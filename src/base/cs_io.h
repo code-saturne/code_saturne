@@ -37,13 +37,13 @@
  *----------------------------------------------------------------------------*/
 
 #include <fvm_defs.h>
-#include <fvm_file.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_file.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -82,7 +82,7 @@ typedef struct _cs_io_t cs_io_t;
 typedef struct {
 
   const char     *sec_name;           /* Pointer to section name */
-  fvm_file_off_t  n_vals;             /* Number of associated values */
+  cs_file_off_t   n_vals;             /* Number of associated values */
   size_t          location_id;        /* Id of associated location, or 0 */
   size_t          index_id;           /* Id of associated index, or 0 */
   size_t          n_location_vals;    /* Number of values per location */
@@ -118,7 +118,7 @@ extern int       cs_glob_io_hints;
  *   name         <-- file name
  *   magic_string <-- magic string associated with file type, or NULL
  *   mode         <-- read or write
- *   hints        <-- optional flags for file access method (see fvm_file.h)
+ *   hints        <-- optional flags for file access method (see cs_file.h)
  *   echo         <-- echo on main output (< 0 if none, header if 0,
  *                    n first and last elements if n > 0)
  *   comm         <-- associated MPI communicator
@@ -156,7 +156,7 @@ cs_io_initialize(const char    *file_name,
  * parameters:
  *   name         <-- file name
  *   magic_string <-- magic string associated with file type
- *   hints        <-- optional flags for file access method (see fvm_file.h)
+ *   hints        <-- optional flags for file access method (see cs_file.h)
  *   echo         <-- echo on main output (< 0 if none, header if 0,
  *                    n first and last elements if n > 0)
  *   comm         <-- associated MPI communicator
@@ -512,7 +512,7 @@ cs_io_write_block_buffer(const char      *sec_name,
  *   offset in file
  *----------------------------------------------------------------------------*/
 
-fvm_file_off_t
+cs_file_off_t
 cs_io_get_offset(cs_io_t  *inp);
 
 /*----------------------------------------------------------------------------
@@ -524,8 +524,8 @@ cs_io_get_offset(cs_io_t  *inp);
  *----------------------------------------------------------------------------*/
 
 void
-cs_io_set_offset(cs_io_t         *inp,
-                 fvm_file_off_t   offset);
+cs_io_set_offset(cs_io_t        *inp,
+                 cs_file_off_t   offset);
 
 /*----------------------------------------------------------------------------
  * Print information on default options for file access.

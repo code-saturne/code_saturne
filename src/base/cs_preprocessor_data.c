@@ -51,7 +51,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_error.h>
-#include <bft_file.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
 
@@ -72,6 +71,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_file.h"
 #include "cs_mesh.h"
 #include "cs_io.h"
 
@@ -95,7 +95,7 @@ BEGIN_C_DECLS
 typedef struct {
 
   const char         *filename;   /* File name */
-  fvm_file_off_t      offset;     /* File offsets for re-opening */
+  cs_file_off_t       offset;     /* File offsets for re-opening */
   const double       *matrix;     /* Coordinate transformation matrix */
 
   size_t              n_group_renames;
@@ -225,12 +225,12 @@ _set_default_input_if_needed(void)
 
   if (_n_mesh_files == 0) {
 
-    if (bft_file_isreg(input_default))
+    if (cs_file_isreg(input_default))
       cs_preprocessor_data_add_file(input_default, 0, NULL, NULL);
 
-    else if (bft_file_isdir(input_default)) {
+    else if (cs_file_isdir(input_default)) {
       int i;
-      char **dir_files = bft_file_listdir(input_default);
+      char **dir_files = cs_file_listdir(input_default);
       for (i = 0; dir_files[i] != NULL; i++) {
         char *tmp_name = NULL;
         BFT_MALLOC(tmp_name,
@@ -238,7 +238,7 @@ _set_default_input_if_needed(void)
                    char);
         sprintf(tmp_name, "%s%c%s",
                 input_default, _dir_separator, dir_files[i]);
-        if (bft_file_isreg(tmp_name))
+        if (cs_file_isreg(tmp_name))
           cs_preprocessor_data_add_file(tmp_name, 0, NULL, NULL);
         BFT_FREE(tmp_name);
         BFT_FREE(dir_files[i]);
@@ -502,7 +502,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
 
   /* Test if file exists */
 
-  if (! bft_file_isreg(file_name)) {
+  if (! cs_file_isreg(file_name)) {
     bft_printf(_(" No \"%s\" file available;\n"), file_name);
     if (_use_sfc == false)
       bft_printf(_("   an unoptimized domain partitioning will be used.\n"));
@@ -586,7 +586,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
                      CS_IO_NAME_LEN) == 0) {
 
       n_elts = mesh->n_g_cells;
-      if (header.n_vals != (fvm_file_off_t)n_elts)
+      if (header.n_vals != (cs_file_off_t)n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name,
                   cs_io_get_name(rank_pp_in));
@@ -2810,7 +2810,7 @@ _read_dimensions(cs_mesh_t       *mesh,
   pp_in = cs_io_initialize(f->filename,
                            "Face-based mesh definition, R0",
                            CS_IO_MODE_READ,
-                           FVM_FILE_NO_MPI_IO,
+                           CS_FILE_NO_MPI_IO,
                            CS_IO_ECHO_NONE,
                            cs_glob_mpi_comm);
 #else

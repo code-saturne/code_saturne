@@ -32,7 +32,6 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 bft_backtrace.h \
 bft_error.h \
-bft_file.h \
 bft_mem.h \
 bft_mem_usage.h \
 bft_printf.h \
@@ -45,7 +44,6 @@ lib_LTLIBRARIES = libbft.la
 libbft_la_SOURCES   = \
 bft_backtrace.c \
 bft_error.c \
-bft_file.c \
 bft_mem.c \
 bft_mem_usage.c \
 bft_printf.c \

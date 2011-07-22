@@ -61,7 +61,7 @@ extern "C" {
  * Local type definitions
  *-----------------------------------------------------------------------------*/
 
-/* Associated typedef documentation (for bft_file.h) */
+/* Associated typedef documentation (for bft_error.h) */
 
 /*!
  * \typedef bft_error_handler_t

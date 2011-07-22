@@ -115,7 +115,6 @@ void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_file.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
 #include <bft_timer.h>
@@ -126,7 +125,6 @@ void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
 
 #include <fvm_defs.h>
 #include <fvm_block_to_part.h>
-#include <fvm_file.h>
 #include <fvm_parall.h>
 
 /*----------------------------------------------------------------------------
@@ -134,6 +132,7 @@ void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_file.h"
 #include "cs_io.h"
 
 /*----------------------------------------------------------------------------*/
@@ -1858,7 +1857,7 @@ _read_input(const char   *path,
 
       cs_gnum_t n_elts = 0;
 
-      if (header.n_vals != (fvm_file_off_t)(n_g_faces*2))
+      if (header.n_vals != (cs_file_off_t)(n_g_faces*2))
         bft_error(__FILE__, __LINE__, 0, unexpected_msg,
                   header.sec_name, cs_io_get_name(inp));
       face_bi = fvm_block_to_part_compute_sizes(rank_id,
@@ -2055,8 +2054,8 @@ _write_output(cs_gnum_t  n_g_cells,
   /* Create directory if required */
 
   if (cs_glob_rank_id < 1) {
-    if (bft_file_isdir(dir) != 1) {
-      if (bft_file_mkdir_default(dir) != 0)
+    if (cs_file_isdir(dir) != 1) {
+      if (cs_file_mkdir_default(dir) != 0)
         bft_error(__FILE__, __LINE__, errno,
                   _("The partitioning directory cannot be created"));
     }
@@ -2213,7 +2212,7 @@ main(int    argc,
 
   /* Read selected data */
 
-  if (bft_file_isdir(input_file))
+  if (cs_file_isdir(input_file))
     bft_error(__FILE__, __LINE__, 0,
               _("\"%s\" is a directory. Run the Kernel to concatenate\n"
                 "its contents into a single file before partitioning."),

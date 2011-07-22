@@ -52,7 +52,6 @@
 #include <arpa/inet.h>
 #endif
 
-#include <bft_file.h>
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
@@ -119,6 +118,49 @@ cs_proxy_comm_t *_cs_glob_proxy_comm = NULL;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Convert data from "little-endian" to "big-endian" or the reverse.
+ *
+ * The memory areas pointed to by src and dest should overlap either
+ * exactly or not at all.
+ *
+ * parameters:
+ *   dest <-- pointer to converted data location.
+ *   src  --> pointer to source data location.
+ *   size <-- size of each item of data in bytes.
+ *   ni   <-- number of data items.
+ *----------------------------------------------------------------------------*/
+
+static void
+_swap_endian(void        *dest,
+             const void  *src,
+             size_t       size,
+             size_t       ni)
+{
+  size_t   i, ib, shift;
+  unsigned char  tmpswap;
+
+  unsigned char  *pdest = (unsigned char *)dest;
+  const unsigned char  *psrc = (const unsigned char *)src;
+
+  for (i = 0; i < ni; i++) {
+
+    shift = i * size;
+
+    for (ib = 0; ib < (size / 2); ib++) {
+
+      tmpswap = *(psrc + shift + ib);
+      *(pdest + shift + ib) = *(psrc + shift + (size - 1) - ib);
+      *(pdest + shift + (size - 1) - ib) = tmpswap;
+
+    }
+
+  }
+
+  if (dest != src && size == 1)
+    memcpy(dest, src, ni);
+}
+
 #if defined(HAVE_SOCKET)
 
 /*----------------------------------------------------------------------------
@@ -165,7 +207,7 @@ static void _comm_read_sock(const cs_proxy_comm_t  *comm,
   }
 
   if (comm->swap_endian == true && size > 1)
-    bft_file_swap_endian(rec, rec, size, count);
+    _swap_endian(rec, rec, size, count);
 }
 
 /*----------------------------------------------------------------------------
@@ -199,7 +241,7 @@ _comm_write_sock(const cs_proxy_comm_t  *comm,
 
   if (comm->swap_endian == true && size != 1) {
     BFT_MALLOC(_rec_swap, n_bytes, char);
-    bft_file_swap_endian(_rec_swap, rec, size, count);
+    _swap_endian(_rec_swap, rec, size, count);
   }
 
   /* Write record to socket */
@@ -313,10 +355,10 @@ _comm_sock_connect(cs_proxy_comm_t  *comm)
   sock_addr.sin_port = port_num;
 
   if (comm->swap_endian == true)
-    bft_file_swap_endian((char *)&(sock_addr.sin_port),
-                         (char *)&(sock_addr.sin_port),
-                         sizeof(sock_addr.sin_port),
-                         1);
+    _swap_endian((char *)&(sock_addr.sin_port),
+                 (char *)&(sock_addr.sin_port),
+                 sizeof(sock_addr.sin_port),
+                 1);
 
   if (connect(comm->socket,
               (struct sockaddr *)&sock_addr, sock_len) < 0)
@@ -688,7 +730,7 @@ cs_proxy_comm_write_request(const char      *func_name,
 #endif
 
   if (comm->swap_endian == true)
-    bft_file_swap_endian(_header+32, _header+32, 4, (header_size - 32)/4);
+    _swap_endian(_header+32, _header+32, 4, (header_size - 32)/4);
 
   /* Pack double values (in C99, int32_t could avoid the sizeof() condition) */
 
@@ -705,10 +747,10 @@ cs_proxy_comm_write_request(const char      *func_name,
     }
 
     if (comm->swap_endian == true)
-      bft_file_swap_endian(_header + header_size_start,
-                           _header + header_size_start,
-                           8,
-                           (header_size - header_size_start)/8);
+      _swap_endian(_header + header_size_start,
+                   _header + header_size_start,
+                   8,
+                   (header_size - header_size_start)/8);
 
   }
 
@@ -776,7 +818,7 @@ cs_proxy_comm_read_response(int        n_ints,
   /* Unpack base info (return code, header_size, n_args/type) */
 
   if (comm->swap_endian == true)
-    bft_file_swap_endian(_header, _header, 4, 5);
+    _swap_endian(_header, _header, 4, 5);
 
 #if (_CS_STDC_VERSION < 199901L)
 
@@ -834,10 +876,10 @@ cs_proxy_comm_read_response(int        n_ints,
   /* Unpack integer values */
 
   if (comm->swap_endian == true)
-    bft_file_swap_endian(_header + header_pos,
-                         _header + header_pos,
-                         4,
-                         n_ints);
+    _swap_endian(_header + header_pos,
+                 _header + header_pos,
+                 4,
+                 n_ints);
 
 #if (_CS_STDC_VERSION < 199901L)
 
@@ -872,10 +914,10 @@ cs_proxy_comm_read_response(int        n_ints,
   assert(sizeof(double) == 8);
 
   if (comm->swap_endian == true)
-    bft_file_swap_endian(_header + header_pos,
-                         _header + header_pos,
-                         8,
-                         n_doubles);
+    _swap_endian(_header + header_pos,
+                 _header + header_pos,
+                 8,
+                 n_doubles);
 
   {
     double *_val_p;

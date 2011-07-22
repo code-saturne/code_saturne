@@ -45,7 +45,6 @@
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_file.h>
 #include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
@@ -63,6 +62,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_file.h"
 #include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
@@ -197,7 +197,7 @@ void CS_PROCF (csmkdr, CSMKDR)
 
   bufname = cs_base_string_f_to_c_create(dirnam, *dirlen);
 
-  if (bft_file_mkdir_default(bufname) == 1)
+  if (cs_file_mkdir_default(bufname) == 1)
     bft_error(__FILE__, __LINE__, 0,
               _("The directory %s cannot be created"), bufname);
 

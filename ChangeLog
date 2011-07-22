@@ -1,3 +1,38 @@
+* 21/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Merge bft_file.* and fvm_file.* into cs_file.*, replacing bft_file_printf()
+  by simple fprintf(), and making endian-swapping code local where needed.
+  added files:
+    src/base/cs_file.c
+    src/base/cs_file.h
+  removed files:
+    src/bft/bft_file.c
+    src/bft/bft_file.h
+    src/fvm/fvm_file.c
+    src/fvm/fvm_file.h
+  modified files:
+    src/apps/cs_partition.c
+    src/base/cs_base_fortran.c
+    src/base/cs_io.c
+    src/base/cs_io.h
+    src/base/cs_preprocessor_data.c
+    src/base/cs_proxy_comm.c
+    src/base/cs_restart.c
+    src/base/cs_syr3_comm.c
+    src/base/Makefile.am
+    src/bft/bft_error.c
+    src/bft/Makefile.am
+    src/ctwr/cs_ctwr.c
+    src/ctwr/cs_ctwr_mesh.c
+    src/fvm/fvm_hilbert.c
+    src/fvm/fvm_morton.c
+    src/fvm/fvm_to_ensight.c
+    src/fvm/fvm_to_ensight_case.c
+    src/fvm/fvm_writer.c
+    src/fvm/fvm_writer_helper.c
+    src/fvm/Makefile.am
+    src/mesh/cs_join_util.c
+    src/mesh/cs_mesh_save.c
+
 * 22/07/2011 - Cyril Baudry <cyril.baudry@edf.fr>
   Fix minor issues in the post-processing pages.
   modified routines:

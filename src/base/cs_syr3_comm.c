@@ -68,7 +68,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_error.h>
-#include <bft_file.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
 
@@ -438,6 +437,49 @@ _comm_mpi_body(void                  *sec_elts,
 #if defined(HAVE_SOCKET)
 
 /*----------------------------------------------------------------------------
+ * Convert data from "little-endian" to "big-endian" or the reverse.
+ *
+ * The memory areas pointed to by src and dest should overlap either
+ * exactly or not at all.
+ *
+ * parameters:
+ *   dest <-- pointer to converted data location.
+ *   src  --> pointer to source data location.
+ *   size <-- size of each item of data in bytes.
+ *   ni   <-- number of data items.
+ *----------------------------------------------------------------------------*/
+
+static void
+_swap_endian(void        *dest,
+             const void  *src,
+             size_t       size,
+             size_t       ni)
+{
+  size_t   i, ib, shift;
+  unsigned char  tmpswap;
+
+  unsigned char  *pdest = (unsigned char *)dest;
+  const unsigned char  *psrc = (const unsigned char *)src;
+
+  for (i = 0; i < ni; i++) {
+
+    shift = i * size;
+
+    for (ib = 0; ib < (size / 2); ib++) {
+
+      tmpswap = *(psrc + shift + ib);
+      *(pdest + shift + ib) = *(psrc + shift + (size - 1) - ib);
+      *(pdest + shift + (size - 1) - ib) = tmpswap;
+
+    }
+
+  }
+
+  if (dest != src && size == 1)
+    memcpy(dest, src, ni);
+}
+
+/*----------------------------------------------------------------------------
  * Read a record from the interface socket
  *----------------------------------------------------------------------------*/
 
@@ -501,7 +543,7 @@ _comm_read_sock(const cs_syr3_comm_t  *comm,
   }
 
   if (comm->swap_endian == true)
-    bft_file_swap_endian(rec, rec, count, nbr);
+    _swap_endian(rec, rec, count, nbr);
 
 }
 
@@ -551,7 +593,7 @@ _comm_write_sock(const cs_syr3_comm_t  *comm,
 
   if (comm->swap_endian == true && count != 1) {
     BFT_MALLOC(rec_tmp, n_bytes, cs_byte_t);
-    bft_file_swap_endian(rec_tmp, rec, count, nbr);
+    _swap_endian(rec_tmp, rec, count, nbr);
   }
   else
     rec_tmp = NULL;
@@ -1556,14 +1598,14 @@ cs_syr3_comm_init_socket(int port_num)
   sock_addr.sin_port = 0;
 
   if (cs_glob_comm_little_endian == true) {
-    bft_file_swap_endian(&(sock_addr.sin_addr.s_addr),
-                         &(sock_addr.sin_addr.s_addr),
-                         sizeof(sock_addr.sin_addr.s_addr),
-                         1);
-    bft_file_swap_endian(&(sock_addr.sin_port),
-                         &(sock_addr.sin_port),
-                         sizeof(sock_addr.sin_port),
-                         1);
+    _swap_endian(&(sock_addr.sin_addr.s_addr),
+                 &(sock_addr.sin_addr.s_addr),
+                 sizeof(sock_addr.sin_addr.s_addr),
+                 1);
+    _swap_endian(&(sock_addr.sin_port),
+                 &(sock_addr.sin_port),
+                 sizeof(sock_addr.sin_port),
+                 1);
   }
 
   if (gethostname(s, CS_LOC_SYR3_COMM_LNG_HOSTNAME) < 0)
@@ -1594,13 +1636,13 @@ cs_syr3_comm_init_socket(int port_num)
 
   _port_num = sock_addr.sin_port;
   if (cs_glob_comm_little_endian == true) {
-    bft_file_swap_endian(&(sock_addr.sin_port),
-                         &(sock_addr.sin_port),
-                         sizeof(sock_addr.sin_port), 1);
+    _swap_endian(&(sock_addr.sin_port),
+                 &(sock_addr.sin_port),
+                 sizeof(sock_addr.sin_port), 1);
     _port_num = sock_addr.sin_port;
-    bft_file_swap_endian(&(sock_addr.sin_port),
-                         &(sock_addr.sin_port),
-                         sizeof(sock_addr.sin_port), 1);
+    _swap_endian(&(sock_addr.sin_port),
+                 &(sock_addr.sin_port),
+                 sizeof(sock_addr.sin_port), 1);
   }
 
   /* Save the structure in the associated global variable */

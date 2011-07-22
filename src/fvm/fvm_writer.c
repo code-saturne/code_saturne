@@ -43,7 +43,6 @@
 
 #include <bft_mem.h>
 #include <bft_error.h>
-#include <bft_file.h>
 #include <bft_printf.h>
 #include <bft_timer.h>
 
@@ -55,6 +54,8 @@
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
 #include "fvm_parall.h"
+
+#include "cs_file.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -678,7 +679,7 @@ fvm_writer_init(const char             *name,
       strcpy(tmp_path, path);
       if (tmp_path[l - 1] == DIR_SEPARATOR)
         tmp_path[l - 1] = '\0';
-      if (bft_file_mkdir_default(path) == 1)
+      if (cs_file_mkdir_default(path) == 1)
         tmp_path[0] = '\0';
       else {
         l = strlen(tmp_path);

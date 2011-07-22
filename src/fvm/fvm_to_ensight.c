@@ -33,23 +33,19 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_error.h>
-#include <bft_mem.h>
-#include <bft_file.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_error.h"
+#include "bft_mem.h"
+#include "bft_printf.h"
 
 #include "fvm_defs.h"
 #include "fvm_convert_array.h"
@@ -63,7 +59,8 @@
 #include "fvm_to_ensight_case.h"
 #include "fvm_writer_helper.h"
 #include "fvm_writer_priv.h"
-#include "fvm_file.h"
+
+#include "cs_file.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -119,8 +116,8 @@ typedef struct {
 
 typedef struct {
 
-  bft_file_t  *tf;                 /* Text file handing structure */
-  fvm_file_t  *bf;                 /* Binary file handling structure */
+  FILE        *tf;                 /* Text file handing structure */
+  cs_file_t   *bf;                 /* Binary file handling structure */
 
 } _ensight_file_t;
 
@@ -159,20 +156,27 @@ _open_ensight_file(const fvm_to_ensight_writer_t  *this_writer,
   _ensight_file_t f = {NULL, NULL};
 
   if (this_writer->text_mode == true) {
-    bft_file_mode_t mode = append ? BFT_FILE_MODE_APPEND : BFT_FILE_MODE_WRITE;
-    if (this_writer->rank == 0)
-      f.tf = bft_file_open(filename, mode, BFT_FILE_TYPE_TEXT);
+    if (this_writer->rank == 0) {
+      if (append)
+        f.tf = fopen(filename, "a");
+      else
+        f.tf = fopen(filename, "w");
+      if (f.tf == NULL)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error opening file \"%s\":\n\n"
+                    "  %s"), filename, strerror(errno));
+    }
   }
   else {
-    fvm_file_mode_t mode = append ? FVM_FILE_MODE_APPEND : FVM_FILE_MODE_WRITE;
+    cs_file_mode_t mode = append ? CS_FILE_MODE_APPEND : CS_FILE_MODE_WRITE;
     const int hints = 0;
 #if defined(HAVE_MPI)
-    f.bf = fvm_file_open(filename, mode, hints, this_writer->comm);
+    f.bf = cs_file_open(filename, mode, hints, this_writer->comm);
 #else
-    f.bf = fvm_file_open(filename, mode, hints);
+    f.bf = cs_file_open(filename, mode, hints);
 #endif
     if (this_writer->swap_endian == true)
-      fvm_file_set_swap_endian(f.bf, 1);
+      cs_file_set_swap_endian(f.bf, 1);
   }
 
   return f;
@@ -188,11 +192,16 @@ _open_ensight_file(const fvm_to_ensight_writer_t  *this_writer,
 static void
 _free_ensight_file(_ensight_file_t  *f)
 {
-  if (f->tf != NULL)
-    f->tf = bft_file_free(f->tf);
+  if (f->tf != NULL) {
+    if (fclose(f->tf) != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error closing EnSight output file (text mode):\n\n"
+                  "  %s"), strerror(errno));
+    f->tf = NULL;
+  }
 
   else if (f->bf != NULL)
-    f->bf = fvm_file_free(f->bf);
+    f->bf = cs_file_free(f->bf);
 }
 
 /*----------------------------------------------------------------------------
@@ -267,7 +276,7 @@ _write_string(_ensight_file_t   f,
   if (f.tf != NULL) {
     strncpy(buf, s, 80);
     buf[80] = '\0';
-    bft_file_printf(f.tf, "%s\n", buf);
+    fprintf(f.tf, "%s\n", buf);
   }
 
   else if (f.bf != NULL) {
@@ -275,7 +284,7 @@ _write_string(_ensight_file_t   f,
     buf[80] = '\0';
     for (i = strlen(buf); i < 80; i++)
       buf[i] = ' ';
-    fvm_file_write_global(f.bf, buf, 1, 80);
+    cs_file_write_global(f.bf, buf, 1, 80);
   }
 }
 
@@ -292,11 +301,11 @@ _write_int(_ensight_file_t  f,
            int32_t          n)
 {
   if (f.tf != NULL)
-    bft_file_printf(f.tf, "%10d\n", (int)n);
+    fprintf(f.tf, "%10d\n", (int)n);
 
   else if (f.bf != NULL) {
     int _n = n;
-    fvm_file_write_global(f.bf, &_n, sizeof(int32_t), 1);
+    cs_file_write_global(f.bf, &_n, sizeof(int32_t), 1);
   }
 }
 
@@ -359,12 +368,12 @@ _write_block_floats_g(cs_gnum_t         num_start,
      we may use use a collective call */
 
   if (f.bf != NULL)
-    fvm_file_write_block_buffer(f.bf,
-                                values,
-                                sizeof(float),
-                                1,
-                                num_start,
-                                num_end);
+    cs_file_write_block_buffer(f.bf,
+                               values,
+                               sizeof(float),
+                               1,
+                               num_start,
+                               num_end);
 
   /* If all ranks do not have a binary file structure pointer, then
      we are using a text file, open only on rank 0 */
@@ -372,30 +381,30 @@ _write_block_floats_g(cs_gnum_t         num_start,
   else {
 
     float *_values = NULL;
-    fvm_file_serializer_t *s
-      = fvm_file_serializer_create(sizeof(float),
-                                   1,
-                                   num_start,
-                                   num_end,
-                                   0,
-                                   values,
-                                   comm);
+    cs_file_serializer_t *s
+      = cs_file_serializer_create(sizeof(float),
+                                  1,
+                                  num_start,
+                                  num_end,
+                                  0,
+                                  values,
+                                  comm);
 
     do {
 
       cs_gnum_t range[2] = {num_start, num_end};
 
-      _values = fvm_file_serializer_advance(s, range);
+      _values = cs_file_serializer_advance(s, range);
 
       if (_values != NULL) { /* only possible on rank 0 */
         assert(f.tf != NULL);
         for (i = 0, j = range[0]; j < range[1]; i++, j++)
-          bft_file_printf(f.tf, "%12.5e\n", _values[i]);
+          fprintf(f.tf, "%12.5e\n", _values[i]);
       }
 
     } while (_values != NULL);
 
-    fvm_file_serializer_destroy(&s);
+    cs_file_serializer_destroy(&s);
   }
 
 }
@@ -421,10 +430,10 @@ _write_block_floats_l(size_t           n_values,
 
   if (f.tf != NULL) {
     for (i = 0; i < n_values; i++)
-      bft_file_printf(f.tf, "%12.5e\n", values[i]);
+      fprintf(f.tf, "%12.5e\n", values[i]);
   }
   else if (f.bf != NULL)
-    fvm_file_write_global(f.bf, values, sizeof(float), n_values);
+    cs_file_write_global(f.bf, values, sizeof(float), n_values);
 }
 
 /*----------------------------------------------------------------------------
@@ -841,78 +850,77 @@ static void
 _write_connect_block_gt(int             stride,
                         cs_lnum_t       n_elems,
                         const int32_t   connect[],
-                        bft_file_t     *tf)
+                        FILE           *tf)
 {
   cs_lnum_t   i;
 
   assert(tf != NULL);
-  assert(bft_file_get_type(tf) == BFT_FILE_TYPE_TEXT);
 
   switch(stride) {
 
   case 1: /* length */
     for (i = 0; i < n_elems; i++)
-      bft_file_printf(tf, "%10d\n",
-                      (int)connect[i]);
+      fprintf(tf, "%10d\n",
+              (int)connect[i]);
     break;
 
   case 2: /* edge */
     for (i = 0; i < n_elems; i++)
-      bft_file_printf(tf, "%10d%10d\n",
-                      (int)connect[i*2],
-                      (int)connect[i*2+1]);
+      fprintf(tf, "%10d%10d\n",
+              (int)connect[i*2],
+              (int)connect[i*2+1]);
     break;
 
   case 3: /* FVM_FACE_TRIA */
     for (i = 0; i < n_elems; i++)
-      bft_file_printf(tf, "%10d%10d%10d\n",
-                      (int)connect[i*3],
-                      (int)connect[i*3+1],
-                      (int)connect[i*3+2]);
+      fprintf(tf, "%10d%10d%10d\n",
+              (int)connect[i*3],
+              (int)connect[i*3+1],
+              (int)connect[i*3+2]);
     break;
 
   case 4: /* FVM_FACE_QUAD or FVM_CELL_TETRA */
     for (i = 0; i < n_elems; i++)
-      bft_file_printf(tf, "%10d%10d%10d%10d\n",
-                      (int)connect[i*4],
-                      (int)connect[i*4+1],
-                      (int)connect[i*4+2],
-                      (int)connect[i*4+3]);
+      fprintf(tf, "%10d%10d%10d%10d\n",
+              (int)connect[i*4],
+              (int)connect[i*4+1],
+              (int)connect[i*4+2],
+              (int)connect[i*4+3]);
     break;
 
   case 5: /* FVM_CELL_PYRAM */
     for (i = 0; i < n_elems; i++)
-      bft_file_printf(tf, "%10d%10d%10d%10d%10d\n",
-                      (int)connect[i*5],
-                      (int)connect[i*5+1],
-                      (int)connect[i*5+2],
-                      (int)connect[i*5+3],
-                      (int)connect[i*5+4]);
+      fprintf(tf, "%10d%10d%10d%10d%10d\n",
+              (int)connect[i*5],
+              (int)connect[i*5+1],
+              (int)connect[i*5+2],
+              (int)connect[i*5+3],
+              (int)connect[i*5+4]);
     break;
 
   case 6: /* FVM_CELL_PRISM */
     for (i = 0; i < n_elems; i++)
-      bft_file_printf(tf, "%10d%10d%10d%10d%10d%10d\n",
-                      (int)connect[i*6],
-                      (int)connect[i*6+1],
-                      (int)connect[i*6+2],
-                      (int)connect[i*6+3],
-                      (int)connect[i*6+4],
-                      (int)connect[i*6+5]);
+      fprintf(tf, "%10d%10d%10d%10d%10d%10d\n",
+              (int)connect[i*6],
+              (int)connect[i*6+1],
+              (int)connect[i*6+2],
+              (int)connect[i*6+3],
+              (int)connect[i*6+4],
+              (int)connect[i*6+5]);
     break;
 
   case 8: /* FVM_CELL_HEXA */
     for (i = 0; i < n_elems; i++)
-      bft_file_printf(tf,
-                      "%10d%10d%10d%10d%10d%10d%10d%10d\n",
-                      (int)connect[i*8],
-                      (int)connect[i*8+1],
-                      (int)connect[i*8+2],
-                      (int)connect[i*8+3],
-                      (int)connect[i*8+4],
-                      (int)connect[i*8+5],
-                      (int)connect[i*8+6],
-                      (int)connect[i*8+7]);
+      fprintf(tf,
+              "%10d%10d%10d%10d%10d%10d%10d%10d\n",
+              (int)connect[i*8],
+              (int)connect[i*8+1],
+              (int)connect[i*8+2],
+              (int)connect[i*8+3],
+              (int)connect[i*8+4],
+              (int)connect[i*8+5],
+              (int)connect[i*8+6],
+              (int)connect[i*8+7]);
     break;
 
   default:
@@ -944,12 +952,12 @@ _write_block_connect_g(int              stride,
      we may use use a collective call */
 
   if (f.bf != NULL)
-    fvm_file_write_block(f.bf,
-                         block_connect,
-                         sizeof(int32_t),
-                         stride,
-                         num_start,
-                         num_end);
+    cs_file_write_block(f.bf,
+                        block_connect,
+                        sizeof(int32_t),
+                        stride,
+                        num_start,
+                        num_end);
 
   /* If all ranks do not have a binary file structure pointer, then
      we are using a text file, open only on rank 0 */
@@ -958,18 +966,18 @@ _write_block_connect_g(int              stride,
 
     int32_t *_block_connect = NULL;
 
-    fvm_file_serializer_t *s = fvm_file_serializer_create(sizeof(int32_t),
-                                                          stride,
-                                                          num_start,
-                                                          num_end,
-                                                          0,
-                                                          block_connect,
-                                                          comm);
+    cs_file_serializer_t *s = cs_file_serializer_create(sizeof(int32_t),
+                                                        stride,
+                                                        num_start,
+                                                        num_end,
+                                                        0,
+                                                        block_connect,
+                                                        comm);
 
     do {
       cs_gnum_t range[2] = {num_start, num_end};
 
-      _block_connect = fvm_file_serializer_advance(s, range);
+      _block_connect = cs_file_serializer_advance(s, range);
 
       if (_block_connect != NULL) /* only possible on rank 0 */
         _write_connect_block_gt(stride,
@@ -979,7 +987,7 @@ _write_block_connect_g(int              stride,
 
     } while (_block_connect != NULL);
 
-    fvm_file_serializer_destroy(&s);
+    cs_file_serializer_destroy(&s);
   }
 }
 
@@ -1009,61 +1017,61 @@ _write_connect_l(int                stride,
 
     case 2: /* edge */
       for (i = 0; i < n_elems; i++)
-        bft_file_printf(f.tf, "%10d%10d\n",
-                        (int)connect[i*2],
-                        (int)connect[i*2+1]);
+        fprintf(f.tf, "%10d%10d\n",
+                (int)connect[i*2],
+                (int)connect[i*2+1]);
       break;
 
     case 3: /* FVM_FACE_TRIA */
       for (i = 0; i < n_elems; i++)
-        bft_file_printf(f.tf, "%10d%10d%10d\n",
-                        (int)connect[i*3],
-                        (int)connect[i*3+1],
-                        (int)connect[i*3+2]);
+        fprintf(f.tf, "%10d%10d%10d\n",
+                (int)connect[i*3],
+                (int)connect[i*3+1],
+                (int)connect[i*3+2]);
       break;
 
     case 4: /* FVM_FACE_QUAD or FVM_CELL_TETRA */
       for (i = 0; i < n_elems; i++)
-        bft_file_printf(f.tf, "%10d%10d%10d%10d\n",
-                        (int)connect[i*4],
-                        (int)connect[i*4+1],
-                        (int)connect[i*4+2],
-                        (int)connect[i*4+3]);
+        fprintf(f.tf, "%10d%10d%10d%10d\n",
+                (int)connect[i*4],
+                (int)connect[i*4+1],
+                (int)connect[i*4+2],
+                (int)connect[i*4+3]);
       break;
 
     case 5: /* FVM_CELL_PYRAM */
       for (i = 0; i < n_elems; i++)
-        bft_file_printf(f.tf, "%10d%10d%10d%10d%10d\n",
-                        (int)connect[i*5],
-                        (int)connect[i*5+1],
-                        (int)connect[i*5+2],
-                        (int)connect[i*5+3],
-                        (int)connect[i*5+4]);
+        fprintf(f.tf, "%10d%10d%10d%10d%10d\n",
+                (int)connect[i*5],
+                (int)connect[i*5+1],
+                (int)connect[i*5+2],
+                (int)connect[i*5+3],
+                (int)connect[i*5+4]);
       break;
 
     case 6: /* FVM_CELL_PRISM */
       for (i = 0; i < n_elems; i++)
-        bft_file_printf(f.tf, "%10d%10d%10d%10d%10d%10d\n",
-                        (int)connect[i*6],
-                        (int)connect[i*6+1],
-                        (int)connect[i*6+2],
-                        (int)connect[i*6+3],
-                        (int)connect[i*6+4],
-                        (int)connect[i*6+5]);
+        fprintf(f.tf, "%10d%10d%10d%10d%10d%10d\n",
+                (int)connect[i*6],
+                (int)connect[i*6+1],
+                (int)connect[i*6+2],
+                (int)connect[i*6+3],
+                (int)connect[i*6+4],
+                (int)connect[i*6+5]);
       break;
 
     case 8: /* FVM_CELL_HEXA */
       for (i = 0; i < n_elems; i++)
-        bft_file_printf(f.tf,
-                        "%10d%10d%10d%10d%10d%10d%10d%10d\n",
-                        (int)connect[i*8],
-                        (int)connect[i*8+1],
-                        (int)connect[i*8+2],
-                        (int)connect[i*8+3],
-                        (int)connect[i*8+4],
-                        (int)connect[i*8+5],
-                        (int)connect[i*8+6],
-                        (int)connect[i*8+7]);
+        fprintf(f.tf,
+                "%10d%10d%10d%10d%10d%10d%10d%10d\n",
+                (int)connect[i*8],
+                (int)connect[i*8+1],
+                (int)connect[i*8+2],
+                (int)connect[i*8+3],
+                (int)connect[i*8+4],
+                (int)connect[i*8+5],
+                (int)connect[i*8+6],
+                (int)connect[i*8+7]);
       break;
 
     default:
@@ -1084,7 +1092,7 @@ _write_connect_l(int                stride,
     while (k < n_values) {
       for (j = 0; j < buffer_size && k < n_values; j++)
         buffer[j] = (int)(connect[k++]);
-      fvm_file_write_global(f.bf, buffer, sizeof(int32_t), j);
+      cs_file_write_global(f.bf, buffer, sizeof(int32_t), j);
     }
 
     BFT_FREE(buffer);
@@ -1120,7 +1128,7 @@ _export_point_elements_g(const fvm_nodal_t  *mesh,
     int32_t  j = 1;
 
     for (i = 0; i < n_g_vertices; i++)
-      bft_file_printf(f.tf, "%10d\n", j++);
+      fprintf(f.tf, "%10d\n", j++);
 
   }
   else if (f.bf != NULL) { /* Binary mode */
@@ -1183,7 +1191,7 @@ _export_point_elements_l(const fvm_nodal_t  *mesh,
   if (f.tf != NULL) { /* Text mode */
     int i;
     for (i = 0; i < n_vertices; i++)
-      bft_file_printf(f.tf, "%10d\n", i+1);
+      fprintf(f.tf, "%10d\n", i+1);
   }
 
   else if (f.bf != NULL) { /* Binary mode */
@@ -1199,7 +1207,7 @@ _export_point_elements_l(const fvm_nodal_t  *mesh,
     while (j < j_end) {
       for (k = 0;  j < j_end  && k < bufsize; k++)
         buf[k] = j++;
-      fvm_file_write_global(f.bf, buf, sizeof(int32_t), k);
+      cs_file_write_global(f.bf, buf, sizeof(int32_t), k);
     }
 
     BFT_FREE(buf);
@@ -1326,12 +1334,12 @@ _write_block_indexed(cs_gnum_t         num_start,
      we may use use a collective call */
 
   if (f.bf != NULL)
-    fvm_file_write_block(f.bf,
-                         block_connect,
-                         sizeof(int32_t),
-                         1,
-                         block_start,
-                         block_end);
+    cs_file_write_block(f.bf,
+                        block_connect,
+                        sizeof(int32_t),
+                        1,
+                        block_start,
+                        block_end);
 
   /* If all ranks do not have a binary file structure pointer, then
      we are using a text file, open only on rank 0 */
@@ -1339,30 +1347,30 @@ _write_block_indexed(cs_gnum_t         num_start,
   else {
     cs_lnum_t   i;
     int32_t *_block_vtx_num = NULL;
-    fvm_file_serializer_t *s = fvm_file_serializer_create(sizeof(int32_t),
-                                                          1,
-                                                          block_start,
-                                                          block_end,
-                                                          0,
-                                                          block_connect,
-                                                          comm);
+    cs_file_serializer_t *s = cs_file_serializer_create(sizeof(int32_t),
+                                                        1,
+                                                        block_start,
+                                                        block_end,
+                                                        0,
+                                                        block_connect,
+                                                        comm);
 
     do {
       cs_gnum_t j;
       cs_gnum_t range[2] = {block_start, block_end};
-      _block_vtx_num = fvm_file_serializer_advance(s, range);
+      _block_vtx_num = cs_file_serializer_advance(s, range);
       if (_block_vtx_num != NULL) { /* only possible on rank 0 */
         assert(f.tf != NULL);
         for (i = 0, j = range[0]; j < range[1]; i++, j++) {
           if (_block_vtx_num[i] != 0)
-            bft_file_printf(f.tf, "%10d", _block_vtx_num[i]);
+            fprintf(f.tf, "%10d", _block_vtx_num[i]);
           else
-            bft_file_printf(f.tf, "\n");
+            fprintf(f.tf, "\n");
         }
       }
     } while (_block_vtx_num != NULL);
 
-    fvm_file_serializer_destroy(&s);
+    cs_file_serializer_destroy(&s);
   }
 }
 
@@ -1744,9 +1752,9 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
 
     if (f.tf != NULL) { /* Text mode */
       for (i = 0; i < section->n_elements; i++)
-        bft_file_printf(f.tf, "%10d\n",
-                        (int)(  section->face_index[i+1]
-                              - section->face_index[i]));
+        fprintf(f.tf, "%10d\n",
+                (int)(  section->face_index[i+1]
+                      - section->face_index[i]));
     }
     else { /* binary mode */
 
@@ -1764,14 +1772,14 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
 
       for (i = 0, i_buf = 0; i < section->n_elements; i++) {
         if (i_buf == buffer_size) {
-          fvm_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
+          cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
           i_buf = 0;
         }
         buffer[i_buf++] = (int)(  section->face_index[i+1]
                                 - section->face_index[i]);
       }
       if (i_buf > 0)
-        fvm_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
+        cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
 
     }
 
@@ -1806,11 +1814,11 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
                        - section->vertex_index[face_id]);
 
         if (f.tf != NULL)
-          bft_file_printf(f.tf, "%10d\n",
-                          (int)face_length);
+          fprintf(f.tf, "%10d\n",
+                  (int)face_length);
         else {
           if (i_buf == buffer_size) {
-            fvm_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
+            cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
             i_buf = 0;
           }
           buffer[i_buf++] = (int)face_length;
@@ -1821,7 +1829,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
     }
 
     if (f.bf != NULL && i_buf > 0)
-      fvm_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
+      cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
 
     current_section = current_section->next;
 
@@ -1863,16 +1871,16 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
           for (k = 0; k < face_length; k++) {
             l =   section->vertex_index[face_id]
                 + (face_length + (k*face_sgn))%face_length;
-            bft_file_printf(f.tf, "%10d", (int)section->vertex_num[l]);
+            fprintf(f.tf, "%10d", (int)section->vertex_num[l]);
           }
-          bft_file_printf(f.tf, "\n");
+          fprintf(f.tf, "\n");
         }
         else { /* binary mode */
           for (k = 0; k < face_length; k++) {
             l =   section->vertex_index[face_id]
                 + (face_length + (k*face_sgn))%face_length;
             if (i_buf == buffer_size) {
-              fvm_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
+              cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
               i_buf = 0;
             }
             buffer[i_buf++] = (int)section->vertex_num[l];
@@ -1884,7 +1892,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
     } /* End of loop on polyhedral cells */
 
     if (f.bf != NULL && i_buf > 0)
-      fvm_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
+      cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
 
     current_section = current_section->next;
 
@@ -2056,8 +2064,8 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 
     if (f.tf != NULL) { /* Text mode */
       for (i = 0; i < section->n_elements; i++)
-        bft_file_printf(f.tf, "%10d\n", (int)(  section->vertex_index[i+1]
-                                           - section->vertex_index[i]));
+        fprintf(f.tf, "%10d\n", (int)(  section->vertex_index[i+1]
+                                      - section->vertex_index[i]));
     }
     else { /* binary mode */
 
@@ -2075,14 +2083,14 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 
       for (i = 0, i_buf = 0; i < section->n_elements; i++) {
         if (i_buf == buffer_size) {
-          fvm_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
+          cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
           i_buf = 0;
         }
         buffer[i_buf++] = (int)(  section->vertex_index[i+1]
                                 - section->vertex_index[i]);
       }
       if (i_buf > 0)
-        fvm_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
+        cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
     }
 
     current_section = current_section->next;
@@ -2107,15 +2115,15 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
         for (j = section->vertex_index[i];
              j < section->vertex_index[i+1];
              j++)
-          bft_file_printf(f.tf, "%10d", (int)section->vertex_num[j]);
-        bft_file_printf(f.tf, "\n");
+          fprintf(f.tf, "%10d", (int)section->vertex_num[j]);
+        fprintf(f.tf, "\n");
       }
       else { /* binary mode */
         for (j = section->vertex_index[i];
              j < section->vertex_index[i+1];
              j++) {
           if (i_buf == buffer_size) {
-            fvm_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
+            cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
             i_buf = 0;
           }
           buffer[i_buf++] = (int)section->vertex_num[j];
@@ -2125,7 +2133,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
     } /* End of loop on polygonal faces */
 
     if (f.bf != NULL && i_buf > 0)
-      fvm_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
+      cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
 
     current_section = current_section->next;
 

@@ -33,6 +33,7 @@
 
 #include <assert.h>
 #include <ctype.h>  /* toupper() */
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,7 +44,6 @@
 
 #include <bft_error.h>
 #include <bft_mem.h>
-#include <bft_file.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -1005,9 +1005,9 @@ void
 fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *this_case,
                                int                     rank)
 {
-  int          i, j;
-  bft_file_t  *f;
-  _Bool        write_time_sets = false;
+  int      i, j;
+  FILE    *f;
+  _Bool    write_time_sets = false;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -1021,47 +1021,50 @@ fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *this_case,
 
   /* Open case file (overwrite it if present) */
 
-  f = bft_file_open(this_case->case_file_name,
-                    BFT_FILE_MODE_WRITE,
-                    BFT_FILE_TYPE_TEXT);
+  f = fopen(this_case->case_file_name, "w");
+
+  if (f == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error opening file \"%s\":\n\n"
+                "  %s"), this_case->case_file_name, strerror(errno));
 
   /* Output FORMAT */
 
-  bft_file_printf(f,
-                  "FORMAT\n"
-                  "type: ensight gold\n");
+  fprintf(f,
+          "FORMAT\n"
+          "type: ensight gold\n");
 
   /* Output geometry */
 
-  bft_file_printf(f,
-                  "\n"
-                  "GEOMETRY\n");
+  fprintf(f,
+          "\n"
+          "GEOMETRY\n");
 
   if (this_case->time_dependency == FVM_WRITER_FIXED_MESH)
-    bft_file_printf(f, "model: %s.geo\n",
-                    this_case->file_name_prefix + this_case->dir_name_length);
+    fprintf(f, "model: %s.geo\n",
+            this_case->file_name_prefix + this_case->dir_name_length);
 
   else if (this_case->time_dependency == FVM_WRITER_TRANSIENT_COORDS)
-    bft_file_printf(f, "model: %d %s.geo.****  change_coords_only\n",
-                    this_case->geom_time_set + 1,
-                    this_case->file_name_prefix + this_case->dir_name_length);
+    fprintf(f, "model: %d %s.geo.****  change_coords_only\n",
+            this_case->geom_time_set + 1,
+            this_case->file_name_prefix + this_case->dir_name_length);
 
   else
-    bft_file_printf(f, "model: %d %s.geo.****\n",
-                    this_case->geom_time_set + 1,
-                    this_case->file_name_prefix + this_case->dir_name_length);
+    fprintf(f, "model: %d %s.geo.****\n",
+            this_case->geom_time_set + 1,
+            this_case->file_name_prefix + this_case->dir_name_length);
 
   /* Output variables */
 
   if (this_case->n_vars > 0) {
 
-    bft_file_printf(f,
-                    "\n"
-                    "VARIABLE\n");
+    fprintf(f,
+            "\n"
+            "VARIABLE\n");
 
     for (i = 0 ; i < this_case->n_vars ; i++) {
       const fvm_to_ensight_case_var_t  *var = this_case->var[i];
-      bft_file_printf(f, "%s\n", var->case_line);
+      fprintf(f, "%s\n", var->case_line);
     }
 
   }
@@ -1079,22 +1082,22 @@ fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *this_case,
 
   if (write_time_sets == true) {
 
-    bft_file_printf(f,
-                    "\n"
-                    "TIME\n");
+    fprintf(f,
+            "\n"
+            "TIME\n");
 
     for (i = 0 ; i < this_case->n_time_sets ; i++) {
 
       const fvm_to_ensight_case_time_t  *ts = this_case->time_set[i];
 
-      bft_file_printf(f, "time set:              %d\n", i+1);
-      bft_file_printf(f, "number of steps:       %d\n", ts->n_time_values);
-      bft_file_printf(f, "filename start number: 1\n");
-      bft_file_printf(f, "filename increment:    1\n");
-      bft_file_printf(f, "time values:\n");
+      fprintf(f, "time set:              %d\n", i+1);
+      fprintf(f, "number of steps:       %d\n", ts->n_time_values);
+      fprintf(f, "filename start number: 1\n");
+      fprintf(f, "filename increment:    1\n");
+      fprintf(f, "time values:\n");
 
       for (j = 0 ; j < ts->n_time_values ; j++)
-        bft_file_printf(f, "            %g\n", ts->time_value[j]);
+        fprintf(f, "            %g\n", ts->time_value[j]);
 
     }
 
@@ -1102,7 +1105,10 @@ fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *this_case,
 
   /* Close case file */
 
-  bft_file_free(f);
+  if (fclose(f) != 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error closing file \"%s\":\n\n"
+                "  %s"), this_case->case_file_name, strerror(errno));
 }
 
 /*----------------------------------------------------------------------------*/

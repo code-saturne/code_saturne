@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2010 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -57,13 +57,10 @@
  * BFT and FVM library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_file.h>
 #include <bft_error.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
 #include <bft_timer.h>
-
-#include <fvm_file.h>
 
 #if defined(HAVE_MPI)
 #include <fvm_parall.h>
@@ -75,6 +72,8 @@
 
 #include "cs_base.h"
 #include "cs_map.h"
+
+#include "cs_file.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -125,10 +124,10 @@ typedef struct {
    *   7: associated file id (in case of multiple files)
    */
 
-  fvm_file_off_t *h_vals;            /* Base values associated
+  cs_file_off_t  *h_vals;            /* Base values associated
                                         with each header */
 
-  fvm_file_off_t *offset;            /* Position of associated data
+  cs_file_off_t  *offset;            /* Position of associated data
                                         in file (-1 if embedded) */
 
   size_t          max_names_size;    /* Maximum size of names array */
@@ -143,7 +142,7 @@ typedef struct {
      files are used to contain the data */
 
   size_t          n_files;           /* Number of associated files */
-  fvm_file_t    **f;                 /* Pointers to associated files */
+  cs_file_t     **f;                 /* Pointers to associated files */
 
 } cs_io_sec_index_t;
 
@@ -154,7 +153,7 @@ struct _cs_io_t {
 
   /* File information */
 
-  fvm_file_t         *f;              /* Pointer to associated file */
+  cs_file_t          *f;              /* Pointer to associated file */
 
   char                contents[64];   /* String describing file contents */
 
@@ -171,7 +170,7 @@ struct _cs_io_t {
   size_t              buffer_size;    /* Current size of header buffer */
   unsigned char      *buffer;         /* Header buffer */
 
-  fvm_file_off_t      n_vals;         /* Number of values in section header */
+  cs_file_off_t       n_vals;         /* Number of values in section header */
   size_t              location_id;    /* Id of location, or 0 */
   size_t              index_id;       /* Id of index, or 0 */
   size_t              n_loc_vals;     /* Number of values per location */
@@ -213,7 +212,7 @@ static char  _type_name_r8[] =   "r8";  /* Double precsision real */
 
 /* Default hints for files using this API (for MPI-IO) */
 #if defined(HAVE_MPI_IO)
-int  cs_glob_io_hints = FVM_FILE_EXPLICIT_OFFSETS;
+int  cs_glob_io_hints = CS_FILE_EXPLICIT_OFFSETS;
 #else
 int  cs_glob_io_hints = 0;
 #endif
@@ -228,6 +227,40 @@ static cs_io_log_t  *_cs_io_log[2] = {NULL, NULL};
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Convert data from "little-endian" to "big-endian" or the reverse.
+ *
+ * parameters:
+ *   buf  <-- pointer to converted data location.
+ *   size <-- size of each item of data in bytes.
+ *   ni   <-- number of data items.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_swap_endian(void    *buf,
+             size_t   size,
+             size_t   ni)
+{
+  size_t   i, ib, shift;
+  unsigned char  tmpswap;
+  unsigned char  *pbuf = (unsigned char *)buf;
+
+  for (i = 0; i < ni; i++) {
+
+    shift = i * size;
+
+    for (ib = 0; ib < (size / 2); ib++) {
+
+      tmpswap = *(pbuf + shift + ib);
+      *(pbuf + shift + ib) = *(pbuf + shift + (size - 1) - ib);
+      *(pbuf + shift + (size - 1) - ib) = tmpswap;
+
+    }
+
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Default conversion rule from type in file to type in memory.
@@ -274,7 +307,7 @@ _type_read_to_elt_type(fvm_datatype_t type_read)
 }
 
 /*----------------------------------------------------------------------------
- * Convert a buffer of type uint64_t to fvm_file_off_t
+ * Convert a buffer of type uint64_t to cs_file_off_t
  *
  * parameters:
  *   buf <-- buffer
@@ -284,7 +317,7 @@ _type_read_to_elt_type(fvm_datatype_t type_read)
 
 static void
 _convert_to_offset(const unsigned char  buf[],
-                   fvm_file_off_t       val[],
+                   cs_file_off_t        val[],
                    size_t               n)
 {
   size_t i;
@@ -315,7 +348,7 @@ _convert_to_offset(const unsigned char  buf[],
 }
 
 /*----------------------------------------------------------------------------
- * Convert a buffer of type fvm_file_off_t to uint64_t
+ * Convert a buffer of type cs_file_off_t to uint64_t
  *
  * parameters:
  *   buf --> buffer
@@ -325,7 +358,7 @@ _convert_to_offset(const unsigned char  buf[],
 
 static void
 _convert_from_offset(unsigned char         buf[],
-                     const fvm_file_off_t  val[],
+                     const cs_file_off_t   val[],
                      size_t                n)
 {
   size_t i;
@@ -432,8 +465,8 @@ _create_index(cs_io_t *inp)
   idx->size = 0;
   idx->max_size = 32;
 
-  BFT_MALLOC(idx->h_vals, idx->max_size*8, fvm_file_off_t);
-  BFT_MALLOC(idx->offset, idx->max_size, fvm_file_off_t);
+  BFT_MALLOC(idx->h_vals, idx->max_size*8, cs_file_off_t);
+  BFT_MALLOC(idx->offset, idx->max_size, cs_file_off_t);
 
   idx->max_names_size = 256;
   idx->names_size = 0;
@@ -478,7 +511,7 @@ _destroy_index(cs_io_t *inp)
     if (idx->f[i] == inp->f)
       idx->f[i] = NULL;
     else if (idx->f[i] != NULL)
-      idx->f[i] = fvm_file_free(idx->f[i]);
+      idx->f[i] = cs_file_free(idx->f[i]);
   }
   BFT_FREE(idx->f);
 
@@ -515,8 +548,8 @@ _update_index_and_shift(cs_io_t             *inp,
       idx->max_size = 32;
     else
       idx->max_size *= 2;
-    BFT_REALLOC(idx->h_vals, idx->max_size*8, fvm_file_off_t);
-    BFT_REALLOC(idx->offset, idx->max_size, fvm_file_off_t);
+    BFT_REALLOC(idx->h_vals, idx->max_size*8, cs_file_off_t);
+    BFT_REALLOC(idx->offset, idx->max_size, cs_file_off_t);
   };
 
   new_names_size = idx->names_size + strlen(inp->sec_name) + 1;
@@ -560,15 +593,15 @@ _update_index_and_shift(cs_io_t             *inp,
   idx->names_size = new_names_size;
 
   if (inp->data == NULL) {
-    fvm_file_off_t offset = fvm_file_tell(inp->f);
-    fvm_file_off_t data_shift = inp->n_vals * inp->type_size;
+    cs_file_off_t offset = cs_file_tell(inp->f);
+    cs_file_off_t data_shift = inp->n_vals * inp->type_size;
     if (inp->body_align > 0) {
       size_t ba = inp->body_align;
       idx->offset[id] = offset + (ba - (offset % ba)) % ba;
     }
     else
       idx->offset[id] = offset;
-    fvm_file_seek(inp->f, idx->offset[id] + data_shift, FVM_FILE_SEEK_SET);
+    cs_file_seek(inp->f, idx->offset[id] + data_shift, CS_FILE_SEEK_SET);
   }
   else {
     idx->h_vals[id*8 + 5] = idx->data_size + 1;
@@ -609,9 +642,9 @@ _file_open(cs_io_t     *cs_io,
            int          hints)
 #endif
 {
-  fvm_file_mode_t f_mode;
+  cs_file_mode_t f_mode;
   char header_data[128 + 24];
-  fvm_file_off_t header_vals[3];
+  cs_file_off_t header_vals[3];
 
   char  base_header[] = "Code_Saturne I/O, BE, R0";
 
@@ -620,11 +653,11 @@ _file_open(cs_io_t     *cs_io,
   switch(cs_io->mode) {
 
   case CS_IO_MODE_READ:
-    f_mode = FVM_FILE_MODE_READ;
+    f_mode = CS_FILE_MODE_READ;
     break;
 
   case CS_IO_MODE_WRITE:
-    f_mode = FVM_FILE_MODE_WRITE;
+    f_mode = CS_FILE_MODE_WRITE;
     break;
 
   default:
@@ -672,12 +705,12 @@ _file_open(cs_io_t     *cs_io,
   /* Create interface file descriptor */
 
 #if defined(HAVE_MPI)
-  cs_io->f = fvm_file_open(name, f_mode, hints, comm);
+  cs_io->f = cs_file_open(name, f_mode, hints, comm);
 #else
-  cs_io->f = fvm_file_open(name, f_mode, hints);
+  cs_io->f = cs_file_open(name, f_mode, hints);
 #endif
 
-  fvm_file_set_big_endian(cs_io->f);
+  cs_file_set_big_endian(cs_io->f);
 
 #if defined(HAVE_MPI)
   cs_io->comm = comm;
@@ -688,7 +721,7 @@ _file_open(cs_io_t     *cs_io,
 
   if (cs_io->mode == CS_IO_MODE_READ) {
 
-    fvm_file_read_global(cs_io->f, header_data, 1, 128 + 24);
+    cs_file_read_global(cs_io->f, header_data, 1, 128 + 24);
 
     header_data[63] = '\0';
     header_data[127] = '\0';
@@ -704,7 +737,7 @@ _file_open(cs_io_t     *cs_io,
                   "\"%s\"\n"
                   "The first 64 bytes read contain:\n"
                   "\"%s\"\n"),
-                fvm_file_get_name(cs_io->f), base_header, header_data);
+                cs_file_get_name(cs_io->f), base_header, header_data);
 
     }
 
@@ -722,13 +755,13 @@ _file_open(cs_io_t     *cs_io,
                     "The file contents are not of the expected type.\n"
                     "\"%s\" was expected,\n"
                     "\"%s\" was read."),
-                  fvm_file_get_name(cs_io->f), magic_string, cs_io->contents);
+                  cs_file_get_name(cs_io->f), magic_string, cs_io->contents);
     }
 
     /* Now decode the sizes */
 
-    if (fvm_file_get_swap_endian(cs_io->f) == 1)
-      bft_file_swap_endian(header_data + 128, header_data + 128, 8, 3);
+    if (cs_file_get_swap_endian(cs_io->f) == 1)
+      _swap_endian(header_data + 128, 8, 3);
 
     _convert_to_offset((unsigned char *)(header_data + 128), header_vals, 3);
 
@@ -758,15 +791,15 @@ _file_open(cs_io_t     *cs_io,
 
     _convert_from_offset((unsigned char *)(header_data + 128), header_vals, 3);
 
-    if (fvm_file_get_swap_endian(cs_io->f) == 1)
-      bft_file_swap_endian(header_data + 128, header_data + 128, 8, 3);
+    if (cs_file_get_swap_endian(cs_io->f) == 1)
+      _swap_endian(header_data + 128, 8, 3);
 
-    n_written = fvm_file_write_global(cs_io->f, header_data, 1, 128 + 24);
+    n_written = cs_file_write_global(cs_io->f, header_data, 1, 128 + 24);
 
     if (n_written < 128 + 24)
       bft_error(__FILE__, __LINE__, 0,
                 _("Error writing the header of file: \"%s\".\n"),
-                fvm_file_get_name(cs_io->f));
+                cs_file_get_name(cs_io->f));
   }
 
   cs_io->buffer_size = cs_io->header_size;
@@ -875,17 +908,17 @@ _file_legacy_restart_open(cs_io_t    *inp,
   /* Create interface file descriptor */
 
 #if defined(HAVE_MPI)
-  inp->f = fvm_file_open(name, FVM_FILE_MODE_READ, FVM_FILE_NO_MPI_IO, comm);
+  inp->f = cs_file_open(name, CS_FILE_MODE_READ, CS_FILE_NO_MPI_IO, comm);
 #else
-  inp->f = fvm_file_open(name, FVM_FILE_MODE_READ, 0);
+  inp->f = cs_file_open(name, CS_FILE_MODE_READ, 0);
 #endif
 
-  fvm_file_set_big_endian(inp->f);
+  cs_file_set_big_endian(inp->f);
 
   /* Read first characters and compare */
   /*-----------------------------------*/
 
-  n_read = fvm_file_read_global(inp->f, header_read, 1, expected_len);
+  n_read = cs_file_read_global(inp->f, header_read, 1, expected_len);
 
   if (n_read == expected_len) {
     header_read[expected_len] = '\0';
@@ -896,7 +929,7 @@ _file_legacy_restart_open(cs_io_t    *inp,
   /* Close file and return if it is not what we are looking for */
 
   if (retval == 0) {
-    inp->f = fvm_file_free(inp->f);
+    inp->f = cs_file_free(inp->f);
     return retval;
   }
 
@@ -911,21 +944,21 @@ _file_legacy_restart_open(cs_io_t    *inp,
 
   /* Read location sizes */
 
-  n_read = fvm_file_read_global(inp->f, sizes, sizeof(cs_lnum_t), 4);
+  n_read = cs_file_read_global(inp->f, sizes, sizeof(cs_lnum_t), 4);
   if (n_read < 4) {
     bft_error(__FILE__, __LINE__, 0,
               _("Restart file \"%s\"\n"
                 "in format 1.1 is not conforming."),
-              fvm_file_get_name(inp->f));
+              cs_file_get_name(inp->f));
 
     /* following code will not be reached as long as errors are fatal */
-    inp->f = fvm_file_free(inp->f);
+    inp->f = cs_file_free(inp->f);
     retval = 0;
   }
 
   /* Update index file section */
   if (inp->index != NULL) {
-    BFT_REALLOC(inp->index->f, inp->index->n_files + 1, fvm_file_t *);
+    BFT_REALLOC(inp->index->f, inp->index->n_files + 1, cs_file_t *);
     inp->index->f[inp->index->n_files] = inp->f;
     inp->index->n_files += 1;
   }
@@ -993,7 +1026,7 @@ _file_legacy_restart_index(cs_io_t     *inp,
 
     /* Read section */
 
-    n_read = fvm_file_read_global(inp->f, buf, sizeof(cs_lnum_t), 4);
+    n_read = cs_file_read_global(inp->f, buf, sizeof(cs_lnum_t), 4);
 
     if (n_read < 4) {
       end_of_file = 1;
@@ -1007,7 +1040,7 @@ _file_legacy_restart_index(cs_io_t     *inp,
     }
     sec_name = (char *)(inp->buffer + 56);
 
-    n_read = fvm_file_read_global(inp->f, sec_name, 1, buf[0]);
+    n_read = cs_file_read_global(inp->f, sec_name, 1, buf[0]);
     sec_name[n_read] = '\0';
 
     if (n_read < buf[0]) {
@@ -1045,7 +1078,7 @@ _file_legacy_restart_index(cs_io_t     *inp,
       for (ii = 0; ii < 4; ii++) {
         if (sizes[ii] != cmp_sizes[ii]) {
           bft_error(__FILE__, __LINE__, 0, _(incorrect_next_file_msg),
-                    fvm_file_get_name(inp->f), (int)(inp->index->n_files));
+                    cs_file_get_name(inp->f), (int)(inp->index->n_files));
           end_of_file = 1;
         }
       }
@@ -1062,7 +1095,7 @@ _file_legacy_restart_index(cs_io_t     *inp,
     else if (strcmp(sec_name, "reprise : partie num") == 0) {
       if (buf[0] != (cs_lnum_t)(inp->index->n_files)) {
         bft_error(__FILE__, __LINE__, 0, _(incorrect_next_file_msg),
-                  fvm_file_get_name(inp->f), (int)(inp->index->n_files));
+                  cs_file_get_name(inp->f), (int)(inp->index->n_files));
         end_of_file = 1;
       }
       continue;
@@ -1137,21 +1170,21 @@ _file_reopen_read(cs_io_t   *inp,
 
   for (i = 0; i < inp->index->n_files; i++) {
 
-    const char *filename = fvm_file_get_name(inp->index->f[i]);
+    const char *filename = cs_file_get_name(inp->index->f[i]);
 
     if (strlen(filename) >= 128)
       BFT_MALLOC(tmpname, strlen(filename) + 1, char);
     strcpy(tmpname, filename);
 
-    inp->index->f[i] = fvm_file_free(inp->index->f[i]);
+    inp->index->f[i] = cs_file_free(inp->index->f[i]);
 
 #if defined(HAVE_MPI)
-    inp->index->f[i] = fvm_file_open(tmpname, FVM_FILE_MODE_READ, hints, comm);
+    inp->index->f[i] = cs_file_open(tmpname, CS_FILE_MODE_READ, hints, comm);
 #else
-    inp->index->f[i] = fvm_file_open(tmpname, FVM_FILE_MODE_READ, hints);
+    inp->index->f[i] = cs_file_open(tmpname, CS_FILE_MODE_READ, hints);
 #endif
 
-    fvm_file_set_big_endian(inp->index->f[i]);
+    cs_file_set_big_endian(inp->index->f[i]);
 
     if (tmpname != _tmpname)
       BFT_FREE(tmpname);
@@ -1174,7 +1207,7 @@ static void
 _file_close(cs_io_t  *cs_io)
 {
   if (cs_io->f != NULL)
-    cs_io->f = fvm_file_free(cs_io->f);
+    cs_io->f = cs_file_free(cs_io->f);
 
   if (cs_io->log_id > -1) {
     double t_end = bft_timer_wtime();
@@ -1199,12 +1232,12 @@ _echo_pre(const cs_io_t  *cs_io)
 
   case CS_IO_MODE_READ:
     bft_printf(_("\n  Section read on \"%s\":\n"),
-               fvm_file_get_name(cs_io->f));
+               cs_file_get_name(cs_io->f));
     break;
 
   case CS_IO_MODE_WRITE:
     bft_printf(_("\n  Section written on \"%s\":\n"),
-               fvm_file_get_name(cs_io->f));
+               cs_file_get_name(cs_io->f));
     break;
 
   default:
@@ -1300,17 +1333,17 @@ _echo_header(const char      *sec_name,
 
 static void
 _echo_data(size_t           echo,
-           fvm_file_off_t   n_elts,
+           cs_file_off_t    n_elts,
            cs_gnum_t        global_num_start,
            cs_gnum_t        global_num_end,
            fvm_datatype_t   elt_type,
            const void      *elts)
 {
-  fvm_file_off_t  i;
+  cs_file_off_t  i;
   cs_gnum_t   num_shift = 1;
   size_t  _n_elts = n_elts;
-  fvm_file_off_t  echo_start = 0;
-  fvm_file_off_t  echo_end = 0;
+  cs_file_off_t  echo_start = 0;
+  cs_file_off_t  echo_end = 0;
   const char *_loc_glob[] = {N_(" (local)"), ""};
   const char *loc_glob = _loc_glob[1];
 
@@ -1439,11 +1472,11 @@ _echo_data(size_t           echo,
 static void
 _cs_io_convert_read(void            *buffer,
                     void            *dest,
-                    fvm_file_off_t   n_elts,
+                    cs_file_off_t    n_elts,
                     fvm_datatype_t   buffer_type,
                     fvm_datatype_t   dest_type)
 {
-  fvm_file_off_t ii;
+  cs_file_off_t ii;
   size_t buffer_type_size = fvm_datatype_size[buffer_type];
 
   assert(dest_type != buffer_type);
@@ -1650,7 +1683,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 {
   double t_start = 0.;
   size_t  type_size = 0;
-  fvm_file_off_t  n_vals = inp->n_vals;
+  cs_file_off_t  n_vals = inp->n_vals;
   cs_io_log_t  *log = NULL;
   bool  convert_type = false;
   void  *_elts = NULL;
@@ -1714,30 +1747,30 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
     /* Position read pointer if necessary */
 
     if (inp->body_align > 0) {
-      fvm_file_off_t offset = fvm_file_tell(inp->f);
+      cs_file_off_t offset = cs_file_tell(inp->f);
       size_t ba = inp->body_align;
       offset += (ba - (offset % ba)) % ba;
-      fvm_file_seek(inp->f, offset, FVM_FILE_SEEK_SET);
+      cs_file_seek(inp->f, offset, CS_FILE_SEEK_SET);
     }
 
     /* Read local or global values */
 
     if (global_num_start > 0 && global_num_end > 0) {
-      fvm_file_read_block(inp->f,
-                          _buf,
-                          type_size,
-                          stride,
-                          global_num_start,
-                          global_num_end);
+      cs_file_read_block(inp->f,
+                         _buf,
+                         type_size,
+                         stride,
+                         global_num_start,
+                         global_num_end);
       if (log != NULL)
         log->data_size[1] += (global_num_end - global_num_start)*type_size;
     }
 
     else if (n_vals > 0) {
-      fvm_file_read_global(inp->f,
-                           _buf,
-                           type_size,
-                           n_vals);
+      cs_file_read_global(inp->f,
+                          _buf,
+                          type_size,
+                          n_vals);
       if (log != NULL)
         log->data_size[0] += n_vals*type_size;
     }
@@ -1836,7 +1869,7 @@ _cs_io_initialize_with_index(cs_io_t       *inp,
      a "lighter" method than MPI-IO should be well adapted. */
 
 #if defined(HAVE_MPI)
-  _file_open(inp, file_name, magic_string, FVM_FILE_NO_MPI_IO, comm);
+  _file_open(inp, file_name, magic_string, CS_FILE_NO_MPI_IO, comm);
 #else
   _file_open(inp, file_name, magic_string, 0);
 #endif
@@ -1844,7 +1877,7 @@ _cs_io_initialize_with_index(cs_io_t       *inp,
   /* Update index file section */
 
   if (inp->index != NULL) {
-    BFT_REALLOC(inp->index->f, inp->index->n_files + 1, fvm_file_t *);
+    BFT_REALLOC(inp->index->f, inp->index->n_files + 1, cs_file_t *);
     inp->index->f[inp->index->n_files] = inp->f;
     inp->index->n_files += 1;
   }
@@ -1879,8 +1912,8 @@ _write_padding(size_t    align,
 {
   if (align > 0) {
 
-    fvm_file_off_t offset = fvm_file_tell(outp->f);
-    fvm_file_off_t add_offset = (align - (offset % align)) % align;
+    cs_file_off_t offset = cs_file_tell(outp->f);
+    cs_file_off_t add_offset = (align - (offset % align)) % align;
 
     if (add_offset > 0) {
 
@@ -1895,15 +1928,15 @@ _write_padding(size_t    align,
 
       memset(outp->buffer, 0, pad_size);
 
-      n_written = fvm_file_write_global(outp->f,
-                                        outp->buffer,
-                                        1,
-                                        pad_size);
+      n_written = cs_file_write_global(outp->f,
+                                       outp->buffer,
+                                       1,
+                                       pad_size);
 
       if (pad_size != n_written)
         bft_error(__FILE__, __LINE__, 0,
                   _("Error writing %llu bytes to file \"%s\"."),
-                  (unsigned long long)pad_size, fvm_file_get_name(outp->f));
+                  (unsigned long long)pad_size, cs_file_get_name(outp->f));
     }
   }
 }
@@ -1939,11 +1972,11 @@ _write_header(const char      *sec_name,
               const void      *elts,
               cs_io_t         *outp)
 {
-  fvm_file_off_t header_vals[6];
+  cs_file_off_t header_vals[6];
 
   double t_start = 0.;
-  fvm_file_off_t write_size = 0;
-  fvm_file_off_t data_size = n_vals * fvm_datatype_size[elt_type];
+  cs_file_off_t write_size = 0;
+  cs_file_off_t data_size = n_vals * fvm_datatype_size[elt_type];
   size_t name_size = 0, name_pad_size = 0;
   size_t n_written = 0;
   cs_io_log_t  *log = NULL;
@@ -1986,15 +2019,15 @@ _write_header(const char      *sec_name,
 
   if (   n_vals > 0
       && elts != NULL
-      && (header_vals[0] + data_size <= (fvm_file_off_t)(outp->header_size))) {
+      && (header_vals[0] + data_size <= (cs_file_off_t)(outp->header_size))) {
     header_vals[0] += data_size;
     embed = true;
   }
 
   /* Ensure buffer is big enough for data */
 
-  if (header_vals[0] > (fvm_file_off_t)(outp->buffer_size)) {
-    while (header_vals[0] > (fvm_file_off_t)(outp->buffer_size))
+  if (header_vals[0] > (cs_file_off_t)(outp->buffer_size)) {
+    while (header_vals[0] > (cs_file_off_t)(outp->buffer_size))
       outp->buffer_size *=2;
     BFT_REALLOC(outp->buffer, outp->buffer_size, unsigned char);
   }
@@ -2005,8 +2038,8 @@ _write_header(const char      *sec_name,
 
   _convert_from_offset(outp->buffer, header_vals, 6);
 
-  if (fvm_file_get_swap_endian(outp->f) == 1)
-    bft_file_swap_endian(outp->buffer, outp->buffer, 8, 6);
+  if (cs_file_get_swap_endian(outp->f) == 1)
+    _swap_endian(outp->buffer, 8, 6);
 
   /* Element type name */
 
@@ -2071,24 +2104,24 @@ _write_header(const char      *sec_name,
 
     memcpy(data, elts, data_size);
 
-    if (   fvm_file_get_swap_endian(outp->f) == 1
+    if (   cs_file_get_swap_endian(outp->f) == 1
         && fvm_datatype_size[elt_type] > 1)
-      bft_file_swap_endian(data, data, fvm_datatype_size[elt_type], n_vals);
+      _swap_endian(data, fvm_datatype_size[elt_type], n_vals);
   }
 
   /* Now write header data */
 
-  write_size = CS_MAX((fvm_file_off_t)(outp->header_size), header_vals[0]);
+  write_size = CS_MAX((cs_file_off_t)(outp->header_size), header_vals[0]);
 
-  n_written = fvm_file_write_global(outp->f,
-                                    outp->buffer,
-                                    1,
-                                    write_size);
+  n_written = cs_file_write_global(outp->f,
+                                   outp->buffer,
+                                   1,
+                                   write_size);
 
-  if (write_size != (fvm_file_off_t)n_written)
+  if (write_size != (cs_file_off_t)n_written)
     bft_error(__FILE__, __LINE__, 0,
               _("Error writing %llu bytes to file \"%s\"."),
-              (unsigned long long)write_size, fvm_file_get_name(outp->f));
+              (unsigned long long)write_size, cs_file_get_name(outp->f));
 
   if (log != NULL) {
     double t_end = bft_timer_wtime();
@@ -2124,7 +2157,7 @@ _dump_index(const cs_io_sec_index_t  *idx)
   for (ii = 0; ii < idx->size; ii++) {
 
     char embed = 'n';
-    fvm_file_off_t *h_vals = idx->h_vals + ii*8;
+    cs_file_off_t *h_vals = idx->h_vals + ii*8;
     const char *name = idx->names + h_vals[4];
 
     if (h_vals[5] > 0)
@@ -2142,7 +2175,7 @@ _dump_index(const cs_io_sec_index_t  *idx)
   bft_printf(_("\n %u associated file(s):\n"), (unsigned)(idx->n_files));
 
   for (ii = 0; ii < idx->n_files; ii++)
-    bft_printf(_("  \"%s\"\n"), fvm_file_get_name(idx->f[ii]));
+    bft_printf(_("  \"%s\"\n"), cs_file_get_name(idx->f[ii]));
 
   bft_printf("\n");
 }
@@ -2160,7 +2193,7 @@ _dump_index(const cs_io_sec_index_t  *idx)
  *   name         <-- file name
  *   magic_string <-- magic string associated with file type
  *   mode         <-- read or write
- *   hints        <-- optional flags for file access method (see fvm_file.h)
+ *   hints        <-- optional flags for file access method (see cs_file.h)
  *   echo         <-- echo on main output (< 0 if none, header if 0,
  *                    n first and last elements if n > 0)
  *   comm         <-- associated MPI communicator
@@ -2217,7 +2250,7 @@ cs_io_initialize(const char    *file_name,
  * parameters:
  *   name         <-- file name
  *   magic_string <-- magic string associated with file type
- *   hints        <-- optional flags for file access method (see fvm_file.h)
+ *   hints        <-- optional flags for file access method (see cs_file.h)
  *   echo         <-- echo on main output (< 0 if none, header if 0,
  *                    n first and last elements if n > 0)
  *   comm         <-- associated MPI communicator
@@ -2306,10 +2339,10 @@ cs_io_finalize(cs_io_t **cs_io)
   if (_cs_io->echo >= CS_IO_ECHO_OPEN_CLOSE) {
     if (_cs_io->mode == CS_IO_MODE_READ)
       bft_printf(_(" Finished reading:    %s\n"),
-                 fvm_file_get_name(_cs_io->f));
+                 cs_file_get_name(_cs_io->f));
     else
       bft_printf(_(" Finished writing:    %s\n"),
-                 fvm_file_get_name(_cs_io->f));
+                 cs_file_get_name(_cs_io->f));
     bft_printf_flush();
   }
 
@@ -2336,7 +2369,7 @@ cs_io_get_name(const cs_io_t  *cs_io)
 {
   assert(cs_io != NULL);
 
-  return(fvm_file_get_name(cs_io->f));
+  return(cs_file_get_name(cs_io->f));
 }
 
 /*----------------------------------------------------------------------------
@@ -2467,11 +2500,11 @@ int
 cs_io_read_header(cs_io_t             *inp,
                   cs_io_sec_header_t  *header)
 {
-  fvm_file_off_t header_vals[6];
+  cs_file_off_t header_vals[6];
 
   double t_start = 0.;
   int type_name_error = 0;
-  fvm_file_off_t body_size = 0;
+  cs_file_off_t body_size = 0;
   cs_io_log_t  *log = NULL;
   size_t n_read = 0, n_add = 0;
 
@@ -2490,11 +2523,11 @@ cs_io_read_header(cs_io_t             *inp,
 
   if (inp->header_align > 0) {
     size_t ha = inp->header_align;
-    fvm_file_off_t offset = fvm_file_tell(inp->f);
-    fvm_file_off_t add_offset = (ha - (offset % ha)) % ha;
+    cs_file_off_t offset = cs_file_tell(inp->f);
+    cs_file_off_t add_offset = (ha - (offset % ha)) % ha;
     if (add_offset > 0) {
       int errcode = 0;
-      errcode = fvm_file_seek(inp->f, add_offset, FVM_FILE_SEEK_CUR);
+      errcode = cs_file_seek(inp->f, add_offset, CS_FILE_SEEK_CUR);
       if (errcode != 0)
         return 1;
     }
@@ -2505,30 +2538,30 @@ cs_io_read_header(cs_io_t             *inp,
   /* Read header */
   /*-------------*/
 
-  n_read = fvm_file_read_global(inp->f, inp->buffer, 1, inp->header_size);
+  n_read = cs_file_read_global(inp->f, inp->buffer, 1, inp->header_size);
 
   if (n_read < inp->header_size)
     return 1;
 
-  if (fvm_file_get_swap_endian(inp->f) == 1)
-    bft_file_swap_endian(inp->buffer, inp->buffer, 8, 6);
+  if (cs_file_get_swap_endian(inp->f) == 1)
+    _swap_endian(inp->buffer, 8, 6);
 
   _convert_to_offset(inp->buffer, header_vals, 6);
 
-  if (header_vals[0] > (fvm_file_off_t)(inp->header_size)) {
+  if (header_vals[0] > (cs_file_off_t)(inp->header_size)) {
 
     n_add = header_vals[0] - inp->header_size;
 
-    if (header_vals[0] > (fvm_file_off_t)(inp->buffer_size)) {
-      while (header_vals[0] > (fvm_file_off_t)(inp->buffer_size))
+    if (header_vals[0] > (cs_file_off_t)(inp->buffer_size)) {
+      while (header_vals[0] > (cs_file_off_t)(inp->buffer_size))
         inp->buffer_size *=2;
       BFT_REALLOC(inp->buffer, inp->buffer_size, unsigned char);
     }
 
-    n_read = fvm_file_read_global(inp->f,
-                                  inp->buffer + inp->header_size,
-                                  1,
-                                  n_add);
+    n_read = cs_file_read_global(inp->f,
+                                 inp->buffer + inp->header_size,
+                                 1,
+                                 n_add);
 
     if (n_read < n_add)
       return 1;
@@ -2589,11 +2622,8 @@ cs_io_read_header(cs_io_t             *inp,
     else if (inp->data == NULL)
       body_size = inp->type_size*inp->n_vals;
 
-    else if (fvm_file_get_swap_endian(inp->f) == 1 && inp->type_size > 1)
-      bft_file_swap_endian(inp->data,
-                           inp->data,
-                           inp->type_size,
-                           inp->n_vals);
+    else if (cs_file_get_swap_endian(inp->f) == 1 && inp->type_size > 1)
+      _swap_endian(inp->data, inp->type_size, inp->n_vals);
   }
 
   /* Set externally visible header values */
@@ -2640,7 +2670,7 @@ cs_io_read_header(cs_io_t             *inp,
       bft_error(__FILE__, __LINE__, 0,
                 _("Error reading file: \"%s\".\n"
                   "Data type \"%s\" is not recognized."),
-                fvm_file_get_name(inp->f), elt_type_name);
+                cs_file_get_name(inp->f), elt_type_name);
 
     header->elt_type = _type_read_to_elt_type(header->type_read);
   }
@@ -2720,9 +2750,9 @@ cs_io_set_indexed_position(cs_io_t             *inp,
 
   if (inp->index->h_vals[8*id + 5] == 0) {
     size_t file_id = inp->index->h_vals[8*id + 7];
-    fvm_file_off_t offset = inp->index->offset[id];
+    cs_file_off_t offset = inp->index->offset[id];
     inp->f = inp->index->f[file_id];
-    retval = fvm_file_seek(inp->f, offset, FVM_FILE_SEEK_SET);
+    retval = cs_file_seek(inp->f, offset, CS_FILE_SEEK_SET);
   }
 
   /* Embedded values */
@@ -2761,7 +2791,7 @@ cs_io_set_fvm_lnum(cs_io_sec_header_t  *header,
                 "Type expected for section: "
                 "\"%s\" is a signed integer\n"
                 "and is not convertible from type read: \"%s\"."),
-              fvm_file_get_name(cs_io->f), cs_io->type_name);
+              cs_file_get_name(cs_io->f), cs_io->type_name);
 
   assert(sizeof(cs_lnum_t) == 4 || sizeof(cs_lnum_t) == 8);
 
@@ -2796,7 +2826,7 @@ cs_io_set_fvm_gnum(cs_io_sec_header_t  *header,
                 "Type expected for section: "
                 "\"%s\" is an unsigned integer\n"
                 "and is not convertible from type read: \"%s\"."),
-              fvm_file_get_name(cs_io->f), cs_io->type_name);
+              cs_file_get_name(cs_io->f), cs_io->type_name);
 
   assert(sizeof(cs_gnum_t) == 4 || sizeof(cs_gnum_t) == 8);
 
@@ -2826,7 +2856,7 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
               _("Error reading file: \"%s\".\n"
                 "Type expected for section: \"%s\"\n"
                 "is \"r4\" or \"r8\" (real), and not \"%s\"."),
-              fvm_file_get_name(cs_io->f), cs_io->type_name);
+              cs_file_get_name(cs_io->f), cs_io->type_name);
 }
 
 /*----------------------------------------------------------------------------
@@ -3127,7 +3157,7 @@ cs_io_write_global(const char      *sec_name,
 
     _write_padding(outp->body_align, outp);
 
-    n_written = fvm_file_write_global(outp->f,
+    n_written = cs_file_write_global(outp->f,
                                       elts,
                                       fvm_datatype_size[elt_type],
                                       n_vals);
@@ -3135,7 +3165,7 @@ cs_io_write_global(const char      *sec_name,
     if (n_vals != n_written)
       bft_error(__FILE__, __LINE__, 0,
                 _("Error writing %llu bytes to file \"%s\"."),
-                (unsigned long long)n_vals, fvm_file_get_name(outp->f));
+                (unsigned long long)n_vals, cs_file_get_name(outp->f));
 
     if (log != NULL) {
       double t_end = bft_timer_wtime();
@@ -3224,7 +3254,7 @@ cs_io_write_block_buffer(const char      *sec_name,
 
   _write_padding(outp->body_align, outp);
 
-  n_written = fvm_file_write_block_buffer(outp->f,
+  n_written = cs_file_write_block_buffer(outp->f,
                                           elts,
                                           fvm_datatype_size[elt_type],
                                           stride,
@@ -3234,7 +3264,7 @@ cs_io_write_block_buffer(const char      *sec_name,
   if (n_vals != n_written)
     bft_error(__FILE__, __LINE__, 0,
               _("Error writing %llu bytes to file \"%s\"."),
-              (unsigned long long)n_vals, fvm_file_get_name(outp->f));
+              (unsigned long long)n_vals, cs_file_get_name(outp->f));
 
   if (log != NULL) {
     double t_end = bft_timer_wtime();
@@ -3259,13 +3289,13 @@ cs_io_write_block_buffer(const char      *sec_name,
  *   offset in file
  *----------------------------------------------------------------------------*/
 
-fvm_file_off_t
+cs_file_off_t
 cs_io_get_offset(cs_io_t  *inp)
 {
   assert(inp != NULL);
   assert(inp->f != NULL);
 
-  return fvm_file_tell(inp->f);
+  return cs_file_tell(inp->f);
 }
 
 /*----------------------------------------------------------------------------
@@ -3278,14 +3308,14 @@ cs_io_get_offset(cs_io_t  *inp)
 
 void
 cs_io_set_offset(cs_io_t         *inp,
-                 fvm_file_off_t   offset)
+                 cs_file_off_t   offset)
 {
   assert(inp != NULL);
   assert(inp->f != NULL);
 
-  fvm_file_seek(inp->f,
+  cs_file_seek(inp->f,
                 offset,
-                FVM_FILE_SEEK_SET);
+                CS_FILE_SEEK_SET);
 }
 
 /*----------------------------------------------------------------------------
@@ -3301,15 +3331,15 @@ cs_io_defaults_info(void)
 #if defined(HAVE_MPI_IO)
 
   if (cs_glob_n_ranks > 1) {
-    if (cs_glob_io_hints & FVM_FILE_EXPLICIT_OFFSETS) {
+    if (cs_glob_io_hints & CS_FILE_EXPLICIT_OFFSETS) {
       bft_printf(_(fmt), _("MPI-IO, explicit offsets"));
       mpi_io = true;
     }
-    else if (cs_glob_io_hints & FVM_FILE_INDIVIDUAL_POINTERS) {
+    else if (cs_glob_io_hints & CS_FILE_INDIVIDUAL_POINTERS) {
       bft_printf(_(fmt), _("MPI-IO, individual file pointers"));
       mpi_io = true;
     }
-    if (mpi_io == false || (cs_glob_io_hints & FVM_FILE_NO_MPI_IO))
+    if (mpi_io == false || (cs_glob_io_hints & CS_FILE_NO_MPI_IO))
       bft_printf(_(fmt), _("serial IO\n\n"));
   }
 #endif
@@ -3336,15 +3366,15 @@ cs_io_set_defaults(int  mpi_io_mode)
 #if defined(HAVE_MPI)
 
   if (mpi_io_mode == 0)
-    cs_glob_io_hints = FVM_FILE_NO_MPI_IO;
+    cs_glob_io_hints = CS_FILE_NO_MPI_IO;
   else if (mpi_io_mode == 1)
-    cs_glob_io_hints = FVM_FILE_EXPLICIT_OFFSETS;
+    cs_glob_io_hints = CS_FILE_EXPLICIT_OFFSETS;
   else if (mpi_io_mode == 2)
-    cs_glob_io_hints = FVM_FILE_INDIVIDUAL_POINTERS;
+    cs_glob_io_hints = CS_FILE_INDIVIDUAL_POINTERS;
 
 #endif
 
-  fvm_file_set_default_semantics(cs_glob_io_hints);
+  cs_file_set_default_semantics(cs_glob_io_hints);
 }
 
 /*----------------------------------------------------------------------------
@@ -3475,7 +3505,7 @@ cs_io_dump(const cs_io_t  *cs_io)
   bft_printf(_("\n\n file contents:\n\n"));
 
   if (cs_io->f != NULL)
-    bft_printf(_("  file: %s\n"), fvm_file_get_name(cs_io->f));
+    bft_printf(_("  file: %s\n"), cs_file_get_name(cs_io->f));
 
   bft_printf(_("  contents: \"%s\"\n"), cs_io->contents);
   if (cs_io->mode == CS_IO_MODE_READ)

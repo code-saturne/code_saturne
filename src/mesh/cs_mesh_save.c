@@ -51,7 +51,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_error.h>
-#include <bft_file.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
 

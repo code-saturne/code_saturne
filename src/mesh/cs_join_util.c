@@ -45,7 +45,6 @@
  * BFT library headers
  *---------------------------------------------------------------------------*/
 
-#include <bft_file.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
 
@@ -63,6 +62,7 @@
  *---------------------------------------------------------------------------*/
 
 #include "cs_join_util.h"
+#include "cs_file.h"
 #include "cs_mesh.h"
 #include "cs_search.h"
 #include "cs_sort.h"
@@ -2073,9 +2073,9 @@ cs_join_create(int                      join_number,
     char dir[] = "log";
     char rank_add[16] = "";
     char perio_add[16] = "";
-    if (bft_file_isdir(dir) == 0) {
+    if (cs_file_isdir(dir) == 0) {
       if (cs_glob_rank_id < 1)
-        if (bft_file_mkdir_default(dir) != 0)
+        if (cs_file_mkdir_default(dir) != 0)
           bft_error(__FILE__, __LINE__, 0,
                     _("The log directory cannot be created"));
 #if defined(HAVE_MPI)

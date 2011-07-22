@@ -54,7 +54,6 @@
 #include <bft_error.h>
 #include <bft_printf.h>
 #include <bft_mem.h>
-#include <bft_file.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -971,11 +970,9 @@ void cs_ctwr_definit
 {
   cs_ctwr_zone_t  *ct;
   cs_int_t length;
-  bft_file_t *f;
+  FILE *f;
   char  *file_name = NULL;
-  bft_file_type_t file_type;
 
-  file_type = BFT_FILE_TYPE_TEXT;
   /* Definition d'une nouvelle zone d'echange */
 
   BFT_MALLOC(ct, 1, cs_ctwr_zone_t);
@@ -1091,20 +1088,15 @@ void cs_ctwr_definit
     BFT_MALLOC(file_name, length, char);
     sprintf(file_name, "bltctc.%02d", ct->num);
 
-    f = bft_file_open(file_name,
-                      BFT_FILE_MODE_APPEND,
-                      file_type);
+    f = fopen(file_name, "a");
 
-    bft_file_printf(f, "# BILANS POUR LA ZONE D\'ECHANGES \n");
-    bft_file_printf(f, "# =================================\n");
-    bft_file_printf(f,"\tTEMP\tFLUX A/E\tTA MOY SOR\t TE MOY SOR");
-    bft_file_printf(f,"\tXA MOY SOR\tDEBI A ENT\tDEBI A SOR \n");
-    f = bft_file_free(f);
+    fprintf(f, "# BILANS POUR LA ZONE D'ECHANGES \n");
+    fprintf(f, "# ===============================\n");
+    fprintf(f, "\tTEMP\tFLUX A/E\tTA MOY SOR\t TE MOY SOR");
+    fprintf(f, "\tXA MOY SOR\tDEBI A ENT\tDEBI A SOR \n");
+    fclose(f);
     BFT_FREE(file_name);
-
   }
-
-
 
 }
 
@@ -2295,12 +2287,9 @@ void cs_ctwr_bilanct
   cs_lnum_t  *face_lat;      /* liste des faces  inferior de la ct */
 
   cs_ctwr_zone_t  *ct;
-  bft_file_t *f;
+  FILE *f;
   char  *file_name = NULL;
-  bft_file_type_t file_type;
   cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
-
-  file_type = BFT_FILE_TYPE_TEXT;
 
   for (ict=0; ict < cs_glob_ct_nbr; ict++) {
 
@@ -2535,22 +2524,19 @@ void cs_ctwr_bilanct
       sprintf(file_name, "bltctc.%02d", ct->num);
 
       if (CS_ABS(ct->heau_e-ct->heau_s)> 1.e-6){
-        f = bft_file_open(file_name,
-                        BFT_FILE_MODE_APPEND,
-                        file_type);
+        f = fopen(file_name, "a");
 
-        aux =CS_ABS( (ct->hair_s - ct->hair_e)/(ct->heau_e - ct->heau_s) );
-        bft_file_printf(f,
-            "%10f\t%10f\t%10f\t%10f\t%12.5e\t%10f\t%10f\n"
-                                          ,time
-                                          ,aux
-                                          ,ct->tair_s
-                                          ,ct->teau_s
-                                          ,ct->xair_s
-                                          ,ct->debit_e
-                                          ,ct->debit_s);
+        aux = CS_ABS((ct->hair_s - ct->hair_e)/(ct->heau_e - ct->heau_s));
+        fprintf(f, "%10f\t%10f\t%10f\t%10f\t%12.5e\t%10f\t%10f\n",
+                time,
+                aux,
+                ct->tair_s,
+                ct->teau_s,
+                ct->xair_s,
+                ct->debit_e,
+                ct->debit_s);
 
-        f = bft_file_free(f);
+        fclose(f);
       }
     }
 

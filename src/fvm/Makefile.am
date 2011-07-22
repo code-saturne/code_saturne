@@ -44,7 +44,6 @@ $(HDF5_CPPFLAGS) $(MED_CPPFLAGS) $(MPI_CPPFLAGS)
 pkginclude_HEADERS = \
 fvm_block_to_part.h \
 fvm_defs.h \
-fvm_file.h \
 fvm_group.h \
 fvm_interface.h \
 fvm_io_num.h \
@@ -100,7 +99,6 @@ fvm_box.c \
 fvm_box_tree.c \
 fvm_convert_array.c \
 fvm_defs.c \
-fvm_file.c \
 fvm_gather.c \
 fvm_group.c \
 fvm_hilbert.c \

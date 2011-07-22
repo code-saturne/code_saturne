@@ -549,7 +549,7 @@ _define_rank_distrib(int                      dim,
 
   if (fvm_parall_get_rank() == 0) {
 
-    bft_file_t  *dbg_file = NULL;
+    FILE  *dbg_file = NULL;
     char  *rfilename = NULL;
     int  len;
     static int  loop_id1 = 0;
@@ -560,23 +560,20 @@ _define_rank_distrib(int                      dim,
 
     loop_id1++;
 
-    dbg_file = bft_file_open(rfilename,
-                             BFT_FILE_MODE_WRITE,
-                             BFT_FILE_TYPE_TEXT);
+    dbg_file = fopen(rfilename, "w");
 
-    bft_file_printf(dbg_file,
-                    "# Sample_id  |  OptCfreq  |  Cfreq  |  Sampling  |"
-                    "Global Distrib\n");
+    fprintf(dbg_file,
+            "# Sample_id  |  OptCfreq  |  Cfreq  |  Sampling  |"
+            "Global Distrib\n");
     for (i = 0; i < n_samples; i++)
-      bft_file_printf(dbg_file, "%8d %15.5f %15.10f %15.10f %10u\n",
-                      i, (double)i/(double)n_samples, cfreq[i],
-                      sampling[i], g_distrib[i]);
-    bft_file_printf(dbg_file, "%8d %15.5f %15.10f %15.10f %10u\n",
-                    i, 1.0, 1.0, 1.0, 0);
+      fprintf(dbg_file, "%8d %15.5f %15.10f %15.10f %10u\n",
+              i, (double)i/(double)n_samples, cfreq[i],
+              sampling[i], g_distrib[i]);
+    fprintf(dbg_file, "%8d %15.5f %15.10f %15.10f %10u\n",
+            i, 1.0, 1.0, 1.0, 0);
 
-    bft_file_flush(dbg_file);
+    fclose(dbg_file);
     BFT_FREE(rfilename);
-    dbg_file = bft_file_free(dbg_file);
 
   }
 

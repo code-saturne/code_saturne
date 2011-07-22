@@ -48,7 +48,6 @@
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_file.h>
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
@@ -66,6 +65,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_file.h"
 #include "cs_io.h"
 #include "cs_mesh.h"
 
@@ -1244,7 +1244,7 @@ int
 cs_restart_present(void)
 {
   if (! _restart_present) {
-     if (bft_file_isdir("restart"))
+     if (cs_file_isdir("restart"))
        _restart_present = 1;
   }
 
@@ -1285,7 +1285,7 @@ cs_restart_create(const char         *name,
     ldir = strlen(dir);
     lname = strlen(name);
 
-    if (bft_file_mkdir_default(dir) == 0) {
+    if (cs_file_mkdir_default(dir) == 0) {
       BFT_MALLOC(path, ldir + lname + 2, char);
       strcpy(path, dir);
       path[ldir] = _dir_separator;
@@ -1306,7 +1306,7 @@ cs_restart_create(const char         *name,
     ldir = strlen(dir);
     lname = strlen(name);
 
-    if (bft_file_isdir(dir) == 1) {
+    if (cs_file_isdir(dir) == 1) {
       BFT_MALLOC(path, ldir + lname + 2, char);
       strcpy(path, dir);
       path[ldir] = _dir_separator;

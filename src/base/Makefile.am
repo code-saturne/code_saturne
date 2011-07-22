@@ -77,6 +77,7 @@ cs_calcium.h \
 cs_coupling.h \
 cs_defs.h \
 cs_ext_neighborhood.h \
+cs_file.h \
 cs_halo.h \
 cs_io.h \
 cs_map.h \
@@ -113,6 +114,7 @@ noinst_LTLIBRARIES = libcscore.la \
 
 libcscore_la_SOURCES = \
 cs_base.c \
+cs_file.c \
 cs_io.c \
 cs_map.c
 libcscore_la_LDFLAGS = -no-undefined
