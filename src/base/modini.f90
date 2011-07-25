@@ -1001,7 +1001,7 @@ if(nscal.gt.0) then
 !       Si l'utilisateur n'a pas couple de scalaire,
     if(nscacp.eq.0) then
 
-!         On couple le scalaire temperature de la premiere phase
+!         On couple le scalaire temperature de la phase
       if(iscalt.gt.0.and.iscalt.le.nscal) then
         icpsyr(iscalt) = 1
         goto 100

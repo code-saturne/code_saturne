@@ -50,12 +50,12 @@ subroutine usphyv &
 
 ! It is forbidden to modify turbulent viscosity "visct" here
 !       =========
-!    (a specifi subroutine is dedicated to that: usvist)
+!    (a specific subroutine is dedicated to that: usvist)
 
 
 ! icp = 1 must have been specified
 !                ========================
-!    in usini1 if we wish to define a varible specific heat
+!    in usini1 if we wish to define a variable specific heat
 !    cp (otherwise: memory overwrite).
 
 
@@ -544,7 +544,7 @@ if(iutile.eq.1) then
     ! --- If the variable is a fluctuation, its diffusivity is the same
     !       as that of the scalar to which it is attached:
     !       there is nothing to do here, we move on to the next variable
-    !       without settign propce(iel,ipcvsl).
+    !       without setting propce(iel,ipcvsl).
 
     ! We only handle here non-thermal variables which are not fluctuations
     if (ith.eq.0.and.iscavr(iscal).le.0) then
