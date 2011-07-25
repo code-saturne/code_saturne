@@ -1331,7 +1331,7 @@ p0 = 1.01325d5
 !       in the uscfx1 user subroutine.
 
 !     When no specific physics module is active, it is necessary to
-!       specify is the density and the molecular viscosity
+!       specify if the density and the molecular viscosity
 !         are constant (irovar=0, ivivar=0)
 !          or variable (irovar=1, ivivar=1)
 

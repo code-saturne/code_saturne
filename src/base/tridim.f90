@@ -184,10 +184,9 @@ endif
 ipass = ipass + 1
 
 ! --- Indicateur de stockage d'un scalaire et de son coef
-!      d'echange associe.
+!     d'echange associe.
 !     Pour le moment, on stocke uniquement dans le cas couplage SYRTHES.
-!     ISVTB donne le numero du scalaire (on suppose qu'il n'y en a
-!       qu'un).
+!     ISVTB donne le numero du scalaire (on suppose qu'il n'y en a qu'un).
 !     Dans le cas ou on a un couplage avec le module thermique 1D en paroi,
 !     on utilise le meme scalaire que celui qui sert a Syrthes (s'il y a
 !     couplage Syrthes), sinon on stocke le scalaire thermique de la phase 1.
@@ -245,8 +244,8 @@ if( ntcabs.le.2 .and. isuite.eq.0 .and. iphydr.eq.0               &
     rtp(iel,ipr) = pred0
     propce(iel,iiptot) = p0                                &
          + ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
-         + gy*(xyzcen(2,iel)-xyp0)                   &
-         + gz*(xyzcen(3,iel)-xzp0) )
+         +       gy*(xyzcen(2,iel)-xyp0)                   &
+         +       gz*(xyzcen(3,iel)-xzp0) )
   enddo
 endif
 
@@ -838,7 +837,7 @@ do while (iterns.le.nterup)
 
   ! --- Couplage code/code entre deux instances (ou plus) de Code_Saturne
   !       On s'occupe ici du couplage via les faces de bord, et de la
-  !       transformation de l'information reÃ§ue en condition limite.
+  !       transformation de l'information reçue en condition limite.
 
   if (nbrcpl.gt.0) then
 

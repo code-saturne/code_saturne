@@ -390,7 +390,7 @@ if (inpdt0.eq.0) then
   iflmas = ipprof(ifluma(ivar))
   iflmab = ipprob(ifluma(ivar))
 
-  ! We save in ipccp a flag allowing to determein if the specific heat is
+  ! We save in ipccp a flag allowing to determine if the specific heat is
   ! constant (= cp0) or variable. It will be used to compute balances
   ! (xbilvl is in Joules).
   if (icp.gt.0) then

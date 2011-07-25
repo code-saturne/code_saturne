@@ -283,6 +283,11 @@ ple_coupling_mpi_set_get_timestep(const ple_coupling_mpi_set_t  *s);
  * Create an intracommunicator from a local and distant communicator
  * within a base communicator.
  *
+ * Note that if a member of the set has used a PLE_COUPLING_STOP or
+ * PLE_COUPLING_LAST flag when calling ple_coupling_mpi_set_create() or
+ * or at the previous call to this function, it will not be synchronized
+ * anymore (i.e. the PLE_COUPLING_NO_SYNC flag will be added).
+ *
  * parameters:
  *   base_comm     <-- communicator associated with both applications
  *   app_comm      <-- communicator associated with local application

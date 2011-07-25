@@ -791,7 +791,7 @@ void CS_PROCF (lect1d,LECT1D)
  *
  * Fortran interface:
  *
- * SUBROUTINE LECT1D
+ * SUBROUTINE ECRT1D
  * *****************
  *
  * CHARACTER        NOMSUI : <-- : Name of the restart file
@@ -877,9 +877,9 @@ void CS_PROCF (ecrt1d,ECRT1D)
     typ_val = CS_TYPE_cs_int_t;
 
     for (i = 0; i < *nfpt1d; i++) {
-            ifac = ifpt1d[i] - 1;
-            tabvar[ifac] = cs_glob_par1d[i].n;
-          }
+      ifac = ifpt1d[i] - 1;
+      tabvar[ifac] = cs_glob_par1d[i].n;
+    }
 
     cs_restart_write_section(suite,
                              nomrub,
@@ -905,9 +905,9 @@ void CS_PROCF (ecrt1d,ECRT1D)
     typ_val = CS_TYPE_cs_real_t;
 
     for (i = 0; i < *nfpt1d; i++) {
-            ifac = ifpt1d[i] - 1;
-            tabvar[ifac] = cs_glob_par1d[i].e;
-          }
+      ifac = ifpt1d[i] - 1;
+      tabvar[ifac] = cs_glob_par1d[i].e;
+    }
 
     cs_restart_write_section(suite,
                      nomrub,

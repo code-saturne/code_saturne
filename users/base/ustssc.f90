@@ -339,7 +339,7 @@ enddo
 ! Formats
 !--------
 
- 1000 format(' User source terms for vaiable ',A8,/)
+ 1000 format(' User source terms for variable ',A8,/)
 
 !----
 ! End
