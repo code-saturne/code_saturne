@@ -19,17 +19,18 @@
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-AUX_DIST = $(ac_aux_dir)/config.guess \
-           $(ac_aux_dir)/config.sub \
-           $(ac_aux_dir)/depcomp \
-           $(ac_aux_dir)/install-sh \
-           $(ac_aux_dir)/missing \
-           $(ac_aux_dir)/mkinstalldirs \
-           $(ac_aux_dir)/ltmain.sh \
-           $(ac_aux_dir)/libtool.m4 \
-           $(ac_aux_dir)/lt~obsolete.m4 \
-           $(ac_aux_dir)/ltoptions.m4 \
-           $(ac_aux_dir)/ltsugar.m4
+AUX_DIST = build-aux/compile \
+           build-aux/config.guess \
+           build-aux/config.sub \
+           build-aux/depcomp \
+           build-aux/install-sh \
+           build-aux/ltmain.sh \
+           build-aux/missing \
+           m4/libtool.m4 \
+           m4/lt~obsolete.m4 \
+           m4/ltoptions.m4 \
+           m4/ltsugar.m4 \
+           m4/ltversion.m4
 
 MAINTAINERCLEANFILES = aclocal.m4 configure $(AUX_DIST)
 

@@ -1,3 +1,25 @@
+* 25/07/2011 - David Monfort <david.monfort@edf.fr>
+  Improve build system to re-enable make dist target.
+  removed directory:
+    gui/doc
+  modified scripts:
+    configure.ac
+    doc/autovnv/Makefile.am
+    doc/developper/Makefile.am
+    doc/doxygen/Makefile.am
+    doc/install/Makefile.am
+    doc/Makefile.am
+    doc/salome/Makefile.am
+    doc/user/Makefile.am
+    libple/Makefile.am
+    libple/sbin/bootstrap
+    Makefile.am
+    salome/cfd_study/resources/Makefile.am
+    salome/cfd_study/src/CFDSTUDYGUI/Makefile.am
+    salome/fsi_coupling/src/FSI_ASTER/Makefile.am
+    salome/fsi_coupling/src/FSI_SATURNE/Makefile.am
+    sbin/bootstrap
+
 * 22/07/2011 - Cyril Baudry <cyril.baudry@edf.fr>
   Fix minor issues in the post-processing pages.
   modified routines:

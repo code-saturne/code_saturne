@@ -75,8 +75,8 @@ distclean-local: clean-local
 # Generate the documentation at dist stage so that the user do not need
 # to have LaTeX (and mandatory tools).
 
-#dist-hook: pdf
-#	$(INSTALL_DATA) $(PDFMAIN) $(distdir)
+dist-hook: pdf
+	$(INSTALL_DATA) $(PDFMAIN) $(distdir)
 
 # Install the documentation if available
 

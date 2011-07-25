@@ -40,7 +40,46 @@ endif
 
 SUBDIRS = $(PLE) $(PREPRO) src libsyrcs $(SALOME) po doc $(GUI) tests
 
+AUX_DIST = \
+m4/codeset.m4 \
+m4/fcntl-o.m4 \
+m4/gettext.m4 \
+m4/glibc21.m4 \
+m4/glibc2.m4 \
+m4/iconv.m4 \
+m4/intdiv0.m4 \
+m4/intldir.m4 \
+m4/intl.m4 \
+m4/intlmacosx.m4 \
+m4/intmax.m4 \
+m4/inttypes_h.m4 \
+m4/inttypes-pri.m4 \
+m4/lcmessage.m4 \
+m4/lib-ld.m4 \
+m4/lib-link.m4 \
+m4/lib-prefix.m4 \
+m4/libtool.m4 \
+m4/lock.m4 \
+m4/longlong.m4 \
+m4/lt~obsolete.m4 \
+m4/ltoptions.m4 \
+m4/ltsugar.m4 \
+m4/ltversion.m4 \
+m4/nls.m4 \
+m4/po.m4 \
+m4/printf-posix.m4 \
+m4/progtest.m4 \
+m4/size_max.m4 \
+m4/stdint_h.m4 \
+m4/threadlib.m4 \
+m4/uintmax_t.m4 \
+m4/visibility.m4 \
+m4/wchar_t.m4 \
+m4/wint_t.m4 \
+m4/xsize.m4
+
 MAINTAINERCLEANFILES = \
+$(AUX_DIST) \
 aclocal.m4 \
 configure \
 build-aux/compile \
@@ -52,22 +91,10 @@ build-aux/install-sh \
 build-aux/ltmain.sh \
 build-aux/missing \
 build-aux/py-compile \
-build-aux/ylwrap \
-m4/gettext.m4 \
-m4/iconv.m4 \
-m4/lib-ld.m4 \
-m4/lib-link.m4 \
-m4/lib-prefix.m4 \
-m4/libtool.m4 \
-m4/lt~obsolete.m4 \
-m4/ltoptions.m4 \
-m4/ltsugar.m4 \
-m4/ltversion.m4 \
-m4/nls.m4 \
-m4/po.m4 \
-m4/progtest.m4
+build-aux/ylwrap
 
 EXTRA_DIST = \
+$(AUX_DIST) \
 COMPATIBILITY \
 QUALITY_ASSURANCE \
 po/Makevars.template \
@@ -77,10 +104,12 @@ sbin/bootstrap \
 sbin/clean \
 sbin/rmb \
 config/cs_auto_flags.sh \
+m4/acx_pthread.m4 \
 m4/cs_adf.m4 \
 m4/cs_blas.m4 \
 m4/cs_ccm.m4 \
 m4/cs_cgns.m4 \
+m4/cs_docs.m4 \
 m4/cs_fortran.m4 \
 m4/cs_hdf5.m4 \
 m4/cs_libxml2.m4 \
@@ -254,10 +283,12 @@ bin/autovnv/TexMaker.py
 # Install user scripts
 
 nodist_pkgdata_DATA = \
-bin/cs_user_scripts.py \
 bin/runcase_aster \
 bin/runcase_coupling \
 bin/SaturneGUI
+
+dist_pkgdata_DATA = \
+bin/cs_user_scripts.py
 
 dist_pkgdata_SCRIPTS = \
 bin/runcase_mpi_rank \
@@ -342,10 +373,10 @@ install-data-hook:
 	done
 
 dist-hook:
-	-rm -rf `find $(distdir)/gui -name .svn`
 	-rm -rf `find $(distdir)/examples  -name .svn`
 	-rm -rf `find $(distdir)/extras  -name .svn`
 	-rm -rf `find $(distdir)/patches -name .svn`
+	-rm -f $(distdir)/extras/salome/fsi_appli_config.xml
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

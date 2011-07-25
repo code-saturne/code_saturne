@@ -36,7 +36,7 @@ TEXINPUTFILES =
 
 # Distributed files
 
-EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
+EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES) input
 
 # Subdirectories (order is important)
 
