@@ -359,43 +359,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
 
   case "$host_os" in
 
-    osf*)
-
-      # Native Compaq Tru64 Unix C compiler
-      #------------------------------------
-
-      $CC -V 2>&1 | grep 'Compaq Tru64' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CC' is Compaq Tru64 compiler"
-
-        # Version strings for logging purposes and known compiler flag
-        $CC -V conftest.c > $outfile 2>&1
-        cs_ac_cc_version=`grep 'Compaq C' $outfile`
-        cs_cc_compiler_known=yes
-        cs_linker_set=yes
-
-        # Default compiler flags
-        case "$host_cpu" in
-          alphaev6|alphaev67|alphaev68|alphaev7)
-            cflags_default="-arch host -tune host -ansi_alias -std -check_bounds -trapuv -check -msg_enable alignment -msg_enable noansi -msg_enable performance -portable -msg_enable c_to_cxx"
-            cflags_default_opt="-O"
-            cflags_default_hot="-O"
-            cflags_default_dbg="-g"
-            cflags_default_prf="-pg"
-            cflags_default_omp="-omp"
-          ;;
-        esac
-
-        # Default  linker flags
-        ldflags_default="-Wl,-call_shared"
-        ldflags_default_opt="-O0"
-        ldflags_default_dbg="-g"
-        ldflags_default_prf="-pg"
-        ldflags_rpath="-Wl,-rpath -Wl,"
-      fi
-      ;;
-
     SUPER-UX* | superux*)
 
       # Native NEC SX vectorizing C compiler (sxmpicc)
@@ -424,30 +387,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         ldflags_default_opt="-O"
         ldflags_default_dbg="-g"
         ldflags_default_prf="-pg"
-
-      fi
-      ;;
-
-    irix5.*|irix6.*)
-
-      # Native SGI IRIX C compiler
-      #---------------------------
-
-      $CC -version 2>&1 | grep 'MIPSpro' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CC' is MIPSpro compiler"
-
-        # Version strings for logging purposes and known compiler flag
-        $CC -version > $outfile 2>&1
-        cs_ac_cc_version=`grep MIPSpro $outfile`
-        cs_cc_compiler_known=yes
-
-        # Default compiler flags
-        cflags_default="-c99 -64"
-        cflags_default_opt="-O2 -woff 1521,1552,1096"
-        cflags_default_dbg="-g -woff 1429,1521,1209 -fullwarn"
-        cflags_default_prf="$cflags_default_opt"
 
       fi
       ;;
@@ -756,37 +695,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
       fi
       ;;
 
-    osf*)
-
-      # Native Compaq Tru64 Unix C compiler
-      #------------------------------------
-
-      $CXX -V 2>&1 | grep 'Compaq Tru64' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CXX' is Compaq Tru64 compiler"
-
-        # Version strings for logging purposes and known compiler flag
-        $CXX -V conftest.c > $outfile 2>&1
-        cs_ac_cxx_version=`grep 'Compaq C' $outfile`
-        cs_cxx_compiler_known=yes
-        cs_linker_set=yes
-
-        # Default compiler flags
-        case "$host_cpu" in
-          alphaev6|alphaev67|alphaev68|alphaev7)
-            cxxflags_default="-arch host -tune host -ansi_alias -std -check_bounds -trapuv -check -msg_enable alignment -msg_enable noansi -msg_enable performance -portable -msg_enable c_to_cxx"
-            cxxflags_default_opt="-O"
-            cxxflags_default_hot="-O"
-            cxxflags_default_dbg="-g"
-            cxxflags_default_prf="-pg"
-            cxxflags_default_omp="-omp"
-          ;;
-        esac
-
-      fi
-      ;;
-
     SUPER-UX*)
 
       # Native NEC SX vectorizing C compiler (sxmpicc)
@@ -809,30 +717,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
         cxxflags_default_dbg=""
         cxxflags_default_prf=""
         cxxflags_default_omp=""
-
-      fi
-      ;;
-
-    irix5.*|irix6.*)
-
-      # Native SGI IRIX C compiler
-      #---------------------------
-
-      $CXX -version 2>&1 | grep 'MIPSpro' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CXX' is MIPSpro compiler"
-
-        # Version strings for logging purposes and known compiler flag
-        $CXX -version > $outfile 2>&1
-        cs_ac_cxx_version=`grep MIPSpro $outfile`
-        cs_cxx_compiler_known=yes
-
-        # Default compiler flags
-        cxxflags_default="-64"
-        cxxflags_default_opt="-O2 -woff 1521,1552,1096"
-        cxxflags_default_dbg="-g -woff 1429,1521,1209 -fullwarn"
-        cxxflags_default_prf="-fbexe"
 
       fi
       ;;
@@ -1215,20 +1099,6 @@ if test "x$cs_linker_set" != "xyes" ; then
         fi
         unset libgfortran_dir
       fi
-      ;;
-
-    osf*)
-      ldflags_default=""
-      ldflags_default_opt="-O"
-      ldflags_default_dbg="-g3"
-      ldflags_default_prf="-pg"
-      ;;
-
-    irix5.*|irix6.*)
-      ldflags_default="-64 -Wl,-woff,85"
-      ldflags_default_opt=""
-      ldflags_default_dbg="-g"
-      ldflags_default_prf="-p"
       ;;
 
     solaris2.*)

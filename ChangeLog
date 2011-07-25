@@ -1,3 +1,8 @@
+* 25/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove support for IRIX and Tru64 Unix, as these systems are now obsolete.
+  modified files:
+    config/cs_auto_flags.sh
+
 * 21/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Merge bft_file.* and fvm_file.* into cs_file.*, replacing bft_file_printf()
   by simple fprintf(), and making endian-swapping code local where needed.
