@@ -1,3 +1,8 @@
+2011-07-25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Remove support for IRIX and Tru64 Unix, as these systems are
+	now obsolete.
+
 2011-06-27  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Improve robustness of MPI detection tests.

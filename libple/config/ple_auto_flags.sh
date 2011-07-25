@@ -279,39 +279,6 @@ if test "x$ple_compiler_known" != "xyes" ; then
 
   case "$host_os" in
 
-    osf*)
-
-      # Native Compaq Tru64 Unix C compiler
-      #------------------------------------
-
-      $CC -V 2>&1 | grep 'Compaq Tru64' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CC' is Compaq Tru64 compiler"
-
-        # Version strings for logging purposes and known compiler flag
-        $CC -V conftest.c > $outfile 2>&1
-        ple_ac_cc_version=`grep 'Compaq C' $outfile`
-        ple_compiler_known=yes
-
-        # Default compiler flags
-        case "$host_cpu" in
-          alphaev6|alphaev67|alphaev68|alphaev7)
-            cflags_default="-arch host -tune host -ansi_alias -std -check_bounds -trapuv -check -msg_enable alignment -msg_enable noansi -msg_enable performance -portable -msg_enable c_to_cxx"
-            cflags_default_opt="-O"
-            cflags_default_dbg="-g"
-            cflags_default_prf="-pg"
-          ;;
-        esac
-
-        # Default  linker flags
-        ldflags_default="-Wl,-call_shared"
-        ldflags_default_opt="-O0"
-        ldflags_default_dbg="-g"
-        ldflags_default_prf="-pg"
-      fi
-      ;;
-
     SUPER-UX* | superux*)
 
       # Native NEC SX vectorizing C compiler (sxmpicc)
@@ -339,30 +306,6 @@ if test "x$ple_compiler_known" != "xyes" ; then
         ldflags_default_opt="-O"
         ldflags_default_dbg="-g"
         ldflags_default_prf="-pg"
-
-      fi
-      ;;
-
-    irix6.*)
-
-      # Native SGI IRIX C compiler
-      #---------------------------
-
-      $CC -version 2>&1 | grep 'MIPSpro' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CC' is MIPSpro compiler"
-
-        # Version strings for logging purposes and known compiler flag
-        $CC -version > $outfile 2>&1
-        ple_ac_cc_version=`grep MIPSpro $outfile`
-        ple_compiler_known=yes
-
-        # Default compiler flags
-        cflags_default="-c99 -64"
-        cflags_default_opt="-O2 -woff 1429,1521"
-        cflags_default_dbg="-g -woff 1429,1521,1209 -fullwarn"
-        cflags_default_prf="$cflags_default_opt"
 
       fi
       ;;
@@ -450,20 +393,6 @@ if test "x$ple_linker_set" != "xyes" ; then
       ldflags_default_opt="-O"
       ldflags_default_dbg="-g"
       ldflags_default_prf="-pg"
-      ;;
-
-    osf*)
-      ldflags_default=""
-      ldflags_default_opt="-O"
-      ldflags_default_dbg="-g3"
-      ldflags_default_prf="-pg"
-      ;;
-
-    irix6.*)
-      ldflags_default="-64 -Wl,-woff,85"
-      ldflags_default_opt=""
-      ldflags_default_dbg="-g"
-      ldflags_default_prf="-p"
       ;;
 
     solaris2.*)
