@@ -60,6 +60,7 @@ src/base/cs_boundary_conditions.c
 src/base/cs_calcium.c
 src/base/cs_coupling.c
 src/base/cs_ext_neighborhood.c
+src/base/cs_file.c
 src/base/cs_halo.c
 src/base/cs_io.c
 src/base/cs_map.c
@@ -87,7 +88,6 @@ src/base/cs_tpar1d.c
 src/base/cs_ventil.c
 src/bft/bft_backtrace.c
 src/bft/bft_error.c
-src/bft/bft_file.c
 src/bft/bft_mem.c
 src/bft/bft_mem_usage.c
 src/bft/bft_printf.c
@@ -103,7 +103,6 @@ src/fvm/fvm_box.c
 src/fvm/fvm_box_tree.c
 src/fvm/fvm_convert_array.c
 src/fvm/fvm_defs.c
-src/fvm/fvm_file.c
 src/fvm/fvm_gather.c
 src/fvm/fvm_group.c
 src/fvm/fvm_hilbert.c
@@ -140,6 +139,7 @@ src/gui/cs_gui.c
 src/gui/cs_gui_conjugate_heat_transfer.c
 src/gui/cs_gui_mesh.c
 src/gui/cs_gui_mobile_mesh.c
+src/gui/cs_gui_output.c
 src/gui/cs_gui_particles.c
 src/gui/cs_gui_radiative_transfer.c
 src/gui/cs_gui_specific_physics.c
