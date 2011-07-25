@@ -23,9 +23,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -49,8 +47,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <fvm_defs.h>
-#include <fvm_config_defs.h>
+#include <cs_defs.h>
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

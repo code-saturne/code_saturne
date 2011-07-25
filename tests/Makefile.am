@@ -69,23 +69,17 @@ bft_printf_test_LDADD    = $(LDADD_BFT_TESTS)
 # FVM tests
 
 check_PROGRAMS += \
-fvm_file_test \
 fvm_interface_test \
 fvm_selector_test \
 fvm_selector_postfix_test \
 fvm_sizes_test
 
-CPPFLAGS_FVM_TESTS = -I$(top_srcdir)/src/bft -I$(top_srcdir)/src/fvm \
-        $(MPI_CPPFLAGS)
+CPPFLAGS_FVM_TESTS = -I$(top_srcdir)/src/base -I$(top_srcdir)/src/bft \
+       -I$(top_srcdir)/src/fvm $(MPI_CPPFLAGS)
 LDFLAGS_FVM_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
 LDADD_FVM_TESTS = $(top_builddir)/src/fvm/libfvm.la \
         $(top_builddir)/src/bft/libbft.la \
-        $(CGNS_LIBS) $(MED_LIBS) $(HDF5_LIBS) $(MPI_LIBS)
-
-fvm_file_test_SOURCES  = fvm_file_test.c
-fvm_file_test_CPPFLAGS = $(CPPFLAGS_FVM_TESTS)
-fvm_file_test_LDFLAGS  = $(LDFLAGS_FVM_TESTS)
-fvm_file_test_LDADD    = $(LDADD_FVM_TESTS)
+        $(MPI_LIBS)
 
 fvm_interface_test_SOURCES  = fvm_interface_test.c
 fvm_interface_test_CPPFLAGS = $(CPPFLAGS_FVM_TESTS)
@@ -113,12 +107,33 @@ check_PROGRAMS += \
 mei_test
 
 mei_test_SOURCES = mei_test_main.c mei_test_graph.c
-mei_test_CPPFLAGS = -I$(top_srcdir)/src/bft -I$(top_srcdir)/src/mei
+mei_test_CPPFLAGS = -I$(top_srcdir)/src/bft \
+        -I$(top_srcdir)/src/mei -I$(top_builddir)/src/mei
 mei_test_LDFLAGS =
 mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
         $(top_builddir)/src/bft/libbft.la -lm
 
+# Code_Saturne tests
+
+check_PROGRAMS += \
+cs_file_test
+
+CPPFLAGS_CS_TESTS = -I$(top_srcdir)/src/base -I$(top_srcdir)/src/bft \
+       -I$(top_srcdir)/src/fvm $(MPI_CPPFLAGS)
+LDFLAGS_CS_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
+LDADD_CS_TESTS =  $(top_builddir)/src/base/libcscore.la \
+        $(top_builddir)/src/fvm/libfvm.la \
+        $(top_builddir)/src/bft/libbft.la \
+        $(MPI_LIBS)
+
+cs_file_test_SOURCES  = cs_file_test.c
+cs_file_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
+cs_file_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+cs_file_test_LDADD    = $(LDADD_CS_TESTS)
+
 # CFD Proxy tests
+
+if HAVE_SALOME_KERNEL
 
 check_PROGRAMS += \
 cfd_proxy_unit_test
@@ -129,6 +144,8 @@ cfd_proxy_unit_test_CPPFLAGS = -I$(top_srcdir)/salome/cfd_proxy \
 cfd_proxy_unit_test_LDFLAGS = $(MPI_LDFLAGS) $(SALOME_KERNEL_LDFLAGS)
 cfd_proxy_unit_test_LDADD = $(top_builddir)/salome/cfd_proxy/libcfdproxy.la \
         $(MPI_LIBS) -lm
+
+endif
 
 # Uncomment for tests execution at "make check"
 #TESTS=$(check_PROGRAMS)

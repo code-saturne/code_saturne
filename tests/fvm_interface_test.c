@@ -23,9 +23,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 #include <assert.h>
 #include <stdarg.h>
@@ -73,27 +71,27 @@ _init_periodicity(void)
 static fvm_interface_set_t *
 _periodic_is(int                       comm_size,
              int                       comm_rank,
-             fvm_gnum_t                n_side,
+             cs_gnum_t                 n_side,
              int                       n_periodic_lists,
              const fvm_periodicity_t  *perio)
 {
-  fvm_gnum_t ii, jj, kk, couple_id;
+  cs_gnum_t ii, jj, kk, couple_id;
 
-  fvm_gnum_t n_max = n_side * n_side * n_side;
-  fvm_lnum_t n_elements = ((n_max+1)*4) / (3*comm_size);
+  cs_gnum_t n_max = n_side * n_side * n_side;
+  cs_lnum_t n_elements = ((n_max+1)*4) / (3*comm_size);
   int periodicity_num[3] = {1, 2, 3};
 
-  fvm_lnum_t *n_periodic_couples = NULL;
-  fvm_gnum_t **periodic_couples = NULL;
-  fvm_gnum_t *global_number = NULL;
+  cs_lnum_t *n_periodic_couples = NULL;
+  cs_gnum_t **periodic_couples = NULL;
+  cs_gnum_t *global_number = NULL;
 
   fvm_interface_set_t *ifset = NULL;
 
   if (comm_size > 1) {
 
-    BFT_MALLOC(global_number, n_elements, fvm_gnum_t);
+    BFT_MALLOC(global_number, n_elements, cs_gnum_t);
 
-    for (ii = 0; ii < (fvm_gnum_t)n_elements; ii++) {
+    for (ii = 0; ii < (cs_gnum_t)n_elements; ii++) {
       global_number[ii] = (n_elements * 3 / 4) * comm_rank + ii + 1;
     }
     if (comm_rank == comm_size -1 && global_number[n_elements - 1] < n_max)
@@ -101,10 +99,10 @@ _periodic_is(int                       comm_size,
 
   }
 
-  BFT_MALLOC(n_periodic_couples, n_periodic_lists, fvm_lnum_t);
-  BFT_MALLOC(periodic_couples, n_periodic_lists, fvm_gnum_t *);
+  BFT_MALLOC(n_periodic_couples, n_periodic_lists, cs_lnum_t);
+  BFT_MALLOC(periodic_couples, n_periodic_lists, cs_gnum_t *);
 
-  for (ii = 0; ii < (fvm_gnum_t)n_periodic_lists; ii++) {
+  for (ii = 0; ii < (cs_gnum_t)n_periodic_lists; ii++) {
 
     n_periodic_couples[ii] = 0;
     periodic_couples[ii] = NULL;
@@ -112,7 +110,7 @@ _periodic_is(int                       comm_size,
     if (comm_rank == 0 || comm_rank == 1) {
 
       n_periodic_couples[ii] = n_side*n_side;
-      BFT_MALLOC(periodic_couples[ii], n_periodic_couples[ii]*2, fvm_gnum_t);
+      BFT_MALLOC(periodic_couples[ii], n_periodic_couples[ii]*2, cs_gnum_t);
 
       couple_id = 0;
 
@@ -148,7 +146,7 @@ _periodic_is(int                       comm_size,
       }
 
       n_periodic_couples[ii] = couple_id;
-      BFT_REALLOC(periodic_couples[ii], n_periodic_couples[ii]*2, fvm_gnum_t);
+      BFT_REALLOC(periodic_couples[ii], n_periodic_couples[ii]*2, cs_gnum_t);
 
     }
 
@@ -161,9 +159,9 @@ _periodic_is(int                       comm_size,
                                    n_periodic_lists,
                                    periodicity_num,
                                    n_periodic_couples,
-                                   (const fvm_gnum_t **const)periodic_couples);
+                                   (const cs_gnum_t **const)periodic_couples);
 
-  for (ii = 0; ii < (fvm_gnum_t)n_periodic_lists; ii++)
+  for (ii = 0; ii < (cs_gnum_t)n_periodic_lists; ii++)
     BFT_FREE(periodic_couples[ii]);
   BFT_FREE(periodic_couples);
   BFT_FREE(n_periodic_couples);
@@ -219,8 +217,8 @@ main (int argc, char *argv[])
 
   int sync = 1;
 
-  fvm_lnum_t n_elements = 20;
-  fvm_gnum_t *global_number = NULL;
+  cs_lnum_t n_elements = 20;
+  cs_gnum_t *global_number = NULL;
 
   /* Initialization */
 
@@ -241,7 +239,7 @@ main (int argc, char *argv[])
 
   /* Build arbitrary interface */
 
-  BFT_MALLOC(global_number, n_elements, fvm_gnum_t);
+  BFT_MALLOC(global_number, n_elements, cs_gnum_t);
 
   for (ii = 0; ii < n_elements; ii++) {
     global_number[ii] = (n_elements * 3 / 4) * rank + ii + 1;

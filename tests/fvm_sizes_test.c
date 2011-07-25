@@ -23,9 +23,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +32,6 @@
 #include <bft_error.h>
 #include <bft_printf.h>
 
-#include "fvm_config_defs.h"
 #include "fvm_parall.h"
 #include "fvm_part_to_block.h"
 
@@ -48,7 +45,7 @@ main (int argc, char *argv[])
   int i, j;
   int rank_id[] = {0, 1024, 2048, 4095};
   int n_ranks = 4096;
-  fvm_gnum_t n_g_ents[] = {500, 1100000000, 2200000000,5400000000};
+  cs_gnum_t n_g_ents[] = {500, 1100000000, 2200000000,5400000000};
 
   fvm_part_to_block_info_t bi;
 

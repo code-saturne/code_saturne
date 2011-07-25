@@ -23,9 +23,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 #include <stdlib.h>
 
@@ -70,8 +68,8 @@ test_2 (void)
   fvm_group_class_set_t *gcset = NULL;
   fvm_selector_t *s = NULL;
 
-  fvm_lnum_t n_se = 0;
-  fvm_lnum_t se[12];
+  cs_lnum_t n_se = 0;
+  cs_lnum_t se[12];
 
   const char *att_02[] = {"2"};   /* 1 */
   const char *att_06[] = {"6"};   /* 2 */
