@@ -38,5 +38,7 @@ FSI_ASTER_module.py: $(srcdir)/FSI_ASTER_module.py.in
 
 nodist_salomepython_PYTHON = FSI_ASTER_module.py
 salomepython_PYTHON = FSI_ASTER_component.py
-salomescript_SCRIPTS = FSI_ASTER.exe
+dist_salomescript_SCRIPTS = FSI_ASTER.exe
 #salomeres_DATA = FSI_ASTER_config.txt
+
+EXTRA_DIST = FSI_ASTER_module.py.in

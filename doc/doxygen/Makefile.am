@@ -19,7 +19,7 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-EXTRA_DIST = Doxyfile mainpage.h images/icon.png
+EXTRA_DIST = Doxyfile mainpage.h images/icon.png examples/bft_error_example.c
 
 doxygen:
 	srcdir="$(top_srcdir)" builddir="$(top_builddir)" doxygen $(top_srcdir)/doc/doxygen/Doxyfile

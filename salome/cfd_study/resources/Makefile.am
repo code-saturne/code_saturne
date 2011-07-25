@@ -24,9 +24,8 @@ include $(top_srcdir)/config/salome_module.mk
 
 MODULE_NAME = cfdstudy
 
-nodist_salomeres_DATA = CFDSTUDYCatalog.xml
-
 dist_salomeres_DATA = \
+CFDSTUDYCatalog.xml \
 SalomeApp.xml \
 CaseAdd.png \
 CaseEdit.png \

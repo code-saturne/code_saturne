@@ -27,7 +27,7 @@ MODULE_NAME = FSI
 AM_CFLAGS = $(SALOME_INCLUDES) -fexceptions
 
 salomelib_LTLIBRARIES = libFSI_SATURNEExelib.la
-salomescript_SCRIPTS= FSI_SATURNE.exe
+dist_salomescript_SCRIPTS= FSI_SATURNE.exe
 salomeinclude_HEADERS = FSI_SATURNE.hxx
 
 libFSI_SATURNEExelib_la_SOURCES = FSI_SATURNE.cxx 

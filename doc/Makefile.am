@@ -20,15 +20,15 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-#SUBDIRS = developper howto install refcard theory tutorial user
-
+if HAVE_SALOME_KERNEL
 if HAVE_SPHINX
 SALOME = salome
+endif
 endif
 
 SUBDIRS = refcard theory tutorial user install developper doxygen autovnv $(SALOME)
 
-DIST_SUBDIRS = $(SUBDIRS) howto
+DIST_SUBDIRS = $(SUBDIRS) howto salome
 
 EXTRA_DIST = \
 style/csdoc.sty \

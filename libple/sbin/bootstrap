@@ -5,23 +5,8 @@ if [ ! -d sbin ]; then
   exit 1
 fi
 
-echo "running aclocal"
-aclocal -I m4
+# Simply run autoreconf
+autoreconf -vi $@
 
-echo "running autoconf"
-autoconf
-
-if [ ! -f build-aux/ltmain.sh ]; then
-  echo "running libtoolize"
-  libtoolize --force --copy
-fi
-
-echo "running autoheader"
-autoheader
-
-echo "running automake"
-automake -a -c
-
-echo "removing autom4te.cache"
+# Remove cache directory
 \rm -rf autom4te.cache
-

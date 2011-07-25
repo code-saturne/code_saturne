@@ -49,6 +49,19 @@ nodist_salomeres_DATA = \
 CFDSTUDY_images.qm \
 CFDSTUDY_msg_en.qm
 
+# PyQt User Interface files
+
+UIFILES = \
+CFDSTUDYGUI_QProcessDialog.ui \
+CopyDialog.ui \
+DefineLinkDialog.ui \
+ECSConversionDialog.ui \
+EnvSettingsDialog.ui \
+GUIActivationDialog.ui \
+InfoDialog.ui \
+RunCaseDialog.ui \
+SetTreeLocationDialog.ui
+
 PYUI_FILES = \
 ui_CFDSTUDYGUI_QProcessDialog.py \
 ui_CopyDialog.py \
@@ -60,10 +73,16 @@ ui_InfoDialog.py \
 ui_RunCaseDialog.py \
 ui_SetTreeLocationDialog.py
 
+# Distribute icons directory, resources files and user interface files
+
+EXTRA_DIST = \
+$(UIFILES) \
+CFDSTUDY_images.ts \
+CFDSTUDY_msg_en.ts
+
+
 ui_%.py: %.ui
 	$(PYUIC4) $< -x -o $@
-
-EXTRA_DIST = $(PYUI_FILES:%.py=%.ui)
 
 install-exec-local: $(PYUI_FILES)
 	for f in $^ ; do\

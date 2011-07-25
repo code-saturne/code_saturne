@@ -66,7 +66,7 @@ AC_CONFIG_HEADERS([cs_config.h])
 
 AM_GNU_GETTEXT_VERSION([0.18.1])
 
-AM_INIT_AUTOMAKE([-Wall])
+AM_INIT_AUTOMAKE([-Wall tar-pax])
 
 # Enable maintainer mode by default for a developper checkout
 AS_IF([test -d ${srcdir}/.svn -o -d ${srcdir}/.git],

@@ -33,7 +33,7 @@ tutorials.rst
 SPHINXBUILD = sphinx-build
 SPHINXOPTS = -d .doctrees $(srcdir)
 
-EXTRA_DIST = images tutorial html
+EXTRA_DIST = images tutorial conf.py index.rst intro.rst tutorials.rst
 
 html-local:
 	$(SPHINXBUILD) -b html $(SPHINXOPTS) html
@@ -45,7 +45,6 @@ clean-local:
 	-rm -rf html latex .doctrees
 
 install-data-local:
-#	$(INSTALL) -d $(DESTDIR)$(salomedocdir)
 	$(MKDIR_P) $(DESTDIR)$(salomedocdir)
 	if test -d "html"; then cp -rf html/* $(DESTDIR)$(salomedocdir); fi;
 
