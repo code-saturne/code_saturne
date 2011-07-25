@@ -354,7 +354,6 @@ extras/salome/fsi_appli_config.xml
 changelog:
 	today=`date +%F`; \
 	start=`date +%Y`-01-01; \
-	echo $${today} $${start}; \
 	svn2cl --reparagraph --include-rev --include-actions \
       --authors=${top_srcdir}/extras/changelog/authors.xml \
       --output=${top_srcdir}/ChangeLog \
