@@ -95,6 +95,11 @@ build-aux/ylwrap
 
 EXTRA_DIST = \
 $(AUX_DIST) \
+ChangeLog.old \
+ChangeLog.2007 \
+ChangeLog.2008 \
+ChangeLog.2009 \
+ChangeLog.2010 \
 COMPATIBILITY \
 QUALITY_ASSURANCE \
 po/Makevars.template \
@@ -344,6 +349,17 @@ extras/salome/fsi_yacs_scheme.xml
 nodist_salome_DATA = \
 extras/salome/fsi_appli_config.xml
 
+# Generate ChangeLog
+
+changelog:
+	today=`date +%F`; \
+	start=`date +%Y`-01-01; \
+	echo $${today} $${start}; \
+	svn2cl --reparagraph --include-rev --include-actions \
+      --authors=${top_srcdir}/extras/changelog/authors.xml \
+      --output=${top_srcdir}/ChangeLog \
+      ${top_srcdir} --revision {"$${today} 23:59"}:{"$${start} 00:00"}
+
 # Finish user files installation
 # - tag with the package version number
 # - remove the test preventing from using a source file
@@ -372,7 +388,8 @@ install-data-hook:
 	  mv "$${file}.tmp" "$${file}"; \
 	done
 
-dist-hook:
+dist-hook: changelog
+	\cp -f ${top_srcdir}/ChangeLog ${distdir}
 	-rm -rf `find $(distdir)/examples  -name .svn`
 	-rm -rf `find $(distdir)/extras  -name .svn`
 	-rm -rf `find $(distdir)/patches -name .svn`

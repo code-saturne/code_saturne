@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<authors xmlns:html="http://www.w3.org/1999/xhtml">
+ <author uid="saturne">
+  Code_Saturne development team &lt;<html:a href="mailto:saturne-support@edf.fr">saturne-support@edf.fr</html:a>&gt;
+ </author>
+ <author uid="monfort">
+  David Monfort &lt;david.monfort@edf.fr&gt;
+ </author>
+ <author uid="fournier">
+  Yvan Fournier &lt;yvan.fournier@edf.fr&gt;
+ </author>
+ <author uid="douce">
+  Alexandre Douce &lt;alexandre.douce@edf.fr&gt;
+ </author>
+</authors>
