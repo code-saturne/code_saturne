@@ -85,7 +85,9 @@ def run_command(_c, _log):
     except OSError, e:
         retcode = "OSError"
         _l = __text("unknown command")
-        retocode = 0
+        retcode = 0
+        t1 = 0.
+        t2 = 0.
 
     _log.flush()
     if _l:
