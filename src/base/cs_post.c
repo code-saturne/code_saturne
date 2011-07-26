@@ -3354,7 +3354,7 @@ cs_post_activate_if_default(int     nt_max_abs,
       if (time_dep != FVM_WRITER_FIXED_MESH)
         writer->active = 0;
     }
-    
+
   }
 }
 
