@@ -113,12 +113,15 @@ check_PROGRAMS += \
 mei_test
 
 mei_test_SOURCES = mei_test_main.c mei_test_graph.c
-mei_test_CPPFLAGS = -I$(top_srcdir)/src/bft -I$(top_srcdir)/src/mei
+mei_test_CPPFLAGS = -I$(top_srcdir)/src/bft -I$(top_srcdir)/src/mei \
+        -I$(top_builddir)/src/mei
 mei_test_LDFLAGS =
 mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
         $(top_builddir)/src/bft/libbft.la -lm
 
 # CFD Proxy tests
+
+if HAVE_SALOME_KERNEL
 
 check_PROGRAMS += \
 cfd_proxy_unit_test
@@ -129,6 +132,8 @@ cfd_proxy_unit_test_CPPFLAGS = -I$(top_srcdir)/salome/cfd_proxy \
 cfd_proxy_unit_test_LDFLAGS = $(MPI_LDFLAGS) $(SALOME_KERNEL_LDFLAGS)
 cfd_proxy_unit_test_LDADD = $(top_builddir)/salome/cfd_proxy/libcfdproxy.la \
         $(MPI_LIBS) -lm
+
+endif
 
 # Uncomment for tests execution at "make check"
 #TESTS=$(check_PROGRAMS)

@@ -67,9 +67,6 @@ main (int argc, char *argv[])
   for (i = 0; i < argc; i++)
     printf("%s\n", argv[i]);
 
-  printf("total system memory: %lu\n", (unsigned long)(bft_sys_info_mem_ram()));
-  printf("total swap memory: %lu\n", (unsigned long)(bft_sys_info_mem_swap()));
-
   if (bft_sys_info_cpu() != NULL)
     printf("CPU type: %s\n", bft_sys_info_cpu());
 
