@@ -2744,9 +2744,11 @@ _post_error_output_def(const char       *var_name,
         val_name[31] = '\0';
       }
 
+      assert(diag_block_size[0] == diag_block_size[1]); /* for now */
+
       cs_sles_post_error_output_var(val_name,
                                     mesh_id,
-                                    diag_block_size,
+                                    diag_block_size[1],
                                     val);
     }
 
