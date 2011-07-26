@@ -3343,6 +3343,18 @@ cs_post_activate_if_default(int     nt_max_abs,
     if (nt_cur_abs == nt_max_abs && writer->output_end)
       writer->active = 1;
 
+    /* Do not activate transient writers for time-independent stages */
+
+    if (nt_cur_abs < 0) {
+      fvm_writer_time_dep_t  time_dep;
+      if (writer->writer)
+        time_dep = fvm_writer_get_time_dep(writer->writer);
+      else
+        time_dep = writer->wd->time_dep;
+      if (time_dep != FVM_WRITER_FIXED_MESH)
+        writer->active = 0;
+    }
+    
   }
 }
 
