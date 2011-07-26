@@ -267,14 +267,16 @@ cs_sles_post_error_output_def(const char       *var_name,
  * Output post-processing variable for failed system convergence.
  *
  * parameters:
- *   var_name <-- Variable name
- *   mesh_id  <-- id of error output mesh, or 0 if none
- *   var      <-- Variable values
+ *   var_name        <-- Variable name
+ *   diag_block_size <-- Block size for diagonal
+ *   mesh_id         <-- id of error output mesh, or 0 if none
+ *   var             <-- Variable values
  *----------------------------------------------------------------------------*/
 
 void
 cs_sles_post_error_output_var(const char  *var_name,
                               int          mesh_id,
+                              int          diag_block_size,
                               cs_real_t   *var);
 
 /*----------------------------------------------------------------------------*/
