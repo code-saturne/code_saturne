@@ -3401,7 +3401,7 @@ fvm_writer_t *
 cs_post_get_writer(cs_int_t  writer_id)
 {
   int  id;
-  const cs_post_writer_t  *writer = NULL;
+  cs_post_writer_t  *writer = NULL;
 
   id = _cs_post_writer_id(writer_id);
   writer = _cs_post_writers + id;
