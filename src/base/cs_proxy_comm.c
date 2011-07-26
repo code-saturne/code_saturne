@@ -675,7 +675,7 @@ cs_proxy_comm_write_request(const char      *func_name,
 
   /* Pack integer values */
 
-#if (_CS_STDC_VERSION < 199901L)
+#if (__STDC_VERSION__ < 199901L)
 
   assert(sizeof(int) == 4);
 
@@ -820,7 +820,7 @@ cs_proxy_comm_read_response(int        n_ints,
   if (comm->swap_endian == true)
     _swap_endian(_header, _header, 4, 5);
 
-#if (_CS_STDC_VERSION < 199901L)
+#if (__STDC_VERSION__ < 199901L)
 
   assert(sizeof(int) == 4);
 
@@ -881,7 +881,7 @@ cs_proxy_comm_read_response(int        n_ints,
                  4,
                  n_ints);
 
-#if (_CS_STDC_VERSION < 199901L)
+#if (__STDC_VERSION__ < 199901L)
 
   assert(sizeof(int) == 4);
 

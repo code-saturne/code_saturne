@@ -446,7 +446,7 @@ _convergence_test(const char             *solver_name,
       int diverges = 0;
       if (residue > convergence->initial_residue * 10000.0 && residue > 100.)
         diverges = 1;
-#if (_CS_STDC_VERSION >= 199901L)
+#if (__STDC_VERSION__ >= 199901L)
       else if (isnan(residue) || isinf(residue))
         diverges = 1;
 #endif
@@ -2200,7 +2200,7 @@ _value_type(size_t      n_vals,
   size_t ii;
   size_t retval = 0;
 
-#if (_CS_STDC_VERSION >= 199901L)
+#if (__STDC_VERSION__ >= 199901L)
 
   for (ii = 0; ii < n_vals; ii++) {
 

@@ -488,7 +488,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
   if (n_ranks == 1)
     return;
 
-#if (_CS_STDC_VERSION < 199901L)
+#if (__STDC_VERSION__ < 199901L)
   sprintf(file_name,
           "partition%cdomain_number_%d",
           _dir_separator, cs_glob_n_ranks);

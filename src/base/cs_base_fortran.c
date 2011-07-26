@@ -116,7 +116,7 @@ _bft_printf(const char     *const format,
 
  /* Write to buffer */
 
-#if (_CS_STDC_VERSION < 199901L)
+#if (__STDC_VERSION__ < 199901L)
   msgsize = vsprintf (cs_buf_print_f, format, arg_ptr);
 #else
   msgsize = vsnprintf (cs_buf_print_f, CS_BUF_PRINT_F_SIZE, format, arg_ptr);

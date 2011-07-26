@@ -869,7 +869,7 @@ _convergence_test(const char         *var_name,
     if (*residue > initial_residue * 10000.0 && *residue > 100.)
       return -2;
 
-#if (_CS_STDC_VERSION >= 199901L)
+#if (__STDC_VERSION__ >= 199901L)
     if (isnan(*residue) || isinf(*residue))
       return -2;
 #endif
