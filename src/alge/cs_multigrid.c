@@ -951,11 +951,11 @@ _abort_on_divergence(cs_multigrid_t    *mg,
 
       cs_grid_project_var(g, n_base_cells, _da, var);
       sprintf(var_name, "Diag_%04d", lv_id);
-      cs_sles_post_error_output_var(var_name, mesh_id, var);
+      cs_sles_post_error_output_var(var_name, mesh_id, 1,var);
 
       cs_grid_project_diag_dom(g, n_base_cells, var);
       sprintf(var_name, "Diag_Dom_%04d", lv_id);
-      cs_sles_post_error_output_var(var_name, mesh_id, var);
+      cs_sles_post_error_output_var(var_name, mesh_id, 1,var);
     }
 
     /* Output info on current level if > 0 */
@@ -975,11 +975,11 @@ _abort_on_divergence(cs_multigrid_t    *mg,
 
       cs_grid_project_var(g, n_base_cells, c_rhs[level], var);
       sprintf(var_name, "RHS_%04d", level);
-      cs_sles_post_error_output_var(var_name, mesh_id, var);
+      cs_sles_post_error_output_var(var_name, mesh_id, 1,var);
 
       cs_grid_project_var(g, n_base_cells, c_vx[level], var);
       sprintf(var_name, "X_%04d", level);
-      cs_sles_post_error_output_var(var_name, mesh_id, var);
+      cs_sles_post_error_output_var(var_name, mesh_id, 1,var);
 
       /* Compute residual */
 
@@ -998,7 +998,7 @@ _abort_on_divergence(cs_multigrid_t    *mg,
       BFT_FREE(c_res);
 
       sprintf(var_name, "Residual_%04d", level);
-      cs_sles_post_error_output_var(var_name, mesh_id, var);
+      cs_sles_post_error_output_var(var_name, mesh_id, 1,var);
     }
 
     cs_post_finalize();

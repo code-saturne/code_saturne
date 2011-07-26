@@ -2292,7 +2292,7 @@ _cell_residual(bool             symmetric,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, res);
 
-  for (ii = 0; ii < n_cells; ii++)
+  for (ii = 0; ii < n_cells*diag_block_size[1]; ii++)
     res[ii] = fabs(res[ii] - rhs[ii]);
 }
 
@@ -2300,56 +2300,130 @@ _cell_residual(bool             symmetric,
  * Compute diagonal dominance metric.
  *
  * parameters:
- *   symmetric <-- indicates if matrix values are symmetric
- *   ad        <-- Diagonal part of linear equation matrix
- *   ax        <-- Non-diagonal part of linear equation matrix
- *   dd        <-- Diagonal dominance (normalized)
+ *   symmetric       <-- indicates if matrix values are symmetric
+ *   interleaved     <-- Indicates if matrix coefficients are interleaved
+ *   diag_block_size <-- Block sizes for diagonal
+ *   ad              <-- Diagonal part of linear equation matrix
+ *   ax              <-- Non-diagonal part of linear equation matrix
+ *   dd              <-- Diagonal dominance (normalized)
  *----------------------------------------------------------------------------*/
 
 static void
 _diag_dominance(bool             symmetric,
+                bool             interleaved,
+                const int       *diag_block_size,
                 const cs_real_t  ad[],
                 const cs_real_t  ax[],
                 cs_real_t        dd[])
 {
-  cs_int_t ii, jj, face_id;
+  cs_int_t ii, jj, kk, face_id;
 
   const cs_int_t n_cells = cs_glob_mesh->n_cells;
   const cs_int_t n_faces = cs_glob_mesh->n_i_faces;
   const cs_int_t *face_cel = cs_glob_mesh->i_face_cells;
   const cs_halo_t *halo = cs_glob_mesh->halo;
 
-  /* Diagonal part of matrix.vector product */
+  if (diag_block_size[3] == 1) {
 
-  for (ii = 0; ii < n_cells; ii++)
-    dd[ii] = fabs(ad[ii]);
+    /* Diagonal part of matrix.vector product */
 
-  if (halo != NULL)
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, dd);
+    for (ii = 0; ii < n_cells; ii++)
+      dd[ii] = fabs(ad[ii]);
 
-  /* non-diagonal terms */
+    if (halo != NULL)
+      cs_halo_sync_var(halo, CS_HALO_STANDARD, dd);
 
-  if (symmetric) {
-    for (face_id = 0; face_id < n_faces; face_id++) {
-      ii = face_cel[2*face_id] -1;
-      jj = face_cel[2*face_id + 1] -1;
-      dd[ii] -= fabs(ax[face_id]);
-      dd[jj] -= fabs(ax[face_id]);
+    /* non-diagonal terms */
+
+    if (symmetric) {
+      for (face_id = 0; face_id < n_faces; face_id++) {
+        ii = face_cel[2*face_id] -1;
+        jj = face_cel[2*face_id + 1] -1;
+        dd[ii] -= fabs(ax[face_id]);
+        dd[jj] -= fabs(ax[face_id]);
+      }
     }
-  }
-  else {
-    for (face_id = 0; face_id < n_faces; face_id++) {
-      ii = face_cel[2*face_id] -1;
-      jj = face_cel[2*face_id + 1] -1;
-      dd[ii] -= fabs(ax[face_id]);
-      dd[jj] -= fabs(ax[face_id + n_faces]);
+    else if (interleaved) {
+      for (face_id = 0; face_id < n_faces; face_id++) {
+        ii = face_cel[2*face_id] -1;
+        jj = face_cel[2*face_id + 1] -1;
+        dd[ii] -= fabs(ax[face_id*2]);
+        dd[jj] -= fabs(ax[face_id*2 + 1]);
+      }
     }
+    else {
+      for (face_id = 0; face_id < n_faces; face_id++) {
+        ii = face_cel[2*face_id] -1;
+        jj = face_cel[2*face_id + 1] -1;
+        dd[ii] -= fabs(ax[face_id]);
+        dd[jj] -= fabs(ax[face_id + n_faces]);
+      }
+    }
+
+    for (ii = 0; ii < n_cells; ii++) {
+      if (fabs(ad[ii]) > 1.e-18)
+        dd[ii] /= fabs(ad[ii]);
+    }
+
   }
 
-  for (ii = 0; ii < n_cells; ii++) {
-    if (fabs(ad[ii]) > 1.e-18)
-      dd[ii] /= fabs(ad[ii]);
+  else { /* if diag_block_size[3] > 1 */
+
+    /* Diagonal part of matrix.vector product */
+
+    for (ii = 0; ii < n_cells; ii++) {
+      for (jj = 0; jj < diag_block_size[1]; jj++)
+        dd[ii*diag_block_size[1] + jj] = 0.0;
+      for (jj = 0; jj < diag_block_size[0]; jj++) {
+        for (kk = 0; kk < diag_block_size[0]; kk++) {
+          double sign = (jj == kk) ? 1. : -1.;
+          dd[ii*diag_block_size[1] + kk]
+            += sign*fabs(ax[ii*diag_block_size[3]
+                            + jj*diag_block_size[2] + kk]);
+        }
+      }
+    }
+
+    if (halo != NULL) {
+      cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, dd, diag_block_size[1]);
+      if (halo->n_transforms > 0 && diag_block_size[0] == 3)
+        cs_perio_sync_var_vect(halo, CS_HALO_STANDARD, dd, diag_block_size[1]);
+    }
+
+    /* non-diagonal terms */
+
+    if (symmetric) {
+      for (face_id = 0; face_id < n_faces; face_id++) {
+        ii = face_cel[2*face_id] -1;
+        jj = face_cel[2*face_id + 1] -1;
+        for (kk = 0; kk < diag_block_size[0]; kk++) {
+          dd[ii*diag_block_size[1] + kk] -= fabs(ax[face_id]);
+          dd[jj*diag_block_size[1] + kk] -= fabs(ax[face_id]);
+        }
+      }
+    }
+    else {
+      for (face_id = 0; face_id < n_faces; face_id++) {
+        ii = face_cel[2*face_id] -1;
+        jj = face_cel[2*face_id + 1] -1;
+        for (kk = 0; kk < diag_block_size[0]; kk++) {
+          dd[ii*diag_block_size[1] + kk] -= fabs(ax[face_id*2]);
+          dd[jj*diag_block_size[1] + kk] -= fabs(ax[face_id*2 + 1]);
+        }
+      }
+    }
+
+    for (ii = 0; ii < n_cells; ii++) {
+      for (jj = 0; jj < diag_block_size[0]; jj++) {
+        double _ax = fabs(ax[ii*diag_block_size[3]
+                             + jj*diag_block_size[2] + jj]);
+        if (fabs(_ax) > 1.e-18)
+          dd[ii*diag_block_size[1] + jj] /= _ax;
+      }
+    }
+
   }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -2604,7 +2678,7 @@ _post_error_output_def(const char       *var_name,
 
     cs_real_t *val;
 
-    BFT_MALLOC(val, mesh->n_cells_with_ghosts, cs_real_t);
+    BFT_MALLOC(val, mesh->n_cells_with_ghosts*diag_block_size[1], cs_real_t);
 
     for (val_id = 0; val_id < 5; val_id++) {
 
@@ -2612,17 +2686,27 @@ _post_error_output_def(const char       *var_name,
 
       case 0:
         strcpy(base_name, "Diag");
-        memcpy(val, ad, n_cells*sizeof(cs_real_t));
+        if (diag_block_size[1] == 1)
+          memcpy(val, ad, n_cells*sizeof(cs_real_t));
+        else {
+          cs_lnum_t ii, jj;
+#pragma omp parallel for private(jj)
+          for (ii = 0; ii < mesh->n_cells; ii++) {
+            for (jj = 0; jj < diag_block_size[0]; jj++)
+              val[ii*diag_block_size[1] + jj]
+                = ad[ii*diag_block_size[3] + jj*diag_block_size[2] + jj];
+          }
+        }
         break;
 
       case 1:
         strcpy(base_name, "RHS");
-        memcpy(val, rhs, n_cells*sizeof(cs_real_t));
+        memcpy(val, rhs, n_cells*diag_block_size[1]*sizeof(cs_real_t));
         break;
 
       case 2:
         strcpy(base_name, "X");
-        memcpy(val, vx, n_cells*sizeof(cs_real_t));
+        memcpy(val, vx, n_cells*diag_block_size[1]*sizeof(cs_real_t));
         break;
 
       case 3:
@@ -2640,7 +2724,12 @@ _post_error_output_def(const char       *var_name,
 
       case 4:
         strcpy(base_name, "Diag_Dom");
-        _diag_dominance(symmetric, ad, ax, val);
+        _diag_dominance(symmetric,
+                        interleaved,
+                        diag_block_size,
+                        ad,
+                        ax,
+                        val);
         break;
 
       }
@@ -2657,6 +2746,7 @@ _post_error_output_def(const char       *var_name,
 
       cs_sles_post_error_output_var(val_name,
                                     mesh_id,
+                                    diag_block_size,
                                     val);
     }
 
@@ -3116,28 +3206,38 @@ cs_sles_solve(const char         *var_name,
 
       switch (solver_type) {
       case CS_SLES_PCG:
-        cvg = _conjugate_gradient(var_name,
-                                  _a,
-                                  _ax,
-                                  poly_degree,
-                                  rotation_mode,
-                                  &convergence,
-                                  rhs,
-                                  vx,
-                                  aux_size,
-                                  aux_vectors);
+        if (_diag_block_size == 1)
+          cvg = _conjugate_gradient(var_name,
+                                    _a,
+                                    _ax,
+                                    poly_degree,
+                                    rotation_mode,
+                                    &convergence,
+                                    rhs,
+                                    vx,
+                                    aux_size,
+                                    aux_vectors);
+        else
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("PCG not supported with block_size > 1 (velocity coupling)."));
         break;
       case CS_SLES_PCG_SR:
-        cvg = _conjugate_gradient_sr(var_name,
-                                     _a,
-                                     _ax,
-                                     poly_degree,
-                                     rotation_mode,
-                                     &convergence,
-                                     rhs,
-                                     vx,
-                                     aux_size,
-                                     aux_vectors);
+        if (_diag_block_size == 1)
+          cvg = _conjugate_gradient_sr(var_name,
+                                       _a,
+                                       _ax,
+                                       poly_degree,
+                                       rotation_mode,
+                                       &convergence,
+                                       rhs,
+                                       vx,
+                                       aux_size,
+                                       aux_vectors);
+        else
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("PCG not supported with block_size > 1 (velocity coupling)."));
         break;
       case CS_SLES_JACOBI:
         if (_diag_block_size == 1)
@@ -3175,16 +3275,20 @@ cs_sles_solve(const char         *var_name,
                          aux_vectors);
         break;
       case CS_SLES_GMRES:
-        cvg = _gmres(var_name,
-                     _a,
-                     _ax,
-                     poly_degree,
-                     rotation_mode,
-                     &convergence,
-                     rhs,
-                     vx,
-                     aux_size,
-                     aux_vectors);
+        if (_diag_block_size == 1)
+          cvg = _gmres(var_name,
+                       _a,
+                       _ax,
+                       poly_degree,
+                       rotation_mode,
+                       &convergence,
+                       rhs,
+                       vx,
+                       aux_size,
+                       aux_vectors);
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("GMRES not supported with block_size > 1 (velocity coupling)."));
         break;
       default:
         break;
@@ -3278,7 +3382,7 @@ cs_sles_post_error_output_def(const char       *var_name,
 
   if (diag_block_size > 1) {
     int i;
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < 3; i++) /* Will become false if padding is used */
       _diag_block_size[i] = diag_block_size;
     _diag_block_size[3] = diag_block_size*diag_block_size;
   }
@@ -3299,17 +3403,21 @@ cs_sles_post_error_output_def(const char       *var_name,
  * Output post-processing variable for failed system convergence.
  *
  * parameters:
- *   var_name <-- Variable name
- *   mesh_id  <-- id of error output mesh, or 0 if none
- *   var      <-- Variable values
+ *   var_name        <-- Variable name
+ *   mesh_id         <-- id of error output mesh, or 0 if none
+ *   diag_block_size <-- Block size for diagonal
+ *   var             <-- Variable values
  *----------------------------------------------------------------------------*/
 
 void
 cs_sles_post_error_output_var(const char  *var_name,
                               int          mesh_id,
+                              int          diag_block_size,
                               cs_real_t   *var)
 {
   if (mesh_id != 0) {
+
+    int _diag_block_size[4] = {1, 1, 1, 1};
 
     const cs_mesh_t *mesh = cs_glob_mesh;
 
@@ -3318,15 +3426,24 @@ cs_sles_post_error_output_var(const char  *var_name,
 
     int *val_type;
 
-    BFT_MALLOC(val_type, n_cells, int);
+    assert(_diag_block_size[0] == _diag_block_size[1]); /* no padding */
 
-    n_non_norm = _value_type(n_cells, var, val_type);
+    if (diag_block_size > 1) {
+      int i;
+      for (i = 0; i < 3; i++) /* will become false if padding is used */
+        _diag_block_size[i] = diag_block_size;
+      _diag_block_size[3] = diag_block_size*diag_block_size;
+    }
+
+    BFT_MALLOC(val_type, _diag_block_size[1]*n_cells, int);
+
+    n_non_norm = _value_type(_diag_block_size[1]*n_cells, var, val_type);
 
     cs_post_write_var(mesh_id,
                       var_name,
-                      1,
-                      false, /* no interlace */
-                      true,  /* use parents */
+                      _diag_block_size[0],
+                      true, /* interlace */
+                      true, /* use parents */
                       CS_POST_TYPE_cs_real_t,
                       -1,
                       0.0,
@@ -3351,9 +3468,9 @@ cs_sles_post_error_output_var(const char  *var_name,
 
       cs_post_write_var(mesh_id,
                         type_name,
-                        1,
-                        false, /* no interlace */
-                        true,  /* use parents */
+                        _diag_block_size[0],
+                        true, /* interlace */
+                        true, /* use parents */
                         CS_POST_TYPE_int,
                         -1,
                         0.0,
