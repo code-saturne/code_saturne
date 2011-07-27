@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-07-15 13:58+0200\n"
+"POT-Creation-Date: 2011-07-27 16:22+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3742,6 +3742,12 @@ msgid ""
 msgstr ""
 "%s [%s]:\n"
 "  sortie immédiate ; r_norm = %11.4e, residu = %11.4e\n"
+
+msgid "PCG not supported with block_size > 1 (velocity coupling)."
+msgstr ""
+
+msgid "GMRES not supported with block_size > 1 (velocity coupling)."
+msgstr ""
 
 #, c-format
 msgid ""
