@@ -130,7 +130,7 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 
 ! Allocate temporary arrays for the species resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(coefad(nfac), coefbd(nfabor))
+allocate(coefad(nfabor), coefbd(nfabor))
 allocate(dam(ncelet), xam(nfac,2))
 allocate(rtpdp(ncelet), smbdp(ncelet), rovsdp(ncelet))
 
