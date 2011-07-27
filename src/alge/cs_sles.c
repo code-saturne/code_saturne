@@ -91,6 +91,12 @@ BEGIN_C_DECLS
 #define HUGE_VAL  1.E+12
 #endif
 
+/* SIMD unit size to ensure SIMD alignement (2 to 4 required on most
+ * current architectures, so 16 should be enough on most architectures
+ * through at least 2012) */
+
+#define CS_SIMD_SIZE(s) (((s-1)/16+1)*16)
+
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -856,7 +862,7 @@ _conjugate_gradient(const char             *var_name,
 
   {
     size_t  n_wa = 5;
-    size_t  wa_size = n_cols;
+    size_t  wa_size = CS_SIMD_SIZE(n_cols);
 
     if (poly_degree > 0)
       n_wa += 1;
@@ -1050,10 +1056,7 @@ _conjugate_gradient_sr(const char             *var_name,
 
   {
     size_t  n_wa = 6;
-    size_t  wa_size = n_cols;
-
-    /* Ensure alignment */
-    wa_size = ((wa_size/16) + 1) * 16;
+    size_t  wa_size = CS_SIMD_SIZE(n_cols);
 
     if (poly_degree > 0)
       n_wa += 1;
@@ -1246,7 +1249,7 @@ _jacobi(const char             *var_name,
   /* Allocate work arrays */
 
   {
-    size_t  wa_size = n_cols;
+    size_t  wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == NULL || aux_size < (wa_size * 2))
       BFT_MALLOC(_aux_vectors, wa_size * 2, cs_real_t);
@@ -1447,7 +1450,7 @@ _block_3_jacobi(const char             *var_name,
   /* Allocate work arrays */
 
   {
-    size_t  wa_size = n_cols;
+    size_t  wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == NULL
         || aux_size < (wa_size * 2) + diag_block_size*wa_size)
@@ -1594,7 +1597,7 @@ _bi_cgstab(const char             *var_name,
 
   {
     size_t  n_wa = 7;
-    size_t  wa_size = n_cols;
+    size_t  wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == NULL || aux_size < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
@@ -1979,11 +1982,13 @@ _gmres(const char             *var_name,
   scaltest = 0;
 
   {
+    size_t _aux_size;
     size_t  n_wa = 5;
     size_t  wa_size = n_cols < krylov_size? krylov_size:n_cols;
-    size_t _aux_size = wa_size*n_wa
-                       + (krylov_size-1)*(n_rows + krylov_size)
-                       + 3*krylov_size;
+
+    wa_size = CS_SIMD_SIZE(wa_size);
+    _aux_size =   wa_size*n_wa
+                + (krylov_size-1)*(n_rows + krylov_size) + 3*krylov_size;
 
     if (aux_vectors == NULL || aux_size < _aux_size)
       BFT_MALLOC(_aux_vectors, _aux_size, cs_real_t);
