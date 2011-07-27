@@ -187,9 +187,10 @@ _sync_i_face_flag_p(cs_mesh_t                  *mesh,
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
     const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
 
+    l = send_index[i];
+
     if (n_perio != 0) {
 
-      l = send_index[i];
       const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
 
       for (k = tr_index[0]; k < tr_index[1]; k++)
