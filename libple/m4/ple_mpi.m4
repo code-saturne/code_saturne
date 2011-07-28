@@ -98,7 +98,13 @@ if test "x$with_mpi" != "xno" ; then
 
   if test "x$ple_have_mpi_header" = "xno" ; then
     unset ac_cv_header_mpi_h
-    MPI_CPPFLAGS="-I/usr/include/mpi"
+    if test ! -z "$MPI_INCLUDE" ; then
+      MPI_CPPFLAGS="-I$MPI_INCLUDE"
+      # Also assume that a similar variable is defined for libraries
+      MPI_LDFLAGS="-L$MPI_LIB"
+    else
+      MPI_CPPFLAGS="-I/usr/include/mpi"
+    fi
     CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
     AC_CHECK_HEADERS([mpi.h],
                      [ple_have_mpi_header=yes],

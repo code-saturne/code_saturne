@@ -1,3 +1,7 @@
+2011-07-28  David Monfort <david.monfort@edf.fr>
+
+	* Fix MPI autodetection on FEDORA systems.
+
 2011-06-27  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Improve robustness of MPI detection tests.
