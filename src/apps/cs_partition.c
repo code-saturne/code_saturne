@@ -684,7 +684,7 @@ _read_global_count(cs_io_t             *inp,
   /* Ensure type of value matches */
 
   if (header->elt_type == FVM_UINT32 || header->elt_type == FVM_UINT64)
-    cs_io_set_fvm_gnum(header, inp);
+    cs_io_set_cs_gnum(header, inp);
   else
     bft_error(__FILE__, __LINE__, 0,
               _("Section: \"%s\" of file \"%s\" is not\n"
@@ -739,7 +739,7 @@ _read_adjacency_array(cs_io_t                         *inp,
 
   if (   header->elt_type == FVM_INT32 || header->elt_type == FVM_INT64
       || header->elt_type == FVM_UINT32 || header->elt_type == FVM_UINT64)
-    cs_io_set_fvm_gnum(header, inp);
+    cs_io_set_cs_gnum(header, inp);
   else
     bft_error(__FILE__, __LINE__, 0,
               _("Section: \"%s\" of file \"%s\" is not\n"
@@ -749,7 +749,7 @@ _read_adjacency_array(cs_io_t                         *inp,
   /* Now set position in file and read data */
 
   cs_io_set_indexed_position(inp, header, rec_id);
-  cs_io_set_fvm_gnum(header, inp);
+  cs_io_set_cs_gnum(header, inp);
 
   cs_io_read_block(header,
                    bi->gnum_range[0],

@@ -1915,7 +1915,7 @@ _exchange_periodic_equiv(size_t                     slice_size,
      in one MPI call, all data is exchanged as cs_gnum_t, even if this
      means larger messages if cs_gnum_t is larger than cs_lnum_t.
      As the number of elements per couple is variable (depending on prior
-     equivalence info), using an MPI datatype to mix int and fvm_gnum
+     equivalence info), using an MPI datatype to mix int and cs_gnum_t
      types rather than casting all to cs_gnum_t is not feasible */
 
   BFT_MALLOC(equiv_send, send_shift[size], cs_gnum_t);

@@ -794,7 +794,7 @@ _b_zero_range(cs_real_t  *restrict y,
 }
 
 /*----------------------------------------------------------------------------
- * Descend binary tree for the ordering of a fvm_gnum (integer) array.
+ * Descend binary tree for the ordering of a cs_gnum_t (integer) array.
  *
  * parameters:
  *   number    <-> pointer to elements that should be ordered

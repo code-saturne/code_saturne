@@ -303,8 +303,8 @@ cs_io_set_indexed_position(cs_io_t             *inp,
  *----------------------------------------------------------------------------*/
 
 void
-cs_io_set_fvm_lnum(cs_io_sec_header_t  *header,
-                   const cs_io_t       *pp_io);
+cs_io_set_cs_lnum(cs_io_sec_header_t  *header,
+                  const cs_io_t       *pp_io);
 
 /*----------------------------------------------------------------------------
  * Set a message's final data type to cs_gnum_t.
@@ -317,8 +317,8 @@ cs_io_set_fvm_lnum(cs_io_sec_header_t  *header,
  *----------------------------------------------------------------------------*/
 
 void
-cs_io_set_fvm_gnum(cs_io_sec_header_t  *header,
-                   const cs_io_t       *pp_io);
+cs_io_set_cs_gnum(cs_io_sec_header_t  *header,
+                  const cs_io_t       *pp_io);
 
 /*----------------------------------------------------------------------------
  * Check that a message's final data type corresponds to cs_real_t.

@@ -549,7 +549,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
                   _(unexpected_msg), header.sec_name,
                   cs_io_get_name(rank_pp_in));
       else {
-        cs_io_set_fvm_gnum(&header, rank_pp_in);
+        cs_io_set_cs_gnum(&header, rank_pp_in);
         cs_io_read_global(&header, &n_g_cells, rank_pp_in);
         if (n_g_cells != mesh->n_g_cells)
           bft_error(__FILE__, __LINE__, 0,
@@ -570,7 +570,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
                   _(unexpected_msg), header.sec_name,
                   cs_io_get_name(rank_pp_in));
       else {
-        cs_io_set_fvm_lnum(&header, rank_pp_in);
+        cs_io_set_cs_lnum(&header, rank_pp_in);
         cs_io_read_global(&header, &n_ranks, rank_pp_in);
         if (n_ranks != cs_glob_n_ranks)
           bft_error(__FILE__, __LINE__, 0,
@@ -592,7 +592,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
                   cs_io_get_name(rank_pp_in));
       else {
         mr->read_cell_rank = 1;
-        cs_io_set_fvm_lnum(&header, rank_pp_in);
+        cs_io_set_cs_lnum(&header, rank_pp_in);
         if (mr->cell_bi.gnum_range[0] > 0)
           n_elts = mr->cell_bi.gnum_range[1] - mr->cell_bi.gnum_range[0];
         BFT_MALLOC(mr->cell_rank, n_elts, cs_lnum_t);
@@ -2870,7 +2870,7 @@ _read_dimensions(cs_mesh_t       *mesh,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
         cs_gnum_t _n_g_cells;
-        cs_io_set_fvm_gnum(&header, pp_in);
+        cs_io_set_cs_gnum(&header, pp_in);
         cs_io_read_global(&header, &_n_g_cells, pp_in);
         mesh->n_g_cells += _n_g_cells;
       }
@@ -2884,7 +2884,7 @@ _read_dimensions(cs_mesh_t       *mesh,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
         cs_gnum_t _n_g_faces;
-        cs_io_set_fvm_gnum(&header, pp_in);
+        cs_io_set_cs_gnum(&header, pp_in);
         cs_io_read_global(&header, &_n_g_faces, pp_in);
         mr->n_g_faces += _n_g_faces;
       }
@@ -2898,7 +2898,7 @@ _read_dimensions(cs_mesh_t       *mesh,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
         cs_gnum_t _n_g_vertices;
-        cs_io_set_fvm_gnum(&header, pp_in);
+        cs_io_set_cs_gnum(&header, pp_in);
         cs_io_read_global(&header, &_n_g_vertices, pp_in);
         mesh->n_g_vertices += _n_g_vertices;
       }
@@ -2912,7 +2912,7 @@ _read_dimensions(cs_mesh_t       *mesh,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
         cs_gnum_t _n_g_face_connect_size;
-        cs_io_set_fvm_gnum(&header, pp_in);
+        cs_io_set_cs_gnum(&header, pp_in);
         cs_io_read_global(&header, &_n_g_face_connect_size, pp_in);
         mr->n_g_face_connect_size += _n_g_face_connect_size;
       }
@@ -2925,7 +2925,7 @@ _read_dimensions(cs_mesh_t       *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        cs_io_set_fvm_lnum(&header, pp_in);
+        cs_io_set_cs_lnum(&header, pp_in);
         cs_io_read_global(&header, &n_gc, pp_in);
         mesh->n_families += n_gc;
       }
@@ -2938,7 +2938,7 @@ _read_dimensions(cs_mesh_t       *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        cs_io_set_fvm_lnum(&header, pp_in);
+        cs_io_set_cs_lnum(&header, pp_in);
         cs_io_read_global(&header, &n_gc_props_max, pp_in);
         if (n_gc_props_max > mesh->n_max_family_items) {
           /* Update (pad) previous definitions */
@@ -2963,7 +2963,7 @@ _read_dimensions(cs_mesh_t       *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        cs_io_set_fvm_lnum(&header, pp_in);
+        cs_io_set_cs_lnum(&header, pp_in);
         cs_io_read_global(&header, &n_groups, pp_in);
         mesh->n_groups += n_groups;
       }
@@ -2976,7 +2976,7 @@ _read_dimensions(cs_mesh_t       *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        cs_io_set_fvm_lnum(&header, pp_in);
+        cs_io_set_cs_lnum(&header, pp_in);
         if (mesh->group_idx == NULL) {
           BFT_MALLOC(mesh->group_idx, mesh->n_groups + 1, cs_int_t);
           cs_io_read_global(&header, mesh->group_idx, pp_in);
@@ -3072,7 +3072,7 @@ _read_dimensions(cs_mesh_t       *mesh,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
 
-        cs_io_set_fvm_lnum(&header, pp_in);
+        cs_io_set_cs_lnum(&header, pp_in);
         cs_io_read_global(&header, &n_init_perio, pp_in);
         mesh->n_init_perio += n_init_perio;
 
@@ -3107,7 +3107,7 @@ _read_dimensions(cs_mesh_t       *mesh,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
         cs_int_t n_rot_perio;
-        cs_io_set_fvm_lnum(&header, pp_in);
+        cs_io_set_cs_lnum(&header, pp_in);
         cs_io_read_global(&header, &n_rot_perio, pp_in);
         if (n_rot_perio > 0)
           mesh->have_rotation_perio = 1;
@@ -3122,7 +3122,7 @@ _read_dimensions(cs_mesh_t       *mesh,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
         size_t dest_offset = mesh->n_init_perio - n_init_perio;
-        cs_io_set_fvm_gnum(&header, pp_in);
+        cs_io_set_cs_gnum(&header, pp_in);
         cs_io_read_global(&header,
                           mr->n_g_per_face_couples + dest_offset,
                           pp_in);
@@ -3573,7 +3573,7 @@ _read_data(int              file_id,
           BFT_MALLOC(mr->face_cells, n_vals, cs_gnum_t);
 
         /* Read data */
-        cs_io_set_fvm_gnum(&header, pp_in);
+        cs_io_set_cs_gnum(&header, pp_in);
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
                          mr->face_cells + val_offset_cur, pp_in);
 
@@ -3613,7 +3613,7 @@ _read_data(int              file_id,
           BFT_MALLOC(mr->cell_gc_id, n_vals, cs_int_t);
 
         /* Read data */
-        cs_io_set_fvm_lnum(&header, pp_in);
+        cs_io_set_cs_lnum(&header, pp_in);
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
                          mr->cell_gc_id + val_offset_cur, pp_in);
 
@@ -3653,7 +3653,7 @@ _read_data(int              file_id,
           BFT_MALLOC(mr->face_gc_id, n_vals, cs_int_t);
 
         /* Read data */
-        cs_io_set_fvm_lnum(&header, pp_in);
+        cs_io_set_cs_lnum(&header, pp_in);
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
                          mr->face_gc_id + val_offset_cur, pp_in);
 
@@ -3701,7 +3701,7 @@ _read_data(int              file_id,
           idx_offset_shift = mr->face_vertices_idx[val_offset_cur];
 
         /* Read data */
-        cs_io_set_fvm_gnum(&header, pp_in);
+        cs_io_set_cs_gnum(&header, pp_in);
         BFT_MALLOC(_g_face_vertices_idx, n_vals_cur+1, cs_gnum_t);
         cs_io_read_index_block(&header, gnum_range_cur[0], gnum_range_cur[1],
                                _g_face_vertices_idx, pp_in);
@@ -3755,7 +3755,7 @@ _read_data(int              file_id,
                     cs_gnum_t);
 
         /* Read data */
-        cs_io_set_fvm_gnum(&header, pp_in);
+        cs_io_set_cs_gnum(&header, pp_in);
         cs_io_read_block(&header, face_vtx_range[0], face_vtx_range[1],
                          mr->face_vertices + val_offset_cur, pp_in);
 
@@ -3872,7 +3872,7 @@ _read_data(int              file_id,
           else
             mr->n_per_face_couples[perio_id] = 0;
 
-          cs_io_set_fvm_gnum(&header, pp_in);
+          cs_io_set_cs_gnum(&header, pp_in);
           n_vals = mr->n_per_face_couples[perio_id]*2;
           BFT_MALLOC(mr->per_face_couples[perio_id], n_vals, cs_gnum_t);
           assert(header.n_location_vals == 2);

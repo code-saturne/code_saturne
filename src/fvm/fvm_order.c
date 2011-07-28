@@ -73,7 +73,7 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Descend binary tree for the ordering of a fvm_gnum (integer) array.
+ * Descend binary tree for the ordering of a cs_gnum_t (integer) array.
  *
  * parameters:
  *   number    <-- pointer to numbers of entities that should be ordered.
@@ -166,7 +166,7 @@ _order_local(const cs_gnum_t   number[],
 
 /*----------------------------------------------------------------------------
  * Descend binary tree for the lexicographical ordering of a strided
- * fvm_gnum array.
+ * cs_gnum_t array.
  *
  * parameters:
  *   number    <-- pointer to numbers of entities that should be ordered.

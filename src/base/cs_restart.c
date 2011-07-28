@@ -317,7 +317,7 @@ _locations_from_index(cs_restart_t  *r)
       loc->n_glob_ents = 0;
 
       cs_io_set_indexed_position(r->fh, &h, rec_id);
-      cs_io_set_fvm_gnum(&h, r->fh);
+      cs_io_set_cs_gnum(&h, r->fh);
       cs_io_read_global(&h, &(loc->n_glob_ents_f), r->fh);
 
       loc->ent_global_num = NULL;
@@ -428,7 +428,7 @@ _read_ent_values(cs_restart_t        *r,
   case CS_TYPE_cs_int_t:
     nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
     nbr_byte_val = sizeof(cs_int_t);
-    cs_io_set_fvm_lnum(header, r->fh);
+    cs_io_set_cs_lnum(header, r->fh);
     break;
   case CS_TYPE_cs_real_t:
     nbr_byte_ent = n_location_vals * sizeof(cs_real_t);
@@ -1732,7 +1732,7 @@ cs_restart_read_section(cs_restart_t  *restart,
   /* If the type of value does not match */
 
   if (header.elt_type == FVM_INT32 || header.elt_type == FVM_INT64) {
-    cs_io_set_fvm_lnum(&header, restart->fh);
+    cs_io_set_cs_lnum(&header, restart->fh);
     if (val_type != CS_TYPE_cs_int_t) {
       bft_printf(_("  %s: section \"%s\" is not of integer type.\n"),
                  restart->name, sec_name);

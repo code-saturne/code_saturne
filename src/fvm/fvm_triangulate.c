@@ -421,11 +421,11 @@ _polygon_vertex_is_ear(int               n_vertices,
  *----------------------------------------------------------------------------*/
 
 static _Bool
-_edge_is_locally_delaunay(int         edge_vertex_0,
-                          int         edge_vertex_1,
-                          int         flip_vertex_0,
-                          int         flip_vertex_1,
-                          cs_coord_t  coords[])
+_edge_is_locally_delaunay(int               edge_vertex_0,
+                          int               edge_vertex_1,
+                          int               flip_vertex_0,
+                          int               flip_vertex_1,
+                          const cs_coord_t  coords[])
 {
   double   a, b, delta;
   double   lambda[4];

@@ -176,9 +176,9 @@ static int  cs_glob_syr3_post_maillage_ext[2] = {0, 1};
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_fvm_gnum(cs_gnum_t   fvm_data[],
-                  cs_int_t    cs_data[],
-                  cs_gnum_t   n_elts)
+_convert_cs_gnum(cs_gnum_t   fvm_data[],
+                 cs_int_t    cs_data[],
+                 cs_gnum_t   n_elts)
 {
   size_t i;
 
@@ -360,9 +360,9 @@ _send_coords(cs_syr3_coupling_t  *syr_coupling,
     /* Convert cs_gnum_t to cs_int_t if necessary */
 
     global_vtx_num_int = (cs_int_t *)global_vtx_num_buffer;
-    _convert_fvm_gnum(global_vtx_num,
-                      global_vtx_num_int,
-                      (cs_gnum_t)n_vertices);
+    _convert_cs_gnum(global_vtx_num,
+                     global_vtx_num_int,
+                     (cs_gnum_t)n_vertices);
 
   }
 
@@ -462,9 +462,9 @@ _send_connectivity(cs_syr3_coupling_t  *syr_coupling,
 
     /* Convert cs_gnum_t to cs_int_t if necessary */
 
-    _convert_fvm_gnum((cs_gnum_t *)glob_elt_num,
-                      (cs_int_t *)glob_elt_num,
-                      (cs_gnum_t)n_elts);
+    _convert_cs_gnum((cs_gnum_t *)glob_elt_num,
+                     (cs_int_t *)glob_elt_num,
+                     (cs_gnum_t)n_elts);
 
   } /* n_faces > 0 */
 

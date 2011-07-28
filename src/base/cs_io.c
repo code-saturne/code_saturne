@@ -2777,8 +2777,8 @@ cs_io_set_indexed_position(cs_io_t             *inp,
  *----------------------------------------------------------------------------*/
 
 void
-cs_io_set_fvm_lnum(cs_io_sec_header_t  *header,
-                   const cs_io_t       *cs_io)
+cs_io_set_cs_lnum(cs_io_sec_header_t  *header,
+                  const cs_io_t       *cs_io)
 {
   assert(header != NULL);
 
@@ -2812,8 +2812,8 @@ cs_io_set_fvm_lnum(cs_io_sec_header_t  *header,
  *----------------------------------------------------------------------------*/
 
 void
-cs_io_set_fvm_gnum(cs_io_sec_header_t  *header,
-                   const cs_io_t       *cs_io)
+cs_io_set_cs_gnum(cs_io_sec_header_t  *header,
+                  const cs_io_t       *cs_io)
 {
   assert(header != NULL);
 
@@ -2988,7 +2988,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
   /* Check type */
 
-  cs_io_set_fvm_gnum(header, cs_io);
+  cs_io_set_cs_gnum(header, cs_io);
 
   /* Increase _global_num_end by 1 for the last rank containing data */
 
