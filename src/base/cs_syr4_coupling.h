@@ -74,6 +74,29 @@ typedef struct _cs_syr4_coupling_t  cs_syr4_coupling_t;
  *  Public function prototypes for Fortran API
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Compute the implicit/explicit contribution for source terms in a SYRTHES
+ * volume coupling
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CTBVSY (NUMSYR, TFLUID, CTBIMP, CTBEXP)
+ * *****************
+ *
+ * INTEGER          NUMSYR      : --> : Number of SYRTHES coupling
+ * DOUBLE PRECISION TFLUID      : --> : Fluid temperature
+ * DOUBLE PRECISION CTBIMP      : --> : Implicit contribution
+ * DOUBLE PRECISION CTBEXP      : --> : Explicit contribution
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ctbvsy, CTBVSY)
+(
+ cs_int_t   *numsyr,
+ cs_real_t  *tfluid,
+ cs_real_t  *ctbimp,
+ cs_real_t  *ctbexp
+);
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -131,6 +154,24 @@ void
 cs_syr4_coupling_all_destroy(void);
 
 /*----------------------------------------------------------------------------
+ * Set conservativity forcing flag to True (1) or False (0) for all defined
+ * SYRTHES couplings
+ *
+ * parameter:
+ *   flag     <--  Conservativity forcing flag to set
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr4_coupling_set_conservativity(int  flag);
+
+/*----------------------------------------------------------------------------
+ * Set explicit treatment for the source terms in SYRTHES volume couplings
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr4_coupling_set_explicit_treatment(void);
+
+/*----------------------------------------------------------------------------
  * Initialize communicator for SYRTHES coupling
  *
  * parameters:
@@ -159,55 +200,108 @@ void
 cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling);
 
 /*----------------------------------------------------------------------------
- * Get number of associated coupled faces in main mesh
+ * Return 1 if this coupling is a surface coupling else 0
  *
  * parameters:
  *   syr_coupling <-- SYRTHES coupling structure
+ *
+ * returns:
+ *   1 or 0
+ *----------------------------------------------------------------------------*/
+
+int
+cs_syr4_coupling_is_surf(const cs_syr4_coupling_t  *syr_coupling);
+
+/*----------------------------------------------------------------------------
+ * Return 1 if this coupling is a volume coupling else 0
+ *
+ * parameters:
+ *   syr_coupling <-- SYRTHES coupling structure
+ *
+ * returns:
+ *   1 or 0
+ *----------------------------------------------------------------------------*/
+
+int
+cs_syr4_coupling_is_vol(const cs_syr4_coupling_t  *syr_coupling);
+
+/*----------------------------------------------------------------------------
+ * Get number of associated coupled elements in main mesh
+ *
+ * parameters:
+ *   syr_coupling <-- SYRTHES coupling structure
+ *   mode          <-- 0 (surface); 1 (volume)
  *
  * returns:
  *   number of vertices in coupled mesh
  *----------------------------------------------------------------------------*/
 
 cs_lnum_t
-cs_syr4_coupling_get_n_faces(const cs_syr4_coupling_t  *syr_coupling);
+cs_syr4_coupling_get_n_elts(const cs_syr4_coupling_t *syr_coupling,
+                            int                       mode);
 
 /*----------------------------------------------------------------------------
- * Get local numbering of coupled faces
+ * Get local numbering of coupled elements
  *
  * parameters:
- *   syr_coupling    <-- SYRTHES coupling structure
- *   coupl_face_list --> List of coupled faces (1 to n)
+ *   syr_coupling  <-- SYRTHES coupling structure
+ *   cpl_elt_lst   --> List of coupled elements (1 to n)
+ *   mode          <-- 0 (surface); 1 (volume)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_get_face_list(const cs_syr4_coupling_t  *syr_coupling,
-                               cs_int_t                   coupl_face_list[]);
+cs_syr4_coupling_get_elt_list(const cs_syr4_coupling_t  *syr_coupling,
+                              cs_int_t                   cpl_elt_lst[],
+                              int                        mode);
 
 /*----------------------------------------------------------------------------
  * Receive coupling variables from SYRTHES
  *
  * parameters:
  *   syr_coupling <-- SYRTHES coupling structure
- *   twall        --> wall temperature
+ *   tsolid       --> solid temperature
+ *   mode         <-- 0: surface coupling; 1: volume coupling
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_recv_twall(cs_syr4_coupling_t *syr_coupling,
-                            cs_real_t           twall[]);
+cs_syr4_coupling_recv_tsolid(cs_syr4_coupling_t  *syr_coupling,
+                             cs_real_t            tsolid[],
+                             int                  mode);
 
 /*----------------------------------------------------------------------------
  * Send coupling variables to SYRTHES
  *
  * parameters:
- *   syr_coupling <-- SYRTHES coupling structure
- *   tf           <-- fluid temperature
- *   hwall        <-- wall heat exchange coefficient (numerical, not physical)
+ *   syr_coupling  <-- SYRTHES coupling structure
+ *   cpl_elt_list  <-- list of coupled boundary faces
+ *   tf            <-- fluid temperature
+ *   hf            <-- fluid heat exchange coef. (numerical or user-defined)
+ *   mode          <-- 0 (surface); 1 (volume)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_send_tf_hwall(cs_syr4_coupling_t *syr_coupling,
-                               cs_real_t           tf[],
-                               cs_real_t           hwall[]);
+cs_syr4_coupling_send_tf_hf(cs_syr4_coupling_t  *syr_coupling,
+                            const cs_lnum_t      cpl_elt_lst[],
+                            cs_real_t            tf[],
+                            cs_real_t            hf[],
+                            int                  mode);
+
+/*----------------------------------------------------------------------------
+ * Compute the explicit/implicit contribution to source terms in case of
+ * volume coupling with SYRTHES4
+ *
+ * parameters:
+ *   syr_coupling  <-- SYRTHES coupling structure
+ *   tf            <-- fluid temperature
+ *   ctbimp        <-> implicit contribution
+ *   ctbexp        <-> explicit contribution
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr4_coupling_ts_contrib(cs_syr4_coupling_t  *syr_coupling,
+                            const cs_real_t      tf[],
+                            cs_real_t            ctbimp[],
+                            cs_real_t            ctbexp[]);
 
 /*----------------------------------------------------------------------------*/
 

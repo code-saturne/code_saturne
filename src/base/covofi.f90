@@ -229,9 +229,6 @@ endif
 
 do iel = 1, ncel
   rovsdt(iel) = 0.d0
-enddo
-
-do iel = 1, ncel
   smbrs(iel) = 0.d0
 enddo
 
@@ -276,6 +273,18 @@ else
 !        Diagonale
     rovsdt(iel) = max(-rovsdt(iel),zero)
   enddo
+endif
+
+! --> Couplage volumique avec Syrthes
+!     Ordre 2 non pris en compte
+
+if (iscal.eq.iscalt) then
+  call cptssy &
+  !==========
+( nvar   , nscal  ,                                              &
+  iscala ,                                                       &
+  dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+  smbrs  , rovsdt )
 endif
 
 ! --> Physique particulieres

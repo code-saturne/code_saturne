@@ -914,8 +914,20 @@ do while (iterns.le.nterup)
   !     UNE FOIS CERTAINS CODES DE CONDITIONS LIMITES INITIALISES PAR
   !     L'UTILISATEUR, ON PEUT COMPLETER CES CODES PAR LES COUPLAGES
   !     AUX BORDS (TYPE SYRTHES), SAUF SI ON DOIT Y REPASSER ENSUITE
+  !     POUR CENTRALISER CE QUI EST RELATIF AU COUPLAGE AVEC SYRTHES
+  !     ON POSITIONNE ICI L'APPEL AU COUPLAGE VOLUMIQUE SYRTHES
+  !     UTILE POUR BENIFICER DE LA DERNIERE VITESSE CALCULEE SI ON
+  !     BOUCLE SUR U/P.
+  !     LE COUPLAGE VOLUMIQUE DOIT ETRE APPELE AVANT LE SURFACIQUE
+  !     POUR RESPECTER LE SCHEMA DE COMMUNICATION
 
   if (itrfin.eq.1 .and. itrfup.eq.1) then
+
+    call cpvosy &
+    !==========
+  ( nvar   , nscal  , isvtb  ,                                 &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,      &
+    hbord  , tbord  )
 
     call coupbi(nfabor, nvar, nscal, icodcl, rcodcl)
     !==========

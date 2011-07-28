@@ -144,6 +144,8 @@ coupbo.f90 \
 codits.f90 \
 coditv.f90 \
 covofi.f90 \
+cptssy.f90 \
+cpvosy.f90 \
 cregeo.f90 \
 cs_ale.c \
 cs_ast_coupling.c \
@@ -288,6 +290,7 @@ $(top_srcdir)/users/base/ustsv2.f90 \
 $(top_srcdir)/users/base/usvima.f90 \
 $(top_srcdir)/users/base/usvist.f90 \
 $(top_srcdir)/users/base/usvort.f90 \
+$(top_srcdir)/users/base/usvosy.f90 \
 $(top_srcdir)/users/base/usvpst.f90 \
 $(top_srcdir)/users/base/cs_user_join.c \
 $(top_srcdir)/users/base/cs_user_mesh_input.c \

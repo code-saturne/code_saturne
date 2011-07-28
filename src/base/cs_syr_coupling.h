@@ -89,6 +89,44 @@ void CS_PROCF(nbcsyr, NBCSYR)
 );
 
 /*----------------------------------------------------------------------------
+ * Test if the given SYRTHES coupling number is a surface coupling
+ * Return 1 if true else 0
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE TSURSY
+ * *****************
+ *
+ * INTEGER          cplnum     : <-- : number of the SYRTHES coupling
+ * INTEGER          issurf     : --> : 1 if surface coupling else 0
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(tsursy, TSURSY)
+(
+ cs_int_t  *const cplnum,
+ cs_int_t  *issurf
+);
+
+/*----------------------------------------------------------------------------
+ * Test if the given SYRTHES coupling number is a volume coupling
+ * Return 1 if true else 0
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE TVOLSY
+ * *****************
+ *
+ * INTEGER          cplnum     : <-- : number of the SYRTHES coupling
+ * INTEGER          issurf     : --> : 1 if volume coupling else 0
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(tvolsy, TVOLSY)
+(
+ cs_int_t  *const cplnum,
+ cs_int_t  *isvol
+);
+
+/*----------------------------------------------------------------------------
  * Create nodal coupled mesh.
  * Send vertices's coordinates and connectivity of coupled mesh.
  *
@@ -150,39 +188,43 @@ void CS_PROCF(itdsy3, ITDSY3)
 );
 
 /*----------------------------------------------------------------------------
- * Get number of boundary faces coupled with SYRTHES.
+ * Get number of coupled elements with SYRTHES.
  *
  * Fortran Interface:
  *
- * SUBROUTINE NBFSYR
+ * SUBROUTINE NBESYR
  * *****************
  *
  * INTEGER          coupl_num       : --> : coupling number
- * INTEGER          n_coupl_faces   : <-- : number of coupled boundary faces
+ * INTEGER          mode            : --> : 0 (surface); 1 (volume)
+ * INTEGER          n_coupl_elts    : <-- : number of coupled elements
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(nbfsyr, NBFSYR)
+void CS_PROCF(nbesyr, NBESYR)
 (
  const cs_int_t  *coupl_num,
-       cs_int_t  *n_coupl_faces
+ const cs_int_t  *mode,
+       cs_int_t  *n_coupl_elts
 );
 
 /*----------------------------------------------------------------------------
- * Get local numbering of coupled faces
+ * Get local numbering of coupled elements
  *
  * Fortran interface:
  *
- * SUBROUTINE LFASYR
+ * SUBROUTINE LELTSY
  * *****************
  *
  * INTEGER      coupl_num       : --> : coupling number
- * INTEGER      coupl_face_list : <-- : list of coupled boundary faces
+ * INTEGER      mode            : --> : 0 (surface); 1 (volume)
+ * INTEGER      coupl_elt_list  : <-- : list of coupled elements
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(lfasyr, LFASYR)
+void CS_PROCF(leltsy, LELTSY)
 (
- const cs_int_t   *coupl_num,
-       cs_lnum_t  *coupl_face_list
+ const cs_int_t    *coupl_num,
+ const cs_int_t    *mode,
+       cs_lnum_t   *coupl_elt_list
 );
 
 /*----------------------------------------------------------------------------
@@ -204,17 +246,19 @@ void CS_PROCF (ussyrc, USSYRC)
  *
  * Fortran Interface:
  *
- * SUBROUTINE VARSYI (NUMSYR, TWALL)
+ * SUBROUTINE VARSYI
  * *****************
  *
  * INTEGER          NUMSYR      : --> : Number of SYRTHES coupling
- * DOUBLE PRECISION TWALL       : <-- : Wall temerature
+ * INTEGER          MODE        : --> : 0 (surface); 1 (volume)
+ * DOUBLE PRECISION TSOLID      : <-- : Solid temperature
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (varsyi, VARSYI)
 (
  cs_int_t   *numsyr,
- cs_real_t  *twall
+ cs_int_t   *mode,
+ cs_real_t  *tsolid
 );
 
 /*----------------------------------------------------------------------------
@@ -222,19 +266,46 @@ void CS_PROCF (varsyi, VARSYI)
  *
  * Fortran Interface:
  *
- * SUBROUTINE VARSYO (NUMSYR, TFLUID, HWALL)
+ * SUBROUTINE VARSYO
  * *****************
  *
  * INTEGER          NUMSYR      : --> : Number of SYRTHES coupling
+ * INTEGER          MODE        : --> : 0 (surface); 1 (volume)
+ * INTEGER          LSTELT      : --> : List of coupled elements
  * DOUBLE PRECISION TFLUID      : --> : Fluid temperature
- * DOUBLE PRECISION HWALL       : --> : Exchange coefficient
+ * DOUBLE PRECISION HFLUID      : --> : Exchange coefficient
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (varsyo, VARSYO)
 (
  cs_int_t   *numsyr,
+ cs_int_t   *mode,
+ cs_int_t   *lstelt,
  cs_real_t  *tfluid,
- cs_real_t  *hwall
+ cs_real_t  *hfluid
+);
+
+/*----------------------------------------------------------------------------
+ * Compute the explicit/implicit contribution to source terms in case of
+ * volume coupling with SYRTHES4
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CTBVSY
+ * *****************
+ *
+ * INTEGER          NUMSYR      : --> : Number of SYRTHES coupling
+ * DOUBLE PRECISION TFLUID      : --> : Fluid temperature
+ * DOUBLE PRECISION CTBIMP      : <-> : Implicit contribution
+ * DOUBLE PRECISION CTBEXP      : <-> : Explicit contribution
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ctbvsy, CTBVSY)
+(
+ cs_int_t   *numsyr,
+ cs_real_t  *tfluid,
+ cs_real_t  *ctbimp,
+ cs_real_t  *ctbexp
 );
 
 /*============================================================================
@@ -288,6 +359,24 @@ cs_syr_coupling_all_init(int  port_num);
 
 void
 cs_syr_coupling_all_finalize(void);
+
+/*----------------------------------------------------------------------------
+ * Set conservativity forcing flag to True (1) or False (0) for all defined
+ * SYRTHES couplings
+ *
+ * parameter:
+ *   flag     <--  Conservativity forcing flag to set
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_set_conservativity(int  flag);
+
+/*----------------------------------------------------------------------------
+ * Set explicit treatment for the source terms in SYRTHES volume couplings
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_set_explicit_treatment(void);
 
 /*----------------------------------------------------------------------------*/
 

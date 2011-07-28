@@ -109,6 +109,7 @@ typedef struct {
   char    *cell_sel_c;     /* Cell selection criteria */
   int      verbosity;      /* Verbosity level */
   int      visualization;  /* Visualization level */
+  int      conservativity; /* Conservativity forcing flag */
 
 } _cs_syr_coupling_builder_t;
 
@@ -575,6 +576,146 @@ void CS_PROCF(nbcsyr, NBCSYR)
 }
 
 /*----------------------------------------------------------------------------
+ * Test if the given SYRTHES coupling number is a surface coupling
+ * Return 1 if true else 0
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE TSURSY
+ * *****************
+ *
+ * INTEGER          cplnum     : <-- : number of the SYRTHES coupling
+ * INTEGER          issurf     : --> : 1 if surface coupling else 0
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(tsursy, TSURSY)
+(
+ cs_int_t  *const cplnum,
+ cs_int_t  *issurf
+)
+{
+  int n_couplings = 0;
+
+  *issurf = 0; /* Default initialization */
+
+  assert(_cs_glob_n_syr_cp > -1);
+
+  if (_cs_glob_n_syr_cp == _cs_glob_n_syr3_cp + _cs_glob_n_syr4_cp) {
+
+    n_couplings = _cs_glob_n_syr_cp;
+
+    if (*cplnum < 1 || *cplnum > n_couplings)
+      bft_error(__FILE__, __LINE__, 0,
+                _("SYRTHES coupling number %d impossible; "
+                  "there are %d couplings"), *cplnum, n_couplings);
+
+    if (*cplnum <= _cs_glob_n_syr3_cp) { /* All SYRTHES3 couplings are
+                                            surface coupling */
+      *issurf = 1;
+    }
+    else {
+      cs_syr4_coupling_t *syr_coupling
+        = cs_syr4_coupling_by_id(*cplnum - _cs_glob_n_syr3_cp - 1);
+
+      *issurf = cs_syr4_coupling_is_surf(syr_coupling);
+
+    }
+
+  }
+  else { /* Couplings are still defined in the builder structure */
+
+    if (_syr_coupling_builder_size == _cs_glob_n_syr_cp) {
+
+      _cs_syr_coupling_builder_t *scb = NULL;
+
+      n_couplings = _cs_glob_n_syr_cp;
+
+      if (*cplnum < 1 || *cplnum > n_couplings)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("SYRTHES coupling number %d impossible; "
+                    "there are %d couplings"), *cplnum, n_couplings);
+
+      scb = _syr_coupling_builder + (*cplnum) - 1;
+
+      if (scb->face_sel_c != NULL)
+        *issurf = 1;
+
+    }
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Test if the given SYRTHES coupling number is a volume coupling
+ * Return 1 if true else 0
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE TVOLSY
+ * *****************
+ *
+ * INTEGER          cplnum     : <-- : number of the SYRTHES coupling
+ * INTEGER          issurf     : --> : 1 if volume coupling else 0
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(tvolsy, TVOLSY)
+(
+ cs_int_t  *const cplnum,
+ cs_int_t  *isvol
+)
+{
+  int n_couplings = 0;
+
+  *isvol = 0; /* Default initialization */
+
+  assert(_cs_glob_n_syr_cp > -1);
+
+  if (_cs_glob_n_syr_cp == _cs_glob_n_syr3_cp + _cs_glob_n_syr4_cp) {
+
+    n_couplings = _cs_glob_n_syr_cp;
+
+    if (*cplnum < 1 || *cplnum > n_couplings)
+      bft_error(__FILE__, __LINE__, 0,
+                _("SYRTHES coupling number %d impossible; "
+                  "there are %d couplings"), *cplnum, n_couplings);
+
+    if (*cplnum > _cs_glob_n_syr3_cp) { /* All SYRTHES3 couplings are
+                                           surface coupling */
+
+      cs_syr4_coupling_t *syr_coupling
+        = cs_syr4_coupling_by_id(*cplnum - _cs_glob_n_syr3_cp - 1);
+
+      *isvol = cs_syr4_coupling_is_vol(syr_coupling);
+
+    }
+
+  }
+  else { /* Couplings are still defined in the builder structure */
+
+    if (_syr_coupling_builder_size == _cs_glob_n_syr_cp) {
+
+      _cs_syr_coupling_builder_t *scb = NULL;
+
+      n_couplings = _cs_glob_n_syr_cp;
+
+      if (*cplnum < 1 || *cplnum > n_couplings)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("SYRTHES coupling number %d impossible; "
+                    "there are %d couplings"), *cplnum, n_couplings);
+
+      scb = _syr_coupling_builder + (*cplnum) - 1;
+
+      if (scb->cell_sel_c != NULL)
+        *isvol = 1;
+
+    }
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
  * Create nodal coupled mesh.
  *
  * Send vertices's coordinates and connectivity of coupled mesh for SYRTHES 3,
@@ -666,21 +807,23 @@ void CS_PROCF(itdsy3, ITDSY3)
 }
 
 /*----------------------------------------------------------------------------
- * Get number of boundary faces coupled with SYRTHES.
+ * Get number of coupled elements with SYRTHES.
  *
  * Fortran Interface:
  *
- * SUBROUTINE NBFSYR
+ * SUBROUTINE NBESYR
  * *****************
  *
  * INTEGER          coupl_num       : --> : coupling number
- * INTEGER          n_coupl_faces   : <-- : number of coupled boundary faces
+ * INTEGER          mode            : --> : 0 (surface); 1 (volume)
+ * INTEGER          n_coupl_elts    : <-- : number of coupled elements
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(nbfsyr, NBFSYR)
+void CS_PROCF(nbesyr, NBESYR)
 (
  const cs_int_t  *coupl_num,
-       cs_int_t  *n_coupl_faces
+ const cs_int_t  *mode,
+       cs_int_t  *n_coupl_elts
 )
 {
   int n_couplings = _cs_glob_n_syr3_cp + _cs_glob_n_syr4_cp;
@@ -695,33 +838,34 @@ void CS_PROCF(nbfsyr, NBFSYR)
     if (*coupl_num <= _cs_glob_n_syr3_cp) {
       cs_syr3_coupling_t *syr_coupling
         = cs_syr3_coupling_by_id(*coupl_num - 1);
-      *n_coupl_faces = cs_syr3_coupling_get_n_faces(syr_coupling);
+      *n_coupl_elts = cs_syr3_coupling_get_n_faces(syr_coupling);
     }
     else {
       cs_syr4_coupling_t *syr_coupling
         = cs_syr4_coupling_by_id(*coupl_num - _cs_glob_n_syr3_cp - 1);
-      *n_coupl_faces = cs_syr4_coupling_get_n_faces(syr_coupling);
+      *n_coupl_elts = cs_syr4_coupling_get_n_elts(syr_coupling, *mode);
     }
   }
 }
 
-
 /*----------------------------------------------------------------------------
- * Get local numbering of coupled faces
+ * Get local numbering of coupled elements
  *
  * Fortran interface:
  *
- * SUBROUTINE LFASYR
+ * SUBROUTINE LELTSY
  * *****************
  *
  * INTEGER      coupl_num       : --> : coupling number
- * INTEGER      coupl_face_list : <-- : list of coupled boundary faces
+ * INTEGER      mode            : --> : 0 (surface); 1 (volume)
+ * INTEGER      coupl_elt_list  : <-- : list of coupled elements
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(lfasyr, LFASYR)
+void CS_PROCF(leltsy, LELTSY)
 (
- const cs_int_t   *coupl_num,
-       cs_lnum_t  *coupl_face_list
+ const cs_int_t    *coupl_num,
+ const cs_int_t    *mode,
+       cs_lnum_t   *coupl_elt_list
 )
 {
   int n_couplings = _cs_glob_n_syr3_cp + _cs_glob_n_syr4_cp;
@@ -735,12 +879,12 @@ void CS_PROCF(lfasyr, LFASYR)
     if (*coupl_num <= _cs_glob_n_syr3_cp) {
       cs_syr3_coupling_t *syr_coupling
         = cs_syr3_coupling_by_id(*coupl_num - 1);
-      cs_syr3_coupling_get_face_list(syr_coupling, coupl_face_list);
+      cs_syr3_coupling_get_face_list(syr_coupling, coupl_elt_list);
     }
     else {
       cs_syr4_coupling_t *syr_coupling
         = cs_syr4_coupling_by_id(*coupl_num - _cs_glob_n_syr3_cp - 1);
-      cs_syr4_coupling_get_face_list(syr_coupling, coupl_face_list);
+      cs_syr4_coupling_get_elt_list(syr_coupling, coupl_elt_list, *mode);
     }
   }
 }
@@ -767,17 +911,19 @@ void CS_PROCF (ussyrc, USSYRC)
  *
  * Fortran Interface:
  *
- * SUBROUTINE VARSYI (NUMSYR, TWALL)
+ * SUBROUTINE VARSYI
  * *****************
  *
  * INTEGER          NUMSYR      : --> : Number of SYRTHES coupling
- * DOUBLE PRECISION TWALL       : <-- : Wall temerature
+ * INTEGER          MODE        : --> : 0 (surface); 1 (volume)
+ * DOUBLE PRECISION TSOLID      : <-- : Solid temperature
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (varsyi, VARSYI)
 (
  cs_int_t   *numsyr,
- cs_real_t  *twall
+ cs_int_t   *mode,
+ cs_real_t  *tsolid
 )
 {
   int n_couplings = _cs_glob_n_syr3_cp + _cs_glob_n_syr4_cp;
@@ -789,12 +935,12 @@ void CS_PROCF (varsyi, VARSYI)
               *numsyr, n_couplings);
   else {
     if (*numsyr <= _cs_glob_n_syr3_cp) {
-      cs_syr3_messages_recv_twall(*numsyr, twall);
+      cs_syr3_messages_recv_twall(*numsyr, tsolid);
     }
     else {
       cs_syr4_coupling_t *syr_coupling
         = cs_syr4_coupling_by_id(*numsyr - _cs_glob_n_syr3_cp -1);
-      cs_syr4_coupling_recv_twall(syr_coupling, twall);
+      cs_syr4_coupling_recv_tsolid(syr_coupling, tsolid, *mode);
     }
   }
 }
@@ -804,19 +950,23 @@ void CS_PROCF (varsyi, VARSYI)
  *
  * Fortran Interface:
  *
- * SUBROUTINE VARSYO (NUMSYR, TFLUID, HWALL)
+ * SUBROUTINE VARSYO
  * *****************
  *
  * INTEGER          NUMSYR      : --> : Number of SYRTHES coupling
+ * INTEGER          MODE        : --> : 0 (surface); 1 (volume)
+ * INTEGER          LSTELT      : --> : List of coupled elements
  * DOUBLE PRECISION TFLUID      : --> : Fluid temperature
- * DOUBLE PRECISION HWALL       : --> : Exchange coefficient
+ * DOUBLE PRECISION HFLUID      : --> : Exchange coefficient
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (varsyo, VARSYO)
 (
  cs_int_t   *numsyr,
+ cs_int_t   *mode,
+ cs_int_t   *lstelt,
  cs_real_t  *tfluid,
- cs_real_t  *hwall
+ cs_real_t  *hfluid
 )
 {
   int n_couplings = _cs_glob_n_syr3_cp + _cs_glob_n_syr4_cp;
@@ -828,13 +978,59 @@ void CS_PROCF (varsyo, VARSYO)
               *numsyr, n_couplings);
   else {
     if (*numsyr <= _cs_glob_n_syr3_cp)
-      cs_syr3_messages_send_tf_hwall(*numsyr, tfluid, hwall);
+      cs_syr3_messages_send_tf_hwall(*numsyr, tfluid, hfluid);
     else {
       cs_syr4_coupling_t *syr_coupling
         = cs_syr4_coupling_by_id(*numsyr - _cs_glob_n_syr3_cp - 1);
-      cs_syr4_coupling_send_tf_hwall(syr_coupling, tfluid, hwall);
+      cs_syr4_coupling_send_tf_hf(syr_coupling, lstelt, tfluid, hfluid, *mode);
     }
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the explicit/implicit contribution to source terms in case of
+ * volume coupling with SYRTHES4
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CTBVSY
+ * *****************
+ *
+ * INTEGER          NUMSYR      : --> : Number of SYRTHES coupling
+ * DOUBLE PRECISION TFLUID      : --> : Fluid temperature
+ * DOUBLE PRECISION CTBIMP      : <-> : Implicit contribution
+ * DOUBLE PRECISION CTBEXP      : <-> : Explicit contribution
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ctbvsy, CTBVSY)
+(
+ cs_int_t   *numsyr,
+ cs_real_t  *tfluid,
+ cs_real_t  *ctbimp,
+ cs_real_t  *ctbexp
+)
+{
+  int n_couplings = _cs_glob_n_syr3_cp + _cs_glob_n_syr4_cp;
+
+  if (*numsyr < 1 || *numsyr > n_couplings)
+    bft_error(__FILE__, __LINE__, 0,
+              _("SYRTHES coupling number %d impossible; "
+                "there are %d couplings"),
+              *numsyr, n_couplings);
+
+  if (*numsyr <= _cs_glob_n_syr3_cp)
+    bft_error(__FILE__, __LINE__, 0,
+              _("SYRTHES volume coupling is only possible with SYRTHES4;\n "
+                "Switch to a newer version of SYRTHES.\n"));
+
+  {
+    cs_syr4_coupling_t *syr_coupling
+      = cs_syr4_coupling_by_id(*numsyr - _cs_glob_n_syr3_cp - 1);
+
+    cs_syr4_coupling_ts_contrib(syr_coupling, tfluid, ctbimp, ctbexp);
+
+  }
+
 }
 
 /*============================================================================
@@ -868,6 +1064,8 @@ cs_syr_coupling_define(const char  *syrthes_name,
                        int          verbosity,
                        int          visualization)
 {
+  int  conservativity = 1; /* Default value */
+
   _cs_syr_coupling_builder_t *scb = NULL;
 
   /* Add corresponding coupling to temporary SYRTHES couplings array */
@@ -921,6 +1119,7 @@ cs_syr_coupling_define(const char  *syrthes_name,
 
   scb->verbosity = verbosity;
   scb->visualization = visualization;
+  scb->conservativity = conservativity;
 
   _syr_coupling_builder_size += 1;
 }
@@ -979,6 +1178,31 @@ cs_syr_coupling_all_finalize(void)
 {
   cs_syr3_coupling_all_destroy();
   cs_syr4_coupling_all_destroy();
+}
+
+/*----------------------------------------------------------------------------
+ * Set conservativity forcing flag to True (1) or False (0) for all defined
+ * SYRTHES couplings
+ *
+ * parameter:
+ *   flag     <--  Conservativity forcing flag to set
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_set_conservativity(int  flag)
+{
+  assert(flag == 0 || flag == 1);
+  cs_syr4_coupling_set_conservativity(flag);
+}
+
+/*----------------------------------------------------------------------------
+ * Set explicit treatment for the source terms in SYRTHES volume couplings
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_set_explicit_treatment(void)
+{
+  cs_syr4_coupling_set_explicit_treatment();
 }
 
 /*----------------------------------------------------------------------------*/

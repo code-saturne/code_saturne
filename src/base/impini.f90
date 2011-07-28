@@ -87,7 +87,7 @@ integer          iok20 , iok21 , iok30 , iok31 , iok50 , iok51 , iok60
 integer          iok70
 integer          ii    , jj    , ivar  , iiesca, iest
 integer          ipp   , iwar  , imom
-integer          nbccou
+integer          nbccou, nbsucp, nbvocp, issurf, isvol
 
 !===============================================================================
 
@@ -2500,9 +2500,27 @@ call nbcsyr (nbccou)
 
 if (nbccou .ge. 1) then
 
-  write (nfecra, 8000)
-  write (nfecra, 8010) nbccou
+  write(nfecra,8000)
+  write(nfecra,8010) nbccou
 
+  nbsucp = 0
+  nbvocp = 0
+
+  do ii = 1, nbccou
+
+     ! Add a new surface coupling if detected
+     issurf = 0
+     call tsursy(ii, issurf)
+     nbsucp = nbsucp + issurf
+
+     ! Add a new volume coupling if detected
+     isvol = 0
+     call tvolsy(ii, isvol)
+     nbvocp = nbvocp + isvol
+
+  enddo
+
+  write(nfecra,8020) nbsucp, nbvocp
   write(nfecra,8030)
   do ii = 1, nscal
     chaine=nomvar(ipprtp(isca(ii)))
@@ -2523,6 +2541,9 @@ endif
 '    ----------------'                                         ,/)
  8010 format(                                                           &
 '       NBCCOU = ',4X,I10,    ' (Nombre de couplages         )',/)
+ 8020 format(                                                           &
+'       dont ',8X,I10, ' couplage(s) surfacique(s)',/,                  &
+'       dont ',8X,I10, ' couplage(s) volumique(s)',/)
  8030 format(                                                           &
                                                                 /,&
 '  -- Scalaires couples'                                       ,/,&
@@ -2544,6 +2565,9 @@ endif
 '    ----------------'                                         ,/)
  8010 format(                                                           &
 '       NBCCOU = ',4X,I10,    ' (Number of couplings         )',/)
+ 8020 format(                                                           &
+'       with ',8X,I10, ' surface coupling(s)',/,                        &
+'       with ',8X,I10, ' volume coupling(s)',/)
  8030 format(                                                           &
                                                                 /,&
 '  -- Coupled scalars'                                         ,/,&

@@ -29,7 +29,7 @@ subroutine coupbo &
 !================
 
  ( nvar   , nscal  , isvtb  ,                                     &
-   ncp , ncv , ientha ,                                           &
+   ncp    , ncv    , ientha ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cpcst  , cp     , cvcst  , cv     ,                            &
@@ -46,19 +46,24 @@ subroutine coupbo &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncp              ! i  ! <-- ! dimension de cp (ncelet ou 1)                  !
-! ncv              ! i  ! <-- ! dimension de cv (ncelet ou 1)                  !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
+! isvtb            ! i  ! <-- !                                                !
+! ncp              ! i  ! <-- ! dimension de cp (ncelet ou 1)                  !
+! ncv              ! i  ! <-- ! dimension de cv (ncelet ou 1)                  !
 ! ientha           ! i  ! <-- ! 1 si tparoi est une enthalpie                  !
 !                  ! i  ! <-- ! 2 si tparoi est une energie                    !
 !                  !    !     !    (compressible)                              !
+! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
+! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
+! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
+! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
+!  (nfabor, *)     !    !     !                                                !
 ! cpcst            ! r  ! <-- ! chaleur specifique si constante                !
-! cvcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! cp(ncp)          ! ra ! <-- ! chaleur specifique si variable                 !
+! cvcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! cv(ncp)          ! ra ! <-- ! chaleur specifique si variable                 !
 ! hbord(nfabor)    ! ra ! <-- ! coefficients d'echange aux bords               !
 ! tbord(nfabor)    ! ra ! <-- ! temperatures aux bords                         !
@@ -101,9 +106,10 @@ double precision hbord(nfabor),tbord(nfabor)
 
 integer          nbccou, inbcou, inbcoo, nbfcou, ifac, iloc, iel
 integer          itflui, ihparo
-integer          mode
+integer          mode, flag
 integer          iccfth, imodif
 integer          iepsel, iepsfa, igamag, ixmasm, ifinwa
+integer          issurf
 double precision enthal, temper, energ, cvt
 
 integer, dimension(:), allocatable :: lfcou
@@ -132,126 +138,140 @@ call nbcsyr(nbccou)
 
 do inbcou = 1, nbccou
 
-  ! Number of boundary faces per coupling case
   inbcoo = inbcou
-  call nbfsyr(inbcoo, nbfcou)
+
+  ! Test if this coupling is a surface coupling
+  ! This is a surface coupling if issurf = 1
+
+  call tsursy(inbcoo, issurf)
   !==========
 
-  ! Memory management to build arrays
-  allocate(lfcou(nbfcou))
-  allocate(tfluid(nbfcou))
-  allocate(hparoi(nbfcou))
+  if (issurf.eq.1) then
 
-  ! Compressible: coupling with energy
+    mode = 0 ! Surface coupling
 
-  if (ientha .eq. 2) then
-    iepsel = 1
-    iepsfa = iepsel + ncelet
-    igamag = iepsfa + nfabor
-    ixmasm = igamag + ncelet
-    ifinwa = ixmasm + ncelet
-    allocate(wa(ifinwa))
-  endif
+    ! Number of boundary faces per coupling case
 
-  ! Loop on coupled faces to compute coefficients
+    call nbesyr(inbcoo, mode, nbfcou)
+    !==========
 
-  inbcoo = inbcou
-  call lfasyr(inbcoo, lfcou(1))
-  !==========
+    ! Memory management to build arrays
+    allocate(lfcou(nbfcou))
+    allocate(tfluid(nbfcou))
+    allocate(hparoi(nbfcou))
 
-  do iloc = 1, nbfcou
+    ! Compressible: coupling with energy
 
-    ifac = lfcou(iloc)
+    if (ientha .eq. 2) then
+      iepsel = 1
+      iepsfa = iepsel + ncelet
+      igamag = iepsfa + nfabor
+      ixmasm = igamag + ncelet
+      ifinwa = ixmasm + ncelet
+      allocate(wa(ifinwa))
+    endif
 
-    ! Saved fluid temperatures and exchange coefficients
-    tfluid(iloc) = tbord(ifac)
-    hparoi(iloc) = hbord(ifac)
+    ! Loop on coupled faces to compute coefficients
 
-  enddo
+    inbcoo = inbcou
+    call leltsy(inbcoo, mode, lfcou)
+    !==========
 
-  ! In enthalpy formulation, transform to temperatures for SYRTHES
-  !  To conserve flux Phi = (lambda/d     ) Delta T
-  !                oe Phi = (lambda/(d Cp)) Delta H
-  !  we multiply hbord = lambda/(d Cp) by Cp in the adjacent cell.
-  !  Conservation is not guaranteed, so we add a warning.
-
-  if (ientha.eq.1) then
-
-    write(nfecra,1000)
-    mode = 1
     do iloc = 1, nbfcou
+
       ifac = lfcou(iloc)
-      iel  = ifabor(ifac)
-      enthal = tfluid(iloc)
-      call usthht (mode   , enthal , temper  )
-      !==========
-      tfluid(iloc) = temper
-      if (ncp.eq.ncelet) then
-        hparoi(iloc) = hparoi(iloc)*cp(iel)
-      else
-        hparoi(iloc) = hparoi(iloc)*cpcst
-      endif
+
+      ! Saved fluid temperatures and exchange coefficients
+      tfluid(iloc) = tbord(ifac)
+      hparoi(iloc) = hbord(ifac)
+
     enddo
 
-  else if (ientha.eq.2) then
-
-    ! In energy formulation, transform to temperatures for SYRTHES
+    ! In enthalpy formulation, transform to temperatures for SYRTHES
     !  To conserve flux Phi = (lambda/d     ) Delta T
-    !                oe Phi = (lambda/(d Cp)) Delta H
-    !  we multiply hbord = lambda/(d Cp) by Cv in the adjacent cell.
-    !  Note that Ei = Cv Ti + 1/2 Ui*Ui + Epsilon_sup_i
-    !  and  that Ep = Cv Tp + 1/2 Ui*Ui + Epsilon_sup_i
-    !    (the difference is thus Cv Delta T)
+    !                or Phi = (lambda/(d Cp)) Delta H
+    !  we multiply hbord = lambda/(d Cp) by Cp in the adjacent cell.
+    !  Conservation is not guaranteed, so we add a warning.
 
-    ! Modify temperature and exchange coefficient
+    if (ientha.eq.1) then
 
-    ! Compute e - CvT
+      write(nfecra,1000)
+      flag = 1
+      do iloc = 1, nbfcou
+        ifac = lfcou(iloc)
+        iel  = ifabor(ifac)
+        enthal = tfluid(iloc)
+        call usthht(flag, enthal, temper)
+        !==========
+        tfluid(iloc) = temper
+        if (ncp.eq.ncelet) then
+          hparoi(iloc) = hparoi(iloc)*cp(iel)
+        else
+          hparoi(iloc) = hparoi(iloc)*cpcst
+        endif
+      enddo
 
-    iccfth = 7
-    imodif = 0
+    else if (ientha.eq.2) then
 
-    call uscfth                                                   &
+      ! In energy formulation, transform to temperatures for SYRTHES
+      !  To conserve flux Phi = (lambda/d     ) Delta T
+      !                or Phi = (lambda/(d Cp)) Delta H
+      !  we multiply hbord = lambda/(d Cp) by Cv in the adjacent cell.
+      !  Note that Ei = Cv Ti + 1/2 Ui*Ui + Epsilon_sup_i
+      !  and  that Ep = Cv Tp + 1/2 Ui*Ui + Epsilon_sup_i
+      !    (the difference is thus Cv Delta T)
+
+      ! Modify temperature and exchange coefficient
+
+      ! Compute e - CvT
+
+      iccfth = 7
+      imodif = 0
+
+      call uscfth                                                   &
+      !==========
+    ( nvar   , nscal  ,                                              &
+      iccfth , imodif ,                                              &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      coefa  , coefb  ,                                              &
+      wa(iepsel) , wa(iepsfa) , wa(igamag) , wa(ixmasm) )
+      !---------   ---------
+
+      do iloc = 1, nbfcou
+        ifac  = lfcou(iloc)
+        iel   = ifabor(ifac)
+        energ = tfluid(iloc)
+        cvt   = energ                                               &
+                      -(0.5d0*( rtp(iel,iu)**2                      &
+                               +rtp(iel,iv)**2                      &
+                               +rtp(iel,iw)**2)                     &
+                        + wa(iepsel+iel-1)           )
+        if (ncv.eq.ncelet) then
+          tfluid(iloc) = cvt/cv(iel)
+          hparoi(iloc) = hparoi(iloc)*cv(iel)
+        else
+          tfluid(iloc) = cvt/cvcst
+          hparoi(iloc) = hparoi(iloc)*cvcst
+        endif
+      enddo
+
+    endif
+
+    ! Send fluid temperature and exchange coefficient
+
+    inbcoo = inbcou
+    call varsyo(inbcoo, mode, lfcou, tfluid, hparoi)
     !==========
- ( nvar   , nscal  ,                                              &
-   iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   wa(iepsel) , wa(iepsfa) , wa(igamag) , wa(ixmasm) )
-   !---------   ---------
 
-    do iloc = 1, nbfcou
-      ifac  = lfcou(iloc)
-      iel   = ifabor(ifac)
-      energ = tfluid(iloc)
-      cvt   = energ                                               &
-             -(0.5d0*( rtp(iel,iu)**2                      &
-                      +rtp(iel,iv)**2                      &
-                      +rtp(iel,iw)**2)                     &
-               + wa(iepsel+iel-1)           )
-       if (ncv.eq.ncelet) then
-         tfluid(iloc) = cvt/cv(iel)
-         hparoi(iloc) = hparoi(iloc)*cv(iel)
-       else
-         tfluid(iloc) = cvt/cvcst
-         hparoi(iloc) = hparoi(iloc)*cvcst
-       endif
-     enddo
+    ! Free memory
+    if (ientha .eq. 2) deallocate(wa)
+    deallocate(hparoi)
+    deallocate(tfluid)
+    deallocate(lfcou)
 
-  endif
+  endif ! This coupling is a surface coupling
 
-  ! Send fluid temperature and exchange coefficient
-
-  inbcoo = inbcou
-  call varsyo (inbcoo, tfluid(1), hparoi(1))
-  !==========
-
-  ! Free memory
-  if (ientha .eq. 2) deallocate(wa)
-  deallocate(hparoi)
-  deallocate(tfluid)
-  deallocate(lfcou)
-
-enddo
+enddo ! Loop on all syrthes couplings
 
 !===============================================================================
 ! End of boundary couplings

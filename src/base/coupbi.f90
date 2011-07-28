@@ -100,7 +100,8 @@ double precision rcodcl(nfabor,nvar,3)
 integer          ll, nbccou, inbcou, inbcoo, nbfcou
 integer          ifac, iloc, iscal
 integer          icldef
-integer          mode
+integer          mode, flag
+integer          issurf
 double precision temper, enthal
 
 integer, dimension(:), allocatable :: lfcou
@@ -122,89 +123,103 @@ call nbcsyr (nbccou)
 
 do inbcou = 1, nbccou
 
-  ! Number of boundary faces per coupling case
   inbcoo = inbcou
-  call nbfsyr (inbcoo, nbfcou)
+
+  ! Test if this coupling is a surface coupling
+  ! This is a surface coupling if issurf = 1
+
+  call tsursy(inbcoo, issurf)
   !==========
 
-  ! Memory management to receive array
-  allocate(lfcou(nbfcou))
-  allocate(thpar(nbfcou))
+  if (issurf.eq.1) then
 
-  ! Read wall temperature and interpolate if necessary.
-  call varsyi (inbcou, thpar(1))
-  !==========
+    mode = 0 ! surface coupling
 
-  ! Prescribe wall temperature
-  inbcoo = inbcou
-  call lfasyr(inbcoo, lfcou(1))
-  !==========
+    ! Number of boundary faces per coupling case
 
-  ! Default condition
-  icldef = 5
+    call nbesyr(inbcoo, mode, nbfcou)
+    !==========
 
-  do iscal = 1, nscal
+    ! Memory management to receive array
+    allocate(lfcou(nbfcou))
+    allocate(thpar(nbfcou))
 
-    if (icpsyr(iscal).eq.1) then
+    ! Read wall temperature and interpolate if necessary.
 
-      ! For scalars coupled with SYRTHES, prescribe a Dirichlet
-      ! condition at coupled faces.
-      ! For the time being, pass here only once, as only one scalar is
-      ! coupled with SYRTHES.
-      ! For the compressible module, solve in energy, but save the
-      ! temperature separately, for BC's to be clearer.
+    call varsyi(inbcou, mode, thpar)
+    !==========
 
-      ll = isca(iscal)
-      if (ippmod(icompf).ge.0) then
-        if (iscal.eq.ienerg) then
-          ll = isca(itempk)
-        else
-          write(nfecra,9000)ienerg,iscal
-          call csexit (1)
+    ! Prescribe wall temperature
+    inbcoo = inbcou
+    call leltsy(inbcoo, mode, lfcou)
+    !==========
+
+    ! Default condition
+    icldef = 5
+
+    do iscal = 1, nscal
+
+      if (icpsyr(iscal).eq.1) then
+
+        ! For scalars coupled with SYRTHES, prescribe a Dirichlet
+        ! condition at coupled faces.
+        ! For the time being, pass here only once, as only one scalar is
+        ! coupled with SYRTHES.
+        ! For the compressible module, solve in energy, but save the
+        ! temperature separately, for BC's to be clearer.
+
+        ll = isca(iscal)
+        if (ippmod(icompf).ge.0) then
+          if (iscal.eq.ienerg) then
+            ll = isca(itempk)
+          else
+            write(nfecra,9000)ienerg,iscal
+            call csexit (1)
+          endif
         endif
-      endif
-
-
-      do iloc = 1, nbfcou
-
-        ifac = lfcou(iloc)
-
-        if ((icodcl(ifac,ll) .ne. 1) .and.                        &
-            (icodcl(ifac,ll) .ne. 5) .and.                        &
-            (icodcl(ifac,ll) .ne. 6)) icodcl(ifac,ll) = icldef
-
-        rcodcl(ifac,ll,1) = thpar(iloc)
-        rcodcl(ifac,ll,2) = rinfin
-        rcodcl(ifac,ll,3) = 0.d0
-
-      enddo
-
-      ! Possible temperature -> enthalpy conversion
-
-      if (iscsth(iscal).eq.2) then
 
         do iloc = 1, nbfcou
 
           ifac = lfcou(iloc)
 
-          temper = rcodcl(ifac,ll,1)
-          mode   = -1
-          call usthht(mode,enthal,temper)
-          !==========
-          rcodcl(ifac,ll,1) = enthal
+          if ((icodcl(ifac,ll) .ne. 1) .and.                        &
+               (icodcl(ifac,ll) .ne. 5) .and.                        &
+               (icodcl(ifac,ll) .ne. 6)) icodcl(ifac,ll) = icldef
+
+          rcodcl(ifac,ll,1) = thpar(iloc)
+          rcodcl(ifac,ll,2) = rinfin
+          rcodcl(ifac,ll,3) = 0.d0
 
         enddo
 
+        ! Possible temperature -> enthalpy conversion
+
+        if (iscsth(iscal).eq.2) then
+
+          do iloc = 1, nbfcou
+
+            ifac = lfcou(iloc)
+
+            temper = rcodcl(ifac,ll,1)
+            flag   = -1
+            call usthht(flag, enthal, temper)
+            !==========
+            rcodcl(ifac,ll,1) = enthal
+
+          enddo
+
+        endif
+
       endif
 
-    endif
+    enddo
 
-  enddo
+    deallocate(thpar)
+    deallocate(lfcou)
 
-  deallocate(thpar)
-  deallocate(lfcou)
+  endif ! This coupling is a surface coupling
 
-enddo
+enddo ! Loop on all syrthes couplings
 
 !===============================================================================
 ! End of boundary couplings

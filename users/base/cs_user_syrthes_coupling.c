@@ -6,7 +6,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2010 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -137,4 +137,18 @@ cs_user_syrthes_coupling(void)
                          ' ',                           /* projection */
                          verbosity,
                          plot);
+
+  /* By default, conservativity forcing flag is switched off (value 0)
+     If one wants to switch on the conservativity forcing flag:
+
+     cs_syr_coupling_set_conservativity(1);
+  */
+
+  /* Only for a volume coupling:
+      By default, implicit treatment is done. You can switch to
+      an explicit treatment by using the following function:
+
+     cs_syr_coupling_set_explicit_treatment(1);
+  */
+
 }
