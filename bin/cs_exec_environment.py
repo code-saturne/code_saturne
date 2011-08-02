@@ -696,7 +696,7 @@ class mpi_environment:
                     basename = os.path.basename(name)
                     if basename in ['mpiexec.mpich2', 'mpiexec',
                                     'mpirun.mpich2', 'mpirun']:
-                        info = get_command_outputs(absname)
+                        info = get_command_output(absname)
                         if info.find('Hydra') > -1:
                             pm = 'hydra'
                         elif info.find(' mpd ') > -1:
