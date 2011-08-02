@@ -132,6 +132,24 @@ def get_command_output(cmd):
 
 #-------------------------------------------------------------------------------
 
+def get_command_outputs(cmd):
+    """
+    Run a command and return it's standard and error outputs.
+    """
+    if have_subprocess == True:
+        p = subprocess.Popen(cmd,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
+        return p.communicate()[0]
+
+    else:
+        p = popen2.Popen4(cmd)
+        returncode = p.wait()
+        return p.fromchild.read()
+
+#-------------------------------------------------------------------------------
+
 def set_modules():
     """
     Set environment modules if present.
@@ -696,7 +714,7 @@ class mpi_environment:
                     basename = os.path.basename(name)
                     if basename in ['mpiexec.mpich2', 'mpiexec',
                                     'mpirun.mpich2', 'mpirun']:
-                        info = get_command_output(absname)
+                        info = get_command_outputs(absname)
                         if info.find('Hydra') > -1:
                             pm = 'hydra'
                         elif info.find(' mpd ') > -1:
