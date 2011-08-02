@@ -4526,10 +4526,14 @@ fvm_to_med_set_mesh_time(void          *this_writer,
 
   /* First verification on time step */
 
-  if (time_step < 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The given time step value should be >= 0, and not %d\n"),
-              time_step);
+  if (time_step < 0) {
+    if (writer->time_dependency == FVM_WRITER_FIXED_MESH)
+      return;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("The given time step value should be >= 0, and not %d\n"),
+                time_step);
+  }
 
   if (   writer->time_steps != NULL
       && writer->time_values != NULL) {
