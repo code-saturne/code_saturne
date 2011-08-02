@@ -1183,6 +1183,9 @@ _export_point_elements_l(const fvm_nodal_t  *mesh,
   _write_string(f, "point");
   _write_int(f, (int)n_vertices);
 
+  if (n_vertices == 0)
+    return;
+
   if (f.tf != NULL) { /* Text mode */
     int i;
     for (i = 0; i < n_vertices; i++)
