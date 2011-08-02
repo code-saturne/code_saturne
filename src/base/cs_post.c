@@ -948,12 +948,10 @@ _clear_unused_meshes(void)
 
   /* Discard meshes not required, compacting array */
 
-  i = 0;
-  while (i < _cs_post_n_meshes) {
+  
+  for (i = _cs_post_n_meshes - 1; i >= 0; i--) {
     if (discard[i] == 1)
       _free_mesh(i);  /* shifts other meshes and reduces _cs_post_n_meshes */
-    else
-      i++;
   }
 
   BFT_FREE(discard);
