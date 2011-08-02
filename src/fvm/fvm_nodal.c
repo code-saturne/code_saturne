@@ -397,6 +397,22 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
   for (vertex_id = 0; vertex_id < max_vertex_num; vertex_id++)
     loc_vertex_num[vertex_id] = 0;
 
+  if (this_nodal->n_vertices > 0) {
+    if (this_nodal->parent_vertex_num != NULL) {
+      for (j = 0; j < this_nodal->n_vertices; j++) {
+        vertex_id = this_nodal->parent_vertex_num[j] - 1;
+        if (loc_vertex_num[vertex_id] == 0)
+          loc_vertex_num[vertex_id] = 1;
+      }
+    }
+    else {
+      for (j = 0; j < this_nodal->n_vertices; j++) {
+        if (loc_vertex_num[j] == 0)
+          loc_vertex_num[j] = 1;
+      }
+    }
+  }
+
   for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
     section = this_nodal->sections[section_id];
     if (this_nodal->parent_vertex_num != NULL) {
@@ -1403,7 +1419,6 @@ fvm_nodal_define_vertex_list(fvm_nodal_t  *this_nodal,
     this_nodal->_parent_vertex_num = parent_vertex_num;
     this_nodal->parent_vertex_num = parent_vertex_num;
   }
-
 }
 
 /*----------------------------------------------------------------------------
