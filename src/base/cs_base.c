@@ -850,6 +850,7 @@ cs_base_logfile_head(int    argc,
 #if defined(MPI_VERSION) && defined(MPI_SUBVERSION)
 #if defined(OPEN_MPI)
 #if defined(OMPI_MAJOR_VERSION)
+  char mpi_lib[32];
   snprintf(mpi_lib, 31, "Open MPI %d.%d.%d",
           OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
   mpi_lib[31] = '\0';
