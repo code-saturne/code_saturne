@@ -1,0 +1,709 @@
+%
+%     This file is part of the Code_Saturne Preprocessor, element of the
+%     Code_Saturne CFD tool.
+%
+%     Copyright (C) 1998-2011 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+%
+%     The Code_Saturne Preprocessor is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+%
+%     The Code_Saturne Preprocessor is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+%
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Preprocessor; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+
+\nopagebreak
+%==================================
+\section{Geometric Algorithms\label{sec:algo}}
+%==================================
+
+In this chapter, we will describe algorithms used for several
+operations done by \CS.
+
+\subsection{Geometric Quantities\label{sec:geo_quant}}
+
+Face normals (whose lengths are equal to face surfaces) as well
+as face centers of gravity and cell centers are computed directly
+by the kernel, though face normals may also be computed by the
+preprocessor for conforming joining.
+
+\subsubsection{Normals and Face Centers%
+                \label{sec:geo_quant.normal}}
+
+To calculate face normals, we taken care to use an algorithm
+that is correct for any planar simple polygon, including non-convex cases.
+The principle is as follows: take an arbitrary point $P_a$ in the
+same plane as the polygon, then compute the sum of the vector normals
+of triangles $\{P_a, P_i, P_{i+1}\}$, where $\{P_1, P_2, ..., P_i, ..., P_n\}$
+are the polygon vertices and $P_{n+1} \equiv P_0$. As shown on figure
+\ref{fig:algo.norm_fac.principle}, some normals have a ``positive''
+contribution while others have a ``negative'' contribution (taking into
+account the ordering of the polygon's vertices). The length of the final normal
+obtained is equal to the polygon's surface.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=4.5cm]{face_surf}}
+\caption{Face normals calculation principle}
+\label{fig:algo.norm_fac.principle}
+\end{figure}
+
+In our implementation, we take the ``arbitrary'' $P_a$ point as
+the center of the polygon's vertices, so as to limit
+precision problems due to truncation errors and to ensure that
+the chosen point is on the polygon's plane.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=3.5cm]{face_quant}}
+\caption{Triangles for calculation of face quantities}
+\label{fig:algo.grd_fac.triangles}
+\end{figure}
+
+A face's center is equal to the weighted center $G$ of triangles
+$T_i$ defined as $\{P_a, P_i, P_{i+1}\}$ and whose centers are
+noted $G_i$. Let $O$ be the center of the coordinate system and
+$\overrightarrow{n_f}$ the face normal, then:
+
+\begin{displaymath}
+\overrightarrow{OG}
+= \frac{\sum_{i=1}^n \textrm{surf}(T_i).\overrightarrow{OG_i}}
+       {\sum_{i=1}^n \textrm{surf}(T_i)}
+\qquad \textrm {avec} \quad
+\textrm{surf}(T_i) = \frac{\overrightarrow{n_{T_i}}.\overrightarrow{n_f}}
+                          {\parallel \overrightarrow{n_f} \parallel}
+\end{displaymath}
+
+It is important to use the signed surface of each triangle so
+that this formula remains true in the case of non convex faces.
+
+In real cases, some faces are nor perfectly planar. In this case,
+a slight error is introduced, but it is difficult to choose an exact
+and practical (implementation and computing cost wise) definition of a
+polygon's surface when its edges do not all lie in a same plane.
+
+So as to limit errors due to warped faces, we compare the contribution
+of a given face to the the neighboring cell volumes (through
+Stoke's formula) with the contribution obtained from the separate
+triangles $\{P_a, P_i, P_{i+1}\}$, and we translate the initial center
+of gravity along the face normal axis so as to obtain the same contribution.
+
+\subsubsection{Cell Centers%
+               \label{sec:geo_quant.cdgcel}}
+
+If we consider that in theory, the Finite Volume method uses constant
+per-cell values, we can make without a precise knowledge of a given cell's
+center, as any point inside the cell could be chosen.
+In practice, precision (spatial order) depends on a good choice of
+the cell's center, as this point is used for the computation of values
+and gradients at mesh faces.
+We do not compute the center a the circumscribed sphere as
+a cell center, as this notion is usually linked to tetrahedral meshes,
+and is not easily defined and calculated for general polyhedra.
+
+Let us consider a cell $\mathcal{C}$ with $p$ faces of centers of gravity
+$G_k$ and surfaces of norm $S_k$. If $O$ is the origin of the coordinate
+system, $\mathcal{C}$'s center $G$ is defined as:
+
+\begin{displaymath}
+\overrightarrow{OG}
+= \frac{\sum_{k=1}^p S_k.\overrightarrow{OG_k}}
+       {\sum_{k=1}^p S_k}
+\end{displaymath}
+
+An older algorithm computed a cell $\mathcal{C}$'s center of gravity as the
+center of gravity of its vertices $q$ of coordinates $X_l$:
+
+$$\overrightarrow{OG} = \sum_{l=1}^q \frac{\overrightarrow{OX_l}}{q}$$
+
+In most cases, the newer algorithm gives better results, though there
+are exceptions (notably near the axis of partial meshes with rotational symmetry).
+
+On figure \ref{fig:algo.cog_cel.loc}, we show the center of gravity
+calculated with both algorithms on a 2D cell. On the left, we have
+a simple cell. On the right, we have added additional vertices as they
+occur in the case of a joining of non conforming faces. The position
+of the center of gravity is stable using the newer algorithm, whilst
+this point is shifted towards the joined sub-faces with the older,
+vertex-based algorithm (which worsens the mesh quality).
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[width=15.5cm]{cell_cog}}
+\caption{Choice of cell center}
+\label{fig:algo.cog_cel.loc}
+\end{figure}
+
+On figure \ref{fig:algo.cog_cel.nonorth}, we show the possible effect of
+the choice of a cell's COG on the position of line segments joining the COG's
+of neighboring cells after a joining of non-conforming cells.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=4.5cm]{cell_cog_nonorth}}
+\caption{Choice of cell center and face orthogonality}
+\label{fig:algo.cog_cel.nonorth}
+\end{figure}
+
+We see here that the vertex-based algorithm tends to increase
+non-orthogonality of faces, compared to the present
+face-based algorithm.
+
+\subsection{Conforming Joining\label{sec:join}}
+
+The use of non conforming meshes is one of \CS's key features, and
+the associated algorithms constitute the most complex part of the
+code's preprocessor. The idea is to build new faces corresponding to
+the intersections of the initial faces to be joined.
+Those initial faces are then replaced by their covering built
+from the new faces, as shown on figure \ref{fig:algo.join.principle}
+(from a 2D sideways perspective):
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=5cm]{join_principle}}
+\caption{Principle of face joinings}
+\label{fig:algo.join.principle}
+\end{figure}
+
+We speak of \emph{conforming joining}, as the mesh resulting from
+this joining is conforming, whereas the initial mesh was not.
+
+The number of faces of a cell of which one side has been joined will
+be greater or equal to the initial number of faces, and the new faces
+resulting from the joining will not always be triangles or quadrangles,
+even if all of the initial faces were of theses types. For this
+reason, the data representations of \CS and its preprocessor
+are designed with arbitrary simple polygonal faces and polyhedral
+cells in mind. We exclude polygons and polyhedra with holes from
+this representation, as shown on figure \ref{fig:algo.join.possible}.
+Thus the cells shown in figure \ref{fig:algo.join.possible} cannot be
+joined, as this would require opening a ``hole'' in one of the larger
+cell's faces. In the case of figure \ref{fig:algo.join.possible}b, we
+have no such problem, as the addition of another smaller cell
+splits the larger face into pieces that do not contain holes.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=5cm]{join_possible}}
+\caption{Possible case joinings}
+\label{fig:algo.join.possible}
+\end{figure}
+
+\subsubsection{Robustness Factors%
+               \label{sec:join.robust}}
+
+We have sought to build a joining algorithm that could function with
+a minimum of user input, on a wide variety of cases.
+
+Several criteria were deemed important:
+
+\begin{enumerate}
+
+\item {\bf determinism}: we want to be able to predict the algorithm's behavior.
+We especially want the algorithm to produce the same results whether
+some mesh $A$ was joined to mesh $B$ or $B$ to $A$. This might not be perfectly
+true in the implementation due to truncation errors, but the main point is
+that the user should not have to worry about the order in which he enters
+his meshes for the best computational results.
+\footnote{The geometry produced by a joining is in theory independent
+from the order mesh inputs, but mesh numbering is not. The input order
+used for a calculation should thus be kept for any calculation restart.}
+
+\item {\bf non planar surfaces}: We must be able to join both curved surface
+meshes and meshes of surfaces assembled from a series of planar sections,
+but whose normal is not necessarily a continuous function of space,
+as shown on figure \ref{fig:algo.join.non_planar}.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=3cm]{join_non_planar}}
+\caption{Initial surfaces}
+\label{fig:algo.join.non_planar}
+\end{figure}
+
+\item {\bf spacing between meshes}: the surfaces to be joined may
+not match perfectly, due to truncation errors or precision differences,
+or to the approximation of curved surfaces by a set of planar faces.
+The algorithm must not leave gaps where none are desired.
+
+\end{enumerate}
+
+\subsubsection{Basic Principle\label{sec:join.principe}}
+
+Let us consider two surfaces to join, as in figure \ref{fig:algo.join.curv}:
+We seek to determine the intersections of the edges of the mesh faces,
+and to split these edges at those intersections, as shown on figure
+\ref{fig:algo.join.curv2}. We will describe more precisely what we
+mean by ``intersection'' of two edges in a later subsection, as
+the notion involves spanning of small gaps in our case.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=4cm]{join_overlap_3d_1}}
+\caption{Surfaces to be joined}
+\label{fig:algo.join.curv}
+\end{figure}
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=4cm]{join_overlap_3d_2}}
+\caption{After edge intersections}
+\label{fig:algo.join.curv2}
+\end{figure}
+
+The next step consists of reconstructing sub-faces derived from the
+initial faces. Starting from an edge of an initial face, we try to find
+closed loops, choosing at each vertex the leftmost edge (as seen standing
+on that face, normal pointing upwards, facing in the direction of the
+current edge), until we have returned to the starting vertex. This way,
+we find the shortest loop turning in the trigonometric
+direction. Each face to be joined is replaced by its covering of
+sub-faces constructed in this manner.
+
+When traversing the loops, we must be careful to stay close to the plane
+of the original face. We thus consider only the edges belonging to a face
+whose normal has a similar direction to that of the face being subdivided
+(i.e. the absolute value of the dot product of the two unitary normals
+should be close to 1).
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=4.5cm]{join_overlap_3d_3}}
+\caption{Sub-face reconstruction.}
+\label{fig:algo.join.curv3}
+\end{figure}
+
+Once all the sub-faces are built, we should have obtained for two tangent
+initial faces two topologically identical sub-faces, each descending
+from one of the initial faces and thus belonging to a different cell.
+All that is required at this stage is to merge those two sub-faces,
+conserving the properties of both. The merged sub-face thus belongs to
+two cells, and becomes an internal face. The joining is thus finalized.
+
+\subsubsection{Simplification of Face Joinings\label{sec:join.simplif}}
+
+For a finite-volume code such as \CS, it is best that faces belonging
+to one same cell have neighboring sizes. This is hard to ensure
+when non-conforming border faces are split so as to be joined
+in a conforming way. On figure \ref{fig:algo.join.simplif},
+we see that this can produce faces of highly varying sizes
+when splitting a face for conformal joining.
+
+It is possible to simplify the covering of a face so as to limit
+this effect, by moving vertices slightly on each side of the covering.
+We seek to move vertices so as to simplify the covering while
+deforming the mesh as little as possible.
+
+One covering example is presented figure \ref{fig:algo.join.simplif},
+where we show several simplification opportunities. We note that all
+these possibilities are associated with a given edge. Similar
+possibilities associated with other edges are not shown so that the
+figure remains readable. After simplification, we obtain the
+situation of figure \ref{fig:algo.join.simpl2}.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=5cm]{join_simplify_1}}
+\caption{Simplification possibilities}
+\label{fig:algo.join.simplif}
+\end{figure}
+
+After simplification, we have the following situation:
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=5cm]{join_simplify_2}}
+\caption{Faces after simplification}
+\label{fig:algo.join.simpl2}
+\end{figure}
+
+\subsubsection{Processing\label{sec:join.process}}
+
+The algorithm's starting point is the search for intersections
+of edges belonging to the faces selected for joining. In 3D, we
+do not restrict ourselves to ``true'' intersections, but
+we consider that two edges intersect as soon as the minimum
+distance between those edges is smaller than a certain tolerance.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=3cm]{join_edge_inter_3d}}
+\caption{Intersection of edges in 3d space}
+\label{fig:algo.join.edge}
+\end{figure}
+
+To each vertex we associate a maximum distance, some factor of
+the length of the smallest edge incident to that vertex.
+This factor is adjustable (we use $0.1$ by default), but
+should always be less than $0.5$.
+By default, this factor is usually multiplied by the smallest sine
+of the angles between the edges considered, so that the
+tolerance assigned to a given vertex is a good estimation
+of the smallest height/width/depth or the adjacent cells.
+
+On figure \ref{fig:algo.join.tolerance}, we illustrate
+this tolerance in 2d with a factor of $0.25$, with red circles
+showing the tolerance region without the sine factor
+correction, and blue circle showing the tolerance with
+the sine correction.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=3cm]{join_tolerance}}
+\caption{Join tolerance for vertices of joinable faces}
+\label{fig:algo.join.tolerance}
+\end{figure}
+
+We consider a neighborhood of an edge defined by the spheres
+associated to the minimal distances around each vertex and
+the shell joining this two spheres, as shown on figure
+\ref{fig:algo.join.edgeint_eps}.
+More precisely, at a point on the edge of linear abscissa $s$,
+the neighborhood is defined to be the sphere of radius
+$d_{max}(s) = (1-s)d_{max}\mid_{s=0} + s.d_{max}\mid_{s=1}$.
+
+We will thus have intersection between edges $E1$ and $E2$ as soon
+as the point of $E1$ closest to $E2$ is within the neighborhood
+of $E2$, and that simultaneously, the point of $E2$ closest
+to $E1$ is inside the neighborhood of $E1$.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=4cm]{join_edge_inter_3d_eps}}
+\caption{Tolerances for intersection of edges}
+\label{fig:algo.join.edgeint_eps}
+\end{figure}
+
+If edge $E2$ cuts the neighborhood of a vertex of edge $E1$,
+and this vertex is also in $E2$'s neighborhood, we choose this
+vertex to define the intersection rather than the point of
+$E1$ closest to $E2$. This avoids needlessly cutting edges.
+We thus search for intersections with the following order
+of priority: vertex-vertex, vertex-edge, then edge-edge.
+If the neighborhoods associated with two edges intersect,
+but the criterion:\\
+$\exists P1 \in A1, \exists P2 \in A2, d(P1,P2)
+ < min(d_{max}(P1), d_{max}(P2))$\\
+is not met, we do not have
+intersection. These cases are shown on figure
+\ref{fig:algo.join.edgeint_type}.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=5cm]{join_edge_inter_3d_type}}
+\caption{Tolerances for intersection of edges}
+\label{fig:algo.join.edgeint_type}
+\end{figure}
+
+\subsubsection{Problems Arising From the Merging of Two Neighboring Vertices
+                \label{sec:join.pb_merge}}
+
+If we have determined that a vertex $V_1$ should be merged with a
+vertex $V_2$ and independently that this vertex $V_2$ should be
+merged with a vertex $V_3$, then $V_1$ and $V_3$ should be
+merged as a result, even though these vertices share no intersection.
+We refer to this problem as merging transitivity and show
+theoretical situations leading to it on figure \ref{fig:algo.merging.pb}.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=5cm]{join_merge_1}}
+\caption{Merging transitivity.}
+\label{fig:algo.merging.pb}
+\end{figure}
+
+On figure \ref{fig:algo.merging.pb_1}, we show cases more
+characteristic of what we can obtain with real meshes, given
+that the definition of local tolerances reduces the risk and
+possible cases of this type of situation.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=5cm]{join_merge_2}}
+\caption{Merging transitivity (real cases)}
+\label{fig:algo.merging.pb_1}
+\end{figure}
+
+Figure \ref{fig:algo.merging.pb_2} illustrates the effect of
+a combination of merges on vertices belonging to a same edge.
+We see that in this case, edges initially going through
+vertices $G$ and $J$ are strongly deformed (i.e. cut into
+sub-edges that are not well aligned). Without transitivity,
+edges going through vertices descended only from the merging
+of $(G, H)$ on one hand and $(L, J)$ on the other hand
+would be much closer to the initial edges.
+
+To avoid excessive simplifications of the mesh arising from a
+combination of merges, we first build ``chains'' of intersections
+which should be merged, compute the coordinates of the merged
+intersection, and then check for all intersection couples
+of a given chain if excessive merging would occur. If this is the case,
+we compute a local multiplicative factor ($< 1$) for all the
+intersections from this chain, so as to reduce the merge tolerance
+and ``break'' this chain into smaller subchains containing only
+intersections withing each other's merging distances.
+
+Tolerance reduction may be done in multiple steps, as we
+try to break the weakest equivalences (those closest to
+the merge tolerance bounds) first.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=6cm]{join_merge_3}}
+\caption{Merging transitivity for an edge}
+\label{fig:algo.merging.pb_2}
+\end{figure}
+
+On figure \ref{fig:algo.merging.pb_3}, we show the possible
+effect of merge transitivity limitation on vertices belonging to several edges.
+Here, breaking of excessive intersection mergings should lead to
+merging of intersections $(G, H, J)$, while $I$ is not merged
+with another intersection.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=5cm]{join_merge_4}}
+\caption{Limited merging transitivity}
+\label{fig:algo.merging.pb_3}
+\end{figure}
+
+\subsubsection{Algorithm Optimization\label{sec:join.optim}}
+
+Certain factors influence both memory and CPU requirements. We always
+try to optimize both, with a slight priority regarding memory
+requirements.
+
+When searching for edge intersections, we try to keep the number of intersection
+tests to a minimum. We compute coordinate axis-aligned bounding boxes associated
+with each joinable face (augmented by the tolerance radii of associated
+vertices), and run a full edge intersection test only for
+edges belonging to faces whose bounding boxes intersect.
+
+To determine which face bounding boxes intersect, we build a ``bounding
+box-tree'' , similar to an octree, but with boxes belonging to all
+the octree leaves they overlap. When running in parallel using MPI, a first,
+coarser version of the tree with the same maximum depth on all ranks is built
+so as to estimate the optimal distribution of data, to balance both the computational
+and memory load. Bounding boxes are then migrated to the target ranks,
+where the final box-tree (which may have different depth on different ranks)
+is built. Assigning the global ids of the matching faces to the bounding boxes
+ensures the search results are usable independently of the distribution
+across MPI ranks.
+
+\subsubsection{Influence on mesh quality\label{sec:join.quality}}
+
+It is preferable for a FV solver such as \CS that the mesh be as
+``orthogonal'' as possible (a face is perfectly orthogonal when the
+segment joining its center of mass to the center of the other cell to
+which it belongs is perfectly aligned with its normal).
+It is also important to avoid non planar faces
+\footnote {Computation of face COG's includes a correction such that
+the contribution of a warped face to a cell's volume is the same
+as that of the same face split into triangles joining that face's
+COG and outer edges, but this correction may not be enough
+for second order values.}.
+By the joining algorithm's principle, orthogonal faces are split
+into several non-orthogonal sub-faces. In addition, the higher
+the tolerance setting, the more merging of neighboring vertices
+will tend to warp faces on the sides of cells with joined faces.
+
+It is thus important to know when building a mesh that a mesh
+built by joining two perfectly regular hexahedral meshes may
+be of poor quality, especially if a high tolerance value
+was used and the cell-sizes of each mesh are very different.
+It is thus important to use the mesh quality criteria visualizations
+available in \CS, and to avoid arbitrary joinings in sensible
+areas of the mesh. When possible, joining faces of which one
+set is already a subdivision of another (to construct local
+refinements for example) is recommended.
+
+\section{Periodicity\label{sec:algo.perio}}
+
+We use an extension of the non-conforming faces joining algorithm
+to build periodic structures. The basic principle is described
+figure \ref{fig:algo.rc_perio}:
+
+\begin{itemize}
+
+\item Let us select a set of boundary faces. These faces (and their
+      edges and vertices) are duplicated, and the copy is moved
+      according to the periodic step (a combination of translation
+      and rotation). A link between original and duplicate
+      entities is kept.
+
+\item We use a conforming joining on the union of
+      selected faces and their duplicates.
+      This joining will slightly deform the mesh so that vertices
+      very close to each other may be merged, and periodic
+      faces may be split into conforming sub-faces (if they are
+      not already conforming).
+
+\item If necessary, the splitting of duplicated, moved, and joined
+      faces is also applied to the faces from which they were
+      descended.
+
+\item Duplicated entities which were not joined (i.e. excess entities)
+      are deleted.
+
+\end{itemize}
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=8cm]{join_perio}}
+\caption{Periodic joining principle (translation example)}
+\label{fig:algo.rc_perio}
+\end{figure}
+
+It is thus not necessary to use periodic boundary conditions
+that the periodic surfaces be meshed in a periodic manner,
+though it is always best not to make to much use of the
+comfort provided by conforming joinings, as it can lower
+mesh quality (and as a consequence, quality of computational
+results).
+
+We note that it could seem simpler to separate periodic faces
+in two sets of ``base'' and ``periodic'' faces, so as
+to duplicate and transform only the first set. This would
+allow for some algorithm simplifications and optimizations,
+but here we gave a higher priority to the consistency
+of user input for specification of face selections, and
+the definition of two separate sets of faces would have
+made user input more complex. As for the basic
+conforming joining, it is usually not necessary to specify
+face selections for relatively simple meshes (in which case
+all faces on the mesh boundary are selected).
+
+\section{Triangulation of faces\label{sec:triangle}}
+
+Face triangulation (handled by the FVM library) is done in two
+stages. The first stage uses an \emph{ear cutting} algorithm, which
+can triangulate any planar polygon, whether convex or not.
+The triangulation is arbitrary, as it depends on the vertex chosen
+to start the loop around the polygon.
+
+The second stage consists of flipping edges so that the final
+triangulation is constrained Delaunay, which leads to a
+more regular triangulation.
+
+\subsection{Initial triangulation\label{sec:triangle_ini}}
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[width=14cm]{face_split_main}}
+\caption{Principle of face triangulation}
+\label{fig:algo.ear_splitting}
+\end{figure}
+
+The algorithm used is based on the one described in \cite{triangl1}.
+Its principle is illustrated figure \ref{fig:algo.ear_splitting}.
+We start by checking if the triangle defined by the first vertices
+of the polygon, $(P_0, P_1, P_2)$ is an ``ear'', that is if it is
+interior to the polygon and does not intersect it. As this is the case
+on this example, we obtain a first triangle, ad we must then process
+the remaining part of the polygon. At the next stage triangle
+$(P_0, P_2, P_3)$ is also an ear, and may be removed.
+
+At stage $2$, we see that the next triangle which is a candidate for
+removal, $(P_0, P_3, P_4)$ is not an ear, as it is not contained in the
+remaining polygon. We thus shift the indexes of vertices to consider,
+and see at stage $4$ that triangle $(P_3, P_4, P_5)$
+is an ear and may be removed.
+
+The algorithm is built in such a way that a triangle is selected based on
+the last vertex of the last triangle considered (starting from triangle
+$(P_0, P_1, P_2)$). Thus, we consider at stage $5$ the triangle ending
+with $P_5$, that is $(P_0, P_3, P_5)$.
+Once this triangle is removed, the remaining polygon is a triangle,
+and its handling is trivial.
+
+\subsection{Improving the Triangulation\label{sec:triangle_delaunay}}
+
+We show on figures \ref{fig:algo.decoup_ex_1} and \ref{fig:algo.decoup_ex_2}
+two examples of a triangulation on similar polygons whose vertices are
+numbered in a different manner.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=2.5cm]{face_split_1}}
+\caption{Triangulation example (1)}
+\label{fig:algo.decoup_ex_1}
+\end{figure}
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=2.5cm]{face_split_2}}
+\caption{Triangulation example (2)}
+\label{fig:algo.decoup_ex_2}
+\end{figure}
+
+\vfill
+
+Not only is the obtained triangulation different, but it has a tendency
+to produce very flat triangles. Once a first triangulation is obtained,
+we apply a corrective algorithm, based on edge flips so as to respect
+the Delaunay condition.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=4cm]{face_split_delaunay_crit}}
+\caption{Delaunay condition (2)}
+\label{fig:algo.delaunay_cond}
+\end{figure}
+
+This condition is illustrated figure \ref{fig:algo.delaunay_cond}.
+In the first case, edge $\overline{P_i P_j}$ does not fulfill the
+condition, as vertex $P_l$ is contained in the circle going through
+$P_i, P_j, P_k$. In the second case, edge $\overline{P_k P_l}$ fulfills
+this condition, as $P_i$ is not contained in the circle going through
+$P_j, P_k, P_l$.
+
+If triangles $(P_i, P_k, P_j)$ and $(P_i, P_j, P_l)$ originated from
+the initial triangulation of a same polygon, they would thus be replaced
+by triangles $(P_i, P_k, P_l)$ and $(P_l, P_k, P_j)$, which
+fulfill the Delaunay condition. In the case of a quadrangle, we
+would be done, but with a more complex initial polygon,
+these new triangles could be replaced by others, depending on their
+neighbors from the same polygon.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=2.5cm]{face_split_delaunay_1}}
+\caption{Edge flip example (1)}
+\label{fig:algo.delaunay_ex_1}
+\end{figure}
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[height=2cm]{face_split_delaunay_2}}
+\caption{Edge flip example (2)}
+\label{fig:algo.delaunay_ex_2}
+\end{figure}
+
+On figures \ref{fig:algo.delaunay_ex_1} and \ref{fig:algo.delaunay_ex_2},
+we illustrate this algorithm on the same examples as before (figures
+\ref{fig:algo.decoup_ex_1} and \ref{fig:algo.decoup_ex_2}). We see that
+the final result is the same. In theory, the edge flipping algorithm
+always converges. To avoid issues due to truncation errors, we allow
+a tolerance before deciding to flip two edges. Thus, we allow that the
+final triangulation only ``almost'' fulfill the Delaunay condition.
+
+In some cases, especially that of perfect rectangles, two different
+triangulations may both fulfill the Delaunay condition, notwithstanding
+truncation errors. For periodicity, we must avoid having two periodic
+faces triangulated in a non-periodic manner (for example, along
+different diagonals of a quadrangle). In this specific case, we
+triangulate only one face using the geometric algorithm, and then
+apply the same triangulation to it's periodic face, rather then
+triangulate both faces independently.

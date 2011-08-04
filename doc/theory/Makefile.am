@@ -50,6 +50,7 @@ inimas.tex \
 introd.tex \
 itrmas.tex \
 matrix.tex \
+mesh_algo.tex \
 navsto.tex \
 preduv.tex \
 recvmc.tex \

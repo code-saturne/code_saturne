@@ -24,13 +24,41 @@
 
 FIGFILES = \
 bordortho.fig \
+cell_cog.fig \
+cell_cog_nonorth.fig \
 condlimite.fig \
 domaine1d.fig \
 entree.fig \
 facebord.fig \
+face_quant.fig \
+face_split_1.fig \
+face_split_2.fig \
+face_split_delaunay_1.fig \
+face_split_delaunay_2.fig \
+face_split_delaunay_crit.fig \
+face_split_main.fig \
+face_surf.fig \
 facesym.fig \
 facette.fig \
 fluxbord.fig \
+join_edge_inter_3d_eps.fig \
+join_edge_inter_3d.fig \
+join_edge_inter_3d_type.fig \
+join_merge_1.fig \
+join_merge_2.fig \
+join_merge_3.fig \
+join_merge_4.fig \
+join_merge_5.fig \
+join_non_planar.fig \
+join_overlap_3d_1.fig \
+join_overlap_3d_2.fig \
+join_overlap_3d_3.fig \
+join_perio.fig \
+join_possible.fig \
+join_principle.fig \
+join_simplify_1.fig \
+join_simplify_2.fig \
+join_tolerance.fig \
 support.fig
 
 # Other files
