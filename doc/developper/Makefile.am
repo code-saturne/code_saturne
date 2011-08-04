@@ -27,7 +27,7 @@ TEXMAIN = developper.tex
 # Other LaTex document
 
 TEXOTHERS = \
-coding_standards.tex
+coding_standards.tex common_constructs.tex
 
 TEXINPUTFILES = input
 
