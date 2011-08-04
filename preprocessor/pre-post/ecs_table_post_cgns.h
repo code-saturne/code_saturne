@@ -43,7 +43,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "ecs_tab_glob.h"
+#include "ecs_tab.h"
 #include "ecs_table.h"
 
 #include "ecs_post.h"

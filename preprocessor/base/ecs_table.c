@@ -1189,8 +1189,8 @@ ecs_table__renumerote(ecs_table_t          *this_table,
  *----------------------------------------------------------------------------*/
 
 ecs_table_t *
-ecs_table__extrait(ecs_table_t            *table_ref,
-                   const ecs_tab_bool_t    bool_elt_select)
+ecs_table__extrait(ecs_table_t  *table_ref,
+                   bool          elt_select[])
 {
   size_t        cpt_elt_new;
   size_t        cpt_val_new;
@@ -1227,7 +1227,7 @@ ecs_table__extrait(ecs_table_t            *table_ref,
 
   for (ielt_ref = 0; ielt_ref < nbr_elt_ref; ielt_ref++) {
 
-    if (bool_elt_select.val[ielt_ref] == true) {
+    if (elt_select[ielt_ref] == true) {
 
       /* L'élément est à extraire */
 

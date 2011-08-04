@@ -9,7 +9,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -70,10 +70,10 @@ struct _ecs_table_t {
 
   size_t                pas;           /* Pas des positions si elles
                                           forment une REGLE (0 sinon) */
-  ecs_size_t           *pos;           /* Positions des valeurs du table
+  ecs_size_t           *pos;           /* Positions des valeurs de la table
                                           (NULL si elles forment une REGLE) */
 
-  ecs_int_t            *val;           /* Valeurs du table */
+  ecs_int_t            *val;           /* Valeurs de la table */
 
   ecs_descr_t          *descr;         /* Tête de la liste chaînée des
                                           descripteurs de table "attribut" */

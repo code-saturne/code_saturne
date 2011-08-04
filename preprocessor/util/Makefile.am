@@ -36,7 +36,6 @@ ecs_fic.h \
 ecs_file.h \
 ecs_mem.h \
 ecs_mem_usage.h \
-ecs_tab_glob.h \
 ecs_tab.h \
 ecs_timer.h
 

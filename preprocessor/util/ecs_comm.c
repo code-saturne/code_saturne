@@ -6,7 +6,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -27,8 +27,9 @@
   Boston, MA  02110-1301  USA
 */
 
+/*----------------------------------------------------------------------------*/
 
-#include "cs_config.h"
+#include "ecs_def.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -56,12 +57,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -549,7 +545,5 @@ ecs_comm_write_section(const char  *name,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 

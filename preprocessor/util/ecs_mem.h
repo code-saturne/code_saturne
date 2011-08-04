@@ -32,35 +32,11 @@
 
 /*----------------------------------------------------------------------------*/
 
-/*
- * Obtain definitions such as that of size_t through stddef.h (C99 standard)
- * if available (preferred method), or through stdlib.h (which defines
- * malloc() and family and so must define size_t some way) otherwise.
- */
-
-#if defined(__STDC_VERSION__)
-#  if (__STDC_VERSION__ == 199901L)
-#    include <stddef.h>
-#  else
-#    include <stdlib.h>
-#  endif
-#else
-#  include <stdlib.h>
-#endif
-
-/* ECS headers */
-
-#include "cs_config.h"
 #include "ecs_def.h"
 
-/*-----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  * Public types
@@ -297,8 +273,6 @@ ecs_mem_size_max(void);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __ECS_MEM_H__ */

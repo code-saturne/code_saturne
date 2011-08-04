@@ -30,20 +30,11 @@
   Boston, MA  02110-1301  USA
 */
 
-/*----------------------------------------------------------------------------
- *  Local headers
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 #include "ecs_def.h"
 
-/*----------------------------------------------------------------------------*/
-
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -51,7 +42,7 @@ extern "C" {
 
 /* Opaque structure to handle file output */
 
-typedef struct _ecs_comm_t ecs_comm_t ;
+typedef struct _ecs_comm_t ecs_comm_t;
 
 /*=============================================================================
  * Public function prototypes
@@ -112,8 +103,6 @@ ecs_comm_write_section(const char  *name,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __ECS_COMM_H__ */

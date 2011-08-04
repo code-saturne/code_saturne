@@ -9,7 +9,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -32,35 +32,9 @@
 
 /*----------------------------------------------------------------------------*/
 
-/*
- * Obtain definitions such as that of size_t through stddef.h (C99 standard)
- * if available (preferred method), or through stdlib.h (which defines
- * malloc() and family and so must define size_t some way) otherwise.
- */
-
-#if defined(__STDC_VERSION__)
-#  if (__STDC_VERSION__ == 199901L)
-#    include <stddef.h>
-#  else
-#    include <stdio.h>
-#  endif
-#else
-#  include <stdio.h>
-#endif
-
-/* ECS headers */
-
-#include "cs_config.h"
 #include "ecs_def.h"
 
-/*-----------------------------------------------------------------------------*/
-
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  * Public types
@@ -636,8 +610,6 @@ ecs_file_version_build_zlib(void);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __ECS_FILE_H__ */

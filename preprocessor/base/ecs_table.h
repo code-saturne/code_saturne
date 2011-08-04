@@ -317,8 +317,8 @@ ecs_table__renumerote(ecs_table_t          *this_table,
  *----------------------------------------------------------------------------*/
 
 ecs_table_t *
-ecs_table__extrait(ecs_table_t            *table_ref,
-                   const ecs_tab_bool_t    bool_elt_select);
+ecs_table__extrait(ecs_table_t  *table_ref,
+                   bool          elt_select[]);
 
 /*----------------------------------------------------------------------------*/
 

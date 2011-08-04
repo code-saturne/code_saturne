@@ -456,7 +456,7 @@ ecs_famille_chaine__cree_descr(ecs_famille_t   *famille,
  *  La libération du tableau est à la charge du code appelant
  *----------------------------------------------------------------------------*/
 
-ecs_tab_bool_t
+bool *
 ecs_famille_chaine__indic_fam_att(const ecs_famille_t  *fam_tete)
 {
   size_t    ifam;
@@ -464,7 +464,7 @@ ecs_famille_chaine__indic_fam_att(const ecs_famille_t  *fam_tete)
 
   const ecs_famille_t  *ptr_fam;
 
-  ecs_tab_bool_t   tab_select;
+  bool  *tab_select = NULL;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -481,11 +481,10 @@ ecs_famille_chaine__indic_fam_att(const ecs_famille_t  *fam_tete)
       num_fam_max = ptr_fam->num;
   }
 
-  tab_select.nbr = num_fam_max + 1;
-  ECS_MALLOC(tab_select.val, tab_select.nbr, bool      );
+  ECS_MALLOC(tab_select, num_fam_max + 1, bool);
 
-  for (ifam = 0; ifam < tab_select.nbr; ifam++)
-    tab_select.val[ifam] = false;
+  for (ifam = 0; ifam < num_fam_max + 1; ifam++)
+    tab_select[ifam] = false;
 
   /* Marquage des familles correspondant aux critères de sélection */
   /*---------------------------------------------------------------*/
@@ -494,7 +493,7 @@ ecs_famille_chaine__indic_fam_att(const ecs_famille_t  *fam_tete)
        ptr_fam != NULL;
        ptr_fam  = ptr_fam->l_famille_sui) {
 
-    tab_select.val[ptr_fam->num] = true;
+    tab_select[ptr_fam->num] = true;
   }
 
   return tab_select;

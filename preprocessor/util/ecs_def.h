@@ -9,7 +9,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2010 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -62,71 +62,71 @@
 /* _Bool */
 
 #if HAVE_STDBOOL_H
-# include <stdbool.h>
+#  include <stdbool.h>
 #else
-# if !HAVE__BOOL
-#  ifdef __cplusplus
+#  ifndef HAVE__BOOL
+#    ifdef __cplusplus
 typedef bool _Bool;
-#  else
-typedef unsigned char _Bool;
+#    else
+#      define _Bool signed char;
+#    endif
 #  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
+#  define bool _Bool
+#  define false 0
+#  define true 1
+#  define __bool_true_false_are_defined 1
 #endif
 
-/* int32_t */
+/* int32_t type */
 
 #if !defined(HAVE_INT32_T)
-# if (SIZEOF_INT == 4)
+#  if (SIZEOF_INT == 4)
 typedef int int32_t;
-# elif (SIZEOF_SHORT == 4)
+#  elif (SIZEOF_SHORT == 4)
 typedef short int32_t;
-# else
-#  error
-# endif
+#  else
+#    error
+#  endif
 #endif
 
-/* int64_t */
+/* int64_t type */
 
 #if !defined(HAVE_INT64_T)
-# if (SIZEOF_INT == 8)
+#  if (SIZEOF_INT == 8)
 typedef int int64_t;
-# elif (SIZEOF_LONG == 8)
+#  elif (SIZEOF_LONG == 8)
 typedef long int64_t;
-# elif (HAVE_LONG_LONG == 8)
+#  elif (HAVE_LONG_LONG == 8)  /* SIZEOF_LONG_LONG not generally available */
 typedef long long int64_t;
-# else
-#  error
-# endif
+#  else
+#    error
+#  endif
 #endif
 
-/* uint32_t */
+/* uint32_t type */
 
 #if !defined(HAVE_UINT32_T)
-# if (SIZEOF_INT == 4)
+#  if (SIZEOF_INT == 4)
 typedef unsigned uint32_t;
-# elif (SIZEOF_SHORT == 4)
+#  elif (SIZEOF_SHORT == 4)
 typedef unsigned short uint32_t;
-# else
-#  error
-# endif
+#  else
+#    error
+#  endif
 #endif
 
-/* uint64_t */
+/* uint64_t type */
 
 #if !defined(HAVE_UINT64_T)
-# if (SIZEOF_INT == 8)
+#  if (SIZEOF_INT == 8)
 typedef unsigned uint64_t;
-# elif (SIZEOF_LONG == 8)
+#  elif (SIZEOF_LONG == 8)
 typedef unsigned long uint64_t;
-# elif (HAVE_LONG_LONG)
+#  elif (HAVE_LONG_LONG) /* SIZEOF_LONG_LONG not generally available */
 typedef unsigned long long uint64_t;
-# else
-#  error
-# endif
+#  else
+#    error
+#  endif
 #endif
 
 /*-----------------------------------------------------------------------------
@@ -141,7 +141,6 @@ typedef char            ecs_byte_t;     /* Byte (untyped memory) */
 /* Type enumeration */
 
 typedef enum {
-  ECS_TYPE_bool,
   ECS_TYPE_char,
   ECS_TYPE_ecs_coord_t,
   ECS_TYPE_ecs_int_t,
@@ -225,6 +224,20 @@ typedef enum {
 #define textdomain(Domain)
 #define bindtextdomain(Package, Directory)
 
+#endif
+
+/* Macros for compilation with a C++ compiler */
+/*--------------------------------------------*/
+
+#undef BEGIN_C_DECLS
+#undef   END_C_DECLS
+
+#if defined(__cplusplus)
+#  define BEGIN_C_DECLS  extern "C" {
+#  define   END_C_DECLS  }
+#else
+#  define BEGIN_C_DECLS
+#  define   END_C_DECLS
 #endif
 
 /*=============================================================================

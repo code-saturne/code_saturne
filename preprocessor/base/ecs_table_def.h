@@ -48,7 +48,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "ecs_def.h"
-#include "ecs_tab_glob.h"
+#include "ecs_tab.h"
 
 
 /*----------------------------------------------------------------------------
@@ -123,8 +123,8 @@ ecs_table_def__remplace_ref(ecs_table_t    *table_def,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_table_def__cree_masque(ecs_tab_bool_t   bool_sselt_select,
-                           ecs_table_t     *table_def_elt);
+ecs_table_def__cree_masque(bool          sselt_select[],
+                           ecs_table_t  *table_def_elt);
 
 /*----------------------------------------------------------------------------
  * Suppression des sommets ne participant pas à la connectivité

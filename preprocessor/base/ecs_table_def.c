@@ -2318,8 +2318,8 @@ ecs_table_def__remplace_ref(ecs_table_t    *table_def,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_table_def__cree_masque(ecs_tab_bool_t   bool_sselt_select,
-                           ecs_table_t     *table_def_elt)
+ecs_table_def__cree_masque(bool          sselt_select[],
+                           ecs_table_t  *table_def_elt)
 {
   size_t  nbr_elt;
   size_t  num_sselt;
@@ -2346,8 +2346,8 @@ ecs_table_def__cree_masque(ecs_tab_bool_t   bool_sselt_select,
 
       /* If the sub-element has not yet been accounted for, mark it */
 
-      if (bool_sselt_select.val[num_sselt] == false)
-        bool_sselt_select.val[num_sselt] = true;
+      if (sselt_select[num_sselt] == false)
+        sselt_select[num_sselt] = true;
 
     }
   }

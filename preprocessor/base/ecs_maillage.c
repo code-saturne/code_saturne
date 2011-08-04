@@ -251,30 +251,26 @@ _dump_connect_couples(FILE             *f,
  * Seules sont concernees les entites de type `entmail_sel'
  *----------------------------------------------------------------------------*/
 
-static ecs_tab_bool_t
+static bool *
 _maillage__selectionne_lst(ecs_maillage_t       *maillage,
                            ecs_entmail_t         entmail_sel,
                            const ecs_tab_int_t  *liste_filtre)
 {
-  size_t         nbr_elt;
-  size_t         ielt;
+  size_t  nbr_elt;
+  size_t  ielt;
 
-  ecs_tab_bool_t  bool_elt_select;
+  bool  *elt_select = NULL;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  bool_elt_select.val = NULL;
-  bool_elt_select.nbr = 0;
 
   if (maillage->table_def[entmail_sel] != NULL) {
 
     nbr_elt = ecs_table__ret_elt_nbr(maillage->table_def[entmail_sel]);
 
-    ECS_MALLOC(bool_elt_select.val, nbr_elt, bool);
-    bool_elt_select.nbr = nbr_elt;
+    ECS_MALLOC(elt_select, nbr_elt, bool);
 
     for (ielt = 0; ielt < nbr_elt; ielt++)
-      bool_elt_select.val[ielt] = false;
+      elt_select[ielt] = false;
 
   }
 
@@ -283,17 +279,17 @@ _maillage__selectionne_lst(ecs_maillage_t       *maillage,
     nbr_elt = ecs_table__ret_elt_nbr(maillage->table_def[entmail_sel]);
 
     for (ielt = 0; ielt < nbr_elt; ielt++)
-      bool_elt_select.val[ielt] = true;
+      elt_select[ielt] = true;
 
   }
   else {
 
     for (ielt = 0; ielt < liste_filtre->nbr; ielt++)
-      bool_elt_select.val[liste_filtre->val[ielt]] = true;
+      elt_select[liste_filtre->val[ielt]] = true;
 
   }
 
-  return bool_elt_select;
+  return elt_select;
 }
 
 /*----------------------------------------------------------------------------
@@ -308,7 +304,7 @@ _maillage__selectionne_lst(ecs_maillage_t       *maillage,
 static ecs_tab_int_t
 _maillage__extrait_coords(ecs_maillage_t         *maillage_new,
                           const ecs_maillage_t   *maillage_ref,
-                          const ecs_tab_bool_t    bool_elt_select)
+                          const bool              elt_select[])
 {
   size_t  cpt_elt_new;
   size_t  cpt_val_new;
@@ -340,7 +336,7 @@ _maillage__extrait_coords(ecs_maillage_t         *maillage_new,
 
   for (ielt_ref = 0; ielt_ref < nbr_elt_ref; ielt_ref++) {
 
-    if (bool_elt_select.val[ielt_ref] == true) {
+    if (elt_select[ielt_ref] == true) {
 
       /* L'élément est à extraire */
 
@@ -379,14 +375,14 @@ _maillage__extrait_coords(ecs_maillage_t         *maillage_new,
  *----------------------------------------------------------------------------*/
 
 static ecs_maillage_t *
-_maillage__extrait(ecs_maillage_t         *maillage,
-                   ecs_entmail_t           entmail,
-                   const ecs_tab_bool_t    bool_elt_select)
+_maillage__extrait(ecs_maillage_t  *maillage,
+                   ecs_entmail_t    entmail,
+                   bool             elt_select[])
 {
   size_t          isom;
   ecs_tab_int_t   tab_som_old_new;
 
-  ecs_tab_bool_t  bool_som_select;
+  bool            *som_select = NULL;
 
   ecs_maillage_t  *maillage_new;
 
@@ -414,20 +410,19 @@ _maillage__extrait(ecs_maillage_t         *maillage,
 
   maillage_new->table_def[entmail]
     = ecs_table__extrait(maillage->table_def[entmail],
-                         bool_elt_select);
+                         elt_select);
 
   /* Traitement des sommets */
   /*------------------------*/
 
   /* Construction de la liste de selection des sommets a extraire */
 
-  bool_som_select.nbr = maillage->n_vertices;
-  ECS_MALLOC(bool_som_select.val, bool_som_select.nbr, bool);
+  ECS_MALLOC(som_select, maillage->n_vertices, bool);
 
-  for (isom = 0; isom < bool_som_select.nbr; isom++)
-    bool_som_select.val[isom] = false;
+  for (isom = 0; isom < maillage->n_vertices; isom++)
+    som_select[isom] = false;
 
-  ecs_table_def__cree_masque(bool_som_select,
+  ecs_table_def__cree_masque(som_select,
                              maillage_new->table_def[entmail]);
 
   /* Extraction des sommets selectionnés
@@ -437,10 +432,9 @@ _maillage__extrait(ecs_maillage_t         *maillage,
 
   tab_som_old_new = _maillage__extrait_coords(maillage_new,
                                               maillage,
-                                              bool_som_select);
+                                              som_select);
 
-  bool_som_select.nbr = 0;
-  ECS_FREE(bool_som_select.val);
+  ECS_FREE(som_select);
 
   /* Remplacement des anciens numéros des sommets
      par les nouveaux numéros (numérotés à partir de 1)
@@ -1424,9 +1418,8 @@ ecs_maillage__extrait(ecs_maillage_t       *maillage,
                       ecs_entmail_t         entmail_sel,
                       const ecs_tab_int_t  *liste_filtre)
 {
-  ecs_tab_bool_t   bool_elt_select;
-
-  ecs_maillage_t  *maillage_new;
+  bool            *elt_select = NULL;
+  ecs_maillage_t  *maillage_new = NULL;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -1438,9 +1431,9 @@ ecs_maillage__extrait(ecs_maillage_t       *maillage,
   /* Construction de la liste des éléments du maillage d'origine à extraire */
   /*------------------------------------------------------------------------*/
 
-  bool_elt_select = _maillage__selectionne_lst(maillage,
-                                               entmail_sel,
-                                               liste_filtre);
+  elt_select = _maillage__selectionne_lst(maillage,
+                                          entmail_sel,
+                                          liste_filtre);
 
   /* Extraction des éléments sélectionnés du maillage d'origine */
   /*  pour l'ensemble des entités de maillage                   */
@@ -1448,10 +1441,10 @@ ecs_maillage__extrait(ecs_maillage_t       *maillage,
 
   maillage_new = _maillage__extrait(maillage,
                                     entmail_sel,
-                                    bool_elt_select);
+                                    elt_select);
 
-  if (bool_elt_select.val != NULL)
-    ECS_FREE(bool_elt_select.val);
+  if (elt_select != NULL)
+    ECS_FREE(elt_select);
 
   return maillage_new;
 }

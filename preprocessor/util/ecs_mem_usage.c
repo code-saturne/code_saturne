@@ -6,7 +6,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2010 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -29,7 +29,6 @@
 
 /*-----------------------------------------------------------------------------*/
 
-#include "cs_config.h"
 #include "ecs_def.h"
 
 /* OS type */
@@ -39,12 +38,6 @@
 
 #elif defined(__sun__) || defined(__sun) || defined(sun)
 #define ECS_OS_Solaris
-
-#elif defined(__uxpv__) || defined(__uxpv) || defined(uxpv)
-#define ECS_OS_UNIX_System_V
-
-#elif defined(__osf__)
-#define ECS_OS_OSF1
 
 #endif
 
@@ -74,28 +67,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#elif defined(ECS_OS_OSF1) && defined(_OSF_SOURCE) && defined(HAVE_UNISTD_H)
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/signal.h>
-#include <sys/fault.h>
-#include <sys/syscall.h>
-#include <sys/procfs.h>
-#include <unistd.h>
-
 #elif defined(ECS_OS_Solaris) && defined(HAVE_UNISTD_H) \
    && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
 #include <sys/types.h>
 #include <sys/procfs.h>
 #include <unistd.h>
-
-#elif (defined(ECS_OS_IRIX64) || defined(ECS_OS_UNIX_System_V))
-#if defined(HAVE_UNISTD_H) && defined(HAVE_SYS_TYPES_H) \
-                           && defined(HAVE_SYS_STAT_H)
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif
 
 #elif defined (ECS_OS_AIX) && defined(HAVE_GETRUSAGE)
 #include <sys/times.h>
@@ -128,12 +104,7 @@
 
 /*-----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*-------------------------------------------------------------------------------
  * Local type definitions
@@ -372,42 +343,6 @@ ecs_mem_usage_pr_size(void)
   return sys_mem_usage;
 }
 
-#elif defined (ECS_OS_OSF1) && defined(_OSF_SOURCE) && defined(HAVE_UNISTD_H)
-
-size_t
-ecs_mem_usage_pr_size(void)
-{
-  size_t sys_mem_usage = 0;
-
-  /* On Compaq Tru64 Unix */
-  {
-    char        buf[81];  /* should be large enough for "/proc/%lu/status" */
-    int         procfile;
-    prpsinfo_t  p;
-
-    const  pid_t  pid = getpid();
-
-    sprintf (buf, "/proc/%05lu", (unsigned long) pid);
-
-    procfile = open(buf, O_RDONLY);
-
-    if (procfile != -1) {
-
-      if (ioctl(procfile, PIOCPSINFO, &p) != -1)
-        sys_mem_usage  = (p.pr_size * getpagesize()) / 1024;
-
-      close(procfile);
-
-    }
-
-  }
-
-  if (sys_mem_usage > _ecs_mem_usage_global_max_pr)
-    _ecs_mem_usage_global_max_pr = sys_mem_usage;
-
-  return sys_mem_usage;
-}
-
 #elif defined(ECS_OS_Solaris) && defined(HAVE_UNISTD_H) \
    && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
 
@@ -439,37 +374,6 @@ ecs_mem_usage_pr_size(void)
     }
 
   }
-
-  if (sys_mem_usage > _ecs_mem_usage_global_max_pr)
-    _ecs_mem_usage_global_max_pr = sys_mem_usage;
-
-  return sys_mem_usage;
-}
-
-#elif (defined(ECS_OS_IRIX64) || defined(ECS_OS_UNIX_System_V))
-
-size_t
-ecs_mem_usage_pr_size(void)
-{
-  size_t sys_mem_usage = 0;
-
-#if defined(HAVE_UNISTD_H) && defined(HAVE_SYS_TYPES_H) \
- && defined(HAVE_SYS_STAT_H)
-  /* On SGI IRIX and Fujitsu VPP 5000, what follows should work */
-
-  {
-    char   buf[81];     /* should be large enough for "/proc/%lu/status" */
-    const  pid_t  pid = getpid ();
-
-    struct stat file_stat;
-
-    sprintf (buf, "/proc/%05lu", (unsigned long) pid);
-
-    if (stat (buf, &file_stat) != -1)
-      sys_mem_usage = file_stat.st_size / 1024;
-
-  }
-#endif /* HAVE_UNISTD_H and SYS_TYPES_H and SYS_STAT_H */
 
   if (sys_mem_usage > _ecs_mem_usage_global_max_pr)
     _ecs_mem_usage_global_max_pr = sys_mem_usage;
@@ -527,7 +431,7 @@ ecs_mem_usage_pr_size(void)
   return 0;
 }
 
-#endif /* ECS_OS_Linux, ECS_OS_OSF1, ... */
+#endif /* ECS_OS_Linux, ... */
 
 /*
  * \brief Return maximum process memory use (in kB) depending on OS.
@@ -551,6 +455,4 @@ ecs_mem_usage_max_pr_size(void)
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS

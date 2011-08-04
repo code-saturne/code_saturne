@@ -48,7 +48,7 @@
  *  Fichiers `include' publics  du  paquetage global "Utilitaire"
  *----------------------------------------------------------------------------*/
 
-#include "ecs_tab_glob.h"
+#include "ecs_tab.h"
 
 
 /*----------------------------------------------------------------------------
@@ -177,7 +177,7 @@ ecs_famille_chaine__cree_descr(ecs_famille_t   *famille,
  *  La libération du tableau est à la charge du code appelant
  *----------------------------------------------------------------------------*/
 
-ecs_tab_bool_t
+bool *
 ecs_famille_chaine__indic_fam_att(const ecs_famille_t  *fam_tete);
 
 /*----------------------------------------------------------------------------*/

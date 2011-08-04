@@ -52,7 +52,7 @@
 #include "ecs_def.h"
 #include "ecs_fic.h"
 #include "ecs_mem.h"
-#include "ecs_tab_glob.h"
+#include "ecs_tab.h"
 
 
 /*----------------------------------------------------------------------------
