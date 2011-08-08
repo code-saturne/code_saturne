@@ -1,7 +1,7 @@
 dnl----------------------------------------------------------------------------
 dnl   This file is part of the Code_Saturne CFD tool.
 dnl
-dnl   Copyright (C) 2010 EDF S.A., France
+dnl   Copyright (C) 2010-2011 EDF S.A., France
 dnl
 dnl   The Code_Saturne CFD tool is free software; you can redistribute it
 dnl   and/or modify it under the terms of the GNU General Public License
@@ -70,12 +70,21 @@ if test "x$with_metis" != "xno" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  # Test for ParMetis first
-
   CPPFLAGS="${CPPFLAGS} ${METIS_CPPFLAGS} ${MPI_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${METIS_LDFLAGS} ${MPI_LDFLAGS}"
   METIS_LIBS="-lparmetis -lmetis -lm"
   LIBS="${LIBS} ${METIS_LIBS} ${MPI_LIBS}"
+
+  # Test for METIS headers
+
+  AC_CHECK_HEADERS([metis.h],
+                   [], 
+                   [ AC_MSG_WARN([METIS header not found or usable])
+                   ],
+                   []
+                  )
+
+  # Test for ParMetis first
 
   AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <stdio.h>
@@ -97,13 +106,6 @@ if test "x$with_metis" != "xno" ; then
     CPPFLAGS="${saved_CPPFLAGS} ${METIS_CPPFLAGS}"
     LDFLAGS="${saved_LDFLAGS} ${METIS_LDFLAGS}"
     LIBS="${savedLIBS} ${METIS_LIBS}"
-
-    AC_CHECK_HEADERS([metis.h],
-                     [], 
-                     [ AC_MSG_WARN([METIS header not found or usable])
-                     ],
-                     []
-                    )
 
     AC_CHECK_LIB(metis, METIS_PartGraphKway, 
                  [ AC_DEFINE([HAVE_METIS], 1, [use METIS ])
