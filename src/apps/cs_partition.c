@@ -118,6 +118,7 @@ void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
  *----------------------------------------------------------------------------*/
 
 #include <bft_file.h>
+#include <bft_error.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
 #include <bft_timer.h>
@@ -1275,7 +1276,6 @@ _part_parmetis(fvm_gnum_t  n_g_cells,
 
   int     wgtflag    = 0; /* No weighting for faces or cells */
   int     numflag    = 0; /* 0 to n-1 numbering (C type) */
-  int     ncon       = 0; /* number of weights for each vertex */
   int     options[3] = {0, 1, 15}; /* By default if options[0] = 0 */
   int     edgecut    = 0; /* <-- Number of faces on partition */
 
@@ -1324,32 +1324,85 @@ _part_parmetis(fvm_gnum_t  n_g_cells,
 
   /* Call ParMETIS partitioning */
 
-  ParMETIS_V3_PartKway
-    (vtxdist,
-     cell_idx,
-     cell_neighbors,
-     NULL,       /* vwgt:   cell weights */
-     NULL,       /* adjwgt: face weights */
-     &wgtflag,
-     &numflag,
-     &ncon,
-     &n_parts,
-     NULL,       /* tpwgts: size ncon, vtx weight fraction */
-     NULL,       /* ubvec: size ncon, vtx imbalance */
-     options,
-     &edgecut,
-     _cell_part,
-     &comm);
+#if (PARMETIS_MAJOR_VERSION == 4)
+
+  {
+    int     j;
+    int     ncon    = 1; /* number of weights for each vertex */
+
+    real_t wgt = 1.0/n_parts;
+    real_t ubvec[]  = {1.5};
+    real_t *tpwgts = NULL;
+
+    BFT_MALLOC(tpwgts, n_parts, real_t);
+
+    for (j = 0; j < n_parts; j++)
+      tpwgts[j] = wgt;
+
+    int retval = ParMETIS_V3_PartKway
+                   (vtxdist,
+                    cell_idx,
+                    cell_neighbors,
+                    NULL,       /* vwgt:   cell weights */
+                    NULL,       /* adjwgt: face weights */
+                    &wgtflag,
+                    &numflag,
+                    &ncon,
+                    &n_parts,
+                    tpwgts,
+                    ubvec,
+                    options,
+                    &edgecut,
+                    _cell_part,
+                    &comm);
+
+    BFT_FREE(tpwgts);
+
+    if (retval != METIS_OK)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error in ParMETIS partitioning.\n"));
+
+  }
+
+#else
+
+  {
+    int     ncon       = 0; /* number of weights for each vertex */
+
+    ParMETIS_V3_PartKway
+      (vtxdist,
+       cell_idx,
+       cell_neighbors,
+       NULL,       /* vwgt:   cell weights */
+       NULL,       /* adjwgt: face weights */
+       &wgtflag,
+       &numflag,
+       &ncon,
+       &n_parts,
+       NULL,       /* tpwgts: size ncon, vtx weight fraction */
+       NULL,       /* ubvec: size ncon, vtx imbalance */
+       options,
+       &edgecut,
+       _cell_part,
+       &comm);
+  }
+
+#endif
 
   end_time = bft_timer_wtime();
 
   BFT_FREE(vtxdist);
 
-  bft_printf(_("\n"
-               "  Total number of faces on parallel boundaries: %llu\n"
-               "  wall-clock time: %f s\n\n"),
-             (unsigned long long)edgecut,
-             (double)(end_time - start_time));
+  if (edgecut > 0)
+    bft_printf(_("\n"
+                 "  Total number of faces on parallel boundaries: %llu\n"
+                 "  wall-clock time: %f s\n\n"),
+               (unsigned long long)edgecut,
+               (double)(end_time - start_time));
+  else
+    bft_printf(_("\n"
+                 "  wall-clock time: %f s\n\n"),
+               (double)(end_time - start_time));
 
   if (sizeof(idxtype) != sizeof(int)) {
     for (i = 0; i < n_cells; i++)
@@ -1752,7 +1805,7 @@ _part_ptscotch(fvm_gnum_t   n_g_cells,
   end_time = bft_timer_wtime();
 
   bft_printf(_("\n"
-               "  wall-clock time: %f s;\n\n"),
+               "  wall-clock time: %f s\n\n"),
              (double)(end_time - start_time));
 
   _cell_part_histogram(n_cells, n_parts, cell_part);

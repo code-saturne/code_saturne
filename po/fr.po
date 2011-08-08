@@ -4266,11 +4266,11 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"  wall-clock time: %f s;\n"
+"  wall-clock time: %f s\n"
 "\n"
 msgstr ""
 "\n"
-"  temps écoulé : %f s ;\n"
+"  temps écoulé : %f s\n"
 "\n"
 
 msgid "Read:   "
