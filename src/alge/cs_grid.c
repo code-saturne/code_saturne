@@ -202,6 +202,8 @@ struct _cs_grid_t {
   int               comm_id;           /* Associated communicator
                                           (owner when merge_idx != NULL) */
 
+  /* Distribution information */
+
 #endif
 };
 

@@ -37,16 +37,13 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
-#include <bft_timer.h>
+#include "bft_mem.h"
+#include "bft_printf.h"
 
-/*----------------------------------------------------------------------------
- *  Local headers
- *----------------------------------------------------------------------------*/
+#include "cs_timer.h"
 
 #include "fvm_order.h"
 #include "fvm_parall.h"
@@ -56,7 +53,7 @@
 #include "fvm_box_tree.h"
 
 /*----------------------------------------------------------------------------
- *  Header for the current file
+ * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "fvm_neighborhood.h"
@@ -658,8 +655,8 @@ fvm_neighborhood_create(void)
 
   /* Timer start */
 
-  w_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  w_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   /* Allocate and initialize */
 
@@ -685,8 +682,8 @@ fvm_neighborhood_create(void)
 
   /* Timer end */
 
-  w_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  w_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   n->cpu_time[0] = cpu_end - cpu_start;  /* build time */
   n->wtime[0] = w_end - w_start;
@@ -886,8 +883,8 @@ fvm_neighborhood_by_boxes(fvm_neighborhood_t  *n,
 
   int  n_ranks = 1;
 
-  clock_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  clock_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   /* Transfer data if necessary */
 
@@ -965,8 +962,8 @@ fvm_neighborhood_by_boxes(fvm_neighborhood_t  *n,
 
   /* Update construction times. */
 
-  clock_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  clock_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   n->cpu_time[0] = cpu_end - cpu_start;
   n->wtime[0] = clock_end - clock_start;
@@ -1019,8 +1016,8 @@ fvm_neighborhood_by_boxes(fvm_neighborhood_t  *n,
 
   /* Update query times. */
 
-  clock_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  clock_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   n->cpu_time[1] = cpu_end - cpu_start;
   n->wtime[1] = clock_end - clock_start;

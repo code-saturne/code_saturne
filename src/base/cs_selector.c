@@ -40,7 +40,6 @@
 #include <bft_error.h>
 #include <bft_printf.h>
 #include <bft_sys_info.h>
-#include <bft_timer.h>
 
 #include "cs_halo.h"
 #include "cs_mesh.h"

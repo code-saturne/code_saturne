@@ -37,7 +37,6 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_sys_info.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers

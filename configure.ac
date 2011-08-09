@@ -595,7 +595,7 @@ AC_CHECK_FUNCS([snprintf])
 AC_CHECK_FUNCS([getcwd sleep])
 AC_CHECK_FUNCS([getpwuid geteuid])
 AC_CHECK_FUNCS([uname])
-AC_CHECK_FUNCS([getrusage gettimeofday sbrk sysinfo])
+AC_CHECK_FUNCS([clock_gettime getrusage gettimeofday sbrk sysinfo])
 AC_CHECK_FUNCS([posix_memalign])
 AC_CHECK_FUNCS([memset pow modf])
 

@@ -50,7 +50,6 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -73,6 +72,7 @@
 #include "cs_gui_variables.h"
 #include "cs_mesh.h"
 #include "cs_prototypes.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1324,7 +1324,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 }
                 else if (cs_gui_strcmp(choice_v, "norm_formula"))
                 {
-                    t0 = bft_timer_wtime();
+                    t0 = cs_timer_wtime();
 
                     mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
                     mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
@@ -1350,7 +1350,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                         rcodcl[vars->rtp[3] * (*nfabor) + ifbr] = boundaries->dirz[izone] * norm;
                     }
 
-                    cs_gui_add_mei_time(bft_timer_wtime() - t0);
+                    cs_gui_add_mei_time(cs_timer_wtime() - t0);
 
                 }
             }
@@ -1392,7 +1392,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                  + boundaries->diry[izone] * boundaries->diry[izone]
                                  + boundaries->dirz[izone] * boundaries->dirz[izone]);
 
-                    t0 = bft_timer_wtime();
+                    t0 = cs_timer_wtime();
 
                     mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
                     mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
@@ -1417,13 +1417,13 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                             rcodcl[vars->rtp[i] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + vars->rtp[i]-1] * norm;
                     }
 
-                    cs_gui_add_mei_time(bft_timer_wtime() - t0);
+                    cs_gui_add_mei_time(cs_timer_wtime() - t0);
 
                 }
             }
             else if (cs_gui_strcmp(choice_d, "formula"))
             {
-                t0 = bft_timer_wtime();
+                t0 = cs_timer_wtime();
 
                 mei_tree_insert(boundaries->direction[izone], "t", *ttcabs);
                 mei_tree_insert(boundaries->direction[izone], "dt", *dtref);
@@ -1507,7 +1507,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                     }
                 }
 
-                cs_gui_add_mei_time(bft_timer_wtime() - t0);
+                cs_gui_add_mei_time(cs_timer_wtime() - t0);
 
             }
             BFT_FREE(choice_v);

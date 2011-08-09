@@ -53,7 +53,6 @@
 
 #include <bft_error.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -64,6 +63,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -296,7 +296,7 @@ cs_resource_get_max_timestep(int   ts_cur,
     if (r_time_method > 0) {
       ntcab0 = ts_cur;
       trestp = trest0;
-      tcpupr = bft_timer_wtime();
+      tcpupr = cs_timer_wtime();
     }
 
   }
@@ -313,7 +313,7 @@ cs_resource_get_max_timestep(int   ts_cur,
       /* Mean time per iteration */
 
       /* previous iteration */
-      tcpuco = bft_timer_wtime();
+      tcpuco = cs_timer_wtime();
       t_it_prev = tcpuco - tcpupr;
 
       /* Current remaining time and mean iteration time */

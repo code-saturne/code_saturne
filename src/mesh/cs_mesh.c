@@ -49,7 +49,6 @@
 
 #include <bft_mem.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -73,6 +72,7 @@
 #include "cs_perio.h"
 #include "cs_mesh_quantities.h"
 #include "cs_ext_neighborhood.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -2928,7 +2928,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
   if (mesh->n_domains > 1 || mesh->n_init_perio > 0) {
 
-    t1 = bft_timer_wtime();
+    t1 = cs_timer_wtime();
 
     bft_printf("\n"
                " ----------------------------------------------------------\n");
@@ -3060,10 +3060,10 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
     fvm_interface_set_dump(vertex_interfaces);
 #endif
 
-    t2 = bft_timer_wtime();
+    t2 = cs_timer_wtime();
     interface_time = t2-t1;
 
-    t1 = bft_timer_wtime();
+    t1 = cs_timer_wtime();
 
     /* Creation of the cs_halo_t structure. */
 
@@ -3087,7 +3087,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
     fvm_interface_set_destroy(vertex_interfaces);
     fvm_interface_set_destroy(face_interfaces);
 
-    t2 = bft_timer_wtime();
+    t2 = cs_timer_wtime();
     halo_time = t2-t1;
 
   } /* end if (mesh->n_domains > 1 || mesh->n_init_perio > 0) */
@@ -3097,7 +3097,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
   if (ivoset == 1) {
 
-    t1 = bft_timer_wtime();
+    t1 = cs_timer_wtime();
     bft_printf(_(" Extended neighborhood structures definition\n"));
     bft_printf_flush();
 
@@ -3107,7 +3107,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
     cs_ext_neighborhood_define(mesh);
 
     bft_printf_flush();
-    t2 = bft_timer_wtime();
+    t2 = cs_timer_wtime();
     ext_neighborhood_time = t2-t1;
 
   }

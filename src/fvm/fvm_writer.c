@@ -38,17 +38,12 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-#include <bft_timer.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
 
 #include "fvm_defs.h"
 #include "fvm_nodal.h"
@@ -56,6 +51,7 @@
 #include "fvm_parall.h"
 
 #include "cs_file.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -947,8 +943,8 @@ fvm_writer_export_nodal(fvm_writer_t        *this_writer,
   assert(this_writer != NULL);
   assert(this_writer->format != NULL);
 
-  w_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  w_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   export_nodal_func = this_writer->format->export_nodal_func;
 
@@ -956,8 +952,8 @@ fvm_writer_export_nodal(fvm_writer_t        *this_writer,
     export_nodal_func(this_writer->format_writer,
                       mesh);
 
-  w_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  w_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   this_writer->mesh_wtime += (w_end - w_start);
   this_writer->mesh_cpu_time += (cpu_end - cpu_start);
@@ -1009,8 +1005,8 @@ fvm_writer_export_field(fvm_writer_t                 *this_writer,
   assert(this_writer != NULL);
   assert(this_writer->format != NULL);
 
-  w_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  w_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   export_field_func = this_writer->format->export_field_func;
 
@@ -1028,8 +1024,8 @@ fvm_writer_export_field(fvm_writer_t                 *this_writer,
                       time_value,
                       field_values);
 
-  w_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  w_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   this_writer->field_wtime += (w_end - w_start);
   this_writer->field_cpu_time += (cpu_end - cpu_start);

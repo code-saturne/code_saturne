@@ -71,7 +71,6 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 #include <bft_sys_info.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -91,6 +90,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_prototypes.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -263,14 +263,14 @@ _cs_base_err_vprintf(const char  *format,
          As sleep() may be interrupted by a signal, repeat as long as the wait
          time is not elapsed; */
       int wait_time = (cs_glob_n_ranks < 64) ? 1: 10;
-      double stime = bft_timer_wtime();
+      double stime = cs_timer_wtime();
       double etime = 0.0;
       do {
         sleep(wait_time);
-        etime = bft_timer_wtime();
+        etime = cs_timer_wtime();
       }
       while (etime > -0.5 && etime - stime < wait_time); /* etime = -1 only if
-                                                            bft_timer_wtime()
+                                                            cs_timer_wtime()
                                                             is unusable. */
 #endif
       if (cs_glob_n_ranks > 9999)
@@ -747,7 +747,7 @@ void CS_PROCF (dmtmps, DMTMPS)
   cs_real_t  *tcpu
 )
 {
-  *tcpu = bft_timer_cpu_time();
+  *tcpu = cs_timer_cpu_time();
 }
 
 /*============================================================================
@@ -1342,13 +1342,13 @@ cs_base_time_summary(void)
 
   bft_printf(_("\nCalculation time summary:\n"));
 
-  bft_timer_cpu_times(&utime, &stime);
+  cs_timer_cpu_times(&utime, &stime);
 
   if (utime > 0. || stime > 0.)
     time_cpu = utime + stime;
 
   else
-    time_cpu = bft_timer_cpu_time();
+    time_cpu = cs_timer_cpu_time();
 
 
   /* CPU time */
@@ -1377,7 +1377,7 @@ cs_base_time_summary(void)
 
   /* Elapsed (wall-clock) time */
 
-  time_tot = bft_timer_wtime();
+  time_tot = cs_timer_wtime();
 
   if (time_tot > 0.) {
 

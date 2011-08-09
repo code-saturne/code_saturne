@@ -63,7 +63,6 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -80,6 +79,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_matrix.h"
 #include "cs_perio.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -119,8 +119,8 @@ static void
 _timer_start(double  *wt,
              double  *cpu)
 {
-  *wt = bft_timer_wtime();
-  *cpu = bft_timer_cpu_time();
+  *wt = cs_timer_wtime();
+  *cpu = cs_timer_cpu_time();
 }
 
 /*----------------------------------------------------------------------------
@@ -139,8 +139,8 @@ _timer_stop(int      n_runs,
 {
   double wt_s, cpu_s;
 
-  wt_s = bft_timer_wtime();
-  cpu_s = bft_timer_cpu_time();
+  wt_s = cs_timer_wtime();
+  cpu_s = cs_timer_cpu_time();
 
   *wt = (wt_s - *wt) / (double)n_runs;
   *cpu = (cpu_s - *cpu) / (double)n_runs;

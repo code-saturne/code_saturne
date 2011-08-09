@@ -38,24 +38,21 @@
 #include <math.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-#include <bft_timer.h>
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
 
-/*----------------------------------------------------------------------------
- *  Local headers
- *----------------------------------------------------------------------------*/
+#include "cs_timer.h"
 
 #include "fvm_defs.h"
 #include "fvm_group.h"
 #include "fvm_selector_postfix.h"
 
 /*----------------------------------------------------------------------------
- *  Header for the current file
+ * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "fvm_selector.h"
@@ -940,7 +937,7 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
   cs_lnum_t   i;
   const fvm_selector_postfix_t *pf = NULL;
   fvm_selector_t  *ts = this_selector;
-  double t0 = bft_timer_wtime();
+  double t0 = cs_timer_wtime();
 
   assert(this_selector != NULL);
 
@@ -1036,7 +1033,7 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
   }
 
   ts->n_evals += 1;
-  ts->eval_wtime += (bft_timer_wtime() - t0);
+  ts->eval_wtime += (cs_timer_wtime() - t0);
 
   return c_id;
 }
@@ -1068,7 +1065,7 @@ fvm_selector_get_gc_list(fvm_selector_t  *this_selector,
   int  c_id, gc_id;
   const fvm_selector_postfix_t *pf = NULL;
   fvm_selector_t  *ts = this_selector;
-  double t0 = bft_timer_wtime();
+  double t0 = cs_timer_wtime();
 
   assert(this_selector != NULL);
 
@@ -1106,7 +1103,7 @@ fvm_selector_get_gc_list(fvm_selector_t  *this_selector,
   }
 
   ts->n_evals += 1;
-  ts->eval_wtime += (bft_timer_wtime() - t0);
+  ts->eval_wtime += (cs_timer_wtime() - t0);
 
   return c_id;
 }

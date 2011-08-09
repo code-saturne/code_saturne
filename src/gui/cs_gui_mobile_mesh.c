@@ -50,7 +50,6 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -74,6 +73,7 @@
 #include "cs_gui_boundary_conditions.h"
 #include "cs_mesh.h"
 #include "cs_prototypes.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1102,7 +1102,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nfabor,
         }
         else if (nature == ale_boundary_nature_fixed_displacement)
         {
-            t0 = bft_timer_wtime();
+            t0 = cs_timer_wtime();
             for (ifac = 0; ifac < faces; ifac++)
             {
                 int ifbr = faces_list[ifac]-1;
@@ -1110,11 +1110,11 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nfabor,
                                           nnod, nodfbr, impale, depale,
                                           *dtref, *ttcabs, *ntcabs);
             }
-            cs_gui_add_mei_time(bft_timer_wtime() - t0);
+            cs_gui_add_mei_time(cs_timer_wtime() - t0);
         }
         else if (nature == ale_boundary_nature_fixed_velocity)
         {
-            t0 = bft_timer_wtime();
+            t0 = cs_timer_wtime();
             for (ifac = 0; ifac < faces; ifac++)
             {
                 int ifbr = faces_list[ifac]-1;
@@ -1123,7 +1123,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nfabor,
                                       *dtref, *ttcabs, *ntcabs);
                 ialtyb[ifbr]  = *ivimpo;
             }
-            cs_gui_add_mei_time(bft_timer_wtime() - t0);
+            cs_gui_add_mei_time(cs_timer_wtime() - t0);
         }
         BFT_FREE(faces_list);
     }

@@ -54,7 +54,6 @@
 #include <bft_error.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -66,6 +65,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_perio.h"
 #include "cs_prototypes.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -778,8 +778,8 @@ void CS_PROCF (cgdcel, CGDCEL)
   sprintf(var_name, "Var. %1d", *ivar);
 
   if (update_stats == true) {
-    wt_start =bft_timer_wtime();
-    cpu_start =bft_timer_cpu_time();
+    wt_start = cs_timer_wtime();
+    cpu_start = cs_timer_cpu_time();
     gradient_info = _find_or_add_system(var_name, gradient_type);
   }
 
@@ -894,8 +894,8 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   if (update_stats == true) {
 
-    wt_stop =bft_timer_wtime();
-    cpu_stop =bft_timer_cpu_time();
+    wt_stop = cs_timer_wtime();
+    cpu_stop = cs_timer_cpu_time();
 
     gradient_info->n_calls += 1;
 
@@ -987,8 +987,8 @@ void CS_PROCF (cgdvec, CGDVEC)
   sprintf(var_name, "Var. %1d", *ivar);
 
   if (update_stats == true) {
-    wt_start =bft_timer_wtime();
-    cpu_start =bft_timer_cpu_time();
+    wt_start = cs_timer_wtime();
+    cpu_start = cs_timer_cpu_time();
     gradient_info = _find_or_add_system(var_name, gradient_type);
   }
 
@@ -1025,8 +1025,8 @@ void CS_PROCF (cgdvec, CGDVEC)
   // TODO _gradient_clipping
   if (update_stats == true) {
 
-    wt_stop =bft_timer_wtime();
-    cpu_stop =bft_timer_cpu_time();
+    wt_stop = cs_timer_wtime();
+    cpu_stop = cs_timer_cpu_time();
 
     gradient_info->n_calls += 1;
 

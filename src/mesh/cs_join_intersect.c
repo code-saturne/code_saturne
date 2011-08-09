@@ -51,7 +51,6 @@
  *---------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_timer.h>
 #include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
@@ -71,6 +70,7 @@
 #include "cs_join_set.h"
 #include "cs_join_util.h"
 #include "cs_search.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -3682,8 +3682,8 @@ cs_join_intersect_edges(cs_join_param_t         param,
   assert(mesh != NULL);
   assert(edges != NULL);
 
-  clock_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  clock_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   if (param.verbosity > 3)
     fprintf(logfile, "  Parallel intersection criterion: %8.5e\n",
@@ -3858,8 +3858,8 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
   }
 
-  clock_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  clock_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   if (param.verbosity > 1)
     bft_printf(_("\n"
@@ -3904,8 +3904,8 @@ cs_join_intersect_faces(const cs_join_param_t   param,
 
   assert(join_mesh != NULL);
 
-  extents_wtime = bft_timer_wtime();
-  extents_cpu_time = bft_timer_cpu_time();
+  extents_wtime = cs_timer_wtime();
+  extents_cpu_time = cs_timer_cpu_time();
 
 #if defined HAVE_MPI
   face_neighborhood = fvm_neighborhood_create(cs_glob_mpi_comm);
@@ -3932,8 +3932,8 @@ cs_join_intersect_faces(const cs_join_param_t   param,
                       join_mesh->vertices,
                       f_extents + i*6);
 
-  extents_wtime = bft_timer_wtime() - extents_wtime;
-  extents_cpu_time = bft_timer_cpu_time() - extents_cpu_time;
+  extents_wtime = cs_timer_wtime() - extents_wtime;
+  extents_cpu_time = cs_timer_cpu_time() - extents_cpu_time;
 
   fvm_neighborhood_by_boxes(face_neighborhood,
                             3, /* spatial dimension */

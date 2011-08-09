@@ -63,7 +63,6 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -84,6 +83,7 @@
 #include "cs_perio.h"
 #include "cs_post.h"
 #include "cs_sles.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1524,8 +1524,8 @@ void CS_PROCF(clmlga, CLMLGA)
 
   /* Initialization */
 
-  wt_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  wt_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   var_name = cs_base_string_f_to_c_create(cname, *lname);
 
@@ -1704,8 +1704,8 @@ void CS_PROCF(clmlga, CLMLGA)
 
   /* Update timers */
 
-  wt_stop = bft_timer_wtime();
-  cpu_stop = bft_timer_cpu_time();
+  wt_stop = cs_timer_wtime();
+  cpu_stop = cs_timer_cpu_time();
 
   mg->info.wt_tot[0] += (wt_stop - wt_start);
   mg->info.cpu_tot[0] += (cpu_stop - cpu_start);
@@ -1729,8 +1729,8 @@ void CS_PROCF(dsmlga, DSMLGA)
 
   /* Initialization */
 
-  wt_start =bft_timer_wtime();
-  cpu_start =bft_timer_cpu_time();
+  wt_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   var_name = cs_base_string_f_to_c_create(cname, *lname);
 
@@ -1748,8 +1748,8 @@ void CS_PROCF(dsmlga, DSMLGA)
 
   /* Update timers */
 
-  wt_stop = bft_timer_wtime();
-  cpu_stop = bft_timer_cpu_time();
+  wt_stop = cs_timer_wtime();
+  cpu_stop = cs_timer_cpu_time();
 
   mg->info.wt_tot[0] += (wt_stop - wt_start);
   mg->info.cpu_tot[0] += (cpu_stop - cpu_start);
@@ -1968,8 +1968,8 @@ cs_multigrid_solve(const char         *var_name,
   double  wt_start = 0.0, wt_stop = 0.0;
   double  cpu_start = 0.0, cpu_stop = 0.0;
 
-  wt_start =bft_timer_wtime();
-  cpu_start =bft_timer_cpu_time();
+  wt_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
   mg = _find_or_add_system(var_name);
   mg_info = &(mg->info);
 
@@ -2082,8 +2082,8 @@ cs_multigrid_solve(const char         *var_name,
 
   /* Update statistics */
 
-  wt_stop =bft_timer_wtime();
-  cpu_stop =bft_timer_cpu_time();
+  wt_stop = cs_timer_wtime();
+  cpu_stop = cs_timer_cpu_time();
 
   /* Update stats on number of iterations (last, min, max, total) */
 

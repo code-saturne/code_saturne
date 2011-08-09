@@ -63,7 +63,6 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -89,6 +88,7 @@
 #include "cs_gui_mobile_mesh.h"
 #include "cs_mesh.h"
 #include "cs_prototypes.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -3607,7 +3607,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         /* return an empty interpreter */
 
-        time0 = bft_timer_wtime();
+        time0 = cs_timer_wtime();
 
         ev_rho = mei_tree_new(law_rho);
 
@@ -3643,7 +3643,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         mei_tree_destroy(ev_rho);
 
-        cs_gui_add_mei_time(bft_timer_wtime() - time0);
+        cs_gui_add_mei_time(cs_timer_wtime() - time0);
     }
 
     /* law for molecular viscosity */
@@ -3672,7 +3672,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         /* return an empty interpreter */
 
-        time0 = bft_timer_wtime();
+        time0 = cs_timer_wtime();
 
         ev_mu = mei_tree_new(law_mu);
 
@@ -3715,7 +3715,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         mei_tree_destroy(ev_mu);
 
-        cs_gui_add_mei_time(bft_timer_wtime() - time0);
+        cs_gui_add_mei_time(cs_timer_wtime() - time0);
     }
 
     /* law for specific heat */
@@ -3744,7 +3744,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         /* return an empty interpreter */
 
-        time0 = bft_timer_wtime();
+        time0 = cs_timer_wtime();
 
         ev_cp = mei_tree_new(law_cp);
 
@@ -3780,7 +3780,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         mei_tree_destroy(ev_cp);
 
-        cs_gui_add_mei_time(bft_timer_wtime() - time0);
+        cs_gui_add_mei_time(cs_timer_wtime() - time0);
     }
 
     /* law for thermal conductivity */
@@ -3809,7 +3809,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         /* return an empty interpreter */
 
-        time0 = bft_timer_wtime();
+        time0 = cs_timer_wtime();
 
         ev_la = mei_tree_new(law_la);
 
@@ -3862,7 +3862,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         }
         mei_tree_destroy(ev_la);
 
-        cs_gui_add_mei_time(bft_timer_wtime() - time0);
+        cs_gui_add_mei_time(cs_timer_wtime() - time0);
     }
 
     /* law for scalar diffusivity */
@@ -3898,7 +3898,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
             /* return an empty interpreter */
 
-            time0 = bft_timer_wtime();
+            time0 = cs_timer_wtime();
 
             ev_Ds = mei_tree_new(law_Ds);
             BFT_FREE(law_Ds);
@@ -3948,7 +3948,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
             }
             mei_tree_destroy(ev_Ds);
 
-            cs_gui_add_mei_time(bft_timer_wtime() - time0);
+            cs_gui_add_mei_time(cs_timer_wtime() - time0);
 
         }
         BFT_FREE(name);

@@ -53,7 +53,6 @@
 
 #include <bft_mem.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers

@@ -48,7 +48,6 @@
 
 #include <bft_mem.h>
 #include <bft_error.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -59,6 +58,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -597,7 +597,7 @@ _plot_file_check_or_write(cs_time_plot_t  *p)
 
   }
   else {
-    double cur_time = bft_timer_wtime();
+    double cur_time = cs_timer_wtime();
     if (   p->flush_times[0] > 0
         && (cur_time - p->flush_times[1]) > p->flush_times[0]) {
       p->flush_times[1] = cur_time;

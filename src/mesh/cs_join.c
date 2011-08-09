@@ -48,7 +48,6 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -72,6 +71,7 @@
 #include "cs_join_split.h"
 #include "cs_join_update.h"
 #include "cs_join_util.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -273,15 +273,15 @@ _get_work_struct(cs_join_param_t         param,
 
   /* TODO: check if this is necessary after cleanup done in face_face_vis */
 
-  clock_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  clock_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   cs_join_gset_single_order(face_face_vis,
                             &n_inter_faces,
                             &intersect_face_gnum);
 
-  clock_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  clock_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   if (param.verbosity > 1)
     bft_printf(_("\n  Sorting possible intersections between faces:\n"
@@ -377,8 +377,8 @@ _build_join_structures(cs_join_t            *this_join,
   cs_join_param_t  param = this_join->param;
   cs_join_select_t  *selection = this_join->selection;
 
-  clock_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  clock_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   /* Define a cs_join_mesh_structure from the selected connectivity */
 
@@ -408,8 +408,8 @@ _build_join_structures(cs_join_t            *this_join,
   if (param.verbosity > 0)
     cs_join_mesh_minmax_tol(param, loc_jmesh);
 
-  clock_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  clock_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   if (param.visualization > 2) {
 
@@ -451,8 +451,8 @@ _build_join_structures(cs_join_t            *this_join,
                    &work_face_normal,
                    &edge_edge_vis);
 
-  clock_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  clock_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   if (param.verbosity > 1)
     bft_printf(_("\n  Definition of structures for the joining algorithm:\n"
@@ -520,8 +520,8 @@ _intersect_edges(cs_join_t               *this_join,
 
   const int  n_ranks = cs_glob_n_ranks;
 
-  clock_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  clock_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   /*
      Compute the intersections between edges.
@@ -634,8 +634,8 @@ _intersect_edges(cs_join_t               *this_join,
   vtx_eset->n_max_equiv = vtx_eset->n_equiv;
   BFT_REALLOC(vtx_eset->equiv_couple, 2*vtx_eset->n_equiv, cs_int_t);
 
-  clock_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  clock_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   if (param.verbosity > 0)
     bft_printf(_("\n"
@@ -992,8 +992,8 @@ _merge_vertices(cs_join_t                *this_join,
   assert(work_jmesh != NULL);
   assert(work_join_edges != NULL);
 
-  clock_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  clock_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   /*
     Store the initial global vertex numbering
@@ -1074,8 +1074,8 @@ _merge_vertices(cs_join_t                *this_join,
   cs_join_mesh_dump_edges(work_join_edges, work_jmesh);
 #endif
 
-  clock_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  clock_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   if (param.verbosity > 0)
     bft_printf(_("\n"
@@ -1195,8 +1195,8 @@ _split_faces(cs_join_t           *this_join,
   cs_join_select_t  *selection = this_join->selection;
   cs_gnum_t  *rank_face_gnum_index = selection->compact_rank_index;
 
-  clock_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  clock_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   cs_join_split_faces(param,
                       work_face_normal,
@@ -1227,8 +1227,8 @@ _split_faces(cs_join_t           *this_join,
                                   mesh,
                                   mesh_builder);
 
-  clock_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  clock_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   /* Partial free memory */
 
@@ -1525,8 +1525,8 @@ cs_join_all(void)
   assert(sizeof(cs_int_t) == sizeof(cs_lnum_t));
   assert(sizeof(double) == sizeof(cs_real_t));
 
-  full_clock_start = bft_timer_wtime();
-  full_cpu_start = bft_timer_cpu_time();
+  full_clock_start = cs_timer_wtime();
+  full_cpu_start = cs_timer_cpu_time();
 
   cs_join_post_init();
 
@@ -1537,8 +1537,8 @@ cs_join_all(void)
     cs_join_t  *this_join = cs_glob_join_array[join_id];
     cs_join_param_t  join_param = this_join->param;
 
-    clock_start = bft_timer_wtime();  /* Start timer */
-    cpu_start = bft_timer_cpu_time();
+    clock_start = cs_timer_wtime();  /* Start timer */
+    cpu_start = cs_timer_cpu_time();
 
     /* Print information into log file */
 
@@ -1740,8 +1740,8 @@ cs_join_all(void)
       bft_printf("\n");
     }
 
-    clock_end = bft_timer_wtime();
-    cpu_end = bft_timer_cpu_time();
+    clock_end = cs_timer_wtime();
+    cpu_end = cs_timer_cpu_time();
 
     bft_printf(_("\n"
                  "  Complete joining treatment for joining %2d\n"
@@ -1770,8 +1770,8 @@ cs_join_all(void)
 
   BFT_FREE(cs_glob_join_array);
 
-  full_clock_end = bft_timer_wtime();
-  full_cpu_end = bft_timer_cpu_time();
+  full_clock_end = cs_timer_wtime();
+  full_cpu_end = cs_timer_cpu_time();
 
   bft_printf(_("\n"
                "  All joining operations successfully finished:\n"

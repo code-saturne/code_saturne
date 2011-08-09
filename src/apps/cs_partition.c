@@ -118,7 +118,6 @@ void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
 #include <bft_error.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -135,6 +134,7 @@ void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
 #include "cs_base.h"
 #include "cs_file.h"
 #include "cs_io.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -1136,8 +1136,8 @@ _part_metis(size_t    n_cells,
   idxtype   _n_parts = n_parts;
   idxtype  *_cell_part = NULL;
 
-  start_time[0] = bft_timer_wtime();
-  start_time[1] = bft_timer_cpu_time();
+  start_time[0] = cs_timer_wtime();
+  start_time[1] = cs_timer_cpu_time();
 
   if (sizeof(idxtype) == sizeof(int))
     _cell_part = (idxtype *)cell_part;
@@ -1227,8 +1227,8 @@ _part_metis(size_t    n_cells,
 
   }
 
-  end_time[0] = bft_timer_wtime();
-  end_time[1] = bft_timer_cpu_time();
+  end_time[0] = cs_timer_wtime();
+  end_time[1] = cs_timer_cpu_time();
 
   bft_printf(_("\n"
                "  Total number of faces on parallel boundaries: %llu\n"
@@ -1290,7 +1290,7 @@ _part_parmetis(cs_gnum_t   n_g_cells,
   idxtype  *_cell_part = NULL;
   MPI_Datatype mpi_idxtype = MPI_DATATYPE_NULL;
 
-  start_time = bft_timer_wtime();
+  start_time = cs_timer_wtime();
 
   MPI_Comm_size(comm, &n_ranks);
 
@@ -1392,7 +1392,7 @@ _part_parmetis(cs_gnum_t   n_g_cells,
 
 #endif
 
-  end_time = bft_timer_wtime();
+  end_time = cs_timer_wtime();
 
   BFT_FREE(vtxdist);
 
@@ -1621,8 +1621,8 @@ _part_scotch(SCOTCH_Num   n_cells,
 
   /* Initialization */
 
-  start_time[0] = bft_timer_wtime();
-  start_time[1] = bft_timer_cpu_time();
+  start_time[0] = cs_timer_wtime();
+  start_time[1] = cs_timer_cpu_time();
 
   if (sizeof(SCOTCH_Num) == sizeof(int))
     _cell_part = cell_part;
@@ -1696,8 +1696,8 @@ _part_scotch(SCOTCH_Num   n_cells,
 
   /* Finalization */
 
-  end_time[0] = bft_timer_wtime();
-  end_time[1] = bft_timer_cpu_time();
+  end_time[0] = cs_timer_wtime();
+  end_time[1] = cs_timer_cpu_time();
 
   bft_printf(_("\n"
                "  Total number of faces on parallel boundaries: %llu\n"
@@ -1748,7 +1748,7 @@ _part_ptscotch(cs_gnum_t    n_g_cells,
 
   /* Initialization */
 
-  start_time = bft_timer_wtime();
+  start_time = cs_timer_wtime();
 
   if (sizeof(SCOTCH_Num) == sizeof(int))
     _cell_part = cell_part;
@@ -1805,7 +1805,7 @@ _part_ptscotch(cs_gnum_t    n_g_cells,
 
   /* Finalization */
 
-  end_time = bft_timer_wtime();
+  end_time = cs_timer_wtime();
 
   bft_printf(_("\n"
                "  wall-clock time: %f s\n\n"),
@@ -2229,7 +2229,7 @@ main(int    argc,
   textdomain(PACKAGE);
 #endif
 
-  (void)bft_timer_wtime();
+  (void)cs_timer_wtime();
 
   /* Initialize memory management and signals */
 

@@ -51,7 +51,6 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -68,6 +67,7 @@
 #include "cs_file.h"
 #include "cs_io.h"
 #include "cs_mesh.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -343,7 +343,7 @@ _add_file(cs_restart_t  *r)
   const char magic_string[] = "Checkpoint / restart, R0";
   const long echo = CS_IO_ECHO_NONE;
 
-  timing[0] = bft_timer_wtime();
+  timing[0] = cs_timer_wtime();
 
   /* In read mode, open file to detect header first */
 
@@ -380,7 +380,7 @@ _add_file(cs_restart_t  *r)
 #endif
   }
 
-  timing[1] = bft_timer_wtime();
+  timing[1] = cs_timer_wtime();
   _restart_wtime[r->mode] += timing[1] - timing[0];
 
   _restart_n_opens[r->mode] += 1;
@@ -1273,7 +1273,7 @@ cs_restart_create(const char         *name,
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
-  timing[0] = bft_timer_wtime();
+  timing[0] = cs_timer_wtime();
 
   /* Create 'checkpoint' directory or read from 'restart' directory */
 
@@ -1360,7 +1360,7 @@ cs_restart_create(const char         *name,
                           mesh->n_g_vertices, mesh->n_vertices,
                           mesh->global_vtx_num);
 
-  timing[1] = bft_timer_wtime();
+  timing[1] = cs_timer_wtime();
   _restart_wtime[mode] += timing[1] - timing[0];
 
   return restart;
@@ -1383,7 +1383,7 @@ cs_restart_destroy(cs_restart_t  *restart)
 
   double timing[2];
 
-  timing[0] = bft_timer_wtime();
+  timing[0] = cs_timer_wtime();
 
   assert(restart != NULL);
 
@@ -1407,7 +1407,7 @@ cs_restart_destroy(cs_restart_t  *restart)
   BFT_FREE(restart->name);
   BFT_FREE(restart);
 
-  timing[1] = bft_timer_wtime();
+  timing[1] = cs_timer_wtime();
   _restart_wtime[mode] += timing[1] - timing[0];
 
   return NULL;
@@ -1497,7 +1497,7 @@ cs_restart_add_location(cs_restart_t     *restart,
 
   int loc_id;
 
-  timing[0] = bft_timer_wtime();
+  timing[0] = cs_timer_wtime();
 
   if (restart->mode == CS_RESTART_MODE_READ) {
 
@@ -1512,7 +1512,7 @@ cs_restart_add_location(cs_restart_t     *restart,
         (restart->location[loc_id]).n_ents  = n_ents;
         (restart->location[loc_id]).ent_global_num = ent_global_num;
 
-        timing[1] = bft_timer_wtime();
+        timing[1] = cs_timer_wtime();
         _restart_wtime[restart->mode] += timing[1] - timing[0];
 
         return loc_id + 1;
@@ -1554,13 +1554,13 @@ cs_restart_add_location(cs_restart_t     *restart,
                        gnum_type, &n_glob_ents,
                        restart->fh);
 
-    timing[1] = bft_timer_wtime();
+    timing[1] = cs_timer_wtime();
     _restart_wtime[restart->mode] += timing[1] - timing[0];
 
     return restart->n_locations;
   }
 
-  timing[1] = bft_timer_wtime();
+  timing[1] = cs_timer_wtime();
   _restart_wtime[restart->mode] += timing[1] - timing[0];
 
   return -1;
@@ -1634,7 +1634,7 @@ cs_restart_read_section(cs_restart_t  *restart,
   cs_int_t _n_location_vals = n_location_vals;
   size_t index_size = 0;
 
-  timing[0] = bft_timer_wtime();
+  timing[0] = cs_timer_wtime();
 
   index_size = cs_io_get_index_size(restart->fh);
 
@@ -1790,7 +1790,7 @@ cs_restart_read_section(cs_restart_t  *restart,
 
 #endif /* #if defined(HAVE_MPI) */
 
-  timing[1] = bft_timer_wtime();
+  timing[1] = cs_timer_wtime();
   _restart_wtime[restart->mode] += timing[1] - timing[0];
 
   /* Return */
@@ -1827,7 +1827,7 @@ cs_restart_write_section(cs_restart_t  *restart,
 
   cs_int_t _n_location_vals = n_location_vals;
 
-  timing[0] = bft_timer_wtime();
+  timing[0] = cs_timer_wtime();
 
   assert(restart != NULL);
 
@@ -1918,7 +1918,7 @@ cs_restart_write_section(cs_restart_t  *restart,
                       val_type,
                       (const cs_byte_t *)val);
 
-  timing[1] = bft_timer_wtime();
+  timing[1] = cs_timer_wtime();
   _restart_wtime[restart->mode] += timing[1] - timing[0];
 
 #endif /* #if defined(HAVE_MPI) */

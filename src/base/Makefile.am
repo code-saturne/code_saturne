@@ -102,6 +102,7 @@ cs_syr3_messages.h \
 cs_syr4_coupling.h \
 cs_syr_coupling.h \
 cs_time_plot.h \
+cs_timer.h \
 cs_tpar1d.h \
 cs_ventil.h
 
@@ -116,7 +117,8 @@ libcscore_la_SOURCES = \
 cs_base.c \
 cs_file.c \
 cs_io.c \
-cs_map.c
+cs_map.c \
+cs_timer.c
 libcscore_la_LDFLAGS = -no-undefined
 
 ###

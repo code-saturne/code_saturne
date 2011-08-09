@@ -60,7 +60,6 @@
 #include <bft_error.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 #if defined(HAVE_MPI)
 #include <fvm_parall.h>
@@ -72,8 +71,8 @@
 
 #include "cs_base.h"
 #include "cs_map.h"
-
 #include "cs_file.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -700,7 +699,7 @@ _file_open(cs_io_t     *cs_io,
       l->n_opens += 1;
   }
 
-  cs_io->start_time = bft_timer_wtime();
+  cs_io->start_time = cs_timer_wtime();
 
   /* Create interface file descriptor */
 
@@ -1210,7 +1209,7 @@ _file_close(cs_io_t  *cs_io)
     cs_io->f = cs_file_free(cs_io->f);
 
   if (cs_io->log_id > -1) {
-    double t_end = bft_timer_wtime();
+    double t_end = cs_timer_wtime();
     cs_io_log_t *log = _cs_io_log[cs_io->mode] + cs_io->log_id;
     log->wtimes[2] += t_end - cs_io->start_time;
   }
@@ -1698,7 +1697,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 
   if (inp->log_id > -1) {
     log = _cs_io_log[inp->mode] + inp->log_id;
-    t_start = bft_timer_wtime();
+    t_start = cs_timer_wtime();
   }
 
   /* Choose global or block mode */
@@ -1816,7 +1815,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
     ((char *)_elts)[header->n_vals] = '\0';
 
   if (log != NULL) {
-    double t_end = bft_timer_wtime();
+    double t_end = cs_timer_wtime();
     int t_id = (global_num_start > 0 && global_num_end > 0) ? 1 : 0;
     log->wtimes[t_id] += t_end - t_start;
   }
@@ -1990,7 +1989,7 @@ _write_header(const char      *sec_name,
 
   if (outp->log_id > -1) {
     log = _cs_io_log[outp->mode] + outp->log_id;
-    t_start = bft_timer_wtime();
+    t_start = cs_timer_wtime();
   }
 
   _write_padding(outp->header_align, outp); /* Pad if necessary */
@@ -2124,7 +2123,7 @@ _write_header(const char      *sec_name,
               (unsigned long long)write_size, cs_file_get_name(outp->f));
 
   if (log != NULL) {
-    double t_end = bft_timer_wtime();
+    double t_end = cs_timer_wtime();
     log->wtimes[0] += t_end - t_start;
     log->data_size[0] += write_size;
   }
@@ -2515,7 +2514,7 @@ cs_io_read_header(cs_io_t             *inp,
 
   if (inp->log_id > -1) {
     log = _cs_io_log[inp->mode] + inp->log_id;
-    t_start = bft_timer_wtime();
+    t_start = cs_timer_wtime();
   }
 
   /* Position read pointer if necessary */
@@ -2682,7 +2681,7 @@ cs_io_read_header(cs_io_t             *inp,
   /* Possible echo */
 
   if (log != NULL) {
-    double t_end = bft_timer_wtime();
+    double t_end = cs_timer_wtime();
     log->wtimes[0] += t_end - t_start;
     log->data_size[0] += (inp->header_size + n_add);
   }
@@ -3152,7 +3151,7 @@ cs_io_write_global(const char      *sec_name,
 
     if (outp->log_id > -1) {
       log = _cs_io_log[outp->mode] + outp->log_id;
-      t_start = bft_timer_wtime();
+      t_start = cs_timer_wtime();
     }
 
     _write_padding(outp->body_align, outp);
@@ -3168,7 +3167,7 @@ cs_io_write_global(const char      *sec_name,
                 (unsigned long long)n_vals, cs_file_get_name(outp->f));
 
     if (log != NULL) {
-      double t_end = bft_timer_wtime();
+      double t_end = cs_timer_wtime();
       log->wtimes[0] += t_end - t_start;
       log->data_size[0] += n_written*fvm_datatype_size[elt_type];
     }
@@ -3249,7 +3248,7 @@ cs_io_write_block_buffer(const char      *sec_name,
 
   if (outp->log_id > -1) {
     log = _cs_io_log[outp->mode] + outp->log_id;
-    t_start = bft_timer_wtime();
+    t_start = cs_timer_wtime();
   }
 
   _write_padding(outp->body_align, outp);
@@ -3267,7 +3266,7 @@ cs_io_write_block_buffer(const char      *sec_name,
               (unsigned long long)n_vals, cs_file_get_name(outp->f));
 
   if (log != NULL) {
-    double t_end = bft_timer_wtime();
+    double t_end = cs_timer_wtime();
     log->wtimes[1] += t_end - t_start;
     log->data_size[1] += n_written*fvm_datatype_size[elt_type];
   }

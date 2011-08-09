@@ -84,6 +84,7 @@ src/base/cs_syr3_messages.c
 src/base/cs_syr4_coupling.c
 src/base/cs_syr_coupling.c
 src/base/cs_time_plot.c
+src/base/cs_timer.c
 src/base/cs_tpar1d.c
 src/base/cs_ventil.c
 src/bft/bft_backtrace.c
@@ -92,7 +93,6 @@ src/bft/bft_mem.c
 src/bft/bft_mem_usage.c
 src/bft/bft_printf.c
 src/bft/bft_sys_info.c
-src/bft/bft_timer.c
 src/ctwr/cs_ctwr_air_props.c
 src/ctwr/cs_ctwr.c
 src/ctwr/cs_ctwr_halo.c

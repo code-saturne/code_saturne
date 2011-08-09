@@ -53,7 +53,6 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -69,6 +68,7 @@
 #include "cs_matrix.h"
 #include "cs_perio.h"
 #include "cs_post.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -2504,8 +2504,8 @@ _solve_ni(const char         *var_name,
 
   n_rows = cs_matrix_get_n_rows(a);
 
-  wt_start =bft_timer_wtime();
-  cpu_start =bft_timer_cpu_time();
+  wt_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
   sles_info = _find_or_add_system(var_name, solver_type);
 
   /* Initialize number of iterations and residue,
@@ -2622,8 +2622,8 @@ _solve_ni(const char         *var_name,
     *residue = convergence.residue;
   }
 
-  wt_stop =bft_timer_wtime();
-  cpu_stop =bft_timer_cpu_time();
+  wt_stop = cs_timer_wtime();
+  cpu_stop = cs_timer_cpu_time();
 
   if (sles_info->n_calls == 0)
     sles_info->n_iterations_min = _n_iter;
@@ -3138,8 +3138,8 @@ cs_sles_solve(const char         *var_name,
   n_rows = cs_matrix_get_n_rows(a);
 
   if (update_stats == true) {
-    wt_start =bft_timer_wtime();
-    cpu_start =bft_timer_cpu_time();
+    wt_start = cs_timer_wtime();
+    cpu_start = cs_timer_cpu_time();
     sles_info = _find_or_add_system(var_name, solver_type);
   }
 
@@ -3336,8 +3336,8 @@ cs_sles_solve(const char         *var_name,
 
   if (update_stats == true) {
 
-    wt_stop =bft_timer_wtime();
-    cpu_stop =bft_timer_cpu_time();
+    wt_stop = cs_timer_wtime();
+    cpu_stop = cs_timer_cpu_time();
 
     if (sles_info->n_calls == 0)
       sles_info->n_iterations_min = _n_iter;

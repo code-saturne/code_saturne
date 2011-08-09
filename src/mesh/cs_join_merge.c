@@ -49,7 +49,6 @@
  *---------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_timer.h>
 #include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
@@ -66,6 +65,7 @@
 
 #include "cs_search.h"
 #include "cs_join_post.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -3273,8 +3273,8 @@ cs_join_merge_vertices(cs_join_param_t        param,
   /* Operate merge between equivalent vertices.
      Manage reduction of tolerance if necessary */
 
-  clock_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  clock_start = cs_timer_wtime();
+  cpu_start = cs_timer_cpu_time();
 
   /* Tag with the same number all the vertices which might be merged together */
 
@@ -3346,8 +3346,8 @@ cs_join_merge_vertices(cs_join_param_t        param,
 
   BFT_FREE(vtx_tags);
 
-  clock_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
+  clock_end = cs_timer_wtime();
+  cpu_end = cs_timer_cpu_time();
 
   cs_join_gset_destroy(&merge_set);
 

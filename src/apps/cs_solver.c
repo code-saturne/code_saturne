@@ -67,7 +67,6 @@
 
 #include <bft_mem.h>
 #include <bft_printf.h>
-#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -277,9 +276,9 @@ cs_run(void)
 
   if (cwf_threshold >= 0.0) {
 
-    t1 = bft_timer_wtime();
+    t1 = cs_timer_wtime();
     cs_mesh_warping_cut_faces(cs_glob_mesh, cwf_threshold, cwf_post);
-    t2 = bft_timer_wtime();
+    t2 = cs_timer_wtime();
 
     bft_printf(_("\n Cutting warped faces (%.3g s)\n"), t2-t1);
 
@@ -315,9 +314,9 @@ cs_run(void)
 
   bft_printf_flush();
 
-  t1 = bft_timer_wtime();
+  t1 = cs_timer_wtime();
   cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
-  t2 = bft_timer_wtime();
+  t2 = cs_timer_wtime();
 
   bft_printf(_("\n Computing geometric quantities (%.3g s)\n"), t2-t1);
 
@@ -571,7 +570,7 @@ main(int    argc,
   textdomain(PACKAGE);
 #endif
 
-  (void)bft_timer_wtime();
+  (void)cs_timer_wtime();
 
   /* Trap floating-point exceptions */
 
