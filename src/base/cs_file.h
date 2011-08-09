@@ -6,24 +6,28 @@
  *============================================================================*/
 
 /*
-  This file is part of the "Finite Volume Mesh" library, intended to provide
-  finite volume mesh and associated fields I/O and manipulation services.
+  This file is part of the Code_Saturne Kernel, element of the
+  Code_Saturne CFD tool.
 
-  Copyright (C) 2007-2011  EDF
+  Copyright (C) 1998-2011 EDF S.A., France
 
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
+  contact: saturne-support@edf.fr
 
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
+  The Code_Saturne Kernel is free software; you can redistribute it
+  and/or modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2 of
+  the License, or (at your option) any later version.
 
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  The Code_Saturne Kernel is distributed in the hope that it will be
+  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with the Code_Saturne Kernel; if not, write to the
+  Free Software Foundation, Inc.,
+  51 Franklin St, Fifth Floor,
+  Boston, MA  02110-1301  USA
 */
 
 /*----------------------------------------------------------------------------*/
@@ -507,7 +511,7 @@ cs_file_serializer_advance(cs_file_serializer_t  *s,
 
 #endif /* defined(HAVE_MPI) */
 
-/*
+/*----------------------------------------------------------------------------
  * Create a new directory using default permissions.
  *
  * This function is similar to the POSIX function mkdir(), except that
@@ -532,12 +536,12 @@ cs_file_serializer_advance(cs_file_serializer_t  *s,
  *   contains the appropriate error code). If the underlying
  *   system has no mkdir() function or it was not detected
  *   upon BFT configuration, 1 is returned.
- */
+ *----------------------------------------------------------------------------*/
 
 int
 cs_file_mkdir_default(const char  *path);
 
-/*
+/*----------------------------------------------------------------------------
  * Check if a file exists and is a regular file.
  *
  * parameters:
@@ -545,12 +549,12 @@ cs_file_mkdir_default(const char  *path);
  *
  * returns:
  *   1 if file exists and is a regular file, 0 otherwise.
- */
+ *----------------------------------------------------------------------------*/
 
 int
 cs_file_isreg(const char  *path);
 
-/*
+/*----------------------------------------------------------------------------
  * Check if a directory exists.
  *
  * parameters:
@@ -558,12 +562,12 @@ cs_file_isreg(const char  *path);
  *
  * returns:
  *   1 if directory exists, 0 otherwise.
- */
+ *----------------------------------------------------------------------------*/
 
 int
 cs_file_isdir(const char  *path);
 
-/*
+/*----------------------------------------------------------------------------
  * List files inside a directory.
  *
  * The array returned must be freed by the caller using BFT_FREE,
@@ -576,7 +580,7 @@ cs_file_isdir(const char  *path);
  *   an array of file names in a directory. The last entry is set to NULL.
  *   If no means to list the directory or an error occured, the return
  *    value is simply NULL.
- */
+ *----------------------------------------------------------------------------*/
 
 char **
 cs_file_listdir(const char *path);
