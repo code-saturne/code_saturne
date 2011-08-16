@@ -69,6 +69,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(HAVE_SYS_TYPES_H)
+#include <sys/types.h>
+#endif
+
 #if (__STDC_VERSION__ >= 199901L)
 #include <stdint.h>
 #endif
