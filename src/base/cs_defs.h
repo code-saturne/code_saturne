@@ -135,6 +135,14 @@ extern "C" {
 #  include <inttypes.h>
 #endif
 
+/*
+ * Obtain the definition of off_t.
+ */
+
+#if defined(HAVE_SYS_TYPES_H)
+#include <sys/types.h>
+#endif
+
 /* C99 _Bool type */
 
 #if HAVE_STDBOOL_H
