@@ -61,6 +61,12 @@
 #endif
 
 /*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_coupling.h>
+
+/*----------------------------------------------------------------------------
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
@@ -124,12 +130,18 @@ struct _cs_syr3_comm_t {
 
   char                 *nom;          /* Communicator name */
 
-  cs_int_t              proc_rank;    /* Communication process name */
-  int                   sock;         /* Socket number */
-
   cs_syr3_comm_type_t   type;         /* Type of data encoding */
   cs_bool_t             swap_endian;  /* Swap bytes ? */
   cs_int_t              echo;         /* Data transfer verbosity level */
+
+#if defined(HAVE_MPI)
+  MPI_Comm              intracomm;    /* Associated MPI intracommunicator */
+  cs_int_t              syr_rank;     /* Syrthes root rank */
+#endif
+
+#if defined(HAVE_SOCKET)
+  int                   sock;         /* Socket number */
+#endif
 
 };
 
@@ -189,7 +201,7 @@ static void
 _comm_mpi_open(cs_syr3_comm_t  *comm,
                const char      *magic_string)
 {
-  int ierror, comm_size;
+  int ierror;
 
   MPI_Status status;
 
@@ -197,27 +209,38 @@ _comm_mpi_open(cs_syr3_comm_t  *comm,
 
   cs_int_t magic_string_len = strlen(magic_string);
 
-  /* Initialize communication */
+  /* Create intracommunicator */
   /*--------------------------*/
 
-  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+  int local_range[2] = {-1, -1};
+  int distant_range[2] = {-1, -1};
 
-  if (comm->proc_rank >= comm_size)
+  bft_printf(_(" Initializing MPI communication: %s ... "), comm->nom);
+  bft_printf_flush();
 
-    bft_error(__FILE__, __LINE__, 0,
-              _("Impossible to establish the communication: %s\n"
-                "because the requested process rank (%d)\n"
-                "is greater than or equal to the number of MPI processes (%d)"),
-              comm->nom, comm->proc_rank, comm_size);
+  ple_coupling_mpi_intracomm_create(MPI_COMM_WORLD,
+                                    cs_glob_mpi_comm,
+                                    comm->syr_rank,
+                                    &(comm->intracomm),
+                                    local_range,
+                                    distant_range);
 
-  BFT_MALLOC(comm_magic_string, magic_string_len + 1, char);
+  bft_printf(_("[ok]\n"));
+  bft_printf(_("  Local ranks = [%d..%d], distant ranks = [%d..%d].\n\n"),
+             local_range[0], local_range[1] - 1,
+             distant_range[0], distant_range[1] - 1);
+  bft_printf_flush();
+
+  comm->syr_rank = distant_range[0];
 
   /* Receive magic string */
   /*----------------------*/
 
+  BFT_MALLOC(comm_magic_string, magic_string_len + 1, char);
+
   ierror = MPI_Recv(comm_magic_string, magic_string_len, MPI_CHAR,
-                    comm->proc_rank,
-                    MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                    comm->syr_rank,
+                    MPI_ANY_TAG, comm->intracomm, &status);
 
   if (ierror != MPI_SUCCESS)
     _comm_mpi_error_msg(comm, ierror);
@@ -242,13 +265,26 @@ _comm_mpi_open(cs_syr3_comm_t  *comm,
   strncpy(comm_magic_string, magic_string, magic_string_len);
 
   ierror = MPI_Send(comm_magic_string, magic_string_len, MPI_CHAR,
-                    comm->proc_rank,
-                    0, MPI_COMM_WORLD);
+                    comm->syr_rank,
+                    0, comm->intracomm);
 
   if (ierror != MPI_SUCCESS)
     _comm_mpi_error_msg(comm, ierror);
 
   BFT_FREE(comm_magic_string);
+}
+
+/*----------------------------------------------------------------------------
+ * Free MPI intracommunicator
+ *----------------------------------------------------------------------------*/
+
+static void
+_comm_mpi_close(cs_syr3_comm_t  *comm)
+{
+  if (comm->intracomm != MPI_COMM_NULL) {
+    MPI_Comm_free(&(comm->intracomm));
+    comm->intracomm = MPI_COMM_NULL;
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -287,8 +323,8 @@ _comm_mpi_header(char                  *sec_name,
     /* Receive message */
 
     ierror = MPI_Recv(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, MPI_PACKED,
-                      comm->proc_rank,
-                      MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                      comm->syr_rank,
+                      MPI_ANY_TAG, comm->intracomm, &status);
 
     if (ierror != MPI_SUCCESS)
       _comm_mpi_error_msg(comm, ierror);
@@ -298,14 +334,14 @@ _comm_mpi_header(char                  *sec_name,
     position = 0;
 
     MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, sec_name,
-               CS_SYR3_COMM_H_LEN, MPI_CHAR, MPI_COMM_WORLD);
+               CS_SYR3_COMM_H_LEN, MPI_CHAR, comm->intracomm);
 
     MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, n_sec_elts,
-               1, CS_MPI_INT, MPI_COMM_WORLD);
+               1, CS_MPI_INT, comm->intracomm);
 
     if (*n_sec_elts > 0)
       MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, elt_type_name,
-                 CS_SYR3_COMM_ELT_TYPE_NAME_LEN, MPI_CHAR, MPI_COMM_WORLD);
+                 CS_SYR3_COMM_ELT_TYPE_NAME_LEN, MPI_CHAR, comm->intracomm);
 
   }
 
@@ -319,19 +355,19 @@ _comm_mpi_header(char                  *sec_name,
     position = 0;
 
     MPI_Pack(sec_name, CS_SYR3_COMM_H_LEN, MPI_CHAR, buffer,
-             CS_SYR3_COMM_MPI_PACK_SIZE, &position, MPI_COMM_WORLD);
+             CS_SYR3_COMM_MPI_PACK_SIZE, &position, comm->intracomm);
 
     MPI_Pack(n_sec_elts, 1, CS_MPI_INT, buffer, CS_SYR3_COMM_MPI_PACK_SIZE,
-             &position, MPI_COMM_WORLD);
+             &position, comm->intracomm);
 
     if (*n_sec_elts > 0)
       MPI_Pack(elt_type_name, CS_SYR3_COMM_ELT_TYPE_NAME_LEN, MPI_CHAR, buffer,
-               CS_SYR3_COMM_MPI_PACK_SIZE, &position, MPI_COMM_WORLD);
+               CS_SYR3_COMM_MPI_PACK_SIZE, &position, comm->intracomm);
 
     /* Send message */
 
-    ierror = MPI_Send(buffer, position, MPI_PACKED, comm->proc_rank,
-                      0, MPI_COMM_WORLD);
+    ierror = MPI_Send(buffer, position, MPI_PACKED, comm->syr_rank,
+                      0, comm->intracomm);
 
     if (ierror != MPI_SUCCESS)
       _comm_mpi_error_msg(comm, ierror);
@@ -369,20 +405,20 @@ _comm_mpi_body(void                  *sec_elts,
     case CS_TYPE_cs_int_t:
 
       ierror = MPI_Recv(sec_elts, n_elts, CS_MPI_INT,
-                        comm->proc_rank,
-                        MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                        comm->syr_rank,
+                        MPI_ANY_TAG, comm->intracomm, &status);
       break;
 
     case CS_TYPE_cs_real_t:
       ierror = MPI_Recv(sec_elts, n_elts, CS_MPI_REAL,
-                        comm->proc_rank,
-                        MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                        comm->syr_rank,
+                        MPI_ANY_TAG, comm->intracomm, &status);
       break;
 
     case CS_TYPE_char:
       ierror = MPI_Recv(sec_elts, n_elts, MPI_CHAR,
-                        comm->proc_rank,
-                        MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                        comm->syr_rank,
+                        MPI_ANY_TAG, comm->intracomm, &status);
       break;
 
     default:
@@ -402,20 +438,20 @@ _comm_mpi_body(void                  *sec_elts,
 
     case CS_TYPE_cs_int_t:
       ierror = MPI_Send(sec_elts, n_elts, CS_MPI_INT,
-                        comm->proc_rank,
-                        0, MPI_COMM_WORLD);
+                        comm->syr_rank,
+                        0, comm->intracomm);
       break;
 
     case CS_TYPE_cs_real_t:
       ierror = MPI_Send(sec_elts, n_elts, CS_MPI_REAL,
-                        comm->proc_rank,
-                        0, MPI_COMM_WORLD);
+                        comm->syr_rank,
+                        0, comm->intracomm);
       break;
 
     case CS_TYPE_char:
       ierror = MPI_Send(sec_elts, n_elts, MPI_CHAR,
-                        comm->proc_rank,
-                        0, MPI_COMM_WORLD);
+                        comm->syr_rank,
+                        0, comm->intracomm);
       break;
 
     default:
@@ -595,7 +631,7 @@ _comm_sock_connect(cs_syr3_comm_t  *comm)
 #if defined(_CS_ARCH_Linux)
   socklen_t sock_len;
 #else
-  int       sock_len;  /* size_t according to SUS-v2 standard, but acording
+  int       sock_len;  /* size_t according to SUS-v2 standard, but according
                           to "man gethostbyname" under Linux, the standard
                           is bad, and we should have an int (or socklen_t) */
 #endif
@@ -726,12 +762,21 @@ _comm_sock_open(cs_syr3_comm_t   *comm,
   int len = strlen(CS_SYR3_COMM_SOCKET_HEADER);
   int magic_string_len = strlen(magic_string);
 
+  /* Information on interface creation */
+
+  bft_printf(_("\n  Opening communication:  %s ..."), comm->nom);
+  bft_printf_flush();
+
+  /* Initialize socket communication */
+
+  _comm_sock_connect(comm);
+
+  /* Check that the connection is from the correct application type */
+
   if (read(comm->sock, nom_tmp, len) < len)
     bft_error(__FILE__, __LINE__, errno,
               _(cs_glob_comm_socket_err), comm->nom,
               rank + 1);
-
-  /* Check that the connection is from the correct application type */
 
   if (strncmp(nom_tmp, CS_SYR3_COMM_SOCKET_HEADER, len != 0))
     bft_error(__FILE__, __LINE__, 0,
@@ -770,6 +815,11 @@ _comm_sock_open(cs_syr3_comm_t   *comm,
                    (const void *)(magic_string),
                    strlen(magic_string),
                    CS_TYPE_char);
+
+  /* Info on interface creation success */
+
+  bft_printf(" [ok]\n");
+  bft_printf_flush();
 }
 
 /*----------------------------------------------------------------------------
@@ -991,9 +1041,12 @@ cs_syr3_comm_initialize(int                  number,
   comm->echo = echo;
 
 #if defined(HAVE_MPI)
-  comm->proc_rank = proc_rank;
-#else
-  comm->proc_rank = -1;
+  comm->syr_rank = proc_rank;
+  comm->intracomm = MPI_COMM_NULL;
+#endif
+
+#if defined(HAVE_SOCKET)
+  comm->sock = -1;
 #endif
 
   /* Test if system is "big-endian" or "little-endian" */
@@ -1016,41 +1069,18 @@ cs_syr3_comm_initialize(int                  number,
 
 #endif
 
-  /* Information on interface creation */
-
-  bft_printf(_("\n  Opening communication:  %s ..."), comm->nom);
-  bft_printf_flush();
-
-#if defined(HAVE_SOCKET)
-  if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
-    _comm_sock_connect(comm);
-#endif /* (HAVE_SOCKET) */
-
   /* Create interface file descriptor */
   /*----------------------------------*/
 
-  if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
-
 #if defined(HAVE_MPI)
+  if (comm->type == CS_SYR3_COMM_TYPE_MPI)
     _comm_mpi_open(comm, magic_string);
-#else
-    assert(comm->proc_rank < 0);
 #endif
-
-  }
-  else {
 
 #if defined(HAVE_SOCKET)
-    if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
-      _comm_sock_open(comm, magic_string);
+  if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
+    _comm_sock_open(comm, magic_string);
 #endif
-
-  }
-
-  /* Info on interface creation success */
-
-  bft_printf(" [ok]\n");
-  bft_printf_flush();
 
   return comm;
 }
@@ -1067,12 +1097,15 @@ cs_syr3_comm_finalize(cs_syr3_comm_t *comm)
   bft_printf(_("\n  Closing communication:  %s\n"), comm->nom);
   bft_printf_flush();
 
-#if defined(HAVE_SOCKET)
+#if defined(HAVE_MPI)
+  if (comm->type == CS_SYR3_COMM_TYPE_MPI)
+    _comm_mpi_close(comm);
+#endif
 
+#if defined(HAVE_SOCKET)
   if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
     _comm_sock_close(comm);
-
-#endif /* (HAVE_SOCKET) */
+#endif
 
   BFT_FREE(comm->nom);
   BFT_FREE(comm);
@@ -1117,9 +1150,9 @@ cs_syr3_comm_send_message(const char             sec_name[CS_SYR3_COMM_H_LEN],
                           const cs_syr3_comm_t  *comm)
 {
   char   sec_name_write[CS_SYR3_COMM_H_LEN + 1];
+  char   elt_type_name_write[CS_SYR3_COMM_ELT_TYPE_NAME_LEN + 1];
 
   char  *elt_type_name = NULL;
-  char   elt_type_name_write[CS_SYR3_COMM_ELT_TYPE_NAME_LEN + 1];
 
 
   assert(comm != NULL);

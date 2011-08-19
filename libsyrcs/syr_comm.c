@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2010 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -61,6 +61,9 @@
  *----------------------------------------------------------------------------*/
 
 #include <ple_defs.h>
+#if defined(HAVE_MPI)
+#include <ple_coupling.h>
+#endif
 
 /*---------------------------------------------------------------------------
  *  Local headers
@@ -115,9 +118,6 @@ struct _syr_comm_t {
 
   char            *name;         /* Communicator name */
 
-  int              proc_rank;    /* Rank of first distant process (MPI) */
-  int             *socket;       /* Array of socket numbers */
-
   int              swap_endian;  /* Force big-endian communications */
 
   syr_comm_type_t  type;         /* Communicator type */
@@ -126,6 +126,15 @@ struct _syr_comm_t {
 
   int             *n_sec_elts;   /* Number of elements in a section for each
                                     proc (when reading) */
+
+#if defined(HAVE_SOCKET)
+  int             *socket;       /* Array of socket numbers */
+#endif
+
+#if defined(HAVE_MPI)
+  int              proc_rank;    /* Rank of first distant process */
+  MPI_Comm         intracomm;    /* Intracommunicator */
+#endif
 
 };
 
@@ -438,7 +447,7 @@ _comm_mpi_header(char              *sec_name,
                       MPI_PACKED,
                       comm->proc_rank + proc_id,
                       MPI_ANY_TAG,
-                      MPI_COMM_WORLD,
+                      comm->intracomm,
                       &status);
 
     if (ierror != MPI_SUCCESS)
@@ -451,14 +460,14 @@ _comm_mpi_header(char              *sec_name,
     position = 0;
 
     MPI_Unpack(buffer, SYR_COMM_MPI_PACK_SIZE, &position, sec_name,
-               SYR_COMM_L_SEC_NAME, MPI_CHAR, MPI_COMM_WORLD);
+               SYR_COMM_L_SEC_NAME, MPI_CHAR, comm->intracomm);
 
     MPI_Unpack(buffer, SYR_COMM_MPI_PACK_SIZE, &position, n_sec_elts,
-               1, MPI_INT, MPI_COMM_WORLD);
+               1, MPI_INT, comm->intracomm);
 
     if (*n_sec_elts > 0)
       MPI_Unpack(buffer, SYR_COMM_MPI_PACK_SIZE, &position, type_name,
-                 SYR_COMM_L_TYPE_NAME, MPI_CHAR, MPI_COMM_WORLD);
+                 SYR_COMM_L_TYPE_NAME, MPI_CHAR, comm->intracomm);
 
   }
 
@@ -472,14 +481,14 @@ _comm_mpi_header(char              *sec_name,
     position = 0;
 
     MPI_Pack(sec_name, SYR_COMM_L_SEC_NAME, MPI_CHAR, buffer,
-             SYR_COMM_MPI_PACK_SIZE, &position, MPI_COMM_WORLD);
+             SYR_COMM_MPI_PACK_SIZE, &position, comm->intracomm);
 
     MPI_Pack(n_sec_elts, 1, MPI_INT, buffer, SYR_COMM_MPI_PACK_SIZE,
-             &position, MPI_COMM_WORLD);
+             &position, comm->intracomm);
 
     if (*n_sec_elts > 0)
       MPI_Pack(type_name, SYR_COMM_L_TYPE_NAME, MPI_CHAR, buffer,
-               SYR_COMM_MPI_PACK_SIZE, &position, MPI_COMM_WORLD);
+               SYR_COMM_MPI_PACK_SIZE, &position, comm->intracomm);
 
     /* Send message */
 
@@ -488,7 +497,7 @@ _comm_mpi_header(char              *sec_name,
                       MPI_PACKED,
                       comm->proc_rank + proc_id,
                       0,
-                      MPI_COMM_WORLD);
+                      comm->intracomm);
 
     if (ierror != MPI_SUCCESS)
       _comm_mpi_msg_err(comm,
@@ -546,7 +555,7 @@ _comm_mpi_body(void              *sec_elts,
                       datatype,
                       comm->proc_rank + proc_id,
                       MPI_ANY_TAG,
-                      MPI_COMM_WORLD,
+                      comm->intracomm,
                       &status);
 
   else /* if (mode == SYR_COMM_MODE_SEND) */
@@ -555,7 +564,7 @@ _comm_mpi_body(void              *sec_elts,
                       datatype,
                       comm->proc_rank + proc_id,
                       0,
-                      MPI_COMM_WORLD);
+                      comm->intracomm);
 
   if (ierror != MPI_SUCCESS)
     _comm_mpi_msg_err(comm, proc_id, ierror);
@@ -747,7 +756,7 @@ _comm_magic_string(syr_comm_t  *comm,
                             lng_magic_string, MPI_CHAR,
                             comm->proc_rank + proc_id,
                             0,
-                            MPI_COMM_WORLD);
+                            comm->intracomm);
 
       if (ierror != MPI_SUCCESS)
         _comm_mpi_msg_err(comm,
@@ -791,7 +800,7 @@ _comm_magic_string(syr_comm_t  *comm,
                         MPI_CHAR,
                         comm->proc_rank + proc_id,
                         MPI_ANY_TAG,
-                        MPI_COMM_WORLD,
+                        comm->intracomm,
                         &status);
 
       if (ierror != MPI_SUCCESS)
@@ -838,6 +847,35 @@ _comm_magic_string(syr_comm_t  *comm,
 #if defined(HAVE_MPI)
 
 /*--------------------------------------------------------------------------
+ * Create an MPI intracommunicator
+ *--------------------------------------------------------------------------*/
+
+static void
+_comm_mpi_init(syr_comm_t  *comm)
+{
+  int local_range[2] = {-1, -1};
+  int distant_range[2] = {-1, -1};
+
+  printf(" Initialisation de la communication MPI: %s ... ", comm->name);
+  fflush(stdout);
+
+  ple_coupling_mpi_intracomm_create(MPI_COMM_WORLD,
+                                    syr_glob_mpi_comm,
+                                    comm->proc_rank,
+                                    &(comm->intracomm),
+                                    local_range,
+                                    distant_range);
+
+  printf("[ok]\n");
+  printf("  Rangs locaux = [%d..%d], rangs distants = [%d..%d].\n\n",
+         local_range[0], local_range[1] - 1,
+         distant_range[0], distant_range[1] - 1);
+  fflush(stdout);
+
+  comm->proc_rank = distant_range[0];
+}
+
+/*--------------------------------------------------------------------------
  * Initialize an MPI communication by sending or reading a "magic string"
  * allowing format verification
  *--------------------------------------------------------------------------*/
@@ -847,19 +885,6 @@ _comm_mpi_open(syr_comm_t  *comm,
                int          proc_id,
                const char  *magic_string)
 {
-  int comm_size;
-
-  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-
-  if (comm->proc_rank + proc_id >= comm_size)
-    ple_error(__FILE__, __LINE__, 0,
-              "Communication impossible avec :\n"
-              "%s (proc %4d) comme le rang du processus correspondant\n"
-              "(rang_base + (id_proc - 1)) = %d + %d est superieur ou\n"
-              "egal au nombre de processus MPI (%d).",
-              comm->name, comm->proc_rank, comm->proc_rank,
-              proc_id, comm_size);
-
   /* Write and read "magic string" */
   /*------------------------------ */
 
@@ -1114,9 +1139,6 @@ syr_comm_initialize(int               coupling_num,
   /* Initialize other fields */
 
   comm->type = type;
-  comm->n_procs = -1;
-  comm->proc_rank = -1;
-  comm->socket = NULL;
   comm->echo = echo;
 
   comm->n_sec_elts = NULL;
@@ -1137,6 +1159,15 @@ syr_comm_initialize(int               coupling_num,
     *((char *) (&int_endian) + sizeof(unsigned) - 1) = '\1';
     assert (int_endian == 1);
   }
+#endif
+
+#if defined(HAVE_MPI)
+  comm->n_procs = -1;
+  comm->proc_rank = -1;
+#endif
+
+#if defined(HAVE_SOCKET)
+  comm->socket = NULL;
 #endif
 
   if (type == SYR_COMM_TYPE_MPI) {
@@ -1174,6 +1205,11 @@ syr_comm_initialize(int               coupling_num,
 
   printf("\n");
 
+#if defined(HAVE_MPI)
+  if (comm->type == SYR_COMM_TYPE_MPI)
+    _comm_mpi_init(comm);
+#endif
+
   /* Build interfaces */
 
   for (proc_id = 0; proc_id < comm->n_procs; proc_id++) {
@@ -1195,19 +1231,14 @@ syr_comm_initialize(int               coupling_num,
     /* Create a descriptor for the interface file */
     /*------------------------------------------- */
 
-    if (comm->proc_rank >= 0) {
-
 #if defined(HAVE_MPI)
+    if (comm->type == SYR_COMM_TYPE_MPI)
       _comm_mpi_open(comm, proc_id, magic_string);
-#else
-      assert(comm->proc_rank < 0);
 #endif
 
-    }
-
 #if defined(HAVE_SOCKET)
-    else if (comm->type == SYR_COMM_TYPE_SOCKET)
-      _comm_sock_open(comm, proc_id, magic_string);
+  if (comm->type == SYR_COMM_TYPE_SOCKET)
+    _comm_sock_open(comm, proc_id, magic_string);
 #endif
 
     /* Info on interface creation success */
