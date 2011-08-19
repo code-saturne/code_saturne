@@ -94,9 +94,11 @@ typedef enum {
  * Global variables
  *============================================================================*/
 
-extern int syr_glob_base_rank;      /* Parallel rank; -1 if serial */
-
 extern char syr_glob_build_date[];  /* Build date */
+
+#if defined (HAVE_MPI)
+extern MPI_Comm  syr_glob_mpi_comm;
+#endif
 
 /*============================================================================
  * Function prototypes
