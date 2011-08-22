@@ -977,6 +977,27 @@ between two succesive time steps (to ensure stability, any decrease in the time 
 is immediate and without limit)\\
 useful if {\tt idtvar} $\ne$ 0}
 
+\motcle{relxst}{r}{0 $<$ real $\leqslant$ 1}{0.9}{O}{L2}
+{relaxation coefficient for the steady algorithm
+ ({\tt relaxp(iphas)}=1: no relaxation)\\
+useful if {\tt idtvar}=-1}
+
+\motcle{relaxv}{ra}{0 $\leqslant$ real $\leqslant$ 1}{0.7 or 1.}{O}{L3}
+{for each variable {\tt ivar}, relaxation coefficient of the variable.
+This relaxation parameter is only useful for the pressure with the unsteady
+algorithm (so as to improve the convergence in case of meshes of insufficient
+quality or and for some of the turbulent models ({\tt iturb(iphas)} = 20, 21,
+50 or 60 and {\tt ikecou(iphas)}=0; if {\tt ikecou(iphas)}=1, {\tt relaxv(ivar)}
+is not used, whatever its value may be). Default values are 0.7 for turbulent
+variables and 1. for pressure.\\
+It also stores the value of the relaxation coefficient when using the steady
+algorithm, deduced from the value of {\tt relxst} (defaulting to
+ {\tt relaxv(ivar} $eq$  {1. - \tt relxst})\\
+useful only for the pressure and for turbulent variables
+if and only if ($k-\varepsilon$, v2f or $k-\omega$ models without coupling)
+ with the usteady algorithm\\
+always useful with the steady algorithm}
+
 
 \minititre{Non-constant time step}
 The calculation of the time step uses a reference time step DTREF (at
@@ -996,7 +1017,7 @@ the maximum, then to the minimum limit.\\
 \subsubsection{Turbulence}
 %==================================
 
-\motcleb{iturb}{ia}{0, 10, 20, 21, 30, 31, 40, 41, 50 or 60}{-999}{O}{L1}
+\motcleb{iturb}{ia}{0, 10, 20, 21, 30, 31, 40, 41, 42, 50, 60, 70}{-999}{O}{L1}
 {indicator of the turbulence model {\tt iturb}\\
 \hspace*{1.3cm}= -999: not initalised. This value is not allowed and
 must be modified by the user\\
@@ -1008,8 +1029,10 @@ must be modified by the user\\
 \hspace*{1.3cm}= 31: $R_{ij}-\varepsilon$ SSG (Speziale, Sarkar \& Gatski)\\
 \hspace*{1.3cm}= 40: LES (Smagorinsky model) \\
 \hspace*{1.3cm}= 41: LES (dynamic model) \\
+\hspace*{1.3cm}= 42: LES (WALE model) \\
 \hspace*{1.3cm}= 50: v2-f, $\varphi$-model version\\
 \hspace*{1.3cm}= 60: $k-\omega$, SST version \\
+\hspace*{1.3cm}= 70: Spalart-Allmaras \\
 always useful}
 
 The $k-\varepsilon$ (standard and linear production) and $R_{ij}-\varepsilon$
@@ -1118,13 +1141,6 @@ and to 1 if\\
 ({\tt iturb}=50)\\
 useful if and only if {\tt iturb} = 20, 21 or 60 ($k-\varepsilon$ and
 $k-\omega$ models)}
-
-\motcle{relaxk}{ra}{0 $\leqslant$ real $\leqslant$ 1}{0.7}{O}{L3}
-{relaxation coefficient of the turbulent
-variables ($k$ and $\varepsilon$ or $\omega$) when {\tt ikecou} = 0. If
-{\tt ikecou}=1, {\tt relaxk} is not used, whatever its value may be.\\
-useful if and only if {\tt iturb} = 20, 21, 50 or 60 and {\tt ikecou}=0
-($k-\varepsilon$, v2f or $k-\omega$ models without coupling)}
 
 \motcle{iclkep}{ia}{0 or 1}{0}{O}{L3}
 {indicates the clipping method used for $k$ and
@@ -1813,13 +1829,6 @@ always useful}
 \motcle{arak}{ra}{0 $<$ real $\leqslant$ 1}{1}{O}{L3}
 {{\tt arak} is the Arakawa coefficient before the
 Rhie\& Chow filter\\
-always useful}
-
-\motcle{relaxp}{ra}{0 $<$ real $\leqslant$ 1}{1}{O}{L2}
-{relaxation of the pressure increment during the
-solution of the system ({\tt relaxp}=1: no relaxation)\\
-can improve the convergence in case of
-meshes of insufficient quality\\
 always useful}
 
 \motcle{irevmc}{ia}{0, 1 or 2}{0}{O}{L3}
@@ -2829,8 +2838,6 @@ level L1.
 \motcleb{iirayo}{ia}{0, 1, 2}{0}{O}{L1}
 {{\tt iirayo} activates ($>0$) or deactivates
 (=0) the radiation module\\
-if a specific physics is activated (in that case, {\tt nscapp}$>$0),
-{\tt iirayo} must be kept to 0 (see {\tt iraypp})\\
 The different values correspond to the following modelings:\\
 \hspace*{1.3cm} = 1 discrete ordinates
 (standard option for radiation in semi-transparent media)\\
@@ -2839,42 +2846,11 @@ The different values correspond to the following modelings:\\
 may only be applied to media with uniform large optical thickness, such as
 some cases of pulverised coal combustion}}
 
-\motcleb{iraypp}{i}{0, 1, 2, 3 or 4}{0}{O}{L1}
-{when a specific physics is activated\footnote{except with the compressible
-module, which is not compatible with radiation}
-{\tt iraypp}
-indicates if thermal radiative transfers are calculated ($>0$) or not
-(=0).\\
-The value of {\tt iraypp} is given {\em via} a data file (gas combustion:
-{\em dp\_C3P}, {\em dp\_C3PSJ}, or {\em dp\_C4P};
-pulverised coal combustion: {\em dp\_FCP}; electric module: {\em dp\_ELE})\\
-{\tt iraypp} allows to choose between the discrete ordinates method and the
-P-1 method (see {\tt irayon}) and to choose the method used to calculate the
-absorption coefficient. The absorption coefficient may be set by the
-user in the data file (then, \mbox{{\tt imodak}=0}) or calculated using
-``Modak\footnote{for details about the calculation of the absorption
-coefficient, please refer to Modak A.T., ``Radiation from products
-of combustion''}'' (then, {\tt imodak}=1).
-The options are the followings:\\
-\hspace*{1.3cm} = 1 discrete ordinates method with the absorption coefficient
-given by the user in the data file ({\tt imodak}=0)\\
-\hspace*{1.3cm} = 2 discrete ordinates method using Modak for the
-calculation of the absorption coefficient ({\tt imodak}=1)\\
-\hspace*{1.3cm} = 3 ``P-1'' model  with the absorption coefficient
-given by the user in the data file ({\tt imodak}=0)\\
-\hspace*{1.3cm} = 4 ``P-1'' model using Modak for the
-calculation of the absorption coefficient ({\tt imodak}=1)\\
-For the electric module, {\tt iraypp} is not set directly in the data file, but
-deduced from the type of {\tt xkabel} specified in the file
-(given by {\tt ixkabe}). In that case, {\tt iraypp} can only be equal
-to 0 ({\tt ixkabe}=0 or 2) or 1 ({\tt ixkabe}=1)}
-
 \motcle{imodak}{i}{0 or 1}{0}{O}{L3}
 {when gas or coal combustion is activated, {\tt imodak} indicates whether the
 absorption coefficient shall be calculated ``automatically'' (=1) or read from
-the data file (=0) (see {\tt iraypp})\\
-useful if the radiation module is activated; {\tt imodak} is then
-automatically set from the value of IRAYPP, without intervention of the user}
+the data file (=0)\\
+useful if the radiation module is activated}
 
 \motcleb{isuird}{i}{0 or 1}{isuite}{C}{L1}
 {indicates whether the radiation variables should be initialised (=0) or read
@@ -2893,7 +2869,7 @@ useful if and only if the radiation module is activated}
 
 \motcleb{ndirec}{i}{32 or 128}{32}{O}{L1}
 {number of directions for the angular discretisation of the radiation
-propagation with the DOM model ({\tt irayon}=1)\\
+propagation with the DOM model ({\tt iirayo}=1)\\
 no other possible value, because of the way the directions are calculated\\
 the calculation with 32 directions may break the symmetry of
 physically axisymmetric cases (but the cost in CPU time is much lower
@@ -2901,7 +2877,7 @@ physically axisymmetric cases (but the cost in CPU time is much lower
 useful if and only if the radiation module is activated with the DOM method}
 
 \motcle{xnp1mx}{r}{real number}{10}{O}{L3}
-{with the P-1 model ({\tt irayon}=2), {\tt xnp1mx} is the percentage of cells of
+{with the P-1 model ({\tt iirayo}=2), {\tt xnp1mx} is the percentage of cells of
 the calculation domain for which it is acceptable that the optical
 thickness is lower than unity\footnote{more precisely, where $KL$ is lower than
 1, where $K$ is the absorption coefficient of the medium and $L$ is a
