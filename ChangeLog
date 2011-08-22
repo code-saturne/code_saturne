@@ -1,3 +1,8 @@
+* 22/08/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Simplify reading of index blocks to improve robustness (based on trunk).
+  modified files:
+    src/base/cs_io.c
+
 * 19/08/2011 - David Monfort <david.monfort@edf.fr>
   Update keywords documentation.
   modified file:

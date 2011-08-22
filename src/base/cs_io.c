@@ -169,6 +169,11 @@ struct _cs_io_t {
   /* Other flags */
 
   long                echo;           /* Data echo level (verbosity) */
+
+#if defined(FVM_HAVE_MPI)
+  MPI_Comm            comm;           /* Associated MPI communicator */
+#endif
+
 };
 
 /*============================================================================
@@ -378,6 +383,12 @@ _cs_io_create(cs_io_mode_t   mode,
   /* Verbosity */
 
   cs_io->echo = echo;
+
+  /* MPI communicator */
+
+#if defined(FVM_HAVE_MPI)
+  cs_io->comm = MPI_COMM_NULL;
+#endif
 
   return cs_io;
 }
@@ -2091,6 +2102,10 @@ cs_io_initialize(const char    *file_name,
     bft_printf_flush();
   }
 
+#if defined(FVM_HAVE_MPI)
+  cs_io->comm = comm;
+#endif
+
   /* Create interface file descriptor */
 
 #if defined(FVM_HAVE_MPI)
@@ -2144,6 +2159,10 @@ cs_io_initialize_with_index(const char    *file_name,
     bft_printf(_("\n Reading file:        %s\n"), file_name);
     bft_printf_flush();
   }
+
+#if defined(FVM_HAVE_MPI)
+  inp->comm = comm;
+#endif
 
   /* Initialize index */
 
@@ -2818,9 +2837,19 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 {
   fvm_gnum_t _global_num_start = global_num_start;
   fvm_gnum_t _global_num_end = global_num_end;
+
   fvm_gnum_t *retval = NULL;
-  cs_bool_t last_data_rank = false;
-  cs_bool_t past_last_data_rank = false;
+
+#if defined(HAVE_MPI)
+  int rank_id = 0;
+  int n_ranks = 1;
+  MPI_Comm comm = cs_io->comm;
+
+  if (comm != MPI_COMM_NULL) {
+    MPI_Comm_rank(comm, &rank_id);
+    MPI_Comm_size(comm, &n_ranks);
+  }
+#endif
 
   assert(global_num_start > 0);
   assert(global_num_end >= global_num_start);
@@ -2829,19 +2858,19 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
   cs_io_set_fvm_gnum(header, cs_io);
 
-  /* Increase _global_num_end by 1 for the last rank */
+  /* Increase _global_num_end by 1 for the last rank containing data */
 
-  if (header->n_vals == global_num_end) {
+  if (global_num_end == (fvm_gnum_t)header->n_vals) {
 
-    _global_num_end += 1;
-    last_data_rank = true;
+    if (global_num_start < global_num_end)
+      _global_num_end += 1;
 
     /* Also shift start values for possibly empty
        blocks past the last rank reading data */
 
-    if (global_num_end <= global_num_start) {
+    else {
       _global_num_start += 1;
-      past_last_data_rank = true;
+      _global_num_end += 1;
     }
 
   }
@@ -2852,91 +2881,84 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
                             elts,
                             cs_io);
 
+  /* Ensure element value initialized in case of empty block */
+
+  if (retval == NULL)
+    BFT_MALLOC(retval, 1, fvm_gnum_t);
+
+  if (_global_num_start == _global_num_end)
+    retval[0] = 0;
+
   /* Exchange past-the-end values */
 
 #if defined(HAVE_MPI)
 
-  if (cs_glob_n_ranks > 1) {
+  if (n_ranks > 1) {
 
-    int needs_safe_algo_loc = 0;
-    int needs_safe_algo = 0;
-    int rank = cs_glob_rank_id;
-    int send_rank = rank - 1;
-    int recv_rank = rank + 1;
-    MPI_Comm comm = cs_glob_mpi_comm;
-    MPI_Status  status;
-    fvm_gnum_t  past_last_recv = 0;
-    fvm_gnum_t  past_last_send = 0;
+    fvm_gnum_t  past_last_max = 0;
+    fvm_gnum_t  past_last_max_0 = 0;
+    fvm_gnum_t  past_last = 0;
+    fvm_gnum_t *past_last_0 = NULL;
 
-    /* Prepare for MPI_Sendrecv */
+    if (   _global_num_end > global_num_end
+        && _global_num_end > _global_num_start)
+      past_last_max = retval[_global_num_end - _global_num_start - 1];
 
-    if (last_data_rank == true)
-      recv_rank = MPI_PROC_NULL;
+    MPI_Reduce(&past_last_max, &past_last_max_0, 1, FVM_MPI_GNUM, MPI_MAX,
+               0, comm);
 
-    if (past_last_data_rank == true) {
-      send_rank = MPI_PROC_NULL;
-      recv_rank = MPI_PROC_NULL;
-    }
+    /* Initially, past_last values contain the first index value
+       for a given rank; they will later be shifted to define the
+       past-the-last value for the previous rank) */
 
-    if (rank == 0)
-      send_rank = MPI_PROC_NULL;
+    if (retval != NULL)
+      past_last = retval[0];
 
-    /* For empty blocks, past_last_send was initialized to 0,
-       and this situation will lead to resorting to a safer
-       but slower algorithm */
+    if (rank_id == 0)
+      BFT_MALLOC(past_last_0, n_ranks, fvm_gnum_t);
 
-    if (global_num_end > global_num_start)
-      past_last_send = retval[0];
+    MPI_Gather(&past_last, 1, FVM_MPI_GNUM,
+               past_last_0, 1, FVM_MPI_GNUM,
+               0, comm);
 
-    MPI_Sendrecv(&past_last_send, 1, FVM_MPI_GNUM, send_rank, CS_IO_MPI_TAG,
-                 &past_last_recv, 1, FVM_MPI_GNUM, recv_rank, CS_IO_MPI_TAG,
-                 comm, &status);
+    if (rank_id == 0) {
 
-    if (recv_rank != MPI_PROC_NULL && past_last_recv == 0)
-      needs_safe_algo_loc = 1;
-
-    /* Check that everything is OK (i.e. no empty intermediate blocks) */
-
-    MPI_Allreduce(&needs_safe_algo_loc, &needs_safe_algo, 1, MPI_INT, MPI_MAX,
-                  comm);
-
-    if (needs_safe_algo == 1) {
-
-      int n_ranks = 1;
       int i;
-      fvm_gnum_t *past_last = NULL;
+      int last_data_rank = n_ranks - 1;
 
-      MPI_Comm_size(comm, &n_ranks);
+      while (last_data_rank > 0 && past_last_0[last_data_rank] == 0)
+        last_data_rank -= 1;
 
-      if (rank == 0)
-        BFT_MALLOC(past_last, n_ranks, fvm_gnum_t);
-
-      MPI_Gather(&past_last_send, 1, FVM_MPI_GNUM,
-                 &past_last, 1, FVM_MPI_GNUM,
-                 0, comm);
-
-      /* Propagate values from higher ranks if necessary */
-
-      for (i = n_ranks - 1; i > 1; i--) {
-        if (past_last[i-1] == 0)
-          past_last[i-1] = past_last[i];
+      /* fill empty values before last rank with data */
+      for (i = last_data_rank; i > 0; i--) {
+        if (past_last_0[i-1] == 0)
+          past_last_0[i-1] = past_last_0[i];
       }
 
-      MPI_Scatter(&past_last, 1, FVM_MPI_GNUM,
-                  &past_last_recv, 1, FVM_MPI_GNUM,
-                  0, comm);
+      /* Shift values one rank (to really define past-the-last values) */
 
-      if (rank == 0)
-        BFT_FREE(past_last);
+      for (i = 0; i < last_data_rank; i++)
+        past_last_0[i] = past_last_0[i+1];
 
-    } /* End of condition on safer algorithm */
+      /* Define for all other ranks from last rank with data onwards */
 
-    if (last_data_rank == false && global_num_end > global_num_start)
-      retval[global_num_end - global_num_start] = past_last_recv;
+      for (i = last_data_rank; i < n_ranks; i++)
+        past_last_0[i] = past_last_max_0;
+    }
 
+    MPI_Scatter(past_last_0, 1, FVM_MPI_GNUM,
+                &past_last, 1, FVM_MPI_GNUM,
+                0, comm);
+
+    if (rank_id == 0)
+      BFT_FREE(past_last_0);
+
+    if (retval != NULL)
+      retval[global_num_end - global_num_start] = past_last;
   }
 
-  if (   header->n_vals != 0 && header->n_vals != global_num_end
+  if (   retval != NULL
+      && header->n_vals != 0 && (fvm_gnum_t)header->n_vals != global_num_end
       && cs_io->echo > CS_IO_ECHO_HEADERS)
     bft_printf(_("    first element for next rank:\n"
                  "    %10llu : %12llu\n"),
@@ -3181,6 +3203,10 @@ cs_io_dump(const cs_io_t  *cs_io)
     bft_printf(_("  mode: CS_IO_MODE_READ\n"), cs_io->contents);
   else if (cs_io->mode == CS_IO_MODE_WRITE)
     bft_printf(_("  mode: CS_IO_MODE_WRITE\n"), cs_io->contents);
+
+#if defined(FVM_HAVE_MPI)
+  bft_printf(_("  MPI communicator: %l\n"), (long)(cs_io->comm));
+#endif
 
   bft_printf(_("  default header size: %lu\n"
                "  header alignment:    %lu\n"
