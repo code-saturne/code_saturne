@@ -1,3 +1,8 @@
+* 19/08/2011 - David Monfort <david.monfort@edf.fr>
+  Update keywords documentation.
+  modified file:
+    doc/user/saturne2.tex
+
 * 19/08/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Use specific intracommunicator instead of MPI_COMM_WORLD for coupling with
   SYRTHES 3, to avoid bug due to non-contiguous MPMD rank-numbering on
