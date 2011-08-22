@@ -1,3 +1,13 @@
+* 19/08/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Use specific intracommunicator instead of MPI_COMM_WORLD for coupling with
+  SYRTHES 3, to avoid bug due to non-contiguous MPMD rank-numbering on
+  BLue Gene/P or similar machines.
+  modified files:
+    src/base/cs_syr3_comm.c
+    libsyrcs/syr_comm.c
+    libsyrcs/syr_defs.c
+    libsyrcs/syr_defs.h
+
 * 02/08/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix typo leading to bug using MPICH2 with Python scripts.
   modified files:

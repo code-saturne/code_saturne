@@ -81,11 +81,10 @@ extern "C" {
  * Global variables
  *============================================================================*/
 
-int syr_glob_base_rank = -1;            /* Parallel rank; -1 if serial */
-
 char syr_glob_build_date[] = __DATE__;  /* Build date */
 
 #if defined(HAVE_MPI)
+MPI_Comm  syr_glob_mpi_comm = MPI_COMM_NULL;
 fvm_coupling_mpi_world_t *syr_glob_coupling_world = NULL;
 #endif
 
@@ -380,10 +379,10 @@ void
 syr_mpi_initialize(int    *argc,
                    char  **argv[])
 {
-  int mpi_init_flag, rank;
-  MPI_Comm  mpi_comm_syr = MPI_COMM_NULL;
-  int app_num = -1, app_num_max = -1;
+  int mpi_init_flag, rank, syr_comm_rank, syr_comm_size;
+  int app_num = -1, app_num_max = -1, inactive = 0;
   int ierror = 0;
+  char app_name[32] = "SYRTHES 3.4";
 
   /* Initialize MPI */
 
@@ -399,7 +398,7 @@ syr_mpi_initialize(int    *argc,
     Split MPI_COMM_WORLD to separate different coupled applications
     (collective operation, like all MPI communicator creation operations).
 
-    We suppose the color argument to MPI_Comm_split is equal to the
+    We assume the color argument to MPI_Comm_split is equal to the
     application number, given through the command line or through
     mpiexec and passed here as an argument.
   */
@@ -408,10 +407,8 @@ syr_mpi_initialize(int    *argc,
 
   MPI_Allreduce(&app_num, &app_num_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
-  if (app_num_max > 0) {
-    ierror = MPI_Comm_split(MPI_COMM_WORLD, app_num, rank, &mpi_comm_syr);
-    MPI_Comm_rank(mpi_comm_syr, &syr_glob_base_rank);
-  }
+  if (app_num_max > 0)
+    ierror = MPI_Comm_split(MPI_COMM_WORLD, app_num, rank, &syr_glob_mpi_comm);
   else
     ierror = 1;
 
@@ -419,24 +416,43 @@ syr_mpi_initialize(int    *argc,
     bft_error(__FILE__, __LINE__, 0,
               "Erreur a la creation d'un communicateur local a SYRTHES.\n");
 
+  MPI_Comm_rank(syr_glob_mpi_comm, &syr_comm_rank);
+  MPI_Comm_size(syr_glob_mpi_comm, &syr_comm_size);
+
+  /* If extra ranks are assigned to SYRTHES,
+     separate rank 0 (useful) from others (ignored) */
+
+  if (syr_comm_size > 1) {
+    MPI_Comm  mpi_comm_syr_ini = syr_glob_mpi_comm;
+    syr_glob_mpi_comm = MPI_COMM_NULL;
+    if (syr_comm_rank > 0)
+      inactive = 1;
+    if (MPI_Comm_split(mpi_comm_syr_ini, inactive, syr_comm_rank,
+                       &syr_glob_mpi_comm) != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                "Erreur a la subdivision d'un communicateur local a SYRTHES.\n");
+    MPI_Comm_free(&mpi_comm_syr_ini);
+  }
+
   /* Discover other applications in the same MPI root communicator
      (and participate in corresponding communication). */
 
+  if (inactive > 0) {
+    app_num += app_num_max + 1;
+    strncpy(app_name, "Inactive (SYRTHES 3.4)", 31);
+    app_name[31] = '\0';
+  }
+    
   syr_glob_coupling_world = fvm_coupling_mpi_world_create(app_num,
-                                                          "SYRTHES 3.4",
+                                                          app_name,
                                                           NULL,
-                                                          mpi_comm_syr);
-
-  /* mpi_comm_syr is not used anymore */
-
-  if (mpi_comm_syr != MPI_COMM_NULL)
-    MPI_Comm_free(&mpi_comm_syr);
+                                                          syr_glob_mpi_comm);
 
   /* If more than 1 rank was assigned to SYRTHES, only 1 is active
-     (this may be the case in IBM BlueGene/P, where a whole pset
+     (this may be the case in IBM Blue Gene/P, where a whole pset
      must be assigned to a given executable) */
 
-  if (syr_glob_base_rank > 0) {
+  if (syr_comm_rank > 0) {
     syr_mpi_finalize();
     syr_exit(EXIT_SUCCESS);
   }
@@ -454,6 +470,8 @@ syr_mpi_finalize(void)
   fvm_coupling_mpi_world_destroy(&syr_glob_coupling_world);
 
   assert(syr_glob_coupling_world == NULL);
+
+  MPI_Comm_free(&syr_glob_mpi_comm);
 
   ierror = MPI_Barrier(MPI_COMM_WORLD);
 
