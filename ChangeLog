@@ -1,4 +1,8 @@
 * 23/08/2011 - David Monfort <david.monfort@edf.fr>
+  Fix a bug in the autovnv process and improve associated documentation.
+  modified files:
+    bin/autovnv/Study.py
+    doc/autovnv/autovnv.tex
 
 * 19/08/2011 - David Monfort <david.monfort@edf.fr>
   Fix minor issue in the script XML reader (provided by Mélanie
