@@ -1,4 +1,10 @@
 * 19/08/2011 - David Monfort <david.monfort@edf.fr>
+  Fix minor issue in the script XML reader (provided by Mélanie
+  Aebischer).
+  modified script:
+    bin/cs_xml_reader.py
+
+* 19/08/2011 - David Monfort <david.monfort@edf.fr>
   Update keywords documentation.
   modified file:
     doc/user/saturne2.tex
