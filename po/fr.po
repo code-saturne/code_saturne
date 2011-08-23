@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-08-09 17:49+0200\n"
+"POT-Creation-Date: 2011-08-23 19:49+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3300,7 +3300,7 @@ msgid ""
 "  Total elapsed time:               %12.3f\n"
 msgstr ""
 "\n"
-"Bilan des calcul de gradient pour \"%s\" (%s) :\n"
+"Bilan des calculs de gradient pour \"%s\" (%s) :\n"
 "\n"
 "  Nombre d'appels :                 %d\n"
 "  Temps écoulé cumulé :             %12.3f\n"
@@ -3390,6 +3390,24 @@ msgstr "La matrice n'est pas définie."
 msgid "Not supported with CSR"
 msgstr ""
 
+msgid "build:"
+msgstr "construction :"
+
+msgid "solve:"
+msgstr "résolution :"
+
+msgid "descent smoothe:"
+msgstr "lissage descendant :"
+
+msgid "ascent smoothe:"
+msgstr "lissage ascendant :"
+
+msgid "restrict:"
+msgstr "restriction :"
+
+msgid "prolong:"
+msgstr "prolongement :"
+
 #, c-format
 msgid ""
 "\n"
@@ -3418,91 +3436,139 @@ msgstr "  Solveur de niveau grossier : %s\n"
 
 #, c-format
 msgid ""
-"  Number of constructions:          %d\n"
-"  Number of resolutions:            %d\n"
-"  Number of levels:\n"
-"    minimum:                        %d\n"
-"    maximum:                        %d\n"
-"    mean:                           %d\n"
-"  Coarse grid size (n cells):\n"
-"    minimum:                        %llu\n"
-"    maximum:                        %llu\n"
-"    mean:                           %llu\n"
+"\n"
+"  %-36s %12s %12s %12s\n"
 msgstr ""
-"  Nombre de constructions :         %d\n"
-"  Nombre de résolutions :           %d\n"
-"  Nombre de niveaux :\n"
-"    minimal :                       %d\n"
-"    maximal :                       %d\n"
-"    moyen :                         %d\n"
-"  Taille du maillage grossier (n cellules) :\n"
-"    minimal :                       %llu\n"
-"    maximal :                       %llu\n"
-"    moyen :                         %llu\n"
+
+msgid "mean"
+msgstr "moyen"
+
+msgid "minimum"
+msgstr "minimum"
+
+msgid "maximum"
+msgstr "maximum"
+
+#, c-format
+msgid "  %-36s %12d %12d %12d\n"
+msgstr ""
+
+msgid "Number of coarse levels:"
+msgstr "Nombre de niveaux grossiers :"
+
+msgid "Number of cycles:"
+msgstr "Nombre de cycles :"
 
 #, c-format
 msgid ""
-"  Coarse grid ranks:\n"
-"    minimum:                        %d\n"
-"    maximum:                        %d\n"
+"\n"
+"  %-26s %9s %12s %12s %12s\n"
 msgstr ""
-"  Nombre de rangs pour maillage grossier:\n"
-"    minimum:                        %d\n"
-"    maximum:                        %d\n"
+
+msgid "calls"
+msgstr "appels"
+
+msgid "elapsed"
+msgstr "écoulé"
+
+msgid "mean CPU"
+msgstr "CPU moyen"
+
+msgid "max CPU"
+msgstr "CPU max"
+
+#, c-format
+msgid "    %-24s %9u %12.3f %12.3f %12.3f\n"
+msgstr ""
+
+msgid "Construction:"
+msgstr "Construction :"
+
+msgid "Resolution:"
+msgstr "Résolution :"
 
 #, c-format
 msgid ""
-"  Number of cycles:\n"
-"    minimum:                        %d\n"
-"    maximum:                        %d\n"
-"    mean:                           %d\n"
-"  Number of iterations:\n"
-"    on finest grid:\n"
-"      minimum:                      %d\n"
-"      maximum:                      %d\n"
-"      mean:                         %d\n"
-"    on coarsest grid:\n"
-"      minimum:                      %d\n"
-"      maximum:                      %d\n"
-"      mean:                         %d\n"
-"    total on grids:\n"
-"      minimum:                      %d\n"
-"      maximum:                      %d\n"
-"      mean:                         %d\n"
-"  Associated times (construction, resolution)\n"
-"    total elapsed:                  %12.3f  %12.3f\n"
+"\n"
+"  %-39s %9s %12s %12s\n"
 msgstr ""
-"  Nombre de cycles :\n"
-"    minimal :                       %d\n"
-"    maximal :                       %d\n"
-"    moyen :                         %d\n"
-"  Nombre d'itérations :\n"
-"    sur grille la plus fine :\n"
-"      minimal :                     %d\n"
-"      maximal :                     %d\n"
-"      moyen :                       %d\n"
-"    sur grille la plus grossière :\n"
-"      minimal :                     %d\n"
-"      maximal :                     %d\n"
-"      moyen :                       %d\n"
-"    total sur les grilles :\n"
-"      minimal :                     %d\n"
-"      maximal :                     %d\n"
-"      moyen :                       %d\n"
-"  Temps associés (construction, résolution)\n"
-"    écoulé cumulé :                 %12.3f  %12.3f\n"
+
+msgid "CPU"
+msgstr "CPU"
+
+#, c-format
+msgid "  %-39s %9u %12.3f %12.3f\n"
+msgstr ""
 
 #, c-format
 msgid ""
-"    Min local total CPU time:       %12.3f  %12.3f\n"
-"    Max local total CPU time:       %12.3f  %12.3f\n"
+"  Grid level %d:\n"
+"    %-34s %12llu %12llu %12llu\n"
 msgstr ""
-"    temps CPU total local min :     %12.3f  %12.3f\n"
-"    temps CPU total local max :     %12.3f  %12.3f\n"
+"  Grille niveau %d :\n"
+"    %-34s %12llu %12llu %12llu\n"
+
+msgid "Number of cells:"
+msgstr "Nombre de cellules :"
 
 #, c-format
-msgid "    Total CPU time:                 %12.3f  %12.3f\n"
-msgstr "    CPU cumulé :                    %12.3f  %12.3f\n"
+msgid "    %-34s %12llu %12llu %12llu\n"
+msgstr ""
+
+msgid "Number of faces:"
+msgstr "Nombre de faces :"
+
+msgid "Number of active ranks:"
+msgstr "Nombre de rangs actifs :"
+
+#, c-format
+msgid ""
+"    %-34s %12llu %12llu %12llu\n"
+"    %-34s %12llu %12llu %12llu\n"
+"    %-34s %12llu %12llu %12llu\n"
+msgstr ""
+
+msgid "Mean local cells:"
+msgstr "Nombre local moyen de cellules :"
+
+msgid "Mean local cells + ghosts:"
+msgstr "Nombre local moyen cell. + halo :"
+
+msgid "Mean local faces:"
+msgstr "Nombre local moyen de faces :"
+
+#, c-format
+msgid ""
+"    %-34s %12.3f %12.3f %12.3f\n"
+"    %-34s %12.3f %12.3f %12.3f\n"
+"    %-34s %12.3f %12.3f %12.3f\n"
+msgstr ""
+
+msgid "Cells unbalance:"
+msgstr "Déséquilibre cellules :"
+
+msgid "Cells + ghosts unbalance:"
+msgstr "Déséquilibre cellules + halos :"
+
+msgid "Faces unbalance:"
+msgstr "Déséquilibre faces :"
+
+msgid "Iterations for solving:"
+msgstr "Itérations pour le résolution: "
+
+msgid "Descent smoother iterations:"
+msgstr "Itérations lisseur de descente :"
+
+msgid "Ascent smoother iterations:"
+msgstr "Itérations lisseur de montée :"
+
+#, c-format
+msgid "  Grid level %d:\n"
+msgstr "  Grille niveau %d :\n"
+
+#, c-format
+msgid "    %-37s %9u %12.3f %12.3f\n"
+msgstr ""
 
 msgid ""
 "  ---------------------------------------------------\n"
@@ -5979,14 +6045,8 @@ msgstr ""
 "Type d'erreur : %s"
 
 #, c-format
-msgid ""
-"Impossible to establish the communication: %s\n"
-"because the requested process rank (%d)\n"
-"is greater than or equal to the number of MPI processes (%d)"
-msgstr ""
-"Impossible d'établir la communication : %s\n"
-"car le rang du processus recherché (%d)\n"
-"est supérieur ou égal au nombre de processus MPI (%d)."
+msgid " Initializing MPI communication: %s ... "
+msgstr " Initialisation de la communication MPI : %s ..."
 
 #, c-format
 msgid ""
@@ -6035,6 +6095,14 @@ msgstr ""
 
 msgid "MPI is needed for socket initialization.\n"
 msgstr "Besoin de MPI lors de l'initialisation des sockets.\n"
+
+#, c-format
+msgid ""
+"\n"
+"  Opening communication:  %s ..."
+msgstr ""
+"\n"
+"  Ouverture de la communication :  %s ..."
 
 msgid ""
 "Attempt to connect to the communication port with\n"
@@ -6088,14 +6156,6 @@ msgid ""
 msgstr ""
 "    nom de la rubrique :    \"%s\"\n"
 "    nombre d'éléments :     %d\n"
-
-#, c-format
-msgid ""
-"\n"
-"  Opening communication:  %s ..."
-msgstr ""
-"\n"
-"  Ouverture de la communication :  %s ..."
 
 #, c-format
 msgid ""
