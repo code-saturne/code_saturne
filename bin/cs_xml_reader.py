@@ -305,7 +305,7 @@ class Parser:
         if calc_node:
             input_node = getChildNode(calc_node, 'user_input_files')
             if input_node != None:
-                nodeList = childNodeList(meshes_node, 'data')
+                nodeList = childNodeList(input_node, 'data')
                 for node in nodeList:
                     name = str(node.getAttribute('name'))
                     if name:
