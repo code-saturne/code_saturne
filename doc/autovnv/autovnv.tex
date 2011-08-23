@@ -93,7 +93,7 @@ The script needs a directory of previous \CS cases which are candidates to be du
 This directory is called \textbf{repository}. The duplication is done in an new directory
 which is called the \textbf{destination}.
 
-For each duplicated case, \textsc{Autovnv} is able to compile the User Defined Functions,
+For each duplicated case, \textsc{Autovnv} is able to compile the user files,
 to run the case, to compare the obtained checkpoint file with the previous one
 from the \textbf{repository}, and to plot curves in order to illustrate the computations.
 
@@ -131,7 +131,7 @@ This file is mandatory, and therefore this option must be completed;
 
 \begin{list}{$\bullet$}{}
 \item \texttt{code\_saturne autovnv -f sample.xml}: duplicates all cases from the \textbf{repository}
-int the \textbf{destination}, compile all User Defined Functions and exits;
+int the \textbf{destination}, compile all user files and exits;
 \item \texttt{code\_saturne autovnv -f sample.xml -r}: as above, and run all cases if defined
 in \texttt{sample.xml};
 \item \texttt{code\_saturne autovnv -f sample.xml -r -c}: as above, and compares all new checkpoint files
@@ -177,7 +177,7 @@ The last line of the file of parameters must be:
 </autovnv>
 \end{verbatim}
 
-\subsection{Case creation and compilation fo the User Defined Functions}
+\subsection{Case creation and compilation fo the user files}
 
 When \textsc{Autovnv} is launched, the file of parameters is parsed in order to known
 which studies and cases from the \textbf{repository} should be duplicated in
@@ -218,7 +218,7 @@ With the attribute \texttt{status}, a single case or a complete study can be swi
 In the above example, only the case \texttt{Grid1} of the study \texttt{MyStudy1} is going
 to be created.
 
-After the creation of the directories in the \textbf{destination}, for each case, all User Defined Functions
+After the creation of the directories in the \textbf{destination}, for each case, all user files
 are compiled. The \textsc{Autovnv} stops if a compilation error occurs: no computation, or
 comparison, or plot will be performed, even if they are switched on.
 
