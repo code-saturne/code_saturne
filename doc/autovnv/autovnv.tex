@@ -204,12 +204,12 @@ and \texttt{<case>} as the following example:
 The attributes are:
 \begin{list}{$\bullet$}{}
 \item \texttt{label}: the name of the file of the script;
-\item \texttt{status}: must ne equal to \texttt{on} or \texttt{off},
+\item \texttt{status}: must be equal to \texttt{on} or \texttt{off},
 activate or desactivate the markup;
-\item \texttt{compute}: must ne equal to \texttt{on} or \texttt{off},
+\item \texttt{compute}: must be equal to \texttt{on} or \texttt{off},
 activate or desactivate the computation of the case;
-\item \texttt{post}: must ne equal to \texttt{on} or \texttt{off},
-activate or desactivate the post-treatment of the case.
+\item \texttt{post}: must nb equal to \texttt{on} or \texttt{off},
+activate or desactivate the post-processing of the case.
 \end{list}
 
 All these attributes are mandatory.
@@ -267,8 +267,9 @@ The comparison is done by the external script \texttt{cs\_io\_dump} with the opt
 
 \begin{verbatim}
     <study label='MyStudy1' status='on'>
-        <case label='Grid1' status='on' compute="on" post="off"/>
+        <case label='Grid1' status='on' compute="on" post="off">
             <compare dest="" repo="" threshold="1.0e-5"/>
+        </case>
         <case label='Grid2' status='on' compute="off" post="off"/>
     </study>
 \end{verbatim}
@@ -376,9 +377,9 @@ if __name__ == '__main__':
     main(options)
 \end{verbatim}
 
-\subsection{Post-treatment: plotting curves}
+\subsection{Post-processing: plotting curves}
 
-The post-treatment is activated if the option \texttt{-p, --post} is present in the command line.
+The post-processing is activated if the option \texttt{-p, --post} is present in the command line.
 
 The following example shows the drawing of four curves or (2D lines) from two files of data (which
 has the same name \texttt{profile.dat}). There are two subplots (i.e. frame with axis and 2D lines),

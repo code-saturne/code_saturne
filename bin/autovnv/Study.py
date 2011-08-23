@@ -175,7 +175,7 @@ class Case(object):
             print "Error: can not opening %s\n" % run_ref
             sys.exit(1)
 
-        patterns = '^\\code_saturne', r'^\\neptune_cfd'
+        patterns = r'^\\code_saturne', r'^\\neptune_cfd'
 
         for line in run_ref_f.readlines():
             for p in patterns:
