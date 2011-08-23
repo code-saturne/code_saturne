@@ -155,6 +155,23 @@ cs_timer_diff(const cs_timer_t  *t0,
               const cs_timer_t  *t1);
 
 /*----------------------------------------------------------------------------
+ * Add the the difference between 2 timers to a counter.
+ *
+ * parameters:
+ *   tc <-> pointer to timer counter
+ *   t0 <-- oldest timer value
+ *   t1 <-- most recent timer value
+ *
+ * returns:
+ *   last - first timer value.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_timer_counter_add_diff(cs_timer_counter_t  *tc,
+                          const cs_timer_t    *t0,
+                          const cs_timer_t    *t1);
+
+/*----------------------------------------------------------------------------
  * Return method used to return wall clock time.
  *
  * Note that in the rare case that only the minimal C library clock()
