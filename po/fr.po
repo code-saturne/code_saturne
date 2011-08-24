@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-07-15 13:23+0200\n"
-"PO-Revision-Date: 2010-01-11 12:50+0100\n"
+"POT-Creation-Date: 2011-08-24 11:55+0200\n"
+"PO-Revision-Date: 2011-08-24 11:58+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "Language: fr\n"
@@ -875,12 +875,12 @@ msgstr ""
 "  Pour plus de détails, vérifiez la fin du \"listing\" de calcul,\n"
 "  ou visualisez le post traitement dédié aux erreurs."
 
-#: src/base/cs_calcium.c:262 src/base/cs_syr3_comm.c:877
+#: src/base/cs_calcium.c:262 src/base/cs_syr3_comm.c:926
 #, c-format
 msgid "    %d first and last elements:\n"
 msgstr "    %d premiers et derniers éléments :\n"
 
-#: src/base/cs_calcium.c:268 src/base/cs_syr3_comm.c:881
+#: src/base/cs_calcium.c:268 src/base/cs_syr3_comm.c:930
 msgid "    elements:\n"
 msgstr "    éléments :\n"
 
@@ -934,7 +934,7 @@ msgstr ""
 "        (temps %f, itération %d) ..."
 
 #: src/base/cs_calcium.c:475 src/base/cs_sat_coupling.c:276
-#: src/base/cs_syr4_coupling.c:210
+#: src/base/cs_syr3_comm.c:223 src/base/cs_syr4_coupling.c:210
 msgid "[ok]\n"
 msgstr "[ok]\n"
 
@@ -1428,7 +1428,7 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_io.c:284 src/base/cs_io.c:325
+#: src/base/cs_io.c:289 src/base/cs_io.c:330
 #, c-format
 msgid ""
 "Compilation configuration / porting error:\n"
@@ -1436,7 +1436,7 @@ msgid ""
 "size_t is %d bits, unsigned long long %d bits"
 msgstr ""
 
-#: src/base/cs_io.c:631
+#: src/base/cs_io.c:642
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -1453,7 +1453,7 @@ msgstr ""
 "Les 64 premiers octets lus contiennent :\n"
 "\"%s\"\n"
 
-#: src/base/cs_io.c:651
+#: src/base/cs_io.c:662
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -1466,12 +1466,12 @@ msgstr ""
 "On attendait \"%s\"\n"
 "On a lu \"%s\"."
 
-#: src/base/cs_io.c:698
+#: src/base/cs_io.c:709
 #, c-format
 msgid "Error writing the header of file: \"%s\".\n"
 msgstr "Erreur à l'écriture de l'entête du fichier : \"%s\".\n"
 
-#: src/base/cs_io.c:847
+#: src/base/cs_io.c:858
 #, c-format
 msgid ""
 "Restart file \"%s\"\n"
@@ -1480,7 +1480,7 @@ msgstr ""
 "Le fichier suite \"%s\"\n"
 "au format 1.1 n'est pas conforme."
 
-#: src/base/cs_io.c:896
+#: src/base/cs_io.c:907
 #, c-format
 msgid ""
 "Restart file \"%s\" does not correspond\n"
@@ -1489,7 +1489,7 @@ msgstr ""
 "Le fichier suite \"%s\" ne correspond pas\n"
 "à la partie %d du fichier suite d'origine."
 
-#: src/base/cs_io.c:1125
+#: src/base/cs_io.c:1136
 #, c-format
 msgid ""
 "\n"
@@ -1498,7 +1498,7 @@ msgstr ""
 "\n"
 "  Section lue sur \"%s\" :\n"
 
-#: src/base/cs_io.c:1130
+#: src/base/cs_io.c:1141
 #, c-format
 msgid ""
 "\n"
@@ -1507,7 +1507,7 @@ msgstr ""
 "\n"
 "  Section écrite sur \"%s\" :\n"
 
-#: src/base/cs_io.c:1159
+#: src/base/cs_io.c:1170
 #, c-format
 msgid ""
 "    section name:           \"%s\"\n"
@@ -1516,32 +1516,32 @@ msgstr ""
 "    nom de la rubrique :    \"%s\"\n"
 "    nombre d'éléments :     %llu\n"
 
-#: src/base/cs_io.c:1194 src/base/cs_syr3_comm.c:849
+#: src/base/cs_io.c:1205 src/base/cs_syr3_comm.c:898
 #, c-format
 msgid "    element type name:      \"%s\"\n"
 msgstr "    nom du type d'élément : \"%s\"\n"
 
-#: src/base/cs_io.c:1238
+#: src/base/cs_io.c:1249
 msgid " (local)"
 msgstr " (locaux)"
 
-#: src/base/cs_io.c:1259
+#: src/base/cs_io.c:1270
 #, c-format
 msgid "    %d first and last elements%s:\n"
 msgstr "    %d premiers et derniers éléments%s :\n"
 
-#: src/base/cs_io.c:1264
+#: src/base/cs_io.c:1275
 #, c-format
 msgid "    elements%s:\n"
 msgstr "    éléments%s :\n"
 
-#: src/base/cs_io.c:1812 src/base/cs_io.c:1989 src/base/cs_io.c:3006
-#: src/base/cs_io.c:3093
+#: src/base/cs_io.c:1823 src/base/cs_io.c:2000 src/base/cs_io.c:3028
+#: src/base/cs_io.c:3115
 #, c-format
 msgid "Error writing %llu bytes to file \"%s\"."
 msgstr "Erreur à l'écriture de %llu octets dans le fichier \"%s\"."
 
-#: src/base/cs_io.c:2012
+#: src/base/cs_io.c:2023
 #, c-format
 msgid ""
 " %llu indexed records:\n"
@@ -1554,12 +1554,12 @@ msgstr ""
 "position)\n"
 "\n"
 
-#: src/base/cs_io.c:2026
+#: src/base/cs_io.c:2037
 #, c-format
 msgid " %40s %10llu %2u %2u %2u %6s %c %2u %ld\n"
 msgstr ""
 
-#: src/base/cs_io.c:2035
+#: src/base/cs_io.c:2046
 #, c-format
 msgid ""
 "\n"
@@ -1568,12 +1568,12 @@ msgstr ""
 "\n"
 " %u fichier(s) associé(s):\n"
 
-#: src/base/cs_io.c:2038
+#: src/base/cs_io.c:2049
 #, c-format
 msgid "  \"%s\"\n"
 msgstr "  \"%s\"\n"
 
-#: src/base/cs_io.c:2088 src/base/cs_io.c:2144
+#: src/base/cs_io.c:2099 src/base/cs_io.c:2159
 #, c-format
 msgid ""
 "\n"
@@ -1582,7 +1582,7 @@ msgstr ""
 "\n"
 " Lecture du fichier :  %s\n"
 
-#: src/base/cs_io.c:2090
+#: src/base/cs_io.c:2101
 #, c-format
 msgid ""
 "\n"
@@ -1591,17 +1591,17 @@ msgstr ""
 "\n"
 " Écriture du fichier : %s\n"
 
-#: src/base/cs_io.c:2201
+#: src/base/cs_io.c:2220
 #, c-format
 msgid " Finished reading:    %s\n"
 msgstr " Fin de la lecture :  %s\n"
 
-#: src/base/cs_io.c:2204
+#: src/base/cs_io.c:2223
 #, c-format
 msgid " Finished writing:    %s\n"
 msgstr " Fin de l'écriture :  %s\n"
 
-#: src/base/cs_io.c:2470
+#: src/base/cs_io.c:2489
 #, c-format
 msgid ""
 "Type \"%s\" is not known\n"
@@ -1610,7 +1610,7 @@ msgstr ""
 "Type \"%s\" inconnu\n"
 "Types connus : \"c \", \"i4\", \"i8\", \"u4\", \"u8\", \"r4\", \"r8\"."
 
-#: src/base/cs_io.c:2526
+#: src/base/cs_io.c:2545
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -1619,7 +1619,7 @@ msgstr ""
 "Erreur à la lecture du fichier : \"%s\".\n"
 "Le type de données \"%s\" n'est pas reconnu."
 
-#: src/base/cs_io.c:2639
+#: src/base/cs_io.c:2658
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -1631,7 +1631,7 @@ msgstr ""
 "\"%s\" est un entier signé\n"
 "et n'est pas convertible à partir du type lu : \"%s\"."
 
-#: src/base/cs_io.c:2674
+#: src/base/cs_io.c:2693
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -1643,7 +1643,7 @@ msgstr ""
 "\"%s\" est un entier non signé\n"
 "et n'est pas convertible à partir du type lu : \"%s\"."
 
-#: src/base/cs_io.c:2705
+#: src/base/cs_io.c:2724
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -1654,7 +1654,7 @@ msgstr ""
 "Le type attendu pour la section : \"%s\"\n"
 "est \"r4\" ou \"r8\" (réel), et non \"%s\"."
 
-#: src/base/cs_io.c:2941
+#: src/base/cs_io.c:2963
 #, c-format
 msgid ""
 "    first element for next rank:\n"
@@ -1663,20 +1663,20 @@ msgstr ""
 "    premier élement rang suivant :\n"
 "    %10llu : %12llu\n"
 
-#: src/base/cs_io.c:3111
+#: src/base/cs_io.c:3133
 #, c-format
 msgid "  I/O mode:          %s\n"
 msgstr "  mode E/S :          %s\n"
 
-#: src/base/cs_io.c:3117
+#: src/base/cs_io.c:3139
 msgid "MPI-IO, explicit offsets"
 msgstr "MPI-IO, positions explicites"
 
-#: src/base/cs_io.c:3121
+#: src/base/cs_io.c:3143
 msgid "MPI-IO, individual file pointers"
 msgstr "MPI-IO, pointeurs de fichiers individuels"
 
-#: src/base/cs_io.c:3125
+#: src/base/cs_io.c:3147
 msgid ""
 "serial IO\n"
 "\n"
@@ -1684,7 +1684,7 @@ msgstr ""
 "ES série\n"
 "\n"
 
-#: src/base/cs_io.c:3174
+#: src/base/cs_io.c:3196
 msgid ""
 "\n"
 "\n"
@@ -1696,25 +1696,29 @@ msgstr ""
 " contenu du fichier :\n"
 "\n"
 
-#: src/base/cs_io.c:3177
+#: src/base/cs_io.c:3199
 #, c-format
 msgid "  file: %s\n"
 msgstr "  fichier : %s\n"
 
-#: src/base/cs_io.c:3179
+#: src/base/cs_io.c:3201
 #, c-format
 msgid "  contents: \"%s\"\n"
 msgstr "  contenu : \"%s\"\n"
 
-#: src/base/cs_io.c:3181
+#: src/base/cs_io.c:3203
 msgid "  mode: CS_IO_MODE_READ\n"
 msgstr "  mode : CS_IO_MODE_READ\n"
 
-#: src/base/cs_io.c:3183
+#: src/base/cs_io.c:3205
 msgid "  mode: CS_IO_MODE_WRITE\n"
 msgstr "  mode : CS_IO_MODE_WRITE\n"
 
-#: src/base/cs_io.c:3185
+#: src/base/cs_io.c:3208
+msgid "  MPI communicator: %l\n"
+msgstr "  Communicateur MPI : %l\n"
+
+#: src/base/cs_io.c:3211
 #, c-format
 msgid ""
 "  default header size: %lu\n"
@@ -4584,7 +4588,8 @@ msgstr ""
 msgid " Code_Saturne coupling %d: initializing MPI communication ... "
 msgstr " Couplage Code_Saturne %d : initialisation de la communication MPI ..."
 
-#: src/base/cs_sat_coupling.c:277 src/base/cs_syr4_coupling.c:211
+#: src/base/cs_sat_coupling.c:277 src/base/cs_syr3_comm.c:224
+#: src/base/cs_syr4_coupling.c:211
 #, c-format
 msgid ""
 "  Local ranks = [%d..%d], distant ranks = [%d..%d].\n"
@@ -4860,12 +4865,12 @@ msgstr ""
 "%s [%s]:\n"
 "  sortie immédiate ; r_norm = %11.4e, residu = %11.4e\n"
 
-#: src/base/cs_syr3_comm.c:151
+#: src/base/cs_syr3_comm.c:163
 #, c-format
 msgid "Error in socket communication:  %s (node %4d)\n"
 msgstr "Erreur pour la communication par socket :  %s (noeud %4d)\n"
 
-#: src/base/cs_syr3_comm.c:175
+#: src/base/cs_syr3_comm.c:187
 #, c-format
 msgid ""
 "MPI error for communication:  %s\n"
@@ -4874,18 +4879,12 @@ msgstr ""
 "Erreur MPI pour la communication :  %s\n"
 "Type d'erreur : %s"
 
-#: src/base/cs_syr3_comm.c:204
+#: src/base/cs_syr3_comm.c:214
 #, c-format
-msgid ""
-"Impossible to establish the communication: %s\n"
-"because the requested process rank (%d)\n"
-"is greater than or equal to the number of MPI processes (%d)"
-msgstr ""
-"Impossible d'établir la communication : %s\n"
-"car le rang du processus recherché (%d)\n"
-"est supérieur ou égal au nombre de processus MPI (%d)."
+msgid " Initializing MPI communication: %s ... "
+msgstr " Initialisation de la communication MPI : %s ..."
 
-#: src/base/cs_syr3_comm.c:228
+#: src/base/cs_syr3_comm.c:250
 #, c-format
 msgid ""
 "Error for communication: \"%s\".\n"
@@ -4900,7 +4899,7 @@ msgstr ""
 "chaîne magique lue      : \"%s\"\n"
 "chaîne magique attendue : \"%s\"\n"
 
-#: src/base/cs_syr3_comm.c:488
+#: src/base/cs_syr3_comm.c:523
 #, c-format
 msgid ""
 "Communication %s:\n"
@@ -4909,7 +4908,7 @@ msgstr ""
 "Communication %s :\n"
 "Erreur de réception de données par socket.\n"
 
-#: src/base/cs_syr3_comm.c:570
+#: src/base/cs_syr3_comm.c:605
 #, c-format
 msgid ""
 "Communication %s:\n"
@@ -4918,30 +4917,39 @@ msgstr ""
 "Communication %s :\n"
 "Erreur d'envoi de données par socket.\n"
 
-#: src/base/cs_syr3_comm.c:626 src/base/cs_syr3_comm.c:679
-#: src/base/cs_syr3_comm.c:688 src/base/cs_syr3_comm.c:696
+#: src/base/cs_syr3_comm.c:661 src/base/cs_syr3_comm.c:714
+#: src/base/cs_syr3_comm.c:723 src/base/cs_syr3_comm.c:731
 msgid "Error in socket communication\n"
 msgstr "Erreur de communication par socket\n"
 
-#: src/base/cs_syr3_comm.c:646
+#: src/base/cs_syr3_comm.c:681
 msgid ""
 "Error while sending the host name through MPI in sockets initialization.\n"
 msgstr ""
 "Erreur lors de l'envoi via MPI du nom de l'hôte en initialisant les "
 "sockets.\n"
 
-#: src/base/cs_syr3_comm.c:656
+#: src/base/cs_syr3_comm.c:691
 msgid ""
 "Error while sending the port number through MPI in sockets initialization.\n"
 msgstr ""
 "Erreur lors de l'envoi via MPI du numéro du port en initialisant les "
 "sockets.\n"
 
-#: src/base/cs_syr3_comm.c:666
+#: src/base/cs_syr3_comm.c:701
 msgid "MPI is needed for socket initialization.\n"
 msgstr "Besoin de MPI lors de l'initialisation des sockets.\n"
 
-#: src/base/cs_syr3_comm.c:734
+#: src/base/cs_syr3_comm.c:762
+#, c-format
+msgid ""
+"\n"
+"  Opening communication:  %s ..."
+msgstr ""
+"\n"
+"  Ouverture de la communication :  %s ..."
+
+#: src/base/cs_syr3_comm.c:778
 msgid ""
 "Attempt to connect to the communication port with\n"
 "an unknown message format\n"
@@ -4949,7 +4957,7 @@ msgstr ""
 "Tentative de connexion au port de communication avec\n"
 "un format de message non reconnu\n"
 
-#: src/base/cs_syr3_comm.c:753
+#: src/base/cs_syr3_comm.c:797
 #, c-format
 msgid ""
 "Error while initializating communication: \"%s\".\n"
@@ -4964,7 +4972,7 @@ msgstr ""
 "chaîne magique lue      : \"%s\"\n"
 "chaîne magique actuelle : \"%s\"\n"
 
-#: src/base/cs_syr3_comm.c:780
+#: src/base/cs_syr3_comm.c:829
 #, c-format
 msgid ""
 "Communication %s):\n"
@@ -4973,7 +4981,7 @@ msgstr ""
 "Communication %s) :\n"
 "Erreur à la fermeture du socket.\n"
 
-#: src/base/cs_syr3_comm.c:800
+#: src/base/cs_syr3_comm.c:849
 #, c-format
 msgid ""
 "\n"
@@ -4982,7 +4990,7 @@ msgstr ""
 "\n"
 "Message reçu sur \"%s\" :\n"
 
-#: src/base/cs_syr3_comm.c:803
+#: src/base/cs_syr3_comm.c:852
 #, c-format
 msgid ""
 "\n"
@@ -4991,7 +4999,7 @@ msgstr ""
 "\n"
 "Message envoyé sur \"%s\" :\n"
 
-#: src/base/cs_syr3_comm.c:825
+#: src/base/cs_syr3_comm.c:874
 #, c-format
 msgid ""
 "    section name:          \"%s\"\n"
@@ -5000,16 +5008,7 @@ msgstr ""
 "    nom de la rubrique :    \"%s\"\n"
 "    nombre d'éléments :     %d\n"
 
-#: src/base/cs_syr3_comm.c:1017
-#, c-format
-msgid ""
-"\n"
-"  Opening communication:  %s ..."
-msgstr ""
-"\n"
-"  Ouverture de la communication :  %s ..."
-
-#: src/base/cs_syr3_comm.c:1063
+#: src/base/cs_syr3_comm.c:1092
 #, c-format
 msgid ""
 "\n"
@@ -5018,16 +5017,16 @@ msgstr ""
 "\n"
 "  Fermeture de la communication :  %s\n"
 
-#: src/base/cs_syr3_comm.c:1536 src/base/cs_syr3_comm.c:1574
-#: src/base/cs_syr3_comm.c:1578 src/base/cs_syr3_comm.c:1586
+#: src/base/cs_syr3_comm.c:1568 src/base/cs_syr3_comm.c:1606
+#: src/base/cs_syr3_comm.c:1610 src/base/cs_syr3_comm.c:1618
 msgid "Initialization error for socket communication support.\n"
 msgstr "Erreur d'initialisation du support de communication par socket.\n"
 
-#: src/base/cs_syr3_comm.c:1564
+#: src/base/cs_syr3_comm.c:1596
 msgid "Error obtaining computer's name"
 msgstr "Erreur de récupération du nom de la machine"
 
-#: src/base/cs_syr3_comm.c:1633
+#: src/base/cs_syr3_comm.c:1665
 msgid ""
 "\n"
 "Closing socket...\t [ok]\n"
