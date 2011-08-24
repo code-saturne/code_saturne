@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-07-27 16:22+0200\n"
-"PO-Revision-Date: 2010-09-10 17:21+0200\n"
+"POT-Creation-Date: 2011-08-24 12:00+0200\n"
+"PO-Revision-Date: 2011-08-24 12:01+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "Language: fr\n"
@@ -4215,6 +4215,9 @@ msgstr ""
 "\n"
 "Partition de %llu cellules vers %d domaines (ParMETIS_V3_PartKway).\n"
 
+msgid "Error in ParMETIS partitioning.\n"
+msgstr "Erreur lors du partionnement ParMETIS.\n"
+
 #, c-format
 msgid ""
 "\n"
@@ -4224,6 +4227,16 @@ msgid ""
 msgstr ""
 "\n"
 "  Nombre total de faces sur des frontières parallèles : %llu\n"
+"  temps écoulé : %f s\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+"  wall-clock time: %f s\n"
+"\n"
+msgstr ""
+"\n"
 "  temps écoulé : %f s\n"
 "\n"
 
@@ -4262,16 +4275,6 @@ msgid ""
 msgstr ""
 "\n"
 "Partition de %llu cellules vers %d domaines (SCOTCH_dgraphpart).\n"
-
-#, c-format
-msgid ""
-"\n"
-"  wall-clock time: %f s\n"
-"\n"
-msgstr ""
-"\n"
-"  temps écoulé : %f s\n"
-"\n"
 
 msgid "Read:   "
 msgstr "Lu :    "
@@ -5936,14 +5939,8 @@ msgstr ""
 "Type d'erreur : %s"
 
 #, c-format
-msgid ""
-"Impossible to establish the communication: %s\n"
-"because the requested process rank (%d)\n"
-"is greater than or equal to the number of MPI processes (%d)"
-msgstr ""
-"Impossible d'établir la communication : %s\n"
-"car le rang du processus recherché (%d)\n"
-"est supérieur ou égal au nombre de processus MPI (%d)."
+msgid " Initializing MPI communication: %s ... "
+msgstr " Initialisation de la communication MPI : %s ..."
 
 #, c-format
 msgid ""
@@ -5992,6 +5989,14 @@ msgstr ""
 
 msgid "MPI is needed for socket initialization.\n"
 msgstr "Besoin de MPI lors de l'initialisation des sockets.\n"
+
+#, c-format
+msgid ""
+"\n"
+"  Opening communication:  %s ..."
+msgstr ""
+"\n"
+"  Ouverture de la communication :  %s ..."
 
 msgid ""
 "Attempt to connect to the communication port with\n"
@@ -6045,14 +6050,6 @@ msgid ""
 msgstr ""
 "    nom de la rubrique :    \"%s\"\n"
 "    nombre d'éléments :     %d\n"
-
-#, c-format
-msgid ""
-"\n"
-"  Opening communication:  %s ..."
-msgstr ""
-"\n"
-"  Ouverture de la communication :  %s ..."
 
 #, c-format
 msgid ""
