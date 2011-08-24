@@ -3434,12 +3434,6 @@ msgstr ""
 msgid "  Coarsest level solver:       %s\n"
 msgstr "  Solveur de niveau grossier : %s\n"
 
-#, c-format
-msgid ""
-"\n"
-"  %-36s %12s %12s %12s\n"
-msgstr ""
-
 msgid "mean"
 msgstr "moyen"
 
@@ -3449,21 +3443,11 @@ msgstr "minimum"
 msgid "maximum"
 msgstr "maximum"
 
-#, c-format
-msgid "  %-36s %12d %12d %12d\n"
-msgstr ""
-
 msgid "Number of coarse levels:"
 msgstr "Nombre de niveaux grossiers :"
 
 msgid "Number of cycles:"
 msgstr "Nombre de cycles :"
-
-#, c-format
-msgid ""
-"\n"
-"  %-26s %9s %12s %12s %12s\n"
-msgstr ""
 
 msgid "calls"
 msgstr "appels"
@@ -3477,43 +3461,25 @@ msgstr "CPU moyen"
 msgid "max CPU"
 msgstr "CPU max"
 
-#, c-format
-msgid "    %-24s %9u %12.3f %12.3f %12.3f\n"
-msgstr ""
-
 msgid "Construction:"
 msgstr "Construction :"
 
 msgid "Resolution:"
 msgstr "Résolution :"
 
-#, c-format
-msgid ""
-"\n"
-"  %-39s %9s %12s %12s\n"
-msgstr ""
-
 msgid "CPU"
 msgstr "CPU"
-
-#, c-format
-msgid "  %-39s %9u %12.3f %12.3f\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"  Grid level %d:\n"
-"    %-34s %12llu %12llu %12llu\n"
-msgstr ""
-"  Grille niveau %d :\n"
-"    %-34s %12llu %12llu %12llu\n"
 
 msgid "Number of cells:"
 msgstr "Nombre de cellules :"
 
 #, c-format
-msgid "    %-34s %12llu %12llu %12llu\n"
+msgid ""
+"  Grid level %d:\n"
+"    %s %12llu %12llu %12llu\n"
 msgstr ""
+"  Grille niveau %d :\n"
+"    %s %12llu %12llu %12llu\n"
 
 msgid "Number of faces:"
 msgstr "Nombre de faces :"
@@ -3521,28 +3487,14 @@ msgstr "Nombre de faces :"
 msgid "Number of active ranks:"
 msgstr "Nombre de rangs actifs :"
 
-#, c-format
-msgid ""
-"    %-34s %12llu %12llu %12llu\n"
-"    %-34s %12llu %12llu %12llu\n"
-"    %-34s %12llu %12llu %12llu\n"
-msgstr ""
-
 msgid "Mean local cells:"
 msgstr "Nombre local moyen de cellules :"
 
 msgid "Mean local cells + ghosts:"
-msgstr "Nombre local moyen cell. + halo :"
+msgstr "Nombre local moyen cell. + halos :"
 
 msgid "Mean local faces:"
 msgstr "Nombre local moyen de faces :"
-
-#, c-format
-msgid ""
-"    %-34s %12.3f %12.3f %12.3f\n"
-"    %-34s %12.3f %12.3f %12.3f\n"
-"    %-34s %12.3f %12.3f %12.3f\n"
-msgstr ""
 
 msgid "Cells unbalance:"
 msgstr "Déséquilibre cellules :"
@@ -3550,7 +3502,7 @@ msgstr "Déséquilibre cellules :"
 msgid "Cells + ghosts unbalance:"
 msgstr "Déséquilibre cellules + halos :"
 
-msgid "Faces unbalance:"
+msgid "Faces unbalance"
 msgstr "Déséquilibre faces :"
 
 msgid "Iterations for solving:"
@@ -3565,10 +3517,6 @@ msgstr "Itérations lisseur de montée :"
 #, c-format
 msgid "  Grid level %d:\n"
 msgstr "  Grille niveau %d :\n"
-
-#, c-format
-msgid "    %-37s %9u %12.3f %12.3f\n"
-msgstr ""
 
 msgid ""
 "  ---------------------------------------------------\n"

@@ -68,6 +68,7 @@
 #include "cs_base.h"
 #include "cs_blas.h"
 #include "cs_grid.h"
+#include "cs_log.h"
 #include "cs_matrix.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -290,6 +291,36 @@ _multigrid_level_info_init(cs_multigrid_level_info_t *info)
 }
 
 /*----------------------------------------------------------------------------
+ * Print a string to a given width into another string
+ *
+ * parameters:
+ *   dest       <-> destination string
+ *   src        <-- source string
+ *   with       <-- desired width
+ *   pad_before <-- add padding before string
+ *----------------------------------------------------------------------------*/
+
+static void
+_sprint_padded_str(char        *dest,
+                   const char  *str,
+                   int          width,
+                   bool         pad_before)
+{
+  int l;
+  assert(str != NULL);
+
+  l = cs_log_strlen(str);
+  if (width > l) {
+    if (pad_before)
+      sprintf(dest, "%-*s%s", width-l, "", str);
+    else
+      sprintf(dest, "%s%-*s", str, width-l, "");
+  }
+  else
+    sprintf(dest, "%s", str);
+}
+
+/*----------------------------------------------------------------------------
  * Output information regarding multigrid resolution.
  *
  * parameters:
@@ -308,13 +339,15 @@ _multigrid_info_dump(const cs_multigrid_t *mg)
   int n_lv_mean = (int)(mg->info.n_levels_tot / n_builds_denom);
   int n_cy_mean = (int)(mg->info.n_cycles[2] / n_solves_denom);
 
-  const char *stage_name[] = {N_("build:"), N_("solve:"),
-                              N_("descent smoothe:"), N_("ascent smoothe:"),
-                              N_("restrict:"), N_("prolong:")};
+  char tmp_s[6][64] =  {"", "", "", "", "", ""};
+  const char *stage_name[6] = {N_("build:"), N_("solve:"),
+                               N_("descent smoothe:"), N_("ascent smoothe:"),
+                               N_("restrict:"), N_("prolong:")};
 
-  bft_printf(_("\n"
-               "Summary of multigrid for \"%s\":\n\n"),
-               mg->info.name);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Summary of multigrid for \"%s\":\n\n"),
+                mg->info.name);
 
   if (mg->info.type[0] != CS_SLES_N_TYPES) {
 
@@ -322,63 +355,119 @@ _multigrid_info_dump(const cs_multigrid_t *mg)
     const char *ascent_smoother_name = cs_sles_type_name[mg->info.type[1]];
 
     if (mg->info.type[0] == mg->info.type[1])
-      bft_printf(_("  Smoother: %s\n"), _(descent_smoother_name));
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("  Smoother: %s\n"),
+                    _(descent_smoother_name));
     else
-      bft_printf(_("  Descent smoother:     %s\n"
-                   "  Ascent smoother:      %s\n"),
-                 _(descent_smoother_name), _(ascent_smoother_name));
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("  Descent smoother:     %s\n"
+                      "  Ascent smoother:      %s\n"),
+                    _(descent_smoother_name), _(ascent_smoother_name));
 
-    bft_printf(_("  Coarsest level solver:       %s\n"),
-               _(cs_sles_type_name[mg->info.type[2]]));
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  Coarsest level solver:       %s\n"),
+                  _(cs_sles_type_name[mg->info.type[2]]));
 
   }
 
-  bft_printf(_("\n  %-36s %12s %12s %12s\n"),
-             "", _("mean"), _("minimum"), _("maximum"));
+  sprintf(tmp_s[0], "%-36s", "");
+  _sprint_padded_str(tmp_s[1], _("mean"), 12, true);
+  _sprint_padded_str(tmp_s[2], _("minimum"), 12, true);
+  _sprint_padded_str(tmp_s[3], _("maximum"), 12, true);
 
-  bft_printf(_("  %-36s %12d %12d %12d\n"),
-             _("Number of coarse levels:"), n_lv_mean, n_lv_min, n_lv_max);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "\n  %s %s %s %s\n",
+                tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3]);
 
-  bft_printf(_("  %-36s %12d %12d %12d\n"),
-             _("Number of cycles:"), n_cy_mean,
-             (int)(mg->info.n_cycles[0]), (int)(mg->info.n_cycles[1]));
+  _sprint_padded_str(tmp_s[0], _("Number of coarse levels:"), 36, false);
+  _sprint_padded_str(tmp_s[1], _("Number of cycles:"), 36, false);
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "  %s %12d %12d %12d\n",
+                tmp_s[0], n_lv_mean, n_lv_min, n_lv_max);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "  %s %12d %12d %12d\n",
+                tmp_s[1], n_cy_mean,
+                (int)(mg->info.n_cycles[0]), (int)(mg->info.n_cycles[1]));
 
 #if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks > 1) {
+
     double cpu_sum[2], cpu_max[2], cpu_loc[2];
+
     cpu_loc[0] = mg->info.t_tot[0].cpu_nsec * 1.e-9;
     cpu_loc[1] = mg->info.t_tot[1].cpu_nsec * 1.e-9;
+
     MPI_Allreduce(cpu_loc, cpu_sum, 2, MPI_DOUBLE, MPI_SUM,
                   cs_glob_mpi_comm);
     MPI_Allreduce(cpu_loc, cpu_max, 2, MPI_DOUBLE, MPI_MAX,
                   cs_glob_mpi_comm);
-    bft_printf(_("\n  %-26s %9s %12s %12s %12s\n"),
-               "", _("calls"),
-               _("elapsed"), _("mean CPU"), _("max CPU"));
-    bft_printf(_("    %-24s %9u %12.3f %12.3f %12.3f\n"),
-               _("Construction:"), mg->info.n_builds,
-               mg->info.t_tot[0].wall_nsec * 1.e-9,
-               cpu_sum[0]/cs_glob_n_ranks, cpu_max[0]);
-    bft_printf(_("    %-24s %9u %12.3f %12.3f %12.3f\n"),
-               _("Resolution:"), mg->info.n_solves,
-               mg->info.t_tot[1].wall_nsec * 1.e-9,
-               cpu_sum[1]/cs_glob_n_ranks, cpu_max[1]);
-  }
-#endif
-  if (cs_glob_n_ranks == 1) {
-    bft_printf(_("\n  %-39s %9s %12s %12s\n"),
-               "", _("calls"), _("elapsed"), _("CPU"));
-    bft_printf(_("  %-39s %9u %12.3f %12.3f\n"),
-               _("Construction:"), mg->info.n_builds,
-               mg->info.t_tot[0].wall_nsec * 1.e-9,
-               mg->info.t_tot[0].cpu_nsec * 1.e-9);
-    bft_printf(_("  %-39s %9u %12.3f %12.3f\n"),
-               _("Resolution:"), mg->info.t_tot[1].wall_nsec * 1.e-9,
-               mg->info.t_tot[1].cpu_nsec * 1.e-9);
+
+    sprintf(tmp_s[0], "%-26s", "");
+    _sprint_padded_str(tmp_s[1], _("calls"), 9, true);
+    _sprint_padded_str(tmp_s[2], _("elapsed"), 12, true);
+
+    _sprint_padded_str(tmp_s[3], _("mean CPU"), 12, true);
+    _sprint_padded_str(tmp_s[4], _("max CPU"), 12, true);
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  "\n  %s %s %s %s %s\n",
+                  tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3], tmp_s[4]);
+
+    _sprint_padded_str(tmp_s[0], _("Construction:"), 26, false);
+    _sprint_padded_str(tmp_s[1], _("Resolution:"), 26, false);
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  "  %s %9u %12.3f %12.3f %12.3f\n",
+                  tmp_s[0], mg->info.n_builds,
+                  mg->info.t_tot[0].wall_nsec * 1.e-9,
+                  cpu_sum[0]/cs_glob_n_ranks, cpu_max[0]);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  "  %s %9u %12.3f %12.3f %12.3f\n",
+                  tmp_s[1], mg->info.n_solves,
+                  mg->info.t_tot[1].wall_nsec * 1.e-9,
+                  cpu_sum[1]/cs_glob_n_ranks, cpu_max[1]);
+
   }
 
-  bft_printf(_("\n  %-36s %12s %12s %12s\n"),
-             "", _("mean"), _("minimum"), _("maximum"));
+#endif
+
+  if (cs_glob_n_ranks == 1) {
+
+    sprintf(tmp_s[0], "%-39s", "");
+    _sprint_padded_str(tmp_s[1], _("calls"), 9, true);
+    _sprint_padded_str(tmp_s[2], _("elapsed"), 12, true);
+    _sprint_padded_str(tmp_s[3], _("CPU"), 12, true);
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  "\n  %13s%s %s %s %s\n",
+                  tmp_s[0], "", tmp_s[1], tmp_s[2], tmp_s[3]);
+
+    _sprint_padded_str(tmp_s[0], _("Construction:"), 39, false);
+    _sprint_padded_str(tmp_s[1], _("Resolution:"), 39, false);
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  "  %s %9u %12.3f %12.3f\n",
+                  tmp_s[0], mg->info.n_builds,
+                  mg->info.t_tot[0].wall_nsec * 1.e-9,
+                  mg->info.t_tot[0].cpu_nsec * 1.e-9);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  "  %s %9u %12.3f %12.3f\n",
+                  tmp_s[1], mg->info.n_solves,
+                  mg->info.t_tot[1].wall_nsec * 1.e-9,
+                  mg->info.t_tot[1].cpu_nsec * 1.e-9);
+
+  }
+
+  sprintf(tmp_s[0], "%-36s", "");
+  _sprint_padded_str(tmp_s[1], _("mean"), 12, true);
+  _sprint_padded_str(tmp_s[2], _("minimum"), 12, true);
+  _sprint_padded_str(tmp_s[3], _("maximum"), 12, true);
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "\n  %s %s %s %s\n",
+                tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3]);
 
   for (i = 0; i <= mg->info.n_levels[2]; i++) {
 
@@ -388,82 +477,120 @@ _multigrid_info_dump(const cs_multigrid_t *mg)
     if (n_lv_builds < 1)
       continue;
 
-    bft_printf(_("  Grid level %d:\n"
-                 "    %-34s %12llu %12llu %12llu\n"),
-               i, _("Number of cells:"),
-               lv_info->n_g_cells[3] / n_lv_builds,
-               lv_info->n_g_cells[1], lv_info->n_g_cells[2]);
+    _sprint_padded_str(tmp_s[0], _("Number of cells:"), 34, false);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  Grid level %d:\n"
+                    "    %s %12llu %12llu %12llu\n"),
+                  i, tmp_s[0],
+                  lv_info->n_g_cells[3] / n_lv_builds,
+                  lv_info->n_g_cells[1], lv_info->n_g_cells[2]);
 
 #if defined(HAVE_MPI)
 
-    if (cs_glob_n_ranks == 1)
-      bft_printf(_("    %-34s %12llu %12llu %12llu\n"),
-                 _("Number of faces:"),
-                 lv_info->n_elts[2][3] / n_lv_builds,
-                 lv_info->n_elts[2][1], lv_info->n_elts[2][2]);
+    if (cs_glob_n_ranks == 1) {
+      _sprint_padded_str(tmp_s[1], _("Number of faces:"), 34, false);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    "    %s %12llu %12llu %12llu\n",
+                    tmp_s[1],
+                    lv_info->n_elts[2][3] / n_lv_builds,
+                    lv_info->n_elts[2][1], lv_info->n_elts[2][2]);
+    }
 
 #endif
     if (cs_glob_n_ranks > 1) {
-      bft_printf(_("    %-34s %12llu %12llu %12llu\n"),
-                 _("Number of active ranks:"),
-                 lv_info->n_ranks[3] / n_lv_builds,
-                 lv_info->n_ranks[1], lv_info->n_ranks[2]);
-      bft_printf(_("    %-34s %12llu %12llu %12llu\n"
-                   "    %-34s %12llu %12llu %12llu\n"
-                   "    %-34s %12llu %12llu %12llu\n"),
-                 _("Mean local cells:"),
-                 lv_info->n_elts[0][3] / n_lv_builds,
-                 lv_info->n_elts[0][1], lv_info->n_elts[0][2],
-                 _("Mean local cells + ghosts:"),
-                 lv_info->n_elts[1][3] / n_lv_builds,
-                 lv_info->n_elts[1][1], lv_info->n_elts[1][2],
-                 _("Mean local faces:"),
-                 lv_info->n_elts[2][3] / n_lv_builds,
-                 lv_info->n_elts[2][1], lv_info->n_elts[2][2]);
-      bft_printf(_("    %-34s %12.3f %12.3f %12.3f\n"
-                   "    %-34s %12.3f %12.3f %12.3f\n"
-                   "    %-34s %12.3f %12.3f %12.3f\n"),
-                 _("Cells unbalance:"),
-                 lv_info->unbalance[0][3] / n_lv_builds,
-                 lv_info->unbalance[0][1], lv_info->unbalance[0][2],
-                 _("Cells + ghosts unbalance:"),
-                 lv_info->unbalance[1][3] / n_lv_builds,
-                 lv_info->unbalance[1][1], lv_info->unbalance[1][2],
-                 _("Faces unbalance:"),
-                 lv_info->unbalance[2][3] / n_lv_builds,
-                 lv_info->unbalance[2][1], lv_info->unbalance[2][2]);
+      _sprint_padded_str(tmp_s[0], _("Number of active ranks:"), 34, false);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    "    %s %12llu %12llu %12llu\n",
+                    tmp_s[0],
+                    lv_info->n_ranks[3] / n_lv_builds,
+                    lv_info->n_ranks[1], lv_info->n_ranks[2]);
+      _sprint_padded_str(tmp_s[0], _("Mean local cells:"), 34, false);
+      _sprint_padded_str(tmp_s[1], _("Mean local cells + ghosts:"), 34, false);
+      _sprint_padded_str(tmp_s[2], _("Mean local faces:"), 34, false);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    "    %s %12llu %12llu %12llu\n"
+                    "    %s %12llu %12llu %12llu\n"
+                    "    %s %12llu %12llu %12llu\n",
+                    tmp_s[0],
+                    lv_info->n_elts[0][3] / n_lv_builds,
+                    lv_info->n_elts[0][1], lv_info->n_elts[0][2],
+                    tmp_s[1],
+                    lv_info->n_elts[1][3] / n_lv_builds,
+                    lv_info->n_elts[1][1], lv_info->n_elts[1][2],
+                    tmp_s[2],
+                    lv_info->n_elts[2][3] / n_lv_builds,
+                    lv_info->n_elts[2][1], lv_info->n_elts[2][2]);
+      _sprint_padded_str(tmp_s[0], _("Cells unbalance:"), 34, false);
+      _sprint_padded_str(tmp_s[1], _("Cells + ghosts unbalance:"), 34, false);
+      _sprint_padded_str(tmp_s[2], _("Faces unbalance"), 34, false);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    "    %-34s %12.3f %12.3f %12.3f\n"
+                    "    %-34s %12.3f %12.3f %12.3f\n"
+                    "    %-34s %12.3f %12.3f %12.3f\n",
+                    tmp_s[0],
+                    lv_info->unbalance[0][3] / n_lv_builds,
+                    lv_info->unbalance[0][1], lv_info->unbalance[0][2],
+                    tmp_s[1],
+                    lv_info->unbalance[1][3] / n_lv_builds,
+                    lv_info->unbalance[1][1], lv_info->unbalance[1][2],
+                    tmp_s[2],
+                    lv_info->unbalance[2][3] / n_lv_builds,
+                    lv_info->unbalance[2][1], lv_info->unbalance[2][2]);
     }
 
     if (lv_info->n_calls[1] > 0) {
-      bft_printf(_("    %-34s %12llu %12llu %12llu\n"),
-                 _("Iterations for solving:"),
-                 lv_info->n_it_solve[3] / lv_info->n_calls[1],
-                 lv_info->n_it_solve[1], lv_info->n_it_solve[2]);
+      _sprint_padded_str(tmp_s[0], _("Iterations for solving:"), 34, false);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    "    %s %12llu %12llu %12llu\n",
+                    tmp_s[0],
+                    lv_info->n_it_solve[3] / lv_info->n_calls[1],
+                    lv_info->n_it_solve[1], lv_info->n_it_solve[2]);
     }
 
     if (lv_info->n_calls[2] > 0) {
-      bft_printf(_("    %-34s %12llu %12llu %12llu\n"),
-                 _("Descent smoother iterations:"),
-                 lv_info->n_it_ds_smoothe[3] / lv_info->n_calls[2],
-                 lv_info->n_it_ds_smoothe[1], lv_info->n_it_ds_smoothe[2]);
+      _sprint_padded_str(tmp_s[1], _("Descent smoother iterations:"), 34, false);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    "    %s %12llu %12llu %12llu\n",
+                    tmp_s[1],
+                    lv_info->n_it_ds_smoothe[3] / lv_info->n_calls[2],
+                    lv_info->n_it_ds_smoothe[1], lv_info->n_it_ds_smoothe[2]);
     }
 
     if (lv_info->n_calls[3] > 0) {
-      bft_printf(_("    %-34s %12llu %12llu %12llu\n"),
-                 _("Ascent smoother iterations:"),
-                 lv_info->n_it_as_smoothe[3] / lv_info->n_calls[3],
-                 lv_info->n_it_as_smoothe[1], lv_info->n_it_as_smoothe[2]);
+      _sprint_padded_str(tmp_s[2], _("Ascent smoother iterations:"), 34, false);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    "    %s %12llu %12llu %12llu\n",
+                    tmp_s[2],
+                    lv_info->n_it_as_smoothe[3] / lv_info->n_calls[3],
+                    lv_info->n_it_as_smoothe[1], lv_info->n_it_as_smoothe[2]);
     }
   }
 
 #if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1)
-    bft_printf(_("\n  %-26s %9s %12s %12s %12s\n"),
-               "", _("calls"), _("elapsed"), _("mean CPU"), _("max CPU"));
+  if (cs_glob_n_ranks > 1) {
+    sprintf(tmp_s[0], "%-26s", "");
+    _sprint_padded_str(tmp_s[1], _("calls"), 9, true);
+    _sprint_padded_str(tmp_s[2], _("elapsed"), 12, true);
+    _sprint_padded_str(tmp_s[3], _("mean CPU"), 12, true);
+    _sprint_padded_str(tmp_s[4], _("max CPU"), 12, true);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  "\n  %s %s %s %s %s\n",
+                  tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3], tmp_s[4]);
+  }
 #endif
-  if (cs_glob_n_ranks == 1)
-    bft_printf(_("\n  %-39s %9s %12s %12s\n"),
-               "", _("calls"), _("elapsed"), _("CPU"));
+  if (cs_glob_n_ranks == 1) {
+    sprintf(tmp_s[0], "%-39s", "");
+    _sprint_padded_str(tmp_s[1], _("calls"), 9, true);
+    _sprint_padded_str(tmp_s[2], _("elapsed"), 12, true);
+    _sprint_padded_str(tmp_s[3], _("CPU"), 12, true);
+    _sprint_padded_str(tmp_s[3], _("CPU"), 12, true);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  "\n  %s %s %s %s\n",
+                  tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3]);
+  }
+
+  for (i = 0; i < 6; i++)
+    _sprint_padded_str(tmp_s[i], _(stage_name[i]), 24, false);
 
   for (i = 0; i <= mg->info.n_levels[2]; i++) {
 
@@ -476,7 +603,8 @@ _multigrid_info_dump(const cs_multigrid_t *mg)
       stage_cpu[j] = lv_info->t_tot[j].cpu_nsec * 1.e-9;
     }
 
-    bft_printf(_("  Grid level %d:\n"), i);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  Grid level %d:\n"), i);
 
 #if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1) {
@@ -487,10 +615,11 @@ _multigrid_info_dump(const cs_multigrid_t *mg)
                     cs_glob_mpi_comm);
       for (j = 0; j < 6; j++) {
         if (lv_info->n_calls[j] > 0) {
-          bft_printf(_("    %-24s %9u %12.3f %12.3f %12.3f\n"),
-                     _(stage_name[j]), lv_info->n_calls[j],
-                     stage_elapsed[j],
-                     cpu_tot[j] / cs_glob_n_ranks, cpu_max[j]);
+          cs_log_printf(CS_LOG_PERFORMANCE,
+                        "    %s %9u %12.3f %12.3f %12.3f\n",
+                        tmp_s[j], lv_info->n_calls[j],
+                        stage_elapsed[j],
+                        cpu_tot[j] / cs_glob_n_ranks, cpu_max[j]);
         }
       }
     }
@@ -498,9 +627,10 @@ _multigrid_info_dump(const cs_multigrid_t *mg)
     if (cs_glob_n_ranks == 1) {
       for (j = 0; j < 6; j++) {
         if (lv_info->n_calls[j] > 0)
-          bft_printf(_("    %-37s %9u %12.3f %12.3f\n"),
-                     _(stage_name[j]), lv_info->n_calls[j],
-                     stage_elapsed[j], stage_cpu[j]);
+          cs_log_printf(CS_LOG_PERFORMANCE,
+                        "    %s%13s %9u %12.3f %12.3f\n",
+                        tmp_s[j], "", lv_info->n_calls[j],
+                        stage_elapsed[j], stage_cpu[j]);
       }
     }
 
