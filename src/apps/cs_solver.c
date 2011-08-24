@@ -92,11 +92,12 @@
 #include "cs_io.h"
 #include "cs_join.h"
 #include "cs_mesh.h"
+#include "cs_mesh_coherency.h"
+#include "cs_mesh_quality.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_save.h"
-#include "cs_mesh_quality.h"
+#include "cs_mesh_smoother.h"
 #include "cs_mesh_warping.h"
-#include "cs_mesh_coherency.h"
 #include "cs_multigrid.h"
 #include "cs_opts.h"
 #include "cs_post.h"
@@ -255,6 +256,10 @@ cs_run(void)
   /* Insert thin walls if necessary */
 
   cs_user_mesh_thinwall(cs_glob_mesh);
+
+  /* Smoothe mesh if required */
+
+  cs_user_mesh_smoothe(cs_glob_mesh);
 
   /* Initialize extended connectivity, ghost cells and other
      parallelism-related structures */

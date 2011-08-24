@@ -299,6 +299,7 @@ $(top_srcdir)/users/base/usvpst.f90 \
 $(top_srcdir)/users/base/cs_user_join.c \
 $(top_srcdir)/users/base/cs_user_mesh_input.c \
 $(top_srcdir)/users/base/cs_user_mesh_modify.c \
+$(top_srcdir)/users/base/cs_user_mesh_smoothe.c \
 $(top_srcdir)/users/base/cs_user_mesh_thinwall.c \
 $(top_srcdir)/users/base/cs_user_periodicity.c \
 $(top_srcdir)/users/base/cs_user_postprocess.c \

@@ -169,5 +169,6 @@ src/mesh/cs_mesh_halo.c
 src/mesh/cs_mesh_quality.c
 src/mesh/cs_mesh_quantities.c
 src/mesh/cs_mesh_save.c
+src/mesh/cs_mesh_smoother.c
 src/mesh/cs_mesh_thinwall.c
 src/mesh/cs_mesh_warping.c
