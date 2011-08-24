@@ -80,6 +80,7 @@ cs_ext_neighborhood.h \
 cs_file.h \
 cs_halo.h \
 cs_io.h \
+cs_log.h \
 cs_map.h \
 cs_numbering.h \
 cs_opts.h \
@@ -167,6 +168,7 @@ cs_coupling.c \
 cs_ext_neighborhood.c \
 csflsh.f90 \
 cs_halo.c \
+cs_log.c \
 csinit.f90 \
 cs_numbering.c \
 csopli.f90 \
