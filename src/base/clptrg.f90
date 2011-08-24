@@ -1183,7 +1183,7 @@ endif
  3X,'** BOUNDARY CONDITIONS FOR ROUGH WALLS',/,             &
  '   --------------------------------------',/,             &
  '------------------------------------------------------------',/,&
- ' Phase ',I6,'                            Minimum     Maximum',/,&
+ '                                         Minimum     Maximum',/,&
  '------------------------------------------------------------',/,&
  '   Rel velocity at the wall uiptn : ',2E12.5                 ,/,&
  '   Friction velocity        uet   : ',2E12.5                 ,/,&
