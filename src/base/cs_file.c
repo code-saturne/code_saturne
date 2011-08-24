@@ -118,7 +118,7 @@ BEGIN_C_DECLS
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-/* FVM file descriptor */
+/* File descriptor */
 
 struct _cs_file_t {
 

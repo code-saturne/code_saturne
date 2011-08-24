@@ -76,7 +76,7 @@ typedef struct _cs_file_t  cs_file_t;
 typedef struct _cs_file_serializer_t cs_file_serializer_t;
 #endif
 
-/* FVM file modes */
+/* File modes */
 
 typedef enum {
 
@@ -90,7 +90,7 @@ typedef enum {
 
 typedef unsigned int cs_file_hints_t;
 
-/* Offset for FVM file position indicator (int64_t in C99) */
+/* Offset for file position indicator (int64_t in C99) */
 
 #if defined(SIZEOF_LONG_LONG)
 typedef long long cs_file_off_t;
