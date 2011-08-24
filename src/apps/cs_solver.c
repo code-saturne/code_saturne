@@ -108,6 +108,7 @@
 #include "cs_sles.h"
 #include "cs_sat_coupling.h"
 #include "cs_syr_coupling.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------*/
 
