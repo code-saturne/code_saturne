@@ -103,7 +103,7 @@ ecs_descr__cree(int          ide,
   else {
     int _tmp_ide = ECS_ABS(ide);
     int l = 1;
-    while (_tmp_ide/10 > 1) {
+    while (_tmp_ide/10 > 0) {
       _tmp_ide /= 10;
       l += 1;
     }
