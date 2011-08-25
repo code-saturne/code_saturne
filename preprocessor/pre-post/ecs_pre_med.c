@@ -1738,19 +1738,19 @@ ecs_loc_pre_med__lit_famille(const ecs_med_t  *fic_maillage,
 
         num_fam_ent = ECS_ENTMAIL_CEL;
 
+        num_fam = (ecs_int_t)num_fam_med;
+
+        famille = ecs_famille__cree(num_fam, descr_tete);
+
+        liste_famille_ent[num_fam_ent][nbr_famille_ent[num_fam_ent]] = famille;
+        nbr_famille_ent[num_fam_ent]++;
+
       }
       else {
 
         num_fam_ent = ECS_ENTMAIL_NONE;
 
       }
-
-      num_fam = (ecs_int_t)num_fam_med;
-
-      famille = ecs_famille__cree(num_fam, descr_tete);
-
-      liste_famille_ent[num_fam_ent][nbr_famille_ent[num_fam_ent]] = famille;
-      nbr_famille_ent[num_fam_ent]++;
 
     } /* Fin : si la famille n'est pas la famille par défaut de MED */
 
