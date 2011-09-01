@@ -71,6 +71,17 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Initialize timer counter.
+ *
+ * parameters:
+ *   _t --> resulting counter.
+ *----------------------------------------------------------------------------*/
+
+#define CS_TIMER_COUNTER_INIT(_t)       \
+  (_t.wall_nsec = 0,  \
+   _t.cpu_nsec  = 0)
+
+/*----------------------------------------------------------------------------
  * Add timer counter.
  *
  * The result may be identical to one of the 2 counters to add.

@@ -105,6 +105,13 @@ typedef void
  * Local macro documentation
  *-----------------------------------------------------------------------------*/
 
+/*! \fn CS_TIMER_COUNTER_INIT(_t)
+ *
+ * \brief Initialize timer counter.
+ *
+ * \param [out] _t  resulting counter.
+ */
+
 /*! \fn CS_TIMER_COUNTER_ADD(_res, _c0, _c1)
  *
  * \brief Add timer counter.
