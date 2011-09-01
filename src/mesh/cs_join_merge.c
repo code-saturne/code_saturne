@@ -63,9 +63,9 @@
  * Local headers
  *---------------------------------------------------------------------------*/
 
+#include "cs_log.h"
 #include "cs_search.h"
 #include "cs_join_post.h"
-#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -3245,8 +3245,6 @@ cs_join_merge_vertices(cs_join_param_t        param,
                        cs_join_mesh_t        *work,
                        const cs_join_eset_t  *vtx_eset)
 {
-  double  clock_start, clock_end, cpu_start, cpu_end;
-
   cs_gnum_t  *vtx_tags = NULL;
   cs_join_gset_t  *merge_set = NULL;
 
@@ -3272,9 +3270,6 @@ cs_join_merge_vertices(cs_join_param_t        param,
 
   /* Operate merge between equivalent vertices.
      Manage reduction of tolerance if necessary */
-
-  clock_start = cs_timer_wtime();
-  cpu_start = cs_timer_cpu_time();
 
   /* Tag with the same number all the vertices which might be merged together */
 
@@ -3346,17 +3341,11 @@ cs_join_merge_vertices(cs_join_param_t        param,
 
   BFT_FREE(vtx_tags);
 
-  clock_end = cs_timer_wtime();
-  cpu_end = cs_timer_cpu_time();
-
   cs_join_gset_destroy(&merge_set);
 
   if (param.verbosity > 1)
     bft_printf(_("\n"
-                 "          Vertex merge (only)\n"
-                 "              wall clock time:       %10.3g\n"
-                 "              cpu time:              %10.3g\n"),
-               clock_end - clock_start, cpu_end - cpu_start);
+                 "  Merging of equivalent vertices done.\n"));
 }
 
 /*----------------------------------------------------------------------------

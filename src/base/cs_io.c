@@ -70,6 +70,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_log.h"
 #include "cs_map.h"
 #include "cs_file.h"
 #include "cs_timer.h"
@@ -3413,9 +3414,11 @@ cs_io_log_finalize(void)
 
     if (map_size > 0) {
       if (i == 0)
-        bft_printf(_("\nCode_Saturne IO files read:\n\n"));
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      _("\nCode_Saturne IO files read:\n\n"));
       else
-        bft_printf(_("\nCode_Saturne IO files written:\n\n"));
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      _("\nCode_Saturne IO files written:\n\n"));
     }
 
     for (j = 0; j < map_size; j++) {
@@ -3451,14 +3454,15 @@ cs_io_log_finalize(void)
           _data_mult[k] = l;
         }
 
-        bft_printf(_("  %s\n"
-                     "    global: %12.5f s, %12.3f %ciB\n"
-                     "    local:  %12.5f s, %12.3f %ciB\n"
-                     "    open:   %12.5f s, %u open(s)\n"),
-                   key,
-                   log->wtimes[0], _data_size[0], unit[_data_mult[0]],
-                   log->wtimes[1], _data_size[1], unit[_data_mult[1]],
-                   log->wtimes[2], log->n_opens);
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      _("  %s\n"
+                        "    global: %12.5f s, %12.3f %ciB\n"
+                        "    local:  %12.5f s, %12.3f %ciB\n"
+                        "    open:   %12.5f s, %u open(s)\n"),
+                      key,
+                      log->wtimes[0], _data_size[0], unit[_data_mult[0]],
+                      log->wtimes[1], _data_size[1], unit[_data_mult[1]],
+                      log->wtimes[2], log->n_opens);
       }
 #endif
 
@@ -3471,12 +3475,13 @@ cs_io_log_finalize(void)
         for (k = 0; _data_size > 1024. && k < 8; k++)
           _data_size /= 1024.;
 
-        bft_printf(_("  %s\n"
-                     "    data: %12.5f s, %12.3f %ciB\n"
-                     "    open: %12.5f s, %u open(s)\n"),
-                   key,
-                   log->wtimes[0] + log->wtimes[1], _data_size, unit[k],
-                   log->wtimes[2], log->n_opens);
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      _("  %s\n"
+                        "    data: %12.5f s, %12.3f %ciB\n"
+                        "    open: %12.5f s, %u open(s)\n"),
+                      key,
+                      log->wtimes[0] + log->wtimes[1], _data_size, unit[k],
+                      log->wtimes[2], log->n_opens);
       }
     }
 
@@ -3487,6 +3492,9 @@ cs_io_log_finalize(void)
     cs_map_name_to_id_destroy(&(_cs_io_map[i]));
     BFT_FREE(_cs_io_log[i]);
   }
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
 }
 
 /*----------------------------------------------------------------------------

@@ -37,6 +37,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,8 +48,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_error.h"
+#include "bft_mem.h"
 
 #include "cs_base.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -113,6 +116,91 @@ _open_log(cs_log_t log)
       _cs_log_atexit_set = true;
     }
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Pad a string so that its printable length is the required length.
+ *
+ * This allows pretty-printing with UTF-8 strings, whose actual length may be
+ * larger than their printable length in the presence of multibyte characters.
+ *
+ * If either the printable length of the string is longer than the target
+ * width or the actual length is long than the destination buffer's size,
+ * it is truncated.
+ *
+ * parameters:
+ *   dest    -->  pointer to destination buffer
+ *   str      <-- pointer to printable string
+ *   width    <-- desired printed length
+ *   destsize <-- destination buffer size
+ *   align    <-- 1: left, 0: right
+ *----------------------------------------------------------------------------*/
+
+static void
+_log_strpad(char        *dest,
+            const char  *src,
+            size_t       width,
+            size_t       destsize,
+            int          align)
+{
+  size_t i, j;
+  size_t pad_l = 0, pad_r = 0, p_len = 0, c_len = 0;
+
+  static int mode_utf8 = -1;
+
+  assert(dest != NULL && destsize > 0);
+
+  if (mode_utf8 == -1) {
+    char *lang = getenv("LANG");
+    mode_utf8 = 0;
+    if (lang != NULL) {
+      if (   strcmp(lang + strlen(lang) - 5, "UTF-8") == 0
+          || strcmp(lang + strlen(lang) - 4, "utf8") == 0)
+        mode_utf8 = 1;
+    }
+  }
+
+  if (src != NULL) {
+    if (mode_utf8 == 0) {
+      p_len = strlen(src);
+      if (p_len > destsize)
+        p_len = destsize - 1;
+      c_len = p_len;
+    }
+    else { /* UTF-8 case */
+      for (i = 0;
+           i < destsize && p_len < width;
+           i++) {
+        unsigned char c = src[i];
+        if (c == '\0') {
+          c_len = i;
+          break;
+        }
+        else if (c < 0x80 || c > 0xBF) { /* Single byte or first byte in UTF-8 */
+          p_len++;
+          c_len = i+1;
+        }
+      }
+    }
+  }
+
+  if (p_len < width) {
+    if (align == 0)
+      pad_r = width - p_len;
+    else
+      pad_l = width - p_len;
+  }
+
+  j = 0;
+  for (i = 0; i < pad_l; i++)
+    dest[j++] = ' ';
+  for (i = 0; i < c_len; i++)
+    dest[j++] = src[i];
+  for (i = 0; i < pad_r; i++)
+    dest[j++] = ' ';
+
+  dest[j] = '\0';
 }
 
 /*============================================================================
@@ -185,6 +273,59 @@ cs_log_strlen(const char  *str)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Pad a string so that its printable length is the required length.
+ *
+ * This allows pretty-printing with UTF-8 strings, whose actual length may be
+ * larger than their printable length in the presence of multibyte characters.
+ *
+ * If either the printable length of the string is longer than the target
+ * width or the actual length is long than the destination buffer's size,
+ * it is truncated.
+ *
+ * \param[out] dest      pointer to destination buffer
+ * \param[in]  str       pointer to printable string
+ * \param[in]  width     desired printed length
+ * \param[in]  destsize  destination buffer size
+ *----------------------------------------------------------------------------*/
+
+void
+cs_log_strpad(char        *dest,
+              const char  *src,
+              size_t       width,
+              size_t       destsize)
+{
+  _log_strpad(dest, src, width, destsize, 0);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Pad a string on the left so that its printable length is
+ * the required length.
+ *
+ * This allows pretty-printing with UTF-8 strings, whose actual length may be
+ * larger than their printable length in the presence of multibyte characters.
+ *
+ * If either the printable length of the string is longer than the target
+ * width or the actual length is long than the destination buffer's size,
+ * it is truncated.
+ *
+ * \param[out] dest      pointer to destination buffer
+ * \param[in]  str       pointer to printable string
+ * \param[in]  width     desired printed length
+ * \param[in]  destsize  destination buffer size
+ *----------------------------------------------------------------------------*/
+
+void
+cs_log_strpadl(char        *dest,
+               const char  *src,
+               size_t       width,
+               size_t       destsize)
+{
+  _log_strpad(dest, src, width, destsize, 1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print log info to a given log type.
  *
  * The format and variable arguments are similar to those of the printf()
@@ -225,43 +366,6 @@ cs_log_printf(cs_log_t     log,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print a string to a given width info to a given type.
- *
- * In parallel, output is only handled by rank 0.
- *
- * \param[in]  log    log file type
- * \param[in]  str    string to print.
- * \param[in]  width  minimum width to which the string must be printed.
- *
- * \return number of characters printed, not counting the trailing '\0' used
- *         to end output strings
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_log_print_padded_str(cs_log_t     log,
-                        const char  *str,
-                        int          width)
-{
-  int l = cs_log_strlen(str);
-  int  retval = 0;
-
-  if (cs_glob_rank_id > 0)
-    return 0;
-  else if (_cs_log[log] == NULL)
-    _open_log(log);
-
-  if (str != NULL)
-    retval += fprintf(_cs_log[log], "%s", str);
-
-  if (width > l)
-    fprintf(_cs_log[log], "%-*s", width-l, "");
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Flush output of a log file.
  *
  * In parallel, output is only handled by rank 0.
@@ -295,6 +399,135 @@ cs_log_printf_flush(cs_log_t log)
   return retval;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print a separator line in a log file
+ *
+ * In parallel, output is only handled by rank 0.
+ *
+ * \param[in]  log  log file type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_separator(cs_log_t log)
+{
+  int i;
+  char separator[81];
+
+  for (i = 0; i < 80; i++)
+    separator[i] = '-';
+    separator[80] = '\0';
+
+  cs_log_printf(log, "%s\n", separator);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output timing data array header to a given log.
+ *
+ * In parallel, output is only handled by rank 0.
+ *
+ * \param[in]  log           log file type
+ * \param[in]  indent        indentation before first column
+ * \param[in]  header_title  title for optional header line
+ * \param[in]  calls         true if calls column is to be used
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_timer_array_header(cs_log_t     log,
+                          int          indent,
+                          const char  *header_title,
+                          bool         calls)
+{
+  int title_width = 80 - 16 - indent;
+  char tmp_s[4][64] =  {"", "", "", ""};
+
+  /* Available width for title */
+
+  if (calls)
+    title_width -= 10; /* 1 field, 1 space + 9 digits */
+
+  /* Header line if requested */
+
+  assert(header_title != NULL);
+
+  if (strlen(header_title) > 0)
+    cs_log_strpad(tmp_s[0], _(header_title), title_width, 64);
+  else
+    cs_log_strpad(tmp_s[0], "", title_width, 64);
+
+  cs_log_strpadl(tmp_s[2], _("time"), 12, 64);
+
+  if (calls) {
+    cs_log_strpadl(tmp_s[1], _("calls"), 9, 64);
+    cs_log_printf(log,
+                  "%*s%s %s %s\n",
+                  indent, " ",
+                  tmp_s[0], tmp_s[1], tmp_s[2]);
+  }
+  else
+    cs_log_printf(log,
+                  "%*s%s %s\n",
+                  indent, " ", tmp_s[0], tmp_s[2]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output timing data block to a given log.
+ *
+ * If the optional array of call counters is used, only lines
+ * with a number of calls greater than 0 are logged.
+ *
+ * In parallel, output is only handled by rank 0.
+ *
+ * \param[in]  log           log file type
+ * \param[in]  indent        indentation before first column
+ * \param[in]  n_lines       number of lines in array, excluding header
+ * \param[in]  line_titles   array of titles for data lines
+ * \param[in]  calls         optional array of call counters, or NULL
+ * \param[in]  time_count    array of time counters
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_timer_array(cs_log_t                   log,
+                   int                        indent,
+                   int                        n_lines,
+                   const char                *line_titles[],
+                   const unsigned             calls[],
+                   const cs_timer_counter_t   time_count[])
+{
+  int i;
+  int title_width = 80 - 16 - indent;
+  char tmp_s[4][64] =  {"", "", "", ""};
+
+  /* Available width for title */
+
+  if (calls != NULL)
+    title_width -= 10; /* 1 field, 1 space + 9 digits */
+
+  /* Data lines */
+
+  for (i = 0; i < n_lines; i++) {
+    double wtime = (time_count[i]).wall_nsec * 1.e-9;
+    if (line_titles != NULL)
+      cs_log_strpad(tmp_s[0], _(line_titles[i]), title_width, 64);
+    else
+      cs_log_strpad(tmp_s[0], "", title_width, 64);
+    if (calls != NULL) {
+      if (calls[i] > 0)
+        cs_log_printf(log,
+                      "%*s%s %9u %12.3f\n",
+                      indent, " ", tmp_s[0], calls[i], wtime);
+    }
+    else
+      cs_log_printf(log,
+                    "%*s%s %12.3f\n",
+                    indent, " ", tmp_s[0], wtime);
+  }
+}
 
 /*-----------------------------------------------------------------------------*/
 

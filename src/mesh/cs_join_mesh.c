@@ -2106,8 +2106,8 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
     MPI_Allreduce(&_max, &g_max, 1, MPI_JOIN_VERTEX, MPI_Vertex_max,
                   cs_glob_mpi_comm);
 
-    bft_printf(_("\n  Global min/max. tolerance:\n\n"
-                 " Glob. Num. |  Tolerance  |              Coordinates\n"));
+    bft_printf(_("  Global min/max. tolerance:\n\n"
+                 " Glob. Num. |  Tolerance  |              Coordinates\n\n"));
     _log_vertex(g_min);
     _log_vertex(g_max);
 

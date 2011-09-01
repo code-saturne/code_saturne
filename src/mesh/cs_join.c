@@ -60,8 +60,6 @@
  *  Local headers
  *---------------------------------------------------------------------------*/
 
-#include "cs_mesh_quantities.h"
-#include "cs_post.h"
 #include "cs_join_intersect.h"
 #include "cs_join_merge.h"
 #include "cs_join_mesh.h"
@@ -71,6 +69,9 @@
 #include "cs_join_split.h"
 #include "cs_join_update.h"
 #include "cs_join_util.h"
+#include "cs_log.h"
+#include "cs_mesh_quantities.h"
+#include "cs_post.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -247,7 +248,7 @@ _get_work_struct(cs_join_param_t         param,
                  cs_real_t              *p_work_face_normal[],
                  cs_join_gset_t        **p_edge_edge_vis)
 {
-  double  clock_start, clock_end, cpu_start, cpu_end;
+  double  clock_start, clock_end;
 
   cs_int_t  n_inter_faces = 0;
   char  *mesh_name = NULL;
@@ -274,20 +275,19 @@ _get_work_struct(cs_join_param_t         param,
   /* TODO: check if this is necessary after cleanup done in face_face_vis */
 
   clock_start = cs_timer_wtime();
-  cpu_start = cs_timer_cpu_time();
 
   cs_join_gset_single_order(face_face_vis,
                             &n_inter_faces,
                             &intersect_face_gnum);
 
   clock_end = cs_timer_wtime();
-  cpu_end = cs_timer_cpu_time();
 
   if (param.verbosity > 1)
-    bft_printf(_("\n  Sorting possible intersections between faces:\n"
-                 "      wall clock time:            %10.3g\n"
-                 "      CPU time:                   %10.3g\n"),
-               clock_end - clock_start, cpu_end - cpu_start);
+    bft_printf(_("\n  Sorted possible intersections between faces.\n"));
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("    Sorting possible intersections between faces:   %10.3g\n"),
+                clock_end - clock_start);
 
   /* Define a distributed cs_join_mesh_t structure to store the connectivity
      of the intersecting faces associated to their bounding boxes in
@@ -367,7 +367,7 @@ _build_join_structures(cs_join_t            *this_join,
                        cs_real_t           *p_work_face_normal[],
                        cs_join_gset_t     **p_edge_edge_vis)
 {
-  double  clock_start, clock_end, cpu_start, cpu_end;
+  double  clock_start, clock_end;
 
   char  *mesh_name = NULL;
   cs_real_t  *work_face_normal = NULL;
@@ -378,7 +378,6 @@ _build_join_structures(cs_join_t            *this_join,
   cs_join_select_t  *selection = this_join->selection;
 
   clock_start = cs_timer_wtime();
-  cpu_start = cs_timer_cpu_time();
 
   /* Define a cs_join_mesh_structure from the selected connectivity */
 
@@ -402,6 +401,8 @@ _build_join_structures(cs_join_t            *this_join,
                                               mesh->vtx_coord,
                                               mesh->global_vtx_num);
 
+  BFT_FREE(mesh_name);
+
   if (param.perio_type != FVM_PERIODICITY_NULL)
     cs_join_perio_apply(this_join, loc_jmesh, mesh);
 
@@ -409,22 +410,9 @@ _build_join_structures(cs_join_t            *this_join,
     cs_join_mesh_minmax_tol(param, loc_jmesh);
 
   clock_end = cs_timer_wtime();
-  cpu_end = cs_timer_cpu_time();
 
-  if (param.visualization > 2) {
-
-    bft_printf(_("\n    Definition of local joining mesh:\n"
-                 "        wall clock time:            %10.3g\n"
-                 "        CPU time:                   %10.3g\n"),
-               clock_end - clock_start, cpu_end - cpu_start);
-
+  if (param.visualization > 2)
     cs_join_post_dump_mesh("LocalMesh", loc_jmesh, param);
-
-  }
-
-  /* Partial free memory */
-
-  BFT_FREE(mesh_name);
 
   /*
     Define a cs_join_mesh_t structure on only faces which will be
@@ -451,14 +439,13 @@ _build_join_structures(cs_join_t            *this_join,
                    &work_face_normal,
                    &edge_edge_vis);
 
-  clock_end = cs_timer_wtime();
-  cpu_end = cs_timer_cpu_time();
+  /* log performance info of previosu step here only to simplify
+     "pretty printing". */
 
-  if (param.verbosity > 1)
-    bft_printf(_("\n  Definition of structures for the joining algorithm:\n"
-                 "      wall clock time:            %10.3g\n"
-                 "      CPU time:                   %10.3g\n"),
-               clock_end - clock_start, cpu_end - cpu_start);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("    Definition of local joining mesh:               %10.3g\n"),
+                clock_end - clock_start);
+
   bft_printf_flush();
 
   /* Return pointers */
@@ -509,7 +496,7 @@ _intersect_edges(cs_join_t               *this_join,
                  cs_join_eset_t         **p_vtx_eset,
                  cs_join_inter_edges_t  **p_inter_edges)
 {
-  double  clock_start, clock_end, cpu_start, cpu_end;
+  double  clock_start, clock_end;
   cs_join_type_t  join_type = CS_JOIN_TYPE_NULL;
 
   cs_gnum_t  n_g_new_vertices = 0;
@@ -521,7 +508,6 @@ _intersect_edges(cs_join_t               *this_join,
   const int  n_ranks = cs_glob_n_ranks;
 
   clock_start = cs_timer_wtime();
-  cpu_start = cs_timer_cpu_time();
 
   /*
      Compute the intersections between edges.
@@ -538,6 +524,14 @@ _intersect_edges(cs_join_t               *this_join,
                                       work_jmesh,
                                       &vtx_eset,
                                       &inter_set);
+
+  clock_end = cs_timer_wtime();
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("    Edge intersections:                             %10.3g\n"),
+                clock_end - clock_start);
+
+  clock_start = clock_end;
 
   cs_join_gset_destroy(p_edge_edge_vis);
 
@@ -635,14 +629,14 @@ _intersect_edges(cs_join_t               *this_join,
   BFT_REALLOC(vtx_eset->equiv_couple, 2*vtx_eset->n_equiv, cs_int_t);
 
   clock_end = cs_timer_wtime();
-  cpu_end = cs_timer_cpu_time();
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("    Creation of new vertices:                       %10.3g\n"),
+                clock_end - clock_start);
 
   if (param.verbosity > 0)
     bft_printf(_("\n"
-                 "  Edge intersections and vertex creation:\n"
-                 "    wall clock time:            %10.3g\n"
-                 "    CPU time:                   %10.3g\n"),
-               clock_end - clock_start, cpu_end - cpu_start);
+                 "  Edge intersections and vertex creation done.\n"));
 
   /* Returns pointers */
 
@@ -976,7 +970,7 @@ _merge_vertices(cs_join_t                *this_join,
                 cs_mesh_t                *mesh)
 {
   int  i;
-  double  clock_start, clock_end, cpu_start, cpu_end;
+  double  clock_start, clock_end, clock_m_start, clock_m_end;
 
   cs_gnum_t  new_max_vtx_gnum = init_max_vtx_gnum + n_g_new_vertices;
   cs_gnum_t  *iwm_vtx_gnum = NULL;
@@ -993,7 +987,6 @@ _merge_vertices(cs_join_t                *this_join,
   assert(work_join_edges != NULL);
 
   clock_start = cs_timer_wtime();
-  cpu_start = cs_timer_cpu_time();
 
   /*
     Store the initial global vertex numbering
@@ -1008,10 +1001,19 @@ _merge_vertices(cs_join_t                *this_join,
 
   /* Merge vertices */
 
+  clock_m_start = cs_timer_wtime();
+
   cs_join_merge_vertices(param,
                          new_max_vtx_gnum,
                          work_jmesh,
                          *vtx_eset);
+
+  clock_m_end = cs_timer_wtime();
+
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("    Merging vertices:                               %10.3g\n"),
+                clock_m_end - clock_m_start);
 
   cs_join_eset_destroy(vtx_eset);
 
@@ -1075,14 +1077,14 @@ _merge_vertices(cs_join_t                *this_join,
 #endif
 
   clock_end = cs_timer_wtime();
-  cpu_end = cs_timer_cpu_time();
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("    Updating structures with vertex merging:        %10.3g\n"),
+                clock_end - clock_start - (clock_m_end - clock_m_start));
 
   if (param.verbosity > 0)
     bft_printf(_("\n"
-                 "  Merge vertices:\n"
-                 "    wall clock time:            %10.3g\n"
-                 "    CPU time:                   %10.3g\n"),
-               clock_end - clock_start, cpu_end - cpu_start);
+                 "  Merge vertices and mesh update done.\n"));
   bft_printf_flush();
 
   /* Post if required and level of verbosity is reached */
@@ -1188,7 +1190,7 @@ _split_faces(cs_join_t           *this_join,
              cs_mesh_t           *mesh,
              cs_mesh_builder_t   *mesh_builder)
 {
-  double  clock_start, clock_end, cpu_start, cpu_end;
+  double  clock_start, clock_end;
 
   cs_join_gset_t  *history = NULL;
   cs_join_param_t  param = this_join->param;
@@ -1196,7 +1198,6 @@ _split_faces(cs_join_t           *this_join,
   cs_gnum_t  *rank_face_gnum_index = selection->compact_rank_index;
 
   clock_start = cs_timer_wtime();
-  cpu_start = cs_timer_cpu_time();
 
   cs_join_split_faces(param,
                       work_face_normal,
@@ -1228,16 +1229,11 @@ _split_faces(cs_join_t           *this_join,
                                   mesh_builder);
 
   clock_end = cs_timer_wtime();
-  cpu_end = cs_timer_cpu_time();
 
-  /* Partial free memory */
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("    Split old faces and reconstruct new faces:      %10.3g\n"),
+                clock_end - clock_start);
 
-  if (param.verbosity > 0)
-    bft_printf(_("\n"
-                 "  Split old faces and reconstruct new faces\n"
-                 "    wall clock time:            %10.3g\n"
-                 "    CPU time:                   %10.3g\n"),
-               clock_end - clock_start, cpu_end - cpu_start);
   bft_printf_flush();
 
   /* Post if required and level of verbosity is reached */
@@ -1510,8 +1506,8 @@ void
 cs_join_all(void)
 {
   int  join_id;
-  double  clock_start, clock_end, cpu_start, cpu_end;
-  double  full_clock_start, full_clock_end, full_cpu_start, full_cpu_end;
+  double  clock_start, clock_end;
+  double  full_clock_start, full_clock_end;
 
   cs_join_type_t  join_type = CS_JOIN_TYPE_NULL;
   cs_mesh_t  *mesh = cs_glob_mesh;
@@ -1526,9 +1522,11 @@ cs_join_all(void)
   assert(sizeof(double) == sizeof(cs_real_t));
 
   full_clock_start = cs_timer_wtime();
-  full_cpu_start = cs_timer_cpu_time();
 
   cs_join_post_init();
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
 
   /* Loop on each defined joining to deal with */
 
@@ -1538,12 +1536,14 @@ cs_join_all(void)
     cs_join_param_t  join_param = this_join->param;
 
     clock_start = cs_timer_wtime();  /* Start timer */
-    cpu_start = cs_timer_cpu_time();
 
     /* Print information into log file */
 
     bft_printf(_("\n -------------------------------------------------------\n"
                  "  Joining number %d:\n\n"), join_param.num);
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\nJoining number %d:\n\n"), join_param.num);
 
     if (join_param.perio_type != FVM_PERIODICITY_NULL) {
       const double m[3][4];
@@ -1741,14 +1741,18 @@ cs_join_all(void)
     }
 
     clock_end = cs_timer_wtime();
-    cpu_end = cs_timer_cpu_time();
 
     bft_printf(_("\n"
-                 "  Complete joining treatment for joining %2d\n"
-                 "    wall clock time:            %10.3g\n"
-                 "    CPU time:                   %10.3g\n"),
-               join_param.num, clock_end - clock_start, cpu_end - cpu_start);
+                 "  Joining %2d completed (%.3g s).\n"),
+               join_param.num, clock_end - clock_start);
     bft_printf_flush();
+
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("\n"
+         "  Complete treatment for joining %2d:\n"
+         "    wall clock time:                                %10.3g\n"),
+       join_param.num, clock_end - clock_start);
 
     /* Free memory */
 
@@ -1771,18 +1775,21 @@ cs_join_all(void)
   BFT_FREE(cs_glob_join_array);
 
   full_clock_end = cs_timer_wtime();
-  full_cpu_end = cs_timer_cpu_time();
 
   bft_printf(_("\n"
                "  All joining operations successfully finished:\n"
                "\n"
-               "  Time summary:\n"
-               "    wall clock time:            %10.3g\n"
-               "    CPU time:                   %10.3g\n\n"),
-             full_clock_end - full_clock_start,
-             full_cpu_end - full_cpu_start);
+               "    Wall clock time:            %10.3g\n\n"),
+             full_clock_end - full_clock_start);
   bft_printf_flush();
 
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Joining operations time summary:\n"
+                  "  wall clock time:            %10.3g\n\n"),
+                full_clock_end - full_clock_start);
+
+  cs_log_separator(CS_LOG_PERFORMANCE);
 }
 
 /*---------------------------------------------------------------------------*/

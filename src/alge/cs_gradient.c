@@ -60,6 +60,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_halo.h"
+#include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
@@ -91,8 +92,7 @@ typedef struct _cs_gradient_info_t {
 
   unsigned             n_calls;            /* Number of times system solved */
 
-  double               wt_tot;             /* Total wall-clock time used */
-  double               cpu_tot;            /* Total (local) CPU used */
+  cs_timer_counter_t   t_tot;              /* Total time used */
 
 } cs_gradient_info_t;
 
@@ -144,8 +144,7 @@ _gradient_info_create(const char          *name,
 
   new_info->n_calls = 0;
 
-  new_info->wt_tot = 0.0;
-  new_info->cpu_tot = 0.0;
+  CS_TIMER_COUNTER_INIT(new_info->t_tot);
 
   return new_info;
 }
@@ -178,34 +177,13 @@ _gradient_info_dump(cs_gradient_info_t *this_info)
 {
   int n_calls = this_info->n_calls;
 
-  bft_printf(_("\n"
-               "Summary of gradient computations pour \"%s\" (%s):\n\n"
-               "  Number of calls:                  %d\n"
-               "  Total elapsed time:               %12.3f\n"),
-             this_info->name, cs_gradient_type_name[this_info->type],
-             n_calls, this_info->wt_tot);
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-
-    double cpu_min, cpu_max;
-    double cpu_loc = this_info->cpu_tot;
-
-    MPI_Allreduce(&cpu_loc, &cpu_min, 1, MPI_DOUBLE, MPI_MIN, cs_glob_mpi_comm);
-    MPI_Allreduce(&cpu_loc, &cpu_max, 1, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
-
-    bft_printf(_("  Min local total CPU time:         %12.3f\n"
-                 "  Max local total CPU time:         %12.3f\n"),
-               cpu_min, cpu_max);
-
-  }
-
-#endif
-
-  if (cs_glob_n_ranks == 1)
-    bft_printf(_("  Total CPU time:                   %12.3f\n"),
-               this_info->cpu_tot);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Summary of gradient computations pour \"%s\" (%s):\n\n"
+                  "  Number of calls:     %12d\n"
+                  "  Total elapsed time:  %12.3f\n"),
+                this_info->name, cs_gradient_type_name[this_info->type],
+                n_calls, this_info->t_tot.wall_nsec*1e-9);
 }
 
 /*----------------------------------------------------------------------------
@@ -734,8 +712,7 @@ void CS_PROCF (cgdcel, CGDCEL)
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
 
   cs_gradient_info_t *gradient_info = NULL;
-  double  wt_start = 0.0, wt_stop = 0.0;
-  double  cpu_start = 0.0, cpu_stop = 0.0;
+  cs_timer_t t0, t1;
 
   char *var_name = NULL;
 
@@ -778,8 +755,7 @@ void CS_PROCF (cgdcel, CGDCEL)
   sprintf(var_name, "Var. %1d", *ivar);
 
   if (update_stats == true) {
-    wt_start = cs_timer_wtime();
-    cpu_start = cs_timer_cpu_time();
+    t0 = cs_timer_time();
     gradient_info = _find_or_add_system(var_name, gradient_type);
   }
 
@@ -893,15 +869,9 @@ void CS_PROCF (cgdcel, CGDCEL)
                      pvar  , dpdx  , dpdy  , dpdz  );
 
   if (update_stats == true) {
-
-    wt_stop = cs_timer_wtime();
-    cpu_stop = cs_timer_cpu_time();
-
     gradient_info->n_calls += 1;
-
-    gradient_info->wt_tot += (wt_stop - wt_start);
-    gradient_info->cpu_tot += (cpu_stop - cpu_start);
-
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
 
   BFT_FREE(var_name);
@@ -997,7 +967,7 @@ void CS_PROCF (cgdvec, CGDVEC)
 
   /* Synchronize variable */
 
-  // TODO imrgra != 0
+  /* TODO imrgra != 0 */
 
   /* "cell -> cells" connectivity for the extended neighborhood */
 
@@ -1020,9 +990,9 @@ void CS_PROCF (cgdvec, CGDVEC)
        gradv );
 
   }
-  // TODO *imrgra == 1 || *imrgra == 2 || *imrgra == 3 || *imrgra == 4
+  /* TODO *imrgra == 1 || *imrgra == 2 || *imrgra == 3 || *imrgra == 4 */
 
-  // TODO _gradient_clipping
+  /* TODO _gradient_clipping */
   if (update_stats == true) {
 
     wt_stop = cs_timer_wtime();
@@ -1030,8 +1000,7 @@ void CS_PROCF (cgdvec, CGDVEC)
 
     gradient_info->n_calls += 1;
 
-    gradient_info->wt_tot += (wt_stop - wt_start);
-    gradient_info->cpu_tot += (cpu_stop - cpu_start);
+    CS_TIMER_COUNTER_INIT(gradient_info->t_tot);
 
   }
 
@@ -1069,6 +1038,9 @@ cs_gradient_finalize(void)
     _gradient_info_dump(cs_glob_gradient_systems[ii]);
     _gradient_info_destroy(&(cs_glob_gradient_systems[ii]));
   }
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
 
   BFT_FREE(cs_glob_gradient_systems);
 

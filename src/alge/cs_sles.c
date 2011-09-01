@@ -64,6 +64,7 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_matrix.h"
 #include "cs_perio.h"
@@ -120,8 +121,7 @@ typedef struct _cs_sles_info_t {
   unsigned long long   n_iterations_tot;   /* Total accumulated number of
                                               iterations */
 
-  double               wt_tot;             /* Total wall-clock time used */
-  double               cpu_tot;            /* Total (local) CPU used */
+  cs_timer_counter_t   t_tot;              /* Total time used */
 
 } cs_sles_info_t;
 
@@ -221,8 +221,7 @@ _sles_info_create(const char      *name,
   new_info->n_iterations_last = 0;
   new_info->n_iterations_tot = 0;
 
-  new_info->wt_tot = 0.0;
-  new_info->cpu_tot = 0.0;
+  CS_TIMER_COUNTER_INIT(new_info->t_tot);
 
   return new_info;
 }
@@ -259,41 +258,18 @@ _sles_info_dump(cs_sles_info_t *this_info)
   int n_it_mean = (int)(  this_info->n_iterations_tot
                         / ((unsigned long long)n_calls));
 
-  bft_printf(_("\n"
-               "Summary of resolutions for %s (%s):\n"
-               "\n"
-               "  Number of calls:                  %d\n"
-               "  Minimum number of iterations:     %d\n"
-               "  Maximum number of iterations:     %d\n"
-               "  Mean number of iterations:        %d\n"
-               "  Total elapsed time:               %12.3f\n"),
-             this_info->name, cs_sles_type_name[this_info->type],
-             n_calls, n_it_min, n_it_max, n_it_mean,
-             this_info->wt_tot);
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-
-    double cpu_min, cpu_max;
-    double cpu_loc = this_info->cpu_tot;
-
-    MPI_Allreduce(&cpu_loc, &cpu_min, 1, MPI_DOUBLE, MPI_MIN,
-                  cs_glob_mpi_comm);
-    MPI_Allreduce(&cpu_loc, &cpu_max, 1, MPI_DOUBLE, MPI_MAX,
-                  cs_glob_mpi_comm);
-
-    bft_printf(_("  Min local total CPU time:         %12.3f\n"
-                 "  Max local total CPU time:         %12.3f\n"),
-               cpu_min, cpu_max);
-
-  }
-
-#endif
-
-  if (cs_glob_n_ranks == 1)
-    bft_printf(_("  Total CPU time:                   %12.3f\n"),
-               this_info->cpu_tot);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Summary of resolutions for %s (%s):\n"
+                  "\n"
+                  "  Number of calls:               %12d\n"
+                  "  Minimum number of iterations:  %12d\n"
+                  "  Maximum number of iterations:  %12d\n"
+                  "  Mean number of iterations:     %12d\n"
+                  "  Total elapsed time:            %12.3f\n"),
+                this_info->name, cs_sles_type_name[this_info->type],
+                n_calls, n_it_min, n_it_max, n_it_mean,
+                this_info->t_tot.wall_nsec*1e-9);
 }
 
 /*----------------------------------------------------------------------------
@@ -2491,21 +2467,20 @@ _solve_ni(const char         *var_name,
           void               *aux_vectors)
 {
   cs_int_t  n_rows;
+  cs_timer_t t0, t1;
+
   unsigned _n_iter = 0;
   int cvg = 0;
   cs_sles_convergence_t  convergence;
 
   cs_sles_info_t *sles_info = NULL;
-  double  wt_start = 0.0, wt_stop = 0.0;
-  double  cpu_start = 0.0, cpu_stop = 0.0;
 
   cs_matrix_t *_a = a;
   cs_matrix_t *_ax = ax;
 
   n_rows = cs_matrix_get_n_rows(a);
 
-  wt_start = cs_timer_wtime();
-  cpu_start = cs_timer_cpu_time();
+  t0 = cs_timer_time();
   sles_info = _find_or_add_system(var_name, solver_type);
 
   /* Initialize number of iterations and residue,
@@ -2622,8 +2597,7 @@ _solve_ni(const char         *var_name,
     *residue = convergence.residue;
   }
 
-  wt_stop = cs_timer_wtime();
-  cpu_stop = cs_timer_cpu_time();
+  t1 = cs_timer_time();
 
   if (sles_info->n_calls == 0)
     sles_info->n_iterations_min = _n_iter;
@@ -2638,8 +2612,7 @@ _solve_ni(const char         *var_name,
   sles_info->n_iterations_last = _n_iter;
   sles_info->n_iterations_tot += _n_iter;
 
-  sles_info->wt_tot += (wt_stop - wt_start);
-  sles_info->cpu_tot += (cpu_stop - cpu_start);
+  cs_timer_counter_add_diff(&(sles_info->t_tot), &t0, &t1);
 
   return cvg;
 }
@@ -2972,6 +2945,9 @@ cs_sles_finalize(void)
     _sles_info_destroy(&(cs_glob_sles_systems[ii]));
   }
 
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
+
   BFT_FREE(cs_glob_sles_systems);
 
   cs_glob_sles_n_systems = 0;
@@ -3123,14 +3099,14 @@ cs_sles_solve(const char         *var_name,
               void               *aux_vectors)
 {
   cs_int_t  n_rows;
+  cs_timer_t t0, t1;
+
   unsigned _n_iter = 0;
   int cvg = 0;
   int _diag_block_size = 1;
   cs_sles_convergence_t  convergence;
 
   cs_sles_info_t *sles_info = NULL;
-  double  wt_start = 0.0, wt_stop = 0.0;
-  double  cpu_start = 0.0, cpu_stop = 0.0;
 
   cs_matrix_t *_a = a;
   cs_matrix_t *_ax = ax;
@@ -3138,8 +3114,7 @@ cs_sles_solve(const char         *var_name,
   n_rows = cs_matrix_get_n_rows(a);
 
   if (update_stats == true) {
-    wt_start = cs_timer_wtime();
-    cpu_start = cs_timer_cpu_time();
+    t0 = cs_timer_time();
     sles_info = _find_or_add_system(var_name, solver_type);
   }
 
@@ -3336,8 +3311,7 @@ cs_sles_solve(const char         *var_name,
 
   if (update_stats == true) {
 
-    wt_stop = cs_timer_wtime();
-    cpu_stop = cs_timer_cpu_time();
+    t1 = cs_timer_time();
 
     if (sles_info->n_calls == 0)
       sles_info->n_iterations_min = _n_iter;
@@ -3352,8 +3326,7 @@ cs_sles_solve(const char         *var_name,
     sles_info->n_iterations_last = _n_iter;
     sles_info->n_iterations_tot += _n_iter;
 
-    sles_info->wt_tot += (wt_stop - wt_start);
-    sles_info->cpu_tot += (cpu_stop - cpu_start);
+    cs_timer_counter_add_diff(&(sles_info->t_tot), &t0, &t1);
   }
 
   return cvg;

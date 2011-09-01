@@ -61,6 +61,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_prototypes.h"
@@ -4119,19 +4120,23 @@ cs_post_finalize(void)
     if (writer != NULL) {
       fvm_writer_get_times(writer,
                            &m_wtime, &m_cpu_time, &c_wtime, &c_cpu_time);
-      bft_printf(_("\n"
-                   "Writing of \"%s\" (%s) summary:\n"
-                   "\n"
-                   "  CPU time for meshes:              %12.3f\n"
-                   "  CPU time for variables:           %12.3f\n"
-                   "\n"
-                 "  Elapsed time for meshes:          %12.3f\n"
-                   "  Elapsed time for variables:       %12.3f\n"),
-                 fvm_writer_get_name(writer),
-                 fvm_writer_get_format(writer),
-                 m_cpu_time, c_cpu_time, m_wtime, c_wtime);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("\n"
+                      "Writing of \"%s\" (%s) summary:\n"
+                      "\n"
+                      "  CPU time for meshes:              %12.3f\n"
+                      "  CPU time for variables:           %12.3f\n"
+                      "\n"
+                      "  Elapsed time for meshes:          %12.3f\n"
+                      "  Elapsed time for variables:       %12.3f\n"),
+                    fvm_writer_get_name(writer),
+                    fvm_writer_get_format(writer),
+                    m_cpu_time, c_cpu_time, m_wtime, c_wtime);
     }
   }
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
 
   /* Initial coordinates (if mesh is deformable) */
 

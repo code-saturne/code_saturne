@@ -30,13 +30,14 @@
   Boston, MA  02110-1301  USA
 */
 
-/*-----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -80,6 +81,53 @@ size_t
 cs_log_strlen(const char  *s);
 
 /*----------------------------------------------------------------------------
+ * Pad a string so that its printable length is the required length.
+ *
+ * This allows pretty-printing with UTF-8 strings, whose actual length may be
+ * larger than their printable length in the presence of multibyte characters.
+ *
+ * If either the printable length of the string is longer than the target
+ * width or the actual length is long than the destination buffer's size,
+ * it is truncated.
+ *
+ * parameters:
+ *   dest     --> pointer to destination buffer
+ *   str      <-- pointer to printable string
+ *   width    <--  desired printed length
+ *   destsize <-- destination buffer size
+ *----------------------------------------------------------------------------*/
+
+void
+cs_log_strpad(char        *dest,
+              const char  *src,
+              size_t       width,
+              size_t       destsize);
+
+/*----------------------------------------------------------------------------
+ * Pad a string on the left so that its printable length is
+ * the required length.
+ *
+ * This allows pretty-printing with UTF-8 strings, whose actual length may be
+ * larger than their printable length in the presence of multibyte characters.
+ *
+ * If either the printable length of the string is longer than the target
+ * width or the actual length is long than the destination buffer's size,
+ * it is truncated.
+ *
+ * parameters:
+ *   dest     --> pointer to destination buffer
+ *   str      <-- pointer to printable string
+ *   width    <--  desired printed length
+ *   destsize <-- destination buffer size
+ *----------------------------------------------------------------------------*/
+
+void
+cs_log_strpadl(char        *dest,
+               const char  *src,
+               size_t       width,
+               size_t       destsize);
+
+/*----------------------------------------------------------------------------
  * Print log info to a given log type.
  *
  * The format and variable arguments are similar to those of the printf()
@@ -102,26 +150,6 @@ cs_log_printf(cs_log_t     log,
               ...);
 
 /*----------------------------------------------------------------------------
- * Print a string to a given width info to a given type.
- *
- * In parallel, output is only handled by rank 0.
- *
- * parameters:
- *   log   <-- log file type
- *   str   <-- string to print
- *   width <-- minimum width to which the string must be printed
- *
- * returns:
- *   number of characters printed, not counting the trailing '\0' used
- *   to end output strings
- *----------------------------------------------------------------------------*/
-
-int
-cs_log_print_padded_str(cs_log_t     log,
-                        const char  *str,
-                        int          width);
-
-/*----------------------------------------------------------------------------
  * Flush for output of cs_log_printf() with modifiable behavior.
  *
  * If the argument is set to CS_LOG_N_TYPES, all log files are flushed.
@@ -133,6 +161,64 @@ cs_log_print_padded_str(cs_log_t     log,
 
 int
 cs_log_printf_flush(cs_log_t log);
+
+/*----------------------------------------------------------------------------
+ * Print a separator line in a log file
+ *
+ * In parallel, output is only handled by rank 0.
+ *
+ * parameters:
+ *   log <-- log file type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_log_separator(cs_log_t log);
+
+/*----------------------------------------------------------------------------
+ * Output timing data block to a given log.
+ *
+ * If the optional array of call counters is used, only lines
+ * with a number of calls greater than 0 are logged.
+ *
+ * In parallel, output is only handled by rank 0.
+ *
+ * parameters:
+ *   log          <-- log file type
+ *   indent       <-- indentation before first column
+ *   header_title <-- title for optional header line
+ *   calls        <-- true if calls column is to be used
+ *----------------------------------------------------------------------------*/
+
+void
+cs_log_timer_array_header(cs_log_t     log,
+                          int          indent,
+                          const char  *header_title,
+                          bool         calls);
+
+/*----------------------------------------------------------------------------
+ * Output timing data block to a given log.
+ *
+ * If the optional array of call counters is used, only lines
+ * with a number of calls greater than 0 are logged.
+ *
+ * In parallel, output is only handled by rank 0.
+ *
+ * parameters:
+ *   log          <-- log file type
+ *   indent       <-- indentation before first column
+ *   n_lines      <-- number of lines in array, excluding header
+ *   line_titles  <-- array of titles for data lines
+ *   calls        <-- optional array of call counters, or NULL
+ *   time_count   <-- array of time counters
+ *----------------------------------------------------------------------------*/
+
+void
+cs_log_timer_array(cs_log_t                   log,
+                   int                        indent,
+                   int                        n_lines,
+                   const char                *line_titles[],
+                   const unsigned             calls[],
+                   const cs_timer_counter_t   time_count[]);
 
 /*----------------------------------------------------------------------------*/
 

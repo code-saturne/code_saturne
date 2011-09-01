@@ -69,6 +69,7 @@
 #include "cs_join_mesh.h"
 #include "cs_join_set.h"
 #include "cs_join_util.h"
+#include "cs_log.h"
 #include "cs_search.h"
 #include "cs_timer.h"
 
@@ -2215,13 +2216,11 @@ _need_to_add_exch_inter(exch_inter_t                  inter,
  * parameters:
  *   face_neighborhood <-- pointer to face neighborhood management structure.
  *   box_wtime         <-- bounding box construction wall-clock time
- *   box_wtime         <-- bounding box construction CPU time
  *---------------------------------------------------------------------------*/
 
 static void
 _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
-                        double                     box_wtime,
-                        double                     box_cpu_time)
+                        double                     box_wtime)
 {
   int i;
   int  dim;
@@ -2263,11 +2262,16 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
   bft_printf(_("  Determination of possible face intersections:\n\n"
                "    bounding-box tree layout: %dD\n"), dim);
 
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  Determination of possible face intersections:\n\n"
+                  "    bounding-box tree layout: %dD\n"), dim);
+
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1)
-    bft_printf
-      (_("                                   rank mean"
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("                                   rank mean"
          "      minimum      maximum\n"
          "    depth:                        %10d | %10d | %10d\n"
          "    number of leaves:             %10llu | %10llu | %10llu\n"
@@ -2294,8 +2298,9 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
 #endif /* defined(HAVE_MPI) */
 
   if (cs_glob_n_ranks == 1)
-    bft_printf
-      (_("    depth:                        %10d\n"
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("    depth:                        %10d\n"
          "    number of leaves:             %10llu\n"
          "    number of boxes:              %10llu\n"
          "    leaves over threshold:        %10llu\n"
@@ -2308,35 +2313,15 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
        n_leaf_boxes[0], n_leaf_boxes[1], n_leaf_boxes[2],
        (unsigned long long)mem_final[0], (unsigned long long)mem_required[0]);
 
-  bft_printf(_("    Associated times:           construction        query\n"
-               "      wall clock time:            %10.3g   %10.3g\n"),
-             build_wtime + box_wtime, query_wtime);
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("  Associated times:\n"
+       "    Face bounding boxes tree construction:          %10.3g\n"
+       "    Face bounding boxes neighborhood query:         %10.3g\n"),
+     build_wtime + box_wtime, query_wtime);
 
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-
-    double cpu_min[2], cpu_max[2], cpu_loc[2];
-    cpu_loc[0] = build_cpu_time + box_cpu_time;
-    cpu_loc[1] = query_cpu_time;
-
-    MPI_Allreduce(cpu_loc, cpu_min, 2, MPI_DOUBLE, MPI_MIN,
-                  cs_glob_mpi_comm);
-    MPI_Allreduce(cpu_loc, cpu_max, 2, MPI_DOUBLE, MPI_MAX,
-                  cs_glob_mpi_comm);
-
-    bft_printf(_("      Min local CPU time:         %10.3g   %10.3g\n"
-                 "      Max local CPU time:         %10.3g   %10.3g\n"),
-               cpu_min[0], cpu_min[1], cpu_max[0], cpu_max[1]);
-  }
-
-#endif
-
-  if (cs_glob_n_ranks == 1)
-    bft_printf(_("      CPU time:                   %10.3g   %10.3g\n"),
-               build_cpu_time + box_cpu_time, query_cpu_time);
+  cs_log_printf_flush(CS_LOG_PERFORMANCE);
   bft_printf_flush();
-
 }
 
 /*============================================================================
@@ -3663,7 +3648,6 @@ cs_join_intersect_edges(cs_join_param_t         param,
                         cs_join_inter_set_t   **inter_set)
 {
   cs_lnum_t  i, j, k;
-  double  clock_start, clock_end, cpu_start, cpu_end;
   double  abs_e1[2], abs_e2[2];
 
   cs_join_type_t  join_type = CS_JOIN_TYPE_CONFORMING;
@@ -3681,9 +3665,6 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
   assert(mesh != NULL);
   assert(edges != NULL);
-
-  clock_start = cs_timer_wtime();
-  cpu_start = cs_timer_cpu_time();
 
   if (param.verbosity > 3)
     fprintf(logfile, "  Parallel intersection criterion: %8.5e\n",
@@ -3858,15 +3839,6 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
   }
 
-  clock_end = cs_timer_wtime();
-  cpu_end = cs_timer_cpu_time();
-
-  if (param.verbosity > 1)
-    bft_printf(_("\n"
-                 "  Edge intersections (only)\n"
-                 "    wall clock time:            %10.3g\n"
-                 "    CPU time:                   %10.3g\n"),
-               clock_end - clock_start, cpu_end - cpu_start);
   bft_printf_flush();
 
   /* Return pointer */
@@ -3896,7 +3868,7 @@ cs_join_intersect_faces(const cs_join_param_t   param,
                         const cs_join_mesh_t   *join_mesh)
 {
   cs_int_t  i;
-  double  extents_wtime, extents_cpu_time;
+  double  extents_wtime;
 
   cs_coord_t  *f_extents = NULL;
   fvm_neighborhood_t  *face_neighborhood = NULL;
@@ -3905,7 +3877,6 @@ cs_join_intersect_faces(const cs_join_param_t   param,
   assert(join_mesh != NULL);
 
   extents_wtime = cs_timer_wtime();
-  extents_cpu_time = cs_timer_cpu_time();
 
 #if defined HAVE_MPI
   face_neighborhood = fvm_neighborhood_create(cs_glob_mpi_comm);
@@ -3933,7 +3904,6 @@ cs_join_intersect_faces(const cs_join_param_t   param,
                       f_extents + i*6);
 
   extents_wtime = cs_timer_wtime() - extents_wtime;
-  extents_cpu_time = cs_timer_cpu_time() - extents_cpu_time;
 
   fvm_neighborhood_by_boxes(face_neighborhood,
                             3, /* spatial dimension */
@@ -3945,8 +3915,7 @@ cs_join_intersect_faces(const cs_join_param_t   param,
 
   if (param.verbosity > 0)
     _face_bbox_search_stats(face_neighborhood,
-                            extents_wtime,
-                            extents_cpu_time);
+                            extents_wtime);
 
   /* Retrieve face -> face visibility */
 

@@ -67,6 +67,7 @@
 
 #include "cs_base.h"
 #include "cs_halo.h"
+#include "cs_log.h"
 #include "cs_mesh_halo.h"
 #include "cs_numbering.h"
 #include "cs_perio.h"
@@ -283,26 +284,29 @@ _print_halo_info(const cs_mesh_t  *mesh,
 {
   /* Summary of the computional times */
 
-  bft_printf(_("\n Halo creation times summary\n\n"));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\nHalo creation times summary\n\n"));
 
   if (mesh->n_domains > 1 || mesh->n_init_perio > 0)
-    bft_printf(_("     Interface creation:                       %.3g s\n"),
-               interface_time);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  Interface creation:                        %.3g s\n"),
+                  interface_time);
 
   if (mesh->halo_type == CS_HALO_EXTENDED)
-    bft_printf(_("     Extended connectivity creation:            %.3g s\n"),
-               ext_neighborhood_time);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  Extended connectivity creation:            %.3g s\n"),
+                  ext_neighborhood_time);
 
-  bft_printf(_("     Halo creation:                             %.3g s\n\n"),
-             halo_time);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  Halo creation:                             %.3g s\n\n"),
+                halo_time);
 
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  Total time for halo creation:              %.3g s\n\n"),
+                halo_time + interface_time + ext_neighborhood_time);
 
-  bft_printf(_("     Total time for halo creation:              %.3g s\n\n"),
-             halo_time + interface_time + ext_neighborhood_time);
-
-  bft_printf(" ----------------------------------------------------------\n\n");
-
-  bft_printf_flush();
+  cs_log_separator(CS_LOG_PERFORMANCE);
+  cs_log_printf_flush(CS_LOG_PERFORMANCE);
 }
 
 /*----------------------------------------------------------------------------
@@ -3124,9 +3128,13 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
                      halo_time,
                      ext_neighborhood_time);
 
-  else if (ivoset == 1)
-    bft_printf(_("\n Extended connectivity creation (%.3g s)\n"),
-               ext_neighborhood_time);
+  else if (ivoset == 1) {
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\nExtended connectivity creation (%.3g s)\n"),
+                  ext_neighborhood_time);
+    cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+    cs_log_separator(CS_LOG_PERFORMANCE);
+  }
 
   _print_mesh_info(mesh);
 }
@@ -3961,16 +3969,20 @@ cs_mesh_selector_stats(cs_mesh_t  *mesh)
   }
 #endif
 
-  bft_printf(_("\n"
-               "Mesh entity selections by criteria statistics:\n"
-               "  entity type     evaluations  elapsed time\n"
-               "  -----------------------------------------\n"
-               "  cells            %10d  %12.5f\n"
-               "  interior faces   %10d  %12.5f\n"
-               "  boundary faces   %10d  %12.5f\n"),
-             n_calls[0], wtimes[0],
-             n_calls[1], wtimes[1],
-             n_calls[2], wtimes[2]);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Mesh entity selections by criteria statistics:\n\n"
+                  "  entity type     evaluations          time\n"
+                  "  -----------------------------------------\n"
+                  "  cells            %10d  %12.5f\n"
+                  "  interior faces   %10d  %12.5f\n"
+                  "  boundary faces   %10d  %12.5f\n"),
+                n_calls[0], wtimes[0],
+                n_calls[1], wtimes[1],
+                n_calls[2], wtimes[2]);
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
 }
 
 /*----------------------------------------------------------------------------
