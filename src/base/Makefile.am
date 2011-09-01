@@ -118,6 +118,7 @@ libcscore_la_SOURCES = \
 cs_base.c \
 cs_file.c \
 cs_io.c \
+cs_log.c \
 cs_map.c \
 cs_timer.c
 libcscore_la_LDFLAGS = -no-undefined
@@ -168,7 +169,6 @@ cs_coupling.c \
 cs_ext_neighborhood.c \
 csflsh.f90 \
 cs_halo.c \
-cs_log.c \
 csinit.f90 \
 cs_numbering.c \
 csopli.f90 \
