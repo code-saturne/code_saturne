@@ -27,6 +27,7 @@
 #============================================================================
 
 import sys
+import os.path
 from xml.dom import minidom
 
 #-------------------------------------------------------------------------------
@@ -243,6 +244,7 @@ class Parser:
         for node in nodeList:
 
             name = str(node.getAttribute('name'))
+            path = str(node.getAttribute('path'))
             format = str(node.getAttribute('format'))
             number = str(node.getAttribute('num'))
             reorient = (str(node.getAttribute('reorient')) == 'on')
@@ -253,6 +255,8 @@ class Parser:
             extension = self._getMeshExtension(name)
             if extension == None and len(format) > 0:
                 l_args.append('--format ' + format)
+            if len(path) > 0:
+                name = os.path.join(path, name)
             if len(number) > 0:
                 l_args.append('--num ' + number)
             if reorient:
