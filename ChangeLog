@@ -1,3 +1,13 @@
+* 07/09/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix mesh file path handling in run script.
+  modified files:
+    bin/cs_xml_reader.py
+
+* 07/09/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix for error and default writer initialization option.
+  modified files:
+    src/base/cs_post.c
+
 * 23/08/2011 - David Monfort <david.monfort@edf.fr>
   Fix a bug in the autovnv process and improve associated documentation.
   modified files:
