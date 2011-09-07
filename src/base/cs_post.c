@@ -3989,7 +3989,7 @@ cs_post_init_writers(void)
                           _cs_post_dirname,
                           "EnSight Gold",   /* format name */
                           "",               /* format options */
-                          0,                /* modification indicator */
+                          FVM_WRITER_FIXED_MESH,
                           true,             /* output at end */
                           -1,               /* time step output frequency */
                           -1.0);            /* time value output frequency */
@@ -4418,7 +4418,7 @@ cs_post_init_error_writer(void)
                         _cs_post_dirname,
                         fvm_writer_format_name(_cs_post_default_format_id),
                         _cs_post_default_format_options,
-                        -1, /* No time dependency here */
+                        FVM_WRITER_FIXED_MESH, /* No time dependency here */
                         true,
                         -1,
                         -1.0);
