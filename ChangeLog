@@ -1,3 +1,6 @@
+* 09/09/2011 - David Monfort <david.monfort@edf.fr>
+  Always use English localization in the GUI.
+
 * 07/09/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix mesh file path handling in run script.
   modified files:
