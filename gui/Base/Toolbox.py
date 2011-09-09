@@ -60,7 +60,10 @@ class GuiParam(object):
     try:
         lang = os.environ['LANG'][0:2]
     except Exception:
-        lang = 'fr'
+        lang = 'en'
+
+    # Force English anyway as nearly no translation is available
+    lang = 'en'
 
     # 'on' (default) or 'off'
     #
