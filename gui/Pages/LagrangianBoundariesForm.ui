@@ -16,7 +16,7 @@
    <item row="0" column="0" >
     <widget class="QGroupBox" name="groupBoxBoundaries" >
      <property name="title" >
-      <string>Lagrangian boundary condition</string>
+      <string>Lagrangian boundary conditions</string>
      </property>
      <layout class="QGridLayout" >
       <item row="0" column="0" >

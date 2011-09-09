@@ -189,7 +189,6 @@ if (ivarl.ne.ilfv .and. ivarl.ne.ilpd) then
         aa = statis(iel,ivarlm)/statis(iel,ilpd1)
         tracel(iel) =  stativ(iel,ivarl1)/statis(iel,ilpd1)       &
                     -( aa * aa )
-        tracel(iel) = sqrt( max(zero,tracel(iel)))
       else
         tracel(iel) = zero
       endif
@@ -229,7 +228,6 @@ else if (ivarl.eq.ilfv) then
         tracel(iel) = stativ(iel,ivarl1)                          &
                  / ( dble(npst) * volume(iel) * volume(iel))      &
                  - aa*aa
-        tracel(iel) = sqrt( max(zero,tracel(iel)) )
 
       else if ( statis(iel,ilpd1).gt.seuil .and.                  &
                 iplas.ge.idstnt                  ) then
@@ -237,8 +235,6 @@ else if (ivarl.eq.ilfv) then
         aa =  statis(iel,ivarlm) / volume(iel)
         tracel(iel) = stativ(iel,ivarl1) / volume(iel)            &
                          - aa*aa
-        tracel(iel) = sqrt( max(zero,tracel(iel)))
-
       else
         tracel(iel) = zero
       endif
@@ -321,7 +317,6 @@ endif
             aa = statis(iel,ivarlm)/statis(iel,ilpd1)
             tracel(iel) = stativ(iel,ivarl1)/statis(iel,ilpd1)    &
                         -( aa * aa)
-            tracel(iel) = sqrt( max(zero,tracel(iel)))
           else
             tracel(iel) = zero
           endif
