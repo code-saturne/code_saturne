@@ -1073,11 +1073,11 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
     label = _get_char_post("volume", "variance_velocity_W", &list_ind, &record_ind);
     if (label) _copy_variance_varname(label, 3);
 
-    label = _get_char_post("volume", "mean_mass_fraction", &list_ind, &record_ind);
+    label = _get_char_post("volume", "mean_volume_fraction", &list_ind, &record_ind);
     if (label) _copy_mean_varname(label, 4);
     ihslag[4] = list_ind;
 
-    label = _get_char_post("volume", "variance_mass_fraction", &list_ind, &record_ind);
+    label = _get_char_post("volume", "variance_volume_fraction", &list_ind, &record_ind);
     if (label) _copy_variance_varname(label, 4);
 
     label = _get_char_post("volume", "mean_resident_time", &list_ind, &record_ind);

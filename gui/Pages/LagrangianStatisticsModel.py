@@ -120,7 +120,7 @@ class LagrangianStatisticsModel(Model):
 
         names = ["statistical_weight",
                  "velocity_U", "velocity_V", "velocity_W",
-                 "mass_fraction", "resident_time", "temperature",
+                 "volume_fraction", "resident_time", "temperature",
                  "diameter", "shrinking_core_diameter",
                  "raw_coal_mass_fraction", "char_mass_fraction" ]
         return names

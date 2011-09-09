@@ -731,50 +731,6 @@ if ( (nbpart+nbpnew).ne.npt ) then
   !==========
 endif
 
-!--> Injection en continu des particules
-
-if ( injcon.eq.1 ) then
-
-!   reinitialisation du compteur de nouvelles particules
-
-  npt = nbpart
-
-!       pour chaque zone de bord:
-
-  do ii = 1,nfrlag
-    nb = ilflag(ii)
-
-!         pour chaque classe :
-
-    do nc = 1, iusncl(nb)
-
-!           si de nouvelles particules doivent entrer :
-      if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 ) then
-
-        call lagnwc                                               &
-        !==========
-  ( lndnod ,                                                      &
-    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
-    itycel , icocel ,                                             &
-    ifrlag , itepa(1,jisor)  , iwork  ,                           &
-    ettp   )
-
-      endif
-
-    enddo
-  enddo
-
-endif
-
-!-->TEST DE CONTROLE (NE PAS MODIFIER)
-
-if ( (nbpart+nbpnew).ne.npt ) then
-  write(nfecra,3010) nbpnew, npt-nbpart
-  call csexit (1)
-  !==========
-endif
-
 
 !   reinitialisation du compteur de nouvelles particules
 
@@ -1121,49 +1077,10 @@ if ( (nbpart+nbpnew).ne.npt ) then
   !==========
 endif
 
-!===============================================================================
-! 6. CALCUL DE LA MASSE TOTALE INJECTES EN CHAQUE ZONE
-!    Attention cette valeur est modifie dans USLABO pour tenir compte
-!    des particules qui sortent
-!    + calcul du nombres physiques de particules qui rentrent (tenant
-!       compte des poids)
-!===============================================================================
 
-!   reinitialisation du compteur de nouvelles particules
-
-npt     = nbpart
-dnbpnw = 0.d0
-
-!     pour chaque zone de bord :
-
-do ii = 1,nfrlag
-  nb = ilflag(ii)
-  deblag(nb) = 0.d0
-
-!       pour chaque classe :
-
-  do nc = 1,iusncl(nb)
-
-!        si de nouvelles particules sont entrees,
-
-    if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 .and.               &
-         iuslag(nc,nb,ijnbp) .gt. 0                 ) then
-
-      do ip = npt+1 , npt+iuslag(nc,nb,ijnbp)
-        deblag(nb) = deblag(nb) + tepa(ip,jrpoi)*ettp(ip,jmp)
-        dnbpnw = dnbpnw + tepa(ip,jrpoi)
-      enddo
-
-    endif
-
-    npt = npt + iuslag(nc,nb,ijnbp)
-
-  enddo
-
-enddo
 
 !===============================================================================
-! 7. SIMULATION DES VITESSES TURBULENTES FLUIDES INSTANTANNEES VUES
+! 6. SIMULATION DES VITESSES TURBULENTES FLUIDES INSTANTANEES VUES
 !    PAR LES PARTICULES SOLIDES LE LONG DE LEUR TRAJECTOIRE.
 !===============================================================================
 
@@ -1182,7 +1099,7 @@ call lagipn                                                       &
     ettp   , tepa   , vagaus )
 
 !===============================================================================
-! 8. MODIFICATION DES TABLEAUX DE DONNEES PARTICULAIRES
+! 7. MODIFICATION DES TABLEAUX DE DONNEES PARTICULAIRES
 !===============================================================================
 
 call uslain                                                       &
@@ -1227,11 +1144,98 @@ do ii = 1,nfrlag
   enddo
 enddo
 
+!===============================================================================
+! 8. INJECTION "CONTINUE" EVENTUELLE
+!===============================================================================
+
+if ( injcon.eq.1 ) then
+
+!   reinitialisation du compteur de nouvelles particules
+
+  npt = nbpart
+
+!       pour chaque zone de bord:
+
+  do ii = 1,nfrlag
+    nb = ilflag(ii)
+
+!         pour chaque classe :
+
+    do nc = 1, iusncl(nb)
+
+!           si de nouvelles particules doivent entrer :
+      if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 ) then
+
+        call lagnwc                                               &
+        !==========
+  ( lndnod ,                                                      &
+    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
+    npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
+    itycel , icocel ,                                             &
+    ifrlag , itepa(1,jisor)  , iwork  ,                           &
+    ettp   )
+
+      endif
+
+    enddo
+  enddo
+
+endif
+
+!-->TEST DE CONTROLE (NE PAS MODIFIER)
+
+if ( (nbpart+nbpnew).ne.npt ) then
+  write(nfecra,3010) nbpnew, npt-nbpart
+  call csexit (1)
+  !==========
+endif
+
 ! Free memory
 deallocate(iwork)
 
 !===============================================================================
-! 8. IMPRESSIONS POUR POST-PROCESSING EN MODE TRAJECTOIRES
+! 9. CALCUL DE LA MASSE TOTALE INJECTES EN CHAQUE ZONE
+!    Attention cette valeur est modifie dans USLABO pour tenir compte
+!    des particules qui sortent
+!    + calcul du nombres physiques de particules qui rentrent (tenant
+!       compte des poids)
+!===============================================================================
+
+!   reinitialisation du compteur de nouvelles particules
+
+npt     = nbpart
+dnbpnw = 0.d0
+
+!     pour chaque zone de bord :
+
+do ii = 1,nfrlag
+  nb = ilflag(ii)
+  deblag(nb) = 0.d0
+
+!       pour chaque classe :
+
+  do nc = 1,iusncl(nb)
+
+!        si de nouvelles particules sont entrees,
+
+    if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 .and.               &
+         iuslag(nc,nb,ijnbp) .gt. 0                 ) then
+
+      do ip = npt+1 , npt+iuslag(nc,nb,ijnbp)
+        deblag(nb) = deblag(nb) + tepa(ip,jrpoi)*ettp(ip,jmp)
+        dnbpnw = dnbpnw + tepa(ip,jrpoi)
+      enddo
+
+    endif
+
+    npt = npt + iuslag(nc,nb,ijnbp)
+
+  enddo
+
+enddo
+
+!===============================================================================
+! 10. IMPRESSIONS POUR POST-PROCESSING EN MODE TRAJECTOIRES
 !===============================================================================
 
 if ( iensi1.eq.1 ) then
@@ -1267,7 +1271,7 @@ if ( iensi1.eq.1 ) then
 endif
 
 !===============================================================================
-! 9. NOUVEAU NOMBRE DE PARTICULES TOTAL
+! 11. NOUVEAU NOMBRE DE PARTICULES TOTAL
 !===============================================================================
 
 !     NBPART : NOMBRE DE PARTICULES PRESENTES DANS LE DOMAINE

@@ -110,7 +110,7 @@ class ComboModel:
         Insert an item in the model.
 
         str_view: string to be displayed in the view.
-        For example, 'Eulerian/Lagangian Multi-phase Treatment'
+        For example, 'Eulerian/Lagrangian Multi-phase Treatment'
 
         str_model: correponding string used in the model.
         For example, 'lagrangian'

@@ -681,6 +681,9 @@ lamvbr = 0
 
 !    (default off: 0 ; on: 1)
 
+!     CAUTION: OPTION FOR DEVELOPERS ONLY
+!     =========
+
 idepst = 0
 
 !===============================================================================
