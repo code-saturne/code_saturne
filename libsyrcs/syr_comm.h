@@ -45,18 +45,6 @@
 #include "syr_defs.h"
 
 /*----------------------------------------------------------------------------
- * Communication types
- *----------------------------------------------------------------------------*/
-
-typedef enum {
-
-  SYR_COMM_TYPE_MPI,       /* Comunicate through MPI */
-  SYR_COMM_TYPE_SOCKET,    /* Communicate through IP sockets */
-  SYR_COMM_TYPE_NULL       /* Null communicator */
-
-} syr_comm_type_t;
-
-/*----------------------------------------------------------------------------
  * Macro definitions
  *----------------------------------------------------------------------------*/
 
@@ -86,8 +74,6 @@ typedef struct _syr_comm_t syr_comm_t;
  *   coupling_num  <-- Coupling number
  *   cs_root_rank  <-- Root rank associated with Code_Saturne
  *   cs_n_ranks    <-- Number of MPI ranks associated with Code_Saturne
- *   sock_str      <-- Communicating host and port (hostname:port)
- *   type          <-- Communication type
  *   echo          <-- Echo on main output
  *----------------------------------------------------------------------------*/
 
@@ -95,8 +81,6 @@ syr_comm_t *
 syr_comm_initialize(int               coupling_num,
                     int               cs_root_rank,
                     int               cs_n_ranks,
-                    const char       *sock_str,
-                    syr_comm_type_t   type,
                     int               echo);
 
 /*----------------------------------------------------------------------------

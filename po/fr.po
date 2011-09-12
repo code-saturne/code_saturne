@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-09-12 11:08+0200\n"
+"POT-Creation-Date: 2011-09-12 11:36+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5435,14 +5435,6 @@ msgid " -q, --quality     mesh quality verification mode\n"
 msgstr " -q, --quality     vérification de la qualité du maillage\n"
 
 #, c-format
-msgid ""
-" --syr-socket      enable sockets for SYRTHES 3 coupling\n"
-"                   <port_num> port number on rank 0\n"
-msgstr ""
-" --syr-socket      autoriser les \"sockets\" pour le couplage SYRTHES 3\n"
-"                   <port_num> numéro du port sur le rang 0\n"
-
-#, c-format
 msgid "%s version %s\n"
 msgstr "%s version %s\n"
 
@@ -6180,10 +6172,6 @@ msgstr ""
 " n'est pas présent dans le maillage.\n"
 
 #, c-format
-msgid "Error in socket communication:  %s (node %4d)\n"
-msgstr "Erreur pour la communication par socket :  %s (noeud %4d)\n"
-
-#, c-format
 msgid ""
 "MPI error for communication:  %s\n"
 "Error type: %s"
@@ -6208,77 +6196,6 @@ msgstr ""
 "La chaîne magique indique une mauvaise version du format de l'interface.\n"
 "chaîne magique lue      : \"%s\"\n"
 "chaîne magique attendue : \"%s\"\n"
-
-#, c-format
-msgid ""
-"Communication %s:\n"
-"Error while receiving data by socket.\n"
-msgstr ""
-"Communication %s :\n"
-"Erreur de réception de données par socket.\n"
-
-#, c-format
-msgid ""
-"Communication %s:\n"
-"Error sending data by socket.\n"
-msgstr ""
-"Communication %s :\n"
-"Erreur d'envoi de données par socket.\n"
-
-msgid "Error in socket communication\n"
-msgstr "Erreur de communication par socket\n"
-
-msgid ""
-"Error while sending the host name through MPI in sockets initialization.\n"
-msgstr ""
-"Erreur lors de l'envoi via MPI du nom de l'hôte en initialisant les "
-"sockets.\n"
-
-msgid ""
-"Error while sending the port number through MPI in sockets initialization.\n"
-msgstr ""
-"Erreur lors de l'envoi via MPI du numéro du port en initialisant les "
-"sockets.\n"
-
-msgid "MPI is needed for socket initialization.\n"
-msgstr "Besoin de MPI lors de l'initialisation des sockets.\n"
-
-#, c-format
-msgid ""
-"\n"
-"  Opening communication:  %s ..."
-msgstr ""
-"\n"
-"  Ouverture de la communication :  %s ..."
-
-msgid ""
-"Attempt to connect to the communication port with\n"
-"an unknown message format\n"
-msgstr ""
-"Tentative de connexion au port de communication avec\n"
-"un format de message non reconnu\n"
-
-#, c-format
-msgid ""
-"Error while initializating communication: \"%s\".\n"
-"The interface version is not correct.\n"
-"The magic string indicates the interface format version:\n"
-"magic string read:     \"%s\"\n"
-"magic string expected: \"%s\"\n"
-msgstr ""
-"Erreur à l'initialisation de la communication : \"%s\".\n"
-"Le format de l'interface n'est pas à la bonne version.\n"
-"La chaîne magique repère la version du format d'interface :\n"
-"chaîne magique lue      : \"%s\"\n"
-"chaîne magique actuelle : \"%s\"\n"
-
-#, c-format
-msgid ""
-"Communication %s):\n"
-"Error closing the socket.\n"
-msgstr ""
-"Communication %s) :\n"
-"Erreur à la fermeture du socket.\n"
 
 #, c-format
 msgid ""
@@ -6311,19 +6228,6 @@ msgid ""
 msgstr ""
 "\n"
 "  Fermeture de la communication :  %s\n"
-
-msgid "Initialization error for socket communication support.\n"
-msgstr "Erreur d'initialisation du support de communication par socket.\n"
-
-msgid "Error obtaining computer's name"
-msgstr "Erreur de récupération du nom de la machine"
-
-msgid ""
-"\n"
-"Closing socket...\t [ok]\n"
-msgstr ""
-"\n"
-"Fermeture du socket ...\t [ok]\n"
 
 #, c-format
 msgid ""
@@ -9763,3 +9667,4 @@ msgstr ""
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
 "\n"
+

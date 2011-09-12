@@ -34,11 +34,15 @@ else
 PLE_CPPFLAGS_TMP = $(PLE_CPPFLAGS)
 endif
 
+if HAVE_LIBSYRCS
+LIBSYRCS = libsyrcs
+endif
+
 if HAVE_SALOME_KERNEL
 SALOME = salome
 endif
 
-SUBDIRS = $(PLE) $(PREPRO) src libsyrcs $(SALOME) po doc $(GUI) tests
+SUBDIRS = $(PLE) $(PREPRO) src $(LIBSYRCS) $(SALOME) po doc $(GUI) tests
 
 AUX_DIST = \
 m4/codeset.m4 \

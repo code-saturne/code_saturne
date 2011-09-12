@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -50,25 +50,9 @@ BEGIN_C_DECLS
 
 #define CS_SYR3_COMM_H_LEN       32   /* Length of a header name */
 
-/* Socket communications: we suppose a maximum of 8 coupled SYRTHES instances;
-   this value may be modified through the CS_SYR3_COMM_SOCKET_NBR_MAX
-   environment variable */
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Message type
- *----------------------------------------------------------------------------*/
-
-typedef enum {
-
-  CS_SYR3_COMM_TYPE_NONE,     /* No communication (pre-initialization) */
-  CS_SYR3_COMM_TYPE_MPI,      /* MPI messages */
-  CS_SYR3_COMM_TYPE_SOCKET    /* IP sockets */
-
-} cs_syr3_comm_type_t;
 
 /* Pointer associated with an opaque communicator structure. */
 
@@ -97,8 +81,7 @@ typedef struct {
  *
  * parameters:
  *   number,       <-- coupling number
- *   proc_rank,    <-- communicating process rank (< 0 if using sockets)
- *   type,         <-- communication type
+ *   proc_rank,    <-- communicating process rank
  *   echo          <-- echo on main output (< 0 if none, header if 0,
  *                     n first and last elements if n)
  *
@@ -108,10 +91,7 @@ typedef struct {
 
 cs_syr3_comm_t *
 cs_syr3_comm_initialize(int                  number,
-#if defined(HAVE_MPI)
                         int                  proc_rank,
-#endif
-                        cs_syr3_comm_type_t  type,
                         cs_int_t             echo);
 
 /*----------------------------------------------------------------------------
@@ -180,27 +160,6 @@ void
 cs_syr3_comm_receive_body(const cs_syr3_comm_msg_header_t  *header,
                           void                             *elt,
                           const cs_syr3_comm_t             *comm);
-
-#if defined(HAVE_SOCKET)
-
-/*----------------------------------------------------------------------------
- * Open an IP socket to prepare for this communication mode
- *
- * parameters:
- *   port_num <-- port number (only used for rank 0; automatic on others)
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr3_comm_init_socket(int port_num);
-
-/*----------------------------------------------------------------------------
- * Close an IP socket associated with this communication mode
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr3_comm_finalize_socket(void);
-
-#endif /* HAVE_SOCKET */
 
 /*----------------------------------------------------------------------------*/
 

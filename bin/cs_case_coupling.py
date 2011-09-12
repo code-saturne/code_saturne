@@ -140,7 +140,6 @@ def coupling(package,
                 dom = syrthes3_domain(package,
                                       name = d.get('domain'),
                                       echo_comm = d.get('echo_comm'),
-                                      coupling_mode = 'MPI',  # 'MPI' or 'Sockets'
                                       coupled_apps = d.get('coupled_apps'),
                                       pset_size = pset_size)
 

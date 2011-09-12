@@ -266,7 +266,6 @@ _syr3_add_mpi(int builder_id,
                        scb->face_sel_c,
                        scb->app_name,
                        syr_rank,
-                       CS_SYR3_COMM_TYPE_MPI,
                        scb->verbosity,
                        scb->visualization);
 
@@ -468,81 +467,6 @@ _init_all_mpi_syr(void)
 }
 
 #endif /* defined(HAVE_MPI) */
-
-#if defined(HAVE_SOCKET)
-
-/*----------------------------------------------------------------------------
- * Add a SYRTHES 3 coupling using sockets.
- *
- * parameters:
- *   builder_id <-- SYRTHES application id in coupling builder
- *----------------------------------------------------------------------------*/
-
-static void
-_syr3_add_socket(int builder_id)
-{
-  cs_syr3_coupling_t *syr_coupling = NULL;
-  _cs_syr_coupling_builder_t *scb = _syr_coupling_builder + builder_id;
-
-  cs_syr3_coupling_add(scb->dim,
-                       scb->ref_axis,
-                       scb->face_sel_c,
-                       scb->app_name,
-                       -1,
-                       CS_SYR3_COMM_TYPE_SOCKET,
-                       scb->verbosity,
-                       scb->visualization);
-
-  syr_coupling = cs_syr3_coupling_by_id(cs_syr3_coupling_n_couplings() - 1);
-
-  cs_syr3_coupling_init_comm(syr_coupling, builder_id);
-}
-
-/*----------------------------------------------------------------------------
- * Initialize SYRTHES couplings using sockets.
- *
- * Currently, only SYRTHES 3.4 may be coupled using sockets
- *
- * This function may be called once all couplings have been defined,
- * and it will match defined couplings with available applications.
- *
- * parameters:
- *   port_num <-- port number (only used for rank 0; automatic on others)
- *----------------------------------------------------------------------------*/
-
-static void
-_init_all_socket_syr(int port_num)
-{
-  int i;
-
-  /* Initialize socket server */
-
-  if (_syr_coupling_builder_size > 0)
-    cs_syr3_comm_init_socket(port_num);
-
-  bft_printf
-    ("SYRTHES couplings for which the socket interface will be used:\n"
-     "--------------------------------------------------------------\n\n");
-
-  _print_all_unmatched_syr();
-
-  /* Loop on unmatched SYRTHES instances */
-
-  for (i = 0; i < _syr_coupling_builder_size; i++) {
-
-    _cs_syr_coupling_builder_t *scb = _syr_coupling_builder + i;
-
-    _syr3_add_socket(i);
-
-    scb->match_id = 0;
-  }
-
-  /* Cleanup (if we have not deadlocked before) */
-
-  _remove_matched_builder_entries();
-}
-
-#endif /* defined(HAVE_SOCKETS) */
 
 /*============================================================================
  *  Public function definitions for Fortran API
@@ -1129,14 +1053,10 @@ cs_syr_coupling_define(const char  *syrthes_name,
  *
  * This function may be called once all couplings have been defined,
  * and it will match defined couplings with available applications.
- *
- * parameters:
- *   port_num <-- port number for rank 0 to enable sockets,
- *                < 0 to disable sockets
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_all_init(int  port_num)
+cs_syr_coupling_all_init(void)
 {
   /* First try using MPI */
 
@@ -1144,15 +1064,6 @@ cs_syr_coupling_all_init(int  port_num)
 
   if (_syr_coupling_builder_size > 0)
     _init_all_mpi_syr();
-
-#endif
-
-  /* If not all SYRTHES instances have been found, try using sockets */
-
-#if defined(HAVE_SOCKET)
-
-  if (_syr_coupling_builder_size > 0 && port_num > -1)
-    _init_all_socket_syr(port_num);
 
 #endif
 

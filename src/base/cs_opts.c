@@ -151,10 +151,6 @@ _arg_env_help(const char  *name)
     (e, _(" -q, --quality     mesh quality verification mode\n"));
 
   fprintf
-    (e, _(" --syr-socket      enable sockets for SYRTHES 3 coupling\n"
-          "                   <port_num> port number on rank 0\n"));
-
-  fprintf
     (e, _(" --version         print version number\n"));
 }
 
@@ -253,8 +249,6 @@ cs_opts_define(int         argc,
   opts->preprocess = false;
   opts->verif = false;
   opts->benchmark = 0;
-
-  opts->syr_socket = -1;
 
   opts->yacs_module = NULL;
 
@@ -367,14 +361,6 @@ cs_opts_define(int         argc,
       opts->verif = true;
 
 #if defined(HAVE_SOCKET)
-
-    /* SYRTHES 3 coupling socket */
-
-    else if (strcmp(s, "--syr-socket") == 0) {
-      opts->syr_socket = _arg_to_int(arg_id + 1, argc, argv, &argerr);
-      if (argerr == 0)
-        arg_id++;
-    }
 
     /* Proxy connection options (do not appear in help as they
        are not destined to be used directly by a user) */

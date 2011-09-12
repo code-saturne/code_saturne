@@ -41,9 +41,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if defined(HAVE_MPI)
 #include <mpi.h>
-#endif
 
 /*----------------------------------------------------------------------------
  * PLE library headers
@@ -214,17 +212,12 @@ _syr_coupling_scatter_var(const syr_coupling_t  *coupling,
  * arguments:
  *   coupling_id <-- Id of Syrthes coupling (0 to n-1)
  *   cs_app_name <-- Application name of Code_Saturne MPI process
- *   sock_str    <-- hostname:socknum of first coupled
- *                   Code_Saturne process, or NULL
- *   comm_type   <-- Type of comunication used
  *   comm_echo   <-- Optional echo to standard output
  *----------------------------------------------------------------------------*/
 
 syr_coupling_t  *
 syr_coupling_initialize(int               coupling_id,
                         const char       *cs_app_name,
-                        const char       *sock_str,
-                        syr_comm_type_t   comm_type,
                         int               comm_echo)
 {
   int root_rank = -1, n_ranks = -1;
@@ -241,10 +234,7 @@ syr_coupling_initialize(int               coupling_id,
 
   coupling->cs_rank = NULL;
 
-#ifdef HAVE_MPI
-  if (comm_type == SYR_COMM_TYPE_MPI)
-    syr_mpi_appinfo(cs_app_name, &root_rank, &n_ranks);
-#endif
+  syr_mpi_appinfo(cs_app_name, &root_rank, &n_ranks);
 
   /* Initialize communicator */
 
@@ -253,8 +243,6 @@ syr_coupling_initialize(int               coupling_id,
   coupling->comm = syr_comm_initialize(coupling_id + 1,
                                        root_rank,
                                        n_ranks,
-                                       sock_str,
-                                       comm_type,
                                        comm_echo);
 
   /* Variable distribution will be defined later */

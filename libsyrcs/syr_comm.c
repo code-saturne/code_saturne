@@ -43,27 +43,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(HAVE_MPI)
 #include <mpi.h>
-#endif
-
-#if defined(HAVE_SOCKET)
-#include <netdb.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#endif
 
 /*----------------------------------------------------------------------------
  * PLE library headers
  *----------------------------------------------------------------------------*/
 
 #include <ple_defs.h>
-#if defined(HAVE_MPI)
 #include <ple_coupling.h>
-#endif
 
 /*---------------------------------------------------------------------------
  *  Local headers
@@ -88,20 +75,7 @@ extern "C" {
  *  Constants and Macros
  *===========================================================================*/
 
-#define CS_COMM_SOCKET_HEADER       "CS_comm_socket"
-
-#define CS_COMM_SOCKET_N_MAX         65
-#define CS_COMM_L_HOSTNAME          256
-#define CS_COMM_L_NOM_MAX           256
-
 #define SYR_COMM_L_TYPE_NAME         2
-
-/* If SSIZE_MAX is not defined by the sytem headers, we take the minimum value
-   required by POSIX (for low level reads/writes with sockets). */
-
-#if !defined(SSIZE_MAX)
-# define SSIZE_MAX  32767
-#endif
 
 typedef enum {
 
@@ -118,23 +92,14 @@ struct _syr_comm_t {
 
   char            *name;         /* Communicator name */
 
-  int              swap_endian;  /* Force big-endian communications */
-
-  syr_comm_type_t  type;         /* Communicator type */
   int              n_procs;      /* Number of communicating processes */
   int              echo;         /* Log (printout) level of communications */
 
   int             *n_sec_elts;   /* Number of elements in a section for each
                                     proc (when reading) */
 
-#if defined(HAVE_SOCKET)
-  int             *socket;       /* Array of socket numbers */
-#endif
-
-#if defined(HAVE_MPI)
   int              proc_rank;    /* Rank of first distant process */
   MPI_Comm         intracomm;    /* Intracommunicator */
-#endif
 
 };
 
@@ -142,54 +107,9 @@ struct _syr_comm_t {
  * Global variables
  *===========================================================================*/
 
-#if defined(HAVE_SOCKET)
-
-static char  syr_glob_comm_err_socket[]
-  = "Error in socket communication:\n"
-    "%s (proc %4d)\n";
-
-#endif
-
 /*===========================================================================
  * Private function definitions
  *===========================================================================*/
-
-/*--------------------------------------------------------------------------
- * Convert data from "little-endian" to "big-endian" or the reverse.
- *
- * The memory areas pointed to by src and dest should overlap either
- * exactly or not at all.
- *--------------------------------------------------------------------------*/
-
-static void
-_swap_endian(void          *dest,
-             const void    *src,
-             const size_t   size,
-             const size_t   ni)
-{
-  size_t   i, ib, shift;
-  unsigned char  tmpswap;
-
-  unsigned char  *pdest = (unsigned char *)dest;
-  const unsigned char  *psrc = (const unsigned char *)src;
-
-  for (i = 0 ; i < ni ; i++) {
-
-    shift = i * size;
-
-    for (ib = 0 ; ib < (size / 2) ; ib++) {
-
-      tmpswap = *(psrc + shift + ib);
-      *(pdest + shift + ib) = *(psrc + shift + (size - 1) - ib);
-      *(pdest + shift + (size - 1) - ib) = tmpswap;
-
-    }
-
-  }
-
-  if (dest != src && size == 1)
-    memcpy(dest, src, ni);
-}
 
 /*--------------------------------------------------------------------------
  * Print "wait on message"
@@ -382,8 +302,6 @@ _comm_echo_body(const syr_comm_t  *comm,
   fflush(stdout);
 }
 
-#if defined(HAVE_MPI)
-
 /*--------------------------------------------------------------------------
  *  Print message in case of MPI communication error
  *--------------------------------------------------------------------------*/
@@ -570,163 +488,6 @@ _comm_mpi_body(void              *sec_elts,
     _comm_mpi_msg_err(comm, proc_id, ierror);
 }
 
-#endif /* defined(HAVE_MPI) */
-
-#if defined(HAVE_SOCKET)
-
-/*--------------------------------------------------------------------------
- * Read a record from an interface socket
- *--------------------------------------------------------------------------*/
-
-static void
-_comm_read_sock(const syr_comm_t  *comm,
-                int                proc_id,
-                char              *rec,
-                size_t             n,
-                syr_type_t         type)
-{
-  size_t   start_id;
-  size_t   end_id;
-  size_t   n_loc;
-  size_t   n_bytes;
-  size_t   size;
-  ssize_t  ret;
-
-  assert(rec  != NULL);
-  assert(comm != NULL);
-  assert(comm->socket != NULL);
-
-  /* Determine associated size */
-
-  switch (type) {
-  case SYR_TYPE_int:
-    size = sizeof(int);
-    break;
-  case SYR_TYPE_float:
-    size = sizeof(float);
-    break;
-  case SYR_TYPE_double:
-    size = sizeof(double);
-    break;
-  case SYR_TYPE_char:
-    size = sizeof(char);
-    break;
-  default:
-    assert(0);
-  }
-
-  n_bytes = size * n;
-
-  /* Read record from socket */
-
-  start_id = 0;
-
-  while (start_id < n_bytes) {
-
-    end_id = SYR_MIN(start_id + SSIZE_MAX, n_bytes);
-    n_loc = end_id - start_id;
-
-    ret = read(comm->socket[proc_id], (void *)(rec + start_id), n_loc);
-
-    if (ret < 1)
-      ple_error(__FILE__, __LINE__, errno,
-                "Communication %s (proc %d) :\n"
-                "Erreur a la reception via un socket",
-                comm->name, proc_id + 1);
-
-    start_id += ret;
-
-  }
-
-  if (comm->swap_endian == 1 && size > 1)
-    _swap_endian(rec, rec, size, n);
-}
-
-/*--------------------------------------------------------------------------
- * Write a record to an interface socket
- *--------------------------------------------------------------------------*/
-
-static void
-_comm_write_sock(const syr_comm_t  *comm,
-                 int                proc_id,
-                 const char        *rec,
-                 size_t             n,
-                 syr_type_t         type)
-{
-  size_t   start_id;
-  size_t   end_id;
-  size_t   n_loc;
-  size_t   n_bytes;
-  size_t   size;
-  ssize_t  ret;
-
-  char    *rec_tmp;
-
-  assert(rec  != NULL);
-  assert(comm != NULL);
-  assert(comm->socket != NULL);
-
-  /* Determine associated size */
-
-  switch(type) {
-  case SYR_TYPE_int:
-    size = sizeof(int);
-    break;
-  case SYR_TYPE_double:
-    size = sizeof(double);
-    break;
-  case SYR_TYPE_float:
-    size = sizeof(float);
-    break;
-  case SYR_TYPE_char:
-    size = sizeof(char);
-    break;
-  default:
-    assert(0);
-  }
-
-  n_bytes = size * n;
-
-  /* Convert if "little-endian" */
-
-  if (comm->swap_endian == 1 && size != 1) {
-    PLE_MALLOC(rec_tmp, n_bytes, char);
-    _swap_endian(rec_tmp, rec, size, n);
-  }
-  else
-    rec_tmp = NULL;
-
-  /* Write record to socket */
-
-  start_id = 0;
-
-  while (start_id < n_bytes) {
-
-    end_id = SYR_MIN(start_id + SSIZE_MAX, n_bytes);
-    n_loc = end_id - start_id;
-
-    if (rec_tmp == NULL)
-      ret = write(comm->socket[proc_id], (const void *)(rec + start_id),
-                  n_loc);
-    else
-      ret = write(comm->socket[proc_id], (const void *)(rec_tmp + start_id),
-                  n_loc);
-
-    if (ret < 1)
-      ple_error(__FILE__, __LINE__, errno,
-                "Communication %s (proc %d) :\n"
-                "Erreur a l'envoi via un socket",
-                comm->name, proc_id + 1);
-
-    start_id += ret;
-  }
-
-  if (rec_tmp != NULL)
-    PLE_FREE(rec_tmp);
-}
-
-#endif /* defined(HAVE_SOCKET) */
-
 /*--------------------------------------------------------------------------
  * Write then read a "magic string" to check file format
  *--------------------------------------------------------------------------*/
@@ -736,6 +497,8 @@ _comm_magic_string(syr_comm_t  *comm,
                    int          proc_id,
                    const char  *magic_string)
 {
+  int ierror;
+  MPI_Status status;
   char *comm_magic_string;
 
   int lng_magic_string = strlen(magic_string);
@@ -747,87 +510,33 @@ _comm_magic_string(syr_comm_t  *comm,
 
   strncpy(comm_magic_string, magic_string, lng_magic_string);
 
-  switch (comm->type) {
+  ierror = MPI_Send(comm_magic_string,
+                    lng_magic_string, MPI_CHAR,
+                    comm->proc_rank + proc_id,
+                    0,
+                    comm->intracomm);
 
-#if defined(HAVE_MPI)
-  case SYR_COMM_TYPE_MPI:
-    {
-      int ierror = MPI_Send(comm_magic_string,
-                            lng_magic_string, MPI_CHAR,
-                            comm->proc_rank + proc_id,
-                            0,
-                            comm->intracomm);
-
-      if (ierror != MPI_SUCCESS)
-        _comm_mpi_msg_err(comm,
-                          proc_id,
-                          ierror);
-
-    }
-    break;
-#endif /* HAVE_MPI */
-
-#if defined(HAVE_SOCKET)
-  case SYR_COMM_TYPE_SOCKET:
-    {
-      _comm_write_sock(comm,
-                       proc_id,
-                       (const char *)(comm_magic_string),
-                       strlen(magic_string),
-                       SYR_TYPE_char);
-    }
-    break;
-#endif
-
-  default:
-    break;
-
-  }
+  if (ierror != MPI_SUCCESS)
+    _comm_mpi_msg_err(comm,
+                      proc_id,
+                      ierror);
 
   /* Read magic string */
   /*--------------------*/
 
-  switch (comm->type) {
+  ierror = MPI_Recv(comm_magic_string,
+                    lng_magic_string,
+                    MPI_CHAR,
+                    comm->proc_rank + proc_id,
+                    MPI_ANY_TAG,
+                    comm->intracomm,
+                    &status);
 
-#if defined(HAVE_MPI)
-  case SYR_COMM_TYPE_MPI:
-    {
-      int ierror;
-      MPI_Status status;
-
-      ierror = MPI_Recv(comm_magic_string,
-                        lng_magic_string,
-                        MPI_CHAR,
-                        comm->proc_rank + proc_id,
-                        MPI_ANY_TAG,
-                        comm->intracomm,
-                        &status);
-
-      if (ierror != MPI_SUCCESS)
-        _comm_mpi_msg_err(comm,
-                          proc_id,
-                          ierror);
-
-    }
-    break;
-#endif /* HAVE_MPI */
-
-#if defined(HAVE_SOCKET)
-  case SYR_COMM_TYPE_SOCKET:
-    {
-      _comm_read_sock(comm,
+  if (ierror != MPI_SUCCESS)
+    _comm_mpi_msg_err(comm,
                       proc_id,
-                      (char *)(comm_magic_string),
-                      strlen(magic_string),
-                      SYR_TYPE_char);
-    }
-    break;
-#endif
+                      ierror);
 
-  default:
-    break;
-
-  }
   comm_magic_string[lng_magic_string] = '\0';
 
   /* If the magic string does not correspond, we have an error */
@@ -843,8 +552,6 @@ _comm_magic_string(syr_comm_t  *comm,
 
   PLE_FREE(comm_magic_string);
 }
-
-#if defined(HAVE_MPI)
 
 /*--------------------------------------------------------------------------
  * Create an MPI intracommunicator
@@ -893,208 +600,6 @@ _comm_mpi_open(syr_comm_t  *comm,
                      magic_string);
 }
 
-#endif /* (HAVE_MPI) */
-
-#if defined(HAVE_SOCKET)
-
-/*--------------------------------------------------------------------------
- * Connection for socket connection initialization
- *--------------------------------------------------------------------------*/
-
-static void
-_comm_sock_connect(syr_comm_t  *comm,
-                   int          proc_id,
-                   char        *host_name,
-                   int          port_num)
-{
-
-#if defined(__linux__) || defined(__linux) || defined(linux)
-  socklen_t  sock_len;
-#else
-  size_t     sock_len;
-#endif
-
-  struct sockaddr_in   sock_addr;
-  struct hostent      *host_ent;
-
-  /* Create socket interface descriptor */
-
-  comm->socket[proc_id] = socket(AF_INET, SOCK_STREAM, 0);
-
-  if (comm->socket[proc_id] == -1)
-    ple_error(__FILE__, __LINE__, errno,
-              "Erreur a l'initialisation de la communication par socket "
-              "(proc %d).\n",
-              proc_id + 1);
-
-  /* Prepare connection */
-
-  sock_len = sizeof(sock_addr);
-
-  memset((char *) &sock_addr, 0, sock_len);
-
-  sock_addr.sin_family = AF_INET;
-  sock_addr.sin_addr.s_addr = inet_addr(host_name);
-
-  if (sock_addr.sin_addr.s_addr == INADDR_NONE) {
-    host_ent = gethostbyname(host_name);
-
-    if (!host_ent)
-      ple_error(__FILE__, __LINE__, 0,
-                "Communication par socket : hote \"%s\" inconnu.",
-                host_name);
-
-    memcpy(&sock_addr.sin_addr, host_ent->h_addr_list[0], host_ent->h_length);
-  }
-
-  sock_addr.sin_port = port_num;
-
-  if (comm->swap_endian == 1)
-    _swap_endian((char *)&(sock_addr.sin_port),
-                 (char *)&(sock_addr.sin_port),
-                 sizeof(sock_addr.sin_port),
-                 1);
-
-  if ( connect(comm->socket[proc_id],
-               (struct sockaddr *)&sock_addr, sock_len) < 0)
-    ple_error(__FILE__, __LINE__, errno,
-              "Communication par socket : erreur de connexion a\n"
-              "%s (port %d)\n", host_name, port_num);
-
-}
-
-/*--------------------------------------------------------------------------
- *  Initialize socket communication
- *--------------------------------------------------------------------------*/
-
-static void
-_comm_sock_init(syr_comm_t  *comm,
-                const char  *sock_serv)
-{
-  int  i, port_num, id, proc_id, name_len;
-
-  char   str_len[7] = "      ";
-  char  *host_name = NULL;
-
-  /* Decode sock_serv string */
-
-  for (id = strlen(sock_serv) - 1;
-       id > 0 && sock_serv[id] != ':'; id--);
-
-  port_num = atoi(sock_serv + id + 1);
-
-  PLE_MALLOC(host_name, id + 1, char);
-  strncpy(host_name, sock_serv, id);
-  host_name[id] = '\0';
-
-  /* Establish communication with rank 0 on Code_Saturne side */
-
-  _comm_sock_connect(comm, 0, host_name, port_num);
-
-  /* Receive number of ranks */
-
-  if (read(comm->socket[0], str_len, 6) < 6)
-    ple_error(__FILE__, __LINE__, errno,
-              syr_glob_comm_err_socket, comm->name,  1);
-
-  str_len[6] = '\0';
-  comm->n_procs = atoi(str_len);
-
-  if (comm->n_procs > 1) {
-    PLE_REALLOC(comm->socket, comm->n_procs, int);
-    for (i = 1; i < comm->n_procs; i++)
-      comm->socket[i] = 0;
-  }
-
-  /* Receive max hostname size */
-
-  if (comm->n_procs > 1) {
-
-    /* Receive max hostname size */
-
-    if (read(comm->socket[0], str_len, 4) < 4)
-      ple_error(__FILE__, __LINE__, errno,
-                syr_glob_comm_err_socket, comm->name,  1);
-
-    str_len[4] = '\0';
-    name_len = atoi(str_len);
-
-    PLE_REALLOC(host_name, name_len + 1, char);
-
-    for (proc_id = 1; proc_id < comm->n_procs; proc_id++) {
-
-      /* Receive hostname */
-
-      if (read(comm->socket[0], host_name, name_len) < name_len)
-        ple_error(__FILE__, __LINE__, errno,
-                  syr_glob_comm_err_socket, comm->name, proc_id + 1);
-
-      host_name[name_len] = '\0';
-
-      /* Receive port number */
-
-      if (read(comm->socket[0], str_len, 6) < 6)
-        ple_error(__FILE__, __LINE__, errno,
-                  syr_glob_comm_err_socket, comm->name, proc_id + 1);
-
-      str_len[6] = '\0';
-      port_num = atoi(str_len);
-
-      /* Establish connection */
-
-      _comm_sock_connect(comm, proc_id, host_name, port_num);
-
-    }
-
-  } /* End of n_procs > 1 case */
-
-  PLE_FREE(host_name);
-}
-
-/*--------------------------------------------------------------------------
- * Initialize a socket for communication
- *--------------------------------------------------------------------------*/
-
-static void
-_comm_sock_open(syr_comm_t  *comm,
-                int          proc_id,
-                const char  *magic_string)
-{
-  char  comm_header[] = CS_COMM_SOCKET_HEADER;
-
-  /* Send initialization message to each proc */
-
-  if (write(comm->socket[proc_id], comm_header, strlen(comm_header))
-      < (ssize_t)strlen(comm_header))
-    ple_error(__FILE__, __LINE__, errno,
-              "Erreur dans la communication par socket.");
-
-  /* Write or read "magic string" */
-
-  _comm_magic_string(comm,
-                     proc_id,
-                     magic_string);
-}
-
-/*--------------------------------------------------------------------------
- * Close an interface socket
- *--------------------------------------------------------------------------*/
-
-static void
-_comm_sock_close(syr_comm_t  *comm,
-                 int          proc_id)
-{
-  if (close(comm->socket[proc_id]) != 0)
-    ple_error(__FILE__, __LINE__, errno,
-              "Communication %s (proc %d) :\n"
-              "Erreur a la fermeture d'un socket.",
-              comm->name, proc_id + 1);
-
-  comm->socket[proc_id] = -1;
-}
-
-#endif /* defined(HAVE_SOCKET) */
-
 /*===========================================================================
  * Public function definitions
  *===========================================================================*/
@@ -1106,7 +611,6 @@ _comm_sock_close(syr_comm_t  *comm,
  *   coupling_num  <-- Coupling number
  *   cs_root_rank  <-- Root rank associated with Code_Saturne
  *   cs_n_ranks    <-- Number of MPI ranks associated with Code_Saturne
- *   sock_str      <-- Communicating host and port (hostname:port)
  *   type          <-- Communication type
  *   echo          <-- Echo on main output
  *----------------------------------------------------------------------------*/
@@ -1115,12 +619,8 @@ syr_comm_t *
 syr_comm_initialize(int               coupling_num,
                     int               cs_root_rank,
                     int               cs_n_ranks,
-                    const char       *sock_str,
-                    syr_comm_type_t   type,
                     int               echo)
 {
-  unsigned  int_endian;
-
   syr_comm_t *comm;
   int proc_id;
 
@@ -1138,77 +638,21 @@ syr_comm_initialize(int               coupling_num,
 
   /* Initialize other fields */
 
-  comm->type = type;
   comm->echo = echo;
 
   comm->n_sec_elts = NULL;
 
-  /* Test if system is big-endian */
-
-  comm->swap_endian = 0; /* Use "big-endian" mode to communicate */
-
-  int_endian = 0;
-  *((char *) (&int_endian)) = '\1';
-
-  if (int_endian == 1)
-    comm->swap_endian = 1;
-
-#if defined(DEBUG) && !defined(NDEBUG)
-  else {
-    int_endian = 0;
-    *((char *) (&int_endian) + sizeof(unsigned) - 1) = '\1';
-    assert (int_endian == 1);
-  }
-#endif
-
-#if defined(HAVE_MPI)
   comm->n_procs = -1;
   comm->proc_rank = -1;
-#endif
 
-#if defined(HAVE_SOCKET)
-  comm->socket = NULL;
-#endif
-
-  if (type == SYR_COMM_TYPE_MPI) {
-#if defined(HAVE_MPI)
-    comm->proc_rank = cs_root_rank;
-    comm->n_procs = cs_n_ranks;
-#else
-    ple_error
-      (__FILE__, __LINE__, 0,
-       "Librarie compilee sans support MPI, donc le type communicateur\n"
-       "doit etre different de SYR_COMM_TYPE_MPI (%d).",
-       (int)SYR_COMM_TYPE_MPI);
-#endif
-  }
-
-  if (type == SYR_COMM_TYPE_SOCKET) {
-#if defined(HAVE_SOCKET)
-    PLE_MALLOC(comm->socket, 1, int);
-    comm->socket[0] = 0;
-
-    /* Using sockets communication, the number of associated ranks
-       may be updated during communication initialization */
-
-    _comm_sock_init(comm, sock_str);
-#else
-    ple_error
-      (__FILE__, __LINE__, 0,
-       "Librarie compilee sans support \"socket\", donc le type communicateur\n"
-       "doit etre different de SYR_COMM_TYPE_SOCKET (%d).",
-       (int)SYR_COMM_TYPE_SOCKET);
-#endif
-  }
+  comm->proc_rank = cs_root_rank;
+  comm->n_procs = cs_n_ranks;
 
   /* Jump one line in log file */
 
   printf("\n");
 
-#if defined(HAVE_MPI)
-  if (comm->type == SYR_COMM_TYPE_MPI)
-    _comm_mpi_init(comm);
-#endif
+  _comm_mpi_init(comm);
 
   /* Build interfaces */
 
@@ -1231,15 +675,7 @@ syr_comm_initialize(int               coupling_num,
     /* Create a descriptor for the interface file */
     /*------------------------------------------- */
 
-#if defined(HAVE_MPI)
-    if (comm->type == SYR_COMM_TYPE_MPI)
-      _comm_mpi_open(comm, proc_id, magic_string);
-#endif
-
-#if defined(HAVE_SOCKET)
-  if (comm->type == SYR_COMM_TYPE_SOCKET)
-    _comm_sock_open(comm, proc_id, magic_string);
-#endif
+    _comm_mpi_open(comm, proc_id, magic_string);
 
     /* Info on interface creation success */
 
@@ -1276,11 +712,6 @@ syr_comm_finalize(syr_comm_t *comm)
     printf("  Fermeture de la communication: %s\n",
            comm->name);
 
-#if defined(HAVE_SOCKET)
-    if (comm->socket != NULL)
-      _comm_sock_close(comm, 0);
-#endif
-
   }
   else {
 
@@ -1291,19 +722,9 @@ syr_comm_finalize(syr_comm_t *comm)
       printf("  Fermeture de la communication: %s (proc %4d)\n",
              comm->name, proc_id + 1);
 
-#if defined(HAVE_SOCKET)
-      if (comm->socket != NULL)
-        _comm_sock_close(comm, proc_id);
-#endif
-
     }
 
   }
-
-#if defined(HAVE_SOCKET)
-  if (comm->socket != NULL)
-    PLE_FREE(comm->socket);
-#endif
 
   PLE_FREE(comm->name);
   PLE_FREE(comm->n_sec_elts);
@@ -1369,6 +790,7 @@ syr_comm_write_section(const char        *sec_name,
                        const syr_comm_t  *comm,
                        int                proc_id)
 {
+  int  n_elts_wri;
   char sec_name_out [SYR_COMM_L_SEC_NAME + 1];
   char type_name    [SYR_COMM_L_TYPE_NAME + 1];
   char type_name_out[SYR_COMM_L_TYPE_NAME + 1];
@@ -1421,80 +843,25 @@ syr_comm_write_section(const char        *sec_name,
   if (comm->echo >= 0)
     _comm_echo_pre(comm, proc_id, SYR_COMM_MODE_SEND);
 
-#if defined(HAVE_MPI)
-
   /* MPI communication */
   /*------------------ */
 
-  if (comm->type == SYR_COMM_TYPE_MPI) {
+  n_elts_wri = n_elts;
 
-    int  n_elts_wri = n_elts;
+  _comm_mpi_header(sec_name_out,
+                   &n_elts_wri,
+                   type_name_out,
+                   comm,
+                   SYR_COMM_MODE_SEND,
+                   proc_id);
 
-    _comm_mpi_header(sec_name_out,
-                     &n_elts_wri,
-                     type_name_out,
-                     comm,
-                     SYR_COMM_MODE_SEND,
-                     proc_id);
-
-    if (n_elts > 0)
-      _comm_mpi_body((void *)elts,
-                     n_elts,
-                     elt_type,
-                     comm,
-                     SYR_COMM_MODE_SEND,
-                     proc_id);
-
-  }
-
-#endif /* (HAVE_MPI) */
-
-#if defined(HAVE_SOCKET)
-
-  /* Socket communication */
-  /*--------------------- */
-
-  if (comm->type == SYR_COMM_TYPE_SOCKET) {
-
-    /* 1. section name */
-
-    _comm_write_sock(comm,
-                     proc_id,
-                     (const char *)sec_name_out,
-                     SYR_COMM_L_SEC_NAME,
-                     SYR_TYPE_char);
-
-    /* 2. number of elements */
-
-    _comm_write_sock(comm,
-                     proc_id,
-                     (const char *)(&n_elts),
-                     1,
-                     SYR_TYPE_int);
-
-    if (n_elts != 0) {
-
-      /* 3. element type name */
-
-      _comm_write_sock(comm,
-                       proc_id,
-                       (const char *)type_name_out,
-                       SYR_COMM_L_TYPE_NAME,
-                       SYR_TYPE_char);
-
-      /* 4. element values */
-
-      _comm_write_sock(comm,
-                       proc_id,
-                       (const char *)elts,
-                       (size_t)n_elts,
-                       elt_type);
-
-    }
-
-  }
-
-#endif /* (HAVE_SOCKET) */
+  if (n_elts > 0)
+    _comm_mpi_body((void *)elts,
+                   n_elts,
+                   elt_type,
+                   comm,
+                   SYR_COMM_MODE_SEND,
+                   proc_id);
 
   /* Optional logging */
   /*----------------- */
@@ -1544,68 +911,17 @@ syr_comm_read_header(char              *sec_name,
                    proc_id,
                    SYR_COMM_MODE_RECEIVE);
 
-#if defined(HAVE_MPI)
-
   /* MPI communication */
   /*------------------ */
 
-  if (comm->type == SYR_COMM_TYPE_MPI) {
+  _comm_mpi_header(sec_name,
+                   &(comm->n_sec_elts[proc_id]),
+                   type_name,
+                   comm,
+                   SYR_COMM_MODE_RECEIVE,
+                   proc_id);
 
-    _comm_mpi_header(sec_name,
-                     &(comm->n_sec_elts[proc_id]),
-                     type_name,
-                     comm,
-                     SYR_COMM_MODE_RECEIVE,
-                     proc_id);
-
-    *n_elts = comm->n_sec_elts[proc_id];
-
-  }
-
-#endif /* (HAVE_MPI) */
-
-#if defined(HAVE_SOCKET)
-
-  /* Socket communication */
-  /*--------------------- */
-
-  if (comm->type == SYR_COMM_TYPE_SOCKET) {
-
-    /* 1. section name */
-
-    _comm_read_sock(comm,
-                    proc_id,
-                    (char *)sec_name,
-                    SYR_COMM_L_SEC_NAME,
-                    SYR_TYPE_char);
-
-    sec_name[SYR_COMM_L_SEC_NAME] = '\0';
-
-    /* 2. number of elements */
-
-    _comm_read_sock(comm,
-                    proc_id,
-                    (char *) &(comm->n_sec_elts[proc_id]),
-                    1,
-                    SYR_TYPE_int);
-
-    *n_elts = comm->n_sec_elts[proc_id];
-
-    if (comm->n_sec_elts[proc_id] != 0) {
-
-      /* 3. element type name */
-
-      _comm_read_sock(comm,
-                      proc_id,
-                      (char *)type_name,
-                      SYR_COMM_L_TYPE_NAME,
-                      SYR_TYPE_char);
-
-    }
-
-  }
-
-#endif /* (HAVE_SOCKET) */
+  *n_elts = comm->n_sec_elts[proc_id];
 
   sec_name[SYR_COMM_L_SEC_NAME] = '\0';
   type_name[SYR_COMM_L_TYPE_NAME] = '\0';
@@ -1730,24 +1046,12 @@ syr_comm_read_body(int                n_sec_elts,
 
     /* Effective read */
 
-#if defined(HAVE_MPI)
-    if (comm->type == SYR_COMM_TYPE_MPI)
-      _comm_mpi_body((void *)_sec_elts,
-                     n_sec_elts,
-                     elt_type,
-                     comm,
-                     SYR_COMM_MODE_RECEIVE,
-                     proc_id);
-#endif /* (HAVE_MPI) */
-
-#if defined(HAVE_SOCKET)
-    if (comm->type == SYR_COMM_TYPE_SOCKET)
-      _comm_read_sock(comm,
-                      proc_id,
-                      (char *)_sec_elts,
-                      (size_t)n_sec_elts,
-                      elt_type);
-#endif /* (HAVE_SOCKET) */
+    _comm_mpi_body((void *)_sec_elts,
+                   n_sec_elts,
+                   elt_type,
+                   comm,
+                   SYR_COMM_MODE_RECEIVE,
+                   proc_id);
 
     /* Verification */
     /*------------- */

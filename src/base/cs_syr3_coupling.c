@@ -140,7 +140,6 @@ struct _cs_syr3_coupling_t {
   /* Communication structure */
 
   cs_syr3_comm_t      *comm;             /* Communicator */
-  cs_syr3_comm_type_t  comm_type;        /* Communicator type */
   int                  comm_echo;        /* Optional echo to standard output */
 
 #if defined(HAVE_MPI)
@@ -988,9 +987,6 @@ _dump_syr_coupling(cs_syr3_coupling_t  *syr_coupling)
     bft_printf("Coupling ommunicator: %s\n",
                cs_syr3_comm_get_name(syr_coupling->comm));
 
-  bft_printf("\nCommunication type: %i\n",
-             syr_coupling->comm_type);
-
 #if defined(HAVE_MPI)
   bft_printf("(MPI) rank of SYRTHES process: %i\n",
              syr_coupling->syr_proc_rank);
@@ -1038,22 +1034,6 @@ cs_syr3_coupling_by_id(int coupling_id)
     retval = cs_glob_syr3_couplings[coupling_id];
 
   return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Get communicator type associated with SYRTHES coupling
- *
- * parameters:
- *   syr_coupling <-- SYRTHES coupling structure
- *
- * returns:
- *   communicator type
- *----------------------------------------------------------------------------*/
-
-cs_syr3_comm_type_t
-cs_syr3_coupling_get_comm_type(const cs_syr3_coupling_t *syr_coupling)
-{
-  return syr_coupling->comm_type;
 }
 
 /*----------------------------------------------------------------------------
@@ -1158,7 +1138,6 @@ cs_syr3_coupling_add(int                 dim,
                      const char         *face_sel_criterion,
                      const char         *syr_name,
                      int                 syr_proc_rank,
-                     cs_syr3_comm_type_t comm_type,
                      int                 verbosity,
                      int                 visualization)
 {
@@ -1212,7 +1191,6 @@ cs_syr3_coupling_add(int                 dim,
   /* Communicators */
 
   syr_coupling->comm_echo = verbosity;
-  syr_coupling->comm_type = comm_type;
   syr_coupling->comm = NULL;
 
 #if defined(HAVE_MPI)
@@ -1244,7 +1222,6 @@ cs_syr3_coupling_init_comm(cs_syr3_coupling_t  *syr_coupling,
 #if defined(HAVE_MPI)
                               syr_coupling->syr_proc_rank,
 #endif
-                              syr_coupling->comm_type,
                               syr_coupling->comm_echo);
 
   if (syr_coupling->comm_echo >= 0) {
@@ -1305,11 +1282,6 @@ cs_syr3_coupling_all_destroy(void)
 
     if (syr_coupling->if_set != NULL)
       syr_coupling->if_set = fvm_interface_set_destroy(syr_coupling->if_set);
-
-#if defined(HAVE_SOCKET)
-    if (syr_coupling->comm_type == CS_SYR3_COMM_TYPE_SOCKET)
-      cs_syr3_comm_finalize_socket();
-#endif
 
     BFT_FREE(syr_coupling->syr_name);
 

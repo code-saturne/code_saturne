@@ -1248,7 +1248,6 @@ class syrthes3_domain(base_domain):
                  package,
                  name = None,
                  echo_comm = None,       # coupling verbosity
-                 coupling_mode = 'MPI',  # 'MPI' or 'sockets'
                  coupled_apps = None,    # coupled domain names if n_domains > 1
                  pset_size = 1):         # size of processor set (for IBM BG/P)
 
@@ -1263,8 +1262,6 @@ class syrthes3_domain(base_domain):
         self.result_dir = None
         self.src_dir = None
         self.echo_comm = echo_comm
-
-        self.set_coupling_mode(coupling_mode)
 
         self.coupled_apps = coupled_apps
 
@@ -1284,21 +1281,6 @@ class syrthes3_domain(base_domain):
         # executable)
 
         self.result_dir = None
-
-    #---------------------------------------------------------------------------
-
-    def set_coupling_mode(self, coupling_mode):
-
-        # Check that coupling mode is either 'MPI' or 'sockets'
-        coupling_modes = ('MPI', 'sockets')
-        if coupling_mode not in coupling_modes:
-            err_str = \
-                'SYRTHES3 coupling mode "' + str(coupling_mode) + '" unknown.\n' \
-                + 'Allowed modes: ' + str(coupling_modes) + '.\n'
-            raise RunCaseError(err_str)
-
-        # Coupling mode
-        self.coupling_mode = coupling_mode
 
     #---------------------------------------------------------------------------
 
@@ -1370,16 +1352,11 @@ class syrthes3_domain(base_domain):
         if self.echo_comm != None:
             args += ' --echo-comm ' + str(self.echo_comm)
 
-        if self.coupling_mode == 'MPI':
-            args += ' --app-name ' + os.path.basename(self.case_dir)
-            if self.coupled_apps != None:
-                args += ' --comm-mpi ' + any_to_str(self.coupled_apps)
-            else:
-                args += ' --comm-mpi '
-
-        elif self.coupling_mode == 'sockets':
-            if 'host_port' in kw:
-                args += ' --comm-socket ' + any_to_str(kw['host_port'])
+        args += ' --app-name ' + os.path.basename(self.case_dir)
+        if self.coupled_apps != None:
+            args += ' --comm-mpi ' + any_to_str(self.coupled_apps)
+        else:
+            args += ' --comm-mpi '
 
         # handled directly
 
@@ -1517,8 +1494,6 @@ class syrthes_domain(base_domain):
         self.result_dir = None
         self.echo_comm = None
 
-        self.set_coupling_mode('MPI')
-
         self.exec_solver = True
 
         # Generation of SYRTHES case deferred until we know how
@@ -1536,21 +1511,6 @@ class syrthes_domain(base_domain):
 
         self.data_dir = self.case_dir
         self.src_dir = self.case_dir
-
-    #---------------------------------------------------------------------------
-
-    def set_coupling_mode(self, coupling_mode):
-
-        # Check that coupling mode is either 'MPI' or 'sockets'
-        coupling_modes = ('MPI')
-        if coupling_mode not in coupling_modes:
-            err_str = \
-                'SYRTHES4 coupling mode "' + str(coupling_mode) + '" unknown.\n' \
-                + 'Allowed modes: ' + str(coupling_modes) + '.\n'
-            raise RunCaseError(err_str)
-
-        # Coupling mode
-        self.coupling_mode = coupling_mode
 
     #---------------------------------------------------------------------------
 
@@ -1601,9 +1561,7 @@ class syrthes_domain(base_domain):
         if self.syrthes_case.n_procs_ray > 0:
             args += ' -r ' + str(self.n_procs_ray)
 
-        if self.coupling_mode == 'MPI':
-
-            args += ' --name ' + self.name
+        args += ' --name ' + self.name
 
         # Output to a logfile
         args += ' --log ' + self.logfile

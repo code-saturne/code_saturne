@@ -47,9 +47,7 @@
 #include <errno.h>
 #endif
 
-#if defined(HAVE_MPI)
 #include <mpi.h>
-#endif
 
 /*----------------------------------------------------------------------------
  * PLE library headers
@@ -57,9 +55,7 @@
 
 #include <ple_defs.h>
 
-#if defined(HAVE_MPI)
 #include <ple_coupling.h>
-#endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -82,10 +78,8 @@ extern "C" {
 
 char syr_glob_build_date[] = __DATE__;  /* Build date */
 
-#if defined(HAVE_MPI)
 MPI_Comm  syr_glob_mpi_comm = MPI_COMM_NULL;
 ple_coupling_mpi_set_t *syr_glob_coupling_world = NULL;
-#endif
 
 /*===========================================================================
  * Private function definitions
@@ -121,7 +115,6 @@ static void _syr_error_handler
 
   assert(0);   /* Use of assert() here allows interception by a debugger. */
 
-#if defined(HAVE_MPI)
   {
     int mpi_flag;
 
@@ -131,12 +124,9 @@ static void _syr_error_handler
       MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
   }
-#endif /* HAVE_MPI */
 
   exit(EXIT_FAILURE);
 }
-
-#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * First analysis of the command line to determine if we require MPI,
@@ -294,8 +284,6 @@ _app_name(int    argc,
   return app_name;
 }
 
-#endif /* HAVE_MPI */
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -309,8 +297,6 @@ syr_errhandler_initialize(void)
 {
   ple_error_handler_set(_syr_error_handler);
 }
-
-#if defined (HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Initialize MPI communication if necessary
@@ -519,8 +505,6 @@ syr_mpi_appinfo(const char  *app_name,
               "Application MPI \"%s\" non trouvee.", app_name);
 }
 
-#endif /* defined (HAVE_MPI) */
-
 /*----------------------------------------------------------------------------
  * Exit / Stop
  *----------------------------------------------------------------------------*/
@@ -536,7 +520,6 @@ syr_exit(int status)
     assert(0);
 #endif
 
-#if defined(HAVE_MPI)
     {
       int mpi_flag;
 
@@ -545,7 +528,6 @@ syr_exit(int status)
       if (mpi_flag != 0)
         MPI_Abort(MPI_COMM_WORLD, status);
     }
-#endif
 
   }
 

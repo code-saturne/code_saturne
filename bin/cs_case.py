@@ -177,28 +177,6 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def check_and_init_couplings(self):
-
-        """
-        Check consistency of coupling modes.
-        """
-
-        coupling_mode = None
-
-        if len(self.domains) > 0:
-            coupling_mode = 'MPI'
-
-        if len(self.syr_domains) > 0:
-            if coupling_mode == None:
-                coupling_mode = self.syr_domains[0].coupling_mode
-            for d in self.syr_domains:
-                if d.coupling_mode != coupling_mode:
-                    err_str = 'This script can only handle SYRTHES couplings ' \
-                        + 'using the same coupling mode.\n'
-                    raise RunCaseError(err_str)
-
-    #---------------------------------------------------------------------------
-
     def print_procs_distribution(self):
 
         """
@@ -254,8 +232,7 @@ class case:
             np_list.append(d.get_n_procs())
 
         for d in self.syr_domains:
-            if d.coupling_mode == 'MPI':
-                np_list.append(d.get_n_procs())
+            np_list.append(d.get_n_procs())
 
         n_procs_tot = 0
         n_procs_min = 0
@@ -359,9 +336,8 @@ class case:
             app_id += 1
 
         for d in self.syr_domains:
-            if d.coupling_mode == 'MPI':
-                d.set_n_procs(np_list[app_id][0])
-                app_id += 1
+            d.set_n_procs(np_list[app_id][0])
+            app_id += 1
 
         # Warn in case of over or under-subscription
 
@@ -738,13 +714,12 @@ class case:
         app_id = 0
 
         for d in self.syr_domains:
-            if d.coupling_mode == 'MPI':
-                s_args = d.solver_command()
-                if len(cmd) > 0:
-                    cmd += ' : '
-                cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
-                    + ' ' + s_args[1] + s_args[2]
-                app_id += 1
+            s_args = d.solver_command()
+            if len(cmd) > 0:
+                cmd += ' : '
+            cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
+                + ' ' + s_args[1] + s_args[2]
+            app_id += 1
 
         for d in self.domains:
             s_args = d.solver_command(app_id=app_id)
@@ -772,15 +747,14 @@ class case:
         app_id = 0
 
         for d in self.syr_domains:
-            if d.coupling_mode == 'MPI':
-                s_args = d.solver_command()
-                cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
-                    + ' ' + s_args[1] + s_args[2] + '\n'
-                e.write(cmd)
-                app_id += 1
+            s_args = d.solver_command()
+            cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
+                + ' ' + s_args[1] + s_args[2] + '\n'
+            e.write(cmd)
+            app_id += 1
 
         for d in self.domains:
-            s_args = d.solver_command(app_id=app_id)
+            s_args = d.solver_command()
             cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
                 + ' ' + s_args[1] + s_args[2] + '\n'
             e.write(cmd)
@@ -914,25 +888,24 @@ class case:
         nr = 0
 
         for d in self.syr_domains:
-            if d.coupling_mode == 'MPI':
 
-                nr += d.n_procs
-                s_args = self.domains[0].solver_command()
-                arg0 = os.path.split(s_args[1])[1]
+            nr += d.n_procs
+            s_args = self.domains[0].solver_command()
+            arg0 = os.path.split(s_args[1])[1]
 
-                e.write('  else if (rank < ' + str(nr) + ') {\n')
-                e.write('    const char *filename = "' + s_args[0] + '";\n')
+            e.write('  else if (rank < ' + str(nr) + ') {\n')
+            e.write('    const char *filename = "' + s_args[0] + '";\n')
 
-                a_s = '    char *const argv[] = {"' + arg0 + '"'
-                for arg in s_args[2].split(' ')[1:]:
-                    a_s += ', "' + arg + '"'
-                a_s += ', (char *)NULL};\n'
-                e.write(a_s)
-                e.write('    chdir("' + s_args[0] + '");\n')
-                e.write('    execve(filename, argv, envp);\n'
-                        '  }\n')
+            a_s = '    char *const argv[] = {"' + arg0 + '"'
+            for arg in s_args[2].split(' ')[1:]:
+                a_s += ', "' + arg + '"'
+            a_s += ', (char *)NULL};\n'
+            e.write(a_s)
+            e.write('    chdir("' + s_args[0] + '");\n')
+            e.write('    execve(filename, argv, envp);\n'
+                    '  }\n')
 
-                app_id += 1
+            app_id += 1
 
         for d in self.domains:
 
@@ -990,13 +963,11 @@ class case:
         if n_procs == None:
             n_procs = 0
             for d in self.syr_domains:
-                if d.coupling_mode == 'MPI':
-                    n_procs += d.n_procs
+                n_procs += d.n_procs
 
         n_mpi_syr = 0
         for d in self.syr_domains:
-            if d.coupling_mode == 'MPI':
-                n_mpi_syr += 1
+            n_mpi_syr += 1
 
         # Determine if an MPMD syntax (mpiexec variant) will be used
 
@@ -1079,41 +1050,14 @@ fi
 
         # Case with only one cs_solver instance possibly under MPI
 
-        if len(self.domains) == 1 and n_mpi_syr == 0:
+        if len(self.domains) == 1 and len(self.syr_domains) == 0:
 
-            if len(self.syr_domains) == 0:
+            s_args = self.domains[0].solver_command()
 
-                s_args = self.domains[0].solver_command()
-
-                s.write('cd ' + s_args[0] + '\n\n')
-                s.write('# Run solver.\n')
-                s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2]
-                        + ' $YACS_ARGS' + ' $@\n')
-
-            else: # coupling through sockets
-
-                s.write('CS_PORT=35623\n')
-
-                syr_id = 0
-                for d in self.syr_domains:
-                    s_args = d.solver_command(host_port='localhost:$CS_PORT')
-                    s.write('cd ' + s_args[0] + '\n')
-                    s.write(s_args[1] + s_args[2] + ' $@ &\n')
-                    s.write('SYR_PID' + str(syr_id) + '=$!\n')
-                    syr_id += 1
-
-                s_args = self.domains[0].solver_command(syr_port='$CS_PORT')
-                s.write('cd ' + s_args[0] + '\n')
-                s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2] + ' $@\n')
-                s.write('CS_PID=$!\n')
-
-                s.write('wait $CS_PID ; CS_RET=$?\n')
-
-                syr_id = 0
-                for d in self.syr_domains:
-                    s.write('wait SYR_PID' + str(syr_id)
-                            + 'SYR_RET=$? ; ((CS_RET=CS_RET+SYR_RET))\n')
-                    syr_id += 1
+            s.write('cd ' + s_args[0] + '\n\n')
+            s.write('# Run solver.\n')
+            s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2]
+                    + ' $YACS_ARGS' + ' $@\n')
 
         # General case
 
@@ -1218,10 +1162,6 @@ fi
         """
         Prepare data for calculation.
         """
-
-        # Check coupling modes consistency and set defaults
-
-        self.check_and_init_couplings()
 
         # General values
 

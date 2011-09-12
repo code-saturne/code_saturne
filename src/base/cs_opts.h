@@ -85,10 +85,6 @@ typedef struct {
                                    1: timing (CPU + Walltime) mode
                                    2: MPI trace-friendly mode */
 
-  /* Server socket for SYRTHES 3 coupling */
-
-  int           syr_socket;     /* socket number to use, or -1 */
-
   /* Connection with YACS or proxy */
 
   char          *yacs_module;   /* Path to YACS module */

@@ -101,19 +101,6 @@ cs_syr3_coupling_t *
 cs_syr3_coupling_by_id(int coupling_id);
 
 /*----------------------------------------------------------------------------
- * Get communicator type associated with SYRTHES coupling
- *
- * parameters:
- *   syr_coupling <-- SYRTHES coupling structure
- *
- * returns:
- *   communicator type
- *----------------------------------------------------------------------------*/
-
-cs_syr3_comm_type_t
-cs_syr3_coupling_get_comm_type(const cs_syr3_coupling_t  *syr_coupling);
-
-/*----------------------------------------------------------------------------
  * Get communicator associated with SYRTHES coupling
  *
  * parameters:
@@ -184,7 +171,6 @@ cs_syr3_coupling_add(int                 dim,
                      const char         *face_sel_criterion,
                      const char         *syr_name,
                      int                 syr_proc_rank,
-                     cs_syr3_comm_type_t comm_type,
                      int                 verbosity,
                      int                 visualization);
 

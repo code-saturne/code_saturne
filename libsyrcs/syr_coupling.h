@@ -60,17 +60,12 @@ typedef struct _syr_coupling_t syr_coupling_t;
  * arguments:
  *   coupling_id <-- Id of Syrthes coupling (0 to n-1)
  *   cs_app_name <-- Application name of Code_Saturne MPI process
- *   sock_str    <-- hostname:socknum of first coupled
- *                   Code_Saturne process, or NULL
- *   comm_type   <-- Type of comunication used
  *   comm_echo   <-- Optional echo to standard output
  *----------------------------------------------------------------------------*/
 
 syr_coupling_t  *
 syr_coupling_initialize(int               coupling_id,
                         const char       *cs_app_name,
-                        const char       *sock_str,
-                        syr_comm_type_t   comm_type,
                         int               comm_echo);
 
 /*----------------------------------------------------------------------------

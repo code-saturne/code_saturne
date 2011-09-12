@@ -230,7 +230,7 @@ cs_run(void)
 
   /* Initialize SYRTHES couplings and communication if necessary */
 
-  cs_syr_coupling_all_init(opts.syr_socket);
+  cs_syr_coupling_all_init();
 
   /* Initialize Code_Saturne couplings and communication if necessary */
 

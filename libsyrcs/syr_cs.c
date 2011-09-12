@@ -42,9 +42,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#if defined(HAVE_MPI)
 #include <mpi.h>
-#endif
 
 /*----------------------------------------------------------------------------
  * PLE library headers
@@ -131,24 +129,13 @@ syr_cs_loc_aidelc(char  *nom,
 {
   FILE *e = stderr;
 
-#ifdef HAVE_MPI
   char opt_mpi[]  = "              [--comm-mpi <a1> <a2> ...]\n";
-#else
-  char opt_mpi[]  = "";
-#endif
-
-#ifdef HAVE_SOCKET
-  char opt_sock[]
-    = "              [--comm-socket <machine1:port> <machine2:port> ...]\n";
-#else
-  char opt_sock[] = "";
-#endif
 
   fprintf
     (e,
-     "\nUtilisation : %s\n%s%s"
+     "\nUtilisation : %s\n%s"
      "              [--app_name nom] [--echo-comm <n>] [-h]\n",
-     nom, opt_sock, opt_mpi);
+     nom, opt_mpi);
 
   if (niveau == 2) {
     fprintf
@@ -158,17 +145,10 @@ syr_cs_loc_aidelc(char  *nom,
       (e,
        " --app-name <nom> : nom d'application SYRTHES (defaut:\n"
        "                    nom du repertoire d'execution)\n");
-#ifdef HAVE_MPI
     fprintf
       (e,
        " --comm-mpi :       communication par MPI\n"
        "                    <a1 a2 ...> : noms d'applications couplees\n");
-#endif
-#ifdef HAVE_SOCKET
-    fprintf
-      (e,
-       " --comm-socket <machine:port> : communication par sockets IP\n");
-#endif
     fprintf
       (e,
        " --echo-comm <n> :  echo de la communication ;\n"
@@ -296,11 +276,8 @@ main(int argc,
 
   int nbr_cas_sat = 0;           /* number of Code_Saturne - SYRTHES couplings */
   int echo_comm = -1;            /* Communication verbosity */
-  syr_comm_type_t type_comm = SYR_COMM_TYPE_NULL; /* Communication type */
   char **app_sat = NULL;         /* application names of coupled Code_Saturne
                                     instances in the global communicator */
-  char **sock_str = NULL;        /* strings for server sockets description */
-
   char *log_name = NULL;         /* name of log file (default: log to stdout) */
   const char *app_name = NULL;   /* name of this SYRTHES application */
 
@@ -310,10 +287,8 @@ main(int argc,
 
   /* Initialize MPI if necessary (pre-analyze command line) */
 
-#if defined (HAVE_MPI)
   syr_mpi_initialize(&argc, &argv);
   atexit(syr_mpi_exit_force);
-#endif
 
   /* Redirect output if necessary (pre-analyze command line) */
 
@@ -351,59 +326,21 @@ main(int argc,
     if (strcmp(s, "--app-name") == 0)
       app_name = syr_cs_loc_argstr(++numarg, argc, argv, &argerr);
 
-#ifdef HAVE_MPI
     else if (strcmp(s, "--comm-mpi") == 0) {
-
-      if (type_comm == SYR_COMM_TYPE_SOCKET) {
-        syr_cs_loc_aidelc(argv[0], argerr);
-        ple_error(__FILE__, __LINE__, 0,
-                  "Il n'est pas possible de melanger des couplages\n"
-                  "utilisant des \"sockets\" et MPI.\n");
-      }
-
-      type_comm = SYR_COMM_TYPE_MPI;
 
       while (numarg + 1 < argc && *(argv[numarg + 1]) != '-') {
         PLE_REALLOC(app_sat, nbr_cas_sat + 1, char *);
-        PLE_REALLOC(sock_str, nbr_cas_sat + 1, char *);
         app_sat[nbr_cas_sat] = syr_cs_loc_argstr(++numarg, argc, argv, &argerr);
-        sock_str[nbr_cas_sat] = NULL;
         nbr_cas_sat++;
       }
 
       if (nbr_cas_sat == 0) {
         PLE_REALLOC(app_sat, 1, char *);
-        PLE_REALLOC(sock_str, 1, char *);
         app_sat[nbr_cas_sat] = NULL;
-        sock_str[nbr_cas_sat] = NULL;
         nbr_cas_sat = 1;
       }
 
     }
-#endif
-#ifdef HAVE_SOCKET
-    else if (strcmp(s, "--comm-socket") == 0) {
-
-      if (type_comm == SYR_COMM_TYPE_MPI) {
-        syr_cs_loc_aidelc(argv[0], argerr);
-        ple_error(__FILE__, __LINE__, 0,
-                  "Il n'est pas possible de melanger des couplages\n"
-                  "utilisant des \"sockets\" et MPI.\n");
-      }
-
-      type_comm = SYR_COMM_TYPE_SOCKET;
-
-      while (numarg + 1 < argc && *(argv[numarg + 1]) != '-') {
-        PLE_REALLOC(app_sat, nbr_cas_sat + 1, char *);
-        PLE_REALLOC(sock_str, nbr_cas_sat + 1, char *);
-        app_sat[nbr_cas_sat] = NULL;
-        PLE_MALLOC(sock_str[nbr_cas_sat], strlen(argv[numarg + 1]) + 1, char);
-        strcpy(sock_str[nbr_cas_sat], argv[++numarg]);
-        nbr_cas_sat++;
-      }
-
-    }
-#endif
     else if (strcmp(s, "--echo-comm") == 0 || strcmp(s, "-ec") == 0) {
       if (numarg + 1 < argc && *(argv[numarg + 1]) != '-')
         echo_comm = (int)syr_cs_loc_argint(++numarg, argc, argv, &argerr);
@@ -446,19 +383,9 @@ main(int argc,
 
     syrcoupl[i_cas_sat] = syr_coupling_initialize(i_cas_sat,
                                                   app_sat[i_cas_sat],
-                                                  sock_str[i_cas_sat],
-                                                  type_comm,
                                                   echo_comm);
 
-#if defined (HAVE_SOCKET)
-    PLE_FREE(sock_str[i_cas_sat]);
-#endif
-
   }
-
-#if defined (HAVE_SOCKET)
-  PLE_FREE(sock_str);
-#endif
 
   PLE_FREE(app_sat);
 
@@ -744,10 +671,7 @@ main(int argc,
 
   /* Close MPI communications if necessary */
 
-#if defined (HAVE_MPI)
-  if (type_comm == SYR_COMM_TYPE_MPI)
-    syr_mpi_finalize();
-#endif
+  syr_mpi_finalize();
 
   /* Normal program exit */
 

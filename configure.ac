@@ -446,6 +446,15 @@ AM_CONDITIONAL(HAVE_PARTITIONER, test x$cs_have_partitioner = xyes)
 
 unset cs_have_partitioner
 
+cs_have_libsyrcs=no
+if test x$cs_have_syrthes = xyes -o x$cs_have_mpi = xyes ; then
+  cs_have_libsyrcs=yes
+fi
+
+AM_CONDITIONAL(HAVE_LIBSYRCS, test x$cs_have_libsyrcs = xyes)
+
+unset cs_have_libsyrcs
+
 # Check if we need to force link with C++
 cs_have_link_cxx=no
 if test x$cs_have_med_link_cxx = xyes ; then

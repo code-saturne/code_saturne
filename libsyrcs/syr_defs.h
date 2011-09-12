@@ -96,9 +96,7 @@ typedef enum {
 
 extern char syr_glob_build_date[];  /* Build date */
 
-#if defined (HAVE_MPI)
 extern MPI_Comm  syr_glob_mpi_comm;
-#endif
 
 /*============================================================================
  * Function prototypes
@@ -110,8 +108,6 @@ extern MPI_Comm  syr_glob_mpi_comm;
 
 void
 syr_errhandler_initialize(void);
-
-#if defined (HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Initialize MPI communication
@@ -153,8 +149,6 @@ void
 syr_mpi_appinfo(const char  *app_name,
                 int         *root_rank,
                 int         *n_ranks);
-
-#endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
  * Exit / Stop
