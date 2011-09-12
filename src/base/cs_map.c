@@ -230,15 +230,19 @@ cs_map_name_to_id_destroy(cs_map_name_to_id_t **m)
 {
   if (m != NULL) {
 
-    cs_map_name_to_id_t *_m = *m;
+    if (*m != NULL) {
 
-    BFT_FREE(_m->reverse_id);
-    BFT_FREE(_m->id);
-    BFT_FREE(_m->key);
+      cs_map_name_to_id_t *_m = *m;
 
-    BFT_FREE(_m->keys);
+      BFT_FREE(_m->reverse_id);
+      BFT_FREE(_m->id);
+      BFT_FREE(_m->key);
 
-    BFT_FREE(*m);
+      BFT_FREE(_m->keys);
+
+      BFT_FREE(*m);
+
+    }
   }
 }
 
