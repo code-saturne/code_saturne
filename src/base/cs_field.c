@@ -326,6 +326,286 @@ _find_or_add_key(const char  *name)
   return key_id;
 }
 
+/*============================================================================
+ * Public Fortran function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Map an existing field.
+ *
+ * Fortran interface
+ *
+ * subroutine fldmap (name,   lname,  ireawr, numsui, ierror)
+ * *****************
+ *
+ * character*       name        : <-- : Field name
+ * integer          lname       : <-- : Field name length
+ * integer          iexten      : <-- : 0: intensive; 1: extensive
+ * integer          itycat      : <-- : Field category
+ *                              :     :  0: variable
+ *                              :     :  1: property
+ * integer          ityloc      : <-- : Location type
+ *                              :     :  0: cells
+ *                              :     :  1: interior faces
+ *                              :     :  2: interior faces
+ *                              :     :  3: vertices
+ * integer          idim        : <-- : Field dimension
+ * integer          ilved       : <-- : 0: not intereaved; 1: interleaved
+ * integer          iprev       : <-- : 0: no previous values, 1: previous
+ * cs_real_t*       val         : <-- : Pointer to field values array
+ * cs_real_t*       valp        : <-- : Pointer to values at previous
+ *                              :     : time step if iprev = 1
+ * integer          idfld       : --> : id of mapped field
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (fldmap, FLDMAP)
+(
+ const char       *name,
+ const cs_int_t   *lname,
+ const cs_int_t   *iexten,
+ const cs_int_t   *itycat,
+ const cs_int_t   *ityloc,
+ const cs_int_t   *idim,
+ const cs_int_t   *ilved,
+ const cs_int_t   *iprev,
+ cs_real_t        *val,
+ cs_real_t        *valp,
+ cs_int_t         *idfld
+ CS_ARGF_SUPP_CHAINE              /*   (possible 'length' arguments added
+                                        by many Fortran compilers) */
+)
+{
+  char *bufname;
+  int type_flag = 0;
+  bool interleaved = (*ilved == 0) ? false : true;
+  cs_real_t *_valp = NULL;
+
+  cs_field_t *f = NULL;
+
+  bufname = cs_base_string_f_to_c_create(name, *lname);
+
+  if (*iexten)
+    type_flag = CS_FIELD_EXTENSIVE;
+  else
+    type_flag = CS_FIELD_INTENSIVE;
+
+  if (*itycat == 0) {
+    type_flag = type_flag | CS_FIELD_VARIABLE;
+    _valp = valp;
+  }
+  else if (*itycat == 1) {
+    type_flag = type_flag | CS_FIELD_PROPERTY;
+    _valp = valp;
+  }
+  else if (*itycat == 2)
+    type_flag = type_flag | CS_FIELD_POSTPROCESS;
+  else if (*itycat == 3)
+    type_flag = type_flag | CS_FIELD_USER;
+
+  if (*iprev)
+    _valp = valp;
+
+  f = cs_field_create_mapped(bufname,
+                             type_flag,
+                             *ityloc,
+                             *idim,
+                             interleaved,
+                             val,
+                             _valp);
+
+  cs_base_string_f_to_c_free(&bufname);
+
+  *idfld = f->id;
+}
+
+/*----------------------------------------------------------------------------
+ * Return an id associated with a given field name if present.
+ *
+ * If the field has not been defined previously, -1 is returned.
+ *
+ * Fortran interface
+ *
+ * subroutine fldfid (name,   lname,  ifield)
+ * *****************
+ *
+ * character*       name        : <-- : Field name
+ * integer          lname       : <-- : Field name length
+ * integer          ifield      : --> : id of given key
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (fldfid, FLDFID)
+(
+ const char       *name,
+ const cs_int_t   *lname,
+ cs_int_t         *ifield
+ CS_ARGF_SUPP_CHAINE              /*   (possible 'length' arguments added
+                                        by many Fortran compilers) */
+)
+{
+  char *bufname;
+
+  bufname = cs_base_string_f_to_c_create(name, *lname);
+
+  *ifield = cs_map_name_to_id_try(_field_map, bufname);
+
+  cs_base_string_f_to_c_free(&bufname);
+}
+
+/*----------------------------------------------------------------------------
+ * Return an id associated with a given key name if present.
+ *
+ * If the key has not been defined previously, -1 is returned.
+ *
+ * Fortran interface
+ *
+ * subroutine fldkid (name,   lname,  ikeyid)
+ * *****************
+ *
+ * character*       name        : <-- : key
+ * integer          lname       : <-- : Key name length
+ * integer          ikeyid      : --> : id of given key
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (fldkid, FLDKID)
+(
+ const char       *name,
+ const cs_int_t   *lname,
+ cs_int_t         *ikeyid
+ CS_ARGF_SUPP_CHAINE              /*   (possible 'length' arguments added
+                                        by many Fortran compilers) */
+)
+{
+  char *bufname;
+
+  bufname = cs_base_string_f_to_c_create(name, *lname);
+
+  *ikeyid = cs_field_key_id_try(bufname);
+
+  cs_base_string_f_to_c_free(&bufname);
+}
+
+/*----------------------------------------------------------------------------
+ * Assign an integer value for a given key to a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * subroutine fldski (ifield, ikey, value)
+ * *****************
+ *
+ * integer          ifield      : <-- : Field id
+ * integer          ikey        : <-- : Key id
+ * integer          value       : <-- : Associated value
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (fldski, FLDSKI)
+(
+ const cs_int_t   *ifield,
+ const cs_int_t   *ikey,
+ cs_int_t         *value
+)
+{
+  int retval = 0;
+
+  cs_field_t *f = cs_field_by_id(*ifield);
+
+  retval = cs_field_set_key_int(f, *ikey, *value);
+
+  if (retval != 0) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, *ikey);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error %d assigning integer value to Field \"%s\" with\n"
+                "type flag %d with key %d (\"%s\")."),
+              retval, f->name, f->type, *ikey, key);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Return a integer value for a given key associated with a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * subroutine fldgki (ifield, ikey, value)
+ * *****************
+ *
+ * integer          ifield      : <-- : Field id
+ * integer          ikey        : <-- : Key id
+ * integer          value       : --> : Associated value
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (fldgki, FLDGKI)
+(
+ const cs_int_t   *ifield,
+ const cs_int_t   *ikey,
+ cs_int_t         *value
+)
+{
+  const cs_field_t *f = cs_field_by_id(*ifield);
+  *value = cs_field_get_key_int(f, *ikey);
+}
+
+/*----------------------------------------------------------------------------
+ * Assign a floating point value for a given key to a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * subroutine fldskd (ifield, ikey, value)
+ * *****************
+ *
+ * integer          ifield      : <-- : Field id
+ * integer          ikey        : <-- : Key id
+ * double precision value       : <-- : Associated value
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (fldskd, FLDSKD)
+(
+ const cs_int_t   *ifield,
+ const cs_int_t   *ikey,
+ cs_real_t        *value
+)
+{
+  int retval = 0;
+
+  cs_field_t *f = cs_field_by_id(*ifield);
+
+  retval = cs_field_set_key_double(f, *ikey, *value);
+
+  if (retval != 0) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, *ikey);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error %d assigning real value to Field \"%s\" with\n"
+                "type flag %d with key %d (\"%s\")."),
+              retval, f->name, f->type, *ikey, key);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Return a floating point value for a given key associated with a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * subroutine fldgkd (ifield, ikey, value)
+ * *****************
+ *
+ * integer          ifield      : <-- : Field id
+ * integer          ikey        : <-- : Key id
+ * double precision value       : --> : Associated value
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (fldgkd, FLDGKD)
+(
+ const cs_int_t   *ifield,
+ const cs_int_t   *ikey,
+ cs_real_t        *value
+)
+{
+  const cs_field_t *f = cs_field_by_id(*ifield);
+  *value = cs_field_get_key_double(f, *ikey);
+}
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -350,10 +630,11 @@ cs_field_n_fields(void)
  *
  * For fields with a dimension greater than 1, components are interleaved.
  *
- * \param[in]  name         field name
- * \param[in]  type_flag    mask of field property and category values
- * \param[in]  location_id  id of associated location
- * \param[in]  dim          field dimension (number of components)
+ * \param[in]  name          field name
+ * \param[in]  type_flag     mask of field property and category values
+ * \param[in]  location_id   id of associated location
+ * \param[in]  dim           field dimension (number of components)
+ * \param[in]  has_previous  maintain values at the previous time step ?
  *
  * \return  pointer to new field.
  */
@@ -363,7 +644,8 @@ cs_field_t *
 cs_field_create(const char   *name,
                 int           type_flag,
                 int           location_id,
-                int           dim)
+                int           dim,
+                bool          has_previous)
 {
   cs_field_t  *f =  _field_create(name,
                                   type_flag,
@@ -376,7 +658,7 @@ cs_field_create(const char   *name,
 
   /* Add previous time step values if necessary */
 
-  if ((type_flag & CS_FIELD_VARIABLE) || (type_flag & CS_FIELD_PROPERTY))
+  if (has_previous)
     f->val_pre = _add_val(n_elts[2], dim);
 
   return f;
@@ -416,25 +698,8 @@ cs_field_create_mapped(const char   *name,
   f->val = val;
   f->is_owner = false;
 
-  if ((type_flag & CS_FIELD_VARIABLE) || (type_flag & CS_FIELD_PROPERTY)) {
-    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(location_id);
-    if (val_pre != NULL)
-      f->val_pre = val_pre;
-    else if (n_elts[2] > 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Mapped field \"%s\" with type flag %d\n"
-                  "is a variable or property, but array of previous values "
-                  "is not defined."),
-                name, type_flag);
-  }
-  else {
-    if (val_pre != NULL)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Mapped field \"%s\" with type flag %d\n"
-                  "is not a variable or property, but array of previous values "
-                  "is defined."),
-                name, type_flag);
-  }
+  if (val_pre != NULL)
+    f->val_pre = val_pre;
 
   return f;
 }
@@ -758,8 +1023,8 @@ cs_field_set_key_int(cs_field_t  *f,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_field_get_key_int(cs_field_t  *f,
-                     int          key_id)
+cs_field_get_key_int(const cs_field_t  *f,
+                     int                key_id)
 {
   int errcode = CS_FIELD_OK;
 
@@ -860,8 +1125,8 @@ cs_field_set_key_double(cs_field_t  *f,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_field_get_key_double(cs_field_t  *f,
-                        int          key_id)
+cs_field_get_key_double(const cs_field_t  *f,
+                        int                key_id)
 {
   int errcode = CS_FIELD_OK;
 
