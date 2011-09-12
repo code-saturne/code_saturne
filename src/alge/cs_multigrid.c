@@ -559,6 +559,8 @@ _multigrid_destroy(cs_multigrid_t  **mg)
 
   assert(*mg != NULL);
 
+  BFT_FREE(_mg->lv_info);
+
   _multigrid_info_unset(&(_mg->info));
 
   for (ii = 0; ii < _mg->n_levels_max; ii++)
