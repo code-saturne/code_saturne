@@ -78,6 +78,7 @@ cs_coupling.h \
 cs_defs.h \
 cs_ext_neighborhood.h \
 cs_file.h \
+cs_field.h \
 cs_halo.h \
 cs_io.h \
 cs_log.h \
@@ -168,6 +169,7 @@ cscpfb.f90 \
 cs_coupling.c \
 cs_ext_neighborhood.c \
 csflsh.f90 \
+cs_field.c \
 cs_halo.c \
 csinit.f90 \
 cs_numbering.c \

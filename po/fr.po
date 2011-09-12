@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-09-01 13:09+0200\n"
+"POT-Creation-Date: 2011-09-12 11:08+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4844,6 +4844,222 @@ msgstr ""
 "\n"
 "  %s"
 
+msgid "intensive"
+msgstr "intensif"
+
+msgid "extensive"
+msgstr "extensif"
+
+msgid "variable"
+msgstr "variable"
+
+msgid "property"
+msgstr "propriété"
+
+msgid "postprocess"
+msgstr "post traitment"
+
+msgid "user"
+msgstr "utilisateur"
+
+#, c-format
+msgid ""
+"Field \"%s\"\n"
+" may not be defined as both intensive and extensive."
+msgstr ""
+"Le champ \"%s\"\n"
+" ne peut pas être à la fois extensif et intensif."
+
+#, c-format
+msgid ""
+"Mesh location %d associated with field \"%s\"\n"
+" has not been defined yet."
+msgstr ""
+"Le support de maillage %d associé avec le champ \"%s\"\n"
+" n'a pas encore été défini."
+
+#, c-format
+msgid ""
+"Mapped field \"%s\" with type flag %d\n"
+"is a variable or property, but array of previous values is not defined."
+msgstr ""
+"Le champ partagé \"%s\" avec indicateur de type %d est une\n"
+"variable ou propriété, mais le tableau de valeurs précédentes n'est pas "
+"défini."
+
+#, c-format
+msgid ""
+"Mapped field \"%s\" with type flag %d\n"
+"is not a variable or property, but array of previous values is defined."
+msgstr ""
+"Le champ partagé \"%s\" avec indicateur de type %d n'est pas une\n"
+"variable ou propriété, mais le tableau de valeurs précédentes est défini."
+
+#, c-format
+msgid "Field with id %d is not defined."
+msgstr "Le champ avec id %d n'est pas défini."
+
+#, c-format
+msgid "Field \"%s\" is not defined."
+msgstr "Le champ \"%s\" n'est pas défini."
+
+#, c-format
+msgid ""
+"Field \"%s\" with type flag %d\n"
+"has no value associated with key %d (\"%s\")."
+msgstr ""
+"Le champ \"%s\" avec indicateur de type %d\n"
+"n'a pas de valeur associée avec la clé %d (\"%s\")."
+
+#, c-format
+msgid ""
+"Field \"%s\" has keyword %d (\"%s\")\n"
+"of type \"%c\" and not \"%c\"."
+msgstr ""
+"Le champ \"%s\" a un mot clé %d (\"%s\")\n"
+"de type \"%c\" et non \"%c\"."
+
+#, c-format
+msgid "Field keyword with id %d is not defined."
+msgstr "Le mot clé de champs avec id %d n'est pas défini."
+
+#, c-format
+msgid ""
+"Field %s with type flag %d\n"
+"has no value associated with key %d (%s)."
+msgstr ""
+"Le champ %s avec indicateur de type %d\n"
+"na pas de valeur associée au mot clé %d (%s)."
+
+#, c-format
+msgid ""
+"\n"
+"  Field:\"%s\"\n"
+msgstr ""
+"\n"
+"  Champ :\"%s\"\n"
+
+#, c-format
+msgid ""
+"\n"
+"    Label:                      %s\n"
+"    Id:                         %d\n"
+"    Type:                       %d"
+msgstr ""
+"\n"
+"    Label :                     %s\n"
+"    Id :                        %d\n"
+"    Type :                      %d"
+
+#, c-format
+msgid " (%s"
+msgstr ""
+
+#, c-format
+msgid ", %s"
+msgstr ""
+
+msgid ")"
+msgstr ""
+
+msgid "\n"
+msgstr ""
+
+msgid "    Dimension:                  1\n"
+msgstr "    Dimension :                 1\n"
+
+#, c-format
+msgid "    Dimension:                  %d (non-interleaved)\n"
+msgstr "    Dimension :                 %d (non entrelacé)\n"
+
+#, c-format
+msgid "    Dimension:                  %d (interleaved)\n"
+msgstr "    Dimension :                 %d (entrelacé)\n"
+
+msgid "    Values mapped from external definition\n"
+msgstr "    Valeurs partagées avec définition externe\n"
+
+msgid ""
+"\n"
+"    Associated key values:\n"
+msgstr ""
+"\n"
+"    Valeurs de clés associées :\n"
+
+#, c-format
+msgid "      %-24s %10d\n"
+msgstr ""
+
+#, c-format
+msgid "      %-24s %10d (default)\n"
+msgstr "      %-24s %10d (défaut)\n"
+
+#, c-format
+msgid "      %-24s %10.3g\n"
+msgstr ""
+
+#, c-format
+msgid "      %-24s %10.3g (default)\n"
+msgstr "      %-24s %10.3g (défaut)\n"
+
+#, c-format
+msgid ""
+"\n"
+"Fields of type: %s\n"
+"---------------\n"
+msgstr ""
+"\n"
+"Champs de type: %s\n"
+"---------------\n"
+
+msgid ""
+"\n"
+"Other fields:\n"
+"-------------\n"
+msgstr ""
+"\n"
+"Autres champs:\n"
+"-------------\n"
+
+msgid "Key word"
+msgstr "Mot clé"
+
+msgid "Default"
+msgstr "Défaut"
+
+msgid "Type"
+msgstr ""
+
+msgid "Id"
+msgstr ""
+
+msgid ""
+"\n"
+"Defined field keys:\n"
+"-------------------\n"
+"\n"
+msgstr ""
+"\n"
+"Clés définies pour les champs :\n"
+"-------------------------------\n"
+"\n"
+
+#, c-format
+msgid "  %s %s %s    %s Type flag\n"
+msgstr "  %s %s %s    %s Indic. type\n"
+
+#, c-format
+msgid "  %s %s %s    %s ---------\n"
+msgstr "  %s %s %s    %s -----------\n"
+
+#, c-format
+msgid "  %-24s %-12d integer %-4d %-4d"
+msgstr "  %-24s %-12d entier  %-4d %-4d"
+
+#, c-format
+msgid "  %-24s %-12.3g real    %-4d %-4d"
+msgstr "  %-24s %-12.3g réel    %-4d %-4d"
+
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -9256,6 +9472,14 @@ msgstr "    Création du halo distant\n"
 
 msgid "    Updating the faces -> cells connectivity\n"
 msgstr "    Mise à jour de la connectivité faces -> cellules\n"
+
+#, c-format
+msgid ""
+"The requested mesh location\n"
+"%d is not defined.\n"
+msgstr ""
+"Le support de maillage demandé\n"
+"%d n'est pas défini.\n"
 
 #, c-format
 msgid "    minimum value =         %10.5e\n"

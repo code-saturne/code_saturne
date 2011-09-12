@@ -49,6 +49,7 @@ cs_mesh_coherency.h \
 cs_mesh_connect.h \
 cs_mesh.h \
 cs_mesh_halo.h \
+cs_mesh_location.h \
 cs_mesh_quality.h \
 cs_mesh_quantities.h \
 cs_mesh_save.h \
@@ -75,6 +76,7 @@ cs_mesh.c \
 cs_mesh_coherency.c \
 cs_mesh_connect.c \
 cs_mesh_halo.c \
+cs_mesh_location.c \
 cs_mesh_quality.c \
 cs_mesh_quantities.c \
 cs_mesh_save.c \

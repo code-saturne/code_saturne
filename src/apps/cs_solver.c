@@ -84,6 +84,7 @@
 #include "cs_calcium.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
+#include "cs_field.h"
 #include "cs_gradient.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
@@ -93,6 +94,7 @@
 #include "cs_join.h"
 #include "cs_mesh.h"
 #include "cs_mesh_coherency.h"
+#include "cs_mesh_location.h"
 #include "cs_mesh_quality.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_save.h"
@@ -326,8 +328,9 @@ cs_run(void)
 
   bft_printf(_("\n Computing geometric quantities (%.3g s)\n"), t2-t1);
 
-  /* Initialize selectors for the mesh */
+  /* Initialize selectors and locations for the mesh */
   cs_mesh_init_selectors();
+  cs_mesh_location_initialize();
 
   /* Initialize meshes for the main post-processing */
 
@@ -515,8 +518,14 @@ cs_run(void)
 
   cs_gui_particles_free();
 
+  /* Free field info */
+
+  cs_field_destroy_all();
+  cs_field_destroy_all_keys();
+
   /* Free main mesh after printing some statistics */
 
+  cs_mesh_location_finalize();
   cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
   cs_mesh_destroy(cs_glob_mesh);
 

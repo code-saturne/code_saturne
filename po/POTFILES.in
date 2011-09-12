@@ -61,6 +61,7 @@ src/base/cs_calcium.c
 src/base/cs_coupling.c
 src/base/cs_ext_neighborhood.c
 src/base/cs_file.c
+src/base/cs_field.c
 src/base/cs_halo.c
 src/base/cs_io.c
 src/base/cs_log.c
@@ -166,6 +167,7 @@ src/mesh/cs_mesh.c
 src/mesh/cs_mesh_coherency.c
 src/mesh/cs_mesh_connect.c
 src/mesh/cs_mesh_halo.c
+src/mesh/cs_mesh_location.c
 src/mesh/cs_mesh_quality.c
 src/mesh/cs_mesh_quantities.c
 src/mesh/cs_mesh_save.c

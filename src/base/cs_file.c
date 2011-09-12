@@ -1259,12 +1259,12 @@ _cs_file_compare_names(const void  *a,
  * By default, data is written or read as native data. This behavior may be
  * modified by cs_file_set_swap_endian().
  *
- * \param [in]  name   file name
- * \param [in]  mode   file acces mode: read, write, or append
- * \param [in]  hints  file I/O hints (for MPI and MPI I/O behavior)
- * \param [in]  comm   associated MPI communicator
+ * \param[in]  name   file name
+ * \param[in]  mode   file acces mode: read, write, or append
+ * \param[in]  hints  file I/O hints (for MPI and MPI I/O behavior)
+ * \param[in]  comm   associated MPI communicator
  *
- * \returns pointer to cs_file_t file descriptor (NULL in case of failure);
+ * \return pointer to cs_file_t file descriptor (NULL in case of failure);
  *   currently, errors are fatal.
  */
 /*----------------------------------------------------------------------------*/
@@ -1278,11 +1278,11 @@ _cs_file_compare_names(const void  *a,
  * By default, data is written or read as native data. This behavior may be
  * modified by cs_file_set_swap_endian().
  *
- * \param [in]  name   file name
- * \param [in]  mode   file acces mode: read, write, or append
- * \param [in]  hints  file I/O hints (for MPI and MPI I/O behavior)
+ * \param[in]  name   file name
+ * \param[in]  mode   file acces mode: read, write, or append
+ * \param[in]  hints  file I/O hints (for MPI and MPI I/O behavior)
  *
- * \returns pointer to cs_file_t file descriptor (NULL in case of failure);
+ * \return pointer to cs_file_t file descriptor (NULL in case of failure);
  *   currently, errors are fatal.
  */
 /*----------------------------------------------------------------------------*/
@@ -1389,7 +1389,7 @@ cs_file_open(const char        *name,
 /*!
  * \brief Destroy a file descriptor and close the associated file.
  *
- * \param [in, out]  f  file descriptor to destroy
+ * \param[in, out]  f  file descriptor to destroy
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1422,9 +1422,9 @@ cs_file_free(cs_file_t  *f)
 /*!
  * \brief Return a file's name.
  *
- * \param [in]  f  cs_file_t descriptor
+ * \param[in]  f  cs_file_t descriptor
  *
- * \returns pointer to the file's name.
+ * \return pointer to the file's name.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1441,7 +1441,7 @@ cs_file_get_name(const cs_file_t  *f)
  * \brief Ensure that data is read or written in big-endian
  * (network standard) format.
  *
- * \param [in, out]  f  cs_file_t descriptor
+ * \param[in, out]  f  cs_file_t descriptor
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1473,9 +1473,9 @@ cs_file_set_big_endian(cs_file_t  *f)
 /*!
  * \brief Return a file's byte-swapping behavior.
  *
- * \param [in]  f  cs_file_t descriptor
+ * \param[in]  f  cs_file_t descriptor
  *
- * \returns 0 if file's endianness is the same as the system's, 1 otherwise.
+ * \return 0 if file's endianness is the same as the system's, 1 otherwise.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1491,8 +1491,8 @@ cs_file_get_swap_endian(const cs_file_t  *f)
 /*!
  * \brief Set a file's byte-swapping behavior.
  *
- * \param [in, out]  f     cs_file_t descriptor
- * \param [in]       swap  1 if bytes must be swapped, 0 otherwise
+ * \param[in, out]  f     cs_file_t descriptor
+ * \param[in]       swap  1 if bytes must be swapped, 0 otherwise
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1510,13 +1510,13 @@ cs_file_set_swap_endian(cs_file_t  *f,
  * \brief Read global data from a file, distributing it to all processes
  * associated with that file.
  *
- * \param [in]  f     cs_file_t descriptor
- * \param [out] buf   pointer to location receiving data
- * \param [in]  size  size of each item of data in bytes
- * \param [in]  ni    number of items to read
+ * \param[in]  f     cs_file_t descriptor
+ * \param[out] buf   pointer to location receiving data
+ * \param[in]  size  size of each item of data in bytes
+ * \param[in]  ni    number of items to read
  *
- * \returns the number of items (not bytes) sucessfully read;
- *          currently, errors are fatal.
+ * \return the number of items (not bytes) sucessfully read;
+ *         currently, errors are fatal.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1604,13 +1604,13 @@ cs_file_read_global(cs_file_t  *f,
  * rank. The buffers on other ranks are ignored, though the file offset
  * is updated (i.e. the call to this function is collective).
  *
- * \param [in]  f     cs_file_t descriptor
- * \param [in]  buf   pointer to location containing data
- * \param [in]  size  size of each item of data in bytes
- * \param [in]  ni    number of items to write
+ * \param[in]  f     cs_file_t descriptor
+ * \param[in]  buf   pointer to location containing data
+ * \param[in]  size  size of each item of data in bytes
+ * \param[in]  ni    number of items to write
  *
- * \returns the number of items (not bytes) sucessfully written;
- *          currently, errors are fatal.
+ * \return the number of items (not bytes) sucessfully written;
+ *         currently, errors are fatal.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1719,17 +1719,17 @@ cs_file_write_global(cs_file_t   *f,
  *   global_num_start at rank i+1 = global_num_end at rank i.
  * Otherwise, behavior (especially positioning for future reads) is undefined.
  *
- * \param [in]  f                cs_file_t descriptor
- * \param [out] buf              pointer to location receiving data
- * \param [in]  size             size of each item of data in bytes
- * \param [in]  stride           number of (interlaced) values per block item
- * \param [in]  global_num_start global number of first block item
+ * \param[in]  f                 cs_file_t descriptor
+ * \param[out] buf               pointer to location receiving data
+ * \param[in]  size              size of each item of data in bytes
+ * \param[in]  stride            number of (interlaced) values per block item
+ * \param[in]  global_num_start  global number of first block item
  *                               (1 to n numbering)
- * \param [in]  global_num_end   global number of past-the end block item
+ * \param[in]  global_num_end    global number of past-the end block item
  *                               (1 to n numbering)
  *
- * \returns the (local) number of items (not bytes) sucessfully read;
- *          currently, errors are fatal.
+ * \return the (local) number of items (not bytes) sucessfully read;
+ *         currently, errors are fatal.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1797,17 +1797,17 @@ cs_file_read_block(cs_file_t  *f,
  * cs_file_write_block_buffer() instead may be used to avoid an unneeded
  * memory allocation and copy.
  *
- * \param [in]  f                cs_file_t descriptor
- * \param [in]  buf              pointer to location containing data
- * \param [in]  size             size of each item of data in bytes
- * \param [in]  stride           number of (interlaced) values per block item
- * \param [in]  global_num_start global number of first block item
+ * \param[in]  f                 cs_file_t descriptor
+ * \param[in]  buf               pointer to location containing data
+ * \param[in]  size              size of each item of data in bytes
+ * \param[in]  stride            number of (interlaced) values per block item
+ * \param[in]  global_num_start  global number of first block item
  *                               (1 to n numbering)
- * \param [in]  global_num_end   global number of past-the end block item
+ * \param[in]  global_num_end    global number of past-the end block item
  *                               (1 to n numbering)
  *
- * \returns the (local) number of items (not bytes) sucessfully written;
- *          currently, errors are fatal.
+ * \return the (local) number of items (not bytes) sucessfully written;
+ *         currently, errors are fatal.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1878,17 +1878,17 @@ cs_file_write_block(cs_file_t   *f,
  * writing, so it may modify the values in its input buffer (notably to
  * convert from little-endian to big-endian of vice-versa if necessary).
  *
- * \param [in]  f                cs_file_t descriptor
- * \param [in, out] buf          pointer to location containing data
- * \param [in]  size             size of each item of data in bytes
- * \param [in]  stride           number of (interlaced) values per block item
- * \param [in]  global_num_start global number of first block item
+ * \param[in]  f                 cs_file_t descriptor
+ * \param[in, out]  buf          pointer to location containing data
+ * \param[in]  size              size of each item of data in bytes
+ * \param[in]  stride            number of (interlaced) values per block item
+ * \param[in]  global_num_start  global number of first block item
  *                               (1 to n numbering)
- * \param [in]  global_num_end   global number of past-the end block item
+ * \param[in]  global_num_end    global number of past-the end block item
  *                               (1 to n numbering)
  *
- * \returns the (local) number of items (not bytes) sucessfully written;
- *          currently, errors are fatal.
+ * \return the (local) number of items (not bytes) sucessfully written;
+ *         currently, errors are fatal.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1950,15 +1950,15 @@ cs_file_write_block_buffer(cs_file_t  *f,
 /*!
  * \brief Update the file pointer according to whence.
  *
- * \param [in, out]  f       cs_file_t descriptor
- * \param [in]       offset  add to position specified to whence to obtain
- *                           new position, measured in characters from the
- *                           beginning of the file
- * \param [in]       whence  beginning if CS_FILE_SEEK_SET,
- *                           current if CS_FILE_SEEK_CUR,
- *                           or end-of-file if CS_FILE_SEEK_END
+ * \param[in, out]  f       cs_file_t descriptor
+ * \param[in]       offset  add to position specified to whence to obtain
+ *                          new position, measured in characters from the
+ *                          beginning of the file
+ * \param[in]       whence  beginning if CS_FILE_SEEK_SET,
+ *                          current if CS_FILE_SEEK_CUR,
+ *                          or end-of-file if CS_FILE_SEEK_END
  *
- * \returns 0 upon success, nonzero otherwise; currently, errors are fatal.
+ * \return 0 upon success, nonzero otherwise; currently, errors are fatal.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2016,9 +2016,9 @@ cs_file_seek(cs_file_t       *f,
  * When using MPI-IO with individual file pointers, we consider the file
  * pointer to be equal to the highest value of the individual file pointers.
  *
- * \param [in]  f  cs_file_t descriptor
+ * \param[in]  f  cs_file_t descriptor
  *
- * \returns current position of the file pointer.
+ * \return current position of the file pointer.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2072,7 +2072,7 @@ cs_file_tell(cs_file_t  *f)
 /*!
  * \brief Get the default semantics for file access.
  *
- * \returns current default semantics for file access.
+ * \return current default semantics for file access.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2090,9 +2090,9 @@ cs_file_get_default_semantics(void)
  * such as (CS_FILE_EXPLICIT_OFFSETS | CS_FILE_INDIVIDUAL_POINTERS),
  * or when setting MPI-IO access semantics when MPI-IO is not available.
  *
- * \param [in]  hints  flag (bit mask) defining default semantics
+ * \param[in]  hints  flag (bit mask) defining default semantics
  *
- * \returns 0 if the semantics were valid, 1 otherwise.
+ * \return 0 if the semantics were valid, 1 otherwise.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2126,7 +2126,7 @@ cs_file_set_default_semantics(cs_file_hints_t  hints)
 /*!
  * \brief Dump the metadata of a file structure in human readable form.
  *
- * \param [in]  f  cs_file_t descriptor
+ * \param[in]  f  cs_file_t descriptor
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2189,19 +2189,19 @@ cs_file_dump(const cs_file_t  *f)
  * rank 0 is assumed; a buffer may not be smaller than this, as it must
  * initially contain all data on rank 0's block.
  *
- * \param [in]    size             size of each item of data in bytes
- * \param [in]    stride           number of (interlaced) values per block item
- * \param [in]    global_num_start global number of first block item
- *                                 (1 to n numbering)
- * \param [in]    global_num_end   global number of past-the end block item
- *                                 (1 to n numbering)
- * \param [in]    buf_block_size   Local data buffer block size, or 0 for
- *                                 default global_num_end - global_num_start
- *                                 (only useful on rank 0)
- * \param [in]    buf              pointer to local block data buffer
- * \param [in]    comm             associated MPI communicator
+ * \param[in]  size              size of each item of data in bytes
+ * \param[in]  stride            number of (interlaced) values per block item
+ * \param[in]  global_num_start  global number of first block item
+ *                               (1 to n numbering)
+ * \param[in]  global_num_end    global number of past-the end block item
+ *                               (1 to n numbering)
+ * \param[in]  buf_block_size    Local data buffer block size, or 0 for
+ *                               default global_num_end - global_num_start
+ *                               (only useful on rank 0)
+ * \param[in]  buf               pointer to local block data buffer
+ * \param[in]  comm              associated MPI communicator
  *
- * \returns pointer to new serializer structure.
+ * \return pointer to new serializer structure.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2233,7 +2233,7 @@ cs_file_serializer_create(size_t       size,
 /*!
  * \brief Destroy a cs_file_serializer_t structure.
  *
- * \param [in, out]  s pointer to pointer structure that should be destroyed
+ * \param[in, out]  s  pointer to pointer structure that should be destroyed
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2261,11 +2261,11 @@ cs_file_serializer_destroy(cs_file_serializer_t  **s)
  * Note also that for ranks > 0, this function always returns NULL,
  * as only one call is needed for those ranks.
  *
- * \param [in]  s          pointer to serializer structure
- * \param [out] cur_range optional start and past-the end global numbers for
- *                        the current block (size: 2), or NULL; only on rank 0
+ * \param[in]   s          pointer to serializer structure
+ * \param[out]  cur_range  optional start and past-the end global numbers for
+ *                         the current block (size: 2), or NULL; only on rank 0
  *
- * \returns a pointer to the buffer containing new data (first call counts as
+ * \return a pointer to the buffer containing new data (first call counts as
  *          new), or NULL if we are finished; always NULL on ranks > 0.
  */
 /*----------------------------------------------------------------------------*/
@@ -2384,12 +2384,12 @@ cs_file_serializer_advance(cs_file_serializer_t  *s,
  * is to make a directory available, so if it already exists,
  * this is considered acceptable.
  *
- * \param [in] pathname name of new directory.
+ * \param[in]  pathname  name of new directory.
  *
- * \returns 0 on success, -1 if an error occured (in which case errno
- *          contains the appropriate error code). If the underlying
- *          system has no mkdir() function or it was not detected
- *          upon BFT configuration, 1 is returned.
+ * \return 0 on success, -1 if an error occured (in which case errno
+ *         contains the appropriate error code). If the underlying
+ *         system has no mkdir() function or it was not detected
+ *         upon BFT configuration, 1 is returned.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2462,9 +2462,9 @@ cs_file_mkdir_default(const char  *path)
 /*!
  * \brief Check if a file exists and is a regular file.
  *
- * \param [in] path file path.
+ * \param[in]  path  file path.
  *
- * \returns 1 if file exists and is a regular file, 0 otherwise.
+ * \return 1 if file exists and is a regular file, 0 otherwise.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2508,9 +2508,9 @@ cs_file_isreg(const char  *path)
 /*!
  * \brief Check if a directory exists.
  *
- * \param [in] path directory path.
+ * \param[in]  path  directory path.
  *
- * \returns 1 if directory exists, 0 otherwise.
+ * \return 1 if directory exists, 0 otherwise.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2553,11 +2553,11 @@ cs_file_isdir(const char  *path)
  * The array returned must be freed by the caller using BFT_FREE,
  * as well as the individual entries in the array.
  *
- * \param [in] path name of directory.
+ * \param[in]  path name of directory.
  *
- * \returns an array of file names in a directory. The last entry is
- *          set to NULL. If no means to list the directory or an error
- *          occured, the return value is simply NULL.
+ * \return an array of file names in a directory. The last entry is
+ *         set to NULL. If no means to list the directory or an error
+ *         occured, the return value is simply NULL.
  */
 /*----------------------------------------------------------------------------*/
 
