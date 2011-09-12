@@ -90,6 +90,7 @@ struct _cs_map_name_to_id_t {
 
   char      **key;              /* Pointer to keys */
   int        *id;               /* Matching id */
+  int        *reverse_id;       /* Reverse id mapping */
 };
 
 /*============================================================================
@@ -128,10 +129,12 @@ _name_to_id_insert_key(cs_map_name_to_id_t  *m,
     m->max_size*= 2;
     BFT_REALLOC(m->key, m->max_size, char *);
     BFT_REALLOC(m->id, m->max_size, int);
+    BFT_REALLOC(m->reverse_id, m->max_size, int);
 
     for (i = prev_size; i < m->max_size; i++) {
       m->key[i] = NULL;
       m->id[i] = -1;
+      m->reverse_id[i] = -1;
     }
   }
 
@@ -162,6 +165,7 @@ _name_to_id_insert_key(cs_map_name_to_id_t  *m,
   for (i = m->size; i > index; i--) {
     m->key[i] = m->key[i-1];
     m->id[i] = m->id[i-1];
+    m->reverse_id[m->id[i]] = i;
   }
 
   /* Insert data */
@@ -170,6 +174,7 @@ _name_to_id_insert_key(cs_map_name_to_id_t  *m,
 
   m->key[index] = m->keys + m->keys_size;
   m->id[index] = id;
+  m->reverse_id[m->size] = index;
 
   m->keys_size += key_size + 1;
 
@@ -208,6 +213,7 @@ cs_map_name_to_id_create(void)
 
   BFT_MALLOC(m->key, m->max_size, char *);
   BFT_MALLOC(m->id, m->max_size, int);
+  BFT_MALLOC(m->reverse_id, m->max_size, int);
 
   return m;
 }
@@ -226,6 +232,7 @@ cs_map_name_to_id_destroy(cs_map_name_to_id_t **m)
 
     cs_map_name_to_id_t *_m = *m;
 
+    BFT_FREE(_m->reverse_id);
     BFT_FREE(_m->id);
     BFT_FREE(_m->key);
 
@@ -279,6 +286,76 @@ cs_map_name_to_id(cs_map_name_to_id_t  *m,
 }
 
 /*----------------------------------------------------------------------------
+ * Return id matching a key, or -1 if not present.
+ *
+ *
+ * parameters:
+ *   m      <-- pointer to map structure
+ *   key    <-- character string (key)
+ *
+ * returns:
+ *   id matching key, or -1.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_map_name_to_id_try(const cs_map_name_to_id_t  *m,
+                      const char                 *key)
+{
+  int start_id, end_id, mid_id;
+  int cmp_ret = 1;
+
+  int retval = -1;
+
+  /* Use binary search to find entry */
+
+  start_id = 0;
+  end_id = m->size - 1;
+  mid_id = start_id + ((end_id -start_id) / 2);
+
+  while (start_id <= end_id) {
+    cmp_ret = strcmp(m->key[mid_id], key);
+    if (cmp_ret < 0)
+      start_id = mid_id + 1;
+    else if (cmp_ret > 0)
+      end_id = mid_id - 1;
+    else
+      break;
+    mid_id = start_id + ((end_id -start_id) / 2);
+  }
+
+  if (cmp_ret == 0)
+    retval = m->id[mid_id];
+
+  return retval;
+}
+
+
+/*----------------------------------------------------------------------------
+ * Return a key name in a map matching a given id.
+ *
+ * parameters:
+ *   m  <-- pointer to map structure.
+ *   id <-- key id
+ *
+ * returns:
+ *   pointer to key.
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_map_name_to_id_reverse(const cs_map_name_to_id_t  *m,
+                          size_t                      id)
+{
+  const char *retval = NULL;
+
+  if (m == NULL)
+    return retval;
+
+  if (id < m->size)
+    retval = (const char *)(m->key[m->reverse_id[id]]);
+
+  return retval;
+}
+/*----------------------------------------------------------------------------
  * Return the size of a map.
  *
  * parameters:
@@ -300,7 +377,7 @@ cs_map_name_to_id_size(const cs_map_name_to_id_t *m)
 }
 
 /*----------------------------------------------------------------------------
- * Return a given key in a map.
+ * Return key in a map for a given index position.
  *
  * parameters:
  *   m  <-- pointer to map structure.
@@ -312,15 +389,15 @@ cs_map_name_to_id_size(const cs_map_name_to_id_t *m)
 
 const char *
 cs_map_name_to_id_key(const cs_map_name_to_id_t  *m,
-                      size_t                      id)
+                      size_t                      index)
 {
   const char *retval = NULL;
 
   if (m == NULL)
     return retval;
 
-  if (id < m->size)
-    retval = (const char *)(m->key[id]);
+  if (index < m->size)
+    retval = (const char *)(m->key[index]);
 
   return retval;
 }

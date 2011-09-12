@@ -100,6 +100,37 @@ cs_map_name_to_id(cs_map_name_to_id_t  *m,
                   const char           *key);
 
 /*----------------------------------------------------------------------------
+ * Return id matching a key, or -1 if not present.
+ *
+ *
+ * parameters:
+ *   m      <-- pointer to map structure
+ *   key    <-- character string (key)
+ *
+ * returns:
+ *   id matching key, or -1.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_map_name_to_id_try(const cs_map_name_to_id_t  *m,
+                      const char                 *key);
+
+/*----------------------------------------------------------------------------
+ * Return a key name in a map matching a given id.
+ *
+ * parameters:
+ *   m  <-- pointer to map structure.
+ *   id <-- key id
+ *
+ * returns:
+ *   pointer to key.
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_map_name_to_id_reverse(const cs_map_name_to_id_t  *m,
+                          size_t                      id);
+
+/*----------------------------------------------------------------------------
  * Return the size of a map.
  *
  * parameters:
@@ -113,7 +144,7 @@ size_t
 cs_map_name_to_id_size(const cs_map_name_to_id_t *m);
 
 /*----------------------------------------------------------------------------
- * Return a given key in a map.
+ * Return key in a map for a given index position.
  *
  * parameters:
  *   m  <-- pointer to map structure.
@@ -125,7 +156,7 @@ cs_map_name_to_id_size(const cs_map_name_to_id_t *m);
 
 const char *
 cs_map_name_to_id_key(const cs_map_name_to_id_t  *m,
-                      size_t                      id);
+                      size_t                      index);
 
 /*----------------------------------------------------------------------------*/
 
