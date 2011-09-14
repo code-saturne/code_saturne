@@ -146,6 +146,7 @@ _log_strpad(char        *dest,
 {
   size_t i, j;
   size_t pad_l = 0, pad_r = 0, p_len = 0, c_len = 0;
+  size_t _destsize = destsize - 1;
 
   static int mode_utf8 = -1;
 
@@ -164,13 +165,13 @@ _log_strpad(char        *dest,
   if (src != NULL) {
     if (mode_utf8 == 0) {
       p_len = strlen(src);
-      if (p_len > destsize)
-        p_len = destsize - 1;
+      if (p_len > _destsize)
+        p_len = _destsize;
       c_len = p_len;
     }
     else { /* UTF-8 case */
       for (i = 0;
-           i < destsize && p_len < width;
+           i < _destsize && p_len < width;
            i++) {
         unsigned char c = src[i];
         if (c == '\0') {
@@ -185,11 +186,14 @@ _log_strpad(char        *dest,
     }
   }
 
-  if (p_len < width) {
+  if (p_len < width && c_len < _destsize) {
+    size_t pad = width - p_len;
+    if (c_len + pad > _destsize)
+      pad = _destsize - c_len;
     if (align == 0)
-      pad_r = width - p_len;
+      pad_r = pad;
     else
-      pad_l = width - p_len;
+      pad_l = pad;
   }
 
   j = 0;
