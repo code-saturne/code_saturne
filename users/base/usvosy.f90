@@ -32,7 +32,7 @@ subroutine usvosy &
 !================
 
  ( nvar   , nscal  , inbcou , ncecpl ,                            &
-   iscalt ,                                                       &
+   iscal  ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    lcecpl , hvol )
 
@@ -63,7 +63,7 @@ subroutine usvosy &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! inbcou           ! i  ! <-- ! SYRTHES coupling number                        !
 ! ncecpl           ! i  ! <-- ! number of cells implied for this coupling      !
-! iscalt           ! i  ! <-- ! index number of the temperature scalar         !
+! iscal            ! i  ! <-- ! index number of the temperature scalar         !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (current time step)                           !
@@ -102,7 +102,7 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncecpl
-integer          iscalt , inbcou
+integer          iscal  , inbcou
 
 integer          lcecpl(ncecpl)
 
@@ -114,7 +114,7 @@ double precision hvol(ncecpl), tfluid(ncecpl)
 ! Local variables
 
 character*80     chaine
-integer          ivar, iiscvr, iel, iloc, iutile, ivart
+integer          ivar, iiscvr, iel, iloc, iutile
 integer          ipcrom, ipcvsl, ipcvis, ipccp
 
 double precision cp, mu, lambda, rho, uloc, L, sexcvo
@@ -146,13 +146,11 @@ else
    ipccp = 0
 endif
 
-if (ivisls(iscalt).gt.0) then
-   ipcvsl = ipproc(ivisls(iscalt))
+if (ivisls(iscal).gt.0) then
+   ipcvsl = ipproc(ivisls(iscal))
 else
    ipcvsl = 0
 endif
-
-ivart = isca(iscalt)
 
 !===============================================================================
 ! 2. Example 1 of the computation of a volumic exchange coefficient
@@ -230,7 +228,7 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
       lambda_over_cp = propce(iel, ipcvsl)
       lambda =  lambda_over_cp * cp
    else
-      lambda_over_cp = visls0(iscalt)
+      lambda_over_cp = visls0(iscal)
       lambda = lambda_over_cp * cp
    endif
 
