@@ -1251,6 +1251,7 @@ fi
         msg += '\n'
 
         sys.stdout.write(msg)
+        sys.stdout.flush()
 
         self.print_procs_distribution()
 
@@ -1278,6 +1279,7 @@ fi
                 "  Compiling user subroutines and linking\n" \
                 " ****************************************\n\n"
             sys.stdout.write(msg)
+            sys.stdout.flush()
 
             for d in self.domains:
                 d.compile_and_link()
@@ -1289,6 +1291,7 @@ fi
                          ' ****************************\n'
                          '  Preparing calculation data\n'
                          ' ****************************\n\n')
+        sys.stdout.flush()
 
         for d in self.domains:
             d.copy_preprocessor_data()
@@ -1300,6 +1303,7 @@ fi
                          ' ***************************\n'
                          '  Preprocessing calculation\n'
                          ' ***************************\n\n')
+        sys.stdout.flush()
 
         self.summary_init(exec_env)
 
@@ -1389,6 +1393,7 @@ fi
                          ' **********************\n'
                          '  Parallel partitioning\n'
                          ' **********************\n\n')
+        sys.stdout.flush()
 
         # Now run the partitionings
 
@@ -1457,6 +1462,7 @@ fi
                          ' **********************\n'
                          '  Starting calculation\n'
                          ' **********************\n\n')
+        sys.stdout.flush()
 
         # Maximum remaining time for PBS or similar batch system.
 
@@ -1543,6 +1549,7 @@ fi
                          ' ****************************\n'
                          '  Saving calculation results\n'
                          ' ****************************\n\n')
+        sys.stdout.flush()
 
         self.summary_finalize()
         self.copy_log('summary')
