@@ -89,8 +89,7 @@ double precision hbord(nfabor),tbord(nfabor)
 ! Local variables
 
 integer          nbccou, inbcou, inbcoo, ncecpl, iloc, iel
-integer          mode
-integer          isvol
+integer          mode, isvol, ivart
 
 integer, dimension(:), allocatable :: lcecpl
 double precision, dimension(:), allocatable :: tfluid, hvol
@@ -129,13 +128,14 @@ do inbcou = 1, nbccou
     endif
 
     if (iscalt.eq.isvtf) then
-      if (iscsth(iscalt).ne.1) then
+      if (abs(iscsth(iscalt)).ne.1) then
         write(nfecra, 1000)
         call csexit(1)
       endif
     endif
 
     mode = 1 ! Volume coupling
+    ivart = isca(iscalt)
 
     ! Number of cells per coupling case
 
@@ -166,7 +166,7 @@ do inbcou = 1, nbccou
     do iloc = 1, ncecpl
 
       iel = lcecpl(iloc)
-      tfluid(iloc) = rtp(iel, iscalt)
+      tfluid(iloc) = rtp(iel, ivart)
       hvol(iloc) = 0.0d0
 
     enddo

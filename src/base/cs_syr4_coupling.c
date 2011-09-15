@@ -510,8 +510,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   if (elt_dim == syr_coupling->dim) {
 
     BFT_MALLOC(coupled_mesh_name,
-               strlen("SYRTHES  cells") + strlen(syr_coupling->syr_name) + 1,
-               char);
+                 strlen(_("SYRTHES %s cells"))
+               + strlen(syr_coupling->syr_name) + 1, char);
     sprintf(coupled_mesh_name, _("SYRTHES %s cells"), syr_coupling->syr_name);
 
     BFT_MALLOC(elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
@@ -1589,7 +1589,7 @@ cs_syr4_coupling_ts_contrib(cs_syr4_coupling_t  *syr_coupling,
 
     for (i = 0; ent->n_elts; i++) {
       ctbexp[i] = hvol[i] * solid_temp[i];
-      ctbimp[i] = -hvol[i];
+      ctbimp[i] = hvol[i];
     }
 
   } /* Test if implicit */

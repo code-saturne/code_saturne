@@ -32,7 +32,7 @@ subroutine usvosy &
 !================
 
  ( nvar   , nscal  , inbcou , ncecpl ,                            &
-   iscal  ,                                                       &
+   iscalt ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    lcecpl , hvol )
 
@@ -63,7 +63,7 @@ subroutine usvosy &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! inbcou           ! i  ! <-- ! SYRTHES coupling number                        !
 ! ncecpl           ! i  ! <-- ! number of cells implied for this coupling      !
-! iscal            ! i  ! <-- ! index number of the current scalar             !
+! iscalt           ! i  ! <-- ! index number of the temperature scalar         !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (current time step)                           !
@@ -102,7 +102,7 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncecpl
-integer          iscal  , inbcou
+integer          iscalt , inbcou
 
 integer          lcecpl(ncecpl)
 
@@ -114,7 +114,7 @@ double precision hvol(ncecpl), tfluid(ncecpl)
 ! Local variables
 
 character*80     chaine
-integer          ivar, iiscvr, iel, iloc, iutile
+integer          ivar, iiscvr, iel, iloc, iutile, ivart
 integer          ipcrom, ipcvsl, ipcvis, ipccp
 
 double precision cp, mu, lambda, rho, uloc, L, sexcvo
@@ -136,14 +136,6 @@ if(1.eq.1) return
 ! 1. Initialization
 !===============================================================================
 
-! --- Index number of the variable associated to scalar iscal
-ivar = isca(iscal)
-
-if (ivar.ne.iscalt) then
-   write(nfecra, 1000)
-   call csexit(1)
-endif
-
 ! --- Index number of the cell properties the propce array
 ipcrom = ipproc(irom)
 ipcvis = ipproc(iviscl)
@@ -154,11 +146,13 @@ else
    ipccp = 0
 endif
 
-if (ivisls(iscal).gt.0) then
-   ipcvsl = ipproc(ivisls(iscal))
+if (ivisls(iscalt).gt.0) then
+   ipcvsl = ipproc(ivisls(iscalt))
 else
    ipcvsl = 0
 endif
+
+ivart = isca(iscalt)
 
 !===============================================================================
 ! 2. Example 1 of the computation of a volumic exchange coefficient
@@ -236,7 +230,7 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
       lambda_over_cp = propce(iel, ipcvsl)
       lambda =  lambda_over_cp * cp
    else
-      lambda_over_cp = visls0(iscal)
+      lambda_over_cp = visls0(iscalt)
       lambda = lambda_over_cp * cp
    endif
 

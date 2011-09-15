@@ -94,7 +94,7 @@ subroutine ustssc &
 ! easiest method is to implement the source term explicitely.
 !
 !   df/dt = .... + F(f(n))
-!   where f(n) is the value of f at time tn, the befinning of the time step.
+!   where f(n) is the value of f at time tn, the beginning of the time step.
 !
 ! This yields :
 !   crvexp = volume*F(f(n))

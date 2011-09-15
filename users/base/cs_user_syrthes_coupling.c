@@ -76,7 +76,7 @@ BEGIN_C_DECLS
  * The arguments to cs_syr_coupling_define are:
  *   syrthes_name      <-- matching SYRTHES application name
  *   boundary_criteria <-- surface selection criteria
- *   volume  _criteria <-- surface selection criteria
+ *   volume  _criteria <-- volume selection criteria
  *   projection_axis   <-- ' ' : standard 3D coupling
  *                         'x', 'y', or 'z': projection axis for coupling
  *                                           with 2D SYRTHES.
@@ -148,7 +148,7 @@ cs_user_syrthes_coupling(void)
       By default, implicit treatment is done. You can switch to
       an explicit treatment by using the following function:
 
-     cs_syr_coupling_set_explicit_treatment(1);
+     cs_syr_coupling_set_explicit_treatment();
   */
 
 }

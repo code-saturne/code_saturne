@@ -91,7 +91,7 @@ double precision crvexp(ncelet), crvimp(ncelet)
 ! Local variables
 
 integer          nbccou, inbcou, inbcoo, ncecpl, iloc, iel
-integer          mode  , isvol , ipccp
+integer          mode  , isvol , ipccp , ivart
 double precision tsexp, tsimp, cp, cecoef
 
 integer, dimension(:), allocatable :: lcecpl
@@ -144,6 +144,7 @@ do inbcou = 1, nbccou
   if (isvol.eq.1) then
 
     mode = 1 ! Volume coupling
+    ivart = isca(iscalt)
 
     ! Number of cells per coupling case
 
@@ -166,7 +167,7 @@ do inbcou = 1, nbccou
     do iloc = 1, ncecpl
 
       iel = lcecpl(iloc)
-      tfluid(iloc) = rtp(iel, iscalt)
+      tfluid(iloc) = rtp(iel, ivart)
       ctbimp(iloc) = 0.0d0
       ctbexp(iloc) = 0.0d0
 
@@ -194,7 +195,7 @@ do inbcou = 1, nbccou
       cecoef = volume(iel)/cp
       tsexp = ctbexp(iloc) * cecoef
       tsimp = ctbimp(iloc) * cecoef
-      tsimp = max(tsimp, zero) ! To avoid a loss of diagonal dominance
+      tsimp = max(tsimp, zero)       ! To avoid a loss of diagonal dominance
 
       crvexp(iel) = crvexp(iel) + tsexp
       crvimp(iel) = crvimp(iel) + tsimp
