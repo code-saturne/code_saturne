@@ -447,7 +447,7 @@ AM_CONDITIONAL(HAVE_PARTITIONER, test x$cs_have_partitioner = xyes)
 unset cs_have_partitioner
 
 cs_have_libsyrcs=no
-if test x$cs_have_syrthes = xyes -o x$cs_have_mpi = xyes ; then
+if test x$cs_have_syrthes = xyes -a x$cs_have_mpi = xyes ; then
   cs_have_libsyrcs=yes
 fi
 

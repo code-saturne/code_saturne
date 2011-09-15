@@ -91,7 +91,9 @@ typedef struct {
 
 cs_syr3_comm_t *
 cs_syr3_comm_initialize(int                  number,
+#if defined(HAVE_MPI)
                         int                  proc_rank,
+#endif
                         cs_int_t             echo);
 
 /*----------------------------------------------------------------------------
