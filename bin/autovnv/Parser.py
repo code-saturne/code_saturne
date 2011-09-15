@@ -357,12 +357,13 @@ class Parser(object):
         @param caseNode: node of the current case
         """
         script = False
-        label, args, repo, dest = [], [], [], []
+        label, nodes, args, repo, dest = [], [], [], [], []
 
         for node in caseNode.getElementsByTagName("script"):
             if str(node.attributes["status"].value) == 'on':
                 script = True
                 label.append(str(node.attributes["label"].value))
+		nodes.append(node)
                 try:
                     args.append(str(node.attributes["args"].value))
                 except:
@@ -376,7 +377,7 @@ class Parser(object):
                 except:
                     dest.append(None)
 
-        return script, label, args, repo, dest
+        return script, label, nodes, args, repo, dest
 
 
     def getResult(self, node):

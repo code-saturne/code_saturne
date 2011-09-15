@@ -647,11 +647,10 @@ class Studies(object):
         """
         for l, s in self.studies:
             for case in s.Cases:
-                bool, label, args, repo, dest = self.__parser.getScript(case.node)
+                bool, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
                 if bool and case.is_run != "KO":
                     for i in range(len(label)):
-                        node = self.__parser.getChild(case.node, "script")
-                        self.__check_dirs(l, case.label, node, repo[i], dest[i])
+                        self.__check_dirs(l, case.label, nodes[i], repo[i], dest[i])
 
 
     def scripts(self):
@@ -661,7 +660,7 @@ class Studies(object):
         for l, s in self.studies:
             self.reporting('  o Script study: ' + l)
             for case in s.Cases:
-                bool, label, args, repo, dest = self.__parser.getScript(case.node)
+                bool, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
                 if bool and case.is_run != "KO":
                     for i in range(len(label)):
                         cmd = os.path.join(self.getDestination(), l, "POST", label[i])

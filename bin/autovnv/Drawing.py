@@ -54,8 +54,8 @@ rcParams['legend.fontsize'] = 'medium'
 rcParams['axes.labelsize']  = 'large'
 rcParams['xtick.labelsize'] = 'large'
 rcParams['ytick.labelsize'] = 'large'
-rcParams['savefig.dpi']     = 200
-rcParams['figure.figsize'] = (4,4)
+rcParams['figure.dpi']      = 200
+rcParams['figure.figsize']  = (4,4)
 rcParams['font.family']     = 'sans-serif'
 rcParams['text.usetex']     = True
 
@@ -258,7 +258,7 @@ class Subplot(object):
         self.cmd = []
         for k, v in parser.getAttributes(node).items():
             if k not in ('id', 'xlabel', 'ylabel', 'title', 'legstatus', \
-                         'legpos', 'xlim', 'xlim'):
+                         'legpos', 'xlim', 'ylim'):
                 self.cmd.append("plt.subplot(" + k + "=" + v + ")")
 
         self.cmd += parser.getPltCommands(node)
