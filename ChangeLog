@@ -1,3 +1,11 @@
+* 15/09/2011 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix a couple of issues in the autovnv scripts and the script output.
+  modified scripts:
+    bin/autovnv/Drawing.py
+    bin/autovnv/Parser.py
+    bin/autovnv/Study.py
+    bin/cs_case.py
+
 * 09/09/2011 - David Monfort <david.monfort@edf.fr>
   Bump version number to 2.1-rc3.
 
