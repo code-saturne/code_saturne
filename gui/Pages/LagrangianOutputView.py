@@ -168,6 +168,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             m = "Frequency_l"
         self.lineEditNTLAL.setText(QString(str(period)))
         t = self.modelNTLAL.dicoM2V[m]
+        self.modelNTLAL.setItem(str_model = m)
         self.slotChoiceNTLAL(t)
 
         status = self.model.getFluidVelocityStatus()

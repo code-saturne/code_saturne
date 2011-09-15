@@ -231,7 +231,7 @@ class LagrangianOutputModel(Model):
         Update the value for listing frequency.
         """
         self.isInt(value)
-        self.isGreaterOrEqual(value, 0)
+        self.isGreaterOrEqual(value, -1)
         self.node_output.xmlSetData('listing_printing_frequency', value)
 
 
