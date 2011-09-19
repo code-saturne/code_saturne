@@ -958,8 +958,8 @@ if (test x$cs_have_med = xyes) ; then
   echo "   MED MPI I/O support: "$cs_have_med_mpi""
 fi
 echo " SYRTHES 3 coupling support: "$cs_have_syrthes""
-echo " IP socket support (for SYRTHES 3 or CFD_Proxy): "$cs_have_socket""
 echo " Dynamic loader support (for YACS): "$cs_have_dlloader""
+echo " IP socket support (for CFD_Proxy): "$cs_have_socket""
 echo " poll support (for CFD Proxy): "$cs_have_poll""
 echo " posix_spawn support (for CFD Proxy): "$cs_have_spawn""
 echo " fork/execve support (for CFD Proxy): "$cs_have_forkexec""
