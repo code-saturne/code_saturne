@@ -89,25 +89,29 @@ contents}{contents}}
 \textsc{Autovnv} is a small framework to automate the launch of \CS computations
 and do some operations on new results.
 
-The script needs a directory of previous \CS cases which are candidates to be duplicated.
-This directory is called \textbf{repository}. The duplication is done in an new directory
-which is called the \textbf{destination}.
+The script needs a directory of previous \CS cases which are candidates to be
+duplicated. This directory is called \textbf{repository}. The duplication is
+done in a new directory which is called the \textbf{destination}.
 
-For each duplicated case, \textsc{Autovnv} is able to compile the user files,
-to run the case, to compare the obtained checkpoint file with the previous one
-from the \textbf{repository}, and to plot curves in order to illustrate the computations.
+For each duplicated case, \textsc{Autovnv} is able to compile the user files, to
+run the case, to compare the obtained checkpoint file with the previous one from
+the \textbf{repository}, and to plot curves in order to illustrate the
+computations.
 
-For all these steps, \textsc{Autovnv} generate two reports, a global report which summarize
-the status of each case, and a detailed report which gives the differences between the new results
-and the previous one in the \textbf{repository}, and display the defined plots.
+For all these steps, \textsc{Autovnv} generate two reports, a global report
+which summarizes the status of each case, and a detailed report which gives the
+differences between the new results and the previous ones in the
+\textbf{repository}, and display the defined plots.
 
-In the \textbf{repository}, previous results of computations are required only for checkpoint
-files comparison purpose. They can be also usfull, if the user needs to run a specific script.
+In the \textbf{repository}, previous results of computations are required only
+for checkpoint files comparison purpose. They can be also usfull, if the user
+needs to run specific scripts.
 
 \section{Installation and prerequisites}
 
-\textsc{Autovnv} does not need a specific installation: the related files are installed
-with other python scripts of the code. Additional prerequisites required are:
+\textsc{Autovnv} does not need a specific installation: the related files are
+installed with the other python scripts of \CS. Additional prerequisites
+required are:
 \begin{list}{$\bullet$}{}
 \item \texttt{numpy},
 \item \texttt{matplotlib}.
@@ -115,33 +119,40 @@ with other python scripts of the code. Additional prerequisites required are:
 
 \section{Command line options}
 
-The command line options can be found with the command: \texttt{code\_saturne autovnv -h}.
+The command line options can be found with the command: \texttt{code\_saturne
+autovnv -h}.
 
 \begin{list}{$\bullet$}{}
-\item \texttt{-f FILE, --file=FILE}: gives the file of parameters for \textsc{Autovnv}.
-This file is mandatory, and therefore this option must be completed;
+\item \texttt{-f FILE, --file=FILE}: gives the file of parameters for
+\textsc{Autovnv}. This file is mandatory, and therefore this option must be
+completed;
 \item \texttt{-q, --quiet}: does not print status messages to stdout;
 \item \texttt{-r, --run}: runs all cases;
-\item \texttt{-c, --compare}: compares chekpoint files between \textbf{repository} and \textbf{destination};
+\item \texttt{-c, --compare}: compares chekpoint files between
+\textbf{repository} and \textbf{destination};
 \item \texttt{-p, --post}: postprocess results of computations;
-\item \texttt{-m ADDRESS1 ADDRESS2 ..., --mail=ADDRESS1 ADDRESS2 ...}: addresses for sending the reports.
+\item \texttt{-m ADDRESS1 ADDRESS2 ..., --mail=ADDRESS1 ADDRESS2 ...}: addresses
+for sending the reports.
 \end{list}
 
 \underline{Examples:}
 
 \begin{list}{$\bullet$}{}
-\item \texttt{code\_saturne autovnv -f sample.xml}: duplicates all cases from the \textbf{repository}
-int the \textbf{destination}, compile all user files and exits;
-\item \texttt{code\_saturne autovnv -f sample.xml -r}: as above, and run all cases if defined
+\item \texttt{code\_saturne autovnv -f sample.xml}: duplicates all cases from
+the \textbf{repository} in the \textbf{destination}, compile all user files
+and exits;
+\item \texttt{code\_saturne autovnv -f sample.xml -r}: as above, and run all
+cases if defined in \texttt{sample.xml};
+\item \texttt{code\_saturne autovnv -f sample.xml -r -c}: as above, and compares
+all new checkpoint files with those from the \textbf{repository} if defined
 in \texttt{sample.xml};
-\item \texttt{code\_saturne autovnv -f sample.xml -r -c}: as above, and compares all new checkpoint files
-with those from the \textbf{repository} if defined in \texttt{sample.xml};
-\item \texttt{code\_saturne autovnv -f sample.xml -r -c -p}: as above, and plots results
-if defined in \texttt{sample.xml};
-\item \texttt{code\_saturne autovnv -f sample.xml -r -c -p -m "dupont@moulinsart.be dupond@moulinsart.be"}: as above,
-and send the two reports.
-\item \texttt{code\_saturne autovnv -f sample.xml -c -p}: compares and plots results in the \textbf{destination}
-already computed.
+\item \texttt{code\_saturne autovnv -f sample.xml -r -c -p}: as above, and plots
+results if defined in \texttt{sample.xml};
+\item \texttt{code\_saturne autovnv -f sample.xml -r -c -p -m
+"dt@moulinsart.be dd@moulinsart.be"}: as above, and send the two
+reports.
+\item \texttt{code\_saturne autovnv -f sample.xml -c -p}: compares and plots
+results in the \textbf{destination} already computed.
 \end{list}
 
 \underline{Note:}
@@ -151,7 +162,7 @@ or \texttt{-p, --post} is present in the command line.
 
 \section{File of parameters}
 
-The file of parameters is of XML formatted ascii file.
+The file of parameters is a XML formatted ascii file.
 
 \subsection{Begin and end of the file of parameters}
 
@@ -164,9 +175,8 @@ This example shows the four mandatory first lines of the file of parameters.
     <destination>/home/dupond/codesaturne/MyDestination</destination>
 \end{verbatim}
 
-
-The third and fourth lines correspond to the definition of the \textbf{repository}
-and \textbf{destination} directories.
+The third and fourth lines correspond to the definition of the
+\textbf{repository} and \textbf{destination} directories.
 Inside the markups \texttt{<repository>} and \texttt{<destination>} the user
 must inform the related directories. If the \textbf{destination} does not exit,
 the directory is created.
@@ -179,10 +189,10 @@ The last line of the file of parameters must be:
 
 \subsection{Case creation and compilation fo the user files}
 
-When \textsc{Autovnv} is launched, the file of parameters is parsed in order to known
-which studies and cases from the \textbf{repository} should be duplicated in
-the \textbf{destination}. The selection is done with the markups \texttt{<study>}
-and \texttt{<case>} as the following example:
+When \textsc{Autovnv} is launched, the file of parameters is parsed in order to
+known which studies and cases from the \textbf{repository} should be duplicated
+in the \textbf{destination}. The selection is done with the markups
+\texttt{<study>} and \texttt{<case>} as the following example:
 
 \begin{verbatim}
 <?xml version="1.0"?>
@@ -214,25 +224,32 @@ activate or desactivate the post-processing of the case.
 
 All these attributes are mandatory.
 
-With the attribute \texttt{status}, a single case or a complete study can be switched off.
-In the above example, only the case \texttt{Grid1} of the study \texttt{MyStudy1} is going
-to be created.
+With the attribute \texttt{status}, a single case or a complete study can be
+switched off. In the above example, only the case \texttt{Grid1} of the study
+\texttt{MyStudy1} is going to be created.
 
-After the creation of the directories in the \textbf{destination}, for each case, all user files
-are compiled. The \textsc{Autovnv} stops if a compilation error occurs: no computation, or
-comparison, or plot will be performed, even if they are switched on.
+After the creation of the directories in the \textbf{destination}, for each
+case, all user files are compiled. The \textsc{Autovnv} stops if a compilation
+error occurs: neither computation nor comparison nor plot will be performed,
+even if they are switched on.
 
-\underline{Note:}
+\underline{Notes:}
 
-During the duplication, every files are copied, except mesh files, for which a symbolic link is used.
+\begin{list}{$\bullet$}{}
+\item During the duplication, every files are copied, except mesh files, for
+which a symbolic link is used.
+\item During the duplication, if a file already exists in the
+\textbf{destination}, this file is not overwritten by \textsc{Autovnv}.
+\end{list}
 
 
 \subsection{Run cases}
 
-The runs of \CS is activated are the option \texttt{-r, --run} is present in the command line.
+The computations are activated if the option \texttt{-r, --run} is present in
+the command line.
 
-All cases described in the file of parameters with the attribute \texttt{compute="on"}
-are taken into account.
+All cases described in the file of parameters with the attribute
+\texttt{compute="on"} are taken into account.
 
 \begin{verbatim}
 <?xml version="1.0"?>
@@ -251,92 +268,116 @@ are taken into account.
 </autovnv>
 \end{verbatim}
 
-After the computation, if no error occurs, the attribute \texttt{compute} is set to \texttt{"off"}
-in the copy of the file of parameters in the \textbf{destination}. It is allow a restart
-of \textsc{Autovnv} without re-run successfull previous computations.
+After the computation, if no error occurs, the attribute \texttt{compute} is set
+to \texttt{"off"} in the copy of the file of parameters in the
+\textbf{destination}. It is allow to restart \textsc{Autovnv} without re-run
+successfull previous computations.
 
 \subsection{Compare checkpoint files}
 
-The comparison is activated if the option \texttt{-c, --compare} is present in the command line.
+The comparison is activated if the option \texttt{-c, --compare} is present in
+the command line.
 
-In order to compare two checkpoint files, the markup \texttt{<compare>} has to be added as
-a child of the condidered case. In the following exemple, a checkpoint file comparison
-is switched on for the case \textit{Grid1}, whereas no comparision is planed for the case
-\textit{Grid2}.
-The comparison is done by the external script \texttt{cs\_io\_dump} with the option \texttt{--diff}.
+In order to compare two checkpoint files, the markup \texttt{<compare>} has to
+be added as a child of the condidered case. In the following exemple, a
+checkpoint file comparison is switched on for the case \textit{Grid1}, whereas
+no comparision is planed for the case \textit{Grid2}. The comparison is done by
+the external script \texttt{cs\_io\_dump} with the option \texttt{--diff}.
 
 \begin{verbatim}
-    <study label='MyStudy1' status='on'>
-        <case label='Grid1' status='on' compute="on" post="off">
-            <compare dest="" repo="" threshold="1.0e-5"/>
-        </case>
-        <case label='Grid2' status='on' compute="off" post="off"/>
-    </study>
+<study label='MyStudy1' status='on'>
+    <case label='Grid1' status='on' compute="on" post="off">
+        <compare dest="" repo="" threshold="1.0e-5"/>
+    </case>
+    <case label='Grid2' status='on' compute="off" post="off"/>
+</study>
 \end{verbatim}
 
 The attributes are:
 \begin{list}{$\bullet$}{}
 
-\item \texttt{repo}: id of the results directory in the \textbf{repository} for example \texttt{repo="20110704-1116"},
-if there is a single results directory in the \texttt{RESU} directory of the case, the id can be ommitted: \texttt{repo=""};
+\item \texttt{repo}: id of the results directory in the \textbf{repository} for
+example \texttt{repo="20110704-1116"}, if there is a single results directory
+in the \texttt{RESU} directory of the case, the id can be ommitted:
+\texttt{repo=""};
 
 \item \texttt{dest}: id of the results directory in the \textbf{destination}:
 \begin{list}{$\rightarrow$}{}
-\item if the id is not known already because the case has not yet run, just let the attribute empty \texttt{dest=""},
-\item if \textsc{Autovnv} is restarted without the run step (with the command line \texttt{code\_saturne
-autovnv -f sample.xml -c} for example), the id of the results directory in
-the \textbf{destination} must be given (for example \texttt{dest="20110706-1523"}), but if there is a single results directory in the \texttt{RESU} directory
-of the case, the id can be ommitted: \texttt{repo=""}, the id will be completed automatically;
+\item if the id is not known already because the case has not yet run, just let
+the attribute empty \texttt{dest=""}, the value will be updated after the run
+step in the \textbf{destination} directory (see section \ref{sec:restart});
+\item if \textsc{Autovnv} is restarted without the run step (with the command
+line \texttt{code\_saturne autovnv -f sample.xml -c} for example), the id of
+the results directory in the \textbf{destination} must be given (for example
+\texttt{dest="20110706-1523"}), but if there is a single results directory in
+the \texttt{RESU} directory of the case, the id can be ommitted:
+\texttt{dest=""}, the id will be completed automatically;
 \end{list}
-\item \texttt{threshold}: real value above which a difference is considered significant (default: $1e-30$).
+
+\item \texttt{threshold}: real value above which a difference is considered
+significant (default: $1e-30$).
 \end{list}
 
 Only the attributes \texttt{repo} and \texttt{dest} are mandatory.
 
-\subsection{Run an external additional script with arguments}
+\subsection{Run external additional scripts with arguments}
 
-The launch of an external script is activated if the option \texttt{-p, --post} is present in the command line.
+The launch of external scripts is activated if the option \texttt{-p, --post}
+is present in the command line.
 
 The markup \texttt{<script>} has to be added as a child of the condidered case.
 
+\small
 \begin{verbatim}
-    <study label='STUDY' status='on'>
-        <case label='CASE1' status='on' compute="on" post="on">
-            <script label="script_post.py" args="-n 1" dest="" repo="20110216-2147" status="on"/>
-        </case>
-    </study>
+<study label='STUDY' status='on'>
+    <case label='CASE1' status='on' compute="on" post="on">
+        <script label="script_post.py" args="-n 1" dest="" repo="20110216-2147" status="on"/>
+    </case>
+</study>
 \end{verbatim}
+\normalsize
 
 The attributes are:
 \begin{list}{$\bullet$}{}
-\item \texttt{label}: the name of the file of the script;
-\item \texttt{status}: mandatory must be equal to \texttt{on} or \texttt{off},
+\item \texttt{label}: the name of the file of the considered script;
+\item \texttt{status}: must be equal to \texttt{on} or \texttt{off}:
 activate or desactivate the markup;
 \item \texttt{args}: the arguments to pass to the script;
-\item \texttt{repo} and \texttt{dest}: id of the results directory in the \textbf{repository} or
-in the \textbf{destination}; if there is a single results directory in the \texttt{RESU} directory
-of the case, the id can be ommitted: \texttt{repo=""} or \texttt{dest=""}, the id will be completed
-automatically.
+\item \texttt{repo} and \texttt{dest}: id of the results directory in the
+\textbf{repository} or in the \textbf{destination};
+\begin{list}{$\rightarrow$}{}
+\item if the id is not known already because the case has not yet run, just let
+the attribute empty \texttt{dest=""}, the value will be updated after the run
+step in the \textbf{destination} directory (see section \ref{sec:restart});
+\item if there is a single results directory in the \texttt{RESU} directory
+(either in the \textbf{repository} or in the \textbf{destination}) of the case,
+the id can be ommitted: \texttt{repo=""} or \texttt{dest=""}, the id will be
+completed automatically.
+\end{list}
+If attributes \texttt{repo} and \texttt{dest} exist, their associated value
+will be passed to the script as arguments, with options \texttt{"-r"} and
+\texttt{"-d"} respectively.
 \end{list}
 
 Only the attributes \texttt{label} and \texttt{status} are mandatory.
 
 Several calls of the same script or to different scripts are permitted:
 \begin{verbatim}
-    <study label="STUDY" status="on">
-        <case label="CASE1" status="on" compute="on" post="on">
-            <script label="script_post.py" args="-n 1" status="on"/>
-            <script label="script_post.py" args="-n 2" status="on"/>
-            <script label="script_post.py" args="-n 3" status="on"/>
-            <script label="another_script.py" status="on"/>
-        </case>
-    </study>
+<study label="STUDY" status="on">
+    <case label="CASE1" status="on" compute="on" post="on">
+        <script label="script_post.py" args="-n 1" status="on"/>
+        <script label="script_post.py" args="-n 2" status="on"/>
+        <script label="script_post.py" args="-n 3" status="on"/>
+        <script label="another_script.py" status="on"/>
+    </case>
+</study>
 \end{verbatim}
 
 The main objectif of running external scripts is to create or modify
-result in order to plot them.
+results in order to plot them.
 
-Example of script, which searches printed informations in the listing:
+Example of script, which searches printed informations in the listing,
+note the function to process the passed command line arguments:
 \begin{verbatim}
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -377,179 +418,371 @@ if __name__ == '__main__':
     main(options)
 \end{verbatim}
 
-\subsection{Post-processing: plotting curves}
+\subsection{Post-processing}
 
-The post-processing is activated if the option \texttt{-p, --post} is present in the command line.
+The post-processing is activated if the option \texttt{-p, --post} is present
+in the command line.
 
-The following example shows the drawing of four curves or (2D lines) from two files of data (which
-has the same name \texttt{profile.dat}). There are two subplots (i.e. frame with axis and 2D lines),
-in a single figure. The figure will be saved on the disk in a png format.
-Each plot of a single curve is defined as a child of a file of data inside a case. The subplots and 
-the figures are defined as childs of the study.
+The following example shows the drawing of four curves (or plots, or 2D lines)
+from two files of data (which have the same name \texttt{profile.dat}). There
+are two subsets of curves (i.e. frames with axis and 2D lines), in a single
+figure. The figure will be saved on the disk in a \textbf{png} format, in the
+\texttt{POST} directory of the related study in the \textbf{destination}. Each
+drawing of a single curve is defined as a markup child of a file of data inside
+a case. Subsets and figures are defined as markup childs of \texttt{<study>}.
 
+\small
 \begin{verbatim}
-    <study label='Study' status='on'>
-        <case label='Grid1' status='on' compute="off" post="on">
-            <data file="profile.dat" dest="">
-                <plot fig="1" xcol="1" ycol="2" legend="Grid level 1" fmt='r-s'/>
-                <plot fig="2" xcol="1" ycol="3" legend="Grid level 1" fmt='r-s'/>
-            </data>
-        </case>
-        <case label='Grid2' status='on' compute="off" post="on">
-            <data file="profile.dat" dest="">
-                <plot fig="1" xcol="1" ycol="2" legend="Grid level 2" fmt='b-p'/>
-                <plot fig="2" xcol="1" ycol="3" legend="Grid level 2" fmt='b-p'/>
-            </data>
-        </case>
-        <subplot id="1" legstatus='on' legpos ='0.95 0.95' ylabel="U ($m/s$)" xlabel="Time ($s$)"/>
-        <subplot id="2" legstatus='on' legpos ='0.95 0.95' ylabel="U ($m/s$)" xlabel="Time ($s$)"/>
-        <figure name="velocity" idlist="1 2" figsize="(4,5)"/>
-    </study>
+<study label='Study' status='on'>
+    <case label='Grid1' status='on' compute="off" post="on">
+        <data file="profile.dat" dest="">
+            <plot fig="1" xcol="1" ycol="2" legend="Grid level 1" fmt='r-s'/>
+            <plot fig="2" xcol="1" ycol="3" legend="Grid level 1" fmt='r-s'/>
+        </data>
+    </case>
+    <case label='Grid2' status='on' compute="off" post="on">
+        <data file="profile.dat" dest="">
+            <plot fig="1" xcol="1" ycol="2" legend="Grid level 2" fmt='b-p'/>
+            <plot fig="2" xcol="1" ycol="3" legend="Grid level 2" fmt='b-p'/>
+        </data>
+    </case>
+    <subplot id="1" legstatus='on' legpos ='0.95 0.95' ylabel="U ($m/s$)" xlabel="Time ($s$)"/>
+    <subplot id="2" legstatus='on' legpos ='0.95 0.95' ylabel="U ($m/s$)" xlabel="Time ($s$)"/>
+    <figure name="velocity" idlist="1 2" figsize="(4,5)"/>
+</study>
 \end{verbatim}
+\normalsize
 
-\subsubsection{Plot curves}
+\subsubsection{Define curves}
 
-\underline{Definition:}
+The curves of computational data are build from data files. These data must be
+ordered as column and the files should be in results directory in the
+\texttt{RESU} directory (either in the \textbf{repository} or in the
+\textbf{destination}). Commentaries are allowed in the file, the head of every
+commentary line must start with character \texttt{\#}.
+
+In the file of parameters, curves are defined with two markups:
+\texttt{<data>} and \texttt{<plot>}:
+
 \begin{list}{$\bullet$}{}
 \item \texttt{<data>}: child of markup \texttt{<case>}, defines a file of data;
 \begin{list}{$\rightarrow$}{}
-\item \texttt{<file>}: 
-\item \texttt{<repo>}: 
-\item \texttt{<dest>}: 
+\item \texttt{file}: name of the file of data
+\item \texttt{repo} or \texttt{dest}: id of the results directory either in the
+\textbf{repository} or in the \textbf{destination};
+\begin{list}{$\Rightarrow$}{}
+\item if the id is not known already because the case has not yet run, just let
+the attribute empty \texttt{dest=""}, the value will be updated after the run
+step in the \textbf{destination} directory (see section \ref{sec:restart});
+\item if there is a single results directory in the \texttt{RESU} directory
+(either in the \textbf{repository} or in the \textbf{destination}) of the case,
+the id can be ommitted: \texttt{repo=""} or \texttt{dest=""}, the id will be
+completed automatically.
 \end{list}
-The attribute \texttt{<file>} is mandatory, and \texttt{<repo>} or \texttt{<dest>} must be present
-even if it is empty.
+\end{list}
+The attribute \texttt{file} is mandatory, and either \texttt{repo} or
+\texttt{dest} must be present (but not the both) even if it is empty.
 
-\item \texttt{<plot>}: child of markup \texttt{<data>}, defines a curve
+\item \texttt{<plot>}: child of markup \texttt{<data>}, defines a single
+curve; the attributes are:
 \begin{list}{$\rightarrow$}{}
-\item \texttt{<fig>}: id of the subplot in which the current curve should be plotted;
-\item \texttt{<xcol>}: number of the column in the file of data for the abscisse;
-\item \texttt{<ycol>}: number of the column in the file of data for the ;
-\item \texttt{<legend>}: add a label to a curve;
-\item \texttt{<fmt>}: format of the line, composed from a symbol, a color and a linestyle;
-\item \texttt{<xplus>}: real to add to all values of the column \texttt{xcol};
-\item \texttt{<yplus>}: real to add to all values of the column \texttt{ycol};
-\item \texttt{<xfois>}: real to multiply to all values of the column \texttt{xcol};
-\item \texttt{<yfois>}: real to multiply to all values of the column \texttt{ycol};
-\item \texttt{<xerr>}: draw error bar;
-\item \texttt{<yerr>}:draw error bar;
-\item all standard options of 2D lines can be added, for example \texttt{markevery="2"}
-or \texttt{markersize="3.5"}. Every options can be found in the matplotlib documentation.
+\item \texttt{fig}: id of the subset of curves (i.e. markup \texttt{<subplot>})
+where the current curve should be plotted;
+\item \texttt{xcol}: number of the column in the file of data for the abscisse;
+\item \texttt{ycol}: number of the column in the file of data for the ordinate;
+\item \texttt{legend}: add a label to a curve;
+\item \texttt{fmt}: format of the line, composed from a symbol, a color and a
+linestyle, for example \texttt{fmt="r--"} for a dashed red line;
+\item \texttt{xplus}: real to add to all values of the column \texttt{xcol};
+\item \texttt{yplus}: real to add to all values of the column \texttt{ycol};
+\item \texttt{xfois}: real to multiply to all values of the column
+\texttt{xcol};
+\item \texttt{yfois}: real to multiply to all values of the column
+\texttt{ycol};
+\item \texttt{xerr}: draw horizontal error bar (see section \ref{sec:err});
+\item \texttt{yerr}: draw vertical error bar (see section \ref{sec:err});
+\item some standard options of 2D lines can be added, for example
+\texttt{markevery="2"} or \texttt{markersize="3.5"}. These options
+are summarized in the table \ref{table:curves}. Note that the options
+which are string of characters must be overquoted likes this: 
+\texttt{color="'g'"}.
 
-The attributes \texttt{fig} and \texttt{<ycol>} are mandatory.
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Property} & \textbf{Value Type} \\
+\hline
+alpha & float (0.0 transparent through 1.0 opaque) \\
+antialiased or aa & \texttt{True} or \texttt{False} \\
+color or c & any matplotlib color \\
+dash\_capstyle & \texttt{butt}; \texttt{round}; \texttt{projecting} \\
+dash\_joinstyle & \texttt{miter}; \texttt{round}; \texttt{bevel} \\
+dashes & sequence of on/off ink in points ex: \texttt{dashes="(5,3)"} \\
+label & any string, same as legend\\
+linestyle or ls &  \texttt{-}; \texttt{--}; \texttt{-.}; \texttt{:}; \texttt{steps}; ... \\
+linewidth or lw & float value in points \\
+marker &  \texttt{+}; \texttt{,}; \texttt{.}; \texttt{1}; \texttt{2}; \texttt{3}; \texttt{4}; ... \\
+markeredgecolor or mec & any matplotlib color \\
+markeredgewidth or mew & float value in points \\
+markerfacecolor or mfc & any matplotlib color \\
+markersize or ms & float \\
+markevery & \texttt{None}; integer; (startind, stride) \\
+solid\_capstyle & \texttt{butt}; \texttt{round}; \texttt{projecting} \\
+solid\_joinstyle & \texttt{miter}; \texttt{round}; \texttt{bevel} \\
+zorder & any number \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Options authorized as attributes of the markup \texttt{plot}.}
+\label{table:curves}
+\end{table}
+
+\end{list}
 \end{list}
 
-\item \texttt{<subplot>}: child of markup \texttt{<study>}, defines a frame with severals curves
+The attributes \texttt{fig} and \texttt{ycol} are mandatory.
+
+Details on 2D lines properties can be found in the \texttt{matplotlib}
+documentation. For more advanced options see section \ref{sec:raw}.
+
+\subsubsection{Define subsets of curves}
+
+A subset of curves is a frame with two axis, axis labels, legend, title and
+drawing of curves inside. Such subset is called subplot in the nomenclature
+of \texttt{matplotlib}.
+
+\texttt{<subplot>}: child of markup \texttt{<study>}, defines a frame with
+severals curves; the attributes are:
 \begin{list}{$\rightarrow$}{}
-\item \texttt{<id>}:
-\item \texttt{<legstatus>}:
-\item \texttt{<legpos>}:
-\item \texttt{<title>}:
-\item \texttt{<xlabel>}:
-\item \texttt{<ylabel>}:
-\item \texttt{<xlim>}:
-\item \texttt{<ylim>}:
-\item all standard options of subplot can be added, for example \texttt{markevery="2"}
-or \texttt{markersize="3.5"}. Every options can be found in the matplotlib documentation.
-
-The attributes \texttt{fig} and \texttt{<ycol>} are mandatory.
+\item \texttt{id}: id of the subplot, should be an integer;
+\item \texttt{legstatus}: if \texttt{"on"} display the frame of the legend;
+\item \texttt{legpos}: sequence of the relative coordinates of the center of
+the legend, it is possible to draw the legend outside the axis;
+\item \texttt{title}: set title of the subplot;
+\item \texttt{xlabel}: set label for the x axis;
+\item \texttt{ylabel}: set label for the y axis;
+\item \texttt{xlim}: set range for the x axis;
+\item \texttt{ylim}: set range for the y axis.
 \end{list}
 
-\item \texttt{<figure>}: child of markup \texttt{<study>}, defines a pictures with a layout of frames
+The attributes \texttt{fig} and \texttt{ycol} are mandatory.
+
+For more advanced options see section \ref{sec:raw}.
+
+\subsubsection{Define figures}
+
+Figure is a compound of subset of curves.
+
+\texttt{<figure>}: child of markup \texttt{<study>}, defines a pictures
+with a layout of frames; the attributes are:
 \begin{list}{$\rightarrow$}{}
-\item \texttt{<name>}: name of the file to be written on the disk;
-\item \texttt{<idlist>}: list of the subplot to be displyed in the figure;
-\item \texttt{<title>}: add a title at the top of the figure;
-\item \texttt{<nbrow>}: impose a  number of row of the layout of the subplots;
-\item \texttt{<nbcol>}: impose a  number of column of the layout of the subplots;
-\item all standard options of figure can be added, for example \texttt{figsize="(3,4)"}
-or \texttt{dpi="200"}. Every options can be found in the matplotlib documentation.
+\item \texttt{name}: name of the file to be written on the disk;
+\item \texttt{idlist}: list of the subplot to be displayed in the figure;
+\item \texttt{title}: add a title on the top of the figure;
+\item \texttt{nbrow}: impose a number of row of the layout of the subplots;
+\item \texttt{nbcol}: impose a number of column of the layout of the subplots;
+\item standard options of figure can be added (table \ref{table:fig}),
+for example \texttt{figsize="(3,4)"}.
 
-The attributes \texttt{name} and \texttt{<idlist>} are mandatory.
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Property} & \textbf{Value Type} \\
+\hline
+figsize   & width x height in inches; defaults to (4,4) \\
+dpi       & resolution; defaults to 200 \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Options authorized as attributes of the markup \texttt{figure}.}
+\label{table:fig}
+\end{table}
+
+Details can be found in the matplotlib documentation.
+For more advanced options see section \ref{sec:raw}.
+
 \end{list}
 
-\end{list}
+The attributes \texttt{name} and \texttt{idlist} are mandatory.
 
 \subsubsection{Experimental data}
 
+A particular markup is provided for curves of experimental data:
+\texttt{<measurement>}; the attributes are:
+\begin{list}{$\rightarrow$}{}
+\item \texttt{file}: name of the file to be read on the disk;
+\item \texttt{path}: path of the directory where the file of experimental data
+is. the path could be ommitted (\texttt{path=""}), and in this case, the file
+will be searched recursively in the directories of the considered study.
+\end{list}
 
+The attributes \texttt{file} and \texttt{path} are mandatory.
 
+In order to draw curves of experimental data, the markup \texttt{<measurement>}
+should be used with the markup \texttt{<plot>} as illustrated below:
+
+\small
 \begin{verbatim}
-    <study label='MyStudy' status='on'>
-        <measurement file='exp1.dat' path ='/home/dupond/codesaturne/MyDestination/MyStudy/DATA_EXP'>
-                <plot fig='1' xcol='1' ycol='2' legend='U Experimental data'/>
-                <plot fig='2' xcol='3' ycol='4' legend='V Experimental data'/>
-        </measurement>
-        <measurement file='exp2.dat' path =''>
-                <plot fig='1' xcol='1' ycol='2' legend='U Experimental data'/>
-                <plot fig='2' xcol='1' ycol='3' legend='V Experimental data'/>
-        </measurement>
-        <case label='Grid1' status='on' compute="off" post="on">
-            <data file="profile.dat" dest="">
-                <plot fig="1" xcol="1" ycol="2" legend="U computed" fmt='r-s'/>
-                <plot fig="2" xcol="1" ycol="3" legend="V computed" fmt='b-s'/>
-            </data>
-        </case>
-    </study>
-    <subplot id="1" legstatus='on'  ylabel="U ($m/s$)" xlabel= "$r$ ($m$)" legpos ='0.05 0.1'/>
-    <subplot id="2" legstatus='off' ylabel="V ($m/s$)" xlabel= "$r$ ($m$)"/>
-    <figure name="MyFigure" idlist="1 2"  figsize="(4,4)" />
+<study label='MyStudy' status='on'>
+    <measurement file='exp1.dat' path=''>
+            <plot fig='1' xcol='1' ycol='2' legend='U Experimental data'/>
+            <plot fig='2' xcol='3' ycol='4' legend='V Experimental data'/>
+    </measurement>
+    <measurement file='exp2.dat' path =''>
+            <plot fig='1' xcol='1' ycol='2' legend='U Experimental data'/>
+            <plot fig='2' xcol='1' ycol='3' legend='V Experimental data'/>
+    </measurement>
+    <case label='Grid1' status='on' compute="off" post="on">
+        <data file="profile.dat" dest="">
+            <plot fig="1" xcol="1" ycol="2" legend="U computed" fmt='r-s'/>
+            <plot fig="2" xcol="1" ycol="3" legend="V computed" fmt='b-s'/>
+        </data>
+    </case>
+</study>
+<subplot id="1" legstatus='on'  ylabel="U ($m/s$)" xlabel= "$r$ ($m$)" legpos ='0.05 0.1'/>
+<subplot id="2" legstatus='off' ylabel="V ($m/s$)" xlabel= "$r$ ($m$)"/>
+<figure name="MyFigure" idlist="1 2"  figsize="(4,4)" />
 \end{verbatim}
+\normalsize
 
-\subsubsection{Curves with error bar}
+\subsubsection{Curves with error bar}\label{sec:err}
 
+In order to draw vertical or horizontal error bar, it is possible to:
+\begin{list}{$\bullet$}{}
+\item give a single column number where the average uncertainty is:
+\small
+\begin{verbatim}
+<measurement file='axis.dat' path =''>
+    <plot fig='1' xcol='1' ycol='3' legend='Experimental data' xerr='2' />
+    <plot fig='1' xcol='1' ycol='3' yerr='4' />
+</measurement>
+\end{verbatim}
+\normalsize
+\item give two column numbers where the minimum and the maximum of the
+uncertainty are:
+\small
+\begin{verbatim}
+<data file='profile.dat' dest="">
+    <plot fig='1' xcol='1' ycol='2' legend='computation' yerr='3 4' />
+</data>
+\end{verbatim}
+\normalsize
+\end{list}
 
-\subsubsection{Legends}
+The attributes \texttt{xerr} and \texttt{yerr} could not be both at the same
+time in the markup \texttt{plot}.
 
+\subsubsection{Matplotlib raw commands}\label{sec:raw}
 
-
-\subsubsection{Matplotlib raw commands}
 The file of parameters allows to execute additional matplotlib commands,
 for curves (2D lines), or subplot, or figure.
-The behaviour 
+For every object drawn, \texttt{Autovnv} associate a name to this obvject
+that can be reused in standard matplotlib commands. Therefore childs
+markup \texttt{<plt\_command>} could be added to \texttt{<plot>},
+\texttt{<subplot>} or \texttt{<figure>}.
 
+It is possible to add commands with Matlab style or python style.
 
+\begin{list}{$\bullet$}{}
 
+\item curves or 2D lines: when a curve is drawn, the associated name
+are \texttt{line} and \texttt{lines} (with \texttt{line = lines[0]}).
+
+\small
 \begin{verbatim}
-                <plot fig="1" xcol="1" ycol="2" fmt='g^' legend="Simulated water level">
-                    <plt_command>plt.setp(lines, color="blue")</plt_command>
-                </plot>
+<plot fig="1" xcol="1" ycol="2" fmt='g^' legend="Simulated water level">
+    <plt_command>plt.setp(line, color="blue")</plt_command>
+    <plt_command>line.set_alpha(0.5)</plt_command>
+</plot>
 \end{verbatim}
+\normalsize
 
+\item subset of curves: for each subset, the associated name is \texttt{ax}:
 
+\small
 \begin{verbatim}
-        <subplot id="1" xlabel="time (s)" ylabel="level (m)" legend='Yes' legpos ='0.2 0.95'>
-            <plt_command>plt.grid(True)</plt_command>
-            <plt_command>plt.xlim(0, 20)</plt_command>
-            <plt_command>ax.set_ylim(1, 3)</plt_command>
-            <plt_command>plt.xlabel(r"Time ($s$)", fontsize=8)</plt_command>
-            <plt_command>ax.set_ylabel(r"Level ($m$)", fontsize=8)</plt_command>
-            <plt_command>for l in ax.xaxis.get_ticklabels(): l.set_fontsize(8)</plt_command>
-            <plt_command>for l in ax.yaxis.get_ticklabels(): l.set_fontsize(8)</plt_command>
-        </subplot>
-        <figure name="1_Water_level" fig="1"  title="Water Level" figsize="(3,3)"/>
+<subplot id="1" legend='Yes' legpos ='0.2 0.95'>
+    <plt_command>plt.grid(True)</plt_command>
+    <plt_command>plt.xlim(0, 20)</plt_command>
+    <plt_command>ax.set_ylim(1, 3)</plt_command>
+    <plt_command>plt.xlabel(r"Time ($s$)", fontsize=8)</plt_command>
+    <plt_command>ax.set_ylabel(r"Level ($m$)", fontsize=8)</plt_command>
+    <plt_command>for l in ax.xaxis.get_ticklabels(): l.set_fontsize(8)</plt_command>
+    <plt_command>for l in ax.yaxis.get_ticklabels(): l.set_fontsize(8)</plt_command>
+    <plt_command>plt.axis([-0.05, 1.6, 0.0, 0.15])</plt_command>
+    <plt_command>plt.xticks([-3, -2, -1, 0, 1])</plt_command>
+    <plt_command>plt.subplots_adjust(hspace=0.4, wspace=0.4, right=0.9, left=0.15)</plt_command>
+</subplot>
 \end{verbatim}
+\normalsize
 
+\end{list}
 
-
-\section{Output and restart}
+\section{Output and restart}\label{sec:restart}
 
 \textsc{Autovnv} produces several files in the \textbf{destination} directory:
 \begin{list}{$\bullet$}{}
 \item \texttt{report.txt}: standard output of the script;
-\item \texttt{auto\_vnv.log}: log of the code and the \texttt{pdflatex} compilation;
-\item \texttt{report\_global.pdf}: summary of the compilation, run, comparison, and plot steps;
-\item \texttt{report\_detailed.pdf}: details the comparison and display the plot;
-\item \texttt{sample.xml}: udpated file of parameters, useful for restart the script if an error occurs.
+\item \texttt{auto\_vnv.log}: log of the code and the \texttt{pdflatex}
+compilation;
+\item \texttt{report\_global.pdf}: summary of the compilation, run, comparison,
+and plot steps;
+\item \texttt{report\_detailed.pdf}: details the comparison and display the
+plot;
+\item \texttt{sample.xml}: udpated file of parameters, useful for restart the
+script if an error occurs.
 \end{list}
 
-After the computation of a case, if no error occurs, the attribute \texttt{compute}
+After the computation of a case, if no error occurs, the attribute
+\texttt{compute}
 is set to \texttt{"off"} in the copy of the file of parameters in
 the \textbf{destination}. It is allow a restart
 of \textsc{Autovnv} without re-run successfull previous computations.
 
 In the same manner, all empty attributes \texttt{repo=""} and \texttt{dest=""}
 are completed in the udpated file of parameters.
+
+\section{Tricks}\label{sec:tricks}
+\begin{list}{$\bullet$}{}
+\item How to comment markups in the file of parameter ?
+
+The opening and closing signs for commantaries are \texttt{<!--} and
+\texttt{-->}. In the following example, nothing from the study
+\texttt{MyStudy2} will be read:
+\begin{verbatim}
+<?xml version="1.0"?>
+<autovnv>
+    <repository>/home/dupond/codesaturne/MyRepository</repository>
+    <destination>/home/dupond/codesaturne/MyDestination</destination>
+
+    <study label="MyStudy1" status="on">
+        <case label="Grid1" status="on" compute="on" post="on"/>
+        <case label="Grid2" status="on" compute="off" post="on"/>
+    </study>
+    <!--
+    <study label="MyStudy2" status="on">
+        <case label="k-eps" status="on" compute="on" post="on"/>
+        <case label="Rij-eps" status="on" compute="on" post="on"/>
+    </study>
+    -->
+</autovnv>
+\end{verbatim}
+
+\item How to add text in a figure ?
+
+\small
+\begin{verbatim}
+<subplot id='301' ylabel ='Location ($m$)' title='Before jet -0.885' legstatus='off'>
+    <plt_command>plt.text(-4.2, 0.113, 'jet')</plt_command>
+    <plt_command>plt.text(-4.6, 0.11, r'$\downarrow$', fontsize=15)</plt_command>
+</subplot>
+ \end{verbatim}
+\normalsize
+
+\end{list}
+
 
 %
 \end{document}

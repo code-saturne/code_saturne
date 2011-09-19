@@ -1,3 +1,9 @@
+* 19/09/2011 - Alexandre Douce <alexandre.douce@edf.fr>
+  Update autovnv documentation and fix a minor issue.
+  modified files:
+    bin/autovnv/Drawing.py
+    doc/autovnv/autovnv.tex
+
 * 15/09/2011 - Cyril Baudry <cyril.baudry@edf.fr>
   Fix some Lagrangian modelling pages in the graphical interface.
   modified files:

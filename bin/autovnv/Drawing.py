@@ -509,9 +509,13 @@ class Plotter(object):
         yspan = curve.yspan
 
         if curve.measurement():
-            if curve.xerr or curve.yerr:
+            if curve.xerr:
                 lines = ax.errorbar(xspan, yspan,
                                     xerr=curve.xerr,
+                                    fmt=curve.fmt,
+                                    label=curve.legend)
+            if curve.yerr:
+                lines = ax.errorbar(xspan, yspan,
                                     yerr=curve.yerr,
                                     fmt=curve.fmt,
                                     label=curve.legend)
