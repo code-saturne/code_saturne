@@ -33,16 +33,10 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_defs.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
+#include "cs_defs.h"
 
 #include "cs_halo.h"
 #include "cs_numbering.h"
@@ -69,6 +63,8 @@ typedef enum {
   CS_MATRIX_NATIVE,     /* Native matrix format */
   CS_MATRIX_CSR,        /* Compressed Sparse Row storage format */
   CS_MATRIX_CSR_SYM,    /* Compressed Symmetric Sparse Row storage format */
+  CS_MATRIX_MSR,        /* Modified Compressed Sparse Row storage format */
+  CS_MATRIX_MSR_SYM,    /* Modified Compressed Symmetric Sparse Row storage */
   CS_MATRIX_N_TYPES     /* Number of known matrix types */
 
 } cs_matrix_type_t;
@@ -80,6 +76,10 @@ typedef struct _cs_matrix_structure_t cs_matrix_structure_t;
 /* Structure associated with opaque matrix object */
 
 typedef struct _cs_matrix_t cs_matrix_t;
+
+/* Structure associated with opaque matrix tuning results object */
+
+typedef struct _cs_matrix_variant_t cs_matrix_variant_t;
 
 /*============================================================================
  *  Global variables
@@ -168,13 +168,30 @@ cs_matrix_finalize(void);
 cs_matrix_structure_t *
 cs_matrix_structure_create(cs_matrix_type_t       type,
                            bool                   have_diag,
-                           cs_int_t               n_cells,
-                           cs_int_t               n_cells_ext,
-                           cs_int_t               n_faces,
+                           cs_lnum_t              n_cells,
+                           cs_lnum_t              n_cells_ext,
+                           cs_lnum_t              n_faces,
                            const cs_gnum_t       *cell_num,
-                           const cs_int_t        *face_cell,
+                           const cs_lnum_t       *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering);
+
+/*----------------------------------------------------------------------------
+ * Create a matrix container using a given structure and tuning info.
+ *
+ * If the matrix variant is incompatible with the structure, it is ignored.
+ *
+ * parameters:
+ *   ms <-- Associated matrix structure
+ *   mv <-- Associated matrix variant
+ *
+ * returns:
+ *   pointer to created matrix structure;
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_matrix_create_tuned(const cs_matrix_structure_t  *ms,
+                       const cs_matrix_variant_t    *mv);
 
 /*----------------------------------------------------------------------------
  * Destroy a matrix structure.
@@ -219,7 +236,7 @@ cs_matrix_destroy(cs_matrix_t **matrix);
  *   matrix --> Pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
-cs_int_t
+cs_lnum_t
 cs_matrix_get_n_columns(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
@@ -229,7 +246,7 @@ cs_matrix_get_n_columns(const cs_matrix_t  *matrix);
  *   matrix --> Pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
-cs_int_t
+cs_lnum_t
 cs_matrix_get_n_rows(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
@@ -250,7 +267,11 @@ const int *
 cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
- * Set matrix coefficients.
+ * Set matrix coefficients, sharing arrays with the caller when possible.
+ *
+ * With shared arrays, the matrix becomes unusable if the arrays passed as
+ * arguments are not be modified (its coefficients should be unset first
+ * to mark this).
  *
  * Depending on current options and initialization, values will be copied
  * or simply mapped.
@@ -280,7 +301,7 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
  * In the symmetric case, there is no difference with the interleaved case.
  *
  * Depending on current options and initialization, values will be copied
- * or simply mapped.
+ * or simply mapped (non-symmetric values will be copied).
  *
  * parameters:
  *   matrix    <-> Pointer to matrix structure
@@ -296,7 +317,38 @@ cs_matrix_set_coefficients_ni(cs_matrix_t      *matrix,
                               const cs_real_t  *xa);
 
 /*----------------------------------------------------------------------------
- * Release matrix coefficients.
+ * Set matrix coefficients, copying values to private arrays.
+ *
+ * With private arrays, the matrix becomes independant from the
+ * arrays passed as arguments.
+ *
+ * Block sizes are defined by an optional array of 4 values:
+ *   0: useful block size, 1: vector block extents,
+ *   2: matrix line extents,  3: matrix line*column extents
+ *
+ * parameters:
+ *   matrix           <-> Pointer to matrix structure
+ *   symmetric        <-- Indicates if matrix coefficients are symmetric
+ *   diag_block_size  <-- Block sizes for diagonal, or NULL
+ *   da               <-- Diagonal values (NULL if zero)
+ *   xa               <-- Extradiagonal values (NULL if zero)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_copy_coefficients(cs_matrix_t      *matrix,
+                            bool              symmetric,
+                            const int        *diag_block_size,
+                            const cs_real_t  *da,
+                            const cs_real_t  *xa);
+
+/*----------------------------------------------------------------------------
+ * Release shared matrix coefficients.
+ *
+ * Pointers to mapped coefficients are set to NULL, while
+ * coefficient copies owned by the matrix are not modified.
+ *
+ * This simply ensures the matrix does not maintain pointers
+ * to nonexistant data.
  *
  * parameters:
  *   matrix <-> Pointer to matrix structure
@@ -336,6 +388,24 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
                           cs_real_t          *restrict y);
 
 /*----------------------------------------------------------------------------
+ * Matrix.vector product y = (A-D).x
+ *
+ * This function includes a halo update of x prior to multiplication by A.
+ *
+ * parameters:
+ *   rotation_mode --> Halo update option for rotational periodicity
+ *   matrix        --> Pointer to matrix structure
+ *   x             <-> Multipliying vector values (ghost values updated)
+ *   y             --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_m_diag_vector_multiply(cs_perio_rota_t     rotation_mode,
+                                 const cs_matrix_t  *matrix,
+                                 cs_real_t          *restrict x,
+                                 cs_real_t          *restrict y);
+
+/*----------------------------------------------------------------------------
  * Matrix.vector product y = A.x with no prior halo update of x.
  *
  * This function does not include a halo update of x prior to multiplication
@@ -352,6 +422,24 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
 void
 cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
                                  const cs_real_t    *x,
+                                 cs_real_t          *restrict y);
+
+/*----------------------------------------------------------------------------
+ * Matrix.vector product y = (A-D).x
+ *
+ * This function includes a halo update of x prior to multiplication by A.
+ *
+ * parameters:
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   matrix        <-- Pointer to matrix structure
+ *   x             <-> Multipliying vector values (ghost values updated)
+ *   y             --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_exdiag_vector_multiply(cs_perio_rota_t     rotation_mode,
+                                 const cs_matrix_t  *matrix,
+                                 cs_real_t          *restrict x,
                                  cs_real_t          *restrict y);
 
 /*----------------------------------------------------------------------------
@@ -375,6 +463,129 @@ cs_matrix_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
                              const cs_matrix_t  *matrix,
                              cs_real_t          *restrict x,
                              cs_real_t          *restrict y);
+
+/*----------------------------------------------------------------------------
+ * Matrix.vector product y = alpha.(A-D).x + beta.y
+ *
+ * This function includes a halo update of x prior to multiplication by A.
+ *
+ * parameters:
+ *   rotation_mode --> Halo update option for rotational periodicity
+ *   alpha         --> Scalar, alpha in alpha.A.x + beta.y
+ *   beta          --> Scalar, beta in alpha.A.x + beta.y
+ *   matrix        --> Pointer to matrix structure
+ *   x             <-> Multipliying vector values (ghost values updated)
+ *   y             --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_alpha_a_m_d_x_p_beta_y(cs_perio_rota_t     rotation_mode,
+                                 cs_real_t           alpha,
+                                 cs_real_t           beta,
+                                 const cs_matrix_t  *matrix,
+                                 cs_real_t          *restrict x,
+                                 cs_real_t          *restrict y);
+
+/*----------------------------------------------------------------------------
+ * Matrix.vector product y = alpha.(A-D).x + beta.y
+ *
+ * This function includes a halo update of x prior to multiplication by A.
+ *
+ * parameters:
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   alpha         <-- Scalar, alpha in alpha.A.x + beta.y
+ *   beta          <-- Scalar, beta in alpha.A.x + beta.y
+ *   matrix        <-- Pointer to matrix structure
+ *   x             <-- Multipliying vector values (ghost values updated)
+ *   y             --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_exdiag_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
+                                    cs_real_t           alpha,
+                                    cs_real_t           beta,
+                                    const cs_matrix_t  *matrix,
+                                    cs_real_t          *restrict x,
+                                    cs_real_t          *restrict y);
+
+/*----------------------------------------------------------------------------
+ * Tune local matrix.vector product operations.
+ *
+ * parameters:
+ *   t_measure      <-- minimum time for each measure
+ *   sym_weight     <-- weight of symmetric case (0 <= weight <= 1)
+ *   block_weight   <-- weight of block case (0 <= weight <= 1)
+ *   n_min_spmv     <-- minimum number of SpMv products (to estimate
+ *                      amortization of coefficients assignment)
+ *   n_cells        <-- number of local cells
+ *   n_cells_ext    <-- number of cells including ghost cells (array size)
+ *   n_faces        <-- local number of internal faces
+ *   cell_num       <-- global cell numbers (1 to n)
+ *   face_cell      <-- face -> cells connectivity (1 to n)
+ *   halo           <-- cell halo structure
+ *   numbering      <-- vectorization or thread-related numbering info, or NULL
+ *
+ * returns:
+ *   pointer to tuning results structure
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_variant_t *
+cs_matrix_variant_tuned(double                 t_measure,
+                        double                 sym_weight,
+                        double                 block_weight,
+                        int                    n_min_products,
+                        cs_lnum_t              n_cells,
+                        cs_lnum_t              n_cells_ext,
+                        cs_lnum_t              n_faces,
+                        const cs_gnum_t       *cell_num,
+                        const cs_lnum_t       *face_cell,
+                        const cs_halo_t       *halo,
+                        const cs_numbering_t  *numbering);
+
+/*----------------------------------------------------------------------------
+ * Destroy a matrix variant structure.
+ *
+ * parameters:
+ *   mv <-> Pointer to matrix variant pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_variant_destroy(cs_matrix_variant_t  **mv);
+
+/*----------------------------------------------------------------------------
+ * Get the type associated with a matrix variant.
+ *
+ * parameters:
+ *   mv <-- Pointer to matrix variant structure
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_type_t
+cs_matrix_variant_type(const cs_matrix_variant_t  *mv);
+
+/*----------------------------------------------------------------------------
+ * Test local matrix.vector product operations.
+ *
+ * parameters:
+ *   n_cells        <-- number of local cells
+ *   n_cells_ext    <-- number of cells including ghost cells (array size)
+ *   n_faces        <-- local number of internal faces
+ *   cell_num       <-- global cell numbers (1 to n)
+ *   face_cell      <-- face -> cells connectivity (1 to n)
+ *   halo           <-- cell halo structure
+ *   numbering      <-- vectorization or thread-related numbering info, or NULL
+ *
+ * returns:
+ *   pointer to tuning results structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_variant_test(cs_lnum_t              n_cells,
+                       cs_lnum_t              n_cells_ext,
+                       cs_lnum_t              n_faces,
+                       const cs_gnum_t       *cell_num,
+                       const cs_lnum_t       *face_cell,
+                       const cs_halo_t       *halo,
+                       const cs_numbering_t  *numbering);
 
 /*----------------------------------------------------------------------------*/
 

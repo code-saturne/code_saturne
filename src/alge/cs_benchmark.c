@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -56,13 +56,24 @@
 #include <mpi.h>
 #endif
 
+#if defined(HAVE_ESSL_H)
+#include <essl.h>
+
+#elif defined(HAVE_MKL)
+#include <mkl_cblas.h>
+#include <mkl_spblas.h>
+
+#elif defined(HAVE_CBLAS)
+#include <cblas.h>
+
+#endif
+
 /*----------------------------------------------------------------------------
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
 #include <bft_error.h>
-#include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -75,6 +86,7 @@
 #include "cs_base.h"
 #include "cs_blas.h"
 #include "cs_halo.h"
+#include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_matrix.h"
@@ -108,126 +120,40 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Start timer.
- *
- * parameters:
- *   wt       --> wall-clock time (start in, stop - start out)
- *   cpu      --> CPU time (start in, stop - start out)
- *----------------------------------------------------------------------------*/
-
-static void
-_timer_start(double  *wt,
-             double  *cpu)
-{
-  *wt = cs_timer_wtime();
-  *cpu = cs_timer_cpu_time();
-}
-
-/*----------------------------------------------------------------------------
- * Stop timer.
- *
- * parameters:
- *   n_runs     <-- Number of timing runs
- *   wt         <-> wall-clock time (start in, stop - start out)
- *   cpu        <-> CPU time (start in, stop - start out)
- *----------------------------------------------------------------------------*/
-
-static void
-_timer_stop(int      n_runs,
-            double  *wt,
-            double  *cpu)
-{
-  double wt_s, cpu_s;
-
-  wt_s = cs_timer_wtime();
-  cpu_s = cs_timer_cpu_time();
-
-  *wt = (wt_s - *wt) / (double)n_runs;
-  *cpu = (cpu_s - *cpu) / (double)n_runs;
- }
-
-/*----------------------------------------------------------------------------
- * Print overhead.
- *
- * parameters:
- *   wt       <-- wall-clock time
- *   cpu      <-- CPU time
- *----------------------------------------------------------------------------*/
-
-static void
-_print_overhead(double  wt,
-                double  cpu)
-{
-  if (cs_glob_n_ranks == 1)
-    bft_printf(_("  Wall clock : %12.5e\n"
-                 "  CPU :        %12.5e\n"),
-               wt, cpu);
-
-  else {
-
-    double loc_count[2], glob_min[2], glob_max[2];
-
-    loc_count[0] = wt;
-    loc_count[1] = cpu;
-
-#if defined(HAVE_MPI)
-    MPI_Allreduce(loc_count, glob_min, 2, MPI_DOUBLE, MPI_MIN,
-                  cs_glob_mpi_comm);
-    MPI_Allreduce(loc_count, glob_max, 2, MPI_DOUBLE, MPI_MAX,
-                  cs_glob_mpi_comm);
-#else
-    { /* We should never enter here unless we have an alternative to MPI */
-      int i;
-      for (i = 0; i < 3; i++) {
-        glob_min[i] = loc_count[i];
-        glob_max[i] = loc_count[i];
-      }
-    }
-#endif
-
-    bft_printf(_("               Min          Max\n"
-                 "  Wall clock : %12.5e %12.5e\n"
-                 "  CPU :        %12.5e %12.5e\n"),
-               glob_min[0], glob_max[0], glob_min[1], glob_max[1]);
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Count number of operations.
  *
  * parameters:
+ *   n_runs       <-- Local number of runs
  *   n_ops        <-- Local number of operations
  *   n_ops_single <-- Single-processor equivalent number of operations
  *                    (without ghosts); ignored if 0
  *   wt           <-- wall-clock time
- *   cpu          <-- CPU time
  *----------------------------------------------------------------------------*/
 
 static void
-_print_stats(long    n_ops,
+_print_stats(long    n_runs,
+             long    n_ops,
              long    n_ops_single,
-             double  wt,
-             double  cpu)
+             double  wt)
 {
-  double fm = 1.0 / (1.e9 * wt);
+  double fm = 1.0 * n_runs / (1.e9 * wt);
 
   if (cs_glob_n_ranks == 1)
-    bft_printf(_("  N ops :      %12ld\n"
-                 "  Wall clock : %12.5e\n"
-                 "  CPU :        %12.5e\n"
-                 "  GFLOPS :     %12.5e\n"),
-               n_ops, wt, cpu, n_ops*fm);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  N ops:       %12ld\n"
+                    "  Wall clock:  %12.5e\n"
+                    "  GFLOPS:      %12.5e\n"),
+                  n_ops, wt/n_runs, n_ops*fm);
+
+#if defined(HAVE_MPI)
 
   else {
 
     long n_ops_min, n_ops_max, n_ops_tot;
-    double loc_count[3], glob_min[3], glob_max[3], fmg;
+    double loc_count[2], glob_sum[2], glob_min[2], glob_max[2], fmg;
 
-    loc_count[0] = wt;
-    loc_count[1] = cpu;
-    loc_count[2] = n_ops*fm;
-
-#if defined(HAVE_MPI)
+    loc_count[0] = wt/n_runs;
+    loc_count[1] = n_ops*fm;
 
     MPI_Allreduce(&n_ops, &n_ops_min, 1, MPI_LONG, MPI_MIN,
                   cs_glob_mpi_comm);
@@ -236,81 +162,139 @@ _print_stats(long    n_ops,
     MPI_Allreduce(&n_ops, &n_ops_tot, 1, MPI_LONG, MPI_SUM,
                   cs_glob_mpi_comm);
 
-    MPI_Allreduce(loc_count, glob_min, 3, MPI_DOUBLE, MPI_MIN,
+    MPI_Allreduce(loc_count, glob_min, 2, MPI_DOUBLE, MPI_MIN,
                   cs_glob_mpi_comm);
-    MPI_Allreduce(loc_count, glob_max, 3, MPI_DOUBLE, MPI_MAX,
+    MPI_Allreduce(loc_count, glob_max, 2, MPI_DOUBLE, MPI_MAX,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(loc_count, glob_sum, 2, MPI_DOUBLE, MPI_SUM,
                   cs_glob_mpi_comm);
 
-#else
-    { /* We should never enter here unless we have an alternative to MPI */
-      int i;
-      n_ops_min = n_ops; n_ops_max = n_ops; n_ops_tot = n_ops;
-      for (i = 0; i < 3; i++) {
-        glob_min[i] = loc_count[i];
-        glob_max[i] = loc_count[i];
-      }
-    }
-#endif
-
-    fmg = 1.0 / (1.e9 * glob_max[0]); /* global flops multiplier */
+    fmg = n_runs / (1.e9 * glob_max[0]); /* global flops multiplier */
 
     if (n_ops_single == 0)
-      bft_printf
-        (_("               Min          Max          Total\n"
-           "  N ops :      %12ld %12ld %12ld\n"
-           "  Wall clock : %12.5e %12.5e\n"
-           "  CPU :        %12.5e %12.5e\n"
-           "  GFLOPS :     %12.5e %12.5e %12.5e\n"),
-         n_ops_min, n_ops_max, n_ops_tot,
-         glob_min[0], glob_max[0],
-         glob_min[1], glob_max[1],
-         glob_min[2], glob_max[2], n_ops_tot*fmg);
+      cs_log_printf
+        (CS_LOG_PERFORMANCE,
+         _("               Mean         Min          Max          Total\n"
+           "  N ops:       %12ld %12ld %12ld %12ld\n"
+           "  Wall clock:  %12.5e %12.5e %12.5e\n"
+           "  GFLOPS:      %12.5e %12.5e %12.5e %12.5e\n"),
+         n_ops_tot/cs_glob_n_ranks, n_ops_min, n_ops_max, n_ops_tot,
+         glob_sum[0]/cs_glob_n_ranks, glob_min[0], glob_max[0],
+         glob_sum[1]/cs_glob_n_ranks, glob_min[1], glob_max[1], n_ops_tot*fmg);
 
     else
-      bft_printf
-        (_("               Min          Max          Total        Single\n"
-           "  N ops :      %12ld %12ld %12ld %12ld\n"
-           "  Wall clock : %12.5e %12.5e\n"
-           "  CPU :        %12.5e %12.5e\n"
-           "  GFLOPS :     %12.5e %12.5e %12.5e %12.5e\n"),
-         n_ops_min, n_ops_max, n_ops_tot, n_ops_single,
-         glob_min[0], glob_max[0],
-         glob_min[1], glob_max[1],
-         glob_min[2], glob_max[2], n_ops_tot*fmg, n_ops_single*fmg);
+      cs_log_printf
+        (CS_LOG_PERFORMANCE,
+         _("               Mean         Min          Max          Total"
+           "        Single\n"
+           "  N ops:       %12ld %12ld %12ld %12ld %12ld\n"
+           "  Wall clock:  %12.5e %12.5e %12.5e\n"
+           "  GFLOPS:      %12.5e %12.5e %12.5e %12.5e %12.5e\n"),
+         n_ops_tot/cs_glob_n_ranks, n_ops_min, n_ops_max, n_ops_tot,
+         n_ops_single,
+         glob_sum[0]/cs_glob_n_ranks, glob_min[0], glob_max[0],
+         glob_sum[1]/cs_glob_n_ranks, glob_min[1], glob_max[1],
+         n_ops_tot*fmg, n_ops_single*fmg);
   }
+
+#endif
+
+  cs_log_printf_flush(CS_LOG_PERFORMANCE);
+}
+
+/*----------------------------------------------------------------------------
+ * Count number of operations.
+ *
+ * parameters:
+ *   n_runs       <-- Local number of runs
+ *   n_ops        <-- Local number of operations
+ *   wt           <-- wall-clock time
+ *----------------------------------------------------------------------------*/
+
+static void
+_print_mem_stats(long    n_runs,
+                 long    n_ops,
+                 double  wt)
+{
+  double fm = 8.0 * n_runs / (1.e9 * wt);
+
+  if (cs_glob_n_ranks == 1)
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  N ops:       %12ld\n"
+                    "  Wall clock:  %12.5e\n"
+                    "  GB/s:        %12.5e\n"),
+                  n_ops, wt/n_runs, n_ops*fm);
+
+#if defined(HAVE_MPI)
+
+  else {
+
+    long n_ops_min, n_ops_max, n_ops_tot;
+    double loc_count[2], glob_sum[2], glob_min[2], glob_max[2], fmg;
+
+    loc_count[0] = wt/n_runs;
+    loc_count[1] = n_ops*fm;
+
+    MPI_Allreduce(&n_ops, &n_ops_min, 1, MPI_LONG, MPI_MIN,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(&n_ops, &n_ops_max, 1, MPI_LONG, MPI_MAX,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(&n_ops, &n_ops_tot, 1, MPI_LONG, MPI_SUM,
+                  cs_glob_mpi_comm);
+
+    MPI_Allreduce(loc_count, glob_min, 2, MPI_DOUBLE, MPI_MIN,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(loc_count, glob_max, 2, MPI_DOUBLE, MPI_MAX,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(loc_count, glob_sum, 2, MPI_DOUBLE, MPI_SUM,
+                  cs_glob_mpi_comm);
+
+    fmg = n_runs / (8.e9 * glob_max[0]); /* global flops multiplier */
+
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("               Mean         Min          Max          Total\n"
+         "  N ops:       %12ld %12ld %12ld %12ld\n"
+         "  Wall clock:  %12.5e %12.5e %12.5e\n"
+         "  GB/s:        %12.5e %12.5e %12.5e %12.5e\n"),
+       n_ops_tot/cs_glob_n_ranks, n_ops_min, n_ops_max, n_ops_tot,
+       glob_sum[0]/cs_glob_n_ranks, glob_min[0], glob_max[0],
+       glob_sum[1]/cs_glob_n_ranks, glob_min[1], glob_max[1], n_ops_tot*fmg);
+
+  }
+
+#endif
+
+  cs_log_printf_flush(CS_LOG_PERFORMANCE);
 }
 
 /*----------------------------------------------------------------------------
  * Simple dot product.
  *
  * parameters:
+ *   t_measure       <-- minimum time for each measure (< 0 for single pass)
  *   global          <-- 0 for local use, 1 for MPI sum
- *   n_runs          <-- number of operation runs
  *   n_cells         <-- number of cells (array size)
  *   x               <-- Vector
  *   y               <-- Vector
  *----------------------------------------------------------------------------*/
 
 static void
-_dot_product_1(int                  global,
-               int                  n_runs,
-               size_t               n_cells,
-               const cs_real_t     *x,
-               const cs_real_t     *y)
+_dot_product_1(double            t_measure,
+               int               global,
+               cs_lnum_t         n_cells,
+               const cs_real_t  *x,
+               const cs_real_t  *y)
 {
-  double wt, cpu;
-  int    run_id;
-  long   n_ops;
-  size_t ii;
+  double wt0, wt1;
+  int run_id, n_runs;
+  long n_ops;
+  cs_lnum_t ii;
 
-  double test_sum_mult = 1.0/n_runs;
   double test_sum = 0.0;
   int _global = global;
 
   char type_name[] = "X.Y";
-
-  if (n_runs < 1)
-    return;
 
   if (x == y)
     type_name[2] = 'X';
@@ -322,79 +306,105 @@ _dot_product_1(int                  global,
 
   /* First simple local x.x version */
 
-  _timer_start(&wt, &cpu);
-
 #if defined(HAVE_BLAS)
 
   test_sum = 0.0;
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    double s1 = cblas_ddot(n_cells, x, 1, y, 1);
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      double s1 = cblas_ddot(n_cells, x, 1, y, 1);
 #if defined(HAVE_MPI)
-    if (_global) {
-      double s1_glob = 0.0;
-      MPI_Allreduce(&s1, &s1_glob, 1, MPI_DOUBLE, MPI_SUM,
-                    cs_glob_mpi_comm);
-      s1 = s1_glob;
-    }
+      if (_global) {
+        double s1_glob = 0.0;
+        MPI_Allreduce(&s1, &s1_glob, 1, MPI_DOUBLE, MPI_SUM,
+                      cs_glob_mpi_comm);
+        s1 = s1_glob;
+      }
 #endif
-    test_sum += test_sum_mult*s1;
+      test_sum += test_sum_mult*s1;
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
-
   if (_global == 0)
-    bft_printf(_("\n"
-                 "Simple local dot product %s with BLAS\n"
-                 "-------------------------------------\n"),
-               type_name);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+      _("\n"
+         "Simple local dot product %s with BLAS\n"
+         "-------------------------------------\n"),
+       type_name);
   else
-    bft_printf(_("\n"
-                 "Simple global dot product %s with BLAS\n"
-                 "---------------------------------------\n"),
-               type_name);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+      _("\n"
+         "Simple global dot product %s with BLAS\n"
+         "---------------------------------------\n"),
+       type_name);
 
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  _print_stats(n_ops, 0, wt, cpu);
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
 #endif /* defined(HAVE_BLAS) */
 
   test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
 
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    double s1 = 0.0;
-    for (ii = 0; ii < n_cells; ii++)
-      s1 += x[ii] * y[ii];
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      double s1 = 0.0;
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cells; ii++)
+        s1 += x[ii] * y[ii];
 #if defined(HAVE_MPI)
-    if (_global) {
-      double s1_glob = 0.0;
-      MPI_Allreduce(&s1, &s1_glob, 1, MPI_DOUBLE, MPI_SUM,
-                    cs_glob_mpi_comm);
-      s1 = s1_glob;
-    }
+      if (_global) {
+        double s1_glob = 0.0;
+        MPI_Allreduce(&s1, &s1_glob, 1, MPI_DOUBLE, MPI_SUM,
+                      cs_glob_mpi_comm);
+        s1 = s1_glob;
+      }
 #endif
-    test_sum += test_sum_mult*s1;
+      test_sum += test_sum_mult*s1;
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
-
   if (_global == 0)
-    bft_printf(_("\n"
-                 "Simple local dot product %s\n"
-                 "---------------------------\n"),
-               type_name);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n"
+                    "Simple local dot product %s\n"
+                    "---------------------------\n"),
+                  type_name);
   else
-    bft_printf(_("\n"
-                 "Simple global dot product %s\n"
-                 "----------------------------\n"),
-               type_name);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n"
+                    "Simple global dot product %s\n"
+                    "----------------------------\n"),
+                  type_name);
 
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  _print_stats(n_ops, 0, wt, cpu);
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
  }
 
@@ -402,79 +412,100 @@ _dot_product_1(int                  global,
  * Double local dot product.
  *
  * parameters:
- *   n_runs          <-- number of operation runs
+ *   t_measure       <-- minimum time for each measure (< 0 for single pass)
  *   n_cells         <-- number of cells (array size)
  *   x               <-- Vector
  *   y               <-- Vector
  *----------------------------------------------------------------------------*/
 
 static void
-_dot_product_2(int                  n_runs,
-               size_t               n_cells,
-               const cs_real_t     *x,
-               const cs_real_t     *y)
+_dot_product_2(double            t_measure,
+               cs_lnum_t         n_cells,
+               const cs_real_t  *x,
+               const cs_real_t  *y)
 {
-  double wt, cpu;
-  int    run_id;
-  long   n_ops;
-  size_t ii;
+  double wt0, wt1;
+  int run_id, n_runs;
+  long n_ops;
+  cs_lnum_t ii;
 
-  double test_sum_mult = 1.0/n_runs;
   double test_sum = 0.0;
-
-  if (n_runs < 1)
-    return;
 
   n_ops = n_cells * 2;
 
   /* First simple local x.x version */
 
-  _timer_start(&wt, &cpu);
-
 #if defined(HAVE_BLAS)
 
   test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
 
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    double s1 = cblas_ddot(n_cells, x, 1, x, 1);
-    double s2 = cblas_ddot(n_cells, x, 1, y, 1);
-    test_sum += test_sum_mult*(s1+s2);
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      double s1 = cblas_ddot(n_cells, x, 1, x, 1);
+      double s2 = cblas_ddot(n_cells, x, 1, y, 1);
+      test_sum += test_sum_mult*(s1+s2);
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Double local dot product X.X, Y.Y with BLAS\n"
+                  "-------------------------------------------\n"));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  bft_printf(_("\n"
-               "Double local dot product X.X, Y.Y with BLAS\n"
-               "-------------------------------------------\n"));
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
-
-  _print_stats(n_ops, 0, wt, cpu);
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
 #endif /* defined(HAVE_BLAS) */
 
   test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
 
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    double s1 = 0.0;
-    double s2 = 0.0;
-    for (ii = 0; ii < n_cells; ii++) {
-      s1 += x[ii] * x[ii];
-      s2 += x[ii] * y[ii];
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      double s1 = 0.0;
+      double s2 = 0.0;
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cells; ii++) {
+        s1 += x[ii] * x[ii];
+        s2 += x[ii] * y[ii];
+      }
+      test_sum += test_sum_mult*(s1+s2);
+      run_id++;
     }
-    test_sum += test_sum_mult*(s1+s2);
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Double local dot product X.X, Y.Y\n"
+                  "---------------------------------\n"));
 
-  bft_printf(_("\n"
-               "Double local dot product X.X, Y.Y\n"
-               "---------------------------------\n"));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
-
-  _print_stats(n_ops, 0, wt, cpu);
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
  }
 
@@ -482,84 +513,100 @@ _dot_product_2(int                  n_runs,
  * y -> ax + y test
  *
  * parameters:
- *   n_runs        <-- number of operation runs
+ *   t_measure     <-- minimum time for each measure (< 0 for single pass)
  *   n_cells       <-- number of cells (array size)
  *   x             <-- Vector
  *   y             <-> Vector
  *----------------------------------------------------------------------------*/
 
 static void
-_axpy_(int                n_runs,
-       size_t             n_cells,
+_axpy_(double             t_measure,
+       cs_lnum_t          n_cells,
        const cs_real_t   *restrict x,
        cs_real_t         *restrict y)
 {
-  double wt, cpu;
-  int    run_id;
-  long   n_ops;
-  size_t ii;
+  double wt0, wt1;
+  int run_id, n_runs;
+  long n_ops;
+  cs_lnum_t ii;
 
-  double test_sum_mult = 1.0/n_runs;
   double test_sum = 0.0;
-
-  if (n_runs < 1)
-    return;
 
   n_ops = n_cells * 2;
 
   /* First simple local x.x version */
 
+# pragma omp parallel for
   for (ii = 0; ii < n_cells; ii++)
     y[ii] = 0.0;
-
-  _timer_start(&wt, &cpu);
 
 #if defined(HAVE_BLAS)
 
   test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
 
-  for (run_id = 0; run_id < n_runs; run_id++) {
-
-    cblas_daxpy(n_cells, test_sum_mult, x, 1, y, 1);
-
-    test_sum += test_sum_mult*y[run_id%n_cells];
-
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      cblas_daxpy(n_cells, test_sum_mult, (cs_real_t *)x, 1, y, 1);
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Y <- aX + Y with BLAS\n"
+                  "---------------------\n"));
 
-  bft_printf(_("\n"
-               "Y <- aX + Y with BLAS\n"
-               "---------------------\n"));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
-
-  _print_stats(n_ops, 0, wt, cpu);
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
 #endif /* defined(HAVE_BLAS) */
 
   test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
 
-  for (run_id = 0; run_id < n_runs; run_id++) {
-
-    for (ii = 0; ii < n_cells; ii++)
-      y[ii] += test_sum_mult * x[ii];
-
-    test_sum += test_sum_mult*y[run_id%n_cells];
-
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cells; ii++)
+        y[ii] += test_sum_mult * x[ii];
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Y <- aX + Y\n"
+                  "-----------\n"));
 
-  bft_printf(_("\n"
-               "Y <- aX + Y\n"
-               "-----------\n"));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
-
-  _print_stats(n_ops, 0, wt, cpu);
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
 }
 
@@ -567,23 +614,20 @@ _axpy_(int                n_runs,
  * Simple divisions on a vector.
  *
  * parameters:
- *   n_runs          <-- number of operation runs
- *   n_cells         <-- number of cells (array size)
+ *   t_measure     <-- minimum time for each measure (< 0 for single pass)
+ *   n_cells       <-- number of cells (array size)
  *----------------------------------------------------------------------------*/
 
 static void
-_division_test(int     n_runs,
-               size_t  n_cells)
+_division_test(double     t_measure,
+               cs_lnum_t  n_cells)
 {
-  double wt, cpu;
-  int    run_id;
-  long   n_ops;
-  size_t ii;
+  double wt0, wt1;
+  int run_id, n_runs;
+  long n_ops;
+  cs_lnum_t ii;
 
   cs_real_t  *x = NULL, *y = NULL, *z = NULL;
-
-  if (n_runs < 1)
-    return;
 
   BFT_MALLOC(x, n_cells, cs_real_t);
   BFT_MALLOC(y, n_cells, cs_real_t);
@@ -594,6 +638,7 @@ _division_test(int     n_runs,
   /* Division */
   /*----------*/
 
+# pragma omp parallel for
   for (ii = 0; ii < n_cells; ii++) {
     x[ii] = 2.0 + ii%3;
     y[ii] = 2.0 + (ii+1)%3;
@@ -601,64 +646,88 @@ _division_test(int     n_runs,
 
   /* Division of two vectors */
 
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-
-    for (ii = 0; ii < n_cells; ii++)
-      z[ii] = x[ii] / y[ii];
-
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    while (run_id < n_runs) {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cells; ii++)
+        z[ii] = x[ii] / y[ii];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Division z = x/y\n"
+                  "----------------\n"));
 
-  bft_printf(_("\n"
-               "Division z = x/y\n"
-               "----------------\n"));
-
-  _print_stats(n_ops, 0, wt, cpu);
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
   BFT_FREE(z);
 
   /* Copy inverse of a vector */
 
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-
-    for (ii = 0; ii < n_cells; ii++)
-      y[ii] = 1.0 / x[ii];
-
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    while (run_id < n_runs) {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cells; ii++)
+        y[ii] = 1.0 / x[ii];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Division y = 1/x\n"
+                  "----------------\n"));
 
-  bft_printf(_("\n"
-               "Division y = 1/x\n"
-               "----------------\n"));
-
-  _print_stats(n_ops, 0, wt, cpu);
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
   BFT_FREE(y);
 
   /* Inverse of a vector */
 
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-
-    for (ii = 0; ii < n_cells; ii++)
-      x[ii] = 1.0 / x[ii];
-
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    while (run_id < n_runs) {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cells; ii++)
+        x[ii] = 1.0 / x[ii];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Division x <- 1/x\n"
+                  "-----------------\n"));
 
-  bft_printf(_("\n"
-               "Division x <- 1/x\n"
-               "-----------------\n"));
-
-  _print_stats(n_ops, 0, wt, cpu);
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
   BFT_FREE(x);
 
@@ -668,231 +737,782 @@ _division_test(int     n_runs,
  * Simple square root on a vector.
  *
  * parameters:
- *   n_runs          <-- number of operation runs
- *   n_cells         <-- number of cells (array size)
+ *   t_measure     <-- minimum time for each measure (< 0 for single pass)
+ *   n_cells       <-- number of cells (array size)
  *----------------------------------------------------------------------------*/
 
 static void
-_sqrt_test(int     n_runs,
-           size_t  n_cells)
+_sqrt_test(double     t_measure,
+           cs_lnum_t  n_cells)
 {
-  double wt, cpu;
-  int    run_id;
-  long   n_ops;
-  size_t ii;
+  double wt0, wt1;
+  int run_id, n_runs;
+  long n_ops;
+  cs_lnum_t ii;
 
   cs_real_t  *x = NULL, *y = NULL;
-
-  if (n_runs < 1)
-    return;
 
   BFT_MALLOC(x, n_cells, cs_real_t);
   BFT_MALLOC(y, n_cells, cs_real_t);
 
   n_ops = n_cells;
 
+# pragma omp parallel for
   for (ii = 0; ii < n_cells; ii++)
     x[ii] = 2.0 + ii%3;
 
   /* Copy square root of a vector */
 
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-
-    for (ii = 0; ii < n_cells; ii++)
-      y[ii] = sqrt(x[ii]);
-
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    while (run_id < n_runs) {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cells; ii++)
+        y[ii] = sqrt(x[ii]);
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "y = sqrt(x)\n"
+                  "-----------\n"));
 
-  bft_printf(_("\n"
-               "y = sqrt(x)\n"
-               "-----------\n"));
-
-  _print_stats(n_ops, 0, wt, cpu);
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
   BFT_FREE(y);
 
   /* In place square root of a vector */
 
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-
-    for (ii = 0; ii < n_cells; ii++)
-      x[ii] = sqrt(x[ii]);
-
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    while (run_id < n_runs) {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cells; ii++)
+        x[ii] = sqrt(x[ii]);
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "x = sqrt(x)\n"
+                  "-----------\n"));
 
-  bft_printf(_("\n"
-               "x = sqrt(x)\n"
-               "-----------\n"));
-
-  _print_stats(n_ops, 0, wt, cpu);
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
   BFT_FREE(x);
 
 }
 
 /*----------------------------------------------------------------------------
- * Measure matrix creation + destruction related performance.
+ * y -> da.x test
  *
  * parameters:
- *   n_runs      <-- number of operation runs
- *   type_name   <-- type name
- *   type        <-- matrix type
- *   n_cells     <-- number of local cells
- *   n_cells_ext <-- number of cells including ghost cells (array size)
- *   n_faces     <-- local number of internal faces
- *   cell_num    <-- global cell numbers (1 to n)
- *   face_cell   <-- face -> cells connectivity (1 to n)
- *   halo        <-- cell halo structure
- *   numbering   <-- vectorization or thread-related numbering info, or NULL
+ *   t_measure     <-- minimum time for each measure (< 0 for single pass)
+ *   n_cells       <-- number of cells (array size)
+ *   da            <-- Vector
+ *   x             <-- Vector
+ *   y             <-> Vector
  *----------------------------------------------------------------------------*/
 
 static void
-_matrix_creation_test(int                    n_runs,
-                      const char            *type_name,
-                      cs_matrix_type_t       type,
-                      cs_int_t               n_cells,
-                      cs_int_t               n_cells_ext,
-                      cs_int_t               n_faces,
-                      const cs_gnum_t       *cell_num,
-                      const cs_int_t        *face_cell,
-                      const cs_halo_t       *halo,
-                      const cs_numbering_t  *numbering)
+_ad_x_test(double             t_measure,
+           cs_lnum_t          n_cells,
+           const cs_real_t   *restrict da,
+           const cs_real_t   *restrict x,
+           cs_real_t         *restrict y)
 {
-  double wt, cpu;
-  int    run_id;
+  double wt0, wt1;
+  int    run_id, n_runs;
+  long   n_ops;
+  int    ii;
 
-  cs_matrix_structure_t  *ms = NULL;
+  double test_sum = 0.0;
 
-  if (n_runs < 1)
-    return;
+  /* Tell IBM compiler not to alias */
+# if defined(__xlc__)
+# pragma disjoint(*x, *y, *da)
+# endif
 
-  /* First count creation/destruction overhead */
+  n_ops = n_cells;
 
-  _timer_start(&wt, &cpu);
+# pragma omp parallel for
+  for (ii = 0; ii < n_cells; ii++)
+    y[ii] = 0.0;
 
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    ms = cs_matrix_structure_create(type,
-                                    true,
-                                    n_cells,
-                                    n_cells_ext,
-                                    n_faces,
-                                    cell_num,
-                                    face_cell,
-                                    halo,
-                                    numbering);
-    cs_matrix_structure_destroy(&ms);
+#if defined(HAVE_CBLAS) || defined(HAVE_MKL)
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      cblas_dgbmv(CblasRowMajor, CblasNoTrans,
+                  n_cells,  /* n rows */
+                  n_cells,  /* n columns */
+                  0,        /* kl */
+                  0,        /* ku */
+                  1.0,      /* alpha */
+                  da,       /* matrix */
+                  1,        /* lda */
+                  x, 1, 0.0, y, 1);
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Y <- DX with BLAS dgbmv\n"
+                  "-----------------------\n"));
 
-  bft_printf(_("\n"
-               "Matrix structure construction / destruction (%s)\n"
-               "------------------------------------------------\n"),
-             _(type_name));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  bft_printf(_("  (calls: %d)\n"), n_runs);
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-  _print_overhead(wt, cpu);
+#endif /* defined(HAVE_CBLAS) || defined(HAVE_MKL) */
+
+#if defined(HAVE_MKL)
+
+  /* Diagonal variant */
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    char transa = 'n';
+    int n_rows = n_cells;
+    int ndiag = 1;
+    int idiag[1] = {0};
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      mkl_ddiagemv(&transa,
+                   &n_rows,
+                   da,
+                   &n_rows,
+                   idiag,
+                   &ndiag,
+                   x,
+                   y);
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Y <- DX with MKL ddiagemv\n"
+                  "-------------------------\n"));
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
+
+#endif /* defined(HAVE_MKL) */
+
+#if defined(HAVE_ESSL)
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      dndot(n_cells, 1, y, 1, 1, da, 1, 1, x, 1, 1);
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Y <- DX with ESSL dndot\n"
+                  "-----------------------\n"));
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
+
+#endif /* defined(HAVE_ESSL) */
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cells; ii++)
+        y[ii] = da[ii] * x[ii];
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Y <- DX\n"
+                  "-------\n"));
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
 }
 
 /*----------------------------------------------------------------------------
- * Measure matrix assignment performance.
+ * Compute matrix-vector product for dense blocks: y[i] = a[i].x[i]
+ *
+ * This variant uses a fixed 3x3 block, for better compiler optimization,
+ * and an inline function
  *
  * parameters:
- *   n_runs      <-- number of operation runs
- *   type_name   <-- type name
- *   type        <-- matrix type
- *   sym_coeffs  <-- symmetric coefficients
- *   n_cells     <-- number of local cells
- *   n_cells_ext <-- number of cells including ghost cells (array size)
- *   n_faces     <-- local number of internal faces
- *   cell_num    <-- global cell numbers (1 to n)
- *   face_cell   <-- face -> cells connectivity (1 to n)
- *   halo        <-- cell halo structure
- *   numbering   <-- vectorization or thread-related numbering info, or NULL
- *   da          <-- diagonal values
- *   xa          <-- extradiagonal values
+ *   b_id   <-- block id
+ *   a      <-- Pointer to block matrixes array (usually matrix diagonal)
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_dense_3_3_ax(cs_lnum_t         b_id,
+              const cs_real_t  *restrict a,
+              const cs_real_t  *restrict x,
+              cs_real_t        *restrict y)
+{
+  cs_lnum_t   jj, kk;
+
+# if defined(__xlc__) /* Tell IBM compiler not to alias */
+# pragma disjoint(*x, *y, * a)
+# endif
+
+  for (jj = 0; jj < 3; jj++) {
+    y[b_id*3 + jj] = 0;
+    for (kk = 0; kk < 3; kk++)
+      y[b_id*3 + jj] +=   a[b_id*9 + jj*3 + kk] * x[b_id*3 + kk];
+  }
+}
+
+static inline void
+_3_3_diag_vec_p_l_a(const cs_real_t  *restrict da,
+                    const cs_real_t  *restrict x,
+                    cs_real_t        *restrict y,
+                    cs_lnum_t         n_elts)
+{
+  cs_lnum_t  ii;
+
+# if defined(__xlc__) /* Tell IBM compiler not to alias */
+# pragma disjoint(*x, *y, *da)
+# endif
+
+# pragma omp parallel for
+  for (ii = 0; ii < n_elts; ii++)
+    _dense_3_3_ax(ii, da, x, y);
+}
+
+/*----------------------------------------------------------------------------
+ * Block version of y[i] = da[i].x[i], with da possibly NULL
+ *
+ * This variant uses a fixed 3x3 block, for better compiler optimization,
+ * and no inline function
+ *
+ * parameters:
+ *   da     <-- Pointer to coefficients array (usually matrix diagonal)
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
+ *   n_elts <-- Array size
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_3_3_diag_vec_p_l_b(const cs_real_t  *restrict da,
+                    const cs_real_t  *restrict x,
+                    cs_real_t        *restrict y,
+                    cs_lnum_t         n_elts)
+{
+  cs_lnum_t  ii, jj, kk;
+
+# if defined(__xlc__) /* Tell IBM compiler not to alias */
+# pragma disjoint(*x, *y, *da)
+# endif
+
+# pragma omp parallel for private(jj, kk)
+  for (ii = 0; ii < n_elts; ii++) {
+    for (jj = 0; jj < 3; jj++) {
+      y[ii*3 + jj] = 0;
+      for (kk = 0; kk < 3; kk++)
+        y[ii*3 + jj] += da[ii*9 + jj*3 + kk] * x[ii*3 + kk];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * y -> da.x test
+ *
+ * parameters:
+ *   t_measure     <-- minimum time for each measure (< 0 for single pass)
+ *   n_cells       <-- number of cells (array size)
  *----------------------------------------------------------------------------*/
 
 static void
-_matrix_assignment_test(int                    n_runs,
-                        const char            *type_name,
-                        cs_matrix_type_t       type,
-                        bool                   sym_coeffs,
-                        cs_int_t               n_cells,
-                        cs_int_t               n_cells_ext,
-                        cs_int_t               n_faces,
-                        const cs_gnum_t       *cell_num,
-                        const cs_int_t        *face_cell,
-                        const cs_halo_t       *halo,
-                        const cs_numbering_t  *numbering,
-                        const cs_real_t       *restrict da,
-                        const cs_real_t       *restrict xa)
+_block_ad_x_test(double             t_measure,
+                 cs_lnum_t          n_cells)
 {
-  double wt, cpu;
-  int    run_id;
+  double wt0, wt1;
+  int    run_id, n_runs;
+  long   n_ops;
+  int    ii;
+  cs_real_t  *da, *x, *y;
 
-  cs_matrix_structure_t *ms = NULL;
-  cs_matrix_t *m = NULL;
+  double test_sum = 0.0;
 
-  if (n_runs < 1)
-    return;
+  /* Tell IBM compiler not to alias */
+# if defined(__xlc__)
+# pragma disjoint(*x, *y, *da)
+# endif
 
-  /* Count assignment overhead */
+  BFT_MALLOC(da, n_cells*15, cs_real_t);
+  BFT_MALLOC(x, n_cells*3, cs_real_t);
+  BFT_MALLOC(y, n_cells*3, cs_real_t);
 
-  ms = cs_matrix_structure_create(type,
-                                  true,
-                                  n_cells,
-                                  n_cells_ext,
-                                  n_faces,
-                                  cell_num,
-                                  face_cell,
-                                  halo,
-                                  numbering);
+  n_ops = n_cells;
 
-  m = cs_matrix_create(ms);
+  /* First simple local x.x version */
 
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    cs_matrix_set_coefficients(m,
-                               sym_coeffs,
-                               NULL,
-                               da,
-                               xa);
+  for (ii = 0; ii < n_cells*15; ii++)
+    da[ii] = 1.0;
+  for (ii = 0; ii < n_cells*3; ii++) {
+    x[ii] = 0.0;
+    y[ii] = 0.0;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+#if defined(HAVE_CBLAS) || defined(HAVE_MKL)
 
-  cs_matrix_destroy(&m);
-  cs_matrix_structure_destroy(&ms);
+  /* Row major variant */
 
-  bft_printf(_("\n"
-               "Matrix value assignment (%s)\n"
-               "-----------------------\n"), _(type_name));
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
 
-  bft_printf(_("  (calls: %d)\n"), n_runs);
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      cblas_dgbmv(CblasRowMajor, CblasNoTrans,
+                  n_cells*3,  /* n rows */
+                  n_cells*3,  /* n columns */
+                  2,          /* kl */
+                  2,          /* ku */
+                  1.0,        /* alpha */
+                  da,         /* matrix */
+                  5,          /* lda */
+                  x, 1, 0.0, y, 1);
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
 
-  _print_overhead(wt, cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Block Y <- DX with BLAS dgbmv (row major)\n"
+                  "-----------------------------\n"));
 
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
+
+  /* Column major variant */
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      cblas_dgbmv(CblasColMajor, CblasNoTrans,
+                  n_cells*3,  /* n rows */
+                  n_cells*3,  /* n columns */
+                  2,          /* kl */
+                  2,          /* ku */
+                  1.0,        /* alpha */
+                  da,         /* matrix */
+                  5,          /* lda */
+                  x, 1, 0.0, y, 1);
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Block Y <- DX with BLAS dgbmv (col major)\n"
+                  "-----------------------------\n"));
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
+
+#endif /* defined(HAVE_CBLAS) || defined(HAVE_MKL) */
+
+#if defined(HAVE_MKL)
+
+  /* Diagonal variant */
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    char transa = 'n';
+    int n_rows = n_cells*3;
+    int ndiag = 5;
+    int idiag[5] = {-2, -1, 0, 1, 2};
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      mkl_ddiagemv(&transa,
+                   &n_rows,
+                   da,
+                   &n_rows,
+                   idiag,
+                   &ndiag,
+                   x,
+                   y);
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Block Y <- DX with MKL ddiagemv\n"
+                  "-------------------------------\n"));
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
+
+#endif /* defined(HAVE_MKL) */
+
+  /* Variant a */
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      _3_3_diag_vec_p_l_a(da, x, y, n_cells);
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Block Y <- DX (variant a)\n"
+                  "-------------\n"));
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
+
+  /* Variant b */
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      _3_3_diag_vec_p_l_b(da, x, y, n_cells);
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Block Y <- DX (variant b)\n"
+                  "-------------\n"));
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
+
+  BFT_FREE(da);
+  BFT_FREE(x);
+  BFT_FREE(y);
+}
+
+/*----------------------------------------------------------------------------
+ * Memory copy test using different variants.
+ *
+ * parameters:
+ *   t_measure     <-- minimum time for each measure (< 0 for single pass)
+ *   n_cells       <-- number of cells (array size)
+ *   x             <-- Vector
+ *   y             <-> Vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_copy_test(double             t_measure,
+           cs_lnum_t          n_cells,
+           const cs_real_t   *restrict x,
+           cs_real_t         *restrict y)
+{
+  double     wt0, wt1;
+  int        sub_id, run_id, n_runs;
+  cs_lnum_t  _n_cells, n_div, ii;
+
+  double test_sum = 0.0;
+
+  /* Tell IBM compiler not to alias */
+# if defined(__xlc__)
+# pragma disjoint(*x, *y)
+# endif
+
+  /* Blas version */
+
+#if defined(HAVE_BLAS)
+
+  for (sub_id = 0, n_div = 1;
+       sub_id < 4;
+       sub_id++, n_div *= 8) {
+
+    test_sum = 0.0;
+    wt0 = cs_timer_wtime(), wt1 = wt0;
+
+    _n_cells = n_div;
+
+    if (t_measure > 0)
+      n_runs = 8;
+    else
+      n_runs = 1;
+    run_id = 0;
+    while (run_id < n_runs) {
+      double test_sum_mult = 1.0/n_runs;
+      while (run_id < n_runs) {
+        cblas_dcopy(_n_cells, (cs_real_t *)x, 1, y, 1);
+        y[0] += 0.1;
+        test_sum += test_sum_mult*y[run_id%n_cells];
+        run_id++;
+      }
+      wt1 = cs_timer_wtime();
+      if (wt1 - wt0 < t_measure)
+        n_runs *= 2;
+    }
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n"
+                    "Copy with cblas_dcopy (n_cells/%d)\n"
+                    "---------------------\n"), n_div);
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  (calls: %d;  test sum: %12.5f)\n"),
+                  n_runs, test_sum);
+
+    _print_mem_stats(n_runs, _n_cells, wt1 - wt0);
+
+  }
+
+#endif /* defined(HAVE_BLAS) */
+
+  /* Copy with memcpy */
+
+  for (sub_id = 0, n_div = 1;
+       sub_id < 4;
+       sub_id++, n_div *= 8) {
+
+    test_sum = 0.0;
+    wt0 = cs_timer_wtime(), wt1 = wt0;
+
+    _n_cells = n_div;
+
+    if (t_measure > 0)
+      n_runs = 8;
+    else
+      n_runs = 1;
+    run_id = 0;
+    while (run_id < n_runs) {
+      double test_sum_mult = 1.0/n_runs;
+      while (run_id < n_runs) {
+        memcpy(y, x, _n_cells*sizeof(cs_real_t));
+        y[0] += 0.1;
+        test_sum += test_sum_mult*y[run_id%n_cells];
+        run_id++;
+      }
+      wt1 = cs_timer_wtime();
+      if (wt1 - wt0 < t_measure)
+        n_runs *= 2;
+    }
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n"
+                    "Copy with memcpy (n_cells/%d)\n"
+                    "----------------\n"), n_div);
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  (calls: %d;  test sum: %12.5f)\n"),
+                  n_runs, test_sum);
+
+    _print_mem_stats(n_runs, _n_cells, wt1 - wt0);
+
+  }
+
+  /* Copy with loop */
+
+  for (sub_id = 0, n_div = 1;
+       sub_id < 4;
+       sub_id++, n_div *= 8) {
+
+    test_sum = 0.0;
+    wt0 = cs_timer_wtime(), wt1 = wt0;
+
+    _n_cells = n_div;
+
+    if (t_measure > 0)
+      n_runs = 8;
+    else
+      n_runs = 1;
+    run_id = 0;
+    while (run_id < n_runs) {
+      double test_sum_mult = 1.0/n_runs;
+      while (run_id < n_runs) {
+#       pragma omp parallel for
+        for (ii = 0; ii < _n_cells; ii++)
+          y[ii] = x[ii];
+        y[0] += 0.1;
+        test_sum += test_sum_mult*y[run_id%n_cells];
+        run_id++;
+      }
+      wt1 = cs_timer_wtime();
+      if (wt1 - wt0 < t_measure)
+        n_runs *= 2;
+    }
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n"
+                    "Copy with loop (n_cells/%d)\n"
+                    "--------------\n"), n_div);
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  (calls: %d;  test sum: %12.5f)\n"),
+                  n_runs, test_sum);
+
+    _print_mem_stats(n_runs, _n_cells, wt1 - wt0);
+
+  }
 }
 
 /*----------------------------------------------------------------------------
  * Measure matrix.vector product related performance.
  *
  * parameters:
- *   n_runs      <-- number of operation runs
- *   type_name   <-- type name
- *   type        <-- matrix type
+ *   t_measure   <-- minimum time for each measure (< 0 for single pass)
+ *   m_variant   <-- matrix type
  *   sym_coeffs  <-- symmetric coefficients
  *   n_cells     <-- number of local cells
  *   n_cells_ext <-- number of cells including ghost cells (array size)
@@ -908,9 +1528,8 @@ _matrix_assignment_test(int                    n_runs,
  *----------------------------------------------------------------------------*/
 
 static void
-_matrix_vector_test(int                    n_runs,
-                    const char            *type_name,
-                    cs_matrix_type_t       type,
+_matrix_vector_test(double                 t_measure,
+                    cs_matrix_variant_t   *m_variant,
                     bool                   sym_coeffs,
                     cs_int_t               n_cells,
                     cs_int_t               n_cells_ext,
@@ -925,16 +1544,14 @@ _matrix_vector_test(int                    n_runs,
                     cs_real_t             *restrict y)
 {
   cs_int_t ii;
-  double wt, cpu;
-  int    run_id;
+  double wt0, wt1;
+  int    run_id, n_runs;
   long   n_ops, n_ops_glob;
 
   double test_sum = 0.0;
   cs_matrix_structure_t *ms = NULL;
   cs_matrix_t *m = NULL;
-
-  if (n_runs < 1)
-    return;
+  cs_matrix_type_t m_type = cs_matrix_variant_type(m_variant);
 
   n_ops = n_cells + n_faces*2;
 
@@ -944,7 +1561,7 @@ _matrix_vector_test(int                    n_runs,
     n_ops_glob = (  cs_glob_mesh->n_g_cells
                   + cs_glob_mesh->n_g_i_faces*2);
 
-  ms = cs_matrix_structure_create(type,
+  ms = cs_matrix_structure_create(m_type,
                                   true,
                                   n_cells,
                                   n_cells_ext,
@@ -954,7 +1571,7 @@ _matrix_vector_test(int                    n_runs,
                                   halo,
                                   numbering);
 
-  m = cs_matrix_create(ms);
+  m = cs_matrix_create_tuned(ms, m_variant);
 
   cs_matrix_set_coefficients(m,
                              sym_coeffs,
@@ -964,171 +1581,171 @@ _matrix_vector_test(int                    n_runs,
 
   /* Matrix.vector product */
 
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    cs_matrix_vector_multiply(CS_PERIO_ROTA_COPY,
-                              m,
-                              x,
-                              y);
-    test_sum += y[n_cells-1];
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      cs_matrix_vector_multiply(CS_PERIO_ROTA_COPY, m, x, y);
+      test_sum += y[n_cells-1]*test_sum_mult;
+      run_id++;
 #if 0
-    for (ii = 0; ii < n_cells; ii++)
-      bft_printf("y[%d] = %12.4f\n", ii, y[ii]);
+      for (ii = 0; ii < n_cells; ii++)
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      "y[%d] = %12.4f\n", ii, y[ii]);
 #endif
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  if (sym_coeffs == true)
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n"
+                    "Matrix.vector product (symm coeffs)\n"
+                    "---------------------\n"));
+  else
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n"
+                    "Matrix.vector product\n"
+                    "---------------------\n"));
 
-  bft_printf(_("\n"
-               "Matrix.vector product (%s)\n"
-               "---------------------\n"), _(type_name));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
-
-  _print_stats(n_ops, n_ops_glob, wt, cpu);
+  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
 
   /* Local timing in parallel mode */
 
   if (cs_glob_n_ranks > 1) {
 
     test_sum = 0.0;
-
-    _timer_start(&wt, &cpu);
-
-    for (run_id = 0; run_id < n_runs; run_id++) {
-      cs_matrix_vector_multiply_nosync(m,
-                                       x,
-                                       y);
-      test_sum += y[n_cells-1];
+    wt0 = cs_timer_wtime(), wt1 = wt0;
+    if (t_measure > 0)
+      n_runs = 8;
+    else
+      n_runs = 1;
+    run_id = 0;
+    while (run_id < n_runs) {
+      double test_sum_mult = 1.0/n_runs;
+      while (run_id < n_runs) {
+        cs_matrix_vector_multiply_nosync(m,
+                                         x,
+                                         y);
+        test_sum += y[n_cells-1]*test_sum_mult;
+        if (run_id > 0 && run_id % 64) {
+          for (ii = n_cells; ii < n_cells_ext; ii++)
+            y[ii] = 0;
+        }
+        run_id++;
+      }
+      wt1 = cs_timer_wtime();
+      if (wt1 - wt0 < t_measure)
+        n_runs *= 2;
     }
 
-    _timer_stop(n_runs, &wt, &cpu);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n"
+                    "Local matrix.vector product\n"
+                    "---------------------------\n"));
 
-    bft_printf(_("\n"
-                 "Local matrix.vector product (%s)\n"
-                 "---------------------------\n"), _(type_name));
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  (calls: %d;  test sum: %12.5f)\n"),
+                  n_runs, test_sum);
 
-    bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-               n_runs, test_sum);
-
-    _print_stats(n_ops, n_ops_glob, wt, cpu);
+    _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
 
   }
 
   /* Combined matrix.vector product: alpha.A.x + beta.y */
 
-  test_sum = 0.0;
   for (ii = 0; ii < n_cells_ext; y[ii++] = 0.0);
 
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    cs_matrix_alpha_a_x_p_beta_y(CS_PERIO_ROTA_COPY,
-                                 0.5,
-                                 0.0,
-                                 m,
-                                 x,
-                                 y);
-    test_sum += y[n_cells-1];
-  }
-
-  _timer_stop(n_runs, &wt, &cpu);
-
-  bft_printf(_("\n"
-               "Matrix.vector product alpha.A.x + beta.y (%s)\n"
-               "----------------------------------------\n"), _(type_name));
-
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
-
-  _print_stats(n_ops, n_ops_glob, wt, cpu);
-
-  /* (Matrix - diagonal).vector product (with diagonal structure) */
-
-  cs_matrix_set_coefficients(m,
-                             sym_coeffs,
-                             NULL,
-                             NULL,
-                             xa);
-
   test_sum = 0.0;
-
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    cs_matrix_vector_multiply(CS_PERIO_ROTA_COPY,
-                              m,
-                              x,
-                              y);
-    test_sum += y[n_cells-1];
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      cs_matrix_alpha_a_x_p_beta_y(CS_PERIO_ROTA_COPY,
+                                   0.5,
+                                   0.0,
+                                   m,
+                                   x,
+                                   y);
+      test_sum += y[n_cells-1]*test_sum_mult;
+      if (run_id > 0 && run_id % 64) {
+        for (ii = n_cells; ii < n_cells_ext; ii++)
+          y[ii] = 0;
+      }
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Matrix.vector product alpha.A.x + beta.y\n"
+                  "----------------------------------------\n"));
 
-  bft_printf(_("\n"
-               "(Matrix-diagonal).vector product (%s)\n"
-               "--------------------------------\n"), _(type_name));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
-
-  _print_stats(n_ops, n_ops_glob, wt, cpu);
+  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
 
   /* (Matrix - diagonal).vector product */
 
-  cs_matrix_destroy(&m);
-  cs_matrix_structure_destroy(&ms);
-
-  n_ops = n_faces*2;
-
-  if (cs_glob_n_ranks == 1)
-    n_ops_glob = n_ops;
-  else
-    n_ops_glob = (  cs_glob_mesh->n_g_cells
-                  + cs_glob_mesh->n_g_i_faces*2);
-
-  ms = cs_matrix_structure_create(type,
-                                  false,
-                                  n_cells,
-                                  n_cells_ext,
-                                  n_faces,
-                                  cell_num,
-                                  face_cell,
-                                  halo,
-                                  numbering);
-
-  m = cs_matrix_create(ms);
-
-  cs_matrix_set_coefficients(m,
-                             sym_coeffs,
-                             NULL,
-                             NULL,
-                             xa);
-
   test_sum = 0.0;
-
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    cs_matrix_vector_multiply(CS_PERIO_ROTA_COPY,
-                              m,
-                              x,
-                              y);
-    test_sum += y[n_cells-1];
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      cs_matrix_exdiag_vector_multiply(CS_PERIO_ROTA_COPY,
+                                       m,
+                                       x,
+                                       y);
+      test_sum += y[n_cells-1]*test_sum_mult;
+      if (run_id > 0 && run_id % 64) {
+        for (ii = n_cells; ii < n_cells_ext; ii++)
+          y[ii] = 0;
+      }
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "(Matrix-diagonal).vector product (%s)\n"
+                  "--------------------------------\n"),
+                _(cs_matrix_type_name[m_type]));
 
-  bft_printf(_("\n"
-               "(Matrix without diagonal).vector product (%s)\n"
-               "----------------------------------------\n"), _(type_name));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
-
-  _print_stats(n_ops, n_ops_glob, wt, cpu);
+  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
 
   cs_matrix_destroy(&m);
   cs_matrix_structure_destroy(&ms);
@@ -1284,7 +1901,7 @@ _mat_vec_exdiag_part_p1(cs_int_t             n_faces,
  * Measure matrix.vector product local extradiagonal part related performance.
  *
  * parameters:
- *   n_runs      <-- number of operation runs
+ *   t_measure   <-- minimum time for each measure (< 0 for single pass)
  *   n_cells     <-- number of cells
  *   n_cells_ext <-- number of cells including ghost cells (array size)
  *   n_faces     <-- local number of internal faces
@@ -1295,7 +1912,7 @@ _mat_vec_exdiag_part_p1(cs_int_t             n_faces,
  *----------------------------------------------------------------------------*/
 
 static void
-_sub_matrix_vector_test(int                  n_runs,
+_sub_matrix_vector_test(double               t_measure,
                         cs_int_t             n_cells,
                         cs_int_t             n_cells_ext,
                         cs_int_t             n_faces,
@@ -1305,15 +1922,12 @@ _sub_matrix_vector_test(int                  n_runs,
                         cs_real_t           *restrict y)
 {
   cs_int_t  jj;
-  double wt, cpu;
-  int    run_id;
+  double wt0, wt1;
+  int    run_id, n_runs;
   long   n_ops, n_ops_glob;
   double *ya = NULL;
 
   double test_sum = 0.0;
-
-  if (n_runs < 1)
-    return;
 
   n_ops = n_faces*2;
 
@@ -1328,23 +1942,35 @@ _sub_matrix_vector_test(int                  n_runs,
 
   /* Matrix.vector product, variant 0 */
 
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    _mat_vec_exdiag_native(n_faces, face_cell, xa, x, y);
-    test_sum += y[n_cells-1];
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      _mat_vec_exdiag_native(n_faces, face_cell, xa, x, y);
+      test_sum += y[n_cells-1]*test_sum_mult;
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Matrix.vector product, extradiagonal part, variant 0\n"
+                  "---------------------\n"));
 
-  bft_printf(_("\n"
-               "Matrix.vector product, extradiagonal part, variant 0\n"
-               "---------------------\n"));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
-
-  _print_stats(n_ops, n_ops_glob, wt, cpu);
+  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
 
   for (jj = 0; jj < n_cells_ext; jj++)
     y[jj] = 0.0;
@@ -1353,23 +1979,35 @@ _sub_matrix_vector_test(int                  n_runs,
 
   /* Matrix.vector product, variant 1 */
 
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    _mat_vec_exdiag_native_v1(n_faces, face_cell, xa, x, y);
-    test_sum += y[n_cells-1];
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      _mat_vec_exdiag_native_v1(n_faces, face_cell, xa, x, y);
+      test_sum += y[n_cells-1]*test_sum_mult;
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
 
-  _timer_stop(n_runs, &wt, &cpu);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Matrix.vector product, extradiagonal part, variant 1\n"
+                  "---------------------\n"));
 
-  bft_printf(_("\n"
-               "Matrix.vector product, extradiagonal part, variant 1\n"
-               "---------------------\n"));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
-
-  _print_stats(n_ops, n_ops_glob, wt, cpu);
+  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
 
   /* Matrix.vector product, contribute to faces only */
 
@@ -1378,26 +2016,36 @@ _sub_matrix_vector_test(int                  n_runs,
     ya[jj] = 0.0;
 
   test_sum = 0.0;
-
-  _timer_start(&wt, &cpu);
-
-  for (run_id = 0; run_id < n_runs; run_id++) {
-    _mat_vec_exdiag_part_p1(n_faces, face_cell, xa, x, ya);
-    test_sum += y[n_cells-1];
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      _mat_vec_exdiag_part_p1(n_faces, face_cell, xa, x, ya);
+      test_sum += y[n_cells-1]*test_sum_mult;
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
   }
-
-  _timer_stop(n_runs, &wt, &cpu);
 
   BFT_FREE(ya);
 
-  bft_printf(_("\n"
-               "Matrix.vector product, face values only\n"
-               "---------------------\n"));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Matrix.vector product, face values only\n"
+                  "---------------------\n"));
 
-  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
-             n_runs, test_sum);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
 
-  _print_stats(n_ops, n_ops_glob, wt, cpu);
+  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
 
 }
 
@@ -1419,12 +2067,15 @@ cs_benchmark(int  mpi_trace_mode)
   /* Local variable definitions */
   /*----------------------------*/
 
-  int n_runs;
   size_t ii;
+
+  double t_measure = (mpi_trace_mode) ? -1.0 : 3.0;
 
   cs_real_t *x1 = NULL, *x2 = NULL;
   cs_real_t *y1 = NULL, *y2 = NULL;
   cs_real_t *da = NULL, *xa = NULL;
+
+  cs_matrix_variant_t *mv = NULL;
 
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mesh_v = cs_glob_mesh_quantities;
@@ -1460,10 +2111,8 @@ cs_benchmark(int  mpi_trace_mode)
   BFT_MALLOC(da, n_cells_ext, cs_real_t);
   BFT_MALLOC(xa, n_faces*2, cs_real_t);
 
-  for (ii = 0; ii < n_cells_ext; ii++) {
+  for (ii = 0; ii < n_cells_ext; ii++)
     da[ii] = 1.0 + ii/n_cells_ext;
-    xa[ii] = mesh_v->cell_cen[ii*3 + 1];
-  }
 
   for (ii = 0; ii < n_faces; ii++) {
     xa[ii*2] = 0.5*(1.0 + ii/n_faces);
@@ -1473,149 +2122,101 @@ cs_benchmark(int  mpi_trace_mode)
   /* Run tests */
   /*-----------*/
 
-  bft_printf(_("\n"
-               "Benchmark mode activated\n"
-               "========================\n"));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Benchmark mode activated\n"
+                  "========================\n"));
 
   /* Dot product test */
   /*------------------*/
 
-  n_runs = (mpi_trace_mode) ? 1 : 10000;
 
-  _dot_product_1(0, n_runs, n_cells, x1, x1);
-  _dot_product_1(0, n_runs, n_cells, x1, x2);
-  _dot_product_2(n_runs, n_cells, x1, x2);
-  _axpy_(n_runs, n_cells, x1, y1);
+  _dot_product_1(t_measure, 0, n_cells, x1, x2);
+  _dot_product_2(t_measure, n_cells, x1, x2);
+  _axpy_(t_measure, n_cells, x1, y1);
 
-  _division_test(n_runs/5, n_cells);
-  _sqrt_test(n_runs/10, n_cells);
+  _division_test(t_measure, n_cells);
+  _sqrt_test(t_measure, n_cells);
 
 #if defined(HAVE_MPI)
 
-  if (cs_glob_n_ranks > 1) {
-
-    n_runs = (mpi_trace_mode) ? 1 : 10000;
-
-    _dot_product_1(1, n_runs, n_cells, x1, x1);
-    _dot_product_1(1, n_runs, n_cells, x1, x2);
-
-  }
+  if (cs_glob_n_ranks > 1)
+    _dot_product_1(t_measure, 1, n_cells, x1, x1);
 
 #endif /* HAVE_MPI */
 
-  /* Matrix test */
-  /*-------------*/
+  _ad_x_test(t_measure, n_cells, da, x1, y1);
 
-  n_runs = (mpi_trace_mode) ? 0 : 500;
+  _block_ad_x_test(t_measure, n_cells);
 
-  if (!mpi_trace_mode) {
+  _copy_test(t_measure, n_cells, x1, y1);
 
-    /* Creation tests */
+  /* Call matrix tuning */
+  /*--------------------*/
 
-    n_runs = 2000;
+  /* Test local matrix.vector product operations. */
 
-    _matrix_creation_test(n_runs,
-                          _("native"),
-                          CS_MATRIX_NATIVE,
-                          n_cells, n_cells_ext, n_faces,
-                          mesh->global_cell_num, mesh->i_face_cells,
-                          mesh->halo,
-                          mesh->i_face_numbering);
+  cs_matrix_variant_test(n_cells,
+                         n_cells_ext,
+                         n_faces,
+                         mesh->global_cell_num,
+                         mesh->i_face_cells,
+                         mesh->halo,
+                         mesh->i_face_numbering);
 
-    n_runs = 300;
+  /* Enter tuning phase */
 
-    _matrix_creation_test(n_runs,
-                          _("CSR"),
-                          CS_MATRIX_CSR,
-                          n_cells, n_cells_ext, n_faces,
-                          mesh->global_cell_num, mesh->i_face_cells,
-                          mesh->halo,
-                          mesh->i_face_numbering);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "General tuning for matrices\n"
+                  "=====================================\n"));
 
-    _matrix_creation_test(n_runs,
-                          _("symmetric CSR"),
-                          CS_MATRIX_CSR_SYM,
-                          n_cells, n_cells_ext, n_faces,
-                          mesh->global_cell_num, mesh->i_face_cells,
-                          mesh->halo,
-                          mesh->i_face_numbering);
+  mv = cs_matrix_variant_tuned(t_measure,
+                               0.000001, /* sym_weight */
+                               0.000001, /* block_weight */
+                               10,       /* min expected SpMV products */
+                               n_cells,
+                               n_cells_ext,
+                               n_faces,
+                               mesh->global_cell_num,
+                               mesh->i_face_cells,
+                               mesh->halo,
+                               mesh->i_face_numbering);
 
-    /* Assignment tests */
-
-    n_runs = 2000;
-
-    _matrix_assignment_test(n_runs,
-                            _("native"),
-                            CS_MATRIX_NATIVE, false,
-                            n_cells, n_cells_ext, n_faces,
-                            mesh->global_cell_num, mesh->i_face_cells,
-                            mesh->halo, mesh->i_face_numbering, da, xa);
-
-    _matrix_assignment_test(n_runs,
-                            _("native, sym coeffs"),
-                            CS_MATRIX_NATIVE, true,
-                            n_cells, n_cells_ext, n_faces,
-                            mesh->global_cell_num, mesh->i_face_cells,
-                            mesh->halo, mesh->i_face_numbering, da, xa);
-
-    n_runs = 300;
-
-    _matrix_assignment_test(n_runs,
-                            _("CSR"),
-                            CS_MATRIX_CSR, false,
-                            n_cells, n_cells_ext, n_faces,
-                            mesh->global_cell_num, mesh->i_face_cells,
-                            mesh->halo, mesh->i_face_numbering, da, xa);
-
-    _matrix_assignment_test(n_runs,
-                            _("CSR, sym coeffs"),
-                            CS_MATRIX_CSR, true,
-                            n_cells, n_cells_ext, n_faces,
-                            mesh->global_cell_num, mesh->i_face_cells,
-                            mesh->halo, mesh->i_face_numbering, da, xa);
-
-    _matrix_assignment_test(n_runs,
-                            _("symmetric CSR"),
-                            CS_MATRIX_CSR_SYM, true,
-                            n_cells, n_cells_ext, n_faces,
-                            mesh->global_cell_num, mesh->i_face_cells,
-                            mesh->halo, mesh->i_face_numbering, da, xa);
-
-  }
-
-  /* Matrix.vector tests */
-
-  n_runs = (mpi_trace_mode) ? 1 : 1000;
-
-  _matrix_vector_test(n_runs,
-                      _("native"),
-                      CS_MATRIX_NATIVE, false,
+  _matrix_vector_test(t_measure,
+                      mv, false,
                       n_cells, n_cells_ext, n_faces,
                       mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
                       mesh->i_face_numbering, da, xa, x1, y1);
 
-  _matrix_vector_test(n_runs,
-                      _("native, sym coeffs"),
-                      CS_MATRIX_NATIVE, true,
+  cs_matrix_variant_destroy(&mv);
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Tuning for symmetric matrices\n"
+                  "=============================\n"));
+
+  mv = cs_matrix_variant_tuned(t_measure,
+                               1.0, /* sym_weight */
+                               0.0, /* block_weight */
+                               10,  /* min expected SpMV products */
+                               n_cells,
+                               n_cells_ext,
+                               n_faces,
+                               mesh->global_cell_num,
+                               mesh->i_face_cells,
+                               mesh->halo,
+                               mesh->i_face_numbering);
+
+  _matrix_vector_test(t_measure,
+                      mv, true,
                       n_cells, n_cells_ext, n_faces,
                       mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
                       mesh->i_face_numbering, da, xa, x1, y1);
 
-  _matrix_vector_test(n_runs,
-                      _("CSR"),
-                      CS_MATRIX_CSR, false,
-                      n_cells, n_cells_ext, n_faces,
-                      mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
-                      mesh->i_face_numbering, da, xa, x1, y1);
+  cs_matrix_variant_destroy(&mv);
 
-  _matrix_vector_test(n_runs,
-                      _("symmetric CSR"),
-                      CS_MATRIX_CSR_SYM, true,
-                      n_cells, n_cells_ext, n_faces,
-                      mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
-                      mesh->i_face_numbering, da, xa, x1, y1);
-
-  _sub_matrix_vector_test(n_runs,
+  _sub_matrix_vector_test(t_measure,
                           n_cells,
                           n_cells_ext,
                           n_faces,
@@ -1623,6 +2224,8 @@ cs_benchmark(int  mpi_trace_mode)
                           xa,
                           x1,
                           y1);
+
+  cs_log_separator(CS_LOG_PERFORMANCE);
 
   /* Free working arrays */
   /*---------------------*/
