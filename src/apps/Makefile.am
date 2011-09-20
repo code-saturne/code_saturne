@@ -144,10 +144,10 @@ cs_check_syntax_CPPFLAGS = \
 cs_check_syntax_SOURCES = cs_check_syntax.c
 cs_check_syntax_LDADD = \
 $(top_builddir)/src/mei/libmei.la \
-$(top_builddir)/src/bft/libbft.la
-cs_check_syntax_LDFLAGS = \
-$(ORIGINRUNPATH) \
+$(top_builddir)/src/bft/libbft.la \
 -lm
+cs_check_syntax_LDFLAGS = \
+$(ORIGINRUNPATH)
 
 endif
 
