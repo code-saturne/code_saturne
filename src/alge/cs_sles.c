@@ -1099,7 +1099,7 @@ _conjugate_gradient_sr(const char             *var_name,
 
   /* Initialize arrays */
 
-# pragma omp parallel for if (n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     ad_inv[ii] = 1.0 / ad_inv[ii];
 
@@ -1139,7 +1139,7 @@ _conjugate_gradient_sr(const char             *var_name,
 
 #if defined(HAVE_OPENMP)
 
-# pragma omp parallel for if (n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     dk[ii] = gk[ii];
 
@@ -1327,7 +1327,7 @@ _jacobi(const char             *var_name,
 
     res2 = 0.0;
 
-#   pragma omp parallel for private(r) reduction(+:res2)
+#   pragma omp parallel for private(r) reduction(+:res2) if(n_rows > THR_MIN)
     for (ii = 0; ii < n_rows; ii++) {
       vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
       r = ad[ii] * (vx[ii]-rk[ii]);
