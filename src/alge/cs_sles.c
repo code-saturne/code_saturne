@@ -724,7 +724,7 @@ _y_aypx_2(cs_int_t    n,
  *   poly_degree   <--  preconditioning polynomial degree (0: diagonal)
  *   rotation_mode <--  Halo update option for rotational periodicity
  *   ad_inv        <--  Inverse of matrix diagonal
- *   ax            <--  Non-diagonal part of linear equation matrix
+ *   a             <--  Linear equation matrix
  *   rk            <--  Residue vector
  *   gk            -->  Result vector
  *   wk            ---  Working array
@@ -735,7 +735,7 @@ _polynomial_preconditionning(cs_int_t            n_cells,
                              int                 poly_degree,
                              cs_perio_rota_t     rotation_mode,
                              const cs_real_t    *ad_inv,
-                             const cs_matrix_t  *ax,
+                             const cs_matrix_t  *a,
                              const cs_real_t    *rk,
                              cs_real_t          *restrict gk,
                              cs_real_t          *restrict wk)
@@ -764,7 +764,7 @@ _polynomial_preconditionning(cs_int_t            n_cells,
 
     /* Compute Wk = (A-diag).Gk */
 
-    cs_matrix_vector_multiply(rotation_mode, ax, gk, wk);
+    cs_matrix_exdiag_vector_multiply(rotation_mode, a, gk, wk);
 
     for (ii = 0; ii < n_cells; ii++)
       gk[ii] = (rk[ii] - wk[ii]) * ad_inv[ii];
@@ -774,7 +774,7 @@ _polynomial_preconditionning(cs_int_t            n_cells,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of (ad+ax).vx = Rhs using preconditioned conjugate gradient.
+ * Solution of A..vx = Rhs using preconditioned conjugate gradient.
  *
  * Parallel-optimized version, groups dot products, at the cost of
  * computation of the preconditionning for n+1 iterations instead of n.
@@ -784,8 +784,6 @@ _polynomial_preconditionning(cs_int_t            n_cells,
  * parameters:
  *   var_name      <-- Variable name
  *   a             <-- Matrix
- *   ax            <-- Non-diagonal part of linear equation matrix
- *                     (only necessary if poly_degree > 0)
  *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   convergence   <-- Convergence information structure
@@ -802,7 +800,6 @@ _polynomial_preconditionning(cs_int_t            n_cells,
 static int
 _conjugate_gradient(const char             *var_name,
                     const cs_matrix_t      *a,
-                    const cs_matrix_t      *ax,
                     int                     poly_degree,
                     cs_perio_rota_t         rotation_mode,
                     cs_sles_convergence_t  *convergence,
@@ -872,8 +869,7 @@ _conjugate_gradient(const char             *var_name,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);
 
-  for (ii = 0; ii < n_rows; ii++)
-    rk[ii] = rk[ii] - rhs[ii];
+  cblas_daxpy(n_rows, -1, rhs, 1, rk, 1);
 
   /* Polynomial preconditionning of order poly_degre */
 
@@ -881,7 +877,7 @@ _conjugate_gradient(const char             *var_name,
                                poly_degree,
                                rotation_mode,
                                ad_inv,
-                               ax,
+                               a,
                                rk,
                                gk,
                                wk);
@@ -920,7 +916,7 @@ _conjugate_gradient(const char             *var_name,
                                  poly_degree,
                                  rotation_mode,
                                  ad_inv,
-                                 ax,
+                                 a,
                                  rk,
                                  gk,
                                  wk);
@@ -967,7 +963,7 @@ _conjugate_gradient(const char             *var_name,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of (ad+ax).vx = Rhs using preconditioned conjugate gradient
+ * Solution of A.vx = Rhs using preconditioned conjugate gradient
  * with single reduction.
  *
  * For more information, see Lapack Working note 56, at
@@ -978,8 +974,6 @@ _conjugate_gradient(const char             *var_name,
  * parameters:
  *   var_name      <-- Variable name
  *   a             <-- Matrix
- *   ax            <-- Non-diagonal part of linear equation matrix
- *                     (only necessary if poly_degree > 0)
  *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   convergence   <-- Convergence information structure
@@ -996,7 +990,6 @@ _conjugate_gradient(const char             *var_name,
 static int
 _conjugate_gradient_sr(const char             *var_name,
                        const cs_matrix_t      *a,
-                       const cs_matrix_t      *ax,
                        int                     poly_degree,
                        cs_perio_rota_t         rotation_mode,
                        cs_sles_convergence_t  *convergence,
@@ -1080,7 +1073,7 @@ _conjugate_gradient_sr(const char             *var_name,
                                poly_degree,
                                rotation_mode,
                                ad_inv,
-                               ax,
+                               a,
                                rk,
                                gk,
                                wk);
@@ -1120,7 +1113,7 @@ _conjugate_gradient_sr(const char             *var_name,
                                  poly_degree,
                                  rotation_mode,
                                  ad_inv,
-                                 ax,
+                                 a,
                                  rk,
                                  gk,
                                  wk);
@@ -1169,14 +1162,14 @@ _conjugate_gradient_sr(const char             *var_name,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of (ad+ax).vx = Rhs using Jacobi.
+ * Solution of A.vx = Rhs using Jacobi.
  *
  * On entry, vx is considered initialized.
  *
  * parameters:
  *   var_name      <-- Variable name
  *   ad            <-- Diagonal part of linear equation matrix
- *   ax            <-- Non-diagonal part of linear equation matrix
+ *   a             <-- Linear equation matrix
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   convergence   <-- Convergence information structure
  *   rhs           <-- Right hand side
@@ -1192,7 +1185,7 @@ _conjugate_gradient_sr(const char             *var_name,
 static int
 _jacobi(const char             *var_name,
         const cs_real_t        *restrict ad,
-        const cs_matrix_t      *ax,
+        const cs_matrix_t      *a,
         cs_perio_rota_t         rotation_mode,
         cs_sles_convergence_t  *convergence,
         const cs_real_t        *rhs,
@@ -1219,8 +1212,8 @@ _jacobi(const char             *var_name,
 
   sles_name = _(cs_sles_type_name[CS_SLES_JACOBI]);
 
-  n_cols = cs_matrix_get_n_columns(ax);
-  n_rows = cs_matrix_get_n_rows(ax);
+  n_cols = cs_matrix_get_n_columns(a);
+  n_rows = cs_matrix_get_n_rows(a);
 
   /* Allocate work arrays */
 
@@ -1246,27 +1239,21 @@ _jacobi(const char             *var_name,
 
   while (cvg == 0) {
 
+    register double r;
+
     n_iter += 1;
 
-    memcpy(rk, vx, n_rows * sizeof(cs_real_t));  /* rk <- vx */
+    memcpy(rk, vx, n_rows * sizeof(cs_real_t));   /* rk <- vx */
 
-    memcpy(vx, rhs, n_rows * sizeof(cs_real_t));  /* vx <- rhs */
-    for (ii = n_rows; ii < n_cols; ii++)
-      vx[ii] = 0.0;
+    /* Compute Vx <- Vx - (A-diag).Rk and residue. */
 
-    /* Compute Vx <- Vx - (A-diag).Rk */
-
-    cs_matrix_alpha_a_x_p_beta_y(rotation_mode, -1.0, 1.0, ax, rk, vx);
-
-    for (ii = 0; ii < n_rows; ii++)
-      vx[ii] = vx[ii] * ad_inv[ii];
-
-    /* Compute residue */
+    cs_matrix_exdiag_vector_multiply(rotation_mode, a, rk, vx);
 
     res2 = 0.0;
 
     for (ii = 0; ii < n_rows; ii++) {
-      register double r = ad[ii] * (vx[ii]-rk[ii]);
+      vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
+      r = ad[ii] * (vx[ii]-rk[ii]);
       res2 += (r*r);
     }
 
@@ -1343,7 +1330,8 @@ _fact_lu33(const cs_real_t   *ad,
 * parameters:
 *   mat           <-- 3*3*dim matrix
 *   x             --> Solution
-*   b             --> RHS
+*   b             --> 1st part of RHS (c - b)
+*   c             --> 2nd part of RHS (c - b)
 *   aux           --> Work array
 *
 * returns:
@@ -1352,13 +1340,13 @@ _fact_lu33(const cs_real_t   *ad,
 inline static void
 _fw_and_bw_lu33(const cs_real_t     mat[],
                 cs_real_t           x[],
-                cs_real_t           b[],
+                const cs_real_t     b[],
+                const cs_real_t     c[],
                 cs_real_t           aux[])
 {
-
-  aux[0] = b[0];
-  aux[1] = b[1] - aux[0]*mat[3];
-  aux[2] = b[2] - aux[0]*mat[6] - aux[1]*mat[7];
+  aux[0] = (c[0] - b[0]);
+  aux[1] = (c[1] - b[1]) - aux[0]*mat[3];
+  aux[2] = (c[2] - b[2]) - aux[0]*mat[6] - aux[1]*mat[7];
 
   x[2] = aux[2]/mat[8];
   x[1] = (aux[1] - mat[5]*x[2])/mat[4];
@@ -1366,14 +1354,14 @@ _fw_and_bw_lu33(const cs_real_t     mat[],
 }
 
 /*----------------------------------------------------------------------------
- * Solution of (ad+ax).vx = Rhs using block Jacobi.
+ * Solution of A.vx = Rhs using block Jacobi.
  *
  * On entry, vx is considered initialized.
  *
  * parameters:
  *   var_name      <-- Variable name
  *   ad            <-- Diagonal part of linear equation matrix
- *   ax            <-- Non-diagonal part of linear equation matrix
+ *   a             <-- Linear equation matrix
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   convergence   <-- Convergence information structure
  *   rhs           <-- Right hand side
@@ -1389,7 +1377,7 @@ _fw_and_bw_lu33(const cs_real_t     mat[],
 static int
 _block_3_jacobi(const char             *var_name,
                 const cs_real_t        *restrict ad,
-                const cs_matrix_t      *ax,
+                const cs_matrix_t      *a,
                 cs_perio_rota_t         rotation_mode,
                 cs_sles_convergence_t  *convergence,
                 const cs_real_t        *rhs,
@@ -1399,12 +1387,11 @@ _block_3_jacobi(const char             *var_name,
 {
   const char *sles_name;
   int cvg;
-  cs_int_t  n_cols, n_rows, ii, kk, jj;
+  cs_int_t  n_cols, n_blocks, n_rows, ii, kk, jj;
   double  res2, residue;
   cs_real_t  *_aux_vectors;
   cs_real_t  temp[3];
   cs_real_t  *restrict ad_inv, *restrict rk, *restrict vxx;
-  int diag_block_size = 3;
   unsigned n_iter = 0;
 
   /* Tell IBM compiler not to alias */
@@ -1417,11 +1404,9 @@ _block_3_jacobi(const char             *var_name,
 
   sles_name = _(cs_sles_type_name[CS_SLES_JACOBI]);
 
-  n_cols = cs_matrix_get_n_columns(ax);
-  n_cols = n_cols*diag_block_size;
-  n_rows = cs_matrix_get_n_rows(ax);
-  cs_int_t dim = n_rows;
-  n_rows = n_rows*diag_block_size;
+  n_cols = cs_matrix_get_n_columns(a) * 3;
+  n_blocks = cs_matrix_get_n_rows(a);
+  n_rows = n_blocks * 3;
 
   /* Allocate work arrays */
 
@@ -1429,19 +1414,19 @@ _block_3_jacobi(const char             *var_name,
     size_t  wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == NULL
-        || aux_size < (wa_size * 2) + diag_block_size*wa_size)
+        || aux_size < (wa_size * 2) + 3*wa_size)
       BFT_MALLOC(_aux_vectors,
-                 (wa_size * 2) + diag_block_size*wa_size, cs_real_t);
+                 (wa_size * 2) + 3*wa_size, cs_real_t);
     else
       _aux_vectors = aux_vectors;
 
     ad_inv = _aux_vectors;
-    rk     = _aux_vectors + wa_size*diag_block_size;
-    vxx    = _aux_vectors + wa_size*diag_block_size + wa_size;
+    rk     = _aux_vectors + wa_size*3;
+    vxx    = _aux_vectors + wa_size*3 + wa_size;
 
   }
 
-  _fact_lu33(ad, ad_inv, dim);
+  _fact_lu33(ad, ad_inv, n_blocks);
 
   cvg = 0;
 
@@ -1450,30 +1435,28 @@ _block_3_jacobi(const char             *var_name,
 
   while (cvg == 0) {
 
+    register double r;
+
     n_iter += 1;
     memcpy(rk, vx, n_rows * sizeof(cs_real_t));  /* rk <- vx */
 
-    memcpy(vxx, rhs, n_rows * sizeof(cs_real_t));  /* vx <- rhs */
+    /* Compute Vx <- Vx - (A-diag).Rk and residue. */
 
-    for (ii = n_rows; ii < n_cols; ii++)
-      vxx[ii] = 0.0;
-
-    /* Compute Vx <- Vx - (A-diag).Rk */
-
-    cs_matrix_alpha_a_x_p_beta_y(rotation_mode, -1.0, 1.0, ax, rk, vxx);
+    cs_matrix_exdiag_vector_multiply(rotation_mode, a, rk, vxx);
 
     res2 = 0.0;
 
-    for (ii = 0; ii < dim; ii++) {
+    for (ii = 0; ii < n_blocks; ii++) {
       _fw_and_bw_lu33(ad_inv + 9*ii,
                       vx + 3*ii,
                       vxx + 3*ii,
+                      rhs + 3*ii,
                       temp);
-      for (jj = 0; jj < diag_block_size; jj++) {
-        register double r = 0.0;
-        for (kk = 0; kk < diag_block_size; kk++)
-          r +=  ad[ii*diag_block_size*diag_block_size + jj*diag_block_size + kk ]
-              * (vx[ii*diag_block_size + kk] - rk[ii*diag_block_size + kk]);
+      for (jj = 0; jj < 3; jj++) {
+        r = 0.0;
+        for (kk = 0; kk < 3; kk++)
+          r +=   ad[ii*9 + jj*3 + kk]
+               * (vx[ii*3 + kk] - rk[ii*3 + kk]);
         res2 += (r*r);
       }
     }
@@ -1505,7 +1488,7 @@ _block_3_jacobi(const char             *var_name,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of (ad+ax).vx = Rhs using preconditioned Bi-CGSTAB.
+ * Solution of A.vx = Rhs using preconditioned Bi-CGSTAB.
  *
  * Parallel-optimized version, groups dot products, at the cost of
  * computation of the preconditionning for n+1 iterations instead of n.
@@ -1515,8 +1498,6 @@ _block_3_jacobi(const char             *var_name,
  * parameters:
  *   var_name         <-- Variable name
  *   a                <-- Matrix
- *   ax               <-- Non-diagonal part of linear equation matrix
- *                        (only necessary if poly_degree > 0)
  *   diag_block_size  <-- Block size of element ii,ii
  *   poly_degree      <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode    <-- Halo update option for rotational periodicity
@@ -1534,7 +1515,6 @@ _block_3_jacobi(const char             *var_name,
 static int
 _bi_cgstab(const char             *var_name,
            const cs_matrix_t      *a,
-           const cs_matrix_t      *ax,
            int                     diag_block_size,
            int                     poly_degree,
            cs_perio_rota_t         rotation_mode,
@@ -1687,7 +1667,7 @@ _bi_cgstab(const char             *var_name,
                                  poly_degree,
                                  rotation_mode,
                                  ad_inv,
-                                 ax,
+                                 a,
                                  pk,
                                  zk,
                                  uk);
@@ -1713,7 +1693,7 @@ _bi_cgstab(const char             *var_name,
                                  poly_degree,
                                  rotation_mode,
                                  ad_inv,
-                                 ax,
+                                 a,
                                  rk,
                                  zk,
                                  vk);
@@ -1874,15 +1854,13 @@ _solve_diag_sup_halo(cs_real_t  *restrict a,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of (ad+ax).vx = Rhs using preconditioned GMRES.
+ * Solution of A.vx = Rhs using preconditioned GMRES.
  *
  * On entry, vx is considered initialized.
  *
  * parameters:
  *   var_name      <-- Variable name
  *   a             <-- Matrix
- *   ax            <-- Non-diagonal part of linear equation matrix
- *                     (only necessary if poly_degree > 0)
  *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   convergence   <-- Convergence information structure
@@ -1899,7 +1877,6 @@ _solve_diag_sup_halo(cs_real_t  *restrict a,
 static int
 _gmres(const char             *var_name,
        const cs_matrix_t      *a,
-       const cs_matrix_t      *ax,
        int                     poly_degree,
        cs_perio_rota_t         rotation_mode,
        cs_sles_convergence_t  *convergence,
@@ -1909,7 +1886,7 @@ _gmres(const char             *var_name,
        void                   *aux_vectors)
 {
   int cvg;
-  char *sles_name;
+  const char *sles_name;
   int check_freq, l_iter, l_old_iter, scaltest;
   int krylov_size, _krylov_size;
   cs_int_t  n_cols, n_rows, ii, kk, jj;
@@ -2030,7 +2007,7 @@ _gmres(const char             *var_name,
                                    poly_degree,
                                    rotation_mode,
                                    ad_inv,
-                                   ax,
+                                   a,
                                    krk,
                                    gk,
                                    dk);
@@ -2106,7 +2083,7 @@ _gmres(const char             *var_name,
                                      poly_degree,
                                      rotation_mode,
                                      ad_inv,
-                                     ax,
+                                     a,
                                      fk,
                                      gk,
                                      bk);
@@ -2426,8 +2403,6 @@ _diag_dominance(bool             symmetric,
  *   ad_coeffs     <-- Diagonal coefficients of linear equation matrix
  *   ax_coeffs     <-- Non-diagonal coefficients of linear equation matrix
  *   a             <-> Matrix
- *   ax            <-> Non-diagonal part of linear equation matrix
- *                     (only necessary if poly_degree > 0)
  *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   verbosity     <-- Verbosity level
@@ -2452,7 +2427,6 @@ _solve_ni(const char         *var_name,
           const cs_real_t    *ad_coeffs,
           const cs_real_t    *ax_coeffs,
           cs_matrix_t        *a,
-          cs_matrix_t        *ax,
           int                 poly_degree,
           cs_perio_rota_t     rotation_mode,
           int                 verbosity,
@@ -2476,7 +2450,6 @@ _solve_ni(const char         *var_name,
   cs_sles_info_t *sles_info = NULL;
 
   cs_matrix_t *_a = a;
-  cs_matrix_t *_ax = ax;
 
   n_rows = cs_matrix_get_n_rows(a);
 
@@ -2499,23 +2472,11 @@ _solve_ni(const char         *var_name,
 
     /* Set matrix coefficients */
 
-    if (solver_type == CS_SLES_JACOBI) {
+    if (solver_type == CS_SLES_JACOBI)
+      cs_matrix_set_coefficients_ni(_a, false, NULL, ax_coeffs);
 
-      if (ax == NULL) {
-        _a = NULL;
-        _ax = a;
-      }
-
-      cs_matrix_set_coefficients_ni(_ax, false, NULL, ax_coeffs);
-    }
-
-    else { /* if (solver_type != CS_SLES_JACOBI) */
-
+    else
       cs_matrix_set_coefficients_ni(_a, false, ad_coeffs, ax_coeffs);
-
-      if (poly_degree > 0)
-        cs_matrix_set_coefficients_ni(_ax, false, NULL, ax_coeffs);
-    }
 
     /* Solve sparse linear system */
 
@@ -2533,7 +2494,6 @@ _solve_ni(const char         *var_name,
     case CS_SLES_PCG_SR:
       cvg = _conjugate_gradient(var_name,
                                 _a,
-                                _ax,
                                 poly_degree,
                                 rotation_mode,
                                 &convergence,
@@ -2545,7 +2505,7 @@ _solve_ni(const char         *var_name,
     case CS_SLES_JACOBI:
       cvg = _jacobi(var_name,
                     ad_coeffs,
-                    _ax,
+                    _a,
                     rotation_mode,
                     &convergence,
                     rhs,
@@ -2556,7 +2516,6 @@ _solve_ni(const char         *var_name,
     case CS_SLES_BICGSTAB:
       cvg = _bi_cgstab(var_name,
                        _a,
-                       _ax,
                        1,
                        poly_degree,
                        rotation_mode,
@@ -2569,7 +2528,6 @@ _solve_ni(const char         *var_name,
     case CS_SLES_GMRES:
       cvg = _gmres(var_name,
                    _a,
-                   _ax,
                    poly_degree,
                    rotation_mode,
                    &convergence,
@@ -2586,8 +2544,6 @@ _solve_ni(const char         *var_name,
 
     if (_a != NULL)
       cs_matrix_release_coefficients(_a);
-    if (_ax != NULL)
-      cs_matrix_release_coefficients(_ax);
 
     /* Update return values */
 
@@ -2668,7 +2624,6 @@ _post_error_output_def(const char       *var_name,
           memcpy(val, ad, n_cells*sizeof(cs_real_t));
         else {
           cs_lnum_t ii, jj;
-#pragma omp parallel for private(jj)
           for (ii = 0; ii < mesh->n_cells; ii++) {
             for (jj = 0; jj < diag_block_size[0]; jj++)
               val[ii*diag_block_size[1] + jj]
@@ -2830,7 +2785,6 @@ void CS_PROCF(reslin, RESLIN)
                         dam,
                         xam,
                         cs_glob_matrix_default,
-                        cs_glob_sles_native_matrix,
                         *ipol,
                         rotation_mode,
                         *iwarnp,
@@ -2849,7 +2803,6 @@ void CS_PROCF(reslin, RESLIN)
                     dam,
                     xam,
                     cs_glob_matrix_default,
-                    cs_glob_sles_native_matrix,
                     *ipol,
                     rotation_mode,
                     *iwarnp,
@@ -3055,8 +3008,6 @@ cs_sles_needs_solving(const char        *var_name,
  *   ad_coeffs         <-- Diagonal coefficients of linear equation matrix
  *   ax_coeffs         <-- Non-diagonal coefficients of linear equation matrix
  *   a                 <-> Matrix
- *   ax                <-> Non-diagonal part of linear equation matrix
- *                         (only necessary if poly_degree > 0)
  *   poly_degree       <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode     <-- Halo update option for rotational periodicity
  *   verbosity         <-- Verbosity level
@@ -3084,7 +3035,6 @@ cs_sles_solve(const char         *var_name,
               const cs_real_t    *ad_coeffs,
               const cs_real_t    *ax_coeffs,
               cs_matrix_t        *a,
-              cs_matrix_t        *ax,
               int                 poly_degree,
               cs_perio_rota_t     rotation_mode,
               int                 verbosity,
@@ -3109,7 +3059,6 @@ cs_sles_solve(const char         *var_name,
   cs_sles_info_t *sles_info = NULL;
 
   cs_matrix_t *_a = a;
-  cs_matrix_t *_ax = ax;
 
   n_rows = cs_matrix_get_n_rows(a);
 
@@ -3139,35 +3088,19 @@ cs_sles_solve(const char         *var_name,
 
     /* Set matrix coefficients */
 
-    if (solver_type == CS_SLES_JACOBI) {
-
-      if (ax == NULL) {
-        _a = NULL;
-        _ax = a;
-      }
-
-      cs_matrix_set_coefficients(_ax,
+    if (solver_type == CS_SLES_JACOBI)
+      cs_matrix_set_coefficients(_a,
                                  symmetric,
                                  diag_block_size,
                                  NULL,
                                  ax_coeffs);
-    }
 
-    else { /* if (solver_type != CS_SLES_JACOBI) */
-
+    else
       cs_matrix_set_coefficients(_a,
                                  symmetric,
                                  diag_block_size,
                                  ad_coeffs,
                                  ax_coeffs);
-
-      if (poly_degree > 0)
-        cs_matrix_set_coefficients(_ax,
-                                   symmetric,
-                                   diag_block_size,
-                                   NULL,
-                                   ax_coeffs);
-    }
 
     /* Solve sparse linear system */
 
@@ -3191,7 +3124,6 @@ cs_sles_solve(const char         *var_name,
         if (_diag_block_size == 1)
           cvg = _conjugate_gradient(var_name,
                                     _a,
-                                    _ax,
                                     poly_degree,
                                     rotation_mode,
                                     &convergence,
@@ -3208,7 +3140,6 @@ cs_sles_solve(const char         *var_name,
         if (_diag_block_size == 1)
           cvg = _conjugate_gradient_sr(var_name,
                                        _a,
-                                       _ax,
                                        poly_degree,
                                        rotation_mode,
                                        &convergence,
@@ -3225,7 +3156,7 @@ cs_sles_solve(const char         *var_name,
         if (_diag_block_size == 1)
           cvg = _jacobi(var_name,
                         ad_coeffs,
-                        _ax,
+                        _a,
                         rotation_mode,
                         &convergence,
                         rhs,
@@ -3235,7 +3166,7 @@ cs_sles_solve(const char         *var_name,
         else if (_diag_block_size == 3)
           cvg = _block_3_jacobi(var_name,
                                 ad_coeffs,
-                                _ax,
+                                _a,
                                 rotation_mode,
                                 &convergence,
                                 rhs,
@@ -3246,7 +3177,6 @@ cs_sles_solve(const char         *var_name,
       case CS_SLES_BICGSTAB:
         cvg = _bi_cgstab(var_name,
                          _a,
-                         _ax,
                          _diag_block_size,
                          poly_degree,
                          rotation_mode,
@@ -3260,7 +3190,6 @@ cs_sles_solve(const char         *var_name,
         if (_diag_block_size == 1)
           cvg = _gmres(var_name,
                        _a,
-                       _ax,
                        poly_degree,
                        rotation_mode,
                        &convergence,
@@ -3298,8 +3227,6 @@ cs_sles_solve(const char         *var_name,
 
     if (_a != NULL)
       cs_matrix_release_coefficients(_a);
-    if (_ax != NULL)
-      cs_matrix_release_coefficients(_ax);
 
     /* Update return values */
 

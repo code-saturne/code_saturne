@@ -194,8 +194,6 @@ cs_sles_needs_solving(const char        *var_name,
  *   ad_coeffs         <-- Diagonal coefficients of linear equation matrix
  *   ax_coeffs         <-- Non-diagonal coefficients of linear equation matrix
  *   a                 <-> Matrix
- *   ax                <-> Non-diagonal part of linear equation matrix
- *                         (only necessary if poly_degree > 0)
  *   poly_degree       <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode     <-- Halo update option for rotational periodicity
  *   verbosity         <-- Verbosity level
@@ -223,7 +221,6 @@ cs_sles_solve(const char         *var_name,
               const cs_real_t    *ad_coeffs,
               const cs_real_t    *ax_coeffs,
               cs_matrix_t        *a,
-              cs_matrix_t        *ax,
               int                 poly_degree,
               cs_perio_rota_t     rotation_mode,
               int                 verbosity,
