@@ -188,6 +188,9 @@ const char *cs_sles_type_name[] = {N_("Conjugate gradient"),
 MPI_Comm _cs_sles_mpi_reduce_comm = MPI_COMM_NULL;
 #endif
 
+/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
+#define THR_MIN 0
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -485,7 +488,20 @@ _dot_product(cs_int_t          n_elts,
              const cs_real_t  *x,
              const cs_real_t  *y)
 {
+#if defined(HAVE_OPENMP)
+
+  cs_lnum_t ii;
+  double s = 0.;
+
+# pragma omp parallel for reduction(+: s) if(n_elts > THR_MIN)
+  for (ii = 0; ii < n_elts; ii++)
+    s += x[ii]*y[ii];
+
+#else
+
   double s = cblas_ddot(n_elts, x, 1, y, 1);
+
+#endif
 
 #if defined(HAVE_MPI)
 
@@ -535,6 +551,7 @@ _dot_products_2(cs_int_t          n_elts,
 
     /* Use temporary variables to help some compilers optimize */
     double _s0 = 0.0, _s1 = 0.0;
+#   pragma omp parallel for reduction(+: _s0, _s1) if(n_elts > THR_MIN)
     for (ii = 0; ii < n_elts; ii++) {
       _s0 += x1[ii] * y1[ii];
       _s1 += x2[ii] * y2[ii];
@@ -603,6 +620,7 @@ _dot_products_3(cs_int_t          n_elts,
 
     /* Use temporary variables to help some compilers optimize */
     double _s0 = 0.0, _s1 = 0.0, _s2 = 0.0;
+#   pragma omp parallel for reduction(+: _s0, _s1, _s2) if(n_elts > THR_MIN)
     for (ii = 0; ii < n_elts; ii++) {
       _s0 += x1[ii] * y1[ii];
       _s1 += x2[ii] * y2[ii];
@@ -657,6 +675,7 @@ _y_aypx(cs_int_t    n,
 #pragma disjoint(alpha, *x, *y)
 #endif
 
+#  pragma omp parallel for firstprivate(alpha) if(n > THR_MIN)
    for (ii = 0; ii < n; ii++)
      y[ii] = x[ii] + (alpha * y[ii]);
  }
@@ -699,6 +718,7 @@ _y_aypx_2(cs_int_t    n,
 #pragma disjoint(alpha, *x1, *y1, *x2, *y2)
 #endif
 
+#  pragma omp parallel for firstprivate(alpha) if(n > THR_MIN)
    for (ii = 0; ii < n; ii++) {
      y1[ii] = x1[ii] + (alpha * y1[ii]);
      y2[ii] = x2[ii] + (alpha * y2[ii]);
@@ -750,6 +770,7 @@ _polynomial_preconditionning(cs_int_t            n_cells,
   /* Polynomial of degree 0 (diagonal)
    *-----------------------------------*/
 
+# pragma omp parallel for if(n_cells > THR_MIN)
   for (ii = 0; ii < n_cells; ii++)
     gk[ii] = rk[ii] * ad_inv[ii];
 
@@ -766,6 +787,7 @@ _polynomial_preconditionning(cs_int_t            n_cells,
 
     cs_matrix_exdiag_vector_multiply(rotation_mode, a, gk, wk);
 
+#   pragma omp parallel for if(n_cells > THR_MIN)
     for (ii = 0; ii < n_cells; ii++)
       gk[ii] = (rk[ii] - wk[ii]) * ad_inv[ii];
 
@@ -859,6 +881,10 @@ _conjugate_gradient(const char             *var_name,
   }
 
   cs_matrix_get_diagonal(a, ad_inv);
+
+  /* Initialize arrays */
+
+# pragma omp parallel for if(n_rows > THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     ad_inv[ii] = 1.0 / ad_inv[ii];
 
@@ -867,9 +893,19 @@ _conjugate_gradient(const char             *var_name,
 
   /* Residue and descent direction */
 
-  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);
+  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
+
+#if defined(HAVE_OPENMP)
+
+# pragma omp parallel for if(n_rows > THR_MIN)
+  for (ii = 0; ii < n_rows; ii++)
+    rk[ii] = rk[ii] - rhs[ii];
+
+#else
 
   cblas_daxpy(n_rows, -1, rhs, 1, rk, 1);
+
+#endif
 
   /* Polynomial preconditionning of order poly_degre */
 
@@ -885,7 +921,17 @@ _conjugate_gradient(const char             *var_name,
   /* Descent direction */
   /*-------------------*/
 
+#if defined(HAVE_OPENMP)
+
+# pragma omp parallel for if(n_rows > THR_MIN)
+  for (ii = 0; ii < n_rows; ii++)
+    dk[ii] = gk[ii];
+
+#else
+
   memcpy(dk, gk, n_rows * sizeof(cs_real_t));
+
+#endif
 
   rk_gkm1 = _dot_product(n_rows, rk, gk);
 
@@ -1229,6 +1275,7 @@ _jacobi(const char             *var_name,
     rk     = _aux_vectors + wa_size;
   }
 
+# pragma omp parallel for if(n_rows > THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     ad_inv[ii] = 1.0 / ad[ii];
 
@@ -1243,7 +1290,17 @@ _jacobi(const char             *var_name,
 
     n_iter += 1;
 
+#if defined(HAVE_OPENMP)
+
+#   pragma omp parallel for if(n_rows > THR_MIN)
+    for (ii = 0; ii < n_rows; ii++)
+      rk[ii] = vx[ii];
+
+#else
+
     memcpy(rk, vx, n_rows * sizeof(cs_real_t));   /* rk <- vx */
+
+#endif
 
     /* Compute Vx <- Vx - (A-diag).Rk and residue. */
 
@@ -1251,6 +1308,7 @@ _jacobi(const char             *var_name,
 
     res2 = 0.0;
 
+#   pragma omp parallel for private(r) reduction(+:res2)
     for (ii = 0; ii < n_rows; ii++) {
       vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
       r = ad[ii] * (vx[ii]-rk[ii]);
@@ -2318,6 +2376,7 @@ _diag_dominance(bool             symmetric,
       }
     }
 
+#   pragma omp parallel if(n_cells > THR_MIN)
     for (ii = 0; ii < n_cells; ii++) {
       if (fabs(ad[ii]) > 1.e-18)
         dd[ii] /= fabs(ad[ii]);
@@ -2624,6 +2683,7 @@ _post_error_output_def(const char       *var_name,
           memcpy(val, ad, n_cells*sizeof(cs_real_t));
         else {
           cs_lnum_t ii, jj;
+          #pragma omp parallel for private(jj)
           for (ii = 0; ii < mesh->n_cells; ii++) {
             for (jj = 0; jj < diag_block_size[0]; jj++)
               val[ii*diag_block_size[1] + jj]
