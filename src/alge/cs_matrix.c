@@ -70,10 +70,6 @@
 #include <mpi.h>
 #endif
 
-#if defined(HAVE_ESSL_H)
-#include <essl.h>
-#endif
-
 #if defined (HAVE_MKL)
 #include <mkl_spblas.h>
 #endif
@@ -682,16 +678,10 @@ _diag_vec_p_l(const cs_real_t  *restrict da,
 # pragma disjoint(*x, *y, *da)
 # endif
 
-  /* Note: also try with BLAS: DNDOT(n_cells, 1, y, 1, 1, da, x, 1, 1) */
-
   if (da != NULL) {
-#if defined(HAVE_ESSL_H)
-    dndot(n_elts, 1, y, 1, 1, da, 1, 1, x, 1, 1);
-#else
 #   pragma omp parallel for
     for (ii = 0; ii < n_elts; ii++)
       y[ii] = da[ii] * x[ii];
-#endif
   }
   else {
 #   pragma omp parallel for
