@@ -200,7 +200,7 @@ contains
 
     allocate(cocg(ncelet,3,3), cocgb(ncelbr,3,3))
     if (ivelco.eq.1) allocate(cocgu(3,3,ncelet))
-    if (imrgra.eq.1 .or. iverif.eq.1) then
+    if (imrgra.eq.4 .or. iverif.eq.1) then
       allocate(coci(ncelet,3,3), cocib(ncelbr,3,3))
     endif
 
