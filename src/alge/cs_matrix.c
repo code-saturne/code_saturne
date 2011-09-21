@@ -614,49 +614,6 @@ _dense_b_aax_p_by(int               b_id,
 }
 
 /*----------------------------------------------------------------------------
- * Compute matrix-vector product for one diagonal block:
- * y[i] = alpha.a[i].x[i] + beta.y[i]
- *
- * Vectors and blocks may be larger than their useful size, to
- * improve data alignment.
- *
- * parameters:
- *   b_id   <-- id of matrix block
- *   x_id   <-- id of x block
- *   y_id   <-- id of y block
- *   b_size <-- block size, including padding:
- *              b_size[0]: useful block size
- *              b_size[1]: vector block extents
- *   alpha  <-- alpha coefficient
- *   beta   <-- beta coefficient
- *   a      <-- Pointer to scalar matrix coefficients (usually extra-diagonal)
- *   x      <-- Multipliying vector values
- *   y      --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static inline void
-_diag_b_aax_p_by(cs_lnum_t         b_id,
-                 cs_lnum_t         x_id,
-                 cs_lnum_t         y_id,
-                 const int         b_size[2],
-                 cs_real_t         alpha,
-                 cs_real_t         beta,
-                 const cs_real_t  *restrict a,
-                 const cs_real_t  *restrict x,
-                 cs_real_t        *restrict y)
-{
-  cs_lnum_t   ii;
-
-# if defined(__xlc__) /* Tell IBM compiler not to alias */
-# pragma disjoint(*x, *y, *a)
-# endif
-
-  for (ii = 0; ii < b_size[0]; ii++)
-    y[y_id*b_size[1] + ii] =   alpha*(a[b_id] * x[x_id*b_size[1] + ii])
-                             + beta*y[y_id*b_size[1] + ii];
-}
-
-/*----------------------------------------------------------------------------
  * y[i] = da[i].x[i], with da possibly NULL
  *
  * parameters:
@@ -3214,7 +3171,7 @@ _alpha_a_x_p_beta_y_csr_mkl(bool                exclude_diag,
   int n_cols = ms->n_cols;
   double _alpha = alpha;
   double _beta = beta;
-  char mathdescra[7] = "G  C  ";
+  char matdescra[7] = "G NC  ";
   char transa[] = "n";
 
   if (exclude_diag)
@@ -3225,7 +3182,7 @@ _alpha_a_x_p_beta_y_csr_mkl(bool                exclude_diag,
              &n_rows,
              &n_cols,
              &_alpha,
-             mathdescra,
+             matdescra,
              mc->val,
              ms->col_id,
              ms->row_index,
@@ -3967,7 +3924,7 @@ _alpha_a_x_p_beta_y_csr_sym_mkl(bool                exclude_diag,
   double _alpha = alpha;
   double _beta = beta;
   char transa[] = "n";
-  char mathdescra[7] = "SUNC  ";
+  char matdescra[7] = "SUNC  ";
 
   if (exclude_diag)
     bft_error(__FILE__, __LINE__, 0,
@@ -3977,7 +3934,7 @@ _alpha_a_x_p_beta_y_csr_sym_mkl(bool                exclude_diag,
              &n_rows,
              &n_cols,
              &_alpha,
-             mathdescra,
+             matdescra,
              mc->val,
              ms->col_id,
              ms->row_index,
@@ -4350,67 +4307,6 @@ _release_coeffs_msr(cs_matrix_t  *matrix)
 }
 
 /*----------------------------------------------------------------------------
- * Get diagonal of MSR matrix.
- *
- * parameters:
- *   matrix <-- Pointer to matrix structure
- *   da     --> Diagonal (pre-allocated, size: n_rows)
- *----------------------------------------------------------------------------*/
-
-static void
-_get_diagonal_msr(const cs_matrix_t  *matrix,
-                  cs_real_t          *restrict da)
-{
-  cs_lnum_t  ii, jj;
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-  const int *b_size = matrix->b_size;
-
-  /* Unblocked version */
-
-  if (matrix->b_size[3] == 1) {
-
-    if (mc->d_val != NULL) {
-
-#     pragma omp parallel for
-      for (ii = 0; ii < n_rows; ii++)
-        da[ii] = mc->d_val[ii];
-
-    }
-    else {
-
-#     pragma omp parallel for
-      for (ii = 0; ii < n_rows; ii++)
-        da[ii] = 0.0;
-
-    }
-
-  }
-
-  /* Blocked version */
-
-  else {
-
-    if (mc->d_val != NULL) {
-
-#     pragma omp parallel for private(jj)
-      for (ii = 0; ii < n_rows; ii++) {
-        for (jj = 0; jj < b_size[0]; jj++)
-          da[ii*b_size[1] + jj] = mc->d_val[ii*b_size[3] + jj*b_size[2] + jj];
-      }
-    }
-    else {
-
-#     pragma omp parallel for
-      for (ii = 0; ii < n_rows*b_size[1]; ii++)
-        da[ii] = 0.0;
-
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Local matrix.vector product y = A.x with MSR matrix.
  *
  * parameters:
@@ -4502,7 +4398,6 @@ _b_mat_vec_p_l_msr(bool                exclude_diag,
                    cs_real_t          *restrict y)
 {
   cs_lnum_t  ii, jj, kk, n_cols;
-  cs_real_t  sii;
   cs_lnum_t  *restrict col_id;
   cs_real_t  *restrict m_row;
 
@@ -4555,7 +4450,6 @@ _b_mat_vec_p_l_msr(bool                exclude_diag,
       col_id = ms->col_id + ms->row_index[ii];
       m_row = mc->x_val + ms->row_index[ii];
       n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      sii = 0.0;
 
       for (kk = 0; kk < b_size[0]; kk++)
         y[ii*b_size[1] + kk] = 0.;
@@ -4580,7 +4474,6 @@ _mat_vec_p_l_msr_mkl(bool                exclude_diag,
                      const cs_real_t    *restrict x,
                      cs_real_t          *restrict y)
 {
-  cs_lnum_t ii;
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
 
@@ -4598,9 +4491,22 @@ _mat_vec_p_l_msr_mkl(bool                exclude_diag,
   /* Add diagonal contribution */
 
   if (!exclude_diag && mc->d_val != NULL) {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_rows; ii++)
-      y[ii] += mc->d_val[ii]*x[ii];
+    char matdescra[7] = "D NC  ";
+    int ndiag = 1;
+    int idiag[1] = {0};
+    double alpha = 1.0, beta = 1.0;
+    mkl_ddiamv(transa,
+               &n_rows,
+               &n_rows,
+               &alpha,
+               matdescra,
+               (double *)mc->d_val,
+               &n_rows,
+               idiag,
+               &ndiag,
+               (double *)x,
+               &beta,
+               y);
   }
 }
 
@@ -4910,7 +4816,6 @@ _alpha_a_x_p_beta_y_msr_mkl(bool                exclude_diag,
                             const cs_real_t    *restrict x,
                             cs_real_t          *restrict y)
 {
-  cs_lnum_t ii;
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
 
@@ -4918,14 +4823,14 @@ _alpha_a_x_p_beta_y_msr_mkl(bool                exclude_diag,
   int n_cols = ms->n_cols;
   double _alpha = alpha;
   double _beta = beta;
-  char mathdescra[7] = "G  C  ";
+  char matdescra[7] = "G NC  ";
   char transa[] = "n";
 
   mkl_dcsrmv(transa,
              &n_rows,
              &n_cols,
              &_alpha,
-             mathdescra,
+             matdescra,
              mc->x_val,
              ms->col_id,
              ms->row_index,
@@ -4937,9 +4842,21 @@ _alpha_a_x_p_beta_y_msr_mkl(bool                exclude_diag,
   /* Add diagonal contribution */
 
   if (!exclude_diag && mc->d_val != NULL) {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_rows; ii++)
-      y[ii] += alpha*mc->d_val[ii]*x[ii];
+    int ndiag = 1;
+    int idiag[1] = {0};
+    matdescra[0] = 'D';
+    mkl_ddiamv(transa,
+               &n_rows,
+               &n_rows,
+               &_alpha,
+               matdescra,
+               (double *)mc->d_val,
+               &n_rows,
+               idiag,
+               &ndiag,
+               (double *)x,
+               &_beta,
+               y);
   }
 }
 
@@ -5412,9 +5329,23 @@ _mat_vec_p_l_msr_sym_mkl(bool                exclude_diag,
   /* Diagonal part of matrix.vector product */
 
   if (!exclude_diag && mc->d_val != NULL) {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_rows; ii++)
-      y[ii] += mc->d_val[ii]*x[ii];
+    char matdescra[7] = "D NC  ";
+    int ndiag = 1;
+    int idiag[1] = {0};
+    char transa[] = "n";
+    double alpha = 1.0, beta = 1.0;
+    mkl_ddiamv(transa,
+               &n_rows,
+               &n_rows,
+               &alpha,
+               matdescra,
+               (double *)mc->d_val,
+               &n_rows,
+               idiag,
+               &ndiag,
+               (double *)x,
+               &beta,
+               y);
   }
 
 }
@@ -5506,13 +5437,13 @@ _alpha_a_x_p_beta_y_msr_sym_mkl(bool                exclude_diag,
   double _alpha = alpha;
   double _beta = beta;
   char transa[] = "n";
-  char mathdescra[7] = "SUNC  ";
+  char matdescra[7] = "SUNC  ";
 
   mkl_dcsrmv(transa,
              &n_rows,
              &n_cols,
              &_alpha,
-             mathdescra,
+             matdescra,
              mc->x_val,
              ms->col_id,
              ms->row_index,
@@ -5728,7 +5659,7 @@ _matrix_check(int                    n_variants,
               cs_matrix_variant_t   *m_variant)
 {
   cs_lnum_t  ii;
-  int  v_id, sub_id, b_id, ed_flag;
+  int  v_id, b_id, ed_flag;
   int  sym_flag;
 
   cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
@@ -5821,8 +5752,6 @@ _matrix_check(int                    n_variants,
 
           if (sym_flag + v->symmetry == 1) /* sym_flag xor v->symmetry */
             continue;
-
-          sub_id = sym_flag*2 + ed_flag;
 
           cs_matrix_set_coefficients(m,
                                      sym_coeffs,
