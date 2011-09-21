@@ -152,7 +152,7 @@ _print_stats(long    n_runs,
     long n_ops_min, n_ops_max, n_ops_tot;
     double loc_count[2], glob_sum[2], glob_min[2], glob_max[2], fmg;
 
-    loc_count[0] = wt/n_runs;
+    loc_count[0] = wt;
     loc_count[1] = n_ops*fm;
 
     MPI_Allreduce(&n_ops, &n_ops_min, 1, MPI_LONG, MPI_MIN,
@@ -170,6 +170,10 @@ _print_stats(long    n_runs,
                   cs_glob_mpi_comm);
 
     fmg = n_runs / (1.e9 * glob_max[0]); /* global flops multiplier */
+
+    glob_sum[0] /= n_runs;
+    glob_min[0] /= n_runs;
+    glob_max[0] /= n_runs;
 
     if (n_ops_single == 0)
       cs_log_printf
@@ -232,7 +236,7 @@ _print_mem_stats(long    n_runs,
     long n_ops_min, n_ops_max, n_ops_tot;
     double loc_count[2], glob_sum[2], glob_min[2], glob_max[2], fmg;
 
-    loc_count[0] = wt/n_runs;
+    loc_count[0] = wt;
     loc_count[1] = n_ops*fm;
 
     MPI_Allreduce(&n_ops, &n_ops_min, 1, MPI_LONG, MPI_MIN,
@@ -250,6 +254,10 @@ _print_mem_stats(long    n_runs,
                   cs_glob_mpi_comm);
 
     fmg = n_runs / (8.e9 * glob_max[0]); /* global flops multiplier */
+
+    glob_sum[0] /= n_runs;
+    glob_min[0] /= n_runs;
+    glob_max[0] /= n_runs;
 
     cs_log_printf
       (CS_LOG_PERFORMANCE,
