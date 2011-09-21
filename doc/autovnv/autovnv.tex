@@ -110,7 +110,7 @@ needs to run specific scripts.
 \section{Installation and prerequisites}
 
 \textsc{Autovnv} does not need a specific installation: the related files are
-installed with the other python scripts of \CS. Additional prerequisites
+installed with the other Python scripts of \CS. Additional prerequisites
 required are:
 \begin{list}{$\bullet$}{}
 \item \texttt{numpy},
@@ -168,12 +168,14 @@ The file of parameters is a XML formatted ascii file.
 
 This example shows the four mandatory first lines of the file of parameters.
 
+\small
 \begin{verbatim}
 <?xml version="1.0"?>
 <autovnv>
     <repository>/home/dupond/codesaturne/MyRepository</repository>
     <destination>/home/dupond/codesaturne/MyDestination</destination>
 \end{verbatim}
+\normalsize
 
 The third and fourth lines correspond to the definition of the
 \textbf{repository} and \textbf{destination} directories.
@@ -183,9 +185,11 @@ the directory is created.
 
 The last line of the file of parameters must be:
 
+\small
 \begin{verbatim}
 </autovnv>
 \end{verbatim}
+\normalsize
 
 \subsection{Case creation and compilation fo the user files}
 
@@ -194,6 +198,7 @@ known which studies and cases from the \textbf{repository} should be duplicated
 in the \textbf{destination}. The selection is done with the markups
 \texttt{<study>} and \texttt{<case>} as the following example:
 
+\small
 \begin{verbatim}
 <?xml version="1.0"?>
 <autovnv>
@@ -210,6 +215,7 @@ in the \textbf{destination}. The selection is done with the markups
     </study>
 </autovnv>
 \end{verbatim}
+\normalsize
 
 The attributes are:
 \begin{list}{$\bullet$}{}
@@ -251,6 +257,7 @@ the command line.
 All cases described in the file of parameters with the attribute
 \texttt{compute="on"} are taken into account.
 
+\small
 \begin{verbatim}
 <?xml version="1.0"?>
 <autovnv>
@@ -267,6 +274,7 @@ All cases described in the file of parameters with the attribute
     </study>
 </autovnv>
 \end{verbatim}
+\normalsize
 
 After the computation, if no error occurs, the attribute \texttt{compute} is set
 to \texttt{"off"} in the copy of the file of parameters in the
@@ -284,6 +292,7 @@ checkpoint file comparison is switched on for the case \textit{Grid1}, whereas
 no comparision is planed for the case \textit{Grid2}. The comparison is done by
 the external script \texttt{cs\_io\_dump} with the option \texttt{--diff}.
 
+\small
 \begin{verbatim}
 <study label='MyStudy1' status='on'>
     <case label='Grid1' status='on' compute="on" post="off">
@@ -292,6 +301,7 @@ the external script \texttt{cs\_io\_dump} with the option \texttt{--diff}.
     <case label='Grid2' status='on' compute="off" post="off"/>
 </study>
 \end{verbatim}
+\normalsize
 
 The attributes are:
 \begin{list}{$\bullet$}{}
@@ -362,6 +372,7 @@ will be passed to the script as arguments, with options \texttt{"-r"} and
 Only the attributes \texttt{label} and \texttt{status} are mandatory.
 
 Several calls of the same script or to different scripts are permitted:
+\small
 \begin{verbatim}
 <study label="STUDY" status="on">
     <case label="CASE1" status="on" compute="on" post="on">
@@ -372,12 +383,14 @@ Several calls of the same script or to different scripts are permitted:
     </case>
 </study>
 \end{verbatim}
+\normalsize
 
 The main objectif of running external scripts is to create or modify
 results in order to plot them.
 
 Example of script, which searches printed informations in the listing,
 note the function to process the passed command line arguments:
+\small
 \begin{verbatim}
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -417,6 +430,7 @@ if __name__ == '__main__':
     options = process_cmd_line(sys.argv[1:])
     main(options)
 \end{verbatim}
+\normalsize
 
 \subsection{Post-processing}
 
@@ -649,19 +663,21 @@ should be used with the markup \texttt{<plot>} as illustrated below:
 
 \subsubsection{Curves with error bar}\label{sec:err}
 
-In order to draw vertical or horizontal error bar, it is possible to:
+In order to draw horizontal and vertical error bar, it is possible to
+specify to the markup \texttt{<plot>} the attributes \texttt{xerr} and
+\texttt{yerr} respectively. The value of theses attributes could be:
 \begin{list}{$\bullet$}{}
-\item give a single column number where the average uncertainty is:
+\item a single column number where the average uncertainty is in the file of
+data:
 \small
 \begin{verbatim}
 <measurement file='axis.dat' path =''>
     <plot fig='1' xcol='1' ycol='3' legend='Experimental data' xerr='2' />
-    <plot fig='1' xcol='1' ycol='3' yerr='4' />
 </measurement>
 \end{verbatim}
 \normalsize
-\item give two column numbers where the minimum and the maximum of the
-uncertainty are:
+\item a sequence of two column numbers where the minimum and the maximum
+of the uncertainty are in the file of data:
 \small
 \begin{verbatim}
 <data file='profile.dat' dest="">
@@ -671,19 +687,29 @@ uncertainty are:
 \normalsize
 \end{list}
 
+\underline{Notes:}
+
 The attributes \texttt{xerr} and \texttt{yerr} could not be both at the same
-time in the markup \texttt{plot}.
+time in the markup \texttt{plot}. If horizontal and vertical bars has be
+drawn together, repeat the markup \texttt{plot} like this:
+\small
+\begin{verbatim}
+<measurement file='axis.dat' path =''>
+    <plot fig='1' xcol='1' ycol='3' legend='Experimental data' xerr='2' />
+    <plot fig='1' xcol='1' ycol='3' yerr='4' />
+</measurement>
+\end{verbatim}
+\normalsize
 
 \subsubsection{Matplotlib raw commands}\label{sec:raw}
 
-The file of parameters allows to execute additional matplotlib commands,
-for curves (2D lines), or subplot, or figure.
-For every object drawn, \texttt{Autovnv} associate a name to this obvject
-that can be reused in standard matplotlib commands. Therefore childs
-markup \texttt{<plt\_command>} could be added to \texttt{<plot>},
-\texttt{<subplot>} or \texttt{<figure>}.
+The file of parameters allows to execute additional matplotlib commands (i.e
+Python commands), for curves (2D lines), or subplot, or figure. For every object
+drawn, \texttt{Autovnv} associate a name to this object that can be reused in
+standard matplotlib commands. Therefore childs markup \texttt{<plt\_command>}
+could be added to \texttt{<plot>}, \texttt{<subplot>} or \texttt{<figure>}.
 
-It is possible to add commands with Matlab style or python style.
+It is possible to add commands with Matlab style or Python style.
 
 \begin{list}{$\bullet$}{}
 
@@ -736,11 +762,9 @@ script if an error occurs.
 \end{list}
 
 After the computation of a case, if no error occurs, the attribute
-\texttt{compute}
-is set to \texttt{"off"} in the copy of the file of parameters in
-the \textbf{destination}. It is allow a restart
-of \textsc{Autovnv} without re-run successfull previous computations.
-
+\texttt{compute} is set to \texttt{"off"} in the copy of the file of parameters
+in the \textbf{destination}. It is allow a restart of \textsc{Autovnv} without
+re-run successfull previous computations.
 In the same manner, all empty attributes \texttt{repo=""} and \texttt{dest=""}
 are completed in the udpated file of parameters.
 
@@ -751,6 +775,7 @@ are completed in the udpated file of parameters.
 The opening and closing signs for commantaries are \texttt{<!--} and
 \texttt{-->}. In the following example, nothing from the study
 \texttt{MyStudy2} will be read:
+\small
 \begin{verbatim}
 <?xml version="1.0"?>
 <autovnv>
@@ -769,9 +794,11 @@ The opening and closing signs for commantaries are \texttt{<!--} and
     -->
 </autovnv>
 \end{verbatim}
+\normalsize
 
 \item How to add text in a figure ?
 
+It is possible to use raw commands:
 \small
 \begin{verbatim}
 <subplot id='301' ylabel ='Location ($m$)' title='Before jet -0.885' legstatus='off'>
