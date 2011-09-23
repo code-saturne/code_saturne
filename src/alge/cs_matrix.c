@@ -4842,10 +4842,21 @@ _alpha_a_x_p_beta_y_msr_mkl(bool                exclude_diag,
   /* Add diagonal contribution */
 
   if (!exclude_diag && mc->d_val != NULL) {
-    cs_lnum_t ii;
-#   pragma omp parallel for
-    for (ii = 0; ii < n_rows; ii++)
-      y[ii] += mc->d_val[ii]*x[ii];
+    int ndiag = 1;
+    int idiag[1] = {0};
+    matdescra[0] = 'D';
+    mkl_ddiamv(transa,
+               &n_rows,
+               &n_rows,
+               &_alpha,
+               matdescra,
+               (double *)mc->d_val,
+               &n_rows,
+               idiag,
+               &ndiag,
+               (double *)x,
+               &_beta,
+               y);
   }
 }
 
@@ -5318,9 +5329,23 @@ _mat_vec_p_l_msr_sym_mkl(bool                exclude_diag,
   /* Diagonal part of matrix.vector product */
 
   if (!exclude_diag && mc->d_val != NULL) {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_rows; ii++)
-      y[ii] += mc->d_val[ii]*x[ii];
+    char matdescra[7] = "D NC  ";
+    int ndiag = 1;
+    int idiag[1] = {0};
+    char transa[] = "n";
+    double alpha = 1.0, beta = 1.0;
+    mkl_ddiamv(transa,
+               &n_rows,
+               &n_rows,
+               &alpha,
+               matdescra,
+               (double *)mc->d_val,
+               &n_rows,
+               idiag,
+               &ndiag,
+               (double *)x,
+               &beta,
+               y);
   }
 
 }
