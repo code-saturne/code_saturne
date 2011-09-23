@@ -4845,6 +4845,7 @@ _alpha_a_x_p_beta_y_msr_mkl(bool                exclude_diag,
     int ndiag = 1;
     int idiag[1] = {0};
     matdescra[0] = 'D';
+    _beta = 1.0;
     mkl_ddiamv(transa,
                &n_rows,
                &n_rows,
