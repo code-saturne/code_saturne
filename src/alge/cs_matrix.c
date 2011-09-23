@@ -4491,10 +4491,22 @@ _mat_vec_p_l_msr_mkl(bool                exclude_diag,
   /* Add diagonal contribution */
 
   if (!exclude_diag && mc->d_val != NULL) {
-    cs_lnum_t ii;
-#   pragma omp parallel for
-    for (ii = 0; ii < n_rows; ii++)
-      y[ii] += mc->d_val[ii]*x[ii];
+    char matdescra[7] = "D NC  ";
+    int ndiag = 1;
+    int idiag[1] = {0};
+    double alpha = 1.0, beta = 1.0;
+    mkl_ddiamv(transa,
+               &n_rows,
+               &n_rows,
+               &alpha,
+               matdescra,
+               (double *)mc->d_val,
+               &n_rows,
+               idiag,
+               &ndiag,
+               (double *)x,
+               &beta,
+               y);
   }
 }
 
