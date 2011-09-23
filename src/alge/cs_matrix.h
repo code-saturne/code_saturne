@@ -388,24 +388,6 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
                           cs_real_t          *restrict y);
 
 /*----------------------------------------------------------------------------
- * Matrix.vector product y = (A-D).x
- *
- * This function includes a halo update of x prior to multiplication by A.
- *
- * parameters:
- *   rotation_mode --> Halo update option for rotational periodicity
- *   matrix        --> Pointer to matrix structure
- *   x             <-> Multipliying vector values (ghost values updated)
- *   y             --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_m_diag_vector_multiply(cs_perio_rota_t     rotation_mode,
-                                 const cs_matrix_t  *matrix,
-                                 cs_real_t          *restrict x,
-                                 cs_real_t          *restrict y);
-
-/*----------------------------------------------------------------------------
  * Matrix.vector product y = A.x with no prior halo update of x.
  *
  * This function does not include a halo update of x prior to multiplication
@@ -441,72 +423,6 @@ cs_matrix_exdiag_vector_multiply(cs_perio_rota_t     rotation_mode,
                                  const cs_matrix_t  *matrix,
                                  cs_real_t          *restrict x,
                                  cs_real_t          *restrict y);
-
-/*----------------------------------------------------------------------------
- * Matrix.vector product y = alpha.A.x + beta.y
- *
- * This function includes a halo update of x prior to multiplication by A.
- *
- * parameters:
- *   rotation_mode --> Halo update option for rotational periodicity
- *   alpha         --> Scalar, alpha in alpha.A.x + beta.y
- *   beta          --> Scalar, beta in alpha.A.x + beta.y
- *   matrix        --> Pointer to matrix structure
- *   x             <-> Multipliying vector values (ghost values updated)
- *   y             --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
-                             cs_real_t           alpha,
-                             cs_real_t           beta,
-                             const cs_matrix_t  *matrix,
-                             cs_real_t          *restrict x,
-                             cs_real_t          *restrict y);
-
-/*----------------------------------------------------------------------------
- * Matrix.vector product y = alpha.(A-D).x + beta.y
- *
- * This function includes a halo update of x prior to multiplication by A.
- *
- * parameters:
- *   rotation_mode --> Halo update option for rotational periodicity
- *   alpha         --> Scalar, alpha in alpha.A.x + beta.y
- *   beta          --> Scalar, beta in alpha.A.x + beta.y
- *   matrix        --> Pointer to matrix structure
- *   x             <-> Multipliying vector values (ghost values updated)
- *   y             --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_alpha_a_m_d_x_p_beta_y(cs_perio_rota_t     rotation_mode,
-                                 cs_real_t           alpha,
-                                 cs_real_t           beta,
-                                 const cs_matrix_t  *matrix,
-                                 cs_real_t          *restrict x,
-                                 cs_real_t          *restrict y);
-
-/*----------------------------------------------------------------------------
- * Matrix.vector product y = alpha.(A-D).x + beta.y
- *
- * This function includes a halo update of x prior to multiplication by A.
- *
- * parameters:
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   alpha         <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta          <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix        <-- Pointer to matrix structure
- *   x             <-- Multipliying vector values (ghost values updated)
- *   y             --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_exdiag_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
-                                    cs_real_t           alpha,
-                                    cs_real_t           beta,
-                                    const cs_matrix_t  *matrix,
-                                    cs_real_t          *restrict x,
-                                    cs_real_t          *restrict y);
 
 /*----------------------------------------------------------------------------
  * Tune local matrix.vector product operations.

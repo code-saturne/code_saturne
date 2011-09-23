@@ -1672,49 +1672,6 @@ _matrix_vector_test(double                 t_measure,
 
   }
 
-  /* Combined matrix.vector product: alpha.A.x + beta.y */
-
-  for (ii = 0; ii < n_cells_ext; y[ii++] = 0.0);
-
-  test_sum = 0.0;
-  wt0 = cs_timer_wtime(), wt1 = wt0;
-  if (t_measure > 0)
-    n_runs = 8;
-  else
-    n_runs = 1;
-  run_id = 0;
-  while (run_id < n_runs) {
-    double test_sum_mult = 1.0/n_runs;
-    while (run_id < n_runs) {
-      cs_matrix_alpha_a_x_p_beta_y(CS_PERIO_ROTA_COPY,
-                                   0.5,
-                                   0.0,
-                                   m,
-                                   x,
-                                   y);
-      test_sum += y[n_cells-1]*test_sum_mult;
-      if (run_id > 0 && run_id % 64) {
-        for (ii = n_cells; ii < n_cells_ext; ii++)
-          y[ii] = 0;
-      }
-      run_id++;
-    }
-    wt1 = cs_timer_wtime();
-    if (wt1 - wt0 < t_measure)
-      n_runs *= 2;
-  }
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Matrix.vector product alpha.A.x + beta.y\n"
-                  "----------------------------------------\n"));
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("  (calls: %d;  test sum: %12.5f)\n"),
-                n_runs, test_sum);
-
-  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
-
   /* (Matrix - diagonal).vector product */
 
   test_sum = 0.0;

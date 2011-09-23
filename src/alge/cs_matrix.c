@@ -151,14 +151,6 @@ typedef void
                               const cs_real_t    *restrict x,
                               cs_real_t          *restrict y);
 
-typedef void
-(cs_matrix_alpha_a_x_p_beta_y_t) (bool                exclude_diag,
-                                  cs_real_t           alpha,
-                                  cs_real_t           beta,
-                                  const cs_matrix_t  *matrix,
-                                  const cs_real_t    *restrict x,
-                                  cs_real_t          *restrict y);
-
 /*----------------------------------------------------------------------------
  * Local Structure Definitions
  *----------------------------------------------------------------------------*/
@@ -393,7 +385,6 @@ struct _cs_matrix_t {
      block_flag*2 + exclude_diagonal_flag */
 
   cs_matrix_vector_product_t        *vector_multiply[4];
-  cs_matrix_alpha_a_x_p_beta_y_t    *alpha_a_x_p_beta_y[4];
 
   /* Loop lenght parameter for some SpMv algorithms */
 
@@ -421,7 +412,6 @@ struct _cs_matrix_variant_t {
      block_flag*2 + exclude_diagonal_flag */
 
   cs_matrix_vector_product_t        *vector_multiply[4];
-  cs_matrix_alpha_a_x_p_beta_y_t    *alpha_a_x_p_beta_y[4];
 
   /* Measured structure creation cost, or -1 otherwise */
 
@@ -437,7 +427,6 @@ struct _cs_matrix_variant_t {
      block_flag*4 + sym_flag*2 + exclude_diagonal_flag) */
 
   double  matrix_vector_cost[8];
-  double  alpha_ax_p_beta_y_cost[8];
 
 };
 
@@ -472,7 +461,7 @@ static char _no_exclude_diag_error_str[]
   = N_("Matrix product variant using function %s\n"
        "does not handle case with excluded diagonal.");
 
-static const char *_matrix_operation_name[16]
+static const char *_matrix_operation_name[8]
   = {N_("y <- A.x"),
      N_("y <- (A-D).x"),
      N_("Symmetric y <- A.x"),
@@ -480,15 +469,7 @@ static const char *_matrix_operation_name[16]
      N_("Block y <- A.x"),
      N_("Block y <- (A-D).x"),
      N_("Block symmetric y <- A.x"),
-     N_("Block symmetric y <- (A-D).x"),
-     N_("y <- alpha.A.x + beta.y"),
-     N_("y <- alpha.(A-D).x + beta.y"),
-     N_("Symmetric y <- alpha.A.x + beta.y"),
-     N_("Symmetric y <- alpha.(A-D).x + beta.y"),
-     N_("Block y <- alpha.A.x + beta.y"),
-     N_("Block y <- alpha.(A-D).x + beta.y"),
-     N_("Block symmetric y <- alpha.A.x + beta.y"),
-     N_("Block symmetric y <- alpha.(A-D).x + beta.y")};
+     N_("Block symmetric y <- (A-D).x")};
 
 cs_matrix_t            *cs_glob_matrix_default = NULL;
 cs_matrix_structure_t  *cs_glob_matrix_default_struct = NULL;
@@ -565,51 +546,6 @@ _dense_3_3_ax(cs_lnum_t         b_id,
     y[b_id*3 + ii] = 0;
     for (jj = 0; jj < 3; jj++)
       y[b_id*3 + ii] +=   a[b_id*9 + ii*3 + jj] * x[b_id*3 + jj];
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Compute matrix-vector product for one dense block:
- * y[i] = alpha.a[i].x[i] + beta.y[i]
- *
- * Vectors and blocks may be larger than their useful size, to
- * improve data alignment.
- *
- * parameters:
- *   b_id   <-- block id
- *   b_size <-- block size, including padding:
- *              b_size[0]: useful block size
- *              b_size[1]: vector block extents
- *              b_size[2]: matrix line extents
- *              b_size[3]: matrix line*column (block) extents
- *   alpha  <-- alpha coefficient
- *   beta   <-- beta coefficient
- *   a      <-- Pointer to block matrixes array (usually matrix diagonal)
- *   x      <-- Multipliying vector values
- *   y      --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static inline void
-_dense_b_aax_p_by(int               b_id,
-                  const int         b_size[4],
-                  cs_real_t         alpha,
-                  cs_real_t         beta,
-                  const cs_real_t  *restrict a,
-                  const cs_real_t  *restrict x,
-                  cs_real_t        *restrict y)
-{
-  cs_lnum_t   ii, jj;
-
-# if defined(__xlc__) /* Tell IBM compiler not to alias */
-# pragma disjoint(*x, *y, *a)
-# endif
-
-  for (ii = 0; ii < b_size[0]; ii++) {
-    y[b_id*b_size[1] + ii] *= beta;
-    for (jj = 0; jj < b_size[0]; jj++)
-      y[b_id*b_size[1] + ii]
-        +=   a[b_id*b_size[3] + ii*b_size[2] + jj]
-           * alpha*x[b_id*b_size[1] + jj];
   }
 }
 
@@ -713,90 +649,6 @@ _3_3_diag_vec_p_l(const cs_real_t  *restrict da,
 #   pragma omp parallel for
     for (ii = 0; ii < n_elts*3; ii++)
       y[ii] = 0.0;
-  }
-}
-
-/*----------------------------------------------------------------------------
- * y[i] = alpha.da[i].x[i] + beta.y[i], with da possibly NULL
- *
- * parameters:
- *   alpha  <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta   <-- Scalar, beta in alpha.A.x + beta.y
- *   da     <-- Pointer to coefficients array (usually matrix diagonal)
- *   x      <-- Multipliying vector values
- *   y      --> Resulting vector
- *   n_elts <-- Array size
- *----------------------------------------------------------------------------*/
-
-static inline void
-_diag_x_p_beta_y(cs_real_t         alpha,
-                 cs_real_t         beta,
-                 const cs_real_t  *restrict da,
-                 const cs_real_t  *restrict x,
-                 cs_real_t        *restrict y,
-                 cs_lnum_t         n_elts)
-{
-  cs_lnum_t  ii;
-
-# if defined(__xlc__) /* Tell IBM compiler not to alias */
-# pragma disjoint(*x, *y, *da)
-# endif
-
-  if (da != NULL) {
-#   pragma omp parallel for firstprivate(alpha, beta)
-    for (ii = 0; ii < n_elts; ii++)
-      y[ii] = (alpha * da[ii] * x[ii]) + (beta * y[ii]);
-  }
-  else {
-#   pragma omp parallel for firstprivate(beta)
-    for (ii = 0; ii < n_elts; ii++)
-      y[ii] *= beta;
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Block version of y[i] = alpha.da[i].x[i] + beta.y[i], with da possibly NULL
- *
- * parameters:
- *   alpha  <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta   <-- Scalar, beta in alpha.A.x + beta.y
- *   da     <-- Pointer to coefficients array (usually matrix diagonal)
- *   x      <-- Multipliying vector values
- *   y      --> Resulting vector
- *   n_elts <-- Array size
- *   b_size <-- block size, including padding:
- *              b_size[0]: useful block size
- *              b_size[1]: vector block extents
- *              b_size[2]: matrix line extents
- *              b_size[3]: matrix line*column (block) extents
- *----------------------------------------------------------------------------*/
-
-static inline void
-_b_diag_x_p_beta_y(cs_real_t         alpha,
-                   cs_real_t         beta,
-                   const cs_real_t  *restrict da,
-                   const cs_real_t  *restrict x,
-                   cs_real_t        *restrict y,
-                   cs_lnum_t         n_elts,
-                   const int         b_size[4])
-{
-  cs_lnum_t ii, jj;
-
-# if defined(__xlc__) /* Tell IBM compiler not to alias */
-# pragma disjoint(*x, *y, *da)
-# endif
-
-  if (da != NULL) {
-#   pragma omp parallel for firstprivate(alpha, beta)
-    for (ii = 0; ii < n_elts; ii++)
-      _dense_b_aax_p_by(ii, b_size, alpha, beta, da, x, y);
-  }
-  else {
-#   pragma omp parallel for firstprivate(beta)
-    for (ii = 0; ii < n_elts; ii++) {
-      for (jj = 0; jj < b_size[0]; jj++)
-        y[ii*b_size[1] + jj] *= beta;
-    }
   }
 }
 
@@ -1869,441 +1721,6 @@ _mat_vec_p_l_native_vector(bool                exclude_diag,
 #endif /* Vector machine variant */
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = alpha.A.x + beta.y with native matrix.
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   alpha        <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta         <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            <-> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_alpha_a_x_p_beta_y_native(bool                exclude_diag,
-                           cs_real_t           alpha,
-                           cs_real_t           beta,
-                           const cs_matrix_t  *matrix,
-                           const cs_real_t    *restrict x,
-                           cs_real_t          *restrict y)
-{
-  cs_lnum_t  ii, jj, face_id;
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa = mc->xa;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag)
-    _diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells);
-  else
-    cblas_dscal(ms->n_cells, beta, y, 1);
-  _zero_range(y, ms->n_cells, ms->n_cells_ext);
-
-  /* Note: parallel and periodic synchronization could be delayed to here */
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    if (mc->symmetric) {
-
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
-        y[ii] += alpha * xa[face_id] * x[jj];
-        y[jj] += alpha * xa[face_id] * x[ii];
-      }
-
-    }
-    else {
-
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
-        y[ii] += alpha * xa[2*face_id] * x[jj];
-        y[jj] += alpha * xa[2*face_id + 1] * x[ii];
-      }
-
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = alpha.A.x + beta.y with native matrix,
- * blocked version.
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   alpha        <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta         <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            <-> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_b_alpha_a_x_p_beta_y_native(bool                exclude_diag,
-                             cs_real_t           alpha,
-                             cs_real_t           beta,
-                             const cs_matrix_t  *matrix,
-                             const cs_real_t    *restrict x,
-                             cs_real_t          *restrict y)
-{
-  cs_lnum_t  ii, jj, kk, face_id;
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa = mc->xa;
-  const int *b_size = matrix->b_size;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _b_diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells, b_size);
-  }
-  else
-    cblas_dscal(ms->n_cells*b_size[1], beta, y, 1);
-  _b_zero_range(y, ms->n_cells, ms->n_cells_ext, b_size);
-
-  /* Note: parallel and periodic synchronization could be delayed to here */
-
-  /* non-diagonal terms */
-  if (mc->xa != NULL) {
-
-    if (mc->symmetric) {
-
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
-        for (kk = 0; kk < b_size[0]; kk++) {
-          y[ii*b_size[1] + kk] += alpha*xa[face_id] * x[jj*b_size[1] + kk];
-          y[jj*b_size[1] + kk] += alpha*xa[face_id] * x[ii*b_size[1] + kk];
-        }
-
-      }
-
-    }
-    else {
-
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
-        for (kk = 0; kk < b_size[0]; kk++) {
-          y[ii*b_size[1] + kk] += alpha*xa[2*face_id]   * x[jj*b_size[1] + kk];
-          y[jj*b_size[1] + kk] += alpha*xa[2*face_id+1] * x[ii*b_size[1] + kk];
-        }
-
-      }
-
-    }
-
-  }
-}
-
-#if defined(HAVE_OPENMP) /* OpenMP variant */
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = alpha.A.x + beta.y with native matrix.
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   alpha        <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta         <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            <-> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_alpha_a_x_p_beta_y_native_omp(bool                exclude_diag,
-                               cs_real_t           alpha,
-                               cs_real_t           beta,
-                               const cs_matrix_t  *matrix,
-                               const cs_real_t    *restrict x,
-                               cs_real_t          *restrict y)
-{
-  int g_id, t_id;
-  cs_lnum_t  ii, jj, face_id;
-  const int n_threads = matrix->numbering->n_threads;
-  const int n_groups = matrix->numbering->n_groups;
-  const cs_lnum_t *group_index = matrix->numbering->group_index;
-
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-
-  const cs_real_t  *restrict xa = mc->xa;
-
-  assert(matrix->numbering->type == CS_NUMBERING_THREADS);
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag)
-    _diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells);
-  else
-    cblas_dscal(ms->n_cells, beta, y, 1);
-  _zero_range(y, ms->n_cells, ms->n_cells_ext);
-
-  /* Note: parallel and periodic synchronization could be delayed to here */
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    if (mc->symmetric) {
-
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
-      for (g_id=0; g_id < n_groups; g_id++) {
-
-#       pragma omp parallel for private(face_id, ii, jj)
-        for (t_id=0; t_id < n_threads; t_id++) {
-
-          for (face_id = group_index[(t_id*n_groups + g_id)*2];
-               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
-               face_id++) {
-            ii = face_cel_p[2*face_id] -1;
-            jj = face_cel_p[2*face_id + 1] -1;
-            y[ii] += alpha * xa[face_id] * x[jj];
-            y[jj] += alpha * xa[face_id] * x[ii];
-          }
-        }
-
-      }
-
-    }
-    else {
-
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
-      for (g_id=0; g_id < n_groups; g_id++) {
-
-#       pragma omp parallel for private(face_id, ii, jj)
-        for (t_id=0; t_id < n_threads; t_id++) {
-
-          for (face_id = group_index[(t_id*n_groups + g_id)*2];
-               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
-               face_id++) {
-            ii = face_cel_p[2*face_id] -1;
-            jj = face_cel_p[2*face_id + 1] -1;
-            y[ii] += alpha * xa[2*face_id] * x[jj];
-            y[jj] += alpha * xa[2*face_id + 1] * x[ii];
-          }
-        }
-      }
-
-    }
-
-  } /* if mc-> xa != NULL */
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = alpha.A.x + beta.y with native matrix,
- * blocked version.
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   alpha        <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta         <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            <-> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_b_alpha_a_x_p_beta_y_native_omp(bool                exclude_diag,
-                                 cs_real_t           alpha,
-                                 cs_real_t           beta,
-                                 const cs_matrix_t  *matrix,
-                                 const cs_real_t    *restrict x,
-                                 cs_real_t          *restrict y)
-{
-  int g_id, t_id;
-  cs_lnum_t  ii, jj, kk, face_id;
-  const int n_threads = matrix->numbering->n_threads;
-  const int n_groups = matrix->numbering->n_groups;
-  const cs_lnum_t *group_index = matrix->numbering->group_index;
-
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-
-  const cs_real_t  *restrict xa = mc->xa;
-
-  const int *b_size = matrix->b_size;
-
-  assert(matrix->numbering->type == CS_NUMBERING_THREADS);
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _b_diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells, b_size);
-  }
-  else
-    cblas_dscal(ms->n_cells*b_size[1], beta, y, 1);
-  _b_zero_range(y, ms->n_cells, ms->n_cells_ext, b_size);
-
-  /* Note: parallel and periodic synchronization could be delayed to here */
-
-  /* non-diagonal terms */
-  if (mc->xa != NULL) {
-
-    if (mc->symmetric) {
-
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
-      for (g_id=0; g_id < n_groups; g_id++) {
-
-#       pragma omp parallel for private(face_id, ii, jj, kk)
-        for (t_id=0; t_id < n_threads; t_id++) {
-
-          for (face_id = group_index[(t_id*n_groups + g_id)*2];
-               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
-               face_id++) {
-            ii = face_cel_p[2*face_id] -1;
-            jj = face_cel_p[2*face_id + 1] -1;
-            for (kk = 0; kk < b_size[0]; kk++) {
-              y[ii*b_size[1] + kk] += alpha*xa[face_id] * x[jj*b_size[1] + kk];
-              y[jj*b_size[1] + kk] += alpha*xa[face_id] * x[ii*b_size[1] + kk];
-            }
-          }
-        }
-
-      }
-
-    }
-    else {
-
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
-      for (g_id=0; g_id < n_groups; g_id++) {
-
-#       pragma omp parallel for private(face_id, ii, jj, kk)
-        for (t_id=0; t_id < n_threads; t_id++) {
-
-          for (face_id = group_index[(t_id*n_groups + g_id)*2];
-               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
-               face_id++) {
-            ii = face_cel_p[2*face_id] -1;
-            jj = face_cel_p[2*face_id + 1] -1;
-            for (kk = 0; kk < b_size[0]; kk++) {
-              y[ii*b_size[1]+kk] += alpha*xa[2*face_id]   * x[jj*b_size[1]+kk];
-              y[jj*b_size[1]+kk] += alpha*xa[2*face_id+1] * x[ii*b_size[1]+kk];
-            }
-          }
-        }
-      }
-
-    }
-
-  }
-}
-
-#endif
-
-#if defined(SX) && defined(_SX) /* For vector machines */
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = alpha.A.x + beta.y with native matrix.
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   alpha        <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta         <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            <-> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_alpha_a_x_p_beta_y_native_vector(bool                exclude_diag,
-                                  cs_real_t           alpha,
-                                  cs_real_t           beta,
-                                  const cs_matrix_t  *matrix,
-                                  const cs_real_t    *restrict x,
-                                  cs_real_t          *restrict y)
-{
-  cs_lnum_t  ii, jj, face_id;
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa = mc->xa;
-  assert(matrix->numbering->type == CS_NUMBERING_VECTORIZE);
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag)
-    _diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells);
-  else
-    cblas_dscal(ms->n_cells, beta, y, 1);
-  _zero_range(y, ms->n_cells, ms->n_cells_ext);
-
-  /* Note: parallel and periodic synchronization could be delayed to here */
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    if (mc->symmetric) {
-
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
-#     pragma cdir nodep
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
-        y[ii] += alpha * xa[face_id] * x[jj];
-        y[jj] += alpha * xa[face_id] * x[ii];
-      }
-
-    }
-    else {
-
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
-#     pragma cdir nodep
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
-        y[ii] += alpha * xa[2*face_id] * x[jj];
-        y[jj] += alpha * xa[2*face_id + 1] * x[ii];
-      }
-
-    }
-
-  }
-}
-
-#endif /* Vector machine variant */
-
-/*----------------------------------------------------------------------------
  * Create a CSR matrix structure from a native matrix stucture.
  *
  * Note that the structure created maps global cell numbers to the given
@@ -3076,208 +2493,6 @@ _mat_vec_p_l_csr_pf(bool                exclude_diag,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = alpha.A.x + beta.y with CSR matrix.
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   alpha        <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta         <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            <-> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_alpha_a_x_p_beta_y_csr(bool                exclude_diag,
-                        cs_real_t           alpha,
-                        cs_real_t           beta,
-                        const cs_matrix_t  *matrix,
-                        const cs_real_t    *restrict x,
-                        cs_real_t          *restrict y)
-{
-  cs_lnum_t  ii, jj, n_cols;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
-  cs_real_t  sii;
-
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *m_row, *col_id)
-# endif
-
-  /* Standard case */
-
-  if (!exclude_diag) {
-
-#   pragma omp parallel for private(jj, col_id, m_row, n_cols, sii)
-    for (ii = 0; ii < n_rows; ii++) {
-
-      col_id = ms->col_id + ms->row_index[ii];
-      m_row = mc->val + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      sii = 0.0;
-
-      for (jj = 0; jj < n_cols; jj++)
-        sii += (m_row[jj]*x[col_id[jj]]);
-
-      y[ii] = (alpha * sii) + (beta * y[ii]);
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel for private(jj, col_id, m_row, n_cols, sii)
-    for (ii = 0; ii < n_rows; ii++) {
-
-      col_id = ms->col_id + ms->row_index[ii];
-      m_row = mc->val + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      sii = 0.0;
-
-      for (jj = 0; jj < n_cols; jj++) {
-        if (col_id[jj] != ii)
-          sii += (m_row[jj]*x[col_id[jj]]);
-      }
-
-      y[ii] = (alpha * sii) + (beta * y[ii]);
-
-    }
-
-  }
-}
-
-#if defined (HAVE_MKL)
-
-static void
-_alpha_a_x_p_beta_y_csr_mkl(bool                exclude_diag,
-                            cs_real_t           alpha,
-                            cs_real_t           beta,
-                            const cs_matrix_t  *matrix,
-                            const cs_real_t    *restrict x,
-                            cs_real_t          *restrict y)
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
-
-  int n_rows = ms->n_rows;
-  int n_cols = ms->n_cols;
-  double _alpha = alpha;
-  double _beta = beta;
-  char matdescra[7] = "G NC  ";
-  char transa[] = "n";
-
-  if (exclude_diag)
-    bft_error(__FILE__, __LINE__, 0,
-              _(_no_exclude_diag_error_str), __func__);
-
-  mkl_dcsrmv(transa,
-             &n_rows,
-             &n_cols,
-             &_alpha,
-             matdescra,
-             mc->val,
-             ms->col_id,
-             ms->row_index,
-             ms->row_index + 1,
-             (double *)x,
-             &_beta,
-             y);
-}
-
-#endif /* defined (HAVE_MKL) */
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = alpha.A.x + beta.y
- * with CSR matrix (prefetch).
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   alpha        <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta         <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            <-> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_alpha_a_x_p_beta_y_csr_pf(bool                exclude_diag,
-                           cs_real_t           alpha,
-                           cs_real_t           beta,
-                           const cs_matrix_t  *matrix,
-                           const cs_real_t    *restrict x,
-                           cs_real_t          *restrict y)
-{
-  cs_lnum_t  start_row, ii, jj, n_cols;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
-
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  if (exclude_diag)
-    bft_error(__FILE__, __LINE__, 0,
-              _(_no_exclude_diag_error_str), __func__);
-
-  /* Outer loop on prefetch lines */
-
-  for (start_row = 0; start_row < n_rows; start_row += mc->n_prefetch_rows) {
-
-    cs_lnum_t end_row = start_row + mc->n_prefetch_rows;
-    cs_real_t  *restrict prefetch_p = mc->x_prefetch;
-
-    /* Tell IBM compiler not to alias */
-#   if defined(__xlc__)
-#   pragma disjoint(*prefetch_p, *x, *col_id)
-#   pragma disjoint(*prefetch_p, *y, *m_row, *col_id)
-#   endif
-
-    if (end_row > n_rows)
-      end_row = n_rows;
-
-    /* Prefetch */
-
-    for (ii = start_row; ii < end_row; ii++) {
-
-      col_id = ms->col_id + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      for (jj = 0; jj < n_cols; jj++)
-        *prefetch_p++ = x[col_id[jj]];
-
-    }
-
-    /* Compute */
-
-    prefetch_p = mc->x_prefetch;
-
-    for (ii = start_row; ii < end_row; ii++) {
-
-      cs_real_t  sii = 0.0;
-
-      m_row = mc->val + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      for (jj = 0; jj < n_cols; jj++)
-        sii += *m_row++ * *prefetch_p++;
-
-      y[ii] = (alpha * sii) + (beta * y[ii]);
-
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
  * Create a symmetric CSR matrix structure from a native matrix stucture.
  *
  * Note that the structure created maps global cell numbers to the given
@@ -3825,123 +3040,6 @@ _mat_vec_p_l_csr_sym_mkl(bool                exclude_diag,
                        ms->col_id,
                        (double *)x,
                        y);
-}
-
-#endif /* defined (HAVE_MKL) */
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = alpha.A.x + beta.y
- * with symmetric CSR matrix.
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   alpha        <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta         <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            <-> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_alpha_a_x_p_beta_y_csr_sym(bool                exclude_diag,
-                            cs_real_t           alpha,
-                            cs_real_t           beta,
-                            const cs_matrix_t  *matrix,
-                            const cs_real_t    *restrict x,
-                            cs_real_t          *restrict y)
-{
-  cs_lnum_t  ii, jj, n_cols;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
-
-  const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  cs_lnum_t  jj_start = 0;
-  cs_lnum_t sym_jj_start = 0;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *m_row, *col_id)
-# endif
-
-  /* By construction, the matrix has either a full or an empty
-     diagonal structure, so testing this on the first row is enough */
-
-  if (ms->col_id[ms->row_index[0]] == 0) {
-    sym_jj_start = 1;
-    if (exclude_diag)
-      jj_start = 1;
-  }
-
-  /* Multiply y by beta term first, as write access will be random
-     due to symmetry terms. */
-
-  if (beta != 1.0)
-    cblas_dscal(ms->n_rows, beta, y, 1);
-
-  for (ii = ms->n_rows; ii < ms->n_cols; ii++)
-    y[ii] = 0.0;
-
-  /* Upper triangular + diagonal part in case of symmetric structure */
-
-  for (ii = 0; ii < n_rows; ii++) {
-
-    cs_real_t  sii = 0.0;
-
-    col_id = ms->col_id + ms->row_index[ii];
-    m_row = mc->val + ms->row_index[ii];
-    n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-    for (jj = jj_start; jj < n_cols; jj++)
-      sii += (m_row[jj]*x[col_id[jj]]);
-
-    y[ii] += alpha * sii;
-
-    for (jj = sym_jj_start; jj < n_cols; jj++)
-      y[col_id[jj]] += alpha * (m_row[jj]*x[ii]);
-
-  }
-
-}
-
-#if defined (HAVE_MKL)
-
-static void
-_alpha_a_x_p_beta_y_csr_sym_mkl(bool                exclude_diag,
-                                cs_real_t           alpha,
-                                cs_real_t           beta,
-                                const cs_matrix_t  *matrix,
-                                const cs_real_t    *restrict x,
-                                cs_real_t          *restrict y)
-{
-  const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
-
-  int n_rows = ms->n_rows;
-  int n_cols = ms->n_cols;
-  double _alpha = alpha;
-  double _beta = beta;
-  char transa[] = "n";
-  char matdescra[7] = "SUNC  ";
-
-  if (exclude_diag)
-    bft_error(__FILE__, __LINE__, 0,
-              _(_no_exclude_diag_error_str), __func__);
-
-  mkl_dcsrmv(transa,
-             &n_rows,
-             &n_cols,
-             &_alpha,
-             matdescra,
-             mc->val,
-             ms->col_id,
-             ms->row_index,
-             ms->row_index + 1,
-             (double *)x,
-             &_beta,
-             y);
 }
 
 #endif /* defined (HAVE_MKL) */
@@ -4643,363 +3741,6 @@ _mat_vec_p_l_msr_pf(bool                exclude_diag,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = alpha.A.x + beta.y with MSR matrix.
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   alpha        <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta         <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            <-> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_alpha_a_x_p_beta_y_msr(bool                exclude_diag,
-                        cs_real_t           alpha,
-                        cs_real_t           beta,
-                        const cs_matrix_t  *matrix,
-                        const cs_real_t    *restrict x,
-                        cs_real_t          *restrict y)
-{
-  cs_lnum_t  ii, jj, n_cols;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
-  cs_real_t  sii;
-
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *m_row, *col_id)
-# endif
-
-  /* Standard case */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-
-#   pragma omp parallel for private(jj, col_id, m_row, n_cols, sii)
-    for (ii = 0; ii < n_rows; ii++) {
-
-      col_id = ms->col_id + ms->row_index[ii];
-      m_row = mc->x_val + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      sii = 0.0;
-
-      for (jj = 0; jj < n_cols; jj++)
-        sii += (m_row[jj]*x[col_id[jj]]);
-
-      sii += mc->d_val[ii]*x[ii];
-
-      y[ii] = (alpha * sii) + (beta * y[ii]);
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel for private(jj, col_id, m_row, n_cols, sii)
-    for (ii = 0; ii < n_rows; ii++) {
-
-      col_id = ms->col_id + ms->row_index[ii];
-      m_row = mc->x_val + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      sii = 0.0;
-
-      for (jj = 0; jj < n_cols; jj++)
-        sii += (m_row[jj]*x[col_id[jj]]);
-
-      y[ii] = (alpha * sii) + (beta * y[ii]);
-
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = alpha.A.x + beta.y with MSR matrix,
- * blocked version
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   alpha        <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta         <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            <-> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_b_alpha_a_x_p_beta_y_msr(bool                exclude_diag,
-                          cs_real_t           alpha,
-                          cs_real_t           beta,
-                          const cs_matrix_t  *matrix,
-                          const cs_real_t    *restrict x,
-                          cs_real_t          *restrict y)
-{
-  cs_lnum_t  ii, jj, kk, n_cols;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
-
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const int *b_size = matrix->b_size;
-  const cs_lnum_t  n_rows = ms->n_rows;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *m_row, *col_id)
-# endif
-
-  /* Standard case */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-
-#   pragma omp parallel for private(jj, kk, col_id, m_row, n_cols)
-    for (ii = 0; ii < n_rows; ii++) {
-
-      col_id = ms->col_id + ms->row_index[ii];
-      m_row = mc->x_val + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      _dense_b_aax_p_by(ii, b_size, alpha, beta, mc->d_val, x, y);
-
-      for (jj = 0; jj < n_cols; jj++) {
-        for (kk = 0; kk < b_size[0]; kk++) {
-          y[ii*b_size[1] + kk]
-            += beta*(m_row[jj]*x[col_id[jj]*b_size[1] + kk]);
-        }
-      }
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel for private(jj, kk, col_id, m_row, n_cols)
-    for (ii = 0; ii < n_rows; ii++) {
-
-      col_id = ms->col_id + ms->row_index[ii];
-      m_row = mc->x_val + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      for (kk = 0; kk < b_size[0]; kk++)
-        y[ii*b_size[1] + kk] *= beta;
-
-       for (jj = 0; jj < n_cols; jj++) {
-        for (kk = 0; kk < b_size[0]; kk++) {
-          y[ii*b_size[1] + kk]
-            += beta*(m_row[jj]*x[col_id[jj]*b_size[1] + kk]);
-        }
-      }
-
-    }
-
-  }
-}
-
-#if defined (HAVE_MKL)
-
-static void
-_alpha_a_x_p_beta_y_msr_mkl(bool                exclude_diag,
-                            cs_real_t           alpha,
-                            cs_real_t           beta,
-                            const cs_matrix_t  *matrix,
-                            const cs_real_t    *restrict x,
-                            cs_real_t          *restrict y)
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-
-  int n_rows = ms->n_rows;
-  int n_cols = ms->n_cols;
-  double _alpha = alpha;
-  double _beta = beta;
-  char matdescra[7] = "G NC  ";
-  char transa[] = "n";
-
-  mkl_dcsrmv(transa,
-             &n_rows,
-             &n_cols,
-             &_alpha,
-             matdescra,
-             mc->x_val,
-             ms->col_id,
-             ms->row_index,
-             ms->row_index + 1,
-             (double *)x,
-             &_beta,
-             y);
-
-  /* Add diagonal contribution */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-    int ndiag = 1;
-    int idiag[1] = {0};
-    matdescra[0] = 'D';
-    _beta = 1.0;
-    mkl_ddiamv(transa,
-               &n_rows,
-               &n_rows,
-               &_alpha,
-               matdescra,
-               (double *)mc->d_val,
-               &n_rows,
-               idiag,
-               &ndiag,
-               (double *)x,
-               &_beta,
-               y);
-  }
-}
-
-#endif /* defined (HAVE_MKL) */
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = alpha.A.x + beta.y
- * with MSR matrix (prefetch).
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   alpha        <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta         <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            <-> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_alpha_a_x_p_beta_y_msr_pf(bool                exclude_diag,
-                           cs_real_t           alpha,
-                           cs_real_t           beta,
-                           const cs_matrix_t  *matrix,
-                           const cs_real_t    *restrict x,
-                           cs_real_t          *restrict y)
-{
-  cs_lnum_t  start_row, ii, jj, n_cols;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
-  cs_real_t  *restrict prefetch_p;
-
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*prefetch_p, *x, *y, *col_id, *m_row, *col_id)
-# endif
-
-  /* Standard case */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-
-    /* Outer loop on prefetch lines */
-
-    for (start_row = 0; start_row < n_rows; start_row += mc->n_prefetch_rows) {
-
-      cs_lnum_t end_row = start_row + mc->n_prefetch_rows;
-      prefetch_p = mc->x_prefetch;
-
-      if (end_row > n_rows)
-        end_row = n_rows;
-
-      /* Prefetch */
-
-      for (ii = start_row; ii < end_row; ii++) {
-
-        col_id = ms->col_id + ms->row_index[ii];
-        n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-        for (jj = 0; jj < n_cols; jj++)
-          *prefetch_p++ = x[col_id[jj]];
-
-        *prefetch_p++ = x[ii];
-
-      }
-
-      /* Compute */
-
-      prefetch_p = mc->x_prefetch;
-
-      for (ii = start_row; ii < end_row; ii++) {
-
-        cs_real_t  sii = 0.0;
-
-        m_row = mc->x_val + ms->row_index[ii];
-        n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-        for (jj = 0; jj < n_cols; jj++)
-          sii += *m_row++ * *prefetch_p++;
-
-        sii += mc->d_val[ii] * *prefetch_p++;
-
-        y[ii] = (alpha * sii) + (beta * y[ii]);
-
-      }
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-    /* Outer loop on prefetch lines */
-
-    for (start_row = 0; start_row < n_rows; start_row += mc->n_prefetch_rows) {
-
-      cs_lnum_t end_row = start_row + mc->n_prefetch_rows;
-      prefetch_p = mc->x_prefetch;
-
-      if (end_row > n_rows)
-        end_row = n_rows;
-
-      /* Prefetch */
-
-      for (ii = start_row; ii < end_row; ii++) {
-
-        col_id = ms->col_id + ms->row_index[ii];
-        n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-        for (jj = 0; jj < n_cols; jj++)
-          *prefetch_p++ = x[col_id[jj]];
-
-      }
-
-      /* Compute */
-
-      prefetch_p = mc->x_prefetch;
-
-      for (ii = start_row; ii < end_row; ii++) {
-
-        cs_real_t  sii = 0.0;
-
-        m_row = mc->x_val + ms->row_index[ii];
-        n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-        for (jj = 0; jj < n_cols; jj++)
-          sii += *m_row++ * *prefetch_p++;
-
-        y[ii] = (alpha * sii) + (beta * y[ii]);
-
-      }
-
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Create symmetric MSR matrix coefficients.
  *
  * returns:
@@ -5354,117 +4095,6 @@ _mat_vec_p_l_msr_sym_mkl(bool                exclude_diag,
 #endif /* defined (HAVE_MKL) */
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = alpha.A.x + beta.y
- * with symmetric MSR matrix.
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   alpha        <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta         <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            <-> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_alpha_a_x_p_beta_y_msr_sym(bool                exclude_diag,
-                            cs_real_t           alpha,
-                            cs_real_t           beta,
-                            const cs_matrix_t  *matrix,
-                            const cs_real_t    *restrict x,
-                            cs_real_t          *restrict y)
-{
-  cs_lnum_t  ii, jj, n_cols;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
-
-  const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_sym_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *m_row, *col_id)
-# endif
-
-  /* Diagonal part of matrix.vector product first,
-     as write access will be random due to symmetry terms.*/
-
-  if (! exclude_diag) {
-    _diag_x_p_beta_y(alpha, beta, mc->d_val, x, y, ms->n_rows);
-  }
-  else
-    cblas_dscal(ms->n_rows, beta, y, 1);
-  _zero_range(y, ms->n_rows, ms->n_cols);
-
-  /* Upper triangular + diagonal part in case of symmetric structure */
-
-  for (ii = 0; ii < n_rows; ii++) {
-
-    cs_real_t  sii = 0.0;
-
-    col_id = ms->col_id + ms->row_index[ii];
-    m_row = mc->x_val + ms->row_index[ii];
-    n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-    for (jj = 0; jj < n_cols; jj++)
-      sii += (m_row[jj]*x[col_id[jj]]);
-
-    y[ii] += alpha * sii;
-
-    for (jj = 0; jj < n_cols; jj++)
-      y[col_id[jj]] += alpha * (m_row[jj]*x[ii]);
-
-  }
-
-}
-
-#if defined (HAVE_MKL)
-
-static void
-_alpha_a_x_p_beta_y_msr_sym_mkl(bool                exclude_diag,
-                                cs_real_t           alpha,
-                                cs_real_t           beta,
-                                const cs_matrix_t  *matrix,
-                                const cs_real_t    *restrict x,
-                                cs_real_t          *restrict y)
-{
-  cs_lnum_t ii;
-  const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_sym_t  *mc = matrix->coeffs;
-
-  int n_rows = ms->n_rows;
-  int n_cols = ms->n_cols;
-  double _alpha = alpha;
-  double _beta = beta;
-  char transa[] = "n";
-  char matdescra[7] = "SUNC  ";
-
-  mkl_dcsrmv(transa,
-             &n_rows,
-             &n_cols,
-             &_alpha,
-             matdescra,
-             mc->x_val,
-             ms->col_id,
-             ms->row_index,
-             ms->row_index + 1,
-             (double *)x,
-             &_beta,
-             y);
-
-  /* Add diagonal contribution */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_rows; ii++)
-      y[ii] += alpha*mc->d_val[ii]*x[ii];
-  }
-}
-
-#endif /* defined (HAVE_MKL) */
-
-/*----------------------------------------------------------------------------
  * Synchronize ghost cells prior to matrix.vector product
  *
  * parameters:
@@ -5535,59 +4165,6 @@ _pre_vector_multiply_sync(cs_perio_rota_t     rotation_mode,
         cs_perio_sync_var_vect(matrix->halo, CS_HALO_STANDARD, x, b_size[1]);
 
     }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Synchronize ghost cells prior to alpha.A.x + beta.y product
- *
- * parameters:
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   matrix        <-- Pointer to matrix structure
- *   x             <-> Multipliying vector values (ghost values updated)
- *----------------------------------------------------------------------------*/
-
-static void
-_pre__alpha_a_x_p_beta_y_sync(cs_perio_rota_t     rotation_mode,
-                              const cs_matrix_t  *matrix,
-                              cs_real_t          *restrict x)
-{
-  assert(matrix->halo != NULL);
-
-  /* Non-blocked version */
-
-  if (matrix->b_size[3] == 1) {
-
-    cs_halo_sync_var(matrix->halo, CS_HALO_STANDARD, x);
-
-    /* Synchronize periodic values */
-
-    if (matrix->halo->n_transforms > 0) {
-      if (rotation_mode == CS_PERIO_ROTA_IGNORE)
-        bft_error(__FILE__, __LINE__, 0, _cs_glob_perio_ignore_error_str);
-      cs_perio_sync_var_scal(matrix->halo, CS_HALO_STANDARD, rotation_mode, x);
-    }
-
-  }
-
-  /* Blocked version */
-
-  else { /* if (matrix->b_size[3] > 1) */
-
-    const int *b_size = matrix->b_size;
-
-    /* Synchronize for parallelism and periodicity first */
-
-    cs_halo_sync_var_strided(matrix->halo,
-                             CS_HALO_STANDARD,
-                             x,
-                             b_size[1]);
-
-    /* Synchronize periodic values */
-
-    if (matrix->halo->n_transforms > 0 && b_size[0] == 3)
-      cs_perio_sync_var_vect(matrix->halo, CS_HALO_STANDARD, x, b_size[1]);
 
   }
 }
@@ -5725,7 +4302,6 @@ _matrix_check(int                    n_variants,
           cs_matrix_variant_t *v = m_variant + v_id;
 
           cs_matrix_vector_product_t        *vector_multiply = NULL;
-          cs_matrix_alpha_a_x_p_beta_y_t    *alpha_a_x_p_beta_y = NULL;
 
           if (sym_flag == 0) {
             if (v->symmetry == 1)
@@ -5763,7 +4339,6 @@ _matrix_check(int                    n_variants,
           /* Check other operations */
 
           vector_multiply = v->vector_multiply[b_id*2 + ed_flag];
-          alpha_a_x_p_beta_y = v->alpha_a_x_p_beta_y[b_id*2 + ed_flag];
 
           if (vector_multiply != NULL) {
             vector_multiply(ed_flag, m, x, y);
@@ -5771,26 +4346,9 @@ _matrix_check(int                    n_variants,
               memcpy(yr0, y, n_cells*_block_mult*sizeof(cs_real_t));
             else {
               double dmax = _matrix_check_compare(n_cells*_block_mult, y, yr0);
-              bft_printf("%-32s %-48s : %12.5e\n",
+              bft_printf("%-32s %-32s : %12.5e\n",
                          v->name,
                          _matrix_operation_name[b_id*4 + sym_flag*2 + ed_flag],
-                         dmax);
-              bft_printf_flush();
-            }
-          }
-
-          if (alpha_a_x_p_beta_y != NULL) {
-#           pragma omp parallel for
-            for (ii = 0; ii < n_cells_ext*_block_mult; ii++)
-              y[ii] = 1.0 + sin(ii);
-            alpha_a_x_p_beta_y(ed_flag, 0.5, 0.5, m, x, y);
-            if (v_id == 0)
-              memcpy(yr1, y, n_cells*_block_mult*sizeof(cs_real_t));
-            else {
-              double dmax = _matrix_check_compare(n_cells*_block_mult, y, yr1);
-              bft_printf("%-32s %-48s : %12.5e\n",
-                         v->name,
-                         _matrix_operation_name[8 + b_id*4 + sym_flag*2 + ed_flag],
                          dmax);
               bft_printf_flush();
             }
@@ -5955,7 +4513,6 @@ _matrix_tune_test(double                 t_measure,
         for (ed_flag = 0; ed_flag < 2; ed_flag++) {
 
           cs_matrix_vector_product_t        *vector_multiply = NULL;
-          cs_matrix_alpha_a_x_p_beta_y_t    *alpha_a_x_p_beta_y = NULL;
 
           /* Ignore unhandled cases */
 
@@ -5992,7 +4549,6 @@ _matrix_tune_test(double                 t_measure,
           /* Measure other operations */
 
           vector_multiply = v->vector_multiply[b_id*2 + ed_flag];
-          alpha_a_x_p_beta_y = v->alpha_a_x_p_beta_y[b_id*2 + ed_flag];
 
           if (vector_multiply != NULL) {
             wt0 = cs_timer_wtime(), wt1 = wt0;
@@ -6011,34 +4567,6 @@ _matrix_tune_test(double                 t_measure,
             }
             wtu = (wt1 - wt0) / n_runs;
             v->matrix_vector_cost[b_id*4 + sym_flag*2 + ed_flag] = wtu;
-          }
-
-          if (alpha_a_x_p_beta_y != NULL) {
-#           pragma omp parallel for
-            for (ii = 0; ii < n_cells_ext*diag_block_size[1]; ii++)
-              y[ii] = 0.0;
-            wt0 = cs_timer_wtime(), wt1 = wt0;
-            run_id = 0, n_runs = 8;
-            while (run_id < n_runs) {
-              while (run_id < n_runs) {
-                if (run_id % 8) {
-                  test_sum = 0;
-                  if (run_id  > 0 && run_id % 256) {
-#                   pragma omp parallel for
-                    for (ii = 0; ii < n_cells_ext*diag_block_size[1]; ii++)
-                      y[ii] = 0.0;
-                  }
-                }
-                alpha_a_x_p_beta_y(ed_flag, 0.5, 0.5, m, x, y);
-                test_sum += y[n_cells-1];
-                run_id++;
-              }
-              wt1 = cs_timer_wtime();
-              if (wt1 - wt0 < t_measure)
-                n_runs *= 2;
-            }
-            wtu = (wt1 - wt0) / n_runs;
-            v->alpha_ax_p_beta_y_cost[b_id*4 + sym_flag*2 + ed_flag] = wtu;
           }
 
           cs_matrix_release_coefficients(m);
@@ -6210,14 +4738,12 @@ _matrix_tune_create_assign_stats(const cs_matrix_variant_t  *m_variant,
  * parameters:
  *   sym_flag    <-- 0: non-symmetric only; 1; symmetric only
  *   ed_flag     <-- 0: include diagonal; 1: exclude diagonal
- *   axpby_flag  <-- 0: y <- Ax; 1; y <- alpha.A.x + beta.y
  *   block_flag  <-- 0: no blocks; 1; blocks only
  *----------------------------------------------------------------------------*/
 
 static void
 _matrix_tune_spmv_title(int  sym_flag,
                         int  ed_flag,
-                        int  axpby_flag,
                         int  block_flag)
 {
   size_t i = 0;
@@ -6227,8 +4753,7 @@ _matrix_tune_spmv_title(int  sym_flag,
   /* Print title */
 
   snprintf(title, 80, "%s",
-           _(_matrix_operation_name[axpby_flag*8 + block_flag*4
-                                    + sym_flag*2 + ed_flag]));
+           _(_matrix_operation_name[block_flag*4 + sym_flag*2 + ed_flag]));
   title[80] = '\0';
   l = cs_log_strlen(title);
 
@@ -6289,7 +4814,6 @@ _matrix_tune_spmv_title(int  sym_flag,
  *   variant_id  <-- variant id
  *   sym_flag    <-- 0: non-symmetric only; 1; symmetric only
  *   ed_flag     <-- 0: include diagonal; 1: exclude diagonal
- *   axpby_flag  <-- 0: y <- Ax; 1; y <- alpha.A.x + beta.y
  *   block_flag  <-- 0: no blocks; 1; blocks only
  *----------------------------------------------------------------------------*/
 
@@ -6298,7 +4822,6 @@ _matrix_tune_spmv_stats(const cs_matrix_variant_t  *m_variant,
                         int                         variant_id,
                         int                         sym_flag,
                         int                         ed_flag,
-                        int                         axpby_flag,
                         int                         block_flag)
 {
   char title[32];
@@ -6314,14 +4837,8 @@ _matrix_tune_spmv_stats(const cs_matrix_variant_t  *m_variant,
 
   /* Get timing info */
 
-  if (axpby_flag) {
-    v_loc[0] = v->alpha_ax_p_beta_y_cost[sub_id];
-    v_loc[1] = r->alpha_ax_p_beta_y_cost[sub_id] / v_loc[0];
-  }
-  else {
-    v_loc[0] = v->matrix_vector_cost[sub_id];
-    v_loc[1] = r->matrix_vector_cost[sub_id] / v_loc[0];
-  }
+  v_loc[0] = v->matrix_vector_cost[sub_id];
+  v_loc[1] = r->matrix_vector_cost[sub_id] / v_loc[0];
 
   if (v_loc[0] < 0)
     return;
@@ -6367,14 +4884,11 @@ _variant_init(cs_matrix_variant_t  *v)
 
   for (i = 0; i < 4; i++) {
     v->vector_multiply[i] = NULL;
-    v->alpha_a_x_p_beta_y[i] = NULL;
     v->matrix_assign_cost[i] = -1.;
   }
 
-  for (i = 0; i < 8; i++) {
+  for (i = 0; i < 8; i++)
     v->matrix_vector_cost[i] = -1.;
-    v->alpha_ax_p_beta_y_cost[i] = -1.;
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -6389,8 +4903,6 @@ _variant_init(cs_matrix_variant_t  *v)
  *   loop_length          <-- loop length option for some algorithms
  *   vector_multiply      <-- function pointer for A.x
  *   b_vector_multiply    <-- function pointer for block A.x
- *   alpha_a_x_p_beta_y   <-- function pointer for alpha.A.x + beta.y
- *   b_alpha_a_x_p_beta_y <-- function pointer for block alpha.A.x + beta.y
  *   n_variants           <-> number of variants
  *   n_variants_max       <-> current maximum number of variants
  *   m_variant            <-> array of matrix variants
@@ -6405,8 +4917,6 @@ _variant_add(const char                        *name,
              int                                loop_length,
              cs_matrix_vector_product_t        *vector_multiply,
              cs_matrix_vector_product_t        *b_vector_multiply,
-             cs_matrix_alpha_a_x_p_beta_y_t    *alpha_a_x_p_beta_y,
-             cs_matrix_alpha_a_x_p_beta_y_t    *b_alpha_a_x_p_beta_y,
              int                               *n_variants,
              int                               *n_variants_max,
              cs_matrix_variant_t              **m_variant)
@@ -6432,25 +4942,17 @@ _variant_add(const char                        *name,
   v->loop_length = loop_length;
 
   if (block_flag != 1) {
-    if (ed_flag != 1) {
+    if (ed_flag != 1)
       v->vector_multiply[0] = vector_multiply;
-      v->alpha_a_x_p_beta_y[0] = alpha_a_x_p_beta_y;
-    }
-    if (ed_flag != 0) {
+    if (ed_flag != 0)
       v->vector_multiply[1] = vector_multiply;
-      v->alpha_a_x_p_beta_y[1] = alpha_a_x_p_beta_y;
-    }
   }
 
   if (block_flag != 0) {
-    if (ed_flag != 1) {
+    if (ed_flag != 1)
       v->vector_multiply[2] = b_vector_multiply;
-      v->alpha_a_x_p_beta_y[2] = b_alpha_a_x_p_beta_y;
-    }
-    if (ed_flag != 0) {
+    if (ed_flag != 0)
       v->vector_multiply[3] = b_vector_multiply;
-      v->alpha_a_x_p_beta_y[3] = b_alpha_a_x_p_beta_y;
-    }
   }
 
   *n_variants += 1;
@@ -6485,8 +4987,6 @@ _build_variant_list(int                    sym_flag,
                0, /* loop_length */
                _mat_vec_p_l_native,
                _b_mat_vec_p_l_native,
-               _alpha_a_x_p_beta_y_native,
-               _b_alpha_a_x_p_beta_y_native,
                n_variants,
                &n_variants_max,
                m_variant);
@@ -6499,8 +4999,6 @@ _build_variant_list(int                    sym_flag,
                0, /* loop_length */
                NULL,
                _3_3_mat_vec_p_l_native,
-               NULL,
-               NULL,
                n_variants,
                &n_variants_max,
                m_variant);
@@ -6512,8 +5010,6 @@ _build_variant_list(int                    sym_flag,
                2, /* ed_flag */
                508, /* loop_length */
                _mat_vec_p_l_native_bull,
-               NULL,
-               NULL,
                NULL,
                n_variants,
                &n_variants_max,
@@ -6527,8 +5023,6 @@ _build_variant_list(int                    sym_flag,
                0, /* loop_length */
                _mat_vec_p_l_csr,
                NULL,
-               _alpha_a_x_p_beta_y_csr,
-               NULL,
                n_variants,
                &n_variants_max,
                m_variant);
@@ -6540,8 +5034,6 @@ _build_variant_list(int                    sym_flag,
                0, /* ed_flag */
                508, /* loop_length */
                _mat_vec_p_l_csr_pf,
-               NULL,
-               _alpha_a_x_p_beta_y_csr_pf,
                NULL,
                n_variants,
                &n_variants_max,
@@ -6556,8 +5048,6 @@ _build_variant_list(int                    sym_flag,
                0, /* ed_flag */
                0, /* loop_length */
                _mat_vec_p_l_csr_mkl,
-               NULL,
-               _alpha_a_x_p_beta_y_csr_mkl,
                NULL,
                n_variants,
                &n_variants_max,
@@ -6575,8 +5065,6 @@ _build_variant_list(int                    sym_flag,
                  0, /* loop_length */
                  _mat_vec_p_l_csr_sym,
                  NULL,
-                 _alpha_a_x_p_beta_y_csr_sym,
-                 NULL,
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -6590,8 +5078,6 @@ _build_variant_list(int                    sym_flag,
                  0, /* ed_flag */
                  0, /* loop_length */
                  _mat_vec_p_l_csr_sym_mkl,
-                 NULL,
-                 _alpha_a_x_p_beta_y_csr_sym_mkl,
                  NULL,
                  n_variants,
                  &n_variants_max,
@@ -6609,8 +5095,6 @@ _build_variant_list(int                    sym_flag,
                0, /* loop_length */
                _mat_vec_p_l_msr,
                _b_mat_vec_p_l_msr,
-               _alpha_a_x_p_beta_y_msr,
-               _b_alpha_a_x_p_beta_y_msr,
                n_variants,
                &n_variants_max,
                m_variant);
@@ -6622,8 +5106,6 @@ _build_variant_list(int                    sym_flag,
                2, /* ed_flag */
                508, /* loop_length */
                _mat_vec_p_l_msr_pf,
-               NULL,
-               _alpha_a_x_p_beta_y_msr_pf,
                NULL,
                n_variants,
                &n_variants_max,
@@ -6638,8 +5120,6 @@ _build_variant_list(int                    sym_flag,
                2, /* ed_flag */
                0, /* loop_length */
                _mat_vec_p_l_msr_mkl,
-               NULL,
-               _alpha_a_x_p_beta_y_msr_mkl,
                NULL,
                n_variants,
                &n_variants_max,
@@ -6657,8 +5137,6 @@ _build_variant_list(int                    sym_flag,
                  0, /* loop_length */
                  _mat_vec_p_l_msr_sym,
                  NULL,
-                 _alpha_a_x_p_beta_y_msr_sym,
-                 NULL,
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -6672,8 +5150,6 @@ _build_variant_list(int                    sym_flag,
                  2, /* ed_flag */
                  0, /* loop_length */
                  _mat_vec_p_l_msr_sym_mkl,
-                 NULL,
-                 _alpha_a_x_p_beta_y_msr_sym_mkl,
                  NULL,
                  n_variants,
                  &n_variants_max,
@@ -7020,9 +5496,7 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
 
   m->set_coefficients = NULL;
   m->vector_multiply[0] = NULL;
-  m->alpha_a_x_p_beta_y[0] = NULL;
   m->vector_multiply[2] = NULL;
-  m->alpha_a_x_p_beta_y[2] = NULL;
 
   switch(m->type) {
 
@@ -7032,9 +5506,7 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
     m->release_coefficients = _release_coeffs_native;
     m->get_diagonal = _get_diagonal_separate;
     m->vector_multiply[0] = _mat_vec_p_l_native;
-    m->alpha_a_x_p_beta_y[0] = _alpha_a_x_p_beta_y_native;
     m->vector_multiply[2] = _b_mat_vec_p_l_native;
-    m->alpha_a_x_p_beta_y[2] = _b_alpha_a_x_p_beta_y_native;
 
     /* Optimized variants here */
 
@@ -7046,15 +5518,12 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
 #if defined(HAVE_OPENMP)
       if (m->numbering->type == CS_NUMBERING_THREADS) {
         m->vector_multiply[0] = _mat_vec_p_l_native_omp;
-        m->alpha_a_x_p_beta_y[0] = _alpha_a_x_p_beta_y_native_omp;
         m->vector_multiply[2] = _b_mat_vec_p_l_native_omp;
-        m->alpha_a_x_p_beta_y[2] = _b_alpha_a_x_p_beta_y_native_omp;
       }
 #endif
 #if defined(SX) && defined(_SX) /* For vector machines */
       if (m->numbering->type == CS_NUMBERING_VECTORIZE) {
         m->vector_multiply[0] = _mat_vec_p_l_native_vector;
-        m->alpha_a_x_p_beta_y[0] = _alpha_a_x_p_beta_y_native_vector;
       }
 #endif
     }
@@ -7067,11 +5536,9 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
     m->get_diagonal = _get_diagonal_csr;
     if (m->loop_length > 0 && cs_glob_n_threads == 1) {
       m->vector_multiply[0] = _mat_vec_p_l_csr_pf;
-      m->alpha_a_x_p_beta_y[0] = _alpha_a_x_p_beta_y_csr_pf;
     }
     else {
       m->vector_multiply[0] = _mat_vec_p_l_csr;
-      m->alpha_a_x_p_beta_y[0] = _alpha_a_x_p_beta_y_csr;
     }
     break;
 
@@ -7080,7 +5547,6 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
     m->release_coefficients = _release_coeffs_csr_sym;
     m->get_diagonal = _get_diagonal_csr_sym;
     m->vector_multiply[0] = _mat_vec_p_l_csr_sym;
-    m->alpha_a_x_p_beta_y[0] = _alpha_a_x_p_beta_y_csr_sym;
     break;
 
   case CS_MATRIX_MSR:
@@ -7089,11 +5555,9 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
     m->get_diagonal = _get_diagonal_separate;
     if (m->loop_length > 0 && cs_glob_n_threads == 1) {
       m->vector_multiply[0] = _mat_vec_p_l_msr_pf;
-      m->alpha_a_x_p_beta_y[0] = _alpha_a_x_p_beta_y_msr_pf;
     }
     else {
       m->vector_multiply[0] = _mat_vec_p_l_msr;
-      m->alpha_a_x_p_beta_y[0] = _alpha_a_x_p_beta_y_msr;
     }
     break;
 
@@ -7102,7 +5566,6 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
     m->release_coefficients = _release_coeffs_msr_sym;
     m->get_diagonal = _get_diagonal_separate;
     m->vector_multiply[0] = _mat_vec_p_l_msr_sym;
-    m->alpha_a_x_p_beta_y[0] = _alpha_a_x_p_beta_y_msr_sym;
     break;
 
   default:
@@ -7111,9 +5574,7 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
   }
 
   m->vector_multiply[1] = m->vector_multiply[0];
-  m->alpha_a_x_p_beta_y[1] = m->alpha_a_x_p_beta_y[0];
   m->vector_multiply[3] = m->vector_multiply[2];
-  m->alpha_a_x_p_beta_y[3] = m->alpha_a_x_p_beta_y[2];
 
   return m;
 }
@@ -7144,8 +5605,6 @@ cs_matrix_create_tuned(const cs_matrix_structure_t  *ms,
       for (i = 0; i < 4; i++) {
         if (mv->vector_multiply[i] != NULL)
           m->vector_multiply[i] = mv->vector_multiply[i];
-        if (mv->alpha_a_x_p_beta_y[i] != NULL)
-          m->alpha_a_x_p_beta_y[i] = mv->alpha_a_x_p_beta_y[i];
       }
     }
   }
@@ -7466,6 +5925,8 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
                           cs_real_t          *restrict x,
                           cs_real_t          *restrict y)
 {
+  assert(matrix != NULL);
+
   if (matrix->halo != NULL)
     _pre_vector_multiply_sync(rotation_mode,
                               matrix,
@@ -7477,8 +5938,9 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
   if (matrix->b_size[3] == 1) {
     if (matrix->vector_multiply[0] != NULL)
       matrix->vector_multiply[0](false, matrix, x, y);
-    else if (matrix->alpha_a_x_p_beta_y != NULL)
-      matrix->alpha_a_x_p_beta_y[0](false, 1.0, 0.0, matrix, x, y);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Matrix is missing a vector multiply function."));
   }
 
   /* Blocked version */
@@ -7486,8 +5948,9 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
   else {
     if (matrix->vector_multiply[2] != NULL)
       matrix->vector_multiply[2](false, matrix, x, y);
-    else if (matrix->alpha_a_x_p_beta_y[2] != NULL)
-      matrix->alpha_a_x_p_beta_y[2](false, 1.0, 0.0, matrix, x, y);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Block matrix is missing a vector multiply function."));
   }
 }
 
@@ -7510,31 +5973,29 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
                                  const cs_real_t    *x,
                                  cs_real_t          *restrict y)
 {
-  if (matrix != NULL) {
+  assert(matrix != NULL);
 
-    /* Non-blocked version */
+  /* Non-blocked version */
 
-    if (matrix->b_size[3] == 1) {
+  if (matrix->b_size[3] == 1) {
 
-      if (matrix->vector_multiply[0] != NULL)
-        matrix->vector_multiply[0](false, matrix, x, y);
+    if (matrix->vector_multiply[0] != NULL)
+      matrix->vector_multiply[0](false, matrix, x, y);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Matrix is missing a vector multiply function."));
 
-      else if (matrix->alpha_a_x_p_beta_y[0] != NULL)
-        matrix->alpha_a_x_p_beta_y[0](false, 1.0, 0.0, matrix, x, y);
+  }
 
-    }
+  /* Blocked version */
 
-    /* Blocked version */
+  else { /* if (matrix->b_size[3] > 1) */
 
-    else { /* if (matrix->b_size[3] > 1) */
-
-      if (matrix->vector_multiply[2] != NULL)
-        matrix->vector_multiply[2](false, matrix, x, y);
-
-      else if (matrix->alpha_a_x_p_beta_y[2] != NULL)
-        matrix->alpha_a_x_p_beta_y[2](false, 1.0, 0.0, matrix, x, y);
-
-    }
+    if (matrix->vector_multiply[2] != NULL)
+      matrix->vector_multiply[2](false, matrix, x, y);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Block matrix is missing a vector multiply function."));
 
   }
 }
@@ -7557,6 +6018,8 @@ cs_matrix_exdiag_vector_multiply(cs_perio_rota_t     rotation_mode,
                                  cs_real_t          *restrict x,
                                  cs_real_t          *restrict y)
 {
+  assert(matrix != NULL);
+
   if (matrix->halo != NULL)
     _pre_vector_multiply_sync(rotation_mode,
                               matrix,
@@ -7568,8 +6031,9 @@ cs_matrix_exdiag_vector_multiply(cs_perio_rota_t     rotation_mode,
   if (matrix->b_size[3] == 1) {
     if (matrix->vector_multiply[1] != NULL)
       matrix->vector_multiply[1](true, matrix, x, y);
-    else if (matrix->alpha_a_x_p_beta_y != NULL)
-      matrix->alpha_a_x_p_beta_y[1](true, 1.0, 0.0, matrix, x, y);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Matrix is missing a vector multiply function."));
   }
 
   /* Blocked version */
@@ -7577,92 +6041,9 @@ cs_matrix_exdiag_vector_multiply(cs_perio_rota_t     rotation_mode,
   else {
     if (matrix->vector_multiply[3] != NULL)
       matrix->vector_multiply[3](false, matrix, x, y);
-    else if (matrix->alpha_a_x_p_beta_y[3] != NULL)
-      matrix->alpha_a_x_p_beta_y[3](false, 1.0, 0.0, matrix, x, y);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Matrix.vector product y = alpha.A.x + beta.y
- *
- * This function includes a halo update of x prior to multiplication by A.
- *
- * parameters:
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   alpha         <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta          <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix        <-- Pointer to matrix structure
- *   x             <-- Multipliying vector values (ghost values updated)
- *   y             --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
-                             cs_real_t           alpha,
-                             cs_real_t           beta,
-                             const cs_matrix_t  *matrix,
-                             cs_real_t          *restrict x,
-                             cs_real_t          *restrict y)
-{
-  if (matrix->halo != NULL)
-    _pre__alpha_a_x_p_beta_y_sync(rotation_mode,
-                                  matrix,
-                                  x);
-
-  /* Non-blocked version */
-
-  if (matrix->b_size[3] == 1) {
-    if (matrix->alpha_a_x_p_beta_y[0] != NULL)
-      matrix->alpha_a_x_p_beta_y[0](false, alpha, beta, matrix, x, y);
-  }
-
-  /* Blocked version */
-
-  else {
-    if (matrix->alpha_a_x_p_beta_y[2] != NULL)
-      matrix->alpha_a_x_p_beta_y[2](false, alpha, beta, matrix, x, y);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Matrix.vector product y = alpha.(A-D).x + beta.y
- *
- * This function includes a halo update of x prior to multiplication by A.
- *
- * parameters:
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   alpha         <-- Scalar, alpha in alpha.A.x + beta.y
- *   beta          <-- Scalar, beta in alpha.A.x + beta.y
- *   matrix        <-- Pointer to matrix structure
- *   x             <-- Multipliying vector values (ghost values updated)
- *   y             --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_exdiag_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
-                                    cs_real_t           alpha,
-                                    cs_real_t           beta,
-                                    const cs_matrix_t  *matrix,
-                                    cs_real_t          *restrict x,
-                                    cs_real_t          *restrict y)
-{
-  if (matrix->halo != NULL)
-    _pre__alpha_a_x_p_beta_y_sync(rotation_mode,
-                                  matrix,
-                                  x);
-
-  /* Non-blocked version */
-
-  if (matrix->b_size[3] == 1) {
-    if (matrix->alpha_a_x_p_beta_y[1] != NULL)
-      matrix->alpha_a_x_p_beta_y[1](true, alpha, beta, matrix, x, y);
-  }
-
-  /* Blocked version */
-
-  else {
-    if (matrix->alpha_a_x_p_beta_y[3] != NULL)
-      matrix->alpha_a_x_p_beta_y[3](true, alpha, beta, matrix, x, y);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Block matrix is missing a vector multiply function."));
   }
 }
 
@@ -7700,13 +6081,13 @@ cs_matrix_variant_tuned(double                 t_measure,
                         const cs_halo_t       *halo,
                         const cs_numbering_t  *numbering)
 {
-  int  t_id, t_id_max, v_id, sub_id, ed_flag, axpby_flag;
+  int  t_id, t_id_max, v_id, sub_id, ed_flag;
   int  _sym_flag, _block_flag;
 
   double speedup, max_speedup;
   double t_speedup[CS_MATRIX_N_TYPES][8];
   double t_overhead[CS_MATRIX_N_TYPES][4];
-  int cur_select[16];
+  int cur_select[8];
 
   int  sym_flag = 0, block_flag = 0;
   int  n_variants = 0;
@@ -7792,20 +6173,16 @@ cs_matrix_variant_tuned(double                 t_measure,
       if (   (_sym_flag == 0 && sym_flag == 1)
           || (_sym_flag == 1 && sym_flag == 0))
       continue;
-      for (axpby_flag = 0; axpby_flag < 2; axpby_flag++) {
-        for (ed_flag = 0; ed_flag < 2; ed_flag++) {
-          _matrix_tune_spmv_title(_sym_flag,
-                                  ed_flag,
-                                  axpby_flag,
-                                  _block_flag);
+      for (ed_flag = 0; ed_flag < 2; ed_flag++) {
+        _matrix_tune_spmv_title(_sym_flag,
+                                ed_flag,
+                                _block_flag);
           for (v_id = 0; v_id < n_variants; v_id++)
             _matrix_tune_spmv_stats(m_variant,
                                     v_id,
                                     _sym_flag,
                                     ed_flag,
-                                    axpby_flag,
                                     _block_flag);
-        }
       }
     }
   }
@@ -7868,7 +6245,7 @@ cs_matrix_variant_tuned(double                 t_measure,
   r->type = t_id_max;
   r->symmetry = sym_flag;
 
-  for (sub_id = 0; sub_id < 16; sub_id++)
+  for (sub_id = 0; sub_id < 8; sub_id++)
     cur_select[sub_id] = -1;
 
   for (v_id = 0; v_id < n_variants; v_id++) {
@@ -7900,19 +6277,6 @@ cs_matrix_variant_tuned(double                 t_measure,
               cur_select[sub_id] = v_id;
             }
           }
-          if (v->alpha_ax_p_beta_y_cost[sub_id] > 0) {
-            if (  (   v->alpha_ax_p_beta_y_cost[sub_id]
-                    < r->alpha_ax_p_beta_y_cost[sub_id])
-                || r->alpha_ax_p_beta_y_cost[sub_id] < 0) {
-              if (r->loop_length <= v->loop_length) {
-                r->alpha_a_x_p_beta_y[_block_flag*2 + ed_flag]
-                  = v->alpha_a_x_p_beta_y[_block_flag*2 + ed_flag];
-                r->alpha_ax_p_beta_y_cost[sub_id]
-                  = v->alpha_ax_p_beta_y_cost[sub_id];
-                cur_select[8 + sub_id] = v_id;
-              }
-            }
-          }
 
         }
       }
@@ -7933,19 +6297,19 @@ cs_matrix_variant_tuned(double                 t_measure,
 
     int *select_loc, *select_sum;
 
-    BFT_MALLOC(select_sum, n_variants*16, int);
-    BFT_MALLOC(select_loc, n_variants*16, int);
+    BFT_MALLOC(select_sum, n_variants*8, int);
+    BFT_MALLOC(select_loc, n_variants*8, int);
 
     for (v_id = 0; v_id < n_variants; v_id++) {
-      for (sub_id = 0; sub_id < 16; sub_id++)
-        select_loc[v_id*16 + sub_id] = 0;
+      for (sub_id = 0; sub_id < 8; sub_id++)
+        select_loc[v_id*8 + sub_id] = 0;
     }
-    for (sub_id = 0; sub_id < 16; sub_id++) {
+    for (sub_id = 0; sub_id < 8; sub_id++) {
       if (cur_select[sub_id] > -1)
-        select_loc[cur_select[sub_id]*16 + sub_id] = 1;
+        select_loc[cur_select[sub_id]*8 + sub_id] = 1;
     }
 
-    MPI_Allreduce(select_loc, select_sum, n_variants*16, MPI_INT, MPI_SUM,
+    MPI_Allreduce(select_loc, select_sum, n_variants*8, MPI_INT, MPI_SUM,
                   cs_glob_mpi_comm);
 
     BFT_FREE(select_loc);
@@ -7954,31 +6318,27 @@ cs_matrix_variant_tuned(double                 t_measure,
       for (_sym_flag = 0; _sym_flag < 2; _sym_flag++) {
         for (ed_flag = 0; ed_flag < 2; ed_flag++) {
 
-          for (axpby_flag = 0; axpby_flag < 2; axpby_flag++) {
+          int count_tot = 0;
 
-            int count_tot = 0;
+          sub_id = _block_flag*4 + _sym_flag*2 + ed_flag;
 
-            sub_id = axpby_flag*8 + _block_flag*4 + _sym_flag*2 + ed_flag;
+          for (v_id = 0; v_id < n_variants; v_id++)
+            count_tot += (select_sum[v_id*8 + sub_id]);
 
-            for (v_id = 0; v_id < n_variants; v_id++)
-              count_tot += (select_sum[v_id*16 + sub_id]);
-
-            if (count_tot > 0) {
-              cs_log_printf(CS_LOG_PERFORMANCE,
-                            _("\n  -%s:\n"),
-                            _(_matrix_operation_name[sub_id]));
-              for (v_id = 0; v_id < n_variants; v_id++) {
-                int scount = select_sum[v_id*16 + sub_id];
-                if (scount > 0) {
-                  char title[36] =  {""};
-                  v = m_variant + v_id;
-                  cs_log_strpad(title, _(v->name), 32, 36);
-                  cs_log_printf(CS_LOG_PERFORMANCE,
-                                _("    %s : %d ranks\n"), title, scount);
-                }
+          if (count_tot > 0) {
+            cs_log_printf(CS_LOG_PERFORMANCE,
+                          _("\n  -%s:\n"),
+                          _(_matrix_operation_name[sub_id]));
+            for (v_id = 0; v_id < n_variants; v_id++) {
+              int scount = select_sum[v_id*8 + sub_id];
+              if (scount > 0) {
+                char title[36] =  {""};
+                v = m_variant + v_id;
+                cs_log_strpad(title, _(v->name), 32, 36);
+                cs_log_printf(CS_LOG_PERFORMANCE,
+                              _("    %s : %d ranks\n"), title, scount);
               }
             }
-
           }
 
         }
@@ -7999,18 +6359,14 @@ cs_matrix_variant_tuned(double                 t_measure,
       for (_sym_flag = 0; _sym_flag < 2; _sym_flag++) {
         for (ed_flag = 0; ed_flag < 2; ed_flag++) {
 
-          for (axpby_flag = 0; axpby_flag < 2; axpby_flag++) {
+          sub_id = _block_flag*4 + _sym_flag*2 + ed_flag;
 
-            sub_id = axpby_flag*8 + _block_flag*4 + _sym_flag*2 + ed_flag;
-
-            v_id = cur_select[sub_id];
-            if (v_id > -1) {
-              v = m_variant + v_id;
-              cs_log_printf(CS_LOG_PERFORMANCE,
-                            _("  %-44s : %s\n"),
-                            _(_matrix_operation_name[sub_id]), _(v->name));
-            }
-
+          v_id = cur_select[sub_id];
+          if (v_id > -1) {
+            v = m_variant + v_id;
+            cs_log_printf(CS_LOG_PERFORMANCE,
+                          _("  %-44s : %s\n"),
+                          _(_matrix_operation_name[sub_id]), _(v->name));
           }
 
         }
