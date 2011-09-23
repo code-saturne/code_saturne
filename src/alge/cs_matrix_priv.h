@@ -1,0 +1,375 @@
+#ifndef __CS_MATRIX_PRIV_H__
+#define __CS_MATRIX_PRIV_H__
+
+/*============================================================================
+ * Private types for sparse matrix representation and operations.
+ *============================================================================*/
+
+/*
+  This file is part of the Code_Saturne Kernel, element of the
+  Code_Saturne CFD tool.
+
+  Copyright (C) 1998-2011 EDF S.A., France
+
+  contact: saturne-support@edf.fr
+
+  The Code_Saturne Kernel is free software; you can redistribute it
+  and/or modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2 of
+  the License, or (at your option) any later version.
+
+  The Code_Saturne Kernel is distributed in the hope that it will be
+  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with the Code_Saturne Kernel; if not, write to the
+  Free Software Foundation, Inc.,
+  51 Franklin St, Fifth Floor,
+  Boston, MA  02110-1301  USA
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_defs.h"
+
+#include "cs_matrix.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*=============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+/* Formats currently supported:
+ *
+ *  - Native
+ *  - Compressed Sparse Row (CSR)
+ *  - Symmetric Compressed Sparse Row (CSR_SYM)
+ */
+
+/*----------------------------------------------------------------------------
+ * Function pointer types
+ *----------------------------------------------------------------------------*/
+
+typedef void
+(cs_matrix_set_coeffs_t) (cs_matrix_t      *matrix,
+                          bool              symmetric,
+                          bool              interleaved,
+                          bool              copy,
+                          const cs_real_t  *restrict da,
+                          const cs_real_t  *restrict xa);
+
+typedef void
+(cs_matrix_release_coeffs_t) (cs_matrix_t  *matrix);
+
+typedef void
+(cs_matrix_get_diagonal_t) (const cs_matrix_t  *matrix,
+                            cs_real_t          *restrict da);
+
+typedef void
+(cs_matrix_vector_product_t) (bool                exclude_diag,
+                              const cs_matrix_t  *matrix,
+                              const cs_real_t    *restrict x,
+                              cs_real_t          *restrict y);
+
+
+/*----------------------------------------------------------------------------
+ * Matrix types
+ *----------------------------------------------------------------------------*/
+
+/* Native matrix structure representation */
+/*----------------------------------------*/
+
+/* Note: the members of this structure are already available through the top
+ *       matrix structure, but are replicated here in case of future removal
+ *       from the top structure (which would require computation/assignment of
+ *       matrix coefficients in another form) */
+
+typedef struct _cs_matrix_struct_native_t {
+
+  cs_lnum_t          n_cells;       /* Local number of cells */
+  cs_lnum_t          n_cells_ext;   /* Local number of participating cells
+                                       (cells + ghost cells sharing a face) */
+  cs_lnum_t          n_faces;       /* Local number of faces
+                                       (for extra-diagonal terms */
+
+  /* Pointers to shared arrays */
+
+  const cs_lnum_t   *face_cell;     /* Face -> cells connectivity (1 to n) */
+
+} cs_matrix_struct_native_t;
+
+/* Native matrix coefficients */
+/*----------------------------*/
+
+typedef struct _cs_matrix_coeff_native_t {
+
+  bool              symmetric;       /* Symmetry indicator */
+  int               max_block_size;  /* Current max allocated block size */
+
+  /* Pointers to possibly shared arrays */
+
+  const cs_real_t   *da;            /* Diagonal terms */
+  const cs_real_t   *xa;            /* Extra-diagonal terms */
+
+  /* Pointers to private arrays (NULL if shared) */
+
+  cs_real_t         *_da;           /* Diagonal terms */
+  cs_real_t         *_xa;           /* Extra-diagonal terms */
+
+} cs_matrix_coeff_native_t;
+
+/* CSR (Compressed Sparse Row) matrix structure representation */
+/*-------------------------------------------------------------*/
+
+typedef struct _cs_matrix_struct_csr_t {
+
+  cs_lnum_t         n_rows;           /* Local number of rows */
+  cs_lnum_t         n_cols;           /* Local number of columns
+                                         (> n_rows in case of ghost cells) */
+  cs_lnum_t         n_cols_max;       /* Maximum number of nonzero values
+                                         on a given row */
+
+  /* Pointers to structure arrays and info (row_index, col_id) */
+
+  bool              have_diag;        /* Has non-zero diagonal */
+  bool              direct_assembly;  /* True if each value corresponds to
+                                         a unique face ; false if multiple
+                                         faces contribute to the same
+                                         value (i.e. we have split faces) */
+
+  cs_lnum_t        *row_index;        /* Row index (0 to n-1) */
+  cs_lnum_t        *col_id;           /* Column id (0 to n-1) */
+
+} cs_matrix_struct_csr_t;
+
+/* CSR matrix coefficients representation */
+/*----------------------------------------*/
+
+typedef struct _cs_matrix_coeff_csr_t {
+
+  int               n_prefetch_rows;  /* Number of rows at a time for which
+                                         the x values in y = Ax should be
+                                         prefetched (0 if no prefetch) */
+
+  cs_real_t        *val;              /* Matrix coefficients */
+
+  cs_real_t        *x_prefetch;       /* Prefetch array for x in y = Ax */
+
+} cs_matrix_coeff_csr_t;
+
+/* CSR_SYM (Symmetric Compressed Sparse Row) matrix structure representation */
+/*---------------------------------------------------------------------------*/
+
+typedef struct _cs_matrix_struct_csr_sym_t {
+
+  cs_lnum_t         n_rows;           /* Local number of rows */
+  cs_lnum_t         n_cols;           /* Local number of columns
+                                         (> n_rows in case of ghost cells) */
+  cs_lnum_t         n_cols_max;       /* Maximum number of nonzero values
+                                         on a given row */
+
+  /* Pointers to structure arrays and info (row_index, col_id) */
+
+  bool              have_diag;        /* Has non-zero diagonal */
+  bool              direct_assembly;  /* True if each value corresponds to
+                                         a unique face ; false if multiple
+                                         faces contribute to the same
+                                         value (i.e. we have split faces) */
+
+  cs_lnum_t        *row_index;        /* Row index (0 to n-1) */
+  cs_lnum_t        *col_id;           /* Column id (0 to n-1) */
+
+} cs_matrix_struct_csr_sym_t;
+
+/* symmetric CSR matrix coefficients representation */
+/*--------------------------------------------------*/
+
+typedef struct _cs_matrix_coeff_csr_sym_t {
+
+  cs_real_t        *val;              /* Matrix coefficients */
+
+} cs_matrix_coeff_csr_sym_t;
+
+/* MSR matrix coefficients representation */
+/*----------------------------------------*/
+
+typedef struct _cs_matrix_coeff_msr_t {
+
+  int              n_prefetch_rows;   /* Number of rows at a time for which
+                                         the x values in y = Ax should be
+                                         prefetched (0 if no prefetch) */
+  int              max_block_size;    /* Current max allocated block size */
+
+  /* Pointers to possibly shared arrays */
+
+  const cs_real_t  *d_val;            /* Diagonal matrix coefficients */
+
+  /* Pointers to private arrays (NULL if shared) */
+
+  cs_real_t        *_d_val;           /* Diagonal matrix coefficients */
+  cs_real_t        *x_val;            /* Extra-diagonal matrix coefficients */
+
+  cs_real_t        *x_prefetch;       /* Prefetch array for x in y = Ax */
+
+} cs_matrix_coeff_msr_t;
+
+/* symmetric MSR matrix coefficients representation */
+/*--------------------------------------------------*/
+
+typedef struct _cs_matrix_coeff_msr_sym_t {
+
+  int              max_block_size;    /* Current max allocated block size */
+
+  /* Pointers to possibly shared arrays */
+
+  const cs_real_t  *d_val;            /* Diagonal matrix coefficients */
+
+  /* Pointers to private arrays (NULL if shared) */
+
+  cs_real_t        *_d_val;           /* Diagonal matrix coefficients */
+  cs_real_t        *x_val;            /* Extra-diagonal matrix coefficients */
+
+} cs_matrix_coeff_msr_sym_t;
+
+/* Matrix structure (representation-independent part) */
+/*----------------------------------------------------*/
+
+struct _cs_matrix_structure_t {
+
+  cs_matrix_type_t       type;         /* Matrix storage and definition type */
+
+  cs_lnum_t              n_cells;      /* Local number of cells */
+  cs_lnum_t              n_cells_ext;  /* Local number of participating cells
+                                          (cells + ghost cells sharing a face) */
+  cs_lnum_t              n_faces;      /* Local Number of mesh faces
+                                          (necessary to affect coefficients) */
+
+  void                  *structure;    /* Matrix structure */
+
+  /* Pointers to shared arrays from mesh structure
+     (face->cell connectivity for coefficient assignment,
+     local->local cell numbering for future info or renumbering,
+     and halo) */
+
+  const cs_lnum_t       *face_cell;    /* Face -> cells connectivity (1 to n) */
+  const cs_gnum_t       *cell_num;     /* Global cell numbers */
+  const cs_halo_t       *halo;         /* Parallel or periodic halo */
+  const cs_numbering_t  *numbering;    /* Vectorization or thread-related
+                                          numbering information */
+};
+
+/* Structure associated with Matrix (representation-independent part) */
+/*--------------------------------------------------------------------*/
+
+struct _cs_matrix_t {
+
+  cs_matrix_type_t       type;         /* Matrix storage and definition type */
+
+  cs_lnum_t              n_cells;      /* Local number of cells */
+  cs_lnum_t              n_cells_ext;  /* Local number of participating cells
+                                          (cells + ghost cells sharing a face) */
+  cs_lnum_t              n_faces;      /* Local Number of mesh faces
+                                          (necessary to affect coefficients) */
+
+  int                    b_size[4];    /* Block size, including padding:
+                                          0: useful block size
+                                          1: vector block extents
+                                          2: matrix line extents
+                                          3: matrix line*column extents */
+
+  /* Pointer to shared structure */
+
+  const void            *structure;    /* Matrix structure */
+
+  /* Pointers to shared arrays from mesh structure
+     (face->cell connectivity for coefficient assignment,
+     local->local cell numbering for future info or renumbering,
+     and halo) */
+
+  const cs_lnum_t       *face_cell;    /* Face -> cells connectivity (1 to n) */
+  const cs_gnum_t       *cell_num;     /* Global cell numbers */
+  const cs_halo_t       *halo;         /* Parallel or periodic halo */
+  const cs_numbering_t  *numbering;    /* Vectorization or thread-related
+                                          numbering information */
+
+  /* Pointer to private data */
+
+  void                  *coeffs;       /* Matrix coefficients */
+
+  /* Function pointers */
+
+  cs_matrix_set_coeffs_t            *set_coefficients;
+  cs_matrix_release_coeffs_t        *release_coefficients;
+  cs_matrix_get_diagonal_t          *get_diagonal;
+
+  /* Function pointer arrays, with 4 variants:
+     block_flag*2 + exclude_diagonal_flag */
+
+  cs_matrix_vector_product_t        *vector_multiply[4];
+
+  /* Loop lenght parameter for some SpMv algorithms */
+
+  int                                loop_length;
+
+};
+
+/* Structure used for tuning variants */
+/*------------------------------------*/
+
+struct _cs_matrix_variant_t {
+
+  char                   name[32];     /* Variant name */
+
+  cs_matrix_type_t       type;         /* Matrix storage and definition type */
+
+  int                    symmetry;     /* 0 for non-symmetric, 1 for symmetric,
+                                          2 for both */
+
+  /* Loop lenght parameter for some SpMv algorithms */
+
+  int                    loop_length;
+
+  /* Function pointer arrays, with 4 variants:
+     block_flag*2 + exclude_diagonal_flag */
+
+  cs_matrix_vector_product_t        *vector_multiply[4];
+
+  /* Measured structure creation cost, or -1 otherwise */
+
+  double  matrix_create_cost;
+
+  /* Measured assignment costs for each available operation, or -1 otherwise
+     (up to 4 measures per variant: block_flag * 2 + sym_flag */
+
+  double  matrix_assign_cost[4];
+
+  /* Measured operation costs for each available operation, or -1 otherwise
+     (up to 8 measures per variant:
+     block_flag*4 + sym_flag*2 + exclude_diagonal_flag) */
+
+  double  matrix_vector_cost[8];
+
+};
+
+/*=============================================================================
+ * Semi-private function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+#endif /* __CS_MATRIX_PRIV_H__ */

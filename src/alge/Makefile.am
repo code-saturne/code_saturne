@@ -45,6 +45,8 @@ cs_blas.h \
 cs_gradient.h \
 cs_grid.h \
 cs_matrix.h \
+cs_matrix_priv.h \
+cs_matrix_util.h \
 cs_multigrid.h \
 cs_sles.h
 
@@ -62,6 +64,7 @@ cs_blas.c \
 cs_gradient.c \
 cs_grid.c \
 cs_matrix.c \
+cs_matrix_util.c \
 cs_multigrid.c \
 cs_sles.c \
 autmgr.f90 \
