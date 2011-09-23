@@ -29,15 +29,19 @@
 
 /*-----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-
-/*-----------------------------------------------------------------------------*/
+#if defined(HAVE_CONFIG_H)
+#  include "cs_config.h"
+#endif
 
 #if defined(HAVE_CLOCK_GETTIME)
 #if !defined(_POSIX_C_SOURCE)
 #define _POSIX_C_SOURCE 199309L
 #endif
 #endif
+
+/*-----------------------------------------------------------------------------*/
+
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -59,6 +63,15 @@
 #if defined(_POSIX_SOURCE)
 #include <sys/times.h>
 #include <unistd.h>
+#endif
+
+/* Disable automatically-defined HAVE_CLOCK_GETTIME on Blue Gene/P
+   to avoid crash.
+   TODO: investigate whether this is due to an incorrect
+   headers/feature flags combination. */
+
+#if defined(HAVE_CLOCK_GETTIME) && defined(__bgp__)
+#undef HAVE_CLOCK_GETTIME
 #endif
 
 /*----------------------------------------------------------------------------
