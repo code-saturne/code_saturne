@@ -50,13 +50,12 @@ subroutine ustsnv &
 !
 ! Usage
 ! -----
-! The routine is called for each velocity component. It is therefore necessary
-! to test the value of the variable ivar to separate the treatments of the
-! components iu, iv or iw.
+! The routine is called if the coulped solving of the velocity components is
+! turned on (ivelco=1).
 !
 ! The additional source term is decomposed into an explicit part (crvexp) and
 ! an implicit part (crvimp) that must be provided here.
-! The resulting equation solved by the code for a velocity component u is:
+! The resulting equation solved by the code for a velocity is:
 !
 !  rho*volume*du/dt + .... = crvimp*u + crvexp
 !
@@ -223,21 +222,16 @@ if(iutile.eq.0) return
 
 ! ----------------------------------------------
 
-if (ivar.eq.iu) then
+ckp  = 10.d0
+qdm  = 100.d0
 
-  ckp  = 10.d0
-  qdm  = 100.d0
+do iel = 1, ncel
+   crvimp(1,1,iel) = - volume(iel)*propce(iel,ipcrom)*ckp
+enddo
 
-  do iel = 1, ncel
-     crvimp(1,1,iel) = - volume(iel)*propce(iel,ipcrom)*ckp
-  enddo
-
-  do iel = 1, ncel
-     crvexp(1,iel) =   volume(iel)*qdm
-  enddo
-
-endif
-
+do iel = 1, ncel
+   crvexp(1,iel) =   volume(iel)*qdm
+enddo
 
 !--------
 ! Formats

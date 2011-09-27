@@ -30,7 +30,7 @@ subroutine coditv &
 
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
@@ -38,7 +38,7 @@ subroutine coditv &
    pvara  , pvark  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab ,                                              &
-   viscfm , viscbm , viscfs , viscbs ,                            &
+   viscfm , viscbm , viscfs , viscbs , secvif , secvib ,          &
    fimp   ,                                                       &
    smbr   ,                                                       &
    pvar   ,                                                       &
@@ -108,9 +108,6 @@ subroutine coditv &
 !             il sert 32 fois dans le rayonnement (raysol).
 !             et dans le calcul de y+ (distyp)
 
-
-
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -136,6 +133,10 @@ subroutine coditv &
 !                  !    !     !  = 0 a partir des gradients voisins            !
 !                  !    !     !  = 1 a partir du gradient moyen                !
 ! ircflp           ! e  ! <-- ! indicateur = 1 rec flux ; 0 sinon              !
+! ivisep           ! e  ! <-- ! indicateur = 1 pour la prise en compte         !
+!                  !    !     !                div(T Grad(vel))                !
+!                  !    !     !                -2/3 Grad(div(vel))             !
+!                  !    !     !              0 sinon                           !
 ! ischcp           ! e  ! <-- ! indicateur = 1 centre , 0 2nd order            !
 ! isstpp           ! e  ! <-- ! indicateur = 1 sans test de pente              !
 !                  !    !     !            = 0 avec test de pente              !
@@ -182,6 +183,8 @@ subroutine coditv &
 !                  !    !     !  pour la matrice                               !
 ! viscfs(nfac)     ! tr ! <-- ! idem viscfm pour second membre                 !
 ! viscbs(nfabor    ! tr ! <-- ! idem viscbm pour second membre                 !
+! secvif(nfac)     ! tr ! --- ! secondary viscosity at interior faces          !
+! secvib(nfabor)   ! tr ! --- ! secondary viscosity at boundary faces          !
 ! fimp(3,3,ncelet) ! tr ! <-- ! rho*volume/dt                                  !
 ! smbr(3,ncelet)   ! tr ! <-- ! bilan au second membre                         !
 ! pvar(3,ncelet)   ! tr ! <-- ! variable resolue                               !
@@ -222,7 +225,7 @@ integer          imrgra , nswrsp , nswrgp , imligp , ircflp
 integer          ischcp , isstpp , iescap , imgrp
 integer          ncymxp , nitmfp
 integer          iwarnp
-integer          ippu   , ippv   , ippw
+integer          ippu   , ippv   , ippw   , ivisep
 double precision blencp , epsilp , epsrgp , climgp , extrap
 double precision relaxp , thetap , epsrsp
 
@@ -236,6 +239,7 @@ double precision cofbfv(3,3,ndimfb)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscfm(nfac), viscbm(nfabor)
 double precision viscfs(nfac), viscbs(nfabor)
+double precision secvif(nfac), secvib(nfabor)
 double precision fimp(3,3,ncelet)
 double precision smbr(3,ncelet)
 double precision eswork(3,ncelet)
@@ -364,12 +368,12 @@ if(abs(thetex).gt.epzero) then
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
+   ischcp , isstpp , inc    , imrgra , iccocg , ivisep ,          &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
-   flumas , flumab , viscfs , viscbs ,                            &
+   flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
    smbr   )
 endif
 
@@ -443,12 +447,12 @@ do 100 isweep = 1, nswmod
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
+   ischcp , isstpp , inc    , imrgra , iccocg , ivisep ,          &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
-   flumas , flumab , viscfs , viscbs ,                            &
+   flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
    smbr   )
 
 ! ---> RESIDU DE NORMALISATION CALCULE AU PREMIER SWEEP
@@ -605,12 +609,12 @@ if (iescap.gt.0) then
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
+   ischcp , isstpp , inc    , imrgra , iccocg , ivisep ,          &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
-   flumas , flumab , viscfs , viscbs ,                            &
+   flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
    smbr   )
 
 !     CONTRIBUTION DES NORMES L2 DES DIFFERENTES COMPOSANTES

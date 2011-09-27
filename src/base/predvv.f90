@@ -36,7 +36,7 @@ subroutine predvv &
    tslagr , coefa  , coefb  , coefav , coefbv , cofafv , cofbfv , &
    ckupdc , smacel , frcxt  ,                                     &
    trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
-   viscf  , viscb  , viscfi , viscbi ,                            &
+   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     , xnormp )
 
 !===============================================================================
@@ -109,9 +109,11 @@ subroutine predvv &
 ! trav(3,ncelet)   ! tr ! --> ! smb qui servira pour normalisation             !
 !                  !    !     !  dans resolp                                   !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
+! viscb(nfabor)    ! tr ! --- ! visc*surface/dist aux faces de bord            !
 ! viscfi(nfac)     ! tr ! --- ! idem viscf pour increments                     !
-! viscbi(nfabor    ! tr ! --- ! idem viscb pour increments                     !
+! viscbi(nfabor)   ! tr ! --- ! idem viscb pour increments                     !
+! secvif(nfac)     ! tr ! --- ! secondary viscosity at interior faces          !
+! secvib(nfabor)   ! tr ! --- ! secondary viscosity at boundary faces          !
 ! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! xnormp(ncelet    ! tr ! <-- ! tableau reel pour norme resolp                 !
 ! tslagr(ncelet    ! tr ! <-- ! terme de couplage retour du                    !
@@ -173,6 +175,7 @@ double precision tpucou(ndim,ncelet)
 double precision trav(3,ncelet)
 double precision viscf(nfac), viscb(nfabor)
 double precision viscfi(nfac), viscbi(nfabor)
+double precision secvif(nfac), secvib(nfabor)
 double precision w1(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision xnormp(ncelet)
@@ -199,7 +202,7 @@ integer          iesprp, iestop
 integer          iptsna
 integer          iflmb0, nswrp , ipbrom
 integer          idtva0
-integer          ippu  , ippv  , ippw  , jsou
+integer          ippu  , ippv  , ippw  , jsou, ivisep
 
 double precision rnorm , vitnor
 double precision romvom, drom  , rom
@@ -250,11 +253,11 @@ else
   iclik = 0
 endif
 
-!     Reperage de rho au bord
+! Reperage de rho au bord
 ipbrom = ipprob(irom  )
-!     Reperage de rho courant (ie en cas d'extrapolation rho^n+1/2)
+! Reperage de rho courant (ie en cas d'extrapolation rho^n+1/2)
 ipcrom = ipproc(irom  )
-!     Reperage de rho^n en cas d'extrapolation
+! Reperage de rho^n en cas d'extrapolation
 if(iroext.gt.0) then
   ipcroa = ipproc(iroma)
 else
@@ -263,7 +266,7 @@ endif
 
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
-!     Theta relatif aux termes sources explicites
+! Theta relatif aux termes sources explicites
 thets  = thetsn
 if(isno2t.gt.0) then
   iptsna = ipproc(itsnsa)
@@ -308,15 +311,12 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       cpdc12 = ckupdc(ielpdc,4)
       cpdc13 = ckupdc(ielpdc,5)
       cpdc23 = ckupdc(ielpdc,6)
-      dfrcxt(iel,1) = dfrcxt(iel,1)                   &
-           -propce(iel,ipcrom)*(                                  &
-           cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
-      dfrcxt(iel,2) = dfrcxt(iel,2)                   &
-           -propce(iel,ipcrom)*(                                  &
-           cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
-      dfrcxt(iel,3) = dfrcxt(iel,3)                   &
-           -propce(iel,ipcrom)*(                                  &
-           cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
+      dfrcxt(iel,1) = dfrcxt(iel,1) &
+                    - propce(iel,ipcrom)*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
+      dfrcxt(iel,2) = dfrcxt(iel,2) &
+                    - propce(iel,ipcrom)*(cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
+      dfrcxt(iel,3) = dfrcxt(iel,3) &
+                    - propce(iel,ipcrom)*(cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
     enddo
   endif
 !     Ajout eventuel de la force de Coriolis
@@ -414,7 +414,7 @@ endif
 !       on utilise les CL de vitesse homogenes pour dt/rho gradP^(n)
 !       ci-dessous et les CL de vitesse completes pour u* a la fin.
 
-if(iappel.eq.1.and.irnpnw.eq.1) then
+if (iappel.eq.1.and.irnpnw.eq.1) then
 
 !     Calcul de dt/rho*grad P
   do iel = 1, ncel
@@ -450,7 +450,6 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
-   !velocity
    trav   ,                                                       &
    coefav , coefbv ,                                              &
    viscf  , viscb  )
@@ -485,7 +484,7 @@ endif
 !       si on itere sur navsto, ca ne sert a rien de recalculer rho g a
 !         chaque fois (ie on pourrait le passer dans trava) mais ce n'est
 !         pas cher.
-if(iappel.eq.1) then
+if (iappel.eq.1) then
 
   if (iphydr.eq.1) then
     do iel = 1, ncel
@@ -551,16 +550,16 @@ deallocate(grad)
 !     A la premiere iter sur navsto
 if(iterns.eq.1) then
 
-!       Si on   extrapole     les T.S. : -theta*valeur precedente
+    ! Si on   extrapole     les T.S. : -theta*valeur precedente
     if(isno2t.gt.0) then
-!         S'il n'y a qu'une    iter : TRAV  incremente
+      ! S'il n'y a qu'une    iter : TRAV  incremente
       if(nterup.eq.1) then
         do ii = 1, ndim
           do iel = 1, ncel
             trav (ii,iel) = trav (ii,iel) - thets*propce(iel,iptsna+ii-1)
           enddo
         enddo
-      !         S'il   y a plusieurs iter : TRAVA initialise
+      ! S'il   y a plusieurs iter : TRAVA initialise
       else
         do ii = 1, ndim
           do iel = 1, ncel
@@ -568,17 +567,17 @@ if(iterns.eq.1) then
           enddo
       enddo
     endif
-    !         Et on initialise PROPCE pour le remplir ensuite
+    ! Et on initialise PROPCE pour le remplir ensuite
     do ii = 1, ndim
       do iel = 1, ncel
         propce(iel,iptsna+ii-1) = 0.d0
       enddo
     enddo
 
-    !       Si on n'extrapole pas les T.S. : pas de PROPCE
+  ! Si on n'extrapole pas les T.S. : pas de PROPCE
   else
-  !         S'il   y a plusieurs iter : TRAVA initialise
-  !           sinon TRAVA n'existe pas
+    ! S'il   y a plusieurs iter : TRAVA initialise
+    !  sinon TRAVA n'existe pas
     if(nterup.gt.1) then
       do ii = 1, ndim
         do iel = 1, ncel
@@ -627,10 +626,10 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
 
   d2s3 = 2.d0/3.d0
 
-!     Si on extrapole les termes source en temps : PROPCE
+  ! Si on extrapole les termes source en temps : PROPCE
   if(isno2t.gt.0) then
-!       Calcul de rho^n grad k^n      si rho non extrapole
-!                 rho^n grad k^n si rho     extrapole
+    ! Calcul de rho^n grad k^n      si rho non extrapole
+    !           rho^n grad k^n      si rho     extrapole
     ipcroo = ipcrom
     if(iroext.gt.0) ipcroo = ipcroa
     do iel = 1, ncel
@@ -639,7 +638,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
       propce(iel,iptsna+1)=propce(iel,iptsna+1)+grad(iel,2)*romvom
       propce(iel,iptsna+2)=propce(iel,iptsna+2)+grad(iel,3)*romvom
     enddo
-!     Si on n'extrapole pas les termes sources en temps : TRAV ou TRAVA
+  ! Si on n'extrapole pas les termes sources en temps : TRAV ou TRAVA
   else
     if(nterup.eq.1) then
       do iel = 1, ncel
@@ -658,7 +657,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
     endif
   endif
 
-!    Calcul des efforts aux parois (partie 3/5), si demande
+  ! Calcul des efforts aux parois (partie 3/5), si demande
   if (ineedf.eq.1) then
     do ifac = 1, nfabor
       iel = ifabor(ifac)
@@ -684,74 +683,18 @@ endif
 !-------------------------------------------------------------------------------
 ! ---> TERMES DE GRADIENT TRANSPOSE
 
-!     Ce terme explicite est calcule une seule fois,
-!       a la premiere iter sur navsto :
-!       si on extrapole il va dans PROPCE,
-!       sinon si on itere sur navsto dans TRAVA
-!             sinon                  dans TRAV
+!     These terms are taken into account in bilsc4.
+!     We only compute here the secondary viscosity.
+
 if (ivisse.eq.1.and.iterns.eq.1) then
 
-!     On utilise temporairement TRAV comme tableau de travail.
-!     Son contenu est stocke dans W7, W8 et W9 jusqu'apres visecv
-  do iel = 1,ncel
-    w7(iel) = trav(1,iel)
-    w8(iel) = trav(2,iel)
-    w9(iel) = trav(3,iel)
-    trav(1,iel) = 0.d0
-    trav(2,iel) = 0.d0
-    trav(3,iel) = 0.d0
-  enddo
-
-  call visecv                                                     &
+  call visecv &
   !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   vela   , propce , propfa , propfb ,                            &
-   coefa  , coefb  , coefav , coefbv , ckupdc , smacel ,          &
-   trav   ,                                                       &
-!  ------
-   viscf  , viscb  )
-
-!     Si on extrapole les termes source en temps :
-!       PROPCE recoit les termes de gradient transpose et
-!       TRAV retrouve sa valeur
-  if(isno2t.gt.0) then
-    do iel = 1, ncel
-      propce(iel,iptsna  ) = propce(iel,iptsna  ) + trav(1,iel)
-      propce(iel,iptsna+1) = propce(iel,iptsna+1) + trav(2,iel)
-      propce(iel,iptsna+2) = propce(iel,iptsna+2) + trav(3,iel)
-      trav(1,iel)  = w7(iel)
-      trav(2,iel)  = w8(iel)
-      trav(3,iel)  = w9(iel)
-    enddo
-
-!     Si on n'extrapole pas les termes source en temps :
-!       Si on itere sur navsto
-!         TRAVA recoit les termes de gradient transpose et
-!         TRAV retrouve sa valeur
-  else
-    if(nterup.gt.1) then
-      do iel = 1, ncel
-        trava(1,iel) = trava(1,iel) + trav(1,iel)
-        trava(2,iel) = trava(2,iel) + trav(2,iel)
-        trava(3,iel) = trava(3,iel) + trav(3,iel)
-        trav(1,iel)  = w7(iel)
-        trav(2,iel)  = w8(iel)
-        trav(3,iel)  = w9(iel)
-      enddo
-!       Si on n'itere pas sur navsto
-!         TRAV retrouve sa valeur augmentee des termes de gradient transpose
-    else
-      do iel = 1, ncel
-        trav(1,iel)  = w7(iel) + trav(1,iel)
-        trav(2,iel)  = w8(iel) + trav(2,iel)
-        trav(3,iel)  = w9(iel) + trav(3,iel)
-      enddo
-    endif
-  endif
+ ( nvar   ,                             &
+   propce ,                             &
+   secvif , secvib )
 
 endif
-
 
 !-------------------------------------------------------------------------------
 ! ---> TERMES DE PERTES DE CHARGE
@@ -759,13 +702,13 @@ endif
 
 if((ncepdp.gt.0).and.(iphydr.eq.0)) then
 
-!     Les termes diagonaux sont places dans TRAV ou TRAVA,
-!       La prise en compte de UVWK a partir de la seconde iteration
-!       est faite directement dans codits.
+  ! Les termes diagonaux sont places dans TRAV ou TRAVA,
+  !   La prise en compte de UVWK a partir de la seconde iteration
+  !   est faite directement dans codits.
   if(iterns.eq.1) then
 
-!       On utilise temporairement TRAV comme tableau de travail.
-!       Son contenu est stocke dans W7, W8 et W9 jusqu'apres tspdci
+    ! On utilise temporairement TRAV comme tableau de travail.
+    ! Son contenu est stocke dans W7, W8 et W9 jusqu'apres tspdci
     do iel = 1,ncel
       w7(iel) = trav(1,iel)
       w8(iel) = trav(2,iel)
@@ -783,7 +726,7 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
    propce , propfa , propfb ,                                     &
    coefa  , coefb  , ckupdc , trav   )
 
-!     Si on itere sur navsto, on utilise TRAVA ; sinon TRAV
+    ! Si on itere sur navsto, on utilise TRAVA ; sinon TRAV
     if(nterup.gt.1) then
       do iel = 1, ncel
         trava(1,iel) = trava(1,iel) + trav(1,iel)
@@ -924,6 +867,8 @@ if( idiff(iu).ge. 1 ) then
 ! --- Si la vitesse doit etre diffusee, on calcule la viscosite
 !       pour le second membre (selon Rij ou non)
 
+  !FIXME we do NOT extrapolate the viscosity here, whereas we do extrapolate for
+  !the second viscosity
   if (itytur.eq.3) then
     do iel = 1, ncel
       w1(iel) = propce(iel,ipcvis)
@@ -1011,14 +956,7 @@ if(iappel.eq.2) then
   enddo
 endif
 
-
-
-! Remarque : On suppose que le couplage vitesse pression
-!  n'est valable que pour une seule phase.
-
-
 ! ---> TERMES SOURCES UTILISATEURS
-
 
 do iel = 1, ncel
   do isou = 1, 3
@@ -1032,7 +970,7 @@ enddo
 ivar = iu
 ipp  = ipprtp(iu)
 !     Le calcul des parties implicite et explicite des termes sources
-!       utilisateurs est faite uniquement a la premiere iter sur navsto.
+!       utilisateurs est faite uniquement a la premiere iter sur navstv.
 if(iterns.eq.1) then
 
   call ustsnv                                                     &
@@ -1440,7 +1378,7 @@ if(iappel.eq.1) then
     !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
@@ -1448,7 +1386,7 @@ if(iappel.eq.1) then
    vela   , vela   ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab ,                                              &
-   viscfi , viscbi , viscf  , viscb  ,                            &
+   viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
    fimp   ,                                                       &
    smbr   ,                                                       &
    vel    ,                                                       &
@@ -1460,7 +1398,7 @@ if(iappel.eq.1) then
     !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
@@ -1468,7 +1406,7 @@ if(iappel.eq.1) then
    vela   , uvwk   ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab ,                                              &
-   viscfi , viscbi , viscf  , viscb  ,                            &
+   viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
    fimp   ,                                                       &
    smbr   ,                                                       &
    vel    ,                                                       &
@@ -1517,11 +1455,14 @@ if(iappel.eq.1) then
     enddo
     iescap = 0
 
+    ! We do not take into account transpose of grad
+    ivisep = 0
+
     call coditv &
     !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
@@ -1529,7 +1470,7 @@ if(iappel.eq.1) then
    tpucou , tpucou ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab ,                                              &
-   viscfi , viscbi , viscf  , viscb  ,                            &
+   viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
    fimp   ,                                                       &
    smbr   ,                                                       &
    tpucou ,                                                       &
@@ -1570,16 +1511,16 @@ elseif(iappel.eq.2) then
   ippv  = ipprtp(iv)
   ippw  = ipprtp(iw)
 
-  call bilsc4                                                     &
+  call bilsc4 &
   !==========
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
+   ischcp , isstpp , inc    , imrgra , iccocg , ivisep ,          &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    vel    , vel    ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
-   flumas , flumab , viscf  , viscb  ,                            &
+   flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
    smbr   )
 
   iestop = ipproc(iestim(iestot))
@@ -1599,14 +1540,14 @@ endif
 
 if(iappel.eq.1.and.irnpnw.eq.1) then
 
-!     Calcul de div(rho u*)
+  ! Calcul de div(rho u*)
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synvin(vel)
     !==========
   endif
 
-!       Pour gagner du temps, on ne reconstruit pas.
+  ! Pour gagner du temps, on ne reconstruit pas.
   init   = 1
   inc    = 1
   iccocg = 1
@@ -1618,7 +1559,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   climgp = climgr(iu )
   extrap = extrag(iu )
 
-  call inimav                                                     &
+  call inimav &
   !==========
  ( nvar   , nscal  ,                                              &
    iu     ,                                                       &
@@ -1634,8 +1575,8 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
                                 ifacel,ifabor,viscf,viscb,xnormp)
 
-!     Calcul de la norme
-!       RNORMP qui servira dans resolp
+  ! Calcul de la norme
+  ! RNORMP qui servira dans resolp
   isqrt = 1
   call prodsc(ncelet,ncel,isqrt,xnormp,xnormp,rnormp)
 

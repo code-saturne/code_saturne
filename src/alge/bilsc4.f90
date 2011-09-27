@@ -30,12 +30,12 @@ subroutine bilsc4 &
 
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
+   ischcp , isstpp , inc    , imrgra , iccocg , ivisep ,          &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    vel    , vela   ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
-   flumas , flumab , viscf  , viscb  ,                            &
+   flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
    smbr   )
 
 !===============================================================================
@@ -48,6 +48,12 @@ subroutine bilsc4 &
 ! SMBR = SMBR -    \   m   VAR  +Visc   ( grad VAR )  . n
 !                  /__  ij    ij     ij             ij    ij
 !                   j
+
+! REMARK:
+! if ivisep = 1 then we also take MU*TRANSPOSE_GRAD(VAR)
+!                               + LAMBDA*TRACE(GRAD(VAR))
+!
+! where lambda is the secondary viscosity, i.e. usually -2/3*MU
 
 ! ATTENTION : SMBRP DEJA INITIALISE AVANT L'APPEL A BILSCA
 !            IL CONTIENT LES TERMES SOURCES EXPLICITES, ETC....
@@ -84,6 +90,10 @@ subroutine bilsc4 &
 !                  ! e  ! <-- !            = 1 gradmc 99                       !
 ! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
 !                  !    !     !              0 sinon                           !
+! ivisep           ! e  ! <-- ! indicateur = 1 pour la prise en compte         !
+!                  !    !     !                div(T Grad(vel))                !
+!                  !    !     !                -2/3 Grad(div(vel))             !
+!                  !    !     !              0 sinon                           !
 ! ipp*             ! e  ! <-- ! numero de variable pour post                   !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! blencp           ! r  ! <-- ! 1 - proportion d'upwind                        !
@@ -115,6 +125,8 @@ subroutine bilsc4 &
 !                  !    !     !  pour second membre                            !
 ! viscb (nfabor    ! tr ! <-- ! visc*surface/dist aux faces de bord            !
 !                  !    !     !  pour second membre                            !
+! secvif(nfac)     ! tr ! --- ! secondary viscosity at interior faces          !
+! secvib(nfabor)   ! tr ! --- ! secondary viscosity at boundary faces          !
 ! smbr(3,ncelet)   ! tr ! <-- ! bilan au second membre                         !
 !__________________!____!_____!________________________________________________!
 
@@ -147,7 +159,7 @@ integer          nvar   , nscal
 integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
-integer          inc    , imrgra , iccocg
+integer          inc    , imrgra , iccocg , ivisep
 integer          iwarnp , ippu   , ippv   , ippw
 
 double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
@@ -159,6 +171,7 @@ double precision coefbv(3,3,nfabor)
 double precision cofbfv(3,3,nfabor)
 double precision flumas(nfac)  , flumab(nfabor)
 double precision viscf (nfac)  , viscb (nfabor)
+double precision secvif(nfac), secvib(nfabor)
 double precision smbr(3,ncelet)
 
 
@@ -171,7 +184,7 @@ integer          iiu,iiv,iiw
 integer          iitytu
 integer          iir11,iir22,iir33
 integer          iir12,iir13,iir23
-integer          isou, jsou
+integer          isou, jsou, ityp
 logical          ilved
 double precision pfac,pfacd,flui,fluj,flux,fluxi,fluxj
 double precision vfac(3)
@@ -187,9 +200,10 @@ double precision diipfv(3)
 double precision djjpfv(3)
 double precision diipbv(3)
 double precision pnd, distf, srfan
-double precision unsvol
+double precision unsvol, visco, grdtrv, tgrdfl, secvis
 
 double precision, dimension(:,:,:), allocatable :: gradv, gradva
+double precision, dimension(:), allocatable :: bndcel
 
 
 !===============================================================================
@@ -250,7 +264,7 @@ if(blencp.eq.0.d0) iupwin = 1
 !        - quand on a de la convection, qu'on n'est pas en upwind pur
 !          et qu'on n'a pas shunte le test de pente
 
-if( (idiffp.ne.0 .and. ircflp.eq.1) .or.                          &
+if( (idiffp.ne.0 .and. ircflp.eq.1) .or. ivisep.eq.1 .or.         &
     (iconvp.ne.0 .and. iupwin.eq.0 .and.                          &
     (ischcp.eq.0 .or.  ircflp.eq.1 .or. isstpp.eq.0)) ) then
 
@@ -1256,6 +1270,72 @@ else
     !end isou
 
   enddo
+
+endif
+
+!===============================================================================
+! 3.  COMPUTATION OF THE TRANSPOSE GRAD(VEL) TERM AND GRAD(-2/3 DIV(VEL))
+!===============================================================================
+
+if (ivisep.eq.1) then
+
+  ! We do not know what condition to put in the inlets and the outlets, so we
+  ! assume that there is an equilibrium
+
+  ! Allocate a temporary array
+  allocate(bndcel(ncelet))
+
+  do iel = 1, ncelet
+    bndcel(iel) = 1.d0
+  enddo
+  do ifac = 1, nfabor
+    ityp = itypfb(ifac)
+    if (ityp.eq.isolib .or. ityp.eq.ientre) bndcel(ifabor(ifac)) = 0.d0
+  enddo
+
+  ! ---> INTERNAL FACES
+
+  do ifac = 1, nfac
+
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+
+    pnd = pond(ifac)
+    secvis = secvif(ifac)
+    visco = viscf(ifac)
+
+    grdtrv =        pnd*(gradv(1,1,ii)+gradv(2,2,ii)+gradv(3,3,ii))   &
+           + (1.d0-pnd)*(gradv(1,1,jj)+gradv(2,2,jj)+gradv(3,3,jj))
+
+    ! We need to compute trans_grad(u).IJ which is equal to IJ.grad(u)
+
+    do isou = 1, 3
+
+      tgrdfl = dijpf(1,ifac) * (        pnd*gradv(1,isou,ii)         &
+                               + (1.d0-pnd)*gradv(1,isou,jj) )       &
+             + dijpf(2,ifac) * (        pnd*gradv(2,isou,ii)         &
+                               + (1.d0-pnd)*gradv(2,isou,jj) )       &
+             + dijpf(3,ifac) * (        pnd*gradv(3,isou,ii)         &
+                               + (1.d0-pnd)*gradv(3,isou,jj) )
+
+
+      flux = visco*tgrdfl + secvis*grdtrv*surfac(isou,ifac)
+
+      smbr(isou,ii) = smbr(isou,ii) + idiffp*flux*bndcel(ii)
+      smbr(isou,jj) = smbr(isou,jj) - idiffp*flux*bndcel(jj)
+
+    enddo
+
+  enddo
+
+  ! ---> BOUNDARY FACES
+  !      the whole flux term of the stress tensor is already taken into account
+  !TODO add the corresponding term in forbr
+  !TODO in theory we should take the normal component into account (the
+  !tangential one is modeled by the wall law)
+
+  !Free memory
+  deallocate(bndcel)
 
 endif
 

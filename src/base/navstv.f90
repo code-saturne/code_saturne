@@ -158,6 +158,7 @@ double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:,:) :: dfrcxt
 double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 double precision, allocatable, dimension(:) :: esflum, esflub
+double precision, allocatable, dimension(:) :: secvif, secvib
 
 double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
 
@@ -194,6 +195,10 @@ if (itytur.eq.3.and.irijnu.eq.1) then
 else
   viscfi => viscf(1:nfac)
   viscbi => viscb(1:nfabor)
+endif
+
+if (ivisse.eq.1) then
+  allocate(secvif(nfac),secvib(nfabor))
 endif
 
 ! Allocate work arrays
@@ -294,7 +299,7 @@ call predvv &
   tslagr , coefa  , coefb  , coefau , coefbu , cofafu , cofbfu , &
   ckupdc , smacel , frcxt ,                                      &
   trava  , ximpa  , uvwk   , dfrcxt , tpucov ,  trav  ,          &
-  viscf  , viscb  , viscfi , viscbi ,                            &
+  viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
   w1     , w7     , w8     , w9     , w10    )
 
 ! --- Sortie si pas de pression continuite
@@ -417,128 +422,129 @@ iflmab = ipprob(ifluma(iu))
 ipcrom = ipproc(irom  )
 ipbrom = ipprob(irom  )
 
-
 !       IREVMC = 0 : Only the standard method is available for the coupled
 !                    version of navstv.
 
-!     The predicted velocity is corrected by the cell gradient of the
-!     pressure increment.
 
-!     GRADIENT DE L'INCREMENT TOTAL DE PRESSION
+if( irevmc.eq.0 ) then
 
-if (idtvar.lt.0) then
-  do iel = 1, ncel
-    drtp(iel) = (rtp(iel,ipr) -rtpa(iel,ipr)) / relaxv(ipr)
-  enddo
-else
-  do iel = 1, ncel
-    drtp(iel) = rtp(iel,ipr) -rtpa(iel,ipr)
-  enddo
-endif
+  !     The predicted velocity is corrected by the cell gradient of the
+  !     pressure increment.
 
-! --->    TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+  !     GRADIENT DE L'INCREMENT TOTAL DE PRESSION
 
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(drtp)
-  !==========
-endif
-
-
-iccocg = 1
-inc = 0
-if (iphydr.eq.1) inc = 1
-nswrgp = nswrgr(ipr)
-imligp = imligr(ipr)
-iwarnp = iwarni(ipr)
-epsrgp = epsrgr(ipr)
-climgp = climgr(ipr)
-extrap = extrag(ipr)
-
-!Allocation
-allocate(gradp (ncelet,3))
-
-call grdpot &
-!==========
-( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
- iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
- rvoid  ,                                                       &
- dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
- drtp   , coefa(1,iclipf) , coefb(1,iclipr)  ,                  &
- gradp  )
-
-!     REACTUALISATION DU CHAMP DE VITESSES
-
-thetap = thetav(ipr)
-do iel = 1, ncelet
-  do isou = 1, 3
-    trav(isou,iel) = gradp(iel,isou)
-  enddo
-enddo
-
-!Free memory
-deallocate(gradp)
-
-
-!     REACTUALISATION DU CHAMP DE VITESSES
-
-thetap = thetav(ipr)
-if (iphydr.eq.0) then
-  if (idtsca.eq.0) then
+  if (idtvar.lt.0) then
     do iel = 1, ncel
-      dtsrom = -thetap*dt(iel)/propce(iel,ipcrom)
-      do isou = 1, 3
-        vel(isou,iel) = vel(isou,iel)+dtsrom*trav(isou,iel)
-      enddo
+      drtp(iel) = (rtp(iel,ipr) -rtpa(iel,ipr)) / relaxv(ipr)
     enddo
   else
     do iel = 1, ncel
-      unsrom = -thetap/propce(iel,ipcrom)
-      ! tpucov is an interleaved array
-      do isou = 1, 3
-        vel(isou,iel) = vel(isou,iel) + unsrom*tpucov(isou,iel)*trav(isou,iel)
-      enddo
+      drtp(iel) = rtp(iel,ipr) -rtpa(iel,ipr)
     enddo
   endif
-else
-  if (idtsca.eq.0) then
-    do iel = 1, ncel
-      dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
-      do isou = 1, 3
-        vel(isou,iel) = vel(isou,iel)                           &
-           +dtsrom*(dfrcxt(iel,isou)-trav(isou,iel) )
-      enddo
-    enddo
-  else
-    do iel = 1, ncel
-      unsrom = thetap/propce(iel,ipcrom)
-      ! tpucov is an interleaved array
-      do isou = 1, 3
-        vel(isou,iel) = vel(isou,iel)                         &
-             +unsrom*tpucov(isou,iel)                         &
-             *(dfrcxt(iel,isou)-trav(isou,iel))
-      enddo
-    enddo
-  endif
-!     mise a jour des forces exterieures pour le calcul des gradients
-  do iel=1,ncel
-    frcxt(iel,1) = frcxt(iel,1) + dfrcxt(iel,1)
-    frcxt(iel,2) = frcxt(iel,2) + dfrcxt(iel,2)
-    frcxt(iel,3) = frcxt(iel,3) + dfrcxt(iel,3)
-  enddo
+
+  ! --->    TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(frcxt(1,1), frcxt(1,2), frcxt(1,3))
+    call synsca(drtp)
     !==========
   endif
-  !     mise a jour des Dirichlets de pression en sortie dans COEFA
-  iclipr = iclrtp(ipr,icoef)
-  iclipf = iclrtp(ipr,icoeff)
-  do ifac = 1,nfabor
-    if (isostd(ifac).eq.1)                              &
-         coefa(ifac,iclipr) = coefa(ifac,iclipr)        &
-         + coefa(ifac,iclipf)
-  enddo
-endif
 
+  iccocg = 1
+  inc = 0
+  if (iphydr.eq.1) inc = 1
+  nswrgp = nswrgr(ipr)
+  imligp = imligr(ipr)
+  iwarnp = iwarni(ipr)
+  epsrgp = epsrgr(ipr)
+  climgp = climgr(ipr)
+  extrap = extrag(ipr)
+
+  !Allocation
+  allocate(gradp(ncelet,3))
+
+  call grdpot &
+  !==========
+ ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
+   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+   rvoid  ,                                                       &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   drtp   , coefa(1,iclipf) , coefb(1,iclipr)  ,                  &
+   gradp  )
+
+  !     REACTUALISATION DU CHAMP DE VITESSES
+
+  thetap = thetav(ipr)
+  do iel = 1, ncelet
+    do isou = 1, 3
+      trav(isou,iel) = gradp(iel,isou)
+    enddo
+  enddo
+
+  !Free memory
+  deallocate(gradp)
+
+
+  !     REACTUALISATION DU CHAMP DE VITESSES
+
+  thetap = thetav(ipr)
+  if (iphydr.eq.0) then
+    if (idtsca.eq.0) then
+      do iel = 1, ncel
+        dtsrom = -thetap*dt(iel)/propce(iel,ipcrom)
+        do isou = 1, 3
+          vel(isou,iel) = vel(isou,iel)+dtsrom*trav(isou,iel)
+        enddo
+      enddo
+    else
+      do iel = 1, ncel
+        unsrom = -thetap/propce(iel,ipcrom)
+        ! tpucov is an interleaved array
+        do isou = 1, 3
+          vel(isou,iel) = vel(isou,iel) + unsrom*tpucov(isou,iel)*trav(isou,iel)
+        enddo
+      enddo
+    endif
+  else
+    if (idtsca.eq.0) then
+      do iel = 1, ncel
+        dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
+        do isou = 1, 3
+          vel(isou,iel) = vel(isou,iel)                           &
+             +dtsrom*(dfrcxt(iel,isou)-trav(isou,iel) )
+        enddo
+      enddo
+    else
+      do iel = 1, ncel
+        unsrom = thetap/propce(iel,ipcrom)
+        ! tpucov is an interleaved array
+        do isou = 1, 3
+          vel(isou,iel) = vel(isou,iel)                         &
+               +unsrom*tpucov(isou,iel)                         &
+               *(dfrcxt(iel,isou)-trav(isou,iel))
+        enddo
+      enddo
+    endif
+    ! Update external forces for the computation of the gradients
+    do iel=1,ncel
+      frcxt(iel,1) = frcxt(iel,1) + dfrcxt(iel,1)
+      frcxt(iel,2) = frcxt(iel,2) + dfrcxt(iel,2)
+      frcxt(iel,3) = frcxt(iel,3) + dfrcxt(iel,3)
+    enddo
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synvec(frcxt(1,1), frcxt(1,2), frcxt(1,3))
+      !==========
+    endif
+    ! Update of the Direchlet boundary conditions on the pressure for the outlet
+    iclipr = iclrtp(ipr,icoef)
+    iclipf = iclrtp(ipr,icoeff)
+    do ifac = 1,nfabor
+      if (isostd(ifac).eq.1)                              &
+           coefa(ifac,iclipr) = coefa(ifac,iclipr)        &
+           + coefa(ifac,iclipf)
+    enddo
+  endif
+endif
 
 !===============================================================================
 ! 5.  CALCUL D'UN ESTIMATEUR D'ERREUR DE L'ETAPE DE CORRECTION ET TOTAL
@@ -583,7 +589,6 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
     endif
 
   endif
-
 
   ! ---> CALCUL DU FLUX DE MASSE DEDUIT DE LA VITESSE REACTUALISEE
 
@@ -670,7 +675,7 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
    tslagr , coefa  , coefb  , coefau , coefbu , cofafu , cofbfu , &
    ckupdc , smacel , frcxt  ,                                     &
    trava  , ximpa  , uvwk   , dfrcxt , tpucov , trav   ,          &
-   viscf  , viscb  , viscfi , viscbi ,                            &
+   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     , w10    )
 
   endif
@@ -683,8 +688,7 @@ endif
 
 if(nterup.gt.1) then
 ! TEST DE CONVERGENCE DE L'ALGORITHME ITERATIF
-! On initialise ICVRGE a 1 et on le met a 0 si une des phases n'est
-! pas convergee
+! On initialise ICVRGE a 1 et on le met a 0 si on n'a pas convergee
 
   icvrge = 1
 
@@ -698,7 +702,7 @@ if(nterup.gt.1) then
   ! --->    TRAITEMENT DU PARALLELISME
 
   if(irangp.ge.0) call parsom (xnrmu)
-                              !==========
+                  !==========
   ! -- >    TRAITEMENT DU COUPLAGE ENTRE DEUX INSTANCES DE CODE_SATURNE
   do numcpl = 1, nbrcpl
     call tbrcpl ( numcpl, 1, 1, xnrmu, xnrdis )
@@ -868,6 +872,7 @@ deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
 deallocate(w7, w8, w9)
 if (allocated(w10)) deallocate(w10)
+if (allocated(secvif)) deallocate(secvif, secvib)
 
 ! Interleaved values of vel and vela
 
