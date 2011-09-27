@@ -148,6 +148,7 @@ do ifac = 1, nfabor
   if (ialtyb(ifac).ne.0      .and.                                &
       ialtyb(ifac).ne.ibfixe .and.                                &
       ialtyb(ifac).ne.igliss .and.                                &
+      ialtyb(ifac).ne.ifresf .and.                                &
       ialtyb(ifac).ne.ivimpo ) then
     write(nfecra,1000)ifac,iprfml(ifmfbr(ifac),1),                &
          ialtyb(ifac)
@@ -242,6 +243,20 @@ do ifac = 1, nfabor
     if (icodcl(ifac,iuma).eq.0) icodcl(ifac,iuma) = 1
     if (icodcl(ifac,ivma).eq.0) icodcl(ifac,ivma) = 1
     if (icodcl(ifac,iwma).eq.0) icodcl(ifac,iwma) = 1
+
+! --> Free surface face: the mesh velocity is imposed by the mass flux
+!TODO set default condition on the fluid velocity to homogenous Neumann
+  elseif (ialtyb(ifac).eq.ifresf) then
+
+    if (icodcl(ifac,iuma).eq.0) then
+      icodcl(ifac,iuma) = 1
+    endif
+    if (icodcl(ifac,ivma).eq.0) then
+      icodcl(ifac,ivma) = 1
+    endif
+    if (icodcl(ifac,iwma).eq.0) then
+      icodcl(ifac,iwma) = 1
+    endif
 
   endif
 

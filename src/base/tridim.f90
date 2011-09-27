@@ -868,6 +868,8 @@ do while (iterns.le.nterup)
 
     if (iihmpr.eq.1) then
 
+      !TODO add ifresf for the free surface
+
       call uialcl &
       !==========
     ( nfabor, nozppm,                    &

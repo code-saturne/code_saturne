@@ -89,8 +89,8 @@ module paramx
 
   ! conditions aux limites possibles pour la vitesse de maillage en ale
 
-  integer    ibfixe, igliss, ivimpo
-  parameter(ibfixe=1, igliss=2, ivimpo=3 )
+  integer    ibfixe, igliss, ivimpo, ifresf
+  parameter(ibfixe=1, igliss=2, ivimpo=3, ifresf=4)
 
   ! nstrmx : nombre de structures max en ale
 

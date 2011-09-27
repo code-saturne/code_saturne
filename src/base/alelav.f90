@@ -144,6 +144,20 @@ endif
 ! Density at the boundary
 ipbrom = ipprob(irom)
 
+!TODO make the direction displacement not always z
+do ifac = 1, nfabor
+  if (ialtyb(ifac) .eq. ifresf) then
+    cfaale(1,ifac) = 0.d0
+    cfaale(2,ifac) = 0.d0
+    cfaale(3,ifac) = propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*surfbo(3,ifac))
+    do isou = 1, 3
+      do jsou = 1, 3
+        cfbale(isou,jsou,ifac) = 0.d0
+      enddo
+    enddo
+  endif
+enddo
+
 !===============================================================================
 ! 2. SOLVING OF THE MESH VELOCITY EQUATION
 !===============================================================================
