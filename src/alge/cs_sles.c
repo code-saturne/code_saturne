@@ -822,6 +822,7 @@ _polynomial_preconditionning(cs_int_t            n_cells,
 static int
 _conjugate_gradient(const char             *var_name,
                     const cs_matrix_t      *a,
+                    int                     diag_block_size,
                     int                     poly_degree,
                     cs_perio_rota_t         rotation_mode,
                     cs_sles_convergence_t  *convergence,
@@ -850,8 +851,8 @@ _conjugate_gradient(const char             *var_name,
 
   sles_name = _(cs_sles_type_name[CS_SLES_PCG]);
 
-  n_cols = cs_matrix_get_n_columns(a);
-  n_rows = cs_matrix_get_n_rows(a);
+  n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
+  n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
 
   /* Allocate work arrays */
 
@@ -2586,6 +2587,7 @@ _solve_ni(const char         *var_name,
     case CS_SLES_PCG_SR:
       cvg = _conjugate_gradient(var_name,
                                 _a,
+                                1,
                                 poly_degree,
                                 rotation_mode,
                                 &convergence,
@@ -3214,20 +3216,16 @@ cs_sles_solve(const char         *var_name,
 
       switch (solver_type) {
       case CS_SLES_PCG:
-        if (_diag_block_size == 1)
-          cvg = _conjugate_gradient(var_name,
-                                    _a,
-                                    poly_degree,
-                                    rotation_mode,
-                                    &convergence,
-                                    rhs,
-                                    vx,
-                                    aux_size,
-                                    aux_vectors);
-        else
-          bft_error
-            (__FILE__, __LINE__, 0,
-             _("PCG not supported with block_size > 1 (velocity coupling)."));
+        cvg = _conjugate_gradient(var_name,
+                                  _a,
+                                  _diag_block_size,
+                                  poly_degree,
+                                  rotation_mode,
+                                  &convergence,
+                                  rhs,
+                                  vx,
+                                  aux_size,
+                                  aux_vectors);
         break;
       case CS_SLES_PCG_SR:
         if (_diag_block_size == 1)
