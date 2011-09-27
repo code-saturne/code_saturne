@@ -856,6 +856,11 @@ do while (iterns.le.nterup)
 
     do ii = 1, nnod
       impale(ii) = 0
+      if (ivelco.eq.1) then
+        disala(1,ii) = depale(ii,1)
+        disala(2,ii) = depale(ii,2)
+        disala(3,ii) = depale(ii,3)
+      endif
     enddo
 
     ! - Interface Code_Saturne
@@ -1290,7 +1295,7 @@ do while (iterns.le.nterup)
 
          call navstv &
         !==========
-      ( nvar   , nscal  , iterns , icvrge ,                            &
+      ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
         isostd ,                                                       &
         dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
         tslagr , coefa  , coefb  , frcxt  ,                            &
@@ -1333,8 +1338,7 @@ do while (iterns.le.nterup)
       !       masse a la derniere iteration
       !     Sinon on traite le flux de masse a toutes les iterations
 
-      !     On teste le flux de masse de la phase 1 (toutes les phases sont
-      !     necessairement traitees de la meme facon, cf. VERINI)
+      !     On teste le flux de masse
       if( (istmpf.eq.0.and.inslst.eq.0) .or. istmpf.ne.0) then
         iappel = 3
         call schtmp &
@@ -1364,7 +1368,7 @@ if (nterup.gt.1) then
   deallocate(trava)
 endif
 
-! Calcul sur champ de vitesse fige SUITE (a cause de la boule U/P)
+! Calcul sur champ de vitesse fige SUITE (a cause de la boucle U/P)
 if (iccvfg.eq.0) then
 !===============
 

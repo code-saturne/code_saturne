@@ -65,9 +65,14 @@ module pointe
 
   ! coefau ! (3,nfabor)     ! explicit Boundary conditions for the velocity
   ! coefbu ! (3,3,nfabor)   ! implicit Boundary conditions for the velocity
+  ! cfaale ! (3,nfabor)     ! explicit Boundary conditions for the mesh velocity
+  ! cfbale ! (3,3,nfabor)   ! implicit Boundary conditions for the mesh velocity
 
   double precision, dimension(:,:), allocatable :: coefau, cofafu
   double precision, dimension(:,:,:), allocatable :: coefbu, cofbfu
+
+  double precision, dimension(:,:), allocatable :: cfaale
+  double precision, dimension(:,:,:), allocatable :: cfbale
 
   ! dudxy  ! (ncelet-ncel,3,3)   ! sauvegarde du gradient de la
   !        !                     ! vitesse en cas de rotation
@@ -194,6 +199,10 @@ contains
 
     if (iale.eq.1) then
       allocate(idfstr(nfabor))
+      if (ivelco.eq.1) then
+        allocate(cfaale(3,nfabor))
+        allocate(cfbale(3,3,nfabor))
+      endif
     endif
 
     ! Gradient calculation
@@ -279,6 +288,7 @@ contains
     deallocate(cocg, cocgb)
     if (allocated(cocgu)) deallocate(cocgu)
     if (allocated(coefau)) deallocate(coefau, cofafu, coefbu, cofbfu)
+    if (allocated(cfaale)) deallocate(cfaale, cfbale)
     if (allocated(coci)) deallocate(coci, cocib)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)

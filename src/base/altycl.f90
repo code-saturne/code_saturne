@@ -323,8 +323,8 @@ do ifac = 1, nfabor
 !    modifiee par l'utilisateur, on ne fixe que la vitesse
 !    normale
       if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0 .and.              &
-           rcodcl(ifac,iv,1).gt.rinfin*0.5d0 .and.             &
-           rcodcl(ifac,iw,1).gt.rinfin*0.5d0) then
+          rcodcl(ifac,iv,1).gt.rinfin*0.5d0 .and.              &
+          rcodcl(ifac,iw,1).gt.rinfin*0.5d0) then
         rcodcl(ifac,iu,1) = rcodcl(ifac,iuma,1)
         rcodcl(ifac,iv,1) = rcodcl(ifac,ivma,1)
         rcodcl(ifac,iw,1) = rcodcl(ifac,iwma,1)
@@ -360,7 +360,7 @@ enddo
 !===============================================================================
 ! FORMATS
 !===============================================================================
-
+!TODO translate it in English
  1000 format(                                                           &
 '@                                                            ',/,&
 '@ METHODE ALE                                                ',/,&
@@ -428,7 +428,7 @@ enddo
 '@   DE MAILLAGE                                              ',/,&
 '@   (cf. message(s) ci-dessus)                               ',/,&
 '@                                                            ',/,&
-'@ Verifier usalcl.F                                          ',/,&
+'@ Verifier usalcl.f90                                        ',/,&
 '@                                                            '  )
 
 

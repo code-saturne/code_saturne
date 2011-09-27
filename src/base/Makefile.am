@@ -128,7 +128,9 @@ libcscore_la_LDFLAGS = -no-undefined
 
 libcsbase_la_SOURCES = \
 alelap.f90 \
+alelav.f90 \
 alemaj.f90 \
+alemav.f90 \
 altycl.f90 \
 calhyd.f90 \
 calmom.f90 \

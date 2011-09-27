@@ -1624,10 +1624,10 @@ if (iale.eq.1) then
            /distbf/srfbn2
     endif
 
-    do ii = 1, 3
-      if (ii.eq.1) ivar = iuma
-      if (ii.eq.2) ivar = ivma
-      if (ii.eq.3) ivar = iwma
+    do isou = 1, 3
+      if (isou.eq.1) ivar = iuma
+      if (isou.eq.2) ivar = ivma
+      if (isou.eq.3) ivar = iwma
       iclvar = iclrtp(ivar,icoef)
 
 !      C.L DE TYPE DIRICHLET
@@ -1647,6 +1647,15 @@ if (iale.eq.1) then
       elseif( icodcl(ifac,ivar).eq.3 ) then
         coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
         coefb(ifac,iclvar) = 1.d0
+      endif
+
+      ! Coupled solving of the velocity components
+      if (ivelco.eq.1) then
+        cfaale(isou,ifac) = coefa(ifac,iclvar)
+        do jsou = 1, 3
+          cfbale(isou,jsou,ifac) = 0.d0
+          if(isou.eq.jsou) cfbale(isou,jsou,ifac) = coefb(ifac,iclvar)
+        enddo
       endif
 
     enddo
@@ -1670,6 +1679,23 @@ if (iale.eq.1) then
       coefb(ifac,ivma) = 1.d0-rny**2
       coefa(ifac,iwma) = - rnz*(rnx*upx+rny*upy)
       coefb(ifac,iwma) = 1.d0-rnz**2
+      ! Coupled solving of the velocity components
+      if (ivelco.eq.1) then
+        cfaale(1,ifac) = 0.d0
+        cfaale(2,ifac) = 0.d0
+        cfaale(3,ifac) = 0.d0
+
+        cfbale(1,1,ifac) = 1.d0-rnx**2
+        cfbale(2,2,ifac) = 1.d0-rny**2
+        cfbale(3,3,ifac) = 1.d0-rnz**2
+
+        cfbale(1,2,ifac) = -rnx*rny
+        cfbale(2,1,ifac) = -rny*rnx
+        cfbale(1,3,ifac) = -rnx*rnz
+        cfbale(3,1,ifac) = -rnz*rnx
+        cfbale(2,3,ifac) = -rny*rnz
+        cfbale(3,2,ifac) = -rnz*rny
+      endif
     endif
 
   enddo

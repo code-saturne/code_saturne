@@ -81,7 +81,7 @@ subroutine usalcl &
 !         conditions')
 
 ! * ialtyb(ifac) = igliss : The mesh slides on corresponding face IFAC. The normal component of mesh
-!          viscosity is automatically set to 0. A homogeneous Neumann condition is automatically
+!          velocity is automatically set to 0. A homogeneous Neumann condition is automatically
 !          prescribed for the other components, as it's the case for 'Symmetry' fluid condition (Please
 !          note that homogeneous Neumann condition is only partially implicit in case of boudary face
 !          that is not aligned with axis).
@@ -151,7 +151,7 @@ subroutine usalcl &
 
 !      If the user decides to prescribe his own non-standard boundary conditions
 !      it will be necessary to assign values to icodcl AND to rcodcl for ALL
-!      mesh viscosity components. Thus, the user does not need to assign values
+!      mesh velocity components. Thus, the user does not need to assign values
 !      to IALTYB for each associated face, as it will not be taken into account
 !      in the code.
 
@@ -183,10 +183,10 @@ subroutine usalcl &
 !    taken into account)
 
 !  During mesh's geometry re-calculation at each time step, the position of the nodes, which
-!    displacement is fixed ( i.e. IMPALE=1), is not calculated using the value of mesh viscosity
+!    displacement is fixed ( i.e. IMPALE=1), is not calculated using the value of mesh velocity
 !    at the center of corresponding cell, but directly filled using the values of DEPALE.
 !  If the displacement is fixed for all nodes of a boundary face it's not necessary to
-!    prescribe boundary conditions at this face on mesh viscosity. ICODCL and RCODCL values will
+!    prescribe boundary conditions at this face on mesh velocity. ICODCL and RCODCL values will
 !    be overwritten :
 !    -> ICODCL is automatically set to 1 (Dirichlet)
 !    -> RCODCL value will be automatically set to face's mean mesh velocity value, that is

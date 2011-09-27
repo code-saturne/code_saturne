@@ -110,6 +110,46 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
                           cs_real_t        *disp_proj);
 
 /*----------------------------------------------------------------------------
+ * Projection on mesh vertices of the displacement (computed on cell center)
+ *
+ * Fortran Interface
+ *
+ * SUBROUTINE ALEDIS
+ * *****************
+ *
+ * INTEGER         IFACEL(2,NFAC)    : --> : Interior faces -> cells connectivity
+ * INTEGER         IFABOR(NFABOR)    : --> : Border faces -> cells connectivity
+ * INTEGER         IPNFAC(NFAC+1)    : --> : Interior faces -> vertices index
+ * INTEGER         NODFAC(LNDFAC)    : --> : Interior faces -> vertices list
+ * INTEGER         IPNFBR(NFABOR+1)  : --> : Border faces -> vertices index
+ * INTEGER         NODFBR(LNDFBR)    : --> : Border faces -> vertices list
+ * INTEGER         IALTYB(NFABOR)    : --> : Type of boundary for ALE
+ * DOUBLE PRECISION POND(NFAC)       : --> : Interior faces geometric weight
+ * DOUBLE PRECISION MESHV(3,NCELET)  : --> : Mesh velocity
+ * DOUBLE PRECISION GRADM(3,3,NCELET): --> : Mesh velocity gradient
+ * DOUBLE PRECISION CFAALE(3,NCELET) : --> : Boundary conditions A
+ * DOUBLE PRECISION CFBALE(3,3,NECLET: --> : Boundary conditions B
+ * DOUBLE PRECISION DT(NCELET)       : --> : Time step
+ * DOUBLE PRECISION DEPROJ(NNOD,3))  : <-- : Displacement projected on vertices
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
+                          const cs_int_t    b_face_cells[],
+                          const cs_int_t    i_face_vtx_idx[],
+                          const cs_int_t    i_face_vtx_lst[],
+                          const cs_int_t    b_face_vtx_idx[],
+                          const cs_int_t    b_face_vtx_lst[],
+                          const cs_int_t    ialtyb[],
+                          const cs_real_t   pond[],
+                          cs_real_t        *meshv,
+                          cs_real_t        *gradm,
+                          cs_real_t        *cfaale,
+                          cs_real_t        *cfbale,
+                          cs_real_t        *dt,
+                          cs_real_t        *disp_proj);
+
+/*----------------------------------------------------------------------------
  * Destroy the associated fvm_interface_set_t structure if necessary
  *
  * Fortran Interface

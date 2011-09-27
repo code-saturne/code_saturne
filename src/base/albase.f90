@@ -55,11 +55,12 @@ module albase
   !  impale : indicateur de deplacement impose
   !  xyzno0 : position initiale du maillage
   !  depale : deplacement du maillage
+  !  disala : mesh displacement of the previous time-step
   !  ialtyb : type de bord
 
   integer, allocatable, dimension(:) :: impale, ialtyb
 
-  double precision, allocatable, dimension(:,:) :: xyzno0, depale
+  double precision, allocatable, dimension(:,:) :: xyzno0, depale, disala
 
 contains
 
@@ -68,6 +69,7 @@ contains
   subroutine init_ale ( ncelet , ncel , nfac , nfabor , nnod )
 
     use cplsat
+    use optcal
 
     ! Arguments
 
@@ -80,7 +82,9 @@ contains
     if (iale.eq.1) then
       allocate(impale(nnod))
       allocate(ialtyb(nfabor))
+      !TODO make depale interleaved
       allocate(depale(nnod,3))
+      if (ivelco.eq.1) allocate(disala(3,nnod))
     endif
 
   end subroutine init_ale
@@ -98,6 +102,7 @@ contains
     if (iale.eq.1) then
       deallocate(impale)
       deallocate(depale)
+      if (allocated(disala)) deallocate(disala)
       deallocate(ialtyb)
     endif
 

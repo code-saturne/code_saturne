@@ -264,6 +264,258 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
 }
 
 /*----------------------------------------------------------------------------
+ * Projection on mesh vertices of the displacement (computed on cell center)
+ *
+ * Fortran Interface
+ *
+ * SUBROUTINE ALEDIS
+ * *****************
+ *
+ * INTEGER         IFACEL(2,NFAC)    : --> : Interior faces -> cells connectivity
+ * INTEGER         IFABOR(NFABOR)    : --> : Border faces -> cells connectivity
+ * INTEGER         IPNFAC(NFAC+1)    : --> : Interior faces -> vertices index
+ * INTEGER         NODFAC(LNDFAC)    : --> : Interior faces -> vertices list
+ * INTEGER         IPNFBR(NFABOR+1)  : --> : Border faces -> vertices index
+ * INTEGER         NODFBR(LNDFBR)    : --> : Border faces -> vertices list
+ * INTEGER         IALTYB(NFABOR)    : --> : Type of boundary for ALE
+ * DOUBLE PRECISION POND(NFAC)       : --> : Interior faces geometric weight
+ * DOUBLE PRECISION MESHV(3,NCELET)  : --> : Mesh velocity
+ * DOUBLE PRECISION GRADM(3,3,NCELET): --> : Mesh velocity gradient
+ * DOUBLE PRECISION CFAALE(3,NCELET) : --> : Boundary conditions A
+ * DOUBLE PRECISION CFBALE(3,3,NECLET: --> : Boundary conditions B
+ * DOUBLE PRECISION DT(NCELET)       : --> : Time step
+ * DOUBLE PRECISION DEPROJ(NNOD,3))  : <-- : Displacement projected on vertices
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
+                          const cs_int_t    b_face_cells[],
+                          const cs_int_t    i_face_vtx_idx[],
+                          const cs_int_t    i_face_vtx_lst[],
+                          const cs_int_t    b_face_vtx_idx[],
+                          const cs_int_t    b_face_vtx_lst[],
+                          const cs_int_t    ialtyb[],
+                          const cs_real_t   pond[],
+                          cs_real_t        *meshv,
+                          cs_real_t        *gradm,
+                          cs_real_t        *cfaale,
+                          cs_real_t        *cfbale,
+                          cs_real_t        *dt,
+                          cs_real_t        *disp_proj)
+{
+  cs_int_t  i, j, face_id, vtx_id, cell_id, cell_id1, cell_id2;
+
+  cs_real_t  *vtx_counter = NULL;
+  cs_real_t  pnd;
+
+  const cs_int_t  n_vertices = cs_glob_mesh->n_vertices;
+  const cs_int_t  n_cells = cs_glob_mesh->n_cells;
+  const cs_int_t  n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_int_t  n_i_faces = cs_glob_mesh->n_i_faces;
+  const cs_int_t  dim = cs_glob_mesh->dim;
+  const cs_real_t  *vtx_coord = cs_glob_mesh->vtx_coord;
+  const cs_real_t  *cell_cen = cs_glob_mesh_quantities->cell_cen;
+  const cs_real_t  *face_cen = cs_glob_mesh_quantities->b_face_cog;
+
+
+  if (cs_glob_mesh->global_vtx_num != NULL && _ale_interface == NULL)
+    _ale_interface
+      = fvm_interface_set_create(n_vertices,
+                                 NULL,
+                                 cs_glob_mesh->global_vtx_num,
+                                 NULL,
+                                 0,
+                                 NULL,
+                                 NULL,
+                                 NULL);
+
+  BFT_MALLOC(vtx_counter, n_vertices, cs_real_t);
+
+  for (vtx_id = 0; vtx_id < n_vertices; vtx_id++) {
+
+    vtx_counter[vtx_id] = 0.;
+
+    for (i = 0; i < dim; i++)
+      disp_proj[n_vertices*i + vtx_id] = 0.;
+
+  }
+
+  /* Interior face treatment */
+
+  for (face_id = 0; face_id < n_i_faces; face_id++) {
+
+    cell_id1 = i_face_cells[2*face_id] - 1;
+    cell_id2 = i_face_cells[2*face_id+1] - 1;
+
+    cs_real_t dvol1 = 1./cs_glob_mesh_quantities->cell_vol[cell_id1];
+    cs_real_t dvol2 = 1./cs_glob_mesh_quantities->cell_vol[cell_id2];
+
+    pnd = pond[face_id];
+
+    if (cell_id1 <= n_cells) { /* Test to take into account face only once */
+
+      for (j = i_face_vtx_idx[face_id]; j < i_face_vtx_idx[face_id+1]; j++) {
+
+        /* Get the vertex number */
+
+        vtx_id = i_face_vtx_lst[j-1] - 1;
+
+        /* Get the vector from the cell center to the node*/
+
+        cs_real_t cen1_node_x = -cell_cen[3*cell_id1]   + vtx_coord[3*vtx_id];
+        cs_real_t cen2_node_x = -cell_cen[3*cell_id2]   + vtx_coord[3*vtx_id];
+        cs_real_t cen1_node_y = -cell_cen[3*cell_id1+1] + vtx_coord[3*vtx_id+1];
+        cs_real_t cen2_node_y = -cell_cen[3*cell_id2+1] + vtx_coord[3*vtx_id+1];
+        cs_real_t cen1_node_z = -cell_cen[3*cell_id1+2] + vtx_coord[3*vtx_id+2];
+        cs_real_t cen2_node_z = -cell_cen[3*cell_id2+2] + vtx_coord[3*vtx_id+2];
+
+        disp_proj[vtx_id] +=
+          dvol1*dt[cell_id1]*(meshv[3*cell_id1] + gradm[9*cell_id1  ]*cen1_node_x
+                                                + gradm[9*cell_id1+3]*cen1_node_y
+                                                + gradm[9*cell_id1+6]*cen1_node_z)
+         +dvol2*dt[cell_id2]*(meshv[3*cell_id2] + gradm[9*cell_id2  ]*cen2_node_x
+                                                + gradm[9*cell_id2+3]*cen2_node_y
+                                                + gradm[9*cell_id2+6]*cen2_node_z);
+
+        disp_proj[vtx_id+n_vertices] +=
+          dvol1*dt[cell_id1]*(meshv[3*cell_id1+1] + gradm[9*cell_id1+1]*cen1_node_x
+                                                  + gradm[9*cell_id1+4]*cen1_node_y
+                                                  + gradm[9*cell_id1+7]*cen1_node_z)
+         +dvol2*dt[cell_id2]*(meshv[3*cell_id2+1] + gradm[9*cell_id2+1]*cen2_node_x
+                                                  + gradm[9*cell_id2+4]*cen2_node_y
+                                                  + gradm[9*cell_id2+7]*cen2_node_z);
+
+        disp_proj[vtx_id+2*n_vertices] +=
+          dvol1*dt[cell_id1]*(meshv[3*cell_id1+2] + gradm[9*cell_id1+2]*cen1_node_x
+                                                  + gradm[9*cell_id1+5]*cen1_node_y
+                                                  + gradm[9*cell_id1+8]*cen1_node_z)
+         +dvol2*dt[cell_id2]*(meshv[3*cell_id2+2] + gradm[9*cell_id2+2]*cen2_node_x
+                                                  + gradm[9*cell_id2+5]*cen2_node_y
+                                                  + gradm[9*cell_id2+8]*cen2_node_z);
+
+        vtx_counter[vtx_id] += dvol1+dvol2;
+
+      }
+
+    }
+
+  } /* End of loop on internal faces */
+
+  /* Border face treatment.
+     We reintialize vtx_counter on border faces in order to take into account
+     only border face contribution */
+
+  for (face_id = 0; face_id < n_b_faces; face_id++) {
+
+    /* If the boundary face is NOT a sliding face */
+
+    if (ialtyb[face_id] != 2) {
+
+      for (j = b_face_vtx_idx[face_id]; j < b_face_vtx_idx[face_id+1]; j++) {
+
+        vtx_id = b_face_vtx_lst[j-1] - 1;
+        vtx_counter[vtx_id] = 0.;
+
+        for (i = 0; i < dim; i++)
+          disp_proj[vtx_id+i*n_vertices]=0.;
+
+      }
+    }
+
+  } /* End of loop on border faces */
+
+  for (face_id = 0; face_id < n_b_faces; face_id++) {
+
+    cell_id = b_face_cells[face_id] - 1;
+
+    cs_real_t dsurf = 1./cs_glob_mesh_quantities->b_face_surf[face_id];
+
+    for (j = b_face_vtx_idx[face_id]; j < b_face_vtx_idx[face_id+1]; j++) {
+
+      vtx_id = b_face_vtx_lst[j-1] - 1;
+
+      /* If the boundary face is NOT a sliding face */
+
+      if (ialtyb[face_id] != 2) {
+
+        /* Get the vector from the face center to the node*/
+
+        cs_real_t face_node_x = -face_cen[3*face_id]   + vtx_coord[3*vtx_id];
+        cs_real_t face_node_y = -face_cen[3*face_id+1] + vtx_coord[3*vtx_id+1];
+        cs_real_t face_node_z = -face_cen[3*face_id+2] + vtx_coord[3*vtx_id+2];
+
+        cs_real_t vel_cen_x = meshv[3*cell_id];
+        cs_real_t vel_cen_y = meshv[3*cell_id+1];
+        cs_real_t vel_cen_z = meshv[3*cell_id+2];
+
+        /* 1st order extrapolation of the mesh velocity at the face center to the node */
+
+        cs_real_t vel_node_x = cfaale[3*face_id  ] + gradm[9*cell_id  ]*face_node_x
+                                                   + gradm[9*cell_id+3]*face_node_y
+                                                   + gradm[9*cell_id+6]*face_node_z;
+        cs_real_t vel_node_y = cfaale[3*face_id+1] + gradm[9*cell_id+1]*face_node_x
+                                                   + gradm[9*cell_id+4]*face_node_y
+                                                   + gradm[9*cell_id+7]*face_node_z;
+        cs_real_t vel_node_z = cfaale[3*face_id+2] + gradm[9*cell_id+2]*face_node_x
+                                                   + gradm[9*cell_id+5]*face_node_y
+                                                   + gradm[9*cell_id+8]*face_node_z;
+
+        disp_proj[vtx_id] += dsurf*
+          dt[cell_id]*(vel_node_x + cfbale[9*face_id  ]*vel_cen_x
+                                  + cfbale[9*face_id+1]*vel_cen_y
+                                  + cfbale[9*face_id+2]*vel_cen_z);
+
+        disp_proj[vtx_id + n_vertices] += dsurf*
+          dt[cell_id]*(vel_node_y + cfbale[9*face_id+3]*vel_cen_x
+                                  + cfbale[9*face_id+4]*vel_cen_y
+                                  + cfbale[9*face_id+5]*vel_cen_z);
+
+        disp_proj[vtx_id + 2*n_vertices] += dsurf*
+          dt[cell_id]*(vel_node_z + cfbale[9*face_id+6]*vel_cen_x
+                                  + cfbale[9*face_id+7]*vel_cen_y
+                                  + cfbale[9*face_id+8]*vel_cen_z);
+
+        vtx_counter[vtx_id] += dsurf;
+
+      }
+
+      /* If the boundary face IS a sliding face.
+         We project the displacment paralelly to the face. */
+
+      else {
+
+        cs_real_t tempox = cfbale[9*face_id  ]*disp_proj[vtx_id]
+                         + cfbale[9*face_id+1]*disp_proj[vtx_id + n_vertices]
+                         + cfbale[9*face_id+2]*disp_proj[vtx_id + 2*n_vertices];
+        cs_real_t tempoy = cfbale[9*face_id+3]*disp_proj[vtx_id]
+                         + cfbale[9*face_id+4]*disp_proj[vtx_id + n_vertices]
+                         + cfbale[9*face_id+5]*disp_proj[vtx_id + 2*n_vertices];
+        cs_real_t tempoz = cfbale[9*face_id+6]*disp_proj[vtx_id]
+                         + cfbale[9*face_id+7]*disp_proj[vtx_id + n_vertices]
+                         + cfbale[9*face_id+8]*disp_proj[vtx_id + 2*n_vertices];
+
+        disp_proj[vtx_id] = tempox;
+        disp_proj[vtx_id + n_vertices] = tempoy;
+        disp_proj[vtx_id + 2*n_vertices] = tempoz;
+
+      }
+    }
+
+  } /* End of loop on border faces */
+
+  if (cs_glob_mesh->global_vtx_num != NULL) {
+    cs_parall_interface_sr(_ale_interface, n_vertices, 3, disp_proj);
+    cs_parall_interface_sr(_ale_interface, n_vertices, 1, vtx_counter);
+  }
+
+  for (vtx_id = 0; vtx_id < n_vertices; vtx_id++)
+    for (i = 0; i < dim; i++)
+      disp_proj[vtx_id + i*n_vertices] /= vtx_counter[vtx_id];
+
+  BFT_FREE(vtx_counter);
+}
+
+/*----------------------------------------------------------------------------
  * Destroy if necessary the associated fvm_interface_set_t structure
  *
  * Fortran Interface

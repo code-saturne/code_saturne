@@ -28,7 +28,7 @@
 subroutine navstv &
 !================
 
- ( nvar   , nscal  , iterns , icvrge ,                            &
+ ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
    isostd ,                                                       &
    dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
    tslagr , coefa  , coefb  , frcxt  ,                            &
@@ -109,7 +109,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal  , iterns , icvrge
+integer          nvar   , nscal  , iterns , icvrge , itrale
 
 integer          isostd(nfabor+1)
 
@@ -129,7 +129,6 @@ integer          ii    , inod
 integer          isou, ivar, iitsm
 integer          iclipr, iclipf
 integer          icliup, iclivp, icliwp, init
-integer          icluma, iclvma, iclwma
 integer          iflmas, iflmab, ipcrom, ipbrom
 integer          iflms1, iflmb1, iflmb0
 integer          nswrgp, imligp, iwarnp
@@ -158,6 +157,7 @@ double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:,:) :: dfrcxt
 double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 double precision, allocatable, dimension(:) :: esflum, esflub
+double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
 
 double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
@@ -165,6 +165,7 @@ double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
 double precision, dimension(:,:), allocatable :: gradp
 double precision, dimension(:,:), allocatable :: vel
 double precision, dimension(:,:), allocatable :: vela
+double precision, dimension(:,:), allocatable :: mshvel
 double precision, dimension(:,:), allocatable :: tpucov
 
 !===============================================================================
@@ -200,6 +201,9 @@ endif
 if (ivisse.eq.1) then
   allocate(secvif(nfac),secvib(nfabor))
 endif
+
+! Allocate work for the ALE module
+if (iale.eq.1) allocate(mshvel(3,ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
@@ -340,6 +344,88 @@ if( iprco.le.0 ) then
    coefau , coefbu ,                                              &
    propfa(1,iflmas), propfb(1,iflmab)  )
 
+  ! In the ALE framework, we add the mesh velocity
+  if (iale.eq.1) then
+
+    do iel = 1, ncelet
+      mshvel(1,iel) = rtp(iel,iuma)
+      mshvel(2,iel) = rtp(iel,ivma)
+      mshvel(3,iel) = rtp(iel,iwma)
+    enddo
+
+    ! One temporary array needed for internal faces, in case some internal vertices
+    !  are moved directly by the user
+    allocate(intflx(nfac), bouflx(nfabor))
+
+    iflmas = ipprof(ifluma(iu))
+    iflmab = ipprob(ifluma(iu))
+    ipcrom = ipproc(irom)
+    ipbrom = ipprob(irom)
+
+    init   = 1
+    inc    = 1
+    iccocg = 1
+    iflmb0 = 1
+    nswrgp = nswrgr(iuma)
+    imligp = imligr(iuma)
+    iwarnp = iwarni(iuma)
+    epsrgp = epsrgr(iuma)
+    climgp = climgr(iuma)
+    extrap = extrag(iuma)
+
+    call inimav &
+    !==========
+  ( nvar   , nscal  ,                                              &
+    iu     ,                                                       &
+    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
+    iwarnp , nfecra ,                                              &
+    epsrgp , climgp , extrap ,                                     &
+    propce(1,ipcrom), propfb(1,ipbrom),                            &
+    mshvel ,                                                       &
+    cfaale , cfbale ,                                              &
+    intflx , bouflx )
+
+    ! Here we need of the opposite of the mesh velocity.
+    do ifac = 1, nfabor
+      propfb(ifac,iflmab) = propfb(ifac,iflmab) - bouflx(ifac)
+    enddo
+
+    do ifac = 1, nfac
+      iecrw = 0
+      ddepx = 0.d0
+      ddepy = 0.d0
+      ddepz = 0.d0
+      icpt  = 0
+      do ii = ipnfac(ifac),ipnfac(ifac+1)-1
+        inod = nodfac(ii)
+        if (impale(inod).eq.0) iecrw = iecrw + 1
+        icpt = icpt + 1
+        ddepx = ddepx + disala(1,inod) + xyzno0(1,inod)-xyznod(1,inod)
+        ddepy = ddepy + disala(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
+        ddepz = ddepz + disala(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
+      enddo
+      ! If all the face vertices have imposed displacement, w is evaluated from
+      !  this displacement
+!FIXME for me we should always do that:      if (iecrw.eq.0) then
+        iel1 = ifacel(1,ifac)
+        iel2 = ifacel(2,ifac)
+        dtfac = 0.5d0*(dt(iel1) + dt(iel2))
+        rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
+        propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(      &
+              ddepx*surfac(1,ifac)                                &
+             +ddepy*surfac(2,ifac)                                &
+             +ddepz*surfac(3,ifac) )/dtfac/icpt
+        ! Else w is calculated from the cell-centre mesh velocity
+!!      else
+!!        ! Here we need of the opposite of the mesh velocity.
+!!        propfa(ifac,iflmas) = propfa(ifac,iflmas) - intflx(ifac)
+!!      endif
+    enddo
+
+    ! Free memory
+    deallocate(intflx, bouflx)
+
+  endif
 
   ! Ajout de la vitesse du solide dans le flux convectif,
   ! si le maillage est mobile (solide rigide)
@@ -406,9 +492,27 @@ call resopv &
    drtp   , smbr   , rovsdt , tslagr ,                            &
    frchy  , dfrchy , trava  )
 
+!===============================================================================
+! 4.  RESOLUTION DE LA VITESSE DE MAILLAGE EN ALE
+!===============================================================================
+
+if (iale.eq.1) then
+
+  ! TODO Check the behaviour of ALE iterations
+  if (itrale.eq.0 .or. itrale.gt.nalinf) then
+
+    call alelav &
+    !==========
+  ( nvar   , nscal  ,                                              &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    coefa  , coefb  )
+
+  endif
+
+endif
 
 !===============================================================================
-! 4.  REACTUALISATION DU CHAMP DE VITESSE
+! 5.  REACTUALISATION DU CHAMP DE VITESSE
 !===============================================================================
 
 iclipr = iclrtp(ipr,icoef)
@@ -544,6 +648,124 @@ if( irevmc.eq.0 ) then
            + coefa(ifac,iclipf)
     enddo
   endif
+endif
+
+  ! In the ALE framework, we add the mesh velocity
+  if (iale.eq.1) then
+
+    do iel = 1, ncelet
+      mshvel(1,iel) = rtp(iel,iuma)
+      mshvel(2,iel) = rtp(iel,ivma)
+      mshvel(3,iel) = rtp(iel,iwma)
+    enddo
+
+    ! One temporary array needed for internal faces, in case some internal vertices
+    !  are moved directly by the user
+    allocate(intflx(nfac), bouflx(nfabor))
+
+    iflmas = ipprof(ifluma(iu))
+    iflmab = ipprob(ifluma(iu))
+    ipcrom = ipproc(irom)
+    ipbrom = ipprob(irom)
+
+    init   = 1
+    inc    = 1
+    iccocg = 1
+    iflmb0 = 1
+    nswrgp = nswrgr(iuma)
+    imligp = imligr(iuma)
+    iwarnp = iwarni(iuma)
+    epsrgp = epsrgr(iuma)
+    climgp = climgr(iuma)
+    extrap = extrag(iuma)
+
+    call inimav &
+    !==========
+  ( nvar   , nscal  ,                                              &
+    iu     ,                                                       &
+    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
+    iwarnp , nfecra ,                                              &
+    epsrgp , climgp , extrap ,                                     &
+    propce(1,ipcrom), propfb(1,ipbrom),                            &
+    mshvel ,                                                       &
+    cfaale , cfbale ,                                              &
+    intflx , bouflx )
+
+    ! Here we need of the opposite of the mesh velocity.
+    do ifac = 1, nfabor
+      propfb(ifac,iflmab) = propfb(ifac,iflmab) - bouflx(ifac)
+    enddo
+
+    do ifac = 1, nfac
+      iecrw = 0
+      ddepx = 0.d0
+      ddepy = 0.d0
+      ddepz = 0.d0
+      icpt  = 0
+      do ii = ipnfac(ifac),ipnfac(ifac+1)-1
+        inod = nodfac(ii)
+        if (impale(inod).eq.0) iecrw = iecrw + 1
+        icpt = icpt + 1
+        ddepx = ddepx + disala(1,inod) + xyzno0(1,inod)-xyznod(1,inod)
+        ddepy = ddepy + disala(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
+        ddepz = ddepz + disala(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
+      enddo
+      ! If all the face vertices have imposed displacement, w is evaluated from
+      !  this displacement
+!FIXME for me we should always do that:      if (iecrw.eq.0) then
+        iel1 = ifacel(1,ifac)
+        iel2 = ifacel(2,ifac)
+        dtfac = 0.5d0*(dt(iel1) + dt(iel2))
+        rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
+        propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(      &
+              ddepx*surfac(1,ifac)                                &
+             +ddepy*surfac(2,ifac)                                &
+             +ddepz*surfac(3,ifac) )/dtfac/icpt
+        ! Else w is calculated from the cell-centre mesh velocity
+!!      else
+!!        ! Here we need of the opposite of the mesh velocity.
+!!        propfa(ifac,iflmas) = propfa(ifac,iflmas) - intflx(ifac)
+!!      endif
+    enddo
+
+    ! Free memory
+    deallocate(intflx, bouflx)
+
+  endif
+
+!FIXME for me we should do that before predvv
+! Ajout de la vitesse du solide dans le flux convectif,
+! si le maillage est mobile (solide rigide)
+! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
+
+if (imobil.eq.1) then
+
+  iflmas = ipprof(ifluma(iu))
+  iflmab = ipprob(ifluma(iu))
+  ipcrom = ipproc(irom)
+  ipbrom = ipprob(irom)
+
+  do ifac = 1, nfac
+    iel1 = ifacel(1,ifac)
+    iel2 = ifacel(2,ifac)
+    dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
+    rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
+    vitbox = omegay*cdgfac(3,ifac) - omegaz*cdgfac(2,ifac)
+    vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
+    vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
+    propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(        &
+         vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboz*surfac(3,ifac) )
+  enddo
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    dtfac  = dt(iel)
+    rhofac = propfb(ifac,ipbrom)
+    vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
+    vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
+    vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
+    propfb(ifac,iflmab) = propfb(ifac,iflmab) - rhofac*(        &
+         vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboz*surfbo(3,ifac) )
+  enddo
 endif
 
 !===============================================================================
@@ -872,6 +1094,7 @@ deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
 deallocate(w7, w8, w9)
 if (allocated(w10)) deallocate(w10)
+if (allocated(mshvel)) deallocate(mshvel)
 if (allocated(secvif)) deallocate(secvif, secvib)
 
 ! Interleaved values of vel and vela
