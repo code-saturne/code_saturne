@@ -6,7 +6,7 @@
 
 import sys
 
-if sys.version_info[:2] < (2,3):
+if sys.version_info[:2] < (2,4):
     sys.stderr.write("This script needs Python 2.4 at least\n")
 
 import platform
@@ -356,8 +356,8 @@ class Setup:
             Package(name="NCS",
                     description="Code_Saturne Kernel",
                     package="ncs",
-                    version="2.0.2",
-                    archive="ncs-202.zip",
+                    version="2.0.3",
+                    archive="ncs-203.zip",
                     url=url_cs)
 
         p = self.packages['ncs']
@@ -443,7 +443,7 @@ class Setup:
 
 
     def read_setup(self):
-        
+
         #
         # setup file reading
         #
@@ -469,7 +469,7 @@ class Setup:
             if len(list) == 0: continue
 
             key = list[0]
-            
+
             if len(list) > 1:
                 if key == 'download': self.download = list[1]
                 elif key == 'prefix': self.prefix = list[1]
@@ -565,7 +565,7 @@ Check the setup file and some utilities presence.
                              "Please check your setup file.\n\n")
             sys.exit(1)
 
-        # Testing debug option
+        # Testing GUI option
         if self.disable_gui not in ['yes', 'no']:
             sys.stderr.write("\n*** Aborting installation:\n"
                              "\'disable_gui\' option in the setup file "
@@ -580,7 +580,7 @@ Check the setup file and some utilities presence.
                              "should be \'en\' or \'fr'.\n"
                              "Please check your setup file.\n\n")
             sys.exit(1)
-            
+
         # Testing prefix directory
         if self.prefix is not None and not os.path.isdir(self.prefix):
             sys.stderr.write("\n*** Aborting installation:\n"
@@ -674,7 +674,7 @@ Check the setup file and some utilities presence.
                              "Please check your setup file.\n\n"
                              % self.blas)
             sys.exit(1)
-            
+
         # Looking for Metis path probided by the user
         if self.metis is not None and not os.path.isdir(self.metis):
             sys.stderr.write("\n*** Aborting installation:\n"
@@ -683,7 +683,7 @@ Check the setup file and some utilities presence.
                              "Please check your setup file.\n\n"
                              % self.metis)
             sys.exit(1)
-            
+
         # Looking for Scotch path probided by the user
         if self.scotch is not None and not os.path.isdir(self.scotch):
             sys.stderr.write("\n*** Aborting installation:\n"
@@ -692,7 +692,7 @@ Check the setup file and some utilities presence.
                              "Please check your setup file.\n\n"
                              % self.scotch)
             sys.exit(1)
-            
+
         # Looking for SYRTHES path probided by the user
         if self.syrthes is not None and not os.path.isdir(self.syrthes):
             sys.stderr.write("\n*** Aborting installation:\n"
@@ -1142,7 +1142,7 @@ if __name__ == "__main__":
         """
         Installation of Code_Saturne
         ____________________________
-        
+
 The process will take several minutes.
 You can have a look at the log file meanwhile.
 """
@@ -1178,7 +1178,7 @@ Thank you for choosing Code_Saturne!
     setup.check_setup()
     setup.update_package_opts()
     setup.install()
-    
+
     setup.log_file.close()
 
     sys.stdout.write(finalize % {'cspath':os.path.join(setup.cs_prefix, 'bin')})
