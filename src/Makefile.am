@@ -77,7 +77,7 @@ $(top_srcdir)/src/turb/vorinc.f90
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
 
-$(top_srcdir)/src/base/albase.f90: cplsat.lo
+$(top_srcdir)/src/base/albase.f90: cplsat.lo optcal.lo
 $(top_srcdir)/src/base/alstru.f90: paramx.lo
 $(top_srcdir)/src/base/cplsat.f90: paramx.lo
 $(top_srcdir)/src/base/cstphy.f90: paramx.lo
