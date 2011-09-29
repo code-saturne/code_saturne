@@ -264,12 +264,9 @@ endif
 ! DIVU = DUDX + DVDY + DWDZ
 
 do iel = 1, ncel
-  tinssa(iel) = gradv(iel,2,1)**2 + gradv(iel,1,2)**2   &
-              + gradv(iel,3,1)**2 + gradv(iel,1,3)**2   &
-              + gradv(iel,3,2)**2 + gradv(iel,2,3)**2   &
-              - 2.d0*(gradv(iel,2,1)*gradv(iel,1,2))    &
-              - 2.d0*(gradv(iel,3,1)*gradv(iel,1,3))    &
-              - 2.d0*(gradv(iel,3,2)*gradv(iel,2,3))
+  tinssa(iel) = (gradv(iel,2,1) - gradv(iel,1,2))**2   &
+              + (gradv(iel,3,1) - gradv(iel,1,3))**2   &
+              + (gradv(iel,3,2) - gradv(iel,2,3))**2
   divu(iel) = gradv(iel,1,1) + gradv(iel,2,2) + gradv(iel,3,3)
 enddo
 
@@ -409,7 +406,7 @@ do iel = 1, ncel
   chi3  = chi**3
   fv1   = chi3/(chi3 + cv13 )
   fv2   = 1.d0 - nusa /(nu0 + nusa*fv1)
-  taussa= sqrt(tinssa(iel)*0.5d0)+nusa/(xkappa*distbf)**2*fv2
+  taussa= max(sqrt(tinssa(iel)*0.5d0)+nusa/(xkappa*distbf)**2*fv2, epzero)
 
   ! Computation of fw
   rsa   = min( nusa/(taussa*(xkappa*distbf)**2),10.D0)
