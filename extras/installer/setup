@@ -51,9 +51,9 @@ mpiCompC
 disable_gui  no
 #
 #--------------------------------------------------------
-# Disable preprocessor
+# Disable frontend (also disables GUI)
 #--------------------------------------------------------
-disable_pre  no
+disable_frontend  no
 #
 #--------------------------------------------------------
 # Python is mandatory to launch the Graphical User

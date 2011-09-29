@@ -6,8 +6,8 @@
 
 import sys
 
-if sys.version_info[:2] < (2,3):
-    sys.stderr.write("This script needs Python 2.3 at least\n")
+if sys.version_info[:2] < (2,4):
+    sys.stderr.write("This script needs Python 2.4 at least\n")
 
 import platform
 
@@ -134,25 +134,54 @@ class Package:
 
     def extract(self):
 
-        import tarfile
+        if self.archive[-4:] == '.zip':
 
-        if not tarfile.is_tarfile(self.archive):
-            sys.stderr.write("%s is not a tar archive\n" % self.archive)
-            sys.exit(1)
+            import zipfile
 
-        tar = tarfile.open(self.archive)
+            if not zipfile.is_zipfile(self.archive):
+                sys.stderr.write("%s is not a zip archive\n" % self.archive)
+                sys.exit(1)
 
-        first_member = tar.next()
-        relative_source_dir = first_member.name.split(os.path.sep)[0]
-        self.source_dir = os.path.abspath(relative_source_dir)
+            zip = zipfile.ZipFile(self.archive)
 
-        try:
-            tar.extractall()
-        except AttributeError:
-            for tarinfo in tar:
-                tar.extract(tarinfo)
+            relative_source_dir = zip.namelist()[0].split(os.path.sep)[0]
+            self.source_dir = os.path.abspath(relative_source_dir)
 
-        tar.close()
+            zip.close()
+
+            # Use external unzip command so as to keep file properties
+
+            p = subprocess.Popen('unzip ' + self.archive,
+                                 shell=True,
+                                 stdout=sys.stdout,
+                                 stderr=sys.stderr)
+            output = p.communicate()
+
+            if p.returncode != 0:
+                sys.stderr.write("Error unzipping file " + self.archive + ".\n")
+                sys.exit(1)
+
+        else:
+
+            import tarfile
+
+            if not tarfile.is_tarfile(self.archive):
+                sys.stderr.write("%s is not a tar archive\n" % self.archive)
+                sys.exit(1)
+
+            tar = tarfile.open(self.archive)
+
+            first_member = tar.next()
+            relative_source_dir = first_member.name.split(os.path.sep)[0]
+            self.source_dir = os.path.abspath(relative_source_dir)
+
+            try:
+                tar.extractall()
+            except AttributeError:
+                for tarinfo in tar:
+                    tar.extract(tarinfo)
+
+            tar.close()
 
 
     def install(self):
@@ -220,7 +249,7 @@ class Setup:
         self.optlibs = ['cgns', 'hdf5', 'med', 'mpi', 'libxml2']
 
         # Code_Saturne version
-        self.version = '2.1-alpha1'
+        self.version = '2.1.0'
 
         # Logging file
         self.log_file = sys.stdout
@@ -242,8 +271,8 @@ class Setup:
         # Disable GUI
         self.disable_gui = 'no'
 
-        # Disable preprocessor
-        self.disable_pre = 'no'
+        # Disable frontend
+        self.disable_frontend = 'no'
 
         # Python interpreter path
         self.python = None
@@ -270,16 +299,16 @@ class Setup:
         # Packages definition
         self.packages = {}
 
-        # Code_Saturne Kernel
+        # Code_Saturne
 
-        url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/918391265/569282765/%s"
+        url_cs = "http://innovation.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/code_saturne/Releases/%s"
 
         self.packages['code_saturne'] = \
             Package(name="Code_Saturne",
                     description="Code_Saturne CFD tool",
                     package="code_saturne",
-                    version="2.1-alpha1",
-                    archive="cs-21a1.tgz",
+                    version="2.1.0",
+                    archive="code_saturne-210.zip",
                     url=url_cs)
 
         p = self.packages['code_saturne']
@@ -293,9 +322,9 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgnslib",
-                    version="2.5.4",
-                    archive="cgnslib_2.5-4.tar.gz",
-                    url="http://sourceforge.net/projects/cgns/files/cgnslib_2.5/Release%%204/%s/download")
+                    version="2.5.5",
+                    archive="cgnslib_2.5-5.tar.gz",
+                    url="http://sourceforge.net/projects/cgns/files/cgnslib_2.5/Release%%205/%s/download")
 
         p = self.packages['cgns']
         p.config_opts = "--enable-64bit --enable-lfs"
@@ -308,9 +337,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.6.10",
-                    archive="hdf5-1.6.10.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/current16/src/%s")
+                    version="1.8.7",
+                    archive="hdf5-1.8.7.tar.gz",
+                    url="http://www.hdfgroup.org/ftp/HDF5/current/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -321,9 +350,9 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="2.3.6",
-                    archive="med-fichier_2.3.6.tar.gz",
-                    url="http://files.opencascade.com/Salome/Salome5.1.3/%s")
+                    version="3.0.3",
+                    archive="med-3.0.3.tar.gz",
+                    url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
         p.config_opts = "--with-med_int=int"
@@ -334,8 +363,8 @@ class Setup:
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.4.2",
-                    archive="openmpi-1.4.2.tar.gz",
+                    version="1.4.3",
+                    archive="openmpi-1.4.3.tar.gz",
                     url="http://www.open-mpi.org/software/ompi/v1.4/downloads/%s")
 
         # Libxml2 library (official url "ftp://xmlsoft.org/libxml2/%s")
@@ -392,7 +421,7 @@ class Setup:
                 elif key == 'compF': self.fc = list[1]
                 elif key == 'mpiCompC': self.mpicc = list[1]
                 elif key == 'disable_gui': self.disable_gui = list[1]
-                elif key == 'disable_pre': self.disable_pre = list[1]
+                elif key == 'disable_frontend': self.disable_frontend = list[1]
                 elif key == 'python': self.python = list[1]
                 elif key == 'blas': self.blas = list[1]
                 elif key == 'metis': self.metis = list[1]
@@ -477,10 +506,10 @@ Check the setup file and some utilities presence.
                              "Please check your setup file.\n\n")
             sys.exit(1)
 
-        # Testing preprocessor option
-        if self.disable_pre not in ['yes', 'no']:
+        # Testing frontend option
+        if self.disable_frontend not in ['yes', 'no']:
             sys.stderr.write("\n*** Aborting installation:\n"
-                             "\'disable_pre\' option in the setup file "
+                             "\'disable_frontend\' option in the setup file "
                              "should be \'yes\' or \'no\'.\n"
                              "Please check your setup file.\n\n")
             sys.exit(1)
@@ -521,7 +550,7 @@ Check the setup file and some utilities presence.
                                      "Please check your setup file.\n\n"
                                      % compiler)
                     sys.exit(1)
-
+        
         # Looking for Python executable provided by the user
         python = 'python'
         if self.python is not None: python = self.python
@@ -690,10 +719,10 @@ Check the setup file and some utilities presence.
         if self.disable_gui == 'yes':
             config_opts = config_opts + " --disable-gui"
 
-        # Disable preprocessor
+        # Disable frontend
 
-        if self.disable_pre == 'yes':
-            config_opts = config_opts + " --disable-preprocessor"
+        if self.disable_frontend == 'yes':
+            config_opts = config_opts + " --disable-frontend"
 
         # CGNS
 
@@ -853,9 +882,9 @@ mpiCompC  %(mpicc)s
 disable_gui  %(disable_gui)s
 #
 #--------------------------------------------------------
-# Disable preprocessor
+# Disable frontend (also disables GUI)
 #--------------------------------------------------------
-disable_pre  %(disable_pre)s
+disable_frontend  %(disable_frontend)s
 #
 #--------------------------------------------------------
 # Python is mandatory to launch the Graphical User
@@ -969,7 +998,7 @@ syrthes   %(syrthes)s
                      'use_arch':self.use_arch, 'arch':self.arch,
                      'cc':self.cc, 'fc':self.fc, 'mpicc':self.mpicc,
                      'disable_gui':self.disable_gui,
-                     'disable_pre':self.disable_pre,
+                     'disable_frontend':self.disable_frontend,
                      'python':self.python, 'blas':self.blas,
                      'metis':self.metis, 'scotch': self.scotch,
                      'syrthes':self.syrthes })
