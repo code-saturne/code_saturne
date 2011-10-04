@@ -2295,6 +2295,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
 
 
   g->matrix = cs_matrix_create(g->matrix_struct);
+  cs_matrix_set_coefficients(g->matrix, symmetric, NULL, g->da, g->xa);
 
   return g;
 }
@@ -2480,28 +2481,22 @@ cs_grid_get_n_g_cells(const cs_grid_t  *g)
  * Get grid's associated matrix information.
  *
  * parameters:
- *   g           <-- Grid structure
- *   da          --> Diagonal matrix coefficients
- *   xa          --> Non-diagonal matrix coefficients
- *   m           --> Associated matrix structure
+ *   g <-- Grid structure
+ *
+ * returns:
+ *   pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
-void
-cs_grid_get_matrix(const cs_grid_t   *g,
-                   const cs_real_t  **da,
-                   const cs_real_t  **xa,
-                   cs_matrix_t      **m)
+const cs_matrix_t *
+cs_grid_get_matrix(const cs_grid_t  *g)
 {
+  const cs_matrix_t *m = NULL;
+
   assert(g != NULL);
 
-  if (da != NULL)
-    *da = g->da;
+  m = g->matrix;
 
-  if (xa != NULL)
-    *xa = g->xa;
-
-  if (m != NULL)
-    *m = g->matrix;
+  return m;
 }
 
 #if defined(HAVE_MPI)
@@ -2783,6 +2778,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
                                                 NULL);
 
   c->matrix = cs_matrix_create(c->matrix_struct);
+  cs_matrix_set_coefficients(c->matrix, c->symmetric, NULL, c->da, c->xa);
 
   /* Return new (coarse) grid */
 

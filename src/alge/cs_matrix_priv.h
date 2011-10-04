@@ -70,8 +70,8 @@ typedef void
 (cs_matrix_release_coeffs_t) (cs_matrix_t  *matrix);
 
 typedef void
-(cs_matrix_get_diagonal_t) (const cs_matrix_t  *matrix,
-                            cs_real_t          *restrict da);
+(cs_matrix_copy_diagonal_t) (const cs_matrix_t  *matrix,
+                             cs_real_t          *restrict da);
 
 typedef void
 (cs_matrix_vector_product_t) (bool                exclude_diag,
@@ -163,6 +163,13 @@ typedef struct _cs_matrix_coeff_csr_t {
 
   cs_real_t        *x_prefetch;       /* Prefetch array for x in y = Ax */
 
+  /* Pointers to auxiliary arrays used for queries */
+
+  const cs_real_t  *d_val;            /* Pointer to diagonal matrix
+                                         coefficients, if queried */
+  cs_real_t        *_d_val;           /* Diagonal matrix coefficients,
+                                         if queried */
+
 } cs_matrix_coeff_csr_t;
 
 /* CSR_SYM (Symmetric Compressed Sparse Row) matrix structure representation */
@@ -195,6 +202,13 @@ typedef struct _cs_matrix_struct_csr_sym_t {
 typedef struct _cs_matrix_coeff_csr_sym_t {
 
   cs_real_t        *val;              /* Matrix coefficients */
+
+  /* Pointers to auxiliary arrays used for queries */
+
+  const cs_real_t  *d_val;            /* Pointer to diagonal matrix
+                                         coefficients, if queried */
+  cs_real_t        *_d_val;           /* Diagonal matrix coefficients,
+                                         if queried */
 
 } cs_matrix_coeff_csr_sym_t;
 
@@ -308,7 +322,7 @@ struct _cs_matrix_t {
 
   cs_matrix_set_coeffs_t            *set_coefficients;
   cs_matrix_release_coeffs_t        *release_coefficients;
-  cs_matrix_get_diagonal_t          *get_diagonal;
+  cs_matrix_copy_diagonal_t         *copy_diagonal;
 
   /* Function pointer arrays, with 4 variants:
      block_flag*2 + exclude_diagonal_flag */

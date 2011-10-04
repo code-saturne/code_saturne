@@ -127,7 +127,7 @@ if (ibsize.gt.1) ilved = 1
 
 ! Resolution
 
-if( imgrp.eq.1 ) then
+if (imgrp.eq.1) then
 
   iresds = ireslp
   iresas = ireslp
@@ -138,10 +138,10 @@ if( imgrp.eq.1 ) then
   call resmgr                                                     &
   !==========
  ( cnom   , lnom   , ncelet , ncel   , nfac   ,                   &
-   isym   , iresds , iresas , ireslp , ipol   ,                   &
+   iresds , iresas , ireslp , ipol   ,                            &
    ncymxp , nitmds , nitmas , nitmap , iinvpe ,                   &
    iwarnp , icycle , niterf , epsilp , rnorm  , residu ,          &
-   ifacel , smbrp  , vx     )
+   smbrp  , vx     )
 
 elseif(imgrp.eq.0) then
 

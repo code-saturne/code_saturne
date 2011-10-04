@@ -353,7 +353,10 @@ void
 cs_matrix_release_coefficients(cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
- * Get matrix diagonal values.
+ * Copy matrix diagonal values.
+ *
+ * In case of matrixes with block diagonal coefficients, only the true
+ * diagonal values are copied.
  *
  * parameters:
  *   matrix --> Pointer to matrix structure
@@ -361,8 +364,24 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix);
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_get_diagonal(const cs_matrix_t  *matrix,
-                       cs_real_t          *restrict da);
+cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
+                        cs_real_t          *restrict da);
+
+/*----------------------------------------------------------------------------
+ * Get matrix diagonal values.
+ *
+ * In case of matrixes with block diagonal coefficients, a pointer to
+ * the complete block diagonal is returned.
+ *
+ * parameters:
+ *   matrix --> Pointer to matrix structure
+ *
+ * returns:
+ *   pointer to matrix diagonal array
+ *----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_matrix_get_diagonal(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
  * Matrix.vector product y = A.x

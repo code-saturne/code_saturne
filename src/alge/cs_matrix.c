@@ -721,7 +721,7 @@ _release_coeffs_native(cs_matrix_t  *matrix)
 }
 
 /*----------------------------------------------------------------------------
- * Get diagonal of native or MSR matrix.
+ * Copy diagonal of native or MSR matrix.
  *
  * parameters:
  *   matrix <-- Pointer to matrix structure
@@ -729,8 +729,8 @@ _release_coeffs_native(cs_matrix_t  *matrix)
  *----------------------------------------------------------------------------*/
 
 static void
-_get_diagonal_separate(const cs_matrix_t  *matrix,
-                       cs_real_t          *restrict da)
+_copy_diagonal_separate(const cs_matrix_t  *matrix,
+                        cs_real_t          *restrict da)
 {
   cs_lnum_t  ii, jj;
   const cs_real_t *_da;
@@ -1627,6 +1627,9 @@ _create_coeff_csr(void)
 
   mc->x_prefetch = NULL;
 
+  mc->d_val = NULL;
+  mc->_d_val = NULL;
+
   return mc;
 }
 
@@ -1649,6 +1652,9 @@ _destroy_coeff_csr(cs_matrix_coeff_csr_t **coeff)
 
     if (mc->x_prefetch != NULL)
       BFT_FREE(mc->x_prefetch);
+
+    if (mc->_d_val != NULL)
+      BFT_FREE(mc->_d_val);
 
     BFT_FREE(*coeff);
 
@@ -1871,7 +1877,6 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
   if (ms->direct_assembly == false) {
     cs_lnum_t val_size = ms->row_index[ms->n_rows];
     for (ii = 0; ii < val_size; ii++)
-
       mc->val[ii] = 0.0;
   }
 
@@ -1906,6 +1911,10 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
     }
 
   }
+
+  /* Mark diagonal values as not queried (mc->_d_val not changed) */
+
+  mc->d_val = NULL;
 
   /* Copy extra-diagonal values */
 
@@ -1949,11 +1958,14 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
 static void
 _release_coeffs_csr(cs_matrix_t  *matrix)
 {
+  cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+  if (mc != NULL)
+    mc->d_val = NULL;
   return;
 }
 
 /*----------------------------------------------------------------------------
- * Get diagonal of CSR matrix.
+ * Copy diagonal of CSR matrix.
  *
  * parameters:
  *   matrix <-- Pointer to matrix structure
@@ -1961,8 +1973,8 @@ _release_coeffs_csr(cs_matrix_t  *matrix)
  *----------------------------------------------------------------------------*/
 
 static void
-_get_diagonal_csr(const cs_matrix_t  *matrix,
-                  cs_real_t          *restrict da)
+_copy_diagonal_csr(const cs_matrix_t  *matrix,
+                   cs_real_t          *restrict da)
 {
   cs_lnum_t  ii, jj;
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
@@ -2382,6 +2394,9 @@ _create_coeff_csr_sym(void)
 
   mc->val = NULL;
 
+  mc->d_val = NULL;
+  mc->_d_val = NULL;
+
   return mc;
 }
 
@@ -2401,6 +2416,9 @@ _destroy_coeff_csr_sym(cs_matrix_coeff_csr_sym_t  **coeff)
 
     if (mc->val != NULL)
       BFT_FREE(mc->val);
+
+    if (mc->_d_val != NULL)
+      BFT_FREE(mc->_d_val);
 
     BFT_FREE(*coeff);
 
@@ -2598,11 +2616,14 @@ _set_coeffs_csr_sym(cs_matrix_t      *matrix,
 static void
 _release_coeffs_csr_sym(cs_matrix_t  *matrix)
 {
+  cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
+  if (mc != NULL)
+    mc->d_val = NULL;
   return;
 }
 
 /*----------------------------------------------------------------------------
- * Get diagonal of symmetric CSR matrix.
+ * Copy diagonal of symmetric CSR matrix.
  *
  * parameters:
  *   matrix <-- Pointer to matrix structure
@@ -2610,8 +2631,8 @@ _release_coeffs_csr_sym(cs_matrix_t  *matrix)
  *----------------------------------------------------------------------------*/
 
 static void
-_get_diagonal_csr_sym(const cs_matrix_t  *matrix,
-                      cs_real_t          *restrict da)
+_copy_diagonal_csr_sym(const cs_matrix_t  *matrix,
+                       cs_real_t          *restrict da)
 {
   cs_lnum_t  ii;
   const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
@@ -5191,7 +5212,7 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
 
     m->set_coefficients = _set_coeffs_native;
     m->release_coefficients = _release_coeffs_native;
-    m->get_diagonal = _get_diagonal_separate;
+    m->copy_diagonal = _copy_diagonal_separate;
     m->vector_multiply[0] = _mat_vec_p_l_native;
     m->vector_multiply[2] = _b_mat_vec_p_l_native;
 
@@ -5220,7 +5241,7 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
   case CS_MATRIX_CSR:
     m->set_coefficients = _set_coeffs_csr;
     m->release_coefficients = _release_coeffs_csr;
-    m->get_diagonal = _get_diagonal_csr;
+    m->copy_diagonal = _copy_diagonal_csr;
     if (m->loop_length > 0 && cs_glob_n_threads == 1) {
       m->vector_multiply[0] = _mat_vec_p_l_csr_pf;
     }
@@ -5232,14 +5253,14 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
   case CS_MATRIX_CSR_SYM:
     m->set_coefficients = _set_coeffs_csr_sym;
     m->release_coefficients = _release_coeffs_csr_sym;
-    m->get_diagonal = _get_diagonal_csr_sym;
+    m->copy_diagonal = _copy_diagonal_csr_sym;
     m->vector_multiply[0] = _mat_vec_p_l_csr_sym;
     break;
 
   case CS_MATRIX_MSR:
     m->set_coefficients = _set_coeffs_msr;
     m->release_coefficients = _release_coeffs_msr;
-    m->get_diagonal = _get_diagonal_separate;
+    m->copy_diagonal = _copy_diagonal_separate;
     if (m->loop_length > 0 && cs_glob_n_threads == 1) {
       m->vector_multiply[0] = _mat_vec_p_l_msr_pf;
     }
@@ -5251,7 +5272,7 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
   case CS_MATRIX_MSR_SYM:
     m->set_coefficients = _set_coeffs_msr_sym;
     m->release_coefficients = _release_coeffs_msr_sym;
-    m->get_diagonal = _get_diagonal_separate;
+    m->copy_diagonal = _copy_diagonal_separate;
     m->vector_multiply[0] = _mat_vec_p_l_msr_sym;
     break;
 
@@ -5576,7 +5597,10 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
 }
 
 /*----------------------------------------------------------------------------
- * Get matrix diagonal values.
+ * Copy matrix diagonal values.
+ *
+ * In case of matrixes with block diagonal coefficients, only the true
+ * diagonal values are copied.
  *
  * parameters:
  *   matrix <-- Pointer to matrix structure
@@ -5584,8 +5608,8 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_get_diagonal(const cs_matrix_t  *matrix,
-                       cs_real_t          *restrict da)
+cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
+                        cs_real_t          *restrict da)
 {
   /* Check API state */
 
@@ -5593,8 +5617,120 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix,
     bft_error(__FILE__, __LINE__, 0,
               _("The matrix is not defined."));
 
-  if (matrix->get_diagonal != NULL)
-    matrix->get_diagonal(matrix, da);
+  if (matrix->copy_diagonal != NULL)
+    matrix->copy_diagonal(matrix, da);
+}
+
+/*----------------------------------------------------------------------------
+ * Get matrix diagonal values.
+ *
+ * In case of matrixes with block diagonal coefficients, a pointer to
+ * the complete block diagonal is returned.
+ *
+ * parameters:
+ *   matrix --> Pointer to matrix structure
+ *
+ * returns:
+ *   pointer to matrix diagonal array
+ *----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
+{
+  cs_lnum_t ii;
+
+  const cs_real_t  *diag = NULL;
+
+  switch(matrix->type) {
+
+  case CS_MATRIX_NATIVE:
+    {
+      cs_matrix_coeff_native_t *mc = matrix->coeffs;
+      if (mc->da == NULL) {
+        cs_lnum_t n_rows = matrix->n_cells * matrix->b_size[3];
+        if (mc->_da == NULL || mc->max_block_size < matrix->b_size[3]) {
+          BFT_REALLOC(mc->_da, matrix->b_size[3]*matrix->n_cells, cs_real_t);
+          mc->max_block_size = matrix->b_size[3];
+        }
+#       pragma omp parallel for
+        for (ii = 0; ii < n_rows; ii++)
+          mc->_da[ii] = 0.0;
+        mc->da = mc->_da;
+      }
+      diag = mc->da;
+    }
+    break;
+
+  case CS_MATRIX_CSR:
+    {
+      cs_matrix_coeff_csr_t *mc = matrix->coeffs;
+      assert(matrix->b_size[3] == 1);
+      if (mc->_d_val == NULL)
+        BFT_MALLOC(mc->_d_val, matrix->n_cells, cs_real_t);
+      if (mc->d_val == NULL) {
+        cs_matrix_copy_diagonal(matrix, mc->_d_val);
+        mc->d_val = mc->_d_val;
+      }
+      diag = mc->d_val;
+    }
+    break;
+
+  case CS_MATRIX_CSR_SYM:
+    {
+      cs_matrix_coeff_csr_sym_t *mc = matrix->coeffs;
+      assert(matrix->b_size[3] == 1);
+      if (mc->_d_val == NULL)
+        BFT_MALLOC(mc->_d_val, matrix->n_cells, cs_real_t);
+      if (mc->d_val == NULL) {
+        cs_matrix_copy_diagonal(matrix, mc->_d_val);
+        mc->d_val = mc->_d_val;
+      }
+      diag = mc->d_val;
+    }
+    break;
+
+  case CS_MATRIX_MSR:
+    {
+      cs_matrix_coeff_msr_t *mc = matrix->coeffs;
+      if (mc->d_val == NULL) {
+        cs_lnum_t n_rows = matrix->n_cells * matrix->b_size[3];
+        if (mc->_d_val == NULL || mc->max_block_size < matrix->b_size[3]) {
+          BFT_REALLOC(mc->_d_val, matrix->b_size[3]*matrix->n_cells, cs_real_t);
+          mc->max_block_size = matrix->b_size[3];
+        }
+#       pragma omp parallel for
+        for (ii = 0; ii < n_rows; ii++)
+          mc->_d_val[ii] = 0.0;
+        mc->d_val = mc->_d_val;
+      }
+      diag = mc->d_val;
+    }
+    break;
+
+  case CS_MATRIX_MSR_SYM:
+    {
+      cs_matrix_coeff_msr_sym_t *mc = matrix->coeffs;
+      if (mc->d_val == NULL) {
+        cs_lnum_t n_rows = matrix->n_cells * matrix->b_size[3];
+        if (mc->_d_val == NULL || mc->max_block_size < matrix->b_size[3]) {
+          BFT_REALLOC(mc->_d_val, matrix->b_size[3]*matrix->n_cells, cs_real_t);
+          mc->max_block_size = matrix->b_size[3];
+        }
+#       pragma omp parallel for
+        for (ii = 0; ii < n_rows; ii++)
+          mc->_d_val[ii] = 0.0;
+        mc->d_val = mc->_d_val;
+      }
+      diag = mc->d_val;
+    }
+    break;
+
+  default:
+    assert(0);
+    break;
+  }
+
+  return diag;
 }
 
 /*----------------------------------------------------------------------------

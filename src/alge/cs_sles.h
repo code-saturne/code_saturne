@@ -171,24 +171,12 @@ cs_sles_needs_solving(const char        *var_name,
 /*----------------------------------------------------------------------------
  * General sparse linear system resolution.
  *
- * Note that in most cases (if the right-hand side is not already zero
- * within convergence criteria), coefficients are assigned to matrixes
- * then released by this function, so coefficients need not be assigned
- * prior to this call, and will have been released upon returning.
- *
- * Diagonal block sizes are defined by an optional array of 4 values:
- *   0: useful block size, 1: vector block extents,
- *   2: matrix line extents,  3: matrix line*column extents
- *
  * parameters:
  *   var_name          <-- Variable name
  *   solver_type       <-- Type of solver (PCG, Jacobi, ...)
  *   update_stats      <-- Automatic solver statistics indicator
  *   symmetric         <-- Symmetric coefficients indicator
- *   diag_block_size   <-- Block size of element ii,ii
- *   ad_coeffs         <-- Diagonal coefficients of linear equation matrix
- *   ax_coeffs         <-- Non-diagonal coefficients of linear equation matrix
- *   a                 <-> Matrix
+ *   a                 <-- Matrix
  *   poly_degree       <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode     <-- Halo update option for rotational periodicity
  *   verbosity         <-- Verbosity level
@@ -211,11 +199,7 @@ int
 cs_sles_solve(const char         *var_name,
               cs_sles_type_t      solver_type,
               bool                update_stats,
-              bool                symmetric,
-              const int          *diag_block_size,
-              const cs_real_t    *ad_coeffs,
-              const cs_real_t    *ax_coeffs,
-              cs_matrix_t        *a,
+              const cs_matrix_t  *a,
               int                 poly_degree,
               cs_perio_rota_t     rotation_mode,
               int                 verbosity,
@@ -233,27 +217,21 @@ cs_sles_solve(const char         *var_name,
  * Output default post-processing data for failed system convergence.
  *
  * parameters:
- *   var_name          <-- Variable name
- *   mesh_id           <-- id of error output mesh, or 0 if none
- *   symmetric         <-- indicates if matrix values are symmetric
- *   diag_block_size   <-- block size of element ii,ii
- *   rotation_mode     <-- Halo update option for rotational periodicity
- *   ad                <-- Diagonal part of linear equation matrix
- *   ax                <-- Non-diagonal part of linear equation matrix
- *   rhs               <-- Right hand side
- *   vx                <-> Current system solution
+ *   var_name         <-- Variable name
+ *   mesh_id          <-- id of error output mesh, or 0 if none
+ *   rotation_mode    <-- Halo update option for rotational periodicity
+ *   a                <-- Linear equation matrix
+ *   rhs              <-- Right hand side
+ *   vx               <-> Current system solution
  *----------------------------------------------------------------------------*/
 
 void
-cs_sles_post_error_output_def(const char       *var_name,
-                              int               mesh_id,
-                              bool              symmetric,
-                              int               diag_block_size,
-                              cs_perio_rota_t   rotation_mode,
-                              const cs_real_t  *ad,
-                              const cs_real_t  *ax,
-                              const cs_real_t  *rhs,
-                              cs_real_t        *vx);
+cs_sles_post_error_output_def(const char         *var_name,
+                              int                 mesh_id,
+                              cs_perio_rota_t     rotation_mode,
+                              const cs_matrix_t  *a,
+                              const cs_real_t    *rhs,
+                              cs_real_t          *vx);
 
 /*----------------------------------------------------------------------------
  * Output post-processing variable for failed system convergence.

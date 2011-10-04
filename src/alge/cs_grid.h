@@ -228,17 +228,14 @@ cs_grid_get_n_g_cells(const cs_grid_t  *g);
  * Get grid's associated matrix information.
  *
  * parameters:
- *   g           <-- Grid structure
- *   da          --> Diagonal matrix coefficients
- *   xa          --> Non-diagonal matrix coefficients
- *   m           --> Associated matrix structure
+ *   g <-- Grid structure
+ *
+ * returns:
+ *   pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
-void
-cs_grid_get_matrix(const cs_grid_t  *g,
-                   const cs_real_t  **da,
-                   const cs_real_t  **xa,
-                   cs_matrix_t      **m);
+const cs_matrix_t *
+cs_grid_get_matrix(const cs_grid_t  *g);
 
 #if defined(HAVE_MPI)
 

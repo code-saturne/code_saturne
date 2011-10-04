@@ -104,8 +104,6 @@ void CS_PROCF(resmgr, RESMGR)
  const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
  const cs_int_t   *ncel,      /* <-- Number of local cells */
  const cs_int_t   *nfac,      /* <-- Number of faces */
- const cs_int_t   *isym,      /* <-- Symmetry indicator:
-                                     1: symmetric; 2: not symmetric */
  const cs_int_t   *iresds,    /* <-- Descent smoother type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
  const cs_int_t   *iresas,    /* <-- Ascent smoother type:
@@ -128,7 +126,6 @@ void CS_PROCF(resmgr, RESMGR)
  const cs_real_t  *epsilp,    /* <-- Precision for iterative resolution */
  const cs_real_t  *rnorm,     /* <-- Residue normalization */
  cs_real_t        *residu,    /* --> Final non normalized residue */
- const cs_int_t   *ifacel,    /* <-- Face -> cell connectivity  */
  const cs_real_t  *rhs,       /* <-- System right-hand side */
  cs_real_t        *vx         /* <-> System solution */
 );
@@ -159,8 +156,7 @@ cs_multigrid_finalize(void);
  *   descent_smoother_type <-- Type of smoother for descent (PCG, Jacobi, ...)
  *   ascent_smoother_type  <-- Type of smoother for ascent (PCG, Jacobi, ...)
  *   coarse_solver_type    <-- Type of solver (PCG, Jacobi, ...)
- *   abort_on_divergence   <-- Call errorhandler if devergence is detected
- *   symmetric             <-- Symmetric coefficients indicator
+ *   abort_on_divergence   <-- Call errorhandler if divergence is detected
  *   poly_degree           <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode         <-- Halo update option for rotational periodicity
  *   verbosity             <-- Verbosity level
@@ -189,7 +185,6 @@ cs_multigrid_solve(const char         *var_name,
                    cs_sles_type_t      ascent_smoother_type,
                    cs_sles_type_t      coarse_solver_type,
                    bool                abort_on_divergence,
-                   bool                symmetric,
                    int                 poly_degree,
                    cs_perio_rota_t     rotation_mode,
                    int                 verbosity,

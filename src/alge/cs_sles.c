@@ -62,6 +62,7 @@
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_matrix.h"
+#include "cs_matrix_util.h"
 #include "cs_perio.h"
 #include "cs_post.h"
 #include "cs_timer.h"
@@ -876,7 +877,7 @@ _conjugate_gradient(const char             *var_name,
       wk = NULL;
   }
 
-  cs_matrix_get_diagonal(a, ad_inv);
+  cs_matrix_copy_diagonal(a, ad_inv);
 
   /* Initialize arrays */
 
@@ -1091,7 +1092,7 @@ _conjugate_gradient_sr(const char             *var_name,
       wk = NULL;
   }
 
-  cs_matrix_get_diagonal(a, ad_inv);
+  cs_matrix_copy_diagonal(a, ad_inv);
 
   /* Initialize arrays */
 
@@ -1229,7 +1230,6 @@ _conjugate_gradient_sr(const char             *var_name,
  *
  * parameters:
  *   var_name      <-- Variable name
- *   ad            <-- Diagonal part of linear equation matrix
  *   a             <-- Linear equation matrix
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   convergence   <-- Convergence information structure
@@ -1245,7 +1245,6 @@ _conjugate_gradient_sr(const char             *var_name,
 
 static int
 _jacobi(const char             *var_name,
-        const cs_real_t        *restrict ad,
         const cs_matrix_t      *a,
         cs_perio_rota_t         rotation_mode,
         cs_sles_convergence_t  *convergence,
@@ -1260,6 +1259,7 @@ _jacobi(const char             *var_name,
   double  res2, residue;
   cs_real_t  *_aux_vectors;
   cs_real_t  *restrict ad_inv, *restrict rk;
+  const cs_real_t  *restrict ad;
 
   unsigned n_iter = 0;
 
@@ -1275,6 +1275,8 @@ _jacobi(const char             *var_name,
 
   n_cols = cs_matrix_get_n_columns(a);
   n_rows = cs_matrix_get_n_rows(a);
+
+  ad = cs_matrix_get_diagonal(a);
 
   /* Allocate work arrays */
 
@@ -1434,7 +1436,6 @@ _fw_and_bw_lu33(const cs_real_t     mat[],
  *
  * parameters:
  *   var_name      <-- Variable name
- *   ad            <-- Diagonal part of linear equation matrix
  *   a             <-- Linear equation matrix
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   convergence   <-- Convergence information structure
@@ -1450,7 +1451,6 @@ _fw_and_bw_lu33(const cs_real_t     mat[],
 
 static int
 _block_3_jacobi(const char             *var_name,
-                const cs_real_t        *restrict ad,
                 const cs_matrix_t      *a,
                 cs_perio_rota_t         rotation_mode,
                 cs_sles_convergence_t  *convergence,
@@ -1466,6 +1466,8 @@ _block_3_jacobi(const char             *var_name,
   cs_real_t  *_aux_vectors;
   cs_real_t  temp[3];
   cs_real_t  *restrict ad_inv, *restrict rk, *restrict vxx;
+  const cs_real_t  *restrict ad;
+
   unsigned n_iter = 0;
 
   /* Tell IBM compiler not to alias */
@@ -1481,6 +1483,8 @@ _block_3_jacobi(const char             *var_name,
   n_cols = cs_matrix_get_n_columns(a) * 3;
   n_blocks = cs_matrix_get_n_rows(a);
   n_rows = n_blocks * 3;
+
+  ad = cs_matrix_get_diagonal(a);
 
   /* Allocate work arrays */
 
@@ -1563,7 +1567,7 @@ _block_3_jacobi(const char             *var_name,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using preconditioned Bi-CGSTAB.
+ * Solution of (ad+ax).vx = Rhs using preconditioned Bi-CGSTAB.
  *
  * Parallel-optimized version, groups dot products, at the cost of
  * computation of the preconditionning for n+1 iterations instead of n.
@@ -1646,7 +1650,7 @@ _bi_cgstab(const char             *var_name,
 
   }
 
-  cs_matrix_get_diagonal(a, ad_inv);
+  cs_matrix_copy_diagonal(a, ad_inv);
 # pragma omp parallel for if(n_rows > THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     ad_inv[ii] = 1.0 / ad_inv[ii];
@@ -2043,7 +2047,7 @@ _gmres(const char             *var_name,
   for (ii = 0; ii < krylov_size*(krylov_size - 1); ii++)
     _h_matrix[ii] = 0.;
 
-  cs_matrix_get_diagonal(a, ad_inv);
+  cs_matrix_copy_diagonal(a, ad_inv);
 
 # pragma omp parallel for if(n_rows > THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
@@ -2301,175 +2305,31 @@ _value_type(size_t      n_vals,
  * Compute per-cell residual for Ax = b.
  *
  * parameters:
- *   symmetric        <-- indicates if matrix values are symmetric
- *   interleaved      <-- Indicates if matrix coefficients are interleaved
  *   diag_block_size  <-- Block sizes for diagonal
  *   rotation_mode    <-- Halo update option for rotational periodicity
- *   ad               <-- Diagonal part of linear equation matrix
- *   ax               <-- Non-diagonal part of linear equation matrix
+ *   a                <-- Linear equation matrix
  *   rhs              <-- Right hand side
  *   vx               <-> Current system solution
  *   res              --> Residual
  *----------------------------------------------------------------------------*/
 
 static void
-_cell_residual(bool             symmetric,
-               bool             interleaved,
-               const int       *diag_block_size,
-               cs_perio_rota_t  rotation_mode,
-               const cs_real_t  ad[],
-               const cs_real_t  ax[],
-               const cs_real_t  rhs[],
-               cs_real_t        vx[],
-               cs_real_t        res[])
+_cell_residual(const int          *diag_block_size,
+               cs_perio_rota_t     rotation_mode,
+               const cs_matrix_t  *a,
+               const cs_real_t     rhs[],
+               cs_real_t           vx[],
+               cs_real_t           res[])
 {
   cs_int_t ii;
 
   const cs_int_t n_vals = cs_glob_mesh->n_cells * diag_block_size[1];
-
-  cs_matrix_t *a = cs_glob_matrix_default;
-
-  if (interleaved || symmetric)
-    cs_matrix_set_coefficients(a, symmetric, diag_block_size, ad, ax);
-  else
-    cs_matrix_set_coefficients_ni(a, symmetric, ad, ax);
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, res);
 
 # pragma omp parallel for if(n_vals > THR_MIN)
   for (ii = 0; ii < n_vals; ii++)
     res[ii] = fabs(res[ii] - rhs[ii]);
-}
-
-/*----------------------------------------------------------------------------
- * Compute diagonal dominance metric.
- *
- * parameters:
- *   symmetric       <-- indicates if matrix values are symmetric
- *   interleaved     <-- Indicates if matrix coefficients are interleaved
- *   diag_block_size <-- Block sizes for diagonal
- *   ad              <-- Diagonal part of linear equation matrix
- *   ax              <-- Non-diagonal part of linear equation matrix
- *   dd              <-- Diagonal dominance (normalized)
- *----------------------------------------------------------------------------*/
-
-static void
-_diag_dominance(bool             symmetric,
-                bool             interleaved,
-                const int       *diag_block_size,
-                const cs_real_t  ad[],
-                const cs_real_t  ax[],
-                cs_real_t        dd[])
-{
-  cs_int_t ii, jj, kk, face_id;
-
-  const cs_int_t n_cells = cs_glob_mesh->n_cells;
-  const cs_int_t n_faces = cs_glob_mesh->n_i_faces;
-  const cs_int_t *face_cel = cs_glob_mesh->i_face_cells;
-  const cs_halo_t *halo = cs_glob_mesh->halo;
-
-  if (diag_block_size[3] == 1) {
-
-    /* Diagonal part of matrix.vector product */
-
-    for (ii = 0; ii < n_cells; ii++)
-      dd[ii] = fabs(ad[ii]);
-
-    if (halo != NULL)
-      cs_halo_sync_var(halo, CS_HALO_STANDARD, dd);
-
-    /* non-diagonal terms */
-
-    if (symmetric) {
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        ii = face_cel[2*face_id] -1;
-        jj = face_cel[2*face_id + 1] -1;
-        dd[ii] -= fabs(ax[face_id]);
-        dd[jj] -= fabs(ax[face_id]);
-      }
-    }
-    else if (interleaved) {
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        ii = face_cel[2*face_id] -1;
-        jj = face_cel[2*face_id + 1] -1;
-        dd[ii] -= fabs(ax[face_id*2]);
-        dd[jj] -= fabs(ax[face_id*2 + 1]);
-      }
-    }
-    else {
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        ii = face_cel[2*face_id] -1;
-        jj = face_cel[2*face_id + 1] -1;
-        dd[ii] -= fabs(ax[face_id]);
-        dd[jj] -= fabs(ax[face_id + n_faces]);
-      }
-    }
-
-#   pragma omp parallel if(n_cells > THR_MIN)
-    for (ii = 0; ii < n_cells; ii++) {
-      if (fabs(ad[ii]) > 1.e-18)
-        dd[ii] /= fabs(ad[ii]);
-    }
-
-  }
-
-  else { /* if diag_block_size[3] > 1 */
-
-    /* Diagonal part of matrix.vector product */
-
-    for (ii = 0; ii < n_cells; ii++) {
-      for (jj = 0; jj < diag_block_size[1]; jj++)
-        dd[ii*diag_block_size[1] + jj] = 0.0;
-      for (jj = 0; jj < diag_block_size[0]; jj++) {
-        for (kk = 0; kk < diag_block_size[0]; kk++) {
-          double sign = (jj == kk) ? 1. : -1.;
-          dd[ii*diag_block_size[1] + kk]
-            += sign*fabs(ax[ii*diag_block_size[3]
-                            + jj*diag_block_size[2] + kk]);
-        }
-      }
-    }
-
-    if (halo != NULL) {
-      cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, dd, diag_block_size[1]);
-      if (halo->n_transforms > 0 && diag_block_size[0] == 3)
-        cs_perio_sync_var_vect(halo, CS_HALO_STANDARD, dd, diag_block_size[1]);
-    }
-
-    /* non-diagonal terms */
-
-    if (symmetric) {
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        ii = face_cel[2*face_id] -1;
-        jj = face_cel[2*face_id + 1] -1;
-        for (kk = 0; kk < diag_block_size[0]; kk++) {
-          dd[ii*diag_block_size[1] + kk] -= fabs(ax[face_id]);
-          dd[jj*diag_block_size[1] + kk] -= fabs(ax[face_id]);
-        }
-      }
-    }
-    else {
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        ii = face_cel[2*face_id] -1;
-        jj = face_cel[2*face_id + 1] -1;
-        for (kk = 0; kk < diag_block_size[0]; kk++) {
-          dd[ii*diag_block_size[1] + kk] -= fabs(ax[face_id*2]);
-          dd[jj*diag_block_size[1] + kk] -= fabs(ax[face_id*2 + 1]);
-        }
-      }
-    }
-
-    for (ii = 0; ii < n_cells; ii++) {
-      for (jj = 0; jj < diag_block_size[0]; jj++) {
-        double _ax = fabs(ax[ii*diag_block_size[3]
-                             + jj*diag_block_size[2] + jj]);
-        if (fabs(_ax) > 1.e-18)
-          dd[ii*diag_block_size[1] + jj] /= _ax;
-      }
-    }
-
-  }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2488,9 +2348,7 @@ _diag_dominance(bool             symmetric,
  * parameters:
  *   var_name      <-- Variable name
  *   solver_type   <-- Type of solver (PCG, Jacobi, ...)
- *   ad_coeffs     <-- Diagonal coefficients of linear equation matrix
- *   ax_coeffs     <-- Non-diagonal coefficients of linear equation matrix
- *   a             <-> Matrix
+ *   a             <-- Matrix
  *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   verbosity     <-- Verbosity level
@@ -2512,9 +2370,7 @@ _diag_dominance(bool             symmetric,
 static int
 _solve_ni(const char         *var_name,
           cs_sles_type_t      solver_type,
-          const cs_real_t    *ad_coeffs,
-          const cs_real_t    *ax_coeffs,
-          cs_matrix_t        *a,
+          const cs_matrix_t  *a,
           int                 poly_degree,
           cs_perio_rota_t     rotation_mode,
           int                 verbosity,
@@ -2537,8 +2393,6 @@ _solve_ni(const char         *var_name,
 
   cs_sles_info_t *sles_info = NULL;
 
-  cs_matrix_t *_a = a;
-
   n_rows = cs_matrix_get_n_rows(a);
 
   t0 = cs_timer_time();
@@ -2558,14 +2412,6 @@ _solve_ni(const char         *var_name,
                             residue,
                             rhs) != 0) {
 
-    /* Set matrix coefficients */
-
-    if (solver_type == CS_SLES_JACOBI)
-      cs_matrix_set_coefficients_ni(_a, false, NULL, ax_coeffs);
-
-    else
-      cs_matrix_set_coefficients_ni(_a, false, ad_coeffs, ax_coeffs);
-
     /* Solve sparse linear system */
 
     _convergence_init(&convergence,
@@ -2581,7 +2427,7 @@ _solve_ni(const char         *var_name,
     case CS_SLES_PCG:
     case CS_SLES_PCG_SR:
       cvg = _conjugate_gradient(var_name,
-                                _a,
+                                a,
                                 1,
                                 poly_degree,
                                 rotation_mode,
@@ -2593,8 +2439,7 @@ _solve_ni(const char         *var_name,
       break;
     case CS_SLES_JACOBI:
       cvg = _jacobi(var_name,
-                    ad_coeffs,
-                    _a,
+                    a,
                     rotation_mode,
                     &convergence,
                     rhs,
@@ -2604,7 +2449,7 @@ _solve_ni(const char         *var_name,
       break;
     case CS_SLES_BICGSTAB:
       cvg = _bi_cgstab(var_name,
-                       _a,
+                       a,
                        1,
                        poly_degree,
                        rotation_mode,
@@ -2616,7 +2461,7 @@ _solve_ni(const char         *var_name,
       break;
     case CS_SLES_GMRES:
       cvg = _gmres(var_name,
-                   _a,
+                   a,
                    poly_degree,
                    rotation_mode,
                    &convergence,
@@ -2628,11 +2473,6 @@ _solve_ni(const char         *var_name,
     default:
       break;
     }
-
-    /* Release matrix coefficients */
-
-    if (_a != NULL)
-      cs_matrix_release_coefficients(_a);
 
     /* Update return values */
 
@@ -2660,124 +2500,6 @@ _solve_ni(const char         *var_name,
   cs_timer_counter_add_diff(&(sles_info->t_tot), &t0, &t1);
 
   return cvg;
-}
-
-/*----------------------------------------------------------------------------
- * Output default post-processing data for failed system convergence.
- *
- * parameters:
- *   var_name         <-- Variable name
- *   mesh_id          <-- id of error output mesh, or 0 if none
- *   symmetric        <-- indicates if matrix values are symmetric
- *   interleaved      <-- Indicates if matrix coefficients are interleaved
- *   diag_block_size  <-- Block size of element ii,ii
- *   rotation_mode    <-- Halo update option for rotational periodicity
- *   ad               <-- Diagonal part of linear equation matrix
- *   ax               <-- Non-diagonal part of linear equation matrix
- *   rhs              <-- Right hand side
- *   vx               <-> Current system solution
- *----------------------------------------------------------------------------*/
-
-static void
-_post_error_output_def(const char       *var_name,
-                       int               mesh_id,
-                       bool              symmetric,
-                       bool              interleaved,
-                       const int        *diag_block_size,
-                       cs_perio_rota_t   rotation_mode,
-                       const cs_real_t  *ad,
-                       const cs_real_t  *ax,
-                       const cs_real_t  *rhs,
-                       cs_real_t        *vx)
-{
-  if (mesh_id != 0) {
-
-    const cs_mesh_t *mesh = cs_glob_mesh;
-
-    char base_name[32], val_name[32];
-
-    int val_id;
-    const cs_int_t n_cells = mesh->n_cells;
-
-    cs_real_t *val;
-
-    BFT_MALLOC(val, mesh->n_cells_with_ghosts*diag_block_size[1], cs_real_t);
-
-    for (val_id = 0; val_id < 5; val_id++) {
-
-      switch(val_id) {
-
-      case 0:
-        strcpy(base_name, "Diag");
-        if (diag_block_size[1] == 1)
-          memcpy(val, ad, n_cells*sizeof(cs_real_t));
-        else {
-          cs_lnum_t ii, jj;
-          #pragma omp parallel for private(jj)
-          for (ii = 0; ii < mesh->n_cells; ii++) {
-            for (jj = 0; jj < diag_block_size[0]; jj++)
-              val[ii*diag_block_size[1] + jj]
-                = ad[ii*diag_block_size[3] + jj*diag_block_size[2] + jj];
-          }
-        }
-        break;
-
-      case 1:
-        strcpy(base_name, "RHS");
-        memcpy(val, rhs, n_cells*diag_block_size[1]*sizeof(cs_real_t));
-        break;
-
-      case 2:
-        strcpy(base_name, "X");
-        memcpy(val, vx, n_cells*diag_block_size[1]*sizeof(cs_real_t));
-        break;
-
-      case 3:
-        strcpy(base_name, "Residual");
-        _cell_residual(symmetric,
-                       interleaved,
-                       diag_block_size,
-                       rotation_mode,
-                       ad,
-                       ax,
-                       rhs,
-                       vx,
-                       val);
-        break;
-
-      case 4:
-        strcpy(base_name, "Diag_Dom");
-        _diag_dominance(symmetric,
-                        interleaved,
-                        diag_block_size,
-                        ad,
-                        ax,
-                        val);
-        break;
-
-      }
-
-      if (strlen(var_name) + strlen(base_name) < 31) {
-        strcpy(val_name, base_name);
-        strcat(val_name, "_");
-        strcat(val_name, var_name);
-      }
-      else {
-        strncpy(val_name, base_name, 31);
-        val_name[31] = '\0';
-      }
-
-      assert(diag_block_size[0] == diag_block_size[1]); /* for now */
-
-      cs_sles_post_error_output_var(val_name,
-                                    mesh_id,
-                                    diag_block_size[1],
-                                    val);
-    }
-
-    BFT_FREE(val);
-  }
-
 }
 
 /*============================================================================
@@ -2830,6 +2552,8 @@ void CS_PROCF(reslin, RESLIN)
   bool interleaved = (*ilved == 1) ? true : false;
   cs_perio_rota_t rotation_mode = CS_PERIO_ROTA_COPY;
 
+  cs_matrix_t *a = cs_glob_matrix_default;
+
   assert(*ncelet >= *ncel);
   assert(*nfac > 0);
   assert(ifacel != NULL);
@@ -2866,15 +2590,16 @@ void CS_PROCF(reslin, RESLIN)
     assert(0);
   }
 
-  if (interleaved || symmetric)
+  if (interleaved || symmetric) {
+    cs_matrix_set_coefficients(a,
+                               symmetric,
+                               diag_block_size,
+                               dam,
+                               xam);
     cvg = cs_sles_solve(var_name,
                         type,
                         true,
-                        symmetric,
-                        diag_block_size,
-                        dam,
-                        xam,
-                        cs_glob_matrix_default,
+                        a,
                         *ipol,
                         rotation_mode,
                         *iwarnp,
@@ -2887,12 +2612,12 @@ void CS_PROCF(reslin, RESLIN)
                         vx,
                         0,
                         NULL);
-  else
+  }
+  else {
+    cs_matrix_set_coefficients_ni(a, false, dam, xam);
     cvg = _solve_ni(var_name,
                     type,
-                    dam,
-                    xam,
-                    cs_glob_matrix_default,
+                    a,
                     *ipol,
                     rotation_mode,
                     *iwarnp,
@@ -2905,6 +2630,7 @@ void CS_PROCF(reslin, RESLIN)
                     vx,
                     0,
                     NULL);
+  }
 
   *niterf = n_iter;
 
@@ -2914,16 +2640,12 @@ void CS_PROCF(reslin, RESLIN)
 
     int mesh_id = cs_post_init_error_writer_cells();
 
-    _post_error_output_def(var_name,
-                           mesh_id,
-                           symmetric,
-                           interleaved,
-                           diag_block_size,
-                           rotation_mode,
-                           dam,
-                           xam,
-                           rhs,
-                           vx);
+    cs_sles_post_error_output_def(var_name,
+                                  mesh_id,
+                                  rotation_mode,
+                                  a,
+                                  rhs,
+                                  vx);
 
     cs_post_finalize();
 
@@ -2931,6 +2653,8 @@ void CS_PROCF(reslin, RESLIN)
               _("%s: error (divergence) solving for %s"),
               _(cs_sles_type_name[type]), var_name);
   }
+
+  cs_matrix_release_coefficients(a);
 
   cs_base_string_f_to_c_free(&var_name);
 }
@@ -3079,25 +2803,13 @@ cs_sles_needs_solving(const char        *var_name,
 /*----------------------------------------------------------------------------
  * General sparse linear system resolution.
  *
- * Note that in most cases (if the right-hand side is not already zero
- * within convergence criteria), coefficients are assigned to matrixes
- * then released by this function, so coefficients need not be assigned
- * prior to this call, and will have been released upon returning.
- *
- * Diagonal block sizes are defined by an optional array of 4 values:
- *   0: useful block size, 1: vector block extents,
- *   2: matrix line extents,  3: matrix line*column extents
- *
  * parameters:
  *   var_name          <-- Variable name
  *   solver_type       <-- Type of solver (PCG, Jacobi, ...)
  *   update_stats      <-- Automatic solver statistics indicator
  *   symmetric         <-- Symmetric coefficients indicator
  *   interleaved       <-- Indicates if matrix coefficients are interleaved
- *   diag_block_size   <-- Sizes of diagonal elements, or NULL
- *   ad_coeffs         <-- Diagonal coefficients of linear equation matrix
- *   ax_coeffs         <-- Non-diagonal coefficients of linear equation matrix
- *   a                 <-> Matrix
+ *   a                 <-- Matrix
  *   poly_degree       <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode     <-- Halo update option for rotational periodicity
  *   verbosity         <-- Verbosity level
@@ -3120,11 +2832,7 @@ int
 cs_sles_solve(const char         *var_name,
               cs_sles_type_t      solver_type,
               bool                update_stats,
-              bool                symmetric,
-              const int          *diag_block_size,
-              const cs_real_t    *ad_coeffs,
-              const cs_real_t    *ax_coeffs,
-              cs_matrix_t        *a,
+              const cs_matrix_t  *a,
               int                 poly_degree,
               cs_perio_rota_t     rotation_mode,
               int                 verbosity,
@@ -3148,7 +2856,7 @@ cs_sles_solve(const char         *var_name,
 
   cs_sles_info_t *sles_info = NULL;
 
-  cs_matrix_t *_a = a;
+  const int *diag_block_size = cs_matrix_get_diag_block_size(a);
 
   n_rows = cs_matrix_get_n_rows(a);
 
@@ -3176,22 +2884,6 @@ cs_sles_solve(const char         *var_name,
                             residue,
                             rhs) != 0) {
 
-    /* Set matrix coefficients */
-
-    if (solver_type == CS_SLES_JACOBI)
-      cs_matrix_set_coefficients(_a,
-                                 symmetric,
-                                 diag_block_size,
-                                 NULL,
-                                 ax_coeffs);
-
-    else
-      cs_matrix_set_coefficients(_a,
-                                 symmetric,
-                                 diag_block_size,
-                                 ad_coeffs,
-                                 ax_coeffs);
-
     /* Solve sparse linear system */
 
     _convergence_init(&convergence,
@@ -3212,7 +2904,7 @@ cs_sles_solve(const char         *var_name,
       switch (solver_type) {
       case CS_SLES_PCG:
         cvg = _conjugate_gradient(var_name,
-                                  _a,
+                                  a,
                                   _diag_block_size,
                                   poly_degree,
                                   rotation_mode,
@@ -3225,7 +2917,7 @@ cs_sles_solve(const char         *var_name,
       case CS_SLES_PCG_SR:
         if (_diag_block_size == 1)
           cvg = _conjugate_gradient_sr(var_name,
-                                       _a,
+                                       a,
                                        poly_degree,
                                        rotation_mode,
                                        &convergence,
@@ -3241,8 +2933,7 @@ cs_sles_solve(const char         *var_name,
       case CS_SLES_JACOBI:
         if (_diag_block_size == 1)
           cvg = _jacobi(var_name,
-                        ad_coeffs,
-                        _a,
+                        a,
                         rotation_mode,
                         &convergence,
                         rhs,
@@ -3251,8 +2942,7 @@ cs_sles_solve(const char         *var_name,
                         aux_vectors);
         else if (_diag_block_size == 3)
           cvg = _block_3_jacobi(var_name,
-                                ad_coeffs,
-                                _a,
+                                a,
                                 rotation_mode,
                                 &convergence,
                                 rhs,
@@ -3262,7 +2952,7 @@ cs_sles_solve(const char         *var_name,
         break;
       case CS_SLES_BICGSTAB:
         cvg = _bi_cgstab(var_name,
-                         _a,
+                         a,
                          _diag_block_size,
                          poly_degree,
                          rotation_mode,
@@ -3275,7 +2965,7 @@ cs_sles_solve(const char         *var_name,
       case CS_SLES_GMRES:
         if (_diag_block_size == 1)
           cvg = _gmres(var_name,
-                       _a,
+                       a,
                        poly_degree,
                        rotation_mode,
                        &convergence,
@@ -3308,11 +2998,6 @@ cs_sles_solve(const char         *var_name,
       convergence.n_iterations = buf[1];
     }
 #endif
-
-    /* Release matrix coefficients */
-
-    if (_a != NULL)
-      cs_matrix_release_coefficients(_a);
 
     /* Update return values */
 
@@ -3351,45 +3036,91 @@ cs_sles_solve(const char         *var_name,
  * parameters:
  *   var_name         <-- Variable name
  *   mesh_id          <-- id of error output mesh, or 0 if none
- *   symmetric        <-- indicates if matrix values are symmetric
- *   diag_block_size  <-- Size of element ii,ii
  *   rotation_mode    <-- Halo update option for rotational periodicity
- *   ad               <-- Diagonal part of linear equation matrix
+ *   a                <-- Linear equation matrix
  *   ax               <-- Non-diagonal part of linear equation matrix
  *   rhs              <-- Right hand side
  *   vx               <-> Current system solution
  *----------------------------------------------------------------------------*/
 
 void
-cs_sles_post_error_output_def(const char       *var_name,
-                              int               mesh_id,
-                              bool              symmetric,
-                              int               diag_block_size,
-                              cs_perio_rota_t   rotation_mode,
-                              const cs_real_t  *ad,
-                              const cs_real_t  *ax,
-                              const cs_real_t  *rhs,
-                              cs_real_t        *vx)
+cs_sles_post_error_output_def(const char         *var_name,
+                              int                 mesh_id,
+                              cs_perio_rota_t     rotation_mode,
+                              const cs_matrix_t  *a,
+                              const cs_real_t    *rhs,
+                              cs_real_t          *vx)
 {
-  int _diag_block_size[4] = {1, 1, 1, 1};
+  if (mesh_id != 0) {
 
-  if (diag_block_size > 1) {
-    int i;
-    for (i = 0; i < 3; i++) /* Will become false if padding is used */
-      _diag_block_size[i] = diag_block_size;
-    _diag_block_size[3] = diag_block_size*diag_block_size;
+    const cs_mesh_t *mesh = cs_glob_mesh;
+
+    char base_name[32], val_name[32];
+
+    int val_id;
+    const cs_int_t n_cells = mesh->n_cells;
+    const int *diag_block_size = cs_matrix_get_diag_block_size(a);
+
+    cs_real_t *val;
+
+    BFT_MALLOC(val, mesh->n_cells_with_ghosts*diag_block_size[1], cs_real_t);
+
+    for (val_id = 0; val_id < 5; val_id++) {
+
+      switch(val_id) {
+
+      case 0:
+        strcpy(base_name, "Diag");
+        cs_matrix_copy_diagonal(a, val);
+        break;
+
+      case 1:
+        strcpy(base_name, "RHS");
+        memcpy(val, rhs, n_cells*diag_block_size[1]*sizeof(cs_real_t));
+        break;
+
+      case 2:
+        strcpy(base_name, "X");
+        memcpy(val, vx, n_cells*diag_block_size[1]*sizeof(cs_real_t));
+        break;
+
+      case 3:
+        strcpy(base_name, "Residual");
+        _cell_residual(diag_block_size,
+                       rotation_mode,
+                       a,
+                       rhs,
+                       vx,
+                       val);
+        break;
+
+      case 4:
+        strcpy(base_name, "Diag_Dom");
+        cs_matrix_diag_dominance(a, val);
+        break;
+
+      }
+
+      if (strlen(var_name) + strlen(base_name) < 31) {
+        strcpy(val_name, base_name);
+        strcat(val_name, "_");
+        strcat(val_name, var_name);
+      }
+      else {
+        strncpy(val_name, base_name, 31);
+        val_name[31] = '\0';
+      }
+
+      assert(diag_block_size[0] == diag_block_size[1]); /* for now */
+
+      cs_sles_post_error_output_var(val_name,
+                                    mesh_id,
+                                    diag_block_size[1],
+                                    val);
+    }
+
+    BFT_FREE(val);
   }
-
-  _post_error_output_def(var_name,
-                         mesh_id,
-                         symmetric,
-                         true, /* interleaved */
-                         _diag_block_size,
-                         rotation_mode,
-                         ad,
-                         ax,
-                         rhs,
-                         vx);
 }
 
 /*----------------------------------------------------------------------------
