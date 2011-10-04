@@ -464,8 +464,7 @@ do 100 isweep = 1, nswmod
     else
       iinvpp = iinvpe
     endif
-    call promav(ncelet,ncel,nfac,isym,1,iinvpp,ifacel,              &
-                dam,xam,pvar,w1)
+    call promav(isym,1,iinvpp,dam,xam,pvar,w1)
     do iel = 1, ncel
       w1(iel) = w1(iel) + smbrp(iel)
     enddo

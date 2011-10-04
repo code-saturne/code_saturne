@@ -4877,16 +4877,12 @@ _build_variant_list(int                    sym_flag,
 
 void CS_PROCF(promav, PROMAV)
 (
- const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
- const cs_int_t   *ncel,      /* <-- Number of local cells */
- const cs_int_t   *nfac,      /* <-- Number of faces */
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
  const cs_int_t   *ibsize,    /* <-- Block size of element ii, ii */
  const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
                                      in rotational periodicty (2) or
                                      to exchange them as scalars (1) */
- const cs_int_t   *ifacel,    /* <-- Face -> cell connectivity  */
  const cs_real_t  *dam,       /* <-- Matrix diagonal */
  const cs_real_t  *xam,       /* <-- Matrix extra-diagonal terms */
  cs_real_t        *vx,        /* <-- A*vx */
@@ -4896,10 +4892,6 @@ void CS_PROCF(promav, PROMAV)
   int diag_block_size[4] = {1, 1, 1, 1};
   bool symmetric = (*isym == 1) ? true : false;
   cs_perio_rota_t rotation_mode = CS_PERIO_ROTA_COPY;
-
-  assert(*ncelet >= *ncel);
-  assert(*nfac > 0);
-  assert(ifacel != NULL);
 
   if (*iinvpe == 2)
     rotation_mode = CS_PERIO_ROTA_RESET;
