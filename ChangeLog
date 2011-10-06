@@ -1,3 +1,11 @@
+* 19/10/2011 - David Monfort <david.monfort@edf.fr>
+  Remove threaded-version of BLAS library detection for MKL and Atlas since
+  MKL threaded version (with Intel 11.1 compilers) proved to be 150 times slower
+  than without BLAS or with non-threaded BLAS. Also apply this change to Atlas
+  library but keep threaded version for BlueGene systems as it seems to be required.
+  modified file:
+    config/cs_blas.m4
+
 * 22/08/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Simplify reading of index blocks to improve robustness (based on trunk).
   modified files:
