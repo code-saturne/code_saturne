@@ -182,29 +182,6 @@ if test "x$with_blas" != "xno" ; then
       fi
     fi
 
-    if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
-
-      if test "`uname -m`" = "ia64" ; then
-        BLAS_LIBS="-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lguide -lpthread"
-      elif test `uname -m` = x86_64 ; then
-        BLAS_LIBS="-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lguide -lpthread"
-      else
-        BLAS_LIBS="-lmkl_intel -lmkl_intel_thread -lmkl_core -lguide -lpthread"
-      fi
-
-      CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
-      LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}${mkl_sub_lib}"
-      LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
-
-      AC_MSG_CHECKING([for threaded MKL BLAS])
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mkl_cblas.h>]],
-                     [[ cblas_ddot(0, 0, 0, 0, 0); ]])],
-                     [ AC_DEFINE([HAVE_MKL], 1, [MKL BLAS support])
-                       cs_have_blas=yes; with_blas_type=MKL ],
-                     [cs_have_blas=no])
-      AC_MSG_RESULT($cs_have_blas)
-    fi
-
     if test "$cs_have_blas" = "no" ; then # Test for non-threaded version
                                           # or explicitely specified libs second
 
@@ -244,23 +221,6 @@ if test "x$with_blas" != "xno" ; then
   # Test for ATLAS BLAS
 
   if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xATLAS" ; then
-
-    if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
-
-      BLAS_LIBS="-lptcblas -latlas -lpthread"
-
-      CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
-      LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-      LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
-
-      AC_MSG_CHECKING([for threaded ATLAS BLAS])
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <cblas.h>]],
-                     [[ cblas_ddot(0, 0, 0, 0, 0); ]])],
-                     [ AC_DEFINE([HAVE_CBLAS], 1, [C BLAS support])
-                       cs_have_blas=yes; with_blas_type=ATLAS ],
-                     [cs_have_blas=no])
-      AC_MSG_RESULT($cs_have_blas)
-    fi
 
     if test "$cs_have_blas" = "no" ; then # Test for non-threaded version
                                           # or explicitely specified libs second
