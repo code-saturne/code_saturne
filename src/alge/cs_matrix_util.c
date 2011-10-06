@@ -573,53 +573,6 @@ _b_diag_dom_msr(const cs_matrix_t  *matrix,
   _b_diag_dom_diag_normalize(mc->d_val, dd, ms->n_rows, b_size);
 }
 
-/*----------------------------------------------------------------------------
- * Measure Diagonal dominance of symmetric MSR matrix.
- *
- * parameters:
- *   matrix <-- Pointer to matrix structure
- *   dd     --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_diag_dom_msr_sym(const cs_matrix_t  *matrix,
-                  cs_real_t          *restrict dd)
-{
-  cs_lnum_t  ii, jj, n_cols;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
-
-  const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_sym_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  /* diagonal contribution */
-
-  _diag_dom_diag_contrib(mc->d_val, dd, ms->n_rows, ms->n_cols);
-
-  /* Initialize dd */
-
-  for (ii = 0; ii < ms->n_cols; ii++)
-    dd[ii] = 0.0;
-
-  /* Upper triangular + diagonal part in case of symmetric structure */
-
-  for (ii = 0; ii < n_rows; ii++) {
-    cs_real_t  sii = 0.0;
-    col_id = ms->col_id + ms->row_index[ii];
-    m_row = mc->x_val + ms->row_index[ii];
-    n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-    for (jj = 0; jj < n_cols; jj++) {
-      double sign = (col_id[jj] == ii) ? 1. : -1.;
-      sii += sign * fabs(m_row[jj]);
-    }
-    dd[ii] += sii;
-    for (jj = 0; jj < n_cols; jj++)
-      dd[col_id[jj]] -= fabs(m_row[jj]);
-  }
-
-}
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -661,10 +614,6 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
     else
       _b_diag_dom_msr(matrix, dd);
     break;
-    break;
-  case CS_MATRIX_MSR_SYM:
-    assert(matrix->b_size[3] == 1);
-    _diag_dom_msr_sym(matrix, dd);
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,

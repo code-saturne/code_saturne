@@ -235,24 +235,6 @@ typedef struct _cs_matrix_coeff_msr_t {
 
 } cs_matrix_coeff_msr_t;
 
-/* symmetric MSR matrix coefficients representation */
-/*--------------------------------------------------*/
-
-typedef struct _cs_matrix_coeff_msr_sym_t {
-
-  int              max_block_size;    /* Current max allocated block size */
-
-  /* Pointers to possibly shared arrays */
-
-  const cs_real_t  *d_val;            /* Diagonal matrix coefficients */
-
-  /* Pointers to private arrays (NULL if shared) */
-
-  cs_real_t        *_d_val;           /* Diagonal matrix coefficients */
-  cs_real_t        *x_val;            /* Extra-diagonal matrix coefficients */
-
-} cs_matrix_coeff_msr_sym_t;
-
 /* Matrix structure (representation-independent part) */
 /*----------------------------------------------------*/
 
