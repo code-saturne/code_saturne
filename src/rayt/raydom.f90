@@ -116,6 +116,7 @@ integer          ifac   , iel    , iok    , izone
 integer          inc    , iccocg , iwarnp , imligp , nswrgp
 integer          mode   , icla   , ipcla  , ivar0
 integer          iscat  , ivart
+integer          idverl
 integer          iflux(nozrdm)
 double precision epsrgp, climgp, extrap
 double precision aa, bb, ckmin, unspi, xlimit, cofrmn, flunmn
@@ -342,6 +343,8 @@ unspi = 1.d0/pi
 
 !---> VERIFICATION D'UN CAS TRANSPARENT
 
+  idverl = idiver
+
   aa = zero
   do iel = 1,ncel
     aa = aa + propce(iel,ipproc(icak(1)))
@@ -352,7 +355,7 @@ unspi = 1.d0/pi
   endif
   if (aa.le.epzero) then
     write(nfecra,1100)
-    idiver = -1
+    idverl = -1
   endif
 
 !===============================================================================
@@ -442,7 +445,7 @@ unspi = 1.d0/pi
 ! 4. STOCKAGE DE LA TEMPERATURE (en Kelvin) dans TEMPK(IEL,IRPHAS)
 !===============================================================================
 
-  if (idiver.ge.0) then
+  if (idverl.ge.0) then
 
     if(abs(iscsth(iscat)).eq.1) then
 
@@ -570,7 +573,7 @@ unspi = 1.d0/pi
     do iel = 1,ncel
       propce(iel,ipproc(itsri(1))) = zero
     enddo
-! fin de IF (IDIVER.GE.0) THEN
+! fin de IF (IDVERL.GE.0) THEN
   endif
 
 !===============================================================================
@@ -911,7 +914,7 @@ unspi = 1.d0/pi
 ! 7.1 TERMES SOURCES RADIATIFS SEMI-ANALYTIQUES
 !===============================================================================
 
-  if (idiver.ge.0) then
+  if (idverl.ge.0) then
 
 !--> On stocke dans le tableau de travail W9 le CP
 !    Attention : il faut conserver W9 dans la suite de la routine,
@@ -1084,7 +1087,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 
 ! A partir d'ici COFRUA et COFRUB deviennent les CL pour la divergence
 
-  if (idiver.eq.1 .or. idiver.eq.2) then
+  if (idverl.eq.1 .or. idverl.eq.2) then
 
     ! Allocate a temporary array for gradient computation
     allocate(grad(ncelet,3))
@@ -1190,7 +1193,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 !===============================================================================
 
 
-  if (idiver.eq.2) then
+  if (idverl.eq.2) then
 
 !---> comparaison des termes sources semi-analytique et conservatif
 
@@ -1226,12 +1229,12 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 ! 7.4 FINALISATION DU TERME SOURCE EXPLICITE
 !===============================================================================
 
-  if (idiver.ge.0) then
+  if (idverl.ge.0) then
 
 !--> Integration volumique du terme source explicite
 !    Le resultat de cette integration DOIT etre le meme que l'integration
 !    surfacique de la densite de flux net radiatif faite plus haut
-!    si  IDIVER = 1 ou 2
+!    si  IDVERL = 1 ou 2
 
     aa = zero
     do iel = 1,ncel
