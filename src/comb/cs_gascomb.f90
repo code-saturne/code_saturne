@@ -239,7 +239,7 @@ do iel = 1, ncel
 !  4eme reaction :
 !
     anu4  = 1.5D0
-    reac3 = min(zz(ih2s), (zz(io2)/anu4))
+    reac4 = min(zz(ih2s), (zz(io2)/anu4))
     zz(ih2s) = zz(ih2s)   -      reac4
     zz(io2)  = zz(io2)    - anu4*reac4
     zz(ih2o) = zz(ih2o)   +      reac4
