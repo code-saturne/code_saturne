@@ -143,33 +143,6 @@ def define_domain_parameters(domain):
 
     domain.user_scratch_files = None
 
-    # Recommended number of processes (advanced)
-    #--------------------------------
-
-    # Number of MPI processes associated with the whole calculation
-    # (auto if none).
-
-    # Hard limits to the number of MPI ranks which may be assigned to the
-    # current domain may be set using domain.n_procs_min (default: 1),
-    # and domain.n_procs_max (default: None).
-
-    # When not running under a batch system and the total number of MPI
-    # ranks is not forced using define_case_parameters(), the
-    # domain.n_procs_weight value defines the number of processes assigned
-    # to the current domain (default of 1 if None).
-    #
-    # When running under a batch system or when the total number of MPI
-    # ranks is forced, the domain.n_procs_weight value only defines the
-    # associated weigh of the domain. The number of processes assigned
-    # will be equal to:
-    #   n_procs * domain.n_procs_weight / sum_of(domain.n_procs_weight)
-    # adjusted by the n_procs_min/n_procs_max constraints of each domain.
-
-    if domain.param == None:
-        domain.n_procs_weight = None
-        domain.n_procs_min = 1
-        domain.n_procs_max = None
-
     # Logging and IO arguments
     #-------------------------
 
@@ -201,6 +174,9 @@ def define_domain_parameters(domain):
     # (for a fixed function: sin(x+2y+3z), while:
     #   domain.solver_args = '--benchmark'
     # allows running  basic linear algebra operation benchmarks.
+    # To run the solver's preprocessing stage only (mesh joining, smoothing,
+    # and other modifications), use:
+    #   domain.solver_args = '--preprocess'
 
     if domain.param == None:
         domain.exec_solver = True
