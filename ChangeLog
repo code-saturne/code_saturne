@@ -1,4 +1,4 @@
-* 19/10/2011 - David Monfort <david.monfort@edf.fr>
+* 06/10/2011 - David Monfort <david.monfort@edf.fr>
   Remove threaded-version of BLAS library detection for MKL and Atlas since
   MKL threaded version (with Intel 11.1 compilers) proved to be 150 times slower
   than without BLAS or with non-threaded BLAS. Also apply this change to Atlas
