@@ -68,7 +68,7 @@ class package:
         self.fcmodinclude="@FCMODINCLUDE@"
         self.ldflags = "@CS_LDFLAGS@"
         self.libs = "-lsaturne -lmei -lfvm_filters -lfvm -lbft @CS_LIBS@"
-        self.deplibs = "@LDFLAGS@ @LIBS@ @FCLIBS@"
+        self.deplibs = "@LDFLAGS@ @LIBINTL@ @LIBS@ @FCLIBS@"
         self.rpath="@LDRPATH@"
 
         # PLE library can be an internal or external library
@@ -101,6 +101,7 @@ class package:
         self.mpi_libdir = "@mpi_libdir@"
 
         self.env_modules = "@cs_env_modules@"
+        self.env_modulecmd = "@MODULECMD@"
 
     def get_preprocessor(self):
 

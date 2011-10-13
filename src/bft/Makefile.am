@@ -51,4 +51,5 @@ bft_mem_usage.c \
 bft_printf.c \
 bft_sys_info.c
 
+libbft_la_LIBADD = $(LTLIBINTL)
 libbft_la_LDFLAGS = -no-undefined -version-info 0:0:0

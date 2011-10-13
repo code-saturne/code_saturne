@@ -369,14 +369,14 @@ _file_open(cs_file_t       *f,
 
   switch (f->mode) {
   case CS_FILE_MODE_APPEND:
-    f->sh = fopen(f->name, "a");
+    f->sh = fopen(f->name, "ab");
     break;
   case CS_FILE_MODE_WRITE:
-    f->sh = fopen(f->name, "w");
+    f->sh = fopen(f->name, "wb");
     break;
   default:
     assert(f->mode == CS_FILE_MODE_READ);
-    f->sh = fopen(f->name, "r");
+    f->sh = fopen(f->name, "rb");
   }
 
   if (f->sh == NULL) {

@@ -134,6 +134,7 @@ $(FCLIBS)
 
 if HAVE_FRONTEND
 cs_io_dump_SOURCES = cs_io_dump.c
+cs_io_dump_LDADD = $(LTLIBINTL)
 endif
 
 # Code_Saturne syntax checker

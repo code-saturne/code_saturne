@@ -60,12 +60,12 @@
 #include <unistd.h>
 #endif
 
-/* Disable automatically-defined HAVE_CLOCK_GETTIME on Blue Gene/P
+/* Disable automatically-defined HAVE_CLOCK_GETTIME on Blue Gene/P and Cygwin
    to avoid crash.
    TODO: investigate whether this is due to an incorrect
    headers/feature flags combination. */
 
-#if defined(HAVE_CLOCK_GETTIME) && defined(__bgp__)
+#if defined(HAVE_CLOCK_GETTIME) && (defined(__bgp__) || defined(__CYGWIN__))
 #undef HAVE_CLOCK_GETTIME
 #endif
 

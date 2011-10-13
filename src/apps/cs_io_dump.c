@@ -678,7 +678,7 @@ _open_input(const char  *filename,
 
   fflush(stdout);
 
-  inp.f = fopen(inp.filename, "r");
+  inp.f = fopen(inp.filename, "rb");
 
   if (inp.f == NULL)
     _error(__FILE__, __LINE__, 0,

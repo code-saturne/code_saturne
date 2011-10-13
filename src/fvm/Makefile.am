@@ -92,7 +92,7 @@ fvm_writer_priv.h
 
 lib_LTLIBRARIES = libfvm.la libfvm_filters.la
 noinst_LTLIBRARIES =
-libfvm_la_LIBADD =
+libfvm_la_LIBADD = $(LTLIBINTL)
 libfvm_filters_la_LIBADD =
 
 libfvm_la_SOURCES = \
