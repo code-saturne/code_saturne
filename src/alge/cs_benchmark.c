@@ -305,7 +305,7 @@ _dot_product_1(double            t_measure,
   if (cs_glob_n_ranks == 1)
     _global = 0;
 
-  n_ops = n_cells;
+  n_ops = CS_MAX(n_cells*2 - 1, 0);
 
   /* First simple local x.x version */
 
@@ -434,7 +434,7 @@ _dot_product_2(double            t_measure,
 
   double test_sum = 0.0;
 
-  n_ops = n_cells * 2;
+  n_ops = CS_MAX(n_cells*2 - 1, 0);
 
   /* First simple local x.x version */
 
@@ -1134,7 +1134,7 @@ _block_ad_x_test(double             t_measure,
   BFT_MALLOC(x, n_cells*3, cs_real_t);
   BFT_MALLOC(y, n_cells*3, cs_real_t);
 
-  n_ops = n_cells;
+  n_ops = n_cells * (3+2) * 3;
 
   /* First simple local x.x version */
 
@@ -1388,7 +1388,7 @@ _copy_test(double             t_measure,
     test_sum = 0.0;
     wt0 = cs_timer_wtime(), wt1 = wt0;
 
-    _n_cells = n_div;
+    _n_cells = n_cells / n_div;
 
     if (t_measure > 0)
       n_runs = 8;
@@ -1432,7 +1432,7 @@ _copy_test(double             t_measure,
     test_sum = 0.0;
     wt0 = cs_timer_wtime(), wt1 = wt0;
 
-    _n_cells = n_div;
+    _n_cells = n_cells / n_div;
 
     if (t_measure > 0)
       n_runs = 8;
@@ -1474,7 +1474,7 @@ _copy_test(double             t_measure,
     test_sum = 0.0;
     wt0 = cs_timer_wtime(), wt1 = wt0;
 
-    _n_cells = n_div;
+    _n_cells = n_cells / n_div;
 
     if (t_measure > 0)
       n_runs = 8;
@@ -1556,7 +1556,10 @@ _matrix_vector_test(double                 t_measure,
   cs_matrix_t *m = NULL;
   cs_matrix_type_t m_type = cs_matrix_variant_type(m_variant);
 
-  n_ops = n_cells + n_faces*2;
+  /* n_cells + n_faces*2 nonzeroes,
+     n_row_elts multiplications + n_row_elts-1 additions per row */
+
+  n_ops = n_cells + n_faces*4;
 
   if (cs_glob_n_ranks == 1)
     n_ops_glob = n_ops;
@@ -1889,7 +1892,7 @@ _sub_matrix_vector_test(double               t_measure,
 
   double test_sum = 0.0;
 
-  n_ops = n_faces*2;
+  n_ops = n_faces*4;
 
   if (cs_glob_n_ranks == 1)
     n_ops_glob = n_ops;
@@ -2032,7 +2035,7 @@ cs_benchmark(int  mpi_trace_mode)
   double t_measure = (mpi_trace_mode) ? -1.0 : 3.0;
 
   cs_real_t *x1 = NULL, *x2 = NULL;
-  cs_real_t *y1 = NULL, *y2 = NULL;
+  cs_real_t *y = NULL;
   cs_real_t *da = NULL, *xa = NULL;
 
   cs_matrix_variant_t *mv = NULL;
@@ -2055,18 +2058,10 @@ cs_benchmark(int  mpi_trace_mode)
     x2[ii] = mesh_v->cell_cen[ii*3 + 1];
   }
 
-  if (CS_MEM_ALIGN > 0) {
-
-    BFT_MEMALIGN(y1, CS_MEM_ALIGN, n_cells_ext, cs_real_t);
-    BFT_MEMALIGN(y2, CS_MEM_ALIGN, n_cells_ext, cs_real_t);
-
-  }
-  else {
-
-    BFT_MALLOC(y1, n_cells_ext, cs_real_t);
-    BFT_MALLOC(y2, n_cells_ext, cs_real_t);
-
-  }
+  if (CS_MEM_ALIGN > 0)
+    BFT_MEMALIGN(y, CS_MEM_ALIGN, n_cells_ext, cs_real_t);
+  else
+    BFT_MALLOC(y, n_cells_ext, cs_real_t);
 
   BFT_MALLOC(da, n_cells_ext, cs_real_t);
   BFT_MALLOC(xa, n_faces*2, cs_real_t);
@@ -2090,10 +2085,9 @@ cs_benchmark(int  mpi_trace_mode)
   /* Dot product test */
   /*------------------*/
 
-
   _dot_product_1(t_measure, 0, n_cells, x1, x2);
   _dot_product_2(t_measure, n_cells, x1, x2);
-  _axpy_(t_measure, n_cells, x1, y1);
+  _axpy_(t_measure, n_cells, x1, y);
 
   _division_test(t_measure, n_cells);
   _sqrt_test(t_measure, n_cells);
@@ -2105,11 +2099,11 @@ cs_benchmark(int  mpi_trace_mode)
 
 #endif /* HAVE_MPI */
 
-  _ad_x_test(t_measure, n_cells, da, x1, y1);
+  _ad_x_test(t_measure, n_cells, da, x1, y);
 
   _block_ad_x_test(t_measure, n_cells);
 
-  _copy_test(t_measure, n_cells, x1, y1);
+  _copy_test(t_measure, n_cells, x1, y);
 
   /* Call matrix tuning */
   /*--------------------*/
@@ -2147,7 +2141,7 @@ cs_benchmark(int  mpi_trace_mode)
                       mv, false,
                       n_cells, n_cells_ext, n_faces,
                       mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
-                      mesh->i_face_numbering, da, xa, x1, y1);
+                      mesh->i_face_numbering, da, xa, x1, y);
 
   cs_matrix_variant_destroy(&mv);
 
@@ -2172,7 +2166,7 @@ cs_benchmark(int  mpi_trace_mode)
                       mv, true,
                       n_cells, n_cells_ext, n_faces,
                       mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
-                      mesh->i_face_numbering, da, xa, x1, y1);
+                      mesh->i_face_numbering, da, xa, x1, y);
 
   cs_matrix_variant_destroy(&mv);
 
@@ -2183,7 +2177,7 @@ cs_benchmark(int  mpi_trace_mode)
                           mesh->i_face_cells,
                           xa,
                           x1,
-                          y1);
+                          y);
 
   cs_log_separator(CS_LOG_PERFORMANCE);
 
@@ -2193,8 +2187,7 @@ cs_benchmark(int  mpi_trace_mode)
   BFT_FREE(x1);
   BFT_FREE(x2);
 
-  BFT_FREE(y1);
-  BFT_FREE(y2);
+  BFT_FREE(y);
 
   BFT_FREE(da);
   BFT_FREE(xa);
