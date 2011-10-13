@@ -25,7 +25,7 @@ subroutine cptssy &
 
  ( nvar   , nscal  ,                                              &
    iscal  ,                                                       &
-   rtp    , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    crvexp , crvimp )
 
 !===============================================================================
@@ -43,6 +43,7 @@ subroutine cptssy &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iscal            ! i  ! <-- ! index number of the current scalar             !
+! dt(ncelet)       ! ra ! <-- ! time-step                                      !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -79,7 +80,7 @@ implicit none
 integer          nvar   , nscal
 integer          iscal
 
-double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)
 double precision crvexp(ncelet), crvimp(ncelet)
 
