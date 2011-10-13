@@ -3290,14 +3290,9 @@ _mat_vec_p_l_msr_mkl(bool                exclude_diag,
                        (double *)x,
                        y);
 
-  /* Add diagonal contribution
-     TODO: analyse why use of mkl_ddiamv() provides correct results
-     in debug (non-optimized) build and in test phase, but leads
-     to floating-point exception on some case in optimized build.
-     Use of mkl_ddiamv() could provide slightly better performance */
+  /* Add diagonal contribution */
 
   if (!exclude_diag && mc->d_val != NULL) {
-#if 0
     char matdescra[7] = "D NC  ";
     int ndiag = 1;
     int idiag[1] = {0};
@@ -3314,12 +3309,6 @@ _mat_vec_p_l_msr_mkl(bool                exclude_diag,
                (double *)x,
                &beta,
                y);
-#else
-    cs_lnum_t ii;
-#   pragma omp parallel for
-    for (ii = 0; ii < n_rows; ii++)
-      y[ii] += mc->d_val[ii]*x[ii];
-#endif
   }
 }
 
@@ -3334,6 +3323,10 @@ _mat_vec_p_l_msr_mkl(bool                exclude_diag,
  *   x            <-- Multipliying vector values
  *   y            --> Resulting vector
  *----------------------------------------------------------------------------*/
+
+#if defined(__INTEL_COMPILER)
+#pragma optimization_level 0 /* With icc 11.1.072, errors occur above this */
+#endif
 
 static void
 _mat_vec_p_l_msr_pf(bool                exclude_diag,
