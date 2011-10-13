@@ -41,6 +41,7 @@ mei_math_util.h \
 mei_parser_glob.h
 
 lib_LTLIBRARIES = libmei.la
+libmei_la_LIBADD = $(LTLIBINTL)
 libmei_la_SOURCES = \
 mei_evaluate.c \
 mei_hash_table.c \

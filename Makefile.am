@@ -203,10 +203,12 @@ edit_config = sed \
 	-e 's|@PLE_LDFLAGS[@]|$(PLE_LDFLAGS)|g' \
 	-e 's|@PLE_LIBS[@]|$(PLE_LIBS)|g' \
 	-e 's|@LDFLAGS[@]|$(LDFLAGS)|g' \
+	-e 's|@LIBINTL[@]|$(LIBINTL)|g' \
 	-e 's|@LIBS[@]|$(LIBS)|g' \
 	-e 's|@FCLIBS[@]|$(FCLIBS)|g' \
 	-e 's|@FCMODINCLUDE[@]|$(FCMODINCLUDE)|g' \
 	-e 's|@LDRPATH[@]|$(LDRPATH)|g' \
+	-e 's|@MODULECMD[@]|$(MODULECMD)|g' \
 	-e 's|@PYTHON[@]|$(PYTHON)|g' \
 	-e 's|@PYUIC4[@]|$(PYUIC4)|g' \
 	-e 's|@PYRCC4[@]|$(PYRCC4)|g' \

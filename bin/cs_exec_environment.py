@@ -120,10 +120,10 @@ def set_modules(pkg):
     Set environment modules if present.
     """
 
-    if pkg.env_modules == "no" or not os.environ.has_key('MODULESHOME'):
+    if pkg.env_modules == "no":
         return
 
-    cmd_prefix = os.path.join(os.environ['MODULESHOME'], 'bin', 'modulecmd')
+    cmd_prefix = pkg.env_modulecmd
 
     cmds = ['purge']
     for m in pkg.env_modules.strip().split():

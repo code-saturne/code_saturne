@@ -281,7 +281,8 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "x$cs_ibm_bg_type" != "x" ; then
+if test "x$cs_ibm_bg_type" != "x" \
+     -o "$host_os" = cygwin -o "$host_os" = mingw32 ; then
    enable_shared=no
 fi
 AC_SUBST(enable_shared)
@@ -560,6 +561,12 @@ AC_ARG_ENABLE(sockets,
   ],
   [ cs_have_socket=yes ]
 )
+
+# Always disable sockets for Windows cross-compilation
+if test "$host_os" = mingw32 ; then
+  cs_have_socket=no
+fi
+
 if test "x$cs_have_socket" = "xyes" ; then
   AC_DEFINE([HAVE_SOCKET], 1, [sockets support])
 fi
