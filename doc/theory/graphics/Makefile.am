@@ -43,6 +43,7 @@ face_surf.fig \
 facesym.fig \
 facette.fig \
 fluxbord.fig \
+hf.fig \
 join_edge_inter_3d_eps.fig \
 join_edge_inter_3d.fig \
 join_edge_inter_3d_type.fig \
@@ -61,7 +62,18 @@ join_principle.fig \
 join_simplify_1.fig \
 join_simplify_2.fig \
 join_tolerance.fig \
-support.fig
+LW2.fig \
+LW4.fig \
+Pf2.fig \
+Pf.fig \
+support.fig \
+TONOx.fig \
+Yf0.fig \
+Yf1.fig \
+Yf2.fig \
+Yf3.fig \
+Yf4.fig \
+Yf.fig
 
 # Other files
 

@@ -29,7 +29,6 @@ TEXMAIN = theory.tex
 # Other LaTex document
 
 TEXOTHERS = \
-biblio.tex \
 bilsc2.tex \
 cfbase.tex \
 cfener.tex \
@@ -41,9 +40,8 @@ clptur.tex \
 clsyvt.tex \
 codits.tex \
 combbase.tex \
-combcharb.tex \
-combfuel.tex \
 combgaz.tex \
+combglb.tex \
 condli.tex \
 covofi.tex \
 elbase.tex \
