@@ -1419,7 +1419,6 @@ _mat_vec_p_l_native_vector(bool                exclude_diag,
  *   n_cells     <-- Local number of participating cells
  *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
  *   n_faces     <-- Local number of faces
- *   cell_num    <-- Global cell numbers (1 to n)
  *   face_cell   <-- Face -> cells connectivity (1 to n)
  *
  * returns:
@@ -2204,7 +2203,6 @@ _mat_vec_p_l_csr_pf(bool                exclude_diag,
  *   n_cells     <-- Local number of participating cells
  *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
  *   n_faces     <-- Local number of faces
- *   cell_num    <-- Global cell numbers (1 to n)
  *   face_cell   <-- Face -> cells connectivity (1 to n)
  *
  * returns:
@@ -3576,7 +3574,7 @@ _matrix_check_compare(cs_lnum_t        n_elts,
  *   n_cells     <-- number of local cells
  *   n_cells_ext <-- number of cells including ghost cells (array size)
  *   n_faces     <-- local number of internal faces
- *   cell_num    <-- global cell numbers (1 to n)
+ *   cell_num    <-- Optional global cell numbers (1 to n), or NULL
  *   face_cell   <-- face -> cells connectivity (1 to n)
  *   halo        <-- cell halo structure
  *   numbering   <-- vectorization or thread-related numbering info, or NULL
@@ -3743,7 +3741,7 @@ _matrix_check(int                    n_variants,
  *   n_cells     <-- number of local cells
  *   n_cells_ext <-- number of cells including ghost cells (array size)
  *   n_faces     <-- local number of internal faces
- *   cell_num    <-- global cell numbers (1 to n)
+ *   cell_num    <-- Optional global cell numbers (1 to n), or NULL
  *   face_cell   <-- face -> cells connectivity (1 to n)
  *   halo        <-- cell halo structure
  *   numbering   <-- vectorization or thread-related numbering info, or NULL
@@ -3769,7 +3767,7 @@ _matrix_tune_test(double                 t_measure,
   cs_matrix_type_t  type, type_prev;
 
   double test_sum = 0.0;
-  cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL, *z = NULL;
+  cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
   cs_matrix_structure_t *ms = NULL;
   cs_matrix_t *m = NULL;
   int diag_block_size[4] = {3, 3, 3, 9};
@@ -3782,12 +3780,10 @@ _matrix_tune_test(double                 t_measure,
   if (CS_MEM_ALIGN > 0) {
     BFT_MEMALIGN(x, CS_MEM_ALIGN, n_cells_ext*diag_block_size[1], cs_real_t);
     BFT_MEMALIGN(y, CS_MEM_ALIGN, n_cells_ext*diag_block_size[1], cs_real_t);
-    BFT_MEMALIGN(z, CS_MEM_ALIGN, n_cells_ext*diag_block_size[1], cs_real_t);
   }
   else {
     BFT_MALLOC(x, n_cells_ext*diag_block_size[1], cs_real_t);
     BFT_MALLOC(y, n_cells_ext*diag_block_size[1], cs_real_t);
-    BFT_MALLOC(z, n_cells_ext*diag_block_size[1], cs_real_t);
   }
 
   BFT_MALLOC(da, n_cells_ext*diag_block_size[3], cs_real_t);
@@ -3795,17 +3791,15 @@ _matrix_tune_test(double                 t_measure,
 
 # pragma omp parallel for
   for (ii = 0; ii < n_cells_ext*diag_block_size[3]; ii++)
-    da[ii] = 1.0 + ii/n_cells_ext;
+    da[ii] = 1.0;
 # pragma omp parallel for
-  for (ii = 0; ii < n_cells_ext*diag_block_size[1]; ii++) {
-    x[ii] = ii/n_cells_ext;
-    z[ii] = ii/n_cells_ext;
-  }
+  for (ii = 0; ii < n_cells_ext*diag_block_size[1]; ii++)
+    x[ii] = ii*0.1/n_cells_ext;
 
 # pragma omp parallel for
   for (ii = 0; ii < n_faces; ii++) {
-    xa[ii*2] = 0.5*(1.0 + ii/n_faces);
-    xa[ii*2 + 1] = -0.5*(1.0 + ii/n_faces);
+    xa[ii*2] = 0.5;
+    xa[ii*2 + 1] = -0.5;
   }
 
   /* Loop on variant types */
@@ -3946,7 +3940,6 @@ _matrix_tune_test(double                 t_measure,
 
   BFT_FREE(x);
   BFT_FREE(y);
-  BFT_FREE(z);
 
   BFT_FREE(da);
   BFT_FREE(xa);
@@ -4598,7 +4591,7 @@ cs_matrix_finalize(void)
  *   n_cells     <-- Local number of cells
  *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
  *   n_faces     <-- Local number of internal faces
- *   cell_num    <-- Global cell numbers (1 to n)
+ *   cell_num    <-- Optional global cell numbers (1 to n), or NULL
  *   face_cell   <-- Face -> cells connectivity (1 to n)
  *   halo        <-- Halo structure associated with cells, or NULL
  *   numbering   <-- vectorization or thread-related numbering info, or NULL
@@ -5446,7 +5439,7 @@ cs_matrix_exdiag_vector_multiply(cs_perio_rota_t     rotation_mode,
  *   n_cells        <-- number of local cells
  *   n_cells_ext    <-- number of cells including ghost cells (array size)
  *   n_faces        <-- local number of internal faces
- *   cell_num       <-- global cell numbers (1 to n)
+ *   cell_num       <-- Optional global cell numbers (1 to n), or NULL
  *   face_cell      <-- face -> cells connectivity (1 to n)
  *   halo           <-- cell halo structure
  *   numbering      <-- vectorization or thread-related numbering info, or NULL
@@ -5801,7 +5794,7 @@ cs_matrix_variant_type(const cs_matrix_variant_t  *mv)
  *   n_cells        <-- number of local cells
  *   n_cells_ext    <-- number of cells including ghost cells (array size)
  *   n_faces        <-- local number of internal faces
- *   cell_num       <-- global cell numbers (1 to n)
+ *   cell_num       <-- Optional global cell numbers (1 to n), or NULL
  *   face_cell      <-- face -> cells connectivity (1 to n)
  *   halo           <-- cell halo structure
  *   numbering      <-- vectorization or thread-related numbering info, or NULL

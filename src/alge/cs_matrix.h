@@ -146,7 +146,7 @@ cs_matrix_finalize(void);
  *   n_cells     <-- Local number of cells
  *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
  *   n_faces     <-- Local number of internal faces
- *   cell_num    <-- Global cell numbers (1 to n)
+ *   cell_num    <-- Optional global cell numbers (1 to n), or NULL
  *   face_cell   <-- Face -> cells connectivity (1 to n)
  *   halo        <-- Halo structure associated with cells, or NULL
  *   numbering   <-- vectorization or thread-related numbering info, or NULL
@@ -445,7 +445,7 @@ cs_matrix_exdiag_vector_multiply(cs_perio_rota_t     rotation_mode,
  *   n_cells        <-- number of local cells
  *   n_cells_ext    <-- number of cells including ghost cells (array size)
  *   n_faces        <-- local number of internal faces
- *   cell_num       <-- global cell numbers (1 to n)
+ *   cell_num       <-- Optional global cell numbers (1 to n), or NULL
  *   face_cell      <-- face -> cells connectivity (1 to n)
  *   halo           <-- cell halo structure
  *   numbering      <-- vectorization or thread-related numbering info, or NULL
@@ -494,7 +494,7 @@ cs_matrix_variant_type(const cs_matrix_variant_t  *mv);
  *   n_cells        <-- number of local cells
  *   n_cells_ext    <-- number of cells including ghost cells (array size)
  *   n_faces        <-- local number of internal faces
- *   cell_num       <-- global cell numbers (1 to n)
+ *   cell_num       <-- Optional global cell numbers (1 to n), or NULL
  *   face_cell      <-- face -> cells connectivity (1 to n)
  *   halo           <-- cell halo structure
  *   numbering      <-- vectorization or thread-related numbering info, or NULL

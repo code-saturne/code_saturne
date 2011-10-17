@@ -131,7 +131,7 @@ _print_stats(long    n_runs,
              long    n_ops_single,
              double  wt)
 {
-  double fm = 1.0 * n_runs / (1.e9 * wt);
+  double fm = 1.0 * n_runs / (1.e9 * (CS_MAX(wt, 1)));
 
   if (cs_glob_n_ranks == 1)
     cs_log_printf(CS_LOG_PERFORMANCE,
@@ -164,7 +164,8 @@ _print_stats(long    n_runs,
     MPI_Allreduce(loc_count, glob_sum, 2, MPI_DOUBLE, MPI_SUM,
                   cs_glob_mpi_comm);
 
-    fmg = n_runs / (1.e9 * glob_max[0]); /* global flops multiplier */
+    /* global flops multiplier */
+    fmg = n_runs / (1.e9 * CS_MAX(glob_max[0], 1));
 
     glob_sum[0] /= n_runs;
     glob_min[0] /= n_runs;
@@ -215,7 +216,7 @@ _print_mem_stats(long    n_runs,
                  long    n_ops,
                  double  wt)
 {
-  double fm = 8.0 * n_runs / (1.e9 * wt);
+  double fm = 1.0 * n_runs / (1.e9 * (CS_MAX(wt, 1)));
 
   if (cs_glob_n_ranks == 1)
     cs_log_printf(CS_LOG_PERFORMANCE,
@@ -248,7 +249,8 @@ _print_mem_stats(long    n_runs,
     MPI_Allreduce(loc_count, glob_sum, 2, MPI_DOUBLE, MPI_SUM,
                   cs_glob_mpi_comm);
 
-    fmg = n_runs / (8.e9 * glob_max[0]); /* global flops multiplier */
+    /* global flops multiplier */
+    fmg = n_runs / (8.e9 * CS_MAX(glob_max[0], 1));
 
     glob_sum[0] /= n_runs;
     glob_min[0] /= n_runs;
@@ -434,7 +436,7 @@ _dot_product_2(double            t_measure,
 
   double test_sum = 0.0;
 
-  n_ops = CS_MAX(n_cells*2 - 1, 0);
+  n_ops = CS_MAX(n_cells*2 - 1, 0) * 2;
 
   /* First simple local x.x version */
 
@@ -611,6 +613,48 @@ _axpy_(double             t_measure,
 
   _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
+  /* Variant with alpha = -1 */
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+
+# pragma omp parallel for
+  for (ii = 0; ii < n_cells; ii++)
+    y[ii] = 0.0;
+
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cells; ii++)
+        y[ii] -= x[ii];
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    if (run_id % 4096 && run_id > 0) {
+      for (ii = 0; ii < n_cells; ii++)
+        y[ii] = 0.0;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Y <- -1.X + Y\n"
+                  "-------------\n"));
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 }
 
 /*----------------------------------------------------------------------------
@@ -1451,7 +1495,7 @@ _copy_test(double             t_measure,
 
   /* Blas version */
 
-#if defined(HAVE_BLAS)
+#if defined(HAVE_CBLAS)
 
   for (sub_id = 0, n_div = 1;
        sub_id < 4;
@@ -1636,8 +1680,7 @@ _matrix_vector_test(double                 t_measure,
   if (cs_glob_n_ranks == 1)
     n_ops_glob = n_ops;
   else
-    n_ops_glob = (  cs_glob_mesh->n_g_cells
-                  + cs_glob_mesh->n_g_i_faces*2);
+    n_ops_glob = (cs_glob_mesh->n_g_cells + cs_glob_mesh->n_g_i_faces*4);
 
   ms = cs_matrix_structure_create(m_type,
                                   true,
@@ -1743,6 +1786,16 @@ _matrix_vector_test(double                 t_measure,
   }
 
   /* (Matrix - diagonal).vector product */
+
+  /* n_faces*2 nonzeroes,
+     n_row_elts multiplications + n_row_elts-1 additions per row */
+
+  n_ops = n_faces*4 - n_cells;
+
+  if (cs_glob_n_ranks == 1)
+    n_ops_glob = n_ops;
+  else
+    n_ops_glob = (cs_glob_mesh->n_g_i_faces*4 - cs_glob_mesh->n_g_cells);
 
   test_sum = 0.0;
   wt0 = cs_timer_wtime(), wt1 = wt0;
@@ -1964,13 +2017,15 @@ _sub_matrix_vector_test(double               t_measure,
 
   double test_sum = 0.0;
 
-  n_ops = n_faces*4;
+  /* n_faces*2 nonzeroes,
+     n_row_elts multiplications + n_row_elts-1 additions per row */
+
+  n_ops = n_faces*4 - n_cells;
 
   if (cs_glob_n_ranks == 1)
     n_ops_glob = n_ops;
   else
-    n_ops_glob = (  cs_glob_mesh->n_g_cells
-                  + cs_glob_mesh->n_g_i_faces*2);
+    n_ops_glob = (cs_glob_mesh->n_g_i_faces*4 - cs_glob_mesh->n_g_cells);
 
   for (jj = 0; jj < n_cells_ext; jj++)
     y[jj] = 0.0;
@@ -2045,6 +2100,15 @@ _sub_matrix_vector_test(double               t_measure,
   _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
 
   /* Matrix.vector product, contribute to faces only */
+
+  /* n_faces*2 nonzeroes, n_row_elts multiplications */
+
+  n_ops = n_faces*2;
+
+  if (cs_glob_n_ranks == 1)
+    n_ops_glob = n_ops;
+  else
+    n_ops_glob = (cs_glob_mesh->n_g_i_faces*2);
 
   BFT_MALLOC(ya, n_faces, cs_real_t);
   for (jj = 0; jj < n_faces; jj++)
@@ -2139,11 +2203,11 @@ cs_benchmark(int  mpi_trace_mode)
   BFT_MALLOC(xa, n_faces*2, cs_real_t);
 
   for (ii = 0; ii < n_cells_ext; ii++)
-    da[ii] = 1.0 + ii/n_cells_ext;
+    da[ii] = 1.0;
 
   for (ii = 0; ii < n_faces; ii++) {
-    xa[ii*2] = 0.5*(1.0 + ii/n_faces);
-    xa[ii*2 + 1] = -0.5*(1.0 + ii/n_faces);
+    xa[ii*2] = 0.5;
+    xa[ii*2 + 1] = -0.5;
   }
 
   /* Run tests */
@@ -2263,7 +2327,6 @@ cs_benchmark(int  mpi_trace_mode)
 
   BFT_FREE(da);
   BFT_FREE(xa);
-
 }
 
 /*----------------------------------------------------------------------------*/
