@@ -742,7 +742,7 @@ _copy_diagonal_separate(const cs_matrix_t  *matrix,
   }
   else if (matrix->type == CS_MATRIX_MSR) {
     const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-    _da = mc->x_val;
+    _da = mc->d_val;
   }
   const cs_lnum_t  n_cells = matrix->n_cells;
 
