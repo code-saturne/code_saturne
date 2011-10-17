@@ -223,17 +223,21 @@ _dense_3_3_ax(cs_lnum_t         b_id,
               const cs_real_t  *restrict x,
               cs_real_t        *restrict y)
 {
-  cs_lnum_t   ii, jj;
-
 # if defined(__xlc__) /* Tell IBM compiler not to alias */
 # pragma disjoint(*x, *y, * a)
 # endif
 
-  for (ii = 0; ii < 3; ii++) {
-    y[b_id*3 + ii] = 0;
-    for (jj = 0; jj < 3; jj++)
-      y[b_id*3 + ii] +=   a[b_id*9 + ii*3 + jj] * x[b_id*3 + jj];
-  }
+  y[b_id*3]     =   a[b_id*9]         * x[b_id*3]
+                  + a[b_id*9 + 1]     * x[b_id*3 + 1]
+                  + a[b_id*9 + 2]     * x[b_id*3 + 2];
+
+  y[b_id*3 + 1] =   a[b_id*9 + 3]     * x[b_id*3]
+                  + a[b_id*9 + 3 + 1] * x[b_id*3 + 1]
+                  + a[b_id*9 + 3 + 2] * x[b_id*3 + 2];
+
+  y[b_id*3 + 2] =   a[b_id*9 + 6]     * x[b_id*3]
+                  + a[b_id*9 + 6 + 1] * x[b_id*3 + 1]
+                  + a[b_id*9 + 6 + 2] * x[b_id*3 + 2];
 }
 
 /*----------------------------------------------------------------------------
@@ -731,7 +735,7 @@ _copy_diagonal_separate(const cs_matrix_t  *matrix,
                         cs_real_t          *restrict da)
 {
   cs_lnum_t  ii, jj;
-  const cs_real_t *_da;
+  const cs_real_t *_da = NULL;
   if (matrix->type == CS_MATRIX_NATIVE) {
     const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
     _da = mc->da;

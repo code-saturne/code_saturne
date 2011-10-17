@@ -1071,7 +1071,7 @@ _3_3_diag_vec_p_l_a(const cs_real_t  *restrict da,
 }
 
 /*----------------------------------------------------------------------------
- * Block version of y[i] = da[i].x[i], with da possibly NULL
+ * Block version of y[i] = da[i].x[i].
  *
  * This variant uses a fixed 3x3 block, for better compiler optimization,
  * and no inline function
@@ -1102,6 +1102,45 @@ _3_3_diag_vec_p_l_b(const cs_real_t  *restrict da,
       for (kk = 0; kk < 3; kk++)
         y[ii*3 + jj] += da[ii*9 + jj*3 + kk] * x[ii*3 + kk];
     }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Block version of y[i] = da[i].x[i], with unrolled loop.
+ *
+ * This variant uses a fixed 3x3 block, for better compiler optimization,
+ * and no inline function
+ *
+ * parameters:
+ *   da     <-- Pointer to coefficients array (usually matrix diagonal)
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
+ *   n_elts <-- Array size
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_3_3_diag_vec_p_l_c(const cs_real_t  *restrict da,
+                    const cs_real_t  *restrict x,
+                    cs_real_t        *restrict y,
+                    cs_lnum_t         n_elts)
+{
+  cs_lnum_t  ii;
+
+# if defined(__xlc__) /* Tell IBM compiler not to alias */
+# pragma disjoint(*x, *y, *da)
+# endif
+
+# pragma omp parallel for
+  for (ii = 0; ii < n_elts; ii++) {
+    y[ii*3]     =   da[ii*9]         * x[ii*3]
+                  + da[ii*9 + 1]     * x[ii*3 + 1]
+                  + da[ii*9 + 2]     * x[ii*3 + 2];
+    y[ii*3 + 1] =   da[ii*9 + 3]     * x[ii*3]
+                  + da[ii*9 + 3 + 1] * x[ii*3 + 1]
+                  + da[ii*9 + 3 + 2] * x[ii*3 + 2];
+    y[ii*3 + 2] =   da[ii*9 + 6]     * x[ii*3]
+                  + da[ii*9 + 6 + 1] * x[ii*3 + 1]
+                  + da[ii*9 + 6 + 2] * x[ii*3 + 2];
   }
 }
 
@@ -1337,6 +1376,39 @@ _block_ad_x_test(double             t_measure,
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("\n"
                   "Block Y <- DX (variant b)\n"
+                  "-------------\n"));
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  (calls: %d;  test sum: %12.5f)\n"),
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
+
+  /* Variant c */
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      _3_3_diag_vec_p_l_c(da, x, y, n_cells);
+      test_sum += test_sum_mult*y[run_id%n_cells];
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Block Y <- DX (variant c)\n"
                   "-------------\n"));
 
   cs_log_printf(CS_LOG_PERFORMANCE,
