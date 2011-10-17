@@ -234,7 +234,7 @@ _b_diag_dom_diag_normalize(const cs_real_t  *restrict da,
   if (da != NULL) {
 #   pragma omp parallel for private(jj, d_val)
     for (ii = 0; ii < n_cells; ii++) {
-      for (jj = 0; jj < b_size[0]; ii++) {
+      for (jj = 0; jj < b_size[0]; jj++) {
         d_val = fabs(da[ii*b_size[3] + jj*b_size[2] + jj]);
         if (d_val > 1.e-18)
           dd[ii*b_size[1] + jj] /= d_val;
