@@ -5420,7 +5420,7 @@ cs_matrix_exdiag_vector_multiply(cs_perio_rota_t     rotation_mode,
 
   else {
     if (matrix->vector_multiply[3] != NULL)
-      matrix->vector_multiply[3](false, matrix, x, y);
+      matrix->vector_multiply[3](true, matrix, x, y);
     else
       bft_error(__FILE__, __LINE__, 0,
                 _("Block matrix is missing a vector multiply function."));
