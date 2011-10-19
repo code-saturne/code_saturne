@@ -3270,6 +3270,16 @@ _b_mat_vec_p_l_msr(bool                exclude_diag,
 
 }
 
+/*----------------------------------------------------------------------------
+ * Local matrix.vector product y = A.x with MSR matrix, using MKL
+ *
+ * parameters:
+ *   exclude_diag <-- exclude diagonal if true
+ *   matrix       <-- Pointer to matrix structure
+ *   x            <-- Multipliying vector values
+ *   y            --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
 #if defined (HAVE_MKL)
 
 static void
@@ -3295,22 +3305,11 @@ _mat_vec_p_l_msr_mkl(bool                exclude_diag,
   /* Add diagonal contribution */
 
   if (!exclude_diag && mc->d_val != NULL) {
-    char matdescra[7] = "D NC  ";
-    int ndiag = 1;
-    int idiag[1] = {0};
-    double alpha = 1.0, beta = 1.0;
-    mkl_ddiamv(transa,
-               &n_rows,
-               &n_rows,
-               &alpha,
-               matdescra,
-               (double *)mc->d_val,
-               &n_rows,
-               idiag,
-               &ndiag,
-               (double *)x,
-               &beta,
-               y);
+    cs_lnum_t ii;
+    const double *restrict da = mc->d_val;
+#   pragma omp parallel for
+    for (ii = 0; ii < n_elts; ii++)
+      y[ii] += da[ii] * x[ii];
   }
 }
 
