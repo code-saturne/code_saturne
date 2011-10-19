@@ -291,6 +291,7 @@ double precision epsrgp , climgp , extrap
 double precision xfluxf , xgamma
 double precision diipbx, diipby, diipbz, surfbn, distbr
 double precision visct, flumab , xcp , xvsl, cp0iph, rrr
+double precision visct, flumab , xcp , xvsl, cp0iph, rrr, ctb1, ctb2
 double precision xfor(3), xyz(3), xabs, xu, xv, xw, xk, xeps
 
 !===============================================================================
@@ -321,7 +322,7 @@ idebra = idbra0
 ! (with boundaries marked by colors).
 
 ! The scalar considered if the temperature. We will also use the
-! specific heat (to btain balances in Joules)
+! specific heat (to obtain balances in Joules)
 
 
 ! Domain and associated boundary colors
@@ -738,11 +739,22 @@ if (inpdt0.eq.0) then
 
   if (ipccp.gt.0) then
     do ifac = 1, nfac
+
       iel1 = ifacel(1,ifac)
+      if (iel1.le.ncel) then
+        ctb1 = propfa(ifac,iflmas)*propce(iel1,ipccp)*rtp(iel1,ivar)
+      else
+        ctb1 = 0d0
+      endif
+
       iel2 = ifacel(2,ifac)
-      xbildv =   xbildv + propfa(ifac,iflmas)                 &
-               * (dt(iel1)*propce(iel1,ipccp)*rtp(iel1,ivar)  &
-               - dt(iel2)*propce(iel2,ipccp)*rtp(iel2,ivar))
+      if (iel2.le.ncel) then
+        ctb2 = propfa(ifac,iflmas)*propce(iel2,ipccp)*rtp(iel2,ivar)
+      else
+        ctb2 = 0d0
+      endif
+
+      xbildv =  xbildv + (dt(iel1)*ctb1 - dt(iel2)*ctb2)
     enddo
 
     do ifac = 1, nfabor
@@ -756,12 +768,22 @@ if (inpdt0.eq.0) then
 
   else
     do ifac = 1, nfac
+
       iel1 = ifacel(1,ifac)
+      if (iel1.le.ncel) then
+        ctb1 = propfa(ifac,iflmas)*cp0*rtp(iel1,ivar)
+      else
+        ctb1 = 0d0
+      endif
+
       iel2 = ifacel(2,ifac)
-      xbildv = xbildv +   (dt(iel1)+ dt(iel2))*0.5d0         &
-                        * cp0iph                             &
-                        * propfa(ifac,iflmas)                &
-                        * (rtp(iel1,ivar) - rtp(iel2,ivar))
+      if (iel2.le.ncel) then
+        ctb2 = propfa(ifac,iflmas)*cp0iph*rtp(iel2,ivar)
+      else
+        ctb2 = 0d0
+      endif
+
+      xbildv = xbildv + (dt(iel1) + dt(iel2))*0.5d0*(ctb1 - ctb2)
     enddo
 
     do ifac = 1, nfabor
