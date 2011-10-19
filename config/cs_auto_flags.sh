@@ -137,9 +137,13 @@ cs_gcc=no
 
 if test "x$GCC" = "xyes"; then
 
-  # Intel compiler passes as GCC but may be recognized by version string
+  # Intel and Pathscale compilers may pass as GCC but
+  # may be recognized by version string
+
   if test -n "`$CC --version | grep icc`" ; then
     cs_gcc=icc
+  elif test -n "`$CC --version 2>&1 | grep PathScale`" ; then
+    cs_gcc=pathcc
   else
     cs_gcc=gcc
   fi
@@ -175,7 +179,7 @@ if test "x$cs_gcc" = "xgcc"; then
   test -n "$cs_cc_vers_patch" || cs_cc_vers_patch=0
 
   # Default compiler flags
-  cflags_default="-ansi -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused"
+  cflags_default="-std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal"
   cflags_default_dbg="-g"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
@@ -191,7 +195,7 @@ if test "x$cs_gcc" = "xgcc"; then
       case "$host_cpu" in
         i686)
           case "$cs_cc_vendor-$cs_cc_version" in
-            gcc-2.9[56]*|gcc-3*|gcc-4*)
+            gcc-3*|gcc-4*)
               cflags_default_opt="$cflags_default_opt -march=i686"
               ;;
           esac
@@ -210,26 +214,15 @@ if test "x$cs_gcc" = "xgcc"; then
   # may not handle all flags)
 
   case "$cs_cc_vendor-$cs_cc_version" in
-
-    gcc-2.9[56]*)
-      cflags_default="$cflags_default -Wno-long-long"
-      ;;
-
-    gcc-3.*|gcc-4.*)
-      cflags_default="`echo $cflags_default | sed -e 's/-ansi/-std=c99/g'`"
-      cflags_default="$cflags_default -Wfloat-equal"
-      ;;
-
-  esac
-
-  case "$cs_cc_vendor-$cs_cc_version" in
-    gcc-2.*|gcc-3*|gcc-4.[012]*)
+    gcc-3*|gcc-4.[012]*)
       cflags_default_omp=""
       ;;
   esac
 
   case "$cs_cc_vendor-$cs_cc_version" in
-    gcc-4.[56]*)
+    gcc-3*|gcc-4.[01234]*)
+      ;;
+    *)
       cflags_default_opt="$cflags_default_opt -fexcess-precision=fast"
       cflags_default_hot="$cflags_default_hot -fexcess-precision=fast"
       ;;
@@ -353,6 +346,34 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     fi
 
   fi
+fi
+
+# Otherwise, are we using pathcc ?
+#---------------------------------
+
+if test "x$cs_cc_compiler_known" != "xyes" ; then
+
+  $CC --version 2>&1 | grep 'PathScale' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is PathScale C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $CC --version > $outfile 2>&1
+    cs_ac_cc_version=`grep -i Compiler $outfile`
+    cs_cc_compiler_known=yes
+
+    # Default compiler flags
+    cflags_default="-c99 -noswitcherror"
+    cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
+    cflags_default_dbg="-g"
+    cflags_default_opt="-O2"
+    cflags_default_hot="-Ofast"
+    cflags_default_prf=""
+    cflags_default_omp="-openmp"
+
+  fi
+
 fi
 
 # Compiler still not identified
@@ -504,9 +525,13 @@ cs_gxx=no
 
 if test "x$GXX" = "xyes"; then
 
-  # Intel compiler passes as GXX but may be recognized by version string
+  # Intel and Pathscale compilers may pass as GXX but
+  # may be recognized by version string
+
   if test -n "`$CXX --version | grep icc`" ; then
     cs_gxx=icc
+  elif test -n "`$CXX --version 2>&1 | grep PathScale`" ; then
+    cs_gxx=pathCC
   else
     cs_gxx=g++
   fi
@@ -542,7 +567,7 @@ if test "x$cs_gxx" = "xg++"; then
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
 
   # Default compiler flags
-  cxxflags_default="-ansi -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wunused -Wno-long-long"
+  cxxflags_default="-ansi -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wunused -Wno-long-long -Wfloat-equal -Wpadded"
   cxxflags_default_dbg="-g"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
@@ -558,7 +583,7 @@ if test "x$cs_gxx" = "xg++"; then
       case "$host_cpu" in
         i686)
           case "$cs_cxx_vendor-$cs_cxx_version" in
-            g++-2.9[56]*|g++-3*|g++-4*)
+            g++-3*|g++-4*)
               cxxflags_default_opt="$cxxflags_default_opt -march=i686"
             ;;
           esac
@@ -573,19 +598,6 @@ if test "x$cs_gxx" = "xg++"; then
 
   # Modify default flags depending on g++ version (as older versions
   # may not handle all flags)
-
-  case "$cs_cxx_vendor-$cs_cxx_version" in
-
-    g++-2.9[56]*)
-      cxxflags_default="$cxxflags_default -Wno-long-long"
-      ;;
-
-    g++-3.*|g++-4.*)
-      cxxflags_default="`echo $cxxflags_default | sed -e 's/-ansi/-std=c99/g'`"
-      cxxflags_default="$cxxflags_default -Wfloat-equal -Wpadded"
-      ;;
-
-  esac
 
   case "$cs_cxx_vendor-$cs_cxx_version" in
     g++-2.*|g++-3*|g++-4.[012]*)
@@ -644,6 +656,33 @@ else
     cxxflags_default_opt="-fast -fastsse"
     cxxflags_default_prf="-Mprof=func,lines"
     cxxflags_default_omp="-mp"
+
+  fi
+
+fi
+
+# Otherwise, are we using pathcc ?
+#---------------------------------
+
+if test "x$cs_cc_compiler_known" != "xyes" ; then
+
+  $CXX --version 2>&1 | grep 'PathScale' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CXX' is PathScale C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $CXX --version > $outfile 2>&1
+    cs_ac_cxx_version=`grep -i Compiler $outfile`
+    cs_cxx_compiler_known=yes
+
+    # Default compiler flags
+    cxxflags_default="-ansi -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
+    cxxflags_default_dbg="-g"
+    cxxflags_default_opt="-O2"
+    cxxflags_default_hot="-Ofast"
+    cxxflags_default_prf=""
+    cxxflags_default_omp="-openmp"
 
   fi
 
@@ -938,6 +977,32 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
 
   fi
 
+fi
+
+if test "x$cs_fc_compiler_known" != "xyes" ; then
+
+  # Are we using pathf95 ?
+  #---------------------
+
+  $FC --version 2>&1 | grep 'PathScale' > /dev/null
+
+  if test "$?" = "0" ; then
+
+    echo "compiler '$FC' is PathScale Fortran compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $FC --version > $outfile 2>&1
+    cs_ac_fc_version=`grep 'PathScale' $outfile`
+    cs_fc_compiler_known=yes
+
+    fcflags_default="-Wall -Wno-unused"
+    fcflags_default_dbg="-g -ffortran-bounds-check"
+    fcflags_default_opt="-O"
+    fcflags_default_hot="-fast"
+    fcflags_default_prf=""
+    fcflags_default_omp="-openmp"
+
+  fi
 fi
 
 if test "x$cs_fc_compiler_known" != "xyes" ; then
