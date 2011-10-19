@@ -28,38 +28,35 @@ subroutine distpr &
    distpa )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
 
-! CALCUL DE LA DISTANCE A LA PAROI PAR INVERSION DE LA SOLUTION 3D
-!   DE L'EQUATION DE DIFFUSION D'UN SCALAIRE
+! Compute distance to wall by solving a 3D diffusion equation.
 
-!  On resout
+! Solve
 !    div[grad(T)] = -1
 !      avec :
-!      T(bord)   = 1 en paroi
+!      T(bord)   = 0 en paroi
 !      grad(T).n = 0 ailleurs
 
-!  La distance a la paroi vaut alors :
+! The wall distance is then equal to:
 
-!   d ~ -|grad(T)|+[grad(T).grad(T)+2.T]^(1/2)
-
+!   d ~ -|grad(T)| + [grad(T).grad(T)+2.T]^(1/2)
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! distpa(ncelet    ! tr ! --> ! tab des distances a la paroi                   !
+! distpa(ncelet    ! ra ! --> ! distance to wall                               !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -93,7 +90,6 @@ double precision distpa(ncelet)
 
 ! Local variables
 
-
 integer          ndircp, iconvp, idiffp, isym
 integer          ipol  , ireslp, ipp
 integer          niterf, icycle, ncymxp, nitmfp
@@ -101,7 +97,7 @@ integer          iinvpe
 integer          isqrt , iel   , ifac
 integer          inc   , iccocg, ivar
 integer          isweep, nittot, idtva0
-integer          ibsize
+integer          ibsize, mmprpl
 
 double precision relaxp, thetap, rnorm, residu, rnoini
 double precision dismax, dismin
@@ -118,9 +114,8 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 !===============================================================================
 
 
-
 !===============================================================================
-! 1. INITIALISATIONS
+! 1. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays for the species resolution
@@ -137,20 +132,10 @@ allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 rnoini = 0.d0
 
-!     Memoire
-
-!     Nombre d'iteration totale pour l'inversion
 nittot = 0
 
-!     La distance a la paroi est initialisee a 0 pour la reconstruction
-
-do iel = 1, ncelet
-  distpa(iel) = 0.d0
-  rtpdp(iel)  = 0.d0
-enddo
-
 !===============================================================================
-! 2.CONDITIONS LIMITES
+! 2. Boundary conditions
 !===============================================================================
 
 !     Conditions aux limites pour le scalaire resolu T
@@ -173,16 +158,16 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 3. PREPARATION DU SYSTEME A RESOUDRE
+! 3. Prepare system to solve
 !===============================================================================
 
-! -- Diagonale
+! -- Diagonal
 
 do iel = 1, ncel
   rovsdp(iel) = 0.d0
 enddo
 
-! -- Diffusion aux faces
+! -- Diffusion at faces
 
 do iel = 1, ncel
   w1(iel) = 1.d0
@@ -210,30 +195,41 @@ call matrix                                                       &
    viscf  , viscb  , viscf  , viscb  ,                            &
    dam    , xam    )
 
-! -- Second membre
+!===============================================================================
+! 4. Solve system
+!===============================================================================
 
-do iel = 1, ncel
-  smbdp(iel)  = volume(iel)
-enddo
-!===============================================================================
-! 4. RESOLUTION DU SYSTEME
-!===============================================================================
 ipp = 1
-NOMVAR(IPP) = 'DisParoi'
+nomvar(ipp) = 'DisParoi'
 ipol   = 0
 ireslp = 0
-! Pas de multigrille (NCYMXP,NITMFP sont arbitraies)
+! No multigrid (NCYMXP,NITMFP arbitrary)
 ncymxp = 100
 nitmfp = 10
-! Periodicite
+! Periodicity
 iinvpe = 0
 if(iperio.eq.1) iinvpe = 1
 isqrt = 1
 ibsize = 1
 
-! -- Boucle de reconstruction
+110 continue
 
-! Si NSWRSY = 1, on doit faire 2 inversions
+! Distance to wall is initialized to 0 for reconstruction
+
+do iel = 1, ncelet
+  distpa(iel) = 0.d0
+  rtpdp(iel)  = 0.d0
+enddo
+
+! -- RHS
+
+do iel = 1, ncel
+  smbdp(iel)  = volume(iel)
+enddo
+
+! -- Reconstruction loop;
+!   if NSWRSY = 1, we must solve twice
+
 do isweep = 0, nswrsy
 
   call prodsc(ncelet,ncel,isqrt,smbdp,smbdp,rnorm)
@@ -241,8 +237,8 @@ do isweep = 0, nswrsy
      write(nfecra,5000) nomvar(ipp),isweep,rnorm
   endif
   if (isweep.le.1) rnoini = rnorm
-! Test de convergence
-  if(rnorm.le.10.d0*epsily*rnoini) goto 100
+  ! Convergence test
+  if (rnorm.le.10.d0*epsily*rnoini) goto 100
 
   do iel = 1, ncelet
     rtpdp(iel) = 0.d0
@@ -262,14 +258,14 @@ do isweep = 0, nswrsy
     distpa(iel) = distpa(iel) + rtpdp(iel)
   enddo
 
-!    - Echange pour le parallelisme
+  ! - Synchronization for parallelism
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synsca(rtpdp)
     !==========
   endif
 
-  if(isweep.lt.nswrsy) then
+  if (isweep.lt.nswrsy) then
     inc    = 0
     iccocg = 1
     ivar = 0
@@ -290,29 +286,45 @@ do isweep = 0, nswrsy
   endif
 enddo
 
+mmprpl = 0
+do iel = 1, ncel
+  if (distpa(iel).lt.0.d0) then
+    mmprpl = 1
+    exit
+  endif
+enddo
+
+if (mmprpl.eq.1) then
+  if (nswrsy.gt.0) then
+    nswrsy = 0
+    write(nfecra,9000)
+    goto 110
+  else
+    write(nfecra,9001) distpa(iel)
+  endif
+endif
+
  100  continue
 
-! On travail ensuite sur RTPDP pour calculer DISTPA
 do iel=1,ncel
   rtpdp(iel)  = distpa(iel)
 enddo
 
 !===============================================================================
-! 5. CALCUL DE LA DISTANCE A LA PAROI
+! 5. Compute distance to wall
 !===============================================================================
 
 ! Allocate a temporary array for the gradient calculation
 allocate(grad(ncelet,3))
 
-!    - Echange pour le parallelisme et pour la periodicite
+! - Synchronization for parallelism and periodicity
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(rtpdp)
   !==========
 endif
 
-
-!    - Calcul du gradient
+! - Compute gradient
 
 inc    = 1
 iccocg = 1
@@ -338,25 +350,23 @@ enddo
 deallocate(grad)
 
 !===============================================================================
-! 6. CALCUL DES BORNES ET IMPRESSIONS
+! 6. Compute bounds and print info
 !===============================================================================
-  dismax = -grand
-  dismin =  grand
 
-  do iel = 1, ncel
-      dismin = min(distpa(iel),dismin)
-      dismax = max(distpa(iel),dismax)
-  enddo
+dismax = -grand
+dismin =  grand
 
-  if (irangp.ge.0) then
-    call parmin(dismin)
-    call parmax(dismax)
-  endif
+do iel = 1, ncel
+  dismin = min(distpa(iel),dismin)
+  dismax = max(distpa(iel),dismax)
+enddo
 
-!     Impressions
+if (irangp.ge.0) then
+  call parmin(dismin)
+  call parmax(dismax)
+endif
 
-  write(nfecra,1000)dismin, dismax, nittot
-
+write(nfecra,1000)dismin, dismax, nittot
 
 ! Free memory
 deallocate(viscf, viscb)
@@ -367,7 +377,7 @@ deallocate(w1, w2, w3)
 deallocate(w7, w8, w9)
 
 !===============================================================================
-! 7. FORMATS
+! 7. Formats
 !===============================================================================
 
 #if defined(_CS_LANG_FR)
@@ -391,6 +401,22 @@ deallocate(w7, w8, w9)
 '@       Coord X      Coord Y      Coord Z                    ',/,&
 '@ ',3E13.5                                                    ,/)
 
+ 9000   format(                                                         &
+'@                                                            ',/,&
+'@ @@ ATTENTION : Calcul de la distance a la paroi            ',/,&
+'@    =========                                               ',/,&
+'@  La solution du laplacien ne respecte pas le principe du   ',/,&
+'@  maximum. On recalcule le laplacien sans les               ',/,&
+'@  reconstructions (nswrsy = 0).                              ',/)
+
+ 9001   format(                                                         &
+'@                                                            ',/,&
+'@ @@ ATTENTION : Calcul de la distance a la paroi            ',/,&
+'@    =========                                               ',/,&
+'@  La solution du laplacien ne respecte pas le principe du   ',/,&
+'@  maximum. (lapalcien negatif : ', E14.6,')      ',/)
+
+
 #else
 
  1000 format(                                                           &
@@ -411,6 +437,21 @@ deallocate(w7, w8, w9)
 '@  The associated variable does not converge in cell ',I10    ,/,&
 '@       Coord X      Coord Y      Coord Z                    ',/,&
 '@ ',3E13.5                                                    ,/)
+
+ 9000   format(                                                         &
+'@                                                            ',/,&
+'@ @@ WARNING: Wall distance calculation                      ',/,&
+'@    =========                                               ',/,&
+'@  The laplacian solution does not respect the maximum       ',/,&
+'@  principle. We recompute the laplacien without             ',/,&
+'@  reconstructions (nswrsy = 0).                              ',/)
+
+ 9001   format(                                                         &
+'@                                                            ',/,&
+'@ @@ WARNING: Wall distance calculation                      ',/,&
+'@    =========                                               ',/,&
+'@  The laplacian solution does not respect the maximum       ',/,&
+'@  principle. (laplacian solution is  negative :', E14.6,')    ',/)
 
 #endif
 
