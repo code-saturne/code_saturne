@@ -792,7 +792,7 @@ _polynomial_preconditionning(cs_int_t            n_cells,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of A..vx = Rhs using preconditioned conjugate gradient.
+ * Solution of A.vx = Rhs using preconditioned conjugate gradient.
  *
  * Parallel-optimized version, groups dot products, at the cost of
  * computation of the preconditionning for n+1 iterations instead of n.
@@ -1015,15 +1015,16 @@ _conjugate_gradient(const char             *var_name,
  * On entry, vx is considered initialized.
  *
  * parameters:
- *   var_name      <-- Variable name
- *   a             <-- Matrix
- *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   convergence   <-- Convergence information structure
- *   rhs           <-- Right hand side
- *   vx            --> System solution
- *   aux_size      <-- Number of elements in aux_vectors
- *   aux_vectors   --- Optional working area (allocation otherwise)
+ *   var_name        <-- Variable name
+ *   a               <-- Matrix
+ *   diag_block_size <-- Block size of element ii, ii
+ *   poly_degree     <-- Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode   <-- Halo update option for rotational periodicity
+ *   convergence     <-- Convergence information structure
+ *   rhs             <-- Right hand side
+ *   vx              --> System solution
+ *   aux_size        <-- Number of elements in aux_vectors
+ *   aux_vectors     --- Optional working area (allocation otherwise)
  *
  * returns:
  *   1 if converged, 0 if not converged, -1 if not converged and maximum
@@ -1033,6 +1034,7 @@ _conjugate_gradient(const char             *var_name,
 static int
 _conjugate_gradient_sr(const char             *var_name,
                        const cs_matrix_t      *a,
+                       int                     diag_block_size,
                        int                     poly_degree,
                        cs_perio_rota_t         rotation_mode,
                        cs_sles_convergence_t  *convergence,
@@ -1061,8 +1063,8 @@ _conjugate_gradient_sr(const char             *var_name,
 
   sles_name = _(cs_sles_type_name[CS_SLES_PCG]);
 
-  n_cols = cs_matrix_get_n_columns(a);
-  n_rows = cs_matrix_get_n_rows(a);
+  n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
+  n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
 
   /* Allocate work arrays */
 
@@ -1577,7 +1579,7 @@ _block_3_jacobi(const char             *var_name,
  * parameters:
  *   var_name         <-- Variable name
  *   a                <-- Matrix
- *   diag_block_size  <-- Block size of element ii,ii
+ *   diag_block_size  <-- Block size of element ii, ii
  *   poly_degree      <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode    <-- Halo update option for rotational periodicity
  *   convergence      <-- Convergence information structure
@@ -2915,20 +2917,16 @@ cs_sles_solve(const char         *var_name,
                                   aux_vectors);
         break;
       case CS_SLES_PCG_SR:
-        if (_diag_block_size == 1)
-          cvg = _conjugate_gradient_sr(var_name,
-                                       a,
-                                       poly_degree,
-                                       rotation_mode,
+        cvg = _conjugate_gradient_sr(var_name,
+                                     a,
+                                     _diag_block_size,
+                                     poly_degree,
+                                     rotation_mode,
                                        &convergence,
-                                       rhs,
-                                       vx,
-                                       aux_size,
-                                       aux_vectors);
-        else
-          bft_error
-            (__FILE__, __LINE__, 0,
-             _("PCG not supported with block_size > 1 (velocity coupling)."));
+                                     rhs,
+                                     vx,
+                                     aux_size,
+                                     aux_vectors);
         break;
       case CS_SLES_JACOBI:
         if (_diag_block_size == 1)
