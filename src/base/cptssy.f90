@@ -163,7 +163,7 @@ do inbcou = 1, nbccou
     do iloc = 1, ncecpl
 
       iel = lcecpl(iloc)
-      tfluid(iloc) = rtp(iel, ivart)
+      tfluid(iloc) = rtpa(iel, ivart)
       ctbimp(iloc) = 0.0d0
       ctbexp(iloc) = 0.0d0
 
