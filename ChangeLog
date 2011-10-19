@@ -1,4 +1,9 @@
 * 18/10/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add missing comma between domain blocks in runcase_coupling.
+  modified file:
+    bin/cs_create.py
+
+* 18/10/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Also remove threaded-version of BLAS library detection for ESSL, as recent
   tests on blue Gene/P show it is not required (though linking with thread-safe
   compiler options is required even for the non-threaded version due to
