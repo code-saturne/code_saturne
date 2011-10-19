@@ -433,7 +433,14 @@ class Study:
 
         for c in self.cases:
 
-            template = \
+            if dict_str != "": # Add separating comma after first domain
+                sep = \
+"""
+    ,"""
+            else:
+                sep = ""
+
+            template = sep + \
 """
     {'solver': 'PACKAGE',
      'domain': 'DOMAIN',
