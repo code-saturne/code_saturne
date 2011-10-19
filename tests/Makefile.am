@@ -149,6 +149,11 @@ cfd_proxy_unit_test_LDADD = $(top_builddir)/salome/cfd_proxy/libcfdproxy.la \
 
 endif
 
+# Graphical User Interface unit tests
+
+EXTRA_DIST = \
+unittests.py
+
 # Uncomment for tests execution at "make check"
 #TESTS=$(check_PROGRAMS)
 

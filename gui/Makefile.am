@@ -24,10 +24,6 @@
 
 SUBDIRS = Base Pages
 
-EXTRA_DIST = \
-epydocConfig \
-sbin/unittests.py
-
 # Install data
 
 nobase_pkgpython_DATA = \
