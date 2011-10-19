@@ -26,27 +26,26 @@ subroutine prodsc &
  ( ncelet , ncel   , isqrt  , va     , vb     , vavb   )
 
 !===============================================================================
-! FONCTION :
-! ----------
-!                                    ______
-! PRODUIT SCALAIRE VAPVB = VA.VB OU \/ VA.VB  SI ISQRT=1
+! Purpose:
+! --------
+
+! Dot product VAPVB = VA.VB or \/ VA.VB  if ISQRT=1
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! isqrt            ! e  ! <-- ! indicateur = 1 pour prendre la racine          !
-! va, vb(ncelet    ! tr ! <-- ! vecteurs a multiplier                          !
-! vavb             ! r  ! --> ! produit scalaire                               !
+! isqrt            ! i  ! <-- ! flag: 1 to return the square root              !
+! va, vb(ncelet)   ! ra ! <-- ! vectors to multiply                            !
+! vavb             ! r  ! --> ! dot product                                    !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -68,21 +67,19 @@ double precision va(ncelet),vb(ncelet)
 
 ! Local variables
 
-integer incx, incy
-double precision ddot
-external         ddot
+double precision csdot
+external         csdot
 
 !===============================================================================
 
-incx = 1
-incy = 1
-vavb = ddot(ncel, va, incx, vb, incy)
+vavb = csdot(ncel, va, vb)
 
 if (irangp.ge.0) call parsom (vavb)
                  !==========
-if( isqrt.eq.1 ) vavb= sqrt(vavb)
+if (isqrt.eq.1) vavb= sqrt(vavb)
+
 !----
-! FIN
+! End
 !----
 
 return

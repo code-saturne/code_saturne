@@ -495,7 +495,7 @@ _dot_product(cs_int_t          n_elts,
 
 #else
 
-  double s = cblas_ddot(n_elts, x, 1, y, 1);
+  double s = cs_dot(n_elts, x, y);
 
 #endif
 
@@ -557,8 +557,8 @@ _dot_products_2(cs_int_t          n_elts,
   }
   else {
 
-    s[0] = cblas_ddot(n_elts, x1, 1, y1, 1);
-    s[1] = cblas_ddot(n_elts, x2, 1, y2, 1);
+    s[0] = cs_dot(n_elts, x1, y1);
+    s[1] = cs_dot(n_elts, x2, y2);
 
   }
 
@@ -640,88 +640,6 @@ _dot_products_3(cs_int_t          n_elts,
   *s1 = s[0];
   *s2 = s[1];
   *s3 = s[2];
-}
-
-/*----------------------------------------------------------------------------
- * Compute y <- x + alpha.y
- *
- * parameters:
- *   n     <-- Number of elements in vectors x, y, z
- *   alpha <-- Scalar alpha
- *   x     <-- Vector x (size: n)
- *   y     <-> Vector y (size: n)
- *----------------------------------------------------------------------------*/
-
-inline static void
-_y_aypx(cs_int_t    n,
-        cs_real_t   alpha,
-        cs_real_t  *restrict x,
-        cs_real_t  *restrict y)
-{
-#if defined(HAVE_ESSL)
-
-  dzaxpy(n, alpha, y, 1, x, 1, y, 1);
-
-#else
-
- {
-   cs_int_t ii;
-
-#if defined(__xlc__)
-#pragma disjoint(alpha, *x, *y)
-#endif
-
-#  pragma omp parallel for firstprivate(alpha) if(n > THR_MIN)
-   for (ii = 0; ii < n; ii++)
-     y[ii] = x[ii] + (alpha * y[ii]);
- }
-
-#endif
-
-}
-
-/*----------------------------------------------------------------------------
- * Compute y1  <- x1  + alpha.y1 and y2 <- x2 + alpha.y2
- *
- * parameters:
- *   n     <-- Number of elements in vectors x, y, z
- *   alpha <-- Scalar alpha
- *   x1    <-- Vector x1 (size: n)
- *   x2    <-- Vector x1 (size: n)
- *   y1    <-> Vector y1 (size: n)
- *   y2    <-> Vector y2 (size: n)
- *----------------------------------------------------------------------------*/
-
-inline static void
-_y_aypx_2(cs_int_t    n,
-          cs_real_t   alpha,
-          cs_real_t  *restrict x1,
-          cs_real_t  *restrict x2,
-          cs_real_t  *restrict y1,
-          cs_real_t  *restrict y2)
-{
-#if defined(HAVE_ESSL)
-
-  dzaxpy(n, alpha, y1, 1, x1, 1, y1, 1);
-  dzaxpy(n, alpha, y2, 1, x2, 1, y2, 1);
-
-#else /* defined(HAVE_ESSL) */
-
- {
-   cs_int_t ii;
-
-#if defined(__xlc__)
-#pragma disjoint(alpha, *x1, *y1, *x2, *y2)
-#endif
-
-#  pragma omp parallel for firstprivate(alpha) if(n > THR_MIN)
-   for (ii = 0; ii < n; ii++) {
-     y1[ii] = x1[ii] + (alpha * y1[ii]);
-     y2[ii] = x2[ii] + (alpha * y2[ii]);
-   }
- }
-
-#endif /* defined(HAVE_ESSL) */
 }
 
 /*----------------------------------------------------------------------------
@@ -892,17 +810,9 @@ _conjugate_gradient(const char             *var_name,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
-#if defined(HAVE_OPENMP)
-
 # pragma omp parallel for if(n_rows > THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     rk[ii] = rk[ii] - rhs[ii];
-
-#else
-
-  cblas_daxpy(n_rows, -1, rhs, 1, rk, 1);
-
-#endif
 
   /* Polynomial preconditionning of order poly_degre */
 
@@ -940,8 +850,8 @@ _conjugate_gradient(const char             *var_name,
 
   alpha =  - ro_0 / ro_1;
 
-  cblas_daxpy(n_rows, alpha, dk, 1, vx, 1);
-  cblas_daxpy(n_rows, alpha, zk, 1, rk, 1);
+  cs_axpy(n_rows, alpha, dk, vx);
+  cs_axpy(n_rows, alpha, zk, rk);
 
   /* Convergence test */
 
@@ -986,7 +896,9 @@ _conjugate_gradient(const char             *var_name,
     beta = rk_gk / rk_gkm1;
     rk_gkm1 = rk_gk;
 
-    _y_aypx(n_rows, beta, gk, dk);  /* dk <- gk + (beta.dk) */
+#   pragma omp parallel for firstprivate(alpha) if(n_rows > THR_MIN)
+    for (ii = 0; ii < n_rows; ii++)
+      dk[ii] = gk[ii] + (beta * dk[ii]);
 
     cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
 
@@ -994,8 +906,8 @@ _conjugate_gradient(const char             *var_name,
 
     alpha =  - ro_0 / ro_1;
 
-    cblas_daxpy(n_rows, alpha, dk, 1, vx, 1);
-    cblas_daxpy(n_rows, alpha, zk, 1, rk, 1);
+    cs_axpy(n_rows, alpha, dk, vx);
+    cs_axpy(n_rows, alpha, zk, rk);
 
   }
 
@@ -1109,17 +1021,9 @@ _conjugate_gradient_sr(const char             *var_name,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
-#if defined(HAVE_OPENMP)
-
 # pragma omp parallel for if(n_rows > THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     rk[ii] = rk[ii] - rhs[ii];
-
-#else
-
-  cblas_daxpy(n_rows, -1, rhs, 1, rk, 1);
-
-#endif
 
   /* Polynomial preconditionning of order poly_degre */
   /* gk = c_1 * rk  (zk = c_1 * rk) */
@@ -1152,14 +1056,14 @@ _conjugate_gradient_sr(const char             *var_name,
 
   /* Descent parameter */
 
-  _dot_products_2(n_rows, rk, gk, dk, zk, &ro_0, &ro_1);
+  _dot_products_2(n_rows, rk, dk, dk, zk, &ro_0, &ro_1);
 
   alpha =  - ro_0 / ro_1;
 
   rk_gkm1 = ro_0;
 
-  cblas_daxpy(n_rows, alpha, dk, 1, vx, 1);
-  cblas_daxpy(n_rows, alpha, zk, 1, rk, 1);
+  cs_axpy(n_rows, alpha, dk, vx);
+  cs_axpy(n_rows, alpha, zk, rk);
 
   /* Convergence test */
 
@@ -1206,16 +1110,18 @@ _conjugate_gradient_sr(const char             *var_name,
     beta = rk_gk / rk_gkm1;
     rk_gkm1 = rk_gk;
 
-    /* dk <- gk + (beta.dk) and zk <- sk + (beta.zk) */
-    _y_aypx_2(n_rows, beta, gk, sk, dk, zk);
-
     ro_1 = gk_sk - beta*beta*ro_1;
     ro_0 = rk_gk;
 
     alpha =  - ro_0 / ro_1;
 
-    cblas_daxpy(n_rows, alpha, dk, 1, vx, 1);
-    cblas_daxpy(n_rows, alpha, zk, 1, rk, 1);
+#   pragma omp parallel for firstprivate(alpha, beta) if(n_rows > THR_MIN)
+    for (ii = 0; ii < n_rows; ii++) {
+      dk[ii] = gk[ii] + (beta * dk[ii]);
+      vx[ii] = vx[ii] + (alpha * dk[ii]);
+      zk[ii] = sk[ii] + (beta * zk[ii]);
+      rk[ii] = rk[ii] + (alpha * zk[ii]);
+    }
 
   }
 
@@ -1769,8 +1675,8 @@ _bi_cgstab(const char             *var_name,
 
     /* First update of vx and rk */
 
-    cblas_daxpy(n_rows,  gamma, zk, 1, vx, 1);
-    cblas_daxpy(n_rows, -gamma, uk, 1, rk, 1);
+    cs_axpy(n_rows,  gamma, zk, vx);
+    cs_axpy(n_rows, -gamma, uk, rk);
 
     /* Compute zk = C.rk (zk is overwritten, vk is a working array */
 
@@ -1808,8 +1714,8 @@ _bi_cgstab(const char             *var_name,
 
     /* Final update of vx and rk */
 
-    cblas_daxpy(n_rows,  alpha, zk, 1, vx, 1);
-    cblas_daxpy(n_rows, -alpha, vk, 1, rk, 1);
+    cs_axpy(n_rows,  alpha, zk, vx);
+    cs_axpy(n_rows, -alpha, vk, rk);
 
     /* Convergence test at beginning of next iteration so
        as to group dot products for better parallel performance */
@@ -1974,7 +1880,7 @@ _gmres(const char             *var_name,
   const char *sles_name;
   int check_freq, l_iter, l_old_iter, scaltest;
   int krylov_size, _krylov_size;
-  cs_int_t  n_cols, n_rows, ii, kk, jj;
+  cs_lnum_t  n_cols, n_rows, ii, kk, jj;
   double    beta, dot_prod, residue, _residue, epsi;
   cs_real_t  *_aux_vectors;
   cs_real_t *restrict _krylov_vectors, *restrict _h_matrix;
@@ -2100,7 +2006,7 @@ _gmres(const char             *var_name,
                                    gk,
                                    dk);
 
-      /* compute w=dk <- A*vj */
+      /* compute w = dk <- A*vj */
 
       cs_matrix_vector_multiply(rotation_mode, a, gk, dk);
 
@@ -2111,10 +2017,10 @@ _gmres(const char             *var_name,
           = _dot_product(n_rows, dk, (_krylov_vectors + kk*n_rows));
 
         /* compute w = dk <- w - h(i,k)*vi */
-        cblas_daxpy(n_rows,
-                    -_h_matrix[ii*krylov_size+kk],
-                    (_krylov_vectors + kk*n_rows),
-                    1, dk, 1);
+        cs_axpy(n_rows,
+                -_h_matrix[ii*krylov_size+kk],
+                (_krylov_vectors + kk*n_rows),
+                dk);
       }
 
       /* compute h(i+1,i) = sqrt<w,w> */
@@ -2158,13 +2064,11 @@ _gmres(const char             *var_name,
 
 #else
 
-#       pragma omp parallel for if(n_rows > THR_MIN)
+#       pragma omp parallel for private(kk) if(n_rows > THR_MIN)
         for (jj = 0; jj < n_rows; jj++) {
-          fk[jj] = cblas_ddot(l_iter + 1,
-                              _krylov_vectors + jj,
-                              n_rows,
-                              gk,
-                              1);
+          fk[jj] = 0.0;
+          for (kk = 0; kk <= l_iter; kk++)
+            fk[jj] += _krylov_vectors[kk*n_rows] * gk[kk];
         }
 #endif
 

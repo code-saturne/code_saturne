@@ -58,6 +58,9 @@
 #include <mkl_cblas.h>
 #include <mkl_spblas.h>
 
+#elif defined(HAVE_ACML)
+#include <acml.h>
+
 #elif defined(HAVE_CBLAS)
 #include <cblas.h>
 
@@ -323,7 +326,7 @@ _dot_product_1(double            t_measure,
   while (run_id < n_runs) {
     double test_sum_mult = 1.0/n_runs;
     while (run_id < n_runs) {
-      double s1 = cblas_ddot(n_cells, x, 1, y, 1);
+      double s1 = cs_dot(n_cells, x, y);
 #if defined(HAVE_MPI)
       if (_global) {
         double s1_glob = 0.0;
@@ -453,8 +456,8 @@ _dot_product_2(double            t_measure,
   while (run_id < n_runs) {
     double test_sum_mult = 1.0/n_runs;
     while (run_id < n_runs) {
-      double s1 = cblas_ddot(n_cells, x, 1, x, 1);
-      double s2 = cblas_ddot(n_cells, x, 1, y, 1);
+      double s1 = cs_dot(n_cells, x, x);
+      double s2 = cs_dot(n_cells, x, y);
       test_sum += test_sum_mult*(s1+s2);
       run_id++;
     }
@@ -558,7 +561,7 @@ _axpy_(double             t_measure,
   while (run_id < n_runs) {
     double test_sum_mult = 1.0/n_runs;
     while (run_id < n_runs) {
-      cblas_daxpy(n_cells, test_sum_mult, (cs_real_t *)x, 1, y, 1);
+      cs_axpy(n_cells, test_sum_mult, x, y);
       test_sum += test_sum_mult*y[run_id%n_cells];
       run_id++;
     }
@@ -1492,52 +1495,6 @@ _copy_test(double             t_measure,
 # if defined(__xlc__)
 # pragma disjoint(*x, *y)
 # endif
-
-  /* Blas version */
-
-#if defined(HAVE_CBLAS)
-
-  for (sub_id = 0, n_div = 1;
-       sub_id < 4;
-       sub_id++, n_div *= 8) {
-
-    test_sum = 0.0;
-    wt0 = cs_timer_wtime(), wt1 = wt0;
-
-    _n_cells = n_cells / n_div;
-
-    if (t_measure > 0)
-      n_runs = 8;
-    else
-      n_runs = 1;
-    run_id = 0;
-    while (run_id < n_runs) {
-      double test_sum_mult = 1.0/n_runs;
-      while (run_id < n_runs) {
-        cblas_dcopy(_n_cells, (cs_real_t *)x, 1, y, 1);
-        y[0] += 0.1;
-        test_sum += test_sum_mult*y[run_id%n_cells];
-        run_id++;
-      }
-      wt1 = cs_timer_wtime();
-      if (wt1 - wt0 < t_measure)
-        n_runs *= 2;
-    }
-
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("\n"
-                    "Copy with cblas_dcopy (n_cells/%d)\n"
-                    "---------------------\n"), n_div);
-
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("  (calls: %d;  test sum: %12.5f)\n"),
-                  n_runs, test_sum);
-
-    _print_mem_stats(n_runs, _n_cells, wt1 - wt0);
-
-  }
-
-#endif /* defined(HAVE_BLAS) */
 
   /* Copy with memcpy */
 

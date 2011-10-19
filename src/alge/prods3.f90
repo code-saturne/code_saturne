@@ -28,33 +28,30 @@ subroutine prods3 &
    vavb1  , vavb2  , vavb3  )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
 
-! CALCUL SIMULTANE DE 3 PRODUITS SCALAIRES
-!                   ______
-! VAPVB = VA.VB OU \/ VA.VB  SI ISQRT=1
+! Triple dot product VAPVB = VA.VB or \/ VA.VB  if ISQRT=1
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! isqrt            ! e  ! <-- ! indicateur = 1 pour prendre la racine          !
-! va1(), vb1()     ! tr ! <-- ! premiers   vecteurs a multiplier               !
-! va2(), vb2()     ! tr ! <-- ! seconds    vecteurs a multiplier               !
-! va3(), vb3()     ! tr ! <-- ! troisiemes vecteurs a multiplier               !
-! vavb1            ! r  ! --> ! premier   produit scalaire                     !
-! vavb2            ! r  ! --> ! second    produit scalaire                     !
-! vavb3            ! r  ! --> ! troisieme produit scalaire                     !
+! isqrt            ! i  ! <-- ! flag: 1 to return the square root              !
+! va1(), vb1()     ! ra ! <-- ! first vectors to multiply                      !
+! va2(), vb2()     ! ra ! <-- ! second vectors to multiply                     !
+! va3(), vb3()     ! ra ! <-- ! third vectors to multiply                      !
+! vavb1            ! r  ! --> ! first dot product                              !
+! vavb2            ! r  ! --> ! second dot product                             !
+! vavb3            ! r  ! --> ! third dot product                              !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -81,17 +78,14 @@ double precision va3(ncelet),vb3(ncelet)
 integer nvavb
 double precision vavb(3)
 
-integer incx, incy
-double precision ddot
-external         ddot
+double precision csdot
+external         csdot
 
 !===============================================================================
 
-incx = 1
-incy = 1
-vavb(1) = ddot(ncel, va1, incx, vb1, incy)
-vavb(2) = ddot(ncel, va2, incx, vb2, incy)
-vavb(3) = ddot(ncel, va3, incx, vb3, incy)
+vavb(1) = csdot(ncel, va1, vb1)
+vavb(2) = csdot(ncel, va2, vb2)
+vavb(3) = csdot(ncel, va3, vb3)
 
 if (irangp.ge.0) then
   nvavb = 3
@@ -110,7 +104,7 @@ if (isqrt.eq.1) then
 endif
 
 !----
-! FIN
+! End
 !----
 
 return

@@ -957,7 +957,7 @@ _dot_product(cs_int_t          n_elts,
              const cs_real_t  *x,
              const cs_real_t  *y)
 {
-  double s = cblas_ddot(n_elts, x, 1, y, 1);
+  double s = cs_dot(n_elts, x, y);
 
 #if defined(HAVE_MPI)
 
