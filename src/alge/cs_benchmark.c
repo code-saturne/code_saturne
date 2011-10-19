@@ -650,8 +650,8 @@ _axpy_(double             t_measure,
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("\n"
-                  "Y <- -1.X + Y\n"
-                  "-------------\n"));
+                  "Y <- Y - X\n"
+                  "----------\n"));
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("  (calls: %d;  test sum: %12.5f)\n"),
@@ -780,7 +780,6 @@ _division_test(double     t_measure,
   _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
   BFT_FREE(x);
-
  }
 
 /*----------------------------------------------------------------------------
@@ -868,7 +867,6 @@ _sqrt_test(double     t_measure,
   _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
   BFT_FREE(x);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1231,140 +1229,6 @@ _block_ad_x_test(double             t_measure,
     y[ii] = 0.0;
   }
 
-#if defined(HAVE_CBLAS) || defined(HAVE_MKL)
-
-  /* Row major variant */
-
-  test_sum = 0.0;
-  wt0 = cs_timer_wtime(), wt1 = wt0;
-
-  if (t_measure > 0)
-    n_runs = 8;
-  else
-    n_runs = 1;
-  run_id = 0;
-  while (run_id < n_runs) {
-    double test_sum_mult = 1.0/n_runs;
-    while (run_id < n_runs) {
-      cblas_dgbmv(CblasRowMajor, CblasNoTrans,
-                  n_cells*3,  /* n rows */
-                  n_cells*3,  /* n columns */
-                  2,          /* kl */
-                  2,          /* ku */
-                  1.0,        /* alpha */
-                  da,         /* matrix */
-                  5,          /* lda */
-                  x, 1, 0.0, y, 1);
-      test_sum += test_sum_mult*y[run_id%n_cells];
-      run_id++;
-    }
-    wt1 = cs_timer_wtime();
-    if (wt1 - wt0 < t_measure)
-      n_runs *= 2;
-  }
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Block Y <- DX with BLAS dgbmv (row major)\n"
-                  "-----------------------------\n"));
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("  (calls: %d;  test sum: %12.5f)\n"),
-                n_runs, test_sum);
-
-  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
-
-  /* Column major variant */
-
-  test_sum = 0.0;
-  wt0 = cs_timer_wtime(), wt1 = wt0;
-
-  if (t_measure > 0)
-    n_runs = 8;
-  else
-    n_runs = 1;
-  run_id = 0;
-  while (run_id < n_runs) {
-    double test_sum_mult = 1.0/n_runs;
-    while (run_id < n_runs) {
-      cblas_dgbmv(CblasColMajor, CblasNoTrans,
-                  n_cells*3,  /* n rows */
-                  n_cells*3,  /* n columns */
-                  2,          /* kl */
-                  2,          /* ku */
-                  1.0,        /* alpha */
-                  da,         /* matrix */
-                  5,          /* lda */
-                  x, 1, 0.0, y, 1);
-      test_sum += test_sum_mult*y[run_id%n_cells];
-      run_id++;
-    }
-    wt1 = cs_timer_wtime();
-    if (wt1 - wt0 < t_measure)
-      n_runs *= 2;
-  }
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Block Y <- DX with BLAS dgbmv (col major)\n"
-                  "-----------------------------\n"));
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("  (calls: %d;  test sum: %12.5f)\n"),
-                n_runs, test_sum);
-
-  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
-
-#endif /* defined(HAVE_CBLAS) || defined(HAVE_MKL) */
-
-#if defined(HAVE_MKL)
-
-  /* Diagonal variant */
-
-  test_sum = 0.0;
-  wt0 = cs_timer_wtime(), wt1 = wt0;
-
-  if (t_measure > 0)
-    n_runs = 8;
-  else
-    n_runs = 1;
-  run_id = 0;
-  while (run_id < n_runs) {
-    char transa = 'n';
-    int n_rows = n_cells*3;
-    int ndiag = 5;
-    int idiag[5] = {-2, -1, 0, 1, 2};
-    double test_sum_mult = 1.0/n_runs;
-    while (run_id < n_runs) {
-      mkl_ddiagemv(&transa,
-                   &n_rows,
-                   da,
-                   &n_rows,
-                   idiag,
-                   &ndiag,
-                   x,
-                   y);
-      test_sum += test_sum_mult*y[run_id%n_cells];
-      run_id++;
-    }
-    wt1 = cs_timer_wtime();
-    if (wt1 - wt0 < t_measure)
-      n_runs *= 2;
-  }
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Block Y <- DX with MKL ddiagemv\n"
-                  "-------------------------------\n"));
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("  (calls: %d;  test sum: %12.5f)\n"),
-                n_runs, test_sum);
-
-  _print_stats(n_runs, n_ops, 0, wt1 - wt0);
-
-#endif /* defined(HAVE_MKL) */
-
   /* Variant a */
 
   test_sum = 0.0;
@@ -1389,7 +1253,7 @@ _block_ad_x_test(double             t_measure,
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("\n"
-                  "Block Y <- DX (variant a)\n"
+                  "Block Y <- DX (compiler inline)\n"
                   "-------------\n"));
 
   cs_log_printf(CS_LOG_PERFORMANCE,
@@ -1422,7 +1286,7 @@ _block_ad_x_test(double             t_measure,
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("\n"
-                  "Block Y <- DX (variant b)\n"
+                  "Block Y <- DX (manual inline)\n"
                   "-------------\n"));
 
   cs_log_printf(CS_LOG_PERFORMANCE,
@@ -1455,7 +1319,7 @@ _block_ad_x_test(double             t_measure,
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("\n"
-                  "Block Y <- DX (variant c)\n"
+                  "Block Y <- DX (3x3 manually unrolled)\n"
                   "-------------\n"));
 
   cs_log_printf(CS_LOG_PERFORMANCE,
