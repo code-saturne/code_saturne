@@ -143,7 +143,12 @@ EXTRA_DIST += examples extras patches
 
 nodist_pkginclude_HEADERS = cs_config.h
 
-DISTCLEANFILES = cs_config.h
+DISTCLEANFILES = \
+bin/code_saturne \
+bin/cs_package.py \
+bin/runcase_aster \
+bin/runcase_coupling \
+cs_config.h
 
 ACLOCAL_AMFLAGS = -I m4
 
