@@ -3305,10 +3305,10 @@ _mat_vec_p_l_msr_mkl(bool                exclude_diag,
   /* Add diagonal contribution */
 
   if (!exclude_diag && mc->d_val != NULL) {
-    cs_lnum_t ii;
+    int ii;
     const double *restrict da = mc->d_val;
 #   pragma omp parallel for
-    for (ii = 0; ii < n_elts; ii++)
+    for (ii = 0; ii < n_rows; ii++)
       y[ii] += da[ii] * x[ii];
   }
 }
