@@ -1,0 +1,68 @@
+THERMOCHIMIE
+13			Nb especes courantes
+8                       Nb de points de tabulation ENTH-TEMP
+ESPECES COURANTES    
+CH4 C2H4 CO H2S H2 HCN NH3  O2 CO2 H2O SO2 N2 C(S)
+300.                    Tmin
+2400.                   Tmax
+5                       Nb especes elementaires / Composition C,H,O,N,S
+ .012        1       2       1       0       0     1     0     0      1       0       0     0      1
+ .001        4       4       0       2       2     1     3     0      0       2       0     0      0
+ .016        0       0       1       0       0     0     0     2      2       1       2     0      0
+ .014        0       0       0       0       0     1     1     0      0       0       0     2      0
+ .032        0       0       0       1       0     0     0     0      0       0       1     0      0          
+RAYONNEMENT
+0.1                     Coeff absorption pour le melange gazeux constant 
+CARACTERISTIQUES CHARBONS
+1                                                                              Nb de charbons
+5                                   1                                          Nb de classes
+1.22E-6 8.14E-6  35.11E-6 104.06E-6 231.88E-6              
+70.90                              70.90                                       Composition C (%) sur sec
+4.6                               4.76                                        Composition H (%) sur sec
+10.8                                8.47                                        Composition O (%) sur sec
+0.0                                0.0                                        Composition S (%) sur sec
+0.0                                0.0                                        Composition N (%) sur sec
+0    31938610.                      0  33048000.                                PCI (J/kg) sur pur (0) sur sec 1 
+1800.                              1800.                                       CP moyen du charbon (J/kg/K)
+1200.                              1200.                                       Masse volumique (kg/m3)
+Coke
+0.                                 0.                                          Composition C (%) sur sec
+0.                                 0.                                          Composition H (%) sur sec
+0.                                 0.                                          Composition O (%) sur sec
+0.                                 0.                                          Composition S (%) sur sec
+0.                                 0.                                          Composition N (%) sur sec
+0.                                 0.                                          PCI sur sec (J/kg)
+Cendres
+11.5                               11.3                                        Taux de cendres en masse (%)
+0.                                 0.                                          Enthalpie de formation des cendres (J/kg)
+1800.                              1800.                                       CP des cendres (J/kg/K)
+0.                                 0.                                          Humidite du charbon(%)
+Parametres de devolatilisation (modele de Kobayashi)
+1 0.416                            1 0.37                                       Coef. stoe. (adim) Y1 si = 0 calcul automatique
+1 0.582                            1 0.74                                       Coef. stoe. (adim) Y2 si = 0 calcul automatique
+370000.                           370000                                              Facteur pre-exponentielle A1 (s-1)
+1.3E13                            1.3E13                                              Facteur pre-exponentielle A2 (s-1)
+74000.                             74000.                                      Energie d'activation E1 (J/mol)
+250000.                            250000.                                      Energie d'activation E2 (J/mol)
+0.50                               0.50                                        Partition de l'azote en HCN   reaction 1
+0.50                               0.50                                        Partition de l'azote en NO    reaction 1
+0.50                               0.50                                        Partition de l'azote en HCN   reaction 2
+0.50                               0.50                                        Partition de l'azote en NO    reaction 2
+Parametres de combustion heterogene O2 (modele a sphere retrecissante)
+38.                               144.05                                       Constante pre-exponentielle (kg/m2/s/atm)
+15.96                              15.96                                        Energie d'activation (kcal/mol)
+1                                  1                                           Ordre de la reaction 0.5 si = 0 1 si = 1 
+Parametres de combustion heterogene CO2 (modele a sphere retrecissante)
+25.26                              1.788                                       Constante pre-exponentielle (kg/m2/s/atm)
+26.983                              1.655                                       Energie d'activation (kcal/mol)
+1                                  1                                           Ordre de la reaction 0.5 si = 0 1 si = 1 
+Parametres de combustion heterogene H2O (modele a sphere retrecissante)
+17.88                             1.788                                       Constante pre-exponentielle (kg/m2/s/atm)
+16.55                             1.655                                       Energie d'activation (kcal/mol)
+1                                  1                                           Ordre de la reaction 0.5 si = 0 1 si = 1 
+CARACTERISTIQUES OXYDANTS (O2,N2,H2O,CO2)
+1
+1.       1.        1. 
+3.76     3.76     3.76 
+0.     0.     0.
+0.       0.       0.
