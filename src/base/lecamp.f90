@@ -878,6 +878,28 @@ else if (iturph.eq.60) then
   endif
   !         Rq : laminaire -> k-omega  (On ne fait rien, deja fait dans iniva0)
 
+  !   -- The new computation is with the Spalart Allmaras (SA) model
+
+else if (iturph.eq.70) then
+
+  !     * SA -> SA
+
+  if(jturph.eq.70) then
+
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+
+    RUBRIQ = 'nusa_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,inusa),ierror)
+    nberro=nberro+ierror
+
+  endif
+
+  !TODO perform the conversion from other models to SA.
+
+  !         Rq : laminar -> SA  (We do nothing, it has already been done in iniva0)
 
   !   -- Le nouveau calcul est en laminaire, longueur de melange ou LES
   !           --> rien a lire

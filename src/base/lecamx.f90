@@ -729,6 +729,8 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
   elseif (iturb.eq.60.and.jturb.eq.60) then
     NOMFLU(IK  )='fm_k_phase'//CPHASE
     NOMFLU(IOMG)='fm_omega_phase'//CPHASE
+  elseif (iturb.eq.70.and.jturb.eq.70) then
+    nomflu(inusa)='fm_nusa_phase'//CPHASE
   endif
   if(nscal.gt.0) then
     do iscal = 1, nscal
@@ -908,6 +910,8 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
   elseif(iturb.eq.60.and.jturb.eq.60) then
     NOMFLU(IK  )='fm_a_k_phase'//CPHASE
     NOMFLU(IOMG)='fm_a_omega_phase'//CPHASE
+  elseif (iturb.eq.70.and.jturb.eq.70) then
+    nomflu(inusa)='fm_a_nusa_phase'//CPHASE
   endif
   if(nscal.gt.0) then
     do iscal = 1, nscal
@@ -1041,6 +1045,8 @@ if (nfabok.eq.1) then
   elseif (iturb.eq.60.and.jturb.eq.60) then
     NOMCLI(IK)='_k_phase'//CPHASE
     NOMCLI(IOMG)='_omega_phase'//CPHASE
+  elseif (iturb.eq.70.and.jturb.eq.70) then
+    nomcli(inusa)='_nusa_phase'//CPHASE
     !     On peut aussi recuperer les CL de k et eps pour un calcul v2f suite
     !     d'un calcul k-eps
   elseif (itytur.eq.5.and.jtytur.eq.2) then
@@ -1444,6 +1450,15 @@ if(isto2t.gt.0) then
     RUBRIQ = 'tsource_tu_ce_omega_phase'//CPHASE
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          propce(1,iptsta+1),ierror)
+    nberro=nberro+ierror
+
+    ilu = ilu + 1
+  elseif (iturb.eq.70.and.jturb.eq.70) then
+    iptsta = ipproc(itstua)
+
+    RUBRIQ = 'tsource_tu_ce_nusa_phase'//CPHASE
+    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         propce(1,iptsta  ),ierror)
     nberro=nberro+ierror
 
     ilu = ilu + 1

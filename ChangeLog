@@ -1,3 +1,9 @@
+* 20/10/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Fix Spalart-Allmaras calculations restart.
+  modified routines:
+    src/base/lecamp.f90
+    src/base/lecamx.f90
+
 * 19/10/2011 - David Monfort <david.monfort@edf.fr>
   Release of Code_Saturne 2.1.0.
 
