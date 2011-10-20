@@ -117,7 +117,7 @@ double cs_dot(cs_lnum_t      n,
   double     s = 0;
 
   if (n < 1)
-    return sum;
+    return s;
 
 # pragma omp parallel for reduction(+: s)
   for (i = 0; i < n; i++) {
