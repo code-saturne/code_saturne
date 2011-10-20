@@ -290,7 +290,6 @@ double precision xbilmi , xbilma
 double precision epsrgp , climgp , extrap
 double precision xfluxf , xgamma
 double precision diipbx, diipby, diipbz, surfbn, distbr
-double precision visct, flumab , xcp , xvsl, cp0iph, rrr
 double precision visct, flumab , xcp , xvsl, cp0iph, rrr, ctb1, ctb2
 double precision xfor(3), xyz(3), xabs, xu, xv, xw, xk, xeps
 
