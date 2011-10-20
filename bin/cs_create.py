@@ -555,7 +555,10 @@ class Study:
             thch_distpath = os.path.join(data_distpath, 'thch')
             ref           = os.path.join(data, 'REFERENCE')
             os.mkdir(ref)
-            for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE', 'dp_FCP', 'dp_FUE', 'meteo']:
+            for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE',
+                      'dp_FCP', 'dp_FCP_new',
+                      'dp_FUE', 'dp_FUE_new',
+                      'meteo']:
                 abs_f = os.path.join(thch_distpath, f)
                 if os.path.isfile(abs_f):
                     shutil.copy(abs_f, ref)
