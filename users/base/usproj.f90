@@ -770,7 +770,7 @@ if (inpdt0.eq.0) then
 
       iel1 = ifacel(1,ifac)
       if (iel1.le.ncel) then
-        ctb1 = propfa(ifac,iflmas)*cp0*rtp(iel1,ivar)
+        ctb1 = propfa(ifac,iflmas)*cp0iph*rtp(iel1,ivar)
       else
         ctb1 = 0d0
       endif
