@@ -68,8 +68,9 @@ BEGIN_C_DECLS
 
 static bool  _cs_log_atexit_set = false;
 
-static FILE* _cs_log[] = {NULL};
-static const char* _cs_log_name[] = {"performance.log"};
+static FILE* _cs_log[] = {NULL, NULL};
+static const char* _cs_log_name[] = {"setup.log",
+                                     "performance.log"};
 
 /*============================================================================
  * Private function definitions
