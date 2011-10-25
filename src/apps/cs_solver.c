@@ -188,6 +188,7 @@ cs_run(void)
 
   /* Initialize global structures for main mesh */
 
+  cs_mesh_location_initialize();
   cs_glob_mesh = cs_mesh_create();
   cs_glob_mesh_builder = cs_mesh_builder_create();
   cs_glob_mesh_quantities = cs_mesh_quantities_create();
@@ -325,7 +326,7 @@ cs_run(void)
 
   /* Initialize selectors and locations for the mesh */
   cs_mesh_init_selectors();
-  cs_mesh_location_initialize();
+  cs_mesh_location_build(cs_glob_mesh, -1);
 
   /* Initialize meshes for the main post-processing */
 
