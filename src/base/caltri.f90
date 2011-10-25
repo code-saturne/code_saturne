@@ -418,6 +418,15 @@ call iniva0 &
    coefa  , coefb  ,                                              &
    frcxt  )
 
+call fldtri &
+!==========
+ ( nproce ,                                                       &
+   ra(idt)    , ra(itpuco) , ra(irtpa) , ra(irtp) ,               &
+   ra(ipropc) , propfa , propfb )
+
+call fldama
+!==========
+
 !===============================================================================
 ! 9. CALCUL SUITE EVENTUEL
 !===============================================================================

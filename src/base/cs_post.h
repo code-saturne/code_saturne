@@ -56,6 +56,14 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/*
+ * Output type masks
+ */
+
+#define CS_POST_VOLUME               (1 << 0)  /* postprocess volume */
+#define CS_POST_BOUNDARY_NR          (1 << 1)  /* postprocess bundary
+                                                  without reconstruction */
+
 /*============================================================================
  * Local type definitions
  *============================================================================*/

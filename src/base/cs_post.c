@@ -56,9 +56,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_field.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
+#include "cs_mesh_location.h"
 #include "cs_prototypes.h"
 #include "cs_selector.h"
 
@@ -224,6 +226,26 @@ static int                     *_cs_post_i_var_tp = NULL;
 /* Default directory name */
 
 static const char  _cs_post_dirname[] = "postprocessing";
+
+/*============================================================================
+ * Fortran function prototypes for subroutines from field.f90.
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Get cumulative moment from dtcmom.
+ *
+ * function pstmom (imom, dtcm)
+ * ***************
+ *
+ * integer          imom        : <-- : Moment id
+ * double precision dtcm        : <-- : cumulative time moment
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstmom, PSTMOM)
+(
+ const cs_int_t   *imom,
+ cs_real_t        *dtcm
+);
 
 /*============================================================================
  * Private function definitions
@@ -1853,6 +1875,208 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
   BFT_FREE(group_flag);
 }
 
+/*----------------------------------------------------------------------------
+ * Build moments array for post-processing.
+ *
+ * If of dimension > 1, the moments array is always interleaved, whether
+ * the accumulator field is interleaved or not.
+ *
+ * parameters:
+ *   f          <-- pointer to field structure
+ *   moment_id  <-- id of associated moment divisor:
+ *                  - if moment_id == -1, the field is not a moment;
+ *                  - if moment_id >= 0, it is the field id for the divisor;
+ *                  - if moment_id < 1, (-1 -moment_id) is the moment id
+ *                    in the Fortran "dtcmom" array of the optcal module
+ *   n_elts     <-- local number of elements
+ *   elt_list   <-- list of cells (1 to n), or NULL
+ *   moment     --> resulting moment array (size: n_elts)
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_post_build_moment(const cs_field_t  *f,
+                      int                moment_id,
+                      cs_lnum_t          n_elts,
+                      const cs_lnum_t    elt_list[],
+                      cs_real_t          moment[])
+{
+  cs_lnum_t ii, jj;
+  cs_lnum_t  d_mult = 0;
+  const cs_real_t ep_zero = 1.e-12;
+  const cs_real_t *denom = NULL;
+
+  assert(moment_id != -1);
+
+  if (moment_id > -1) {
+    const cs_field_t  *fd = cs_field_by_id(moment_id);
+    assert(fd->dim == 1);
+    denom = fd->val;
+    d_mult = 1;
+  }
+  else if (moment_id < 0) {
+    cs_real_t dtcm;
+    cs_int_t  imom = -1 - moment_id;
+    CS_PROCF(pstmom, PSTMOM) (&imom, &dtcm);
+    denom = &dtcm;
+    /* d_mult = 0 is set above */
+  }
+
+  if (f->dim == 1) {
+    if (elt_list == NULL) {
+      for (ii = 0; ii < n_elts; ii++)
+        moment[ii] = f->val[ii] / CS_MAX(denom[ii*d_mult], ep_zero);
+    }
+    else {
+      for (ii = 0; ii < n_elts; ii++) {
+        cs_lnum_t c_id = elt_list[ii] - 1;
+        moment[c_id] = f->val[c_id] / CS_MAX(denom[c_id*d_mult], ep_zero);
+      }
+    }
+  }
+  else {
+    cs_lnum_t ii_mult = 1, jj_mult = 1;
+    if (f->interleaved)
+      ii_mult = f->dim;
+    else {
+      const cs_lnum_t *n_loc_elts
+        = cs_mesh_location_get_n_elts(f->location_id);
+      jj_mult = n_loc_elts[2];
+    }
+    if (elt_list == NULL) {
+      for (ii = 0; ii < n_elts; ii++) {
+        for (jj = 0; jj < f->dim; jj++)
+          moment[ii*f->dim + jj] =   f->val[ii*ii_mult + jj*jj_mult]
+                                   / CS_MAX(denom[ii*d_mult], ep_zero);
+      }
+    }
+    else {
+      for (ii = 0; ii < n_elts; ii++) {
+        cs_lnum_t c_id = elt_list[ii] - 1;
+        for (jj = 0; jj < f->dim; jj++)
+          moment[ii*f->dim + jj] =   f->val[c_id*ii_mult + jj*jj_mult]
+                                   / CS_MAX(denom[ii*d_mult], ep_zero);
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Main post-processing output of variables.
+ *
+ * parameters:
+ *   post_mesh   <-- pointer to post-processing mesh structure
+ *   n_cells     <-- local number of cells of post_mesh
+ *   n_i_faces   <-- local number of interior faces of post_mesh
+ *   n_b_faces   <-- local number of boundary faces of post_mesh
+ *   cell_list   <-- list of cells (1 to n) of post-processing mesh
+ *   i_face_list <-- list of interior faces (1 to n) of post-processing mesh
+ *   b_face_list <-- list of boundary faces (1 to n) of post-processing mesh
+ *   nt_cur_abs  <-- current time step number
+ *   t_cur_abs   <-- current physical time
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_post_output_fields(cs_post_mesh_t   *post_mesh,
+                       cs_lnum_t         n_cells,
+                       cs_lnum_t         n_i_faces,
+                       cs_lnum_t         n_b_faces,
+                       const cs_lnum_t   cell_list[],
+                       const cs_lnum_t   i_face_list[],
+                       const cs_lnum_t   b_face_list[],
+                       int               nt_cur_abs,
+                       double            t_cur_abs)
+{
+  /* Output for cell mesh */
+  /*----------------------*/
+
+  if (post_mesh->cat_id == -1) {
+
+    int f_id;
+    cs_real_t  *_val;
+    const cs_real_t *val;
+    const char *name;
+
+    const int n_fields = cs_field_n_fields();
+    const int vis_key_id = cs_field_key_id("post_vis");
+    const int label_key_id = cs_field_key_id("label");
+    const int moment_key_id = cs_field_key_id("moment_dt");
+
+    /* Loop on fields */
+
+    for (f_id = 0; f_id < n_fields; f_id++) {
+
+      bool interleaved, use_parent;
+
+      const cs_field_t  *f = cs_field_by_id(f_id);
+
+      if (f->location_id != CS_MESH_LOCATION_CELLS)
+        continue;
+
+      if (! (cs_field_get_key_int(f, vis_key_id) & CS_POST_VOLUME))
+        continue;
+
+      interleaved = f->interleaved;
+      use_parent = true;
+
+      _val = NULL;
+      val = f->val;
+
+      name = cs_field_get_key_str(f, label_key_id);
+      if (name == NULL)
+        name = f->name;
+
+      /* A property field might be a moment */
+
+      if (f->type & CS_FIELD_ACCUMULATOR) {
+
+        int moment_id = cs_field_get_key_int(f, moment_key_id);
+
+        /* if moment_id == 1, the field is not a moment;
+           if moment_id >= 0, it is the field id for the divisor;
+           if moment_id < 1, (-1 -moment_id) is the moment id in "dtcmom" */
+
+        if (moment_id != -1) {
+          const cs_lnum_t *n_parent_cells
+            = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_CELLS);
+          BFT_MALLOC(_val, n_cells*f->dim, cs_real_t);
+          _cs_post_build_moment(f, moment_id, n_cells, cell_list, _val);
+          val = _val;
+          interleaved = true;
+          if (n_cells < n_parent_cells[0] || cell_list != NULL)
+            use_parent = false;
+        }
+
+      } /* End of test on properties/moments */
+
+      cs_post_write_var(post_mesh->id,
+                        name,
+                        f->dim,
+                        interleaved,
+                        use_parent,
+                        CS_POST_TYPE_cs_real_t,
+                        nt_cur_abs,
+                        t_cur_abs,
+                        val,
+                        NULL,
+                        NULL);
+
+      if (_val != NULL)
+        BFT_FREE(_val);
+
+    } /* End of loop on fields */
+
+  } /* End of output for cell mesh */
+
+  /* Output for boundary mesh */
+  /*--------------------------*/
+
+  if (post_mesh->cat_id == -2) {
+
+    /* TODO migrate code from dvvpst.f90 here */
+
+  } /* End of output for boundary mesh */
+}
+
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/
@@ -2340,6 +2564,13 @@ void CS_PROCF (pstvar, PSTVAR)
         b_face_vals = NULL;
 
       /* Standard post-processing */
+
+      if (numtyp < 0)
+        _cs_post_output_fields(post_mesh,
+                               n_cells, n_i_faces, n_b_faces,
+                               cell_list, i_face_list, b_face_list,
+                               *ntcabs,
+                               *ttcabs);
 
       if (numtyp < 0)
         CS_PROCF(dvvpst, DVVPST) (&nummai, &numtyp,

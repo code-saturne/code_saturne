@@ -211,6 +211,8 @@ cs_run(void)
   _verif = (   (opts.preprocess | opts.verif) == true
             || opts.benchmark > 0) ? 1 : 0;
 
+  cs_field_define_keys_base();
+
   CS_PROCF(initi1, INITI1)(&_verif);
 
   /* Discover applications visible through MPI (requires communication);
@@ -246,6 +248,11 @@ cs_run(void)
   cs_gui_postprocess_writers();
   cs_user_postprocess_writers();
   cs_post_init_writers();
+
+  /* Print info on fields and associated keys */
+
+  cs_field_log_keys();
+  cs_field_log_fields(true);
 
   /* Join meshes / build periodicity links if necessary */
 

@@ -34,12 +34,11 @@ subroutine dvvpst &
    ra     )
 
 !===============================================================================
-! FONCTION :
+! Purpose:
 ! --------
 
-! ROUTINE DEVELOPPEUR POUR LA SORTIE STANDARD
-! DES VALEURS SUR LES MAILLAGES DE POST TRAITEMENT
-!   (appelee apres usproj)
+! Standard output of variables on post-processing meshes
+!   (called after usproj)
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -70,21 +69,20 @@ subroutine dvvpst &
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! statce           ! tr ! <-- ! statistiques cellules (lagrangien)             !
-!(ncelet,nvlsta    !    !     !                                                !
-! stativ           ! tr ! <-- ! statistiques variance cellules                 !
-!(ncelet,nvlsta    !    !     !                          (lagrangien)          !
+!  (ncelet,nvlsta) !    !     !                                                !
+! stativ           ! tr ! <-- ! statistiques variance cellules (lagrangien)    !
+!  (ncelet,nvlsta) !    !     !                                                !
 ! statfb           ! tr ! <-- ! statistiques faces bord (lagrangien)           !
-!(nfabor,nvisbr    !    !     !                                                !
+!  (nfabor,nvisbr) !    !     !                                                !
 ! tracel(*)        ! tr ! <-- ! tab reel valeurs cellules post                 !
 ! trafac(*)        ! tr ! <-- ! tab reel valeurs faces int. post               !
 ! trafbr(*)        ! tr ! <-- ! tab reel valeurs faces bord post               !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -164,104 +162,20 @@ double precision, allocatable, dimension(:) :: treco
 
 ipp = 0
 
-! Memoire
-
-
 !===============================================================================
-!     1.1. TRAITEMENT POUR LE MAILLAGE FLUIDE
+! 1.1. Fluid domain
 !===============================================================================
 
 if (numtyp .eq. -1) then
 
+  !  1.1.2 Variables supplementaires automatiques
+  !  --------------------------------------------
 
-!       1.1.1 TRAITEMENT DES VARIABLES POST TRAITABLES
-!       ----------------------------------------------
-
-  do ipp = 2, nvppmx
-
-!         -> si chrono demande sur la variable
-    if(ichrvr(ipp).eq.1) then
-
-!           -> pointeur de la variable dans RA (en absolu)
-!              (si negatif, c'est un vecteur)
-      ira = ipp2ra(ipp)
-!           -> si c'est un moment cumule, il faut diviser par le temps
-!             (si   0 ce n'est pas un moment,
-!              si > 0 c'est le pointeur dans RA,
-!              si < 0 c'est le rang dans DTCMOM)
-      idivdt = ippmom(ipp)
-!           -> dimension de la variable a ecrire
-      idimt = 1
-      if(ira.lt.0) then
-        idimt = 3
-        ira = -ira
-      endif
-
-!           -> nom de la variable
-      name80 = nomvar(ipp)
-      namevr = name80(1:32)
-
-!           -> si l'on a une variable vectorielle, on supprime
-!              la partie X, Y, ou Z en derniere ou avant-derniere
-!              position dans le nom
-
-      if (idimt.eq.3) then
-        name80 = nomvar(ipp+1)
-        namev1 = name80(1:32)
-        name80 = nomvar(ipp+2)
-        namev2 = name80(1:32)
-        call pstsnv ( namevr , namev1 , namev2 )
-        !==========
-      endif
-
-!           -> si c'est un moment cumule, il faut diviser par le temps
-      if(idivdt.gt.0) then
-        do iloc = 1, ncelps
-          iel = lstcel(iloc)
-          tracel(iloc) = ra(ira+iel-1)/                           &
-               max(ra(idivdt+iel-1),epzero)
-        enddo
-      elseif(idivdt.lt.0) then
-        do iloc = 1, ncelps
-          iel = lstcel(iloc)
-          tracel(iloc) = ra(ira+iel-1)/                           &
-               max(dtcmom(-idivdt),epzero)
-        enddo
-      endif
-
-!           Ecriture effective des valeurs calculees
-
-!           Valeurs non entrelacées
-      ientla = 0
-
-      if(idivdt.eq.0) then
-        ivarpr = 1
-        call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-        !==========
-                    ntcabs, ttcabs, ra(ira), rbid, rbid)
-
-      else
-        ivarpr = 0
-        call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-        !==========
-                    ntcabs, ttcabs, tracel, rbid, rbid)
-
-      endif
-
-    endif
-!         Fin du traitement en cas de sortie de la variable
-
-  enddo
-!       Fin de la boucle sur les variables
-
-!       1.1.2 VARIABLES SUPPLEMENTAIRES AUTOMATIQUES
-!       --------------------------------------------
-
-!       Distance a la paroi (si LES+VanDriest ou Rij+Echo ou K-w SST)
+  ! Distance a la paroi (si LES+VanDriest ou Rij+Echo ou K-w SST)
 
   if (ineedy.eq.1 .and. abs(icdpar).eq.1) then
 
-    NAMEVR = 'DistParoi'
+    namevr = 'DistWall'
     idimt = 1
     ientla = 0
     ivarpr = 1
@@ -272,12 +186,12 @@ if (numtyp .eq. -1) then
 
   endif
 
-!       Yplus (si LES+VanDriest)
+  ! Yplus (si LES+VanDriest)
 
   if (ineedy.eq.1 .and. abs(icdpar).eq.1) then
 
     ineeyp = 0
-    if(itytur.eq.4.and.idries.eq.1) then
+    if (itytur.eq.4.and.idries.eq.1) then
       ineeyp = 1
     endif
 
@@ -303,7 +217,7 @@ if (numtyp .eq. -1) then
     ipcrom = ipproc(irom)
     omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
 
-    NAMEVR = 'Pressure'
+    namevr = 'Pressure'
     idimt = 1
     ientla = 0
     ivarpr = 0
@@ -318,8 +232,7 @@ if (numtyp .eq. -1) then
 
       daxis2 = daxis2 / omgnrm**2
 
-      tracel(iloc) = rtp(iel,ipr)                          &
-          + 0.5d0*propce(iel,ipcrom)*omgnrm**2*daxis2
+      tracel(iloc) = rtp(iel,ipr) + 0.5d0*propce(iel,ipcrom)*omgnrm**2*daxis2
 
     enddo
 
@@ -328,7 +241,7 @@ if (numtyp .eq. -1) then
                 ntcabs, ttcabs, tracel, rbid, rbid)
 
 
-    NAMEVR = 'Velocity'
+    namevr = 'Velocity'
     idimt = 3
     ientla = 1
     ivarpr = 0
@@ -360,7 +273,7 @@ if (numtyp .eq. -1) then
     ipcrom = ipproc(irom)
     omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
 
-    NAMEVR = 'Rel Pressure'
+    namevr = 'Rel Pressure'
     idimt = 1
     ientla = 0
     ivarpr = 0
@@ -385,7 +298,7 @@ if (numtyp .eq. -1) then
                 ntcabs, ttcabs, tracel, rbid, rbid)
 
 
-    NAMEVR = 'Rel Velocity'
+    namevr = 'Rel Velocity'
     idimt = 3
     ientla = 1
     ivarpr = 0
@@ -413,51 +326,52 @@ if (numtyp .eq. -1) then
 
 
 !===============================================================================
-!     1.2. TRAITEMENT POUR LE MAILLAGE DE BORD
+! 1.2. Boundary
 !===============================================================================
 
-else if  (numtyp .eq. -2) then
+else if (numtyp .eq. -2) then
 
 
-! --    1.2.1 TRAITEMENT DE YPLUS AU BORD
-!       ----------------------------------
+  ! 1.2.1 output y+ at the boundary
+  ! -------------------------------
 
-  if(mod(ipstdv,ipstyp).eq.0) then
+  if (mod(ipstdv,ipstyp).eq.0) then
 
-    !       Initialisation
+    ! Variable name
+
     do ii = 1, 32
-      NAMEVR (II:II) = ' '
+      namevr (ii:ii) = ' '
     enddo
 
-    !       Nom de la variable
-    NAMEVR = 'Yplus'
+    namevr = 'Yplus'
 
-    !       Dimension de la variable (3 = vecteur, 1=scalaire)
-    idimt = 1
+    idimt = 1  ! variable dimension (3: vector, 1: scalar)
 
-    !       Calcul des valeurs de la variable sur les faces de bord
+    ! Compute variable on boundary faces
 
     do iloc = 1, nfbrps
       ifac = lstfbr(iloc)
       trafbr(1 + (iloc-1)*idimt) = yplbr(ifac)
     enddo
 
-    !           Valeurs non entrelacées, définies sur tableau de travail
+    ! Non interleaved values, defined in work array
+
     ientla = 0
     ivarpr = 0
 
     call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
-                                !==========
-         ntcabs, ttcabs, rbid, rbid, trafbr)
+    !==========
+                ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
-! fin du test sur sortie de yplus
+
+  ! end of test on output of y+
 
 
 ! --    1.2.2 TRAITEMENT DES VARIABLES AU BORD SANS RECONSTRUCTION
 !       -----------------------------------------------------------
 
-  if(mod(ipstdv,ipstcl).eq.0) then
+  if (mod(ipstdv, ipstcl).eq.0) then
 
 !       Le codage ci-dessous est relativement avance :
 !         il accede aux variables directement au travers du macro tableau RA
@@ -471,7 +385,6 @@ else if  (numtyp .eq. -2) then
     isaut = 0
 
     do ivar = 1, nvar
-
 
 !         Variables post-traitables
 !         (ISAUT est utilise pour ne pas postraiter plusieurs fois les
@@ -500,7 +413,7 @@ else if  (numtyp .eq. -2) then
 
 !         -> dimension de la variable a ecrire
         idimt = 1
-        if(ipp2ra(ipp).lt.0) then
+        if (ipp2ra(ipp).lt.0) then
           idimt = 3
           isaut = 2
         endif
@@ -560,18 +473,18 @@ else if  (numtyp .eq. -2) then
 !       ----------------------------------------
 !           Si on travaille en enthalpie, on calcule un flux d'enthalpie
 
-  if(mod(ipstdv,ipstft).eq.0) then
+  if (mod(ipstdv,ipstft).eq.0) then
 
-    if(iscalt.gt.0 .and. nscal.gt.0 .and.                &
+    if (iscalt.gt.0 .and. nscal.gt.0 .and.                &
          iscalt.le.nscal) then
 
       !       Initialisation
       do ii = 1, 32
-        NAMEVR (II:II) = ' '
+        namevr (ii:ii) = ' '
       enddo
 
       !       Nom de la variable
-      NAMEVR = 'Flux thermique entrant W.m-2'
+      namevr = 'Flux thermique entrant W.m-2'
 
       !       Dimension de la variable (3 = vecteur, 1=scalaire)
       idimt = 1
@@ -662,7 +575,7 @@ else if  (numtyp .eq. -2) then
 
       !          Calcul du flux (ouf          !) convectif et diffusif
 
-      if(ivisls(iscal).gt.0) then
+      if (ivisls(iscal).gt.0) then
         ipcvsl = ipproc(ivisls(iscal))
       else
         ipcvsl = 0
@@ -674,7 +587,7 @@ else if  (numtyp .eq. -2) then
         ifac = lstfbr(iloc)
         iel = ifabor(ifac)
 
-        if(ipcvsl.gt.0) then
+        if (ipcvsl.gt.0) then
           xvsl = propce(iel,ipcvsl)
         else
           xvsl = visls0(iscal)
@@ -695,8 +608,8 @@ else if  (numtyp .eq. -2) then
       enddo
 
       !          Pour la temperature, on multiplie par CP
-      if(abs(iscsth(iscal)).eq.1) then
-        if(icp.gt.0) then
+      if (abs(iscsth(iscal)).eq.1) then
+        if (icp.gt.0) then
           ipccp  = ipproc(icp   )
         else
           ipccp  = 0
@@ -704,7 +617,7 @@ else if  (numtyp .eq. -2) then
         do iloc = 1, nfbrps
           ifac = lstfbr(iloc)
           iel = ifabor(ifac)
-          if(ipccp.gt.0) then
+          if (ipccp.gt.0) then
             xcp = propce(iel,ipccp)
           else
             xcp    = cp0
@@ -731,7 +644,7 @@ else if  (numtyp .eq. -2) then
 ! --    1.2.4 TRAITEMENT DES EFFORTS AUX BORDS
 !       --------------------------------------
 
-  if(mod(ipstdv,ipstfo).eq.0) then
+  if (mod(ipstdv,ipstfo).eq.0) then
 
 !       Initialisation
     do ii = 1, 32
@@ -802,14 +715,14 @@ if (nummai .eq. -1) then
           if (ivarl.eq.ivarl1) then
             name80 = nomlag(ivarl)
           else
-            WRITE(NAME80,'(A8,A4,I3)') NOMLAG(IVARL),'_grp',ICLA
+            write(name80,'(a8,a4,i3)') nomlag(ivarl),'_grp',icla
           endif
         else if (nvlsts.gt.0) then
           if (ivarl.eq.ivarl1) then
             name80 = nomlag(ilvu(ivarl-iii))
           else
-            WRITE(NAME80,'(A8,A4,I3)')                            &
-                 NOMLAG(ILVU(IVARL-III)),'_grp',ICLA
+            write(name80,'(a8,a4,i3)')                            &
+                 nomlag(ilvu(ivarl-iii)),'_grp',icla
           endif
         endif
 
@@ -841,14 +754,14 @@ if (nummai .eq. -1) then
           if (ivarl.eq.ivarl1) then
             name80 = nomlav(ivarl)
           else
-            WRITE(NAME80,'(A8,A4,I3)') NOMLAV(IVARL),'_grp',ICLA
+            write(name80,'(a8,a4,i3)') nomlav(ivarl),'_grp',icla
           endif
         else if (nvlsts.gt.0) then
           if (ivarl.eq.ivarl1) then
             name80 = nomlav(ilvu(ivarl-iii))
           else
-            WRITE(NAME80,'(A8,A4,I3)')                            &
-                 NOMLAV(ILVU(IVARL-III)),'_grp',ICLA
+            write(name80,'(a8,a4,i3)')                            &
+                 nomlav(ilvu(ivarl-iii)),'_grp',icla
           endif
         endif
 
@@ -1041,11 +954,11 @@ if (     ippmod(ieljou).ge.1                                      &
 endif
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 !----
-! FIN
+! End
 !----
 
 return

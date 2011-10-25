@@ -43,6 +43,7 @@ noinst_LTLIBRARIES = libcsmodules.la
 libcsmodules_la_SOURCES = \
 $(top_srcdir)/src/base/paramx.f90 \
 $(top_srcdir)/src/base/mesh.f90 \
+$(top_srcdir)/src/base/field.f90 \
 $(top_srcdir)/src/base/alaste.f90 \
 $(top_srcdir)/src/base/albase.f90 \
 $(top_srcdir)/src/base/alstru.f90 \

@@ -211,6 +211,8 @@ ecrhis.f90 \
 ecrlis.f90 \
 findnd.f90 \
 findpt.f90 \
+fldini.f90 \
+fldtri.f90 \
 haltyp.f90 \
 hturbp.f90 \
 idrbla.f90 \

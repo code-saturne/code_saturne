@@ -59,7 +59,6 @@ module numvar
                    nscaus      , nscapp        ,                &
                    iuma        , ivma          , iwma
 
-
   ! Position des proprietes (physiques ou numeriques)
   !  (dans propce, propfa et propfb)
   !    le numero des proprietes est unique, quelle aue soit la
@@ -111,6 +110,13 @@ module numvar
   ! iclrtp  : pointeur dans COEFA et COEFB
 
   integer, save :: icoef , icoeff , iclrtp(nvarmx,2)
+
+  ! Mapping to field structures
+
+  ! ivarfl(i)                  Field id for variable i
+  ! iprpfl(i)                  Field id for property i
+
+  integer, save :: ivarfl(nvarmx), iprpfl(npromx)
 
   !=============================================================================
 

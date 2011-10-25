@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-10-19 18:47+0200\n"
+"POT-Creation-Date: 2011-10-25 18:40+0200\n"
 "PO-Revision-Date: 2011-10-13 19:39+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5035,6 +5035,9 @@ msgstr "propriété"
 msgid "postprocess"
 msgstr "post traitment"
 
+msgid "accumulator"
+msgstr "accumulateur"
+
 msgid "user"
 msgstr "utilisateur"
 
@@ -5069,6 +5072,12 @@ msgid ""
 msgstr ""
 "Erreur %d à l'association d'un réel au champ \"%s\"\n"
 "d'indicateur de type %d avec la clé %d (\"%s\")."
+
+#, c-format
+msgid ""
+"Field \"%s\"\n"
+" requires mapped values which have not been set."
+msgstr ""
 
 #, c-format
 msgid "Field with id %d is not defined."
@@ -5109,20 +5118,18 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"  Field:\"%s\"\n"
+"  Field: \"%s\"\n"
 msgstr ""
 "\n"
-"  Champ :\"%s\"\n"
+"  Champ : \"%s\"\n"
 
 #, c-format
 msgid ""
 "\n"
-"    Label:                      %s\n"
 "    Id:                         %d\n"
 "    Type:                       %d"
 msgstr ""
 "\n"
-"    Label :                     %s\n"
 "    Id :                        %d\n"
 "    Type :                      %d"
 
@@ -5162,20 +5169,28 @@ msgstr ""
 "    Valeurs de clés associées :\n"
 
 #, c-format
-msgid "      %-24s %10d\n"
-msgstr ""
+msgid "      %-24s %-10d\n"
+msgstr "      %-24s %-10d\n"
 
 #, c-format
-msgid "      %-24s %10d (default)\n"
-msgstr "      %-24s %10d (défaut)\n"
+msgid "      %-24s %-10d (default)\n"
+msgstr "      %-24s %-10d (défaut)\n"
 
 #, c-format
-msgid "      %-24s %10.3g\n"
-msgstr ""
+msgid "      %-24s %-10.3g\n"
+msgstr "      %-24s %-10.3g\n"
 
 #, c-format
-msgid "      %-24s %10.3g (default)\n"
-msgstr "      %-24s %10.3g (défaut)\n"
+msgid "      %-24s %-10.3g (default)\n"
+msgstr "      %-24s %-10.3g (défaut)\n"
+
+#, c-format
+msgid "      %-24s %s\n"
+msgstr "      %-24s %s\n"
+
+#, c-format
+msgid "      %-24s %-10s (default)\n"
+msgstr "      %-24s %-10s (défaut)\n"
 
 #, c-format
 msgid ""
@@ -5220,12 +5235,12 @@ msgstr ""
 "\n"
 
 #, c-format
-msgid "  %s %s %s    %s Type flag\n"
-msgstr "  %s %s %s    %s Indic. type\n"
+msgid "  %s %s %s %s Type flag\n"
+msgstr "  %s %s %s %s Indic. type\n"
 
 #, c-format
-msgid "  %s %s %s    %s ---------\n"
-msgstr "  %s %s %s    %s -----------\n"
+msgid "  %s %s %s %s ---------\n"
+msgstr "  %s %s %s %s -----------\n"
 
 #, c-format
 msgid "  %-24s %-12d integer %-4d %-4d"
@@ -5234,6 +5249,10 @@ msgstr "  %-24s %-12d entier  %-4d %-4d"
 #, c-format
 msgid "  %-24s %-12.3g real    %-4d %-4d"
 msgstr "  %-24s %-12.3g réel    %-4d %-4d"
+
+#, c-format
+msgid "  %-24s %-12s string  %-4d %-4d"
+msgstr "  %-24s %-12s chaîne  %-4d %-4d"
 
 #, c-format
 msgid ""
@@ -9559,6 +9578,12 @@ msgid ""
 msgstr ""
 "Le support de maillage demandé\n"
 "%d n'est pas défini.\n"
+
+#, c-format
+msgid ""
+"A selection criteria is given but no associated selector\n"
+"is available for mesh location %d of type %d."
+msgstr ""
 
 #, c-format
 msgid "    minimum value =         %10.5e\n"

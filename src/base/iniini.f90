@@ -442,6 +442,16 @@ ncofab = 0
 ! 5. POSITION DES VARIABLES DE numvar.f90
 !===============================================================================
 
+! --- Initialize mappings of field ids
+
+do ii = 1, nvarmx
+  ivarfl(ii) = -1
+enddo
+
+do ii = 1, npromx
+  iprpfl(ii) = -1
+enddo
+
 ! --- Variables de calcul resolues (RTP, RTPA)
 
 ipr    = 0
