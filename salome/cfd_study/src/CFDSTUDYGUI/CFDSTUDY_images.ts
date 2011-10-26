@@ -142,6 +142,10 @@
             <translation>Delete.png</translation>
         </message>
         <message>	
+            <source>CLOSE_CFD_GUI_ACTION_ICON</source>
+            <translation>CloseGui.png</translation>
+        </message>
+        <message>	
             <source>CREATE_LINK_ACTION_ICON</source>
             <translation>Link.png</translation>
         </message>

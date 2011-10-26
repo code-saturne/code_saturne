@@ -83,14 +83,23 @@ class CFDSTUDYGUI_CommandMgr(QObject):
     def runFunctionDlg(self, function, Message, RedirectOut, **kwargs):
         """
         Calls custom function with list of arguments in background mode.
+        @type function: C{function}
+        @param function: popup menu from the Object Browser.
+        @type Message: C{String}
+        @param Message:
+        @type RedirectOut: C{True} or C{False}
+        @param RedirectOut:
+        @type kwargs: C{Dictionary}
+        @param kwargs:
         """
-        _dlg = CFDSTUDYGUI_CommandDlg(Message)
+        self._dlg = CFDSTUDYGUI_CommandDlg(Message)
         self.kw = kwargs
+
         import thread
         thread.start_new_thread( self._runFunction,\
-                                ( _dlg, function, RedirectOut ) )
+                                ( self._dlg, function, RedirectOut ) )
 
-        _dlg.show()
+        self._dlg.show()
 
 
     def _runFunction( self, dlg, function, RedirectOut ):
@@ -100,11 +109,12 @@ class CFDSTUDYGUI_CommandMgr(QObject):
             self._LoggingMgr.start( sys )
 
         function(**self.kw)
-
         if RedirectOut:
             self._LoggingMgr.finish(sys)
         #end of operation -> close the dialog
             QApplication.postEvent(dlg, QCloseEvent())
+
+        QApplication.postEvent(dlg, QEvent(9999))
 
 
     def runCommandDlg(self, sObjRep, Message, cmd, start_directory = "", prefix = ""):
@@ -112,27 +122,19 @@ class CFDSTUDYGUI_CommandMgr(QObject):
         Executing of custom shell command in background mode.
         All output information catched by LogWindow.
         """
-        _dlg = CFDSTUDYGUI_CommandDlg(Message)
+        #self._dlg = CFDSTUDYGUI_CommandDlg(Message)
         self.sObjR = sObjRep
 
         if "str" in str(type(cmd)):
             # on est dans le cas d'un runcase
-            self.runTextEdit("",cmd)
+            self.runTextEdit("", cmd)
         import thread
-        thread.start_new_thread( self._runCommand, ( _dlg, cmd, start_directory, prefix) )
-        _dlg.show()
+        #thread.start_new_thread( self._runCommand, ( self._dlg, cmd, start_directory, prefix) )
+        thread.start_new_thread( self._runCommand, ( cmd, start_directory, prefix) )
+        #self._dlg.show()
 
 
-    def runCommand(self, cmd, start_directory = "", prefix = "", log_file = ""):
-        """
-        Executing of custom shell command in background mode.
-        All output information catched by LogWindow and log file.
-        """
-        import thread
-        thread.start_new_thread( self._runCommand, ( None, cmd, start_directory, prefix, log_file) )
-
-
-    def _runCommand(self, dlg, cmd, start_directory = '', prefix = '', log_file = ''):
+    def _runCommand(self, cmd, start_directory = '', prefix = '', log_file = ''):
         """
         Run command cmd and asynchronize put it to LogWindow and to log file.
         Each string is logged with prefix.
@@ -157,26 +159,24 @@ class CFDSTUDYGUI_CommandMgr(QObject):
                 if not text:
                     break
                 if aLogFile:
-
                     aLogFile.write( text )
-
                 if re.search( "\n$", text ):
                     text = text[:len(text)-1]
-
                 ev=QtCore.QEvent(QtCore.QEvent.User)
                 ev.text= prefix + text
                 QtGui.qApp.postEvent(self.textEdit,ev)
-
                 #sgPyQt.message( prefix + text, False )
 
         except OSError, e:
             sgPyQt.message( prefix + "Exception had occured during script execution " + e.__str__(), True )
-        if pipe:
-            pipe.stdout.close()
         if aLogFile:
             aLogFile.close()
-        import CFDSTUDYGUI_DataModel
-        CFDSTUDYGUI_DataModel.UpdateSubTree(self.sObjR)
+        if pipe:
+            pipe.stdout.close()
+            #QApplication.postEvent(dlg, QEvent(9998))
+            import CFDSTUDYGUI_DataModel
+            CFDSTUDYGUI_DataModel.UpdateSubTree(self.sObjR)
+
 
 
     def runTextEdit(self,texte,aTitleCase):
@@ -218,6 +218,9 @@ class CFDSTUDYGUI_CommandMgr(QObject):
         runDock.show()
         runDock.raise_()
 
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
 
 class CFDSTUDYGUI_MyWidgetListing(QWidget):
     def __init__(self, parent = None ):
@@ -235,11 +238,14 @@ class CFDSTUDYGUI_MyWidgetListing(QWidget):
             self.textEditListing.append(ev.text)
         return QWidget.event(self, ev)
 
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
 
 class CFDSTUDYGUI_CommandDlg(QDialog):
     def __init__(self, text,parent = None ):
         QDialog.__init__(self, parent)
-        self.setWindowTitle("")
+        self.setWindowTitle(" ")
         layout = QGridLayout()
         label = QLabel(text, self)
         layout.addWidget(label)
@@ -247,11 +253,16 @@ class CFDSTUDYGUI_CommandDlg(QDialog):
         self.setMaximumSize(self.minimumSize())
         self.setSizeGripEnabled(False)
 
-
     def event(self, e):
+        if e.type() == 9999:
+            return QDialog.event(self, QCloseEvent())
+
+        if e.type() == 9998:
+            return QDialog.event(self, QCloseEvent())
         if e.type() == QEvent.Close:
             e.ignore()
             return True
+
         return QDialog.event(self, e)
 
 
@@ -262,6 +273,9 @@ class CFDSTUDYGUI_CommandDlg(QDialog):
     def accept( self ):
         QDialog.accept(self)
 
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
 
 class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
     """
@@ -283,7 +297,7 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
 
         self.proc = QProcess()
         self.connect(self.proc, SIGNAL('readyReadStandardOutput()'), self.__readFromStdout)
-        self.connect(self.proc, SIGNAL('readyReadStandardError()'), self.__readFromStderr)
+        self.connect(self.proc, SIGNAL('readyReadStandardError()'),  self.__readFromStderr)
         self.procErrorFlag = False
 
         self.cmd_list = cmd_list
@@ -344,6 +358,9 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
         QApplication.restoreOverrideCursor()
         self.pushButton.setEnabled(True)
 
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
 
 def runCommand(cmd, start_directory, prefix, *args):
     """

@@ -37,8 +37,10 @@ omniORB_ok=yes
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 
-AC_PATH_PROG(OMNIORB_IDL, omniidl)
-if test "x$OMNIORB_IDL" = "x"
+AC_ARG_VAR([OMNIIDL], [the omniORB IDL compiler])
+AC_PATH_PROG([OMNIIDL], [omniidl])
+
+if test "x$OMNIIDL" = "x"
 then
   omniORB_ok=no
   AC_MSG_RESULT(omniORB binaries not in PATH variable)
@@ -48,9 +50,7 @@ fi
 
 if  test "x$omniORB_ok" = "xyes"
 then
-  AC_SUBST(OMNIORB_IDL)
-
-  OMNIORB_BIN=`echo ${OMNIORB_IDL} | sed -e "s,[[^/]]*$,,;s,/$,,;s,^$,.,"`
+  OMNIORB_BIN=`echo ${OMNIIDL} | sed -e "s,[[^/]]*$,,;s,/$,,;s,^$,.,"`
   OMNIORB_ROOT=${OMNIORB_BIN}
   # one-level up
   OMNIORB_ROOT=`echo ${OMNIORB_ROOT}  | sed -e "s,[[^/]]*$,,;s,/$,,;s,^$,.,"`

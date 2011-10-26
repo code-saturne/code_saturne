@@ -84,6 +84,9 @@ from LifeCycleCORBA import *
 import SALOMEDS
 import SALOMEDS_Attributes_idl
 
+import SMESH
+import salome
+
 #-------------------------------------------------------------------------------
 # Application modules
 #-------------------------------------------------------------------------------
@@ -94,13 +97,20 @@ import CFDSTUDYGUI_SolverGUI
 from CFDSTUDYGUI_CommandMgr import runCommand
 
 #-------------------------------------------------------------------------------
+# For Error Message Box
+#-------------------------------------------------------------------------------
+
+#import CFDSTUDYGUI_DesktopMgr
+from PyQt4.QtGui import QMessageBox
+
+#-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
 
 logging.basicConfig()
 log = logging.getLogger("CFDSTUDYGUI_DataModel")
-log.setLevel(logging.DEBUG)
-#log.setLevel(logging.NOTSET)
+#log.setLevel(logging.DEBUG)
+log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
 # Module name. Attribut "AttributeName" for the related SObject.
@@ -184,25 +194,6 @@ dict_object["UnvFile"]        = 100081
 dict_object["POSTFolder"]     = 100090
 dict_object["POSTFile"]       = 100091
 
-# LocalId attributes for PublishedIntoObjectBrowser method
-dict_object["PublishedIntoObjectBrowser"]          = 200000
-dict_object["PublishedMeshIntoObjectBrowser"]      = 200001
-dict_object["PublishedMeshGroupIntoObjectBrowser"] = 200002
-dict_object["PublishedMeshGroupFacesIntoObjectBrowser"] = 200003
-dict_object["PublishedMeshGroupCellsIntoObjectBrowser"] = 200004
-
-listPublishedId = [dict_object["PublishedIntoObjectBrowser"],
-                   dict_object["PublishedMeshIntoObjectBrowser"],
-                   dict_object["PublishedMeshGroupFacesIntoObjectBrowser"],
-                   dict_object["PublishedMeshGroupCellsIntoObjectBrowser"],
-                   dict_object["PublishedMeshGroupIntoObjectBrowser"] ]
-
-# listPublishedId is used into PublishedIntoObjectBrowser method and caracterize entries
-# PublishedIntoObjectBrowser method adds entries into Salome Object Browser.
-# These entries do not provide from an Unix cfd study directory, and are idendified into the object browser
-# by a localId Attribute from the python list listPublishedId
-
-
 #-------------------------------------------------------------------------------
 # Definition of the icon of objects to represent in the Object Browser.
 # Attribut "AttributePixMap" for the related SObject.
@@ -277,11 +268,6 @@ icon_collection[dict_object["POSTFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["PRETFolder"]+1000]  = "CFDSTUDY_FOLDER_LINKED_OBJ_ICON"
 icon_collection[dict_object["SUITEFolder"]+1000] = "CFDSTUDY_FOLDER_LINKED_OBJ_ICON"
 
-icon_collection[dict_object["PublishedIntoObjectBrowser"]]          = "MESH_TREE_OBJ_ICON"
-icon_collection[dict_object["PublishedMeshIntoObjectBrowser"]]      = "MESH_TREE_OBJ_ICON"
-icon_collection[dict_object["PublishedMeshGroupIntoObjectBrowser"]] = "MESH_GROUP_TREE_OBJ_ICON"
-icon_collection[dict_object["PublishedMeshGroupFacesIntoObjectBrowser"]] = ""
-icon_collection[dict_object["PublishedMeshGroupCellsIntoObjectBrowser"]] = ""
 
 #-------------------------------------------------------------------------------
 # ObjectTR is a convenient object for traduction purpose
@@ -347,6 +333,19 @@ def _getStudy():
     studyId = sgPyQt.getStudyId()
     study = studyManager.GetStudyByID(studyId)
     return study
+
+
+def _getlistOfOpenStudies():
+    return studyManager.GetOpenStudies()
+
+def _getStudy_Id(studyName) :
+    s=studyManager.GetStudyByName(studyName)
+    return s._get_StudyId()
+
+def _getNewBuilder():
+    study   = _getStudy()
+    builder = study.NewBuilder()
+    return builder
 
 
 def _getComponent():
@@ -421,8 +420,8 @@ def _SetStudyLocation(theStudyPath, theCaseNames):
     study   = _getStudy()
     builder = study.NewBuilder()
     father  = _findOrCreateComponent()
-
     studyObject = FindStudyByPath(theStudyPath)
+    iok = True
     if studyObject == None:
         #obtain name and dir for new study
         lst = os.path.split(theStudyPath)
@@ -446,40 +445,43 @@ def _SetStudyLocation(theStudyPath, theCaseNames):
         CreateStudy = True
         if os.path.exists(theStudyPath):
             CreateStudy = False
-        _CallCreateScript(theStudyPath, CreateStudy, theCaseNames)
-        UpdateSubTree(studyObject)
+        iok = _CallCreateScript(theStudyPath, CreateStudy, theCaseNames)
+        if iok :
+            UpdateSubTree(studyObject)
     else :
 
         CreateStudy = True
         if os.path.exists(theStudyPath):
             CreateStudy = False
-        _CallCreateScript(theStudyPath, CreateStudy, theCaseNames)
+            iok = _CallCreateScript(theStudyPath, CreateStudy, theCaseNames)
         # here, if CreateStudy is True, _SetStudyLocation is used to add a case into a CFD study
         #updating Object browser : optimization : UpdateSubTree(studyObject) updates all the cases inside of de studyObject
         # here it only updates the concerned cases
-        objList = []
-        objMap  = {}
-        iter  = study.NewChildIterator(studyObject)
-        while iter.More():
-            casename = iter.Value().GetName()
-            if casename != "" :
-                objList.append(iter.Value().GetName())
-                objMap[iter.Value().GetName()]  = iter.Value()
-            iter.Next()
-        if len(theCaseNames) != 0 :
-            import string
-            CaseName_list = string.split(string.upper(theCaseNames),' ')
+        if iok :
+            objList = []
+            objMap  = {}
+            iter  = study.NewChildIterator(studyObject)
+            while iter.More():
+                casename = iter.Value().GetName()
+                if casename != "" :
+                    objList.append(iter.Value().GetName())
+                    objMap[iter.Value().GetName()]  = iter.Value()
+                iter.Next()
+            if len(theCaseNames) != 0 :
+                import string
+                CaseName_list = string.split(string.upper(theCaseNames),' ')
 
-            for casename in CaseName_list :
-                if not casename == "" and casename not in objList :
-                    caseObject  = builder.NewObject(studyObject)
-                    attr    = builder.FindOrCreateAttribute(caseObject, "AttributeLocalID")
-                    attr.SetValue(dict_object["Case"])
-                    attr = builder.FindOrCreateAttribute(caseObject, "AttributeName")
-                    attr.SetValue(casename)
-                    _SetIcon(caseObject, builder)
-                    attr = builder.FindOrCreateAttribute(caseObject, "AttributeComment")
-                    UpdateSubTree(caseObject)
+                for casename in CaseName_list :
+                    if not casename == "" and casename not in objList :
+                        caseObject  = builder.NewObject(studyObject)
+                        attr    = builder.FindOrCreateAttribute(caseObject, "AttributeLocalID")
+                        attr.SetValue(dict_object["Case"])
+                        attr = builder.FindOrCreateAttribute(caseObject, "AttributeName")
+                        attr.SetValue(casename)
+                        _SetIcon(caseObject, builder)
+                        attr = builder.FindOrCreateAttribute(caseObject, "AttributeComment")
+                        UpdateSubTree(caseObject)
+    return iok
 
 def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames):
     """
@@ -492,45 +494,49 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames):
     @type theCaseNames: C{String}
     @param theCaseNames: unix pathes of the new CFD cases to be build.
     """
-
+    mess = ""
     if isCreateStudy or theCaseNames != "":
-        scrpt, c = BinCode()
+        scrpt, c ,mess = BinCode()
+        if mess == "" :
+            curd = os.path.abspath('.')
 
-        curd = os.path.abspath('.')
+            start_dir = ""
+            if isCreateStudy:
+                fatherdir,etude = os.path.split(theStudyPath)
+                start_dir = fatherdir
+            else:
+                start_dir = theStudyPath
 
-        start_dir = ""
-        if isCreateStudy:
-            fatherdir,etude = os.path.split(theStudyPath)
-            start_dir = fatherdir
-        else:
-            start_dir = theStudyPath
+            args = [scrpt]
+            args.append('create')
 
-        args = [scrpt]
-        args.append('create')
+            if isCreateStudy:
+                if CFD_Code() == "Code_Saturne":
+                    args.append("--study")
+                elif CFD_Code() == "NEPTUNE_CFD":
+                    args.append("--study")
+                args.append(os.path.basename(theStudyPath))
+ #           else:
+ #                if CFD_Code() == "Code_Saturne":
+ #                    args.append("--case")
+ #                elif  CFD_Code() == "NEPTUNE_CFD":
+#                     args.append("--case")
 
-        if isCreateStudy:
-            if CFD_Code() == "Code_Saturne":
-                args.append("--study")
-            elif CFD_Code() == "NEPTUNE_CFD":
-                args.append("--study")
-            args.append(os.path.basename(theStudyPath))
-        else:
-            if CFD_Code() == "Code_Saturne":
+            for i in theCaseNames.split(' '):
                 args.append("--case")
-            elif  CFD_Code() == "NEPTUNE_CFD":
-                args.append("--case")
+                args.append(i)
+            if Trace():
+                print '_CreateStudy',theStudyPath,theCaseNames,'curdir',curd
+                print 'CFDSTUDYGUI_DataModel : _CallCreateScript : scrpt = ',scrpt
+                print 'CFDSTUDYGUI_DataModel : _CallCreateScript : args  = ',args
+                print 'CFDSTUDYGUI_DataModel : _CallCreateScript : start_dir = ',start_dir
+            runCommand(args, start_dir, "")
 
-        for i in theCaseNames.split(' '):
-            args.append(i)
-
-        if Trace():
-            print '_CreateStudy',theStudyPath,theCaseNames,'curdir',curd
-            print 'CFDSTUDYGUI_DataModel : _CallCreateScript : scrpt = ',scrpt
-            print 'CFDSTUDYGUI_DataModel : _CallCreateScript : args  = ',args
-            print 'CFDSTUDYGUI_DataModel : _CallCreateScript : start_dir = ',start_dir
-        runCommand(args, start_dir, "")
-
-        os.chdir(curd)
+            os.chdir(curd)
+        else :
+            QMessageBox.critical(None,
+                                "Error", mess, QMessageBox.Ok, 0)
+    return mess == ""
 
 
 def _UpdateStudy():
@@ -559,9 +565,9 @@ def UpdateSubTree(theObject=None):
         _RebuildTreeRecursively(theObject)
     else:
         _UpdateStudy()
-
+    # --- update object browser from a thread different of the main thread is not safe !
     studyId = sgPyQt.getStudyId()
-    sgPyQt.updateObjBrowser(studyId, 1)
+    sgPyQt.updateObjBrowser(studyId,1)
 
 
 def _RebuildTreeRecursively(theObject):
@@ -609,7 +615,6 @@ def _RebuildTreeRecursively(theObject):
 
     # build a list of file from the file system
     dirList = _GetDirList(theObject)
-
     # build a list and a dictionary of childs SObject from the current SObject
     objList = []
     objMap  = {}
@@ -649,6 +654,7 @@ def _RebuildTreeRecursively(theObject):
                 if not dirEnd:
                     #append new object
                     if Trace(): print "1 Append new Item: ", dirName
+                    log.debug("_RebuildTreeRecursively 4: dirName = %s objName = %s" %(dirName,objName))
                     _CreateObject(theObject, builder, dirName)
                     dirIndex+=1
 
@@ -675,6 +681,7 @@ def _RebuildTreeRecursively(theObject):
                 else:
                     #append new item at the end
                     if Trace(): print "2 Append new Item: ", dirName
+                    log.debug("_RebuildTreeRecursively 5: dirName = %s objName = %s" %(dirName,objName))
                     _CreateObject(theObject, builder, dirName)
                     dirIndex+=1
 
@@ -709,6 +716,7 @@ def _RebuildTreeRecursively(theObject):
                not attr.Value() == dict_object["SUITELink"]:
                 _RebuildTreeRecursively(iter.Value())
         iter.Next()
+    log.debug("_RebuildTreeRecursively -> %s END" % (theObject.GetName()))
 
 
 def _CreateObject(theFather, theBuilder, theName):
@@ -732,6 +740,16 @@ def _CreateObject(theFather, theBuilder, theName):
     attr.SetValue(theName)
     _FillObject(newChild, theFather, theBuilder)
 
+def _CreateItem(theFather,theNewName) :
+    """
+    Creates a child with name theNewName under theFather root into Object Brother
+    @type theFather: C{SObject}
+    @type theNewName : C{String}
+    """
+    log.debug("_CreateItem: NewItem = %s with Parent = %s" % (theNewName,theFather.GetName()))
+    theBuilder = _getNewBuilder()
+    if theNewName not in ScanChildNames(theFather,  ".*") :
+        _CreateObject(theFather, theBuilder, theNewName)
 
 def _FillObject(theObject, theParent, theBuilder):
     """
@@ -754,6 +772,7 @@ def _FillObject(theObject, theParent, theBuilder):
 
     # Parent is study
     if parentId == dict_object["Study"]:
+        if Trace(): print "parent is Study ", theParent.GetName()
         #check for case
         if os.path.isdir(path):
             dirList = os.listdir(path)
@@ -805,8 +824,8 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["DATALaunch"]
             elif re.match("^dp_", name):
                 objectId = dict_object["DATAFile"]
-            #elif re.match(".*\.xml$", name):
-            #    objectId = dict_object["DATAfileXML"]
+            elif re.match(".*\.xml$", name):
+                objectId = dict_object["DATAfileXML"]
             else:
                 if os.path.isfile(path):
                     fd = os.open(path , os.O_RDONLY)
@@ -820,7 +839,12 @@ def _FillObject(theObject, theParent, theBuilder):
 
     # parent is RESU folder
     elif parentId == dict_object["RESUFolder"]:
+        if Trace():
+            print "Parent is RESU folder"
+            print "Path is:", path
         if os.path.isdir(path):
+            if Trace():
+                print "Object is other folder"
             objectId = dict_object["OtherFolder"]
         elif os.path.isfile(path):
             if re.match(".*\.med$", name):
@@ -828,6 +852,9 @@ def _FillObject(theObject, theParent, theBuilder):
             else:
                 objectId = dict_object["OtherFile"]
         else:
+            #virtual directory
+            if Trace():
+                print "Object is virtual folder"
             objectId = dict_object["VirtFolder"]
 
     # parent is SCRIPTS folder
@@ -890,16 +917,6 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["UnvFile"]
             else:
                 objectId = dict_object["MESHFile"]
-
-#    elif parentId == dict_object["PublishedMeshIntoObjectBrowser"]:
-#        if name == "Groups of Faces":
-#            objectId = dict_object["PublishedMeshGroupFacesIntoObjectBrowser"]
-#        elif name == "Groups of Cells":
-#            objectId = dict_object["PublishedMeshGroupCellsIntoObjectBrowser"]
-#
-#    elif parentId == dict_object["PublishedMeshGroupFacesIntoObjectBrowser"] \
-#          or parentId == dict_object["PublishedMeshGroupFacesIntoObjectBrowser"]:
-#            objectId = dict_object["PublishedMeshGroupIntoObjectBrowser"]
 
     # parent is POST folder
     elif parentId == dict_object["POSTFolder"]:
@@ -968,6 +985,8 @@ def _FillObject(theObject, theParent, theBuilder):
     elif parentId == dict_object["VirtFolder"]:
         #needs for update path
         path = os.path.join(_GetPath(theParent.GetFather()), name) + "." + str(theParent.GetName())
+        if Trace():
+            print "------------PATH---------", path
         if os.path.isdir(path):
             #folder
             if name == "SRC":
@@ -1046,18 +1065,22 @@ def _FillObject(theObject, theParent, theBuilder):
            re.match(".*\.for$", name) or \
            re.match(".*\.FOR$", name):
             if _DetectUSERSObject(theObject) == True:
+                if Trace(): print "******************************", path
                 objectId = _DetectSRCObject(theParent)
         elif re.match(".*\.c$", name):
             if _DetectUSERSObject(theObject) == True:
+                if Trace(): print "******************************", path
                 objectId = _DetectSRCObject(theParent)
         elif re.match(".*\.cpp$", name) or \
            re.match(".*\.cxx$", name):
             if _DetectUSERSObject(theObject) == True:
+                if Trace(): print "******************************", path
                 objectId = _DetectSRCObject(theParent)
         elif re.match(".*\.h$", name) or \
            re.match(".*\.hxx$", name) or \
            re.match(".*\.hpp$", name):
             if _DetectUSERSObject(theObject) == True:
+                if Trace(): print "******************************", path
                 objectId = _DetectSRCObject(theParent)
 
     if objectId == dict_object["OtherFile"]:
@@ -1107,6 +1130,7 @@ def _SetIcon(theObject, theBuilder):
             iter  = study.NewChildIterator(case)
             while iter.More():
                 if iter.Value().GetName() == "DATA":
+                    if Trace(): print "check for link"
                     newpath = os.path.join(_GetPath(iter.Value()), theObject.GetName())
                     if Trace():
                         print "check for: ", newpath
@@ -1354,17 +1378,11 @@ def GetStudyByObj(theObject):
     @return: study to which belongs the I{theObject}.
     @rtype: C{SObject}
     """
-    if Trace(): print "TheObject", theObject
-
     if theObject == None:
         return None
 
     study   = _getStudy()
-    if Trace(): print "get study:", study
-
     builder = study.NewBuilder()
-    if Trace(): print "builder:", builder
-
     cur = theObject
 
     while cur:
@@ -1814,21 +1832,83 @@ def findMaxDeepObject(thePath):
     return parent
 
 
-def publishInStudySalome(SO_father, objName, idElem):
+#def publishInStudySalome(SO_father, objName, idElem):
+    #"""
+    #Publish objName into Object Browser under SO_father with the AttributeLocalID idElem
+    #listPublishedId is used into PublishedIntoObjectBrowser method and caracterize entries
+    #PublishedIntoObjectBrowser method adds entries into Salome Object Browser.
+    #These entries do not provide from an Unix cfd study directory, and are idendified into the object browser
+    #by a localId Attribute from the python list listPublishedId
+    #"""
+    #study = _getStudy()
+    #builder = study.NewBuilder()
+    #studyObject = builder.NewObject(SO_father)
+    #attr = builder.FindOrCreateAttribute(studyObject, "AttributeName")
+    #attr.SetValue(objName)
+    #attr = builder.FindOrCreateAttribute(studyObject, "AttributeLocalID")
+    #attr.SetValue(idElem)
+    #_SetIcon(studyObject, builder)
+    #log.debug("publishInStudySalome: %s" % ScanChildNames(SO_father,  ".*"))
+    #return studyObject
+
+
+def getOrLoadObject(item):
     """
-    Publish objName into Object Browser under SO_father with the AttributeLocalID idElem
-    listPublishedId is used into PublishedIntoObjectBrowser method and caracterize entries
-    PublishedIntoObjectBrowser method adds entries into Salome Object Browser.
-    These entries do not provide from an Unix cfd study directory, and are idendified into the object browser
-    by a localId Attribute from the python list listPublishedId
+    Get the CORBA object associated with the SObject `item`, eventually by
+    first loading it with the corresponding engine.
     """
-    study = _getStudy()
-    builder = study.NewBuilder()
-    studyObject = builder.NewObject(SO_father)
-    attr = builder.FindOrCreateAttribute(studyObject, "AttributeName")
-    attr.SetValue(objName)
-    attr = builder.FindOrCreateAttribute(studyObject, "AttributeLocalID")
-    attr.SetValue(idElem)
-    _SetIcon(studyObject, builder)
-    log.debug("publishInStudySalome: %s" % ScanChildNames(SO_father,  ".*"))
-    return studyObject
+    object = item.GetObject()
+    if object is None: # the engine has not been loaded yet
+        sComponent = item.GetFatherComponent()
+        #self.loadComponentEngine(sComponent)
+        study   = _getStudy()
+        builder = study.NewBuilder()
+        engine = _getEngine()
+        if engine is None:
+            print "Cannot load component ", __MODULE_NAME__
+        object = item.GetObject()
+    return object
+
+def getMeshFromMesh(meshSobjItem) :
+    """
+    return: The SALOMEDS._objref_SObject instance of the mesh, if the meshSobjItem is a sobj of a mesh, None if not
+    """
+    meshItem = None
+    obj = getOrLoadObject(meshSobjItem)
+    if obj is not None:
+        mesh = obj._narrow(SMESH.SMESH_Mesh)
+
+        if mesh is not None:
+            meshItem = salome.ObjectToSObject(mesh)
+
+    return meshItem
+
+def SetAutoColor (meshSobjItem) :
+    obj = getOrLoadObject(meshSobjItem)
+    if obj is not None:
+        mesh = obj._narrow(SMESH.SMESH_Mesh)
+        if mesh is not None:
+            mesh.SetAutoColor(1)
+
+def getMeshFromGroup(meshGroupItem):
+    """
+    Get the mesh item owning the mesh group `meshGroupItem`.
+
+    :type   meshGroupItem: SObject
+    :param  meshGroupItem: Mesh group belonging to the searched mesh.
+
+    :return: The SALOMEDS._objref_SObject instance corresponding to the mesh group or None
+             and SMESH._objref_SMESH_Group instance  or None if it was not
+             found.
+    """
+    group = None
+    meshItem = None
+    obj = getOrLoadObject(meshGroupItem)
+    #obj = self.editor.getOrLoadObject(meshGroupItem) # version 515
+
+    if obj is not None:
+        group = obj._narrow(SMESH.SMESH_GroupBase)
+        if group is not None: # The type of the object is ok
+            meshObj = group.GetMesh()
+            meshItem = salome.ObjectToSObject(meshObj)
+    return meshItem,group

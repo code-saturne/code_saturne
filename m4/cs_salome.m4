@@ -26,19 +26,17 @@ dnl-----------------------------------------------------------------------------
 
 AC_DEFUN([CS_AC_TEST_SALOME], [
 
+AC_ARG_VAR([SALOMEENV], [SALOME environment script])
+AC_ARG_VAR([SALOMEPRE], [SALOME pre-requisites script])
+
 CS_AC_TEST_SALOME_KERNEL
 CS_AC_TEST_SALOME_GUI
-
+CS_AC_TEST_SALOME_YACS
 
 AS_IF([test $cs_have_salome_kernel = yes -o $cs_have_salome_gui = yes],
       [CS_AC_TEST_OMNIORB
        CS_AC_TEST_CORBA
-       CS_AC_TEST_BOOST
-       AC_SUBST(ROOT_SALOME)
-       AC_SUBST(KERNEL_ROOT_DIR)
-       AC_SUBST(GUI_ROOT_DIR)
-       AC_SUBST(YACS_ROOT_DIR)
-       AC_SUBST(SALOME_VERSION, [`basename $KERNEL_ROOT_DIR|sed -e 's/KERNEL_//' -`])])
+       CS_AC_TEST_BOOST])
 
 CS_AC_TEST_SPHINX
 
@@ -55,7 +53,7 @@ cs_have_salome_kernel=no
 
 AC_ARG_WITH(salome-kernel,
             [AS_HELP_STRING([--with-salome-kernel=PATH],
-                            [specify prefix directory for SALOME kernel])],
+                            [specify prefix directory for SALOME KERNEL])],
             [if test "x$withval" = "x"; then
                if test -z "$KERNEL_ROOT_DIR"; then
                  with_salome_kernel=yes
@@ -69,60 +67,21 @@ AC_ARG_WITH(salome-kernel,
                with_salome_kernel=$KERNEL_ROOT_DIR
              fi])
 
-AC_ARG_WITH(salome-kernel-include,
-            [AS_HELP_STRING([--with-salome-kernel-include=PATH],
-                            [specify directory for SALOME kernel include files])],
-            [if test "x$with_salome_kernel" = "xcheck"; then
-               with_salome_kernel=yes
-             fi
-             SALOME_KERNEL_CPPFLAGS="-I$with_salome_kernel_include"],
-            [if test "x$with_salome_kernel" != "xno" ; then
-               if test "x$with_salome_kernel" != "xyes" \
-	               -a "x$with_salome_kernel" != "xcheck"; then
-                 SALOME_KERNEL_CPPFLAGS="-I$with_salome_kernel/include/salome"
-               else
-                 SALOME_KERNEL_CPPFLAGS="-I/usr/include/salome"
-               fi
-             fi])
-
-AC_ARG_WITH(salome-kernel-idl,
-            [AS_HELP_STRING([--with-salome-kernel-idl=PATH],
-                            [specify directory for SALOME_KERNEL IDL files])],
-            [if test "x$with_salome_kernel" = "xcheck"; then
-               with_salome_kernel=yes
-             fi
-             SALOME_KERNEL_IDL="-L$with_salome_kernel_idl"],
-            [if test "x$with_salome_kernel" != "xno" ; then
-               if test "x$with_salome_kernel" != "xyes" \
-	               -a "x$with_salome_kernel" != "xcheck"; then
-                 SALOME_KERNEL_IDL="-I$with_salome_kernel/idl/salome"
-               else
-                 SALOME_KERNEL_IDL="-I/usr/idl/salome"
-               fi
-             fi])
-
-AC_ARG_WITH(salome-kernel-lib,
-            [AS_HELP_STRING([--with-salome-kernel-lib=PATH],
-                            [specify directory for SALOME_KERNEL library])],
-            [if test "x$with_salome_kernel" = "xcheck"; then
-               with_salome_kernel=yes
-             fi
-             SALOME_KERNEL_LDFLAGS="-L$with_salome_kernel_lib"],
-            [if test "x$with_salome_kernel" != "xno" ; then
-               if test "x$with_salome_kernel" != "xyes" \
-	               -a "x$with_salome_kernel" != "xcheck"; then
-                 SALOME_KERNEL_LDFLAGS="-L$with_salome_kernel/lib/salome"
-               else
-                 SALOME_KERNEL_LDFLAGS="-L/usr/lib/salome"
-               fi
-             fi])
-
 if test "x$with_salome_kernel" != "xno" ; then
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
+  if test x"$with_salome_kernel" != xyes -a x"$with_salome_kernel" != xcheck ; then
+    SALOME_KERNEL="$with_salome_kernel"
+  else
+    SALOME_KERNEL="/usr"
+  fi
+
+  SALOME_KERNEL_CPPFLAGS="-I$SALOME_KERNEL/include/salome"
+  SALOME_KERNEL_IDL="-I$SALOME_KERNEL/idl/salome"
+  SALOME_KERNEL_LDFLAGS="-L$SALOME_KERNEL/lib/salome"
   SALOME_KERNEL_LIBS="-lCalciumC"
   
   CPPFLAGS="${CPPFLAGS} ${SALOME_KERNEL_CPPFLAGS}"
@@ -156,6 +115,7 @@ if test "x$with_salome_kernel" != "xno" ; then
 fi
 
 AC_SUBST(cs_have_salome_kernel)
+AC_SUBST(SALOME_KERNEL)
 AC_SUBST(SALOME_KERNEL_CPPFLAGS)
 AC_SUBST(SALOME_KERNEL_IDL)
 AC_SUBST(SALOME_KERNEL_LDFLAGS)
@@ -177,7 +137,7 @@ cs_have_salome_gui=no
 
 AC_ARG_WITH(salome-gui,
             [AS_HELP_STRING([--with-salome-gui=PATH],
-                            [specify prefix directory for SALOME gui])],
+                            [specify prefix directory for SALOME GUI])],
             [if test "x$withval" = "x"; then
                if test -z "$GUI_ROOT_DIR"; then
                  with_salome_gui=yes
@@ -191,71 +151,97 @@ AC_ARG_WITH(salome-gui,
                with_salome_gui=$GUI_ROOT_DIR
              fi])
 
-AC_ARG_WITH(salome-gui-include,
-            [AS_HELP_STRING([--with-salome-gui-include=PATH],
-                            [specify directory for SALOME gui include files])],
-            [if test "x$with_salome_gui" = "xcheck"; then
-               with_salome_gui=yes
-             fi
-             SALOME_GUI_CPPFLAGS="-I$with_salome_gui_include"],
-            [if test "x$with_salome_gui" != "xno" ; then
-               if test "x$with_salome_gui" != "xyes" \
-	               -a "x$with_salome_gui" != "xcheck"; then
-                 SALOME_GUI_CPPFLAGS="-I$with_salome_gui/include/salome"
-               else
-                 SALOME_GUI_CPPFLAGS="-I/usr/include/salome"
-               fi
-             fi])
-
-AC_ARG_WITH(salome-gui-idl,
-            [AS_HELP_STRING([--with-salome-gui-idl=PATH],
-                            [specify directory for SALOME_GUI IDL files])],
-            [if test "x$with_salome_gui" = "xcheck"; then
-               with_salome_gui=yes
-             fi
-             SALOME_GUI_IDL="-L$with_salome_gui_idl"],
-            [if test "x$with_salome_gui" != "xno" ; then
-               if test "x$with_salome_gui" != "xyes" \
-	               -a "x$with_salome_gui" != "xcheck"; then
-                 SALOME_GUI_IDL="-I$with_salome_gui/idl/salome"
-               else
-                 SALOME_GUI_IDL="-I/usr/idl/salome"
-               fi
-             fi])
-
-AC_ARG_WITH(salome-gui-lib,
-            [AS_HELP_STRING([--with-salome-gui-lib=PATH],
-                            [specify directory for SALOME_GUI library])],
-            [if test "x$with_salome_gui" = "xcheck"; then
-               with_salome_gui=yes
-             fi
-             SALOME_GUI_LDFLAGS="-L$with_salome_gui_lib"],
-            [if test "x$with_salome_gui" != "xno" ; then
-               if test "x$with_salome_gui" != "xyes" \
-	               -a "x$with_salome_gui" != "xcheck"; then
-                 SALOME_GUI_LDFLAGS="-L$with_salome_gui/lib/salome"
-               else
-                 SALOME_GUI_LDFLAGS="-L/usr/lib/salome"
-               fi
-             fi])
-
 #if test "x$with_salome_gui" != "xno" ; then
 # We should add a couple of tests here...
 #fi
 
-if test "x$with_salome_gui" = "xno" ; then
-  cs_have_salome_gui=no
-else
+if test x"$with_salome_gui" != xno ; then
+
   cs_have_salome_gui=yes
+
+  if test x"$with_salome_gui" != xyes -a x"$with_salome_gui" != xcheck ; then
+    SALOME_GUI="$with_salome_gui"
+  else
+    SALOME_GUI="/usr"
+  fi
+
+  SALOME_GUI_CPPFLAGS="-I$SALOME_GUI/include/salome"
+  SALOME_GUI_IDL="-I$SALOME_GUI/idl/salome"
+  SALOME_GUI_LDFLAGS="-L$SALOME_GUI/lib/salome"
+  SALOME_GUI_LIBS=
+  
+else
+  cs_have_salome_gui=no
 fi
 
 AC_SUBST(cs_have_salome_gui)
+AC_SUBST(SALOME_GUI)
 AC_SUBST(SALOME_GUI_CPPFLAGS)
 AC_SUBST(SALOME_GUI_IDL)
 AC_SUBST(SALOME_GUI_LDFLAGS)
 AC_SUBST(SALOME_GUI_LIBS)
 
 AM_CONDITIONAL(HAVE_SALOME_GUI, test x$cs_have_salome_gui = xyes)
+
+])dnl
+
+
+# CS_AC_TEST_SALOME_YACS
+#----------------------
+# modifies or sets cs_have_salome_yacs, SALOME_YACS_CPPFLAGS, SALOME_YACS_LDFLAGS, and SALOME_YACS_LIBS
+# depending on libraries found
+
+AC_DEFUN([CS_AC_TEST_SALOME_YACS], [
+
+cs_have_salome_yacs=no
+
+AC_ARG_WITH(salome-yacs,
+            [AS_HELP_STRING([--with-salome-yacs=PATH],
+                            [specify prefix directory for SALOME YACS])],
+            [if test "x$withval" = "x"; then
+               if test -z "$YACS_ROOT_DIR"; then
+                 with_salome_yacs=yes
+               else
+                 with_salome_yacs=$YACS_ROOT_DIR
+               fi
+             fi],
+            [if test -z "$YACS_ROOT_DIR"; then
+               with_salome_yacs=check
+             else
+               with_salome_yacs=$YACS_ROOT_DIR
+             fi])
+
+#if test "x$with_salome_yacs" != "xno" ; then
+# We should add a couple of tests here...
+#fi
+
+if test x"$with_salome_yacs" != xno ; then
+
+  cs_have_salome_yacs=yes
+
+  if test x"$with_salome_yacs" != xyes -a x"$with_salome_yacs" != xcheck ; then
+    SALOME_YACS="$with_salome_yacs"
+  else
+    SALOME_YACS="/usr"
+  fi
+
+  SALOME_YACS_CPPFLAGS="-I$SALOME_YACS/include/salome"
+  SALOME_YACS_IDL="-I$SALOME_YACS/idl/salome"
+  SALOME_YACS_LDFLAGS="-L$SALOME_YACS/lib/salome"
+  SALOME_YACS_LIBS=
+  
+else
+  cs_have_salome_yacs=no
+fi
+
+AC_SUBST(cs_have_salome_yacs)
+AC_SUBST(SALOME_YACS)
+AC_SUBST(SALOME_YACS_CPPFLAGS)
+AC_SUBST(SALOME_YACS_IDL)
+AC_SUBST(SALOME_YACS_LDFLAGS)
+AC_SUBST(SALOME_YACS_LIBS)
+
+AM_CONDITIONAL(HAVE_SALOME_YACS, test x$cs_have_salome_yacs = xyes)
 
 ])dnl
 

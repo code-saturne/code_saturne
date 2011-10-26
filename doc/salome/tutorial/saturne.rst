@@ -34,7 +34,7 @@ Hot inlet:
 2. Prerequisites
 ----------------
 
-Before starting the Salomé platform, it is necessary to update the environment variable **PYTHONPATH** so that the module **CFDSTUDY** knows the details of the installation of *Code_Saturne*. In order to do that, one should indicate in the variable PYTHONPATH where are the additional Python modules related to *Code_Saturne*. For example (sh ):
+Before starting the SALOME platform, it is necessary to update the environment variable **PYTHONPATH** so that the module **CFDSTUDY** knows the details of the installation of *Code_Saturne*. In order to do that, one should indicate in the variable PYTHONPATH where are the additional Python modules related to *Code_Saturne*. For example (sh ):
 
 export PYTHONPATH=/home/login/Code_Saturne/2.0/lib/python2.4/site-packages:$PYTHONPATH
 
@@ -448,7 +448,7 @@ Here the tutorial proposes two options:
     :align: center
   .. :width: 11cm
 
-  - viscosity: ``mu = 0.0015452 - 3.2212e-5 * TempC + 2.45422 * TempC^2;``
+  - viscosity: ``mu = 0.0015452 - 3.2212e-5 * TempC + 2.45422e-7 * TempC^2;``
 
   .. image:: images/T_PIPE/t-pipe-cfd-mei-mu.png
     :align: center

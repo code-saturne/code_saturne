@@ -69,7 +69,10 @@ def main(argv, pkg):
     """
 
     template = """\
-CFDSTUDY_ROOT_DIR=%(prefix)s; PYTHONPATH=%(pythondir)s:$PYTHONPATH;
+. %(salomepre)s;
+. %(salomeenv)s;
+CFDSTUDY_ROOT_DIR=%(prefix)s;
+PYTHONPATH=%(pkgpythondir)s${PYTHONPATH:+:$PYTHONPATH};
 export CFDSTUDY_ROOT_DIR PYTHONPATH;
 %(runsalome)s --modules=%(modules)s
 """
@@ -83,8 +86,10 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH;
     # Skipped modules (version 6.3.0): YACS,JOBMANAGER,HOMARD,OPENTURNS
     default_modules = "GEOM,SMESH,MED,CFDSTUDY,PARAVIS,VISU"
 
-    cmd = template % {'prefix': pkg.prefix,
-                      'pythondir': pkg.pythondir,
+    cmd = template % {'salomepre': cfg.salome_pre,
+                      'salomeenv': cfg.salome_env,
+                      'prefix': pkg.prefix,
+                      'pkgpythondir': pkg.pkgpythondir,
                       'runsalome': os.path.join(cfg.salome_kernel,
                                                 'bin', 'salome', 'runSalome'),
                       'modules': default_modules}

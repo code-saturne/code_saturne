@@ -224,9 +224,11 @@ edit_config = sed \
 	-e 's|@PACKAGE_STRING[@]|$(PACKAGE_STRING)|g' \
 	-e 's|@PACKAGE_BUGREPORT[@]|$(PACKAGE_BUGREPORT)|g' \
 	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g' \
-	-e 's|@KERNEL_ROOT_DIR[@]|$(KERNEL_ROOT_DIR)|g' \
-	-e 's|@ROOT_SALOME[@]|$(ROOT_SALOME)|g' \
-	-e 's|@SALOME_VERSION[@]|$(SALOME_VERSION)|g'
+	-e 's|@SALOME_KERNEL[@]|$(SALOME_KERNEL)|g' \
+	-e 's|@SALOME_GUI[@]|$(SALOME_GUI)|g' \
+	-e 's|@SALOME_YACS[@]|$(SALOME_YCAS)|g' \
+	-e 's|@SALOMEENV[@]|$(SALOMEENV)|g' \
+	-e 's|@SALOMEPRE[@]|$(SALOMEPRE)|g'
 
 bin/code_saturne bin/runcase_coupling: Makefile
 	rm -f $@ $@.tmp
@@ -252,12 +254,8 @@ EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in bin/runcase_aster.in bin/
 
 # Install binary scripts
 
-if HAVE_SALOME_KERNEL
-CS_SALOME_WRAPPER = bin/cs_salome_wrapper
-endif
-
 nodist_bin_SCRIPTS = \
-bin/code_saturne $(CS_SALOME_WRAPPER)
+bin/code_saturne
 
 # Install Python library
 
