@@ -36,6 +36,10 @@ class CFDSTUDY(CFDSTUDY_ORB__POA.CFDSTUDY_Gen,
         par omniidl et de la classe SALOME_ComponentPy_i
         qui porte les services generaux d'un composant SALOME
     """
+
+    # attribut de classe
+    _Component = "CFDSTUDY"
+
     def __init__ ( self, orb, poa, contID, containerName, instanceName,
                    interfaceName ):
         #print "CFDSTUDY.__init__: ", containerName, ';', instanceName

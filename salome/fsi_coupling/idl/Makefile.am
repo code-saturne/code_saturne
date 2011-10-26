@@ -43,9 +43,9 @@ libSalomeIDLFSI_la_CXXFLAGS = $(SALOME_INCLUDES)
 libSalomeIDLFSI_la_LIBADD = $(SALOME_IDL_LIBS)
 
 %SK.cc %.hh : %.idl
-	$(OMNIORB_IDL) -bcxx $(OMNIORB_IDLCXXFLAGS) $(IDL_INCLUDES) $<
+	$(OMNIIDL) -bcxx $(OMNIORB_IDLCXXFLAGS) $(IDL_INCLUDES) $<
 %_idl.py : %.idl
-	$(OMNIORB_IDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES)  $<
+	$(OMNIIDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES)  $<
 
 CLEANFILES = *.hh *SK.cc *.py *.hxx *.cxx
 
@@ -54,7 +54,7 @@ EXTRA_DIST = $(IDL_FILES)
 install-data-local: $(IDL_FILES)
 	$(INSTALL) -d  $(DESTDIR)$(salomepythondir)
 	ls $^ | while read file; do \
-	$(OMNIORB_IDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES) -C$(DESTDIR)$(salomepythondir) $$file ; \
+	( . $(SALOMEPRE) && $(OMNIIDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES) -C$(DESTDIR)$(salomepythondir) $$file ) ; \
 	done
 
 uninstall-local:

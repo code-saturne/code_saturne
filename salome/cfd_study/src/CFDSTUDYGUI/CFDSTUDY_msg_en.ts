@@ -1,11 +1,15 @@
 <!DOCTYPE TS><TS>
     <context>
-        <name>@default</name>    
+        <name>@default</name>
         <message>
             <source>CFDSTUDY_INVALID_ENV</source>
             <translation>CFD code environment not found!</translation>
 	</message>
         <message>
+            <source>CFDSTUDY_INVALID_SOLVER_NAME</source>
+            <translation>%1 is an invalid name of solver ! It must be %2 or %3 !</translation>
+	</message>
+	<message>
             <source>CFDSTUDY_MENU</source>
             <translation>CFDSTUDY</translation>
 	</message>
@@ -151,27 +155,27 @@
 	</message>
         <message>
             <source>SOLVER_SAVE_ACTION_TEXT</source>
-            <translation>Save data xml file</translation>
+            <translation>Save CFD Data File</translation>
 	</message>
         <message>
             <source>SOLVER_SAVE_ACTION_TIP</source>
-            <translation>Save data xml file</translation>
+            <translation>Save CFD Data File</translation>
 	</message>
         <message>
             <source>SOLVER_SAVE_ACTION_SB</source>
-            <translation>Save data xml file</translation>
+            <translation>Save CFD Data File</translation>
 	</message>
         <message>
             <source>SOLVER_SAVEAS_ACTION_TEXT</source>
-            <translation>Save as data xml file</translation>
+            <translation>Save as CFD Data File</translation>
 	</message>
         <message>
             <source>SOLVER_SAVEAS_ACTION_TIP</source>
-            <translation>Save as data xml file</translation>
+            <translation>Save as CFD Data File</translation>
 	</message>
         <message>
             <source>SOLVER_SAVEAS_ACTION_SB</source>
-            <translation>Save as data xml file</translation>
+            <translation>Save as CFD Data File</translation>
 	</message>
         <message>
             <source>SOLVER_TOOLS_MENU_TEXT</source>
@@ -442,6 +446,22 @@
             <translation>Do You want to remove of %1 from this study?</translation>
 	</message>
         <message>
+            <source>CLOSE_CFD_GUI_ACTION_TEXT</source>
+            <translation>Close CFD GUI</translation>
+	</message>
+        <message>
+            <source>CLOSE_CFD_GUI_ACTION_TIP</source>
+            <translation>Close CFD GUI</translation>
+	</message>
+        <message>
+            <source>CLOSE_CFD_GUI_ACTION_SB</source>
+            <translation>Close CFD GUI</translation>
+	</message>
+        <message>
+            <source>CLOSE_CFD_GUI_ACTION_CONFIRM_MESS</source>
+            <translation>Do You want to close the CFD GUI %1 from this study?</translation>
+	</message>
+        <message>
             <source>CREATE_LINK_ACTION_TEXT</source>
             <translation>Create link</translation>
 	</message>
@@ -531,7 +551,7 @@
 	</message>
         <message>
             <source>COPY_CASE_FILE_ACTION_TEXT</source>
-            <translation>Copy into an other Case</translation>
+            <translation>Copy into another Case</translation>
 	</message>
         <message>
             <source>COPY_CASE_FILE_ACTION_TIP</source>
@@ -713,7 +733,28 @@
         <message>
             <source>STMSG_CHECK_COMPILATION</source>
             <translation>Check compilation...</translation>
-	</message>			
+	</message>
+        <message>
+            <source>ENV_DLG_INVALID_DIRECTORY</source>
+            <translation>Directory %1 does not exists!!! </translation>
+        </message>
+        <message>
+            <source>ENV_DLG_INVALID_FILE</source>
+            <translation>%1 : File %2  does not exists!!! </translation>
+        </message>
+        <message>
+            <source>INFO_DLG_INVALID_ENV</source>
+            <translation>Invalid environment for %1 ! </translation>
+        </message>
+        <message>
+            <source>STMSG_UPDATE_STUDY_INCOMING</source>
+            <translation> ...Study structure updating NOW ! </translation>
+        </message>
+        <message>
+            <source>INFO_DLG_CASE</source>
+            <translation> Study Case %1 already exists ! </translation>
+        </message>
+
     </context>
     <context>
         <name>InfoDialogHandler</name>
@@ -929,18 +970,6 @@
             <translation>Options</translation>
         </message>	
         <message>
-            <source>ECSCONVERT_DLG_VOL_OPT_BTN_TEXT</source>
-            <translation>-volume</translation>
-        </message>		
-        <message>
-            <source>ECSCONVERT_DLG_BORD_OPT_BTN_TEXT</source>
-            <translation>-boundary</translation>
-        </message>		
-        <message>
-            <source>ECSCONVERT_DLG_COLOR_OPT_BTN_TEXT</source>
-            <translation>--color-to-group</translation>
-        </message>		
-        <message>
             <source>ECSCONVERT_DLG_RESULT_LABEL_TEXT</source>
             <translation>Result med file</translation>
         </message>			
@@ -960,20 +989,28 @@
             <translation>Cancel</translation>
         </message>
         <message>
+            <source>COPY_DLG_DEST_FILE_LABEL</source>
+            <translation>File</translation>
+        </message>
+        <message>
             <source>COPY_DLG_DEST_CASE_LABEL</source>
-            <translation>To case:</translation>
+            <translation>Case</translation>
+        </message>
+        <message>
+            <source>COPY_DLG_DEST_STUDY_LABEL</source>
+            <translation>Study</translation>
         </message>
         <message>
             <source>COPY_DLG_SOURCE_CASE_LABEL</source>
-            <translation>From case:</translation>
+            <translation>Case</translation>
         </message>
         <message>
             <source>COPY_DLG_FILE_NAME_LABEL</source>
-            <translation>Copy file:</translation>
+            <translation>File</translation>
         </message>	
         <message>
             <source>COPY_DLG_CAPTION</source>
-            <translation>Copy file</translation>
+            <translation>Copy file of parameters</translation>
         </message>
         <message>
             <source>COPY_DLG_EXISTS_ERROR_CAPTION</source>

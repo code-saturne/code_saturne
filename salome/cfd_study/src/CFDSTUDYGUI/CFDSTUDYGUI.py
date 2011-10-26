@@ -47,9 +47,11 @@ from PyQt4.QtCore import Qt, QObject, QVariant, SIGNAL
 # Salome modules
 #-------------------------------------------------------------------------------
 
+import SalomePyQt
 from SalomePyQt import WT_ObjectBrowser, WT_PyConsole, WT_LogWindow
 import SALOMEDS
 import SALOMEDS_Attributes_idl
+import libSalomePy
 
 #-------------------------------------------------------------------------------
 # Application modules
@@ -86,6 +88,8 @@ _DesktopMgr = CFDSTUDYGUI_DesktopMgr.CFDSTUDYGUI_DesktopMgr()
 # ObjectTR is a convenient object for traduction purpose
 ObjectTR = QObject()
 
+DEFAULT_EDITOR_NAME = ObjectTR.tr("CFDSTUDY_PREF_EDITOR")
+
 #-------------------------------------------------------------------------------
 # Callback GUI functions
 #-------------------------------------------------------------------------------
@@ -96,6 +100,8 @@ def initialize():
     """
     # nothing to do here.
     log.debug("initialize")
+    if not sgPyQt.hasSetting( "CFDSTUDY", "ExternalEditor"):
+        sgPyQt.addSetting( "CFDSTUDY", "ExternalEditor", DEFAULT_EDITOR_NAME )
     pass
 
 
@@ -114,7 +120,7 @@ def windows():
     winMap = {}
     winMap[ WT_ObjectBrowser ] = Qt.LeftDockWidgetArea
     winMap[ WT_PyConsole ]     = Qt.BottomDockWidgetArea
-    winMap[ WT_LogWindow ]     = Qt.BottomDockWidgetArea
+    #winMap[ WT_LogWindow ]     = Qt.BottomDockWidgetArea
 
     return winMap
 
@@ -133,8 +139,13 @@ def views():
     winList = "VTKViewer"
     #winList = "OCCViewer"
     #winList = "Plot2d"
-
     #winList = ""
+
+    #MP ren1 = libSalomePy.getRenderer()
+    ###ren1.GradientBackgroundOn()
+    #MP ren1.SetBackground(0.6, 0.6, 0.7)
+    ###ren1.SetBackground2(0.1, 0.2, 0.4)
+
     return winList
 
 
@@ -157,17 +168,14 @@ def createPreferences():
     """
     log.debug("createPreferences")
     sgPyQt = CFDSTUDYGUI_DataModel.sgPyQt
-    tabId = sgPyQt.addPreference(ObjectTR.tr("CFDSTUDY_PREF_TAB"))
-    genGroup = sgPyQt.addPreference(ObjectTR.tr("CFDSTUDY_PREF_GEN_GROUP"), tabId)
-    sgPyQt.setPreferenceProperty(genGroup, "columns", QVariant(1))
+    genTab = sgPyQt.addPreference(ObjectTR.tr("CFDSTUDY_PREF_GEN_GROUP"))
+    editorGroup = sgPyQt.addPreference("Editor",genTab)
+    editor      = sgPyQt.addPreference("External Editor",editorGroup,SalomePyQt.PT_String, "CFDSTUDY","ExternalEditor")
+    Reader      = sgPyQt.addPreference("External Reader",editorGroup,SalomePyQt.PT_String, "CFDSTUDY","ExternalReader")
 
-    sgPyQt.addPreference(ObjectTR.tr("CFDSTUDY_PREF_EDITOR"), genGroup, 3, "CFDSTUDY", "Editor")
-    sgPyQt.addPreference(ObjectTR.tr("CFDSTUDY_PREF_READER"), genGroup, 3, "CFDSTUDY", "Reader")
-    sgPyQt.addPreference(ObjectTR.tr("CFDSTUDY_PREF_DIFF"  ), genGroup, 3, "CFDSTUDY", "Tool_for_diff")
-    sgPyQt.addPreference(ObjectTR.tr("CFDSTUDY_PREF_DISPLAY"), genGroup, 3, "CFDSTUDY", "Display")
-
-    genGroup = sgPyQt.addPreference(ObjectTR.tr("CFDSTUDY_PREF_ENV_GROUP"), tabId)
-    sgPyQt.setPreferenceProperty(genGroup, "columns", QVariant(1))
+def preferenceChanged( section, setting ):
+    log.debug("preferenceChanged(): %s / %s" % ( section, setting ))
+    pass
 
 
 def activate():
@@ -190,23 +198,38 @@ def activate():
 
     if d_activation[studyId] == 1:
         d_activation[studyId] = 0
-        env_saturne = CheckCFD_CodeEnv(CFD_Saturne)
-        env_neptune = CheckCFD_CodeEnv(CFD_Neptune)
+        env_saturne,mess1 = CheckCFD_CodeEnv(CFD_Saturne)
+        env_neptune,mess2 = CheckCFD_CodeEnv(CFD_Neptune)
 
-        #log.debug("activate -> env_saturne = %s" % env_saturne)
-        #log.debug("activate -> env_neptune = %s" % env_neptune)
+        log.debug("activate -> env_saturne = %s" % env_saturne)
+        log.debug("activate -> env_neptune = %s" % env_neptune)
 
         if not env_saturne and not env_neptune:
-            mess = ObjectTR.tr("CFDSTUDY_INVALID_ENV")
-            QMessageBox.critical(ActionHandler.dskAgent().workspace(),
-                                 "Error", mess, QMessageBox.Ok, 0)
 
+            QMessageBox.critical(ActionHandler.dskAgent().workspace(),
+                                 "Error", mess1, QMessageBox.Ok, 0)
+            QMessageBox.critical(ActionHandler.dskAgent().workspace(),
+                                 "Error", mess2, QMessageBox.Ok, 0)
             d_activation[studyId] = 1
             return False
         elif env_saturne:
-            ActionHandler.DialogCollector.InfoDialog.setCode(CFD_Saturne, True)
+            if mess1 != "" :
+                Error = "Error : "+ ObjectTR.tr("CFDSTUDY_INVALID_ENV")
+                QMessageBox.critical(ActionHandler.dskAgent().workspace(),
+                                 Error, mess1, QMessageBox.Ok, 0)
+                d_activation[studyId] = 1
+                return False
+            else :
+                ActionHandler.DialogCollector.InfoDialog.setCode(CFD_Saturne, True)
         elif env_neptune:
-            ActionHandler.DialogCollector.InfoDialog.setCode(CFD_Neptune, True)
+            if mess2 != "" :
+                Error = "Error : "+ ObjectTR.tr("CFDSTUDY_INVALID_ENV")
+                QMessageBox.critical(ActionHandler.dskAgent().workspace(),
+                                 Error, mess2, QMessageBox.Ok, 0)
+                d_activation[studyId] = 1
+                return False
+            else :
+                ActionHandler.DialogCollector.InfoDialog.setCode(CFD_Neptune, True)
 
         ActionHandler.DialogCollector.InfoDialog.exec_()
 
@@ -222,11 +245,10 @@ def activate():
     ActionHandler.updateObjBrowser()
 
     # Hide the Python Console window layout
-    dsk = sgPyQt.getDesktop()
-    ldockWindows = dsk.findChildren(QDockWidget)
-    for dock in ldockWindows:
+    for dock in sgPyQt.getDesktop().findChildren(QDockWidget):
         dockTitle = dock.windowTitle()
-        if str(dockTitle) == "Python Console":
+        log.debug("activate -> QDockWidget: %s" % str(dockTitle))
+        if str(dockTitle) in ("Python Console", "Message Window"):
             dock.setVisible(False)
 
     return True
@@ -274,46 +296,8 @@ def createPopupMenu(popup, context):
 
     log.debug("createPopupMenu -> SelectedCount = %s" % sg.SelectedCount())
 
-    id_flag = 0
-
-    if sg.SelectedCount() <= 0:
-        return
-    elif sg.SelectedCount() == 1:
-        entry = sg.getSelected(0)
-        if entry != '':
-            sobj = study.FindObjectID(entry)
-            if sobj is not None:
-                test, anAttr = sobj.FindAttribute("AttributeLocalID")
-                if test:
-                    id = anAttr._narrow(SALOMEDS.AttributeLocalID).Value()
-                    if id >= 0:
-                        ActionHandler.customPopup(id, popup)
-                        if CFDSTUDYGUI_DataModel.isLinkPathObject(sobj):
-                            popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.EditAction))
-                            popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.MoveToDRAFTAction))
-                            popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.CopyCaseFileAction))
-                    id_flag = id
-
-    else:
-#        flag = True
-#        index = 0
-
-#        #check for Pre MED files multi selection
-#        while index < sg.SelectedCount() and flag :
-#            sobj = study.FindObjectID(sg.getSelected(index))
-#            flag = CFDSTUDYGUI_DataModel.checkPreMEDType(sobj)
-#            index += 1
-#
-#        if not flag:
-#            return
-#
-#        if flag:
-#            #add MED conversion to popup
-#            popup.addAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.ECSConvertAction))
-#            return
-
-        #add Display Mesh group to popup
-
+    if sg.SelectedCount() > 0:
+        # Custom Popup menu added or removed regards to the type of the object
         for i in range(sg.SelectedCount()):
             entry = sg.getSelected(i)
             if entry != '':
@@ -322,29 +306,19 @@ def createPopupMenu(popup, context):
                     test, anAttr = sobj.FindAttribute("AttributeLocalID")
                     if test:
                         id = anAttr._narrow(SALOMEDS.AttributeLocalID).Value()
-                        if id != CFDSTUDYGUI_DataModel.dict_object["PublishedMeshGroupIntoObjectBrowser"]:
-                            id_flag = 0
-                            break
-                        else:
-                            id_flag = id
+                        if id >= 0 :
 
-            if id_flag == CFDSTUDYGUI_DataModel.dict_object["PublishedMeshGroupIntoObjectBrowser"]:
-                ActionHandler.customPopup(id, popup)
-                popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.DisplayOnlyGroupMESHAction))
+                            if sobj.GetFatherComponent().GetName() == "Mesh":
+                                if CFDSTUDYGUI_DataModel.getMeshFromMesh(sobj) == None :
+                                    meshGroupObject,group = CFDSTUDYGUI_DataModel.getMeshFromGroup(sobj)
+                                    if meshGroupObject != None :
+                                        ActionHandler.customPopup(id, popup)
+                                        if sg.SelectedCount() > 1 :
+                                            popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.DisplayOnlyGroupMESHAction))
+                                else :
+                                    ActionHandler.customPopup(id, popup)
+                                    popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.DisplayOnlyGroupMESHAction))
 
-    if context == "VTKViewer":
-        if id_flag == CFDSTUDYGUI_DataModel.dict_object["PublishedMeshGroupIntoObjectBrowser"]:
-            ActionHandler.customPopup("VTKViewer", popup)
-
-
-
-
-
-# TODELETE
-#def processMgr():
-#    """
-#    Stores the SALOME desktop (i.e. C{QMainWindow}) in the dekstop manager.
-#    """
-#    log.debug("processMgr")
-#    dsk = sgPyQt.getDesktop()
-#    return _DesktopMgr.getProcessMgr(dsk)
+                            else :
+                                if not CFDSTUDYGUI_DataModel.isLinkPathObject(sobj):
+                                    ActionHandler.customPopup(id, popup)

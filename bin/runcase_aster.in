@@ -112,8 +112,9 @@ pkglibexecdir=@pkglibexecdir@
 #
 # SALOME
 #
-salomeroot=@ROOT_SALOME@
-salomekernelbindir=@KERNEL_ROOT_DIR@/bin/salome
+salomeenv=@SALOMEENV@
+salomepre=@SALOMEPRE@
+salomekernelbindir=@SALOME_KERNEL@/bin/salome
 #
 # Code_Aster
 #
@@ -335,8 +336,9 @@ $salomekernelbindir/appli_gen.py --prefix=$appli --config=$pkgdatadir/salome/fsi
 #
 localexec=$RUN_PATH/localexec
 echo '#!/bin/sh' > $localexec
+echo '. '${salomepre} >> $localexec
+echo '. '${salomeenv} >> $localexec
 echo '. '${asterhome}'/'${astervers}'/profile.sh' >> $localexec
-echo 'export ROOT_SALOME='$salomeroot >> $localexec
 echo 'export PATH='$bindir':$PATH' >> $localexec
 echo 'appli='$appli >> $localexec
 echo '$appli/runSession killSalome.py' >> $localexec

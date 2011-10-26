@@ -112,9 +112,9 @@ class config:
         # SALOME-related information
 
         self.have_salome = "@cs_have_salome_kernel@"
-        self.salome_kernel = "@KERNEL_ROOT_DIR@"
-        self.salome_root = "@ROOT_SALOME@"
-        self.salome_version = "@SALOME_VERSION@"
+        self.salome_env = "@SALOMEENV@"
+        self.salome_pre = "@SALOMEPRE@"
+        self.salome_kernel = "@SALOME_KERNEL@"
 
         # Setup the optionnal features
 

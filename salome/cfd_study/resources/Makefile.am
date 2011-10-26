@@ -36,6 +36,7 @@ Case.png \
 CaseRun.png \
 CFDSTUDY.png \
 CheckCompilation.png \
+CloseGui.png \
 Copy.png \
 Delete.png \
 Document.png \
