@@ -40,6 +40,8 @@ AC_LANG_CPLUSPLUS
 AC_ARG_VAR([OMNIIDL], [the omniORB IDL compiler])
 AC_PATH_PROG([OMNIIDL], [omniidl])
 
+AC_ARG_VAR([OMNIIDLPYBE], [Python backend for omniidl])
+
 if test "x$OMNIIDL" = "x"
 then
   omniORB_ok=no
