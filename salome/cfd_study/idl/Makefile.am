@@ -57,7 +57,8 @@ SUFFIXES = .idl .hh SK.cc
 %SK.cc %.hh : %.idl
 	$(OMNIIDL) -bcxx $(OMNIORB_IDLCXXFLAGS) $(IDL_INCLUDES) $<
 %_idl.py : %.idl
-	$(OMNIIDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES)  $<
+	PYTHONPATH=$(OMNIIDLPYBE)${PYTHONPATH:+:$PYTHONPATH} \
+	$(OMNIIDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES) $<
 
 
 CLEANFILES = *.hh *SK.cc *.py *.hxx *.cxx
@@ -68,7 +69,8 @@ EXTRA_DIST = $(IDL_FILES)
 install-data-local: $(IDL_FILES)
 	$(INSTALL) -d  $(DESTDIR)$(salomepythondir)
 	ls $^ | while read file; do \
-	( . $(SALOMEPRE) && $(OMNIIDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES) -C$(DESTDIR)$(salomepythondir) $$file ) ; \
+	PYTHONPATH=$(OMNIIDLPYBE)${PYTHONPATH:+:$PYTHONPATH} \
+	$(OMNIIDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES) -C$(DESTDIR)$(salomepythondir) $$file; \
 	done
 
 uninstall-local:
