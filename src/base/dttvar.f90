@@ -638,8 +638,8 @@ if (idtvar.ge.0) then
 
     cfmax = -grand
     cfmin =  grand
-    icfmax= 1
-    icfmin= 1
+    icfmax= 0
+    icfmin= 0
 
     do iel = 1, ncel
 

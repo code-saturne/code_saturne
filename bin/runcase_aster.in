@@ -45,7 +45,6 @@ SAT_MESH=
 #
 AST_COMM=
 AST_MESH=
-AST_EXPORT=
 #
 # Scratchdir (where the coupling application is going
 # to be run)
@@ -107,7 +106,6 @@ SAT_RESULTS_PATH=${RESULTS_PATH}/${SAT_RESULTS_DIR}
 #
 prefix=@prefix@
 bindir=@bindir@
-libdir=@libdir@
 pkgdatadir=@pkgdatadir@
 pkglibexecdir=@pkglibexecdir@
 #
@@ -253,12 +251,9 @@ fi
 #
 # Create the run_solver.sh file
 #
-runsolver=${SAT_SCRATCH_PATH}/run_solver.sh
+runsolver=${SAT_SCRATCH_PATH}//run_solver.sh
 echo '#!/bin/sh' > $runsolver
-echo 'cd ..' >> $runsolver
-echo ${SAT_SCRATCH_PATH}'/cs_solver \' >> $runsolver
-echo $COMMAND_PARAM' \' >> $runsolver
-echo '--yacs-module='$libdir'/salome/libFSI_SATURNEExelib.so' >> $runsolver
+echo ${SAT_SCRATCH_PATH}'/cs_solver -h' >> $runsolver
 #
 chmod +x $runsolver
 #
@@ -317,37 +312,12 @@ else
     exit 1
 fi
 #
-if [ ! -z "$AST_EXPORT" ]
-    then
-    file=${STUDY_PATH}/${AST_NAME}/${AST_EXPORT}
-    #
-    if [ -f $file ]
-        then
-        cp $file $AST_SCRATCH_PATH
-    else
-        echo '***********************************************'
-        echo ' ERROR                                         '
-        echo ' The export file ' $file
-        echo ' can not be accessed.                          '
-        echo ' The simulation will not be run                '
-        echo '***********************************************'
-        exit 1
-    fi
-else
-    echo "**************************************"
-    echo "AST export file name is not specified "
-    echo "The simulation will not be run        "
-    echo "**************************************"
-    exit 1
-fi
-#
 # Create the aster_by_yacs.sh file
 #
 asterbyyacs=${AST_SCRATCH_PATH}/aster_by_yacs.sh
 echo '#!/bin/sh' > $asterbyyacs
-echo 'cd ..' >> $asterbyyacs
 echo 'export PATH=/home/aster/bin:$PATH' >> $asterbyyacs
-echo 'as_run '$AST_EXPORT >> $asterbyyacs
+echo 'as_run --help' >> $asterbyyacs
 #
 chmod +x $asterbyyacs
 #
