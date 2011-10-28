@@ -56,7 +56,6 @@ from PyQt4.QtCore import QTranslator
 #-------------------------------------------------------------------------------
 
 from ui_InfoDialog            import Ui_InfoDialog
-from ui_DefineLinkDialog      import Ui_DefineLinkDialog
 from ui_SetTreeLocationDialog import Ui_SetTreeLocationDialog
 from ui_RunCaseDialog         import Ui_RunCaseDialog
 from ui_ECSConversionDialog   import Ui_ECSConversionDialog
@@ -170,68 +169,6 @@ class InfoDialogHandler(InfoDialog):
             self.labelVersionValue.setText(pkg.version)
             self.labelPrefixValue.setText(pkg.prefix)
 
-
-#-----------------------------------------------------------------------------------------------------------
-
-class DefineLinkDialog(QtGui.QDialog, Ui_DefineLinkDialog):
-    """
-    QGroupBox Class with radio button added into, with fillDialog method
-    """
-    def __init__(self, parent = None):
-        """
-        """
-        QtGui.QDialog.__init__(self, parent)
-        Ui_DefineLinkDialog.__init__(self)
-
-        self.setupUi(self)
-
-
-class DefineLinkDialogHandler(DefineLinkDialog):
-    """
-    QGroupBox Class with radio button added into, with fillDialog method
-    """
-    def __init__(self, parent=None ):
-        QtGui.QDialog.__init__(self, parent)
-        DefineLinkDialog.__init__(self,parent)
-
-        aBtn = self.findChild(QtGui.QPushButton,"OKButton")
-        aBtn.setText(self.tr("DLG_OK_BUTTON_TEXT"))
-
-        self.BtnGroup = self.MainGroup # comment: QGroupBox
-        self.BtnGroup.setTitle(self.tr("LINK_DLG_GROUP_TITLE"))
-        self.BtnGroup.setCheckable(True)
-        self.setWindowTitle(self.tr("LINK_DLG_CAPTION"))
-
-    def fillDialog(self, NameList):
-        """
-        NameList: Names of the radio buttons to be added into the QGroupBox
-        """
-        #clear previouse entry
-        BtnList = self.BtnGroup.findChildren(QRadioButton)
-
-        for obj in BtnList:
-            self.BtnGroup.removeChild(obj)
-            obj.deleteLater()
-        id = 0
-        vbox = QVBoxLayout()
-        for i in NameList:
-            aBtn = QRadioButton(i, self.BtnGroup)
-            if i == NameList[0]:
-                aBtn.setChecked(1)
-            vbox.addWidget(aBtn, id)
-            id += 1
-
-        vbox.addStretch(1)
-        self.BtnGroup.setLayout(vbox)
-        self.updateGeometry()
-
-    def currentName(self):
-        BtnList = self.BtnGroup.findChildren(QRadioButton)
-        for obj in BtnList:
-            if obj.isChecked() == True:
-                return obj.text()
-
-        return ""
 
 #-----------------------------------------------------------------------------------------------------------
 
@@ -1068,7 +1005,6 @@ class CFDSTUDYGUI_DialogCollector:
     def __init__(self):
         self.SetTreeLocationDialog = SetTreeLocationDialogHandler()
         self.InfoDialog = InfoDialogHandler()
-        self.DefineLinkDialog = DefineLinkDialogHandler()
         self.RunCaseDialog = RunCaseDialogHandler()
         self.ECSConversionDialog = ECSConversionDialogHandler()
         self.CopyDialog = CopyDialogHandler()

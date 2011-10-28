@@ -613,7 +613,7 @@ class CFDSTUDYGUI_ProcessMgr(QObject):
             # update the icon of th case in the Object Browser (case path in: e.data())
             CFDSTUDYGUI_DataModel.setCaseInProcess(e.data(), False)
 
-            # update the view in the Object Browser with the new virtual folder results
+            # update the view in the Object Browser with the new folder results
             case = CFDSTUDYGUI_DataModel.findMaxDeepObject(e.data())
             #case = CFDSTUDYGUI_DataModel.GetCase(obj)
             if case:

@@ -134,8 +134,6 @@ dict_object["Case"]          = 100003
 dict_object["CaseInProcess"] = 100004
 
 dict_object["DATAFolder"]    = 100010
-dict_object["PRETLink"]      = 100011
-dict_object["SUITELink"]     = 100012
 dict_object["DATAFile"]      = 100013
 dict_object["DRAFTFolder"]   = 100014
 dict_object["DATADRAFTFile"] = 100015
@@ -154,10 +152,7 @@ dict_object["USRSRCFile"]   = 100025
 
 dict_object["RESUFolder"]  = 100030
 dict_object["RESUFile"]    = 100031
-# VirtFolder correspond a un repertoire virtuel dans l'object browser,
-# cree pour regrouper les repertoires et fichiers
-# issus d'un runcase : correspond a la date d'execution
-dict_object["VirtFolder"]    = 100032
+dict_object["RESUSubFolder"] = 100032
 dict_object["RESSRCFolder"]  = 100033
 dict_object["RESSRCFile"]    = 100034
 dict_object["HISTFolder"]    = 100035
@@ -208,8 +203,6 @@ icon_collection[dict_object["Case"]]           = "CFDSTUDY_CASE_OBJ_ICON"
 icon_collection[dict_object["CaseInProcess"]]  = "CFDSTUDY_CASE_IN_PROC_OBJ_ICON"
 
 icon_collection[dict_object["DATAFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
-icon_collection[dict_object["PRETLink"]]       = "CFDSTUDY_LINK_OBJ_ICON"
-icon_collection[dict_object["SUITELink"]]      = "CFDSTUDY_LINK_OBJ_ICON"
 icon_collection[dict_object["DATAFile"]]       = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["DRAFTFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["DATADRAFTFile"]]  = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
@@ -227,7 +220,7 @@ icon_collection[dict_object["USRSRCFile"]]     = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICO
 
 icon_collection[dict_object["RESUFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESUFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
-icon_collection[dict_object["VirtFolder"]]     = "CFDSTUDY_FOLDER_VIRTUAL_OBJ_ICON"
+icon_collection[dict_object["RESUSubFolder"]]  = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESSRCFolder"]]   = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESSRCFile"]]     = "CFDSTUDY_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["HISTFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
@@ -263,11 +256,6 @@ icon_collection[dict_object["UnvFile"]]        = "MESH_OBJ_ICON"
 
 icon_collection[dict_object["POSTFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["POSTFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
-
-#mark folder as linked
-icon_collection[dict_object["PRETFolder"]+1000]  = "CFDSTUDY_FOLDER_LINKED_OBJ_ICON"
-icon_collection[dict_object["SUITEFolder"]+1000] = "CFDSTUDY_FOLDER_LINKED_OBJ_ICON"
-
 
 #-------------------------------------------------------------------------------
 # ObjectTR is a convenient object for traduction purpose
@@ -603,15 +591,13 @@ def _RebuildTreeRecursively(theObject):
 
     # clean the SObject, if the corresponding file or directory
     # does not exist any more in the file system
-    # (but not special virtual objects)
 
     if os.path.isfile(theObjectPath) and attr.Value() == dict_object["MEDFile"]:
         return
 
     if not os.path.isdir(theObjectPath) and not os.path.isfile(theObjectPath):
-        if not attr.Value() == dict_object["VirtFolder"]:
-            builder.RemoveObjectWithChildren(theObject)
-            return
+        builder.RemoveObjectWithChildren(theObject)
+        return
 
     # build a list of file from the file system
     dirList = _GetDirList(theObject)
@@ -710,11 +696,7 @@ def _RebuildTreeRecursively(theObject):
     iter  = study.NewChildIterator(theObject)
     while iter.More():
         if iter.Value().GetName():
-            # do not create tree for links and for published item
-            attr = builder.FindOrCreateAttribute(iter.Value(), "AttributeLocalID")
-            if not attr.Value() == dict_object["PRETLink"] and \
-               not attr.Value() == dict_object["SUITELink"]:
-                _RebuildTreeRecursively(iter.Value())
+            _RebuildTreeRecursively(iter.Value())
         iter.Next()
     log.debug("_RebuildTreeRecursively -> %s END" % (theObject.GetName()))
 
@@ -808,17 +790,10 @@ def _FillObject(theObject, theParent, theBuilder):
     # parent is DATA folder
     elif parentId == dict_object["DATAFolder"]:
         if os.path.isdir(path):
-            if os.path.islink(path):
-                if name == "PRE_TRAITEMENT":
-                    objectId = dict_object["PRETLink"]
-                elif name == "SUITE":
-                    objectId = dict_object["SUITELink"]
-
-            else:
-                if name == "DRAFT":
-                    objectId = dict_object["DRAFTFolder"]
-                elif name == "THCH":
-                    objectId = dict_object["THCHFolder"]
+            if name == "DRAFT":
+                objectId = dict_object["DRAFTFolder"]
+            elif name == "THCH":
+                objectId = dict_object["THCHFolder"]
         else:
             if name == "SaturneGUI" or name == "NeptuneGUI":
                 objectId = dict_object["DATALaunch"]
@@ -844,18 +819,15 @@ def _FillObject(theObject, theParent, theBuilder):
             print "Path is:", path
         if os.path.isdir(path):
             if Trace():
-                print "Object is other folder"
-            objectId = dict_object["OtherFolder"]
-        elif os.path.isfile(path):
+                print "Object is RESU sub folder"
+            objectId = dict_object["RESUSubFolder"]
+        else:
             if re.match(".*\.med$", name):
                 objectId = dict_object["RESMEDFile"]
+            elif re.match(".*\.xml$", name):
+                objectId = dict_object["RESXMLFile"]
             else:
-                objectId = dict_object["OtherFile"]
-        else:
-            #virtual directory
-            if Trace():
-                print "Object is virtual folder"
-            objectId = dict_object["VirtFolder"]
+                objectId = dict_object["RESUFile"]
 
     # parent is SCRIPTS folder
     elif parentId == dict_object["SCRPTFolder"]:
@@ -981,29 +953,28 @@ def _FillObject(theObject, theParent, theBuilder):
             elif re.match(".*\.h$", name) or re.match(".*\.hpp$", name) or re.match(".*\.hxx$", name):
                 objectId = dict_object["RESSRCFile"]
 
-    # parent is VIRTUAL folder
-    elif parentId == dict_object["VirtFolder"]:
-        #needs for update path
-        path = os.path.join(_GetPath(theParent.GetFather()), name) + "." + str(theParent.GetName())
+    # parent is RESULT sub folder
+    elif parentId == dict_object["RESUSubFolder"]:
         if Trace():
-            print "------------PATH---------", path
+            print "Parent is RESU folder or subfolder"
+            print "Path is:", path
         if os.path.isdir(path):
-            #folder
-            if name == "SRC":
+            if name == "src":
                 objectId = dict_object["RESSRCFolder"]
-            elif name == "HIST":
+            elif name == "monitoring":
                 objectId = dict_object["HISTFolder"]
-            elif name == "PRE_TRAITEMENT":
-                objectId = dict_object["PRETFolder"]
-            elif name == "SUITE":
+            elif name == "checkpoint":
                 objectId = dict_object["SUITEFolder"]
-            elif name == "RES_USER":
-                objectId = dict_object["RESUSERFolder"]
-            else:
-                objectId = dict_object["OtherFolder"]
-        elif os.path.isfile(path):
+            elif name == "mesh_input":
+                objectId = dict_object["PRETFolder"]
+            if Trace():
+                print "Object is RESU sub folder"
+            objectId = dict_object["RESUSubFolder"]
+        else:
             if re.match(".*\.med$", name):
                 objectId = dict_object["RESMEDFile"]
+            if re.match(".*\.dat$", name) or re.match(".*\.csv$", name):
+                objectId = dict_object["HISTFile"]
             elif re.match(".*\.xml$", name):
                 objectId = dict_object["RESXMLFile"]
             else:
@@ -1045,7 +1016,7 @@ def _FillObject(theObject, theParent, theBuilder):
     # parent is HIST folder
     elif parentId == dict_object["HISTFolder"]:
         if os.path.isfile(path):
-            if re.match(".*\.dat$", name):
+            if re.match(".*\.dat$", name) or re.match(".*\.csv$", name):
                 objectId = dict_object["HISTFile"]
         elif os.path.isdir(path):
             objectId = dict_object["OtherFolder"]
@@ -1053,8 +1024,7 @@ def _FillObject(theObject, theParent, theBuilder):
     # parent is RES_USER folder
     elif parentId == dict_object["RESUSERFolder"]:
         if os.path.isfile(path):
-            if re.match(".*\.dat$", name) or re.match(".*\.tab$", name) or \
-               re.match(".*\.xls$", name) or re.match(".*\.txt$", name):
+            if re.match(".*\.dat$", name) or re.match(".*\.csv$", name):
                 objectId = dict_object["HISTFile"]
         elif os.path.isdir(path):
             objectId = dict_object["OtherFolder"]
@@ -1122,30 +1092,6 @@ def _SetIcon(theObject, theBuilder):
 
     attr = theBuilder.FindOrCreateAttribute(theObject, "AttributePixMap")
 
-    if id == dict_object["PRETFolder"] or id == dict_object["SUITEFolder"]:
-        #check for existing link
-        case = GetCase(theObject)
-        if not case == None:
-            study = _getStudy()
-            iter  = study.NewChildIterator(case)
-            while iter.More():
-                if iter.Value().GetName() == "DATA":
-                    if Trace(): print "check for link"
-                    newpath = os.path.join(_GetPath(iter.Value()), theObject.GetName())
-                    if Trace():
-                        print "check for: ", newpath
-                        print "source: ",  os.path.normpath(_GetPath(theObject))
-                        print "exists: ",  os.path.exists(newpath)
-                        print "islink: ",  os.path.islink(newpath)
-                        print "is same: ", os.path.realpath(newpath)
-                    if os.path.exists(newpath) and \
-                       os.path.islink(newpath) and \
-                       os.path.samefile(os.path.realpath(newpath), _GetPath(theObject)):
-                        #offset for special icons
-                        id += 1000
-                    break
-                iter.Next()
-
     attr.SetPixMap(str(ObjectTR.tr(icon_collection[id]).toLatin1()))
     #check path for link and create new attribute
     if id != dict_object["Case"]:
@@ -1187,10 +1133,7 @@ def _GetPath(theObject):
 
     father = theObject.GetFather()
     attr = builder.FindOrCreateAttribute(father, "AttributeLocalID")
-    if attr.Value() == dict_object["VirtFolder"]:
-        path = os.path.join(_GetPath(father.GetFather()), path) + "." + str(father.GetName())
-    else:
-        path = os.path.join(_GetPath(father), path)
+    path = os.path.join(_GetPath(father), path)
 
     return path
 
@@ -1210,58 +1153,10 @@ def _GetDirList(theObject):
     path = _GetPath(theObject)
     attr = builder.FindOrCreateAttribute(theObject, "AttributeLocalID")
     lst = []
-
-    if attr.Value() == dict_object["VirtFolder"]:
-        name = theObject.GetName()
-        path = _GetPath(theObject.GetFather())
-        if Trace(): print "Path for virt scan: ", path
-        temp = os.listdir(path)
-        for s in temp:
-            if re.match(".*\." + name + "$", s):
-                l = s.split(".")
-                l.remove(name)
-                lst.append(string.join(l, "."))
-
-    elif attr.Value() == dict_object["RESUFolder"]:
-        temp = os.listdir(path)
-        for s in temp:
-            if re.match(".*\.[0-9]+$", s):
-                l = s.split(".")
-                vf = l[len(l)-1]
-                if lst.count(vf) == 0:
-                    lst.append(vf)
-            else:
-                lst.append(s)
-
-    elif os.path.isdir(path):
+    if os.path.isdir(path):
         lst = os.listdir(path)
 
     lst.sort()
-    return lst
-
-
-def _DetectVirtualFolder(thePath):
-    """
-    Returns the list of the time extension of the results files and folders.
-
-    @type thePath: C{String}
-    @param thePath: unix path of a folder.
-    @return: list of time extension.
-    @rtype: C{List} of C{String}
-    """
-    temp = os.listdir(thePath)
-    lst = []
-    for s in temp:
-        if re.match(".*\.[0-9]+$", s):
-            l = s.split(".")
-            a = ""
-            i = 0
-            while i < len(l) - 2:
-                a += l[i] + "."
-                i+=1
-            a += l[len(l)-2]
-            lst.append(a)
-
     return lst
 
 
