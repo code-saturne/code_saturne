@@ -87,8 +87,7 @@ SCRATCH_DIR=tmp_Saturne
 RUN_DIR=${STUDY_NAME}.${DATE}
 RUN_PATH=${TMP_PREFIX}/${SCRATCH_DIR}/${RUN_DIR}
 #
-# Define the sub-directories where Saturne and Aster
-# are run
+# Define the sub-directories where Code_Saturne and Code_Aster are run
 #
 AST_SCRATCH_PATH=${RUN_PATH}/${AST_NAME}
 SAT_SCRATCH_PATH=${RUN_PATH}/${SAT_NAME}
@@ -118,8 +117,7 @@ salomekernelbindir=@SALOME_KERNEL@/bin/salome
 #
 # Code_Aster
 #
-asterhome=ASTERHOMEDIR
-astervers=ASTERVERSION
+asterhome=ASTERHOME
 #
 # =====================================================
 # Creation of the working directories
@@ -149,10 +147,25 @@ fi
 #
 mkdir -p ${SAT_SCRATCH_PATH} ${AST_SCRATCH_PATH}
 #
-# Copy the present script file in the working directory
+# Create intermediate script for YACS
 #
-cp ${STUDY_PATH}/runcase_coupling ${RUN_PATH}
-chmod +x ${RUN_PATH}/runcase_coupling
+mkdir -p ${RUN_PATH}/bin
+#
+fsisaturne=${RUN_PATH}/bin/FSI_SATURNE.exe
+echo '#!/bin/sh' > $fsisaturne
+echo 'export SALOME_CONTAINER=$1' >> $fsisaturne
+echo 'export SALOME_CONTAINERNAME=$2' >> $fsisaturne
+echo 'export SALOME_INSTANCE=$3' >> $fsisaturne
+echo ${SAT_SCRATCH_PATH}'/run_solver.sh' >> $fsisaturne
+#
+fsiaster=${RUN_PATH}/bin/FSI_ASTER.exe
+echo '#!/bin/sh' > $fsiaster
+echo 'export SALOME_CONTAINER=$1' >> $fsiaster
+echo 'export SALOME_CONTAINERNAME=$2' >> $fsiaster
+echo 'export SALOME_INSTANCE=$3' >> $fsiaster
+echo ${AST_SCRATCH_PATH}'/aster_by_yacs.sh' >> $fsiaster
+#
+chmod +x $fsisaturne $fsiaster
 #
 # =====================================================
 # Setting up Code_Saturne temporary workdir
@@ -236,6 +249,14 @@ if [ ! -z "$SAT_PARAM" ]
     fi
 fi
 #
+# Create the run_solver.sh file
+#
+runsolver=${SAT_SCRATCH_PATH}//run_solver.sh
+echo '#!/bin/sh' > $runsolver
+echo ${SAT_SCRATCH_PATH}'/cs_solver -h' >> $runsolver
+#
+chmod +x $runsolver
+#
 # =====================================================
 # Setting up Code_Aster temporary workdir
 # =====================================================
@@ -291,6 +312,15 @@ else
     exit 1
 fi
 #
+# Create the aster_by_yacs.sh file
+#
+asterbyyacs=${AST_SCRATCH_PATH}/aster_by_yacs.sh
+echo '#!/bin/sh' > $asterbyyacs
+echo 'export PATH=/home/aster/bin:$PATH' >> $asterbyyacs
+echo 'as_run --help' >> $asterbyyacs
+#
+chmod +x $asterbyyacs
+#
 # =====================================================
 # Starting calculation
 # =====================================================
@@ -338,8 +368,8 @@ localexec=$RUN_PATH/localexec
 echo '#!/bin/sh' > $localexec
 echo '. '${salomepre} >> $localexec
 echo '. '${salomeenv} >> $localexec
-echo '. '${asterhome}'/'${astervers}'/profile.sh' >> $localexec
-echo 'export PATH='$bindir':$PATH' >> $localexec
+echo '. '${asterhome}'/profile.sh' >> $localexec
+echo 'export PATH='${RUN_PATH}'/bin:$PATH' >> $localexec
 echo 'appli='$appli >> $localexec
 echo '$appli/runSession killSalome.py' >> $localexec
 echo 'unset PYTHONHOME' >> $localexec
