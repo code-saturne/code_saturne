@@ -1,4 +1,16 @@
-* 20/10/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+* 27/10/2011 - David Monfort <david.monfort@edf.fr>
+  Upate Code_Aster coupling preliminary features.
+  removed files:
+    salome/fsi_coupling/src/FSI_ASTER/FSI_ASTER.exe
+    salome/fsi_coupling/src/FSI_SATURNE/FSI_SATURNE.exe
+  modified files:
+    bin/cs_create.py
+    bin/runcase_aster.in
+    config/salome_module.mk
+    salome/fsi_coupling/src/FSI_ASTER/Makefile.am
+    salome/fsi_coupling/src/FSI_SATURNE/Makefile.am
+
+* 27/10/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Update CFDSTUDY features according to recent changes in Code_Saturne
   studies framework.
   removed files:

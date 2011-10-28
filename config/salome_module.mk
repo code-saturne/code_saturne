@@ -26,7 +26,6 @@
 salomeincludedir   = ${includedir}/salome
 salomelibdir       = ${libdir}/salome
 salomebindir       = ${bindir}/salome
-salomescriptdir    = ${bindir}
 salomepythondir    = ${pythondir}/salome
 
 # Directory for installing idl files

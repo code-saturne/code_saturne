@@ -383,8 +383,7 @@ class Study:
         config = ConfigParser.ConfigParser()
         config.read([self.package.get_configfile(),
                      os.path.expanduser('~/.' + self.package.configfile)])
-        asterhomedir = config.get('install', 'aster')
-        astervers = config.get('install', 'aster_vers')
+        asterhome = config.get('install', 'aster')
 
         runcase = os.path.join(repbase, 'runcase_coupling')
         runcase_tmp = runcase + '.tmp'
@@ -393,8 +392,7 @@ class Study:
         kwd2 = re.compile('CASENAME')
         kwd3 = re.compile('ASTERNAME')
         kwd4 = re.compile('STUDYNAME')
-        kwd5 = re.compile('ASTERHOMEDIR')
-        kwd6 = re.compile('ASTERVERSION')
+        kwd5 = re.compile('ASTERHOME')
 
         runcase_tmp = runcase + '.tmp'
 
@@ -406,8 +404,7 @@ class Study:
             line = re.sub(kwd2, self.cases[0], line)
             line = re.sub(kwd3, self.ast_case_name, line)
             line = re.sub(kwd4, self.name, line)
-            line = re.sub(kwd5, asterhomedir, line)
-            line = re.sub(kwd6, astervers, line)
+            line = re.sub(kwd5, asterhome, line)
             fdt.write(line)
 
         fd.close()
