@@ -1,3 +1,21 @@
+* 20/10/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update CFDSTUDY features according to recent changes in Code_Saturne
+  studies framework.
+  removed files:
+    salome/cfd_study/resources/FolderLinked.png
+    salome/cfd_study/resources/FolderVirtual.png
+    salome/cfd_study/resources/Link.png
+    salome/cfd_study/src/CFDSTUDYGUI/DefineLinkDialog.ui
+  modified files:
+    salome/cfd_study/resources/Makefile.am
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DialogCollector.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ProcessMgr.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_images.ts
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_en.ts
+    salome/cfd_study/src/CFDSTUDYGUI/Makefile.am
+
 * 20/10/2011 - Martin Ferrand <martin.ferrand@edf.fr>
   Fix Spalart-Allmaras calculations restart.
   modified routines:

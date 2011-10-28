@@ -54,14 +54,6 @@
             <translation>Folder.png</translation>
         </message>
         <message>	
-            <source>CFDSTUDY_FOLDER_LINKED_OBJ_ICON</source>
-            <translation>FolderLinked.png</translation>
-        </message>
-        <message>	
-            <source>CFDSTUDY_FOLDER_VIRTUAL_OBJ_ICON</source>
-            <translation>FolderVirtual.png</translation>
-        </message>
-        <message>	
             <source>CFDSTUDY_DOCUMENT_OBJ_ICON</source>
             <translation>Document.png</translation>
         </message>
@@ -72,10 +64,6 @@
         <message>	
             <source>CFDSTUDY_EXECUTABLE_OBJ_ICON</source>
             <translation>Executable.png</translation>
-        </message>
-        <message>	
-            <source>CFDSTUDY_LINK_OBJ_ICON</source>
-            <translation>Link.png</translation>
         </message>
         <message>	
             <source>CFDSTUDY_OPENED_FOLDER_OBJ_ICON</source>
@@ -146,16 +134,8 @@
             <translation>CloseGui.png</translation>
         </message>
         <message>	
-            <source>CREATE_LINK_ACTION_ICON</source>
-            <translation>Link.png</translation>
-        </message>
-        <message>	
             <source>CHECK_COMPILATION_ACTION_ICON</source>
             <translation>CheckCompilation.png</translation>
-        </message>
-        <message>	
-            <source>DEFINE_LINK_ACTION_ICON</source>
-            <translation>Link.png</translation>
         </message>
         <message>	
             <source>EXPORT_IN_POSTPRO_ACTION_ICON</source>

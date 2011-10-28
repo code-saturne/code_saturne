@@ -100,10 +100,6 @@ CopyInDATAAction              = 24
 CopyInSRCAction               = 25
 CopyCaseFileAction            = 26
 
-#link actions
-CreateLinkAction              = 30
-DefineLinkAction              = 31
-
 #export/convert actions
 ExportInPostProAction         = 40
 ExportInSMESHAction           = 41
@@ -511,27 +507,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[ECSConvertAction] = action_id
 
-        #link actions
-        action = sgPyQt.createAction(-1,\
-                                      ObjectTR.tr("CREATE_LINK_ACTION_TEXT"),\
-                                      ObjectTR.tr("CREATE_LINK_ACTION_TIP"),\
-                                      ObjectTR.tr("CREATE_LINK_ACTION_SB"),\
-                                      ObjectTR.tr("CREATE_LINK_ACTION_ICON"))
-        self.connect(action, SIGNAL("activated()"), self.slotCreateLink)
-        action_id = sgPyQt.actionId(action)
-        self._ActionMap[action_id] = action
-        self._CommonActionIdMap[CreateLinkAction] = action_id
-
-        action = sgPyQt.createAction(-1,\
-                                      ObjectTR.tr("DEFINE_LINK_ACTION_TEXT"),\
-                                      ObjectTR.tr("DEFINE_LINK_ACTION_TIP"),\
-                                      ObjectTR.tr("DEFINE_LINK_ACTION_SB"),\
-                                      ObjectTR.tr("DEFINE_LINK_ACTION_ICON"))
-        self.connect(action, SIGNAL("activated()"), self.slotDefineLink)
-        action_id = sgPyQt.actionId(action)
-        self._ActionMap[action_id] = action
-        self._CommonActionIdMap[DefineLinkAction] = action_id
-
         #other actions
         action = sgPyQt.createAction(-1,\
                                       ObjectTR.tr("CHECK_COMPILATION_ACTION_TEXT"),\
@@ -904,14 +879,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(LaunchGUIAction))
             #popup.addAction(self.commonAction(RunCaseAction))
             popup.addAction(self.commonAction(RemoveAction))
-        elif id == CFDSTUDYGUI_DataModel.dict_object["PRETLink"]:
-            popup.addAction(self.commonAction(DefineLinkAction))
-            popup.addAction(self.commonAction(RemoveAction))
-            popup.addAction(self.commonAction(UpdateObjBrowserAction))
-            popup.addAction(self.commonAction(LaunchGUIAction))
-        elif id == CFDSTUDYGUI_DataModel.dict_object["SUITELink"]:
-            popup.addAction(self.commonAction(DefineLinkAction))
-            popup.addAction(self.commonAction(RemoveAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATAFile"]:
             popup.addAction(self.commonAction(EditAction))
             popup.addAction(self.commonAction(MoveToDRAFTAction))
@@ -947,17 +914,16 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(CopyInSRCAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESUFile"]:
             popup.addAction(self.commonAction(ViewAction))
-        elif id == CFDSTUDYGUI_DataModel.dict_object["VirtFolder"]:
+        elif id == CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]:
             popup.addAction(self.commonAction(RemoveAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESSRCFile"]:
             popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["HISTFile"]:
             popup.addAction(self.commonAction(ViewAction))
             popup.addAction(self.commonAction(ExportInPostProAction))
-        elif id == CFDSTUDYGUI_DataModel.dict_object["PRETFolder"] or \
-             id == CFDSTUDYGUI_DataModel.dict_object["SUITEFolder"]:
-            popup.addAction(self.commonAction(CreateLinkAction))
-            popup.addAction(self.commonAction(CopyInDATAAction))
+        # elif id == CFDSTUDYGUI_DataModel.dict_object["PRETFolder"] or \
+        #     id == CFDSTUDYGUI_DataModel.dict_object["SUITEFolder"]:
+        #    popup.addAction(self.commonAction(RemoveAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESMEDFile"]:
             popup.addAction(self.commonAction(ExportInPostProAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SCRPTLanceFile"]:
@@ -1393,8 +1359,9 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if re.match(".*\.med$", sobj.GetName()):
                 #export Med file
                 self.myVisu.ImportFile(path)
-            elif re.match(".*\.dat$", sobj.GetName()):
-                self.myVisu.ImportTables(path)
+            elif re.match(".*\.dat$", sobj.GetName()) or \
+                 re.match(".*\.csv$", sobj.GetName()):
+                self.myVisu.ImportTables(path, True)
             studyId = sgPyQt.getStudyId()
             sgPyQt.updateObjBrowser(studyId,1)
         QApplication.restoreOverrideCursor()
@@ -1575,84 +1542,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         salome.sg.FitAll()
 
         QApplication.restoreOverrideCursor()
-
-
-    def slotCreateLink(self):
-        """
-        """
-        sobj = self._singleSelectedObject()
-        if not sobj == None:
-            path = CFDSTUDYGUI_DataModel._GetPath(sobj)
-            study = CFDSTUDYGUI_DataModel._getStudy()
-            case = CFDSTUDYGUI_DataModel.GetCase(sobj)
-            if not case == None:
-                iter  = study.NewChildIterator(case)
-                while iter.More():
-                    if iter.Value().GetName() == "DATA":
-                        dataPath = CFDSTUDYGUI_DataModel._GetPath(iter.Value())
-                        linkPath = os.path.join(dataPath , sobj.GetName())
-                        if os.path.exists(linkPath):
-                            os.spawnlp(os.P_WAIT, 'rm', 'rm', '-fr', linkPath)
-
-                        os.symlink(path, linkPath)
-                        #update Object Browser
-                        CFDSTUDYGUI_DataModel._RebuildTreeRecursively(case)
-                        return
-                iter.Next()
-            studyId = sgPyQt.getStudyId()
-            sgPyQt.updateObjBrowser(studyId,1)
-
-
-    def slotDefineLink(self):
-        sobj = self._singleSelectedObject()
-        if not sobj == None:
-            #detection kind of link
-            link_kind = -1
-            if sobj.GetName() == "PRE_TRAITEMENT":
-                link_kind = CFDSTUDYGUI_DataModel.dict_object["PRETLink"]
-            elif sobj.GetName() == "SUITE":
-                link_kind = CFDSTUDYGUI_DataModel.dict_object["SUITELink"]
-            else:
-                return
-
-            path = CFDSTUDYGUI_DataModel._GetPath(sobj)
-            study = CFDSTUDYGUI_DataModel._getStudy()
-            builder = study.NewBuilder()
-            case = CFDSTUDYGUI_DataModel.GetCase(sobj)
-            if not case == None:
-                iter  = study.NewChildIterator(case)
-                while iter.More():
-                    if iter.Value().GetName() == "RESU":
-                        resupath = CFDSTUDYGUI_DataModel._GetPath(iter.Value())
-                        ld = os.listdir(resupath)
-
-                        iter1  = study.NewChildIterator(iter.Value())
-                        NameList = []
-                        while iter1.More():
-                            attr = builder.FindOrCreateAttribute(iter1.Value(), "AttributeLocalID")
-                            if attr.Value() == CFDSTUDYGUI_DataModel.dict_object["VirtFolder"] and \
-                               ld.count(sobj.GetName() + "." + iter1.Value().GetName()) == 1:
-                                NameList.append(iter1.Value().GetName())
-                            iter1.Next()
-
-                        self.DialogCollector.DefineLinkDialog.fillDialog(NameList)
-                        self.DialogCollector.DefineLinkDialog.exec_()
-                        status = self.DialogCollector.DefineLinkDialog.result()
-                        name = self.DialogCollector.DefineLinkDialog.currentName()
-
-                        if status == QDialog.Accepted and not name == "":
-                            #remove old link
-                            os.unlink(path)
-
-                            os.symlink(os.path.join(resupath, sobj.GetName()) + "." + str(name.toLatin1()) , path)
-                            #update Object Browser
-                            CFDSTUDYGUI_DataModel._RebuildTreeRecursively(case)
-                            return
-                        else:
-                            break
-                    iter.Next()
-                studyId = sgPyQt.getStudyId()
-                sgPyQt.updateObjBrowser(studyId,1)
 
 
     def slotOpenCFD_GUI(self):

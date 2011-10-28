@@ -462,30 +462,6 @@
             <translation>Do You want to close the CFD GUI %1 from this study?</translation>
 	</message>
         <message>
-            <source>CREATE_LINK_ACTION_TEXT</source>
-            <translation>Create link</translation>
-	</message>
-        <message>
-            <source>CREATE_LINK_ACTION_TIP</source>
-            <translation>Create link</translation>
-	</message>
-        <message>
-            <source>CREATE_LINK_ACTION_SB</source>
-            <translation>Create link</translation>
-	</message>
-        <message>
-            <source>DEFINE_LINK_ACTION_TEXT</source>
-            <translation>Define link</translation>
-	</message>
-        <message>
-            <source>DEFINE_LINK_ACTION_TIP</source>
-            <translation>Choosing source results</translation>
-	</message>
-        <message>
-            <source>DEFINE_LINK_ACTION_SB</source>
-            <translation>Choosing source results</translation>
-	</message>
-        <message>
             <source>VIEW_ACTION_TEXT</source>
             <translation>View</translation>
 	</message>
@@ -849,21 +825,6 @@
             <source>SET_STUDY_LOCATION_BROWSE_CAPTION</source>
             <translation>Choose CFDSTUDY Study location</translation>	
         </message>		    				
-    </context>
-    <context>
-        <name>DefineLinkDialogHandler</name>
-        <message>
-            <source>LINK_DLG_GROUP_TITLE</source>
-            <translation>Choose new virtual folder</translation>
-        </message>
-        <message>
-            <source>LINK_DLG_CAPTION</source>
-            <translation>Define link</translation>
-        </message>
-        <message>
-            <source>DLG_OK_BUTTON_TEXT</source>
-            <translation>OK</translation>
-        </message>	
     </context>
     <context>
         <name>SetTreeLocationDialogHandler</name>

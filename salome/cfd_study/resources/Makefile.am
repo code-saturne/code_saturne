@@ -44,13 +44,10 @@ EditableDocument.png \
 EditFile.png \
 ExecSATURNE.png \
 Executable.png \
-FolderLinked.png \
 Folder.png \
-FolderVirtual.png \
 InfoCFDSTUDY.png \
 LaunchGUI.png \
 LaunchGUIwithOptions.png \
-Link.png \
 MED_Module_Convert.png \
 MED_Module.png \
 mesh_group.png \
