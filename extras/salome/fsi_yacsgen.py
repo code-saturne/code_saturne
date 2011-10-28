@@ -27,7 +27,7 @@ from module_generator import ASTERComponent, CPPComponent
 # Context definition
 # ------------------
 
-asterdir = os.path.expanduser("~/Code_Aster/NEW11.0")
+asterdir = os.path.expanduser("/home/aster/NEW11")
 
 milieuinc = "-I$(top_srcdir)/salome/libmilieu"
 milieulib = "$(top_builddir)/salome/libmilieu/libmilieu.la"
@@ -41,7 +41,7 @@ if KERNEL_ROOT_DIR is None:
 
 context = {'update':1,
            "prerequisites":os.path.join(os.path.dirname(KERNEL_ROOT_DIR),
-                                        'prerequis-V6.3.0.sh'),
+                                        'prerequis-V6.3.1.sh'),
            "kernel":KERNEL_ROOT_DIR}
 
 # Definition of all the in/out streams
