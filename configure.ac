@@ -573,8 +573,8 @@ if test "x$cs_have_gui" = "xyes" ; then
   AC_ARG_VAR([LRELEASE], [Qt message files generator])
   AC_ARG_VAR([MOC], [Qt meta objects compiler])
 
-  AC_PATH_PROG([LRELEASE], [lrelease])
-  AC_PATH_PROG([MOC], [moc])
+  AC_PATH_PROGS([LRELEASE], [lrelease lrelease-qt4])
+  AC_PATH_PROGS([MOC], [moc moc-qt4])
 
   if test "$LRELEASE" = : -o "$MOC" = : ; then
     AC_MSG_FAILURE([cannot find Qt4 dev tools, Graphical User Interface cannot be installed])

@@ -235,7 +235,7 @@ edit_config = sed \
 	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g' \
 	-e 's|@SALOME_KERNEL[@]|$(SALOME_KERNEL)|g' \
 	-e 's|@SALOME_GUI[@]|$(SALOME_GUI)|g' \
-	-e 's|@SALOME_YACS[@]|$(SALOME_YCAS)|g' \
+	-e 's|@SALOME_YACS[@]|$(SALOME_YACS)|g' \
 	-e 's|@SALOMEENV[@]|$(SALOMEENV)|g' \
 	-e 's|@SALOMEPRE[@]|$(SALOMEPRE)|g'
 

@@ -26,6 +26,55 @@ dnl-----------------------------------------------------------------------------
 
 AC_DEFUN([CS_AC_TEST_SALOME], [
 
+AC_ARG_WITH(salome,
+            [AS_HELP_STRING([--with-salome=PATH],
+                            [specify prefix directory for SALOME])],
+            [if test "x$withval" = "x"; then
+               if test -z "$ROOT_SALOME"; then
+                 with_salome=no
+               else
+                 with_salome=$ROOT_SALOME
+               fi
+             else
+               if test -z "$ROOT_SALOME"; then
+                 ROOT_SALOME=$with_salome
+               fi
+             fi],
+            [if test -z "$ROOT_SALOME"; then
+               with_salome=no
+             else
+               with_salome=$ROOT_SALOME
+             fi])
+
+if test "x$with_salome" != "xno" ; then
+
+  SALOMEENV=$(find $with_salome -maxdepth 1 -name envSalome*.sh 2>/dev/null)
+  SALOMEPRE=$(find $with_salome -maxdepth 1 -name prerequis*.sh 2>/dev/null)
+
+  KERNEL_ROOT_DIR=$(. $SALOMEPRE ; . $SALOMEENV ; echo $KERNEL_ROOT_DIR)
+  GUI_ROOT_DIR=$(. $SALOMEPRE ; . $SALOMEENV ; echo $GUI_ROOT_DIR)
+  YACS_ROOT_DIR=$(. $SALOMEPRE ; . $SALOMEENV ; echo $YACS_ROOT_DIR)
+
+  OMNIIDL=$(. $SALOMEPRE ; which omniidl)
+
+  # Make sure omniidl will correcly work by forcing PYTHONPATH
+  OMNIIDLPYTHONPATH=$(. $SALOMEPRE ; \
+for d in `find $PREREQUIS_ROOT_DIR -name omniidl_be`
+do
+  dirname `ls $d/../_omniidlmodule.so 2>/dev/null` 2>/dev/null
+done)
+
+  # Make sure Python backend of omniidl will be found
+  OMNIIDLPYBE=$(. $SALOMEPRE ; \
+for d in `find $PREREQUIS_ROOT_DIR -name omniidl_be`
+do
+  dirname `ls $d/python.py 2>/dev/null` 2>/dev/null
+done)
+
+fi
+
+AC_SUBST(OMNIIDLPYTHONPATH)
+
 AC_ARG_VAR([SALOMEENV], [SALOME environment script])
 AC_ARG_VAR([SALOMEPRE], [SALOME pre-requisites script])
 
@@ -35,8 +84,7 @@ CS_AC_TEST_SALOME_YACS
 
 AS_IF([test $cs_have_salome_kernel = yes -o $cs_have_salome_gui = yes],
       [CS_AC_TEST_OMNIORB
-       CS_AC_TEST_CORBA
-       CS_AC_TEST_BOOST])
+       CS_AC_TEST_CORBA])
 
 CS_AC_TEST_SPHINX
 
@@ -267,50 +315,6 @@ if test x"$cs_enable_pthreads_done" != xyes; then
 fi
 ])dnl
 dnl
-
-
-# CS_AC_TEST_BOOST
-#-----------------
-# Boost location for a couple of headers needed by Calcium.hxx
-
-AC_DEFUN([CS_AC_TEST_BOOST],[
-AC_REQUIRE([CS_AC_ENABLE_PTHREADS])dnl
-
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
-
-BOOST_CPPFLAGS=""
-
-AC_CHECKING(for BOOST headers location)
-
-AC_ARG_WITH(boost-include,
-            [AS_HELP_STRING([--with-boost-include=PATH],
-                            [specify directory for BOOST include files])],
-            [BOOST_CPPFLAGS="-I$with_boost_include"],
-            [if ! test -z "$BOOSTDIR"; then
-               BOOST_CPPFLAGS="-I${BOOSTDIR}/include"
-             fi])
-
-CPPFLAGS_old="${CPPFLAGS}"
-
-if test "x${BOOSTDIR}" != "x" ; then
-  BOOST_CPPFLAGS="-I${BOOSTDIR}/include"
-fi
-
-AC_TRY_COMPILE([#include <boost/shared_ptr.hpp>],
-               [boost::shared_ptr<int>(new int)],
-                boost_headers_ok=yes,
-                boost_headers_ok=no)
-
-CPPFLAGS="${CPPFLAGS_old}"
-
-AC_MSG_RESULT(for boost headers: $boost_headers_ok)
-
-AC_SUBST(BOOST_CPPFLAGS)
-
-AC_LANG_RESTORE
-
-])dnl
 
 
 # CS_AC_TEST_CORBA
