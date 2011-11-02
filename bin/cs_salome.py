@@ -72,7 +72,7 @@ def main(argv, pkg):
 . %(salomepre)s;
 . %(salomeenv)s;
 CFDSTUDY_ROOT_DIR=%(prefix)s;
-PYTHONPATH=%(pkgpythondir)s${PYTHONPATH:+:$PYTHONPATH};
+PYTHONPATH=%(pythondir)s/salome:%(pkgpythondir)s${PYTHONPATH:+:$PYTHONPATH};
 export CFDSTUDY_ROOT_DIR PYTHONPATH;
 %(runsalome)s --modules=%(modules)s
 """
@@ -89,6 +89,7 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH;
     cmd = template % {'salomepre': cfg.salome_pre,
                       'salomeenv': cfg.salome_env,
                       'prefix': pkg.prefix,
+                      'pythondir': pkg.pythondir,
                       'pkgpythondir': pkg.pkgpythondir,
                       'runsalome': os.path.join(cfg.salome_kernel,
                                                 'bin', 'salome', 'runSalome'),
