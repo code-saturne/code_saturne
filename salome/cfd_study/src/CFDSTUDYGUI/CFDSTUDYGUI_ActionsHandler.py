@@ -48,8 +48,6 @@ from PyQt4.QtCore import Qt, QObject, SIGNAL, QFileInfo, QString
 # Salome modules
 #-------------------------------------------------------------------------------
 
-import VISU
-import visu_gui
 import SALOMEDS #Si on veut changer de couleur...
 import salome,smesh
 import SMESH
@@ -212,14 +210,21 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         self._DskAgent = Desktop_Agent()
 
-        self.myVisu = visu_gui.myVisu
-        self.myViewManager = self.myVisu.GetViewManager()
-        #self.myView = myViewManager.Create3DView()
-        #self.myView = myViewManager.GetCurrentView()
-        log.debug("__init__ myVisu = %s" % self.myVisu)
-        log.debug("__init__ myViewManager = %s" % self.myViewManager)
-        #log.debug("__init__ myView = %s" % self.myView)
-
+        self.myVisu = None
+        self.myViewManager = None
+        try:
+            import VISU
+            import visu_gui
+            self.myVisu = visu_gui.myVisu
+            self.myViewManager = self.myVisu.GetViewManager()
+            #self.myView = myViewManager.Create3DView()
+            #self.myView = myViewManager.GetCurrentView()
+            log.debug("__init__ myVisu = %s" % self.myVisu)
+            log.debug("__init__ myViewManager = %s" % self.myViewManager)
+            #log.debug("__init__ myView = %s" % self.myView)
+        except Exception:
+            log.debug("VISU module not available.")
+            pass
 
     def createActions(self):
         """
@@ -412,15 +417,17 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._CommonActionIdMap[CopyCaseFileAction] = action_id
 
         #export/convert actions
-        action = sgPyQt.createAction(-1,\
-                                      ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_TEXT"),\
-                                      ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_TIP"),\
-                                      ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_SB"),\
-                                      ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_ICON"))
-        self.connect(action, SIGNAL("activated()"), self.slotExportInPostPro)
-        action_id = sgPyQt.actionId(action)
-        self._ActionMap[action_id] = action
-        self._CommonActionIdMap[ExportInPostProAction] = action_id
+
+        if (self.myVisu != None and self.myViewManager != None):
+            action = sgPyQt.createAction(-1,
+                                          ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_TEXT"),
+                                          ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_TIP"),
+                                          ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_SB"),
+                                          ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_ICON"))
+            self.connect(action, SIGNAL("activated()"), self.slotExportInPostPro)
+            action_id = sgPyQt.actionId(action)
+            self._ActionMap[action_id] = action
+            self._CommonActionIdMap[ExportInPostProAction] = action_id
 
         action = sgPyQt.createAction(-1,\
                                       ObjectTR.tr("EXPORT_IN_SMESH_ACTION_TEXT"),\
