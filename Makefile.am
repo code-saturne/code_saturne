@@ -361,7 +361,8 @@ salome_DATA = \
 extras/salome/fsi_yacs_scheme.xml
 
 nodist_salome_DATA = \
-extras/salome/fsi_appli_config.xml
+extras/salome/fsi_appli_config.xml \
+extras/salome/fsi.export
 
 # Generate ChangeLog
 
