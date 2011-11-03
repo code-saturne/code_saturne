@@ -1,3 +1,8 @@
+* 03/11/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix linked libraries order for static link of MEI syntax check.
+  modified file:
+    src/apps/Makefile.am
+
 * 02/11/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix CFDSTUDY module launch when VISU module is not available.
   modified file:
