@@ -379,6 +379,13 @@ class Study:
             sys.stderr.write("Cannot copy runcase_coupling script: " + \
                              os.path.join(datadir, 'runcase_coupling') + ".\n")
             sys.exit(1)
+        try:
+            shutil.copy(os.path.join(datadir, 'salome', 'fsi.export'),
+                        os.path.join(repbase, self.ast_case_name))
+        except:
+            sys.stderr.write("Cannot copy fsi.export file: " + \
+                             os.path.join(datadir, 'salome', 'fsi.export') + ".\n")
+            sys.exit(1)
 
         config = ConfigParser.ConfigParser()
         config.read([self.package.get_configfile(),

@@ -45,7 +45,7 @@ SAT_MESH=
 #
 AST_COMM=
 AST_MESH=
-AST_EXPORT=
+AST_EXPORT=fsi.export
 #
 # Scratchdir (where the coupling application is going
 # to be run)
@@ -110,6 +110,7 @@ bindir=@bindir@
 libdir=@libdir@
 pkgdatadir=@pkgdatadir@
 pkglibexecdir=@pkglibexecdir@
+salomepythondir=@pythondir@/salome
 #
 # SALOME
 #
@@ -341,6 +342,12 @@ else
     exit 1
 fi
 #
+# Create FSI specific config.txt file
+#
+sed -e "s|profile.sh|$asterhome/profile.sh|" $asterhome/config.txt \
+    -e "s|Execution/E_SUPERV.py|$salomepythondir/FSI_ASTER_component.py|" \
+    > $AST_SCRATCH_PATH/fsi_config.txt
+#
 # Create the aster_by_yacs.sh file
 #
 asterbyyacs=${AST_SCRATCH_PATH}/aster_by_yacs.sh
@@ -398,7 +405,6 @@ localexec=$RUN_PATH/localexec
 echo '#!/bin/sh' > $localexec
 echo '. '${salomepre} >> $localexec
 echo '. '${salomeenv} >> $localexec
-echo '. '${asterhome}'/profile.sh' >> $localexec
 echo 'export PATH='${RUN_PATH}'/bin:$PATH' >> $localexec
 echo 'appli='$appli >> $localexec
 echo '$appli/runSession killSalome.py' >> $localexec
