@@ -80,12 +80,9 @@ typedef struct {
                                    1: timing (CPU + Walltime) mode
                                    2: MPI trace-friendly mode */
 
-  /* Connection with YACS or proxy */
+  /* Connection with YACS */
 
   char          *yacs_module;   /* Path to YACS module */
-
-  char          *proxy_socket;  /* Name of proxy socket */
-  int            proxy_key;     /* Key for connection to proxy */
 
 } cs_opts_t;
 

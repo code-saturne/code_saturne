@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-10-25 18:40+0200\n"
+"POT-Creation-Date: 2011-11-04 11:46+0100\n"
 "PO-Revision-Date: 2011-10-13 19:39+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5640,12 +5640,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-"%s was built without socket support,\n"
-"so option \"%s\" may not be used.\n"
-msgstr ""
-
-#, c-format
-msgid ""
 "%s was built without dynamic loader support,\n"
 "so module file \"%s\" may not be loaded.\n"
 msgstr ""
@@ -5946,69 +5940,6 @@ msgstr ""
 "  1 :   partition basée sur la numérotation initiale\n"
 "  2-5 : partition basée sur une courbe fractale\n"
 "et non %d."
-
-#, c-format
-msgid ""
-"Communication %s:\n"
-"Error receiving data through socket."
-msgstr ""
-"Communication %s :\n"
-"Erreur de réception de données par socket."
-
-#, c-format
-msgid ""
-"Communication %s:\n"
-"Error sending data through socket."
-msgstr ""
-"Communication %s :\n"
-"Erreur d'envoi de données par socket."
-
-#, c-format
-msgid ""
-"Communication %s:\n"
-"Error closing socket."
-msgstr ""
-"Communication %s :\n"
-"Erreur à la fermeture du socket."
-
-msgid "Error initializing socket communication."
-msgstr "Erreur à l'initialisation de la communication par sockets."
-
-#, c-format
-msgid "Socket communication: host \"%s\" unknown."
-msgstr "Communication par sockets : hôte \"%s\" inconnu."
-
-#, c-format
-msgid ""
-"Socket communication: error connecting to\n"
-"%s (port %d)."
-msgstr ""
-"Communication par sockets : erreur de connexion à\n"
-"%s (port %d)."
-
-msgid "Handshake with proxy failed."
-msgstr "Échec de la \"poignée de main\" avec le proxy."
-
-#, c-format
-msgid "Connecting to proxy:  %s ..."
-msgstr "Connexion au proxy :  %s ..."
-
-msgid "Connecting to proxy ..."
-msgstr "Connexion au proxy ..."
-
-#, c-format
-msgid ""
-"Library compiled without sockets support, so the communicator\n"
-"type argument to cs_proxy_comm_initialize() must be different\n"
-"from CS_PROXY_COMM_TYPE_SOCKET (%d)."
-msgstr ""
-"Librarie compilée sans support des sockets support, donc l'argument\n"
-"de type du communicator dans l'appel à cs_proxy_comm_initialize()\n"
-"doit être différent de CS_PROXY_COMM_TYPE_SOCKET (%d)."
-
-#, c-format
-msgid "Closing communication: %s\n"
-msgstr "Fermeture de la communication : %s\n"
 
 #, c-format
 msgid ""

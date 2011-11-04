@@ -215,13 +215,6 @@ cs_calcium_set_component(int    comp_id,
                          void  *comp);
 
 /*----------------------------------------------------------------------------
- * Set proxy IPC communication mode
- *----------------------------------------------------------------------------*/
-
-void
-cs_calcium_set_comm_proxy(void);
-
-/*----------------------------------------------------------------------------
  * Set the CALCIUM-mappable function's verbosity
  *
  * parameters:

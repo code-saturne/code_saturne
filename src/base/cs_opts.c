@@ -229,8 +229,6 @@ cs_opts_define(int         argc,
   int arg_id = 0, argerr = 0;
 
   const char moduleoptbase[] = "--yacs-module=";
-  const char socketoptbase[] = "--proxy-socket=";
-  const char keyoptbase[] = "--proxy-key=";
 
   /* Default initialization */
 
@@ -246,9 +244,6 @@ cs_opts_define(int         argc,
   opts->benchmark = 0;
 
   opts->yacs_module = NULL;
-
-  opts->proxy_socket = NULL;
-  opts->proxy_key = -1;
 
   /* Parse command line arguments */
 
@@ -354,38 +349,6 @@ cs_opts_define(int         argc,
 
     else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0)
       opts->verif = true;
-
-#if defined(HAVE_SOCKET)
-
-    /* Proxy connection options (do not appear in help as they
-       are not destined to be used directly by a user) */
-
-    else if (strncmp(s, socketoptbase, strlen(socketoptbase)) == 0) {
-      const char *_s = s + strlen(socketoptbase);
-      BFT_MALLOC(opts->proxy_socket, strlen(_s) + 1, char);
-      strcpy(opts->proxy_socket, _s);
-    }
-
-    else if (strncmp(s, keyoptbase, strlen(keyoptbase)) == 0) {
-      const char *_start = s + strlen(keyoptbase);
-      char *_end = NULL;
-      opts->proxy_key = strtol(_start, &_end, 0);
-      if (_end != _start + strlen(_start))
-        argerr = 1;
-    }
-
-#else /* !defined(HAVE_SOCKET) */
-
-    else if (   strcmp(s, "--syr-socket") == 0
-             || (strncmp(s, socketoptbase, strlen(socketoptbase)) == 0)
-             || (strncmp(s, keyoptbase, strlen(keyoptbase)) == 0)) {
-      fprintf(stderr, _("%s was built without socket support,\n"
-                        "so option \"%s\" may not be used.\n"),
-              argv[0], s);
-      cs_exit(EXIT_FAILURE);
-    }
-
-#endif /* defined(HAVE_SOCKET) */
 
     /* Library loader options (do not appear in help as they
        are not destined to be used directly by a user) */

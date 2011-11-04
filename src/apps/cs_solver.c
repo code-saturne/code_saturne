@@ -100,7 +100,6 @@
 #include "cs_post.h"
 #include "cs_preprocessor_data.h"
 #include "cs_prototypes.h"
-#include "cs_proxy_comm.h"
 #include "cs_renumber.h"
 #include "cs_restart.h"
 #include "cs_sles.h"
@@ -532,10 +531,6 @@ cs_run(void)
   cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
   cs_mesh_destroy(cs_glob_mesh);
 
-  /* End of possible communication with a proxy */
-
-  cs_proxy_comm_finalize();
-
   /* CPU times and memory management finalization */
 
   cs_io_log_finalize();
@@ -636,19 +631,6 @@ main(int    argc,
 
   cs_io_log_initialize();
 
-  /* In case of use with SALOME, optional connection with CFD_Proxy
-     launcher or load and start of YACS module */
-
-  /* Using CFD_Proxy, simply initialize connection before standard run */
-  if (opts.proxy_socket != NULL) {
-    cs_proxy_comm_initialize(opts.proxy_socket,
-                             opts.proxy_key,
-                             CS_PROXY_COMM_TYPE_SOCKET);
-    BFT_FREE(opts.proxy_socket);
-    opts.proxy_key = -1;
-    cs_calcium_set_comm_proxy();
-  }
-
   /* Running as a standalone SALOME component, load YACS component
      library and run yacsinit() component initialization and event loop,
      which should itself include the standard run routine */
@@ -660,7 +642,7 @@ main(int    argc,
     cs_calcium_unload_yacs();
   }
 
-  /* In standard case or with CFD_Proxy, simply call regular run() method */
+  /* In standard case, simply call regular run() method */
 
   else
     cs_run();

@@ -92,7 +92,6 @@ cs_perio.h \
 cs_post.h \
 cs_preprocessor_data.h \
 cs_prototypes.h \
-cs_proxy_comm.h \
 cs_renumber.h \
 cs_resource.h \
 cs_restart.h \
@@ -184,7 +183,6 @@ cs_perio.c \
 cs_post.c \
 cs_post_f2c.f90 \
 cs_preprocessor_data.c \
-cs_proxy_comm.c \
 cs_renumber.c \
 cs_resource.c \
 cs_restart.c \

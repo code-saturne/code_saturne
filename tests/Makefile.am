@@ -133,22 +133,6 @@ cs_file_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
 cs_file_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_file_test_LDADD    = $(LDADD_CS_TESTS)
 
-# CFD Proxy tests
-
-if HAVE_SALOME_KERNEL
-
-check_PROGRAMS += \
-cfd_proxy_unit_test
-
-cfd_proxy_unit_test_SOURCES = cfd_proxy_unit_test.c
-cfd_proxy_unit_test_CPPFLAGS = -I$(top_srcdir)/salome/cfd_proxy \
-        $(MPI_CPPFLAGS) $(SALOME_KERNEL_CPPFLAGS)
-cfd_proxy_unit_test_LDFLAGS = $(MPI_LDFLAGS) $(SALOME_KERNEL_LDFLAGS)
-cfd_proxy_unit_test_LDADD = $(top_builddir)/salome/cfd_proxy/libcfdproxy.la \
-        $(MPI_LIBS) -lm
-
-endif
-
 # Graphical User Interface unit tests
 
 EXTRA_DIST = \

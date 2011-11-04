@@ -57,7 +57,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_proxy_comm.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -173,10 +172,6 @@ typedef int
 /*=============================================================================
  * Static global variables
  *============================================================================*/
-
-/* Use communication with proxy ? */
-
-static int _cs_calcium_comm_proxy = 0;
 
 /* Verbosity (none if -1, headers if 0,
    headers + n first and last elements if > 0 */
@@ -470,175 +465,6 @@ _calcium_echo_post_write(cs_calcium_datatype_t  datatype,
   _calcium_echo_body(datatype, _cs_calcium_n_echo, n_val, val);
 }
 
-/*----------------------------------------------------------------------------
- * Call CALCIUM-type connection through inter-process communication
- * with a proxy.
- *
- * parameters:
- *   comp_id <-- id of component to connect (0 to n-1, Code_Saturne local)
- *   s       --> name of calling instance
- *               (CS_CALCIUM_INSTANCE_LEN chars max)
- *
- * returns:
- *   0 in case of success, error code otherwise
- *----------------------------------------------------------------------------*/
-
-static int
-_proxy_comm_connect(int   comp_id,
-                    char *s)
-{
-  int  retval = 0;
-
-  char *string_out[] = {s};
-
-  cs_proxy_comm_write_request("cp_cd", comp_id,
-                              0, 0, 0, NULL, NULL, NULL);
-
-  retval = cs_proxy_comm_read_response(0, 0, 1, NULL, NULL, string_out);
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Call CALCIUM-type disconnection through inter-process communication
- * with a proxy.
- *
- * parameters:
- *   comp_id <-- id of component to connect (0 to n-1, Code_Saturne local)
- *   cont    <-- continuation directive
- *
- * returns:
- *   0 in case of success, error code otherwise
- *----------------------------------------------------------------------------*/
-
-static int
-_proxy_comm_disconnect(int  comp_id,
-                       int  cont)
-{
-  int  retval = 0;
-
-  const int int_in[] = {cont};
-
-  cs_proxy_comm_write_request("cp_fin", comp_id,
-                              1, 0, 0, int_in, NULL, NULL);
-
-  retval = cs_proxy_comm_read_response(0, 0, 0,
-                                       NULL, NULL, NULL);
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Base function for reading values, relaying the CALCIUM-type call through
- * inter-process communication with a proxy.
- *
- * parameters:
- *   func_name  <-- associated function name
- *   blocking   <-- use blocking variant (1) or non-blocking (0)
- *   comp_id    <-- id of component to connect (0 to n-1, Code_Saturne local)
- *   time_dep   <-- type of time dependency (time or iteration)
- *   min_time   <-> lower bound of read interval
- *   max_time   <-- upper bound of read interval
- *   iteration  <-> iteration number of read
- *   var_name   <-- name of the variable to read
- *   n_val_max  <-- maximum number of values to read
- *   n_val_read <-- maximum number of values to read
- *   val        --> values read
- *
- * returns:
- *   0 in case of success, error code otherwise
- *----------------------------------------------------------------------------*/
-
-static int
-_proxy_comm_read_any(const char  *func_name,
-                     int          blocking,
-                     int          comp_id,
-                     int          time_dep,
-                     double      *min_time,
-                     double      *max_time,
-                     int         *iteration,
-                     const char  *var_name,
-                     int          n_val_max,
-                     int         *n_val_read,
-                     size_t       type_size,
-                     void        *val)
-{
-  int  retval = 0;
-
-  int int_out[2];
-  double double_out[1];
-
-  const int int_in[] = {time_dep, *iteration, n_val_max};
-  const double double_in[] = {*min_time, *max_time};
-  const char *string_in[] = {var_name};
-
-  cs_proxy_comm_write_request(func_name, comp_id,
-                              3, 2, 1,
-                              int_in, double_in, string_in);
-
-  retval = cs_proxy_comm_read_response(2, 1, 0,
-                                       int_out, double_out, NULL);
-
-  if (blocking == 0 && retval == 13) /* 13: CPATTENTE */
-    return retval;
-
-  *min_time = double_out[0];
-  *iteration = int_out[0];
-  *n_val_read = int_out[1];
-
-  if (*n_val_read > 0)
-    cs_proxy_comm_read(val, type_size, *n_val_read);
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Base function for writing values, relaying the CALCIUM-type call through
- * inter-process communication with a proxy.
- *
- * parameters:
- *   func_name  <-- associated function name
- *   comp_id    <-- id of component to connect (0 to n-1, Code_Saturne local)
- *   time_dep   <-- type of time dependency (time or iteration)
- *   cur_time   <-- current time
- *   iteration  <-> iteration number of read
- *   var_name   <-- name of the variable to read
- *   n_val      <-- maximum number of values to write
- *   val        <-- values written
- *
- * returns:
- *   0 in case of success, error code otherwise
- *----------------------------------------------------------------------------*/
-
-static int
-_proxy_comm_write_any(const char  *func_name,
-                      int          comp_id,
-                      int          time_dep,
-                      double       cur_time,
-                      int          iteration,
-                      const char  *var_name,
-                      int          n_val,
-                      size_t       type_size,
-                      void        *val)
-{
-  int  retval = 0;
-
-  const int int_in[] = {time_dep, iteration, n_val};
-  const double double_in[] = {cur_time};
-  const char *string_in[] = {var_name};
-
-  cs_proxy_comm_write_request(func_name, comp_id,
-                              3, 1, 1,
-                              int_in, double_in, string_in);
-
-  if (n_val > 0)
-    cs_proxy_comm_write(val, type_size, n_val);
-
-  retval = cs_proxy_comm_read_response(0, 0, 0, NULL, NULL, NULL);
-
-  return retval;
-}
-
 #if defined(HAVE_DLOPEN)
 
 /*----------------------------------------------------------------------------
@@ -701,9 +527,6 @@ cs_calcium_connect(int   comp_id,
     retval = _cs_calcium_connect(_cs_calcium_component[comp_id],
                                  s);
 
-  else if (_cs_calcium_comm_proxy)
-    retval = _proxy_comm_connect(comp_id, s);
-
   return retval;
 }
 
@@ -728,9 +551,6 @@ cs_calcium_disconnect(int                       comp_id,
   if (_cs_calcium_disconnect != NULL)
     retval = _cs_calcium_disconnect(_cs_calcium_component[comp_id],
                                     _cont);
-
-  else if (_cs_calcium_comm_proxy)
-    retval = _proxy_comm_disconnect(comp_id, _cont);
 
   return retval;
 }
@@ -789,12 +609,6 @@ cs_calcium_read_int(int                    comp_id,
     *min_time = _min_time;
     *max_time = _max_time;
   }
-
-  else if (_cs_calcium_comm_proxy)
-    _retval = _proxy_comm_read_any("cp_len", 1, comp_id,
-                                   _time_dep, min_time, max_time, iteration,
-                                   _var_name, n_val_max, n_val_read,
-                                   sizeof(int), val);
 
   _calcium_echo_post_read(*min_time, *iteration,
                           CALCIUM_integer, *n_val_read, val);
@@ -857,12 +671,6 @@ cs_calcium_read_float(int                    comp_id,
     *max_time = _max_time;
   }
 
-  else if (_cs_calcium_comm_proxy)
-    _retval = _proxy_comm_read_any("cp_lre", 1, comp_id,
-                                   _time_dep, min_time, max_time, iteration,
-                                   _var_name, n_val_max, n_val_read,
-                                   sizeof(float), val);
-
   _calcium_echo_post_read(*min_time, *iteration,
                           CALCIUM_real, *n_val_read, val);
 
@@ -920,12 +728,6 @@ cs_calcium_read_double(int                    comp_id,
                                       n_val_read,
                                       val);
 
-  else if (_cs_calcium_comm_proxy)
-    _retval = _proxy_comm_read_any("cp_ldb", 1, comp_id,
-                                   _time_dep, min_time, max_time, iteration,
-                                   _var_name, n_val_max, n_val_read,
-                                   sizeof(double), val);
-
   _calcium_echo_post_read(*min_time, *iteration,
                           CALCIUM_double, *n_val_read, val);
 
@@ -980,11 +782,6 @@ cs_calcium_write_int(int                    comp_id,
                                    _var_name,
                                    n_val,
                                    _val);
-
-  else if (_cs_calcium_comm_proxy)
-    _proxy_comm_write_any("cp_een", comp_id, _time_dep,
-                          cur_time, iteration, _var_name,
-                          n_val, sizeof(int), _val);
 
   BFT_FREE(_val);
 
@@ -1042,11 +839,6 @@ cs_calcium_write_float(int                    comp_id,
                                      n_val,
                                      _val);
 
-  else if (_cs_calcium_comm_proxy)
-    _proxy_comm_write_any("cp_ere", comp_id, _time_dep,
-                          cur_time, iteration, _var_name,
-                          n_val, sizeof(float), _val);
-
   BFT_FREE(_val);
 
   _calcium_echo_post_write(CALCIUM_real, n_val, val);
@@ -1103,11 +895,6 @@ cs_calcium_write_double(int                    comp_id,
                                       n_val,
                                       _val);
 
-  else if (_cs_calcium_comm_proxy)
-    _proxy_comm_write_any("cp_edb", comp_id, _time_dep,
-                          cur_time, iteration, _var_name,
-                          n_val, sizeof(double), _val);
-
   BFT_FREE(_val);
 
   _calcium_echo_post_write(CALCIUM_double, n_val, val);
@@ -1130,16 +917,6 @@ cs_calcium_set_component(int    comp_id,
   assert(comp_id > -1 && comp_id < 8); /* Current limit, easily made dynamic */
 
   _cs_calcium_component[comp_id] = comp;
-}
-
-/*----------------------------------------------------------------------------
- * Set proxy IPC communication mode
- *----------------------------------------------------------------------------*/
-
-void
-cs_calcium_set_comm_proxy(void)
-{
-  _cs_calcium_comm_proxy = 1;
 }
 
 /*----------------------------------------------------------------------------

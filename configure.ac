@@ -652,20 +652,6 @@ if test "x$cs_have_socket" = "xyes" ; then
 fi
 AC_SUBST(cs_have_socket)
 
-# Also check for poll() (for CFD Proxy, to be removed later on)
-
-AC_MSG_CHECKING([for poll])
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <poll.h>]],
-                                [[(void) poll(0, 0, 0);]])],
-               [cs_have_poll=yes],
-               [cs_have_poll=no])
-AC_MSG_RESULT($cs_have_poll)
-if test "x$cs_have_poll" = "xyes" ; then
-  AC_DEFINE([HAVE_POLL], 1, [poll support])
-else
-  cs_have_poll=no
-fi
-
 # Optional shared library support
 #--------------------------------
 
@@ -699,72 +685,6 @@ if test "x$cs_have_dlloader" = "xyes" ; then
   else
     LIBS="$saved_LIBS"
     cs_have_dlloader=no
-  fi
-
-fi
-
-# Optional posix_spawn support (for CFD Proxy, to be removed later on)
-#-----------------------------
-
-AC_ARG_ENABLE(spawn,
-  [AS_HELP_STRING([--disable-spawn], [disable posix_spawn in place of fork/exec])],
-  [
-    case "${enableval}" in
-      yes) cs_have_spawn=yes ;;
-      no)  cs_have_spawn=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-spawn]) ;;
-    esac
-  ],
-  [ cs_have_spawn=yes ]
-)
-
-if test "x$cs_have_spawn" = "xyes" ; then
-
-  AC_MSG_CHECKING([for posix_spawnp])
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <spawn.h>]],
-                 [[pid_t pid; posix_spawn(&pid, "path", 0, 0, 0, 0);]])],
-                 [cs_have_spawn=yes],
-                 [cs_have_spawn=no])
-  AC_MSG_RESULT($cs_have_spawn)
-  if test "x$cs_have_spawn" = "xyes" ; then
-    AC_DEFINE([HAVE_POSIX_SPAWN], 1, [spawn support])
-  else
-    cs_have_spawn=no
-  fi
-
-fi
-
-# Optional fork/execve support (for CFD Proxy, to be removed later on)
-#-----------------------------
-
-AC_ARG_ENABLE(forkexec,
-  [AS_HELP_STRING([--disable-fork-exec], [disable fork/execve support])],
-  [
-    case "${enableval}" in
-      yes) cs_have_forkexec=yes ;;
-      no)  cs_have_forkexec=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-fork-exec]) ;;
-    esac
-  ],
-  [ cs_have_forkexec=yes ]
-)
-
-if test "x$cs_have_forkexec" = "xyes" ; then
-
-  AC_MSG_CHECKING([for fork and execve])
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([
-[#include <sys/types.h>
-#include <unistd.h>]],
-[[(void) fork();
-(void)execve("path", 0, 0);]
-])],
-                 [cs_have_forkexec=yes],
-                 [cs_have_forkexec=no])
-  AC_MSG_RESULT($cs_have_forkexec)
-  if test "x$cs_have_forkexec" = "xyes" ; then
-    AC_DEFINE([HAVE_FORK_EXECVE], 1, [fork/execve support])
-  else
-    cs_have_forkexec=no
   fi
 
 fi
@@ -869,7 +789,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  preprocessor/pre-post/Makefile preprocessor/util/Makefile
                  preprocessor/tools/Makefile
                  salome/Makefile
-                 salome/cfd_proxy/Makefile salome/libmilieu/Makefile
+                 salome/libmilieu/Makefile
                  src/Makefile      src/apps/Makefile src/gui/Makefile
                  src/bft/Makefile  src/fvm/Makefile  src/mei/Makefile
                  src/base/Makefile src/atmo/Makefile src/cfbl/Makefile
@@ -966,10 +886,6 @@ if (test x$cs_have_med = xyes) ; then
 fi
 echo " SYRTHES 3 coupling support: "$cs_have_syrthes""
 echo " Dynamic loader support (for YACS): "$cs_have_dlloader""
-echo " IP socket support (for CFD_Proxy): "$cs_have_socket""
-echo " poll support (for CFD Proxy): "$cs_have_poll""
-echo " posix_spawn support (for CFD Proxy): "$cs_have_spawn""
-echo " fork/execve support (for CFD Proxy): "$cs_have_forkexec""
 echo
 echo "The package has been configured. Type:"
 echo " make"

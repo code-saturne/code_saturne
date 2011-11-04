@@ -26,4 +26,4 @@ if HAVE_SALOME_GUI
 CFDSTUDY = cfd_study
 endif
 
-SUBDIRS = $(CFDSTUDY) cfd_proxy libmilieu fsi_coupling
+SUBDIRS = $(CFDSTUDY) libmilieu fsi_coupling
