@@ -625,33 +625,6 @@ AC_FUNC_FSEEKO
 
 AC_CHECK_SIZEOF([off_t])
 
-# Optional socket support
-#------------------------
-
-cs_have_socket=no
-
-AC_ARG_ENABLE(sockets,
-  [AS_HELP_STRING([--disable-sockets], [disable communications through IP sockets])],
-  [
-    case "${enableval}" in
-      yes) cs_have_socket=yes ;;
-      no)  cs_have_socket=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-sockets]) ;;
-    esac
-  ],
-  [ cs_have_socket=yes ]
-)
-
-# Always disable sockets for Windows cross-compilation
-if test "$host_os" = mingw32 ; then
-  cs_have_socket=no
-fi
-
-if test "x$cs_have_socket" = "xyes" ; then
-  AC_DEFINE([HAVE_SOCKET], 1, [sockets support])
-fi
-AC_SUBST(cs_have_socket)
-
 # Optional shared library support
 #--------------------------------
 
