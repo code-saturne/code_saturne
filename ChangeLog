@@ -1,3 +1,8 @@
+* 08/11/2011 - David Monfort <david.monfort@edf.fr>
+  Add a missing call to uinpst to handle MEI function for writers output.
+  modified routine:
+    src/base/caltri.f90
+
 * 03/11/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix linked libraries order for static link of MEI syntax check.
   modified file:
