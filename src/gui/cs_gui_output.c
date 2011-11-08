@@ -1478,13 +1478,12 @@ static mei_tree_t *_init_mei_tree(const int num,
   char *path = NULL;
   char *formula = NULL;
 
-  printf("debut init du tree\n");
   /* return an empty interpreter */
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "analysis_control", "output");
   cs_xpath_add_element_num(&path, "writer", num);
-  cs_xpath_add_element(&path, "frequency_formula");
+  cs_xpath_add_element(&path, "frequency");
   cs_xpath_add_function_text(&path);
   formula = cs_gui_get_text_value(path);
   mei_tree_t *tree = mei_tree_new(formula);
@@ -1535,7 +1534,10 @@ void CS_PROCF (uinpst, UINPST) ( const cs_int_t  *ntcabs,
       mei_evaluate(ev_formula);
       iactive =  mei_tree_lookup(ev_formula, "iactive");
       mei_tree_destroy(ev_formula);
-      BFT_FREE(ev_formula);
+      if (iactive == 1)
+        cs_post_activate_writer(id, true);
+      else
+        cs_post_activate_writer(id, false);
     }
     BFT_FREE(frequency_choice);
   }
