@@ -37,7 +37,7 @@ This module defines the following functions:
 #-------------------------------------------------------------------------------
 
 
-import os, sys, pwd, shutil, stat
+import os, sys, pwd, shutil, stat, fnmatch
 from optparse import OptionParser
 
 #-------------------------------------------------------------------------------
@@ -64,7 +64,7 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("-g", "--guide", dest="guides", type="string",
                       metavar="<guide>", action="append",
-                      help="open a manual [refcard, user, theory, tutorial, developper]")
+                      help="open a manual " + str(get_pdf(pkg)))
 
     parser.add_option("--version", dest="version",
                       action="store_true",
@@ -103,6 +103,16 @@ def print_version(pkg):
 #-------------------------------------------------------------------------------
 # Launch the PDF manual
 #-------------------------------------------------------------------------------
+
+def get_pdf(pkg):
+    """
+    Return the list of available PDF manual for the command line.
+    """
+    l = [] 
+    if os.path.isdir(pkg.pdfdir):
+        for pdf in fnmatch.filter(os.listdir(pkg.pdfdir), '*.pdf'):
+            l.append(pdf[:-4])
+    return l
 
 
 def launch_manual(reader, m, pkg):
