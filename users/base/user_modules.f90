@@ -53,7 +53,7 @@ contains
 
     ! Local variables
 
-    integer err
+    integer :: err = 0
 
     if (.not.allocated(iwork)) then
       allocate(iwork(ncelet), stat=err)

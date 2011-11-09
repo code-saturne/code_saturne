@@ -1,3 +1,9 @@
+* 09/11/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add initialization of allocation return status in example to avoid
+  issues with gcc 4.6.
+  modified file:
+    users/base/user_modules.f90
+
 * 08/11/2011 - Cyril Baudry <cyril.baudry@edf.fr>
   Fix XML reader for writer output freqency.
   modified routine:
