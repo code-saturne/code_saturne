@@ -1681,11 +1681,14 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
   } /* End of tests on end_cycle */
 
-  if (c_cvg == -2 && abort_on_divergence)
-    _abort_on_divergence(mg, level,
-                         rotation_mode, cycle_id,
-                         _initial_residue, _residue,
-                         rhs, vx, _rhs, _vx);
+  if (c_cvg == -2) {
+    cvg = -2;
+    if (abort_on_divergence)
+      _abort_on_divergence(mg, level,
+                           rotation_mode, cycle_id,
+                           _initial_residue, _residue,
+                           rhs, vx, _rhs, _vx);
+  }    
 
   /* Free memory */
 
