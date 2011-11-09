@@ -989,8 +989,10 @@ endif ! iisuit = 1
 call pstntc(ntmabs, ntcabs, ttcabs)
 !==========
 
-call uinpst(ntcabs, ttcabs)
-!==========
+if (iihmpr.eq.1) then
+  call uinpst(ntcabs, ttcabs)
+  !==========
+endif
 
 call pstusn(ntmabs, ntcabs, ttcabs)
 !==========
