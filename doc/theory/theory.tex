@@ -20,11 +20,10 @@
 
 %-------------------------------------------------------------------------------
 
-\documentclass[a4paper,10pt,twoside]{report}
-%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PACKAGES OBLIGATOIRES
-\usepackage{csdoc}
+% csdoc class wich is done for reports
+\documentclass[a4paper,10pt,twoside]{csdoc}
+%
 % MACROS SUPPLEMENTAIRES
 \usepackage{csmacros}
 %
@@ -47,13 +46,14 @@
 % MACROS SUPPLEMENTAIRES
 % \newcommand{/...}{...}
 %
-\setcounter{tocdepth}{0}
+\setcounter{tocdepth}{1}
 %Compteur de ``programme'' remis a jour dans les part.
 \newcounter{prog}[part]
-\renewcommand{\theprog}{\arabic{prog}}
-\renewcommand{\thesection}{\theprog.\arabic{section}}
-\renewcommand{\theequation}{\thepart.\theprog.\arabic{equation}}
-\renewcommand{\thefigure}{\thepart.\theprog.\arabic{figure}}
+\renewcommand{\theprog}{\Alph{prog}}
+\renewcommand{\thesection}{\thechapter.\arabic{section}}
+\renewcommand{\theequation}{\thepart.\thechapter.\arabic{equation}}
+\renewcommand{\thefigure}{\thepart.\thechapter.\arabic{figure}}
+%
 \newcommand{\programme}[1]{%
 \passepage
 \refstepcounter{prog}
@@ -62,22 +62,19 @@
 \setcounter{equation}{0}
 \setcounter{figure}{0}
 \begin{center}
-\Huge \bf \theprog - \underline{Sous-programme \fort{#1}}
+\Huge \bf \theprog - \underline{\fort{#1} routine}
 \end{center}
-\addcontentsline{toc}{chapter}{\theprog- Sous-programme #1}}
+\addcontentsline{toc}{chapter}{\theprog - #1 routine}
+}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INFO POUR PAGES DE GARDES
-\titreCS{\CS \verscs Theory and Programmer's Guide}
+\titreCS{\CS \verscs Theory Guide}
 \docassociesCS{}
 \resumeCS{Ce document constitue la documentation th\'eorique et
 informatique des parties centrales du noyau de \CS~\verscs.
 La documentation est attach\'ee \`a la version du code
-correspondante pour favoriser les mises \`a jour. En pratique, les
-utilisateurs de \CS
-peuvent acc\'eder \`a la documentation sous
-\texttt{\$CS\_HOME/doc/NOYAU/}, information qui leur est rappel\'ee par la
-commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
+correspondante pour favoriser les mises \`a jour.}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -86,8 +83,7 @@ commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
 % DEBUT DU DOCUMENT
 \begin{document}
 
-%\def\bibname{Références}
-\def\contentsname{\textbf{\normalsize SOMMAIRE}\pdfbookmark[1]{Sommaire}{contents}}
+\def\contentsname{\textbf{\normalsize Table of contents}\pdfbookmark[1]{Contents}{contents}}
 \def\indexname{Index des variables principales et des mots cl\'es}
 
 \pdfbookmark[1]{Pages de garde}{pdg}
@@ -104,15 +100,126 @@ commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
 \end{singlespace}\end{center}
 
 
-%\passepage
-%\printsymliste\
+% TODO nomenclature
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CORPS DU DOCUMENT
 %
 \passepage
 
-\part{Introduction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% New doc Nov 2011
+%
+\chapter{Introduction}
+\section{Backgrounds and history}
+Work in progress.
+\section{Nomenclature}
+Work in progress.
+
+\part{Generic solver capabilities}
+%TODO add that to the class
+\setcounter{chapter}{0}
+\setcounter{section}{0}
+\setcounter{equation}{0}
+\setcounter{figure}{0}
+
+\chapter{Governing equations}
+Work in progress.
+\chapter{Time stepping}
+Work in progress.
+\section{Pressure-based velocity-pressure solver}
+Work in progress.
+
+\subsection{Segregated solver}
+Work in progress.
+\subsection{Coupled solver}
+Work in progress.
+\section{steady algorithm}
+Work in progress.
+\section{Unsteady algorithm}
+Work in progress.
+
+\chapter{Space discretization}
+Work in progress.
+\section{Introduction}
+Work in progress.
+\section{Gradient calculation}
+Work in progress.
+\subsection{Standard method}
+Work in progress.
+\subsection{Least-square method}
+Work in progress.
+
+\chapter{Source terms}
+Work in progress.
+\section{Head losses}
+Work in progress.
+\section{Mass source terms}
+Work in progress.
+
+\chapter{Boundary conditions}
+Work in progress.
+
+\chapter{Linear algebrae}
+Work in progress.
+
+
+\part{Advanced modelling}
+\setcounter{chapter}{0}
+\setcounter{section}{0}
+\setcounter{equation}{0}
+\setcounter{figure}{0}
+
+\chapter{Turbulence}
+\section{Two-equations closure models}
+Work in progress.
+\section{Reynolds-stress closure models}
+Work in progress.
+\section{Large-Eddy Simulation}
+Work in progress.
+\subsection{Standard Smagorinsky model}
+\subsection{Dynamic Smagorinsky model}
+\subsection{WALE model}
+
+\chapter{Compressible flows}
+\section{Density-based solver}
+
+\chapter{Combustion}
+Work in progress.
+\section{Gaz combustion}
+\subsection{Eddy-Break-Up}
+\subsection{Libby-Williams}
+\subsection{Pdf modelling}
+\section{Coal combustion}
+\section{Heavy fuel oil combustion}
+
+\chapter{Magneto-Hydro Dynamics}
+Work in progress.
+\section{Electric arcs}
+\chapter{Radiative transfer}
+
+\chapter{Lagrangian particle tracking}
+
+\chapter{Atmospheric flows}
+
+\chapter{Cooling towers}
+
+\chapter{ALE}
+Work in progress.
+
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\appendix
+\setcounter{section}{0}
+\setcounter{equation}{0}
+\setcounter{figure}{0}
+
+\part{Appendices}
+\setcounter{chapter}{0}
+\setcounter{section}{0}
+\setcounter{equation}{0}
+\setcounter{figure}{0}
 \stepcounter{prog}
 \include{introd}
 
@@ -141,6 +248,11 @@ commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
 \include{vortex}
 
 \part{Compressible module}
+\setcounter{chapter}{0}
+\setcounter{section}{0}
+\setcounter{equation}{0}
+\setcounter{figure}{0}
+
 \include{cfbase}
 \include{cfener}
 \include{cfmsvl}
@@ -148,13 +260,27 @@ commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
 \include{cfxtcl}
 
 \part{Electric Arcs}
+\setcounter{chapter}{0}
+\setcounter{section}{0}
+\setcounter{equation}{0}
+\setcounter{figure}{0}
+
 \include{elbase}
 
 \part{Combustion}
+\setcounter{chapter}{0}
+\setcounter{section}{0}
+\setcounter{equation}{0}
+\setcounter{figure}{0}
+
 \include{combbase}
 \include{thermo}
 \include{combgaz}
 \include{combglb}
+
+\setcounter{section}{0}
+\setcounter{equation}{0}
+\setcounter{figure}{0}
 
 \part{Mesh Handling Algorithms}
 \stepcounter{prog}
@@ -164,9 +290,14 @@ commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
 \include{mesh_algo}
 
 \part{References}
-\stepcounter{prog}
+\setcounter{chapter}{0}
 \setcounter{section}{0}
-\include{biblio}
+\setcounter{equation}{0}
+\setcounter{figure}{0}
+\stepcounter{prog}
+
+\bibliographystyle{alpha}
+\bibliography{csbiblio}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % FIN DU DOCUMENT

@@ -25,7 +25,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -67,11 +67,11 @@ de pr\'ediction des vitesses du sch\'ema de base de \CS.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %---------------------------------
-\subsection{Discr\'etisation en temps}
+\subsection*{Discr\'etisation en temps}
 %---------------------------------
 
 On implicite le terme de convection, éventuellement
@@ -131,11 +131,11 @@ et l'on utilise alors l'\'equation de la masse discr\`ete pour \'ecrire~:
 
 
 %---------------------------------
-\subsection{Discr\'etisation en espace}
+\subsection*{Discr\'etisation en espace}
 %---------------------------------
 
 %.................................
-\subsubsection{Introduction}
+\subsubsection*{Introduction}
 %.................................
 
 On int\`egre l'\'equation (\ref{Cfbl_Cfqdmv_eq_vitesse_cfqdmv})
@@ -160,7 +160,7 @@ on obtient l'\'equation discr\'etis\'ee en espace~:
 \end{equation}
 
 %.................................
-\subsubsection{Discr\'etisation de la partie ``convective''}
+\subsubsection*{Discr\'etisation de la partie ``convective''}
 %.................................
 
 La valeur \`a la face s'\'ecrit~:
@@ -194,7 +194,7 @@ avec
 \end{equation}
 
 %.................................
-\subsubsection{Discr\'etisation de la partie ``diffusive''}
+\subsubsection*{Discr\'etisation de la partie ``diffusive''}
 %.................................
 
 La valeur \`a la face s'\'ecrit~:
@@ -217,14 +217,14 @@ et un sch\'ema centr\'e pour le gradient normal aux faces~:
 \end{equation}
 
 %.................................
-\subsubsection{Discr\'etisation du gradient de pression}
+\subsubsection*{Discr\'etisation du gradient de pression}
 %.................................
 
 On utilise \fort{grdcel} standard. Suivant la valeur de \var{IMRGRA},
 cela correspond à une reconstruction itérative ou par moindres carrés.
 
 %.................................
-\subsubsection{Discr\'etisation du ``reste'' du tenseur des contraintes visqueuses}
+\subsubsection*{Discr\'etisation du ``reste'' du tenseur des contraintes visqueuses}
 %.................................
 
 On calcule des gradients aux cellules et on utilise une
@@ -245,7 +245,7 @@ faces (avec, en pratique, $\alpha_{ij}=\frac{1}{2}$)~:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 On r\'esout les trois directions d'espace du syst\`eme
@@ -274,7 +274,7 @@ d'incr\'ement et r\'esidu en utilisant une m\'ethode de Jacobi.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\section{Points \`a traiter}
+%\section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

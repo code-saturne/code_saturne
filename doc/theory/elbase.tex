@@ -66,11 +66,11 @@ Paris et EDF, 1999
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Notations}
+\subsection*{Notations}
 
 {\bf Variables utilis\'ees}
 \nopagebreak
@@ -125,9 +125,9 @@ et donc :
 \end{equation}
 
 
-\subsection{Arcs \'electriques}
+\subsection*{Arcs \'electriques}
 
-\subsubsection{Introduction}
+\subsubsection*{Introduction}
 
 Pour les \'etudes d'arc \'electrique, on calcule,
 \`a un pas de temps donn\'e~:
@@ -149,7 +149,7 @@ respectivement dans l'\'equation de l'enthalpie et dans celle
 de la quantit\'e de mouvement.
 
 
-\subsubsection{\'Equations continues}
+\subsubsection*{\'Equations continues}
 
 {\bf Syst\`eme d'\'equations}
 \nopagebreak
@@ -560,9 +560,9 @@ permettant de calculer le potentiel vecteur~:
 
 
 
-\subsection{Effet Joule}
+\subsection*{Effet Joule}
 
-\subsubsection{Introduction}
+\subsubsection*{Introduction}
 
 Pour les \'etudes Joule, on calcule,
 \`a un pas de temps donn\'e~:
@@ -682,7 +682,7 @@ repr\'esente naturellement le potentiel (r\'eel, continu).
 valeurs de potentiel impos\'ees aux limites} (facteur $\frac{1}{\sqrt{2}}$ ou
 $cos\phi$).
 
-\subsubsection{\'Equations continues}
+\subsubsection*{\'Equations continues}
 
 {\bf Syst\`eme d'\'equations}
 \nopagebreak
@@ -768,7 +768,7 @@ densit\'e de courant, au champ \'electrique et au potentiel dont il d\'erive.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -782,9 +782,9 @@ potentiels.
 
 
 
-\subsection{Arcs \'electriques}
+\subsection*{Arcs \'electriques}
 
-\subsubsection{Conditions aux limites}
+\subsubsection*{Conditions aux limites}
 
 Seules les conditions aux limites pour les potentiels sont \`a pr\'eciser.
 
@@ -839,9 +839,9 @@ calcul\'ee au pas de temps pr\'ec\'edent).
 
 
 
-\subsection{Effet Joule}
+\subsection*{Effet Joule}
 
-\subsubsection{Conditions aux limites}
+\subsubsection*{Conditions aux limites}
 
 Seules les conditions aux limites pour les potentiels sont \`a pr\'eciser.
 
@@ -887,12 +887,12 @@ peut donc \^etre utilis\'ee si besoin pour imposer les conditions aux limites.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\subsection{Introduction}
+\subsection*{Introduction}
 
 Le module \'electrique est une ``physique particuli\`ere'' activ\'ee lorsque les
 mots-cl\'es \var{IPPMOD(IELARC)} (arc \'electrique) ou \var{IPPMOD(IELJOU)}
@@ -917,7 +917,7 @@ Les sous-programmes marqu\'es d'un ast\'erisque sont d\'etaill\'es ensuite.
 
 \newpage
 
-\subsection{Inconnues et propri\'et\'es}
+\subsection*{Inconnues et propri\'et\'es}
 
 Les d\'eveloppements ont \'et\'e r\'ealis\'es pour une unique phase (\var{NPHAS}=1).
 
@@ -981,7 +981,7 @@ stock\'es que de mani\`ere temporaire (voir \fort{elflux}).
 
 \newpage
 
-\subsection{Arbre d'appel simplifi\'e}
+\subsection*{Arbre d'appel simplifi\'e}
 
 \begin{table}[htp]
 \begin{center}
@@ -1164,7 +1164,7 @@ Navier-Stokes, turbulence et scalaires)}
 
 \newpage
 
-\subsection{Pr\'ecisions}
+\subsection*{Pr\'ecisions}
 
 \etape{\fort{ellecd}}
 
@@ -1331,7 +1331,7 @@ et \var{COEJOU}).
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points \`a traiter}
+\section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -25,7 +25,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Ce sous-programme est dédié à la génération des conditions d'entrée
@@ -39,7 +39,7 @@ tourbillons au centre des faces d'entrée.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -132,11 +132,11 @@ w(y,z) = \sum_{p=1}^N \Gamma_p\, w_p(y,z)
 \end{array}
 \end{equation}
 %================================
-\subsection{Paramètres physiques}
+\subsection*{Paramètres physiques}
 %================================
 
 %-------------------------------
-\subsubsection{Marche en temps}
+\subsubsection*{Marche en temps}
 %-------------------------------
 La position initiale de chaque vortex est tirée de manière aléatoire. On calcul
 les déplacements successifs de chacun des vortex dans le plan d'entrée par
@@ -161,7 +161,7 @@ w(y,z)$ où $\overline{V}$ et $\overline{W}$ sont les composantes de la vitesse
 transverse moyenne qu'impose l'utilisateur à l'aide des fichiers de données.
 
 %---------------------------------------------------
-\subsubsection{Intensité et durée de vie des vortex}
+\subsubsection*{Intensité et durée de vie des vortex}
 %---------------------------------------------------
 Il serait possible, à partir de l'équation de transport de la vorticité,
 d'obtenir un modèle d'évolution pour l'intensité du vecteur tourbillon
@@ -200,7 +200,7 @@ $\tau_p$, le vortex est détruit et un nouveau vortex généré (sa position et le
 signe de $\Gamma_p$ sont tirés de façon aléatoire).
 
 %--------------------------------
-\subsubsection{Taille des vortex}
+\subsubsection*{Taille des vortex}
 %--------------------------------
 La taille des vortex peut être prise constante, ou calculée à partir des
 relations :
@@ -230,7 +230,7 @@ Dans tous les cas, la taille du vortex doit être supérieure à la taille des
 mailles en entrée afin que le vortex soit effectivement simulé.
 
 %==================================
-\subsection{Conditions aux limites}
+\subsection*{Conditions aux limites}
 %==================================
 Le champ de vitesse généré à l'aide de la relation \ref{Base_Vortex_compvit} ne tient pas
 compte {\em a priori} des conditions aux limites appliquées sur les bords du plan
@@ -249,7 +249,7 @@ type de conditions aux limites dans une conduite carrée.}
 \end{figure}
 
 %----------------------------------
-\subsubsection{Condition de paroi}
+\subsubsection*{Condition de paroi}
 %----------------------------------
 On crée, pour chaque vortex $P$ contenu dans le plan d'entrée, un vortex image
 $P'$ identique à $P$ (\textit{i.e} de même caractéristiques) et symétrique de $P$
@@ -263,13 +263,13 @@ perçu depuis le point $M$ au niveau du point $J$ est nul, ce qui est bien
 l'effet recherché.
 
 %------------------------------------
-\subsubsection{Condition de symétrie}
+\subsubsection*{Condition de symétrie}
 %-------------------------------------
 La technique est identique à celle utilisée pour les conditions de paroi, mais
 seule la composante pour la vitesse normale au bord est modifiée dans ce cas.
 
 %---------------------------------------
-\subsubsection{Condition de périodicité}
+\subsubsection*{Condition de périodicité}
 %---------------------------------------
 On crée pour chaque vortex, un vortex images $P'$ identique à $P$ mais translaté
 d'une quantité $L$ correspondant à la longueur qui sépare les deux plans de la
@@ -277,7 +277,7 @@ section d'entrée où sont appliquées les conditions de périodicité. Dans le cas
 où il y a deux directions de périodicité, on crée deux vortex image.
 
 %=============================================
-\subsection{Composante de vitesse principale}
+\subsection*{Composante de vitesse principale}
 %=============================================
 La méthode des vortex ne générant pas de fluctuation $u$ de la vitesse dans la
 direction principale, la dernière composante est calculée à partir d'une
@@ -300,7 +300,7 @@ n'est utilisée que dans le cas de conduites circulaires.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -432,7 +432,7 @@ changement de repère éventuel.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points \`a traiter}
+\section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

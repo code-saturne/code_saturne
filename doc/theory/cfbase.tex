@@ -24,7 +24,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -58,7 +58,7 @@ double choc sym\'etrique).
 
 \newpage
 %=================================
-\subsection{Notations}
+\subsection*{Notations}
 %=================================
 
 \begin{table}[h!]
@@ -186,7 +186,7 @@ $\Phi_v$         & $W/kg$         & $\rho\Phi_v$ repr\'esente le terme
 \clearpage
 
 %=================================
-\subsection{Syst\`eme d'\'equations laminaires de r\'ef\'erence}
+\subsection*{Syst\`eme d'\'equations laminaires de r\'ef\'erence}
 %=================================
 
 L'algorithme d\'evelopp\'e propose de r\'esoudre
@@ -215,7 +215,7 @@ que la turbulence ne pose pas de problème particulier dans la mesure où les
 équations suppl\'ementaires sont découplées du syst\`eme~(\ref{Cfbl_Cfbase_eq_ref_laminaire_cfbase}).
 
 %=================================
-\subsection{Expression des termes intervenant dans les \'equations}
+\subsection*{Expression des termes intervenant dans les \'equations}
 %=================================
 
 \begin{itemize}
@@ -248,12 +248,12 @@ que la turbulence ne pose pas de problème particulier dans la mesure où les
 
 
 %=================================
-\subsection{\'Equations d'\'etat et expressions de l'\'energie interne}
+\subsection*{\'Equations d'\'etat et expressions de l'\'energie interne}
 \label{Cfbl_Cfbase_equations_etat_cfbase}
 %=================================
 
 %---------------------------------
-\subsubsection{Gaz parfait}
+\subsubsection*{Gaz parfait}
 %---------------------------------
 
 \'Equation d'\'etat : $P = \rho r T$\\
@@ -269,7 +269,7 @@ P = (\gamma -1) \rho (e - \frac{1}{2} u^2)
 
 
 %---------------------------------
-\subsubsection{M\'elange de gaz parfaits}
+\subsubsection*{M\'elange de gaz parfaits}
 %---------------------------------
 
 On consid\`ere un m\'elange de $N$ constituants de fractions massiques
@@ -292,7 +292,7 @@ et\ \ $r_{m\acute elange} = \displaystyle\sum\limits_{i=1}^{N} {Y_i r_i}$
 
 
 %---------------------------------
-\subsubsection{Equation d'\'etat de Van der Waals}
+\subsubsection*{Equation d'\'etat de Van der Waals}
 %---------------------------------
 
 Cette \'equation est une correction de l'\'equation d'\'etat
@@ -322,11 +322,11 @@ avec $\hat{\gamma} = 1 + \displaystyle\frac{r}{C_v}
 
 
 %=================================
-\subsection{Calcul des grandeurs thermodymamiques}
+\subsection*{Calcul des grandeurs thermodymamiques}
 %=================================
 
 %---------------------------------
-\subsubsection{Pour un gaz parfait \`a $\gamma$ constant}
+\subsubsection*{Pour un gaz parfait \`a $\gamma$ constant}
 %---------------------------------
 
 %`````````````````````````````````
@@ -398,7 +398,7 @@ $h = C_p T
 
 
 %---------------------------------
-\subsubsection{Pour un m\'elange de gaz parfaits}
+\subsubsection*{Pour un m\'elange de gaz parfaits}
 %---------------------------------
 
 Une intervention de l'utilisateur dans le sous-programme utilisateur
@@ -491,7 +491,7 @@ $h = {C_p}_{m\acute el}\  T
 \displaystyle\frac{P}{\rho}$
 
 %---------------------------------
-\subsubsection{Pour un gaz de Van der Waals}
+\subsubsection*{Pour un gaz de Van der Waals}
 %---------------------------------
 
 Ces lois n'ont pas été programmées, mais l'utilisateur peut intervenir
@@ -571,7 +571,7 @@ $h = \displaystyle\frac{\hat{\gamma}-b\rho}{\hat{\gamma}-1}
 
 
 %=================================
-\subsection{Algorithme de base}
+\subsection*{Algorithme de base}
 %=================================
 
 On suppose connues toutes les variables au temps $t^n$ et on cherche
@@ -614,7 +614,7 @@ pression $P(\rho^{n+1},e^{n+1})$.\\
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -628,7 +628,7 @@ aux limites.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -642,7 +642,7 @@ module~: initialisation avec \fort{initi1} puis (\fort{iniva0} et) \fort{inivar}
 enfin, boucle en temps avec \fort{tridim}.
 
 
-\subsection{Inconnues et propri\'et\'es}
+\subsection*{Inconnues et propri\'et\'es}
 
 Les \var{NSCAPP} inconnues scalaires associ\'ees \`a la physique
 particuli\`ere sont d\'efinies dans \fort{cfvarp} dans l'ordre
@@ -707,7 +707,7 @@ thermique impos\'e.
 
 \newpage
 
-\subsection{Arbre d'appel simplifi\'e}
+\subsection*{Arbre d'appel simplifi\'e}
 \nopagebreak
 \begin{table}[h!]
 \begin{center}
@@ -953,7 +953,7 @@ ordre en temps (ordre 2 non pris en compte).
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points \`a traiter}
+\section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

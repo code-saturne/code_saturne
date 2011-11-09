@@ -25,7 +25,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Le but de ce sous-programme est principalement de calculer le flux de masse aux
@@ -38,7 +38,7 @@ $R_{ij}-\varepsilon$, filtre Rhie \& Chow, ...).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -57,7 +57,7 @@ g\'eom\'etriques pour les faces internes (gauche) et de bord (droite).}
 \end{figure}
 
 
-\subsection{Faces internes}
+\subsection*{Faces internes}
 On ne conna\^\i t pas la masse volumique \`a la face, cette derni\`ere doit donc
 aussi \^etre interpol\'ee. On utilise la discr\'etisation suivante :
 
@@ -78,7 +78,7 @@ faisant intervenir $\alpha$. L'erreur commise sur $\rho\vect{u}$ est en
 $O(h^2)$.
 
 
-\subsection{Faces de bord}
+\subsection*{Faces de bord}
 Le traitement des faces de bord est n\'ecessaire pour y calculer le flux de
 masse, bien s\^ur, mais aussi pour obtenir des conditions aux limites pour le
 calcul du $\ggrad\!(\rho \vect{u})$ utilis\'e pour les faces internes.
@@ -174,7 +174,7 @@ glissante ($B_k\ne0$) avec un gradient de temp\'erature ($\rho_F\ne\rho_I$).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

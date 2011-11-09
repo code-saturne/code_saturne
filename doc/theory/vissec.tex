@@ -26,7 +26,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Dans ce sous-programme sont calcul\'es les termes de gradient transposé et de viscosité
@@ -37,7 +37,7 @@ pas compatible avec le sch\'ema de r\'esolution actuel ({\it cf. } sous-programm
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 L'intégration des termes de gradient transposé
@@ -77,10 +77,10 @@ où $\mu$ et $\mu_t$ repr\'esentent respectivement la viscosit\'e dynamique moléc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Terme de gradient transposé}
+\subsection*{Terme de gradient transposé}
 Avant de calculer l'intégration des deux termes, on calcule dans un premier
 temps la viscosité totale en fonction du modèle de turbulence considéré.\\
 Les termes calculés dans ce sous-programme, appelé par \fort{preduv}, interviennent dans le second membre
@@ -120,7 +120,7 @@ l})_{\,moy,{b_{\,ik}}}\,S_{\,{b_{\,ik}}}^{\,\alpha}\ \right]\\
 \end{itemize}
 Fin de la boucle sur les composantes de la vitesse.\\
 \\
-\subsection{Terme de viscosité secondaire}
+\subsection*{Terme de viscosité secondaire}
 Le terme de seconde viscosité
  $-\displaystyle \frac{2}{3}\grad (\mu_{\,tot} \dive\,(\underline{v}))$
  est calculé de la façon suivante :
@@ -150,7 +150,7 @@ Le traitement est similaire pour le terme de viscosité de volume dans le module 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points \`a traiter} \label{Base_Vissec_paragraphe4}
+\section*{Points \`a traiter} \label{Base_Vissec_paragraphe4}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 L'intégration du terme de gradient transposé pose un problème de compatibilité.

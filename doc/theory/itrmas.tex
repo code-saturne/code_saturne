@@ -25,7 +25,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Le but du sous-programme \fort{itrmas} est de calculer un gradient de pression
@@ -44,7 +44,7 @@ d\'efinition de tableaux de travail de taille \var{NFAC} et \var{NFABOR}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -61,7 +61,7 @@ g\'eom\'etriques pour les faces internes (gauche) et de bord (droite).}
 \end{figure}
 
 
-\subsection{Calcul sans reconstruction des non orthogonalit\'es}
+\subsection*{Calcul sans reconstruction des non orthogonalit\'es}
 Pour les faces internes, on \'ecrit simplement :
 \begin{equation}
 \label{Base_Itrmas_eq_intssrec}
@@ -82,7 +82,7 @@ par interpolation par les sous-programmes \fort{viscfa} (cas isotrope,
 \var{IPUCOU=0}) ou \fort{visort} (cas anisotrope, \var{IPUCOU=1}).
 
 
-\subsection{Calcul avec reconstruction des non orthogonalit\'es}
+\subsection*{Calcul avec reconstruction des non orthogonalit\'es}
 Plusieurs discr\'etisations peuvent \^etre propos\'ees pour le traitement des
 non orthogonalit\'es. Celle retenue dans le code est issue des premiers tests
 r\'ealis\'es sur le prototype, et fait intervenir non seulement le pas de temps
@@ -109,7 +109,7 @@ Pour les faces de bord, on \'ecrit :
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Les principaux arguments pass\'es \`a \fort{itrmas} et \fort{itrgrp} sont la
@@ -151,7 +151,7 @@ l\`a encore par une application directe des formules (\ref{Base_Itrmas_eq_intavc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points \`a traiter}
+\section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Il est un peu redondant de passer en argument \`a la fois le pas de temps

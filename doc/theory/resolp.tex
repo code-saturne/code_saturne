@@ -25,7 +25,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Dans ce sous-programme appelé dans \fort{navsto}, on effectue l'étape de projection de la vitesse (ou de correction de pression). L'équation de quantité de mouvement (pr\'ediction) est résolue dans \fort{preduv} avec une pression totalement explicite. Il en résulte un champ de vitesse qui ne satisfait pas l'\'equation de continuit\'e. Deux algorithmes de correction sont proposés :
@@ -50,7 +50,7 @@ $\tens{T}^n$ est un tenseur d'ordre 2 dont les termes sont homogènes à un pas de
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 L'étape de pr\'ediction de la vitesse est décrite dans \fort{preduv}. On adopte ici une notation d'opérateurs pour simplifier la compréhension des algorithmes implantés.
@@ -351,14 +351,14 @@ avec :
 \begin{equation}\label{Base_Resolp_increment}
 \left\{\begin{array}{lll}
 (\delta(\delta p))^{0} &= 0\\
-(\delta(\delta p))^{k+1} &= (\delta p)^{k+1}-(\delta p)^k &\text {$\forall k \in \grandN$}\\
+(\delta(\delta p))^{k+1} &= (\delta p)^{k+1}-(\delta p)^k &\text {$\forall k \in \mathbb{N}$}\\
 \end{array}\right.
 \end{equation}
 Ce sont les gradients facette $(\grad{(\delta{p})^k})_{\,f_{\,ij}}$ et $(\grad{(\delta{p})^k})_{\,f_{b_{\,ik}}}$ qui seront reconstruits.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 On expose dans ce qui suit l'algorithme tel qu'il est écrit dans \fort{resolp}.
@@ -485,7 +485,7 @@ $$\var{RTP} = \var{RTPA} + \var{RTP} $$
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points \`a traiter}
+\section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Il reste plusieurs probl\`emes \`a r\'esoudre :

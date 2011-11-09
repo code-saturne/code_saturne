@@ -26,7 +26,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Ce sous-programme, appelé entre autre par \fort{preduv}, \fort{turbke}, \fort{covofi},
@@ -57,7 +57,7 @@ existe, est la solution de l'équation précédente.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Afin d'expliquer la procédure utilisée pour traiter les difficultés dues aux
@@ -119,7 +119,7 @@ Soit :
 \mathcal{EM}_{n}(a^{n+1}) =  \mathcal{EM}_{n}(a^{n+1}) -  \mathcal{E}_{n}(a^{n+1})
 \end{equation}
 On va pour cela utiliser un algorithme de type point fixe en définissant la
-suite $(a^{n+1,\,k})_{k\in \grandN}$\footnote{Dans le cas ou le point fixe en
+suite $(a^{n+1,\,k})_{k\in \mathbb{N}}$\footnote{Dans le cas ou le point fixe en
 vitesse-pression est utilisé (\var{NTERUP}$>$ 1) $a^{n+1,0}$ est initialisé par
 la dernière valeur obtenue de $a^{n+1}$.}:
 \begin{equation}\notag
@@ -165,7 +165,7 @@ utilise un modèle $R_{ij}-\varepsilon$, auquel cas on a
 $\mu_{\,tot}=\mu_{\,laminaire}$.\\
 Le choix de $\mathcal{EM}_{n}$ étant  {\it a
 priori} arbitraire ($\mathcal{EM}_{n}$ doit \^etre lin\'eaire et la suite
- $(a^{n+1,\,k})_{k\in\grandN}$ doit converger pour tout $n$ donn\'e), une option des modèles
+ $(a^{n+1,\,k})_{k\in\mathbb{N}}$ doit converger pour tout $n$ donn\'e), une option des modèles
 $R_{ij}-\varepsilon$ ($\var{IRIJNU}=1$) consiste \`a for\c cer  $\mu_{\,tot}^n$
 dans l'expression de $\mathcal{EM}_{n}$ \`a la
 valeur $\mu_{\,laminaire}^n + \mu_{\,turbulent}^n$ lors de l'appel \`a
@@ -177,7 +177,7 @@ autant les valeurs de la limite de la suite $(a^{n+1,\,k})_k$.\\
 
 \minititre{Remarque 2}
 Quand \fort{codits} est utilis\'e pour le couplage instationnaire renforcé
-vitesse-pression (\var{IPUCOU}=1), on fait une seule itération $k$ en initialisant la suite $(a^{n+1,\,k})_{k\in\grandN}$ à zéro. Les conditions de type Dirichlet sont
+vitesse-pression (\var{IPUCOU}=1), on fait une seule itération $k$ en initialisant la suite $(a^{n+1,\,k})_{k\in\mathbb{N}}$ à zéro. Les conditions de type Dirichlet sont
 annulées (on a $\var{INC}\,=\,0$) et le second membre est égal à $\rho |\Omega_i|$.
 Ce qui permet d'obtenir une approximation de type diagonal de
 $\tens{EM}_{n}$
@@ -185,7 +185,7 @@ n\'ecessaire lors de l'étape de correction de la vitesse\footnote{cf. le sous-pr
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 L'algorithme de ce sous-programme est le suivant :\\
@@ -360,7 +360,7 @@ Fin de la boucle.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points \`a traiter}\label{Base_Codits_section4}
+\section*{Points \`a traiter}\label{Base_Codits_section4}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \etape{Approximation $\mathcal{EM}_{n}$ de l'op\'erateur

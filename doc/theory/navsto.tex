@@ -32,7 +32,7 @@ une discr\'etisation spatiale  par volumes finis colocalis\'ee.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -109,7 +109,7 @@ de \CS (qui résout l'équation complète) est alors sans doute plus adapté.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -132,8 +132,8 @@ On pose :
 g\'eom\'etriques pour les faces internes (gauche) et de bord (droite).}
 \end{figure}
 
-\subsection{\bf M\'ethode \`a pas fractionnaires}
-\subsubsection{\bf Introduction}
+\subsection*{\bf M\'ethode \`a pas fractionnaires}
+\subsubsection*{\bf Introduction}
 Une des m\'ethodes permettant de r\'esoudre num\'eriquement les \'equations de
 Navier-Stokes est de d\'ecomposer les op\'erateurs s'y rattachant en
 op\'erateurs moins complexes (qui peuvent \^etre trait\'es \`a l'aide d'algorithmes
@@ -144,7 +144,7 @@ constitue l'\'etape dite de pr\'ediction de la vitesse, le
 second traite l'\'equation de continuit\'e et est
 d\'esign\'e comme l'\'etape de correction de pression ou de projection de la vitesse.
 
-\subsubsection{\bf \'Etape de pr\'ediction des vitesses}
+\subsubsection*{\bf \'Etape de pr\'ediction des vitesses}
 La discr\'etisation en temps se fait en appliquant \`a la variable r\'esolue un $\theta$-sch\'ema au temps $n+\theta$ s'inspirant de la d\'emarche utilis\'ee pour l'\'equation de transport d'un scalaire\footnote{cf. \fort{covofi}}.\\ La vitesse au temps $n+1$ n'\'etant disponible qu'apr\`es l'\'etape de projection, c'est ici une vitesse pr\'edite au temps $n+1$ que l'on utilise pour interpoler :
 \begin{equation}
 \label{Base_Navsto_thetaschema}
@@ -204,7 +204,7 @@ avec ~:
 \end{array}
 \end{equation}
 
-\subsubsection{\bf \'Etape de correction de la pression (ou projection des vitesses)}
+\subsubsection*{\bf \'Etape de correction de la pression (ou projection des vitesses)}
 Le champ de vitesse pr\'edit est {\it a priori} \`a divergence non nulle. La seconde
 \'etape corrige la pression en imposant la nullit\'e de la contrainte
 stationnaire pour la vitesse prise \`a l'instant ${t^{n+1}}$.
@@ -226,10 +226,10 @@ o\`u l'incr\'ement de pression $\delta P^{n+\theta}$ vaut~:
 Les quantit\'es $\rho$ et $\mu$ sont constantes lors de ces
 deux \'etapes. Leur variation \'eventuelle est effectu\'ee au début du pas de temps suivant, après réactualisation des scalaires (température, fraction massique,...).
 
-\subsection{\bf Discr\'etisation spatiale}
+\subsection*{\bf Discr\'etisation spatiale}
 On int\`egre  classiquement sur les volumes de contr\^ole ${\Omega_i}$ (ou cellules) les
 \'equations discr\'etis\'ees en temps.
-\subsubsection{\bf \'Etape de pr\'ediction des vitesses}
+\subsubsection*{\bf \'Etape de pr\'ediction des vitesses}
 \paragraph{\bf Second membre\\ }
 Si l'on ne tient pas compte des termes de convection et de diffusion issus du $\theta$-schéma, les termes sources volumiques explicites de l'\'equation (\ref{Base_Navsto_eq_prediction_continue}) s'écrivent pour le syst\`eme portant sur la quantité $(\vect{\widetilde{u}}^{n+1}-\vect {u}^{n})$ :\\
 \begin{equation}\notag
@@ -377,7 +377,7 @@ Le syst\`eme (\ref{Base_Navsto_eq_prediction_continue}) pouvant comporter des no
 lin\'earit\'es dues au recours au test de pente ou pouvant conduire {\it via} la
 reconstruction  du gradient (cellule) \`a une matrice quasiment pleine en
 pr\'esence de non orthogonalit\'es, on le r\'esout de mani\`ere it\'erative avec
-la suite $(\vect{\widetilde{u}}^{n+1,k})_{k\in \grandN}$ d\'efinie par :
+la suite $(\vect{\widetilde{u}}^{n+1,k})_{k\in \mathbb{N}}$ d\'efinie par :
 \begin{equation}
 \left\{\begin{array}{l}
 \vect{\widetilde{u}}^{n+1,0} = \vect{u}^{n}\\
@@ -386,7 +386,7 @@ la suite $(\vect{\widetilde{u}}^{n+1,k})_{k\in \grandN}$ d\'efinie par :
 \end{array}\right.
 \end{equation}
 ce qui d\'efinit \'egalement la suite $(\delta\vect{\widetilde{u}}^{k+1})
-_{k\in \grandN}$.\\
+_{k\in \mathbb{N}}$.\\
 Les deux op\'erateurs $\mathcal{E}$ et $\mathcal{EM}$ ont pour expression respective~:
 \begin{equation}\notag
 \begin{array}{ll}\label{Base_Navsto_eq_pred_exacte}
@@ -422,7 +422,7 @@ avec :
 \end{equation}
 
 
-De plus, on suppose que cette suite  $(\vect{\widetilde{u}}^{n+1,k})_{k\in \grandN}$
+De plus, on suppose que cette suite  $(\vect{\widetilde{u}}^{n+1,k})_{k\in \mathbb{N}}$
 converge %(au sens de la norme L2 discr\`ete) vers la bonne solution
 vers $\vect{\widetilde{u}}^{n+1}$.\\
 
@@ -454,9 +454,9 @@ L'op\'erateur $\mathcal{EM}$ approche $\mathcal{E}$ (aucun terme n'est
 reconstruit et la partie convective est trait\'ee syst\'ematiquement en sch\'ema
 d\'ecentr\'e amont). Ceci peut g\'en\'erer des
 impr\'ecisions num\'eriques non n\'egligeables si la suite
-$(\vect{\widetilde{u}}^{n+1,k})_{k\in \grandN}$ n'a pas converg\'e.
+$(\vect{\widetilde{u}}^{n+1,k})_{k\in \mathbb{N}}$ n'a pas converg\'e.
 
-\subsubsection{\bf \'Etape de correction de la pression}
+\subsubsection*{\bf \'Etape de correction de la pression}
 En prenant la divergence de la premi\`ere \'equation du syst\`eme
 (\ref{Base_Navsto_eq_correction_continue}), on obtient~:
 \begin{equation}
@@ -588,7 +588,7 @@ $R_{ij}-\varepsilon$.
 %$\vect{G}^{\,n}_{\,cel,ij}$.\\
 
 \paragraph{\bf R\'esolution\\}
-On construit une suite $(\delta P^{n+1,k})_{k\in \grandN}$ pour r\'esoudre
+On construit une suite $(\delta P^{n+1,k})_{k\in \mathbb{N}}$ pour r\'esoudre
 l'\'equation (\ref{Base_Navsto_eq_correction_discrete}), qui peut conduire {\it via} la
 reconstruction  du gradient cellule \`a une matrice quasiment pleine en
 pr\'esence de non orthogonalit\'es, d\'efinie par :
@@ -599,7 +599,7 @@ pr\'esence de non orthogonalit\'es, d\'efinie par :
 \mathcal{FM}(\delta(\delta P)^{n+\theta,k+1},I) = \mathcal{F}(\delta P^{n+\theta,k},I) \\\end{array}\right.
 \end{equation}\\
 ce qui d\'efinit \'egalement la suite $({\delta(\delta P)^{n+\theta,k+1}})_{k\in
-\grandN}$.\\
+\mathbb{N}}$.\\
 Les op\'erateurs $\mathcal{F}$ et $\mathcal{FM}$ ont pour expression :
 \begin{equation}
 \begin{array}{ll}
@@ -622,7 +622,7 @@ et :
 
 respectivement.\\
 $C_{relax}$ est un coefficient de relaxation donn\'e et fix\'e \`a 1 en standard.
-On suppose que la suite $(\delta P^{n+\theta,k})_{k\in \grandN}$
+On suppose que la suite $(\delta P^{n+\theta,k})_{k\in \mathbb{N}}$
 converge
 %(au sens de la norme L2 discr\`ete) vers la bonne solution
 vers $\delta P^{n+\theta}$.
@@ -651,7 +651,7 @@ et on calcule le nouveau champ de vitesse au centre des cellules gr\^ace \`a l'\
 \minititre{Remarque 8}
 Un traitement sp\'ecifique permet d'assurer que la conservation de la masse portant sur le bilan des flux
 de masse aux faces est toujours parfaitement v\'erifi\'ee \`a l'issue de
-l'\'etape de correction, que la suite $(\delta P^{n+\theta,k+1})_{k\in \grandN}$ ait
+l'\'etape de correction, que la suite $(\delta P^{n+\theta,k+1})_{k\in \mathbb{N}}$ ait
 ou non atteint la convergence.
 En effet, $\delta P^{n+\theta,k_{fin}+1}$,
 dernier terme \'evalu\'e de la suite, est donn\'e par :
@@ -713,7 +713,7 @@ et donc :
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

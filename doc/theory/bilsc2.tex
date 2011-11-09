@@ -25,7 +25,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Function}
+\section*{Function}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -51,10 +51,10 @@ with $\rho$, $\vect{u}$, $\beta$ and $a$ the variables at time  ${t^n}$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discretization}
+\section*{Discretization}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{\bf Convective Part}
+\subsection*{\bf Convective Part}
 Using the notations adopted in the subroutine \fort{navsto}, the
 explicit budget corresponding to the integration over a cell
 $\Omega_i$ of the convective part $-{\dive(\,(\rho\,\vect{u})^n a)}$
@@ -156,7 +156,7 @@ A slope test (which may introduce non-linearities in the convection operator) al
 the centered or SOLU scheme to the first order upwind scheme (without blending). Additionally, in standard mode $a_{\,f,ij}$ is computed as a weighted average between the upstream value and the centered value (blending), according to users' choice (variable $\var{BLENCV}$ in the subroutine  \fort{usini1}).
 
 
-\subsection{\bf Diffusive Part}
+\subsection*{\bf Diffusive Part}
 
 Similarly, the diffusive part writes :
 
@@ -180,7 +180,7 @@ $\vect{S}_{\,ij}$, and $\vect{S}_{\,b_{ik}}$ respectively.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Implementation}
+\section*{Implementation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -208,7 +208,7 @@ $\bullet \ $ \var{BLENCP}, from array \var{BLENCV} ; indicates the percentage of
 $\bullet \ $ \var{ISSTPP}, from array \var{ISSTPC} ; indicates if one wants to remove the slope test that switches the convection scheme from second order to upwind if the test is positive.\\
 \hspace*{1cm}$ = 0$ : a slope test is systematically used\\
 \hspace*{1cm}$ = 1$ : no slope test
-\subsection{\bf Computation of the gradient $\vect{G}_{\,c,i}$ of variable $a$}
+\subsection*{\bf Computation of the gradient $\vect{G}_{\,c,i}$ of variable $a$}
 The computation of the gradient of variable $a$ is necessary for the computation of the explicit budget.   \fort{grdcel} is called everytime this gradient is needed, and it is stored in the array (\var{DPDX}, \var{DPDY}, \var{DPDZ}). The computation of the gradient is necessary in the following situations: 
 \hspace*{0.5cm}$\bullet \ $ if the convection is activated with a non pure upwind scheme 
  ($\var{ICONVP} \ne {0}$ and $\var{IUPWIN} =~0$) {\bf and},\\
@@ -220,7 +220,7 @@ or :\\
 \hspace*{0.5cm}$\bullet \ $ if there is diffusion and we want to reconstruct the fluxes ($\var{IDIFFP} \ne {0}$ and $\var{IRCFLP} =~1$).\\\\
 In all other cases, the array (\var{DPDX}, \var{DPDY}, \var{DPDZ}) is set to zero.
 
-\subsection{\bf Computation of the upwind gradient $\vect{G}^{\,amont}_{\,c,i}$ of variable $a$}
+\subsection*{\bf Computation of the upwind gradient $\vect{G}^{\,amont}_{\,c,i}$ of variable $a$}
 
 $\vect{G}^{\,amont}_{\,c,i}$ refers to the upwind gradient of variable $a$, for cell $\Omega_i$. 
 It is stored in the array ($\var{DPDXA}, \var{DPDYA}, \var{DPDZA}$).\\
@@ -270,7 +270,7 @@ $(A_{\,b,ik},
 B_{\,b,ik})_{k\in {\gamma_b(i)}}$ are stored in the arrays (\var{COEFAP}, \var{COEFBP}). The vector  $\vect{II'}$ is stored in the array (\var{DIIPBX}, \var{DIIPBY},
 \var{DIIPBZ}). The surfaces  $(\vect{S}_{\,{b}_{ik}})_{k\in {\gamma_b(i)}}$ are stored in the array \var{SURFBO} .
 
-\subsection{\bf Summation of the numerical convective and diffusive fluxes}
+\subsection*{\bf Summation of the numerical convective and diffusive fluxes}
 The contributions to the explicit budget $[-\dive(\,(\rho \vect{u})^{n}a)
 +\dive(\,\beta\,\grad a)]$ are computed and added to the right-hand side array \var{SMBR},
 which has already been initialized before the call to 
@@ -351,7 +351,7 @@ We still have to compute, when the convection option is activated ($\var{ICONVP}
 the values of variables \var{PIF} and
 \var{PJF}, for any internal face \var{IFAC} between cell 
 $\Omega_i$  and $\Omega_j$.
-\subsubsection{\bf Calculation of the flux in pure upwind $\var{IUPWIN} = 1$}
+\subsubsection*{\bf Calculation of the flux in pure upwind $\var{IUPWIN} = 1$}
 
 In this case, there is no reconstruction since only
 the values \var{PVAR(II)} and \var{PVAR(JJ)} at the cell centres are needed.
@@ -377,7 +377,7 @@ $\bullet$ calculation of the quantities \var{FLUI} and \var{FLUJ},\\
 $\bullet$ calculation of the flux \var{FLUX} using (\ref{Base_Bilsc2_eq_flux_interne}).\\
 The computation of the sum in \var{SMBR} is straight-forward, following (\ref{Base_Bilsc2_eq_continue})
 \footnote{ taking into account the negative sign of $\mathcal{B_{\mathcal{\beta}}}$.} .
-\subsubsection{\bf Calculation of the flux with a centered or SOLU scheme ($\var{IUPWIN} = 0$)}
+\subsubsection*{\bf Calculation of the flux with a centered or SOLU scheme ($\var{IUPWIN} = 0$)}
 
 The two available second order schemes on orthogonal meshes are the centered scheme and the SOLU scheme.
 \\ In both cases, the following operations are performed:\\
@@ -595,7 +595,7 @@ For more information on the convection schemes and the slope test in \CS
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points to treat}
+\section*{Points to treat}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \etape{Convection scheme}

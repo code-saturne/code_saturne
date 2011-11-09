@@ -22,20 +22,20 @@
 
 \nopagebreak
 %==================================
-\section{Geometric Algorithms\label{sec:algo}}
+\section*{Geometric Algorithms\label{sec:algo}}
 %==================================
 
 In this chapter, we will describe algorithms used for several
 operations done by \CS.
 
-\subsection{Geometric Quantities\label{sec:geo_quant}}
+\subsection*{Geometric Quantities\label{sec:geo_quant}}
 
 Face normals (whose lengths are equal to face surfaces) as well
 as face centers of gravity and cell centers are computed directly
 by the kernel, though face normals may also be computed by the
 preprocessor for conforming joining.
 
-\subsubsection{Normals and Face Centers%
+\subsubsection*{Normals and Face Centers%
                 \label{sec:geo_quant.normal}}
 
 To calculate face normals, we taken care to use an algorithm
@@ -96,7 +96,7 @@ Stoke's formula) with the contribution obtained from the separate
 triangles $\{P_a, P_i, P_{i+1}\}$, and we translate the initial center
 of gravity along the face normal axis so as to obtain the same contribution.
 
-\subsubsection{Cell Centers%
+\subsubsection*{Cell Centers%
                \label{sec:geo_quant.cdgcel}}
 
 If we consider that in theory, the Finite Volume method uses constant
@@ -157,7 +157,7 @@ We see here that the vertex-based algorithm tends to increase
 non-orthogonality of faces, compared to the present
 face-based algorithm.
 
-\subsection{Conforming Joining\label{sec:join}}
+\subsection*{Conforming Joining\label{sec:join}}
 
 The use of non conforming meshes is one of \CS's key features, and
 the associated algorithms constitute the most complex part of the
@@ -198,7 +198,7 @@ splits the larger face into pieces that do not contain holes.
 \label{fig:algo.join.possible}
 \end{figure}
 
-\subsubsection{Robustness Factors%
+\subsubsection*{Robustness Factors%
                \label{sec:join.robust}}
 
 We have sought to build a joining algorithm that could function with
@@ -237,7 +237,7 @@ The algorithm must not leave gaps where none are desired.
 
 \end{enumerate}
 
-\subsubsection{Basic Principle\label{sec:join.principe}}
+\subsubsection*{Basic Principle\label{sec:join.principe}}
 
 Let us consider two surfaces to join, as in figure \ref{fig:algo.join.curv}:
 We seek to determine the intersections of the edges of the mesh faces,
@@ -289,7 +289,7 @@ All that is required at this stage is to merge those two sub-faces,
 conserving the properties of both. The merged sub-face thus belongs to
 two cells, and becomes an internal face. The joining is thus finalized.
 
-\subsubsection{Simplification of Face Joinings\label{sec:join.simplif}}
+\subsubsection*{Simplification of Face Joinings\label{sec:join.simplif}}
 
 For a finite-volume code such as \CS, it is best that faces belonging
 to one same cell have neighboring sizes. This is hard to ensure
@@ -326,7 +326,7 @@ After simplification, we have the following situation:
 \label{fig:algo.join.simpl2}
 \end{figure}
 
-\subsubsection{Processing\label{sec:join.process}}
+\subsubsection*{Processing\label{sec:join.process}}
 
 The algorithm's starting point is the search for intersections
 of edges belonging to the faces selected for joining. In 3D, we
@@ -404,7 +404,7 @@ intersection. These cases are shown on figure
 \label{fig:algo.join.edgeint_type}
 \end{figure}
 
-\subsubsection{Problems Arising From the Merging of Two Neighboring Vertices
+\subsubsection*{Problems Arising From the Merging of Two Neighboring Vertices
                 \label{sec:join.pb_merge}}
 
 If we have determined that a vertex $V_1$ should be merged with a
@@ -476,7 +476,7 @@ with another intersection.
 \label{fig:algo.merging.pb_3}
 \end{figure}
 
-\subsubsection{Algorithm Optimization\label{sec:join.optim}}
+\subsubsection*{Algorithm Optimization\label{sec:join.optim}}
 
 Certain factors influence both memory and CPU requirements. We always
 try to optimize both, with a slight priority regarding memory
@@ -499,7 +499,7 @@ is built. Assigning the global ids of the matching faces to the bounding boxes
 ensures the search results are usable independently of the distribution
 across MPI ranks.
 
-\subsubsection{Influence on mesh quality\label{sec:join.quality}}
+\subsubsection*{Influence on mesh quality\label{sec:join.quality}}
 
 It is preferable for a FV solver such as \CS that the mesh be as
 ``orthogonal'' as possible (a face is perfectly orthogonal when the
@@ -526,7 +526,7 @@ areas of the mesh. When possible, joining faces of which one
 set is already a subdivision of another (to construct local
 refinements for example) is recommended.
 
-\section{Periodicity\label{sec:algo.perio}}
+\section*{Periodicity\label{sec:algo.perio}}
 
 We use an extension of the non-conforming faces joining algorithm
 to build periodic structures. The basic principle is described
@@ -582,7 +582,7 @@ conforming joining, it is usually not necessary to specify
 face selections for relatively simple meshes (in which case
 all faces on the mesh boundary are selected).
 
-\section{Triangulation of faces\label{sec:triangle}}
+\section*{Triangulation of faces\label{sec:triangle}}
 
 Face triangulation (handled by the FVM library) is done in two
 stages. The first stage uses an \emph{ear cutting} algorithm, which
@@ -594,7 +594,7 @@ The second stage consists of flipping edges so that the final
 triangulation is constrained Delaunay, which leads to a
 more regular triangulation.
 
-\subsection{Initial triangulation\label{sec:triangle_ini}}
+\subsection*{Initial triangulation\label{sec:triangle_ini}}
 
 \begin{figure}[!h]
 \centerline{
@@ -625,7 +625,7 @@ with $P_5$, that is $(P_0, P_3, P_5)$.
 Once this triangle is removed, the remaining polygon is a triangle,
 and its handling is trivial.
 
-\subsection{Improving the Triangulation\label{sec:triangle_delaunay}}
+\subsection*{Improving the Triangulation\label{sec:triangle_delaunay}}
 
 We show on figures \ref{fig:algo.decoup_ex_1} and \ref{fig:algo.decoup_ex_2}
 two examples of a triangulation on similar polygons whose vertices are

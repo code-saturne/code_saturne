@@ -25,7 +25,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -73,11 +73,11 @@ $$
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %---------------------------------
-\subsection{Discr\'etisation en temps}
+\subsection*{Discr\'etisation en temps}
 %---------------------------------
 
 Le syst\`eme (\ref{Cfbl_Cfmsvl_eq_acoustique_cfmsvl}) discr\'etis\'e en temps donne :
@@ -174,12 +174,12 @@ avec le terme de convection implicite~:
 
 
 %---------------------------------
-\subsection{Discr\'etisation en espace}
+\subsection*{Discr\'etisation en espace}
 %---------------------------------
 
 
 %.................................
-\subsubsection{Introduction}
+\subsubsection*{Introduction}
 %.................................
 
 On int\`egre l'\'equation pr\'ec\'edente ( (\ref{Cfbl_Cfmsvl_eq_densite_cfmsvl})
@@ -201,7 +201,7 @@ $\rho^{n+\frac{1}{2}} = \rho^{n}$.}~:
 \end{equation}
 
 %.................................
-\subsubsection{Discr\'etisation de la partie ``convective''}
+\subsubsection*{Discr\'etisation de la partie ``convective''}
 %.................................
 
 La valeur \`a la face s'\'ecrit~:
@@ -238,7 +238,7 @@ avec
 \end{equation}
 
 %.................................
-\subsubsection{Discr\'etisation de la partie ``diffusive''}
+\subsubsection*{Discr\'etisation de la partie ``diffusive''}
 %.................................
 
 La valeur \`a la face s'\'ecrit~:
@@ -261,7 +261,7 @@ et un sch\'ema centr\'e pour le gradient normal aux faces~:
 \end{equation}
 
 %.................................
-\subsubsection{Syst\`eme final}
+\subsubsection*{Syst\`eme final}
 %.................................
 
 On obtient maintenant le syst\`eme final, portant sur
@@ -278,7 +278,7 @@ $(\rho_i^{n+1})_{i=1 \ldots N}$~:
 
 
 %.................................
-\subsubsection{Remarque~: interpolation aux faces pour le terme de diffusion}
+\subsubsection*{Remarque~: interpolation aux faces pour le terme de diffusion}
 %.................................
 
 Le choix de la forme de la moyenne pour le cofacteur du flux
@@ -325,7 +325,7 @@ pour obtenir la valeur de $(c^2)_{ij}$ correspondant \`a l'\'equation (\ref{Cfbl
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Le syst\`eme (\ref{Cfbl_Cfmsvl_eq_densite_finale_cfmsvl}) est r\'esolu par une m\'ethode
@@ -389,7 +389,7 @@ On actualise la pression \`a la fin de l'\'etape, en utilisant la loi d'\'etat~:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points \`a traiter}
+\section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Le calcul du flux de masse au  bord n'est pas enti\`erement satisfaisant

@@ -3,7 +3,7 @@
 %===============================================
 
 %=====================================
-\section{Function}
+\section*{Function}
 %=====================================
 
 Pulverised coal combustion is described (excluding grid burning) allowing the
@@ -90,7 +90,7 @@ The heavy fuel oil injection is described by a thermodynamic data file and
 granulometry, neither blend nor coal / oil mixing is possible.
 
 %============================================================================
-\section[Diffusion turbulent reaction]{Enhancement of diffusion turbulent reaction for two phase combustion}
+\section*[Diffusion turbulent reaction]{Enhancement of diffusion turbulent reaction for two phase combustion}
 %============================================================================
 
 With a Probability Density Function and the assumption of concentrations
@@ -281,7 +281,7 @@ where $h_{\mbox{\scriptsize \textsc{rec}}}$ is the height of the PDF's
 rectangle.
 
 %========================================
-\section{Specification of pyrolysis}
+\section*{Specification of pyrolysis}
 %========================================
 
 Coal is currently known by its proximate and ultimate analysis. Ultimate analysis of char can be known or assumed pure carbone.
@@ -379,7 +379,7 @@ auxiliary unknown in place of x) :
 Then a 8 x 8 linear system is defined and can be solved by regular algorithm.
  
 %===============================================
-\section{Specification of granulometry}
+\section*{Specification of granulometry}
 %===============================================
 
 User has to choose the initial diameter of different classes and the sharing out
@@ -465,7 +465,7 @@ As an example, if the user chooses the (recommended) sharing out $\left[0.1 , 0.
 With such a symetrical mass distribution, the diameter of the central class is the median diameter of the Rossin-Ramler (i.e. half of the mass is contained in more tiny particles).
 
 %===============================================
-\section{Special attention paid to variance}
+\section*{Special attention paid to variance}
 %===============================================
 
 With the gaz phase combustion model, everything is quite simple : two variables
@@ -525,7 +525,7 @@ This special assumption allows a term source for variance easy to implicit in or
 
 
 %========================================
-\section{NOx}
+\section*{NOx}
 %========================================
 
 Nitrogen oxides are a key pollutant, an accurate prediction is difficult but the
@@ -541,7 +541,7 @@ combustion ; its contribution is worthy of attention only for gas combustion
 (especially in dry
 low NOx combustor for gas turbine).\\
 
-\subsection{Thermal NOx}
+\subsection*{Thermal NOx}
 In the Zeldovich mechanism, the rate of the key reaction, between molecular
 nitrogen and radical oxygen, has a simple expression thanks to an assumption of
 equilibrium applied on oxygen dissociation, leading to :
@@ -594,7 +594,7 @@ mixture fraction, the numerical integration of the source term is now available,
 using a regular trapezium method with 200 points (between the pdf's rectangle
 begining and the minimum of fs3 and pdf's rectangle end).
 
-\subsection {Fuel NOx}
+\subsection* {Fuel NOx}
 The nitrogen included in the organic part of the fuel (can be a significant part
 of some biomass, like agricultural residues, oil cake and so on) evolves to
 $HCN$. This reducing form of nitrogen can be oxydised either by oxygen or by
@@ -619,7 +619,7 @@ In the last case, $NO$ is reduced to nitrogen : the fuel nitrogen contributes to
 %\clearpage
 
 %=================================
-\section[Conservation Equations]{Conservation Equations for two phase flow combustion}
+\section*[Conservation Equations]{Conservation Equations for two phase flow combustion}
 %=================================
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
@@ -716,7 +716,7 @@ where k is the phase, can be written:
 \end{equation}
 
 
-\subsubsection{Bulk enthalpy: $H_{m}$ }
+\subsubsection*{Bulk enthalpy: $H_{m}$ }
 %=======================================
 
 Budget equation for the specific enthalpy of the mixture (gas + particles)
@@ -730,7 +730,7 @@ $S_{m,\mbox{\scriptsize\textsc{r}}}$:
 With contributions of each phase liable to be described by different models (eg
 : wide band for gases, black body for particles).
 
-\subsubsection{Particles enthalpy: $Y_{2}^{*}H_{2}$ }
+\subsubsection*{Particles enthalpy: $Y_{2}^{*}H_{2}$ }
 %=====================================================
 
 Enthalpy of droplets (J in particles/kg bulk) is the product of solid phase mass
@@ -760,7 +760,7 @@ with
 \end{itemize}
 %==================
 
-\subsubsection{Dispersed phase mass fraction: $Y_{2}^{*}$}
+\subsubsection*{Dispersed phase mass fraction: $Y_{2}^{*}$}
 %==========================================================
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
@@ -790,14 +790,14 @@ computed with respect to the number of particles, initial size and initial
 amount of ashes. The sum of these four component is the amount of each class
 (initial diameter and kind of coal).
           
-\subsubsection{Number of particles: $N_{p}^{*}$}
+\subsubsection*{Number of particles: $N_{p}^{*}$}
 %================================================
 No source term in the budget equation for number of droplets or solid particles
 : a droplet became a particle (eventually a tiny flying ash) but never vanish
 (all particles have to get out).
 
                                 
-\subsubsection{Mean of the passive scalar for light volatile: $F_{1}$}  
+\subsubsection*{Mean of the passive scalar for light volatile: $F_{1}$}  
 %======================================================================
 
 This scalar represents the amount of matter released by the first (low
@@ -808,7 +808,7 @@ only the pyrolisis mass flux :
 \begin{equation}
     \Gamma _{\mbox{\small pyrol}}
 \end{equation}
-\subsubsection{Mean of the passive scalar for heavy volatile: $F_{2}$}  
+\subsubsection*{Mean of the passive scalar for heavy volatile: $F_{2}$}  
 %======================================================================
 
 This scalar represents the amount of matter which has leaved the droplet as fuel
@@ -823,12 +823,12 @@ pyrolisis mass flux :
 %---------------
 \end{equation}     
 
-\subsubsection{Mean of the passive scalar for oxidizers: $F_{3}$ to $F_{5}$}  
+\subsubsection*{Mean of the passive scalar for oxidizers: $F_{3}$ to $F_{5}$}  
 %========================================================================
 
 Budget equation for the three different oxidizers taken in account don't have
 any source term.
-\subsubsection{Mean of the passive scalar for steam from drying: $F_{6}$}  
+\subsubsection*{Mean of the passive scalar for steam from drying: $F_{6}$}  
 %========================================================================
  
 Budget equation for the water steam issued from drying of coal or biomass has
@@ -840,7 +840,7 @@ one source term :
 \end{equation} 
 
                                               
-\subsubsection{Mean of the passive scalar for carbon from char oxidation: $F_{7}$}  
+\subsubsection*{Mean of the passive scalar for carbon from char oxidation: $F_{7}$}  
 %========================================================================
   
 Budget equation for $F_{7}$ hase for source term the mass flux due to
@@ -854,7 +854,7 @@ flux). As for $F_{1}$, oxidation in the gaseous phase does not modifiy this {\em
 %---------------
 \end{equation}   
          
- \subsubsection{Mean of the passive scalar for gasification by the carbon dioxide: $F_{8}$}  
+ \subsubsection*{Mean of the passive scalar for gasification by the carbon dioxide: $F_{8}$}  
  
  Budget equation for $F_{8}$ has for source term the mass flux due to
  heterogeneous combustion (mass flux of carbon monoxide minus oxygene mass
@@ -867,7 +867,7 @@ flux). As for $F_{1}$, oxidation in the gaseous phase does not modifiy this {\em
 %---------------
 \end{equation}                         
 
- \subsubsection{Mean of the passive scalar for gasification by steam: $F_{9}$}  
+ \subsubsection*{Mean of the passive scalar for gasification by steam: $F_{9}$}  
  
  Budget equation for $F_{9}$ have for one source term the mass flux due to
  heterogeneous combustion (mass flux of carbon monoxide minus oxygene mass
@@ -885,7 +885,7 @@ flux). As for $F_{1}$, oxidation in the gaseous phase does not modifiy this {\em
 %\clearpage
 
 
-\subsubsection{Droplets enthalpy: $Y_{2}^{*}H_{2}$ }
+\subsubsection*{Droplets enthalpy: $Y_{2}^{*}H_{2}$ }
  
 Enthalpy of droplets (J in droplets/kg bulk) is the product of liquid phase mass
 fraction (kg liq/kg bulk) by the specific enthalpy of liquid (kg liq/kg
@@ -907,7 +907,7 @@ with
 at char particle one.
 \end{itemize}
 
-\subsubsection{Dispersed phase mass fraction : $Y_{2}^{*}$}
+\subsubsection*{Dispersed phase mass fraction : $Y_{2}^{*}$}
 
 In budget equation for the mass fraction of the dispersed phase (first droplets,
 then char particles, at last ashes) the source terms are interfacial mass fluxes
@@ -920,7 +920,7 @@ then char particles, at last ashes) the source terms are interfacial mass fluxes
 \end{equation}
 
 %================================================
-\section{Bibliography}
+\section*{Bibliography}
 %================================================
 \begin{thebibliography}{1}
 

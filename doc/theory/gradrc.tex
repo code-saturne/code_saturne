@@ -25,7 +25,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -43,11 +43,11 @@ des gradients de toutes les grandeurs. Cette technique est plus robuste mais bea
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{\bf M\'ethode g\'en\'erale}
+\subsection*{\bf M\'ethode g\'en\'erale}
 \begin{figure}[h]
 \parbox{8cm}{%
 \centerline{\includegraphics[height=4cm]{facette}}}
@@ -148,7 +148,7 @@ ce qui donne pour la direction $\eta$ ($\eta ,\,\beta = \, x, \,y\,\, \text{ou} 
 +\sum\limits_{j\in Vois(i)}\frac{1}{2}\,\left(\sum\limits_{\beta}(\vect{O_{\,ij}F_{\,ij}})_{,\,\beta}\,{G}_{\,c,j,\,\beta}\right){S}_{\,ij,\,\eta}\\
 +\sum\limits_{k\in {\gamma_b(i)}}(\var{INC}\,A_{\,b,ik} + B_{\,b,ik}\,P_{I})\,{S}_{\,{b}_{ik},\,\eta}
 \end{multline}
-\subsection{\bf Cas sans reconstruction des non orthogonalit\'es}
+\subsection*{\bf Cas sans reconstruction des non orthogonalit\'es}
 Lorsque le maillage est orthogonal ou lorsqu'on ne veut pas reconstruire, seules
 les contributions d'ordre $0$ au centre des cellules interviennent dans le
 calcul du gradient ($\vect{II'} = \vect{0}$, $\vect{OF} = \vect{0}$)~:
@@ -174,13 +174,13 @@ Le gradient non reconstruit $ \vect{G}_{\,c,i}^{NRec} $ se calcule donc tr\`es
 facilement et directement {\it via} l'\'equation~(\ref{Base_Gradrc_eq_nonreconstruction}).
 Il n'est cependant pas consistant sur maillage non orthogonal.
 
-\subsection{\bf Reconstruction}
-\subsubsection{\bf M\'ethode de r\'esolution}
+\subsection*{\bf Reconstruction}
+\subsubsection*{\bf M\'ethode de r\'esolution}
 
 Afin de pouvoir r\'esoudre le syst\`eme (\ref{Base_Gradrc_eq_reconstruction}), on va
 impliciter les termes en $\vect{G}_{\,c,i}$, expliciter ceux en
 $\vect{G}_{\,c,j}$ et raisonner de facon it\'erative en introduisant une suite
-d'incr\'ements~$(\delta\,\vect{G}^{\,k}_{\,i})_{k\in \grandN}$ d\'efinie par~:\\
+d'incr\'ements~$(\delta\,\vect{G}^{\,k}_{\,i})_{k\in \mathbb{N}}$ d\'efinie par~:\\
 \begin{equation}
 \left\{\begin{array}{l}
 \delta\,\vect{G}^{\,0}_{\,i} = \vect{G}_{\,c,i}^{NRec}\\
@@ -451,7 +451,7 @@ P}{\delta n}\right|_{F_{\,b_{\,ik}}} = g_{\,bord}$, le recours \`a  $
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -469,13 +469,13 @@ z\'ero.\\
 Le calcul du gradient cellule non reconstruit $\vect{G}^{NRec}_{\,c,i}$ est
 r\'ealis\'e et stock\'e dans les tableaux \var{DPDX}, \var{DPDY} et \var{DPDZ}. Si
 aucune reconstruction n'est \`a faire, on a fini.\\
-\hspace*{1cm}\subsection{\bf  Reconstruction}
+\hspace*{1cm}\subsection*{\bf  Reconstruction}
 Sinon, on cherche \`a r\'esoudre le syst\`eme (\ref{Base_Gradrc_eq_reconstruction_increment}) en incr\'ements de
 gradient ${\delta\,\vect{G}}^{\,k+1}_{\,i}$. Le gradient non reconstruit
 constitue alors une premi\`ere estimation du gradient \`a calculer par
 incr\'ements.\\
 On effectue les op\'erations suivantes~:
-\hspace*{1cm}\subsubsection{\bf Phase pr\'eliminaire}
+\hspace*{1cm}\subsubsection*{\bf Phase pr\'eliminaire}
 \hspace*{1,5cm}{\bf Calcul de la matrice, hors boucle en $k$}\\
 Les \var{NCEL} matrices $\tens{C}_{\,i}$ (matrices non sym\'etriques $3\times 3$) sont
 stock\'ees dans le tableau \var{COCG},
@@ -532,7 +532,7 @@ s\'erie de boucles en vectorisation forc\'ee sur des blocs de \var{NBLOC=1024}
 \'el\'ements. Le reliquat ($\var{NCEL}-E(\var{NCEL}/1024)\times 1024$) est
 trait\'e apr\`es les boucles.
 La matrice inverse est ensuite stock\'ee dans \var{COCG}.\\
-\hspace*{1cm}\subsubsection{\bf Phase it\'erative $k$, $k\in \grandN$}
+\hspace*{1cm}\subsubsection*{\bf Phase it\'erative $k$, $k\in \mathbb{N}$}
 On suppose  $\delta\,\vect{G}^{\,k}_{\,i}$ connu et donc  $\vect{G}^{k}_{\,c,i}$ pour $k$ donn\'e et sur
 toute cellule $\Omega_{i}$ et on veut calculer
 $\delta\,\vect{G}^{\,k+1}_{\,i}$ et $\vect{G}^{k+1}_{\,c,i}$ .\\
@@ -614,7 +614,7 @@ consid\'er\'e.\\
 Sinon, on continue d'it\'erer sur $k$.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points \`a traiter}
+\section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \etape{Vectorisation forc\'ee}

@@ -25,7 +25,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -88,7 +88,7 @@ Neumann homog\`ene.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -199,10 +199,10 @@ homog\`ene ou de type Neumann homog\`ene.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{\bf Initialisations}
+\subsection*{\bf Initialisations}
 L'indicateur de sym\'etrie \var{ISYM} de la matrice consid\'er\'ee est affect\'e comme suit :\\
 \hspace*{1cm}$\bullet$ $\var{ISYM}$ = 1 , si la matrice est sym\'etrique ;
 on travaille en diffusion pure , \var{ICONVP} = 0 et \var{IDIFFP} = 1,\\
@@ -219,10 +219,10 @@ $ \var{ISTATP} = 0 $ (en fait, ceci ne concerne que les calculs relatifs \`a la
 pression). Sinon, on lui affecte la valeur \var{ROVSDT} comprenant la partie instationnaire, la contribution du terme continu en $-\ a\ \dive(\rho \vect{u})^n$
 et la partie diagonale des termes sources implicit\'es. Le tableau
 $\var{XA(NFAC,*)}$ est initialis\'e \`a z\'ero.\\
-\subsection{\bf Calcul des termes extradiagonaux stock\'es dans \var{XA} }
+\subsection*{\bf Calcul des termes extradiagonaux stock\'es dans \var{XA} }
 Ils ne se calculent que pour des faces purement internes \var{IFAC}, les faces
 de bord ne contribuant qu'\`a la diagonale.
-\subsubsection{matrice non sym\'etrique ( pr\'esence de convection ) }
+\subsubsection*{matrice non sym\'etrique ( pr\'esence de convection ) }
 %\hspace*{1cm}{\tiny$\blacksquare$}\ \underline{pour une face purement interne
 %$ij\ ( \var{IFAC} )$} \\
 Pour chaque face interne \var{IFAC}, les contributions extradiagonales relatives
@@ -265,7 +265,7 @@ On a la relation :\\
 \overline{J'I'}^{\tiny {\,J}}=\ \overline{I'J'}^{\tiny {\,I}} = (\ \overline{I'J'})
 \end{equation}
 d'o\`u la deuxi\`eme \'egalit\'e dans (\ref{Base_Matrix_eq_extra}).
-\subsubsection{matrice sym\'etrique ( diffusion pure ) }
+\subsubsection*{matrice sym\'etrique ( diffusion pure ) }
 Pour chaque face interne \var{IFAC}, la contribution extradiagonale relative au
 terme $a_I$ est calcul\'ee dans
 $\var{XA(IFAC,1)}$ par la  relation suivante :\\
@@ -274,8 +274,8 @@ $\var{XA(IFAC,1)}$ par la  relation suivante :\\
 \end{equation}
 avec $\var{VISCF(IFAC)} $ \`a $ \ \displaystyle \beta_{\,ij}\frac {
 S_{\,ij}}{\overline{I'J'}} $.
-\subsection{\bf Calcul des termes diagonaux stock\'es dans \var{DA} }
-\subsubsection{matrice non sym\'etrique ( pr\'esence de convection ) }
+\subsection*{\bf Calcul des termes diagonaux stock\'es dans \var{DA} }
+\subsubsection*{matrice non sym\'etrique ( pr\'esence de convection ) }
 Pour chaque face interne $ij\ ( \var{IFAC} )$ s\'eparant les cellules $\Omega_i$
 de centre $I$ et $\Omega_j$ de centre $J$, $\var{DA(II)}$ est la quantit\'e en facteur de $a_I$ dans la
 derni\`ere expression de (\ref{Base_Matrix_eq_face_int}), soit :
@@ -298,7 +298,7 @@ $\var{DA(II)}$ la contribution crois\'ee $-\var{XA(IFAC,2)}$ ({\it cf.}
 \`a
 $\var{DA(JJ)}$ la contribution $-\var{XA(IFAC,1)}$ ({\it cf.}
 (\ref{Base_Matrix_eq_diag_JJ})).
-\subsection{\bf Prise en compte des conditions aux limites}
+\subsection*{\bf Prise en compte des conditions aux limites}
 Elles interviennent juste dans le tableau \var{DA}, compte-tenu de leur
 \'ecriture et d\'efinition. Elles se calculent {\it via} la derni\`ere
 expression de (\ref{Base_Matrix_eq_face_bord}). Pour chaque face \var{IFAC}, de l'\'el\'ement
@@ -334,7 +334,7 @@ $\ \displaystyle\frac{1}{2}\ (\ m_{\,{b}_{ik}}^n -
 |m_{\,{b}_{ik}}^n|)B_{\,b,ik}\ $ par $\ \var{FLUI}\ $,
 $B_{\,b,ik}$ par $\var{COEFBP(IFAC)}$, $\beta_{\,b_{ik}}\displaystyle\frac
 {S_{\,b_{ik}}}{\overline{I'F}} $ par $\var{VISCB(IFAC)}$.\\
-\subsection{\bf D\'ecalage du spectre}
+\subsection*{\bf D\'ecalage du spectre}
 Lorsqu'il n'existe aucune condition \`a la limite de type Dirichlet et que
 $\var{ISTATP} = 0 $ (c'est-\`a-dire pour la pression uniquement), on
 d\'eplace le spectre de la matrice ${\tens{EM}}_{\,scal}$ de $\var{EPSI}$  ({\it i.e.} on multiplie chaque terme diagonal par $(1 + \var{EPSI})$ ) afin
@@ -342,7 +342,7 @@ de la rendre inversible. \var{EPSI} est fix\'e en dur dans \fort{matrix} \`a
  ${10}^{-7}$.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points \`a traiter}
+\section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \etape{Initialisation}

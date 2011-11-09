@@ -89,6 +89,7 @@ BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
 # Generated documents (pdf and index files)
 
 PDFMAIN = $(TEXMAIN:.tex=.pdf)
+BIBMAIN = $(TEXMAIN:.tex=.aux)
 
 # One redefines here the standard pdf targets of automake
 # so that they handle generation from LaTeX documents.
@@ -96,6 +97,7 @@ PDFMAIN = $(TEXMAIN:.tex=.pdf)
 pdf-local:
 	@$(PDFLATEX) $(TEXMAIN)
 	@$(PDFLATEX) $(TEXMAIN)
+	@$(BIBTEX) $(BIBMAIN)
 	@$(PDFLATEX) $(TEXMAIN)
 
 clean-local:

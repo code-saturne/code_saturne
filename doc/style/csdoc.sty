@@ -54,6 +54,9 @@
 \RequirePackage{lastpage}
 \RequirePackage{ifthen}
 \RequirePackage{alltt}
+\RequirePackage{nomencl}
+\RequirePackage{enumitem}
+\RequirePackage{subfigure}
 
 \RequirePackage[latin1]{inputenc}
 \RequirePackage[OT1]{fontenc} % \RequirePackage[T1]{fontenc} Attention: Liste des symboles
@@ -68,7 +71,7 @@
                 citecolor=blue]{hyperref}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Mise en page : Définitions des MACROS
+% Mise en page : DÃ©finitions des MACROS
 \newcommand{\titreCS}[1]{\def\titre{#1}}
 \newcommand{\docassociesCS}[1]{\def\docassocies{#1}}
 \newcommand{\resumeCS}[1]{\def\resume{#1}}
@@ -107,19 +110,19 @@
 \DeclareFixedFont{\polsec}{OT1}{phv}{b}{n}{16}
 \DeclareFixedFont{\polssec}{OT1}{phv}{b}{n}{14}
 \DeclareFixedFont{\polsssec}{OT1}{phv}{b}{n}{12}
-\renewcommand{\section}{\@startsection {section}{1}{-5mm}
+\renewcommand{\section}{\@startsection {section}{1}{\z@}
                         {12pt plus2pt minus1pt}
                         {6pt}
                         {\bfseries\fontsize{16}{18}\selectfont\polsec}}
-\renewcommand{\subsection}{\@startsection {subsection}{2}{-5mm}
+\renewcommand{\subsection}{\@startsection {subsection}{2}{\z@}
                            {12pt plus2pt minus1pt}
                            {6pt}
                            {\bfseries\fontsize{14}{16}\polssec}}
-\renewcommand{\subsubsection}{\@startsection {subsubsection}{3}{-5mm}
+\renewcommand{\subsubsection}{\@startsection {subsubsection}{3}{\z@}
                            {12pt plus2pt minus1pt}
                            {6pt}
                            {\bfseries\fontsize{12}{14}\polsssec}}
-\newcommand{\subsubsubsection}{\@startsection {paragraph}{3}{-5mm}
+\newcommand{\subsubsubsection}{\@startsection {paragraph}{3}{\z@}
                              {12pt plus2pt minus1pt}
                              {6pt}
                              {\bfseries\fontsize{10}{12}\polsssec}}
@@ -130,9 +133,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Contents
 %
-\renewcommand*\l@section{\upshape\bfseries \@dottedtocline{1}{0mm}{1.5em}}
-\renewcommand*\l@subsection{\mdseries\scshape \@dottedtocline{2}{0mm}{2.4em}}
-\renewcommand*\l@subsubsection{\itshape \@dottedtocline{3}{3mm}{3.6em}}
+\renewcommand*\l@section{\upshape\bfseries \@dottedtocline{1}{0.5em}{2.5em}}
+\renewcommand*\l@subsection{\mdseries\scshape \@dottedtocline{2}{0.5em}{3.4em}}
+\renewcommand*\l@subsubsection{\itshape \@dottedtocline{3}{0.5em}{4.5em}}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Input Code_Saturne name and version macros
@@ -260,3 +263,5 @@ Page \thepage/\pageref{LastPage} \\
 \end{titlepage}
 \normalsize
 }
+
+

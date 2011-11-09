@@ -25,7 +25,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Le but de ce sous-programme est de r\'esoudre le syst\`eme des \'equations des
@@ -211,7 +211,7 @@ $0,3$ \\
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 La r\'esolution se fait en d\'ecouplant totalement les tensions de Reynolds
@@ -224,7 +224,7 @@ en n'implicitant que les termes pouvant \^etre lin\'earis\'es par rapport \`a la
 variable courante\footnote{En effet, aucune variable n'est actualis\'ee pour la r\'esolution de la suivante.}.
 
 Les \'equations sont r\'esolues \`a l'instant $n+1$.
-\subsection{\bf Variables tensions de Reynolds}
+\subsection*{\bf Variables tensions de Reynolds}
 Pour chaque composante $R_{ij}$, on \'ecrit :
 \begin{equation}\label{Base_Turrij_Eq_Temp_Rij}
 \begin{array}{ll}
@@ -344,7 +344,7 @@ $$\dive(\,\tens{E}^n\,\grad{R}^{\,n}_{ij}) + \dive(\,\tens{D}^n\,[\,\grad{R}^{\,
 )\,\vect{n}\,]\,)$$ en omettant la notion de face.\\
 Le dernier terme est implicite relativement \`a la variable $R_{ij}$ et correspond \`a l'op\'erateur continu :
  $$\dive(\,\tens{D}^n\,(\grad{R}^{\,n+1}_{ij}\,.\,\vect{n} )\,\vect{n})$$
-\subsection{\bf Variable $\varepsilon$ }
+\subsection*{\bf Variable $\varepsilon$ }
 On r\'esout l'\'equation de $\varepsilon$ de fa\c con analogue \`a celle de
 $R_{ij}$.
 \begin{equation}
@@ -404,7 +404,7 @@ Le dernier terme est implicite relativement \`a la variable $\varepsilon$ et cor
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 La num\'ero de la phase trait\'ee fait partie des arguments de \fort{turrij}. On
@@ -511,7 +511,7 @@ viscosit\'e turbulente calcul\'ee comme en $k-\varepsilon$).}
 
 o\`u on rappelle :\\
 pour $n$ donn\'e entier positif, on d\'efinit la suite
- $({R}_{ij}^{\,n+1,p})_{p \in \grandN}$
+ $({R}_{ij}^{\,n+1,p})_{p \in \mathbb{N}}$
  par :
 \begin{equation}\notag
 \left\{\begin{array}{l}
@@ -915,7 +915,7 @@ fois la valeur obtenue au pas de temps pr\'ec\'edent.} contient l'option $\var{I
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points \`a traiter}
+\section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Sauf mention explicite, $\phi$ repr\'esentera une tension de Reynolds ou la dissipation turbulente ($\phi = R_{ij} \ \text{ou} \ \varepsilon$).

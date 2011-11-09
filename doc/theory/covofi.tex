@@ -25,7 +25,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Dans ce sous-programme, on résout : \\
@@ -103,7 +103,7 @@ l'équation précédente s'écrit finalement :\\
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Pour intégrer l'équation (\ref{Base_Covofi_Eq_cv_scal}), une discrétisation temporelle de
@@ -234,7 +234,7 @@ qui est ensuite résolue par \fort{codits}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 On distingue deux cas suivant le type de schéma en temps choisi pour les termes sources :
@@ -388,7 +388,7 @@ T_s^{\,exp} + T_s^{\,imp}\,f^{n}+\dive(\,\rho
 %Le $\theta$ en facteur du terme de compressibilté provient de la façon dont est complété le second membre lors de l'appel au sous-programme \fort{bilcs2}.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points à traiter}\label{Base_Covofi_section4}
+\section*{Points à traiter}\label{Base_Covofi_section4}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \etape{Intégration du terme de convection-diffusion}
@@ -399,7 +399,7 @@ terme de convection-diffusion. On renvoie donc le lecteur au sous-programme
 \clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{ Annexe 1 : Inversibilit\'e de la matrice $\tens{EM}_{\,n}$}
+\section*{Annexe 1 : Inversibilit\'e de la matrice $\tens{EM}_{\,n}$ }
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Dans cette section, on va \'etudier plus particulièrement l'inversibilit\'e de
@@ -412,7 +412,7 @@ s'assurer que la matrice des syst\`emes de convection-diffusion dans les cas
 courants est toujours inversible.
 
 %%%%%%%%%%%%%%%%
-\subsection{\bf Introduction }
+\subsection*{\bf Introduction }
 %%%%%%%%%%%%%%%%
 
 Pour montrer l'inversibilit\'e, on va utiliser le fait que la dominance
@@ -474,13 +474,13 @@ Ed. Masson.} se d\'emontre simplement si l'on admet le th\'eor\`eme de
 Gerschg\"orin ci-dessous~:
 
 $\underline{\text{Th\'eor\`eme~:}}$
-Soit $\tens{B}$ une matrice carr\'ee d'ordre N dans $\grandC\,\times\,\grandC$,
+Soit $\tens{B}$ une matrice carr\'ee d'ordre N dans $\mathbb{C}\,\times\,\mathbb{C}$,
 d'\'el\'ement g\'en\'erique $B_{\,ij}$, les valeurs propres $\lambda_l$ de $B$ sont, dans
 le plan complexe, telles que
-$||\lambda_l - B_{ii}||_{\,\grandC} \leqslant \sum\limits_{j=1,\,j\neq
-i}^{j=N}{||B_{ij}||_{\,\grandC}}$
+$||\lambda_l - B_{ii}||_{\,\mathbb{C}} \leqslant \sum\limits_{j=1,\,j\neq
+i}^{j=N}{||B_{ij}||_{\,\mathbb{C}}}$
 
-Si $B$ est \`a \'el\'ements r\'eels, on \'ecrira $||\lambda_l - B_{ii}||_{\,\grandC}
+Si $B$ est \`a \'el\'ements r\'eels, on \'ecrira $||\lambda_l - B_{ii}||_{\,\mathbb{C}}
 \leqslant \sum\limits_{j=1,\,j\neq i}^{j=N}|B_{ij}|$
 
 $\underline{\text{D\'emontration de la propri\'et\'e pr\'ec\'edente~:}}$
@@ -496,13 +496,13 @@ ses \'el\'ements diagonaux sont non nuls. $D$ est donc inversible (et
 les \'elements de l'inverse sont r\'eels). On
 consid\`ere alors la suite\footnote{On reconna\^\i t la m\'ethode de Jacobi}~:
 
-$$(X^n)_{n\in\grandN}, \text{\hspace*{1cm}avec\hspace*{1cm}} X^0=D^{-1}S
+$$(X^n)_{n\in\mathbb{N}}, \text{\hspace*{1cm}avec\hspace*{1cm}} X^0=D^{-1}S
 \text{\hspace*{1cm}et\hspace*{1cm}} DX^n=S+EX^{n-1}$$
 On peut \'ecrire~:
 $$X^n = \sum\limits_{k=0}^{k=n} \left(D^{-1}E\right)^k D^{-1}S$$
 Cette somme converge si
 le rayon spectral de $B=D^{-1}E$ est strictement inf\'erieur \`a 1. Or, la
-matrice $C$ est \`a diagonale strictement dominante. On a donc pour tout $i\in\grandN$
+matrice $C$ est \`a diagonale strictement dominante. On a donc pour tout $i\in\mathbb{N}$
 (\`a partir de la relation (\ref{Base_Covofi_Eq_Propriete_1}) et en
 divisant par $|C_{ii}|$)~:
 $$\forall i \in [1,N],\ \ \ \frac{|C_{ii}|}{|C_{ii}|} > \sum\limits_{j=1,\,j\neq
@@ -513,13 +513,13 @@ i}^{j=N}|\left[D^{-1}E\right]_{ij}|$$ ou bien~:
 $$\forall i \in [1,N],\ \ \  1 > \sum\limits_{j=1,\,j\neq
 i}^{j=N}|B_{ij}|$$  d'o\`u, avec le th\'eor\`eme de Gerschg\"orin, une
 relation sur les valeurs propres $\lambda_l$ de $B$~:
-$$\forall i \in [1,N],\ \ \  ||\lambda_l - B_{ii}||_{\,\grandC} \leqslant \sum\limits_{j=1,\,j\neq i}^{j=N}|B_{ij}| < 1 $$
+$$\forall i \in [1,N],\ \ \  ||\lambda_l - B_{ii}||_{\,\mathbb{C}} \leqslant \sum\limits_{j=1,\,j\neq i}^{j=N}|B_{ij}| < 1 $$
 et comme $B_{ii}=0$~:
-$$ ||\lambda_l ||_{\,\grandC}  < 1 $$
+$$ ||\lambda_l ||_{\,\mathbb{C}}  < 1 $$
 en particulier, la valeur propre dont la norme est la plus grande v\'erifie
 \'egalement cette
 \'equation. Ceci implique que le rayon spectral de $B$ est strictement
-inf\'erieur \`a 1. La suite $(X^n)_{n\in\grandN}$ converge donc (et la m\'ethode
+inf\'erieur \`a 1. La suite $(X^n)_{n\in\mathbb{N}}$ converge donc (et la m\'ethode
 de Jacobi converge). Il existe donc une solution \`a l'\'equation  $CX=S$. Cette
 solution est unique\footnote{On peut le voir ``par l'absurde''.
 En effet, supposons qu'il existe deux solutions
@@ -534,12 +534,12 @@ $D^{-1}E$.  En cons\'equence, il ne peut exister qu'une seule solution
 
 
 %%%%%%%%%%%%%%%%
-\subsection{\bf Avec prise en compte des termes issus de
-$\displaystyle \frac {{\partial}\,\rho}{{\partial}\,t}$ dans  $\tens{EM}_{\,n}$}
+\subsection*{Avec prise en compte des termes issus de
+$\displaystyle \frac{{\partial}\,\rho}{{\partial}\,t}$ dans  $\tens{EM}_{\,n}$}
 %%%%%%%%%%%%%%%%
 \label{Base_Covofi_Avecdrhodt}
 %---------------
-\subsubsection{Introduction}
+\subsubsection*{Introduction}
 %---------------
 Pour montrer que la matrice $\tens{EM}_{\,n}$ est inversible, on va
 montrer qu'elle est \`a diagonale strictement dominante. Pour cela, on
@@ -563,7 +563,7 @@ $\tens{EM}_{\,n}$ et donc \`a son inversibilit\'e.
 
 
 %---------------
-\subsubsection{Contributions des termes diff\'erentiels d'ordre 0 lin\'eaires en
+\subsubsection*{Contributions des termes diff\'erentiels d'ordre 0 lin\'eaires en
 $\delta f^{\,n+1,k+1}$}
 %---------------
 \label{Base_Covofi_ContributionTermesdOrdre0}
@@ -590,7 +590,7 @@ $T_s^{\,imp}$. Il en résulte une contrainte sur la valeur du pas de temps.
 
 %
 %---------------
-\subsubsection{Contributions  des termes
+\subsubsection*{Contributions  des termes
 diff\'erentiels d'ordre 1 et des termes issus de la prise en compte de
 $\displaystyle \frac {{\partial}\,\rho}{{\partial}\,t}$}
 %---------------
@@ -704,7 +704,7 @@ diagonale {\bf simplement dominante}.
 
 
 %---------------
-\subsubsection{Contributions des termes diff\'erentiels d'ordre 2}
+\subsubsection*{Contributions des termes diff\'erentiels d'ordre 2}
 %---------------
 
 On va consid\'erer enfin les contributions des termes diff\'erentiels
@@ -754,7 +754,7 @@ que la matrice associ\'ee aux contributions des termes diff\'erentiels d'ordre 2
 
 
 %---------------
-\subsubsection{Conclusion}
+\subsubsection*{Conclusion}
 %---------------
 En travaillant sur
 des maillages non pathologiques (\`a transmittivit\'e positive, voir la note de
@@ -767,13 +767,13 @@ dominante}, et donc {\bf inversible} (de plus, la
 m\'ethode it\'erative de Jacobi converge).
 
 
-\subsection{\bf Sans prise en compte des termes issus de
+\subsection*{Sans prise en compte des termes issus de
 $\displaystyle \frac {{\partial}\,\rho}{{\partial}\,t}$ dans
 $\tens{EM}_{\,n}$}
 
 
 %---------------
-\subsubsection{Introduction}
+\subsubsection*{Introduction}
 %---------------
 
 Pour identifier les cas dans lesquels la matrice $\tens{EM}_{\,n}$ est
@@ -786,7 +786,7 @@ consid\'erations relatives aux contributions des termes diff\'erentiels d'ordre
 de $\displaystyle\frac {{\partial}\,\rho}{{\partial}\,t}$.
 
 %---------------
-\subsubsection{Contributions des termes diff\'erentiels d'ordre 1}
+\subsubsection*{Contributions des termes diff\'erentiels d'ordre 1}
 %---------------
 
 La contribution du terme de convection est la seule \`a prendre en compte. Elle
@@ -911,7 +911,7 @@ v\'erifi\'ee exactement.
 
 
 %---------------
-\subsubsection{Conclusion}
+\subsubsection*{Conclusion}
 %---------------
 En travaillant sur
 des maillages non pathologiques (\`a transmittivit\'e positive, voir la note de
@@ -932,11 +932,11 @@ probl\`eme potentiel en prenant en compte les termes issus de $\displaystyle \fr
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{ Annexe 2 : Remarques \`a propos du respect du principe du maximum discret}
+\section*{Annexe 2 : Remarques \`a propos du respect du principe du maximum discret}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %---------------
-\subsection{Introduction}
+\subsection*{Introduction}
 %---------------
 %
 Les consid\'erations expos\'ees ici sont relatives au fait que, en continu,
@@ -991,12 +991,12 @@ Les consid\'erations pr\'esentes m\'eriteraient d'\^etre approfondies.
 
 
 %==============
-\subsection{Cas g\'en\'eral}
+\subsection*{Cas g\'en\'eral}
 %==============
 
 
 %-------------
-\subsubsection {Discr\'etisation spatiale de $ \displaystyle \rho^n \,\frac {\,f^{n+1} -\,f^n}{\Delta t} -
+\subsubsection* {Discr\'etisation spatiale de $ \displaystyle \rho^n \,\frac {\,f^{n+1} -\,f^n}{\Delta t} -
 f^{n+1}\,\dive\,(\rho\,\underline{u})^n +
 \,\dive\,((\rho\,\underline{u})^n\,f^{n+1}) = 0$}
 %-------------
@@ -1050,15 +1050,15 @@ avec :
 \begin{equation}
 \left\{\begin{array}{ll}
 f_I^{\,n+1,0} = f_I^{\,n}\\
-\delta f_I^{\,n+1,k+1} = f_I^{\,n+1,k+1} - f_I^{\,n+1,k},{\text {$k\in \grandN$}}
+\delta f_I^{\,n+1,k+1} = f_I^{\,n+1,k+1} - f_I^{\,n+1,k},{\text {$k\in \mathbb{N}$}}
 \end{array}\right.
 \end{equation}
-et $(f^{\,n+1,k})_{k\in \grandN}$ suite convergeant vers  $f^{\,n+1}$, $n$
+et $(f^{\,n+1,k})_{k\in \mathbb{N}}$ suite convergeant vers  $f^{\,n+1}$, $n$
 entier donn\'e, solution de (\ref{Base_Covofi_Eq_Avec_Temp}) .\\
 
  \newpage
 %-------------
-\subsubsection {Discr\'etisation spatiale de
+\subsubsection* {Discr\'etisation spatiale de
  $ \displaystyle \rho^n \,\frac {\,f^{n+1} -\,f^n}{\Delta t} +\,\dive\,((\rho\,\underline{u})^n\,f^{n+1}) = 0$}
 %-------------
 
@@ -1090,14 +1090,14 @@ avec :
 \begin{equation}
 \left\{\begin{array}{ll}
 f_I^{\,n+1,0} = f_I^{\,n}\\
-\delta f_I^{\,n+1,k+1} = f_I^{\,n+1,k+1} - f_I^{\,n+1,k},{\text {$k\in \grandN$}}
+\delta f_I^{\,n+1,k+1} = f_I^{\,n+1,k+1} - f_I^{\,n+1,k},{\text {$k\in \mathbb{N}$}}
 \end{array}\right.
 \end{equation}
-et $(f^{\,n+1,k})_{k\in \grandN}$ suite convergeant vers  $f^{\,n+1}$, $n$
+et $(f^{\,n+1,k})_{k\in \mathbb{N}}$ suite convergeant vers  $f^{\,n+1}$, $n$
 entier donn\'e, solution de (\ref{Base_Covofi_Eq_Sans_Temp}) .\\
 
 %=============
-\subsection{Exemple pour le principe du maximum}
+\subsection*{Exemple pour le principe du maximum}
 %=============
 
 On va maintenant se placer en monodimensionnel, sur un maillage r\'egulier
@@ -1139,7 +1139,7 @@ soit, ici~:
 \end{equation}
 
 %-------------
-\subsubsection{Prise en compte de la contribution de
+\subsubsection*{Prise en compte de la contribution de
 $\displaystyle\frac{\partial \rho}{\partial t}$ dans la matrice}
 %-------------
 \label{Base_Covofi_PpmaxAvecDrhoDt}
@@ -1186,7 +1186,7 @@ dont on ne s'est pas servi ici.
 
 
 %-------------
-\subsubsection{Sans la contribution de
+\subsubsection*{Sans la contribution de
 $\displaystyle\frac{\partial \rho}{\partial t}$ dans la matrice}
 %-------------
 
@@ -1263,7 +1263,7 @@ u)^n_{\,12}\,.\,S_{\,12}\Delta t}{\rho_1|\Omega_1|}$ exc\`ede l'inverse de la
 pr\'ecision relative locale $\varepsilon$.
 
 %=============
-\subsection{Conclusion}
+\subsection*{Conclusion}
 %=============
 
 Prendre en compte la contribution de

@@ -25,7 +25,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -83,16 +83,16 @@ Riemann pour d\'eterminer une pression au bord.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %=================================
-\subsection{Introduction}
+\subsection*{Introduction}
 %=================================
 
 %---------------------------------
-\subsubsection{Objectif}
+\subsubsection*{Objectif}
 %---------------------------------
 
 On r\'esume ici les diff\'erentes conditions aux limites utilis\'ees pour l'algorithme
@@ -124,7 +124,7 @@ les diff\'erentes variables et les diff\'erentes \'etapes de calcul.
 
 
 %---------------------------------
-\subsubsection{Parois}
+\subsubsection*{Parois}
 %---------------------------------
 
 {\bf Pression} : on doit disposer d'une condition pour le calcul du gradient
@@ -187,7 +187,7 @@ pris nul. De ce fait, les flux convectifs seront nuls quelle que soit les valeur
 de bord impos\'ees pour les diff\'erentes variables transport\'ees.
 
 %---------------------------------
-\subsubsection{Sym\'etrie}
+\subsubsection*{Sym\'etrie}
 %---------------------------------
 
 Les conditions appliqu\'ees sont les conditions classiques de l'algorithme
@@ -201,7 +201,7 @@ probl\`emes potentiels dans les configurations 2D).
 
 
 %---------------------------------
-\subsubsection{Entr\'ees et sorties}
+\subsubsection*{Entr\'ees et sorties}
 %---------------------------------
 
 On obtient, par r\'esolution d'un probl\`eme de Riemann au bord, compl\'et\'e par
@@ -245,12 +245,12 @@ de sortie de type 9 ou 10 est couvert par cette approche).
 
 
 %=================================
-\subsection{Probl\`eme de Riemann au bord}
+\subsection*{Probl\`eme de Riemann au bord}
 \label{Cfbl_Cfxtcl_section_pb_riemann_cfener}
 %=================================
 
 %---------------------------------
-\subsubsection{Introduction}
+\subsubsection*{Introduction}
 %---------------------------------
 
 On cherche \`a obtenir un \'etat au bord,
@@ -358,7 +358,7 @@ thermodynamique pr\'evue est celle des gaz parfaits).
 
 
 %---------------------------------
-\subsubsection{En paroi, pour la condition de pression (sans effet de gravit\'e)}
+\subsubsection*{En paroi, pour la condition de pression (sans effet de gravit\'e)}
 %---------------------------------
 
 Pour les faces de paroi, on d\'efinit \`a l'ext\'erieur du domaine
@@ -547,7 +547,7 @@ la condition de pression d\'etermin\'ee ci-dessus est effectivement
 utilis\'ee (pour le calcul du gradient sans effet de gravit\'e).
 
 %---------------------------------
-\subsubsection{En sortie}
+\subsubsection*{En sortie}
 %---------------------------------
 
 Il existe deux cas de traitement des conditions en sortie,
@@ -722,7 +722,7 @@ dans le flux de masse.
 
 
 %---------------------------------
-\subsubsection{En entr\'ee}
+\subsubsection*{En entr\'ee}
 %---------------------------------
 
 L'utilisateur impose les valeurs qu'il souhaite pour les variables
@@ -934,7 +934,7 @@ $$
 
 
 %=================================
-\subsection{Condition de pression en paroi avec effets de gravit\'e}
+\subsection*{Condition de pression en paroi avec effets de gravit\'e}
 %=================================
 
 Le probl\`eme de Riemann consid\'er\'e pr\'ec\'edemment
@@ -997,12 +997,12 @@ On voit aussi que la diff\'erence entre la pression calcul\'ee au centre
 de la cellule et celle calcul\'ee au bord est de l'ordre de~$3\%$.
 
 %=================================
-\subsection{Sch\'ema de Rusanov pour le calcul de flux convectifs au bord}
+\subsection*{Sch\'ema de Rusanov pour le calcul de flux convectifs au bord}
 %=================================
 
 
 %---------------------------------
-\subsubsection{Introduction}
+\subsubsection*{Introduction}
 %---------------------------------
 
 Le sch\'ema de Rusanov est utilis\'e pour certains types de conditions aux
@@ -1024,7 +1024,7 @@ l'\'etat amont et le d\'ecentrement du sch\'ema de Rusanov n'apporterait donc
 rien.
 
 %---------------------------------
-\subsubsection{Principe}
+\subsubsection*{Principe}
 %---------------------------------
 
 Pour le calcul du flux d\'ecentr\'e de Rusanov, on consid\`ere
@@ -1080,7 +1080,7 @@ qu'il r\'esulte de la r\'esolution du probl\`eme de Riemann au bord
 pr\'esent\'ee plus haut pour chaque type de fronti\`ere consid\'er\'e).
 
 %---------------------------------
-\subsubsection{Param\`etre de d\'ecentrement $\rho_{rus\,{b}_{ik}}$}
+\subsubsection*{Param\`etre de d\'ecentrement $\rho_{rus\,{b}_{ik}}$}
 %---------------------------------
 
 Pour chaque face de bord, le scalaire $\rho_{rus\,{b}_{ik}}$ est la
@@ -1139,7 +1139,7 @@ $|u|+c$ et le param\`etre de d\'ecentrement s'en d\'eduit~:
 
 
 %---------------------------------
-\subsubsection{Expression des flux convectifs}
+\subsubsection*{Expression des flux convectifs}
 %---------------------------------
 
 Les flux convectifs calcul\'es par le sch\'ema de Rusanov
@@ -1191,12 +1191,12 @@ avec la valeur pr\'ec\'edente de $\rho_{rus\,{b}_{ik}}$, on a~:
 
 
 %=================================
-\subsection{Conditions aux limites pour le flux diffusif d'\'energie}
+\subsection*{Conditions aux limites pour le flux diffusif d'\'energie}
 \label{Cfbl_Cfxtcl_section_cl_flux_diffusif_energie_cfener}
 %=================================
 
 %---------------------------------
-\subsubsection{Rappel}
+\subsubsection*{Rappel}
 %---------------------------------
 
 Pour le flux de diffusion d'\'energie, les conditions aux limites sont
@@ -1276,7 +1276,7 @@ avec $A_b$ et $B_b$ d\'efinis selon le type des conditions~:
 \end{equation}
 
 %---------------------------------
-\subsubsection{Flux diffusif d'\'energie}
+\subsubsection*{Flux diffusif d'\'energie}
 %---------------------------------
 
 Dans le module compressible, on r\'esout une \'equation sur l'\'energie, qui s'\'ecrit, si
@@ -1322,7 +1322,7 @@ r\'esolue et peut \^etre fix\'e par l'utilisateur.
 
 
 %---------------------------------
-\subsubsection{Condition de Neumann}
+\subsubsection*{Condition de Neumann}
 %---------------------------------
 
 La conservation du flux s'\'ecrit~:
@@ -1342,7 +1342,7 @@ On a donc dans ce cas~:
 
 
 %---------------------------------
-\subsubsection{Condition de Dirichlet}
+\subsubsection*{Condition de Dirichlet}
 %---------------------------------
 
 On suppose que la condition de Dirichlet porte sur la temp\'erature $T_{b,ext}$.
@@ -1416,12 +1416,12 @@ la majorit\'e des cas, car il est habituellement pris infini).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Mise en \oe uvre}
+\section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %=================================
-\subsection{Introduction}
+\subsection*{Introduction}
 %=================================
 
 Les conditions aux limites sont impos\'ees par une suite de sous-programmes,
@@ -1482,7 +1482,7 @@ sur la construction des seconds membres de l'\'equation de la quantit\'e
 de mouvement et de l'\'equation de l'\'energie (\fort{cfqdmv} et \fort{cfener}).
 
 %=================================
-\subsection{Flux de Rusanov pour le calcul des flux convectifs en entr\'ee et sortie}
+\subsection*{Flux de Rusanov pour le calcul des flux convectifs en entr\'ee et sortie}
 %=================================
 
 Le sch\'ema de Rusanov est utilis\'e pour calculer des flux convectifs de bord
@@ -1576,11 +1576,11 @@ un flux convectif avec le sch\'ema de Rusanov.
 
 
 %=================================
-\subsection{Flux diffusif d'\'energie}
+\subsection*{Flux diffusif d'\'energie}
 %=================================
 
 %---------------------------------
-\subsubsection{Introduction}
+\subsubsection*{Introduction}
 %---------------------------------
 
 Une condition doit \^etre fournie sur toutes les fronti\`eres pour le calcul du
@@ -1602,7 +1602,7 @@ impos\'e doivent \^etre trait\'ees avec plus d'attention, en particulier
 lorsqu'une couche limite turbulente est pr\'esente.
 
 %---------------------------------
-\subsubsection{Coexistence de deux conditions de bord}
+\subsubsection*{Coexistence de deux conditions de bord}
 %---------------------------------
 
 Comme indiqu\'e dans la partie "discr\'etisation",
@@ -1635,7 +1635,7 @@ disposer pour l'\'energie de deux couples de coefficients
 dont l'une est utilis\'ee pour le calcul du flux diffusif sp\'ecifiquement.
 
 %---------------------------------
-\subsubsection{Calcul des \var{COEFA} et \var{COEFB} pour les faces de paroi
+\subsubsection*{Calcul des \var{COEFA} et \var{COEFB} pour les faces de paroi
 \`a temp\'erature impos\'ee}
 %---------------------------------
 
@@ -1660,7 +1660,7 @@ diffusif).
 
 
 %---------------------------------
-\subsubsection{Calcul des \var{COEFA} et \var{COEFB} pour les faces de paroi
+\subsubsection*{Calcul des \var{COEFA} et \var{COEFB} pour les faces de paroi
 \`a flux thermique impos\'e}
 %---------------------------------
 
@@ -1683,7 +1683,7 @@ l'indicateur \var{ICOEFF} qui renvoie aux coefficients d\'edi\'es au flux
 diffusif).
 
 %---------------------------------
-\subsubsection{Gradient de l'\'energie en paroi \`a temp\'erature ou \`a flux thermique impos\'e}
+\subsubsection*{Gradient de l'\'energie en paroi \`a temp\'erature ou \`a flux thermique impos\'e}
 %---------------------------------
 
 Dans les deux cas (paroi \`a temp\'erature ou \`a flux thermique impos\'e),
@@ -1700,7 +1700,7 @@ Pour la temp\'erature, il s'agit d'une pr\'ecaution, au cas
 o\`u l'utilisateur aurait besoin d'en calculer le gradient.
 
 %---------------------------------
-\subsubsection{Autres fronti\`eres que les parois \`a temp\'erature ou \`a flux thermique impos\'e}
+\subsubsection*{Autres fronti\`eres que les parois \`a temp\'erature ou \`a flux thermique impos\'e}
 %---------------------------------
 
 Pour les fronti\`eres qui ne sont pas des parois \`a temp\'erature ou
@@ -1725,7 +1725,7 @@ dans
 jeux de conditions aux limites sont identiques pour les faces de sym\'etrie.
 
 %---------------------------------
-\subsubsection{Impact dans \fort{cfener}}
+\subsubsection*{Impact dans \fort{cfener}}
 %---------------------------------
 
 Lors de la construction des seconds membres, dans \fort{cfener}, on utilise les
@@ -1751,7 +1751,7 @@ lors des reconstructions sur maillage non orthogonal.
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Points \`a traiter}
+\section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{Cfbl_Cfxtcl_prg_a_traiter}%
