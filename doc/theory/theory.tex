@@ -67,24 +67,27 @@
 \addcontentsline{toc}{chapter}{\theprog - #1 routine}
 }
 %
+\renewcommand{\arraystretch}{2.0}
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INFO POUR PAGES DE GARDES
 \titreCS{\CS \verscs Theory Guide}
 \docassociesCS{}
-\resumeCS{Ce document constitue la documentation th\'eorique et
-informatique des parties centrales du noyau de \CS~\verscs.
-La documentation est attach\'ee \`a la version du code
-correspondante pour favoriser les mises \`a jour.}
+\resumeCS{This document is the theory guide of the kernel of
+ \CS~\verscs.
+This documentation is attached to the corresponding version of 
+the code in order to facilitate updates.}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+% For the List of symbols
+%
+\makeglossary
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEBUT DU DOCUMENT
 \begin{document}
 
 \def\contentsname{\textbf{\normalsize Table of contents}\pdfbookmark[1]{Contents}{contents}}
-\def\indexname{Index des variables principales et des mots cl\'es}
 
 \pdfbookmark[1]{Pages de garde}{pdg}
 \large
@@ -100,20 +103,20 @@ correspondante pour favoriser les mises \`a jour.}
 \end{singlespace}\end{center}
 
 
-% TODO nomenclature
-%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CORPS DU DOCUMENT
 %
 \passepage
 
+\printglossary
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% New doc Nov 2011
 %
 \chapter{Introduction}
+\include{introd}
 \section{Backgrounds and history}
 Work in progress.
-\section{Nomenclature}
+\section{Notations}
 Work in progress.
 
 \part{Generic solver capabilities}
@@ -125,44 +128,29 @@ Work in progress.
 
 \chapter{Governing equations}
 Work in progress.
+\include{goveqn}
+
 \chapter{Time stepping}
 Work in progress.
-\section{Pressure-based velocity-pressure solver}
-Work in progress.
-
-\subsection{Segregated solver}
-Work in progress.
-\subsection{Coupled solver}
-Work in progress.
-\section{steady algorithm}
-Work in progress.
-\section{Unsteady algorithm}
-Work in progress.
+\include{timstp}
 
 \chapter{Space discretization}
 Work in progress.
-\section{Introduction}
-Work in progress.
-\section{Gradient calculation}
-Work in progress.
-\subsection{Standard method}
-Work in progress.
-\subsection{Least-square method}
-Work in progress.
+\include{spadis}
 
 \chapter{Source terms}
 Work in progress.
 \section{Head losses}
-Work in progress.
 \section{Mass source terms}
-Work in progress.
+\section{Coriolis source terms}
+
 
 \chapter{Boundary conditions}
 Work in progress.
 
-\chapter{Linear algebrae}
+\chapter{Algebrae}
 Work in progress.
-
+\include{algebr}
 
 \part{Advanced modelling}
 \setcounter{chapter}{0}
@@ -182,7 +170,8 @@ Work in progress.
 \subsection{WALE model}
 
 \chapter{Compressible flows}
-\section{Density-based solver}
+Work in progress.
+\include{comprs}
 
 \chapter{Combustion}
 Work in progress.
@@ -211,9 +200,6 @@ Work in progress.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \appendix
-\setcounter{section}{0}
-\setcounter{equation}{0}
-\setcounter{figure}{0}
 
 \part{Appendices}
 \setcounter{chapter}{0}
@@ -221,7 +207,7 @@ Work in progress.
 \setcounter{equation}{0}
 \setcounter{figure}{0}
 \stepcounter{prog}
-\include{introd}
+\include{apintr}
 
 \part{Base module}
 \include{bilsc2}

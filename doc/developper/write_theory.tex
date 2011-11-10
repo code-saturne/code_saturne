@@ -103,6 +103,8 @@ in Table ~\ref{tab:macros_soft} and ~\ref{tab:macros_math}.
 \verb1\degresC1   &   \degresC \\
 \verb1$\Max$1    &  $ \Max     $\\ 
 \verb1$\Min$1    &  $ \Min     $\\
+\verb1$\trace$1    &  $ \trace     $\\
+\verb1$\transpose{M}$1    &  $ \transpose{M} $\\
 \verb1$\Neigh{i}$1    &  $ \Neigh{i}     $\\
 \verb1$\Bound{i}$1    &  $ \Bound{i}     $
 \end{tabular}
@@ -118,6 +120,10 @@ Here are some usefull tricks:
 \verb1\textcolor{orangededf}{text}1.
 \item Use label and references, and dissociate equations with sections and appendices and figures and tables using \verb1\label{eq:label}1, \verb1\label{sec:label}1, \verb1\label{ap:label}1,
 \verb1\label{fig:label}1 and \verb1\label{tab:label}1 prefixes.
+\item Use the \verb1\emph{}1 mode for acronyms (\emph{e.g.} \emph{EDF}).
+\item Use the \verb1\emph{}1 mode for Latin words(\emph{e.g.}, \emph{i.e}, \emph{a priori}, \emph{etc.}).
+\item Use \verb1\left(1 instead of \verb1(1 and \verb1\right)1 instead of \verb1)1 in math mode.
+\item DO NOT put a space before the symbol ``:''. In English the rule is no space, never.
 \item Use the enumerate environment:
 \begin{verbatim}
 \begin{enumerate}[ label=\roman{*}/, ref=(\roman{*})]

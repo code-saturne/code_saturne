@@ -62,13 +62,13 @@ of $\mathcal{B_{\mathcal{\beta}}}$ can be written as a sum of the
 numerical fluxes $F_{\,ij}$ calculated at the faces of the internal
 cells, and the numerical fluxes $F_{\,b_{ik}}$ calculated at the
 boundary faces of the computational domain $\Omega$. Let's take
-$Vois(i)$ the set of the centres of the neighbouring cells of
+$\Neigh{i}$ the set of the centres of the neighbouring cells of
 ${\Omega_i}$ and $\gamma_b(i)$ the set of the centres of the boundary
 faces of ${\Omega_i}$ (if they exist). Thus we can write
 
 \begin{equation}\notag
 \int_{\Omega_i}{\dive( (\rho \vect{u})^n  a )\, d\Omega} =
-\sum_{j\in Vois(i)}{F_{\,ij}((\rho \vect{u})^n, a)}
+\sum_{j\in \Neigh{i}}{F_{\,ij}((\rho \vect{u})^n, a)}
 +\sum_{k\in {\gamma_b(i)}} {F_{\,{b}_{ik}}((\rho \vect{u})^n,a)}
 \end{equation}
 
@@ -162,7 +162,7 @@ Similarly, the diffusive part writes :
 
 \begin{equation}\notag
 \int_{\Omega_i}{\dive(\,\beta\ \grad a)\  d\Omega} =
-\sum_{j\in Vois(i)}{D_{\,ij}(\,\beta, a)}
+\sum_{j\in \Neigh{i}}{D_{\,ij}(\,\beta, a)}
 +\sum_{k\in {\gamma_b(i)}} {D_{\,{b}_{ik}}(\beta, a)}
 \end{equation}
 with:
@@ -230,7 +230,7 @@ and $a^{\,amont}_{\,b_{ik}}$ as:
 \begin{equation}\label{Base_Bilsc2_Eq_grad_decentre}
 \begin{array}{ll}
 |\Omega_i|\,\vect{G}^{\,upwind}_{\,c,i}&\overset{\text{\it\small def}}{=}
-\sum\limits_{j\in Vois(i)}a^{\,upwind}_{\,ij}\,{\vect S_{\,ij}} + \sum\limits_{k\in {\gamma_b(i)}}a^{\,upwind}_{\,b_{ik}}\,\vect{S}_{\,{b}_{ik}} \\
+\sum\limits_{j\in \Neigh{i}}a^{\,upwind}_{\,ij}\,{\vect S_{\,ij}} + \sum\limits_{k\in {\gamma_b(i)}}a^{\,upwind}_{\,b_{ik}}\,\vect{S}_{\,{b}_{ik}} \\
 \end{array}
 \end{equation}
 
@@ -246,7 +246,7 @@ a_{JF}= a_J + \vect {JF}\,.\,(\grad a)_{\,J} \\
 
 Depending on the sign $s^n_{ij}$ of the mass flux $(\rho \vect{u})_{\,ij}^n.\ \vect{S}_{\,ij}$,
 we give $a_{IF}$ or $a_{JF}$ the value $a^{\,upwind}_{\,ij}$ of the expression
- $\sum\limits_{j\in Vois(i)}a^{\,upwind}_{\,ij}\,{\vect S_{\,ij}}$.\\
+ $\sum\limits_{j\in \Neigh{i}}a^{\,upwind}_{\,ij}\,{\vect S_{\,ij}}$.\\
 \begin{equation}\notag
 a^{\,upwind}_{\,ij}=\left\lbrace\begin{array}{l}
 a_I +\vect{IF}\,.\,(\grad a)_{\,I}
@@ -295,9 +295,9 @@ on an internal face $\var{IFAC}$ ($\var{FLUMAB(IFAC)}$ for a boundary face \var{
 \hspace*{1cm}{\tiny$\blacksquare$}\, for an internal face $ij$ (\var{IFAC})\\
 We calculate :
 \begin{equation}\notag
-\sum_{j\in Vois(i)}{F_{\,ij}((\rho \vect{u})^n, a)}
-- \sum_{j\in Vois(i)}{D_{\,ij}(\,\beta, a)}\\
-= \sum_{j\in Vois(i)}\displaystyle\left({ \left[{(\rho \vect{u})_{\,ij}^n} \text{.}\,
+\sum_{j\in \Neigh{i}}{F_{\,ij}((\rho \vect{u})^n, a)}
+- \sum_{j\in \Neigh{i}}{D_{\,ij}(\,\beta, a)}\\
+= \sum_{j\in \Neigh{i}}\displaystyle\left({ \left[{(\rho \vect{u})_{\,ij}^n} \text{.}\,
 \vect{S}_{\,ij}\right]\ a_{\,f,ij}
 - \beta_{\,ij}\frac{a_{\,J'}- a_{\,I'}}{\overline{I'J'}} S_{\,ij}}\right)
 \end{equation}
@@ -426,17 +426,17 @@ $ s^n_{ij} = sgn \left[(\rho\vect{u})_{\,ij}^n\,.\,\vect{S}_{\,ij}\right]$ :\\
 \begin{equation}\notag
 \begin{array}{lll}
 |\Omega_i|\,\vect{G}^{\,upwind}_{\,c,i}&=
-\sum\limits_{j\in Vois(i)}a^{\,upwind}_{\,ij}\,{\vect S_{\,ij}} \\
+\sum\limits_{j\in \Neigh{i}}a^{\,upwind}_{\,ij}\,{\vect S_{\,ij}} \\
 &=\sum\limits_{j\in
-Vois(i)}\left[\displaystyle\frac{1}{2}(\ s^n_{ij} + 1\ )\right.&a_{IF} +
+\Neigh{i}}\left[\displaystyle\frac{1}{2}(\ s^n_{ij} + 1\ )\right.&a_{IF} +
 \left.\displaystyle\frac{1}{2}(\ s^n_{ij} - 1\ )\,a_{JF}\right]\ \vect{S}_{\,ij}\\
 &=\sum\limits_{j\in
-Vois(i)}\left[\displaystyle\frac{1}{2}(\ s^n_{ij} + 1\ )\right.&(\ a_I + \vect {IF}\,.\,(\grad a)_{\,I}\ ) \\
+\Neigh{i}}\left[\displaystyle\frac{1}{2}(\ s^n_{ij} + 1\ )\right.&(\ a_I + \vect {IF}\,.\,(\grad a)_{\,I}\ ) \\
 & &
 +\displaystyle\frac{1}{2}\ \left.(\ s^n_{ij} - 1\ )\,(\ a_I + \vect{JF}\,.\,(\grad a)_{\,J}\ )\right]\ \vect{S}_{\,ij}
 \end{array}
 \end{equation}\\
-On a cell $\Omega_i$ with neighbours $(\Omega_j)_{j\in Vois(i)}$, the classic slope test 
+On a cell $\Omega_i$ with neighbours $(\Omega_j)_{j\in \Neigh{i}}$, the classic slope test 
 consists in locating where a variable $a$ is non-monotonic by studying the sign of
 the scalar product of the cell gradients of $\vect{G}_{\,c,i}$
 and $\vect{G}_{\,c,j}$. If this product is negative, we switch to an upwind scheme, if it is

@@ -29,6 +29,8 @@ TEXMAIN = theory.tex
 # Other LaTex document
 
 TEXOTHERS = \
+algebr.tex \
+apintr.tex \
 bilsc2.tex \
 cfbase.tex \
 cfener.tex \
@@ -42,9 +44,11 @@ codits.tex \
 combbase.tex \
 combgaz.tex \
 combglb.tex \
+comprs.tex \
 condli.tex \
 covofi.tex \
 elbase.tex \
+goveqn.tex \
 gradmc.tex \
 gradrc.tex \
 inimas.tex \
@@ -56,7 +60,9 @@ navsto.tex \
 preduv.tex \
 recvmc.tex \
 resolp.tex \
+spadis.tex \
 thermo.tex \
+timstp.tex \
 summary.tex \
 turbke.tex \
 turrij.tex \
@@ -85,11 +91,14 @@ BSTINPUTS = $(top_srcdir)/doc/style/:
 
 PDFLATEX = export TEXINPUTS="$(TEXINPUTS)"; pdflatex
 BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
+INDEX = makeindex
 
 # Generated documents (pdf and index files)
 
 PDFMAIN = $(TEXMAIN:.tex=.pdf)
 BIBMAIN = $(TEXMAIN:.tex=.aux)
+GLOSSMAIN = $(TEXMAIN:.tex=.glo)
+INDEXMAIN = $(TEXMAIN:.tex=.gls)
 
 # One redefines here the standard pdf targets of automake
 # so that they handle generation from LaTeX documents.
@@ -98,11 +107,13 @@ pdf-local:
 	@$(PDFLATEX) $(TEXMAIN)
 	@$(PDFLATEX) $(TEXMAIN)
 	@$(BIBTEX) $(BIBMAIN)
+	@$(INDEX) $(GLOSSMAIN) -s nomencl.ist -o $(INDEXMAIN)
 	@$(PDFLATEX) $(TEXMAIN)
 
 clean-local:
 	-rm -f *.out *.log *.aux *.toc *.lof *.lot \
-	 *.ilg *.idx *.bbl *.blg *.ind *.sym *.nsy 
+	 *.ilg *.idx *.bbl *.blg *.ind *.sym *.nsy \
+	 *.glo *.gls
 
 install-pdf-local:
 	$(MKDIR_P) "$(DESTDIR)$(pdfdir)"
