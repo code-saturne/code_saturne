@@ -42,9 +42,9 @@ SUBDIRS = graphics .
 
 # Environment variables for LaTeX
 
-TEXINPUTS = $(top_srcdir)/doc/style/:$(top_builddir)/doc/style/:$(srcdir)//:$(builddir)//:
-BIBINPUTS = $(top_srcdir)/doc/style/:
-BSTINPUTS = $(top_srcdir)/doc/style/:
+TEXINPUTS = $(top_srcdir)/docs/style/:$(top_builddir)/docs/style/:$(srcdir)//:$(builddir)//:
+BIBINPUTS = $(top_srcdir)/docs/style/:
+BSTINPUTS = $(top_srcdir)/docs/style/:
 
 # LaTeX commands
 

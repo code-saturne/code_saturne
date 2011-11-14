@@ -27,15 +27,15 @@ mainpage.h images/icon.png examples/bft_error_example.c
 
 doxygen-pre:
 	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
-	doxygen $(top_srcdir)/doc/doxygen/Doxyfile-pre
+	doxygen $(top_srcdir)/docs/doxygen/Doxyfile-pre
 
 doxygen-src:
 	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
-	doxygen $(top_srcdir)/doc/doxygen/Doxyfile-src
+	doxygen $(top_srcdir)/docs/doxygen/Doxyfile-src
 
 doxygen-ui:
 	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
-	doxygen $(top_srcdir)/doc/doxygen/Doxyfile-ui
+	doxygen $(top_srcdir)/docs/doxygen/Doxyfile-ui
 
 doxygen: doxygen-pre doxygen-src doxygen-ui
 
