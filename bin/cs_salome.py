@@ -91,8 +91,7 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH;
                       'prefix': pkg.prefix,
                       'pythondir': pkg.pythondir,
                       'pkgpythondir': pkg.pkgpythondir,
-                      'runsalome': os.path.join(cfg.salome_kernel,
-                                                'bin', 'salome', 'runSalome'),
+                      'runsalome': cfg.salome_run,
                       'modules': default_modules}
 
     process_cmd_line(argv, pkg)
