@@ -24,21 +24,17 @@
 
 # Main LaTeX document
 
-TEXMAIN = user.tex
+TEXMAIN = howto.tex
 
 # Other LaTex document
 
-TEXOTHERS = \
-biblio.tex \
-saturne1.tex \
-saturne2.tex \
-summary.tex
+TEXOTHERS =
 
-TEXINPUTFILES =
+TEXINPUTFILES = input
 
 # Distributed files
 
-EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES) input
+EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
 
 # Subdirectories (order is important)
 
@@ -46,29 +42,24 @@ SUBDIRS = graphics .
 
 # Environment variables for LaTeX
 
-TEXINPUTS = $(top_srcdir)/doc/style/:$(top_srcdir)/extras/examples/:$(top_builddir)/doc/style/:$(srcdir)//:$(builddir)//:
+TEXINPUTS = $(top_srcdir)/doc/style/:$(top_builddir)/doc/style/:$(srcdir)//:$(builddir)//:
 BIBINPUTS = $(top_srcdir)/doc/style/:
 BSTINPUTS = $(top_srcdir)/doc/style/:
-INDEXSTYLE = $(top_srcdir)/doc/style/:
 
 # LaTeX commands
 
 PDFLATEX = export TEXINPUTS="$(TEXINPUTS)"; pdflatex
 BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
-MAKEINDEX = export INDEXSTYLE="$(INDEXSTYLE)"; makeindex
 
 # Generated documents (pdf and index files)
 
 PDFMAIN = $(TEXMAIN:.tex=.pdf)
-IDXMAIN = $(TEXMAIN:.tex=.idx)
 
 # One redefines here the standard pdf targets of automake
 # so that they handle generation from LaTeX documents.
 
 pdf-local:
 	@$(PDFLATEX) $(TEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(MAKEINDEX) $(IDXMAIN) -s csindex.sty
 	@$(PDFLATEX) $(TEXMAIN)
 	@$(PDFLATEX) $(TEXMAIN)
 
@@ -86,13 +77,12 @@ distclean-local: clean-local
 # Generate the documentation at dist stage so that the user do not need
 # to have LaTeX (and mandatory tools).
 
-dist-hook: pdf
-	$(INSTALL_DATA) $(PDFMAIN) $(distdir)
+#dist-hook: pdf
+#	$(INSTALL_DATA) $(PDFMAIN) $(distdir)
 
 # Install the documentation if available
 
 install-data-local:
-	@$(NORMAL_INSTALL)
 	if test -f $(srcdir)/$(PDFMAIN); then \
 	  $(MKDIR_P) "$(DESTDIR)$(pdfdir)"; \
 	  $(INSTALL_DATA) $(srcdir)/$(PDFMAIN) $(DESTDIR)$(pdfdir); \

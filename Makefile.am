@@ -45,7 +45,7 @@ if HAVE_SALOME_KERNEL
 SALOME = salome
 endif
 
-SUBDIRS = $(PLE) $(PREPRO) src $(LIBSYRCS) $(SALOME) po docs $(GUI) tests
+SUBDIRS = $(PLE) $(PREPRO) src $(LIBSYRCS) $(SALOME) po doc $(GUI) tests
 
 AUX_DIST = \
 m4/codeset.m4 \
@@ -342,7 +342,7 @@ extras/batch/batch.SLURM
 # Install man pages
 
 dist_man_MANS = \
-docs/manpages/code_saturne.1
+doc/manpages/code_saturne.1
 
 # Install bash completion script
 
@@ -364,19 +364,6 @@ extras/salome/fsi_yacs_scheme.xml
 nodist_salome_DATA = \
 extras/salome/fsi_appli_config.xml \
 extras/salome/fsi.export
-
-# Update gettext dictionnaries
-
-update-po:
-	cd po && $(MAKE) $(AM_MAKEFLAGS) update-po
-
-# Generate and install documentation
-
-doc:
-	cd docs && $(MAKE) $(AM_MAKEFLAGS) doc
-
-install-doc:
-	cd docs && $(MAKE) $(AM_MAKEFLAGS) install-doc
 
 # Generate ChangeLog
 

@@ -21,7 +21,7 @@
 %-------------------------------------------------------------------------------
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% csdoc class wich is done for reports
+% Short doc CS class corresponding to article
 \documentclass[a4paper,10pt,twoside]{csshortdoc}
 % MACROS SUPPLEMENTAIRES
 \usepackage{csmacros}
@@ -32,7 +32,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PACKAGES ET COMMANDES POUR LE DOCUMENTS PDF ET LES HYPERLIENS
 \hypersetup{%
-  pdftitle = {CodeSaturne practical user's guide},
+  pdftitle = {CodeSaturne howto's},
   pdfauthor = {MFEE},
   pdfpagemode = UseOutlines
 }
@@ -42,27 +42,19 @@
 % pdfpagemode = UseThumbs
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% REALISATION D'UN INDEX
-\usepackage{makeidx}
-\makeindex
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PACKAGES ALLTT D'ENVIRONNEMENT VERBATIM AMELIORE
-\usepackage{alltt}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INFO POUR PAGES DE GARDES
-\titreCS{\CS version~\verscs practical user's guide}
+\titreCS{\CS version~\verscs howto-'s}
+
 \docassociesCS{}
-\resumeCS{This document presents all the necessary elements to run a calculation
-with \CS version \verscs. It then lists all the variables of the code
-which may be useful for more advanced utilisation.
-The user subroutines of all the modules within the code are also documented.
-Eventually, for each key word and user-modifiable parameter in the code,
-their definition, allowed values, default values and conditions for use are given.
-These key words and parameters are grouped under headings
-based on their function. An alphabetical index list is also given at the end of
-the document for easier consultation.}
+\resumeCS{This document presents all a list of quick How-To's for
+\CS version~\verscs.
+
+\begin{center}
+\large{WORK IN PROGRESS}
+\end{center}
+}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEBUT DU DOCUMENT
@@ -70,14 +62,11 @@ the document for easier consultation.}
 
 \def\contentsname{\textbf{\normalsize TABLE OF CONTENTS}\pdfbookmark[1]{Table of
 contents}{contents}}
-\def\indexname{Index of the main variables and keywords}
 
 \pdfbookmark[1]{Flyleaf}{pdg}
 \large
 \makepdgCS
 \normalsize
-
-\input summary
 
 \passepage
 
@@ -85,27 +74,7 @@ contents}{contents}}
 \tableofcontents
 \end{singlespace}\end{center}
 %
-\lstlistoflistings
 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% CORPS DU DOCUMENT
-%
-\passepage
-\include{saturne1}
-\include{saturne2}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% REFERENCES
-\include{biblio}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ANNEXES
-%\passepage
-\phantomsection\addcontentsline{toc}{section}{\indexname}
-\printindex
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% FIN DU DOCUMENT
 \end{document}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

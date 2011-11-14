@@ -22,21 +22,15 @@
 
 #-------------------------------------------------------------------------------
 
-if HAVE_LATEX
-LATEX_SUBDIRS = refcard theory tutorial user install developper autovnv
-endif
-
-if HAVE_DOXYGEN
-DOXYGEN_SUBDIRS = doxygen
-endif
-
-if HAVE_SPHINX
 if HAVE_SALOME_KERNEL
-SPHINX_SUBDIRS = salome
+if HAVE_SPHINX
+SALOME = salome
 endif
 endif
 
-SUBDIRS = $(LATEX_SUBDIRS) $(DOXYGEN_SUBDIRS) $(SPHINX_SUBDIRS)
+SUBDIRS = refcard theory tutorial user install developper doxygen autovnv $(SALOME)
+
+DIST_SUBDIRS = $(SUBDIRS) howto salome
 
 EXTRA_DIST = \
 style/csdoc.sty \
@@ -45,8 +39,3 @@ style/csmacros.sty \
 style/csvers.tex.in \
 style/logocs.png \
 style/logoedf.png
-
-# Macro-rules so as to compile/install both PDF and HTML outputs
-
-doc: pdf html
-install-doc: install-pdf install-html
