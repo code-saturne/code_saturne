@@ -22,22 +22,42 @@
 
 #-------------------------------------------------------------------------------
 
-EXTRA_DIST = Doxyfile mainpage.h images/icon.png examples/bft_error_example.c
+EXTRA_DIST = Doxyfile-pre Doxyfile-src Doxyfile-ui \
+mainpage.h images/icon.png examples/bft_error_example.c
 
-doxygen:
-	srcdir="$(top_srcdir)" builddir="$(top_builddir)" doxygen $(top_srcdir)/doc/doxygen/Doxyfile
+doxygen-pre:
+	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
+	doxygen $(top_srcdir)/doc/doxygen/Doxyfile-pre
+
+doxygen-src:
+	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
+	doxygen $(top_srcdir)/doc/doxygen/Doxyfile-src
+
+doxygen-ui:
+	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
+	doxygen $(top_srcdir)/doc/doxygen/Doxyfile-ui
+
+doxygen: doxygen-pre doxygen-src doxygen-ui
 
 html-local: doxygen
 
 clean-local:
-	-rm -rf html latex man index.bt
+	for d in pre src ui ;\
+	do \
+	  if test -d $$d ;\
+	  then \
+	    (cd $$d && -rm -rf html latex man index.bt) ;\
+          fi ;\
+	done
 
 distclean-local:
 	-rm -rf Makefile
 
 install-html-local:
-	$(MKDIR_P) "$(DESTDIR)$(htmldir)"
-	\cp -R html $(DESTDIR)$(htmldir)/doxygen
+	$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen"
+	\cp -R pre/html $(DESTDIR)$(htmldir)/doxygen/pre
+	\cp -R src/html $(DESTDIR)$(htmldir)/doxygen/src
+	\cp -R ui/html  $(DESTDIR)$(htmldir)/doxygen/ui
 
 uninstall-local:
-	-rm -rf $(docdir)
+	-rm -rf $(htmldir)/doxygen
