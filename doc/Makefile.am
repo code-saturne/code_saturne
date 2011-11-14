@@ -22,15 +22,21 @@
 
 #-------------------------------------------------------------------------------
 
-if HAVE_SALOME_KERNEL
+if HAVE_LATEX
+LATEX_SUBDIRS = refcard theory tutorial user install developper autovnv
+endif
+
+if HAVE_DOXYGEN
+DOXYGEN_SUBDIRS = doxygen
+endif
+
 if HAVE_SPHINX
-SALOME = salome
+if HAVE_SALOME_KERNEL
+SPHINX_SUBDIRS = salome
 endif
 endif
 
-SUBDIRS = refcard theory tutorial user install developper doxygen autovnv $(SALOME)
-
-DIST_SUBDIRS = $(SUBDIRS) salome
+SUBDIRS = $(LATEX_SUBDIRS) $(DOXYGEN_SUBDIRS) $(SPHINX_SUBDIRS)
 
 EXTRA_DIST = \
 style/csdoc.sty \

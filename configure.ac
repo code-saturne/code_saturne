@@ -435,6 +435,8 @@ CS_AC_TEST_ZLIB
 CS_AC_TEST_SYRTHES
 CS_AC_TEST_SALOME
 
+CS_AC_TEST_DOCS
+
 cs_have_partitioner=no
 if test x$cs_have_parmetis = xyes -o x$cs_have_metis = xyes ; then
   cs_have_partitioner=yes
