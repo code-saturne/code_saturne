@@ -30,7 +30,7 @@ endif
 
 SUBDIRS = refcard theory tutorial user install developper doxygen autovnv $(SALOME)
 
-DIST_SUBDIRS = $(SUBDIRS) howto salome
+DIST_SUBDIRS = $(SUBDIRS) salome
 
 EXTRA_DIST = \
 style/csdoc.sty \
