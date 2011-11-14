@@ -45,7 +45,7 @@ if HAVE_SALOME_KERNEL
 SALOME = salome
 endif
 
-SUBDIRS = $(PLE) $(PREPRO) src $(LIBSYRCS) $(SALOME) po doc $(GUI) tests
+SUBDIRS = $(PLE) $(PREPRO) src $(LIBSYRCS) $(SALOME) po docs $(GUI) tests
 
 AUX_DIST = \
 m4/codeset.m4 \
@@ -342,7 +342,7 @@ extras/batch/batch.SLURM
 # Install man pages
 
 dist_man_MANS = \
-doc/manpages/code_saturne.1
+docs/manpages/code_saturne.1
 
 # Install bash completion script
 
