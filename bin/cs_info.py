@@ -108,7 +108,7 @@ def get_pdf(pkg):
     """
     Return the list of available PDF manual for the command line.
     """
-    l = [] 
+    l = []
     if os.path.isdir(pkg.pdfdir):
         for pdf in fnmatch.filter(os.listdir(pkg.pdfdir), '*.pdf'):
             l.append(pdf[:-4])

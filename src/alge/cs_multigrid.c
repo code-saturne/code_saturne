@@ -1688,7 +1688,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                            rotation_mode, cycle_id,
                            _initial_residue, _residue,
                            rhs, vx, _rhs, _vx);
-  }    
+  }
 
   /* Free memory */
 
