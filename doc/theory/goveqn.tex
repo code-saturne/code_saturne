@@ -21,7 +21,7 @@
 %-------------------------------------------------------------------------------
 
 %-------------------------------------------------------------------------------
-\section*{Continuous equations}
+\section{Continuous mass and momentum equations}
 %-------------------------------------------------------------------------------
 
 This section presents the continuous equations. It is no substitutes for the
@@ -30,14 +30,14 @@ provide an overview before more detailed reading.
 
 In the following, $\rho $ stands for the density, $\vect{u}$ for the
 velocity field. A mass source term, $\Gamma $ , may present, but in most
-cases the right-hand side of the Masss equation is $\Gamma =0$. 
+cases the right-hand side of the Mass equation is $\Gamma =0$. 
 \nomenclature[grho]{$\rho$}{density field}
 \nomenclature[rut1]{$\vect{u}$}{velocity field}
 \nomenclature[ggamma ]{$\Gamma$}{mass source term}
 The continuity equation (also called mass equation) is displayed in (\ref{eq:mass}).
 
 \begin{equation}\label{eq:mass}
-\dive(\rho \vect{u})=\Gamma.
+\dfrac{\partial \rho}{\partial t} + \dive(\rho \vect{u})=\Gamma.
 \end{equation}
 
 In fact, to compute a given unknown $\phi$ (and in particular for the
@@ -57,8 +57,8 @@ not taken into account in the pressure correction step.
 The momentum equation is:
 \begin{equation}\label{eq:momentum}
 \dfrac{\partial }{\partial t}(\rho \vect{u})
-+\divt \left( \vect{u}\otimes \rho \vect{u} \right)
-=\divt \left( \tens{\sigma} \right) +\vect{ST}_{\vect{u}}-\tens{K}\,\vect{u},
++\divv \left( \vect{u}\otimes \rho \vect{u} \right)
+=\divv \left( \tens{\sigma} \right) +\vect{ST}_{\vect{u}}-\tens{K}\,\vect{u},
 \end{equation}
 where $\vect{ST}_{\vect{u}}$ and $\tens{K}\,\vect{u}$ stand for explicit and implicit additional 
 momentum Source Terms
@@ -78,14 +78,18 @@ $\tens{K}$ is a symetric positive tensor, by definition.
 where $\tens{\tau}$ is the viscous stress tensor,
 \nomenclature[rp ]{$p$}{pressure field}
 \nomenclature[gtaut2]{$\tens{\tau}$}{viscous stress tensor, which is the deviatoric part of the stress tensor}
- defined from $\mu =\mu_l $ (dynamic molecular viscosity) 
+ defined for a Newtonian fluid from $\mu =\mu_l $ (dynamic molecular viscosity) 
 \nomenclature[gmu]{$\mu$}{dynamic viscosity}
 \nomenclature[gmul]{$\mu_l$}{dynamic molecular viscosity}
 and $\tens{S}$ (strain rate tensor) as:
 \nomenclature[rst2]{$\tens{S}$}{strain rate tensor}
 \begin{equation}\label{eq:base_introd_tau}%Base_Introd_tau_eq}
-\tens{\tau}=2\,\mu \ \tens{S}-\frac{2}{3}\mu \ \trace{\tens{S}}\ \tens{Id},
+\tens{\tau}=2\,\mu \ \deviator{\tens{S}} = 2\,\mu \ \tens{S}-\frac{2}{3}\mu \ \trace{\tens{S}}\ \tens{Id},
 \end{equation}
+%
+\nomenclature[odeviator]{$\deviator{ \left(\tens{.} \right)}$}{deviatoric part of a tensor}
+\nomenclature[otrace]{$\trace{ \left(\tens{.}\right)}$}{trace of a tensor}
+%
 with
 \begin{equation}\label{eq:base_introd_strainrate}%Base_Introd_tau_eq}
  \tens{S}=\frac{1}{2} \left( \ggrad\vect{u}+\,
@@ -99,12 +103,12 @@ fluctuations arising from the non linear convective term). The modelling of
 the latter depends upon the turbulence model adopted:
 
 \begin{itemize}
-\item with an eddy-viscosity model (EVM) such as the $%
+\item with an eddy-viscosity model (\emph{EVM}) such as the $%
 k-\varepsilon $ model, the closure requires a turbulent viscosity $\mu _{t}$%
-. With formally the same definition for $\tens{\tau}$ as in equation~(\ref{eq:base_introd_tau}),
+. With formally the same definition for $\tens{\tau}$ as in Equation~(\ref{eq:base_introd_tau}),
  but with $\mu =\mu _{l}+\mu _{t}$, $\tens{\sigma}$ reads:
 \begin{equation}
-\tens{\sigma}=\tens{\tau}-(P+\frac{2}{3}\rho k)\tens{Id}
+\tens{\sigma}=\tens{\tau}-(p+\frac{2}{3}\rho k)\tens{Id}
 \end{equation}
 
 \item with the \emph{LES} approach, the definition for $\tens{\sigma}$
@@ -117,7 +121,7 @@ variables during the simulation, and are readily available for the momentum
 equation, so one obtains, with $\mu =\mu _{l}$ in the definition of $%
 \tens{\tau}$ (Equation~(\ref{eq:base_introd_tau})):
 \begin{equation}
-\tens{\sigma}=\tens{\tau}-P\tens{Id}-\rho \tens{R}
+\tens{\sigma}=\tens{\tau}-p\tens{Id}-\rho \tens{R}
 \end{equation}
 
 \end{itemize}
@@ -125,12 +129,14 @@ equation, so one obtains, with $\mu =\mu _{l}$ in the definition of $%
 
 In the following, only three standard types of turbulence models are
 described, as representatives of the types of equations that need to be
-dicretised. A more detailed description of available turbulence models is
-described in section 
+dicretised. 
+% TODO A more detailed description of available turbulence models is
+% described in section 
 %TODO(?? Turbulence Models??)
 
 %-------------------------------------------------------------------------------
-\subsection*{Equations for the variables $k$ and $\varepsilon$
+\section{Turbulence modelling}
+\subsection{Equations for the variables $k$ and $\varepsilon$
 (standard $k-\varepsilon$ model)}
 
 \begin{equation}
@@ -156,8 +162,8 @@ where $\mathcal{P}$ is the production term created by mean shear:
 \begin{equation}
 \begin{array}{rcl}
 \mathcal{P} & = & \displaystyle -\rho \tens{R} : \gradt \, \vect{u}
-= -\left[-2 \mu_t \tens{S} + \frac{2}{3}\mu_t\trace{\tens{S}} \tens{1}%
-+ \frac{2}{3}\rho k \tens{1}\right] : \tens{S} \\
+= -\left[-2 \mu_t \deviator{\tens{S}}%
++ \frac{2}{3}\rho k \tens{1}\right] : \tens{S}, \\
 & = & \displaystyle \mu_t \left[ 2\left(\frac{\partial u}{\partial x}%
 \right)^2+ 2\left(\frac{\partial v}{\partial y}\right)^2+ 2\left(\frac{%
 \partial w}{\partial z}\right)^2+ \left(\frac{\partial u}{\partial y}+\frac{%
@@ -237,7 +243,8 @@ production- tensor associated with buoyancy effects:
 \begin{array}{r c l}
 \displaystyle \tens{ \mathcal{P}} & = & \displaystyle-\rho \left[ \tens{R} \, . \, \gradt \, \vect{u} 
 + \gradt \, \vect{u}  \, . \, \tens{R}\right], \\
-\tens{ \mathcal{G}} & = & \frac{3}{2}\frac{C_{\mu }}{\sigma _{t}}
+\tens{ \mathcal{G}} & = &
+\displaystyle \frac{3}{2}\frac{C_{\mu }}{\sigma _{t}}
 \frac{k}{\varepsilon }
 \left[\vect{r} \otimes \vect{g} +\vect{g} \otimes \vect{r}  \right].
 \end{array}
@@ -250,43 +257,44 @@ $G_{\varepsilon }= \Max \left(0, \, \frac{1}{2}\trace \tens{\mathcal{G}}\right)$
 With these definition the following relations hold:
 \begin{equation}
 \begin{array}{r c l}
-\displaystyle k &=&\frac{1}{2}R_{ll} \\
-\mathcal{P} &=&\frac{1}{2} \trace \left( \tens{\mathcal{P}} \right) 
+\displaystyle k &=&\frac{1}{2} \trace{\tens{R}}, \\
+\mathcal{P} &=&\frac{1}{2} \trace \left( \tens{\mathcal{P}} \right) ,
 \end{array}
 \end{equation}
 
 $\tens{\Phi}$ is the term representing pressure-velocity correlations:
 \nomenclature[gphit2]{$\tens{\Phi}$}{pressure-velocity correlation tensor}
 \begin{equation}
-\displaystyle \Phi_{ij} =\phi_{ij,1}+ \phi_{ij,2}+\phi_{ij,3}+\phi_{ij,w}
+\displaystyle \tens{\Phi} = \tens{\phi_{1}}+ \tens{\phi_{2}}+ \tens{\phi_{3}}+ \tens{\phi_{w}},
 \end{equation}%
 %
 \begin{equation}
 \begin{array}{r c l}
-\phi _{ij,1} &=& -\rho \,C_{1}\frac{\varepsilon }{k}%
-\left( R_{ij}-\frac{2}{3}k\delta _{ij} \right), \\
-\phi _{ij,2} &=& -\rho \,C_{2} \left(
-\mathcal{P}_{ij}-\frac{2}{3}\mathcal{P} \right)\delta _{ij}, \\
-\phi_{ij,3} &=& -C_{3} \left( G_{ij}-\frac{1}{3}\delta _{ij}G_{kk} \right).
+\tens{\phi_{1}} &=& \displaystyle -\rho \,C_{1}\frac{\varepsilon }{k}%
+\deviator{\tens{R}}, \\
+\tens{\phi_{2}} &=& -\rho \,C_{2} 
+\deviator{\tens{\mathcal{P}}}, \\
+\tens{\phi_{3}} &=& -C_{3} \deviator{ \tens{G} }.
 \end{array}
 \end{equation}
 
-The term $\phi _{ij,w}$ is called ``wall echo term'' (by default, it is not
-accounted for: see \fort{turrij}).
+The term $\tens{\phi_{w}}$ is called ``wall echo term'' (by default, it is not
+accounted for: see \fort{turrij} \ref{ap:turrij}).
 
-The dissipation term, $\varepsilon _{ij}$ , is considered isotropic:
+The dissipation term, $\tens{\varepsilon}$ , is considered isotropic:
 \nomenclature[gepsilont2]{$\tens{\varepsilon}$}{turbulent kinetic energy dissipation tensor}
 \begin{equation}
-\displaystyle\varepsilon _{ij}=\frac{2}{3}\ \delta _{ij}\varepsilon
+\displaystyle \tens{\varepsilon}=\frac{2}{3}\ \varepsilon \tens{1}.
 \end{equation}
 
 The turbulent diffusion terms are:
 \begin{equation}
-d_{ij}=C_{S}\frac{\partial }{\partial x_{k}}(\rho \frac{k}{\varepsilon }%
-R_{km}\frac{\partial R_{ij}}{\partial x_{m}})\text{\hspace*{1cm}and%
-\hspace*{1cm}}{d}=C_{\varepsilon }\displaystyle\frac{\partial }{\partial
-x_{k}}\left( \rho \frac{k}{\varepsilon }R_{km}\frac{\partial \varepsilon }{%
-\partial x_{m}}\right)
+\begin{array}{r c l}
+\tens{d} & = & C_{S} \displaystyle \divt \left( \rho \frac{k}{\varepsilon }%
+\tens{R} \, . \, \gradtt \tens{R} \right), \\
+d & = & C_{\varepsilon }\displaystyle \dive \left( \rho \frac{k}{\varepsilon} 
+\tens{R} \, . \, \grad \varepsilon \right).
+\end{array}
 \end{equation}
 
 In the rare event of masse sources, $\Gamma R_{ij}^{i}$ and $\Gamma
@@ -313,15 +321,19 @@ $0,09$ & $0,18$ & $1,44$ & $1,92$ & $1,8$ & $0,6$ & $0,55$ & $0.22$ & $0,5$
  \item[Smagorinsky model] 
 \begin{equation}
 \mu_{t}=\rho \, \left( C_{s}\,\overline{\Delta } \right)^{2}
-\sqrt{2\overline{S_{ij}}\,\overline{S_{ij}}}
+\sqrt{2\overline{\tens{S}} \,: \, \overline{\tens{S}}},
 \end{equation}%
-With $\overline{S_{ij}}$ the filtered strain rate tensor components:
+\nomenclature[odotproductdouble]{$:$}{double dot product}
+%
+where $\overline{\tens{S}}$ the filtered strain rate tensor components:
 
 \begin{equation}
-\overline{S_{ij}}=\frac{1}{2} \left( \frac{\partial \,\overline{u_{i}} }{%
-\partial \,x_{j}} + \frac{\partial \,\overline{u_{j}}}{\partial \,x_{i}}%
-\right).
+\overline{\tens{S}}= \symmetric{\overline{\tens{S}}} =
+\frac{1}{2} \left[ \gradt \vect{\overline{u}} + \transpose{\left( \gradt \vect{\overline{u}} \right)}
+\right].
 \end{equation}%
+\nomenclature[osymmetric]{$\symmetric{ \left(\tens{.}\right)}$}{symmetric part of a tensor}
+%
 Here, $\overline{u_{i}}$ stands for the $i^{th}$ resolved velocity component%
 \footnote{%
 In the case of implicit filtering, the discretisation in space introduces a
@@ -349,16 +361,16 @@ filter to $a$ is noted $\tilde{a}$. Moreover, with:
 
 \begin{equation}
 \begin{array}{ r c l}
-L_{ij} & = &\widetilde{\overline{u_{i}}\ \overline{u_{j}}}-\widetilde{\overline{%
-u_{i}}}\ \widetilde{\overline{u_{j}}}, \\
-\tau _{ij} & = & \overline{u_{i}u_{j}}-\overline{u_{i}}\ \overline{u_{j}}, \\
-T_{ij} &= &\widetilde{\overline{u_{i}u_{j}}}-\widetilde{\overline{u_{i}}}\
-\widetilde{\overline{u_{j}}},
+\tens{L} & = &\widetilde{\overline{\vect{u}} \otimes \overline{\vect{u}}}
+-\widetilde{\overline{\vect{u}}} \otimes \widetilde{\overline{ \vect{u}}}, \\
+\tens{\tau} & = & \overline{ \vect{u} \otimes \vect{u}}-\overline{\vect{u}} \otimes \overline{ \vect{u}}, \\
+\tens{T} &= &\widetilde{\overline{ \vect{u} \otimes \vect{u}}}-\widetilde{\overline{\vect{u}}} \otimes
+\widetilde{\overline{ \vect{u}}},
 \end{array}
 \end{equation}
 Germano identity reads:
 \begin{equation}
-L_{ij}=T_{ij}-\widetilde{\tau _{ij}}.
+\tens{L} = \tens{T}-\widetilde{\tens{\tau}}.
 \end{equation}
 
 Both dynamic models described herafter rely on the estimation of the tensors
@@ -368,9 +380,9 @@ strain rate tensor (Smagorinsky model). The following modelling is adopted%
 
 \begin{equation}
 \begin{array}{ r c l}
-T_{ij}-\frac{1}{3}\delta_{ij} T_{kk} &=& -2 C \widetilde{\Delta}^2 |\widetilde{%
+T_{ij}-\frac{1}{3}\trace \tens{T} \delta_{ij} &=& -2 C \widetilde{\Delta}^2 |\widetilde{%
 \overline{D_{ij}}}| \widetilde{\overline{D_{ij}}}, \\
-\tau_{ij}-\frac{1}{3}\delta_{ij} \tau_{kk} &=& -2 C^* \overline{\Delta}^2 |%
+\tau_{ij}-\frac{1}{3} \tens{\tau } \delta_{ij} &=& -2 C^* \overline{\Delta}^2 |%
 \overline{D_{ij}}| \overline{D_{ij}} ,
 \end{array}
 \end{equation}
@@ -392,8 +404,8 @@ taken out of the explicit filtering operator, the following equation is
 obtained:
 
 \begin{equation}
-L_{ij} -\frac{1}{3} \delta_{ij} L_{kk} =  C \left(
-\alpha_{ij}-\widetilde{\beta}_{ij} \right),
+\deviator{\tens{L}} =  C \left(
+\tens{ \alpha}- \tens{\widetilde{\beta}} \right),
 \end{equation}
 with:
 \begin{equation}
@@ -408,20 +420,20 @@ Since we are left with six equations to determine one single variable, the
 least square method is used\footnote{$L_{kk}$ has no effect for
 incompressible flows.}. With:
 \begin{equation}
-E_{ij} = L_{ij}-C \left(\alpha_{ij} - \widetilde{\beta}_{ij} \right),
+\tens{E} = \tens{L}-C \left( \tens{\alpha} - \tens{\widetilde{\beta}} \right),
 \end{equation}
 the value for $C$ is obtained by solving the following equation:
 \begin{equation}
-\frac{\partial E_{ij}E_{ij}}{\partial C} = 0.
+\frac{\partial \tens{E} : \tens{E}}{\partial C} = 0.
 \end{equation}
 
 Finally:
 \begin{equation}
-C = \frac{M_{ij}L_{ij}} {M_{kl}M_{kl}},
+C = \frac{ \tens{M} : \tens{L} }{ \tens{M} : \tens{M}},
 \end{equation}
 with
 \begin{equation}
-M_{ij} = \alpha_{ij} - \widetilde{\beta}_{ij}
+\tens{M} = \tens{\alpha} - \tens{\widetilde{\beta}}.
 \end{equation}
 
 This method allows to calculate the Smagorinsky "constant" dynamically at
@@ -440,13 +452,13 @@ one vertex with the cell considered). More precisely, the average value
 (also denoted $C$ hereafter) is calculated as indicated below:
 
 \begin{equation}
-C = \frac{\widetilde{M_{ij}L_{ij}}} {\widetilde{M_{kl}M_{kl}}}
+C = \frac{\widetilde{ \tens{M} : \tens{L}}} {\widetilde{ \tens{M} : \tens{M}}}
 \end{equation}
 
 \end{description}
 
 %-------------------------------------------------------------------------------
-\subsection{Equations for the scalars}
+\section{Equations for the scalars}
 
 Two types of transport equations are considered: 
 %

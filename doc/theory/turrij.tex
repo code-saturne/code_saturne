@@ -21,15 +21,13 @@
 %-------------------------------------------------------------------------------
 
 \programme{turrij}
-
+\label{ap:turrij}
 \vspace{1cm}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-------------------------------------------------------------------------------
 \section*{Fonction}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-------------------------------------------------------------------------------
 Le but de ce sous-programme est de r\'esoudre le syst\`eme des \'equations des
-tensions de Reynolds et de la dissipation $\varepsilon$ de mani\`ere totalement d\'ecoupl\'ee dans le cadre de l'utilisation du mod\`ele $R_{ij}-\varepsilon$  LRR\footnote{la description du SSG est prévue pour une version ultérieure de la documentation} (option $\var{ITURB}=30$ dans \fort{usini1}).\\
+tensions de Reynolds et de la dissipation $\varepsilon$ de mani\`ere totalement d\'ecoupl\'ee dans le cadre de l'utilisation du mod\`ele $R_{ij}-\varepsilon$  LRR\footnote{la description du SSG est pr\'evue pour une version ult\'erieure de la documentation} (option $\var{ITURB}=30$ dans \fort{usini1}).\\
 Le tenseur sym\'etrique des tensions de Reynolds est not\'e $\tens{R}$. Les composantes de ce tenseur repr\'esentent le moment d'ordre deux de la vitesse : $R_{ij} = \overline{u_iu_j}$.
 
 Pour chaque composante $R_{ij}$, on r\'esout :
@@ -630,7 +628,7 @@ $ + \left.\ (1-C_2) \ \var{PRODUC(ISOU,IEL)} -
 \item Appel de \fort{rijech} pour le calcul des termes d'\'echo de paroi
  $\phi^n_{ij,w}$ si $\var{IRIJEC()}=1$ et ajout dans \var{SMBR}.\\
 $\var{SMBR} = \var{SMBR} + \phi^n_{ij,w}$\\
-Suivant son mode de calcul (\var{ICDPAR}), la distance à la paroi est directement accessible
+Suivant son mode de calcul (\var{ICDPAR}), la distance \`a la paroi est directement accessible
 par \var{RA(IDIPAR+IEL-1)} (\var{|ICDPAR|} = 1) ou bien
 est calcul\'ee \`a partir de $\var{IA(IIFAPA(IPHAS)+IEL - 1)}$,
 qui donne pour l'\'el\'ement $\var{IEL}$ le num\'ero de la face de bord
