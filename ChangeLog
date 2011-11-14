@@ -1,4 +1,10 @@
 * 14/11/2011 - David Monfort <david.monfort@edf.fr>
+  Remove documentation compilation from the Python installer.
+  modified files:
+    extras/installer/install_saturne.py
+    extras/installer/README.txt
+
+* 14/11/2011 - David Monfort <david.monfort@edf.fr>
   Add a SALOMERUN variable to configure stage to define SALOME main script.
   modified files:
     bin/cs_config.py.in

@@ -143,8 +143,9 @@ for the directory where you want to install Code_Saturne.
       # Graphical interface and scripts support
 
       --with-libxml2=...    for Libxml2 support
-      --with-python=...     for specific Python executable
-      --with-pyqt4-exec=... for PyQt4 developper tools
+      PYTHON=...            for specific Python executable
+      PYUIC4=...            for PyQt4 developper tools pyuic4
+      PYRCC4=...            for PyQt4 developper tools pyrcc4
 
       # Run-time options
 

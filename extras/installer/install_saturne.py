@@ -93,7 +93,6 @@ class Package:
         # Installation information
         self.use = 'no'
         self.installation = 'no'
-        self.installation_pdf = 'no'
         self.source_dir = None
         self.install_dir = None
         self.config_opts = ''
@@ -216,22 +215,10 @@ class Package:
         if self.cc is not None: configure = configure + ' CC=\"' + self.cc + '\"'
         if self.fc is not None: configure = configure + ' FC=\"' + self.fc + '\"'
 
-        # Install the package
+        # Install the package and clean build directory
         run_command(configure, "Configure", self.name, self.log_file)
         run_command("make", "Compile", self.name, self.log_file)
         run_command("make install", "Install", self.name, self.log_file)
-
-        # Install pdf documentation if needed
-        if self.installation_pdf == 'yes':
-            try:
-                run_command("make pdf", "Generate documentation",
-                            self.name, self.log_file)
-                run_command("make install-pdf", "Install documentation",
-                            self.name, self.log_file)
-            except:
-                pass
-
-        # Clean build directory
         run_command("make clean", "Clean", self.name, self.log_file)
 
         # End of installation
@@ -314,7 +301,6 @@ class Setup:
         p = self.packages['code_saturne']
         p.use = 'yes'
         p.installation = 'yes'
-        p.installation_pdf = 'yes'
 
         # CGNS library
 
@@ -652,28 +638,6 @@ Check the setup file and some utilities presence.
                              "compilation.\n"
                              "Please install development tools.\n\n")
             sys.exit(1)
-
-        # Looking for pdflatex for potential documentation compilation
-        ret = run_test("pdflatex")
-        if ret != 0:
-            self.packages['code_saturne'].installation_pdf = 'no'
-            sys.stderr.write("\n*** Warning: "
-                             "pdflatex utility cannot be found\n"
-                             "Code_Saturne documentation will not be "
-                             "installed\n")
-        else:
-            self.packages['code_saturne'].installation_pdf = 'yes'
-
-        # Looking for fig2dev for potential documentation compilation
-        ret = run_test("fig2dev")
-        if ret != 0:
-            self.packages['code_saturne'].installation_pdf = 'no'
-            sys.stderr.write("\n*** Warning: "
-                             "fig2dev utility cannot be found\n"
-                             "Code_Saturne documentation will not be "
-                             "installed\n")
-        else:
-            self.packages['code_saturne'].installation_pdf = 'yes'
 
         if verbose == 'yes':
             sys.stdout.write("\n")
