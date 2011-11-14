@@ -45,3 +45,8 @@ style/csmacros.sty \
 style/csvers.tex.in \
 style/logocs.png \
 style/logoedf.png
+
+# Macro-rules so as to compile/install both PDF and HTML outputs
+
+doc: pdf html
+install-doc: install-pdf install-html

@@ -365,6 +365,19 @@ nodist_salome_DATA = \
 extras/salome/fsi_appli_config.xml \
 extras/salome/fsi.export
 
+# Update gettext dictionnaries
+
+update-po:
+	cd po && $(MAKE) $(AM_MAKEFLAGS) update-po
+
+# Generate and install documentation
+
+doc:
+	cd docs && $(MAKE) $(AM_MAKEFLAGS) doc
+
+install-doc:
+	cd docs && $(MAKE) $(AM_MAKEFLAGS) install-doc
+
 # Generate ChangeLog
 
 changelog:
