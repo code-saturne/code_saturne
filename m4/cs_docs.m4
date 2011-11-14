@@ -20,19 +20,89 @@ dnl Street, Fifth Floor, Boston, MA 02110-1301, USA.
 dnl
 dnl--------------------------------------------------------------------------------
 
+# CS_AC_TEST_DOCS
+#----------------
+# Macro function grouping the different tests for documentation generation
+
+AC_DEFUN([CS_AC_TEST_DOCS], [
+
+CS_AC_TEST_LATEX
+CS_AC_TEST_DOXYGEN
+CS_AC_TEST_SPHINX
+
+])dnl
+
+# CS_AC_TEST_LATEX
+#-----------------
+# modifies or sets cs_have_latex
+
+AC_DEFUN([CS_AC_TEST_LATEX],[
+
+cs_have_latex=yes
+
+dnl where is pdflatex ?
+AC_PATH_PROG(PDFLATEX, [pdflatex]) 
+if test "x$PDFLATEX" = "x"; then
+  AC_MSG_WARN(pdflatex not found)
+  cs_have_latex=no
+fi
+
+dnl where is bibtex ?
+AC_PATH_PROG(BIBTEX, [bibtex])
+if test "x$BIBTEX" = "x"; then
+  AC_MSG_WARN(bibtex not found)
+  cs_have_latex=no
+fi
+
+dnl where is makeindex ?
+AC_PATH_PROG(MAKEINDEX, [makeindex]) 
+if test "x$MAKEINDEX" = "x"; then
+  AC_MSG_WARN(makeindex not found)
+  cs_have_latex=no
+fi
+
+dnl where is fig2dev ?
+AC_PATH_PROG(FIG2DEV, [fig2dev]) 
+if test "x$FIG2DEV" = "x"; then
+  AC_MSG_WARN(fig2dev not found)
+  cs_have_latex=no
+fi
+
+AM_CONDITIONAL(HAVE_LATEX, [test $cs_have_latex = yes])
+
+])dnl
+
+# CS_AC_TEST_DOXYGEN
+#-------------------
+# modifies or sets cs_have_doxygen
+
+AC_DEFUN([CS_AC_TEST_DOXYGEN],[
+
+cs_have_doxygen=yes
+
+dnl where is doxygen ?
+AC_PATH_PROG(DOXYGEN, [doxygen]) 
+if test "x$DOXYGEN" = "x"; then
+  AC_MSG_WARN(doxygen not found)
+  cs_have_doxygen=no
+fi
+
+AM_CONDITIONAL(HAVE_DOXYGEN, [test $cs_have_doxygen = yes])
+
+])dnl
+
 # CS_AC_TEST_SPHINX
 #------------------
 # modifies or sets cs_have_sphinx, SPHINX depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_SPHINX],[
 
-AC_CHECKING(for sphinx doc generator)
-
 cs_have_sphinx=yes
+
 dnl where is sphinx ?
 AC_PATH_PROG(SPHINX, sphinx-build) 
 if test "x$SPHINX" = "x"; then
-  AC_MSG_WARN(sphinx not found)
+  AC_MSG_WARN(sphinx-build not found)
   cs_have_sphinx=no
 fi
 

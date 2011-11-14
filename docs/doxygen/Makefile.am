@@ -22,27 +22,42 @@
 
 #-------------------------------------------------------------------------------
 
-# Xfig files to process
+EXTRA_DIST = Doxyfile-pre Doxyfile-src Doxyfile-ui \
+mainpage.h images/icon.png examples/bft_error_example.c
 
-FIGFILES =
+doxygen-pre:
+	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
+	doxygen $(top_srcdir)/doc/doxygen/Doxyfile-pre
 
-# Generated documents (pdf files)
+doxygen-src:
+	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
+	doxygen $(top_srcdir)/doc/doxygen/Doxyfile-src
 
-PDF_FIGFILES = $(FIGFILES:.fig=.pdf)
+doxygen-ui:
+	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
+	doxygen $(top_srcdir)/doc/doxygen/Doxyfile-ui
 
-# New suffixes and targets
+doxygen: doxygen-pre doxygen-src doxygen-ui
 
-SUFFIXES = .fig .pdf
-
-.fig.pdf:
-	fig2dev -L pdf $< > $@
-
-# One redefines here the standard pdf targets of automake
-# so that they handle generation from LaTeX documents.
-
-pdf-local: $(PDF_FIGFILES)
+html-local: doxygen
 
 clean-local:
-	-rm -f $(PDF_FIGFILES)
+	for d in pre src ui ;\
+	do \
+	  if test -d $$d ;\
+	  then \
+	    (cd $$d && -rm -rf html latex man index.bt) ;\
+          fi ;\
+	done
 
-distclean-local: clean-local
+distclean-local:
+	-rm -rf Makefile
+
+install-html-local:
+	$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen"
+	\cp -R pre/html $(DESTDIR)$(htmldir)/doxygen/pre
+	\cp -R src/html $(DESTDIR)$(htmldir)/doxygen/src
+	\cp -R ui/html  $(DESTDIR)$(htmldir)/doxygen/ui
+
+uninstall-local:
+	-rm -rf $(htmldir)/doxygen

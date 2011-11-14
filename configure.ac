@@ -435,6 +435,8 @@ CS_AC_TEST_ZLIB
 CS_AC_TEST_SYRTHES
 CS_AC_TEST_SALOME
 
+CS_AC_TEST_DOCS
+
 cs_have_partitioner=no
 if test x$cs_have_parmetis = xyes -o x$cs_have_metis = xyes ; then
   cs_have_partitioner=yes
@@ -785,16 +787,15 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  salome/cfd_study/src/Makefile
                  salome/cfd_study/src/CFDSTUDY/Makefile
                  salome/cfd_study/src/CFDSTUDYGUI/Makefile
-                 doc/Makefile doc/doxygen/Makefile doc/style/csvers.tex
-                 doc/autovnv/Makefile doc/autovnv/graphics/Makefile
-                 doc/howto/Makefile doc/howto/graphics/Makefile
-                 doc/developper/Makefile doc/developper/graphics/Makefile
-                 doc/install/Makefile
-                 doc/refcard/Makefile doc/refcard/graphics/Makefile
-                 doc/salome/Makefile
-                 doc/theory/Makefile doc/theory/graphics/Makefile
-                 doc/tutorial/Makefile doc/tutorial/graphics/Makefile
-                 doc/user/Makefile doc/user/graphics/Makefile
+                 docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
+                 docs/autovnv/Makefile docs/autovnv/graphics/Makefile
+                 docs/developper/Makefile docs/developper/graphics/Makefile
+                 docs/install/Makefile
+                 docs/refcard/Makefile docs/refcard/graphics/Makefile
+                 docs/salome/Makefile
+                 docs/theory/Makefile docs/theory/graphics/Makefile
+                 docs/tutorial/Makefile docs/tutorial/graphics/Makefile
+                 docs/user/Makefile docs/user/graphics/Makefile
                  tests/Makefile
                  extras/salome/fsi_appli_config.xml
                  bin/cs_config.py bin/SaturneGUI])

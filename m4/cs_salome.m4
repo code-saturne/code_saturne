@@ -89,8 +89,6 @@ AS_IF([test $cs_have_salome_kernel = yes -o $cs_have_salome_gui = yes],
       [CS_AC_TEST_OMNIORB
        CS_AC_TEST_CORBA])
 
-CS_AC_TEST_SPHINX
-
 ])dnl
 
 # CS_AC_TEST_SALOME_KERNEL
