@@ -1,4 +1,9 @@
 * 14/11/2011 - David Monfort <david.monfort@edf.fr>
+  Fix detection of coupled nodes in case of Code_Aster coupling.
+  modified routine:
+    src/base/strini.f90
+
+* 14/11/2011 - David Monfort <david.monfort@edf.fr>
   Remove documentation compilation from the Python installer.
   modified files:
     extras/installer/install_saturne.py

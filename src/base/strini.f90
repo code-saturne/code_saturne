@@ -238,7 +238,7 @@ if (nbaste.gt.0) then
     endif
   enddo
   do inod = 1, nnod
-    if (itrav(inod).gt.0) nbnast = nbnast + 1
+    if (itrav(inod).lt.0) nbnast = nbnast + 1
   enddo
 
   ! Allocate temporary arrays
