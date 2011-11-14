@@ -51,6 +51,8 @@ if test "x$with_salome" != "xno" ; then
   SALOMEENV=$(find $with_salome -maxdepth 1 -name envSalome*.sh 2>/dev/null)
   SALOMEPRE=$(find $with_salome -maxdepth 1 -name prerequis*.sh 2>/dev/null)
 
+  SALOMERUN="$ROOT_SALOME/runSalome"
+
   KERNEL_ROOT_DIR=$(. $SALOMEPRE ; . $SALOMEENV ; echo $KERNEL_ROOT_DIR)
   GUI_ROOT_DIR=$(. $SALOMEPRE ; . $SALOMEENV ; echo $GUI_ROOT_DIR)
   YACS_ROOT_DIR=$(. $SALOMEPRE ; . $SALOMEENV ; echo $YACS_ROOT_DIR)
@@ -77,6 +79,7 @@ AC_SUBST(OMNIIDLPYTHONPATH)
 
 AC_ARG_VAR([SALOMEENV], [SALOME environment script])
 AC_ARG_VAR([SALOMEPRE], [SALOME pre-requisites script])
+AC_ARG_VAR([SALOMERUN], [SALOME main script (usually runSalome)])
 
 CS_AC_TEST_SALOME_KERNEL
 CS_AC_TEST_SALOME_GUI

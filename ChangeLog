@@ -1,3 +1,11 @@
+* 14/11/2011 - David Monfort <david.monfort@edf.fr>
+  Add a SALOMERUN variable to configure stage to define SALOME main script.
+  modified files:
+    bin/cs_config.py.in
+    bin/cs_salome.py
+    m4/cs_salome.m4
+    Makefile.am
+
 * 09/11/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add initialization of allocation return status in example to avoid
   issues with gcc 4.6.

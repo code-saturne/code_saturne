@@ -114,6 +114,7 @@ class config:
         self.have_salome = "@cs_have_salome_kernel@"
         self.salome_env = "@SALOMEENV@"
         self.salome_pre = "@SALOMEPRE@"
+        self.salome_run = "@SALOMERUN@"
         self.salome_kernel = "@SALOME_KERNEL@"
 
         # Setup the optionnal features
