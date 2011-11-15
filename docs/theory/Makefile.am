@@ -97,8 +97,8 @@ INDEX = makeindex
 
 PDFMAIN = $(TEXMAIN:.tex=.pdf)
 BIBMAIN = $(TEXMAIN:.tex=.aux)
-GLOSSMAIN = $(TEXMAIN:.tex=.glo)
-INDEXMAIN = $(TEXMAIN:.tex=.gls)
+GLOSSMAIN = $(TEXMAIN:.tex=.nlo)
+INDEXMAIN = $(TEXMAIN:.tex=.nls)
 
 # One redefines here the standard pdf targets of automake
 # so that they handle generation from LaTeX documents.
@@ -113,7 +113,7 @@ pdf-local:
 clean-local:
 	-rm -f *.out *.log *.aux *.toc *.lof *.lot \
 	 *.ilg *.idx *.bbl *.blg *.ind *.sym *.nsy \
-	 *.glo *.gls
+	 *.nlo *.nls
 
 install-pdf-local:
 	$(MKDIR_P) "$(DESTDIR)$(pdfdir)"

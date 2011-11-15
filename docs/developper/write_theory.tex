@@ -51,7 +51,7 @@ present the macros defined in \texttt{csmacro.sty} and give some typographic pie
 
 \subsubsection{Macros}
 The available macros located in the \texttt{csmacros} and \texttt{csvers.tex} package are displayed 
-in Table ~\ref{tab:macros_soft} and ~\ref{tab:macros_math}.
+in \tablename~\ref{tab:macros_soft} and \tablename~\ref{tab:macros_math}.
 
 \begin{table}[!htbcp]
 \centering
@@ -94,6 +94,7 @@ in Table ~\ref{tab:macros_soft} and ~\ref{tab:macros_math}.
 \hline 
 \verb1$\divs$1   &  $ \divs    $\\ 
 \verb1$\divv$1   &  $ \divv    $\\ 
+\verb1$\divt$1   &  $ \divt    $\\ 
 \verb1$\grad$1   &  $ \grad    $\\ 
 \verb1$\gradv$1  &  $ \gradv   $\\  
 \verb1$\gradt$1  &  $ \gradt   $\\  
@@ -105,6 +106,8 @@ in Table ~\ref{tab:macros_soft} and ~\ref{tab:macros_math}.
 \verb1$\Min$1    &  $ \Min     $\\
 \verb1$\trace$1    &  $ \trace     $\\
 \verb1$\transpose{M}$1    &  $ \transpose{M} $\\
+\verb1$\deviator{M}$1    &  $ \deviator{M} $\\
+\verb1$\symmetric{M}$1    &  $ \symmetric{M} $\\
 \verb1$\Neigh{i}$1    &  $ \Neigh{i}     $\\
 \verb1$\Bound{i}$1    &  $ \Bound{i}     $
 \end{tabular}
@@ -124,6 +127,8 @@ Here are some usefull tricks:
 \item Use the \verb1\emph{}1 mode for Latin words(\emph{e.g.}, \emph{i.e}, \emph{a priori}, \emph{etc.}).
 \item Use \verb1\left(1 instead of \verb1(1 and \verb1\right)1 instead of \verb1)1 in math mode.
 \item DO NOT put a space before the symbol ``:''. In English the rule is no space, never.
+\item DO NOT use \verb1\newline1 or \verb1\\1 except in a tabular environment or an array.
+\item Write ``Equation'' with a  firt upper case letter. Use \verb1\figurename~1 and to \verb1\tablename~1 write \figurename~ and \tablename.
 \item Use the enumerate environment:
 \begin{verbatim}
 \begin{enumerate}[ label=\roman{*}/, ref=(\roman{*})]

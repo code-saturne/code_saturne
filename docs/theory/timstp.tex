@@ -21,10 +21,10 @@
 %-------------------------------------------------------------------------------
 
 %-------------------------------------------------------------------------------
-\section*{Discretisation in time}
+\section{Time discretisation of a transport equation}
 
 At first, the physical properties of the flow are computed (density,
-viscosity, specific heat...): indeed, they may depend upon the variables
+viscosity, specific heat \emph{etc.}): indeed, they may depend upon the variables
 (such as the temperature for example).
 
 The time scheme is a $\theta$-scheme:
@@ -32,19 +32,12 @@ The time scheme is a $\theta$-scheme:
 \left\{%
 \begin{array}{ll}
 \theta = 1 & \text{for an implicit first order Euler scheme} \\
-\theta = 1/2 & \text{for second order Crank-Nicolson scheme}%
+\theta = \frac{1}{2} & \text{for second order Crank-Nicolson scheme}%
 \end{array}
 \right.
 \end{equation}
 
 For the second order scheme, the time step is assumed to be constant.
-
-A fractional step scheme is used to solve the mass and momentum equations
-(Chorin). The first step (predictor step) provides predicted velocity
-components: they are determined sequentially and without coupling between
-each other. The mass equation is taken into account during the second step
-(corrector step): a pressure Poisson equation is solved and the mass fluxes
-at the cell faces are updated.
 
 If required, the equations for the turbulent variables are solved (turbulent
 kinetic energy and dissipation or Reynolds stresses and dissipation), using
@@ -61,47 +54,48 @@ Finally, all the variables are updated and another time step may start.
 The general equation for advection (valid for the velocity components, the
 turbulent variables and the scalars) is re-written as follows in a condensed
 form; the mass equation ($\frac{\partial \rho } {\partial t}+ \dive(\rho
-\underline{u}) = \Gamma$) has been used to split the time derivative:
-\begin{equation}  \label{Base_Introd_simple}
-\rho \frac {\partial f}{\partial t} + \dive\,((\rho\,\underline{u}) f) - %
-\dive\,(K \grad f) = S_{i}(\Phi,\varphi)\,f + S_{e}(\Phi,\varphi) + \dive%
-\,(\rho\,\underline{u})\,f
+\vect{u}) = \Gamma$ see Equation (\ref{eq:mass})) has been used to split the time derivative:
+%
+\begin{equation}\label{eq:transport_eq_scalar}%Base_Introd_simple}
+\rho \frac {\partial f}{\partial t} + \dive  \left(f \rho\,\vect{u}) \right) - %
+\dive \left(K \grad f \right) = S_{i}\left(\Phi, \, \varphi\right)\,f + S_{e}\left(\Phi,\varphi \right) 
++ \dive  \left(\rho\,\vect{u} \right)\,f
 \end{equation}
-In this equation:\newline
+In this equation:
+
 \begin{tabular}{ll}
 $\Phi$ & : represents the physical properties $(\rho,K,\mu_{t},...)$ \\
 $\varphi$ & : represents the variables of the problem $(\vect{u}%
 ,k,\epsilon,...)$ \\
-$S_{i}(\Phi,\varphi)\,f$ & : represents the linear part of the source terms
+$S_{i}\left(\Phi, \, \varphi \right)\,f$ & : represents the linear part of the source terms
 \\
-$S_{e}(\Phi,\varphi)$ & : includes all other source terms \\
-$\dive\,(\rho\,\underline{u})\,f$ & : is the term associated with ``mass
+$S_{e} \left(\Phi, \, \varphi \right)$ & : includes all other source terms \\
+$\dive \left(\rho\,\vect{u}\right)\,f$ & : is the term associated with ``mass
 accumulation''%
 \end{tabular}
-\newline
-\newline
 
-The time at which the different quantities are evaluated is indicated below:%
-\newline
-$\bullet$ $\Phi$: the time considered is defined by the time scheme applied
-to the physical properties.\newline
-$\bullet$ $(\rho\,\underline{u})$: the time considered is defined by the
-time scheme applied to the mass flux.\newline
-$\bullet$ $S_{e}(\Phi,\varphi)$: the time considered is defined by the time
+The time at which the different quantities are evaluated is indicated below:
+%
+\begin{description}
+\item[$\Phi$:] the time considered is defined by the time scheme applied
+to the physical properties.
+\item[$\rho\,\vect{u}$:] the time considered is defined by the
+time scheme applied to the mass flux.
+\item[$S_{e}\left(\Phi, \, \varphi \right)$:] the time considered is defined by the time
 scheme applied to the explicit source terms.
+\end{description}
 
 If $\theta=1/2$, or if an extrapolation is used, the time step $\Delta t$ is
 constant in time and uniform in space.
 
-\subsection*{Physical properties}
+\subsection{Physical properties}
 
 The physical properties of the flow (density, viscosity, specific heat...)
 are:
 
 \begin{itemize}
-\item[-] either explicit, defined at the time step $n$.
-
-\item[-] or extrapolated at $n+\theta _{\Phi }$ using the Adam-Bashforth
+\item either explicit, defined at the time step $n$.
+\item or extrapolated at $n+\theta _{\Phi }$ using the Adam-Bashforth
 time scheme (in this case, the time step is assumed to be constant).
 \end{itemize}
 
@@ -121,70 +115,71 @@ Under a more general form, this reads:
 \right.
 \end{equation}
 
-\subsection*{Mass flux}
+\subsection{Mass flux}
 
 For the mass flux, three time schemes are available. The mass flux may be:
-
+%
 \begin{itemize}
-\item[-] explicit, taken at time step $n$ for the momentum equations and
+\item explicit, taken at time step $n$ for the momentum equations and
 updated with its value at time step $n+1$ for the equations for turbulence
-and scalars (standard scheme).\newline
+and scalars (standard scheme).
 
-\item[-] explicit, taken at time step $n$ for the momentum equations and
+\item explicit, taken at time step $n$ for the momentum equations and
 also for the equations for turbulence and scalars.
 
-\item[-] taken at $n+\theta_{F}$ (second order if $\theta_{F}=1/2$). To
-solve the momentum equations, $(\rho\,\underline{u})^{n-2+\theta_{F}}$ and $%
-(\rho\,\underline{u})^{n-1+\theta_{F}}$ are known. Hence, the value at $%
+\item taken at $n+\theta_{F}$ (second order if $\theta_{F}=1/2$). To
+solve the momentum equations, $\left(\rho\,\vect{u}\right)^{n-2+\theta_{F}}$ and $%
+\left(\rho\,\vect{u}\right)^{n-1+\theta_{F}}$ are known. Hence, the value at $%
 n+\theta_{F}$ is obtained as a result of the following extrapolation:
 \begin{equation}
-(\rho\,\underline{u})^{n+\theta_{F}}= 2\,\,(\rho\,\underline{u}%
-)^{n-1+\theta_{F}} -\,\,(\rho\,\underline{u})^{n-2+\theta_{F}}
+\left(\rho\,\vect{u}\right)^{n+\theta_{F}}= 2\,\,\left(\rho\,\vect{u}%
+\right)^{n-1+\theta_{F}} -\,\,\left(\rho\,\vect{u}\right)^{n-2+\theta_{F}}
 \end{equation}
-At the end of this phase (after the pressure correction step), $(\rho\,%
-\underline{u})^{n+1}$ is known and the following interpolation is used to
+At the end of this phase (after the pressure correction step), $\left(\rho\,%
+\vect{u}\right)^{n+1}$ is known and the following interpolation is used to
 determine the mass flux at $n+\theta_{F}$ that will be adopted for the
 equations for turbulence and scalars:
 \begin{equation}
-(\rho\,\underline{u})^{n+\theta_{F}}= \frac{1}{2-\theta_{F}}\,(\rho\,%
-\underline{u})^{n+1} +\frac{1-\theta_{F}}{2-\theta_{F}}\,(\rho\,\underline{u}%
-)^{n-1+\theta_{F}}
+\left(\rho\,\vect{u}\right)^{n+\theta_{F}}= \frac{1}{2-\theta_{F}}\,\left(\rho\,%
+\vect{u}\right)^{n+1} +\frac{1-\theta_{F}}{2-\theta_{F}}\,\left(\rho\,\vect{u}%
+\right)^{n-1+\theta_{F}}
 \end{equation}
 \end{itemize}
 
-\subsection*{Source terms}
+\subsection{Source terms}
 
 As for the physical properties, the \textbf{explicit} source terms are:
 
 \begin{itemize}
-\item[-] explicit:
+\item explicit:
 \begin{equation}
-\lbrack S_{e}(\Phi ,\varphi )]^{n}=S_{e}(\Phi ^{n+\theta _{\Phi }},\varphi
-^{n})
+\left[ S_{e} \left(\Phi , \, \varphi \right) \right]^{n}=S_{e}\left(\Phi ^{n+\theta_{\Phi }}, \, \varphi
+^{n} \right)
 \end{equation}
 
-\item[-] extrapolated at $n+\theta _{S}$ using the Adams-Bashforth scheme:
+\item extrapolated at $n+\theta _{S}$ using the Adams-Bashforth scheme:
 \begin{equation}
-\lbrack S_{e}(\Phi ,\varphi )]^{n+\theta _{S}}=(1+\theta _{S})\,S_{e}(\Phi
-^{n},\varphi ^{n})-\theta _{S}\,S_{e}(\Phi ^{n-1},\varphi ^{n-1})
+\left[ S_{e} \left(\Phi , \, \varphi \right) \right]^{n+\theta _{S}}=\left(1+\theta _{S}\right)\,
+S_{e}\left(\Phi^{n}, \, \varphi^{n}\right)-\theta _{S}\,S_{e} \left(\Phi ^{n-1} , \,\varphi ^{n-1}\right)
 \end{equation}
 \end{itemize}
 
 By default, to be consistent and preserve the order of convergence in time,
 the implicit source terms are discretized with the same scheme as that used
-for convection-diffusion of the unknown considered, \textit{i.e.} taken at $%
+for convection-diffusion of the unknown considered, \emph{i.e.} taken at $%
 n+\theta $:
 \begin{equation}
 \lbrack S_{i}(\Phi ,\varphi )\,f]^{n+\theta }=S_{i}(\Phi ^{n+\theta _{\Phi
 }},\varphi ^{n})\,[\theta \,f^{n+1}+(1-\theta )\,f^{n}]
 \end{equation}
 
-\underline{Note:}\newline
+\begin{remark}
 The \textbf{implicit} source terms taken also at $n+\theta $ for $\theta
 _{S}\neq 0$, while for $\theta _{S}=0$, the implicit source terms are taken
 at $n+1$ , this to enhance stability.
+\end{remark}
 
-\subsection*{General discrete form}
+\subsection{General time discretized form}
 
 For the sake of clarity, it is assumed hereafter that, unless otherwise
 explicitly stated, the mass flux is taken at $n+\theta_F$ and the physical
@@ -192,100 +187,116 @@ properties are taken at $n+\theta_\Phi$, with $\theta_F$ and $\theta_\Phi$
 dependant upon the specific schemes selected for the mass flux and the
 physical properties respectively.
 
-Under a general form, the discrete counterpart of equation~(\ref{Base_Introd_simple}) at
+Under a general form, the discrete counterpart of Equation~(\ref{eq:transport_eq_scalar}) at
 $n+\theta$ reads:
 \begin{equation}
-\begin{array}{c}
-\displaystyle \frac{\rho}{\Delta t}(f^{n+1}-f^{n})+ \dive\,((\rho\,%
-\underline{u}) f^{n+\theta})-\dive\,(K \grad f^{n+\theta}) = \\
-\left[S_{i}(\Phi,\varphi)\,f\right]^{n+\theta} + \left[S_{e}(\Phi,\varphi)%
-\right]^{n+\theta_{S}} + \dive\,(\rho\,\underline{u})\,f^{n+\theta}%
+\begin{array}{rcl}
+\displaystyle \frac{\rho}{\Delta t} \left(f^{n+1}-f^{n}\right)+ \dive \left(f^{n+\theta}(\rho\,%
+\vect{u}) - K \grad f^{n+\theta} \right) &=&
+\left[S_{i}(\Phi, \, \varphi)\,f\right]^{n+\theta} + \left[S_{e}(\Phi, \, \varphi)
+\right]^{n+\theta_{S}} \\
+&+& \dive \left(\rho\,\vect{u} \right)\,f^{n+\theta}%
 \end{array}%
 \end{equation}
 
-Using the standard $\theta$-scheme $f^{n+\theta}=\theta\,f^{n+1}+(1-\theta)%
+Using the standard $\theta$-scheme $f^{n+\theta}=\theta\,f^{n+1}+\left(1-\theta \right)%
 \,f^{n}$, the equation reads:
 \begin{equation}
-\begin{array}{c}
-\displaystyle \frac{\rho}{\Delta t}(f^{n+1}-f^{n})+ \theta\,\dive\,((\rho\,%
-\underline{u}) f^{n+1})-\theta\, \dive\,(K \grad f^{n+1}) = \\
-- (1-\theta)\,\dive\,((\rho\,\underline{u}) f^{n})+(1-\theta)\,\dive\,(K %
-\grad \,f^{n}) + \\
-S_{i}(\Phi,\varphi^n)\left[\theta\,f^{n+1}+(1-\theta)\,f^{n}\right] + \left[%
-S_{e}(\Phi,\varphi)\right]^{n+\theta_{S}} + \dive\,(\rho\,\underline{u}%
-)\,(\theta\,f^{n+1}+(1-\theta)\,f^{n})%
+\begin{array}{rcl}
+\displaystyle \frac{\rho}{\Delta t} \left(f^{n+1}-f^{n} \right)
++ \theta\,\dive \left( f^{n+1}(\rho\,%
+\vect{u}) - K \grad f^{n+1} \right) &=& 
+- \left(1-\theta\right)\,\dive \left(f^{n} (\rho\,\vect{u}) -K %
+\grad \,f^{n}\right)  \\
+&+& S_{i}\left(\Phi , \,\varphi^n\right)\left[\theta\,f^{n+1}+ \left(1-\theta \right)\,f^{n}\right] 
++ \left[ S_{e}(\Phi, \, \varphi)\right]^{n+\theta_{S}} \\
+&+& \dive \left(\rho\,\vect{u} \right)
+\,\left(\theta\,f^{n+1}+\left(1-\theta\right)\,f^{n}\right)%
 \end{array}%
 \end{equation}
 
 For numerical reasons, the system is solved in an iterative and incremental
-manner, with the help of the series $\delta f^{n+1,k+1}=f^{n+1,k+1}-f^{n+1,k}
-$ (with, by definition, $f^{n+1,0}=f^{n}$). In particular, this method
+manner, with the help of the series $\delta f^{n+1}_{k+1}=f^{n+1}_{k+1}-f^{n+1}_{k}
+$ (with, by definition, $f^{n+1}_0=f^{n}$). In particular, this method
 allows to treat implicitly a portion of the advection-diffusion terms
 associated correction terms for non orthogonal meshes. Hence, the system
 actually solved reads:
 \begin{equation}
-\begin{array}{c}
-\displaystyle\underbrace{\left[ \frac{\rho }{\Delta t}-\theta \,S_{i}(\Phi
-,\varphi ^{n})-\theta \,\dive\,(\rho \,\underline{u})\,\right] }_{%
-\displaystyle\var{ROVSDT}}\,(f^{n+1,k+1}-f^{n+1,k}) \\
-+\theta \,\dive\,((\rho \,\underline{u})\,(f^{n+1,k+1}-f^{n+1,k}))-\theta \,%
-\dive\,(K\grad\,(f^{n+1,k+1}-f^{n+1,k}))= \\
-\var{SMBRS}\left\{
-\begin{array}{c}
--\theta \,\dive\,((\rho \,\underline{u})\,f^{n+1,k})+\theta \,\dive\,(K\grad%
-\,f^{n+1,k}) \\
--(1-\theta )\,\dive\,((\rho \,\underline{u})\,f^{n})+(1-\theta )\,\dive\,(K%
-\grad\,f^{n}) \\
-\displaystyle-\frac{\rho }{\Delta t}(f^{n+1,k}-f^{n})+S_{i}(\Phi ,\varphi
-^{n})\left[ \theta \,f^{n+1,k}+(1-\theta )\,f^{n}\right]  \\
-+\dive\,(\rho \,\underline{u})\,(\theta \,f^{n+1,k}+(1-\theta )\,f^{n})+%
-\left[ S_{e}(\Phi ,\varphi )\right] ^{n+\theta _{S}}%
+\begin{array}{r c l}
+\begin{array}{r}
+\displaystyle\overbrace{
+\left[ \frac{\rho }{\Delta t}-\theta \,S_{i} \left(\Phi
+, \, \varphi ^{n}\right)-\theta \,\dive \left(\rho \,\vect{u} \right)\,\right] 
+}^{%
+\displaystyle \var{ROVSDT}} 
+\,\delta f^{n+1}_{k+1}\\
++\theta \,\dive \left( \delta f^{n+1}_{k+1} \rho \,\vect{u} -
+ K\grad \delta f^{n+1}_{k+1} \right)
+\end{array}
+&=& 
+\left.
+\begin{array}{l}
+-\theta \,\dive \left( f^{n+1}_{k} \left(\rho \,\vect{u}\right)- K\grad f^{n+1}_{k}\right) \\
+-(1-\theta )\,\dive \left( f^{n} \left(\rho \,\vect{u}\right) - K \grad f^{n} \right) \\
+\displaystyle-\frac{\rho }{\Delta t} \left(f^{n+1}_{k}-f^{n} \right)
++S_{i}\left(\Phi , \, \varphi^{n}\right)
+\left[ \theta \,f^{n+1}_{k}+ \left(1-\theta \right)\,f^{n}\right]  \\
++\dive \left(\rho \,\vect{u}\right)\,\left(\theta \,f^{n+1}_{k}+\left(1-\theta \right)\,f^{n}\right)+%
+\left[ S_{e}\left(\Phi , \, \varphi \right)\right] ^{n+\theta _{S}}%
 \end{array}%
-\right.
+\right\}\var{SMBRS}
 \end{array}%
 \end{equation}
 
+%TODO suppress ROVSDT and SMBR! suppress the name of the routines.
 Whatever the equation considered (momentum equation, equations for
 turbulence or scalars,...) the system representation is always the same: a
 right-hand side (stored in the vector-array \var{SMBRS}) and a vector-array %
-\var{ROVSDT} for the part linear with respect to $\delta f^{n+1,k+1}$.%
-\newline
+\var{ROVSDT} for the part linear with respect to $\delta f^{n+1}_{k+1}$.%
 
-\begin{description}
+\begin{itemize}
 \item The vector-array \var{ROVSDT} is computed by the subroutine %
-\fort{covofi} for the scalars, by \fort{preduv} for the velocity and by %
-\fort{turbke} or \fort{turrij} for the turbulence.
+\fort{covofi} (see \S \ref{ap:covofi}) for the scalars, by \fort{preduv} (see \S \ref{ap:preduv}) for the velocity and by %
+\fort{turbke} (see \S \ref{ap:turbke}) or \fort{turrij} (see \S \ref{ap:turrij}) for the turbulence.
 
 \item The vector-array \var{SMBRS} is not computed at one go, but in two
-successive steps.\newline
-\end{description}
+successive steps.
 
-The first part is calculated by the subroutines \fort{covofi}, \fort{preduv}%
-, \fort{turbke} and \fort{turrij} (respectively for the scalars, the
+The first part is calculated by the subroutines \fort{covofi} (see \S \ref{ap:covofi}), \fort{preduv}%
+(see \S \ref{ap:preduv}), \fort{turbke} (see \S \ref{ap:turbke}) and \fort{turrij} (see \S \ref{ap:turrij}) (respectively for the scalars, the
 velocity and the turbulence). At that point, the vector \var{SMBRS} is
 defined as follows:
 \begin{equation}
-\begin{array}{c}
-\var{SMBRS}=S_{i}(\Phi ,\varphi ^{n})\,f^{n}+\dive\,(\rho \,\underline{u}%
-)\,f^{n}+\left[ S_{e}(\Phi ,\varphi )\right] ^{n+\theta _{S}}%
-\end{array}%
+\var{SMBRS}=S_{i} \left(\Phi , \, \varphi ^{n}\right)\,f^{n}
++\dive \left(\rho \,\vect{u} \right)\,f^{n}
++\left[ S_{e} \left(\Phi , \, \varphi \right)\right] ^{n+\theta _{S}}%
 \end{equation}%
 then, the calculation of \var{SMBRS} is complemented at each sub-iteration
-during the resolution of the equation by the subroutine \fort{codits} as
+during the resolution of the equation by the subroutine \fort{codits} (see \S \ref{ap:codits})as
 follows:
 \begin{equation}
-\begin{array}{c}
-\var{SMBRS}=\var{SMBRS}-\var{ROVSDT}\,(f^{n+1,k}-\,f^{n}) \\
--\theta \,\dive\,((\rho \,\underline{u})\,f^{n+1,k})+\theta \,\dive\,(K\grad%
-\,f^{n+1,k}) \\
--(1-\theta )\,\dive\,((\rho \,\underline{u})\,f^{n})+(1-\theta )\,\dive\,(K%
-\grad\,f^{n})%
+\begin{array}{r c l}
+\var{SMBRS} & = & \var{SMBRS}-\var{ROVSDT}\,\left(f^{n+1}_{k}-\,f^{n} \right) \\
+&-&\theta \,\dive \left( f^{n+1}_{k} \left(\rho \,\vect{u}\right)
+- K\grad f^{n+1}_{k}\right) \\
+&-& \left(1-\theta \right)\,\dive \left( f^{n} \left(\rho \,\vect{u}\right) - K%
+\grad f^{n} \right)%
 \end{array}%
 \end{equation}
 
+More theoretical details of such an iterative process are given in \S \ref{sec:algebrea_iterative_process}.
+
+\end{itemize}
+
 %-------------------------------------------------------------------------------
 \section{Pressure-based velocity-pressure solver}
-Work in progress.
+A fractional step scheme is used to solve the mass and momentum equations
+(see Chorin \cite{Chorin:????}). The first step (predictor step) provides predicted velocity
+components: they are determined sequentially and without coupling between
+each other. The mass equation is taken into account during the second step
+(corrector step): a pressure Poisson equation is solved and the mass fluxes
+at the cell faces are updated.
+
 \subsection{Segregated solver}
 Work in progress.
 \subsection{Coupled solver}
