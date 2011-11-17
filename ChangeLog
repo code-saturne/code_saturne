@@ -1,3 +1,9 @@
+* 17/11/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Fixes for ALE method with parallelism or periodicity.
+  modified files:
+    src/base/cs_ale.c
+    src/base/iniva0.f90
+
 * 14/11/2011 - David Monfort <david.monfort@edf.fr>
   Fix detection of coupled nodes in case of Code_Aster coupling.
   modified routine:
