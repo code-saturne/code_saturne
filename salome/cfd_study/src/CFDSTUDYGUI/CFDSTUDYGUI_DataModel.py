@@ -1698,7 +1698,7 @@ def checkPathUnderObject(theObject, thePath):
 def getSObject(theParent,Name) :
     Sobjlist = ScanChildren(theParent,  ".*")
     SObj = None
-    for i in Sobjlist : 
+    for i in Sobjlist :
         if i.GetName() == Name :
             SObj = i
     return SObj

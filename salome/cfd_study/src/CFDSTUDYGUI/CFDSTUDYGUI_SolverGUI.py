@@ -179,7 +179,7 @@ def update_selectedMainViewCase_list(studyCFDName, caseName, xmlName) :
     for win in _selectedMainViewCase :
         xmlfile = os.path.basename(win.case['xmlfile'])
         boo = xmlfile.rstrip() == xmlName and win.salome.GetName()==caseName and win.salome.GetFather().GetName() == studyCFDName
-        if boo : 
+        if boo :
             lind.append(ind)
         ind = ind + 1
     if len(lind) > 0 :
@@ -672,7 +672,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             for dock in _d_DockWindowsBrowser[studyId]:
                 dock.show()
                 dock.setVisible(True)
- 
+
         if studyId not in _d_DockWindowsRuncase.keys():
             return
         if len(_d_DockWindowsRuncase[studyId]) != 0:
