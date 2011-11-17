@@ -1551,19 +1551,17 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         QApplication.restoreOverrideCursor()
 
 
-    def slotOpenCFD_GUI(self):
+    def OpenCFD_GUI(self,sobj):
         """
         Open into Salome the CFD GUI from an XML file whose name is sobj.GetName()
         """
-        sobj = self._singleSelectedObject()
         import os
-        if not os.path.exists(CFDSTUDYGUI_DataModel._GetPath(sobj)) :
-            mess = self.tr("ENV_DLG_INVALID_FILE").arg("CFD_Code").arg(CFDSTUDYGUI_DataModel._GetPath(sobj))+ self.tr("STMSG_UPDATE_STUDY_INCOMING")
-            QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
-            self.updateObjBrowser()
-            return
-
         if sobj != None:
+            if not os.path.exists(CFDSTUDYGUI_DataModel._GetPath(sobj)) :
+                mess = self.tr("ENV_DLG_INVALID_FILE").arg("CFD_Code").arg(CFDSTUDYGUI_DataModel._GetPath(sobj))+ self.tr("STMSG_UPDATE_STUDY_INCOMING")
+                QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
+                self.updateObjBrowser()
+                return
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
                 aXmlFileName = sobj.GetName()
                 aCase = CFDSTUDYGUI_DataModel.GetCase(sobj)
@@ -1598,11 +1596,25 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 self.updateActions()
 
 
-    def slotCloseCFD_GUI(self):
+    def slotOpenCFD_GUI(self):
+        """
+        Open into Salome the CFD GUI from an XML file whose name is sobj.GetName()
+        """
+        sobj = self._singleSelectedObject()
+        if sobj != None :
+            import os
+            if not os.path.exists(CFDSTUDYGUI_DataModel._GetPath(sobj)) :
+                mess = self.tr("ENV_DLG_INVALID_FILE").arg("CFD_Code").arg(CFDSTUDYGUI_DataModel._GetPath(sobj))+ self.tr("STMSG_UPDATE_STUDY_INCOMING")
+                QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
+                self.updateObjBrowser()
+                return
+            self.OpenCFD_GUI(sobj)
+
+
+    def CloseCFD_GUI(self,sobj):
         """
         Close into Salome the CFD GUI from an XML file whose name is sobj.GetName()
         """
-        sobj = self._singleSelectedObject()
         if sobj != None:
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
                 aXmlFileName = sobj.GetName()
@@ -1625,6 +1637,14 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 CFDSTUDYGUI_SolverGUI.update_selectedMainViewCase_list(aStudyName, aCaseName, aXmlFileName)
                 self._SolverGUI.update_WindowsMap_dict(aCase,aXmlFileName)
                 self.updateActions()
+
+
+    def slotCloseCFD_GUI(self):
+        """
+        Close into Salome the CFD GUI from an XML file whose name is sobj.GetName()
+        """
+        sobj = self._singleSelectedObject()
+        self.CloseCFD_GUI(sobj)
 
 
     def slotRunGUI(self, study=None, case=None):
@@ -1916,7 +1936,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             args.append(os.path.join(thePath, outfile))
             args.append("--post-volume")
             args.append("med")
-
             args.append(CFDSTUDYGUI_DataModel._GetPath(sobj))
 
             log.debug("slotMeshConvertToMed -> args = %s" % args)
@@ -2006,14 +2025,104 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         """
         Redirects B{Save} method to GUI of current solver
         """
-        self._SolverGUI.onSaveXmlFile()
-
+        if self._SolverGUI._CurrentWindow != None:
+            if CFD_Code() == CFD_Saturne:
+                if self._SolverGUI._CurrentWindow.case['xmlfile'] != "":
+                    self._SolverGUI._CurrentWindow.fileSave()
+                else:
+                    self.slotSaveAsDataFile()
 
     def slotSaveAsDataFile(self):
         """
         Redirects B{SaveAs} method to GUI of current solver
         """
-        self._SolverGUI.onSaveAsXmlFile()
+        old_sobj = None
+        new_sobj = None
+        oldCase = self._SolverGUI._WindowsMap[self._SolverGUI._CurrentWindow]
+        oldStudy = CFDSTUDYGUI_DataModel.GetStudyByObj(oldCase)
+        old_xml_file,xml_file = self._SolverGUI.SaveAsXmlFile()
+        if old_xml_file == None and xml_file != None :
+            theNewStudyPath = os.path.dirname(os.path.dirname(os.path.dirname(xml_file)))
+            study = CFDSTUDYGUI_DataModel.FindStudyByPath(theNewStudyPath)
+
+            if study == None :
+                theCaseName = os.path.basename(os.path.dirname(os.path.dirname(xml_file)))
+                iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theNewStudyPath, theCaseName)
+                if iok :
+                    study = CFDSTUDYGUI_DataModel.FindStudyByPath(theNewStudyPath)
+                    obj = CFDSTUDYGUI_DataModel.checkPathUnderObject(study, xml_file)
+                    if obj:
+                        NewSObj = CFDSTUDYGUI_DataModel.getSObject(obj,os.path.basename(xml_file))
+                        if  NewSObj != None :
+                            self.OpenCFD_GUI(NewSObj)
+                            CFDSTUDYGUI_SolverGUI.removeDockWindow(oldStudy.GetName(), oldCase.GetName(), "unnamed")
+            else :
+                theCaseName = os.path.basename(os.path.dirname(os.path.dirname(xml_file)))
+                theCaseObj = CFDSTUDYGUI_DataModel.getSObject(study,theCaseName)
+                if theCaseObj != None :
+                    obj = CFDSTUDYGUI_DataModel.getSObject(theCaseObj,"DATA")
+                    if obj != None :
+                        NewSObj = CFDSTUDYGUI_DataModel.getSObject(obj,os.path.basename(xml_file))
+                        if  NewSObj != None :
+                            self.CloseCFD_GUI(NewSObj)
+                            self.OpenCFD_GUI(NewSObj)
+                        else :
+                            CFDSTUDYGUI_DataModel._CreateItem(obj,os.path.basename(xml_file))
+                            NewSObj = CFDSTUDYGUI_DataModel.getSObject(obj,os.path.basename(xml_file))
+                            if  NewSObj != None :
+                                self.OpenCFD_GUI(NewSObj)
+                                CFDSTUDYGUI_SolverGUI.removeDockWindow(study.GetName(),theCaseName , "unnamed")
+                    else :
+                        mess = "DATA directory is not found into Object Browser for case " +  theCaseName + "and study = " + study.GetName()
+                        QMessageBox.critical(None,
+                                "Error", mess, QMessageBox.Ok, 0)
+            return
+
+        if xml_file != None and xml_file != old_xml_file and old_xml_file != None :
+            theOldStudyPath = os.path.dirname(os.path.dirname(os.path.dirname(old_xml_file)))
+            theOldStudyName = os.path.basename(theOldStudyPath)
+            theNewStudyPath = os.path.dirname(os.path.dirname(os.path.dirname(xml_file)))
+            theNewStudyName = os.path.basename(theNewStudyPath)
+            oldStudy = CFDSTUDYGUI_DataModel.FindStudyByPath(theOldStudyPath)
+            Old_obj = CFDSTUDYGUI_DataModel.checkPathUnderObject(oldStudy, old_xml_file) #parent DATA path object for old_xml_file
+            if Old_obj :
+                OldSobj = CFDSTUDYGUI_DataModel.getSObject(Old_obj,os.path.basename(old_xml_file))
+                if OldSobj != None :
+                    self.CloseCFD_GUI(OldSobj)
+
+            if theOldStudyName == theNewStudyName :
+                study = oldStudy
+                obj = CFDSTUDYGUI_DataModel.checkPathUnderObject(study, xml_file) #parent DATA path object for xml_file
+                if obj :
+                    if os.path.exists(xml_file):
+                        CFDSTUDYGUI_DataModel._CreateItem(obj,os.path.basename(xml_file))
+                        NewSObj = CFDSTUDYGUI_DataModel.getSObject(obj,os.path.basename(xml_file))
+                        if  NewSObj != None :
+                            self.OpenCFD_GUI(NewSObj)
+
+            else :
+                study = CFDSTUDYGUI_DataModel.FindStudyByPath(theNewStudyPath)
+                if study == None :
+                    theCaseName = os.path.basename(os.path.dirname(os.path.dirname(xml_file)))
+                    iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theNewStudyPath, theCaseName)
+                    if iok :
+                        study = CFDSTUDYGUI_DataModel.FindStudyByPath(theNewStudyPath)
+                        obj = CFDSTUDYGUI_DataModel.checkPathUnderObject(study, xml_file)
+                        if obj:
+                            NewSObj = CFDSTUDYGUI_DataModel.getSObject(obj,os.path.basename(xml_file))
+                            if  NewSObj != None :
+                                self.OpenCFD_GUI(NewSObj)
+                else :
+                   obj = CFDSTUDYGUI_DataModel.checkPathUnderObject(study, xml_file)
+                   NewSObj = CFDSTUDYGUI_DataModel.getSObject(obj,os.path.basename(xml_file))
+                   if  NewSObj != None :
+                       self.CloseCFD_GUI(NewSObj)
+                       self.OpenCFD_GUI(NewSObj)
+                   else :
+                       CFDSTUDYGUI_DataModel._CreateItem(obj,os.path.basename(xml_file))
+                       NewSObj = CFDSTUDYGUI_DataModel.getSObject(obj,os.path.basename(xml_file))
+                       if  NewSObj != None :
+                           self.OpenCFD_GUI(NewSObj)
 
 
     def slotOpenShell(self):

@@ -729,8 +729,8 @@ def _CreateItem(theFather,theNewName) :
     @type theNewName : C{String}
     """
     log.debug("_CreateItem: NewItem = %s with Parent = %s" % (theNewName,theFather.GetName()))
-    theBuilder = _getNewBuilder()
     if theNewName not in ScanChildNames(theFather,  ".*") :
+        theBuilder = _getNewBuilder()
         _CreateObject(theFather, theBuilder, theNewName)
 
 def _FillObject(theObject, theParent, theBuilder):
@@ -799,18 +799,24 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["DATALaunch"]
             elif re.match("^dp_", name):
                 objectId = dict_object["DATAFile"]
-            elif re.match(".*\.xml$", name):
-                objectId = dict_object["DATAfileXML"]
+            #elif re.match(".*\.xml$", name):
+            #    objectId = dict_object["DATAfileXML"]
             else:
                 if os.path.isfile(path):
                     fd = os.open(path , os.O_RDONLY)
                     f = os.fdopen(fd)
-                    l = f.readline()
+                    l1 = f.readline()
+                    if l1.startswith('''<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI''') or l1.startswith('''<?xml version="1.0" encoding="utf-8"?><NEPTUNE_CFD_GUI'''):
+                        objectId = dict_object["DATAfileXML"]
+                    elif l1.startswith('''<?xml version="1.0" encoding="utf-8"?>''') :
+                        l2 = f.readline()
+                        if l2.startswith('''<Code_Saturne_GUI''') or l2.startswith('''<NEPTUNE_CFD_GUI'''):
+                            objectId = dict_object["DATAfileXML"]
+                        else :
+                            mess = ObjectTR.tr("XML_DATA_FILE").arg(path)
+                            QMessageBox.warning(None, "File Error: ",mess)
                     f.close()
-                    if l.startswith('''<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI'''):
-                        objectId = dict_object["DATAfileXML"]
-                    elif l.startswith('''<?xml version="1.0" encoding="utf-8"?><NEPTUNE_CFD_GUI'''):
-                        objectId = dict_object["DATAfileXML"]
+
 
     # parent is RESU folder
     elif parentId == dict_object["RESUFolder"]:
@@ -973,7 +979,7 @@ def _FillObject(theObject, theParent, theBuilder):
         else:
             if re.match(".*\.med$", name):
                 objectId = dict_object["RESMEDFile"]
-            if re.match(".*\.dat$", name) or re.match(".*\.csv$", name):
+            elif re.match(".*\.dat$", name) or re.match(".*\.csv$", name):
                 objectId = dict_object["HISTFile"]
             elif re.match(".*\.xml$", name):
                 objectId = dict_object["RESXMLFile"]
@@ -1089,9 +1095,7 @@ def _SetIcon(theObject, theBuilder):
     id = int(attr.Value())
     if icon_collection[id] == "":
         return
-
     attr = theBuilder.FindOrCreateAttribute(theObject, "AttributePixMap")
-
     attr.SetPixMap(str(ObjectTR.tr(icon_collection[id]).toLatin1()))
     #check path for link and create new attribute
     if id != dict_object["Case"]:
@@ -1691,6 +1695,13 @@ def checkPathUnderObject(theObject, thePath):
 
     return aParent
 
+def getSObject(theParent,Name) :
+    Sobjlist = ScanChildren(theParent,  ".*")
+    SObj = None
+    for i in Sobjlist : 
+        if i.GetName() == Name :
+            SObj = i
+    return SObj
 
 def findMaxDeepObject(thePath):
     """

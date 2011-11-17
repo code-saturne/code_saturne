@@ -164,7 +164,7 @@ def findDockWindow(xmlName, caseName, studyCFDName):
 
         if _d_DockWindows[studyId] != []:
             for dock in _d_DockWindows[studyId]:
-                if string.join([studyCFDName, caseName, xmlName], ".") in dockTitle:
+                if string.rstrip(string.join([studyCFDName, caseName, xmlName], ".")) == string.rstrip(dockTitle) :
                     bool_findDockWindow = True
                     dock.show()
                     dock.raise_()
@@ -177,8 +177,9 @@ def update_selectedMainViewCase_list(studyCFDName, caseName, xmlName) :
     lind = []
     ind = 0
     for win in _selectedMainViewCase :
-        boo = win.cmd_case.rstrip() == xmlName and win.salome.GetName()==caseName and win.salome.GetFather().GetName() == studyCFDName
-        if boo :
+        xmlfile = os.path.basename(win.case['xmlfile'])
+        boo = xmlfile.rstrip() == xmlName and win.salome.GetName()==caseName and win.salome.GetFather().GetName() == studyCFDName
+        if boo : 
             lind.append(ind)
         ind = ind + 1
     if len(lind) > 0 :
@@ -195,7 +196,9 @@ def removeDockWindow(studyCFDName, caseName, xmlName=""):
     for dock in dsk.findChildren(QDockWidget):
         dockTitle = str(dock.windowTitle())
         log.debug("removeDockWindow -> dockTitle = %s" % dockTitle)
-        if string.join([studyCFDName, caseName, xmlName], ".") in dockTitle:
+        stringName = string.rstrip(string.join([studyCFDName, caseName, xmlName], "."))
+        stringNameB = stringName + " Browser"
+        if stringName  == string.rstrip(dockTitle) or stringNameB == string.rstrip(dockTitle):
             log.debug("removeDockWindow -> widget to close = %s" % dockTitle)
             if "Browser" not in str(dockTitle):
                 _d_DockWindows[studyId].remove(dock)
@@ -292,37 +295,29 @@ class CFDSTUDYGUI_SolverGUI(QObject):
                 if self._CurrentWindow.case['xmlfile'] != "":
                     self._CurrentWindow.fileSave()
                 else:
-                    self.onSaveAsXmlFile()
+                    self.SaveAsXmlFile()
 
-
-    def onSaveAsXmlFile(self):
+    def SaveAsXmlFile(self):
         """
+        First : get the xmlfile name with the case (whose path is stored into the MainView Object)
+        then save as into tne new xml file (the new name is stored into the case of the MainView Object instead of the old one)
+        return old_xml_file,new_xml_file
         """
         old_xml_file = None
         xml_file = None
+        NewSObj = None
+        OldSobj = None
         if  len(_selectedMainViewCase) != 0:
             _sMainViewCase = self._CurrentWindow
             if CFD_Code() == CFD_Saturne:
                 old_xml_file = _sMainViewCase.case['xmlfile']
                 _sMainViewCase.fileSaveAs()
                 xml_file = _sMainViewCase.case['xmlfile']
-            if xml_file != None and xml_file != "" and xml_file != old_xml_file:
-                #need update object browser
-                aCase = self._WindowsMap[_sMainViewCase]
-                study = CFDSTUDYGUI_DataModel.GetStudyByObj(aCase)
+                if old_xml_file == "" :
+                    old_xml_file = None
 
-                obj = CFDSTUDYGUI_DataModel.checkPathUnderObject(study, xml_file)
-                if obj:
-                    #changes Title of the tab
-                    new_title = os.path.basename(xml_file)
-                    new_title_win_CFD = self.setWindowTitle_CFD(_sMainViewCase,aCase,new_title)
-                    #updates Object Browser
-                    #CFDSTUDYGUI_DataModel._RebuildTreeRecursively(obj)
-                    #if os.path.exists(old_xml_file) and os.path.exists(xml_file):
-                    if os.path.exists(xml_file):
-                        CFDSTUDYGUI_DataModel._CreateItem(obj,os.path.basename(xml_file))
-                        self.replaceDockTitleName(xml_file,old_xml_file,aCase,study)
-                    updateObjectBrowser()
+
+        return old_xml_file,xml_file
 
 
     def getDockTitleName(self,xml_file):
@@ -579,13 +574,15 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         studyId = sgPyQt.getStudyId()
         if studyId not in _d_DockWindowsBrowser.keys():
             return
+        titledockBr = string.rstrip(titledock) + " Browser"
         for i in range(len(_d_DockWindowsBrowser[studyId])):
-            if titledock in str(_d_DockWindowsBrowser[studyId][i].windowTitle()):
+
+            if string.rstrip(titledockBr) == string.rstrip(str(_d_DockWindowsBrowser[studyId][i].windowTitle())):
                 _d_DockWindowsBrowser[studyId][i].activateWindow()
                 _d_DockWindowsBrowser[studyId][i].setVisible(True)
                 _d_DockWindowsBrowser[studyId][i].show()
                 _d_DockWindowsBrowser[studyId][i].raise_()
-                self.activateCurrentWindow(titledock)
+                self.activateCurrentWindow(titledockBr)
 
 
     def setdockWindowActivated(self,visible):
@@ -600,31 +597,12 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         if studyId not in _d_DockWindowsBrowser.keys():
             return
         for i in range(len(_d_DockWindows[studyId])):
-            if str(_d_DockWindows[studyId][i].windowTitle()) in str(title):
+            if string.rstrip(str(_d_DockWindows[studyId][i].windowTitle())) == string.rstrip(str(titledock)):
                 _d_DockWindows[studyId][i].activateWindow()
                 _d_DockWindows[studyId][i].setVisible(True)
                 _d_DockWindows[studyId][i].show()
                 _d_DockWindows[studyId][i].raise_()
                 self.activateCurrentWindow(titledock)
-
-
-    def activateCurrentWindow_OLD(self,title):
-        """
-        """
-        for mw in self._WindowsMap.keys():
-            casename = mw.case['salome'].GetName()
-            # casename = mw.salome.GetName() a verifier  02/2011
-            xmlfile = mw.case['xmlfile']
-            if xmlfile == "" or xmlfile == None:
-                xmlfileName = "unnamed"
-            else:
-                xmlfileName = os.path.basename(xmlfile)
-            fatherCaseName = mw.case['salome'].GetFather().GetName()
-            if title == string.join([fatherCaseName,casename,xmlfileName],"."):
-                self._CurrentWindow = mw
-                if mw not in _selectedMainViewCase:
-                    _selectedMainViewCase.append(mw)
-                mw.activateWindow()
 
 
     def activateCurrentWindow(self,title):
@@ -633,13 +611,14 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         for mw in self._WindowsMap.keys():
 
             casename = mw.salome.GetName()
-            xmlfile = mw.cmd_case.rstrip()
+            xmlfile = os.path.basename(mw.case['xmlfile'])
+            xmlfile = xmlfile.rstrip()
             if xmlfile == "" or xmlfile == None:
                 xmlfileName = "unnamed"
             else:
                 xmlfileName = xmlfile
             fatherCaseName = mw.salome.GetFather().GetName()
-            if title == string.join([fatherCaseName,casename,xmlfileName],"."):
+            if string.rstrip(title) == string.join([fatherCaseName,casename,xmlfileName],"."):
                 self._CurrentWindow = mw
                 if mw not in _selectedMainViewCase:
                     _selectedMainViewCase.append(mw)
@@ -693,7 +672,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             for dock in _d_DockWindowsBrowser[studyId]:
                 dock.show()
                 dock.setVisible(True)
-
+ 
         if studyId not in _d_DockWindowsRuncase.keys():
             return
         if len(_d_DockWindowsRuncase[studyId]) != 0:
@@ -705,7 +684,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
     def update_WindowsMap_dict(self,aCase,aXmlFileName) :
         l_win = []
         for win in self._WindowsMap.keys() :
-            boo = self._WindowsMap[win].GetName() == aCase.GetName() and win.cmd_case.rstrip() == aXmlFileName and self._WindowsMap[win].GetFather().GetName() == aCase.GetFather().GetName()
+            xmlfile = os.path.basename(win.case['xmlfile'])
+            boo = self._WindowsMap[win].GetName() == aCase.GetName() and xmlfile.rstrip() == aXmlFileName and self._WindowsMap[win].GetFather().GetName() == aCase.GetFather().GetName()
             if boo :
                 l_win.append(win)
         if len(l_win) != 0 :
