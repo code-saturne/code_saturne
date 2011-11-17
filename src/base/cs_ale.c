@@ -179,7 +179,7 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
     cell_id1 = i_face_cells[2*face_id] - 1;
     cell_id2 = i_face_cells[2*face_id+1] - 1;
 
-    if (cell_id1 <= n_cells) { /* Test to take into account face only once */
+    if (cell_id1 < n_cells) { /* Test to take into account face only once */
 
       for (j = i_face_vtx_idx[face_id]; j < i_face_vtx_idx[face_id+1]; j++) {
 
@@ -301,7 +301,6 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
   cs_int_t  i, j, face_id, vtx_id, cell_id, cell_id1, cell_id2;
 
   cs_real_t  *vtx_counter = NULL;
-  cs_real_t  pnd;
 
   const cs_int_t  n_vertices = cs_glob_mesh->n_vertices;
   const cs_int_t  n_cells = cs_glob_mesh->n_cells;
@@ -345,9 +344,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
     cs_real_t dvol1 = 1./cs_glob_mesh_quantities->cell_vol[cell_id1];
     cs_real_t dvol2 = 1./cs_glob_mesh_quantities->cell_vol[cell_id2];
 
-    pnd = pond[face_id];
-
-    if (cell_id1 <= n_cells) { /* Test to take into account face only once */
+    if (cell_id1 < n_cells) { /* Test to take into account face only once */
 
       for (j = i_face_vtx_idx[face_id]; j < i_face_vtx_idx[face_id+1]; j++) {
 
@@ -498,7 +495,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
 
   } /* End of loop on border faces */
 
-  if (cs_glob_mesh->global_vtx_num != NULL) {
+  if (_ale_interface != NULL) {
     cs_parall_interface_sr(_ale_interface, n_vertices, 3, disp_proj);
     cs_parall_interface_sr(_ale_interface, n_vertices, 1, vtx_counter);
   }

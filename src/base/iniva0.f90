@@ -139,7 +139,9 @@ endif
 ! 2. PAS DE TEMPS
 !===============================================================================
 
-do iel = 1, ncel
+! dt might be used on the halo cells during the ALE initialization
+! otherwise dt is synchronized in the pressure correction step.
+do iel = 1, ncelet
   dt (iel) = dtref
 enddo
 

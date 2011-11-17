@@ -494,7 +494,7 @@ call resopv &
 if (iale.eq.1) then
 
   ! TODO Check the behaviour of ALE iterations
-  if (itrale.eq.0 .or. itrale.gt.nalinf) then
+  if (itrale.gt.nalinf) then
 
     call alelav &
     !==========

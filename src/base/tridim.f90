@@ -1200,11 +1200,27 @@ do while (iterns.le.nterup)
 
     if (itrale.eq.0 .or. itrale.gt.nalinf) then
 
-      call alelap &
-      !==========
-    ( nvar   , nscal  ,                                              &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-      coefa  , coefb  )
+      if (ivelco.eq.0) then
+        call alelap &
+        !==========
+      ( nvar   , nscal  ,                                              &
+        dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+        coefa  , coefb  )
+
+      else
+
+        ! otherwise it is done in navstv.f90
+        if (itrale.eq.0) then
+
+          call alelav &
+          !==========
+        ( nvar   , nscal  ,                                              &
+          dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+          coefa  , coefb  )
+
+        endif
+
+      endif
 
     endif
 
