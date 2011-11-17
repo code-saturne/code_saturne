@@ -244,7 +244,7 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
 
   } /* End of loop on border faces */
 
-  if (cs_glob_mesh->global_vtx_num != NULL) {
+  if (_ale_interface != NULL) {
     cs_parall_interface_sr(_ale_interface, n_vertices, 3, disp_proj);
     cs_parall_interface_sr(_ale_interface, n_vertices, 1, vtx_counter);
   }
