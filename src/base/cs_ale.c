@@ -181,7 +181,7 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
     cell_id1 = i_face_cells[2*face_id] - 1;
     cell_id2 = i_face_cells[2*face_id+1] - 1;
 
-    if (cell_id1 <= n_cells) { /* Test to take into account face only once */
+    if (cell_id1 < n_cells) { /* Test to take into account face only once */
 
       for (j = i_face_vtx_idx[face_id]; j < i_face_vtx_idx[face_id+1]; j++) {
 
