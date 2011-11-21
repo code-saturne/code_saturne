@@ -434,6 +434,7 @@ CS_AC_TEST_CCM
 CS_AC_TEST_ZLIB
 CS_AC_TEST_SYRTHES
 CS_AC_TEST_SALOME
+CS_AC_TEST_MEDCOUPLING
 
 CS_AC_TEST_DOCS
 
@@ -858,8 +859,14 @@ echo " MED (Model for Exchange of Data) support: "$cs_have_med""
 if (test x$cs_have_med = xyes) ; then
   echo "   MED MPI I/O support: "$cs_have_med_mpi""
 fi
-echo " SYRTHES 3 coupling support: "$cs_have_syrthes""
+echo " MEDCoupling support: "$cs_have_medcoupling""
+if test x$cs_have_medcoupling = xyes ; then
+  echo " ParaMEDMEM support: "$cs_have_paramedmem""
+fi
+echo " SALOME GUI support: "$cs_have_salome_gui""
+echo " SALOME Kernel support: "$cs_have_salome_kernel""
 echo " Dynamic loader support (for YACS): "$cs_have_dlloader""
+echo " SYRTHES 3 coupling support: "$cs_have_syrthes""
 echo
 echo "The package has been configured. Type:"
 echo " make"

@@ -320,5 +320,19 @@ basedir = $(pkgdatadir)/users/base
 base_DATA = $(baseusers) \
 $(top_srcdir)/users/base/user_modules.f90
 
+# Conditionally compiled extensions
+
+if HAVE_PARAMEDMEM
+libcs_paramedmem_la_CPPFLAGS = \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/bft \
+$(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
+pkginclude_HEADERS += cs_paramedmem_coupling.hxx
+lib_LTLIBRARIES = libcs_paramedmem.la
+libcs_paramedmem_la_SOURCES = cs_paramedmem_coupling.cxx
+endif
+
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
+# Library source files
