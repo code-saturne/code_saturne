@@ -793,19 +793,21 @@ class domain(base_domain):
                 raise RunCaseError(err_str)
 
             if (type(m) == tuple):
-                m = m[0]
+                m0 = m[0]
+            else:
+                m0 = m
 
-            m = os.path.expanduser(m)
+            m0 = os.path.expanduser(m0)
 
-            mesh_path = m
-            if (not os.path.isabs(m)) and len(mesh_dirs) > 0:
+            mesh_path = m0
+            if (not os.path.isabs(m0)) and len(mesh_dirs) > 0:
                 for mesh_dir in mesh_dirs:
-                    mesh_path = os.path.join(mesh_dir, m)
+                    mesh_path = os.path.join(mesh_dir, m0)
                     if os.path.isfile(mesh_path):
                         break
 
             if not os.path.isfile(mesh_path):
-                err_str = 'Mesh file ' + m + ' not found'
+                err_str = 'Mesh file ' + m0 + ' not found'
                 if not (os.path.isabs(mesh_path) or mesh_dirs):
                     err_str += '(no mesh directory given)'
                 raise RunCaseError(err_str)
