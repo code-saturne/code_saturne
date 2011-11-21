@@ -1779,6 +1779,82 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
 
 }
 
+/*----------------------------------------------------------------------------
+ * Determination of a given cell's type.
+ *
+ * If the optional cell_vtx[8] array is given, it is filled with the vertex
+ * indexes of cell's vertices, unless the cell is a general polyhedron.
+ *
+ * parameters:
+ *   cell_id         <-- cell id (0 to n-1)
+ *   n_face_lists    <-- number of face lists
+ *   face_list_shift <-- face list to common number index shifts;
+ *                       size: n_face_lists
+ *   face_vertex_idx <-- face -> vertex indexes (per face list)
+ *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   cell_face_idx   <-- cell -> face indexes (1 to n)
+ *   cell_face_num   <-- cell -> face numbers (1 to n)
+ *   vertex_num      --> nodal connectivity of cell, if not a general
+ *                       polyhedron
+ *
+ * returns:
+ *   type of cell defined by cell_id
+ *----------------------------------------------------------------------------*/
+
+fvm_element_t
+fvm_nodal_from_desc_cell(const cs_lnum_t    cell_id,
+                         const int          n_face_lists,
+                         const cs_lnum_t    face_list_shift[],
+                         const cs_lnum_t   *face_vertex_idx[],
+                         const cs_lnum_t   *face_vertex_num[],
+                         const cs_lnum_t    cell_face_idx[],
+                         const cs_lnum_t    cell_face_num[],
+                         cs_lnum_t          vertex_num[8])
+{
+  fvm_nodal_from_desc_t  retcode;
+  cs_lnum_t   cell_vtx_tria[3*4]; /* We will only seek to fill these arrays */
+  cs_lnum_t   cell_vtx_quad[4*6]; /* for local faces 1-4 and 1-6 at most    */
+
+  fvm_element_t cell_type = _nodal_cell_from_desc(cell_id,
+                                                  n_face_lists,
+                                                  face_list_shift,
+                                                  face_vertex_idx,
+                                                  face_vertex_num,
+                                                  cell_face_idx,
+                                                  cell_face_num,
+                                                  cell_vtx_tria,
+                                                  cell_vtx_quad);
+
+  switch (cell_type) {
+  case FVM_CELL_TETRA:
+    retcode = _nodal_from_desc_cnv_cel_tetra(cell_vtx_tria,
+                                             vertex_num);
+    break;
+  case FVM_CELL_PYRAM:
+    retcode = _nodal_from_desc_cnv_cel_pyram(cell_vtx_tria,
+                                             cell_vtx_quad,
+                                             vertex_num);
+    break;
+  case FVM_CELL_PRISM:
+    retcode = _nodal_from_desc_cnv_cel_prism(cell_vtx_tria,
+                                             cell_vtx_quad,
+                                             vertex_num);
+    break;
+  case FVM_CELL_HEXA:
+    retcode = _nodal_from_desc_cnv_cel_hexa(cell_vtx_quad,
+                                            vertex_num);
+    break;
+  default:
+    retcode = FVM_NODAL_FROM_DESC_FAILURE;
+    break;
+  }
+
+  if (retcode != FVM_NODAL_FROM_DESC_SUCCESS)
+    cell_type = FVM_CELL_POLY;
+
+  return cell_type;
+}
+
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus

@@ -134,6 +134,38 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
                               const int          *face_gc_id[],
                               const cs_lnum_t     parent_face_num[]);
 
+/*----------------------------------------------------------------------------
+ * Determination of a given cell's type.
+ *
+ * If the optional cell_vtx[8] array is given, it is filled with the vertex
+ * indexes of cell's vertices, unless the cell is a general polyhedron.
+ *
+ * parameters:
+ *   cell_id         <-- cell id (0 to n-1)
+ *   n_face_lists    <-- number of face lists
+ *   face_list_shift <-- face list to common number index shifts;
+ *                       size: n_face_lists
+ *   face_vertex_idx <-- face -> vertex indexes (per face list)
+ *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   cell_face_idx   <-- cell -> face indexes (1 to n)
+ *   cell_face_num   <-- cell -> face numbers (1 to n)
+ *   vertex_num      --> nodal connectivity of cell, if not a general
+ *                       polyhedron
+ *
+ * returns:
+ *   type of cell defined by cell_id
+ *----------------------------------------------------------------------------*/
+
+fvm_element_t
+fvm_nodal_from_desc_cell(const cs_lnum_t    cell_id,
+                         const int          n_face_lists,
+                         const cs_lnum_t    face_list_shift[],
+                         const cs_lnum_t   *face_vertex_idx[],
+                         const cs_lnum_t   *face_vertex_num[],
+                         const cs_lnum_t    cell_face_idx[],
+                         const cs_lnum_t    cell_face_num[],
+                         cs_lnum_t          vertex_num[8]);
+
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
