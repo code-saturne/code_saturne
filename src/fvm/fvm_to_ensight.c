@@ -36,7 +36,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -49,8 +48,6 @@
 #include "fvm_defs.h"
 #include "fvm_convert_array.h"
 #include "fvm_part_to_block.h"
-#include "fvm_block_to_part.h"
-#include "fvm_gather.h"
 #include "fvm_io_num.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
@@ -723,7 +720,7 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
     }
 
     fvm_part_to_block_copy_array(d,
-                                 sizeof(float),
+                                 FVM_FLOAT,
                                  1,
                                  part_coords,
                                  block_coords);
@@ -1278,7 +1275,7 @@ _write_lengths_g(const fvm_io_num_t  *global_element_num,
   d = fvm_part_to_block_create_by_gnum(comm, bi, n_elements, g_num);
 
   fvm_part_to_block_copy_array(d,
-                               sizeof(int32_t),
+                               FVM_INT32,
                                1,
                                part_lengths,
                                block_lengths);
@@ -2524,7 +2521,7 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
     }
 
     fvm_part_to_block_copy_array(d,
-                                 sizeof(int32_t),
+                                 FVM_INT32,
                                  stride,
                                  part_vtx_num,
                                  block_vtx_num);
@@ -2676,7 +2673,7 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
       assert(end_id == part_size);
 
       fvm_part_to_block_copy_array(d,
-                                   sizeof(float),
+                                   FVM_FLOAT,
                                    1,
                                    part_values,
                                    block_values);
@@ -2951,7 +2948,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
 
     BFT_MALLOC(block_n_sub, block_size, int);
     fvm_part_to_block_copy_array(d,
-                                 sizeof(int),
+                                 FVM_INT32,
                                  1,
                                  part_n_sub,
                                  block_n_sub);
@@ -3030,7 +3027,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
       /* Distribute part values */
 
       fvm_part_to_block_copy_array(d,
-                                   sizeof(float),
+                                   FVM_FLOAT,
                                    1,
                                    part_values,
                                    block_values);
