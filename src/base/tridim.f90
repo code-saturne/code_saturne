@@ -1372,9 +1372,11 @@ if (iccvfg.eq.0) then
     endif
 
     ! Free memory
-    deallocate(flmalf, flmalb)
-    deallocate(cofale)
-    deallocate(xprale)
+    if (allocated(flmalf)) then
+      deallocate(flmalf, flmalb)
+      deallocate(cofale)
+      deallocate(xprale)
+    endif
 
   endif
 

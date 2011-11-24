@@ -1,3 +1,8 @@
+* 24/11/2011 - David Monfort <david.monfort@edf.fr>
+  Fix a memory deallocation issue in fluid/structure interaction.
+  modified routine:
+    src/base/tridim.f90
+
 * 17/11/2011 - Martin Ferrand <martin.ferrand@edf.fr>
   Fixes for ALE method with parallelism or periodicity.
   modified files:
