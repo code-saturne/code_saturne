@@ -1402,11 +1402,6 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
 #ifdef HAVE_MEI
                 else if (cs_gui_strcmp(choice_v, "norm_formula"))
                 {
-                    norm = boundaries->norm[izone] /
-                             sqrt( boundaries->dirx[izone] * boundaries->dirx[izone]
-                                 + boundaries->diry[izone] * boundaries->diry[izone]
-                                 + boundaries->dirz[izone] * boundaries->dirz[izone]);
-
                     mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
                     mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
                     mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
