@@ -4118,16 +4118,16 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
 
     if (matrix->halo != NULL) {
 
+      if (   matrix->halo->n_transforms > 0
+          && rotation_mode == CS_PERIO_ROTA_IGNORE)
+        cs_perio_save_rotation_halo(cs_glob_mesh->halo, CS_HALO_STANDARD, x);
+
       cs_halo_sync_var(matrix->halo, CS_HALO_STANDARD, x);
 
       /* Synchronize periodic values */
 
-      if (matrix->halo->n_transforms > 0) {
-        if (rotation_mode == CS_PERIO_ROTA_IGNORE)
-          bft_error(__FILE__, __LINE__, 0, _cs_glob_perio_ignore_error_str);
+      if (matrix->halo->n_transforms > 0)
         cs_perio_sync_var_scal(matrix->halo, CS_HALO_STANDARD, rotation_mode, x);
-      }
-
     }
 
     /* Now call local matrix.vector product */
@@ -4252,17 +4252,18 @@ cs_matrix_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
 
   if (matrix->b_size[3] == 1) {
 
-    if (matrix->halo != NULL){
+    if (matrix->halo != NULL) {
+
+      if (   matrix->halo->n_transforms > 0
+          && rotation_mode == CS_PERIO_ROTA_IGNORE)
+        cs_perio_save_rotation_halo(cs_glob_mesh->halo, CS_HALO_STANDARD, x);
 
       cs_halo_sync_var(matrix->halo, CS_HALO_STANDARD, x);
 
       /* Synchronize periodic values */
 
-      if (matrix->halo->n_transforms > 0) {
-        if (rotation_mode == CS_PERIO_ROTA_IGNORE)
-          bft_error(__FILE__, __LINE__, 0, _cs_glob_perio_ignore_error_str);
+      if (matrix->halo->n_transforms > 0)
         cs_perio_sync_var_scal(matrix->halo, CS_HALO_STANDARD, rotation_mode, x);
-      }
     }
 
     /* Now call local matrix.vector product */
