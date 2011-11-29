@@ -1,3 +1,7 @@
+2011-11-29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Fix link problem in PLE unit tests.
+
 2011-07-28  David Monfort <david.monfort@edf.fr>
 
 	* Fix MPI autodetection on FEDORA systems.

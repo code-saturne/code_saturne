@@ -41,7 +41,7 @@ check_PROGRAMS += ple_coupling_test
 ple_coupling_test_SOURCES = ple_coupling_test.c
 ple_coupling_test_CPPFLAGS = $(DEBUG_CPPFLAGS) -I$(top_srcdir)/src $(MPI_CPPFLAGS)
 ple_coupling_test_LDFLAGS  = $(MPI_LDFLAGS)
-ple_coupling_test_LDADD = $(top_builddir)/src/libple.la $(MPI_LIBS)
+ple_coupling_test_LDADD = $(top_builddir)/src/libple.la $(MPI_LIBS) -lm
 endif
 
 # Uncomment for tests execution at "make check"
