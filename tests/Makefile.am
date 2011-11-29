@@ -22,12 +22,22 @@
 
 #-------------------------------------------------------------------------------
 
+# PLE dependency
+
+if HAVE_INTERNAL_PLE
+  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
+  LIBPLE_LA = $(top_builddir)/libple/src/libple.la
+else
+  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
+  LDFLAGS_PLE = $(PLE_LDFLAGS)
+  LIBS_PLE = $(PLE_LIBS)
+endif
+
 check_PROGRAMS =
 
 # BFT tests
 
 check_PROGRAMS += \
-bft_test \
 bft_backtrace_test \
 bft_error_test \
 bft_mem_usage_test \
@@ -37,11 +47,6 @@ bft_printf_test
 CPPFLAGS_BFT_TESTS = -I$(top_srcdir)/src/bft
 LDFLAGS_BFT_TESTS =
 LDADD_BFT_TESTS = $(top_builddir)/src/bft/libbft.la
-
-bft_test_SOURCES  = bft_test.c
-bft_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
-bft_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
-bft_test_LDADD    = $(LDADD_BFT_TESTS)
 
 bft_backtrace_test_SOURCES  = bft_backtrace_test.c
 bft_backtrace_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
@@ -68,41 +73,6 @@ bft_printf_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
 bft_printf_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
 bft_printf_test_LDADD    = $(LDADD_BFT_TESTS)
 
-# FVM tests
-
-check_PROGRAMS += \
-fvm_interface_test \
-fvm_selector_test \
-fvm_selector_postfix_test \
-fvm_sizes_test
-
-CPPFLAGS_FVM_TESTS = -I$(top_srcdir)/src/base -I$(top_srcdir)/src/bft \
-       -I$(top_srcdir)/src/fvm $(MPI_CPPFLAGS)
-LDFLAGS_FVM_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
-LDADD_FVM_TESTS = $(top_builddir)/src/fvm/libfvm.la \
-        $(top_builddir)/src/bft/libbft.la \
-        $(MPI_LIBS)
-
-fvm_interface_test_SOURCES  = fvm_interface_test.c
-fvm_interface_test_CPPFLAGS = $(CPPFLAGS_FVM_TESTS)
-fvm_interface_test_LDFLAGS  = $(LDFLAGS_FVM_TESTS)
-fvm_interface_test_LDADD    = $(LDADD_FVM_TESTS)
-
-fvm_selector_test_SOURCES  = fvm_selector_test.c
-fvm_selector_test_CPPFLAGS = $(CPPFLAGS_FVM_TESTS)
-fvm_selector_test_LDFLAGS  = $(LDFLAGS_FVM_TESTS)
-fvm_selector_test_LDADD    = $(LDADD_FVM_TESTS)
-
-fvm_selector_postfix_test_SOURCES  = fvm_selector_postfix_test.c
-fvm_selector_postfix_test_CPPFLAGS = $(CPPFLAGS_FVM_TESTS)
-fvm_selector_postfix_test_LDFLAGS  = $(LDFLAGS_FVM_TESTS)
-fvm_selector_postfix_test_LDADD    = $(LDADD_FVM_TESTS)
-
-fvm_sizes_test_SOURCES  = fvm_sizes_test.c
-fvm_sizes_test_CPPFLAGS = $(CPPFLAGS_FVM_TESTS)
-fvm_sizes_test_LDFLAGS  = $(LDFLAGS_FVM_TESTS)
-fvm_sizes_test_LDADD    = $(LDADD_FVM_TESTS)
-
 # MEI tests
 
 check_PROGRAMS += \
@@ -118,20 +88,52 @@ mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
 # Code_Saturne tests
 
 check_PROGRAMS += \
-cs_file_test
+cs_core_test \
+cs_file_test \
+fvm_interface_test \
+fvm_selector_test \
+fvm_selector_postfix_test \
+fvm_sizes_test
 
 CPPFLAGS_CS_TESTS = -I$(top_srcdir)/src/base -I$(top_srcdir)/src/bft \
-       -I$(top_srcdir)/src/fvm $(MPI_CPPFLAGS)
-LDFLAGS_CS_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
+       -I$(top_srcdir)/src/fvm $(CPPFLAGS_PLE) $(MPI_CPPFLAGS)
+LDFLAGS_CS_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
+        $(PLE_LDFLAGS) $(MPI_LDFLAGS)
 LDADD_CS_TESTS =  $(top_builddir)/src/base/libcscore.la \
         $(top_builddir)/src/fvm/libfvm.la \
         $(top_builddir)/src/bft/libbft.la \
-        $(MPI_LIBS)
+        $(top_builddir)/src/base/libcscore.la \
+        $(LIBPLE_LA) $(PLE_LIBS) $(MPI_LIBS) -lm
+
+cs_core_test_SOURCES  = cs_core_test.c
+cs_core_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
+cs_core_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+cs_core_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_file_test_SOURCES  = cs_file_test.c
 cs_file_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
 cs_file_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_file_test_LDADD    = $(LDADD_CS_TESTS)
+
+fvm_interface_test_SOURCES  = fvm_interface_test.c
+fvm_interface_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
+fvm_interface_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+fvm_interface_test_LDADD    = $(LDADD_CS_TESTS)
+
+fvm_selector_test_SOURCES  = fvm_selector_test.c
+fvm_selector_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
+fvm_selector_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+fvm_selector_test_LDADD    = $(LDADD_CS_TESTS)
+
+fvm_selector_postfix_test_SOURCES  = fvm_selector_postfix_test.c
+fvm_selector_postfix_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
+fvm_selector_postfix_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+fvm_selector_postfix_test_LDADD    = $(LDADD_CS_TESTS)
+
+fvm_sizes_test_SOURCES  = fvm_sizes_test.c
+fvm_sizes_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
+fvm_sizes_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+fvm_sizes_test_LDADD    = $(LDADD_CS_TESTS)
 
 # Graphical User Interface unit tests
 

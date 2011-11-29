@@ -31,7 +31,9 @@
 #include "bft_error.h"
 #include "bft_mem_usage.h"
 #include "bft_sys_info.h"
-#include "bft_timer.h"
+
+#include "cs_defs.h"
+#include "cs_timer.h"
 
 #if defined(__MINGW32__)
 #define sleep Sleep
@@ -55,14 +57,9 @@ main (int argc, char *argv[])
   }
 #endif /* HAVE_SETLOCALE */
 
-#if ENABLE_NLS
-  bindtextdomain(PACKAGE, LOCALEDIR);
-  textdomain(PACKAGE);
-#endif
-
   /* Initialization and environment */
 
-  (void)bft_timer_wtime();
+  (void)cs_timer_wtime();
 
   printf("command line arguments\n");
   for (i = 0; i < argc; i++)
@@ -73,13 +70,13 @@ main (int argc, char *argv[])
 
   sleep(1);
 
-  walltime = bft_timer_wtime();
-  cputime  = bft_timer_cpu_time();
+  walltime = cs_timer_wtime();
+  cputime  = cs_timer_cpu_time();
 
   printf("Wallclock time: %f (method: %s)\n",
-         walltime, bft_timer_wtime_method());
+         walltime, cs_timer_wtime_method());
   printf("CPU time: %f (method: %s)\n",
-         cputime, bft_timer_cpu_time_method());
+         cputime, cs_timer_cpu_time_method());
 
   exit (EXIT_SUCCESS);
 }
