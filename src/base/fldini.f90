@@ -312,6 +312,9 @@ enddo
 
 do iprop = 1, nproce
   name = nomvar(ipppro(iprop))
+  if (name(1:4) .eq. '    ') then
+    write(name, '(a, i3.3)') 'property_', iprop
+  endif
   if (iapro(iprop).eq.0) then
     itycat = 8
   else

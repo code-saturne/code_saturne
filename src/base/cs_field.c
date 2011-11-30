@@ -240,6 +240,9 @@ _field_create(const char   *name,
   if (_field_map == NULL)
     _field_map = cs_map_name_to_id_create();
 
+  if (strlen(name) == 0)
+    bft_error(__FILE__, __LINE__, 0, _("Defining a field requires a name."));
+
   /* Find or insert entry in map */
 
   field_id = cs_map_name_to_id(_field_map, name);
