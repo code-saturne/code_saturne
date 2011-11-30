@@ -197,6 +197,17 @@ if (iale.eq.1) then
   !==========
 endif
 
+! User variables
+!---------------
+
+do ii = 1, nscaus
+  if (isca(ii) .gt. 0) then
+    ivar = isca(ii)
+    call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
+    !==========
+  endif
+enddo
+
 ! The choice made in VARPOS specifies that we will only be interested in
 ! properties at cell centers (no mass flux, nor density at the boundary).
 

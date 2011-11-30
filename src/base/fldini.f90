@@ -264,6 +264,26 @@ if (iale.eq.1) then
   ivarfl(iwma) = ivarfl(iwma)
 endif
 
+! User variables
+!---------------
+
+do ii = 1, nscaus
+
+  if (isca(ii) .gt. 0) then
+    ivar = isca(ii)
+    name = nomvar(ipprtp(ivar))
+    call flddef(name, iinten, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
+    !==========
+    call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
+    !==========
+    if (ichrvr(ipprtp(ivar)) .eq. 1) then
+      call fldski(ivarfl(ivar), keyvis, iopchr)
+      !==========
+    endif
+  endif
+
+enddo
+
 ! Flag moments
 
 do ii = 1, npromx
