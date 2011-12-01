@@ -50,8 +50,9 @@
 #include "fvm_defs.h"
 
 #include "fvm_block_dist.h"
-#include "fvm_order.h"
 #include "fvm_parall.h"
+
+#include "cs_order.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -179,7 +180,7 @@ _ordered_list(size_t              n_ents,
 
   /* Sort global numbers */
 
-  order = fvm_order_local(NULL, ent_global_num, n_ents);
+  order = cs_order_gnum(NULL, ent_global_num, n_ents);
 
   /* Count number of distinct global entities */
 
@@ -984,11 +985,11 @@ fvm_block_to_part_transfer_gnum(fvm_block_to_part_t *d)
  *----------------------------------------------------------------------------*/
 
 void
-fvm_block_to_part_copy_array(fvm_block_to_part_t   *d,
-                             fvm_datatype_t         datatype,
-                             int                    stride,
-                             const void            *block_values,
-                             void                  *part_values)
+fvm_block_to_part_copy_array(fvm_block_to_part_t  *d,
+                             cs_datatype_t         datatype,
+                             int                   stride,
+                             const void           *block_values,
+                             void                 *part_values)
 {
   int        i;
   size_t     j, k;
@@ -996,8 +997,8 @@ fvm_block_to_part_copy_array(fvm_block_to_part_t   *d,
   unsigned char *send_buf = NULL;
   unsigned char *recv_buf = NULL;
 
-  size_t stride_size = fvm_datatype_size[datatype]*stride;
-  MPI_Datatype mpi_type = fvm_datatype_to_mpi[datatype];
+  size_t stride_size = cs_datatype_size[datatype]*stride;
+  MPI_Datatype mpi_type = cs_datatype_to_mpi[datatype];
 
   const unsigned char *_block_values = block_values;
   unsigned char *_part_values = part_values;
@@ -1138,12 +1139,12 @@ fvm_block_to_part_copy_index(fvm_block_to_part_t  *d,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
-                               fvm_datatype_t         datatype,
-                               const cs_lnum_t       *block_index,
-                               const void            *block_val,
-                               const cs_lnum_t       *part_index,
-                               void                  *part_val)
+fvm_block_to_part_copy_indexed(fvm_block_to_part_t  *d,
+                               cs_datatype_t         datatype,
+                               const cs_lnum_t      *block_index,
+                               const void           *block_val,
+                               const cs_lnum_t      *part_index,
+                               void                 *part_val)
 {
   int    i;
   size_t j, k, w_displ, r_displ;
@@ -1165,8 +1166,8 @@ fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
   const unsigned char *_send_val = block_val;
   unsigned char *_recv_val = part_val;
 
-  size_t type_size = fvm_datatype_size[datatype];
-  MPI_Datatype mpi_type = fvm_datatype_to_mpi[datatype];
+  size_t type_size = cs_datatype_size[datatype];
+  MPI_Datatype mpi_type = cs_datatype_to_mpi[datatype];
 
   const int n_ranks = d->n_ranks;
 

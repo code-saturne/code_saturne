@@ -123,8 +123,8 @@ _get_distrib_statistics(const fvm_box_distrib_t  *distrib,
     for (i = 0; i < distrib->n_ranks; i++) {
 
       _n_rank_boxes = distrib->index[i+1] - distrib->index[i];
-      _min = FVM_MIN(_min, _n_rank_boxes);
-      _max = FVM_MAX(_max, _n_rank_boxes);
+      _min = CS_MIN(_min, _n_rank_boxes);
+      _max = CS_MAX(_max, _n_rank_boxes);
 
       if (_n_rank_boxes > 0)
         _n_ranks += 1;
@@ -257,7 +257,7 @@ fvm_box_set_create(int                dim,
     cs_gnum_t  box_max = 0;
 
     for (i = 0; i < n_boxes; i++)
-      box_max = FVM_MAX(box_max, box_gnum[i]);
+      box_max = CS_MAX(box_max, box_gnum[i]);
 
     MPI_Allreduce(&box_max, &n_g_boxes, 1, CS_MPI_GNUM, MPI_MAX, comm);
 

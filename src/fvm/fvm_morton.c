@@ -150,7 +150,7 @@ _a_ge_b(fvm_morton_code_t  code_a,
         fvm_morton_code_t  code_b)
 {
   int i, a, b, a_diff, b_diff;
-  int l = FVM_MAX(code_a.L, code_b.L);
+  int l = CS_MAX(code_a.L, code_b.L);
 
   a_diff = l - code_a.L;
   b_diff = l - code_b.L;
@@ -204,7 +204,7 @@ _a_gt_b(fvm_morton_code_t  code_a,
         fvm_morton_code_t  code_b)
 {
   int i, a, b, a_diff, b_diff;
-  int l = FVM_MAX(code_a.L, code_b.L);
+  int l = CS_MAX(code_a.L, code_b.L);
 
   a_diff = l - code_a.L;
   b_diff = l - code_b.L;
@@ -433,9 +433,9 @@ _evaluate_distribution(int          n_ranges,
   for (i = 0; i < n_ranges; i++) {
 
     if (distribution[i] > optim)
-      d_up = FVM_MAX(d_up, distribution[i] - optim);
+      d_up = CS_MAX(d_up, distribution[i] - optim);
     else
-      d_low = FVM_MAX(d_low, optim - distribution[i]);
+      d_low = CS_MAX(d_low, optim - distribution[i]);
 
   }
 
@@ -925,10 +925,10 @@ fvm_morton_get_global_extents(int               dim,
 
   for (i = 0; i < n_extents; i++) {
     for (j = 0; j < (size_t)dim; j++) {
-      g_extents[j]     = FVM_MIN(g_extents[j],
-                                 extents[i*dim*2 + j]);
-      g_extents[j+dim] = FVM_MAX(g_extents[j + dim],
-                                 extents[i*dim*2 + j + dim]);
+      g_extents[j]     = CS_MIN(g_extents[j],
+                                extents[i*dim*2 + j]);
+      g_extents[j+dim] = CS_MAX(g_extents[j + dim],
+                                extents[i*dim*2 + j + dim]);
     }
   }
 
@@ -971,7 +971,7 @@ fvm_morton_encode(int               dim,
   morton_code.X[2] = 0;
 
   for (i = 0; i < dim; i++)
-    morton_code.X[i] = FVM_MIN(floor(coords[i]*refinement), refinement - 1);
+    morton_code.X[i] = CS_MIN(floor(coords[i]*refinement), refinement - 1);
 
   return morton_code;
 }
@@ -1008,7 +1008,7 @@ fvm_morton_encode_coords(int                dim,
   for (i = 0; i < (size_t)dim; i++) {
     s[i] = extents[i];
     d[i] = extents[i+dim] - extents[i];
-    d_max = FVM_MAX(d_max, d[i]);
+    d_max = CS_MAX(d_max, d[i]);
   }
 
   for (i = 0; i < (size_t)dim; i++) { /* Reduce effective dimension */
@@ -1023,7 +1023,7 @@ fvm_morton_encode_coords(int                dim,
       m_code[i].L = level;
       for (j = 0; j < 3; j++) {
         n[j] = (coords[i*dim + j] - s[j]) / d[j];
-        m_code[i].X[j] = FVM_MIN(floor(n[j]*refinement), refinement - 1);
+        m_code[i].X[j] = CS_MIN(floor(n[j]*refinement), refinement - 1);
       }
     }
     break;
@@ -1033,7 +1033,7 @@ fvm_morton_encode_coords(int                dim,
       m_code[i].L = level;
       for (j = 0; j < 2; j++) {
         n[j] = (coords[i*dim + j] - s[j]) / d[j];
-        m_code[i].X[j] = FVM_MIN(floor(n[j]*refinement), refinement - 1);
+        m_code[i].X[j] = CS_MIN(floor(n[j]*refinement), refinement - 1);
       }
       m_code[i].X[2] = 0;
     }
@@ -1043,7 +1043,7 @@ fvm_morton_encode_coords(int                dim,
     for (i = 0; i < n_coords; i++) {
       m_code[i].L = level;
       n[0] = (coords[i] - s[0]) / d[0];
-      m_code[i].X[0] = FVM_MIN(floor(n[0]*refinement), refinement - 1);
+      m_code[i].X[0] = CS_MIN(floor(n[0]*refinement), refinement - 1);
       m_code[i].X[1] = 0;
       m_code[i].X[2] = 0;
     }

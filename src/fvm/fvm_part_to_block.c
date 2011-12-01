@@ -50,7 +50,6 @@
 #include "fvm_defs.h"
 
 #include "fvm_block_dist.h"
-#include "fvm_order.h"
 #include "fvm_parall.h"
 
 /*----------------------------------------------------------------------------
@@ -345,11 +344,11 @@ _init_gather_by_gnum(fvm_part_to_block_t  *d,
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_array_alltoallv(fvm_part_to_block_t   *d,
-                      fvm_datatype_t         datatype,
-                      int                    stride,
-                      const void            *part_values,
-                      void                  *block_values)
+_copy_array_alltoallv(fvm_part_to_block_t  *d,
+                      cs_datatype_t         datatype,
+                      int                   stride,
+                      const void           *part_values,
+                      void                 *block_values)
 {
   int        i;
   size_t     j, k;
@@ -357,9 +356,9 @@ _copy_array_alltoallv(fvm_part_to_block_t   *d,
   unsigned char *send_buf = NULL;
   unsigned char *recv_buf = NULL;
 
-  size_t type_size = fvm_datatype_size[datatype];
-  size_t stride_size = fvm_datatype_size[datatype]*stride;
-  MPI_Datatype mpi_type = fvm_datatype_to_mpi[datatype];
+  size_t type_size = cs_datatype_size[datatype];
+  size_t stride_size = cs_datatype_size[datatype]*stride;
+  MPI_Datatype mpi_type = cs_datatype_to_mpi[datatype];
 
   unsigned char *_block_values = block_values;
   const unsigned char *_part_values = part_values;
@@ -467,11 +466,11 @@ _copy_array_alltoallv(fvm_part_to_block_t   *d,
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_array_gatherv(fvm_part_to_block_t   *d,
-                    fvm_datatype_t         datatype,
-                    int                    stride,
-                    const void            *part_values,
-                    void                  *block_values)
+_copy_array_gatherv(fvm_part_to_block_t  *d,
+                    cs_datatype_t         datatype,
+                    int                   stride,
+                    const void           *part_values,
+                    void                 *block_values)
 {
   int        i;
   size_t     j, k;
@@ -481,8 +480,8 @@ _copy_array_gatherv(fvm_part_to_block_t   *d,
 
   int send_count = d->n_part_ents * stride;
 
-  size_t stride_size = fvm_datatype_size[datatype]*stride;
-  MPI_Datatype mpi_type = fvm_datatype_to_mpi[datatype];
+  size_t stride_size = cs_datatype_size[datatype]*stride;
+  MPI_Datatype mpi_type = cs_datatype_to_mpi[datatype];
 
   unsigned char *_block_values = block_values;
 
@@ -703,12 +702,12 @@ _copy_index_gatherv(fvm_part_to_block_t  *d,
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_indexed_alltoallv(fvm_part_to_block_t   *d,
-                        fvm_datatype_t         datatype,
-                        const cs_lnum_t       *part_index,
-                        const void            *part_val,
-                        const cs_lnum_t       *block_index,
-                        void                  *block_val)
+_copy_indexed_alltoallv(fvm_part_to_block_t  *d,
+                        cs_datatype_t         datatype,
+                        const cs_lnum_t      *part_index,
+                        const void           *part_val,
+                        const cs_lnum_t      *block_index,
+                        void                 *block_val)
 {
   int    i, l;
   size_t j, k;
@@ -727,8 +726,8 @@ _copy_indexed_alltoallv(fvm_part_to_block_t   *d,
   const unsigned char *_part_val = part_val;
   unsigned char *_block_val = block_val;
 
-  size_t type_size = fvm_datatype_size[datatype];
-  MPI_Datatype mpi_type = fvm_datatype_to_mpi[datatype];
+  size_t type_size = cs_datatype_size[datatype];
+  MPI_Datatype mpi_type = cs_datatype_to_mpi[datatype];
 
   const int n_ranks = d->n_ranks;
   const int rank_step = d->bi.rank_step;
@@ -872,12 +871,12 @@ _copy_indexed_alltoallv(fvm_part_to_block_t   *d,
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_indexed_gatherv(fvm_part_to_block_t   *d,
-                      fvm_datatype_t         datatype,
-                      const cs_lnum_t       *part_index,
-                      const void            *part_val,
-                      const cs_lnum_t       *block_index,
-                      void                  *block_val)
+_copy_indexed_gatherv(fvm_part_to_block_t  *d,
+                      cs_datatype_t         datatype,
+                      const cs_lnum_t      *part_index,
+                      const void           *part_val,
+                      const cs_lnum_t      *block_index,
+                      void                 *block_val)
 {
   int    i, l;
   size_t j, k;
@@ -895,8 +894,8 @@ _copy_indexed_gatherv(fvm_part_to_block_t   *d,
   const unsigned char *_part_val = part_val;
   unsigned char *_block_val = block_val;
 
-  size_t type_size = fvm_datatype_size[datatype];
-  MPI_Datatype mpi_type = fvm_datatype_to_mpi[datatype];
+  size_t type_size = cs_datatype_size[datatype];
+  MPI_Datatype mpi_type = cs_datatype_to_mpi[datatype];
 
   const int n_ranks = d->n_ranks;
   const size_t n_recv_ents = d->recv_size;
@@ -1149,11 +1148,11 @@ fvm_part_to_block_get_n_part_ents(fvm_part_to_block_t *d)
  *----------------------------------------------------------------------------*/
 
 void
-fvm_part_to_block_copy_array(fvm_part_to_block_t   *d,
-                             fvm_datatype_t         datatype,
-                             int                    stride,
-                             const void            *part_values,
-                             void                  *block_values)
+fvm_part_to_block_copy_array(fvm_part_to_block_t  *d,
+                             cs_datatype_t         datatype,
+                             int                   stride,
+                             const void           *part_values,
+                             void                 *block_values)
 {
   if (d->bi.n_ranks == 1)
     _copy_array_gatherv(d,
@@ -1211,12 +1210,12 @@ fvm_part_to_block_copy_index(fvm_part_to_block_t  *d,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_part_to_block_copy_indexed(fvm_part_to_block_t   *d,
-                               fvm_datatype_t         datatype,
-                               const cs_lnum_t       *part_index,
-                               const void            *part_val,
-                               const cs_lnum_t       *block_index,
-                               void                  *block_val)
+fvm_part_to_block_copy_indexed(fvm_part_to_block_t  *d,
+                               cs_datatype_t         datatype,
+                               const cs_lnum_t      *part_index,
+                               const void           *part_val,
+                               const cs_lnum_t      *block_index,
+                               void                 *block_val)
 {
   if (d->bi.n_ranks == 1)
     _copy_indexed_gatherv(d,

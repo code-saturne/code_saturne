@@ -861,7 +861,7 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
   extra_vertex_coords = _extra_vertex_coords(writer,
                                              mesh);
 
-  BFT_MALLOC(coords_tmp, FVM_MAX(n_vertices, n_extra_vertices), cs_coord_t);
+  BFT_MALLOC(coords_tmp, CS_MAX(n_vertices, n_extra_vertices), cs_coord_t);
   BFT_MALLOC(global_coords_s, global_s_size, cs_coord_t);
 
   vertices_slice = fvm_gather_slice_create(mesh->global_vertex_num,
@@ -1085,7 +1085,7 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
                                              mesh);
 
 
-  BFT_MALLOC(coords_tmp, FVM_MAX(n_vertices, n_extra_vertices), cs_coord_t);
+  BFT_MALLOC(coords_tmp, CS_MAX(n_vertices, n_extra_vertices), cs_coord_t);
 
   /* Loop on dimension */
 
@@ -1455,8 +1455,8 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
   BFT_MALLOC(local_idx, n_elements + 1, cs_lnum_t);
   BFT_MALLOC(global_idx_s, global_s_size + 1, cs_gnum_t);
 
-  local_connect_size = FVM_MAX(global_s_size,
-                               (cs_gnum_t)n_sub_elements_max*10);
+  local_connect_size = CS_MAX(global_s_size,
+                              (cs_gnum_t)n_sub_elements_max*10);
   BFT_MALLOC(sub_elt_vertex_num, local_connect_size * stride, cs_gnum_t);
 
   /* Loop on slices */
@@ -2074,10 +2074,10 @@ _export_field_e(const fvm_writer_section_t      *export_list,
                 int                              solution_index,
                 int                              input_dim,
                 CGNS_ENUMT(DataType_t)           cgns_datatype,
-                fvm_interlace_t                  interlace,
+                cs_interlace_t                   interlace,
                 int                              n_parent_lists,
                 const cs_lnum_t                  parent_num_shift[],
-                fvm_datatype_t                   datatype,
+                cs_datatype_t                    datatype,
                 const void                *const field_values[],
                 size_t                           output_buffer_size,
                 void                      *const output_buffer)
@@ -2188,10 +2188,10 @@ _export_field_n(const fvm_nodal_t               *mesh,
                 int                              solution_index,
                 int                              input_dim,
                 CGNS_ENUMT(DataType_t)           cgns_datatype,
-                fvm_interlace_t                  interlace,
+                cs_interlace_t                   interlace,
                 int                              n_parent_lists,
                 const cs_lnum_t                  parent_num_shift[],
-                fvm_datatype_t                   datatype,
+                cs_datatype_t                    datatype,
                 const void                *const field_values[],
                 size_t                           output_buffer_size,
                 void                      *const output_buffer)
@@ -3107,17 +3107,17 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
                          const char             *name,
                          fvm_writer_var_loc_t    location,
                          int                     dimension,
-                         fvm_interlace_t         interlace,
+                         cs_interlace_t          interlace,
                          int                     n_parent_lists,
                          const cs_lnum_t         parent_num_shift[],
-                         fvm_datatype_t          datatype,
+                         cs_datatype_t           datatype,
                          int                     time_step,
                          double                  time_value,
                          const void       *const field_values[])
 {
   char   base_name[FVM_CGNS_NAME_SIZE+1];
   char   field_name[FVM_CGNS_NAME_SIZE+1];
-  fvm_datatype_t  export_datatype = FVM_DATATYPE_NULL;
+  cs_datatype_t  export_datatype = CS_DATATYPE_NULL;
   int    output_dim;
 
   size_t  input_size = 0;
@@ -3148,29 +3148,29 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
   /* FVM datatype conversion to CGNS */
 
   switch (datatype) {
-  case FVM_DOUBLE:
+  case CS_DOUBLE:
     cgns_datatype = CGNS_ENUMV(RealDouble);
-    export_datatype = FVM_DOUBLE;
+    export_datatype = CS_DOUBLE;
     break;
-  case FVM_FLOAT:
+  case CS_FLOAT:
     cgns_datatype = CGNS_ENUMV(RealSingle);
-    export_datatype = FVM_FLOAT;
+    export_datatype = CS_FLOAT;
     break;
-  case FVM_UINT32:
+  case CS_UINT32:
     cgns_datatype = CGNS_ENUMV(Integer);
-    export_datatype = FVM_INT32;
+    export_datatype = CS_INT32;
     break;
-  case FVM_UINT64:
+  case CS_UINT64:
     cgns_datatype = CGNS_ENUMV(Integer);
-    export_datatype = FVM_INT32;
+    export_datatype = CS_INT32;
     break;
-  case FVM_INT32:
+  case CS_INT32:
     cgns_datatype = CGNS_ENUMV(Integer);
-    export_datatype = FVM_INT32;
+    export_datatype = CS_INT32;
     break;
-  case FVM_INT64:
+  case CS_INT64:
     cgns_datatype = CGNS_ENUMV(Integer);
-    export_datatype = FVM_INT32;
+    export_datatype = CS_INT32;
     break;
   default:
     assert(0);
@@ -3309,7 +3309,7 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
   helper = fvm_writer_field_helper_create(mesh,
                                           export_list,
                                           output_dim,
-                                          FVM_NO_INTERLACE,
+                                          CS_NO_INTERLACE,
                                           export_datatype,
                                           location);
 
@@ -3339,9 +3339,9 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
   else
     var_buffer_size = input_size / 4;
 
-  var_buffer_size = FVM_MAX(var_buffer_size, min_var_buffer_size);
-  var_buffer_size = FVM_MAX(var_buffer_size, 128);
-  var_buffer_size = FVM_MIN(var_buffer_size, output_size);
+  var_buffer_size = CS_MAX(var_buffer_size, min_var_buffer_size);
+  var_buffer_size = CS_MAX(var_buffer_size, 128);
+  var_buffer_size = CS_MIN(var_buffer_size, output_size);
 
   BFT_MALLOC(var_buffer, var_buffer_size, double);
 

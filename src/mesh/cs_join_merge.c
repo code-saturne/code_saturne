@@ -40,25 +40,17 @@
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *---------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM headers
- *---------------------------------------------------------------------------*/
-
-#include <fvm_io_num.h>
-#include <fvm_order.h>
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *---------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_printf.h"
+
+#include "fvm_io_num.h"
+#include "fvm_parall.h"
+
 #include "cs_log.h"
+#include "cs_order.h"
 #include "cs_search.h"
 #include "cs_join_post.h"
 
@@ -352,7 +344,7 @@ _compute_new_vertex_gnum(const cs_join_mesh_t       *work,
 
   BFT_MALLOC(order, n_new_vertices, cs_lnum_t);
 
-  fvm_order_local_allocated_s(NULL, inter_tag, 3, order, n_new_vertices);
+  cs_order_gnum_allocated_s(NULL, inter_tag, 3, order, n_new_vertices);
 
   BFT_MALLOC(adjacency, 3*n_new_vertices, cs_gnum_t);
 
@@ -2422,7 +2414,7 @@ _keep_local_vtx_evolution(cs_int_t                 n_vertices,
 
   BFT_MALLOC(order, n_vertices, cs_lnum_t);
 
-  fvm_order_local_allocated(NULL, vtx_gnum, order, n_vertices);
+  cs_order_gnum_allocated(NULL, vtx_gnum, order, n_vertices);
 
   /* Delete vertices sharing the same global number. Keep only one */
 

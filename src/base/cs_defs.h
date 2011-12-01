@@ -217,6 +217,23 @@ typedef unsigned long long uint64_t;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Variable value type.
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_DATATYPE_NULL,      /* empty datatype */
+  CS_CHAR,               /* character values */
+  CS_FLOAT,              /* 4-byte floating point values */
+  CS_DOUBLE,             /* 8-byte floating point values */
+  CS_INT32,              /* 4-byte signed integer values */
+  CS_INT64,              /* 8-byte signed integer values */
+  CS_UINT32,             /* 4-byte unsigned integer values */
+  CS_UINT64              /* 8-byte unsigned integer values */
+
+} cs_datatype_t;
+
+/*----------------------------------------------------------------------------
  * Basic types used by Code_Saturne
  * They may be modified here to better map to a given library, with the
  * following constraints:
@@ -279,8 +296,30 @@ typedef char     cs_byte_t;     /* Byte (untyped memory unit) */
 
 #endif /* defined(HAVE_MPI) && !defined(CS_IGNORE_MPI) */
 
-/* Macros for compilation with a C++ compiler */
-/*--------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Type independent min an max (caution: the argument is evaluated)
+ *----------------------------------------------------------------------------*/
+
+#define CS_ABS(a)     ((a) <  0  ? -(a) : (a))  /* Absolute value of a */
+#define CS_MIN(a,b)   ((a) < (b) ?  (a) : (b))  /* Minimum of a et b */
+#define CS_MAX(a,b)   ((a) > (b) ?  (a) : (b))  /* Maximum of a et b */
+
+/*----------------------------------------------------------------------------
+ * Variable interlace type:
+ * {x1, y1, z1, x2, y2, z2, ...,xn, yn, zn} if interlaced
+ * {x1, x2, ..., xn, y1, y2, ..., yn, z1, z2, ..., zn} if non interlaced
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_INTERLACE,          /* Variable is interlaced */
+  CS_NO_INTERLACE        /* Variable is not interlaced */
+
+} cs_interlace_t;
+
+/*----------------------------------------------------------------------------
+ * Macros for compilation with a C++ compiler
+ *----------------------------------------------------------------------------*/
 
 #undef BEGIN_C_DECLS
 #undef   END_C_DECLS
@@ -291,6 +330,23 @@ typedef char     cs_byte_t;     /* Byte (untyped memory unit) */
 #else
 #  define BEGIN_C_DECLS
 #  define   END_C_DECLS
+#endif
+
+/*=============================================================================
+ * Global variables
+ *============================================================================*/
+
+/* Sizes and names associated with datatypes */
+
+extern const size_t   cs_datatype_size[];
+extern const char    *cs_datatype_name[];
+
+/* MPI Datatypes associated with Code_Saturne datatypes */
+
+#if defined(HAVE_MPI) && !defined(CS_IGNORE_MPI)
+
+extern MPI_Datatype   cs_datatype_to_mpi[];
+
 #endif
 
 /*----------------------------------------------------------------------------*/

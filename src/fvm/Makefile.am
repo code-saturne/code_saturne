@@ -59,7 +59,6 @@ fvm_nodal_order.h \
 fvm_nodal_project.h \
 fvm_nodal_triangulate.h \
 fvm_nodal_extract.h \
-fvm_order.h \
 fvm_parall.h \
 fvm_part_to_block.h \
 fvm_periodicity.h \
@@ -90,8 +89,8 @@ fvm_writer_priv.h
 
 # Library source files
 
-lib_LTLIBRARIES = libfvm.la libfvm_filters.la
-noinst_LTLIBRARIES =
+lib_LTLIBRARIES =
+noinst_LTLIBRARIES = libfvm.la libfvm_filters.la
 libfvm_la_LIBADD = $(LTLIBINTL)
 libfvm_filters_la_LIBADD =
 
@@ -117,7 +116,6 @@ fvm_nodal_order.c \
 fvm_nodal_project.c \
 fvm_nodal_triangulate.c \
 fvm_nodal_extract.c \
-fvm_order.c \
 fvm_parall.c \
 fvm_part_to_block.c \
 fvm_periodicity.c \

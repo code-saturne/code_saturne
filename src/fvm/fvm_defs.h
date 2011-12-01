@@ -38,13 +38,6 @@ extern "C" {
  * Macro definitions
  *============================================================================*/
 
-/* "Classical" macros */
-/*--------------------*/
-
-#define FVM_ABS(a)     ((a) <  0  ? -(a) : (a))  /* Absolute value of a */
-#define FVM_MIN(a,b)   ((a) > (b) ?  (b) : (a))  /* Minimum of a et b */
-#define FVM_MAX(a,b)   ((a) < (b) ?  (b) : (a))  /* Maximum of a et b */
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -68,36 +61,6 @@ typedef enum {
 
 } fvm_element_t;
 
-/*----------------------------------------------------------------------------
- * Variable interlace type:
- * {x1, y1, z1, x2, y2, z2, ...,xn, yn, zn} if interlaced
- * {x1, x2, ..., xn, y1, y2, ..., yn, z1, z2, ..., zn} if non interlaced
- *----------------------------------------------------------------------------*/
-
-typedef enum {
-
-  FVM_INTERLACE,          /* Variable is interlaced */
-  FVM_NO_INTERLACE        /* Variable is not interlaced */
-
-} fvm_interlace_t;
-
-/*----------------------------------------------------------------------------
- * Variable value type.
- *----------------------------------------------------------------------------*/
-
-typedef enum {
-
-  FVM_DATATYPE_NULL,      /* empty datatype */
-  FVM_CHAR,               /* character values */
-  FVM_FLOAT,              /* 4-byte floating point values */
-  FVM_DOUBLE,             /* 8-byte floating point values */
-  FVM_INT32,              /* 4-byte signed integer values */
-  FVM_INT64,              /* 8-byte signed integer values */
-  FVM_UINT32,             /* 4-byte unsigned integer values */
-  FVM_UINT64              /* 8-byte unsigned integer values */
-
-} fvm_datatype_t;
-
 /*=============================================================================
  * Static global variables
  *============================================================================*/
@@ -109,11 +72,6 @@ extern const char  *fvm_elements_type_name[];
 /* Names of (single) element types */
 
 extern const char  *fvm_element_type_name[];
-
-/* Sizes and names associated with datatypes */
-
-extern const size_t  fvm_datatype_size[];
-extern const char   *fvm_datatype_name[];
 
 /*----------------------------------------------------------------------------*/
 

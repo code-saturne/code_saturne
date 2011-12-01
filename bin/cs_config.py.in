@@ -434,7 +434,7 @@ def main(argv, pkg):
 
     if opts.libs is not None:
         if opts.libs == "saturne":
-            print("-lsaturne -lmei -lfvm_filters -lfvm -lbft")
+            print("-lsaturne -lmei -lbft")
         elif opts.libs == "ple":
             print(pkg.ple_libs)
         else:

@@ -290,7 +290,7 @@ _added_vertex_coords(const fvm_tesselation_t  *ts,
     cs_coord_t triangle_surface = 0.;
     const cs_coord_t *current_coords = NULL;
 
-    face_id = FVM_ABS(ts->face_num[i]) - 1;
+    face_id = CS_ABS(ts->face_num[i]) - 1;
 
     n_vertices = ts->vertex_index[face_id+1] - ts->vertex_index[face_id];
 
@@ -435,10 +435,10 @@ _solve_ax_b_4(double            a[4][4],
     /* Seek best pivot */
 
     k_pivot = i;
-    abs_pivot = FVM_ABS(_a[i][i]);
+    abs_pivot = CS_ABS(_a[i][i]);
 
     for (k = i+1; k < 4; k++) {
-      abs_a_ki = FVM_ABS(_a[k][i]);
+      abs_a_ki = CS_ABS(_a[k][i]);
       if (abs_a_ki > abs_pivot) {
         abs_pivot = abs_a_ki;
         k_pivot = k;
@@ -526,7 +526,7 @@ _polyhedron_vertices(const fvm_tesselation_t   *ts,
     /* Loop on face vertices */
     /*-----------------------*/
 
-    face_id = FVM_ABS(ts->face_num[i]) - 1;
+    face_id = CS_ABS(ts->face_num[i]) - 1;
 
     n_vertices = ts->vertex_index[face_id+1] - ts->vertex_index[face_id];
 
@@ -635,9 +635,9 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
                              int                       dest_dim,
                              cs_lnum_t                 start_id,
                              cs_lnum_t                 end_id,
-                             fvm_interlace_t           src_interlace,
-                             fvm_datatype_t            src_datatype,
-                             fvm_datatype_t            dest_datatype,
+                             cs_interlace_t            src_interlace,
+                             cs_datatype_t             src_datatype,
+                             cs_datatype_t             dest_datatype,
                              int                       n_parent_lists,
                              const cs_lnum_t           parent_num_shift[],
                              const cs_lnum_t           parent_num[],
@@ -741,7 +741,7 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
           parent_id -= parent_num_shift[pl];
         }
 
-        if (src_interlace == FVM_INTERLACE) {
+        if (src_interlace == CS_INTERLACE) {
           src_id = parent_id * src_dim + _src_dim_shift;
         }
         else {
@@ -752,10 +752,10 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
         /* Now convert based on source datatype */
 
         switch(src_datatype) {
-        case FVM_FLOAT:
+        case CS_FLOAT:
           v_f = ((const float *const *const)src_data)[pl][src_id];
           break;
-        case FVM_DOUBLE:
+        case CS_DOUBLE:
           v_f = ((const double *const *const)src_data)[pl][src_id];
           break;
         default:
@@ -809,10 +809,10 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
       /* Now convert based on destination datatype */
 
       switch(dest_datatype) {
-      case FVM_FLOAT:
+      case CS_FLOAT:
         ((float *const)dest_data)[i] = interpolated_value;
         break;
-      case FVM_DOUBLE:
+      case CS_DOUBLE:
         ((double *const)dest_data)[i] = interpolated_value;
         break;
       default:
@@ -1278,7 +1278,7 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
          j < ts->face_index[i+1];
          j++) {
 
-      face_id = FVM_ABS(ts->face_num[j]) - 1;
+      face_id = CS_ABS(ts->face_num[j]) - 1;
 
       n_vertices = ts->vertex_index[face_id+1] - ts->vertex_index[face_id];
 
@@ -1790,7 +1790,7 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
          k < ts->face_index[j+1];
          k++) {
 
-      face_id = FVM_ABS(ts->face_num[k]) - 1;
+      face_id = CS_ABS(ts->face_num[k]) - 1;
 
       n_vertices = ts->vertex_index[face_id+1] - ts->vertex_index[face_id];
       vertex_id = ts->vertex_index[face_id];
@@ -1980,7 +1980,7 @@ _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
          k < ts->face_index[j+1];
          k++) {
 
-      face_id = FVM_ABS(ts->face_num[k]) - 1;
+      face_id = CS_ABS(ts->face_num[k]) - 1;
 
       n_vertices = ts->vertex_index[face_id+1] - ts->vertex_index[face_id];
       vertex_id = ts->vertex_index[face_id];
@@ -2212,7 +2212,7 @@ fvm_tesselation_create(fvm_element_t        element_type,
     cs_lnum_t   max_face_id = 0;
     for (j = 0; j < n_elements; j++) {
       for (k = face_index[j]; k < face_index[j+1]; k++) {
-        face_id = FVM_ABS(face_num[k]) - 1;
+        face_id = CS_ABS(face_num[k]) - 1;
         if (face_id > max_face_id)
           max_face_id = face_id;
       }
@@ -2959,9 +2959,9 @@ fvm_tesselation_vertex_values(const fvm_tesselation_t  *this_tesselation,
                               int                       dest_dim,
                               cs_lnum_t                 start_id,
                               cs_lnum_t                 end_id,
-                              fvm_interlace_t           src_interlace,
-                              fvm_datatype_t            src_datatype,
-                              fvm_datatype_t            dest_datatype,
+                              cs_interlace_t            src_interlace,
+                              cs_datatype_t             src_datatype,
+                              cs_datatype_t             dest_datatype,
                               int                       n_parent_lists,
                               const cs_lnum_t           parent_num_shift[],
                               const cs_lnum_t           parent_num[],
@@ -2971,15 +2971,15 @@ fvm_tesselation_vertex_values(const fvm_tesselation_t  *this_tesselation,
   /* If source or destination datatype is not floating-point,
      set all return values to zero */
 
-  if (   (src_datatype != FVM_DOUBLE && src_datatype != FVM_FLOAT)
-      || (dest_datatype != FVM_DOUBLE && dest_datatype != FVM_FLOAT)) {
+  if (   (src_datatype != CS_DOUBLE && src_datatype != CS_FLOAT)
+      || (dest_datatype != CS_DOUBLE && dest_datatype != CS_FLOAT)) {
 
     unsigned char *_dest_data = dest_data;
 
     size_t data_shift =     start_id
-                          * (dest_dim * fvm_datatype_size[dest_datatype]);
+                          * (dest_dim * cs_datatype_size[dest_datatype]);
     size_t data_size_c =    (end_id - start_id)
-                          * (dest_dim * fvm_datatype_size[dest_datatype]);
+                          * (dest_dim * cs_datatype_size[dest_datatype]);
 
     memset(_dest_data + data_shift, 0, data_size_c);
 

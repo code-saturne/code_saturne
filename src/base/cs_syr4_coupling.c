@@ -660,7 +660,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                coupling_ent->n_elts*syr_coupling->dim,
                cs_coord_t);
     fvm_nodal_get_element_centers(location_elts,
-                                  FVM_INTERLACE,
+                                  CS_INTERLACE,
                                   coupling_ent->elt_dim,
                                   elt_centers);
   }

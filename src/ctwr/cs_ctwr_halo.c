@@ -35,29 +35,21 @@
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_periodicity.h>
-#include <fvm_interface.h>
-#include <fvm_nodal_extract.h>
-#include <fvm_order.h>
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
+
+#include "fvm_periodicity.h"
+#include "fvm_interface.h"
+#include "fvm_nodal_extract.h"
+#include "fvm_parall.h"
+
 #include "cs_base.h"
 #include "cs_ctwr.h"
+#include "cs_order.h"
 #include "cs_halo.h"
 
 /*----------------------------------------------------------------------------
@@ -221,10 +213,10 @@ _vtx_lookup_create(cs_int_t              n_vertices,
         _rank_ids[i] = vtx_lookup->rank_ids[i];
       }
 
-      fvm_order_local_allocated(NULL,
-                                buffer,
-                                order,
-                                n_interfaces-1);
+      cs_order_gnum_allocated(NULL,
+                              buffer,
+                              order,
+                              n_interfaces-1);
 
       for (i = 0; i < n_interfaces - 1; i++) {
         vtx_lookup->if_ranks[i+1] = (cs_int_t)buffer[order[i]];

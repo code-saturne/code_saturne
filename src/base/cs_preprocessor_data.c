@@ -50,18 +50,6 @@
 #include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_periodicity.h>
-
-#include <fvm_block_to_part.h>
-#include <fvm_io_num.h>
-#include <fvm_interface.h>
-#include <fvm_order.h>
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -69,6 +57,12 @@
 #include "cs_file.h"
 #include "cs_mesh.h"
 #include "cs_io.h"
+
+#include "fvm_block_to_part.h"
+#include "fvm_io_num.h"
+#include "fvm_interface.h"
+#include "fvm_parall.h"
+#include "fvm_periodicity.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -384,7 +378,7 @@ _add_periodicity(cs_mesh_t *mesh,
                  cs_int_t   perio_num,
                  cs_real_t  matrix[3][4])
 {
-  cs_int_t  i, j, tr_id;
+  cs_int_t  i, j;
   double  _matrix[3][4];
 
   fvm_periodicity_type_t _perio_type = perio_type;
@@ -394,10 +388,10 @@ _add_periodicity(cs_mesh_t *mesh,
       _matrix[i][j] = matrix[i][j];
   }
 
-  tr_id = fvm_periodicity_add_by_matrix(mesh->periodicity,
-                                        perio_num,
-                                        _perio_type,
-                                        _matrix);
+  fvm_periodicity_add_by_matrix(mesh->periodicity,
+                                perio_num,
+                                _perio_type,
+                                _matrix);
 }
 
 /*----------------------------------------------------------------------------
@@ -1605,8 +1599,8 @@ _precompute_cell_center(const _mesh_reader_t    *mr,
   cs_lnum_t i;
   int n_ranks = 0;
 
-  fvm_datatype_t gnum_type = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
-  fvm_datatype_t real_type = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
+  cs_datatype_t gnum_type = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
+  cs_datatype_t real_type = (sizeof(cs_real_t) == 8) ? CS_DOUBLE : CS_FLOAT;
 
   cs_lnum_t _n_cells = 0;
   cs_lnum_t _n_faces = 0;
@@ -1939,7 +1933,7 @@ _precompute_free_face_center(const _mesh_reader_t   *mr,
 {
   int n_ranks = 0;
 
-  fvm_datatype_t real_type = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
+  cs_datatype_t real_type = (sizeof(cs_real_t) == 8) ? CS_DOUBLE : CS_FLOAT;
 
   cs_lnum_t _n_faces = 0;
   cs_lnum_t _n_vertices = 0;
@@ -2177,9 +2171,9 @@ _decompose_data_g(cs_mesh_t          *mesh,
   cs_lnum_t i;
   int n_ranks = 0;
 
-  fvm_datatype_t lnum_type = (sizeof(cs_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
-  fvm_datatype_t gnum_type = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
-  fvm_datatype_t real_type = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
+  cs_datatype_t lnum_type = (sizeof(cs_lnum_t) == 8) ? CS_INT64 : CS_INT32;
+  cs_datatype_t gnum_type = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
+  cs_datatype_t real_type = (sizeof(cs_real_t) == 8) ? CS_DOUBLE : CS_FLOAT;
 
   int use_cell_rank = 0;
 

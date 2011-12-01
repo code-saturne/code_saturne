@@ -39,32 +39,24 @@
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_io_num.h>
-#include <fvm_order.h>
-#include <fvm_parall.h>
-#include <fvm_interface.h>
-#include <fvm_periodicity.h>
-#include <fvm_selector.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_printf.h"
+
+#include "fvm_io_num.h"
+#include "fvm_parall.h"
+#include "fvm_interface.h"
+#include "fvm_periodicity.h"
+#include "fvm_selector.h"
 
 #include "cs_base.h"
 #include "cs_halo.h"
 #include "cs_log.h"
 #include "cs_mesh_halo.h"
 #include "cs_numbering.h"
+#include "cs_order.h"
 #include "cs_perio.h"
 #include "cs_mesh_quantities.h"
 #include "cs_ext_neighborhood.h"
@@ -2652,10 +2644,10 @@ cs_mesh_order_vertices(cs_mesh_t  *const mesh)
   for (i = 0; i < n_vertices; i++)
     g_vertex_num[i] = mesh->global_vtx_num[i];
 
-  vertex_order = fvm_order_local(NULL, g_vertex_num, (size_t)n_vertices);
+  vertex_order = cs_order_gnum(NULL, g_vertex_num, (size_t)n_vertices);
   BFT_FREE(g_vertex_num);
 
-  vertex_renum = fvm_order_local_renumbering(vertex_order, (size_t)n_vertices);
+  vertex_renum = cs_order_renumbering(vertex_order, (size_t)n_vertices);
   BFT_FREE(vertex_order);
 
   /* Re-define face -> vertices connectivity with the new vertex numbering */
@@ -3207,7 +3199,7 @@ cs_mesh_clean_families(cs_mesh_t  *mesh)
     }
   }
 
-  order = fvm_order_local_s(NULL, interlaced, n_gc_vals, n_gc);
+  order = cs_order_gnum_s(NULL, interlaced, n_gc_vals, n_gc);
 
   /* Prepare removal of duplicates and renumbering */
 

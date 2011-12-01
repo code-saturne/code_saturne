@@ -64,6 +64,7 @@ AM_LDFLAGS = $(ORIGINRUNPATH)
 lib_LTLIBRARIES = libsaturne.la
 libsaturne_la_SOURCES = cs_solver.c
 libsaturne_la_LIBADD = \
+$(top_builddir)/src/fvm/libfvm_filters.la \
 $(top_builddir)/src/base/libcsbase.la \
 $(top_builddir)/src/base/libcscore.la \
 $(top_builddir)/src/pprt/libcspprt.la \
@@ -117,8 +118,6 @@ cs_solver_SOURCES =
 cs_solver_LDADD = libsaturne.la \
 $(LIBPLE_LA) \
 $(top_builddir)/src/mei/libmei.la \
-$(top_builddir)/src/fvm/libfvm_filters.la \
-$(top_builddir)/src/fvm/libfvm.la \
 $(top_builddir)/src/bft/libbft.la \
 $(LTLIBINTL) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
@@ -162,10 +161,10 @@ cs_partition_CPPFLAGS = $(AM_CPPFLAGS) \
 -I$(top_srcdir)/src/bft \
 $(METIS_CPPFLAGS) $(SCOTCH_CPPFLAGS)
 cs_partition_SOURCES = cs_partition.c
-cs_partition_LDADD = $(top_builddir)/src/base/libcscore.la \
-$(LIBPLE_LA) \
-$(top_builddir)/src/fvm/libfvm.la \
+cs_partition_LDADD = \
+$(top_builddir)/src/base/libcscore.la \
 $(top_builddir)/src/bft/libbft.la \
+$(LIBPLE_LA) \
 $(LTLIBINTL) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
 $(METIS_LDFLAGS) $(METIS_LIBS) \

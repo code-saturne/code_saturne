@@ -343,7 +343,7 @@ fvm_writer_def_nodal_buf_size(const fvm_nodal_t  *this_nodal,
 
   /* Define global slice size as (global_size / n_ranks) +  1 */
 
-  *global_s_size = FVM_MAX(n_g_cells, n_g_faces);
+  *global_s_size = CS_MAX(n_g_cells, n_g_faces);
 
   if (*global_s_size == 0)
     *global_s_size = n_g_edges;
@@ -366,10 +366,10 @@ fvm_writer_def_nodal_buf_size(const fvm_nodal_t  *this_nodal,
     case FVM_FACE_POLY:
     case FVM_CELL_POLY:
       if (section->type == FVM_FACE_POLY)
-        connect_size =   FVM_MIN(_n_g_elements_section[i], *global_s_size)
+        connect_size =   CS_MIN(_n_g_elements_section[i], *global_s_size)
                        * n_polygon_vertices_mean;
       else if (section->type == FVM_CELL_POLY)
-        connect_size =   FVM_MIN(_n_g_elements_section[i], *global_s_size)
+        connect_size =   CS_MIN(_n_g_elements_section[i], *global_s_size)
                        * n_polyhedron_vertices_mean;
 
       if (section->tesselation != NULL) {
@@ -395,8 +395,8 @@ fvm_writer_def_nodal_buf_size(const fvm_nodal_t  *this_nodal,
           stride = fvm_nodal_n_vertices_element[sub_type];
 
 
-          connect_size = FVM_MAX(connect_size,
-                                 (cs_gnum_t)n_sub_elements_max * stride);
+          connect_size = CS_MAX(connect_size,
+                                (cs_gnum_t)n_sub_elements_max * stride);
 
         }
 
@@ -405,15 +405,15 @@ fvm_writer_def_nodal_buf_size(const fvm_nodal_t  *this_nodal,
       break;
       break;
     default:
-      connect_size =   FVM_MIN(_n_g_elements_section[i], *global_s_size)
+      connect_size =   CS_MIN(_n_g_elements_section[i], *global_s_size)
                      * section->stride;
     }
 
     /* Buffer size is that required for the entity type
        requiring the largest buffer size */
 
-    *global_connect_s_size = FVM_MAX(*global_connect_s_size,
-                                     connect_size);
+    *global_connect_s_size = CS_MAX(*global_connect_s_size,
+                                    connect_size);
 
   }
 
@@ -708,8 +708,8 @@ fvm_writer_init(const char             *name,
   this_writer->options = tmp_options;
   tmp_options = NULL;
 
-  this_writer->time_dep = FVM_MIN(time_dependency,
-                                  this_writer->format->max_time_dep);
+  this_writer->time_dep = CS_MIN(time_dependency,
+                                 this_writer->format->max_time_dep);
 
   this_writer->mesh_wtime = 0.;
   this_writer->mesh_cpu_time = 0.;
@@ -989,10 +989,10 @@ fvm_writer_export_field(fvm_writer_t                 *this_writer,
                         const char                   *name,
                         fvm_writer_var_loc_t          location,
                         int                           dimension,
-                        fvm_interlace_t               interlace,
+                        cs_interlace_t                interlace,
                         int                           n_parent_lists,
                         const cs_lnum_t               parent_num_shift[],
-                        fvm_datatype_t                datatype,
+                        cs_datatype_t                 datatype,
                         int                           time_step,
                         double                        time_value,
                         const void             *const field_values[])

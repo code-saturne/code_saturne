@@ -619,7 +619,7 @@ _descend_hilbert_heap_coords(int                dim,
   for (i = 0; i < (size_t)dim; i++) {
     s[i] = extents[i];
     d[i] = extents[i+dim] - extents[i];
-    d_max = FVM_MAX(d_max, d[i]);
+    d_max = CS_MAX(d_max, d[i]);
   }
 
   for (i = 0; i < (size_t)dim; i++) { /* Reduce effective dimension */
@@ -756,9 +756,9 @@ _evaluate_distribution(int          n_ranges,
   for (i = 0; i < n_ranges; i++) {
 
     if (distribution[i] > optim)
-      d_up = FVM_MAX(d_up, distribution[i] - optim);
+      d_up = CS_MAX(d_up, distribution[i] - optim);
     else
-      d_low = FVM_MAX(d_low, optim - distribution[i]);
+      d_low = CS_MAX(d_low, optim - distribution[i]);
 
   }
 
@@ -1211,7 +1211,7 @@ fvm_hilbert_get_coord_extents(int               dim,
 
   for (i = 0; i < (size_t)dim; i++) {
     d[i] = g_extents[i+dim] - g_extents[i];
-    d_max = FVM_MAX(d_max, d[i]);
+    d_max = CS_MAX(d_max, d[i]);
   }
 
   for (i = 0; i < (size_t)dim; i++) {

@@ -49,9 +49,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "fvm_defs.h"
-#include "fvm_order.h"
 #include "fvm_parall.h"
 #include "fvm_periodicity.h"
+
+#include "cs_order.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -302,11 +303,11 @@ _sort_periodic_couples(cs_lnum_t    *n_slice_couples,
   BFT_MALLOC(order, n_couples, cs_lnum_t);
   BFT_MALLOC(couples_tmp, n_couples*3, cs_gnum_t);
 
-  fvm_order_local_allocated_s(NULL,
-                              couples,
-                              3,
-                              order,
-                              n_couples);
+  cs_order_gnum_allocated_s(NULL,
+                            couples,
+                            3,
+                            order,
+                            n_couples);
 
   /* Copy to temporary array, ignoring duplicates */
 
@@ -555,10 +556,10 @@ _slice_global_num_to_equiv(int                n_ranks,
 
   BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
 
-  fvm_order_local_allocated(NULL,
-                            recv_global_num,
-                            recv_order,
-                            n_ent_recv);
+  cs_order_gnum_allocated(NULL,
+                          recv_global_num,
+                          recv_order,
+                          n_ent_recv);
 
   /* Loop by increasing number: if two elements have the same global
      number, they are equivalent. We do not increment equivalence counts
@@ -1872,7 +1873,7 @@ _exchange_periodic_equiv(size_t                     slice_size,
 
   /* Build ordering array for binary search */
 
-  order = fvm_order_local(NULL, slice_global_num, n_slice_elements);
+  order = cs_order_gnum(NULL, slice_global_num, n_slice_elements);
 
   /* Associate id in slice for periodic couples prior to sending */
 
@@ -3390,9 +3391,9 @@ fvm_interface_set_create(cs_lnum_t                 n_ent,
 
   /* Initial checks */
 
-  if (   fvm_order_local_test(parent_entity_number,
-                              global_number,
-                              n_ent) == false
+  if (   cs_order_gnum_test(parent_entity_number,
+                            global_number,
+                            n_ent) == false
       && global_number != NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("Trying to build an interface with unordered elements\n"

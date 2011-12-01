@@ -83,26 +83,6 @@ const char  *fvm_element_type_name[] = {N_("edge"),
                                         N_("hexahedron"),
                                         N_("simple polyhedron")};
 
-/* Sizes associated with datatypes */
-
-const size_t  fvm_datatype_size[] = {0,
-                                     1,
-                                     sizeof(float),
-                                     sizeof(double),
-                                     4,
-                                     8,
-                                     4,
-                                     8};
-
-const char   *fvm_datatype_name[] = {"",
-                                     "char",
-                                     "float",
-                                     "double",
-                                     "int32",
-                                     "int64",
-                                     "uint32",
-                                     "uint64"};
-
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus

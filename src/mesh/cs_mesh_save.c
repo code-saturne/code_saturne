@@ -42,32 +42,23 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_error.h>
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_periodicity.h>
-
-#include <fvm_block_to_part.h>
-#include <fvm_part_to_block.h>
-#include <fvm_io_num.h>
-#include <fvm_interface.h>
-#include <fvm_order.h>
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_error.h"
+#include "bft_mem.h"
+#include "bft_printf.h"
+
+#include "fvm_block_to_part.h"
+#include "fvm_part_to_block.h"
+#include "fvm_io_num.h"
+#include "fvm_interface.h"
+#include "fvm_parall.h"
+#include "fvm_periodicity.h"
+
 #include "cs_base.h"
 #include "cs_mesh.h"
+#include "cs_order.h"
 #include "cs_io.h"
 
 /*----------------------------------------------------------------------------
@@ -108,8 +99,8 @@ _write_mesh_perio_metadata(const cs_mesh_t  *mesh,
 {
   char section_name[32];
 
-  const fvm_datatype_t lnum_type
-    = (sizeof(cs_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
+  const cs_datatype_t lnum_type
+    = (sizeof(cs_lnum_t) == 8) ? CS_INT64 : CS_INT32;
 
   double  matrix[3][4];
   cs_lnum_t perio_type = 0;
@@ -134,7 +125,7 @@ _write_mesh_perio_metadata(const cs_mesh_t  *mesh,
 
   sprintf(section_name, "periodicity_matrix_%02d", perio_num);
 
-  cs_io_write_global(section_name, 12, 0, 0, 1, FVM_DOUBLE,
+  cs_io_write_global(section_name, 12, 0, 0, 1, CS_DOUBLE,
                      matrix,  pp_out);
 }
 
@@ -169,8 +160,8 @@ _write_face_vertices_g(const cs_mesh_t           *mesh,
   const cs_lnum_t n_faces = mesh->n_i_faces + mesh->n_b_faces;
 
   const cs_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
-  const fvm_datatype_t gnum_type
-    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+  const cs_datatype_t gnum_type
+    = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
 
   /* Face -> vertex connectivity */
   /*-----------------------------*/
@@ -317,12 +308,12 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
   const cs_lnum_t n_faces = mesh->n_i_faces + mesh->n_b_faces;
 
   const cs_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
-  const fvm_datatype_t real_type
-    = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
-  const fvm_datatype_t gnum_type
-    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
-  const fvm_datatype_t lnum_type
-    = (sizeof(cs_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
+  const cs_datatype_t real_type
+    = (sizeof(cs_real_t) == 8) ? CS_DOUBLE : CS_FLOAT;
+  const cs_datatype_t gnum_type
+    = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
+  const cs_datatype_t lnum_type
+    = (sizeof(cs_lnum_t) == 8) ? CS_INT64 : CS_INT32;
 
   /* Distribute cell group class info to blocks (write later) */
   /*----------------------------------------------------------*/
@@ -549,8 +540,8 @@ _write_mesh_perio_data_g(int         perio_num,
   const cs_gnum_t  *couple_g_num = NULL;
   fvm_part_to_block_t *d = NULL;
 
-  const fvm_datatype_t gnum_type
-    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+  const cs_datatype_t gnum_type
+    = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
 
   /* Create global couple numbering */
 
@@ -635,27 +626,27 @@ _write_mesh_data_l(const cs_mesh_t  *mesh,
   const cs_lnum_t n_faces = mesh->n_i_faces + mesh->n_b_faces;
 
   const cs_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
-  const fvm_datatype_t real_type
-    = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
-  const fvm_datatype_t gnum_type
-    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
-  const fvm_datatype_t lnum_type
-    = (sizeof(cs_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
+  const cs_datatype_t real_type
+    = (sizeof(cs_real_t) == 8) ? CS_DOUBLE : CS_FLOAT;
+  const cs_datatype_t gnum_type
+    = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
+  const cs_datatype_t lnum_type
+    = (sizeof(cs_lnum_t) == 8) ? CS_INT64 : CS_INT32;
 
   /* Prepare cell group classes */
 
   BFT_MALLOC(cell_gc_id, mesh->n_cells, cs_lnum_t);
 
-  order = fvm_order_local(NULL, mesh->global_cell_num, mesh->n_cells);
+  order = cs_order_gnum(NULL, mesh->global_cell_num, mesh->n_cells);
   for (i = 0; i < mesh->n_cells; i++)
     cell_gc_id[i] = mesh->cell_family[order[i]];
   BFT_FREE(order);
 
   /* Face ordering */
 
-  i_order = fvm_order_local(NULL, mesh->global_i_face_num, mesh->n_i_faces);
+  i_order = cs_order_gnum(NULL, mesh->global_i_face_num, mesh->n_i_faces);
   if (mesh->n_b_faces > 0)
-    b_order = fvm_order_local(NULL, mesh->global_b_face_num, mesh->n_b_faces);
+    b_order = cs_order_gnum(NULL, mesh->global_b_face_num, mesh->n_b_faces);
 
   /* Face -> cell connectivity (excluding periodic values )*/
 
@@ -849,7 +840,7 @@ _write_mesh_data_l(const cs_mesh_t  *mesh,
 
   BFT_MALLOC(vtx_coords, mesh->n_vertices*3, cs_real_t);
 
-  order = fvm_order_local(NULL, mesh->global_vtx_num, mesh->n_vertices);
+  order = cs_order_gnum(NULL, mesh->global_vtx_num, mesh->n_vertices);
   for (i = 0; i < mesh->n_vertices; i++) {
     j = order[i];
     for (k = 0; k <3; k++)
@@ -889,8 +880,8 @@ _write_mesh_perio_data_l(int         perio_num,
 {
   char section_name[32];
 
-  const fvm_datatype_t gnum_type
-    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+  const cs_datatype_t gnum_type
+    = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
 
   /* Write face couples */
 
@@ -936,10 +927,10 @@ cs_mesh_save(const cs_mesh_t  *mesh,
   cs_io_t  *pp_out = NULL;
 
   const cs_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
-  const fvm_datatype_t gnum_type
-    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
-  const fvm_datatype_t lnum_type
-    = (sizeof(cs_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
+  const cs_datatype_t gnum_type
+    = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
+  const cs_datatype_t lnum_type
+    = (sizeof(cs_lnum_t) == 8) ? CS_INT64 : CS_INT32;
 
   /* Precompute some sizes */
 
@@ -1005,7 +996,7 @@ cs_mesh_save(const cs_mesh_t  *mesh,
   /* Write headers */
   /*---------------*/
 
-  cs_io_write_global("start_block:dimensions", 0, 0, 0, 0, FVM_DATATYPE_NULL,
+  cs_io_write_global("start_block:dimensions", 0, 0, 0, 0, CS_DATATYPE_NULL,
                      NULL, pp_out);
 
   cs_io_write_global("n_cells", 1, 1, 0, 1, gnum_type,
@@ -1036,7 +1027,7 @@ cs_mesh_save(const cs_mesh_t  *mesh,
                        mesh->group_idx, pp_out);
 
     cs_io_write_global("group_name",
-                       mesh->group_idx[mesh->n_groups] - 1, 0, 0, 1, FVM_CHAR,
+                       mesh->group_idx[mesh->n_groups] - 1, 0, 0, 1, CS_CHAR,
                        mesh->group_lst, pp_out);
   }
 
@@ -1077,13 +1068,13 @@ cs_mesh_save(const cs_mesh_t  *mesh,
 
   }
 
-  cs_io_write_global("end_block:dimensions", 0, 0, 0, 0, FVM_DATATYPE_NULL,
+  cs_io_write_global("end_block:dimensions", 0, 0, 0, 0, CS_DATATYPE_NULL,
                      NULL, pp_out);
 
   /* Write data */
   /*------------*/
 
-  cs_io_write_global("start_block:data", 0, 0, 0, 0, FVM_DATATYPE_NULL,
+  cs_io_write_global("start_block:data", 0, 0, 0, 0, CS_DATATYPE_NULL,
                      NULL, pp_out);
 
   /* Main mesh data */
@@ -1124,7 +1115,7 @@ cs_mesh_save(const cs_mesh_t  *mesh,
 
   /* Close file */
 
-  cs_io_write_global("end_block:data", 0, 0, 0, 0, FVM_DATATYPE_NULL,
+  cs_io_write_global("end_block:data", 0, 0, 0, 0, CS_DATATYPE_NULL,
                      NULL, pp_out);
 
   if (n_perio_faces != NULL) {

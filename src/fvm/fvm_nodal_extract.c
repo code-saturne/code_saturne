@@ -315,7 +315,7 @@ _cell_poly_section_centers(const fvm_nodal_section_t  *this_section,
                            cs_lnum_t                  *element_count,
                            const cs_lnum_t            *parent_vertex_num,
                            const cs_coord_t            vertex_coords[],
-                           fvm_interlace_t             interlace,
+                           cs_interlace_t              interlace,
                            cs_coord_t                 *cell_centers)
 {
   cs_lnum_t i, j;
@@ -342,7 +342,7 @@ _cell_poly_section_centers(const fvm_nodal_section_t  *this_section,
 
       double f_center[3], f_normal[3], f_surface;
 
-      cs_lnum_t face_id = FVM_ABS(this_section->face_num[j]) - 1;
+      cs_lnum_t face_id = CS_ABS(this_section->face_num[j]) - 1;
       cs_lnum_t v_index_start = this_section->vertex_index[face_id];
       cs_lnum_t v_index_end = this_section->vertex_index[face_id + 1];
       cs_lnum_t n_vertices = v_index_end - v_index_start;
@@ -361,7 +361,7 @@ _cell_poly_section_centers(const fvm_nodal_section_t  *this_section,
 
     } /* End of loop on faces */
 
-    if (interlace == FVM_INTERLACE) {
+    if (interlace == CS_INTERLACE) {
       for (k = 0; k < 3; k++)
         cell_centers[_element_count*3 + k] = c_center[k]/denom;
     }
@@ -396,7 +396,7 @@ _cell_strided_section_centers(const fvm_nodal_section_t  *this_section,
                               cs_lnum_t                  *element_count,
                               const cs_lnum_t            *parent_vertex_num,
                               const cs_coord_t            vertex_coords[],
-                              fvm_interlace_t             interlace,
+                              cs_interlace_t              interlace,
                               cs_coord_t                 *cell_centers)
 {
   cs_lnum_t i, j;
@@ -448,7 +448,7 @@ _cell_strided_section_centers(const fvm_nodal_section_t  *this_section,
 
     } /* End of loop on faces */
 
-    if (interlace == FVM_INTERLACE) {
+    if (interlace == CS_INTERLACE) {
       for (k = 0; k < 3; k++)
         cell_centers[_element_count*3 + k] = c_center[k]/denom;
     }
@@ -483,7 +483,7 @@ _face_section_centers_3d(const fvm_nodal_section_t  *this_section,
                          cs_lnum_t                  *element_count,
                          const cs_lnum_t            *parent_vertex_num,
                          const cs_coord_t            vertex_coords[],
-                         fvm_interlace_t             interlace,
+                         cs_interlace_t              interlace,
                          cs_coord_t                 *cell_centers)
 {
   cs_lnum_t i, v_index_start, v_index_end, n_vertices;
@@ -516,7 +516,7 @@ _face_section_centers_3d(const fvm_nodal_section_t  *this_section,
                         f_normal,
                         &f_surface);
 
-    if (interlace == FVM_INTERLACE) {
+    if (interlace == CS_INTERLACE) {
       for (k = 0; k < 3; k++)
         cell_centers[_element_count*3 + k] = f_center[k];
     }
@@ -551,7 +551,7 @@ _face_section_centers_2d(const fvm_nodal_section_t  *this_section,
                          cs_lnum_t                  *element_count,
                          const cs_lnum_t            *parent_vertex_num,
                          const cs_coord_t            vertex_coords[],
-                         fvm_interlace_t             interlace,
+                         cs_interlace_t              interlace,
                          cs_coord_t                 *cell_centers)
 {
   cs_lnum_t i, v_index_start, v_index_end, n_vertices;
@@ -583,7 +583,7 @@ _face_section_centers_2d(const fvm_nodal_section_t  *this_section,
                         f_center,
                         &f_surface);
 
-    if (interlace == FVM_INTERLACE) {
+    if (interlace == CS_INTERLACE) {
       for (k = 0; k < 2; k++)
         cell_centers[_element_count*2 + k] = f_center[k];
     }
@@ -757,7 +757,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
       for (j = this_section->face_index[i];
            j < this_section->face_index[i + 1];
            j++) {
-        face_id = FVM_ABS(this_section->face_num[j]) - 1;
+        face_id = CS_ABS(this_section->face_num[j]) - 1;
         for (k = this_section->vertex_index[face_id];
              k < this_section->vertex_index[face_id + 1];
              k++) {
@@ -975,7 +975,7 @@ fvm_nodal_get_global_element_num(const fvm_nodal_t  *this_nodal,
 
 void
 fvm_nodal_get_vertex_coords(const fvm_nodal_t  *this_nodal,
-                            fvm_interlace_t     interlace,
+                            cs_interlace_t      interlace,
                             cs_coord_t         *vertex_coords)
 {
   int i;
@@ -988,7 +988,7 @@ fvm_nodal_get_vertex_coords(const fvm_nodal_t  *this_nodal,
 
   if (this_nodal->parent_vertex_num == NULL) {
 
-    if (interlace == FVM_INTERLACE)
+    if (interlace == CS_INTERLACE)
       memcpy(vertex_coords, coords, sizeof(cs_coord_t) * n_vertices * dim);
 
     else {
@@ -1003,7 +1003,7 @@ fvm_nodal_get_vertex_coords(const fvm_nodal_t  *this_nodal,
   }
   else { /* parent_vertex_num != NULL */
 
-    if (interlace == FVM_INTERLACE) {
+    if (interlace == CS_INTERLACE) {
 
       for (i = 0; i < dim; i++) {
         for (vertex_id = 0; vertex_id < n_vertices; vertex_id++)
@@ -1042,7 +1042,7 @@ fvm_nodal_get_vertex_coords(const fvm_nodal_t  *this_nodal,
 
 void
 fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
-                              fvm_interlace_t     interlace,
+                              cs_interlace_t      interlace,
                               int                 entity_dim,
                               cs_coord_t         *cell_centers)
 {
@@ -1155,7 +1155,7 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
           }
         }
 
-        if (interlace == FVM_INTERLACE) {
+        if (interlace == CS_INTERLACE) {
           for (i = 0; i < dim; i++)
             cell_centers[element_count*dim + i] = cell_center[i] / denom;
         }
@@ -1317,7 +1317,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
         cs_lnum_t start_face_id = section->face_index[i];
         cs_lnum_t end_face_id = section->face_index[i+1];
         for (j = start_face_id; j < end_face_id; j++) {
-          cs_lnum_t face_id = FVM_ABS(section->face_num[j]) - 1;
+          cs_lnum_t face_id = CS_ABS(section->face_num[j]) - 1;
           cs_lnum_t start_id = section->vertex_index[face_id];
           cs_lnum_t end_id = section->vertex_index[face_id+1];
           for (k = start_id; k < end_id; k++)
@@ -1390,7 +1390,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
         cs_lnum_t start_face_id = section->face_index[i];
         cs_lnum_t end_face_id = section->face_index[i+1];
         for (j = start_face_id; j < end_face_id; j++) {
-          cs_lnum_t face_id = FVM_ABS(section->face_num[j]) - 1;
+          cs_lnum_t face_id = CS_ABS(section->face_num[j]) - 1;
           cs_lnum_t start_id = section->vertex_index[face_id];
           cs_lnum_t end_id = section->vertex_index[face_id+1];
           for (k = start_id; k < end_id; k++) {

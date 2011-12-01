@@ -64,14 +64,6 @@ extern "C" {
  * Static global variables
  *============================================================================*/
 
-/* MPI Datatypes associated with fvm datatypes */
-
-#if defined(HAVE_MPI)
-
-extern MPI_Datatype  fvm_datatype_to_mpi[];
-
-#endif
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

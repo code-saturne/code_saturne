@@ -626,6 +626,58 @@ _cs_base_erreur_mpi(MPI_Comm  *comm,
 #endif
 
 /*----------------------------------------------------------------------------
+ * Ensure Code_Saturne to MPI datatype conversion has correct values.
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_datatype_to_mpi_init(void)
+{
+  int size_short, size_int, size_long, size_long_long;
+
+  MPI_Type_size(MPI_SHORT, &size_short);
+  MPI_Type_size(MPI_INT,   &size_int);
+  MPI_Type_size(MPI_LONG,  &size_long);
+
+#if defined(MPI_LONG_LONG)
+  MPI_Type_size(MPI_LONG_LONG, &size_long_long);
+#else
+  size_long_long = 0;
+#endif
+
+  if (size_int == 4) {
+    cs_datatype_to_mpi[CS_INT32] = MPI_INT;
+    cs_datatype_to_mpi[CS_UINT32] = MPI_UNSIGNED;
+  }
+  else if (size_short == 4) {
+    cs_datatype_to_mpi[CS_INT32] = MPI_SHORT;
+    cs_datatype_to_mpi[CS_UINT32] = MPI_UNSIGNED_SHORT;
+  }
+  else if (size_long == 4) {
+    cs_datatype_to_mpi[CS_INT32] = MPI_LONG;
+    cs_datatype_to_mpi[CS_UINT32] = MPI_UNSIGNED_LONG;
+  }
+
+  if (size_int == 8) {
+    cs_datatype_to_mpi[CS_INT64] = MPI_INT;
+    cs_datatype_to_mpi[CS_UINT64] = MPI_UNSIGNED;
+  }
+  else if (size_long == 8) {
+    cs_datatype_to_mpi[CS_INT64] = MPI_LONG;
+    cs_datatype_to_mpi[CS_UINT64] = MPI_UNSIGNED_LONG;
+  }
+#if defined(MPI_LONG_LONG)
+  else if (size_long_long == 8) {
+    cs_datatype_to_mpi[CS_INT64] = MPI_LONG_LONG;
+#if defined(MPI_UNSIGNED_LONG_LONG)
+    cs_datatype_to_mpi[CS_UINT64] = MPI_UNSIGNED_LONG_LONG;
+#else
+    cs_datatype_to_mpi[CS_UINT64] = MPI_LONG_LONG;
+#endif
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------
  * Complete MPI setup.
  *
  * MPI should have been initialized by cs_base_mpi_init().
@@ -683,6 +735,10 @@ _cs_base_mpi_setup(const char *app_name)
 
   if (cs_glob_n_ranks == 1 && app_num > -1)
     cs_glob_rank_id = -1;
+
+  /* Initialize datatype conversion */
+
+  _cs_datatype_to_mpi_init();
 
   /* Initialize associated libraries */
 

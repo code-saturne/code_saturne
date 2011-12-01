@@ -2485,7 +2485,7 @@ _eval_plane(const fvm_selector_postfix_t  *pf,
     double epsilon = *((double *)(pf->elements + *i));
     assert(pf_type == PF_FLOAT);
     *i += _postfix_float_size;
-    if (FVM_ABS(pfunc) < epsilon)
+    if (CS_ABS(pfunc) < epsilon)
       retval = true;
   }
 

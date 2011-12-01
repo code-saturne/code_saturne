@@ -192,7 +192,7 @@ _polygon_plane_3d(const int   n_vertices,
     for (i = 0; i < 3; i++)
       coords[j*3 + i] -= face_center[i];
 
-  if (FVM_ABS(face_normal[0]) > 1.e-12 || FVM_ABS(face_normal[1]) > 1.e-12) {
+  if (CS_ABS(face_normal[0]) > 1.e-12 || CS_ABS(face_normal[1]) > 1.e-12) {
 
     /* First rotation of axis (Oz) and angle (Ox, normal proj. on Oxy) */
 
@@ -442,7 +442,7 @@ _edge_is_locally_delaunay(int               edge_vertex_0,
   /* If the triangle is flat, we automatically switch diagonals to
      avoid a division by zero. */
 
-  if (FVM_ABS(delta) < 1.e-12)
+  if (CS_ABS(delta) < 1.e-12)
     return false;
 
   a =   coords[edge_vertex_1*2    ] * coords[edge_vertex_1*2    ]
@@ -622,8 +622,8 @@ _polygon_delaunay_flip(int               n_vertices,
       i_0 = triangle_vertices[(j*3) +   i      ];
       i_1 = triangle_vertices[(j*3) + ((i+1)%3)];
 
-      i_min = FVM_MIN(i_0, i_1);
-      i_max = FVM_MAX(i_0, i_1);
+      i_min = CS_MIN(i_0, i_1);
+      i_max = CS_MAX(i_0, i_1);
 
       edge_id = _EDGE_INDEX(i_min, i_max);
 
@@ -720,8 +720,8 @@ _polygon_delaunay_flip(int               n_vertices,
       if (   edge_locally_delaunay == false
           && convex_quad == true) {
 
-        i_min = FVM_MIN(vertex_flip[0], vertex_flip[1]);
-        i_max = FVM_MAX(vertex_flip[0], vertex_flip[1]);
+        i_min = CS_MIN(vertex_flip[0], vertex_flip[1]);
+        i_max = CS_MAX(vertex_flip[0], vertex_flip[1]);
 
         flip_edge_id = _EDGE_INDEX(i_min, i_max);
 
@@ -752,8 +752,8 @@ _polygon_delaunay_flip(int               n_vertices,
             i_0 = triangle_vertices[3*triangle_id_0 + i];
             i_1 = triangle_vertices[3*triangle_id_0 + ((i + 1)%3)];
 
-            i_min = FVM_MIN(i_0, i_1);
-            i_max = FVM_MAX(i_0, i_1);
+            i_min = CS_MIN(i_0, i_1);
+            i_max = CS_MAX(i_0, i_1);
 
             current_edge_id = _EDGE_INDEX(i_min, i_max);
 

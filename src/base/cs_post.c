@@ -382,7 +382,7 @@ _init_writer(cs_post_writer_t  *writer)
 }
 
 /*----------------------------------------------------------------------------
- * Convert cs_post_type_t datatype to fvm_datatype_t.
+ * Convert cs_post_type_t datatype to cs_datatype_t.
  *
  * parameters:
  *   type_cs <-- Code_Saturne data type
@@ -391,40 +391,40 @@ _init_writer(cs_post_writer_t  *writer)
  *   corresponding FVM datatype
  *----------------------------------------------------------------------------*/
 
-static fvm_datatype_t
+static cs_datatype_t
 _cs_post_cnv_datatype(cs_post_type_t  type_cs)
 {
-  fvm_datatype_t type_fvm = FVM_DATATYPE_NULL;
+  cs_datatype_t type_fvm = CS_DATATYPE_NULL;
 
   switch(type_cs) {
 
   case CS_POST_TYPE_cs_int_t:
     if (sizeof(cs_int_t) == 4)
-      type_fvm = FVM_INT32;
+      type_fvm = CS_INT32;
     else if (sizeof(cs_int_t) == 8)
-      type_fvm = FVM_INT64;
+      type_fvm = CS_INT64;
     break;
 
   case CS_POST_TYPE_cs_real_t:
     if (sizeof(cs_real_t) == sizeof(double))
-      type_fvm = FVM_DOUBLE;
+      type_fvm = CS_DOUBLE;
     else if (sizeof(cs_real_t) == sizeof(float))
-      type_fvm = FVM_FLOAT;
+      type_fvm = CS_FLOAT;
     break;
 
   case CS_POST_TYPE_int:
     if (sizeof(int) == 4)
-      type_fvm = FVM_INT32;
+      type_fvm = CS_INT32;
     else if (sizeof(int) == 8)
-      type_fvm = FVM_INT64;
+      type_fvm = CS_INT64;
     break;
 
   case CS_POST_TYPE_float:
-    type_fvm = FVM_FLOAT;
+    type_fvm = CS_FLOAT;
     break;
 
   case CS_POST_TYPE_double:
-    type_fvm = FVM_DOUBLE;
+    type_fvm = CS_DOUBLE;
     break;
 
   default:
@@ -1097,7 +1097,7 @@ _cs_post_write_domain(fvm_writer_t       *writer,
 {
   int  dim_ent;
   cs_lnum_t  i, n_elts;
-  fvm_datatype_t  datatype;
+  cs_datatype_t  datatype;
 
   cs_lnum_t  dec_num_parent[1]  = {0};
   cs_int_t *domain = NULL;
@@ -1123,9 +1123,9 @@ _cs_post_write_domain(fvm_writer_t       *writer,
   /* Prepare post-processing output */
 
   if (sizeof(cs_int_t) == 4)
-    datatype = FVM_INT32;
+    datatype = CS_INT32;
   else if (sizeof(cs_int_t) == 8)
-    datatype = FVM_INT64;
+    datatype = CS_INT64;
 
   var_ptr[0] = domain;
 
@@ -1139,7 +1139,7 @@ _cs_post_write_domain(fvm_writer_t       *writer,
                           _("parallel domain"),
                           FVM_WRITER_PER_ELEMENT,
                           1,
-                          FVM_INTERLACE,
+                          CS_INTERLACE,
                           1,
                           dec_num_parent,
                           datatype,
@@ -1257,7 +1257,7 @@ _cs_post_assmb_var_faces(const fvm_nodal_t  *exp_mesh,
                          cs_int_t            n_i_faces,
                          cs_int_t            n_b_faces,
                          int                 var_dim,
-                         fvm_interlace_t     interlace,
+                         cs_interlace_t      interlace,
                          const cs_real_t     i_face_vals[],
                          const cs_real_t     b_face_vals[],
                          cs_real_t           var_tmp[])
@@ -1274,7 +1274,7 @@ _cs_post_assmb_var_faces(const fvm_nodal_t  *exp_mesh,
 
   /* Boundary faces contribution */
 
-  if (interlace == FVM_INTERLACE) {
+  if (interlace == CS_INTERLACE) {
     stride_1 = var_dim;
     stride_2 = 1;
   }
@@ -1290,7 +1290,7 @@ _cs_post_assmb_var_faces(const fvm_nodal_t  *exp_mesh,
 
   /* Interior faces contribution */
 
-  if (interlace == FVM_INTERLACE) {
+  if (interlace == CS_INTERLACE) {
     stride_1 = var_dim;
     stride_2 = 1;
   }
@@ -1347,7 +1347,7 @@ _cs_post_write_displacements(int     nt_cur_abs,
 {
   int i, j;
   cs_int_t  k, nbr_val;
-  fvm_datatype_t datatype;
+  cs_datatype_t datatype;
 
   cs_lnum_t  dec_num_parent[1]  = {0};
   cs_post_mesh_t  *post_mesh = NULL;
@@ -1387,9 +1387,9 @@ _cs_post_write_displacements(int     nt_cur_abs,
   /*-------------------------*/
 
   if (sizeof(cs_real_t) == sizeof(double))
-    datatype = FVM_DOUBLE;
+    datatype = CS_DOUBLE;
   else if (sizeof(cs_real_t) == sizeof(float))
-    datatype = FVM_FLOAT;
+    datatype = CS_FLOAT;
 
   var_ptr[0] = deplacements;
 
@@ -1411,7 +1411,7 @@ _cs_post_write_displacements(int     nt_cur_abs,
                                 _("displacement"),
                                 FVM_WRITER_PER_NODE,
                                 3,
-                                FVM_INTERLACE,
+                                CS_INTERLACE,
                                 1,
                                 dec_num_parent,
                                 datatype,
@@ -3701,8 +3701,8 @@ cs_post_write_var(int              mesh_id,
   int       _mesh_id;
 
 
-  fvm_interlace_t      _interlace;
-  fvm_datatype_t       datatype;
+  cs_interlace_t  _interlace;
+  cs_datatype_t    datatype;
 
   size_t       dec_ptr = 0;
   int          nbr_listes_parents = 0;
@@ -3728,9 +3728,9 @@ cs_post_write_var(int              mesh_id,
   post_mesh = _cs_post_meshes + _mesh_id;
 
   if (interlace == true)
-    _interlace = FVM_INTERLACE;
+    _interlace = CS_INTERLACE;
   else
-    _interlace = FVM_NO_INTERLACE;
+    _interlace = CS_NO_INTERLACE;
 
   datatype =  _cs_post_cnv_datatype(var_type);
 
@@ -3754,7 +3754,7 @@ cs_post_write_var(int              mesh_id,
         dec_ptr = cs_glob_mesh->n_cells_with_ghosts;
       else
         dec_ptr = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 3);
-      dec_ptr *= fvm_datatype_size[datatype];
+      dec_ptr *= cs_datatype_size[datatype];
       for (i = 1; i < var_dim; i++)
         var_ptr[i] = ((const char *)cel_vals) + i*dec_ptr;
     }
@@ -3776,7 +3776,7 @@ cs_post_write_var(int              mesh_id,
 
       if (post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] == 1) {
         if (interlace == false) {
-          dec_ptr = cs_glob_mesh->n_b_faces * fvm_datatype_size[datatype];
+          dec_ptr = cs_glob_mesh->n_b_faces * cs_datatype_size[datatype];
           for (i = 0; i < var_dim; i++)
             var_ptr[i] = ((const char *)b_face_vals) + i*dec_ptr;
         }
@@ -3786,7 +3786,7 @@ cs_post_write_var(int              mesh_id,
 
       if (post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 1) {
         if (interlace == false) {
-          dec_ptr = cs_glob_mesh->n_i_faces * fvm_datatype_size[datatype];
+          dec_ptr = cs_glob_mesh->n_i_faces * cs_datatype_size[datatype];
           for (i = 0; i < var_dim; i++)
             var_ptr[var_dim + i] = ((const char *)i_face_vals) + i*dec_ptr;
         }
@@ -3825,10 +3825,10 @@ cs_post_write_var(int              mesh_id,
                                    b_face_vals,
                                    var_tmp);
 
-          _interlace = FVM_NO_INTERLACE;
+          _interlace = CS_NO_INTERLACE;
 
-          dec_ptr = fvm_datatype_size[datatype] * (  post_mesh->n_i_faces
-                                                   + post_mesh->n_b_faces);
+          dec_ptr = cs_datatype_size[datatype] * (  post_mesh->n_i_faces
+                                                  + post_mesh->n_b_faces);
 
           for (i = 0; i < var_dim; i++)
             var_ptr[i] = ((char *)var_tmp) + i*dec_ptr;
@@ -3840,7 +3840,7 @@ cs_post_write_var(int              mesh_id,
         else {
 
           if (interlace == false) {
-            dec_ptr = fvm_datatype_size[datatype] * post_mesh->n_b_faces;
+            dec_ptr = cs_datatype_size[datatype] * post_mesh->n_b_faces;
             for (i = 0; i < var_dim; i++)
               var_ptr[i] = ((const char *)b_face_vals) + i*dec_ptr;
           }
@@ -3855,7 +3855,7 @@ cs_post_write_var(int              mesh_id,
       else if (post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 1) {
 
         if (interlace == false) {
-          dec_ptr = fvm_datatype_size[datatype] * post_mesh->n_i_faces;
+          dec_ptr = cs_datatype_size[datatype] * post_mesh->n_i_faces;
           for (i = 0; i < var_dim; i++)
             var_ptr[i] = ((const char *)i_face_vals) + i*dec_ptr;
         }
@@ -3936,9 +3936,9 @@ cs_post_write_vertex_var(int              mesh_id,
   int       _mesh_id;
 
   cs_post_mesh_t  *post_mesh;
-  cs_post_writer_t    *writer;
-  fvm_interlace_t      _interlace;
-  fvm_datatype_t       datatype;
+  cs_post_writer_t  *writer;
+  cs_interlace_t  _interlace;
+  cs_datatype_t  datatype;
 
   size_t       dec_ptr = 0;
   int          nbr_listes_parents = 0;
@@ -3958,9 +3958,9 @@ cs_post_write_vertex_var(int              mesh_id,
   post_mesh = _cs_post_meshes + _mesh_id;
 
   if (interlace == true)
-    _interlace = FVM_INTERLACE;
+    _interlace = CS_INTERLACE;
   else
-    _interlace = FVM_NO_INTERLACE;
+    _interlace = CS_NO_INTERLACE;
 
   assert(   sizeof(cs_real_t) == sizeof(double)
          || sizeof(cs_real_t) == sizeof(float));
@@ -3980,7 +3980,7 @@ cs_post_write_vertex_var(int              mesh_id,
       dec_ptr = cs_glob_mesh->n_vertices;
     else
       dec_ptr =   fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0)
-                * fvm_datatype_size[datatype];
+                * cs_datatype_size[datatype];
     for (i = 1; i < var_dim; i++)
       var_ptr[i] = ((const char *)vtx_vals) + i*dec_ptr;
   }

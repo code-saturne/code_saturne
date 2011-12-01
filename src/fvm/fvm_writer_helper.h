@@ -150,8 +150,8 @@ fvm_writer_field_helper_t *
 fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
                                const fvm_writer_section_t *section_list,
                                int                         field_dim,
-                               fvm_interlace_t             interlace,
-                               fvm_datatype_t              datatype,
+                               cs_interlace_t              interlace,
+                               cs_datatype_t               datatype,
                                fvm_writer_var_loc_t        location);
 
 /*----------------------------------------------------------------------------
@@ -237,7 +237,7 @@ fvm_writer_field_helper_field_dim(const fvm_writer_field_helper_t  *helper);
  *   output datatype associated with helper
  *----------------------------------------------------------------------------*/
 
-fvm_datatype_t
+cs_datatype_t
 fvm_writer_field_helper_datatype(const fvm_writer_field_helper_t  *helper);
 
 /*----------------------------------------------------------------------------
@@ -273,10 +273,10 @@ fvm_writer_field_helper_step_e(fvm_writer_field_helper_t   *helper,
                                const fvm_writer_section_t  *export_section,
                                int                          src_dim,
                                int                          src_dim_shift,
-                               fvm_interlace_t              src_interlace,
+                               cs_interlace_t               src_interlace,
                                int                          n_parent_lists,
                                const cs_lnum_t              parent_num_shift[],
-                               fvm_datatype_t               datatype,
+                               cs_datatype_t                datatype,
                                const void            *const field_values[],
                                void                        *output_buffer,
                                size_t                       output_buffer_size,
@@ -315,10 +315,10 @@ fvm_writer_field_helper_step_n(fvm_writer_field_helper_t   *helper,
                                const fvm_nodal_t           *mesh,
                                int                          src_dim,
                                int                          src_dim_shift,
-                               fvm_interlace_t              src_interlace,
+                               cs_interlace_t               src_interlace,
                                int                          n_parent_lists,
                                const cs_lnum_t              parent_num_shift[],
-                               fvm_datatype_t               datatype,
+                               cs_datatype_t                datatype,
                                const void            *const field_values[],
                                void                        *output_buffer,
                                size_t                       output_buffer_size,

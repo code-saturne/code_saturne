@@ -386,7 +386,7 @@ _send_coords(cs_syr3_coupling_t  *syr_coupling,
     assert(sizeof(double) == sizeof(cs_real_t));
 
     fvm_nodal_get_vertex_coords(coupled_mesh,
-                                FVM_NO_INTERLACE,
+                                CS_NO_INTERLACE,
                                 coords);
 
   }

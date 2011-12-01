@@ -49,8 +49,9 @@
 #include "fvm_defs.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
-#include "fvm_order.h"
 #include "fvm_parall.h"
+
+#include "cs_order.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -265,13 +266,13 @@ fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
 
       assert(section->global_element_num == NULL);
 
-      if (fvm_order_local_test(section->parent_element_num,
-                               parent_global_number,
-                               section->n_elements) == false) {
+      if (cs_order_gnum_test(section->parent_element_num,
+                             parent_global_number,
+                             section->n_elements) == false) {
 
-        order = fvm_order_local(section->parent_element_num,
-                                parent_global_number,
-                                section->n_elements);
+        order = cs_order_gnum(section->parent_element_num,
+                              parent_global_number,
+                              section->n_elements);
 
         _fvm_nodal_order_parent_list(&(section->_parent_element_num),
                                      &(section->parent_element_num),
@@ -333,13 +334,13 @@ fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
 
       assert(section->global_element_num == NULL);
 
-      if (fvm_order_local_test(section->parent_element_num,
-                               parent_global_number,
-                               section->n_elements) == false) {
+      if (cs_order_gnum_test(section->parent_element_num,
+                             parent_global_number,
+                             section->n_elements) == false) {
 
-        order = fvm_order_local(section->parent_element_num,
-                                parent_global_number,
-                                section->n_elements);
+        order = cs_order_gnum(section->parent_element_num,
+                              parent_global_number,
+                              section->n_elements);
 
         _fvm_nodal_order_parent_list(&(section->_parent_element_num),
                                      &(section->parent_element_num),
@@ -401,16 +402,16 @@ fvm_nodal_order_vertices(fvm_nodal_t       *this_nodal,
 
   /* Return if already ordered */
 
-  if (fvm_order_local_test(this_nodal->parent_vertex_num,
-                           parent_global_number,
-                           this_nodal->n_vertices) == true)
+  if (cs_order_gnum_test(this_nodal->parent_vertex_num,
+                         parent_global_number,
+                         this_nodal->n_vertices) == true)
     return;
 
   /* Else, we must re-order vertices and update connectivity */
 
-  order = fvm_order_local(this_nodal->parent_vertex_num,
-                          parent_global_number,
-                          this_nodal->n_vertices);
+  order = cs_order_gnum(this_nodal->parent_vertex_num,
+                        parent_global_number,
+                        this_nodal->n_vertices);
 
   /* Re-order parent list */
 
@@ -422,8 +423,7 @@ fvm_nodal_order_vertices(fvm_nodal_t       *this_nodal,
   /* Calculate renumbering table for associated connectivity
      and free ordering array, no longer needed after that */
 
-  renumber = fvm_order_local_renumbering(order,
-                                         this_nodal->n_vertices);
+  renumber = cs_order_renumbering(order, this_nodal->n_vertices);
 
   BFT_FREE(order);
 

@@ -37,26 +37,18 @@
 #include <float.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *---------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *---------------------------------------------------------------------------*/
-
-#include <fvm_io_num.h>
-#include <fvm_order.h>
-#include <fvm_parall.h>
-#include <fvm_periodicity.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *---------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
+
+#include "fvm_io_num.h"
+#include "fvm_parall.h"
+#include "fvm_periodicity.h"
+
+#include "cs_order.h"
 #include "cs_search.h"
 #include "cs_sort.h"
 #include "cs_join_perio.h"
@@ -688,7 +680,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
     BFT_MALLOC(order, s_sub_size, cs_lnum_t);
 
-    fvm_order_local_allocated(NULL, s_sub_gbuf, order, s_sub_size);
+    cs_order_gnum_allocated(NULL, s_sub_gbuf, order, s_sub_size);
 
     prev = 0;
     n_new_vertices = 0;
@@ -749,10 +741,10 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
     BFT_REALLOC(order, mesh->n_vertices, cs_lnum_t);
 
-    fvm_order_local_allocated(NULL,
-                              mesh->global_vtx_num,
-                              order,
-                              mesh->n_vertices);
+    cs_order_gnum_allocated(NULL,
+                            mesh->global_vtx_num,
+                            order,
+                            mesh->n_vertices);
 
     BFT_MALLOC(new_vtx_gnum, mesh->n_vertices, cs_gnum_t);
 
@@ -928,7 +920,7 @@ _update_vertices_after_merge(const cs_gnum_t        o2n_vtx_gnum[],
   for (i = 0, j = n_bm_vertices; i < n_j_vertices; i++, j++)
     tmp_vtx_gnum[j] = j_vertices[i].gnum;
 
-  fvm_order_local_allocated(NULL, tmp_vtx_gnum, order, n_vertices);
+  cs_order_gnum_allocated(NULL, tmp_vtx_gnum, order, n_vertices);
 
   /* Define o2n_vtx_id and join2mesh_vtx_id arrays */
 
@@ -1093,7 +1085,7 @@ _update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
   for (i = 0, j = n_bs_vertices; i < n_j_vertices; i++, j++)
     tmp_vtx_gnum[j] = j_vertices[i].gnum;
 
-  fvm_order_local_allocated(NULL, tmp_vtx_gnum, order, n_vertices);
+  cs_order_gnum_allocated(NULL, tmp_vtx_gnum, order, n_vertices);
 
   /* Define o2n_vtx_id and join2mesh_vtx_id arrays */
 
@@ -3658,7 +3650,7 @@ _combine_families(cs_mesh_t   *mesh,
     for (i = 0; i < n_fam_values; i++)
       tmp_family[i] = family[i] + 1;
 
-    order = fvm_order_local_i(NULL, tmp_family, family_idx, n_elts);
+    order = cs_order_gnum_i(NULL, tmp_family, family_idx, n_elts);
 
     BFT_FREE(tmp_family);
 

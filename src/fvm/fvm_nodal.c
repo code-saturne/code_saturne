@@ -2188,7 +2188,7 @@ fvm_nodal_copy_edges(const char         *name,
   }
 
   /* Sort and remove duplicates
-     (use qsort rather than fvm_order_local_s() so as to sort in place) */
+     (use qsort rather than cs_order_..._s() so as to sort in place) */
 
   qsort(new_section->_vertex_num,
         n_max_edges,

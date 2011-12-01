@@ -43,18 +43,14 @@
 #include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_interface.h>
-#include <fvm_periodicity.h>
-#include <fvm_order.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_order.h"
+
+#include "fvm_interface.h"
+#include "fvm_periodicity.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -362,9 +358,9 @@ cs_halo_create(fvm_interface_set_t  *ifs)
   /* Order ranks */
 
   if (   halo->n_c_domains > 2
-      && fvm_order_local_test(&(halo->c_domain_rank[1]),
-                              NULL,
-                              halo->n_c_domains-1) == 0) {
+      && cs_order_gnum_test(&(halo->c_domain_rank[1]),
+                            NULL,
+                            halo->n_c_domains-1) == 0) {
 
     cs_lnum_t  *order = NULL;
     cs_gnum_t  *buffer = NULL;
@@ -377,10 +373,10 @@ cs_halo_create(fvm_interface_set_t  *ifs)
     for (i = 1; i < halo->n_c_domains; i++)
       buffer[i-1] = (cs_gnum_t)halo->c_domain_rank[i];
 
-    fvm_order_local_allocated(NULL,
-                              buffer,
-                              order,
-                              halo->n_c_domains - 1);
+    cs_order_gnum_allocated(NULL,
+                            buffer,
+                            order,
+                            halo->n_c_domains - 1);
 
     for (i = 0; i < halo->n_c_domains - 1; i++)
       halo->c_domain_rank[i+1] = (cs_int_t)buffer[order[i]];

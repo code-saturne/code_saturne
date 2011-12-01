@@ -87,6 +87,7 @@ cs_log.h \
 cs_map.h \
 cs_numbering.h \
 cs_opts.h \
+cs_order.h \
 cs_parall.h \
 cs_perio.h \
 cs_post.h \
@@ -118,12 +119,15 @@ noinst_LTLIBRARIES = libcscore.la \
 
 libcscore_la_SOURCES = \
 cs_base.c \
+cs_defs.c \
 cs_file.c \
 cs_io.c \
 cs_log.c \
 cs_map.c \
+cs_order.c \
 cs_timer.c
 libcscore_la_LDFLAGS = -no-undefined
+libcscore_la_LIBADD = $(top_builddir)/src/fvm/libfvm.la
 
 ###
 

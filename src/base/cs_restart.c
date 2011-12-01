@@ -500,7 +500,7 @@ _write_ent_values(const cs_restart_t  *r,
 {
   cs_lnum_t  block_buf_size = 0;
 
-  fvm_datatype_t elt_type = FVM_DATATYPE_NULL;
+  cs_datatype_t elt_type = CS_DATATYPE_NULL;
   size_t      nbr_byte_ent;
   cs_byte_t  *buffer = NULL;
 
@@ -513,12 +513,12 @@ _write_ent_values(const cs_restart_t  *r,
   switch (val_type) {
   case CS_TYPE_cs_int_t:
     nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
-    elt_type = (sizeof(cs_int_t) == 8) ? FVM_INT64 : FVM_INT32;
+    elt_type = (sizeof(cs_int_t) == 8) ? CS_INT64 : CS_INT32;
     break;
   case CS_TYPE_cs_real_t:
     nbr_byte_ent = n_location_vals * sizeof(cs_real_t);
-    elt_type =   (sizeof(cs_real_t) == fvm_datatype_size[FVM_DOUBLE])
-               ? FVM_DOUBLE : FVM_FLOAT;
+    elt_type =   (sizeof(cs_real_t) == cs_datatype_size[CS_DOUBLE])
+               ? CS_DOUBLE : CS_FLOAT;
     break;
   default:
     assert(val_type == CS_TYPE_cs_int_t || val_type == CS_TYPE_cs_real_t);
@@ -1525,8 +1525,8 @@ cs_restart_add_location(cs_restart_t     *restart,
 
   else {
 
-    fvm_datatype_t gnum_type
-      = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+    cs_datatype_t gnum_type
+      = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
 
     /* Create a new location */
 
@@ -1726,7 +1726,7 @@ cs_restart_read_section(cs_restart_t  *restart,
 
   /* If the type of value does not match */
 
-  if (header.elt_type == FVM_INT32 || header.elt_type == FVM_INT64) {
+  if (header.elt_type == CS_INT32 || header.elt_type == CS_INT64) {
     cs_io_set_cs_lnum(&header, restart->fh);
     if (val_type != CS_TYPE_cs_int_t) {
       bft_printf(_("  %s: section \"%s\" is not of integer type.\n"),
@@ -1734,12 +1734,12 @@ cs_restart_read_section(cs_restart_t  *restart,
       return CS_RESTART_ERR_VAL_TYPE;
     }
   }
-  else if (header.elt_type == FVM_FLOAT || header.elt_type == FVM_DOUBLE) {
-    if (sizeof(cs_real_t) != fvm_datatype_size[header.elt_type]) {
-      if (sizeof(cs_real_t) == fvm_datatype_size[FVM_FLOAT])
-        header.elt_type = FVM_FLOAT;
+  else if (header.elt_type == CS_FLOAT || header.elt_type == CS_DOUBLE) {
+    if (sizeof(cs_real_t) != cs_datatype_size[header.elt_type]) {
+      if (sizeof(cs_real_t) == cs_datatype_size[CS_FLOAT])
+        header.elt_type = CS_FLOAT;
       else
-        header.elt_type = FVM_DOUBLE;
+        header.elt_type = CS_DOUBLE;
     }
     if (val_type != CS_TYPE_cs_real_t) {
       bft_printf(_("  %s: section \"%s\" is not of floating-point type.\n"),
@@ -1816,7 +1816,7 @@ cs_restart_write_section(cs_restart_t  *restart,
   double timing[2];
 
   cs_int_t         n_tot_vals, n_glob_ents, n_ents;
-  fvm_datatype_t   elt_type = FVM_DATATYPE_NULL;
+  cs_datatype_t    elt_type = CS_DATATYPE_NULL;
 
   const cs_gnum_t  *ent_global_num;
 
@@ -1848,11 +1848,11 @@ cs_restart_write_section(cs_restart_t  *restart,
 
   switch (val_type) {
   case CS_TYPE_cs_int_t:
-    elt_type = (sizeof(cs_int_t) == 8) ? FVM_INT64 : FVM_INT32;
+    elt_type = (sizeof(cs_int_t) == 8) ? CS_INT64 : CS_INT32;
     break;
   case CS_TYPE_cs_real_t:
-    elt_type =   (sizeof(cs_real_t) == fvm_datatype_size[FVM_DOUBLE])
-               ? FVM_DOUBLE : FVM_FLOAT;
+    elt_type =   (sizeof(cs_real_t) == cs_datatype_size[CS_DOUBLE])
+               ? CS_DOUBLE : CS_FLOAT;
     break;
   default:
     assert(val_type == CS_TYPE_cs_int_t || val_type == CS_TYPE_cs_real_t);

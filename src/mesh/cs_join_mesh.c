@@ -36,27 +36,19 @@
 #include <float.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *---------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *---------------------------------------------------------------------------*/
-
-#include <fvm_io_num.h>
-#include <fvm_nodal.h>
-#include <fvm_nodal_from_desc.h>
-#include <fvm_nodal_order.h>
-#include <fvm_order.h>
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *---------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_printf.h"
+
+#include "fvm_io_num.h"
+#include "fvm_nodal.h"
+#include "fvm_nodal_from_desc.h"
+#include "fvm_nodal_order.h"
+#include "fvm_parall.h"
+
+#include "cs_order.h"
 #include "cs_search.h"
 #include "cs_join_post.h"
 #include "cs_join_set.h"
@@ -311,7 +303,7 @@ _compute_tolerance2(const cs_real_t   vtx_coords[],
                                     edge_quantities[4*(k+1)+3]);
       sine = _compute_sine(k, edge_quantities);
 
-      vtx_tolerance[vid] = FVM_MIN(vtx_tolerance[vid], sine*tolerance);
+      vtx_tolerance[vid] = CS_MIN(vtx_tolerance[vid], sine*tolerance);
 
     }
 
@@ -370,8 +362,8 @@ _compute_tolerance1(const cs_real_t   vtx_coords[],
 
       length = _compute_length(a, b);
       tolerance = length * fraction;
-      vtx_tolerance[vtx_id1] = FVM_MIN(vtx_tolerance[vtx_id1], tolerance);
-      vtx_tolerance[vtx_id2] = FVM_MIN(vtx_tolerance[vtx_id2], tolerance);
+      vtx_tolerance[vtx_id1] = CS_MIN(vtx_tolerance[vtx_id1], tolerance);
+      vtx_tolerance[vtx_id2] = CS_MIN(vtx_tolerance[vtx_id2], tolerance);
 
     }
 
@@ -387,8 +379,8 @@ _compute_tolerance1(const cs_real_t   vtx_coords[],
 
     length = _compute_length(a, b);
     tolerance = length * fraction;
-    vtx_tolerance[vtx_id1] = FVM_MIN(vtx_tolerance[vtx_id1], tolerance);
-    vtx_tolerance[vtx_id2] = FVM_MIN(vtx_tolerance[vtx_id2], tolerance);
+    vtx_tolerance[vtx_id1] = CS_MIN(vtx_tolerance[vtx_id1], tolerance);
+    vtx_tolerance[vtx_id2] = CS_MIN(vtx_tolerance[vtx_id2], tolerance);
 
   } /* End of loop on faces */
 
@@ -565,7 +557,7 @@ _get_global_tolerance(cs_int_t             n_vertices,
 
   for (i = 0; i < recv_shift[n_ranks]; i++) {
     vtx_id = recv_glist[i] - first_vtx_gnum;
-    g_vtx_tolerance[vtx_id] = FVM_MIN(g_vtx_tolerance[vtx_id], recv_list[i]);
+    g_vtx_tolerance[vtx_id] = CS_MIN(g_vtx_tolerance[vtx_id], recv_list[i]);
   }
 
   /* Replace local vertex tolerance by the new computed global tolerance */
@@ -2533,7 +2525,7 @@ cs_join_mesh_face_order(cs_join_mesh_t  *mesh)
 
   BFT_MALLOC(order, n_faces, cs_lnum_t);
 
-  fvm_order_local_allocated(NULL, mesh->face_gnum, order, n_faces);
+  cs_order_gnum_allocated(NULL, mesh->face_gnum, order, n_faces);
 
   /* Order global face numbering */
 
@@ -2703,7 +2695,7 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
   for (i = 0; i < recv_shift[n_ranks]; i++)
     recv_gnum[i] = recv_vertices[i].gnum;
 
-  fvm_order_local_allocated(NULL, recv_gnum, order, recv_shift[n_ranks]);
+  cs_order_gnum_allocated(NULL, recv_gnum, order, recv_shift[n_ranks]);
 
   /* Sync. vertices sharing the same global number */
 
@@ -2808,7 +2800,7 @@ cs_join_mesh_vertex_clean(cs_join_mesh_t  *mesh)
 
   /* Order vertices by increasing global number */
 
-  fvm_order_local_allocated(NULL, gnum_buf, order, n_init_vertices);
+  cs_order_gnum_allocated(NULL, gnum_buf, order, n_init_vertices);
 
   n_final_vertices = 0;
   prev = 0;
@@ -3033,7 +3025,7 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
 
   BFT_MALLOC(order, n_init_edges, cs_lnum_t);
 
-  fvm_order_local_allocated_s(NULL, adjacency, 2, order, n_init_edges);
+  cs_order_gnum_allocated_s(NULL, adjacency, 2, order, n_init_edges);
 
   if (n_init_edges > 0) {
 
@@ -3191,7 +3183,7 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
 
   /* Order vtx_lst and build an order list into adjacency */
 
-  fvm_order_local_allocated_s(NULL, adjacency, 2, order, edges->n_edges);
+  cs_order_gnum_allocated_s(NULL, adjacency, 2, order, edges->n_edges);
 
   if (cs_glob_n_ranks == 1) { /* Serial treatment */
 

@@ -118,10 +118,10 @@ typedef void
                              const char             *name,
                              fvm_writer_var_loc_t    location,
                              int                     dimension,
-                             fvm_interlace_t         interlace,
+                             cs_interlace_t          interlace,
                              int                     n_parent_lists,
                              const cs_lnum_t         parent_num_shift[],
-                             fvm_datatype_t          datatype,
+                             cs_datatype_t           datatype,
                              int                     time_step,
                              double                  time_value,
                              const void       *const field_values[]);

@@ -42,14 +42,14 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "cs_timer.h"
-
-#include "fvm_order.h"
 #include "fvm_parall.h"
 #include "fvm_part_to_block.h"
 
 #include "fvm_box.h"
 #include "fvm_box_tree.h"
+
+#include "cs_order.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -202,7 +202,7 @@ _update_bt_statistics(_box_tree_stats_t     *bts,
   bts->dim = dim;
 
   for (i = 0; i < 3; i++)
-    bts->mem_required[i] = FVM_MAX(bts->mem_required[i], mem_required[i]);
+    bts->mem_required[i] = CS_MAX(bts->mem_required[i], mem_required[i]);
 }
 
 #if defined(HAVE_MPI)
@@ -392,7 +392,7 @@ _order_neighborhood(fvm_neighborhood_t  *n)
 
   /* Order elt_num */
 
-  fvm_order_local_allocated(NULL, old_e_num, order, n_elts);
+  cs_order_gnum_allocated(NULL, old_e_num, order, n_elts);
 
   /* Reshape according to the new ordering */
 

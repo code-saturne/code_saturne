@@ -38,25 +38,17 @@
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *---------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *---------------------------------------------------------------------------*/
-
-#include <fvm_order.h>
-#include <fvm_io_num.h>
-#include <fvm_parall.h>
-#include <fvm_periodicity.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *---------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_printf.h"
+
+#include "fvm_io_num.h"
+#include "fvm_parall.h"
+#include "fvm_periodicity.h"
+
+#include "cs_order.h"
 #include "cs_search.h"
 #include "cs_join_post.h"
 
@@ -1146,7 +1138,7 @@ _split_face(cs_int_t                fid,
 
       cs_int_t  head_edge_num = _head_edges->array[head_edge_shift];
       cs_int_t  edge_num = head_edge_num;
-      cs_int_t  edge_id = FVM_ABS(edge_num) - 1;
+      cs_int_t  edge_id = CS_ABS(edge_num) - 1;
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
       if (tst_dbg && logfile != NULL)
@@ -1459,7 +1451,7 @@ _get_subface_gnum(face_builder_t         *builder,
   */
 
   for (i = 0; i < n_subfaces; i++)
-    max_size = FVM_MAX(max_size, index[i+1] - index[i]);
+    max_size = CS_MAX(max_size, index[i+1] - index[i]);
 
   BFT_MALLOC(tmp, max_size, cs_gnum_t);
   BFT_MALLOC(glob_list, index[n_subfaces], cs_gnum_t);
@@ -1542,10 +1534,10 @@ _get_subface_gnum(face_builder_t         *builder,
 
     cs_int_t  *order_index = NULL;
     cs_gnum_t  *order_glob_list = NULL;
-    cs_lnum_t  *order = fvm_order_local_i(NULL,
-                                          glob_list,
-                                          index,
-                                          n_subfaces);
+    cs_lnum_t  *order = cs_order_gnum_i(NULL,
+                                        glob_list,
+                                        index,
+                                        n_subfaces);
 
     _renumber_local_ordered_i(n_subfaces,
                               order,
@@ -1579,10 +1571,10 @@ _get_subface_gnum(face_builder_t         *builder,
   else { /* Serial treatment */
 
     cs_gnum_t  gnum = 1;
-    cs_lnum_t  *order = fvm_order_local_i(NULL,
-                                          glob_list,
-                                          index,
-                                          n_subfaces);
+    cs_lnum_t  *order = cs_order_gnum_i(NULL,
+                                        glob_list,
+                                        index,
+                                        n_subfaces);
 
     builder->subface_gnum[order[0]] = gnum;
 
@@ -1679,7 +1671,7 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
 
   BFT_MALLOC(order, n_subfaces, cs_lnum_t);
 
-  fvm_order_local_allocated(NULL, builder->subface_gnum, order, n_subfaces);
+  cs_order_gnum_allocated(NULL, builder->subface_gnum, order, n_subfaces);
 
   prev = 0;
   n_new_faces = 0;

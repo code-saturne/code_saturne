@@ -42,29 +42,21 @@
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *---------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM headers
- *---------------------------------------------------------------------------*/
-
-#include <fvm_neighborhood.h>
-#include <fvm_io_num.h>
-#include <fvm_order.h>
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *---------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_printf.h"
+
+#include "fvm_neighborhood.h"
+#include "fvm_io_num.h"
+#include "fvm_parall.h"
 
 #include "cs_join_mesh.h"
 #include "cs_join_set.h"
 #include "cs_join_util.h"
 #include "cs_log.h"
+#include "cs_order.h"
 #include "cs_search.h"
 #include "cs_timer.h"
 
@@ -3464,7 +3456,7 @@ cs_join_intersect_update_struct(int                      verbosity,
     BFT_MALLOC(edge_order, n_edges, cs_lnum_t);
     BFT_MALLOC(edge_gnum, n_edges, cs_gnum_t);
 
-    fvm_order_local_allocated(NULL, edges->gnum, edge_order, n_edges);
+    cs_order_gnum_allocated(NULL, edges->gnum, edge_order, n_edges);
 
     for (i = 0; i < n_edges; i++)
       edge_gnum[i] = edges->gnum[edge_order[i]];
@@ -3537,7 +3529,7 @@ cs_join_intersect_update_struct(int                      verbosity,
   for (i = 0; i < n_init_vertices; i++)
     vtx_gnum[i] = mesh->vertices[i].gnum;
 
-  fvm_order_local_allocated(NULL, vtx_gnum, vtx_order, n_init_vertices);
+  cs_order_gnum_allocated(NULL, vtx_gnum, vtx_order, n_init_vertices);
 
   for (i = 0; i < n_init_vertices; i++)
     vtx_gnum[i] = mesh->vertices[vtx_order[i]].gnum;

@@ -99,10 +99,9 @@ CPPFLAGS_CS_TESTS = -I$(top_srcdir)/src/base -I$(top_srcdir)/src/bft \
        -I$(top_srcdir)/src/fvm $(CPPFLAGS_PLE) $(MPI_CPPFLAGS)
 LDFLAGS_CS_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
         $(PLE_LDFLAGS) $(MPI_LDFLAGS)
-LDADD_CS_TESTS =  $(top_builddir)/src/base/libcscore.la \
-        $(top_builddir)/src/fvm/libfvm.la \
-        $(top_builddir)/src/bft/libbft.la \
+LDADD_CS_TESTS = \
         $(top_builddir)/src/base/libcscore.la \
+        $(top_builddir)/src/bft/libbft.la \
         $(LIBPLE_LA) $(PLE_LIBS) $(MPI_LIBS) -lm
 
 cs_core_test_SOURCES  = cs_core_test.c

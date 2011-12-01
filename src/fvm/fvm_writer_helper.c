@@ -89,8 +89,8 @@ extern "C" {
 struct _fvm_writer_field_helper_t {
 
   int                         field_dim;       /* Field dimension */
-  fvm_interlace_t             interlace;       /* Field interlaced or not */
-  fvm_datatype_t              datatype;        /* Output datatype */
+  cs_interlace_t              interlace;       /* Field interlaced or not */
+  cs_datatype_t               datatype;        /* Output datatype */
   fvm_writer_var_loc_t        location;        /* Variable location */
 
   cs_gnum_t                   input_size;     /* Total input support size
@@ -275,10 +275,10 @@ _field_helper_step_eg(fvm_writer_field_helper_t   *helper,
                       const fvm_writer_section_t  *export_section,
                       int                          src_dim,
                       int                          src_dim_shift,
-                      fvm_interlace_t              src_interlace,
+                      cs_interlace_t               src_interlace,
                       int                          n_parent_lists,
                       const cs_lnum_t              parent_num_shift[],
-                      fvm_datatype_t               datatype,
+                      cs_datatype_t                datatype,
                       const void            *const field_values[],
                       void                        *output_buffer,
                       size_t                       output_buffer_size,
@@ -299,7 +299,7 @@ _field_helper_step_eg(fvm_writer_field_helper_t   *helper,
 
   /* If output data is interlaced, set stride */
 
-  if (h->field_dim > 1 && h->interlace == FVM_INTERLACE)
+  if (h->field_dim > 1 && h->interlace == CS_INTERLACE)
     stride = h->field_dim;
 
   if (n_parent_lists == 0)
@@ -369,7 +369,7 @@ _field_helper_step_eg(fvm_writer_field_helper_t   *helper,
 
       fvm_gather_array(h->local_buffer,
                        output_buffer,
-                       fvm_datatype_to_mpi[h->datatype],
+                       cs_datatype_to_mpi[h->datatype],
                        stride,
                        section->global_element_num,
                        h->comm,
@@ -467,14 +467,14 @@ _field_helper_step_eg(fvm_writer_field_helper_t   *helper,
                                  export_section->type,
                                  h->start_id,
                                  end_id,
-                                 fvm_datatype_size[h->datatype] * stride,
+                                 cs_datatype_size[h->datatype] * stride,
                                  h->local_buffer);
 
       /* Now gather distributed values */
 
       fvm_gather_indexed(h->local_buffer,
                          output_buffer,
-                         fvm_datatype_to_mpi[h->datatype],
+                         cs_datatype_to_mpi[h->datatype],
                          h->local_idx,
                          section->global_element_num,
                          h->comm,
@@ -546,10 +546,10 @@ _field_helper_step_el(fvm_writer_field_helper_t   *helper,
                       const fvm_writer_section_t  *export_section,
                       int                          src_dim,
                       int                          src_dim_shift,
-                      fvm_interlace_t              src_interlace,
+                      cs_interlace_t               src_interlace,
                       int                          n_parent_lists,
                       const cs_lnum_t              parent_num_shift[],
-                      fvm_datatype_t               datatype,
+                      cs_datatype_t                datatype,
                       const void            *const field_values[],
                       void                        *output_buffer,
                       size_t                       output_buffer_size,
@@ -572,7 +572,7 @@ _field_helper_step_el(fvm_writer_field_helper_t   *helper,
 
   /* If output data is interlaced, set stride */
 
-  if (h->field_dim > 1 && h->interlace == FVM_INTERLACE) {
+  if (h->field_dim > 1 && h->interlace == CS_INTERLACE) {
     stride = h->field_dim;
     output_buffer_base_size /= h->field_dim;
   }
@@ -590,8 +590,8 @@ _field_helper_step_el(fvm_writer_field_helper_t   *helper,
 
     if (export_section->type == section->type) {
 
-      end_id = FVM_MIN(h->start_id + (cs_lnum_t)output_buffer_base_size,
-                       section->n_elements);
+      end_id = CS_MIN(h->start_id + (cs_lnum_t)output_buffer_base_size,
+                      section->n_elements);
 
       fvm_convert_array(src_dim,
                         src_dim_shift,
@@ -632,9 +632,9 @@ _field_helper_step_el(fvm_writer_field_helper_t   *helper,
                                       NULL,
                                       &n_sub_elements_max);
 
-      output_buffer_size_min = FVM_MIN(output_buffer_size_min,
-                                       (  n_sub_elements_max
-                                        * FVM_WRITER_MIN_SUB_ELEMENTS));
+      output_buffer_size_min = CS_MIN(output_buffer_size_min,
+                                      (  n_sub_elements_max
+                                       * FVM_WRITER_MIN_SUB_ELEMENTS));
 
       /* The buffer passed to this function should not be too small,
          as its size should have been computed in a consistent manner,
@@ -684,7 +684,7 @@ _field_helper_step_el(fvm_writer_field_helper_t   *helper,
                                  export_section->type,
                                  h->start_id,
                                  end_id,
-                                 fvm_datatype_size[h->datatype] * stride,
+                                 cs_datatype_size[h->datatype] * stride,
                                  output_buffer);
 
       slice_output_size = (  sub_element_idx[end_id]
@@ -750,10 +750,10 @@ _field_helper_step_ng(fvm_writer_field_helper_t   *helper,
                       const fvm_nodal_t           *mesh,
                       int                          src_dim,
                       int                          src_dim_shift,
-                      fvm_interlace_t              src_interlace,
+                      cs_interlace_t               src_interlace,
                       int                          n_parent_lists,
                       const cs_lnum_t              parent_num_shift[],
-                      fvm_datatype_t               datatype,
+                      cs_datatype_t                datatype,
                       const void            *const field_values[],
                       void                        *output_buffer,
                       size_t                       output_buffer_size,
@@ -773,7 +773,7 @@ _field_helper_step_ng(fvm_writer_field_helper_t   *helper,
 
   /* If output data is interlaced, set stride */
 
-  if (h->field_dim > 1 && h->interlace == FVM_INTERLACE)
+  if (h->field_dim > 1 && h->interlace == CS_INTERLACE)
     stride = h->field_dim;
 
   /* When at the beginning of a slice, setup state */
@@ -838,7 +838,7 @@ _field_helper_step_ng(fvm_writer_field_helper_t   *helper,
 
     fvm_gather_array(h->local_buffer,
                      output_buffer,
-                     fvm_datatype_to_mpi[h->datatype],
+                     cs_datatype_to_mpi[h->datatype],
                      stride,
                      global_entity_num,
                      h->comm,
@@ -869,8 +869,8 @@ _field_helper_step_ng(fvm_writer_field_helper_t   *helper,
 
     /* Interpolate values if both source and destination are floating point */
 
-    if (   (h->datatype == FVM_DOUBLE || h->datatype == FVM_FLOAT)
-        && (datatype == FVM_DOUBLE || datatype == FVM_FLOAT)) {
+    if (   (h->datatype == CS_DOUBLE || h->datatype == CS_FLOAT)
+        && (datatype == CS_DOUBLE || datatype == CS_FLOAT)) {
 
       /* Build a new slice if changing section */
 
@@ -920,7 +920,7 @@ _field_helper_step_ng(fvm_writer_field_helper_t   *helper,
 
         fvm_gather_array(h->local_buffer,
                          output_buffer,
-                         fvm_datatype_to_mpi[h->datatype],
+                         cs_datatype_to_mpi[h->datatype],
                          stride,
                          global_entity_num,
                          h->comm,
@@ -947,7 +947,7 @@ _field_helper_step_ng(fvm_writer_field_helper_t   *helper,
         size_t ii;
         size_t slice_output_size_c = slice_output_size * stride;
 
-        slice_output_size_c *= fvm_datatype_size[datatype];
+        slice_output_size_c *= cs_datatype_size[datatype];
         for (ii = 0; ii < slice_output_size_c; ii++)
           output_buffer_v[ii] = 0.;
 
@@ -1029,10 +1029,10 @@ _field_helper_step_nl(fvm_writer_field_helper_t   *helper,
                       const fvm_nodal_t           *mesh,
                       int                          src_dim,
                       int                          src_dim_shift,
-                      fvm_interlace_t              src_interlace,
+                      cs_interlace_t               src_interlace,
                       int                          n_parent_lists,
                       const cs_lnum_t              parent_num_shift[],
-                      fvm_datatype_t               datatype,
+                      cs_datatype_t                datatype,
                       const void            *const field_values[],
                       void                        *output_buffer,
                       size_t                       output_buffer_size,
@@ -1051,7 +1051,7 @@ _field_helper_step_nl(fvm_writer_field_helper_t   *helper,
 
   /* If output data is interlaced, set stride */
 
-  if (h->field_dim > 1 && h->interlace == FVM_INTERLACE)
+  if (h->field_dim > 1 && h->interlace == CS_INTERLACE)
     stride = h->field_dim;
 
   /* Main vertices */
@@ -1062,7 +1062,7 @@ _field_helper_step_nl(fvm_writer_field_helper_t   *helper,
     cs_lnum_t n_entities = mesh->n_vertices;
 
     end_id = h->start_id + (output_buffer_size / stride);
-    end_id = FVM_MIN(end_id, n_entities);
+    end_id = CS_MIN(end_id, n_entities);
 
     fvm_convert_array(src_dim,
                       src_dim_shift,
@@ -1109,8 +1109,8 @@ _field_helper_step_nl(fvm_writer_field_helper_t   *helper,
     slice_output_size = end_id - h->start_id;
     slice_output_size_c = slice_output_size * stride;
 
-    if (   (h->datatype == FVM_DOUBLE || h->datatype == FVM_FLOAT)
-        && (datatype == FVM_DOUBLE || datatype == FVM_FLOAT)) {
+    if (   (h->datatype == CS_DOUBLE || h->datatype == CS_FLOAT)
+        && (datatype == CS_DOUBLE || datatype == CS_FLOAT)) {
 
       fvm_tesselation_vertex_values(section->tesselation,
                                     src_dim,
@@ -1130,7 +1130,7 @@ _field_helper_step_nl(fvm_writer_field_helper_t   *helper,
     }
     else {
       unsigned char *output_buffer_v = output_buffer;
-      slice_output_size_c *= fvm_datatype_size[datatype];
+      slice_output_size_c *= cs_datatype_size[datatype];
       for (ii = 0; ii < slice_output_size_c; ii++)
         output_buffer_v[ii] = 0.;
     }
@@ -1367,8 +1367,8 @@ fvm_writer_field_helper_t *
 fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
                                const fvm_writer_section_t *section_list,
                                int                         field_dim,
-                               fvm_interlace_t             interlace,
-                               fvm_datatype_t              datatype,
+                               cs_interlace_t              interlace,
+                               cs_datatype_t               datatype,
                                fvm_writer_var_loc_t        location)
 {
   fvm_writer_field_helper_t *h = NULL;
@@ -1481,18 +1481,18 @@ fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
       h->input_size  += section->n_elements;
       h->output_size += n_sub_elements;
 
-      h->max_grouped_elements     = FVM_MAX(h->max_grouped_elements,
-                                            n_grouped_elements);
-      h->max_grouped_elements_out = FVM_MAX(h->max_grouped_elements_out,
-                                            n_grouped_elements_out);
+      h->max_grouped_elements     = CS_MAX(h->max_grouped_elements,
+                                           n_grouped_elements);
+      h->max_grouped_elements_out = CS_MAX(h->max_grouped_elements_out,
+                                           n_grouped_elements_out);
 
-      h->max_section_elements     = FVM_MAX(h->max_section_elements,
-                                            section->n_elements);
-      h->max_section_elements_out = FVM_MAX(h->max_section_elements_out,
-                                            n_sub_elements);
+      h->max_section_elements     = CS_MAX(h->max_section_elements,
+                                           section->n_elements);
+      h->max_section_elements_out = CS_MAX(h->max_section_elements_out,
+                                           n_sub_elements);
 
-      h->n_sub_elements_max = FVM_MAX(h->n_sub_elements_max,
-                                      n_sub_elements_max);
+      h->n_sub_elements_max = CS_MAX(h->n_sub_elements_max,
+                                     n_sub_elements_max);
 
       /* continue with next section */
 
@@ -1553,8 +1553,8 @@ fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
           h->output_size += n_vertices_add;
 
           h->n_vertices_add += n_vertices_add;
-          h->max_vertices_add = FVM_MAX(h->max_vertices_add,
-                                        n_vertices_add);
+          h->max_vertices_add = CS_MAX(h->max_vertices_add,
+                                       n_vertices_add);
 
           h->added_vertex_section[jj] = ii;
           jj++;
@@ -1685,34 +1685,34 @@ fvm_writer_field_helper_init_g(fvm_writer_field_helper_t   *helper,
       h->input_size += n_g_elements;
       h->output_size += n_g_sub_elements;
 
-      h->max_grouped_elements_g     = FVM_MAX(h->max_grouped_elements_g,
-                                              n_grouped_elements_g);
-      h->max_grouped_elements_out_g = FVM_MAX(h->max_grouped_elements_out_g,
-                                              n_grouped_elements_out_g);
+      h->max_grouped_elements_g     = CS_MAX(h->max_grouped_elements_g,
+                                             n_grouped_elements_g);
+      h->max_grouped_elements_out_g = CS_MAX(h->max_grouped_elements_out_g,
+                                             n_grouped_elements_out_g);
 
-      h->max_section_elements_g     = FVM_MAX(h->max_section_elements_g,
-                                              n_g_elements);
-      h->max_section_elements_out_g = FVM_MAX(h->max_section_elements_out_g,
-                                              n_g_sub_elements);
+      h->max_section_elements_g     = CS_MAX(h->max_section_elements_g,
+                                             n_g_elements);
+      h->max_section_elements_out_g = CS_MAX(h->max_section_elements_out_g,
+                                             n_g_sub_elements);
 
       /* Update buffer sizes */
 
-      h->local_buffer_size = FVM_MAX(h->local_buffer_size,
-                                     (size_t)section->n_elements);
+      h->local_buffer_size = CS_MAX(h->local_buffer_size,
+                                    (size_t)section->n_elements);
 
       if (export_section->type != section->type) { /* Tesselated section */
-        local_buffer_size = FVM_MAX(section->n_elements,
-                                    (  n_sub_elements_max
-                                     * FVM_WRITER_MIN_SUB_ELEMENTS));
+        local_buffer_size = CS_MAX(section->n_elements,
+                                   (  n_sub_elements_max
+                                    * FVM_WRITER_MIN_SUB_ELEMENTS));
         local_index_size = section->n_elements + 1;
         global_index_size_g = n_g_elements + 1;
       }
-      h->local_buffer_size = FVM_MAX(h->local_buffer_size,
-                                     local_buffer_size);
-      h->local_index_size = FVM_MAX(h->local_index_size,
-                                    local_index_size);
-      h->global_index_size_g = FVM_MAX(h->global_index_size_g,
-                                       global_index_size_g);
+      h->local_buffer_size = CS_MAX(h->local_buffer_size,
+                                    local_buffer_size);
+      h->local_index_size = CS_MAX(h->local_index_size,
+                                   local_index_size);
+      h->global_index_size_g = CS_MAX(h->global_index_size_g,
+                                      global_index_size_g);
 
       /* continue with next section */
 
@@ -1751,13 +1751,13 @@ fvm_writer_field_helper_init_g(fvm_writer_field_helper_t   *helper,
         h->output_size += n_g_vertices_add;
 
         h->n_vertices_add_g += n_g_vertices_add;
-        h->max_vertices_add_g = FVM_MAX(h->max_vertices_add_g,
-                                        n_g_vertices_add);
+        h->max_vertices_add_g = CS_MAX(h->max_vertices_add_g,
+                                       n_g_vertices_add);
 
         /* Update buffer sizes */
 
-        h->local_buffer_size = FVM_MAX(h->local_buffer_size,
-                                       (size_t)section->n_elements);
+        h->local_buffer_size = CS_MAX(h->local_buffer_size,
+                                      (size_t)section->n_elements);
 
       }
     }
@@ -1767,7 +1767,7 @@ fvm_writer_field_helper_init_g(fvm_writer_field_helper_t   *helper,
   /* With interlaced multidimensional arrays,
      multiply local buffer size by the stride */
 
-  if (h->field_dim > 1 && h->interlace == FVM_INTERLACE) {
+  if (h->field_dim > 1 && h->interlace == CS_INTERLACE) {
     h->local_buffer_size *= h->field_dim;
   }
 
@@ -1794,7 +1794,7 @@ fvm_writer_field_helper_init_g(fvm_writer_field_helper_t   *helper,
   }
 
   BFT_MALLOC(h->local_buffer,
-             h->local_buffer_size*fvm_datatype_size[h->datatype],
+             h->local_buffer_size*cs_datatype_size[h->datatype],
              char);
 
   if (h->n_sub_elements_max > 1)
@@ -1854,11 +1854,11 @@ fvm_writer_field_helper_get_size(const fvm_writer_field_helper_t  *helper,
 
     if (h->n_sub_elements_max > 1) {
       min_size = h->n_sub_elements_max * FVM_WRITER_MIN_SUB_ELEMENTS;
-      min_size = FVM_MIN(min_size, h->output_size);
+      min_size = CS_MIN(min_size, h->output_size);
     }
 
     if (h->output_size > 0)
-      min_size = FVM_MAX(FVM_WRITER_MIN_ELEMENTS, min_size);
+      min_size = CS_MAX(FVM_WRITER_MIN_ELEMENTS, min_size);
 
     if (min_size > h->output_size)
       min_size = h->output_size;
@@ -1866,7 +1866,7 @@ fvm_writer_field_helper_get_size(const fvm_writer_field_helper_t  *helper,
     /* With interlaced multidimensional arrays,
        multiply buffer sizes by the stride */
 
-    if (h->field_dim > 1 && h->interlace == FVM_INTERLACE)
+    if (h->field_dim > 1 && h->interlace == CS_INTERLACE)
       min_size *= h->field_dim;
 
     *min_output_buffer_size = min_size;
@@ -1901,7 +1901,7 @@ fvm_writer_field_helper_field_dim(const fvm_writer_field_helper_t  *helper)
  *   output datatype associated with helper
  *----------------------------------------------------------------------------*/
 
-fvm_datatype_t
+cs_datatype_t
 fvm_writer_field_helper_datatype(const fvm_writer_field_helper_t  *helper)
 {
   return helper->datatype;
@@ -1940,10 +1940,10 @@ fvm_writer_field_helper_step_e(fvm_writer_field_helper_t   *helper,
                                const fvm_writer_section_t  *export_section,
                                int                          src_dim,
                                int                          src_dim_shift,
-                               fvm_interlace_t              src_interlace,
+                               cs_interlace_t               src_interlace,
                                int                          n_parent_lists,
                                const cs_lnum_t              parent_num_shift[],
-                               fvm_datatype_t               datatype,
+                               cs_datatype_t                datatype,
                                const void            *const field_values[],
                                void                        *output_buffer,
                                size_t                       output_buffer_size,
@@ -2019,10 +2019,10 @@ fvm_writer_field_helper_step_n(fvm_writer_field_helper_t   *helper,
                                const fvm_nodal_t           *mesh,
                                int                          src_dim,
                                int                          src_dim_shift,
-                               fvm_interlace_t              src_interlace,
+                               cs_interlace_t               src_interlace,
                                int                          n_parent_lists,
                                const cs_lnum_t              parent_num_shift[],
-                               fvm_datatype_t               datatype,
+                               cs_datatype_t                datatype,
                                const void            *const field_values[],
                                void                        *output_buffer,
                                size_t                       output_buffer_size,

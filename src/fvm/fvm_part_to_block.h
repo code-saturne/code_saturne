@@ -174,7 +174,7 @@ fvm_part_to_block_get_n_part_ents(fvm_part_to_block_t *d);
 
 void
 fvm_part_to_block_copy_array(fvm_part_to_block_t   *d,
-                             fvm_datatype_t         datatype,
+                             cs_datatype_t          datatype,
                              int                    stride,
                              const void            *part_values,
                              void                  *block_values);
@@ -215,7 +215,7 @@ fvm_part_to_block_copy_index(fvm_part_to_block_t  *d,
 
 void
 fvm_part_to_block_copy_indexed(fvm_part_to_block_t   *d,
-                               fvm_datatype_t         datatype,
+                               cs_datatype_t          datatype,
                                const cs_lnum_t       *part_index,
                                const void            *part_val,
                                const cs_lnum_t       *block_index,

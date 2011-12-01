@@ -62,8 +62,9 @@
 #include "fvm_defs.h"
 #include "fvm_hilbert.h"
 #include "fvm_morton.h"
-#include "fvm_order.h"
 #include "fvm_parall.h"
+
+#include "cs_order.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -486,10 +487,10 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   if (n_ent_recv > 0) {
 
-    fvm_order_local_allocated(NULL,
-                              recv_global_num,
-                              recv_order,
-                              n_ent_recv);
+    cs_order_gnum_allocated(NULL,
+                            recv_global_num,
+                            recv_order,
+                            n_ent_recv);
 
     /* Determine global order; requires ordering to loop through buffer by
        increasing number (slice blocks associated with each process are
@@ -711,11 +712,11 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
 
     size_t prev_id, cur_id;
 
-    fvm_order_local_allocated_s(NULL,
-                                recv_global_num,
-                                stride,
-                                recv_order,
-                                n_ent_recv);
+    cs_order_gnum_allocated_s(NULL,
+                              recv_global_num,
+                              stride,
+                              recv_order,
+                              n_ent_recv);
 
     /* Determine global order; requires ordering to loop through buffer by
        increasing number (slice blocks associated with each process are
@@ -998,11 +999,11 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
 
     BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
 
-    fvm_order_local_allocated_i(NULL,
-                                recv_global_num,
-                                recv_sub_index,
-                                recv_order,
-                                n_ent_recv);
+    cs_order_gnum_allocated_i(NULL,
+                              recv_global_num,
+                              recv_sub_index,
+                              recv_order,
+                              n_ent_recv);
 
     /* Determine global order; requires ordering to loop through buffer by
        increasing number (slice blocks associated with each process are
@@ -1224,10 +1225,10 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
 
   if (n_ent_recv > 0) {
 
-    fvm_order_local_allocated(NULL,
-                              recv_global_num,
-                              recv_order,
-                              n_ent_recv);
+    cs_order_gnum_allocated(NULL,
+                            recv_global_num,
+                            recv_order,
+                            n_ent_recv);
 
     /* Determine global order; requires ordering to loop through buffer by
        increasing number (slice blocks associated with each process are
@@ -1294,7 +1295,7 @@ _adjust_extents(cs_coord_t  extents[6],
 
   for (i = 0; i < 3; i++) {
     double  w = fabs(extents[i+3] - extents[i]);
-    max_width = FVM_MAX(max_width, w);
+    max_width = CS_MAX(max_width, w);
   }
 
   for (i = 0; i < 3; i++) {
@@ -1894,9 +1895,9 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
   if (fvm_parall_get_size() < 2)
     return NULL;
 
-  assert(fvm_order_local_test(parent_entity_number,
-                              parent_global_number,
-                              n_entities) == true);
+  assert(cs_order_gnum_test(parent_entity_number,
+                            parent_global_number,
+                            n_entities) == true);
 
 #if defined(HAVE_MPI)
 
@@ -2073,10 +2074,10 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_number[],
   if (fvm_parall_get_size() < 2)
     return NULL;
 
-  assert(fvm_order_local_test_s(parent_entity_number,
-                                adjacency,
-                                stride,
-                                n_entities) == true);
+  assert(cs_order_gnum_test_s(parent_entity_number,
+                              adjacency,
+                              stride,
+                              n_entities) == true);
 
 #if defined(HAVE_MPI)
   {

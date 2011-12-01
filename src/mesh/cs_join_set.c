@@ -35,24 +35,16 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *---------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *---------------------------------------------------------------------------*/
-
-#include <fvm_io_num.h>
-#include <fvm_order.h>
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *---------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+
+#include "fvm_io_num.h"
+#include "fvm_parall.h"
+
 #include "cs_join_util.h"
+#include "cs_order.h"
 #include "cs_search.h"
 #include "cs_sort.h"
 
@@ -602,7 +594,7 @@ cs_join_gset_create_from_tag(cs_int_t         n_elts,
 
   BFT_MALLOC(order, n_elts, cs_lnum_t);
 
-  fvm_order_local_allocated(NULL, tag, order, n_elts);
+  cs_order_gnum_allocated(NULL, tag, order, n_elts);
 
   /* Create a cs_join_gset_t structure to store the initial position of equiv.
      element in tag */
@@ -745,7 +737,7 @@ cs_join_gset_create_by_equiv(const cs_join_gset_t  *set,
     couple_list[2*i+1] = init_array[i];
   }
 
-  fvm_order_local_allocated_s(NULL, couple_list, 2, order, list_size);
+  cs_order_gnum_allocated_s(NULL, couple_list, 2, order, list_size);
 
   /* Create a cs_join_gset_t structure to store the initial value of equiv.
      element in set->g_list */
@@ -945,7 +937,7 @@ cs_join_gset_sort_elts(cs_join_gset_t  *set)
 
   /* Sort g_elts */
 
-  fvm_order_local_allocated(NULL, g_elts, order, n_elts);
+  cs_order_gnum_allocated(NULL, g_elts, order, n_elts);
 
   /* Reshape cs_join_gset_t according to the new ordering */
 
@@ -1045,7 +1037,7 @@ cs_join_gset_invert(const cs_join_gset_t  *set)
 
   BFT_MALLOC(order, list_size, cs_lnum_t);
 
-  fvm_order_local_allocated(NULL, set->g_list, order, list_size);
+  cs_order_gnum_allocated(NULL, set->g_list, order, list_size);
 
   /* Count the number of elements */
 
@@ -1322,7 +1314,7 @@ cs_join_gset_single_order(const cs_join_gset_t  *set,
     BFT_MALLOC(_new_array, _n_elts, cs_gnum_t);
     BFT_MALLOC(order, _n_elts, cs_lnum_t);
 
-    fvm_order_local_allocated(NULL, elt_list, order, _n_elts);
+    cs_order_gnum_allocated(NULL, elt_list, order, _n_elts);
 
     for (i = 0; i < _n_elts; i++)
       _new_array[i] = elt_list[order[i]];

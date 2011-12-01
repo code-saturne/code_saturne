@@ -108,7 +108,7 @@ fvm_nodal_get_global_element_num(const fvm_nodal_t  *this_nodal,
 
 void
 fvm_nodal_get_vertex_coords(const fvm_nodal_t  *this_nodal,
-                            fvm_interlace_t     interlace,
+                            cs_interlace_t      interlace,
                             cs_coord_t         *vertex_coords);
 
 /*----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ fvm_nodal_get_vertex_coords(const fvm_nodal_t  *this_nodal,
 
 void
 fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
-                              fvm_interlace_t     interlace,
+                              cs_interlace_t      interlace,
                               int                 entity_dim,
                               cs_coord_t         *cell_centers);
 

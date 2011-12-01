@@ -679,7 +679,7 @@ _read_global_count(cs_io_t             *inp,
 
   /* Ensure type of value matches */
 
-  if (header->elt_type == FVM_UINT32 || header->elt_type == FVM_UINT64)
+  if (header->elt_type == CS_UINT32 || header->elt_type == CS_UINT64)
     cs_io_set_cs_gnum(header, inp);
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -733,8 +733,8 @@ _read_adjacency_array(cs_io_t                         *inp,
 
   /* Ensure type of value matches */
 
-  if (   header->elt_type == FVM_INT32 || header->elt_type == FVM_INT64
-      || header->elt_type == FVM_UINT32 || header->elt_type == FVM_UINT64)
+  if (   header->elt_type == CS_INT32 || header->elt_type == CS_INT64
+      || header->elt_type == CS_UINT32 || header->elt_type == CS_UINT64)
     cs_io_set_cs_gnum(header, inp);
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -1965,7 +1965,7 @@ _read_input(const char   *path,
       bft_printf(_("  %s \"%-32s\"; Type: %-6s; Size: %llu\n"),
                  _(read_type_name[read_type]),
                  header.sec_name,
-                 fvm_datatype_name[header.type_read],
+                 cs_datatype_name[header.type_read],
                  (unsigned long long)(header.n_vals));
     }
     else {
@@ -2014,8 +2014,8 @@ _read_input(const char   *path,
 
   if (cs_glob_n_ranks > 1) {
 
-    fvm_datatype_t gnum_type
-      = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+    cs_datatype_t gnum_type
+      = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
     cs_gnum_t *_g_face_cells_tmp = NULL;
 
     d = fvm_block_to_part_create_by_adj_s(cs_glob_mpi_comm,
@@ -2077,24 +2077,24 @@ _write_output(cs_gnum_t  n_g_cells,
   int n_ranks_size;
   char *filename = NULL;
   cs_io_t *fh = NULL;
-  fvm_datatype_t datatype_gnum = FVM_DATATYPE_NULL;
-  fvm_datatype_t datatype_int = FVM_DATATYPE_NULL;
+  cs_datatype_t datatype_gnum = CS_DATATYPE_NULL;
+  cs_datatype_t datatype_int = CS_DATATYPE_NULL;
 
   const char dir[] = "partition";
   const char magic_string[] = "Domain partitioning, R0";
 
   if (sizeof(int) == 4)
-    datatype_int = FVM_INT32;
+    datatype_int = CS_INT32;
   else if (sizeof(int) == 8)
-    datatype_int = FVM_INT64;
+    datatype_int = CS_INT64;
   else {
     assert(0);
   }
 
   if (sizeof(cs_gnum_t) == 4)
-    datatype_gnum = FVM_UINT32;
+    datatype_gnum = CS_UINT32;
   else if (sizeof(cs_gnum_t) == 8)
-    datatype_gnum = FVM_UINT64;
+    datatype_gnum = CS_UINT64;
   else {
     assert(0);
   }

@@ -27,11 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_defs.h>
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -81,8 +77,8 @@ typedef struct {
   size_t          location_id;        /* Id of associated location, or 0 */
   size_t          index_id;           /* Id of associated index, or 0 */
   size_t          n_location_vals;    /* Number of values per location */
-  fvm_datatype_t  elt_type;           /* Type if n_elts > 0 */
-  fvm_datatype_t  type_read;          /* Type in file */
+  cs_datatype_t   elt_type;           /* Type if n_elts > 0 */
+  cs_datatype_t   type_read;          /* Type in file */
 
 } cs_io_sec_header_t;
 
@@ -441,14 +437,14 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
  *----------------------------------------------------------------------------*/
 
 void
-cs_io_write_global(const char      *sec_name,
-                   cs_gnum_t        n_vals,
-                   size_t           location_id,
-                   size_t           index_id,
-                   size_t           n_location_vals,
-                   fvm_datatype_t   elt_type,
-                   const void      *elts,
-                   cs_io_t         *outp);
+cs_io_write_global(const char     *sec_name,
+                   cs_gnum_t       n_vals,
+                   size_t          location_id,
+                   size_t          index_id,
+                   size_t          n_location_vals,
+                   cs_datatype_t   elt_type,
+                   const void     *elts,
+                   cs_io_t        *outp);
 
 /*----------------------------------------------------------------------------
  * Write a section to file, each associated process providing a contiguous
@@ -486,16 +482,16 @@ cs_io_write_global(const char      *sec_name,
  *----------------------------------------------------------------------------*/
 
 void
-cs_io_write_block_buffer(const char      *sec_name,
-                         cs_gnum_t        n_g_elts,
-                         cs_gnum_t        global_num_start,
-                         cs_gnum_t        global_num_end,
-                         size_t           location_id,
-                         size_t           index_id,
-                         size_t           n_location_vals,
-                         fvm_datatype_t   elt_type,
-                         void            *elts,
-                         cs_io_t         *outp);
+cs_io_write_block_buffer(const char     *sec_name,
+                         cs_gnum_t       n_g_elts,
+                         cs_gnum_t       global_num_start,
+                         cs_gnum_t       global_num_end,
+                         size_t          location_id,
+                         size_t          index_id,
+                         size_t          n_location_vals,
+                         cs_datatype_t   elt_type,
+                         void           *elts,
+                         cs_io_t        *outp);
 
 /*----------------------------------------------------------------------------
  * Return the position of the file pointer for an open kernel IO file.

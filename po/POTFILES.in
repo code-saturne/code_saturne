@@ -68,6 +68,7 @@ src/base/cs_log.c
 src/base/cs_map.c
 src/base/cs_numbering.c
 src/base/cs_opts.c
+src/base/cs_order.c
 src/base/cs_parall.c
 src/base/cs_perio.c
 src/base/cs_post.c
@@ -119,7 +120,6 @@ src/fvm/fvm_nodal_from_desc.c
 src/fvm/fvm_nodal_order.c
 src/fvm/fvm_nodal_project.c
 src/fvm/fvm_nodal_triangulate.c
-src/fvm/fvm_order.c
 src/fvm/fvm_parall.c
 src/fvm/fvm_part_to_block.c
 src/fvm/fvm_periodicity.c

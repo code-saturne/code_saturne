@@ -50,7 +50,6 @@
 #include "bft_printf.h"
 
 #include "fvm_io_num.h"
-#include "fvm_order.h"
 #include "fvm_part_to_block.h"
 
 #include "cs_base.h"
@@ -59,6 +58,7 @@
 #include "cs_halo.h"
 #include "cs_log.h"
 #include "cs_numbering.h"
+#include "cs_order.h"
 #include "cs_prototypes.h"
 #include "cs_perio.h"
 #include "cs_timer.h"
@@ -1131,7 +1131,7 @@ _sort_matrix_dump_data(cs_lnum_t   n_entries,
   cs_gnum_t *_m_coords;
   double *_m_vals;
 
-  cs_lnum_t *order = fvm_order_local_s(NULL, m_coords, 2, n_entries);
+  cs_lnum_t *order = cs_order_gnum_s(NULL, m_coords, 2, n_entries);
 
   BFT_MALLOC(_m_coords, n_entries*2, cs_gnum_t);
 
@@ -1308,8 +1308,8 @@ _write_matrix_g(const cs_matrix_t  *m,
   cs_gnum_t  *m_coords = NULL;
   double  *m_vals = NULL;
 
-  const fvm_datatype_t gnum_type
-    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+  const cs_datatype_t gnum_type
+    = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
 
   /* Initialization for matrix coefficients */
 
@@ -1383,7 +1383,7 @@ _write_matrix_g(const cs_matrix_t  *m,
   if (block_size > 0)
     BFT_MALLOC(b_vals, block_size, double);
 
-  fvm_part_to_block_copy_array(d, FVM_DOUBLE, 1, m_vals, b_vals);
+  fvm_part_to_block_copy_array(d, CS_DOUBLE, 1, m_vals, b_vals);
 
   BFT_FREE(m_vals);
 
@@ -1552,11 +1552,11 @@ _write_vector_g(cs_lnum_t         n_elts,
     BFT_MALLOC(p_vals, n_elts, double);
     for (ii = 0; ii < n_elts; ii++)
       p_vals[ii] = vals[ii];
-    fvm_part_to_block_copy_array(d, FVM_DOUBLE, 1, p_vals, b_vals);
+    fvm_part_to_block_copy_array(d, CS_DOUBLE, 1, p_vals, b_vals);
     BFT_FREE(p_vals);
   }
   else
-    fvm_part_to_block_copy_array(d, FVM_DOUBLE, 1, vals, b_vals);
+    fvm_part_to_block_copy_array(d, CS_DOUBLE, 1, vals, b_vals);
 
   /* Write value blocks */
 

@@ -720,7 +720,7 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
     }
 
     fvm_part_to_block_copy_array(d,
-                                 FVM_FLOAT,
+                                 CS_FLOAT,
                                  1,
                                  part_coords,
                                  block_coords);
@@ -781,7 +781,7 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
   /* Vertex coordinates */
   /*--------------------*/
 
-  BFT_MALLOC(coords_tmp, FVM_MAX(n_vertices, n_extra_vertices), float);
+  BFT_MALLOC(coords_tmp, CS_MAX(n_vertices, n_extra_vertices), float);
 
   _write_string(f, "coordinates");
   _write_int(f, n_vertices + n_extra_vertices);
@@ -1275,7 +1275,7 @@ _write_lengths_g(const fvm_io_num_t  *global_element_num,
   d = fvm_part_to_block_create_by_gnum(comm, bi, n_elements, g_num);
 
   fvm_part_to_block_copy_array(d,
-                               FVM_INT32,
+                               CS_INT32,
                                1,
                                part_lengths,
                                block_lengths);
@@ -1551,7 +1551,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
     k = 0;
     for (i = 0; i < section->n_elements; i++) {
       for (j = section->face_index[i]; j < section->face_index[i+1]; j++) {
-        face_id = FVM_ABS(section->face_num[j]) - 1;
+        face_id = CS_ABS(section->face_num[j]) - 1;
         face_length = (  section->vertex_index[face_id+1]
                        - section->vertex_index[face_id]);
         part_face_len[k++] = face_length;
@@ -1636,7 +1636,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
       for (i = 0; i < section->n_elements; i++) {
         cell_length = 0;
         for (j = section->face_index[i]; j < section->face_index[i+1]; j++) {
-          face_id = FVM_ABS(section->face_num[j]) - 1;
+          face_id = CS_ABS(section->face_num[j]) - 1;
           face_length = (  section->vertex_index[face_id+1]
                          - section->vertex_index[face_id]);
           cell_length += face_length;
@@ -1655,7 +1655,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
       for (i = 0; i < section->n_elements; i++) {
         cell_length = 0;
         for (j = section->face_index[i]; j < section->face_index[i+1]; j++) {
-          face_id = FVM_ABS(section->face_num[j]) - 1;
+          face_id = CS_ABS(section->face_num[j]) - 1;
           face_length = (  section->vertex_index[face_id+1]
                          - section->vertex_index[face_id]);
           cell_length += face_length + 1;
@@ -2521,7 +2521,7 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
     }
 
     fvm_part_to_block_copy_array(d,
-                                 FVM_INT32,
+                                 CS_INT32,
                                  stride,
                                  part_vtx_num,
                                  block_vtx_num);
@@ -2577,10 +2577,10 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
                         _Bool                     divide_polyhedra,
                         int                       input_dim,
                         int                       output_dim,
-                        fvm_interlace_t           interlace,
+                        cs_interlace_t            interlace,
                         int                       n_parent_lists,
                         const cs_lnum_t           parent_num_shift[],
-                        fvm_datatype_t            datatype,
+                        cs_datatype_t             datatype,
                         const void         *const field_values[],
                         _ensight_file_t           f,
                         MPI_Comm                  comm)
@@ -2626,7 +2626,7 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
                         end_id,
                         interlace,
                         datatype,
-                        FVM_FLOAT,
+                        CS_FLOAT,
                         n_parent_lists,
                         parent_num_shift,
                         mesh->parent_vertex_num,
@@ -2659,7 +2659,7 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
                                         n_extra_vertices,
                                         interlace,
                                         datatype,
-                                        FVM_FLOAT,
+                                        CS_FLOAT,
                                         n_parent_lists,
                                         parent_num_shift,
                                         mesh->parent_vertex_num,
@@ -2673,7 +2673,7 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
       assert(end_id == part_size);
 
       fvm_part_to_block_copy_array(d,
-                                   FVM_FLOAT,
+                                   CS_FLOAT,
                                    1,
                                    part_values,
                                    block_values);
@@ -2730,10 +2730,10 @@ static void
 _export_field_values_nl(const fvm_nodal_t           *mesh,
                         fvm_writer_field_helper_t   *helper,
                         int                          input_dim,
-                        fvm_interlace_t              interlace,
+                        cs_interlace_t               interlace,
                         int                          n_parent_lists,
                         const cs_lnum_t              parent_num_shift[],
-                        fvm_datatype_t               datatype,
+                        cs_datatype_t                datatype,
                         const void            *const field_values[],
                         _ensight_file_t              f)
 {
@@ -2807,10 +2807,10 @@ static const fvm_writer_section_t *
 _export_field_values_eg(const fvm_writer_section_t      *export_section,
                         int                              input_dim,
                         int                              output_dim,
-                        fvm_interlace_t                  interlace,
+                        cs_interlace_t                   interlace,
                         int                              n_parent_lists,
                         const cs_lnum_t                  parent_num_shift[],
-                        fvm_datatype_t                   datatype,
+                        cs_datatype_t                    datatype,
                         const void                *const field_values[],
                         MPI_Comm                         comm,
                         _ensight_file_t                  f)
@@ -2948,7 +2948,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
 
     BFT_MALLOC(block_n_sub, block_size, int);
     fvm_part_to_block_copy_array(d,
-                                 FVM_INT32,
+                                 CS_INT32,
                                  1,
                                  part_n_sub,
                                  block_n_sub);
@@ -2966,7 +2966,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
      Without tesselation, _block_n_sub simply points to block_n_sub */
 
   BFT_MALLOC(part_values,
-             FVM_MAX(part_size, (cs_lnum_t)block_sub_size),
+             CS_MAX(part_size, (cs_lnum_t)block_sub_size),
              float);
   BFT_MALLOC(block_values, block_size, float);
 
@@ -3010,7 +3010,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
                           section->n_elements + src_shift,
                           interlace,
                           datatype,
-                          FVM_FLOAT,
+                          CS_FLOAT,
                           n_parent_lists,
                           parent_num_shift,
                           section->parent_element_num,
@@ -3027,7 +3027,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
       /* Distribute part values */
 
       fvm_part_to_block_copy_array(d,
-                                   FVM_FLOAT,
+                                   CS_FLOAT,
                                    1,
                                    part_values,
                                    block_values);
@@ -3104,10 +3104,10 @@ static const fvm_writer_section_t *
 _export_field_values_el(const fvm_writer_section_t      *export_section,
                         fvm_writer_field_helper_t       *helper,
                         int                              input_dim,
-                        fvm_interlace_t                  interlace,
+                        cs_interlace_t                   interlace,
                         int                              n_parent_lists,
                         const cs_lnum_t                  parent_num_shift[],
-                        fvm_datatype_t                   datatype,
+                        cs_datatype_t                    datatype,
                         const void                *const field_values[],
                         _ensight_file_t                  f)
 {
@@ -3131,9 +3131,9 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
                                    &min_output_buffer_size);
 
   output_buffer_size = input_size / 4;
-  output_buffer_size = FVM_MAX(output_buffer_size, min_output_buffer_size);
-  output_buffer_size = FVM_MAX(output_buffer_size, 128);
-  output_buffer_size = FVM_MIN(output_buffer_size, output_size);
+  output_buffer_size = CS_MAX(output_buffer_size, min_output_buffer_size);
+  output_buffer_size = CS_MAX(output_buffer_size, 128);
+  output_buffer_size = CS_MIN(output_buffer_size, output_size);
 
   BFT_MALLOC(output_buffer, output_buffer_size, float);
 
@@ -3681,10 +3681,10 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
                             const char            *name,
                             fvm_writer_var_loc_t   location,
                             int                    dimension,
-                            fvm_interlace_t        interlace,
+                            cs_interlace_t         interlace,
                             int                    n_parent_lists,
                             const cs_lnum_t        parent_num_shift[],
-                            fvm_datatype_t         datatype,
+                            cs_datatype_t          datatype,
                             int                    time_step,
                             double                 time_value,
                             const void      *const field_values[])
@@ -3768,8 +3768,8 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
     helper = fvm_writer_field_helper_create(mesh,
                                             export_list,
                                             output_dim,
-                                            FVM_NO_INTERLACE,
-                                            FVM_FLOAT,
+                                            CS_NO_INTERLACE,
+                                            CS_FLOAT,
                                             location);
 
   /* Part header */

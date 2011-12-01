@@ -34,32 +34,24 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_defs.h>
-#include <fvm_io_num.h>
-#include <fvm_order.h>
-#include <fvm_triangulate.h>
-#include <fvm_nodal.h>
-#include <fvm_writer.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_printf.h"
+
+#include "fvm_defs.h"
+#include "fvm_io_num.h"
+#include "fvm_triangulate.h"
+#include "fvm_nodal.h"
+#include "fvm_writer.h"
 
 #include "cs_halo.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_quality.h"
 #include "cs_mesh_connect.h"
+#include "cs_order.h"
 #include "cs_post.h"
 
 /*----------------------------------------------------------------------------
@@ -1218,7 +1210,7 @@ _update_cut_faces_num(cs_mesh_t      *mesh,
 
   /* Faces should not have been reordered */
 
-  if (fvm_order_local_test(NULL, *p_global_face_num, n_init_faces) == false)
+  if (cs_order_gnum_test(NULL, *p_global_face_num, n_init_faces) == false)
     bft_error(__FILE__, __LINE__, 0,
               _("The faces have been renumbered before cutting.\n"
                 "This case should not arise, because the mesh entities\n"
@@ -1313,10 +1305,10 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
                           _("Face warping"),
                           FVM_WRITER_PER_ELEMENT,
                           1,
-                          FVM_INTERLACE,
+                          CS_INTERLACE,
                           n_parent_lists,
                           parent_num_shift,
-                          FVM_DOUBLE,
+                          CS_DOUBLE,
                           (int)-1,
                           (double)0.0,
                           (const void **)var_ptr);

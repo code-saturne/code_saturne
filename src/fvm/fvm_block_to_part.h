@@ -254,11 +254,11 @@ fvm_block_to_part_transfer_gnum(fvm_block_to_part_t *d);
  *----------------------------------------------------------------------------*/
 
 void
-fvm_block_to_part_copy_array(fvm_block_to_part_t   *d,
-                             fvm_datatype_t         datatype,
-                             int                    stride,
-                             const void            *block_values,
-                             void                  *part_values);
+fvm_block_to_part_copy_array(fvm_block_to_part_t  *d,
+                             cs_datatype_t         datatype,
+                             int                   stride,
+                             const void           *block_values,
+                             void                 *part_values);
 
 /*----------------------------------------------------------------------------
  * Copy a local index from block distribution to general domain partition.
@@ -292,12 +292,12 @@ fvm_block_to_part_copy_index(fvm_block_to_part_t  *d,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
-                               fvm_datatype_t         datatype,
-                               const cs_lnum_t       *block_index,
-                               const void            *block_val,
-                               const cs_lnum_t       *part_index,
-                               void                  *part_val);
+fvm_block_to_part_copy_indexed(fvm_block_to_part_t  *d,
+                               cs_datatype_t         datatype,
+                               const cs_lnum_t      *block_index,
+                               const void           *block_val,
+                               const cs_lnum_t      *part_index,
+                               void                 *part_val);
 
 #endif /* defined(HAVE_MPI) */
 

@@ -76,17 +76,6 @@ static MPI_Comm  _fvm_mpi_parall_comm = MPI_COMM_NULL;  /* Intra-communicator */
 static int       _fvm_mpi_parall_size = 1;
 static int       _fvm_mpi_parall_rank = 0;
 
-/* MPI Datatypes associated with fvm datatypes */
-
-MPI_Datatype  fvm_datatype_to_mpi[] = {MPI_DATATYPE_NULL,
-                                       MPI_CHAR,
-                                       MPI_FLOAT,
-                                       MPI_DOUBLE,
-                                       MPI_INT,            /* FVM_INT32 */
-                                       MPI_LONG_INT,       /* FVM_INT64 */
-                                       MPI_UNSIGNED,       /* FVM_UINT32 */
-                                       MPI_UNSIGNED_LONG}; /* FVM_UINT64 */
-
 /* Minimum recommended scatter/gather buffer size */
 
 static size_t _fvm_parall_min_coll_buf_size = 1024*1024*8;
@@ -142,56 +131,6 @@ fvm_parall_set_mpi_comm(const MPI_Comm  comm)
     _fvm_mpi_parall_size = 1;
     _fvm_mpi_parall_rank = 0;
   }
-
-  /* Check (correct) fvm_datatype_to_mpi values */
-
-  if (mpi_flag != 0)
-  {
-    int size_short, size_int, size_long, size_long_long;
-
-    MPI_Type_size(MPI_SHORT, &size_short);
-    MPI_Type_size(MPI_INT,   &size_int);
-    MPI_Type_size(MPI_LONG,  &size_long);
-
-#if defined(MPI_LONG_LONG)
-    MPI_Type_size(MPI_LONG_LONG, &size_long_long);
-#else
-    size_long_long = 0;
-#endif
-
-    if (size_int == 4) {
-      fvm_datatype_to_mpi[FVM_INT32] = MPI_INT;
-      fvm_datatype_to_mpi[FVM_UINT32] = MPI_UNSIGNED;
-    }
-    else if (size_short == 4) {
-      fvm_datatype_to_mpi[FVM_INT32] = MPI_SHORT;
-      fvm_datatype_to_mpi[FVM_UINT32] = MPI_UNSIGNED_SHORT;
-    }
-    else if (size_long == 4) {
-      fvm_datatype_to_mpi[FVM_INT32] = MPI_LONG;
-      fvm_datatype_to_mpi[FVM_UINT32] = MPI_UNSIGNED_LONG;
-    }
-
-    if (size_int == 8) {
-      fvm_datatype_to_mpi[FVM_INT64] = MPI_INT;
-      fvm_datatype_to_mpi[FVM_UINT64] = MPI_UNSIGNED;
-    }
-    else if (size_long == 8) {
-      fvm_datatype_to_mpi[FVM_INT64] = MPI_LONG;
-      fvm_datatype_to_mpi[FVM_UINT64] = MPI_UNSIGNED_LONG;
-    }
-#if defined(MPI_LONG_LONG)
-    else if (size_long_long == 8) {
-      fvm_datatype_to_mpi[FVM_INT64] = MPI_LONG_LONG;
-#if defined(MPI_UNSIGNED_LONG_LONG)
-      fvm_datatype_to_mpi[FVM_UINT64] = MPI_UNSIGNED_LONG_LONG;
-#else
-      fvm_datatype_to_mpi[FVM_UINT64] = MPI_LONG_LONG;
-#endif
-    }
-#endif
-  }
-
 }
 
 #endif

@@ -430,8 +430,8 @@ _get_local_tolerance(const cs_real_t   vtx_coords[],
 
       length = _compute_distance(a, b);
       tolerance = length * fraction;
-      vtx_tolerance[vtx_id1] = FVM_MIN(vtx_tolerance[vtx_id1], tolerance);
-      vtx_tolerance[vtx_id2] = FVM_MIN(vtx_tolerance[vtx_id2], tolerance);
+      vtx_tolerance[vtx_id1] = CS_MIN(vtx_tolerance[vtx_id1], tolerance);
+      vtx_tolerance[vtx_id2] = CS_MIN(vtx_tolerance[vtx_id2], tolerance);
 
     }
 
@@ -447,8 +447,8 @@ _get_local_tolerance(const cs_real_t   vtx_coords[],
 
     length = _compute_distance(a, b);
     tolerance = length * fraction;
-    vtx_tolerance[vtx_id1] = FVM_MIN(vtx_tolerance[vtx_id1], tolerance);
-    vtx_tolerance[vtx_id2] = FVM_MIN(vtx_tolerance[vtx_id2], tolerance);
+    vtx_tolerance[vtx_id1] = CS_MIN(vtx_tolerance[vtx_id1], tolerance);
+    vtx_tolerance[vtx_id2] = CS_MIN(vtx_tolerance[vtx_id2], tolerance);
 
   } /* End of loop on faces */
 
@@ -610,7 +610,7 @@ _get_global_tolerance(cs_mesh_t            *mesh,
 
   for (i = 0; i < recv_shift[n_ranks]; i++) {
     vtx_id = recv_glist[i] - first_vtx_gnum;
-    g_vtx_tolerance[vtx_id] = FVM_MIN(g_vtx_tolerance[vtx_id], recv_list[i]);
+    g_vtx_tolerance[vtx_id] = CS_MIN(g_vtx_tolerance[vtx_id], recv_list[i]);
   }
 
   /* Replace local vertex tolerance by the new computed global tolerance */
@@ -817,8 +817,8 @@ _unwarping_mvt(fvm_interface_set_t   *ifs,
 
   for (i = 0; i < mesh->n_vertices; i++)
     for (coord_id = 0; coord_id < 3; coord_id++)
-      loc_vtx_mvt[3*i + coord_id] = FVM_MIN(loc_vtx_mvt[3*i + coord_id],
-                                            vtx_tolerance[i]);
+      loc_vtx_mvt[3*i + coord_id] = CS_MIN(loc_vtx_mvt[3*i + coord_id],
+                                           vtx_tolerance[i]);
 
   return maxwarp;
 }

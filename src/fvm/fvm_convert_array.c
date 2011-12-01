@@ -101,7 +101,7 @@ _convert_array_float_to_float(const int                     src_dim,
                               const int                     dest_dim,
                               const cs_lnum_t               src_idx_start,
                               const cs_lnum_t               src_idx_end,
-                              const fvm_interlace_t         src_interlace,
+                              const cs_interlace_t          src_interlace,
                               const int                     n_parent_lists,
                               const cs_lnum_t               parent_num_shift[],
                               const cs_lnum_t               parent_num[],
@@ -112,11 +112,11 @@ _convert_array_float_to_float(const int                     src_dim,
   size_t  i, k, l, min_dim;
   cs_lnum_t   j, parent_id;
 
-  min_dim = (size_t)(FVM_MIN((src_dim - src_dim_shift), dest_dim));
+  min_dim = (size_t)(CS_MIN((src_dim - src_dim_shift), dest_dim));
 
   /* If source data is interlaced */
 
-  if (src_interlace == FVM_INTERLACE) {
+  if (src_interlace == CS_INTERLACE) {
 
     if (n_parent_lists == 0) {
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
@@ -230,7 +230,7 @@ _convert_array_float_to_double(const int                     src_dim,
                                const int                     dest_dim,
                                const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
-                               const fvm_interlace_t         src_interlace,
+                               const cs_interlace_t          src_interlace,
                                const int                     n_parent_lists,
                                const cs_lnum_t               parent_num_shift[],
                                const cs_lnum_t               parent_num[],
@@ -241,11 +241,11 @@ _convert_array_float_to_double(const int                     src_dim,
   size_t  i, k, l, min_dim;
   cs_lnum_t   j, parent_id;
 
-  min_dim = (size_t)(FVM_MIN((src_dim - src_dim_shift), dest_dim));
+  min_dim = (size_t)(CS_MIN((src_dim - src_dim_shift), dest_dim));
 
   /* If source data is interlaced */
 
-  if (src_interlace == FVM_INTERLACE) {
+  if (src_interlace == CS_INTERLACE) {
 
     if (n_parent_lists == 0) {
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
@@ -359,7 +359,7 @@ _convert_array_double_to_float(const int                     src_dim,
                                const int                     dest_dim,
                                const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
-                               const fvm_interlace_t         src_interlace,
+                               const cs_interlace_t          src_interlace,
                                const int                     n_parent_lists,
                                const cs_lnum_t               parent_num_shift[],
                                const cs_lnum_t               parent_num[],
@@ -370,11 +370,11 @@ _convert_array_double_to_float(const int                     src_dim,
   size_t  i, k, l, min_dim;
   cs_lnum_t   j, parent_id;
 
-  min_dim = (size_t)(FVM_MIN((src_dim - src_dim_shift), dest_dim));
+  min_dim = (size_t)(CS_MIN((src_dim - src_dim_shift), dest_dim));
 
   /* If source data is interlaced */
 
-  if (src_interlace == FVM_INTERLACE) {
+  if (src_interlace == CS_INTERLACE) {
 
     if (n_parent_lists == 0) {
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
@@ -488,7 +488,7 @@ _convert_array_double_to_double(const int                     src_dim,
                                 const int                     dest_dim,
                                 const cs_lnum_t               src_idx_start,
                                 const cs_lnum_t               src_idx_end,
-                                const fvm_interlace_t         src_interlace,
+                                const cs_interlace_t          src_interlace,
                                 const int                     n_parent_lists,
                                 const cs_lnum_t               parent_num_shift[],
                                 const cs_lnum_t               parent_num[],
@@ -499,11 +499,11 @@ _convert_array_double_to_double(const int                     src_dim,
   size_t  i, k, l, min_dim;
   cs_lnum_t   j, parent_id;
 
-  min_dim = (size_t)(FVM_MIN((src_dim - src_dim_shift), dest_dim));
+  min_dim = (size_t)(CS_MIN((src_dim - src_dim_shift), dest_dim));
 
   /* If source data is interlaced */
 
-  if (src_interlace == FVM_INTERLACE) {
+  if (src_interlace == CS_INTERLACE) {
 
     if (n_parent_lists == 0) {
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
@@ -2002,9 +2002,9 @@ fvm_convert_array(const int                     src_dim,
                   const int                     dest_dim,
                   const cs_lnum_t               src_idx_start,
                   const cs_lnum_t               src_idx_end,
-                  const fvm_interlace_t         src_interlace,
-                  const fvm_datatype_t          src_datatype,
-                  const fvm_datatype_t          dest_datatype,
+                  const cs_interlace_t          src_interlace,
+                  const cs_datatype_t           src_datatype,
+                  const cs_datatype_t           dest_datatype,
                   const int                     n_parent_lists,
                   const cs_lnum_t               parent_num_shift[],
                   const cs_lnum_t               parent_num[],
@@ -2015,11 +2015,11 @@ fvm_convert_array(const int                     src_dim,
 
   switch(src_datatype) {
 
-  case FVM_FLOAT:  /* float source datatype */
+  case CS_FLOAT:  /* float source datatype */
 
     switch(dest_datatype) {
 
-    case FVM_FLOAT:
+    case CS_FLOAT:
       _convert_array_float_to_float(src_dim,
                                     src_dim_shift,
                                     dest_dim,
@@ -2033,7 +2033,7 @@ fvm_convert_array(const int                     src_dim,
                                     dest_data);
       break;
 
-    case FVM_DOUBLE:
+    case CS_DOUBLE:
       _convert_array_float_to_double(src_dim,
                                      src_dim_shift,
                                      dest_dim,
@@ -2047,27 +2047,27 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_INT32:
-    case FVM_INT64:
-    case FVM_UINT32:
-    case FVM_UINT64:
+    case CS_INT32:
+    case CS_INT64:
+    case CS_UINT32:
+    case CS_UINT64:
       bft_error(__FILE__, __LINE__, 0,
                 _("fvm_writer_convert_array() may not be used to convert "
                   "float to int32, int64, uint32, or uint64"));
       break;
 
-    case FVM_CHAR:
-    case FVM_DATATYPE_NULL:
+    case CS_CHAR:
+    case CS_DATATYPE_NULL:
       break;
 
     }
     break;
 
-  case FVM_DOUBLE:   /* double source datatype */
+  case CS_DOUBLE:   /* double source datatype */
 
     switch(dest_datatype) {
 
-    case FVM_FLOAT:
+    case CS_FLOAT:
       _convert_array_double_to_float(src_dim,
                                      src_dim_shift,
                                      dest_dim,
@@ -2081,7 +2081,7 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_DOUBLE:
+    case CS_DOUBLE:
       _convert_array_double_to_double(src_dim,
                                       src_dim_shift,
                                       dest_dim,
@@ -2095,23 +2095,23 @@ fvm_convert_array(const int                     src_dim,
                                       dest_data);
       break;
 
-    case FVM_INT32:
-    case FVM_INT64:
-    case FVM_UINT32:
-    case FVM_UINT64:
+    case CS_INT32:
+    case CS_INT64:
+    case CS_UINT32:
+    case CS_UINT64:
       bft_error(__FILE__, __LINE__, 0,
                 _("fvm_writer_convert_array() may not be used to convert "
                   "double to int32, int64, uint32, or uint64"));
       break;
 
-    case FVM_CHAR:
-    case FVM_DATATYPE_NULL:
+    case CS_CHAR:
+    case CS_DATATYPE_NULL:
       break;
 
     }
     break;
 
-  case FVM_INT32:  /* int32 source datatype */
+  case CS_INT32:  /* int32 source datatype */
 
     if (src_dim > 1 || dest_dim > 1)
       bft_error(__FILE__, __LINE__, 0,
@@ -2122,7 +2122,7 @@ fvm_convert_array(const int                     src_dim,
 
     switch(dest_datatype) {
 
-    case FVM_FLOAT:
+    case CS_FLOAT:
       _convert_array_int32_to_float(src_idx_start,
                                     src_idx_end,
                                     n_parent_lists,
@@ -2132,7 +2132,7 @@ fvm_convert_array(const int                     src_dim,
                                     dest_data);
       break;
 
-    case FVM_DOUBLE:
+    case CS_DOUBLE:
       _convert_array_int32_to_double(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
@@ -2142,7 +2142,7 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_INT32:
+    case CS_INT32:
       _convert_array_int32_to_int32(src_idx_start,
                                     src_idx_end,
                                     n_parent_lists,
@@ -2152,7 +2152,7 @@ fvm_convert_array(const int                     src_dim,
                                     dest_data);
       break;
 
-    case FVM_INT64:
+    case CS_INT64:
       _convert_array_int32_to_int64(src_idx_start,
                                     src_idx_end,
                                     n_parent_lists,
@@ -2162,7 +2162,7 @@ fvm_convert_array(const int                     src_dim,
                                     dest_data);
       break;
 
-    case FVM_UINT32:
+    case CS_UINT32:
       _convert_array_int32_to_uint32(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
@@ -2172,7 +2172,7 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_UINT64:
+    case CS_UINT64:
       _convert_array_int32_to_uint64(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
@@ -2182,14 +2182,14 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_CHAR:
-    case FVM_DATATYPE_NULL:
+    case CS_CHAR:
+    case CS_DATATYPE_NULL:
       break;
 
     }
     break;
 
-  case FVM_INT64:  /* int64 source datatype */
+  case CS_INT64:  /* int64 source datatype */
 
     if (src_dim > 1 || dest_dim > 1)
       bft_error(__FILE__, __LINE__, 0,
@@ -2200,7 +2200,7 @@ fvm_convert_array(const int                     src_dim,
 
     switch(dest_datatype) {
 
-    case FVM_FLOAT:
+    case CS_FLOAT:
       _convert_array_int64_to_float(src_idx_start,
                                     src_idx_end,
                                     n_parent_lists,
@@ -2210,7 +2210,7 @@ fvm_convert_array(const int                     src_dim,
                                     dest_data);
       break;
 
-    case FVM_DOUBLE:
+    case CS_DOUBLE:
       _convert_array_int64_to_double(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
@@ -2220,7 +2220,7 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_INT32:
+    case CS_INT32:
       _convert_array_int64_to_int32(src_idx_start,
                                     src_idx_end,
                                     n_parent_lists,
@@ -2230,7 +2230,7 @@ fvm_convert_array(const int                     src_dim,
                                     dest_data);
       break;
 
-    case FVM_INT64:
+    case CS_INT64:
       _convert_array_int64_to_int64(src_idx_start,
                                     src_idx_end,
                                     n_parent_lists,
@@ -2240,7 +2240,7 @@ fvm_convert_array(const int                     src_dim,
                                     dest_data);
       break;
 
-    case FVM_UINT32:
+    case CS_UINT32:
       _convert_array_int64_to_uint32(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
@@ -2250,7 +2250,7 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_UINT64:
+    case CS_UINT64:
       _convert_array_int64_to_uint64(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
@@ -2260,14 +2260,14 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_CHAR:
-    case FVM_DATATYPE_NULL:
+    case CS_CHAR:
+    case CS_DATATYPE_NULL:
       break;
 
     }
     break;
 
-  case FVM_UINT32:  /* unsigned int32 source datatype */
+  case CS_UINT32:  /* unsigned int32 source datatype */
 
     if (src_dim > 1 || dest_dim > 1)
       bft_error(__FILE__, __LINE__, 0,
@@ -2278,7 +2278,7 @@ fvm_convert_array(const int                     src_dim,
 
     switch(dest_datatype) {
 
-    case FVM_FLOAT:
+    case CS_FLOAT:
       _convert_array_uint32_to_float(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
@@ -2288,7 +2288,7 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_DOUBLE:
+    case CS_DOUBLE:
       _convert_array_uint32_to_double(src_idx_start,
                                       src_idx_end,
                                       n_parent_lists,
@@ -2298,7 +2298,7 @@ fvm_convert_array(const int                     src_dim,
                                       dest_data);
       break;
 
-    case FVM_INT32:
+    case CS_INT32:
       _convert_array_uint32_to_int32(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
@@ -2308,7 +2308,7 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_INT64:
+    case CS_INT64:
       _convert_array_uint32_to_int64(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
@@ -2318,7 +2318,7 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_UINT32:
+    case CS_UINT32:
       _convert_array_uint32_to_uint32(src_idx_start,
                                       src_idx_end,
                                       n_parent_lists,
@@ -2328,7 +2328,7 @@ fvm_convert_array(const int                     src_dim,
                                       dest_data);
       break;
 
-    case FVM_UINT64:
+    case CS_UINT64:
       _convert_array_uint32_to_uint64(src_idx_start,
                                       src_idx_end,
                                       n_parent_lists,
@@ -2338,14 +2338,14 @@ fvm_convert_array(const int                     src_dim,
                                       dest_data);
       break;
 
-    case FVM_CHAR:
-    case FVM_DATATYPE_NULL:
+    case CS_CHAR:
+    case CS_DATATYPE_NULL:
       break;
 
     }
     break;
 
-  case FVM_UINT64:  /* unsigned int64 source datatype */
+  case CS_UINT64:  /* unsigned int64 source datatype */
 
     if (src_dim > 1 || dest_dim > 1)
       bft_error(__FILE__, __LINE__, 0,
@@ -2356,7 +2356,7 @@ fvm_convert_array(const int                     src_dim,
 
     switch(dest_datatype) {
 
-    case FVM_FLOAT:
+    case CS_FLOAT:
       _convert_array_uint64_to_float(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
@@ -2366,7 +2366,7 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_DOUBLE:
+    case CS_DOUBLE:
       _convert_array_uint64_to_double(src_idx_start,
                                       src_idx_end,
                                       n_parent_lists,
@@ -2376,7 +2376,7 @@ fvm_convert_array(const int                     src_dim,
                                       dest_data);
       break;
 
-    case FVM_INT32:
+    case CS_INT32:
       _convert_array_uint64_to_int32(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
@@ -2386,7 +2386,7 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_INT64:
+    case CS_INT64:
       _convert_array_uint64_to_int64(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
@@ -2396,7 +2396,7 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case FVM_UINT32:
+    case CS_UINT32:
       _convert_array_uint64_to_uint32(src_idx_start,
                                       src_idx_end,
                                       n_parent_lists,
@@ -2406,7 +2406,7 @@ fvm_convert_array(const int                     src_dim,
                                       dest_data);
       break;
 
-    case FVM_UINT64:
+    case CS_UINT64:
       _convert_array_uint64_to_uint64(src_idx_start,
                                       src_idx_end,
                                       n_parent_lists,
@@ -2416,15 +2416,15 @@ fvm_convert_array(const int                     src_dim,
                                       dest_data);
       break;
 
-    case FVM_CHAR:
-    case FVM_DATATYPE_NULL:
+    case CS_CHAR:
+    case CS_DATATYPE_NULL:
       break;
 
     }
     break;
 
-  case FVM_CHAR:
-  case FVM_DATATYPE_NULL:
+  case CS_CHAR:
+  case CS_DATATYPE_NULL:
     break;
   }
 }

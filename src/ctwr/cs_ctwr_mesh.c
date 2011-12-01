@@ -180,7 +180,7 @@ _inverse_3x3(double  m[3][3],
         - m[1][0]*(m[0][1]*m[2][2] - m[2][1]*m[0][2])
         + m[2][0]*(m[0][1]*m[1][2] - m[1][1]*m[0][2]);
 
-  if (FVM_ABS(det) < _epsilon_denom)
+  if (CS_ABS(det) < _epsilon_denom)
     return 1;
   else
     det_inv = 1./det;
@@ -487,13 +487,13 @@ _search_height(cs_ctwr_zone_t   *ct,
   nb = (cs_int_t) fvm_nodal_get_n_entities(ct->face_sup_mesh, 0);
   BFT_MALLOC(lst_xyz_sup, nb*3, cs_coord_t);
   fvm_nodal_get_vertex_coords(ct->face_sup_mesh,
-                              FVM_INTERLACE,
+                              CS_INTERLACE,
                               lst_xyz_sup);
 
   nb = (cs_int_t) fvm_nodal_get_n_entities(ct->face_inf_mesh, 0);
   BFT_MALLOC(lst_xyz_inf, nb*3, cs_coord_t);
   fvm_nodal_get_vertex_coords(ct->face_inf_mesh,
-                              FVM_INTERLACE,
+                              CS_INTERLACE,
                               lst_xyz_inf);
 
   fs_tmp_mesh = fvm_nodal_copy(ct->face_sup_mesh);
@@ -527,14 +527,14 @@ _search_height(cs_ctwr_zone_t   *ct,
 
   BFT_MALLOC(lst_xyz_fs, nb*2, cs_coord_t);
 
-  fvm_nodal_get_vertex_coords(fs_tmp_mesh, FVM_INTERLACE, lst_xyz_fs);
+  fvm_nodal_get_vertex_coords(fs_tmp_mesh, CS_INTERLACE, lst_xyz_fs);
 
 
   nb = (cs_int_t) fvm_nodal_get_n_entities(fi_tmp_mesh, 0);
 
   BFT_MALLOC(lst_xyz_fi, nb*2, cs_coord_t);
 
-  fvm_nodal_get_vertex_coords(fi_tmp_mesh, FVM_INTERLACE, lst_xyz_fi);
+  fvm_nodal_get_vertex_coords(fi_tmp_mesh, CS_INTERLACE, lst_xyz_fi);
 
   /* Create locator on the proj surf  */
 
@@ -1198,7 +1198,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
                                              NULL, 0, NULL, NULL, NULL);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    fvm_interface_set_dump(interface_set);
+    cs_interface_set_dump(interface_set);
 #endif
 
     /* Creation of the cs_mesh_halo_t structure. */
@@ -1228,7 +1228,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     BFT_MALLOC(lst_xyz_cel, ct->nbevct*3, cs_coord_t);
 
-    fvm_nodal_get_element_centers(ct->cell_mesh, FVM_INTERLACE, 3, lst_xyz_cel);
+    fvm_nodal_get_element_centers(ct->cell_mesh, CS_INTERLACE, 3, lst_xyz_cel);
 
     ple_locator_set_mesh(ct->locat_water_air,
                          ct->water_mesh,
@@ -1253,7 +1253,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     BFT_MALLOC(lst_xyz, ct->nnpsct*ct->nelect*3, cs_coord_t);
 
-    fvm_nodal_get_element_centers(ct->water_mesh, FVM_INTERLACE, 3, lst_xyz);
+    fvm_nodal_get_element_centers(ct->water_mesh, CS_INTERLACE, 3, lst_xyz);
 
     ple_locator_set_mesh(ct->locat_air_water,
                          ct->cell_mesh,
@@ -1445,7 +1445,7 @@ void cs_ctwr_adeau
     lst_xyz_water   = ple_locator_get_dist_coords(ct->locat_air_water);
 
     BFT_MALLOC(lst_xyz_cel, ct->nbevct*3, cs_coord_t);
-    fvm_nodal_get_element_centers(ct->cell_mesh, FVM_INTERLACE, 3, lst_xyz_cel);
+    fvm_nodal_get_element_centers(ct->cell_mesh, CS_INTERLACE, 3, lst_xyz_cel);
 
     BFT_MALLOC(lst_par_cel, ct->nbevct, cs_lnum_t);
     fvm_nodal_get_parent_num(ct->cell_mesh, 3, lst_par_cel);
@@ -1781,7 +1781,7 @@ void cs_ctwr_adair (void)
 
 
     BFT_MALLOC(lst_xyz_water, (3*ct->nelect*ct->nnpsct), cs_coord_t);
-    fvm_nodal_get_element_centers(ct->water_mesh,FVM_INTERLACE,3, lst_xyz_water);
+    fvm_nodal_get_element_centers(ct->water_mesh, CS_INTERLACE,3, lst_xyz_water);
 
     if (ct->water_halo != NULL) {
       BFT_REALLOC(lst_xyz_water, (3*ct->nelect*ct->nnpsct_with_ghosts), cs_coord_t);
@@ -2176,7 +2176,7 @@ cs_ctwr_stacking(void)
                    3*(ct_upw->nbfac_ict+ct_upw->nbfbr_ict), cs_coord_t);
 
         fvm_nodal_get_element_centers
-          (ct_upw->face_inf_mesh,FVM_INTERLACE,2,lst_xyz);
+          (ct_upw->face_inf_mesh, CS_INTERLACE,2,lst_xyz);
 
         tmp  = CS_ABS(ct_upw->hmax - ct_upw->hmin)/(ct_upw->nelect-1);
         tmp /= CS_LOC_MODULE(gravite);

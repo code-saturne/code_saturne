@@ -61,23 +61,18 @@
 #include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_defs.h>
-#include <fvm_order.h>
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
 #include "cs_halo.h"
 #include "cs_matrix.h"
+#include "cs_order.h"
 #include "cs_prototypes.h"
 #include "cs_perio.h"
 #include "cs_sles.h"
+
+#include "fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1309,7 +1304,7 @@ _merge_halo_data(cs_halo_t   *h,
     }
   }
 
-  order = fvm_order_local_s(NULL, tmp_num, stride, n_elts_ini);
+  order = cs_order_gnum_s(NULL, tmp_num, stride, n_elts_ini);
 
   /* Rebuilt lists and build renumbering */
 

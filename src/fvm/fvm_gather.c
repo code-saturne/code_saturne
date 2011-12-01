@@ -774,8 +774,8 @@ fvm_gather_resize_indexed_slice(const cs_gnum_t      n_elements_s_min,
         *global_num_end = this_slice->global_num_slice_end;
 
       *global_connect_s_size =
-        FVM_MAX(*global_connect_s_size,
-                slice_index[*global_num_end - global_num_start]);
+        CS_MAX(*global_connect_s_size,
+               slice_index[*global_num_end - global_num_start]);
 
     }
 

@@ -203,7 +203,7 @@ void CS_PROCF(astgeo, ASTGEO)
 
   assert(sizeof(cs_coord_t)==sizeof(cs_real_t));
 
-  fvm_nodal_get_vertex_coords(ifs_mesh, FVM_INTERLACE,
+  fvm_nodal_get_vertex_coords(ifs_mesh, CS_INTERLACE,
                               (cs_coord_t *) nodes_coords);
 
   for (j = 0; j < n_faces; j++) {

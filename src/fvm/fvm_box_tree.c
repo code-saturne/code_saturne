@@ -275,9 +275,9 @@ _update_tree_stats(fvm_box_tree_t  *bt,
     if (node->n_boxes > bt->threshold)
       s.n_spill_leaves += 1;
 
-    s.min_linked_boxes = FVM_MIN(s.min_linked_boxes, node->n_boxes);
-    s.max_linked_boxes = FVM_MAX(s.max_linked_boxes, node->n_boxes);
-    s.max_level_reached = FVM_MAX(s.max_level_reached, node->morton_code.L);
+    s.min_linked_boxes = CS_MIN(s.min_linked_boxes, node->n_boxes);
+    s.max_linked_boxes = CS_MAX(s.max_linked_boxes, node->n_boxes);
+    s.max_level_reached = CS_MAX(s.max_level_reached, node->morton_code.L);
 
     bt->stats = s;
   }

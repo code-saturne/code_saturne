@@ -267,36 +267,36 @@ _swap_endian(void    *buf,
  *   default corresponding type in memory (may need conversion)
  *----------------------------------------------------------------------------*/
 
-static fvm_datatype_t
-_type_read_to_elt_type(fvm_datatype_t type_read)
+static cs_datatype_t
+_type_read_to_elt_type(cs_datatype_t type_read)
 {
-  fvm_datatype_t elt_type = FVM_DATATYPE_NULL;
+  cs_datatype_t elt_type = CS_DATATYPE_NULL;
 
-  if (type_read == FVM_INT32 || type_read == FVM_INT64) {
+  if (type_read == CS_INT32 || type_read == CS_INT64) {
     assert(sizeof(cs_lnum_t) == 4 || sizeof(cs_lnum_t) == 8);
     if (sizeof(cs_lnum_t) == 4)
-      elt_type = FVM_INT32;
+      elt_type = CS_INT32;
     else
-      elt_type = FVM_INT64;
+      elt_type = CS_INT64;
   }
 
-  else if (type_read == FVM_UINT32 || type_read == FVM_UINT64) {
+  else if (type_read == CS_UINT32 || type_read == CS_UINT64) {
     assert(sizeof(cs_gnum_t) == 4 || sizeof(cs_gnum_t) == 8);
     if (sizeof(cs_gnum_t) == 4)
-      elt_type = FVM_UINT32;
+      elt_type = CS_UINT32;
     else
-      elt_type = FVM_UINT64;
+      elt_type = CS_UINT64;
   }
 
-  else if (type_read == FVM_FLOAT || type_read == FVM_DOUBLE) {
+  else if (type_read == CS_FLOAT || type_read == CS_DOUBLE) {
     if (sizeof(cs_real_t) == 4)
-      elt_type = FVM_FLOAT;
+      elt_type = CS_FLOAT;
     else
-      elt_type = FVM_DOUBLE;
+      elt_type = CS_DOUBLE;
   }
 
-  else if (type_read == FVM_CHAR)
-    elt_type = FVM_CHAR;
+  else if (type_read == CS_CHAR)
+    elt_type = CS_CHAR;
 
   return elt_type;
 }
@@ -552,7 +552,7 @@ _update_index_and_shift(cs_io_t             *inp,
   if (inp->data != NULL)
     new_data_size
       = idx->data_size + (  inp->n_vals
-                          * fvm_datatype_size[header->type_read]);
+                          * cs_datatype_size[header->type_read]);
 
   if (new_names_size > idx->max_names_size) {
     if (idx->max_names_size == 0)
@@ -828,8 +828,8 @@ _file_legacy_add_sizes(cs_io_t     *inp,
   /* Common initializations */
 
   h.n_location_vals = 1;
-  h.type_read = FVM_INT32;
-  h.elt_type = FVM_INT32;
+  h.type_read = CS_INT32;
+  h.elt_type = CS_INT32;
 
   /* Add 4 sizes and associated locations as sections with embedded data */
 
@@ -852,9 +852,9 @@ _file_legacy_add_sizes(cs_io_t     *inp,
     assert(sizeof(size_t) == 4 || sizeof(size_t) == 8);
 
     if (sizeof(size_t) == 4)
-      h.type_read = FVM_UINT32;
+      h.type_read = CS_UINT32;
     else
-      h.type_read = FVM_UINT64;
+      h.type_read = CS_UINT64;
     h.elt_type = _type_read_to_elt_type(h.type_read);
 
     /* Add to index */
@@ -1116,16 +1116,16 @@ _file_legacy_restart_index(cs_io_t     *inp,
       h.n_vals = inp->n_vals;
       h.location_id = inp->location_id;
       h.n_location_vals = inp->n_loc_vals;
-      h.type_read = FVM_DATATYPE_NULL;
+      h.type_read = CS_DATATYPE_NULL;
       if (buf[3] == 0)
-        h.type_read = FVM_CHAR;
+        h.type_read = CS_CHAR;
       else if (buf[3] == 1)
-        h.type_read = FVM_INT32;
+        h.type_read = CS_INT32;
       else if (buf[3] == 2)
-        h.type_read = FVM_DOUBLE;
+        h.type_read = CS_DOUBLE;
       h.elt_type = _type_read_to_elt_type(h.type_read);
 
-      inp->type_size = fvm_datatype_size[h.type_read];
+      inp->type_size = cs_datatype_size[h.type_read];
 
       /* Add to index */
 
@@ -1254,9 +1254,9 @@ _echo_pre(const cs_io_t  *cs_io)
  *----------------------------------------------------------------------------*/
 
 static void
-_echo_header(const char      *sec_name,
-             cs_gnum_t        n_elts,
-             fvm_datatype_t   type)
+_echo_header(const char     *sec_name,
+             cs_gnum_t       n_elts,
+             cs_datatype_t   type)
 {
   /* Instructions */
 
@@ -1269,25 +1269,25 @@ _echo_header(const char      *sec_name,
     char *type_name;
 
     switch(type) {
-    case FVM_CHAR:
+    case CS_CHAR:
       type_name = _type_name_char;
       break;
-    case FVM_INT32:
+    case CS_INT32:
       type_name = _type_name_i4;
       break;
-    case FVM_INT64:
+    case CS_INT64:
       type_name = _type_name_i8;
       break;
-    case FVM_UINT32:
+    case CS_UINT32:
       type_name = _type_name_u4;
       break;
-    case FVM_UINT64:
+    case CS_UINT64:
       type_name = _type_name_u8;
       break;
-    case FVM_FLOAT:
+    case CS_FLOAT:
       type_name = _type_name_r4;
       break;
-    case FVM_DOUBLE:
+    case CS_DOUBLE:
       type_name = _type_name_r8;
       break;
     default:
@@ -1307,10 +1307,10 @@ _echo_header(const char      *sec_name,
  *
  * FVM datatypes must have been converted to the corresponding
  * Code_Saturne compatible datatype before calling this function:
- *   FVM_CHAR                -> char
- *   FVM_INT32 / FVM_INT64   -> cs_lnum_t / cs_int_t
- *   FVM_UINT32 / FVM_UINT64 -> cs_gnum_t
- *   FVM_REAL / FVM_FLOAT    -> double / cs_real_t
+ *   CS_CHAR               -> char
+ *   CS_INT32 / CS_INT64   -> cs_lnum_t / cs_int_t
+ *   CS_UINT32 / CS_UINT64 -> cs_gnum_t
+ *   CS_REAL / CS_FLOAT    -> double / cs_real_t
  *
  * If global_num_start and global_num_end are > 0, the echo shows that
  * a different block is assigned to each processor. Otherwise, the full
@@ -1327,12 +1327,12 @@ _echo_header(const char      *sec_name,
  *----------------------------------------------------------------------------*/
 
 static void
-_echo_data(size_t           echo,
-           cs_file_off_t    n_elts,
-           cs_gnum_t        global_num_start,
-           cs_gnum_t        global_num_end,
-           fvm_datatype_t   elt_type,
-           const void      *elts)
+_echo_data(size_t          echo,
+           cs_file_off_t   n_elts,
+           cs_gnum_t       global_num_start,
+           cs_gnum_t       global_num_end,
+           cs_datatype_t   elt_type,
+           const void     *elts)
 {
   cs_file_off_t  i;
   cs_gnum_t   num_shift = 1;
@@ -1377,8 +1377,8 @@ _echo_data(size_t           echo,
 
     switch (elt_type) {
 
-    case FVM_INT32:
-    case FVM_INT64:
+    case CS_INT32:
+    case CS_INT64:
       {
         const cs_lnum_t *_elts = elts;
 
@@ -1388,8 +1388,8 @@ _echo_data(size_t           echo,
       }
       break;
 
-    case FVM_UINT32:
-    case FVM_UINT64:
+    case CS_UINT32:
+    case CS_UINT64:
       {
         const cs_gnum_t *_elts = elts;
 
@@ -1400,8 +1400,8 @@ _echo_data(size_t           echo,
       }
       break;
 
-    case FVM_FLOAT:
-    case FVM_DOUBLE:
+    case CS_FLOAT:
+    case CS_DOUBLE:
       {
         const cs_real_t *_elts = elts;
 
@@ -1411,7 +1411,7 @@ _echo_data(size_t           echo,
       }
       break;
 
-    case FVM_CHAR:
+    case CS_CHAR:
       {
         const char *_elts = elts;
 
@@ -1452,9 +1452,9 @@ _echo_data(size_t           echo,
  * dest_type must have been set to the corresponding
  * Code_Saturne compatible datatype before calling this function and
  * conversion will be done accordingly:
- *   FVM_INT32 / FVM_INT64   -> cs_lnum_t / cs_int_t
- *   FVM_UINT32 / FVM_UINT64 -> cs_gnum_t
- *   FVM_REAL / FVM_FLOAT    -> double / cs_real_t
+ *   CS_INT32 / CS_INT64   -> cs_lnum_t / cs_int_t
+ *   CS_UINT32 / CS_UINT64 -> cs_gnum_t
+ *   CS_REAL / CS_FLOAT    -> double / cs_real_t
  *
  * parameters:
  *   buffer      --> input buffer
@@ -1465,14 +1465,14 @@ _echo_data(size_t           echo,
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_io_convert_read(void            *buffer,
-                    void            *dest,
-                    cs_file_off_t    n_elts,
-                    fvm_datatype_t   buffer_type,
-                    fvm_datatype_t   dest_type)
+_cs_io_convert_read(void           *buffer,
+                    void           *dest,
+                    cs_file_off_t   n_elts,
+                    cs_datatype_t   buffer_type,
+                    cs_datatype_t   dest_type)
 {
   cs_file_off_t ii;
-  size_t buffer_type_size = fvm_datatype_size[buffer_type];
+  size_t buffer_type_size = cs_datatype_size[buffer_type];
 
   assert(dest_type != buffer_type);
 
@@ -1482,13 +1482,13 @@ _cs_io_convert_read(void            *buffer,
 
   switch(dest_type) {
 
-  case FVM_INT32:
-  case FVM_INT64:
+  case CS_INT32:
+  case CS_INT64:
     {
       cs_lnum_t *_dest = dest;
 
-      if (   buffer_type == FVM_INT32
-          || buffer_type == FVM_INT64) {
+      if (   buffer_type == CS_INT32
+          || buffer_type == CS_INT64) {
 
         if (sizeof(long) == buffer_type_size) {
           long * _buffer = buffer;
@@ -1513,8 +1513,8 @@ _cs_io_convert_read(void            *buffer,
 
       }
 
-      else if (   buffer_type == FVM_UINT32
-               || buffer_type == FVM_UINT64) {
+      else if (   buffer_type == CS_UINT32
+               || buffer_type == CS_UINT64) {
 
         if (sizeof(unsigned long) == buffer_type_size) {
           unsigned long * _buffer = buffer;
@@ -1546,13 +1546,13 @@ _cs_io_convert_read(void            *buffer,
     }
     break;
 
-  case FVM_UINT32:
-  case FVM_UINT64:
+  case CS_UINT32:
+  case CS_UINT64:
     {
       cs_gnum_t *_dest = dest;
 
-      if (   buffer_type == FVM_INT32
-          || buffer_type == FVM_INT64) {
+      if (   buffer_type == CS_INT32
+          || buffer_type == CS_INT64) {
 
         if (sizeof(long) == buffer_type_size) {
           long * _buffer = buffer;
@@ -1577,8 +1577,8 @@ _cs_io_convert_read(void            *buffer,
 
       }
 
-      else if (   buffer_type == FVM_UINT32
-               || buffer_type == FVM_UINT64) {
+      else if (   buffer_type == CS_UINT32
+               || buffer_type == CS_UINT64) {
 
         if (sizeof(unsigned long) == buffer_type_size) {
           unsigned long * _buffer = buffer;
@@ -1610,24 +1610,24 @@ _cs_io_convert_read(void            *buffer,
     }
     break;
 
-  case FVM_FLOAT:
+  case CS_FLOAT:
     {
       cs_real_t *_dest = dest;
       double * _buffer = buffer;
 
-      assert(buffer_type == FVM_DOUBLE);
+      assert(buffer_type == CS_DOUBLE);
 
       for (ii = 0; ii < n_elts; ii++)
         _dest[ii] = _buffer[ii];
     }
     break;
 
-  case FVM_DOUBLE:
+  case CS_DOUBLE:
     {
       cs_real_t *_dest = dest;
       float * _buffer = buffer;
 
-      assert(buffer_type == FVM_FLOAT);
+      assert(buffer_type == CS_FLOAT);
 
       for (ii = 0; ii < n_elts; ii++)
         _dest[ii] = _buffer[ii];
@@ -1708,14 +1708,14 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 
   /* Datatype size given by FVM datatype */
 
-  type_size = fvm_datatype_size[header->type_read];
+  type_size = cs_datatype_size[header->type_read];
 
   /* Assign or allocate */
 
   _elts = elts;
 
   if (_elts == NULL && n_vals != 0) {
-    if (header->elt_type == FVM_CHAR)
+    if (header->elt_type == CS_CHAR)
       BFT_MALLOC(_elts, n_vals + 1, char);
     else
       BFT_MALLOC(_elts, n_vals*type_size, char);
@@ -1729,8 +1729,8 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
   if (inp->data != NULL)
     _buf = NULL;
   else if (convert_type == true
-           && (   fvm_datatype_size[header->type_read]
-               != fvm_datatype_size[header->elt_type]))
+           && (   cs_datatype_size[header->type_read]
+               != cs_datatype_size[header->elt_type]))
     BFT_MALLOC(_buf, n_vals*type_size, char);
   else
     _buf = _elts;
@@ -1779,7 +1779,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
     if (global_num_start > 0 && global_num_end > 0)
       _buf =   ((unsigned char *)inp->data)
              + (  (global_num_start - 1) * stride
-                * fvm_datatype_size[header->type_read]);
+                * cs_datatype_size[header->type_read]);
     else
       _buf = inp->data;
 
@@ -1798,7 +1798,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
       BFT_FREE(_buf);
   }
   else if (inp->data != NULL) {
-    memcpy(_elts, _buf, n_vals*fvm_datatype_size[header->type_read]);
+    memcpy(_elts, _buf, n_vals*cs_datatype_size[header->type_read]);
     _buf = NULL;
   }
 
@@ -1807,7 +1807,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 
   /* Add null character at end of string to ensure C-type string */
 
-  if (n_vals != 0 && header->elt_type == FVM_CHAR)
+  if (n_vals != 0 && header->elt_type == CS_CHAR)
     ((char *)_elts)[header->n_vals] = '\0';
 
   if (log != NULL) {
@@ -1958,20 +1958,20 @@ _write_padding(size_t    align,
  *----------------------------------------------------------------------------*/
 
 static bool
-_write_header(const char      *sec_name,
-              cs_gnum_t        n_vals,
-              size_t           location_id,
-              size_t           index_id,
-              size_t           n_location_vals,
-              fvm_datatype_t   elt_type,
-              const void      *elts,
-              cs_io_t         *outp)
+_write_header(const char     *sec_name,
+              cs_gnum_t       n_vals,
+              size_t          location_id,
+              size_t          index_id,
+              size_t          n_location_vals,
+              cs_datatype_t   elt_type,
+              const void     *elts,
+              cs_io_t        *outp)
 {
   cs_file_off_t header_vals[6];
 
   double t_start = 0.;
   cs_file_off_t write_size = 0;
-  cs_file_off_t data_size = n_vals * fvm_datatype_size[elt_type];
+  cs_file_off_t data_size = n_vals * cs_datatype_size[elt_type];
   size_t name_size = 0, name_pad_size = 0;
   size_t n_written = 0;
   cs_io_log_t  *log = NULL;
@@ -2042,7 +2042,7 @@ _write_header(const char      *sec_name,
 
   if (n_vals > 0) {
     switch(elt_type) {
-    case FVM_FLOAT:
+    case CS_FLOAT:
       outp->type_name[0] = 'r';
       if (sizeof(float) == 4)
         outp->type_name[1] = '4';
@@ -2050,7 +2050,7 @@ _write_header(const char      *sec_name,
         outp->type_name[1] = '8';
       assert(sizeof(float) == 4 || sizeof(float) == 8);
       break;
-    case FVM_DOUBLE:
+    case CS_DOUBLE:
       outp->type_name[0] = 'r';
       if (sizeof(double) == 8)
         outp->type_name[1] = '8';
@@ -2060,23 +2060,23 @@ _write_header(const char      *sec_name,
       }
       assert(sizeof(double) == 8 || sizeof(float) == 16);
       break;
-    case FVM_INT32:
+    case CS_INT32:
       outp->type_name[0] = 'i';
       outp->type_name[1] = '4';
       break;
-    case FVM_INT64:
+    case CS_INT64:
       outp->type_name[0] = 'i';
       outp->type_name[1] = '8';
       break;
-    case FVM_UINT32:
+    case CS_UINT32:
       outp->type_name[0] = 'u';
       outp->type_name[1] = '4';
       break;
-    case FVM_UINT64:
+    case CS_UINT64:
       outp->type_name[0] = 'u';
       outp->type_name[1] = '8';
       break;
-    case FVM_CHAR:
+    case CS_CHAR:
       outp->type_name[0] = 'c';
       outp->type_name[1] = ' ';
       break;
@@ -2100,8 +2100,8 @@ _write_header(const char      *sec_name,
     memcpy(data, elts, data_size);
 
     if (   cs_file_get_swap_endian(outp->f) == 1
-        && fvm_datatype_size[elt_type] > 1)
-      _swap_endian(data, fvm_datatype_size[elt_type], n_vals);
+        && cs_datatype_size[elt_type] > 1)
+      _swap_endian(data, cs_datatype_size[elt_type], n_vals);
   }
 
   /* Now write header data */
@@ -2161,7 +2161,7 @@ _dump_index(const cs_io_sec_index_t  *idx)
     bft_printf(_(" %40s %10llu %2u %2u %2u %6s %c %2u %ld\n"),
                name, (unsigned long long)(h_vals[0]),
                (unsigned)(h_vals[1]), (unsigned)(h_vals[2]),
-               (unsigned)(h_vals[3]), fvm_datatype_name[h_vals[6]],
+               (unsigned)(h_vals[3]), cs_datatype_name[h_vals[6]],
                embed, (unsigned)(h_vals[7]),
                (long)(idx->offset[ii]));
 
@@ -2327,7 +2327,7 @@ cs_io_finalize(cs_io_t **cs_io)
   cs_io_t *_cs_io = *cs_io;
 
   if(_cs_io->mode == CS_IO_MODE_WRITE)
-    cs_io_write_global("EOF", 0, 0, 0, 0, FVM_DATATYPE_NULL, NULL, _cs_io);
+    cs_io_write_global("EOF", 0, 0, 0, 0, CS_DATATYPE_NULL, NULL, _cs_io);
 
   /* Info on closing of interface file */
 
@@ -2455,7 +2455,7 @@ cs_io_get_indexed_sec_header(const cs_io_t  *inp,
     h.location_id     = 0;
     h.index_id        = 0;
     h.n_location_vals = 0;
-    h.type_read       = FVM_DATATYPE_NULL;
+    h.type_read       = CS_DATATYPE_NULL;
     h.elt_type        = h.type_read;
   }
 
@@ -2641,25 +2641,25 @@ cs_io_read_header(cs_io_t             *inp,
 
     if (   strcmp(elt_type_name, _type_name_i4) == 0
         || strcmp(elt_type_name, "i ") == 0)
-      header->type_read = FVM_INT32;
+      header->type_read = CS_INT32;
 
     else if (strcmp(elt_type_name, _type_name_i8) == 0)
-      header->type_read = FVM_INT64;
+      header->type_read = CS_INT64;
 
     else if (strcmp(elt_type_name, _type_name_u4) == 0)
-      header->type_read = FVM_UINT32;
+      header->type_read = CS_UINT32;
 
     else if (strcmp(elt_type_name, _type_name_u8) == 0)
-      header->type_read = FVM_UINT64;
+      header->type_read = CS_UINT64;
 
     else if (strcmp(elt_type_name, _type_name_r4) == 0)
-      header->type_read = FVM_FLOAT;
+      header->type_read = CS_FLOAT;
 
     else if (strcmp(elt_type_name, _type_name_r8) == 0)
-      header->type_read = FVM_DOUBLE;
+      header->type_read = CS_DOUBLE;
 
     else if (strcmp(elt_type_name, _type_name_char) == 0)
-      header->type_read = FVM_CHAR;
+      header->type_read = CS_CHAR;
 
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -2670,8 +2670,8 @@ cs_io_read_header(cs_io_t             *inp,
     header->elt_type = _type_read_to_elt_type(header->type_read);
   }
   else {
-    header->type_read = FVM_DATATYPE_NULL;
-    header->elt_type = FVM_DATATYPE_NULL;
+    header->type_read = CS_DATATYPE_NULL;
+    header->elt_type = CS_DATATYPE_NULL;
   }
 
   /* Possible echo */
@@ -2732,7 +2732,7 @@ cs_io_set_indexed_position(cs_io_t             *inp,
   inp->location_id = header->location_id;
   inp->index_id    = header->index_id;
   inp->n_loc_vals  = header->n_location_vals;
-  inp->type_size   = fvm_datatype_size[header->type_read];
+  inp->type_size   = cs_datatype_size[header->type_read];
 
   /* The following values are not taken from the header buffer as
      usual, but are base on the index */
@@ -2777,10 +2777,10 @@ cs_io_set_cs_lnum(cs_io_sec_header_t  *header,
 {
   assert(header != NULL);
 
-  if (   header->type_read != FVM_INT32
-      && header->type_read != FVM_INT64
-      && header->type_read != FVM_UINT32
-      && header->type_read != FVM_UINT64)
+  if (   header->type_read != CS_INT32
+      && header->type_read != CS_INT64
+      && header->type_read != CS_UINT32
+      && header->type_read != CS_UINT64)
     bft_error(__FILE__, __LINE__, 0,
               _("Error reading file: \"%s\".\n"
                 "Type expected for section: "
@@ -2791,9 +2791,9 @@ cs_io_set_cs_lnum(cs_io_sec_header_t  *header,
   assert(sizeof(cs_lnum_t) == 4 || sizeof(cs_lnum_t) == 8);
 
   if (sizeof(cs_lnum_t) == 4)
-    header->elt_type = FVM_INT32;
+    header->elt_type = CS_INT32;
   else
-    header->elt_type = FVM_INT64;
+    header->elt_type = CS_INT64;
 }
 
 /*----------------------------------------------------------------------------
@@ -2812,10 +2812,10 @@ cs_io_set_cs_gnum(cs_io_sec_header_t  *header,
 {
   assert(header != NULL);
 
-  if (   header->type_read != FVM_INT32
-      && header->type_read != FVM_INT64
-      && header->type_read != FVM_UINT32
-      && header->type_read != FVM_UINT64)
+  if (   header->type_read != CS_INT32
+      && header->type_read != CS_INT64
+      && header->type_read != CS_UINT32
+      && header->type_read != CS_UINT64)
     bft_error(__FILE__, __LINE__, 0,
               _("Error reading file: \"%s\".\n"
                 "Type expected for section: "
@@ -2826,9 +2826,9 @@ cs_io_set_cs_gnum(cs_io_sec_header_t  *header,
   assert(sizeof(cs_gnum_t) == 4 || sizeof(cs_gnum_t) == 8);
 
   if (sizeof(cs_gnum_t) == 4)
-    header->elt_type = FVM_UINT32;
+    header->elt_type = CS_UINT32;
   else
-    header->elt_type = FVM_UINT64;
+    header->elt_type = CS_UINT64;
 }
 
 /*----------------------------------------------------------------------------
@@ -2845,8 +2845,8 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
 {
   assert(header != NULL);
 
-  if (   header->elt_type != FVM_FLOAT
-      && header->elt_type != FVM_DOUBLE)
+  if (   header->elt_type != CS_FLOAT
+      && header->elt_type != CS_DOUBLE)
     bft_error(__FILE__, __LINE__, 0,
               _("Error reading file: \"%s\".\n"
                 "Type expected for section: \"%s\"\n"
@@ -3116,14 +3116,14 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
  *----------------------------------------------------------------------------*/
 
 void
-cs_io_write_global(const char      *sec_name,
-                   cs_gnum_t        n_vals,
-                   size_t           location_id,
-                   size_t           index_id,
-                   size_t           n_location_vals,
-                   fvm_datatype_t   elt_type,
-                   const void      *elts,
-                   cs_io_t         *outp)
+cs_io_write_global(const char     *sec_name,
+                   cs_gnum_t       n_vals,
+                   size_t          location_id,
+                   size_t          index_id,
+                   size_t          n_location_vals,
+                   cs_datatype_t   elt_type,
+                   const void     *elts,
+                   cs_io_t        *outp)
 {
   bool embed = false;
 
@@ -3154,7 +3154,7 @@ cs_io_write_global(const char      *sec_name,
 
     n_written = cs_file_write_global(outp->f,
                                       elts,
-                                      fvm_datatype_size[elt_type],
+                                      cs_datatype_size[elt_type],
                                       n_vals);
 
     if (n_vals != n_written)
@@ -3165,7 +3165,7 @@ cs_io_write_global(const char      *sec_name,
     if (log != NULL) {
       double t_end = cs_timer_wtime();
       log->wtimes[0] += t_end - t_start;
-      log->data_size[0] += n_written*fvm_datatype_size[elt_type];
+      log->data_size[0] += n_written*cs_datatype_size[elt_type];
     }
   }
 
@@ -3209,16 +3209,16 @@ cs_io_write_global(const char      *sec_name,
  *----------------------------------------------------------------------------*/
 
 void
-cs_io_write_block_buffer(const char      *sec_name,
-                         cs_gnum_t        n_g_elts,
-                         cs_gnum_t        global_num_start,
-                         cs_gnum_t        global_num_end,
-                         size_t           location_id,
-                         size_t           index_id,
-                         size_t           n_location_vals,
-                         fvm_datatype_t   elt_type,
-                         void            *elts,
-                         cs_io_t         *outp)
+cs_io_write_block_buffer(const char     *sec_name,
+                         cs_gnum_t       n_g_elts,
+                         cs_gnum_t       global_num_start,
+                         cs_gnum_t       global_num_end,
+                         size_t          location_id,
+                         size_t          index_id,
+                         size_t          n_location_vals,
+                         cs_datatype_t   elt_type,
+                         void           *elts,
+                         cs_io_t        *outp)
 {
   double t_start = 0.;
   size_t n_written = 0;
@@ -3251,7 +3251,7 @@ cs_io_write_block_buffer(const char      *sec_name,
 
   n_written = cs_file_write_block_buffer(outp->f,
                                           elts,
-                                          fvm_datatype_size[elt_type],
+                                          cs_datatype_size[elt_type],
                                           stride,
                                           global_num_start,
                                           global_num_end);
@@ -3264,7 +3264,7 @@ cs_io_write_block_buffer(const char      *sec_name,
   if (log != NULL) {
     double t_end = cs_timer_wtime();
     log->wtimes[1] += t_end - t_start;
-    log->data_size[1] += n_written*fvm_datatype_size[elt_type];
+    log->data_size[1] += n_written*cs_datatype_size[elt_type];
   }
 
   if (n_vals != 0 && outp->echo > CS_IO_ECHO_HEADERS)

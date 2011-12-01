@@ -37,28 +37,20 @@
 #include <math.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *---------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *---------------------------------------------------------------------------*/
-
-#include "fvm_defs.h"
-#include <fvm_parall.h>
-#include <fvm_io_num.h>
-#include <fvm_order.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *---------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_printf.h"
+
+#include "fvm_defs.h"
+#include "fvm_parall.h"
+#include "fvm_io_num.h"
 
 #include "cs_join_util.h"
 #include "cs_file.h"
 #include "cs_mesh.h"
+#include "cs_order.h"
 #include "cs_search.h"
 #include "cs_sort.h"
 
@@ -2208,7 +2200,7 @@ cs_join_select_create(const char  *selection_criteria,
   BFT_MALLOC(order, selection->n_faces, cs_lnum_t);
   BFT_MALLOC(ordered_faces, selection->n_faces, cs_lnum_t);
 
-  fvm_order_local_allocated(selection->faces, NULL, order, selection->n_faces);
+  cs_order_gnum_allocated(selection->faces, NULL, order, selection->n_faces);
 
   for (i = 0; i < selection->n_faces; i++)
     ordered_faces[i] = selection->faces[order[i]];

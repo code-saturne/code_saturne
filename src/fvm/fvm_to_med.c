@@ -236,7 +236,7 @@ static char _hdf5_version_string_[2][32] = {"", ""};
 
 static void
 _convert_float_fvm_to_med(const void      *fvm_data,
-                          fvm_datatype_t   fvm_datatype,
+                          cs_datatype_t    cs_datatype,
                           med_float       *med_data,
                           int              n_elems)
 {
@@ -249,13 +249,13 @@ _convert_float_fvm_to_med(const void      *fvm_data,
 
   /* Type conversion adaptation */
 
-  if (fvm_datatype == FVM_DOUBLE) {
+  if (cs_datatype == CS_DOUBLE) {
 
     for (i_elem = 0; i_elem < n_elems; i_elem++)
       med_data[i_elem] = (med_float)data_d[i_elem];
 
   }
-  else if (fvm_datatype == FVM_FLOAT)  {
+  else if (cs_datatype == CS_FLOAT)  {
 
     for (i_elem = 0; i_elem < n_elems; i_elem++)
       med_data[i_elem] = (med_float)data_f[i_elem];
@@ -872,7 +872,7 @@ _get_connect_section_size(const fvm_to_med_writer_t   *writer,
 
         for (i = 0; i < section->n_elements; i++) {
           for (j = f_idx[i]; j < f_idx[i+1]; j++) {
-            f_id = FVM_ABS(f_num[j]) - 1;
+            f_id = CS_ABS(f_num[j]) - 1;
             l_connect_size += v_idx[f_id + 1] - v_idx[f_id];
           }
         }
@@ -960,8 +960,8 @@ _get_connect_buffer_size(const fvm_to_med_writer_t   *writer,
       connect_section_size += _get_connect_section_size(writer,
                                                         current_section);
 
-    global_connect_buffer_size = FVM_MAX(connect_section_size,
-                                         global_connect_buffer_size);
+    global_connect_buffer_size = CS_MAX(connect_section_size,
+                                        global_connect_buffer_size);
 
     current_section = current_section->next;
 
@@ -980,17 +980,17 @@ _get_connect_buffer_size(const fvm_to_med_writer_t   *writer,
  * Adapt datatype to be MED compliant and associate its own MED datatype
  *
  * parameters:
- *   input_fvm_datatype   <-- input field datatype in FVM.
- *   output_fvm_datatype  --> output field datatype in FVM.
- *   med_datatype         --> associated MED field datatype.
- *   data_sizeof          --> size of datatype to be exported.
+ *   input_cs_datatype   <-- input field datatype in FVM.
+ *   output_cs_datatype  --> output field datatype in FVM.
+ *   med_datatype        --> associated MED field datatype.
+ *   data_sizeof         --> size of datatype to be exported.
  *----------------------------------------------------------------------------*/
 
 static void
-_get_datatypes(const fvm_datatype_t    input_fvm_datatype,
-               fvm_datatype_t         *output_fvm_datatype,
-               med_field_type         *med_datatype,
-               int                    *data_sizeof)
+_get_datatypes(const cs_datatype_t    input_cs_datatype,
+               cs_datatype_t         *output_cs_datatype,
+               med_field_type        *med_datatype,
+               int                   *data_sizeof)
 {
   int med_int_sizeof, med_float_sizeof;
 
@@ -1005,29 +1005,29 @@ _get_datatypes(const fvm_datatype_t    input_fvm_datatype,
   med_int_sizeof = sizeof(med_int);
   med_float_sizeof = sizeof(med_float);
 
-  /* Define output_fvm_datatype and med_datatype by input_fvm_datatype */
+  /* Define output_cs_datatype and med_datatype by input_cs_datatype */
 
-  switch(input_fvm_datatype) {
-  case FVM_DOUBLE:
-    *output_fvm_datatype = FVM_DOUBLE;
+  switch(input_cs_datatype) {
+  case CS_DOUBLE:
+    *output_cs_datatype = CS_DOUBLE;
     *med_datatype = MED_FLOAT64;
     *data_sizeof = med_float_sizeof;
     break;
 
-  case FVM_FLOAT:
-    *output_fvm_datatype = FVM_DOUBLE;
+  case CS_FLOAT:
+    *output_cs_datatype = CS_DOUBLE;
     *med_datatype = MED_FLOAT64;
     *data_sizeof = med_float_sizeof;
     break;
 
-  case FVM_INT32:
+  case CS_INT32:
     if (med_int_sizeof == 4) {
-      *output_fvm_datatype = FVM_INT32;
+      *output_cs_datatype = CS_INT32;
       *med_datatype = MED_INT32;
       *data_sizeof = med_int_sizeof;
     }
     else if (med_int_sizeof == 8) {
-      *output_fvm_datatype = FVM_INT64;
+      *output_cs_datatype = CS_INT64;
       *med_datatype = MED_INT64;
       *data_sizeof = med_int_sizeof;
     }
@@ -1035,14 +1035,14 @@ _get_datatypes(const fvm_datatype_t    input_fvm_datatype,
       assert(0);
     break;
 
-  case FVM_INT64:
+  case CS_INT64:
     if (med_int_sizeof == 4) {
-      *output_fvm_datatype = FVM_INT32;
+      *output_cs_datatype = CS_INT32;
       *med_datatype = MED_INT32;
       *data_sizeof = med_int_sizeof;
     }
     else if (med_int_sizeof == 8) {
-      *output_fvm_datatype = FVM_INT64;
+      *output_cs_datatype = CS_INT64;
       *med_datatype = MED_INT64;
       *data_sizeof = med_int_sizeof;
     }
@@ -1050,14 +1050,14 @@ _get_datatypes(const fvm_datatype_t    input_fvm_datatype,
       assert(0);
     break;
 
-  case FVM_UINT32:
+  case CS_UINT32:
     if (med_int_sizeof == 4) {
-      *output_fvm_datatype = FVM_INT32;
+      *output_cs_datatype = CS_INT32;
       *med_datatype = MED_INT32;
       *data_sizeof = med_int_sizeof;
     }
     else if (med_int_sizeof == 8) {
-      *output_fvm_datatype = FVM_INT64;
+      *output_cs_datatype = CS_INT64;
       *med_datatype = MED_INT64;
       *data_sizeof = med_int_sizeof;
     }
@@ -1065,14 +1065,14 @@ _get_datatypes(const fvm_datatype_t    input_fvm_datatype,
       assert(0);
     break;
 
-  case FVM_UINT64:
+  case CS_UINT64:
     if (med_int_sizeof == 4) {
-      *output_fvm_datatype = FVM_INT32;
+      *output_cs_datatype = CS_INT32;
       *med_datatype = MED_INT32;
       *data_sizeof = med_int_sizeof;
     }
     else if (med_int_sizeof == 8) {
-      *output_fvm_datatype = FVM_INT64;
+      *output_cs_datatype = CS_INT64;
       *med_datatype = MED_INT64;
       *data_sizeof = med_int_sizeof;
     }
@@ -1421,7 +1421,7 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
   int  i_dim;
   cs_lnum_t    i_lnod;
   MPI_Datatype  mpi_datatype;
-  fvm_datatype_t  fvm_datatype;
+  cs_datatype_t  cs_datatype;
 
   cs_lnum_t   n_extra_vertices = 0;
   cs_gnum_t   n_g_extra_vertices = 0;
@@ -1461,9 +1461,9 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
   /* Define MPI and FVM datatype */
 
   if (sizeof(cs_coord_t) == sizeof(double))
-    fvm_datatype = FVM_DOUBLE;
+    cs_datatype = CS_DOUBLE;
   else if (sizeof(cs_coord_t) == sizeof(float))
-    fvm_datatype = FVM_FLOAT;
+    cs_datatype = CS_FLOAT;
   else
     bft_error(__FILE__, __LINE__, 0 ,
               "Unexpected cs_coord_t datatype size (%d).",
@@ -1498,7 +1498,7 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
                                            comm);
 
   BFT_MALLOC(med_coords,
-             FVM_MAX(n_vertices, n_extra_vertices) * dim,
+             CS_MAX(n_vertices, n_extra_vertices) * dim,
              med_float);
 
   if (parent_vertex_num != NULL) {
@@ -1514,7 +1514,7 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
   }
   else
     _convert_float_fvm_to_med(vertex_coords,
-                              fvm_datatype,
+                              cs_datatype,
                               med_coords,
                               n_vertices * dim);
 
@@ -1727,7 +1727,7 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
 {
   int  i_dim;
   cs_lnum_t   i_vtx;
-  fvm_datatype_t  datatype;
+  cs_datatype_t  datatype;
 
   cs_lnum_t   idx = 0;
   cs_lnum_t   n_extra_vertices = 0;
@@ -1757,9 +1757,9 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
   /* Define FVM datatype */
 
   if (sizeof(cs_coord_t) == sizeof(double))
-    datatype = FVM_DOUBLE;
+    datatype = CS_DOUBLE;
   else if (sizeof(cs_coord_t) == sizeof(float))
-    datatype = FVM_FLOAT;
+    datatype = CS_FLOAT;
   else
     bft_error(__FILE__, __LINE__, 0 ,
               "Unexpected cs_coord_t datatype size (%d).",
@@ -1945,17 +1945,17 @@ _export_families_g(const fvm_writer_section_t  *export_section,
 
   const fvm_writer_section_t  *current_section = NULL;
 
-  fvm_datatype_t  gc_id_type = FVM_DATATYPE_NULL;
-  fvm_datatype_t  med_family_type = FVM_DATATYPE_NULL;
+  cs_datatype_t  gc_id_type = CS_DATATYPE_NULL;
+  cs_datatype_t  med_family_type = CS_DATATYPE_NULL;
 
   /* Initialize datatypes */
 
   switch(sizeof(int)) {
   case 4:
-    gc_id_type = FVM_INT32;
+    gc_id_type = CS_INT32;
     break;
   case 8:
-    gc_id_type = FVM_INT64;
+    gc_id_type = CS_INT64;
     break;
   default:
     assert(0);
@@ -1963,10 +1963,10 @@ _export_families_g(const fvm_writer_section_t  *export_section,
 
   switch(sizeof(med_int)) {
   case 4:
-    med_family_type = FVM_INT32;
+    med_family_type = CS_INT32;
     break;
   case 8:
-    med_family_type = FVM_INT64;
+    med_family_type = CS_INT64;
     break;
   default:
     assert(0);
@@ -2095,7 +2095,7 @@ _export_families_g(const fvm_writer_section_t  *export_section,
      Without tesselation, _block_n_sub simply points to block_n_sub */
 
   BFT_MALLOC(part_values,
-             FVM_MAX(part_size, (cs_lnum_t)block_sub_size),
+             CS_MAX(part_size, (cs_lnum_t)block_sub_size),
              med_int);
   BFT_MALLOC(block_values, block_size, med_int);
 
@@ -2131,7 +2131,7 @@ _export_families_g(const fvm_writer_section_t  *export_section,
                         1, /* dest_dim */
                         0,
                         section->n_elements,
-                        FVM_NO_INTERLACE,
+                        CS_NO_INTERLACE,
                         gc_id_type,
                         med_family_type,
                         0, /* n_parent_lists */
@@ -2369,8 +2369,8 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
       BFT_MALLOC(local_idx, section->n_elements + 1, cs_lnum_t);
       BFT_MALLOC(global_idx, n_g_elements_section + 1, cs_gnum_t);
 
-      buffer_size = FVM_MAX((cs_gnum_t)(10 * n_sub_elements_max),
-                            (cs_gnum_t)(n_g_sub_elements / writer->n_ranks));
+      buffer_size = CS_MAX((cs_gnum_t)(10 * n_sub_elements_max),
+                           (cs_gnum_t)(n_g_sub_elements / writer->n_ranks));
       buffer_size *= stride;
       buffer_size_prev = buffer_size;
 
@@ -2584,17 +2584,17 @@ _export_families_l(const fvm_writer_section_t  *export_section,
 
   const fvm_writer_section_t  *current_section = NULL;
 
-  fvm_datatype_t  gc_id_type = FVM_DATATYPE_NULL;
-  fvm_datatype_t  med_family_type = FVM_DATATYPE_NULL;
+  cs_datatype_t  gc_id_type = CS_DATATYPE_NULL;
+  cs_datatype_t  med_family_type = CS_DATATYPE_NULL;
 
   /* Initialize datatypes */
 
   switch(sizeof(int)) {
   case 4:
-    gc_id_type = FVM_INT32;
+    gc_id_type = CS_INT32;
     break;
   case 8:
-    gc_id_type = FVM_INT64;
+    gc_id_type = CS_INT64;
     break;
   default:
     assert(0);
@@ -2602,10 +2602,10 @@ _export_families_l(const fvm_writer_section_t  *export_section,
 
   switch(sizeof(med_int)) {
   case 4:
-    med_family_type = FVM_INT32;
+    med_family_type = CS_INT32;
     break;
   case 8:
-    med_family_type = FVM_INT64;
+    med_family_type = CS_INT64;
     break;
   default:
     assert(0);
@@ -2650,7 +2650,7 @@ _export_families_l(const fvm_writer_section_t  *export_section,
                         1, /* dest_dim */
                         0,
                         section->n_elements,
-                        FVM_NO_INTERLACE,
+                        CS_NO_INTERLACE,
                         gc_id_type,
                         med_family_type,
                         0, /* n_parent_lists */
@@ -2828,8 +2828,8 @@ _export_connect_l(const fvm_writer_section_t  *export_sections,
                                       NULL,
                                       &n_sub_elts_max);
 
-      buffer_size = FVM_MAX(n_sub_elts_max, n_sub_elts/4 + 1);
-      buffer_size = FVM_MAX(256, buffer_size);
+      buffer_size = CS_MAX(n_sub_elts_max, n_sub_elts/4 + 1);
+      buffer_size = CS_MAX(256, buffer_size);
 
       BFT_MALLOC(sub_elt_vertex_num, buffer_size * stride, cs_lnum_t);
 
@@ -2962,7 +2962,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
   cs_gnum_t *_fvm_export_connect = (cs_gnum_t *)export_connect;
   med_int    *_med_export_connect = (med_int *)export_connect;
 
-  const size_t export_datasize = FVM_MAX(sizeof(cs_gnum_t),sizeof(med_int));
+  const size_t export_datasize = CS_MAX(sizeof(cs_gnum_t),sizeof(med_int));
   const fvm_writer_section_t *current_section = NULL;
 
   med_err  retval = 0;
@@ -3334,7 +3334,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
 
   fvm_gather_slice_t *polyhedra_slice = NULL;
 
-  const size_t export_datasize = FVM_MAX(sizeof(cs_gnum_t), sizeof(med_int));
+  const size_t export_datasize = CS_MAX(sizeof(cs_gnum_t), sizeof(med_int));
   const fvm_writer_section_t *current_section = NULL;
 
   med_err  retval = 0;
@@ -3398,7 +3398,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
            i_face_idx < section->face_index[i_elt + 1];
            i_face_idx++) {
 
-        face_id = FVM_ABS(section->face_num[i_face_idx]) - 1;
+        face_id = CS_ABS(section->face_num[i_face_idx]) - 1;
         _face_lengths[i_face] = (  section->vertex_index[face_id + 1]
                                  - section->vertex_index[face_id]);
         cell_vtx_length += _face_lengths[i_face];
@@ -3727,7 +3727,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_sections,
            i_face_idx < section->face_index[i_elt + 1];
            i_face_idx++) {
 
-        face_id = FVM_ABS(section->face_num[i_face_idx]) - 1;
+        face_id = CS_ABS(section->face_num[i_face_idx]) - 1;
 
         med_face_lengths[i_face] = (  (med_int)section->vertex_index[face_id + 1]
                                     - (med_int)section->vertex_index[face_id]);
@@ -3874,10 +3874,10 @@ _export_field_values_e(const fvm_writer_section_t      *export_section,
                        fvm_to_med_writer_t             *writer,
                        int                              input_dim,
                        int                              output_dim,
-                       fvm_interlace_t                  interlace,
+                       cs_interlace_t                   interlace,
                        int                              n_parent_lists,
                        const cs_lnum_t                  parent_num_shift[],
-                       fvm_datatype_t                   datatype,
+                       cs_datatype_t                    datatype,
                        const void                *const field_values[],
                        char                            *med_mesh_name,
                        char                            *med_field_name,
@@ -3900,7 +3900,7 @@ _export_field_values_e(const fvm_writer_section_t      *export_section,
 
   med_section_type = _get_med_elt_type(current_section->type);
   datatype_size
-    = fvm_datatype_size[fvm_writer_field_helper_datatype(helper)];
+    = cs_datatype_size[fvm_writer_field_helper_datatype(helper)];
 
   /* Loop on sections of same type to fill output buffer */
   /*-----------------------------------------------------*/
@@ -4029,10 +4029,10 @@ _export_field_values_n(const fvm_nodal_t               *mesh,
                        fvm_to_med_writer_t             *writer,
                        int                              input_dim,
                        int                              output_dim,
-                       fvm_interlace_t                  interlace,
+                       cs_interlace_t                   interlace,
                        int                              n_parent_lists,
                        const cs_lnum_t                  parent_num_shift[],
-                       fvm_datatype_t                   datatype,
+                       cs_datatype_t                    datatype,
                        const void                *const field_values[],
                        char                            *med_mesh_name,
                        char                            *med_field_name,
@@ -4048,7 +4048,7 @@ _export_field_values_n(const fvm_nodal_t               *mesh,
   unsigned char  *output_buffer_slice = output_buffer;
 
   size_t datatype_size
-    = fvm_datatype_size[fvm_writer_field_helper_datatype(helper)];
+    = cs_datatype_size[fvm_writer_field_helper_datatype(helper)];
 
   /* Fill output buffer */
   /*--------------------*/
@@ -4755,7 +4755,7 @@ fvm_to_med_export_nodal(void               *this_writer,
 #if defined(HAVE_MPI)
   if (n_ranks > 1) {
 
-    connect_type_size = FVM_MAX(sizeof(cs_gnum_t), sizeof(med_int));
+    connect_type_size = CS_MAX(sizeof(cs_gnum_t), sizeof(med_int));
     BFT_MALLOC(export_connect_buffer,
                global_connect_slice_size * connect_type_size,
                char);
@@ -4918,10 +4918,10 @@ fvm_to_med_export_field(void                            *this_writer,
                         const char                      *name,
                         const fvm_writer_var_loc_t       location,
                         const int                        dimension,
-                        const fvm_interlace_t            interlace,
+                        const cs_interlace_t             interlace,
                         const int                        n_parent_lists,
                         const cs_lnum_t                  parent_num_shift[],
-                        const fvm_datatype_t             datatype,
+                        const cs_datatype_t              datatype,
                         const int                        time_step,
                         const double                     time_value,
                         const void                *const field_values[])
@@ -4932,7 +4932,7 @@ fvm_to_med_export_field(void                            *this_writer,
   char  med_mesh_name[MED_NAME_SIZE + 1];
   char  med_fieldname[MED_NAME_SIZE + 1];
 
-  fvm_datatype_t  datatype_convert = FVM_DATATYPE_NULL;
+  cs_datatype_t  datatype_convert = CS_DATATYPE_NULL;
   med_field_type  datatype_med = MED_FLOAT64;
 
   size_t   input_size = 0, output_size = 0, min_var_buffer_size = 0;
@@ -5015,7 +5015,7 @@ fvm_to_med_export_field(void                            *this_writer,
 
   med_mesh = writer->med_meshes[med_mesh_num - 1];
 
-  /* Adapt fvm_datatype and find corresponding MED datatype */
+  /* Adapt cs_datatype and find corresponding MED datatype */
 
   _get_datatypes(datatype,
                  &datatype_convert,
@@ -5048,7 +5048,7 @@ fvm_to_med_export_field(void                            *this_writer,
   helper = fvm_writer_field_helper_create(mesh,
                                           export_list,
                                           output_dim,
-                                          FVM_INTERLACE,
+                                          CS_INTERLACE,
                                           datatype_convert,
                                           location);
 
@@ -5081,23 +5081,23 @@ fvm_to_med_export_field(void                            *this_writer,
 
   var_buffer_size = input_size / n_ranks;
 
-  var_buffer_size = FVM_MAX(var_buffer_size, min_var_buffer_size);
-  var_buffer_size = FVM_MAX(var_buffer_size, 128*(size_t)output_dim);
+  var_buffer_size = CS_MAX(var_buffer_size, min_var_buffer_size);
+  var_buffer_size = CS_MAX(var_buffer_size, 128*(size_t)output_dim);
 
   alloc_size = var_buffer_size;
 
   if (location == FVM_WRITER_PER_NODE) {
-    var_buffer_size = FVM_MIN(var_buffer_size, output_size);
+    var_buffer_size = CS_MIN(var_buffer_size, output_size);
     if (writer->rank == 0)
       alloc_size = output_size;
   }
   else if (location == FVM_WRITER_PER_ELEMENT) {
-    var_buffer_size = FVM_MIN(var_buffer_size, max_grouped_elements_out);
+    var_buffer_size = CS_MIN(var_buffer_size, max_grouped_elements_out);
     if (writer->rank == 0)
       alloc_size = max_grouped_elements_out;
   }
 
-  alloc_size *= fvm_datatype_size[datatype_convert];
+  alloc_size *= cs_datatype_size[datatype_convert];
 
   BFT_MALLOC(var_buffer, alloc_size, unsigned char);
 

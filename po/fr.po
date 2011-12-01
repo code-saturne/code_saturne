@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-11-04 11:46+0100\n"
+"POT-Creation-Date: 2011-12-01 11:12+0100\n"
 "PO-Revision-Date: 2011-10-13 19:39+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5040,6 +5040,9 @@ msgstr "accumulateur"
 
 msgid "user"
 msgstr "utilisateur"
+
+msgid "Defining a field requires a name."
+msgstr ""
 
 #, c-format
 msgid ""

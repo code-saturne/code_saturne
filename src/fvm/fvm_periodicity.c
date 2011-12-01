@@ -254,12 +254,12 @@ _combine_transforms_check(const fvm_periodicity_t  *this_periodicity,
     for (i = 0; i < 3; i++) {
       for (j = 0; j < 4; j++) {
 
-        if (  FVM_ABS(m0[i][j] - m1[i][j])
+        if (  CS_ABS(m0[i][j] - m1[i][j])
             > this_periodicity->equiv_tolerance) {
 
           if (abort_on_error) {
-            int ext0 = FVM_ABS(tr0->external_num);
-            int ext1 = FVM_ABS(tr1->external_num);
+            int ext0 = CS_ABS(tr0->external_num);
+            int ext1 = CS_ABS(tr1->external_num);
             if (ext1 != 0) {
               bft_error(__FILE__, __LINE__, 0,
                         _("Periodicity transforms %d and %d\n"
@@ -273,8 +273,8 @@ _combine_transforms_check(const fvm_periodicity_t  *this_periodicity,
               int j_1 = tr1->parent_ids[1];
               ext1 = (this_periodicity->transform[j_0])->external_num;
               ext2 = (this_periodicity->transform[j_1])->external_num;
-              ext1 = FVM_ABS(ext1);
-              ext2 = FVM_ABS(ext2);
+              ext1 = CS_ABS(ext1);
+              ext2 = CS_ABS(ext2);
               bft_error(__FILE__, __LINE__, 0,
                         _("Periodicity transforms %d and %d\n"
                           "(based on directions %d, %d %d)\n"
@@ -750,7 +750,7 @@ fvm_periodicity_add_by_matrix(fvm_periodicity_t       *this_periodicity,
       _Bool is_equiv = true;
       for (j = 0; j < 3; j++) {
         for (k = 0; k < 4; k++) {
-          if (  FVM_ABS(transform->m[j][k] - tr->m[j][k])
+          if (  CS_ABS(transform->m[j][k] - tr->m[j][k])
               > this_periodicity->equiv_tolerance)
             is_equiv = false;
         }
@@ -892,7 +892,7 @@ fvm_periodicity_add_rotation(fvm_periodicity_t  *this_periodicity,
   /* Clip "zero" values */
   for (i = 0; i < 3; i++) {
     for (j = 0; j < 4; j++) {
-      if (FVM_ABS(matrix[i][j]) < 1.e-16)
+      if (CS_ABS(matrix[i][j]) < 1.e-16)
         matrix[i][j] = 0.;
     }
   }

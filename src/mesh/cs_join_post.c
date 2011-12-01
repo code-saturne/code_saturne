@@ -157,10 +157,10 @@ _post_vtx_dfield(fvm_nodal_t   *mesh,
                           varname,
                           FVM_WRITER_PER_NODE,
                           dim,
-                          FVM_INTERLACE,
+                          CS_INTERLACE,
                           0,
                           parent_num_shift,
-                          FVM_DOUBLE,
+                          CS_DOUBLE,
                           -1,
                           0.,
                           (const void **)var_ptr);
@@ -186,7 +186,7 @@ _post_elt_ifield(fvm_nodal_t  *mesh,
   fvm_writer_t  *writer = _cs_join_post_param.writer;
 
   cs_int_t   parent_num_shift[2]  = {0, 0};
-  fvm_datatype_t  datatype = FVM_DATATYPE_NULL;
+  cs_datatype_t  datatype = CS_DATATYPE_NULL;
 
   const int  *var_ptr[9] = {NULL, NULL, NULL,
                             NULL, NULL, NULL,
@@ -196,9 +196,9 @@ _post_elt_ifield(fvm_nodal_t  *mesh,
   assert(sizeof(cs_int_t) == sizeof(int));
 
   if (sizeof(int) == 4)
-    datatype = FVM_INT32;
+    datatype = CS_INT32;
   else if (sizeof(int) == 8)
-    datatype = FVM_INT64;
+    datatype = CS_INT64;
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Size of \"int\" is not 4 or 8 bytes.\n"
@@ -211,7 +211,7 @@ _post_elt_ifield(fvm_nodal_t  *mesh,
                           varname,
                           FVM_WRITER_PER_ELEMENT,
                           dim,
-                          FVM_INTERLACE,
+                          CS_INTERLACE,
                           0,
                           parent_num_shift,
                           datatype,
