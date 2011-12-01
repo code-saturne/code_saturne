@@ -13,7 +13,6 @@
 
 #include "cs_halo.h"
 #include "cs_numbering.h"
-#include "cs_perio.h"
 
 #include "cs_matrix.h"
 

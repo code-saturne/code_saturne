@@ -60,10 +60,10 @@
 #include "cs_base.h"
 #include "cs_blas.h"
 #include "cs_log.h"
+#include "cs_halo.h"
 #include "cs_mesh.h"
 #include "cs_matrix.h"
 #include "cs_matrix_util.h"
-#include "cs_perio.h"
 #include "cs_post.h"
 #include "cs_timer.h"
 
@@ -665,14 +665,14 @@ _dot_products_3(cs_int_t          n_elts,
  *----------------------------------------------------------------------------*/
 
 static void
-_polynomial_preconditionning(cs_int_t            n_cells,
-                             int                 poly_degree,
-                             cs_perio_rota_t     rotation_mode,
-                             const cs_real_t    *ad_inv,
-                             const cs_matrix_t  *a,
-                             const cs_real_t    *rk,
-                             cs_real_t          *restrict gk,
-                             cs_real_t          *restrict wk)
+_polynomial_preconditionning(cs_int_t             n_cells,
+                             int                  poly_degree,
+                             cs_halo_rotation_t   rotation_mode,
+                             const cs_real_t     *ad_inv,
+                             const cs_matrix_t   *a,
+                             const cs_real_t     *rk,
+                             cs_real_t           *restrict gk,
+                             cs_real_t           *restrict wk)
 {
   int deg_id;
   cs_int_t ii;
@@ -738,7 +738,7 @@ _conjugate_gradient(const char             *var_name,
                     const cs_matrix_t      *a,
                     int                     diag_block_size,
                     int                     poly_degree,
-                    cs_perio_rota_t         rotation_mode,
+                    cs_halo_rotation_t      rotation_mode,
                     cs_sles_convergence_t  *convergence,
                     const cs_real_t        *rhs,
                     cs_real_t              *restrict vx,
@@ -948,7 +948,7 @@ _conjugate_gradient_sr(const char             *var_name,
                        const cs_matrix_t      *a,
                        int                     diag_block_size,
                        int                     poly_degree,
-                       cs_perio_rota_t         rotation_mode,
+                       cs_halo_rotation_t      rotation_mode,
                        cs_sles_convergence_t  *convergence,
                        const cs_real_t        *rhs,
                        cs_real_t              *restrict vx,
@@ -1154,7 +1154,7 @@ _conjugate_gradient_sr(const char             *var_name,
 static int
 _jacobi(const char             *var_name,
         const cs_matrix_t      *a,
-        cs_perio_rota_t         rotation_mode,
+        cs_halo_rotation_t      rotation_mode,
         cs_sles_convergence_t  *convergence,
         const cs_real_t        *rhs,
         cs_real_t              *restrict vx,
@@ -1360,7 +1360,7 @@ _fw_and_bw_lu33(const cs_real_t     mat[],
 static int
 _block_3_jacobi(const char             *var_name,
                 const cs_matrix_t      *a,
-                cs_perio_rota_t         rotation_mode,
+                cs_halo_rotation_t      rotation_mode,
                 cs_sles_convergence_t  *convergence,
                 const cs_real_t        *rhs,
                 cs_real_t              *restrict vx,
@@ -1504,7 +1504,7 @@ _bi_cgstab(const char             *var_name,
            const cs_matrix_t      *a,
            int                     diag_block_size,
            int                     poly_degree,
-           cs_perio_rota_t         rotation_mode,
+           cs_halo_rotation_t      rotation_mode,
            cs_sles_convergence_t  *convergence,
            const cs_real_t        *rhs,
            cs_real_t              *restrict vx,
@@ -1869,7 +1869,7 @@ static int
 _gmres(const char             *var_name,
        const cs_matrix_t      *a,
        int                     poly_degree,
-       cs_perio_rota_t         rotation_mode,
+       cs_halo_rotation_t      rotation_mode,
        cs_sles_convergence_t  *convergence,
        const cs_real_t        *rhs,
        cs_real_t              *restrict vx,
@@ -2220,12 +2220,12 @@ _value_type(size_t      n_vals,
  *----------------------------------------------------------------------------*/
 
 static void
-_cell_residual(const int          *diag_block_size,
-               cs_perio_rota_t     rotation_mode,
-               const cs_matrix_t  *a,
-               const cs_real_t     rhs[],
-               cs_real_t           vx[],
-               cs_real_t           res[])
+_cell_residual(const int           *diag_block_size,
+               cs_halo_rotation_t   rotation_mode,
+               const cs_matrix_t   *a,
+               const cs_real_t      rhs[],
+               cs_real_t            vx[],
+               cs_real_t            res[])
 {
   cs_int_t ii;
 
@@ -2274,21 +2274,21 @@ _cell_residual(const int          *diag_block_size,
  *----------------------------------------------------------------------------*/
 
 static int
-_solve_ni(const char         *var_name,
-          cs_sles_type_t      solver_type,
-          const cs_matrix_t  *a,
-          int                 poly_degree,
-          cs_perio_rota_t     rotation_mode,
-          int                 verbosity,
-          int                 n_max_iter,
-          double              precision,
-          double              r_norm,
-          int                *n_iter,
-          double             *residue,
-          const cs_real_t    *rhs,
-          cs_real_t          *vx,
-          size_t              aux_size,
-          void               *aux_vectors)
+_solve_ni(const char          *var_name,
+          cs_sles_type_t       solver_type,
+          const cs_matrix_t   *a,
+          int                  poly_degree,
+          cs_halo_rotation_t   rotation_mode,
+          int                  verbosity,
+          int                  n_max_iter,
+          double               precision,
+          double               r_norm,
+          int                 *n_iter,
+          double              *residue,
+          const cs_real_t     *rhs,
+          cs_real_t           *vx,
+          size_t               aux_size,
+          void                *aux_vectors)
 {
   cs_int_t  n_rows;
   cs_timer_t t0, t1;
@@ -2456,7 +2456,7 @@ void CS_PROCF(reslin, RESLIN)
   int diag_block_size[4] = {1, 1, 1, 1};
   bool symmetric = (*isym == 1) ? true : false;
   bool interleaved = (*ilved == 1) ? true : false;
-  cs_perio_rota_t rotation_mode = CS_PERIO_ROTA_COPY;
+  cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
   cs_matrix_t *a = cs_glob_matrix_default;
 
@@ -2465,9 +2465,9 @@ void CS_PROCF(reslin, RESLIN)
   assert(ifacel != NULL);
 
   if (*iinvpe == 2)
-    rotation_mode = CS_PERIO_ROTA_RESET;
+    rotation_mode = CS_HALO_ROTATION_ZERO;
   else if (*iinvpe == 3)
-    rotation_mode = CS_PERIO_ROTA_IGNORE;
+    rotation_mode = CS_HALO_ROTATION_IGNORE;
 
   if (*ibsize > 1) {
     diag_block_size[0] = *ibsize;
@@ -2735,22 +2735,22 @@ cs_sles_needs_solving(const char        *var_name,
  *----------------------------------------------------------------------------*/
 
 int
-cs_sles_solve(const char         *var_name,
-              cs_sles_type_t      solver_type,
-              bool                update_stats,
-              const cs_matrix_t  *a,
-              int                 poly_degree,
-              cs_perio_rota_t     rotation_mode,
-              int                 verbosity,
-              int                 n_max_iter,
-              double              precision,
-              double              r_norm,
-              int                *n_iter,
-              double             *residue,
-              const cs_real_t    *rhs,
-              cs_real_t          *vx,
-              size_t              aux_size,
-              void               *aux_vectors)
+cs_sles_solve(const char          *var_name,
+              cs_sles_type_t       solver_type,
+              bool                 update_stats,
+              const cs_matrix_t   *a,
+              int                  poly_degree,
+              cs_halo_rotation_t   rotation_mode,
+              int                  verbosity,
+              int                  n_max_iter,
+              double               precision,
+              double               r_norm,
+              int                 *n_iter,
+              double              *residue,
+              const cs_real_t     *rhs,
+              cs_real_t           *vx,
+              size_t               aux_size,
+              void                *aux_vectors)
 {
   cs_int_t  n_rows;
   cs_timer_t t0, t1;
@@ -2946,12 +2946,12 @@ cs_sles_solve(const char         *var_name,
  *----------------------------------------------------------------------------*/
 
 void
-cs_sles_post_error_output_def(const char         *var_name,
-                              int                 mesh_id,
-                              cs_perio_rota_t     rotation_mode,
-                              const cs_matrix_t  *a,
-                              const cs_real_t    *rhs,
-                              cs_real_t          *vx)
+cs_sles_post_error_output_def(const char          *var_name,
+                              int                  mesh_id,
+                              cs_halo_rotation_t   rotation_mode,
+                              const cs_matrix_t   *a,
+                              const cs_real_t     *rhs,
+                              cs_real_t           *vx)
 {
   if (mesh_id != 0) {
 

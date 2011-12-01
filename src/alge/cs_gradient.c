@@ -55,11 +55,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_halo.h"
+#include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
-#include "cs_perio.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 
@@ -324,8 +324,9 @@ _gradient_clipping(const cs_int_t   *imrgra,
         cs_halo_sync_var(halo, halo_type, dpdx);
         cs_halo_sync_var(halo, halo_type, dpdy);
         cs_halo_sync_var(halo, halo_type, dpdz);
-        cs_perio_sync_var_vect_ni(halo, halo_type, CS_PERIO_ROTA_COPY,
-                                  dpdx, dpdy, dpdz);
+        cs_halo_perio_sync_var_vect_ni(halo, halo_type,
+                                       CS_HALO_ROTATION_COPY,
+                                       dpdx, dpdy, dpdz);
       }
 
     } /* End if imligp == 1 */
@@ -621,10 +622,10 @@ _gradient_clipping(const cs_int_t   *imrgra,
       cs_halo_sync_var(halo, halo_type, dpdy);
       cs_halo_sync_var(halo, halo_type, dpdz);
 
-      cs_perio_sync_var_vect_ni(halo,
-                                halo_type,
-                                CS_PERIO_ROTA_COPY,
-                                dpdx, dpdy, dpdz);
+      cs_halo_perio_sync_var_vect_ni(halo,
+                                     halo_type,
+                                     CS_HALO_ROTATION_COPY,
+                                     dpdx, dpdy, dpdz);
 
     }
 
@@ -780,8 +781,8 @@ void CS_PROCF (cgdcel, CGDCEL)
         cs_halo_sync_var(halo, halo_type, fextx);
         cs_halo_sync_var(halo, halo_type, fexty);
         cs_halo_sync_var(halo, halo_type, fextz);
-        cs_perio_sync_var_vect_ni(halo, halo_type, CS_PERIO_ROTA_COPY,
-                                  fextx, fexty, fextz);
+        cs_halo_perio_sync_var_vect_ni(halo, halo_type, CS_HALO_ROTATION_COPY,
+                                       fextx, fexty, fextz);
       }
     }
 
@@ -922,7 +923,6 @@ void CS_PROCF (cgdvec, CGDVEC)
 )
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_halo_t  *halo = mesh->halo;
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
 

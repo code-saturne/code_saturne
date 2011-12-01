@@ -66,10 +66,10 @@
 
 #include "cs_base.h"
 #include "cs_halo.h"
+#include "cs_halo_perio.h"
 #include "cs_matrix.h"
 #include "cs_order.h"
 #include "cs_prototypes.h"
-#include "cs_perio.h"
 #include "cs_sles.h"
 
 #include "fvm_defs.h"
@@ -1718,7 +1718,7 @@ _sync_merged_cell_data(cs_grid_t  *g)
 
     cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, g->_cell_cen, 3);
     if (g->halo->n_transforms > 0)
-      cs_perio_sync_coords(g->halo, CS_HALO_STANDARD, g->_cell_cen);
+      cs_halo_perio_sync_coords(g->halo, CS_HALO_STANDARD, g->_cell_cen);
 
     cs_halo_sync_var(g->halo, CS_HALO_STANDARD, g->_cell_vol);
 
@@ -2718,7 +2718,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
     cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_cell_cen, 3);
     if (c->halo->n_transforms > 0)
-      cs_perio_sync_coords(c->halo, CS_HALO_STANDARD, c->_cell_cen);
+      cs_halo_perio_sync_coords(c->halo, CS_HALO_STANDARD, c->_cell_cen);
 
     cs_halo_sync_var(c->halo, CS_HALO_STANDARD, c->_cell_vol);
 

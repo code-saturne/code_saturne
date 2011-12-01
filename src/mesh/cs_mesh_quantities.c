@@ -56,9 +56,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_halo_perio.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
-#include "cs_perio.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1441,13 +1441,13 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
     if (mesh->n_init_perio > 0) {
 
-       cs_perio_sync_coords(mesh->halo, mesh->halo_type,
-                            mesh_quantities->cell_cen);
+       cs_halo_perio_sync_coords(mesh->halo, mesh->halo_type,
+                                 mesh_quantities->cell_cen);
 
-       cs_perio_sync_var_scal(mesh->halo,
-                              mesh->halo_type,
-                              CS_PERIO_ROTA_COPY,
-                              mesh_quantities->cell_vol);
+       cs_halo_perio_sync_var_scal(mesh->halo,
+                                   mesh->halo_type,
+                                   CS_HALO_ROTATION_COPY,
+                                   mesh_quantities->cell_vol);
     }
 
   }

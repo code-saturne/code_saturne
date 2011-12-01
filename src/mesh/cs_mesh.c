@@ -53,11 +53,11 @@
 
 #include "cs_base.h"
 #include "cs_halo.h"
+#include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_mesh_halo.h"
 #include "cs_numbering.h"
 #include "cs_order.h"
-#include "cs_perio.h"
 #include "cs_mesh_quantities.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_timer.h"
@@ -2440,7 +2440,7 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   /* Free halo structure */
 
   if (mesh == cs_glob_mesh) {
-    cs_perio_free_buffer();
+    cs_halo_perio_free_buffer();
     cs_halo_free_buffer();
   }
 
@@ -3073,7 +3073,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
                         &gcell_vtx_lst);
 
     if (mesh->n_init_perio > 0)
-      cs_perio_update_buffer(mesh->halo);
+      cs_halo_perio_update_buffer(mesh->halo);
 
     fvm_interface_set_destroy(vertex_interfaces);
     fvm_interface_set_destroy(face_interfaces);
@@ -3487,10 +3487,10 @@ cs_mesh_sync_var_scal(cs_real_t  *var)
   cs_halo_sync_var(halo, CS_HALO_STANDARD, var);
 
   if (cs_glob_mesh->n_init_perio > 0)
-    cs_perio_sync_var_scal(halo,
-                           CS_HALO_STANDARD,
-                           CS_PERIO_ROTA_COPY,
-                           var);
+    cs_halo_perio_sync_var_scal(halo,
+                                CS_HALO_STANDARD,
+                                CS_HALO_ROTATION_COPY,
+                                var);
 }
 
 /*----------------------------------------------------------------------------
@@ -3516,10 +3516,10 @@ cs_mesh_sync_var_vect_ni(cs_real_t  *var1,
   cs_halo_sync_var(halo, CS_HALO_STANDARD, var3);
 
   if (cs_glob_mesh->n_init_perio > 0)
-    cs_perio_sync_var_vect_ni(halo,
-                              CS_HALO_STANDARD,
-                              CS_PERIO_ROTA_COPY,
-                              var1, var2, var3);
+    cs_halo_perio_sync_var_vect_ni(halo,
+                                   CS_HALO_STANDARD,
+                                   CS_HALO_ROTATION_COPY,
+                                   var1, var2, var3);
 }
 
 /*----------------------------------------------------------------------------
@@ -3539,10 +3539,10 @@ cs_mesh_sync_var_vect(cs_real_t  *var)
   cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, var, 3);
 
   if (cs_glob_mesh->n_init_perio > 0)
-    cs_perio_sync_var_vect(halo,
-                           CS_HALO_STANDARD,
-                           var,
-                           3);
+    cs_halo_perio_sync_var_vect(halo,
+                                CS_HALO_STANDARD,
+                                var,
+                                3);
 }
 
 /*----------------------------------------------------------------------------
@@ -3568,9 +3568,9 @@ cs_mesh_sync_var_diag_ni(cs_real_t  *var11,
   cs_halo_sync_var(halo, CS_HALO_STANDARD, var33);
 
   if (cs_glob_mesh->n_init_perio > 0)
-    cs_perio_sync_var_diag_ni(halo,
-                              CS_HALO_STANDARD,
-                              var11, var22, var33);
+    cs_halo_perio_sync_var_diag_ni(halo,
+                                   CS_HALO_STANDARD,
+                                   var11, var22, var33);
 }
 
 /*----------------------------------------------------------------------------
@@ -3590,9 +3590,9 @@ cs_mesh_sync_var_diag(cs_real_t  *var)
   cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, var, 3);
 
   if (cs_glob_mesh->n_init_perio > 0)
-    cs_perio_sync_var_diag(halo,
-                           CS_HALO_STANDARD,
-                           var);
+    cs_halo_perio_sync_var_diag(halo,
+                                CS_HALO_STANDARD,
+                                var);
 }
 
 /*----------------------------------------------------------------------------
@@ -3636,11 +3636,11 @@ cs_mesh_sync_var_tens_ni(cs_real_t  *var11,
   cs_halo_sync_var(halo, CS_HALO_STANDARD, var33);
 
   if (cs_glob_mesh->n_init_perio > 0)
-    cs_perio_sync_var_tens_ni(halo,
-                              CS_HALO_STANDARD,
-                              var11, var12, var13,
-                              var21, var22, var33,
-                              var31, var32, var33);
+    cs_halo_perio_sync_var_tens_ni(halo,
+                                   CS_HALO_STANDARD,
+                                   var11, var12, var13,
+                                   var21, var22, var33,
+                                   var31, var32, var33);
 }
 
 /*----------------------------------------------------------------------------
@@ -3660,9 +3660,9 @@ cs_mesh_sync_var_tens(cs_real_t  *var)
   cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, var, 9);
 
   if (cs_glob_mesh->n_init_perio > 0)
-    cs_perio_sync_var_tens(halo,
-                           CS_HALO_STANDARD,
-                           var);
+    cs_halo_perio_sync_var_tens(halo,
+                                CS_HALO_STANDARD,
+                                var);
 }
 
 /*----------------------------------------------------------------------------

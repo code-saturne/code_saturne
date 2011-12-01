@@ -82,6 +82,7 @@ cs_ext_neighborhood.h \
 cs_file.h \
 cs_field.h \
 cs_halo.h \
+cs_halo_perio.h \
 cs_io.h \
 cs_log.h \
 cs_map.h \
@@ -89,7 +90,6 @@ cs_numbering.h \
 cs_opts.h \
 cs_order.h \
 cs_parall.h \
-cs_perio.h \
 cs_post.h \
 cs_preprocessor_data.h \
 cs_prototypes.h \
@@ -178,12 +178,12 @@ cs_ext_neighborhood.c \
 csflsh.f90 \
 cs_field.c \
 cs_halo.c \
+cs_halo_perio.c \
 csinit.f90 \
 cs_numbering.c \
 csopli.f90 \
 cs_opts.c \
 cs_parall.c \
-cs_perio.c \
 cs_post.c \
 cs_post_f2c.f90 \
 cs_preprocessor_data.c \

@@ -32,8 +32,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_halo_perio.h"
 #include "cs_matrix.h"
-#include "cs_perio.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -196,22 +196,22 @@ cs_sles_needs_solving(const char        *var_name,
  *----------------------------------------------------------------------------*/
 
 int
-cs_sles_solve(const char         *var_name,
-              cs_sles_type_t      solver_type,
-              bool                update_stats,
-              const cs_matrix_t  *a,
-              int                 poly_degree,
-              cs_perio_rota_t     rotation_mode,
-              int                 verbosity,
-              int                 n_max_iter,
-              double              precision,
-              double              r_norm,
-              int                *n_iter,
-              double             *residue,
-              const cs_real_t    *rhs,
-              cs_real_t          *vx,
-              size_t              aux_size,
-              void               *aux_vectors);
+cs_sles_solve(const char          *var_name,
+              cs_sles_type_t       solver_type,
+              bool                 update_stats,
+              const cs_matrix_t   *a,
+              int                  poly_degree,
+              cs_halo_rotation_t   rotation_mode,
+              int                  verbosity,
+              int                  n_max_iter,
+              double               precision,
+              double               r_norm,
+              int                 *n_iter,
+              double              *residue,
+              const cs_real_t     *rhs,
+              cs_real_t           *vx,
+              size_t               aux_size,
+              void                *aux_vectors);
 
 /*----------------------------------------------------------------------------
  * Output default post-processing data for failed system convergence.
@@ -226,12 +226,12 @@ cs_sles_solve(const char         *var_name,
  *----------------------------------------------------------------------------*/
 
 void
-cs_sles_post_error_output_def(const char         *var_name,
-                              int                 mesh_id,
-                              cs_perio_rota_t     rotation_mode,
-                              const cs_matrix_t  *a,
-                              const cs_real_t    *rhs,
-                              cs_real_t          *vx);
+cs_sles_post_error_output_def(const char          *var_name,
+                              int                  mesh_id,
+                              cs_halo_rotation_t   rotation_mode,
+                              const cs_matrix_t   *a,
+                              const cs_real_t     *rhs,
+                              cs_real_t           *vx);
 
 /*----------------------------------------------------------------------------
  * Output post-processing variable for failed system convergence.

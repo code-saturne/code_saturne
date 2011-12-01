@@ -84,10 +84,10 @@
 #include "cs_base.h"
 #include "cs_blas.h"
 #include "cs_halo.h"
+#include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_numbering.h"
 #include "cs_prototypes.h"
-#include "cs_perio.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -137,12 +137,6 @@ const char
                               N_("Compressed Sparse Row"),
                               N_("symmetric Compressed Sparse Row"),
                               N_("Modified Compressed Sparse Row")};
-
-static char _cs_glob_perio_ignore_error_str[]
-  = N_("Matrix product with CS_PERIO_IGNORE rotation mode not yet\n"
-       "implemented: in this case, use cs_matrix_vector_multiply_nosync\n"
-       "with an external halo synchronization, preceded by a backup and\n"
-       "followed by a restoration of the rotation halo.");
 
 static char _no_exclude_diag_error_str[]
   = N_("Matrix product variant using function %s\n"
@@ -3460,10 +3454,10 @@ _mat_vec_p_l_msr_pf(bool                exclude_diag,
  *----------------------------------------------------------------------------*/
 
 static void
-_pre_vector_multiply_sync(cs_perio_rota_t     rotation_mode,
-                          const cs_matrix_t  *matrix,
-                          cs_real_t          *restrict x,
-                          cs_real_t          *restrict y)
+_pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
+                          const cs_matrix_t   *matrix,
+                          cs_real_t           *restrict x,
+                          cs_real_t           *restrict y)
 {
   size_t n_cells_ext = matrix->n_cells_ext;
 
@@ -3482,15 +3476,18 @@ _pre_vector_multiply_sync(cs_perio_rota_t     rotation_mode,
     if (matrix->halo != NULL) {
 
       if (   matrix->halo->n_transforms > 0
-          && rotation_mode == CS_PERIO_ROTA_IGNORE)
-        cs_perio_save_rotation_halo(cs_glob_mesh->halo, CS_HALO_STANDARD, x);
+          && rotation_mode == CS_HALO_ROTATION_IGNORE)
+        cs_halo_perio_save_rotation(cs_glob_mesh->halo, CS_HALO_STANDARD, x);
 
       cs_halo_sync_var(matrix->halo, CS_HALO_STANDARD, x);
 
       /* Synchronize periodic values */
 
       if (matrix->halo->n_transforms > 0)
-        cs_perio_sync_var_scal(matrix->halo, CS_HALO_STANDARD, rotation_mode, x);
+        cs_halo_perio_sync_var_scal(matrix->halo,
+                                    CS_HALO_STANDARD,
+                                    rotation_mode,
+                                    x);
 
     }
 
@@ -3518,7 +3515,10 @@ _pre_vector_multiply_sync(cs_perio_rota_t     rotation_mode,
       /* Synchronize periodic values */
 
       if (matrix->halo->n_transforms > 0 && b_size[0] == 3)
-        cs_perio_sync_var_vect(matrix->halo, CS_HALO_STANDARD, x, b_size[1]);
+        cs_halo_perio_sync_var_vect(matrix->halo,
+                                    CS_HALO_STANDARD,
+                                    x,
+                                    b_size[1]);
 
     }
 
@@ -4502,12 +4502,12 @@ void CS_PROCF(promav, PROMAV)
 {
   int diag_block_size[4] = {1, 1, 1, 1};
   bool symmetric = (*isym == 1) ? true : false;
-  cs_perio_rota_t rotation_mode = CS_PERIO_ROTA_COPY;
+  cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
   if (*iinvpe == 2)
-    rotation_mode = CS_PERIO_ROTA_RESET;
+    rotation_mode = CS_HALO_ROTATION_ZERO;
   else if (*iinvpe == 3)
-    rotation_mode = CS_PERIO_ROTA_IGNORE;
+    rotation_mode = CS_HALO_ROTATION_IGNORE;
 
   if (*ibsize > 1 || symmetric) {
     /* TODO: update diag_block_size[] values for the general case */
@@ -5300,10 +5300,10 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
-                          const cs_matrix_t  *matrix,
-                          cs_real_t          *restrict x,
-                          cs_real_t          *restrict y)
+cs_matrix_vector_multiply(cs_halo_rotation_t   rotation_mode,
+                          const cs_matrix_t   *matrix,
+                          cs_real_t           *restrict x,
+                          cs_real_t           *restrict y)
 {
   assert(matrix != NULL);
 
@@ -5393,10 +5393,10 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_exdiag_vector_multiply(cs_perio_rota_t     rotation_mode,
-                                 const cs_matrix_t  *matrix,
-                                 cs_real_t          *restrict x,
-                                 cs_real_t          *restrict y)
+cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
+                                 const cs_matrix_t   *matrix,
+                                 cs_real_t           *restrict x,
+                                 cs_real_t           *restrict y)
 {
   assert(matrix != NULL);
 

@@ -84,11 +84,11 @@
 #include "cs_base.h"
 #include "cs_blas.h"
 #include "cs_halo.h"
+#include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_matrix.h"
-#include "cs_perio.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -1533,7 +1533,7 @@ _matrix_vector_test(double                 t_measure,
   while (run_id < n_runs) {
     double test_sum_mult = 1.0/n_runs;
     while (run_id < n_runs) {
-      cs_matrix_vector_multiply(CS_PERIO_ROTA_COPY, m, x, y);
+      cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, m, x, y);
       test_sum += y[n_cells-1]*test_sum_mult;
       run_id++;
 #if 0
@@ -1628,7 +1628,7 @@ _matrix_vector_test(double                 t_measure,
   while (run_id < n_runs) {
     double test_sum_mult = 1.0/n_runs;
     while (run_id < n_runs) {
-      cs_matrix_exdiag_vector_multiply(CS_PERIO_ROTA_COPY,
+      cs_matrix_exdiag_vector_multiply(CS_HALO_ROTATION_COPY,
                                        m,
                                        x,
                                        y);

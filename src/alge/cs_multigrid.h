@@ -180,27 +180,27 @@ cs_multigrid_finalize(void);
  *----------------------------------------------------------------------------*/
 
 int
-cs_multigrid_solve(const char         *var_name,
-                   cs_sles_type_t      descent_smoother_type,
-                   cs_sles_type_t      ascent_smoother_type,
-                   cs_sles_type_t      coarse_solver_type,
-                   bool                abort_on_divergence,
-                   int                 poly_degree,
-                   cs_perio_rota_t     rotation_mode,
-                   int                 verbosity,
-                   int                 n_max_cycles,
-                   int                 n_max_iter_descent,
-                   int                 n_max_iter_ascent,
-                   int                 n_max_iter_coarse,
-                   double              precision,
-                   double              r_norm,
-                   int                *n_cycles,
-                   int                *n_iter,
-                   double             *residue,
-                   const cs_real_t    *rhs,
-                   cs_real_t          *vx,
-                   size_t              aux_size,
-                   void               *aux_vectors);
+cs_multigrid_solve(const char          *var_name,
+                   cs_sles_type_t       descent_smoother_type,
+                   cs_sles_type_t       ascent_smoother_type,
+                   cs_sles_type_t       coarse_solver_type,
+                   bool                 abort_on_divergence,
+                   int                  poly_degree,
+                   cs_halo_rotation_t   rotation_mode,
+                   int                  verbosity,
+                   int                  n_max_cycles,
+                   int                  n_max_iter_descent,
+                   int                  n_max_iter_ascent,
+                   int                  n_max_iter_coarse,
+                   double               precision,
+                   double               r_norm,
+                   int                 *n_cycles,
+                   int                 *n_iter,
+                   double              *residue,
+                   const cs_real_t     *rhs,
+                   cs_real_t           *vx,
+                   size_t               aux_size,
+                   void                *aux_vectors);
 
 /*----------------------------------------------------------------------------*/
 

@@ -63,11 +63,11 @@
 #include "cs_base.h"
 #include "cs_blas.h"
 #include "cs_grid.h"
+#include "cs_halo.h"
 #include "cs_log.h"
 #include "cs_matrix.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-#include "cs_perio.h"
 #include "cs_post.h"
 #include "cs_sles.h"
 #include "cs_timer.h"
@@ -1099,16 +1099,16 @@ _convergence_test(const char         *var_name,
  *----------------------------------------------------------------------------*/
 
 static void
-_abort_on_divergence(cs_multigrid_t    *mg,
-                     int                level,
-                     cs_perio_rota_t    rotation_mode,
-                     int                cycle_id,
-                     double             initial_residue,
-                     double             residue,
-                     const cs_real_t    rhs[],
-                     cs_real_t          vx[],
-                     cs_real_t        **c_rhs,
-                     cs_real_t        **c_vx)
+_abort_on_divergence(cs_multigrid_t      *mg,
+                     int                  level,
+                     cs_halo_rotation_t   rotation_mode,
+                     int                  cycle_id,
+                     double               initial_residue,
+                     double               residue,
+                     const cs_real_t      rhs[],
+                     cs_real_t            vx[],
+                     cs_real_t          **c_rhs,
+                     cs_real_t          **c_vx)
 {
   int mesh_id = cs_post_init_error_writer_cells();
 
@@ -1269,25 +1269,25 @@ _lv_info_update_stage_iter(unsigned long long  lv_info_it[],
  *----------------------------------------------------------------------------*/
 
 static int
-_multigrid_cycle(cs_multigrid_t     *mg,
-                 cs_sles_type_t      descent_smoother_type,
-                 cs_sles_type_t      ascent_smoother_type,
-                 cs_sles_type_t      coarse_solver_type,
-                 bool                abort_on_divergence,
-                 int                 poly_degree,
-                 cs_perio_rota_t     rotation_mode,
-                 int                 verbosity,
-                 int                 cycle_id,
-                 int                 n_max_cycles,
-                 const int           n_max_iter[],
-                 int                *n_equiv_iter,
-                 double              precision,
-                 double              r_norm,
-                 double             *residue,
-                 const cs_real_t    *rhs,
-                 cs_real_t          *vx,
-                 size_t              aux_size,
-                 void               *aux_vectors)
+_multigrid_cycle(cs_multigrid_t      *mg,
+                 cs_sles_type_t       descent_smoother_type,
+                 cs_sles_type_t       ascent_smoother_type,
+                 cs_sles_type_t       coarse_solver_type,
+                 bool                 abort_on_divergence,
+                 int                  poly_degree,
+                 cs_halo_rotation_t   rotation_mode,
+                 int                  verbosity,
+                 int                  cycle_id,
+                 int                  n_max_cycles,
+                 const int            n_max_iter[],
+                 int                 *n_equiv_iter,
+                 double               precision,
+                 double               r_norm,
+                 double              *residue,
+                 const cs_real_t     *rhs,
+                 cs_real_t           *vx,
+                 size_t               aux_size,
+                 void                *aux_vectors)
 {
   int level, coarsest_level;
   cs_lnum_t ii;
@@ -2086,15 +2086,15 @@ void CS_PROCF(resmgr, RESMGR)
   int _iresas = *iresas;
   int _ireslp = *ireslp;
 
-  cs_perio_rota_t rotation_mode = CS_PERIO_ROTA_COPY;
+  cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
   assert(*ncelet >= *ncel);
   assert(*nfac > 0);
 
   if (*iinvpe == 2)
-    rotation_mode = CS_PERIO_ROTA_RESET;
+    rotation_mode = CS_HALO_ROTATION_ZERO;
   else if (*iinvpe == 3)
-    rotation_mode = CS_PERIO_ROTA_IGNORE;
+    rotation_mode = CS_HALO_ROTATION_IGNORE;
 
   var_name = cs_base_string_f_to_c_create(cname, *lname);
 
@@ -2211,27 +2211,27 @@ cs_multigrid_finalize(void)
  *----------------------------------------------------------------------------*/
 
 int
-cs_multigrid_solve(const char         *var_name,
-                   cs_sles_type_t      descent_smoother_type,
-                   cs_sles_type_t      ascent_smoother_type,
-                   cs_sles_type_t      coarse_solver_type,
-                   bool                abort_on_divergence,
-                   int                 poly_degree,
-                   cs_perio_rota_t     rotation_mode,
-                   int                 verbosity,
-                   int                 n_max_cycles,
-                   int                 n_max_iter_descent,
-                   int                 n_max_iter_ascent,
-                   int                 n_max_iter_coarse,
-                   double              precision,
-                   double              r_norm,
-                   int                *n_cycles,
-                   int                *n_equiv_iter,
-                   double             *residue,
-                   const cs_real_t    *rhs,
-                   cs_real_t          *vx,
-                   size_t              aux_size,
-                   void               *aux_vectors)
+cs_multigrid_solve(const char          *var_name,
+                   cs_sles_type_t       descent_smoother_type,
+                   cs_sles_type_t       ascent_smoother_type,
+                   cs_sles_type_t       coarse_solver_type,
+                   bool                 abort_on_divergence,
+                   int                  poly_degree,
+                   cs_halo_rotation_t   rotation_mode,
+                   int                  verbosity,
+                   int                  n_max_cycles,
+                   int                  n_max_iter_descent,
+                   int                  n_max_iter_ascent,
+                   int                  n_max_iter_coarse,
+                   double               precision,
+                   double               r_norm,
+                   int                 *n_cycles,
+                   int                 *n_equiv_iter,
+                   double              *residue,
+                   const cs_real_t     *rhs,
+                   cs_real_t           *vx,
+                   size_t               aux_size,
+                   void                *aux_vectors)
 {
   int ii;
 

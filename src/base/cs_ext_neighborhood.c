@@ -58,9 +58,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_halo.h"
+#include "cs_halo_perio.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-#include "cs_perio.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1221,10 +1221,10 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t    var[],
     cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, var);
 
     if (mesh->n_init_perio > 0)
-      cs_perio_sync_var_scal(mesh->halo,
-                             CS_HALO_EXTENDED,
-                             CS_PERIO_ROTA_COPY,
-                             var);
+      cs_halo_perio_sync_var_scal(mesh->halo,
+                                  CS_HALO_EXTENDED,
+                                  CS_HALO_ROTATION_COPY,
+                                  var);
 
   }
 
@@ -1276,10 +1276,10 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t    var[],
     cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_var);
 
     if (mesh->n_init_perio > 0)
-      cs_perio_sync_var_scal(mesh->halo,
-                             CS_HALO_STANDARD,
-                             CS_PERIO_ROTA_COPY,
-                             f_var);
+      cs_halo_perio_sync_var_scal(mesh->halo,
+                                  CS_HALO_STANDARD,
+                                  CS_HALO_ROTATION_COPY,
+                                  f_var);
 
   }
 }

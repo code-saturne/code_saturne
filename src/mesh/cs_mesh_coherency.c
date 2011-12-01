@@ -51,9 +51,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_halo.h"
+#include "cs_halo_perio.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-#include "cs_perio.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -290,12 +290,12 @@ cs_mesh_coherency_check(void)
 
     }
 
-    cs_perio_sync_var_vect_ni(mesh->halo,
-                              mesh->halo_type,
-                              CS_PERIO_ROTA_COPY,
-                              delta_buffer,
-                              delta_buffer +   n_cells_with_ghosts,
-                              delta_buffer + 2*n_cells_with_ghosts);
+    cs_halo_perio_sync_var_vect_ni(mesh->halo,
+                                   mesh->halo_type,
+                                   CS_HALO_ROTATION_COPY,
+                                   delta_buffer,
+                                   delta_buffer +   n_cells_with_ghosts,
+                                   delta_buffer + 2*n_cells_with_ghosts);
 
     for (coord_id = 0; coord_id < 3; coord_id++) {
       for (cell_id = n_cells; cell_id < n_cells_with_ghosts; cell_id++)
@@ -305,7 +305,7 @@ cs_mesh_coherency_check(void)
 
     BFT_FREE(delta_buffer);
 
-    cs_perio_sync_coords(mesh->halo, mesh->halo_type, mean);
+    cs_halo_perio_sync_coords(mesh->halo, mesh->halo_type, mean);
 
   }
 

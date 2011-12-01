@@ -1,5 +1,5 @@
-#ifndef __CS_PERIO_H__
-#define __CS_PERIO_H__
+#ifndef __CS_HALO_PERIO_H__
+#define __CS_HALO_PERIO_H__
 
 /*============================================================================
  * Structure and function headers associated to periodicity
@@ -27,11 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_defs.h>
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -47,18 +43,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Periodicity treatment for the halo when the periodicity is a rotation
- *----------------------------------------------------------------------------*/
-
-typedef enum {
-
-  CS_PERIO_ROTA_COPY,          /* Copy halo (for scalar) */
-  CS_PERIO_ROTA_RESET,         /* Reset halo in case of rotation */
-  CS_PERIO_ROTA_IGNORE         /* Ignore halo in case of rotation */
-
-} cs_perio_rota_t;
 
 /*============================================================================
  *  Public function header for Fortran API
@@ -87,7 +71,7 @@ typedef enum {
  * - Periodicity for a scalar (IDIMTE = 0, ITENSO = 1). We update VAR11 only
  *   for translation periodicity.
  * - Periodicity for a scalar (IDIMTE = 0, ITENSO = 11). We update VAR11 only
- *   for translation periodicity. VAR11 is reseted for rotation periodicicty.
+ *   for translation periodicity. VAR11 is reset for rotation periodicicty.
  *
  *   We use this option to cancel the halo for rotational periodicities
  *   in iterative solvers when solving for vectors and tensors by
@@ -438,9 +422,9 @@ CS_PROCF (peinr2, PEINR2)(cs_real_t         *drdxyz);
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_coords(const cs_halo_t *halo,
-                     cs_halo_type_t   sync_mode,
-                     cs_real_t       *coords);
+cs_halo_perio_sync_coords(const cs_halo_t  *halo,
+                          cs_halo_type_t    sync_mode,
+                          cs_real_t        *coords);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real scalar between periodic elements.
@@ -449,15 +433,15 @@ cs_perio_sync_coords(const cs_halo_t *halo,
  *   halo      <-> halo associated with variable to synchronize
  *   sync_mode --> kind of halo treatment (standard or extended)
  *   rota_mode --> Kind of treatment to do on periodic cells of the halo:
- *                 COPY, IGNORE or RESET
+ *                 COPY, IGNORE or ZERO
  *   var       <-> scalar to synchronize
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_scal(const cs_halo_t *halo,
-                       cs_halo_type_t   sync_mode,
-                       cs_perio_rota_t  rota_mode,
-                       cs_real_t        var[]);
+cs_halo_perio_sync_var_scal(const cs_halo_t     *halo,
+                            cs_halo_type_t       sync_mode,
+                            cs_halo_rotation_t   rota_mode,
+                            cs_real_t            var[]);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real vector (interleaved) between periodic cells.
@@ -470,10 +454,10 @@ cs_perio_sync_var_scal(const cs_halo_t *halo,
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_vect(const cs_halo_t  *halo,
-                       cs_halo_type_t    sync_mode,
-                       cs_real_t         var[],
-                       int               incvar);
+cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
+                            cs_halo_type_t    sync_mode,
+                            cs_real_t         var[],
+                            int               incvar);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real vector between periodic cells.
@@ -482,19 +466,19 @@ cs_perio_sync_var_vect(const cs_halo_t  *halo,
  *   halo      <-> halo associated with variable to synchronize
  *   sync_mode --> kind of halo treatment (standard or extended)
  *   rota_mode --> Kind of treatment to do on periodic cells of the halo:
- *                 COPY, IGNORE or RESET
+ *                 COPY, IGNORE or ZERO
  *   var_x     <-> component of the vector to update
  *   var_y     <-> component of the vector to update
  *   var_z     <-> component of the vector to update
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_vect_ni(const cs_halo_t *halo,
-                          cs_halo_type_t   sync_mode,
-                          cs_perio_rota_t  rota_mode,
-                          cs_real_t        var_x[],
-                          cs_real_t        var_y[],
-                          cs_real_t        var_z[]);
+cs_halo_perio_sync_var_vect_ni(const cs_halo_t     *halo,
+                               cs_halo_type_t       sync_mode,
+                               cs_halo_rotation_t   rota_mode,
+                               cs_real_t            var_x[],
+                               cs_real_t            var_y[],
+                               cs_real_t            var_z[]);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real tensor between periodic cells.
@@ -514,17 +498,17 @@ cs_perio_sync_var_vect_ni(const cs_halo_t *halo,
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_tens_ni(const cs_halo_t *halo,
-                          cs_halo_type_t   sync_mode,
-                          cs_real_t        var11[],
-                          cs_real_t        var12[],
-                          cs_real_t        var13[],
-                          cs_real_t        var21[],
-                          cs_real_t        var22[],
-                          cs_real_t        var23[],
-                          cs_real_t        var31[],
-                          cs_real_t        var32[],
-                          cs_real_t        var33[]);
+cs_halo_perio_sync_var_tens_ni(const cs_halo_t *halo,
+                               cs_halo_type_t   sync_mode,
+                               cs_real_t        var11[],
+                               cs_real_t        var12[],
+                               cs_real_t        var13[],
+                               cs_real_t        var21[],
+                               cs_real_t        var22[],
+                               cs_real_t        var23[],
+                               cs_real_t        var31[],
+                               cs_real_t        var32[],
+                               cs_real_t        var33[]);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real tensor (interleaved) between periodic cells.
@@ -536,9 +520,9 @@ cs_perio_sync_var_tens_ni(const cs_halo_t *halo,
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_tens(const cs_halo_t *halo,
-                       cs_halo_type_t   sync_mode,
-                       cs_real_t        var[]);
+cs_halo_perio_sync_var_tens(const cs_halo_t *halo,
+                            cs_halo_type_t   sync_mode,
+                            cs_real_t        var[]);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real diagonal tensor between periodic cells.
@@ -554,11 +538,11 @@ cs_perio_sync_var_tens(const cs_halo_t *halo,
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_diag_ni(const cs_halo_t *halo,
-                          cs_halo_type_t   sync_mode,
-                          cs_real_t        var11[],
-                          cs_real_t        var22[],
-                          cs_real_t        var33[]);
+cs_halo_perio_sync_var_diag_ni(const cs_halo_t *halo,
+                               cs_halo_type_t   sync_mode,
+                               cs_real_t        var11[],
+                               cs_real_t        var22[],
+                               cs_real_t        var33[]);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real diagonal tensor (interleaved)
@@ -573,9 +557,9 @@ cs_perio_sync_var_diag_ni(const cs_halo_t *halo,
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_diag(const cs_halo_t *halo,
-                       cs_halo_type_t   sync_mode,
-                       cs_real_t        var[]);
+cs_halo_perio_sync_var_diag(const cs_halo_t *halo,
+                            cs_halo_type_t   sync_mode,
+                            cs_real_t        var[]);
 
 /*----------------------------------------------------------------------------
  * Update global halo backup buffer size so as to be usable with a given halo.
@@ -588,14 +572,14 @@ cs_perio_sync_var_diag(const cs_halo_t *halo,
  *---------------------------------------------------------------------------*/
 
 void
-cs_perio_update_buffer(const cs_halo_t *halo);
+cs_halo_perio_update_buffer(const cs_halo_t *halo);
 
 /*----------------------------------------------------------------------------
  * Update free global halo backup buffer.
  *---------------------------------------------------------------------------*/
 
 void
-cs_perio_free_buffer(void);
+cs_halo_perio_free_buffer(void);
 
 /*----------------------------------------------------------------------------
  * Save rotation terms of a halo to an internal buffer.
@@ -611,7 +595,7 @@ cs_perio_free_buffer(void);
  *----------------------------------------------------------------------------*/
 
 size_t
-cs_perio_save_rotation_halo(const cs_halo_t   *halo,
+cs_halo_perio_save_rotation(const cs_halo_t   *halo,
                             cs_halo_type_t     op_type,
                             const cs_real_t    var[]);
 
@@ -628,7 +612,7 @@ cs_perio_save_rotation_halo(const cs_halo_t   *halo,
  *----------------------------------------------------------------------------*/
 
 size_t
-cs_perio_restore_rotation_halo(const cs_halo_t   *halo,
+cs_halo_perio_restore_rotation(const cs_halo_t   *halo,
                                cs_halo_type_t     op_type,
                                cs_real_t          var[]);
 
@@ -636,5 +620,5 @@ cs_perio_restore_rotation_halo(const cs_halo_t   *halo,
 
 END_C_DECLS
 
-#endif /* __CS_PERIO_H__ */
+#endif /* __CS_HALO_PERIO_H__ */
 

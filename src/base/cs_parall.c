@@ -35,24 +35,20 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_perio.h" /* Only needed for PARCOM */
+#include "bft_mem.h"
+#include "bft_printf.h"
+
+#include "cs_mesh.h"
+#include "cs_halo.h"
+#include "cs_halo_perio.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_halo.h"
-#include "cs_mesh.h"
 #include "cs_parall.h"
 
 /*----------------------------------------------------------------------------*/
@@ -135,7 +131,7 @@ CS_PROCF (parcom, PARCOM)(cs_real_t  var[])
 {
 
   if (cs_glob_mesh->have_rotation_perio != 0)
-    cs_perio_save_rotation_halo(cs_glob_mesh->halo, CS_HALO_STANDARD, var);
+    cs_halo_perio_save_rotation(cs_glob_mesh->halo, CS_HALO_STANDARD, var);
 
   cs_halo_sync_var(cs_glob_mesh->halo, CS_HALO_STANDARD, var);
 

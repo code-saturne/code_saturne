@@ -60,7 +60,6 @@
 #include "cs_numbering.h"
 #include "cs_order.h"
 #include "cs_prototypes.h"
-#include "cs_perio.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -1673,7 +1672,10 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
     else {
       cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, dd, matrix->b_size[1]);
       if (halo->n_transforms > 0 && matrix->b_size[0] == 3)
-        cs_perio_sync_var_vect(halo, CS_HALO_STANDARD, dd, matrix->b_size[1]);
+        cs_halo_perio_sync_var_vect(halo,
+                                    CS_HALO_STANDARD,
+                                    dd,
+                                    matrix->b_size[1]);
     }
   }
 }

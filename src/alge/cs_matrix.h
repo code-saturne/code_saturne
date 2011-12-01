@@ -35,7 +35,7 @@
 
 #include "cs_halo.h"
 #include "cs_numbering.h"
-#include "cs_perio.h"
+#include "cs_halo_perio.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -391,10 +391,10 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix);
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
-                          const cs_matrix_t  *matrix,
-                          cs_real_t          *restrict x,
-                          cs_real_t          *restrict y);
+cs_matrix_vector_multiply(cs_halo_rotation_t   rotation_mode,
+                          const cs_matrix_t   *matrix,
+                          cs_real_t           *restrict x,
+                          cs_real_t           *restrict y);
 
 /*----------------------------------------------------------------------------
  * Matrix.vector product y = A.x with no prior halo update of x.
@@ -428,10 +428,10 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_exdiag_vector_multiply(cs_perio_rota_t     rotation_mode,
-                                 const cs_matrix_t  *matrix,
-                                 cs_real_t          *restrict x,
-                                 cs_real_t          *restrict y);
+cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
+                                 const cs_matrix_t   *matrix,
+                                 cs_real_t           *restrict x,
+                                 cs_real_t           *restrict y);
 
 /*----------------------------------------------------------------------------
  * Tune local matrix.vector product operations.
