@@ -105,6 +105,7 @@ cs_syr3_coupling.h \
 cs_syr3_messages.h \
 cs_syr4_coupling.h \
 cs_syr_coupling.h \
+cs_system_info.h \
 cs_time_plot.h \
 cs_timer.h \
 cs_tpar1d.h \
@@ -125,6 +126,7 @@ cs_io.c \
 cs_log.c \
 cs_map.c \
 cs_order.c \
+cs_system_info.c \
 cs_timer.c
 libcscore_la_LDFLAGS = -no-undefined
 libcscore_la_LIBADD = $(top_builddir)/src/fvm/libfvm.la

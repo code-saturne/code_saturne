@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-12-01 13:00+0100\n"
+"POT-Creation-Date: 2011-12-01 14:58+0100\n"
 "PO-Revision-Date: 2011-10-13 19:39+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4681,60 +4681,6 @@ msgstr ""
 msgid "  CPU / elapsed time   %12.3f\n"
 msgstr "  Temps CPU / écoulé      %12.3f\n"
 
-msgid "Local case configuration:\n"
-msgstr "Configuration locale du cas :\n"
-
-msgid "Date:              "
-msgstr "Date :             "
-
-msgid "System:            "
-msgstr "Système :          "
-
-msgid "Machine:           "
-msgstr "Machine :          "
-
-msgid "Processor:         "
-msgstr "Processeur :       "
-
-msgid "Memory:            "
-msgstr "Mémoire :          "
-
-msgid "MB"
-msgstr "Mo"
-
-msgid "User:              "
-msgstr "Utilisateur :      "
-
-msgid "Directory:         "
-msgstr "Répertoire :       "
-
-msgid "SMP mode"
-msgstr ""
-
-msgid "Virtual-node mode"
-msgstr ""
-
-msgid "Dual mode"
-msgstr ""
-
-msgid "Unknown mode"
-msgstr ""
-
-msgid "MPI ranks:         "
-msgstr "Rangs MPI :        "
-
-msgid "pset size:         "
-msgstr ""
-
-msgid "Torus dimensions:  "
-msgstr ""
-
-msgid "appnum attribute:"
-msgstr "attribut appnum :"
-
-msgid "OpenMP threads:    "
-msgstr "Threads OpenMP :   "
-
 #, c-format
 msgid ""
 "It is impossible to redirect the standard error to file:\n"
@@ -5461,8 +5407,8 @@ msgstr ""
 "    %10llu : %12llu\n"
 
 #, c-format
-msgid "  I/O mode:          %s\n"
-msgstr "  mode E/S :         %s\n"
+msgid "  I/O mode:            %s\n"
+msgstr "  mode E/S :           %s\n"
 
 msgid "MPI-IO, explicit offsets"
 msgstr "MPI-IO, positions explicites"
@@ -6638,6 +6584,63 @@ msgid ""
 msgstr ""
 "Au moins 1 couplage SYRTHES a été défini pour lequel\n"
 "aucune communication avec une instance de SYRTHES n'est possible."
+
+msgid "Local case configuration:\n"
+msgstr "Configuration locale du cas :\n"
+
+msgid "Date:                "
+msgstr "Date :               "
+
+msgid "System:              "
+msgstr "Système :            "
+
+msgid "Machine:             "
+msgstr "Machine :            "
+
+msgid "Processor:           "
+msgstr "Processeur :         "
+
+msgid "Memory:              "
+msgstr "Mémoire :            "
+
+msgid "MB"
+msgstr "Mo"
+
+msgid "User:                "
+msgstr "Utilisateur :        "
+
+msgid "Directory:           "
+msgstr "Répertoire :         "
+
+msgid "SMP mode"
+msgstr ""
+
+msgid "Virtual-node mode"
+msgstr ""
+
+msgid "Dual mode"
+msgstr ""
+
+msgid "Unknown mode"
+msgstr ""
+
+msgid "MPI ranks:           "
+msgstr "Rangs MPI :          "
+
+msgid "MPI_COMM_WORLD size: "
+msgstr ""
+
+msgid "pset size:         "
+msgstr ""
+
+msgid "Torus dimensions:    "
+msgstr ""
+
+msgid "appnum attribute:"
+msgstr "attribut appnum :"
+
+msgid "OpenMP threads:      "
+msgstr "Threads OpenMP :     "
 
 #, c-format
 msgid "Error opening file: \"%s\""
@@ -9790,3 +9793,4 @@ msgstr ""
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
 "\n"
+

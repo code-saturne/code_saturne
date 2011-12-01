@@ -105,6 +105,7 @@
 #include "cs_sles.h"
 #include "cs_sat_coupling.h"
 #include "cs_syr_coupling.h"
+#include "cs_system_info.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------*/
@@ -181,7 +182,11 @@ cs_run(void)
 
   /* System information */
 
-  cs_base_system_info();
+#if defined(HAVE_MPI)
+  cs_system_info(cs_glob_mpi_comm);
+#else
+  cs_system_info();
+#endif
 
   cs_io_defaults_info();
 

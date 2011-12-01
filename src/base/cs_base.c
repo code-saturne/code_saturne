@@ -43,40 +43,6 @@
 #include <unistd.h>
 #endif
 
-#if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
-#include <pwd.h>
-#endif
-
-#if defined(HAVE_UNAME)
-#include <sys/utsname.h>
-#endif
-
-#if defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
-#include <sys/sysinfo.h>
-#endif
-
-#if defined(__bgp__)
-#include <spi/kernel_interface.h>
-#include <common/bgp_personality.h>
-#include <common/bgp_personality_inlines.h>
-#endif
-
-/*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_backtrace.h>
-#include <bft_mem_usage.h>
-#include <bft_mem.h>
-#include <bft_printf.h>
-#include <bft_sys_info.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_parall.h>
-
 /*----------------------------------------------------------------------------
  * PLE library headers
  *----------------------------------------------------------------------------*/
@@ -87,6 +53,13 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_backtrace.h"
+#include "bft_mem_usage.h"
+#include "bft_mem.h"
+#include "bft_printf.h"
+
+#include "fvm_parall.h"
 
 #include "cs_prototypes.h"
 #include "cs_timer.h"
@@ -1405,7 +1378,6 @@ cs_base_time_summary(void)
   else
     time_cpu = cs_timer_cpu_time();
 
-
   /* CPU time */
 
   if (utime > 0. || stime > 0.) {
@@ -1444,192 +1416,6 @@ cs_base_time_summary(void)
 
   }
 
-}
-
-/*----------------------------------------------------------------------------
- * Print available system information.
- *----------------------------------------------------------------------------*/
-
-void
-cs_base_system_info(void)
-{
-  time_t          date;
-  size_t          ram;
-
-#if defined(HAVE_UNAME)
-  struct utsname  sys_config;
-#endif
-
-#if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
-  struct passwd   *pwd_user = NULL;
-#endif
-
-#if !defined(PATH_MAX)
-#define PATH_MAX 1024
-#endif
-
-  char  str_date[81];
-  char  str_directory[PATH_MAX] = "";
-  char  *str_user = NULL;
-
-#if defined(__bgp__)
-  _BGP_Personality_t personality;
-  Kernel_GetPersonality(&personality, sizeof(personality));
-#endif
-
-  /* Date */
-
-  if (   time(&date) == -1
-      || strftime(str_date, 80, "%c", localtime(&date)) == 0)
-    strcpy(str_date, "");
-
-  /* User */
-
-#if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
-
-  /* Functions not available on IBM Blue Gene or Cray XT,
-     but a stub may exist, so we make sure we ignore it */
-#if   defined(__blrts__) || defined(__bgp__) \
-   || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
-  pwd_user = NULL;
-#else
-  pwd_user = getpwuid(geteuid());
-#endif
-
-  if (pwd_user != NULL) {
-
-    size_t l_user = strlen(pwd_user->pw_name);
-    size_t l_info = 0;
-
-    if (pwd_user->pw_gecos != NULL) {
-      for (l_info = 0;
-           (   pwd_user->pw_gecos[l_info] != '\0'
-            && pwd_user->pw_gecos[l_info] != ',');
-           l_info++);
-    }
-
-    BFT_MALLOC(str_user, l_info + l_user + 3 + 1, char);
-    strcpy(str_user, pwd_user->pw_name);
-
-    if (pwd_user->pw_gecos != NULL) {
-      strcat(str_user, " (");
-      strncpy(str_user + l_user + 2, pwd_user->pw_gecos, l_info);
-      str_user[l_user + 2 + l_info]     = ')';
-      str_user[l_user + 2 + l_info + 1] = '\0';
-    }
-
-  }
-
-#endif /* defined(HAVE_GETPWUID) && defined(HAVE_GETEUID) */
-
-  /* Working directory */
-
-#if defined(HAVE_GETCWD)
-  if (getcwd(str_directory, 1024) == NULL)
-    strcpy(str_directory, "");
-#endif
-
-  /* Print local configuration */
-  /*---------------------------*/
-
-  bft_printf("\n%s\n", _("Local case configuration:\n"));
-
-  bft_printf("  %s%s\n", _("Date:              "), str_date);
-
-  /* System and machine */
-
-#if defined(HAVE_UNAME)
-
-  if (uname(&sys_config) != -1) {
-    bft_printf("  %s%s %s\n", _("System:            "),
-               sys_config.sysname, sys_config.release);
-    bft_printf("  %s%s\n", _("Machine:           "),  sys_config.nodename);
-  }
-#endif
-
-  bft_printf("  %s%s\n", _("Processor:         "), bft_sys_info_cpu());
-
-  /* Available memory */
-
-#if defined(__bgp__)
-  ram = personality.DDR_Config.DDRSizeMB;
-#elif defined(__linux__) \
-   && defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
-  {
-    struct sysinfo info;
-    sysinfo(&info);
-    ram = info.totalram / (size_t)(1024*1024);
-  }
-#endif
-
-  if (ram > 0)
-    bft_printf("  %s%llu %s\n", _("Memory:            "),
-               (unsigned long long)ram, _("MB"));
-
-  /* User and directory info */
-
-  if (str_user != NULL) {
-    bft_printf("  %s%s\n", _("User:              "), str_user);
-    BFT_FREE(str_user);
-  }
-
-  bft_printf("  %s%s\n", _("Directory:         "), str_directory);
-
-  /* MPI Info */
-
-#if defined(__bgp__)
-  {
-    int node_config = personality.Kernel_Config.ProcessConfig;
-    const char *_mode_names[] = {N_("SMP mode"),
-                                 N_("Virtual-node mode"),
-                                 N_("Dual mode"),
-                                 N_("Unknown mode")};
-    const char *mode_name = _mode_names[3];
-
-    if (node_config == _BGP_PERS_PROCESSCONFIG_SMP)
-      mode_name = _mode_names[0];
-    else if (node_config == _BGP_PERS_PROCESSCONFIG_VNM)
-      mode_name = _mode_names[1];
-    else if (node_config == _BGP_PERS_PROCESSCONFIG_2x2)
-      mode_name = _mode_names[2];
-
-    bft_printf("  %s%d (%s)\n", _("MPI ranks:         "),
-               cs_glob_n_ranks, _(mode_name));
-    bft_printf("  %s%d\n", _("pset size:         "),
-               personality.Network_Config.PSetSize);
-    bft_printf("  %s<%d,%d,%d>\n", _("Torus dimensions:  "),
-               personality.Network_Config.Xnodes,
-               personality.Network_Config.Ynodes,
-               personality.Network_Config.Znodes);
-  }
-#elif defined(HAVE_MPI)
-  {
-    int flag = 0, appnum = -1;
-
-    MPI_Initialized(&flag);
-    if (flag != 0) {
-
-#  if defined(MPI_VERSION) && (MPI_VERSION >= 2)
-      void *attp = NULL;
-      flag = 0;
-      MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &attp, &flag);
-      if (flag != 0)
-        appnum = *(int *)attp;
-#  endif
-
-      if (appnum > -1)
-        bft_printf("  %s%d (%s %d)\n",
-                   _("MPI ranks:         "), cs_glob_n_ranks,
-                   _("appnum attribute:"), appnum);
-      else
-        bft_printf("  %s%d\n", _("MPI ranks:         "), cs_glob_n_ranks);
-    }
-  }
-#endif /* defined(HAVE_MPI) */
-
-#if defined(HAVE_OPENMP)
-  bft_printf("  %s%d\n", _("OpenMP threads:    "), cs_glob_n_threads);
-#endif
 }
 
 /*----------------------------------------------------------------------------

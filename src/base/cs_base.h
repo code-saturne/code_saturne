@@ -256,13 +256,6 @@ void
 cs_base_time_summary(void);
 
 /*----------------------------------------------------------------------------
- * Print available system information.
- *----------------------------------------------------------------------------*/
-
-void
-cs_base_system_info(void);
-
-/*----------------------------------------------------------------------------
  * Replace default bft_printf() mechanism with internal mechanism.
  *
  * This allows redirecting or suppressing logging for different ranks.

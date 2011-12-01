@@ -107,28 +107,20 @@ void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_error.h>
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_defs.h>
-#include <fvm_block_to_part.h>
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_error.h"
+#include "bft_mem.h"
+#include "bft_printf.h"
+
+#include "fvm_block_to_part.h"
+#include "fvm_parall.h"
 
 #include "cs_base.h"
 #include "cs_file.h"
 #include "cs_io.h"
+#include "cs_system_info.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------*/
@@ -2255,7 +2247,12 @@ main(int    argc,
 
   /* System information */
 
-  cs_base_system_info();
+#if defined(HAVE_MPI)
+  cs_system_info(cs_glob_mpi_comm);
+#else
+  cs_system_info();
+#endif
+
   cs_io_defaults_info();
 
   /* Read selected data */

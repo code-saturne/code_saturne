@@ -3321,7 +3321,7 @@ void
 cs_io_defaults_info(void)
 {
   bool mpi_io = false;
-  const char *fmt = N_("  I/O mode:          %s\n");
+  const char *fmt = N_("  I/O mode:            %s\n");
 
 #if defined(HAVE_MPI_IO)
 

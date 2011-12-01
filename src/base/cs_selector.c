@@ -38,7 +38,6 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
-#include <bft_sys_info.h>
 
 #include "cs_halo.h"
 #include "cs_mesh.h"
