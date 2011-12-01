@@ -31,7 +31,6 @@
 #include "bft_error.h"
 #include "bft_mem_usage.h"
 #include "bft_mem.h"
-#include "bft_sys_info.h"
 
 static void
 bft_mem_error_handler_test(const char     *const file_name,

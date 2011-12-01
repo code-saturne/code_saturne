@@ -30,7 +30,6 @@
 
 #include "bft_error.h"
 #include "bft_mem_usage.h"
-#include "bft_sys_info.h"
 
 int
 main (int argc, char *argv[])

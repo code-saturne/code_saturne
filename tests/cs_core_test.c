@@ -30,7 +30,8 @@
 
 #include "bft_error.h"
 #include "bft_mem_usage.h"
-#include "bft_sys_info.h"
+
+#include "cs_system_info.h"
 
 #include "cs_defs.h"
 #include "cs_timer.h"
@@ -65,8 +66,13 @@ main (int argc, char *argv[])
   for (i = 0; i < argc; i++)
     printf("%s\n", argv[i]);
 
-  if (bft_sys_info_cpu() != NULL)
-    printf("CPU type: %s\n", bft_sys_info_cpu());
+#if defined(HAVE_MPI)
+  cs_system_info(MPI_COMM_NULL);
+#else
+  cs_system_info();
+#endif
+
+  printf("\n");
 
   sleep(1);
 
