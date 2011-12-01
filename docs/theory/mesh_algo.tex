@@ -704,3 +704,157 @@ different diagonals of a quadrangle). In this specific case, we
 triangulate only one face using the geometric algorithm, and then
 apply the same triangulation to it's periodic face, rather then
 triangulate both faces independently.
+
+\section*{Unwarping algorithm\label{sec:unwarping}}
+The unwarping algorithm is a smoother which 
+the principle is to mitigate the local defects by averaging
+the mesh quality. It moves vertices by an iterative
+process which, we expect, converges to a mesh with better averaged 
+warping criteria.
+\subsection*{Warping criterion in \CS\label{sec:warping_criterion}}
+The warp face quality criterion in \CS represents the non coplanarity 
+in space of $N$ points $P_{i=1:N}$ $(N > 3)$.
+
+Let $f$ be the face defined by $P_{i=1:Nbv(f)}$, $O_{f}$ the center 
+of gravity and $\overrightarrow{n_{f}}$ the face normal, the warping
+criterion is calculated for each face by the ``maximum'' angle between
+$\overrightarrow{P_{i}P_{i+1}}$ and $\overrightarrow{n_{f}}^{\perp}$ 
+$\forall i\in [1,Nbv(f)]$ where $P_{Nbv(f)+1} = P_{1}$. For consistency
+purposes, the warping criterion $warp_{f}$ is defined in degree for each
+face of the mesh $\mathcal{M}$ as:
+
+$$\forall f \in \mathcal{M}, \qquad warp_{f} = 90 -
+\arccos\left(\max_{\forall i\in [1,Nbv(f)]}\left(\cos(
+\overrightarrow{P_{i}P_{i+1}},\overrightarrow{n_{f}})
+\right)\right)\frac{180}{\pi}$$
+
+\subsection*{Unwarping method\label{sec:unwarping_method}}
+The principle of unwarping algorithm is to move vertices in the midplane of the
+faces by an iterating process. At each iteration the algorithm tries to
+approach vertices from the midplane of the face without increasing the warping
+of the neighbours faces.
+
+The displacement is calculated by projecting vertices onto 
+the plane defined by $\overrightarrow{n_{f}}$ and the center of gravity $O$.
+
+For the face $f$, $\forall i \in [1,Nbv(f)]$, the vertices $P_{i}$ are displaced
+by the vector $\lambda^{f}_{P_{i}}$ 
+$$\forall i \in [1,Nbv(f)], \qquad \lambda_{P_{i}}^{f} 
+= (\overrightarrow{P_{i}O_{f}}.\overrightarrow{n_{f}})
+\overrightarrow{n_{f}}$$
+
+In most cases, a vertex shares many faces $f_{j=1:Nbf(P_{i})}$, its final
+displacement being:
+
+$$\forall f \in \mathcal{M}, \; \forall i \in [1,Nbv(f)], \qquad
+ \lambda_{P_{i}}^{f}=\sum_{j=1:Nbf(P_{i})}\lambda^{f_{j}}_{P_{i}}$$
+
+This displacement technique may pose problems because the contributions
+$\lambda^{f_{l}}_{P}$ and $\lambda^{f_{k}}_{P}$ can be ``contradictory''.
+More, if a small and a large face are neighbours, the large face contribution
+impose a too big displacement to the shared vertices and the warping criterion
+can be deteriorated.
+
+\subsubsection*{Displacements control\label{sec:unwarping_mvt}}
+The weighting coefficients shown below allow us to reduce the conflicting
+contributions and equilibrate the contributions between small and large faces.
+\paragraph*{Face weighting}
+Every iteration, for each face the algorithm calculates the warping criterion.
+It is used to give more weight to the warp faces. After renormalisation of the 
+warping criterion, a new displacement formula is obtained:
+
+$$\forall f \in \mathcal{M}, \; \forall i \in [1,Nbv(f)], \qquad
+\lambda_{P_{i}}^{f}=\sum_{j=1:Nbf(P_{i})} 
+\frac{warp_{f_{j}}}{\max_{f \in \mathcal{M}} warp_{f}}\lambda^{f_{j}}_{P_{i}}$$
+\paragraph*{Vertex weighting}
+Every iteration, for each vertex $P \in \mathcal{M} $, the algorithm calculates 
+the vertex tolerance defined as:
+$$\forall P \in \mathcal{M}, \qquad
+vtxtol_{P} = \frac{\min_{P \in nb(P)} PP\prime}
+{\max_{Q\in \mathcal{M}}{\min_{Q\prime\in nb(Q)} QQ\prime}}$$
+where $nb(Q)$ are the first neighbours of the point $Q$.
+
+This criterion is used to reduce the vertex displacement when a vertex lies
+on an edge much smaller than the average length. Another vertex tolerance
+may have been chosen. For example a more ``local coefficient'' can be 
+defined as:
+$$\forall P \in \mathcal{M}, \qquad
+vtxtol_{P}^{local} = \frac{\min_{P\prime \in nb(P)} PP\prime}
+{\max_{P\prime \in nb(P)} PP\prime}$$
+As we observed, this ``local coefficient'' is less efficient that the first one.
+The first definition is used in \CS.
+
+The unwarping displacement is updated as below:
+
+$$\forall f \in \mathcal{M}, \; \forall i \in [1,Nbv(f)], \qquad
+\lambda_{P_{i}}^{f}=vtxtol_{P_{i}}\sum_{j=1:Nbf(P_{i})} 
+\frac{warp_{f_{j}}}{\max_{f \in \mathcal{M}} warp_{f}}\lambda^{f_{j}}_{P_{i}}$$
+
+\paragraph*{Movement coefficient}
+To ensure a better convergence, all vertices movement are multiplied by a scale 
+factor $Cm$ (where $Cm \leqslant 1$). This coefficient helps converging to the
+best solution by preventing too big a movement in the wrong direction.
+In \CS the default value is set to 0.10.
+
+The unwarping displacement is now:
+
+$$\forall f \in \mathcal{M}, \; \forall i \in [1,Nbv(f)], \qquad
+\lambda_{P_{i}}^{f}=Cm*vtxtol_{P_{i}}\sum_{j=1:Nbf(P_{i})} 
+\frac{warp_{f_{j}}}{\max_{f \in \mathcal{M}} warp_{f}}\lambda^{f_{j}}_{P_{i}}$$
+ 
+\paragraph*{Maximum displacement}
+To reduce the ``cell reversal'' risk, the maximum displacement is limited for
+each vertex $P \in \mathcal{M}$ to $Md = 0.10\,\min_{P \in nb(P)} PP\prime$.
+
+Finally, the complete unwarping displacement formula is defined as:
+
+\begin{equation*}
+\begin{split}
+\forall f \in \mathcal{M},& \; \forall i \in [1,Nbv(f)], \qquad \\
+&\lambda_{P_{i}}^{f}=\min(Cm*vtxtol_{P_{i}}\sum_{j=1:Nbf(P_{i})}
+\frac{warp_{f_{j}}}{\max_{f \in \mathcal{M}} 
+warp_{f}}\lambda^{f_{j}}_{P_{i}},\; Md)
+\end{split}
+\end{equation*}
+
+
+\subsubsection*{Stop criterion\label{sec:unwarping_stop}}
+The algorithm automatically stops according to the warp face criterion.
+
+\paragraph*{1st case: the algorithm converges}
+The algorithm stops when, at the $i$-th iteration, the relation below is verified.
+
+$$ 1 - \frac{\max_{f\in \mathcal{M}} warp_{f}^{i}}{\max_{f\in \mathcal{M}}
+warp_{f}^{i-1}} < 1.E-4$$
+
+\paragraph*{2nd case: the algorithm diverges}
+
+The algorithm stops when at the $i$-th iteration the relation below is verified.
+
+$$\frac{\max_{f\in \mathcal{M}} warp_{f}^{i}}{\max_{f\in M}
+warp_{f}^{i-1}} > 1.05$$
+
+It means that the current iteration degrades the previous one.
+The obtained mesh is the result of the $(i-1)$-th iteration.
+
+\paragraph*{3rd case: the maximum number of iterations is reached}
+The algorithm stops after $N_{max}$ iterations (51 by default in \CS). 
+
+\subsubsection*{Specific treatment for boundary faces
+\label{sec:unwarping_border}}
+The unwarping algorithm may modify the mesh geometry. The function
+fit\_by\_feature allows to fix boundary faces according to a feature angle.
+The feature angle between a vertex and one of its adjacent faces is defined
+by the angle between the vertex normal and the face normal.
+
+A vertex normal is defined by the average of the normals of the
+faces sharing this vertex.
+
+This function fixes a vertex if one of its feature angles is less than
+$cos(\theta)$ where $\theta$ is the maximum feature angle (in degrees)
+defined by the user.
+In fact, if $\theta = 0^{\circ}$ all boundary vertices will be fixed, and 
+if $\theta = 90^{\circ}$ all boundary vertices will be free.
+
+Fixing all boundary vertices ensures the geometry is preserved, but reduces
+the smoothing algorithm's effectiveness.
