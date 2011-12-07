@@ -584,7 +584,7 @@ all faces on the mesh boundary are selected).
 
 \section*{Triangulation of faces\label{sec:triangle}}
 
-Face triangulation (handled by the FVM library) is done in two
+Face triangulation is done in two
 stages. The first stage uses an \emph{ear cutting} algorithm, which
 can triangulate any planar polygon, whether convex or not.
 The triangulation is arbitrary, as it depends on the vertex chosen
@@ -603,7 +603,7 @@ more regular triangulation.
 \label{fig:algo.ear_splitting}
 \end{figure}
 
-The algorithm used is based on the one described in \cite{triangl1}.
+The algorithm used is based on the one described in \cite{Theussl:1998}.
 Its principle is illustrated figure \ref{fig:algo.ear_splitting}.
 We start by checking if the triangle defined by the first vertices
 of the polygon, $(P_0, P_1, P_2)$ is an ``ear'', that is if it is
@@ -650,7 +650,7 @@ numbered in a different manner.
 Not only is the obtained triangulation different, but it has a tendency
 to produce very flat triangles. Once a first triangulation is obtained,
 we apply a corrective algorithm, based on edge flips so as to respect
-the Delaunay condition.
+the Delaunay condition \cite{Shewchuck:1999}.
 
 \begin{figure}[!h]
 \centerline{
