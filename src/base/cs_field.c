@@ -233,6 +233,8 @@ _field_create(const char   *name,
 {
   int key_id;
   int field_id = -1;
+  const char *addr_0 = NULL, *addr_1 = NULL;
+
   cs_field_t *f =  NULL;
 
   /* Initialize if necessary */
@@ -240,12 +242,27 @@ _field_create(const char   *name,
   if (_field_map == NULL)
     _field_map = cs_map_name_to_id_create();
 
+  else
+    addr_0 = cs_map_name_to_id_reverse(_field_map, 0);
+
   if (strlen(name) == 0)
     bft_error(__FILE__, __LINE__, 0, _("Defining a field requires a name."));
 
   /* Find or insert entry in map */
 
   field_id = cs_map_name_to_id(_field_map, name);
+
+  /* Move name pointers of previous fields if necessary
+     (i.e. reallocation of map names array) */
+
+  addr_1 = cs_map_name_to_id_reverse(_field_map, 0);
+
+  if (addr_1 != addr_0) {
+    int i;
+    ptrdiff_t addr_shift = addr_1 - addr_0;
+    for (i = 0; i < field_id; i++)
+      (_fields + i)->name += addr_shift;
+  }
 
   if (field_id == _n_fields)
     _n_fields = field_id + 1;
