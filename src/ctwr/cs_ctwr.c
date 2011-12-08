@@ -70,6 +70,7 @@
 #include "cs_ctwr_air_props.h"
 #include "cs_ctwr_halo.h"
 #include "cs_halo.h"
+#include "cs_mesh_location.h"
 #include "cs_post.h"
 #include "cs_restart.h"
 #include "cs_selector.h"
@@ -450,7 +451,7 @@ void CS_PROCF (ecrctw, ECRCTW)
   cs_int_t  ict;
 
   cs_restart_t         *suite;
-  cs_restart_location_t location_id,support;
+  cs_mesh_location_type_t  location_id,support;
   cs_type_t             typ_val;
 
   cs_ctwr_zone_t  *ct;
@@ -516,7 +517,7 @@ void CS_PROCF (ecrctw, ECRCTW)
       tabvar[ 2 ] = ct->nelect; /* nb of node per segment*/
 
       nbvent  = 3;
-      support = CS_RESTART_LOCATION_NONE;
+      support = CS_MESH_LOCATION_NONE;
       typ_val = CS_TYPE_cs_int_t;
 
       cs_restart_write_section(suite,
@@ -546,7 +547,7 @@ void CS_PROCF (ecrctw, ECRCTW)
 
 
       nbvent  = 4;
-      support = CS_RESTART_LOCATION_NONE;
+      support = CS_MESH_LOCATION_NONE;
       typ_val = CS_TYPE_cs_real_t;
 
       cs_restart_write_section(suite,
@@ -628,9 +629,9 @@ void CS_PROCF (lecctw, LECCTW)
   cs_int_t            nbvent;
   cs_int_t            i, ict,indfac, ierror;
 
-  cs_restart_t         *suite;
-  cs_restart_location_t location_id,support;
-  cs_type_t             typ_val;
+  cs_restart_t             *suite;
+  cs_mesh_location_type_t   location_id,support;
+  cs_type_t                 typ_val;
 
   cs_lnum_t n_g_elements, n_elements;
 
@@ -704,7 +705,7 @@ void CS_PROCF (lecctw, LECCTW)
       BFT_MALLOC(tabvar, 3, cs_int_t);
 
       nbvent  = 3;
-      support = CS_RESTART_LOCATION_NONE;
+      support = CS_MESH_LOCATION_NONE;
       typ_val = CS_TYPE_cs_int_t;
 
       ierror = cs_restart_read_section(suite,
@@ -775,7 +776,7 @@ void CS_PROCF (lecctw, LECCTW)
       BFT_MALLOC(tabvar, 4, cs_real_t);
 
       nbvent  = 4;
-      support = CS_RESTART_LOCATION_NONE;
+      support = CS_MESH_LOCATION_NONE;
       typ_val = CS_TYPE_cs_real_t;
 
       ierror = cs_restart_read_section(suite,

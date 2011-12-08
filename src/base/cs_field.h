@@ -77,19 +77,6 @@ typedef enum {
 
 } cs_field_error_type_t;
 
-/* Field location types */
-
-typedef enum {
-
-  CS_FIELD_CELLS,
-  CS_FIELD_INTERIOR_FACES,
-  CS_FIELD_BOUNDARY_FACES,
-  CS_FIELD_VERTICES,
-  CS_FIELD_OTHER
-  // CS_FIELD_PARTICLES
-
-} cs_field_location_type_t;
-
 /* Field descriptor */
 
 typedef struct {

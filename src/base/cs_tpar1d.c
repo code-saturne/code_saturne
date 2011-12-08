@@ -52,6 +52,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_mesh_location.h"
 #include "cs_restart.h"
 
 /*----------------------------------------------------------------------------
@@ -420,9 +421,9 @@ void CS_PROCF (lect1d,LECT1D)
   cs_int_t            i, j, ifac, indfac, ierror;
   cs_int_t            version;    /* Not used at the moment */
 
-  cs_restart_t         *suite;
-  cs_restart_location_t support;
-  cs_type_t             typ_val;
+  cs_restart_t             *suite;
+  cs_mesh_location_type_t   support;
+  cs_type_t                 typ_val;
 
 
   ierror = CS_RESTART_SUCCES;
@@ -464,7 +465,7 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_MALLOC(tabvar, 1, cs_int_t);
 
     nbvent  = 1;
-    support = CS_RESTART_LOCATION_NONE;
+    support = CS_MESH_LOCATION_NONE;
     typ_val = CS_TYPE_cs_int_t;
 
     ierror = cs_restart_read_section(suite,
@@ -503,7 +504,7 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_MALLOC(tabvar, *nfabor, cs_int_t);
 
     nbvent  = 1;
-    support = CS_RESTART_LOCATION_B_FACE;
+    support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_int_t;
 
     ierror = cs_restart_read_section(suite,
@@ -591,7 +592,7 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_MALLOC(tabvar, *nfabor, cs_real_t);
 
     nbvent  = 1;
-    support = CS_RESTART_LOCATION_B_FACE;
+    support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
 
     ierror = cs_restart_read_section(suite,
@@ -645,7 +646,7 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_MALLOC(tabvar, *nfabor, cs_real_t);
 
     nbvent  = 1;
-    support = CS_RESTART_LOCATION_B_FACE;
+    support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
 
     ierror = cs_restart_read_section(suite,
@@ -681,7 +682,7 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_MALLOC(tabvar, nptmx, cs_real_t);
 
     nbvent  = *nmxt1d;
-    support = CS_RESTART_LOCATION_B_FACE;
+    support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
 
     ierror = cs_restart_read_section(suite,
@@ -746,7 +747,7 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_MALLOC(tabvar, nptmx, cs_real_t);
 
     nbvent  = *nmxt1d;
-    support = CS_RESTART_LOCATION_B_FACE;
+    support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
 
     ierror = cs_restart_read_section(suite,
@@ -813,9 +814,9 @@ void CS_PROCF (ecrt1d,ECRT1D)
   cs_int_t            nbvent, ierror;
   cs_int_t            i, j, ifac;
 
-  cs_restart_t         *suite;
-  cs_restart_location_t support;
-  cs_type_t             typ_val;
+  cs_restart_t             *suite;
+  cs_mesh_location_type_t   support;
+  cs_type_t                 typ_val;
 
 
   ierror = CS_RESTART_SUCCES;
@@ -845,7 +846,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
     *tabvar = 120;
 
     nbvent  = 1;
-    support = CS_RESTART_LOCATION_NONE;
+    support = CS_MESH_LOCATION_NONE;
     typ_val = CS_TYPE_cs_int_t;
 
     cs_restart_write_section(suite,
@@ -868,7 +869,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
       tabvar[i] = 0;
 
     nbvent  = 1;
-    support = CS_RESTART_LOCATION_B_FACE;
+    support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_int_t;
 
     for (i = 0; i < *nfpt1d; i++) {
@@ -896,7 +897,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
       tabvar[i] = 0.0;
 
     nbvent  = 1;
-    support = CS_RESTART_LOCATION_B_FACE;
+    support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
 
     for (i = 0; i < *nfpt1d; i++) {
@@ -924,7 +925,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
       tabvar[i] = 0.0;
 
     nbvent  = 1;
-    support = CS_RESTART_LOCATION_B_FACE;
+    support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
 
     for (i = 0; i < *nfpt1d; i++) {
@@ -954,7 +955,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
       tabvar[i] = 0.0;
 
     nbvent  = *nmxt1d;
-    support = CS_RESTART_LOCATION_B_FACE;
+    support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
 
     for (i = 0; i < *nfpt1d; i++) {
@@ -989,7 +990,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
       tabvar[i] = 0.0;
 
     nbvent  = *nmxt1d;
-    support = CS_RESTART_LOCATION_B_FACE;
+    support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
 
     for (i = 0; i < *nfpt1d; i++) {

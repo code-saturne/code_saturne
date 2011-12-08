@@ -62,6 +62,7 @@
 #include "cs_file.h"
 #include "cs_io.h"
 #include "cs_mesh.h"
+#include "cs_mesh_location.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -619,23 +620,23 @@ _section_f77_to_c(const cs_int_t   *numsui,
   switch (*itysup) {
 
   case 0:
-    *location = CS_RESTART_LOCATION_NONE;
+    *location = CS_MESH_LOCATION_NONE;
     break;
 
   case 1:
-    *location = CS_RESTART_LOCATION_CELL;
+    *location = CS_MESH_LOCATION_CELLS;
     break;
 
   case 2:
-    *location = CS_RESTART_LOCATION_I_FACE;
+    *location = CS_MESH_LOCATION_INTERIOR_FACES;
     break;
 
   case 3:
-    *location = CS_RESTART_LOCATION_B_FACE;
+    *location = CS_MESH_LOCATION_BOUNDARY_FACES;
     break;
 
   case 4:
-    *location = CS_RESTART_LOCATION_VERTEX;
+    *location = CS_MESH_LOCATION_VERTICES;
     break;
 
   default:

@@ -32,20 +32,10 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_defs.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -78,20 +68,8 @@ typedef enum {
 
 } cs_restart_mode_t;
 
-/* Predefined location types for a given section */
-
-typedef enum {
-
-  CS_RESTART_LOCATION_NONE,        /* Global (no location) */
-  CS_RESTART_LOCATION_CELL,        /* Values defined at cells */
-  CS_RESTART_LOCATION_I_FACE,      /* Values defined at interior faces */
-  CS_RESTART_LOCATION_B_FACE,      /* Values defined at boundary faces */
-  CS_RESTART_LOCATION_VERTEX       /* Values defined at vertices */
-
-} cs_restart_location_t;
-
 /*
-  Pointeur associated with a restart file structure. The structure itself
+  Pointer associated with a restart file structure. The structure itself
   is defined in "cs_restart.c", and is opaque outside that unit.
 */
 
