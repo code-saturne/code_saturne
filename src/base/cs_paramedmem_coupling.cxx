@@ -256,8 +256,9 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
       for (j = mesh->b_face_vtx_idx[eid];
            j < mesh->b_face_vtx_idx[eid+1];
            j++) {
-        if (vtx_id[j-1] < 0)
-          vtx_id[j-1] = vtx_count++;
+        cs_lnum_t vid = mesh->b_face_vtx_lst[j-1] - 1;
+        if (vtx_id[vid] < 0)
+          vtx_id[vid] = vtx_count++;
       }
     }
 
@@ -268,8 +269,9 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
       for (j = mesh->b_face_vtx_idx[i];
            j < mesh->b_face_vtx_idx[i+1];
            j++) {
-        if (vtx_id[j-1] < 0)
-          vtx_id[j-1] = vtx_count++;
+        cs_lnum_t vid = mesh->b_face_vtx_lst[j-1] - 1;
+        if (vtx_id[vid] < 0)
+          vtx_id[vid] = vtx_count++;
       }
     }
 
@@ -382,8 +384,9 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
       for (j = mesh->b_face_vtx_idx[face_id];
            j < mesh->b_face_vtx_idx[face_id+1];
            j++) {
-        if (vtx_id[j-1] < 0)
-          vtx_id[j-1] = vtx_count++;
+        cs_lnum_t vid = mesh->b_face_vtx_lst[j-1] - 1;
+        if (vtx_id[vid] < 0)
+          vtx_id[vid] = vtx_count++;
       }
     }
   }
@@ -397,8 +400,9 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
       for (j = mesh->i_face_vtx_idx[face_id];
            j < mesh->i_face_vtx_idx[face_id+1];
            j++) {
-        if (vtx_id[j-1] < 0)
-          vtx_id[j-1] = vtx_count++;
+        cs_lnum_t vid = mesh->i_face_vtx_lst[j-1] - 1;
+        if (vtx_id[vid] < 0)
+          vtx_id[vid] = vtx_count++;
       }
     }
   }
