@@ -74,30 +74,16 @@ def process_cmd_line(argv):
                       metavar="<file>",
                       help="upload a previous case at the interface start")
 
-    parser.add_option("-b", "--batch", dest="batch_file", type="string",
-                      metavar="<batchfile>",
-                      help="set batchrunning window with batch file")
-
     parser.add_option("-n", "--new", dest="new",
                       action="store_true",
                       help="open a new case")
 
-    parser.add_option("-r", "--read-only", dest="read_only",
-                      action="store_true",
-                      help="load file in read only mode")
-
     parser.add_option("-z", "--no-splash", dest="splash_screen",
                       action="store_false",
-                      help="load file in read only mode")
-
-    parser.add_option("--no-tree", dest="tree_window",
-                      action="store_false",
-                      help="load file in read only mode")
+                      help="deactivate splash screen")
 
 
-    parser.set_defaults(read_only=False)
     parser.set_defaults(splash_screen=True)
-    parser.set_defaults(tree_window=True)
 
     (options, args) = parser.parse_args(argv)
 
@@ -108,22 +94,13 @@ def process_cmd_line(argv):
     if options.new:
         options.file_name = "new case"
 
-    if options.batch_file and not options.file_name:
-        parser.error("Option --batch requires --file")
-
     if len(args) > 0:
         if options.file_name or len(args) > 1:
             parser.error("Multiple filenames are given")
         else:
             options.file_name = args[0]
 
-    batch_window = False
-    if options.batch_file:
-        batch_window = True
-        options.batch_file = os.path.basename(options.batch_file)
-
-    return options.file_name, options.splash_screen, \
-        batch_window, options.batch_file, options.tree_window, options.read_only
+    return options.file_name, options.splash_screen
 
 #-------------------------------------------------------------------------------
 # Main
@@ -142,8 +119,7 @@ def main(argv, pkg):
         from core.MainView import MainView
         icons_path = os.path.join(pkg.pkgpythondir, 'core', 'icons')
 
-    case, spl, batch_window, batch_file, tree_window, read_only \
-       = process_cmd_line(argv)
+    case, spl = process_cmd_line(argv)
 
     app = QApplication(argv)
     app.setOrganizationName("EDF S.A.")
@@ -165,11 +141,7 @@ def main(argv, pkg):
         QTimer.singleShot(1500, splash.hide)
 
     main = MainView(package = pkg,
-                    cmd_case = case,
-                    cmd_batch_window = batch_window,
-                    cmd_batch_file = batch_file,
-                    cmd_tree_window = tree_window,
-                    cmd_read_only = read_only)
+                    cmd_case = case)
 
     try:
         main.show()

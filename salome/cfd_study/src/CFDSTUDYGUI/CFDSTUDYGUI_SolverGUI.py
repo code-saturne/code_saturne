@@ -506,8 +506,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             Title = sobjXML.GetName()
         self.Workspace = WorkSpace
         pkg = package()
-        case, splash, batch_window, batch_file, tree_window, read_only = process_cmd_line(Args)
-        mw = MainView(pkg, case, batch_window, batch_file, tree_window, read_only, aCase)
+        case, splash = process_cmd_line(Args)
+        mw = MainView(pkg, case, aCase)
 
         aTitle = self.setWindowTitle_CFD(mw,aCase,Title)
         dsk = sgPyQt.getDesktop()

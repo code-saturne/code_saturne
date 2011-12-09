@@ -116,8 +116,7 @@ _code_saturne() {
             case ${prev} in
                 -f|--file)  _filedir; return 0;;
                 -b|--batch) COMPREPLY=( ); return 0;;
-                *) cmdOpts="-f --file -b --batch -n --new \
-                     -r --read-only --no-tree -z --no-splash";;
+                *) cmdOpts="-f --file -n --new -z --no-splash";;
             esac
             ;;
         info)
@@ -166,9 +165,6 @@ _code_saturne() {
         # Take out alternatives and mutually exclusives
         case $optBase in
             --aster)         cmdOpts=${cmdOpts/ --syrthes / } ;;
-            -b)              cmdOpts=${cmdOpts/ --batch / } ;;
-            --batch)         cmdOpts=${cmdOpts/ -b / }
-                             cmdOpts=${cmdOpts/ --new / };;
             -c)              cmdOpts=${cmdOpts/ --case / }; isOptcase=1 ;;
             --case)          cmdOpts=${cmdOpts/ -c / }; isOptcase=1 ;;
             -d)              cmdOpts=${cmdOpts/ --dest / } ;;
@@ -181,7 +177,6 @@ _code_saturne() {
             --keep-going)    cmdOpts=${cmdOpts/ -k / } ;;
             -n)              cmdOpts=${cmdOpts/ --new / } ;;
             --new)           cmdOpts=${cmdOpts/ -n / }
-                             cmdOpts=${cmdOpts/ --batch / }
                              cmdOpts=${cmdOpts/ --file / } ;;
             --no-splash)     cmdOpts=${cmdOpts/ -z / } ;;
             --opt-libs)      cmdOpts=${cmdOpts/ --syrthes / } ;;
@@ -189,12 +184,7 @@ _code_saturne() {
             --param)         cmdOpts=${cmdOpts/ -p / } ;;
             -q)              cmdOpts=${cmdOpts/ --quiet / } ;;
             --quiet)         cmdOpts=${cmdOpts/ -q / } ;;
-            -r)
-                case ${cmd} in
-                    info)    cmdOpts=${cmdOpts/ --reader / } ;;
-                    gui)     cmdOpts=${cmdOpts/ --read-only / } ;;
-                esac ;;
-            --read-only)     cmdOpts=${cmdOpts/ -r / } ;;
+            -r)              cmdOpts=${cmdOpts/ --reader / } ;;
             --reader)        cmdOpts=${cmdOpts/ -r / } ;;
             -s)
                 case ${cmd} in

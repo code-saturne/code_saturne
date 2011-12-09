@@ -89,10 +89,6 @@ class MainView(QMainWindow, Ui_MainForm):
     def __init__(self,
                  package          = None,
                  cmd_case         = "",
-                 cmd_batch_window = False,
-                 cmd_batch_file   = 'runcase',
-                 cmd_tree_window  = True,
-                 cmd_read_only    = False,
                  cmd_salome       = None):
         """
         Initializes a Main Window for a new document:
@@ -173,12 +169,9 @@ class MainView(QMainWindow, Ui_MainForm):
         self.cmd_case    = cmd_case
         self.salome      = cmd_salome
         self.batch_type  = cs_batch_type
-        self.batch       = cmd_batch_window
-        self.batch_file  = cmd_batch_file
+        self.batch       = None
+        self.batch_file  = 'runcase'
         self.batch_lines = []
-        self.tree_w      = cmd_tree_window
-        self.read_o      = cmd_read_only
-        self.notree      = 0
         self.package     = package
 
         self.resize(800, 700)
