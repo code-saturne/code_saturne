@@ -46,7 +46,7 @@ clean-local:
 	do \
 	  if test -d $$d ;\
 	  then \
-	    (cd $$d && -rm -rf html latex man index.bt) ;\
+	    (cd $$d && rm -rf html latex man index.bt) ;\
           fi ;\
 	done
 

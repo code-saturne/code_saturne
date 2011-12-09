@@ -45,14 +45,14 @@ PROJECT_BRIEF          = "CFD tool"
 # exceed 55 pixels and the maximum width should not exceed 200 pixels.
 # Doxygen will copy the logo to the output directory.
 
-PROJECT_LOGO           = $(srcdir)/doc/doxygen/images/icon.png
+PROJECT_LOGO           = $(srcdir)/docs/doxygen/images/icon.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute)
 # base path where the generated documentation will be put.
 # If a relative path is entered, it will be relative to the location
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = $(builddir)/doc/doxygen/pre
+OUTPUT_DIRECTORY       = $(builddir)/docs/doxygen/pre
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create
 # 4096 sub-directories (in 2 levels) under the output directory of each output
@@ -729,7 +729,7 @@ EXAMPLE_RECURSIVE      = NO
 # directories that contain image that are included in the documentation (see
 # the \image command).
 
-IMAGE_PATH             = $(srcdir)/doc/doxygen/images
+IMAGE_PATH             = $(srcdir)/docs/doxygen/images
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
