@@ -323,8 +323,8 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.7",
-                    archive="hdf5-1.8.7.tar.gz",
+                    version="1.8.8",
+                    archive="hdf5-1.8.8.tar.gz",
                     url="http://www.hdfgroup.org/ftp/HDF5/current/src/%s")
 
         p = self.packages['hdf5']
@@ -349,8 +349,8 @@ class Setup:
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.4.3",
-                    archive="openmpi-1.4.3.tar.gz",
+                    version="1.4.4",
+                    archive="openmpi-1.4.4.tar.gz",
                     url="http://www.open-mpi.org/software/ompi/v1.4/downloads/%s")
 
         # Libxml2 library (official url "ftp://xmlsoft.org/libxml2/%s")
