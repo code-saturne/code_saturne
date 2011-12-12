@@ -284,6 +284,7 @@ _perio_face_clean(cs_join_param_t      param,
   BFT_FREE(mesh->i_face_vtx_idx);
 
   mesh->i_face_vtx_idx = new_f2v_idx;
+  mesh->i_face_vtx_connect_size = new_f2v_idx[n_fi_faces]-1;
 
   /* There is no need to define a new glbal interior face numbering
      because the excluded faces are always defined on an another rank */

@@ -1,7 +1,12 @@
 * 12/12/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add missing array size update when cleaning interior faces with periodicity.
+  modified routine:
+    src/mesh/cs_join_perio.c
+
+* 12/12/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix: update ghost cells -> vertices connectivity when removing isolated faces.
   modified routine:
-    src/base/cs_matrix.c
+    src/mesh/cs_mesh.c
 
 * 29/11/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix for periodicity of rotation.
