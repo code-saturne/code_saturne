@@ -422,6 +422,7 @@ cs_gui_mesh_define_joinings(void)
     BFT_FREE(selector_s);
     BFT_FREE(fraction_s);
     BFT_FREE(plane_s);
+    BFT_FREE(verbosity_s);
     BFT_FREE(visu_s);
   }
 }

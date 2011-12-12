@@ -1707,6 +1707,7 @@ void
 cs_gui_postprocess_meshes(void)
 {
   int i, j, id, id_writer;
+  char *id_s = NULL;
   char *label = NULL;
   char *all_variables = NULL;
   bool auto_vars = true;
@@ -1723,7 +1724,8 @@ cs_gui_postprocess_meshes(void)
   nmesh = cs_gui_get_tag_number("/analysis_control/output/mesh", 1);
 
   for (i = 1; i <= nmesh; i++) {
-    id = atoi(cs_gui_output_type_choice("mesh","id",i));
+    id_s = cs_gui_output_type_choice("mesh","id",i);
+    id = atoi(id_s);
     label = cs_gui_output_type_choice("mesh","label",i);
     all_variables
       = cs_gui_output_type_options("mesh", "status", "all_variables",i);
@@ -1757,6 +1759,7 @@ cs_gui_postprocess_meshes(void)
     }
 
     BFT_FREE(writer_ids);
+    BFT_FREE(id_s);
     BFT_FREE(label);
     BFT_FREE(all_variables);
     BFT_FREE(location);
@@ -1779,7 +1782,8 @@ cs_gui_postprocess_writers(void)
   char *format_options = NULL;
   char *time_dependency = NULL;
   char *frequency_choice = NULL;
-  char *output_end_st = NULL;
+  char *output_end_s = NULL;
+  char *id_s = NULL;
 
   int n_writers = 0;
 
@@ -1796,12 +1800,13 @@ cs_gui_postprocess_writers(void)
     cs_int_t time_step = -1;
     cs_real_t time_value = -1.0;
 
-    id = atoi(cs_gui_output_type_choice("writer", "id", i));
+    id_s = cs_gui_output_type_choice("writer", "id", i);
+    id = atoi(id_s);
     label = cs_gui_output_type_choice("writer", "label", i);
     directory = cs_gui_output_type_options("writer", "name", "directory", i);
     frequency_choice
       = cs_gui_output_type_options("writer", "period", "frequency", i);
-    output_end_st
+    output_end_s
       = cs_gui_output_type_options("writer", "status", "output_at_end", i);
     if (cs_gui_strcmp(frequency_choice, "none")) {
       time_step = -1;
@@ -1816,7 +1821,7 @@ cs_gui_postprocess_writers(void)
       time_step = -1;
       time_value = -1.;
     }
-    if (cs_gui_strcmp(output_end_st, "off"))
+    if (cs_gui_strcmp(output_end_s, "off"))
       output_at_end = false;
     format_name = cs_gui_output_type_options("writer", "name", "format",i);
     format_options
@@ -1838,11 +1843,12 @@ cs_gui_postprocess_writers(void)
                           output_at_end,
                           time_step,
                           time_value);
+    BFT_FREE(id_s);
     BFT_FREE(label);
     BFT_FREE(format_name);
     BFT_FREE(format_options);
     BFT_FREE(time_dependency);
-    BFT_FREE(output_end_st);
+    BFT_FREE(output_end_s);
     BFT_FREE(frequency_choice);
     BFT_FREE(directory);
   }
