@@ -1,3 +1,8 @@
+* 12/12/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix: update ghost cells -> vertices connectivity when removing isolated faces.
+  modified routine:
+    src/base/cs_matrix.c
+
 * 29/11/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix for periodicity of rotation.
   modified routine:
