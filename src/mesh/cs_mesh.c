@@ -1626,6 +1626,14 @@ _discard_free_vertices(cs_mesh_t  *mesh)
       }
     }
 
+    /* Update extended connectivity */
+
+    if (mesh->gcell_vtx_lst != NULL) {
+      const cs_lnum_t n = mesh->gcell_vtx_idx[mesh->n_ghost_cells];
+      for (i = 0; i < n; i++)
+        mesh->gcell_vtx_lst[i] = new_vertex_id[mesh->gcell_vtx_lst[i] - 1] + 1;
+    }
+
     /* Update mesh structure */
 
     mesh->n_vertices = n_vertices;
