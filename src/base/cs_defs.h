@@ -296,6 +296,32 @@ typedef char     cs_byte_t;     /* Byte (untyped memory unit) */
 
 #endif /* defined(HAVE_MPI) && !defined(CS_IGNORE_MPI) */
 
+/* Mappings to Code_Saturne datatypes */
+/*------------------------------------*/
+
+#if defined(HAVE_LONG_GNUM)
+# define CS_GNUM_TYPE     CS_UINT64
+#elif (SIZEOF_INT == 8)
+# define CS_GNUM_TYPE     CS_UINT64
+#else
+# define CS_GNUM_TYPE     CS_UINT32
+#endif
+
+#if (SIZEOF_INT == 8)
+# define CS_LNUM_TYPE     CS_INT64
+#else
+# define CS_LNUM_TYPE     CS_INT32
+#endif
+
+#if (SIZEOF_INT == 8)
+# define CS_INT_TYPE      CS_INT64
+#else
+# define CS_INT_TYPE      CS_INT32
+#endif
+
+#define CS_REAL_TYPE      CS_DOUBLE
+#define CS_COORD_TYPE     CS_DOUBLE
+
 /*----------------------------------------------------------------------------
  * Type independent min an max (caution: the argument is evaluated)
  *----------------------------------------------------------------------------*/
