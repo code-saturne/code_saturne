@@ -64,6 +64,7 @@ src/base/cs_file.c
 src/base/cs_field.c
 src/base/cs_halo.c
 src/base/cs_halo_perio.c
+src/base/cs_interface.c
 src/base/cs_io.c
 src/base/cs_log.c
 src/base/cs_map.c
@@ -108,7 +109,6 @@ src/fvm/fvm_defs.c
 src/fvm/fvm_gather.c
 src/fvm/fvm_group.c
 src/fvm/fvm_hilbert.c
-src/fvm/fvm_interface.c
 src/fvm/fvm_io_num.c
 src/fvm/fvm_morton.c
 src/fvm/fvm_neighborhood.c

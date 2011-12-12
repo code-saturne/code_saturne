@@ -28,16 +28,12 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_interface.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_interface.h"
+
 #include "cs_ctwr.h"
 
 /*----------------------------------------------------------------------------*/
@@ -66,12 +62,12 @@ cs_reverse_vtx_faces_connect(const fvm_nodal_t   *this_nodal,
  *
  * parameters:
  *   mesh                 -->  pointer to cs_mesh_t structure
- *   interface_set        -->  pointer to fvm_interface_set_t structure.
+ *   interface_set        -->  pointer to cs_interface_set_t structure.
  *---------------------------------------------------------------------------*/
 
 void
-cs_ctwr_halo_define(cs_ctwr_zone_t       *ct,
-                    fvm_interface_set_t  *interface_set);
+cs_ctwr_halo_define(cs_ctwr_zone_t      *ct,
+                    cs_interface_set_t  *interface_set);
 
 /*----------------------------------------------------------------------------*/
 

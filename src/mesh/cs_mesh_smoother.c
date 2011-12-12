@@ -456,50 +456,6 @@ _get_local_tolerance(const cs_real_t   vtx_coords[],
 
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------
- * Compute the sum of real values for entities belonging to a fvm_interface_t
- *
- * parameters:
- *   ifs             <--  pointer to a fvm_interface_set_t structure
- *   n_entities      <--  number of elements in data
- *   data            <->  data array (interleaved)
- *   data_per_entity <--  size of each element
- *----------------------------------------------------------------------------*/
-
-static void
-_parall_real_sum(fvm_interface_set_t  *ifs,
-                 int                   n_entities,
-                 cs_real_t            *data,
-                 int                   data_per_entity)
-{
-  cs_real_t *_comm_data;
-  int i, j;
-
-  BFT_MALLOC(_comm_data, n_entities * data_per_entity, cs_real_t);
-
-  if (cs_glob_n_ranks > 1) {
-    for (i = 0; i < n_entities; i++) {
-      for (j = 0; j < data_per_entity; j++)
-        _comm_data[i + j*n_entities] = data[i*data_per_entity + j];
-    }
-
-    cs_parall_interface_sr(ifs,
-                           n_entities,
-                           data_per_entity,
-                           _comm_data);
-
-    for (i = 0; i < n_entities; i++) {
-      for (j = 0; j < data_per_entity; j++)
-        data[i*data_per_entity + j] = _comm_data[i + j*n_entities];
-    }
-
-  }
-
-  BFT_FREE(_comm_data);
-}
-#endif
-
-#if defined(HAVE_MPI)
-/*----------------------------------------------------------------------------
  * Exchange local vertex tolerances to get a global vertex tolerance.
  *
  * parameters:
@@ -699,7 +655,7 @@ _get_tolerance(cs_mesh_t   *mesh,
  * Unwarping algorithm, called by _unwarping
  *
  * parameters:
- *   ifs          <--  pointer to a fvm_interface_set_t structure
+ *   ifs                 <--  pointer to a cs_interface_set_t structure
  *   mesh                <--  pointer to a cs_mesh_t structure
  *   i_face_norm         <--  surface normal of interior faces
  *   b_face_norm         <--  surface normal of border faces
@@ -716,17 +672,17 @@ _get_tolerance(cs_mesh_t   *mesh,
  *----------------------------------------------------------------------------*/
 
 static cs_real_t
-_unwarping_mvt(fvm_interface_set_t   *ifs,
-               cs_mesh_t             *mesh,
-               cs_real_t             *i_face_norm,
-               cs_real_t             *b_face_norm,
-               cs_real_t             *i_face_cog,
-               cs_real_t             *b_face_cog,
-               cs_real_t             *loc_vtx_mvt,
-               cs_real_t             *i_face_warp,
-               cs_real_t             *b_face_warp,
-               cs_real_t             *vtx_tolerance,
-               double                 frac)
+_unwarping_mvt(cs_interface_set_t   *ifs,
+               cs_mesh_t            *mesh,
+               cs_real_t            *i_face_norm,
+               cs_real_t            *b_face_norm,
+               cs_real_t            *i_face_cog,
+               cs_real_t            *b_face_cog,
+               cs_real_t            *loc_vtx_mvt,
+               cs_real_t            *i_face_warp,
+               cs_real_t            *b_face_warp,
+               cs_real_t            *vtx_tolerance,
+               double                frac)
 {
   cs_lnum_t face_id, i;
   int coord_id;
@@ -808,10 +764,12 @@ _unwarping_mvt(fvm_interface_set_t   *ifs,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) { /* Parallel treatment : synchro over the ranks */
-    _parall_real_sum(ifs,
-                     mesh->n_vertices,
-                     loc_vtx_mvt,
-                     3);
+    cs_interface_set_sum(ifs,
+                         mesh->n_vertices,
+                         3,
+                         true,
+                         CS_REAL_TYPE,
+                         loc_vtx_mvt);
   }
 #endif
 
@@ -834,10 +792,10 @@ _unwarping_mvt(fvm_interface_set_t   *ifs,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_vtx_normals(fvm_interface_set_t     *ifs,
-                     cs_mesh_t               *mesh,
-                     cs_real_t               *b_face_norm,
-                     cs_real_t               *b_vtx_norm)
+_compute_vtx_normals(cs_interface_set_t  *ifs,
+                     cs_mesh_t           *mesh,
+                     cs_real_t           *b_face_norm,
+                     cs_real_t           *b_vtx_norm)
 {
   int coord_id;
   cs_lnum_t i, j;
@@ -859,12 +817,13 @@ _compute_vtx_normals(fvm_interface_set_t     *ifs,
 
   /* summing upon processors if necessary */
 #if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
-    _parall_real_sum(ifs,
-                     mesh->n_vertices,
-                     b_vtx_norm,
-                     3);
-  }
+  if (cs_glob_n_ranks > 1)
+    cs_interface_set_sum(ifs,
+                         mesh->n_vertices,
+                         3,
+                         true,
+                         CS_REAL_TYPE,
+                         b_vtx_norm);
 #endif
 
   /* normalizing */
@@ -907,18 +866,18 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
   cs_real_t *b_face_cog = NULL;
   cs_real_t *b_vtx_norm = NULL;
   cs_real_t *_vtx_is_fixed = NULL;
-  fvm_interface_set_t  *ifs = NULL;
+  cs_interface_set_t  *ifs = NULL;
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
-    ifs = fvm_interface_set_create(mesh->n_vertices,
-                                   NULL,
-                                   mesh->global_vtx_num,
-                                   NULL,
-                                   0,
-                                   NULL,
-                                   NULL,
-                                   NULL);
+    ifs = cs_interface_set_create(mesh->n_vertices,
+                                  NULL,
+                                  mesh->global_vtx_num,
+                                  NULL,
+                                  0,
+                                  NULL,
+                                  NULL,
+                                  NULL);
 #endif /* defined(HAVE_MPI) */
 
   BFT_MALLOC(_vtx_is_fixed, mesh->n_vertices, cs_real_t);
@@ -961,11 +920,13 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) { /* Parallel treatment : synchro over the ranks */
-    _parall_real_sum(ifs,
-                     mesh->n_vertices,
-                     _vtx_is_fixed,
-                     1);
-    fvm_interface_set_destroy(ifs);
+    cs_interface_set_sum(ifs,
+                         mesh->n_vertices,
+                         1,
+                         true,
+                         CS_REAL_TYPE,
+                         _vtx_is_fixed);
+    cs_interface_set_destroy(&ifs);
   }
 #endif
 
@@ -1011,20 +972,20 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
   cs_real_t *b_face_cog = NULL;
   cs_real_t *b_face_warp = NULL;
   cs_real_t *i_face_warp = NULL;
-  fvm_interface_set_t  *ifs = NULL;
+  cs_interface_set_t  *ifs = NULL;
 
   if (cs_glob_n_ranks > 0 || mesh->periodicity != NULL) {
     if (mesh->periodicity != NULL)
       bft_error(__FILE__, __LINE__, 0,
                 "Smoothing in case of periodicity not yet handled.");
-    ifs = fvm_interface_set_create(mesh->n_vertices,
-                                   NULL,
-                                   mesh->global_vtx_num,
-                                   NULL,
-                                   0,
-                                   NULL,
-                                   NULL,
-                                   NULL);
+    ifs = cs_interface_set_create(mesh->n_vertices,
+                                  NULL,
+                                  mesh->global_vtx_num,
+                                  NULL,
+                                  0,
+                                  NULL,
+                                  NULL,
+                                  NULL);
   }
 
   bft_printf(_("\n Start unwarping algorithm\n\n"));
@@ -1150,7 +1111,7 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
   /* Free vertex interfaces */
 
   if (ifs != NULL)
-    fvm_interface_set_destroy(ifs);
+    cs_interface_set_destroy(&ifs);
 
   /* Output quality histograms */
 

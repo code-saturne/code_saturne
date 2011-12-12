@@ -42,25 +42,6 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_nodal.h>
-#include <fvm_interface.h>
-#include <fvm_nodal_extract.h>
-#include <fvm_nodal_project.h>
-#include <fvm_parall.h>
-#include <fvm_selector.h>
-
-/*----------------------------------------------------------------------------
  * PLE library headers
  *----------------------------------------------------------------------------*/
 
@@ -71,12 +52,21 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
+
+#include "fvm_nodal.h"
+#include "fvm_nodal_extract.h"
+#include "fvm_nodal_project.h"
+#include "fvm_parall.h"
+#include "fvm_selector.h"
+
 #include "cs_coupling.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_connect.h"
 #include "cs_selector.h"
-#include "cs_parall.h"
 #include "cs_post.h"
 
 /*----------------------------------------------------------------------------

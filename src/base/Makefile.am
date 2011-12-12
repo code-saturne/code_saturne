@@ -83,6 +83,7 @@ cs_file.h \
 cs_field.h \
 cs_halo.h \
 cs_halo_perio.h \
+cs_interface.h \
 cs_io.h \
 cs_log.h \
 cs_map.h \
@@ -122,6 +123,7 @@ libcscore_la_SOURCES = \
 cs_base.c \
 cs_defs.c \
 cs_file.c \
+cs_interface.c \
 cs_io.c \
 cs_log.c \
 cs_map.c \

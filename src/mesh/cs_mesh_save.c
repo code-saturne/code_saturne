@@ -52,11 +52,11 @@
 #include "fvm_block_to_part.h"
 #include "fvm_part_to_block.h"
 #include "fvm_io_num.h"
-#include "fvm_interface.h"
 #include "fvm_parall.h"
 #include "fvm_periodicity.h"
 
 #include "cs_base.h"
+#include "cs_interface.h"
 #include "cs_mesh.h"
 #include "cs_order.h"
 #include "cs_io.h"

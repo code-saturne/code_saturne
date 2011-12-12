@@ -1,5 +1,5 @@
 /*============================================================================
- * Unit test for fvm_interface.c;
+ * Unit test for cs_interface.c;
  *============================================================================*/
 
 /*
@@ -36,7 +36,8 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
-#include "fvm_interface.h"
+#include "cs_base.h"
+#include "cs_interface.h"
 #include "fvm_parall.h"
 #include "fvm_periodicity.h"
 
@@ -69,7 +70,7 @@ _init_periodicity(void)
   return p;
 }
 
-static fvm_interface_set_t *
+static cs_interface_set_t *
 _periodic_is(int                       comm_size,
              int                       comm_rank,
              cs_gnum_t                 n_side,
@@ -86,7 +87,7 @@ _periodic_is(int                       comm_size,
   cs_gnum_t **periodic_couples = NULL;
   cs_gnum_t *global_number = NULL;
 
-  fvm_interface_set_t *ifset = NULL;
+  cs_interface_set_t *ifset = NULL;
 
   if (comm_size > 1) {
 
@@ -153,14 +154,14 @@ _periodic_is(int                       comm_size,
 
   }
 
-  ifset = fvm_interface_set_create(n_elements,
-                                   NULL,
-                                   global_number,
-                                   perio,
-                                   n_periodic_lists,
-                                   periodicity_num,
-                                   n_periodic_couples,
-                                   (const cs_gnum_t **const)periodic_couples);
+  ifset = cs_interface_set_create(n_elements,
+                                  NULL,
+                                  global_number,
+                                  perio,
+                                  n_periodic_lists,
+                                  periodicity_num,
+                                  n_periodic_couples,
+                                  (const cs_gnum_t **const)periodic_couples);
 
   for (ii = 0; ii < (cs_gnum_t)n_periodic_lists; ii++)
     BFT_FREE(periodic_couples[ii]);
@@ -189,14 +190,34 @@ static int _bft_printf_proxy
     char filename[64];
     int rank = 0;
 #if defined(HAVE_MPI)
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (cs_glob_mpi_comm != MPI_COMM_NULL)
+      MPI_Comm_rank(cs_glob_mpi_comm, &rank);
 #endif
-    sprintf (filename, "fvm_interface_test_out.%d", rank);
+    sprintf (filename, "cs_interface_test_out.%d", rank);
     f = fopen(filename, "w");
     assert(f != NULL);
   }
 
   return vfprintf(f, format, arg_ptr);
+}
+
+/*----------------------------------------------------------------------------
+ * Stop the code in case of error
+ *----------------------------------------------------------------------------*/
+
+static void
+_bft_error_handler(const char  *nom_fic,
+                   int          num_ligne,
+                   int          code_err_sys,
+                   const char  *format,
+                   va_list      arg_ptr)
+{
+  bft_printf_flush();
+
+  if (code_err_sys != 0)
+    fprintf(stderr, "\nSystem error: %s\n", strerror(code_err_sys));
+
+  vfprintf(stderr, format, arg_ptr);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -207,36 +228,32 @@ main (int argc, char *argv[])
   char mem_trace_name[32];
   int size = 1;
   int rank = 0;
-  fvm_interface_set_t *ifset = NULL;
+  cs_interface_set_t *ifset = NULL;
   fvm_periodicity_t *perio = NULL;
 
 #if defined(HAVE_MPI)
 
   int ii;
 
-  MPI_Status status;
-
-  int sync = 1;
-
   cs_lnum_t n_elements = 20;
   cs_gnum_t *global_number = NULL;
 
   /* Initialization */
 
-  MPI_Init(&argc, &argv);
+  cs_base_mpi_init(&argc, &argv);
 
-  fvm_parall_set_mpi_comm(MPI_COMM_WORLD);
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if (cs_glob_mpi_comm != MPI_COMM_NULL) {
+    MPI_Comm_rank(cs_glob_mpi_comm, &rank);
+    MPI_Comm_size(cs_glob_mpi_comm, &size);
+  }
+  bft_printf_proxy_set(_bft_printf_proxy);
+  bft_error_handler_set(_bft_error_handler);
 
   if (size > 1)
-    sprintf(mem_trace_name, "fvm_interface_test_mem.%d", rank);
+    sprintf(mem_trace_name, "cs_interface_test_mem.%d", rank);
   else
-    strcpy(mem_trace_name, "fvm_interface_test_mem");
+    strcpy(mem_trace_name, "cs_interface_test_mem");
   bft_mem_init(mem_trace_name);
-
-  bft_printf_proxy_set(_bft_printf_proxy);
 
   /* Build arbitrary interface */
 
@@ -246,36 +263,30 @@ main (int argc, char *argv[])
     global_number[ii] = (n_elements * 3 / 4) * rank + ii + 1;
   }
 
-  ifset = fvm_interface_set_create(n_elements,
-                                   NULL,
-                                   global_number,
-                                   NULL,
-                                   0,
-                                   NULL,
-                                   NULL,
-                                   NULL);
+  ifset = cs_interface_set_create(n_elements,
+                                  NULL,
+                                  global_number,
+                                  NULL,
+                                  0,
+                                  NULL,
+                                  NULL,
+                                  NULL);
 
   BFT_FREE(global_number);
 
-  /* Serialize dump of interfaces */
-
-  if (rank > 0)
-    MPI_Recv(&sync, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, &status);
-
   bft_printf("Interface on rank %d:\n\n", rank);
 
-  fvm_interface_set_dump(ifset);
-
-  if (rank < size - 1)
-    MPI_Send(&sync, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
+  cs_interface_set_add_match_ids(ifset);
+  cs_interface_set_dump(ifset);
+  cs_interface_set_free_match_ids(ifset);
 
   /* We are finished for this interface */
 
-  ifset = fvm_interface_set_destroy(ifset);
+  cs_interface_set_destroy(&ifset);
 
 #else
 
-  strcpy(mem_trace_name, "fvm_interface_test_mem");
+  strcpy(mem_trace_name, "cs_interface_test_mem");
   bft_mem_init(mem_trace_name);
 
   bft_printf_proxy_set(_bft_printf_proxy);
@@ -297,37 +308,26 @@ main (int argc, char *argv[])
                        3, /* n_periodic_lists */
                        perio);
 
-#if defined(HAVE_MPI)
-
-  /* Serialize dump of interfaces */
-
-  if (rank > 0)
-    MPI_Recv(&sync, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, &status);
-
-#endif /* (HAVE_MPI) */
-
   bft_printf("Periodic Interface on rank %d:\n\n", rank);
 
-  fvm_interface_set_dump(ifset);
-
-#if defined(HAVE_MPI)
-
-  if (rank < size - 1)
-    MPI_Send(&sync, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
-
-#endif /* (HAVE_MPI) */
+  cs_interface_set_add_match_ids(ifset);
+  cs_interface_set_dump(ifset);
+  cs_interface_set_free_match_ids(ifset);
 
   /* We are finished */
 
-  ifset = fvm_interface_set_destroy(ifset);
+  cs_interface_set_destroy(&ifset);
   fvm_periodicity_destroy(perio);
 
   bft_mem_end();
 
 #if defined(HAVE_MPI)
-
-  MPI_Finalize();
-
+  {
+    int mpi_flag;
+    MPI_Initialized(&mpi_flag);
+    if (mpi_flag != 0)
+      MPI_Finalize();
+  }
 #endif
 
   exit (EXIT_SUCCESS);

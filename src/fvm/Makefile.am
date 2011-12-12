@@ -48,7 +48,6 @@ pkginclude_HEADERS = \
 fvm_block_to_part.h \
 fvm_defs.h \
 fvm_group.h \
-fvm_interface.h \
 fvm_io_num.h \
 fvm_neighborhood.h \
 fvm_nodal.h \
@@ -104,7 +103,6 @@ fvm_defs.c \
 fvm_gather.c \
 fvm_group.c \
 fvm_hilbert.c \
-fvm_interface.c \
 fvm_io_num.c \
 fvm_morton.c \
 fvm_neighborhood.c \

@@ -49,7 +49,7 @@
 #include "cs_base.h"
 #include "cs_order.h"
 
-#include "fvm_interface.h"
+#include "cs_interface.h"
 #include "fvm_periodicity.h"
 
 /*----------------------------------------------------------------------------
@@ -300,14 +300,14 @@ _zero_rotation_values(const cs_halo_t  *halo,
  * Create a halo structure.
  *
  * parameters:
- *   ifs  <--  pointer to a fvm_interface_set structure
+ *   ifs  <--  pointer to a cs_interface_set structure
  *
  * returns:
  *  pointer to created cs_halo_t structure
  *---------------------------------------------------------------------------*/
 
 cs_halo_t *
-cs_halo_create(fvm_interface_set_t  *ifs)
+cs_halo_create(cs_interface_set_t  *ifs)
 {
   cs_int_t  i, tmp_id, perio_lst_size;
 
@@ -315,14 +315,14 @@ cs_halo_create(fvm_interface_set_t  *ifs)
 
   cs_halo_t  *halo = NULL;
 
-  const fvm_interface_t  *interface = NULL;
+  const cs_interface_t  *interface = NULL;
 
   BFT_MALLOC(halo, 1, cs_halo_t);
 
-  halo->n_c_domains = fvm_interface_set_size(ifs);
+  halo->n_c_domains = cs_interface_set_size(ifs);
   halo->n_transforms = 0;
 
-  halo->periodicity = fvm_interface_set_periodicity(ifs);
+  halo->periodicity = cs_interface_set_periodicity(ifs);
   halo->n_rotations = 0;
 
   halo->n_local_elts = 0;
@@ -339,10 +339,10 @@ cs_halo_create(fvm_interface_set_t  *ifs)
 
   for (i = 0; i < halo->n_c_domains; i++) {
 
-    interface = fvm_interface_set_get(ifs, i);
-    halo->c_domain_rank[i] = fvm_interface_rank(interface);
+    interface = cs_interface_set_get(ifs, i);
+    halo->c_domain_rank[i] = cs_interface_rank(interface);
 
-    if (cs_glob_rank_id == fvm_interface_rank(interface))
+    if (cs_glob_rank_id == cs_interface_rank(interface))
       loc_id = i;
 
   } /* End of loop on ranks */

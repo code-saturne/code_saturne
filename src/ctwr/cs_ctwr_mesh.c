@@ -41,24 +41,6 @@
 #include <mpi.h>
 #endif
 
-
-/*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_error.h>
-#include <bft_printf.h>
-#include <bft_mem.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_interface.h>
-#include <fvm_nodal_extract.h>
-#include <fvm_nodal_extrude.h>
-#include <fvm_nodal_project.h>
-
 /*----------------------------------------------------------------------------
  * PLE library headers
  *----------------------------------------------------------------------------*/
@@ -69,12 +51,21 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_error.h"
+#include "bft_printf.h"
+#include "bft_mem.h"
+
+#include "fvm_nodal_extract.h"
+#include "fvm_nodal_extrude.h"
+#include "fvm_nodal_project.h"
+
 #include "cs_base.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
 #include "cs_ctwr_air_props.h"
 #include "cs_ctwr_halo.h"
 #include "cs_halo.h"
+#include "cs_interface.h"
 #include "cs_mesh_connect.h"
 
 /*----------------------------------------------------------------------------
@@ -700,7 +691,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 {
   cs_int_t   icel_1, icel_2, ii, length, nb, rank,
              dist_rank, res_loc, res_dist;
-  cs_int_t   ifac, ict, icpt, icpti, icptl, icptla, icptfac,
+  cs_int_t   ifac, ict, icpt, icpti, icptla, icptfac,
              iaux, i, j;
   cs_real_t  aux, gravite[3], v_aux[3], alpha;
   cs_coord_t *extrusion_vectors, *lst_xyz_cel, *lst_xyz;
@@ -736,7 +727,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
   const cs_real_t *i_face_normal = mesh_quantities->i_face_normal;
   const cs_real_t *b_face_normal = mesh_quantities->b_face_normal;
 
-  fvm_interface_set_t  *interface_set = NULL;
+  cs_interface_set_t  *interface_set = NULL;
   cs_ctwr_zone_t  *ct;
   cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
 
@@ -875,7 +866,6 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
     icpt   = 0; /*indice tableau des faces  sup */
     icpti  = 0; /*indice tableau des faces  inf */
     icptla = 0; /*indice tableau des faces  laterales */
-    icptl  = 0; /*indice tableau des noeuds sup ct */
     icptfac  = 0; /*indice tableau des noeuds sup ct */
     /* Boucle sur les faces internes du domaine */
     for (ifac = 0; ifac < mesh->n_i_faces; ifac++) {
@@ -946,7 +936,6 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
         }
       }
     } /* fin contribution faces externes */
-
 
     /*---------------------------------------------------------*
     * Creation des maillages surfacique en connectivite nodale*
@@ -1194,8 +1183,8 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     fvm_nodal_get_global_vertex_num(ct->face_sup_mesh, fsup_gb_vt_num);
 
-    interface_set = fvm_interface_set_create(n_vertices, NULL, fsup_gb_vt_num,
-                                             NULL, 0, NULL, NULL, NULL);
+    interface_set = cs_interface_set_create(n_vertices, NULL, fsup_gb_vt_num,
+                                            NULL, 0, NULL, NULL, NULL);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     cs_interface_set_dump(interface_set);
@@ -1213,7 +1202,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     cs_ctwr_halo_define(ct, interface_set);
 
-    fvm_interface_set_destroy(interface_set);
+    cs_interface_set_destroy(&interface_set);
 
     /* Create locator for interpolate */
 
@@ -1389,7 +1378,7 @@ void cs_ctwr_adeau
   cs_int_t   ict, iwat,nb_node_water, ii, jj, iair, nbvois,
              nbn, ifac, icel_1, icel_2, lf, indice, dim;
   cs_int_t   nvois[cs_ctwr_nmaxvoi];
-  cs_real_t  dhi, dmin;
+  cs_real_t  dhi;
   cs_real_t  xwat, ywat, zwat, dx, dy, dz, dxx, dyy, dzz, ouv, aux;
   cs_real_t  coeff[cs_ctwr_nmaxvoi];
   cs_real_t  vectBase[3][3];
@@ -1470,7 +1459,6 @@ void cs_ctwr_adeau
        * boucle sur les cellules appartenant a la ct*
        * recherche du noeud air le plus proche      *
        *--------------------------------------------*/
-      dmin = 1000.;
       iair = location_cel[iwat] -1;
 
       /*--------------------------------------------*

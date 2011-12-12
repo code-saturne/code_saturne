@@ -503,10 +503,10 @@ _extract_contig_faces(cs_int_t          n_vertices,
 
 /*----------------------------------------------------------------------------
  * Define a structure used for synchronizing "single" vertices.
- * Use a fvm_interface_t structure to help the build.
+ * Use a cs_interface_t structure to help the build.
  *
  * parameters:
- *   interfaces     <-- pointer to a fvm_interface_set_t structure
+ *   interfaces     <-- pointer to a cs_interface_set_t structure
  *   var_size       <-- number of elements in var buffer
  *   count          <-> counter buffer (0: not selected, 1 otherwise)
  *   related_ranks  <-> rank associated to each single vertex (size: var_size)
@@ -514,113 +514,41 @@ _extract_contig_faces(cs_int_t          n_vertices,
  *----------------------------------------------------------------------------*/
 
 static void
-_add_single_vertices(fvm_interface_set_t  *interfaces,
-                     cs_lnum_t             var_size,
-                     cs_lnum_t            *count,
-                     cs_lnum_t            *related_ranks,
-                     cs_join_sync_t       *single)
+_add_single_vertices(cs_interface_set_t  *interfaces,
+                     cs_lnum_t            var_size,
+                     cs_lnum_t           *count,
+                     cs_lnum_t           *related_ranks,
+                     cs_join_sync_t      *single)
 {
-  int  request_count, distant_rank, n_interfaces, total_size;
-  int  id, ii, last_found_rank;
+  int  distant_rank, n_interfaces, last_found_rank;
+  cs_lnum_t  id, ii;
 
-  int  count_size = 0;
-  int  n_max_ranks = 0, n_max_elts = 0;
-  cs_lnum_t  n_entities = 0;
-  int  *buf = NULL, *send_buf = NULL, *recv_buf = NULL;
+  int  n_max_ranks = 0;
+  cs_lnum_t  count_size = 0, n_entities = 0, total_size = 0, n_max_elts = 0;
+  cs_lnum_t  *buf = NULL, *recv_buf = NULL;
 
-  MPI_Request  *request = NULL;
-  MPI_Status  *status  = NULL;
-  MPI_Comm  mpi_comm = cs_glob_mpi_comm;
-
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
-  const cs_lnum_t  *local_num = NULL;
-  const fvm_interface_t  *interface = NULL;
+  const cs_lnum_t  *local_id = NULL;
+  const cs_interface_t  *interface = NULL;
 
   assert(count != NULL);
   assert(single != NULL);
 
   /* Initialize and allocate */
 
-  n_interfaces = fvm_interface_set_size(interfaces);
+  n_interfaces = cs_interface_set_size(interfaces);
 
-  for (id = 0; id < n_interfaces; id++) {
-    count_size
-      += fvm_interface_size(fvm_interface_set_get(interfaces, id));
-  }
+  total_size = cs_interface_set_n_elts(interfaces);
 
-  total_size = count_size;
+  BFT_MALLOC(buf, total_size, cs_lnum_t);
 
-  BFT_MALLOC(buf, total_size * 2, int);
+  /* Exchange with distant ranks */
 
-  BFT_MALLOC(request, n_interfaces * 2, MPI_Request);
-  BFT_MALLOC(status,  n_interfaces * 2, MPI_Status);
-
-  /* Send and Receive data from distant ranks with
-     non-blocking communications */
-
-  request_count = 0;
-  count_size  = 0;
-
-  /* Receive */
-
-  for (id = 0; id < n_interfaces; id++) {
-
-    interface = fvm_interface_set_get(interfaces, id);
-    distant_rank = fvm_interface_rank(interface);
-    n_entities = fvm_interface_size(interface);
-
-    recv_buf = buf + count_size;
-
-    MPI_Irecv(recv_buf,
-              n_entities,
-              MPI_INT,
-              distant_rank,
-              distant_rank,
-              mpi_comm,
-              &(request[request_count++]));
-
-    count_size += n_entities;
-
-  }
-
-  assert(count_size == total_size);
-
-  /* Send */
-
-  for (id = 0; id < n_interfaces; id++) {
-
-    /* Preparation of data to send */
-
-    interface = fvm_interface_set_get(interfaces, id);
-    distant_rank   = fvm_interface_rank(interface);
-    n_entities = fvm_interface_size(interface);
-    local_num = fvm_interface_get_local_num(interface);
-
-    send_buf = buf + count_size;
-
-    for (ii = 0; ii < n_entities; ii++)
-      send_buf[ii] = count[local_num[ii]-1];
-
-    MPI_Isend(send_buf,
-              n_entities,
-              MPI_INT,
-              distant_rank,
-              local_rank,
-              mpi_comm,
-              &(request[request_count++]));
-
-    count_size += n_entities;
-
-  }
-
-  assert(count_size == 2*total_size);
-
-  /* Sync after each rank had received all the messages */
-
-  MPI_Waitall(request_count, request, status);
-
-  BFT_FREE(request);
-  BFT_FREE(status);
+  cs_interface_set_copy_array(interfaces,
+                              CS_LNUM_TYPE,
+                              1,
+                              true,
+                              count,
+                              buf);
 
   /* Now we estimate the max. number of ranks and elements involved */
 
@@ -631,16 +559,16 @@ _add_single_vertices(fvm_interface_set_t  *interfaces,
 
     /* Scan data */
 
-    interface = fvm_interface_set_get(interfaces, id);
-    distant_rank = fvm_interface_rank(interface);
-    n_entities = fvm_interface_size(interface);
-    local_num = fvm_interface_get_local_num(interface);
+    interface = cs_interface_set_get(interfaces, id);
+    distant_rank = cs_interface_rank(interface);
+    n_entities = cs_interface_size(interface);
+    local_id = cs_interface_get_elt_ids(interface);
 
     recv_buf = buf + count_size;
 
     for (ii = 0; ii < n_entities; ii++) {
 
-      int  vtx_id = local_num[ii] - 1;
+      int  vtx_id = local_id[ii];
 
       assert(vtx_id < var_size);
 
@@ -676,16 +604,16 @@ _add_single_vertices(fvm_interface_set_t  *interfaces,
 
       /* Scan data */
 
-      interface = fvm_interface_set_get(interfaces, id);
-      distant_rank = fvm_interface_rank(interface);
-      n_entities = fvm_interface_size(interface);
-      local_num = fvm_interface_get_local_num(interface);
+      interface = cs_interface_set_get(interfaces, id);
+      distant_rank = cs_interface_rank(interface);
+      n_entities = cs_interface_size(interface);
+      local_id = cs_interface_get_elt_ids(interface);
 
       recv_buf = buf + count_size;
 
       for (ii = 0; ii < n_entities; ii++) {
 
-        int  vtx_id = local_num[ii] - 1;
+        int  vtx_id = local_id[ii];
 
         if (count[vtx_id] == 0 && recv_buf[ii] > 0) {
 
@@ -694,7 +622,7 @@ _add_single_vertices(fvm_interface_set_t  *interfaces,
             single->ranks[single->n_ranks++] = distant_rank;
           }
 
-          single->array[single->n_elts++] = local_num[ii];
+          single->array[single->n_elts++] = local_id[ii] + 1;
           single->index[single->n_ranks] = single->n_elts;
 
           related_ranks[vtx_id] = distant_rank;
@@ -742,121 +670,54 @@ _add_single_vertices(fvm_interface_set_t  *interfaces,
 
 /*-----------------------------------------------------------------------------
  * Define a structure used for synchronizing "single" vertices.
- * Use a fvm_interface_t structure to help the build.
+ * Use a cs_interface_t structure to help the build.
  *
  * parameters:
- *  interfaces     --> pointer to a fvm_interface_set_t structure
+ *  interfaces     --> pointer to a cs_interface_set_t structure
  *  var_size       --> number of elements in var buffer
  *  related_ranks  <-> rank buffer for synchronization
  *  coupled        <-> pointer to a structure to build on coupled vertices
  *----------------------------------------------------------------------------*/
 
 static void
-_add_coupled_vertices(fvm_interface_set_t  *interfaces,
-                      cs_lnum_t             var_size,
-                      int                  *related_ranks,
-                      cs_join_sync_t       *coupled)
+_add_coupled_vertices(cs_interface_set_t  *interfaces,
+                      cs_lnum_t            var_size,
+                      int                 *related_ranks,
+                      cs_join_sync_t      *coupled)
 {
-  int  id, ii;
-  int  request_count, distant_rank, n_interfaces, total_size, last_found_rank;
+  int  distant_rank, n_interfaces, last_found_rank;
+  cs_lnum_t id, ii;
 
-  int  count_size = 0;
-  cs_lnum_t  n_entities = 0;
-  int  *buf = NULL, *send_buf = NULL, *recv_buf = NULL;
+  cs_lnum_t  n_entities = 0, count_size = 0, total_size = 0;
+  int  *buf = NULL, *recv_buf = NULL;
 
-  MPI_Request  *request = NULL;
-  MPI_Status  *status  = NULL;
-  MPI_Comm  mpi_comm = cs_glob_mpi_comm;
+  cs_datatype_t int_type = (sizeof(int) == 8) ? CS_INT64 : CS_INT32;
 
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
-  const cs_lnum_t  *local_num = NULL;
-  const fvm_interface_t  *interface = NULL;
+  const cs_lnum_t  *local_id = NULL;
+  const cs_interface_t  *interface = NULL;
 
   assert(related_ranks != NULL);
   assert(coupled != NULL);
 
   /* Initialize and allocate */
 
-  n_interfaces = fvm_interface_set_size(interfaces);
+  n_interfaces = cs_interface_set_size(interfaces);
 
-  for (id = 0; id < n_interfaces; id++) {
-    count_size
-      += fvm_interface_size(fvm_interface_set_get(interfaces, id));
-  }
+  n_interfaces = cs_interface_set_size(interfaces);
 
-  total_size = count_size;
+  total_size = cs_interface_set_n_elts(interfaces);
 
-  BFT_MALLOC(buf, total_size * 2, int);
+  BFT_MALLOC(buf, total_size, int);
 
-  BFT_MALLOC(request, n_interfaces * 2, MPI_Request);
-  BFT_MALLOC(status,  n_interfaces * 2, MPI_Status);
+  /* Exchange with distant ranks */
 
-  /* Send and Receive data from distant ranks with
-     non-blocking communications */
-
-  request_count = 0;
-  count_size  = 0;
-
-  /* Receive */
-
-  for (id = 0; id < n_interfaces; id++) {
-
-    interface = fvm_interface_set_get(interfaces, id);
-    distant_rank = fvm_interface_rank(interface);
-    n_entities = fvm_interface_size(interface);
-
-    recv_buf = buf + count_size;
-
-    MPI_Irecv(recv_buf,
-              n_entities,
-              MPI_INT,
-              distant_rank,
-              distant_rank,
-              mpi_comm,
-              &(request[request_count++]));
-
-    count_size += n_entities;
-
-  }
-
-  assert(count_size == total_size);
-
-  /* Send */
-
-  for (id = 0; id < n_interfaces; id++) {
-
-    /* Preparation of data to send */
-
-    interface = fvm_interface_set_get(interfaces, id);
-    distant_rank   = fvm_interface_rank(interface);
-    n_entities = fvm_interface_size(interface);
-    local_num = fvm_interface_get_local_num(interface);
-
-    send_buf = buf + count_size;
-
-    for (ii = 0; ii < n_entities; ii++)
-      send_buf[ii] = related_ranks[local_num[ii]-1];
-
-    MPI_Isend(send_buf,
-              n_entities,
-              MPI_INT,
-              distant_rank,
-              local_rank,
-              mpi_comm,
-              &(request[request_count++]));
-
-    count_size += n_entities;
-
-  }
-
-  assert(count_size == 2*total_size);
-
-  /* Sync after each rank had received all the messages */
-
-  MPI_Waitall(request_count, request, status);
-
-  BFT_FREE(request);
-  BFT_FREE(status);
+  cs_interface_set_copy_array(interfaces,
+                              int_type,
+                              1,
+                              true,
+                              related_ranks,
+                              buf);
 
   /* Now we scan each part to build coupled */
 
@@ -869,9 +730,9 @@ _add_coupled_vertices(fvm_interface_set_t  *interfaces,
 
     /* Scan data */
 
-    interface = fvm_interface_set_get(interfaces, id);
-    distant_rank   = fvm_interface_rank(interface);
-    n_entities = fvm_interface_size(interface);
+    interface = cs_interface_set_get(interfaces, id);
+    distant_rank   = cs_interface_rank(interface);
+    n_entities = cs_interface_size(interface);
 
     recv_buf = buf + count_size;
 
@@ -907,10 +768,10 @@ _add_coupled_vertices(fvm_interface_set_t  *interfaces,
 
       /* Retrieve data */
 
-      interface = fvm_interface_set_get(interfaces, id);
-      distant_rank   = fvm_interface_rank(interface);
-      n_entities = fvm_interface_size(interface);
-      local_num = fvm_interface_get_local_num(interface);
+      interface = cs_interface_set_get(interfaces, id);
+      distant_rank   = cs_interface_rank(interface);
+      n_entities = cs_interface_size(interface);
+      local_id = cs_interface_get_elt_ids(interface);
 
       recv_buf = buf + count_size;
 
@@ -923,8 +784,8 @@ _add_coupled_vertices(fvm_interface_set_t  *interfaces,
             coupled->ranks[rank_shift++] = distant_rank;
           }
 
-          assert(local_num[ii] <= var_size);
-          coupled->array[vtx_shift++] = local_num[ii];
+          assert(local_id[ii] < var_size);
+          coupled->array[vtx_shift++] = local_id[ii] + 1;
           coupled->index[rank_shift] = vtx_shift;
         }
 
@@ -967,16 +828,16 @@ _add_coupled_vertices(fvm_interface_set_t  *interfaces,
  *
  * parameters:
  *   n_vertices   <--  number of vertices in the parent mesh
- *   ifs          <--  pointer to a fvm_interface_set_t struct.
+ *   ifs          <--  pointer to a cs_interface_set_t struct.
  *   p_vtx_tag    <->  pointer to an array on vertices. tag=1 if selected
  *   join_select  <->  pointer to a fvm_join_selection_t structure
  *---------------------------------------------------------------------------*/
 
 static void
-_get_missing_vertices(cs_int_t              n_vertices,
-                      fvm_interface_set_t  *ifs,
-                      cs_int_t             *p_vtx_tag[],
-                      cs_join_select_t     *selection)
+_get_missing_vertices(cs_int_t             n_vertices,
+                      cs_interface_set_t  *ifs,
+                      cs_int_t            *p_vtx_tag[],
+                      cs_join_select_t    *selection)
 {
   cs_int_t  i;
   cs_gnum_t  n_l_elts, n_g_elts;
@@ -1185,17 +1046,17 @@ _add_s_edge(cs_int_t         vertex_tag[],
             cs_int_t         v2_id,
             const cs_int_t   sel_v2v_idx[],
             const cs_int_t   sel_v2v_lst[],
-            int             *p_tmp_size,
-            int             *p_max_size,
-            int             *p_tmp_edges[])
+            cs_lnum_t       *p_tmp_size,
+            cs_lnum_t       *p_max_size,
+            cs_lnum_t       *p_tmp_edges[])
 {
-  int  i, a, b, edge_id;
+  cs_lnum_t  i, a, b, edge_id;
 
   _Bool  is_selected = false, is_found = false;
 
-  int  tmp_size = *p_tmp_size;
-  int  max_size = *p_max_size;
-  int  *tmp_edges = *p_tmp_edges;
+  cs_lnum_t  tmp_size = *p_tmp_size;
+  cs_lnum_t  max_size = *p_max_size;
+  cs_lnum_t *tmp_edges = *p_tmp_edges;
 
   if (vertex_tag[v1_id] > 0)
     if (vertex_tag[v2_id] > 0)
@@ -1209,9 +1070,9 @@ _add_s_edge(cs_int_t         vertex_tag[],
 
       assert(v1_id != v2_id);
       if (v1_id < v2_id)
-        a = v1_id + 1, b = v2_id + 1;
+        a = v1_id, b = v2_id;
       else
-        a = v2_id + 1, b = v1_id + 1;
+        a = v2_id, b = v1_id;
 
       /* n_edges is assumed to be small */
       for (i = 0; i < tmp_size; i++) {
@@ -1231,7 +1092,7 @@ _add_s_edge(cs_int_t         vertex_tag[],
 
         if (tmp_size >= max_size) {
           max_size *= 2;
-          BFT_REALLOC(tmp_edges, 2*max_size, int);
+          BFT_REALLOC(tmp_edges, 2*max_size, cs_lnum_t);
         }
 
       }
@@ -1266,17 +1127,17 @@ _add_s_edge(cs_int_t         vertex_tag[],
  *---------------------------------------------------------------------------*/
 
 static void
-_add_single_edges(fvm_interface_set_t   *ifs,
-                  cs_int_t               vertex_tag[],
-                  cs_join_select_t      *selection,
-                  cs_int_t               sel_v2v_idx[],
-                  cs_int_t               sel_v2v_lst[],
-                  cs_int_t               b_f2v_idx[],
-                  cs_int_t               b_f2v_lst[],
-                  cs_int_t               i_f2v_idx[],
-                  cs_int_t               i_f2v_lst[],
-                  cs_int_t               i_face_cells[],
-                  cs_join_sync_t        *s_edges)
+_add_single_edges(cs_interface_set_t   *ifs,
+                  cs_int_t              vertex_tag[],
+                  cs_join_select_t     *selection,
+                  cs_int_t              sel_v2v_idx[],
+                  cs_int_t              sel_v2v_lst[],
+                  cs_int_t              b_f2v_idx[],
+                  cs_int_t              b_f2v_lst[],
+                  cs_int_t              i_f2v_idx[],
+                  cs_int_t              i_f2v_lst[],
+                  cs_int_t              i_face_cells[],
+                  cs_join_sync_t       *s_edges)
 {
   cs_int_t  i, j, fid, s, e;
 
@@ -1357,9 +1218,9 @@ _add_single_edges(fvm_interface_set_t   *ifs,
     int  last_found_rank = -1;
     int  *edge_tag = NULL;
 
-    const int  n_interfaces = fvm_interface_set_size(ifs);
-    const cs_lnum_t  *local_num = NULL;
-    const fvm_interface_t  *interface = NULL;
+    const int  n_interfaces = cs_interface_set_size(ifs);
+    const cs_lnum_t  *local_id = NULL;
+    const cs_interface_t  *interface = NULL;
 
     shift = 0;
     s_edges->n_elts = tmp_size;
@@ -1375,16 +1236,16 @@ _add_single_edges(fvm_interface_set_t   *ifs,
 
     for (i = 0; i < n_interfaces; i++) {
 
-      interface = fvm_interface_set_get(ifs, i);
-      distant_rank = fvm_interface_rank(interface);
-      n_entities = fvm_interface_size(interface);
-      local_num = fvm_interface_get_local_num(interface);
+      interface = cs_interface_set_get(ifs, i);
+      distant_rank = cs_interface_rank(interface);
+      n_entities = cs_interface_size(interface);
+      local_id = cs_interface_get_elt_ids(interface);
 
       for (j = 0; j < tmp_size; j++) {
 
         if (edge_tag[j] == 0) { /* Not already treated */
-          if (cs_search_binary(n_entities, tmp_edges[2*j], local_num) > -1) {
-            if (cs_search_binary(n_entities, tmp_edges[2*j+1], local_num) > -1) {
+          if (cs_search_binary(n_entities, tmp_edges[2*j], local_id) > -1) {
+            if (cs_search_binary(n_entities, tmp_edges[2*j+1], local_id) > -1) {
 
               if (last_found_rank != distant_rank) {
                 s_edges->ranks[s_edges->n_ranks] = distant_rank;
@@ -1412,7 +1273,7 @@ _add_single_edges(fvm_interface_set_t   *ifs,
     /* Memory management */
 
     if (s_edges->n_elts != tmp_size)
-        BFT_REALLOC(s_edges->array, 2*s_edges->n_elts, int);
+      BFT_REALLOC(s_edges->array, 2*s_edges->n_elts, int);
 
     BFT_REALLOC(s_edges->ranks, s_edges->n_ranks, int);
     BFT_REALLOC(s_edges->index, s_edges->n_ranks + 1, int);
@@ -1455,22 +1316,22 @@ _add_single_edges(fvm_interface_set_t   *ifs,
  *---------------------------------------------------------------------------*/
 
 static void
-_add_coupled_edges(fvm_interface_set_t   *ifs,
-                   cs_join_sync_t        *s_edges,
-                   cs_join_sync_t        *c_edges)
+_add_coupled_edges(cs_interface_set_t   *ifs,
+                   cs_join_sync_t       *s_edges,
+                   cs_join_sync_t       *c_edges)
 {
-  int  i, j, id, n_entities;
+  cs_lnum_t  i, j, id, n_entities;
   int  request_count, rank_shift, distant_rank;
 
-  int  *buf = NULL, *recv_buf = NULL, *send_buf = NULL;
+  cs_lnum_t  *buf = NULL, *recv_buf = NULL, *send_buf = NULL;
   MPI_Request  *request = NULL;
   MPI_Status  *status  = NULL;
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
-  const cs_lnum_t  *local_num = NULL, *distant_num = NULL;
-  const int  n_interfaces = fvm_interface_set_size(ifs);
-  const fvm_interface_t  *interface = NULL;
+  const cs_lnum_t  *local_id = NULL, *distant_id = NULL;
+  const int  n_interfaces = cs_interface_set_size(ifs);
+  const cs_interface_t  *interface = NULL;
 
   assert(c_edges != NULL);
 
@@ -1487,8 +1348,8 @@ _add_coupled_edges(fvm_interface_set_t   *ifs,
 
   for (id = 0; id < n_interfaces; id++) {
 
-    interface = fvm_interface_set_get(ifs, id);
-    distant_rank = fvm_interface_rank(interface);
+    interface = cs_interface_set_get(ifs, id);
+    distant_rank = cs_interface_rank(interface);
 
     MPI_Irecv(&(buf[id]),
               1,
@@ -1508,8 +1369,8 @@ _add_coupled_edges(fvm_interface_set_t   *ifs,
 
     /* Preparation of data to send */
 
-    interface = fvm_interface_set_get(ifs, id);
-    distant_rank = fvm_interface_rank(interface);
+    interface = cs_interface_set_get(ifs, id);
+    distant_rank = cs_interface_rank(interface);
 
     if (rank_shift < s_edges->n_ranks) {
       if (s_edges->ranks[rank_shift] == distant_rank) {
@@ -1554,8 +1415,8 @@ _add_coupled_edges(fvm_interface_set_t   *ifs,
   for (i = 0; i < n_interfaces; i++) {
     if (buf[i] > 0) {
 
-      interface = fvm_interface_set_get(ifs, i);
-      distant_rank = fvm_interface_rank(interface);
+      interface = cs_interface_set_get(ifs, i);
+      distant_rank = cs_interface_rank(interface);
       c_edges->ranks[rank_shift++] = distant_rank;
       c_edges->index[rank_shift] = buf[i];
 
@@ -1578,8 +1439,8 @@ _add_coupled_edges(fvm_interface_set_t   *ifs,
 
   for (id = 0; id < n_interfaces; id++) {
 
-    interface = fvm_interface_set_get(ifs, id);
-    distant_rank = fvm_interface_rank(interface);
+    interface = cs_interface_set_get(ifs, id);
+    distant_rank = cs_interface_rank(interface);
 
     if (rank_shift < c_edges->n_ranks) {
       if (c_edges->ranks[rank_shift] == distant_rank) {
@@ -1608,8 +1469,8 @@ _add_coupled_edges(fvm_interface_set_t   *ifs,
 
   for (id = 0; id < n_interfaces; id++) {
 
-    interface = fvm_interface_set_get(ifs, id);
-    distant_rank = fvm_interface_rank(interface);
+    interface = cs_interface_set_get(ifs, id);
+    distant_rank = cs_interface_rank(interface);
 
     if (rank_shift < s_edges->n_ranks) {
       if (s_edges->ranks[rank_shift] == distant_rank) {
@@ -1641,30 +1502,34 @@ _add_coupled_edges(fvm_interface_set_t   *ifs,
 
   rank_shift = 0;
 
-  /* Switch received couple vertices from distant num. to local num. */
+  /* Switch received couple vertices from distant id. to local id. */
+
+  cs_interface_set_add_match_ids(ifs);
 
   for (i = 0; i < n_interfaces; i++) {
 
-    interface = fvm_interface_set_get(ifs, i);
-    distant_rank = fvm_interface_rank(interface);
+    interface = cs_interface_set_get(ifs, i);
+    distant_rank = cs_interface_rank(interface);
+    distant_id = cs_interface_get_match_ids(interface);
+
+    n_entities = cs_interface_size(interface);
 
     if (rank_shift < c_edges->n_ranks) {
       if (c_edges->ranks[rank_shift] == distant_rank) {
 
-        n_entities = fvm_interface_size(interface);
-        local_num = fvm_interface_get_local_num(interface);
-        distant_num = fvm_interface_get_distant_num(interface);
+        local_id = cs_interface_get_elt_ids(interface);
 
         for (j = c_edges->index[rank_shift];
-             j < c_edges->index[rank_shift+1]; j++) {
+             j < c_edges->index[rank_shift+1];
+             j++) {
 
-          id = cs_search_binary(n_entities, c_edges->array[2*j], distant_num);
+          id = cs_search_binary(n_entities, c_edges->array[2*j], distant_id);
           assert(id != -1);
-          c_edges->array[2*j] = local_num[id];
+          c_edges->array[2*j] = local_id[id];
 
-          id = cs_search_binary(n_entities, c_edges->array[2*j+1], distant_num);
+          id = cs_search_binary(n_entities, c_edges->array[2*j+1], distant_id);
           assert(id != -1);
-          c_edges->array[2*j+1] = local_num[id];
+          c_edges->array[2*j+1] = local_id[id];
 
         } /* Loop on couple edges */
 
@@ -1674,6 +1539,8 @@ _add_coupled_edges(fvm_interface_set_t   *ifs,
     }
 
   } /* Loop on interfaces */
+
+  cs_interface_set_free_match_ids(ifs);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n  Coupled edges for the joining operation: (%p)\n",
@@ -1743,8 +1610,8 @@ _filter_edge_element(cs_join_select_t   *selection,
 
   for (i = 0; i < c_edges->n_elts; i++) {
 
-    vid1 = c_edges->array[2*i] - 1;
-    vid2 = c_edges->array[2*i+1] - 1;
+    vid1 = c_edges->array[2*i];
+    vid2 = c_edges->array[2*i+1];
     edge_id = _get_edge_id(vid1, vid2, sel_v2v_idx, sel_v2v_lst);
 
     if (edge_id == -1)
@@ -1811,8 +1678,8 @@ _filter_edge_element(cs_join_select_t   *selection,
       for (j = save; j < c_edges->index[i+1]; j++) {
         if (c_edge_tag[j] == 1) {
           c_edges->array[2*shift] = c_edges->array[2*j];
-            c_edges->array[2*shift+1] = c_edges->array[2*j+1];
-           shift++;
+          c_edges->array[2*shift+1] = c_edges->array[2*j+1];
+          shift++;
         }
       }
       save = c_edges->index[i+1];
@@ -1866,21 +1733,21 @@ _filter_edge_element(cs_join_select_t   *selection,
  *  i_f2v_lst     <-- interior "face -> vertex" connect. list
  *  n_vertices    <-- number of vertices in the parent mesh
  *  vtx_tag       <-- tag on vertices. 1 if selected, 0 otherwise
- *  ifs           <-- pointer to a fvm_interface_set_t struct.
+ *  ifs           <-- pointer to a cs_interface_set_t struct.
  *  i_face_cells  <-- interior face -> cells connect.
  *  join_select   <-> pointer to a fvm_join_selection_t structure
  *---------------------------------------------------------------------------*/
 
 static void
-_get_missing_edges(cs_int_t              b_f2v_idx[],
-                   cs_int_t              b_f2v_lst[],
-                   cs_int_t              i_f2v_idx[],
-                   cs_int_t              i_f2v_lst[],
-                   cs_int_t              n_vertices,
-                   cs_int_t              vtx_tag[],
-                   fvm_interface_set_t  *ifs,
-                   cs_int_t              i_face_cells[],
-                   cs_join_select_t     *selection)
+_get_missing_edges(cs_int_t             b_f2v_idx[],
+                   cs_int_t             b_f2v_lst[],
+                   cs_int_t             i_f2v_idx[],
+                   cs_int_t             i_f2v_lst[],
+                   cs_int_t             n_vertices,
+                   cs_int_t             vtx_tag[],
+                   cs_interface_set_t  *ifs,
+                   cs_int_t             i_face_cells[],
+                   cs_join_select_t    *selection)
 {
   cs_gnum_t  n_l_elts, n_g_elts;
 
@@ -2138,7 +2005,7 @@ cs_join_select_create(const char  *selection_criteria,
   cs_int_t  *vtx_tag = NULL;
   cs_join_select_t  *selection = NULL;
   cs_lnum_t  *order = NULL, *ordered_faces = NULL;
-  fvm_interface_set_t  *ifs = NULL;
+  cs_interface_set_t  *ifs = NULL;
   cs_mesh_t  *mesh = cs_glob_mesh;
   FILE  *logfile = cs_glob_join_log;
 
@@ -2252,14 +2119,14 @@ cs_join_select_create(const char  *selection_criteria,
 
     assert(mesh->global_vtx_num != NULL);
 
-    ifs = fvm_interface_set_create(mesh->n_vertices,
-                                   NULL,
-                                   mesh->global_vtx_num,
-                                   NULL,
-                                   0,
-                                   NULL,
-                                   NULL,
-                                   NULL);
+    ifs = cs_interface_set_create(mesh->n_vertices,
+                                  NULL,
+                                  mesh->global_vtx_num,
+                                  NULL,
+                                  0,
+                                  NULL,
+                                  NULL,
+                                  NULL);
 
     assert(ifs != NULL);
 
@@ -2316,7 +2183,7 @@ cs_join_select_create(const char  *selection_criteria,
                        selection);
 
     BFT_FREE(vtx_tag);
-    ifs = fvm_interface_set_destroy(ifs);
+    cs_interface_set_destroy(&ifs);
 
   }
 #endif

@@ -44,12 +44,12 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "fvm_interface.h"
 #include "fvm_periodicity.h"
 
 #include "cs_base.h"
-#include "cs_mesh.h"
 #include "cs_halo.h"
+#include "cs_interface.h"
+#include "cs_mesh.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -1802,8 +1802,6 @@ cs_halo_perio_sync_coords(const cs_halo_t  *halo,
 
   cs_real_t  matrix[3][4];
 
-  fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
-
   const fvm_periodicity_t  *periodicity = cs_glob_mesh->periodicity;
   const cs_int_t  n_transforms = halo->n_transforms;
   const cs_int_t  n_elts = halo->n_local_elts;
@@ -1823,7 +1821,6 @@ cs_halo_perio_sync_coords(const cs_halo_t  *halo,
 
     shift = 4 * halo->n_c_domains * t_id;
 
-    perio_type = fvm_periodicity_get_type(periodicity, t_id);
     fvm_periodicity_get_matrix(periodicity, t_id, matrix);
 
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {

@@ -31,25 +31,17 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_interface.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_printf.h"
+
+#include "cs_interface.h"
+
 #include "cs_base.h"
+
 #include "cs_mesh.h"
-#include "cs_parall.h"
 #include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
@@ -66,7 +58,7 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-static fvm_interface_set_t  *_ale_interface = NULL;
+static cs_interface_set_t  *_ale_interface = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -153,14 +145,14 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
 
   if (cs_glob_mesh->global_vtx_num != NULL && _ale_interface == NULL)
     _ale_interface
-      = fvm_interface_set_create(n_vertices,
-                                 NULL,
-                                 cs_glob_mesh->global_vtx_num,
-                                 NULL,
-                                 0,
-                                 NULL,
-                                 NULL,
-                                 NULL);
+      = cs_interface_set_create(n_vertices,
+                                NULL,
+                                cs_glob_mesh->global_vtx_num,
+                                NULL,
+                                0,
+                                NULL,
+                                NULL,
+                                NULL);
 
   BFT_MALLOC(vtx_counter, n_vertices, cs_real_t);
 
@@ -245,10 +237,22 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
   } /* End of loop on border faces */
 
   if (_ale_interface != NULL) {
-    cs_parall_interface_sr(_ale_interface, n_vertices, 3, disp_proj);
-    cs_parall_interface_sr(_ale_interface, n_vertices, 1, vtx_counter);
+    cs_datatype_t elt_type
+      =   (sizeof(cs_real_t) == cs_datatype_size[CS_DOUBLE])
+        ? CS_DOUBLE : CS_FLOAT;
+    cs_interface_set_sum(_ale_interface,
+                         n_vertices,
+                         3,
+                         false,
+                         elt_type,
+                         disp_proj);
+    cs_interface_set_sum(_ale_interface,
+                         n_vertices,
+                         1,
+                         true,
+                         elt_type,
+                         vtx_counter);
   }
-
 
   for (vtx_id = 0; vtx_id < n_vertices; vtx_id++)
     for (i = 0; i < dim; i++)
@@ -290,7 +294,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
                           const cs_int_t    b_face_vtx_idx[],
                           const cs_int_t    b_face_vtx_lst[],
                           const cs_int_t    ialtyb[],
-                          const cs_real_t   pond[],
+                          const cs_real_t   opond[],
                           cs_real_t        *meshv,
                           cs_real_t        *gradm,
                           cs_real_t        *cfaale,
@@ -314,14 +318,14 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
 
   if (cs_glob_mesh->global_vtx_num != NULL && _ale_interface == NULL)
     _ale_interface
-      = fvm_interface_set_create(n_vertices,
-                                 NULL,
-                                 cs_glob_mesh->global_vtx_num,
-                                 NULL,
-                                 0,
-                                 NULL,
-                                 NULL,
-                                 NULL);
+      = cs_interface_set_create(n_vertices,
+                                NULL,
+                                cs_glob_mesh->global_vtx_num,
+                                NULL,
+                                0,
+                                NULL,
+                                NULL,
+                                NULL);
 
   BFT_MALLOC(vtx_counter, n_vertices, cs_real_t);
 
@@ -496,8 +500,21 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
   } /* End of loop on border faces */
 
   if (_ale_interface != NULL) {
-    cs_parall_interface_sr(_ale_interface, n_vertices, 3, disp_proj);
-    cs_parall_interface_sr(_ale_interface, n_vertices, 1, vtx_counter);
+    cs_datatype_t elt_type
+      =   (sizeof(cs_real_t) == cs_datatype_size[CS_DOUBLE])
+        ? CS_DOUBLE : CS_FLOAT;
+    cs_interface_set_sum(_ale_interface,
+                         n_vertices,
+                         3,
+                         false,
+                         elt_type,
+                         disp_proj);
+    cs_interface_set_sum(_ale_interface,
+                         n_vertices,
+                         1,
+                         true,
+                         elt_type,
+                         vtx_counter);
   }
 
   for (vtx_id = 0; vtx_id < n_vertices; vtx_id++)
@@ -508,7 +525,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
 }
 
 /*----------------------------------------------------------------------------
- * Destroy if necessary the associated fvm_interface_set_t structure
+ * Destroy if necessary the associated cs_interface_set_t structure
  *
  * Fortran Interface
  *
@@ -521,7 +538,7 @@ CS_PROCF (lbrale, LBRALE)(void)
 {
 
   if (_ale_interface != NULL)
-    _ale_interface = fvm_interface_set_destroy(_ale_interface);
+    cs_interface_set_destroy(&_ale_interface);
 
 }
 

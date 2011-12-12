@@ -34,28 +34,20 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *---------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *---------------------------------------------------------------------------*/
-
-#include <fvm_parall.h>
-#include <fvm_periodicity.h>
-#include <fvm_interface.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *---------------------------------------------------------------------------*/
 
-#include "cs_mesh.h"
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
 
+#include "fvm_parall.h"
+#include "fvm_periodicity.h"
+
+#include "cs_interface.h"
+#include "cs_mesh.h"
 #include "cs_search.h"
+
 #include "cs_join_mesh.h"
 #include "cs_join_post.h"
 #include "cs_join_set.h"

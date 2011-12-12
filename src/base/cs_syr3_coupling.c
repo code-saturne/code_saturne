@@ -42,30 +42,21 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_nodal.h>
-#include <fvm_interface.h>
-#include <fvm_nodal_extract.h>
-#include <fvm_nodal_project.h>
-#include <fvm_nodal_triangulate.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
+
+#include "fvm_nodal.h"
+#include "fvm_nodal_extract.h"
+#include "fvm_nodal_project.h"
+#include "fvm_nodal_triangulate.h"
+
+#include "cs_interface.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
-#include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_selector.h"
 
@@ -118,7 +109,7 @@ struct _cs_syr3_coupling_t {
   cs_real_t      *weighting;        /* Triangle area or edge lengths */
   fvm_nodal_t    *coupled_mesh;     /* Nodal mesh extracted */
 
-  fvm_interface_set_t  *if_set;     /* Interfaces between equivalent vertices */
+  cs_interface_set_t  *if_set;      /* Interfaces between equivalent vertices */
 
   /* Saved arrays for post processing (float for reduced memory use) */
 
@@ -791,8 +782,16 @@ _interpolate_elt_to_vtx(const cs_syr3_coupling_t  *syr_coupling,
   /* Sum on parallel domain boundaries ;
      Reminder: we need to have down = vtx_values + n_vtx_values */
 
-  if (syr_coupling->if_set != NULL)
-    cs_parall_interface_sr(syr_coupling->if_set, n_vertices, 2, vtx_values);
+  if (syr_coupling->if_set != NULL) {
+    cs_datatype_t r_type = (sizeof(cs_real_t) == cs_datatype_size[CS_DOUBLE])
+                           ? CS_DOUBLE : CS_FLOAT;
+    cs_interface_set_sum(syr_coupling->if_set,
+                         n_vertices,
+                         2,
+                         false, /* non-interlaced */
+                         r_type,
+                         vtx_values);
+  }
 
   for (i = 0; i < n_vertices; i++)
     vtx_values[i] /= down[i];
@@ -1276,7 +1275,7 @@ cs_syr3_coupling_all_destroy(void)
         = fvm_nodal_destroy(syr_coupling->coupled_mesh);
 
     if (syr_coupling->if_set != NULL)
-      syr_coupling->if_set = fvm_interface_set_destroy(syr_coupling->if_set);
+      cs_interface_set_destroy(&(syr_coupling->if_set));
 
     BFT_FREE(syr_coupling->syr_name);
 
@@ -1407,14 +1406,14 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t  *syr_coupling)
 
     /* Define interface between vertices on parallel boundaries */
 
-    syr_coupling->if_set = fvm_interface_set_create(n_vertices,
-                                                    NULL,
-                                                    global_vertex_num,
-                                                    NULL,
-                                                    0,
-                                                    NULL,
-                                                    NULL,
-                                                    NULL);
+    syr_coupling->if_set = cs_interface_set_create(n_vertices,
+                                                   NULL,
+                                                   global_vertex_num,
+                                                   NULL,
+                                                   0,
+                                                   NULL,
+                                                   NULL,
+                                                   NULL);
 
     BFT_FREE(global_vertex_num);
 

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-12-01 14:58+0100\n"
+"POT-Creation-Date: 2011-12-12 19:05+0100\n"
 "PO-Revision-Date: 2011-10-13 19:39+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5215,6 +5215,15 @@ msgstr ""
 "alors que les dernières variables dont le halo de rotation\n"
 "a été sauvegardé sont définies à partir de [%p, %p, %p]."
 
+msgid ""
+"Trying to build an interface with unordered elements\n"
+"not currently handled."
+msgstr ""
+
+#, c-format
+msgid "Called cs_interface_set_sum with unhandled datatype (%d)."
+msgstr ""
+
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -7217,11 +7226,6 @@ msgstr "hexaèdre"
 
 msgid "simple polyhedron"
 msgstr "polyèdre simple"
-
-msgid ""
-"Trying to build an interface with unordered elements\n"
-"not currently handled."
-msgstr ""
 
 msgid "Morton (in bounding box)"
 msgstr "Morton (dans boîte englobante)"
@@ -9793,4 +9797,3 @@ msgstr ""
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
 "\n"
-

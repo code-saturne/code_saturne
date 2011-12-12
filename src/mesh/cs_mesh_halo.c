@@ -43,7 +43,7 @@
 #include "bft_printf.h"
 
 #include "fvm_periodicity.h"
-#include "fvm_interface.h"
+#include "cs_interface.h"
 #include "fvm_parall.h"
 
 #include "cs_base.h"
@@ -67,20 +67,20 @@ BEGIN_C_DECLS
 
 typedef struct _vtx_lookup_table {
 
-  cs_int_t   n_vertices;    /* Number of local vertices in the problem domain */
-  cs_int_t   n_transforms;  /* Number of transformations */
-  cs_int_t   n_interfaces;  /* Number of interfaces */
-  cs_int_t   n_categories;  /* Number of possible categories
+  cs_lnum_t  n_vertices;    /* Number of local vertices in the problem domain */
+  cs_lnum_t  n_transforms;  /* Number of transformations */
+  cs_lnum_t  n_interfaces;  /* Number of interfaces */
+  cs_lnum_t  n_categories;  /* Number of possible categories
                                = n_interfaces * (n_transforms + 1)
                                (1 category for purely parallel elements) */
 
-  cs_int_t   *if_ranks;     /* List of ranks */
-  cs_int_t   *rank_ids;     /* list of rank ids */
+  cs_lnum_t  *if_ranks;     /* List of ranks */
+  cs_lnum_t  *rank_ids;     /* list of rank ids */
 
-  cs_int_t   *index;        /* index on table (size = n_vertices + 1) */
+  cs_lnum_t  *index;        /* index on table (size = n_vertices + 1) */
 
-  cs_int_t   *rank_list;    /* list of ranks on which vertices are linked */
-  cs_int_t   *type_list;    /* list of type (purelly parallel (=0) or number
+  cs_lnum_t  *rank_list;    /* list of ranks on which vertices are linked */
+  cs_lnum_t  *type_list;    /* list of type (purelly parallel (=0) or number
                                of the periodicity) featuring a vertex. This
                                list is only allocated when n_perio > 0 */
 
@@ -111,29 +111,29 @@ typedef struct _vtx_lookup_table {
  *---------------------------------------------------------------------------*/
 
 static void
-_fill_vtx_lookup(vtx_lookup_table_t         *vtx_lookup,
-                 const fvm_interface_set_t  *ifs)
+_fill_vtx_lookup(vtx_lookup_table_t        *vtx_lookup,
+                 const cs_interface_set_t  *ifs)
 {
-  cs_int_t  i, vtx_id, rank_id, shift;
+  cs_lnum_t i, vtx_id, rank_id, shift;
 
-  cs_int_t  *counter = NULL;
+  cs_lnum_t *counter = NULL;
 
-  const cs_int_t  n_interfaces = fvm_interface_set_size(ifs);
+  const cs_lnum_t n_interfaces = cs_interface_set_size(ifs);
 
-  BFT_MALLOC(counter, vtx_lookup->n_vertices, cs_int_t);
+  BFT_MALLOC(counter, vtx_lookup->n_vertices, cs_lnum_t);
 
   for (i = 0; i < vtx_lookup->n_vertices; i++)
     counter[i] = 0;
 
   for (rank_id = 0; rank_id < n_interfaces; rank_id++) {
 
-    const fvm_interface_t  *interface = fvm_interface_set_get(ifs, rank_id);
-    const cs_lnum_t  interface_size = fvm_interface_size(interface);
-    const cs_lnum_t  *local_num = fvm_interface_get_local_num(interface);
+    const cs_interface_t  *interface = cs_interface_set_get(ifs, rank_id);
+    const cs_lnum_t  interface_size = cs_interface_size(interface);
+    const cs_lnum_t  *elt_id = cs_interface_get_elt_ids(interface);
 
     for (i = 0; i < interface_size; i++) { /* Only parallel vertices */
 
-      vtx_id = local_num[i]-1;
+      vtx_id = elt_id[i];
       shift = vtx_lookup->index[vtx_id] + counter[vtx_id];
 
       vtx_lookup->rank_list[shift] = vtx_lookup->rank_ids[rank_id];
@@ -162,38 +162,38 @@ _fill_vtx_lookup(vtx_lookup_table_t         *vtx_lookup,
  *---------------------------------------------------------------------------*/
 
 static void
-_fill_vtx_lookup_with_perio(vtx_lookup_table_t         *vtx_lookup,
-                            const fvm_interface_set_t  *ifs)
+_fill_vtx_lookup_with_perio(vtx_lookup_table_t        *vtx_lookup,
+                            const cs_interface_set_t  *ifs)
 {
-  cs_int_t  i, tr_id, vtx_id, rank_id, shift;
+  cs_lnum_t i, tr_id, vtx_id, rank_id, shift;
 
-  cs_int_t  *counter = NULL;
+  cs_lnum_t *counter = NULL;
 
-  const fvm_periodicity_t  *periodicity = fvm_interface_set_periodicity(ifs);
-  const cs_int_t  n_interfaces = fvm_interface_set_size(ifs);
-  const cs_int_t  n_transforms = fvm_periodicity_get_n_transforms(periodicity);
+  const fvm_periodicity_t  *periodicity = cs_interface_set_periodicity(ifs);
+  const cs_lnum_t n_interfaces = cs_interface_set_size(ifs);
+  const cs_lnum_t n_transforms = fvm_periodicity_get_n_transforms(periodicity);
 
   assert(n_transforms > 0);
 
-  BFT_MALLOC(counter, vtx_lookup->n_vertices, cs_int_t);
+  BFT_MALLOC(counter, vtx_lookup->n_vertices, cs_lnum_t);
 
   for (i = 0; i < vtx_lookup->n_vertices; i++)
     counter[i] = 0;
 
   for (rank_id = 0; rank_id < n_interfaces; rank_id++) {
 
-    const fvm_interface_t  *interface
-      = fvm_interface_set_get(ifs, vtx_lookup->rank_ids[rank_id]);
-    const cs_lnum_t  tr_index_size = fvm_interface_get_tr_index_size(interface);
-    const cs_lnum_t  *tr_index = fvm_interface_get_tr_index(interface);
-    const cs_lnum_t  *local_num = fvm_interface_get_local_num(interface);
+    const cs_interface_t  *interface
+      = cs_interface_set_get(ifs, vtx_lookup->rank_ids[rank_id]);
+    const cs_lnum_t  tr_index_size = cs_interface_get_tr_index_size(interface);
+    const cs_lnum_t  *tr_index = cs_interface_get_tr_index(interface);
+    const cs_lnum_t  *vtx_ids = cs_interface_get_elt_ids(interface);
 
     assert(n_transforms + 2 == tr_index_size);
     assert(tr_index != NULL);
 
     for (i = tr_index[0]; i < tr_index[1]; i++) { /* Only parallel vertices */
 
-      vtx_id = local_num[i]-1;
+      vtx_id = vtx_ids[i];
       shift = vtx_lookup->index[vtx_id] + counter[vtx_id];
 
       vtx_lookup->rank_list[shift] = rank_id;
@@ -206,7 +206,7 @@ _fill_vtx_lookup_with_perio(vtx_lookup_table_t         *vtx_lookup,
 
       for (i = tr_index[tr_id + 1]; i < tr_index[tr_id + 2]; i++) {
 
-        vtx_id = local_num[i]-1;
+        vtx_id = vtx_ids[i];
         shift = vtx_lookup->index[vtx_id] + counter[vtx_id];
         vtx_lookup->rank_list[shift] = rank_id;
         vtx_lookup->type_list[shift] = tr_id + 1;
@@ -234,19 +234,19 @@ _fill_vtx_lookup_with_perio(vtx_lookup_table_t         *vtx_lookup,
  *---------------------------------------------------------------------------*/
 
 static vtx_lookup_table_t *
-_vtx_lookup_create(cs_int_t                    n_vertices,
-                   const fvm_interface_set_t  *ifs)
+_vtx_lookup_create(cs_lnum_t                  n_vertices,
+                   const cs_interface_set_t  *ifs)
 {
-  cs_int_t  i, rank_id, tmp_id, interface_size;
+  cs_lnum_t i, rank_id, tmp_id, interface_size;
 
-  cs_int_t  loc_rank_id = -1;
+  cs_lnum_t loc_rank_id = -1;
   vtx_lookup_table_t  *vtx_lookup = NULL;
 
-  const fvm_interface_t  *interface = NULL;
-  const cs_lnum_t  *local_num = NULL;
-  const fvm_periodicity_t  *periodicity = fvm_interface_set_periodicity(ifs);
-  const cs_int_t  n_transforms = fvm_periodicity_get_n_transforms(periodicity);
-  const cs_int_t  n_interfaces = fvm_interface_set_size(ifs);
+  const cs_interface_t  *interface = NULL;
+  const cs_lnum_t  *vtx_ids = NULL;
+  const fvm_periodicity_t  *periodicity = cs_interface_set_periodicity(ifs);
+  const cs_lnum_t n_transforms = fvm_periodicity_get_n_transforms(periodicity);
+  const cs_lnum_t n_interfaces = cs_interface_set_size(ifs);
 
   BFT_MALLOC(vtx_lookup, 1, vtx_lookup_table_t);
 
@@ -255,9 +255,9 @@ _vtx_lookup_create(cs_int_t                    n_vertices,
   vtx_lookup->n_transforms = n_transforms;
   vtx_lookup->n_categories = (n_transforms + 1)*n_interfaces;
 
-  BFT_MALLOC(vtx_lookup->index, n_vertices + 1, cs_int_t);
-  BFT_MALLOC(vtx_lookup->if_ranks, n_interfaces, cs_int_t);
-  BFT_MALLOC(vtx_lookup->rank_ids, n_interfaces, cs_int_t);
+  BFT_MALLOC(vtx_lookup->index, n_vertices + 1, cs_lnum_t);
+  BFT_MALLOC(vtx_lookup->if_ranks, n_interfaces, cs_lnum_t);
+  BFT_MALLOC(vtx_lookup->rank_ids, n_interfaces, cs_lnum_t);
 
   for (i = 0; i < n_vertices + 1; i++)
     vtx_lookup->index[i] = 0;
@@ -267,11 +267,11 @@ _vtx_lookup_create(cs_int_t                    n_vertices,
 
   for (rank_id = 0; rank_id < n_interfaces; rank_id++) {
 
-    interface = fvm_interface_set_get(ifs, rank_id);
-    vtx_lookup->if_ranks[rank_id] = fvm_interface_rank(interface);
+    interface = cs_interface_set_get(ifs, rank_id);
+    vtx_lookup->if_ranks[rank_id] = cs_interface_rank(interface);
     vtx_lookup->rank_ids[rank_id] = rank_id;
 
-    if (cs_glob_rank_id == fvm_interface_rank(interface))
+    if (cs_glob_rank_id == cs_interface_rank(interface))
       loc_rank_id = rank_id;
 
   } /* End of loop on if_ranks */
@@ -293,13 +293,13 @@ _vtx_lookup_create(cs_int_t                    n_vertices,
 
       cs_lnum_t  *order = NULL;
       cs_gnum_t  *buffer = NULL;
-      cs_int_t  *_rank_ids = NULL;
+      cs_lnum_t *_rank_ids = NULL;
 
-      assert(sizeof(cs_lnum_t) == sizeof(cs_int_t));
+      assert(sizeof(cs_lnum_t) == sizeof(cs_lnum_t));
 
       BFT_MALLOC(order, n_interfaces - 1, cs_lnum_t);
       BFT_MALLOC(buffer, n_interfaces - 1, cs_gnum_t);
-      BFT_MALLOC(_rank_ids, n_interfaces , cs_int_t);
+      BFT_MALLOC(_rank_ids, n_interfaces , cs_lnum_t);
 
       _rank_ids[0] = vtx_lookup->rank_ids[0];
       for (i = 1; i < n_interfaces; i++) {
@@ -313,7 +313,7 @@ _vtx_lookup_create(cs_int_t                    n_vertices,
                               n_interfaces-1);
 
       for (i = 0; i < n_interfaces - 1; i++) {
-        vtx_lookup->if_ranks[i+1] = (cs_int_t)buffer[order[i]];
+        vtx_lookup->if_ranks[i+1] = (cs_lnum_t)buffer[order[i]];
         vtx_lookup->rank_ids[i+1] = _rank_ids[order[i] + 1];
       }
 
@@ -329,12 +329,12 @@ _vtx_lookup_create(cs_int_t                    n_vertices,
 
   for (rank_id = 0; rank_id < n_interfaces; rank_id++) {
 
-    interface = fvm_interface_set_get(ifs, rank_id);
-    interface_size = fvm_interface_size(interface);
-    local_num = fvm_interface_get_local_num(interface);
+    interface = cs_interface_set_get(ifs, rank_id);
+    interface_size = cs_interface_size(interface);
+    vtx_ids = cs_interface_get_elt_ids(interface);
 
     for (i = 0; i < interface_size; i++)
-      vtx_lookup->index[(cs_int_t)local_num[i]] += 1;
+      vtx_lookup->index[vtx_ids[i] + 1] += 1;
 
   } /* End of loop on if_ranks */
 
@@ -343,13 +343,13 @@ _vtx_lookup_create(cs_int_t                    n_vertices,
   for (i = 0; i < n_vertices; i++)
     vtx_lookup->index[i+1] += vtx_lookup->index[i];
 
-  BFT_MALLOC(vtx_lookup->rank_list, vtx_lookup->index[n_vertices], cs_int_t);
+  BFT_MALLOC(vtx_lookup->rank_list, vtx_lookup->index[n_vertices], cs_lnum_t);
 
   /* Second loop to fill table(s) */
 
   if (n_transforms > 0) {
 
-    BFT_MALLOC(vtx_lookup->type_list, vtx_lookup->index[n_vertices], cs_int_t);
+    BFT_MALLOC(vtx_lookup->type_list, vtx_lookup->index[n_vertices], cs_lnum_t);
     _fill_vtx_lookup_with_perio(vtx_lookup, ifs);
 
   }
@@ -396,14 +396,14 @@ _vtx_lookup_destroy(vtx_lookup_table_t  **vtx_lookup)
  *---------------------------------------------------------------------------*/
 
 static void
-_update_vtx_checker(cs_int_t             vtx_id,
-                    cs_int_t            *vtx_checker,
+_update_vtx_checker(cs_lnum_t            vtx_id,
+                    cs_lnum_t           *vtx_checker,
                     vtx_lookup_table_t  *vtx_lookup)
 {
-  cs_int_t  i, rank_id, type;
+  cs_lnum_t i, rank_id, type;
 
-  const cs_int_t  n_interfaces = vtx_lookup->n_interfaces;
-  const cs_int_t  n_transforms = vtx_lookup->n_transforms;
+  const cs_lnum_t n_interfaces = vtx_lookup->n_interfaces;
+  const cs_lnum_t n_transforms = vtx_lookup->n_transforms;
 
   for (i = vtx_lookup->index[vtx_id];
        i < vtx_lookup->index[vtx_id + 1]; i++) {
@@ -440,12 +440,12 @@ _update_vtx_checker(cs_int_t             vtx_id,
  *---------------------------------------------------------------------------*/
 
 static cs_halo_type_t
-_update_face_checker(cs_int_t          n_face_vertices,
-                     cs_int_t          n_categories,
-                     cs_int_t         *vtx_checker,
+_update_face_checker(cs_lnum_t         n_face_vertices,
+                     cs_lnum_t         n_categories,
+                     cs_lnum_t        *vtx_checker,
                      cs_halo_type_t   *face_checker)
 {
-  cs_int_t  i;
+  cs_lnum_t i;
 
   cs_halo_type_t  ret_type = CS_HALO_N_TYPES;
 
@@ -489,12 +489,12 @@ static void
 _count_halo_elements(cs_mesh_t        *mesh,
                      cs_halo_type_t   *face_checker)
 {
-  cs_int_t  type_id, rank_id;
+  cs_lnum_t type_id, rank_id;
 
-  const cs_int_t  n_transforms = mesh->n_transforms;
+  const cs_lnum_t n_transforms = mesh->n_transforms;
   const cs_halo_t  *halo = mesh->halo;
-  const cs_int_t  n_c_domains = halo->n_c_domains;
-  const cs_int_t  stride = 4*n_c_domains;
+  const cs_lnum_t n_c_domains = halo->n_c_domains;
+  const cs_lnum_t stride = 4*n_c_domains;
 
   for (type_id = 0; type_id < n_transforms + 1; type_id++) {
 
@@ -540,22 +540,22 @@ _count_halo_elements(cs_mesh_t        *mesh,
 static void
 _build_halo_index(cs_mesh_t  *mesh)
 {
-  cs_int_t  i, rank_id;
-  cs_int_t  buffer_size, n_halo_elts, n_per_halo_elts;
+  cs_lnum_t i, rank_id;
+  cs_lnum_t buffer_size, n_halo_elts, n_per_halo_elts;
 
   cs_halo_t  *halo = mesh->halo;
 
-  const cs_int_t  n_c_domains = halo->n_c_domains;
-  const cs_int_t  n_init_perio = mesh->n_init_perio;
-  const cs_int_t  stride = 4*n_c_domains;
-  const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
+  const cs_lnum_t n_c_domains = halo->n_c_domains;
+  const cs_lnum_t n_init_perio = mesh->n_init_perio;
+  const cs_lnum_t stride = 4*n_c_domains;
+  const cs_lnum_t n_transforms = mesh->n_transforms;
+  const cs_lnum_t local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
 
   buffer_size = 0;
   for (i = 0; i < 2*n_c_domains; i++)
     buffer_size += halo->send_index[i+1];
 
-  BFT_MALLOC(halo->send_list, buffer_size, cs_int_t);
+  BFT_MALLOC(halo->send_list, buffer_size, cs_lnum_t);
 
   /* Define parallel and periodic index */
 
@@ -640,15 +640,15 @@ _build_halo_index(cs_mesh_t  *mesh)
 static void
 _add_halo_elements(cs_mesh_t        *mesh,
                    cs_halo_type_t   *face_checker,
-                   cs_int_t          cell_id,
-                   cs_int_t         *counter)
+                   cs_lnum_t         cell_id,
+                   cs_lnum_t        *counter)
 {
-  cs_int_t  i, type_id, shift, c_shift;
+  cs_lnum_t i, type_id, shift, c_shift;
 
   cs_halo_t  *halo = mesh->halo;
 
-  const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  n_c_domains = halo->n_c_domains;
+  const cs_lnum_t n_transforms = mesh->n_transforms;
+  const cs_lnum_t n_c_domains = halo->n_c_domains;
 
     /* How is organized counter:
 
@@ -729,7 +729,7 @@ _add_halo_elements(cs_mesh_t        *mesh,
 
 static bool
 _test_loop_continues(cs_mesh_t   *mesh,
-                     cs_int_t     face_num)
+                     cs_lnum_t    face_num)
 {
   bool  choice = false;
 
@@ -739,7 +739,7 @@ _test_loop_continues(cs_mesh_t   *mesh,
 
     if (mesh->halo_type == CS_HALO_STANDARD) {
 
-      cs_int_t  fac_id = face_num - mesh->n_b_faces - 1;
+      cs_lnum_t fac_id = face_num - mesh->n_b_faces - 1;
 
       if (   mesh->i_face_cells[2*fac_id] < 1
           || mesh->i_face_cells[2*fac_id+1] < 1 )
@@ -774,30 +774,30 @@ _test_loop_continues(cs_mesh_t   *mesh,
  *---------------------------------------------------------------------------*/
 
 static void
-_fill_send_halo(cs_mesh_t                  *mesh,
-                const fvm_interface_set_t  *vertex_ifs,
-                cs_int_t                   *cell_faces_idx,
-                cs_int_t                   *cell_faces_lst)
+_fill_send_halo(cs_mesh_t                 *mesh,
+                const cs_interface_set_t  *vertex_ifs,
+                cs_lnum_t                 *cell_faces_idx,
+                cs_lnum_t                 *cell_faces_lst)
 {
-  cs_int_t  i, cell_id, i_fac, i_vtx;
-  cs_int_t  fac_id, vtx_id, fac_num;
-  cs_int_t  n_face_vertices;
+  cs_lnum_t i, cell_id, i_fac, i_vtx;
+  cs_lnum_t fac_id, vtx_id, fac_num;
+  cs_lnum_t n_face_vertices;
 
   cs_halo_type_t  type_tag = CS_HALO_N_TYPES;
   cs_halo_type_t  face_type = CS_HALO_N_TYPES;
   cs_halo_type_t  cell_type = CS_HALO_N_TYPES;
-  cs_int_t  n_categories = 0;
+  cs_lnum_t n_categories = 0;
   cs_halo_t  *halo = mesh->halo;
   vtx_lookup_table_t  *vtx_lookup = NULL;
   cs_halo_type_t  *cell_tag = NULL;
   cs_halo_type_t  *face_checker = NULL;
-  cs_int_t  *vtx_checker = NULL;
-  cs_int_t  *counter = NULL;
+  cs_lnum_t *vtx_checker = NULL;
+  cs_lnum_t *counter = NULL;
 
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  n_vertices = mesh->n_vertices;
-  const cs_int_t  *fac_vtx_idx = mesh->i_face_vtx_idx;
-  const cs_int_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t n_vertices = mesh->n_vertices;
+  const cs_lnum_t *fac_vtx_idx = mesh->i_face_vtx_idx;
+  const cs_lnum_t *fac_vtx_lst = mesh->i_face_vtx_lst;
 
   /* We should have the faces -> vertices connectivity to continue */
 
@@ -805,7 +805,7 @@ _fill_send_halo(cs_mesh_t                  *mesh,
     return;
 
   /* Create a lookup table to accelerate search in
-     fvm_interface_set structure */
+     cs_interface_set structure */
 
   vtx_lookup = _vtx_lookup_create(n_vertices, vertex_ifs);
 
@@ -832,7 +832,7 @@ _fill_send_halo(cs_mesh_t                  *mesh,
 
   if (cell_faces_idx != NULL && cell_faces_lst != NULL) {
 
-    BFT_MALLOC(vtx_checker, n_categories, cs_int_t);
+    BFT_MALLOC(vtx_checker, n_categories, cs_lnum_t);
     BFT_MALLOC(face_checker, n_categories, cs_halo_type_t);
     BFT_MALLOC(cell_tag, n_cells, cs_halo_type_t);
 
@@ -898,7 +898,7 @@ _fill_send_halo(cs_mesh_t                  *mesh,
 
     /* Initialize counter */
 
-    BFT_MALLOC(counter, 2*n_categories, cs_int_t);
+    BFT_MALLOC(counter, 2*n_categories, cs_lnum_t);
 
     for (i = 0; i < 2*n_categories; i++)
       counter[i] = 0;
@@ -1002,34 +1002,34 @@ _fill_send_halo(cs_mesh_t                  *mesh,
  *
  * parameters:
  *   n_vertices    <-- size of the buffer
- *   vertex_ifs    <-- pointer to a fvm_interface_set_t structure
+ *   vertex_ifs    <-- pointer to a cs_interface_set_t structure
  *   p_vertex_tag  <-> pointer to the tagged buffer
  *---------------------------------------------------------------------------*/
 
 static void
-_get_vertex_tag(cs_int_t                    n_vertices,
-                const fvm_interface_set_t  *vertex_ifs,
-                cs_int_t                   *p_vertex_tag[])
+_get_vertex_tag(cs_lnum_t                  n_vertices,
+                const cs_interface_set_t  *vertex_ifs,
+                cs_lnum_t                 *p_vertex_tag[])
 {
-  cs_int_t  i, j, rank_id;
+  cs_lnum_t i, j, rank_id;
 
-  cs_int_t  *vertex_tag = NULL;
+  cs_lnum_t *vertex_tag = NULL;
 
-  const int  ifs_size = fvm_interface_set_size(vertex_ifs);
+  const int  ifs_size = cs_interface_set_size(vertex_ifs);
 
-  BFT_MALLOC(vertex_tag, n_vertices, cs_int_t);
+  BFT_MALLOC(vertex_tag, n_vertices, cs_lnum_t);
 
   for (i = 0; i < n_vertices; i++)
     vertex_tag[i] = 0;
 
   for (rank_id = 0; rank_id < ifs_size; rank_id++) {
 
-    const fvm_interface_t  *interface = fvm_interface_set_get(vertex_ifs, rank_id);
-    const cs_lnum_t  *local_num = fvm_interface_get_local_num(interface);
-    const cs_lnum_t  if_size = fvm_interface_size(interface);
+    const cs_interface_t  *interface = cs_interface_set_get(vertex_ifs, rank_id);
+    const cs_lnum_t  *vtx_ids = cs_interface_get_elt_ids(interface);
+    const cs_lnum_t  if_size = cs_interface_size(interface);
 
     for (j = 0; j < if_size; j++)
-      vertex_tag[local_num[j]-1] = 1;
+      vertex_tag[vtx_ids[j]] = 1;
 
   } /* End of loop on ranks */
 
@@ -1052,18 +1052,18 @@ _get_vertex_tag(cs_int_t                    n_vertices,
  *  Number of purely parallel elements in the halo.
  *---------------------------------------------------------------------------*/
 
-static cs_int_t
+static cs_lnum_t
 _get_n_par_ghost_cells(const cs_mesh_t  *mesh,
-                       cs_int_t          rank,
+                       cs_lnum_t         rank,
                        cs_halo_type_t    type,
-                       const cs_int_t    index[],
-                       const cs_int_t    perio_lst[])
+                       const cs_lnum_t   index[],
+                       const cs_lnum_t   perio_lst[])
 {
-  cs_int_t  i;
-  cs_int_t  n_per_gcells = 0, n_par_gcells = 0;
+  cs_lnum_t i;
+  cs_lnum_t n_per_gcells = 0, n_par_gcells = 0;
 
-  const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  n_c_domains = mesh->halo->n_c_domains;
+  const cs_lnum_t n_transforms = mesh->n_transforms;
+  const cs_lnum_t n_c_domains = mesh->halo->n_c_domains;
 
   if (type == CS_HALO_STANDARD) {
 
@@ -1098,8 +1098,8 @@ _get_n_par_ghost_cells(const cs_mesh_t  *mesh,
 static void
 _fill_halo(cs_mesh_t  *mesh)
 {
-  cs_int_t  rank_id, i, j;
-  cs_int_t  shift;
+  cs_lnum_t rank_id, i, j;
+  cs_lnum_t shift;
 
 #if defined(HAVE_MPI)
   MPI_Request _request[128];
@@ -1110,13 +1110,13 @@ _fill_halo(cs_mesh_t  *mesh)
 
   int request_count = 0;
 
-  cs_int_t  *count = NULL;
+  cs_lnum_t *count = NULL;
 
   cs_halo_t  *halo = mesh->halo;
 
-  const  cs_int_t  n_c_domains = halo->n_c_domains;
-  const  cs_int_t  n_transforms = mesh->n_transforms;
-  const  cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
+  const  cs_lnum_t n_c_domains = halo->n_c_domains;
+  const  cs_lnum_t n_transforms = mesh->n_transforms;
+  const  cs_lnum_t local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
 
 #if defined(HAVE_MPI)
   if (halo->n_c_domains*2 > 128) {
@@ -1152,7 +1152,7 @@ _fill_halo(cs_mesh_t  *mesh)
     MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
-  BFT_MALLOC(count, 2*n_c_domains, cs_int_t);
+  BFT_MALLOC(count, 2*n_c_domains, cs_lnum_t);
 
   /* Send data to distant ranks */
 
@@ -1205,15 +1205,15 @@ _fill_halo(cs_mesh_t  *mesh)
 
   if (mesh->n_init_perio > 0) {
 
-    cs_int_t  n_elts;
-    cs_int_t  *exchange_buffer = NULL;
+    cs_lnum_t n_elts;
+    cs_lnum_t *exchange_buffer = NULL;
 
     /* n_transforms periodicities to deal with and for each sub-periodicity
        2 data. One for standard halo and the other one for extended halo */
 
-    const cs_int_t  n_elts_to_exchange = 2 * n_transforms;
+    const cs_lnum_t n_elts_to_exchange = 2 * n_transforms;
 
-    BFT_MALLOC(exchange_buffer, 4*n_transforms, cs_int_t);
+    BFT_MALLOC(exchange_buffer, 4*n_transforms, cs_lnum_t);
 
     for (rank_id = 0; rank_id < n_c_domains; rank_id++) {
 
@@ -1330,38 +1330,38 @@ _fill_halo(cs_mesh_t  *mesh)
  * This is done to avoid a reallocation for each rank and transformation.
  *
  * parameters:
- *   ifs <-- pointer to a fvm_interface_set_t structure
+ *   ifs <-- pointer to a cs_interface_set_t structure
  *
  * returns:
  *  max buffer size
  *---------------------------------------------------------------------------*/
 
-static cs_int_t
-_get_list_buffer_size(const fvm_interface_set_t  *ifs)
+static cs_lnum_t
+_get_list_buffer_size(const cs_interface_set_t  *ifs)
 {
-  cs_int_t  i, j, tr_index_size;
+  cs_lnum_t i, j, tr_index_size;
 
-  cs_int_t  max_lst_size = 0;
+  cs_lnum_t max_lst_size = 0;
 
-  const fvm_interface_t  *interface = NULL;
+  const cs_interface_t  *interface = NULL;
   const cs_lnum_t  *tr_index = NULL;
-  const cs_int_t  ifs_size = fvm_interface_set_size(ifs);
+  const cs_lnum_t ifs_size = cs_interface_set_size(ifs);
 
   if (ifs == NULL)
     return max_lst_size;
 
   for (i = 0; i < ifs_size; i++) {
 
-    interface = fvm_interface_set_get(ifs, i);
-    tr_index = fvm_interface_get_tr_index(interface);
-    tr_index_size = fvm_interface_get_tr_index_size(interface) - 1;
+    interface = cs_interface_set_get(ifs, i);
+    tr_index = cs_interface_get_tr_index(interface);
+    tr_index_size = cs_interface_get_tr_index_size(interface) - 1;
 
     if (tr_index != NULL)
       for (j = 0; j < tr_index_size; j++)
         max_lst_size = CS_MAX(max_lst_size, tr_index[j+1] - tr_index[j]);
     else
       max_lst_size = CS_MAX(max_lst_size,
-                            (cs_int_t)fvm_interface_size(interface));
+                            (cs_lnum_t)cs_interface_size(interface));
 
   } /* End of loop on interfaces */
 
@@ -1373,45 +1373,45 @@ _get_list_buffer_size(const fvm_interface_set_t  *ifs)
  * and this transformation.
  *
  * parameters:
- *   ifs                <-- pointer to fvm_interface_set_t structure
+ *   ifs                <-- pointer to cs_interface_set_t structure
  *   rank_id            <-- rank number to work with
  *   tr_id              <-- transformation id to work with
  *   vtx_interface_idx  <-> index on vertices which match the criterions
  *---------------------------------------------------------------------------*/
 
 static void
-_define_vtx_interface_idx(const fvm_interface_set_t  *ifs,
-                          cs_int_t                    rank_id,
-                          cs_int_t                    tr_id,
-                          cs_int_t                    n_vertices,
-                          cs_int_t                   *vtx_interface_idx)
+_define_vtx_interface_idx(const cs_interface_set_t  *ifs,
+                          cs_lnum_t                  rank_id,
+                          cs_lnum_t                  tr_id,
+                          cs_lnum_t                  n_vertices,
+                          cs_lnum_t                 *vtx_interface_idx)
 {
-  cs_int_t  i, j, id;
+  cs_lnum_t i, j, id;
 
   /* Initialize index */
 
   for (i = 0; i < n_vertices + 1; i++)
     vtx_interface_idx[i] = 0;
 
-  for (id = 0; id < fvm_interface_set_size(ifs); id++) {
+  for (id = 0; id < cs_interface_set_size(ifs); id++) {
 
-    const fvm_interface_t  *interface = fvm_interface_set_get(ifs, id);
+    const cs_interface_t  *interface = cs_interface_set_get(ifs, id);
 
-    if (rank_id == fvm_interface_rank(interface)) {
+    if (rank_id == cs_interface_rank(interface)) {
 
-      const cs_lnum_t  *tr_index = fvm_interface_get_tr_index(interface);
-      const cs_lnum_t  *local_num = fvm_interface_get_local_num(interface);
+      const cs_lnum_t  *tr_index = cs_interface_get_tr_index(interface);
+      const cs_lnum_t  *vtx_ids = cs_interface_get_elt_ids(interface);
 
       if (tr_index == NULL) {  /*  purelly parallel elements */
 
-        for (j = 0; j < (cs_int_t)fvm_interface_size(interface); j++)
-          vtx_interface_idx[local_num[j]] += 1;
+        for (j = 0; j < (cs_lnum_t)cs_interface_size(interface); j++)
+          vtx_interface_idx[vtx_ids[j] + 1] += 1;
 
       }
       else {
 
         for (j = tr_index[tr_id]; j < tr_index[tr_id+1]; j++)
-          vtx_interface_idx[local_num[j]] += 1;
+          vtx_interface_idx[vtx_ids[j] + 1] += 1;
 
       }
 
@@ -1435,7 +1435,7 @@ _define_vtx_interface_idx(const fvm_interface_set_t  *ifs,
  * to local vertices (same rank and same transformation).
  *
  * parameters:
- *   ifs               <-- pointer to fvm_interface_set_t structure
+ *   ifs               <-- pointer to cs_interface_set_t structure
  *   rank_id           <-- rank number to work with
  *   tr_id             <-- transformation id to work with
  *   n_vertices        <-- number of vertices
@@ -1444,52 +1444,52 @@ _define_vtx_interface_idx(const fvm_interface_set_t  *ifs,
  *---------------------------------------------------------------------------*/
 
 static void
-_define_dist_num_lst(const fvm_interface_set_t  *ifs,
-                     int                         rank_id,
-                     int                         tr_id,
-                     cs_int_t                    n_vertices,
-                     cs_int_t                   *dist_num_lst,
-                     cs_int_t                   *vtx_interface_idx)
+_define_dist_num_lst(const cs_interface_set_t  *ifs,
+                     int                        rank_id,
+                     int                        tr_id,
+                     cs_lnum_t                  n_vertices,
+                     cs_lnum_t                 *dist_num_lst,
+                     cs_lnum_t                 *vtx_interface_idx)
 {
-  cs_int_t  i, j, id, shift;
+  cs_lnum_t  i, j, id, shift;
 
   /* Initialize index */
 
   for (i = 0; i < n_vertices + 1; i++)
     vtx_interface_idx[i] = 0;
 
-  for (id = 0; id < fvm_interface_set_size(ifs); id++) {
+  for (id = 0; id < cs_interface_set_size(ifs); id++) {
 
-    const fvm_interface_t  *interface = fvm_interface_set_get(ifs, id);
+    const cs_interface_t  *interface = cs_interface_set_get(ifs, id);
 
-    if (rank_id == fvm_interface_rank(interface)) {
+    if (rank_id == cs_interface_rank(interface)) {
 
-      const cs_lnum_t  *tr_index = fvm_interface_get_tr_index(interface);
-      const cs_lnum_t  *distant_num = fvm_interface_get_distant_num(interface);
-      const cs_lnum_t  *local_num = fvm_interface_get_local_num(interface);
+      const cs_lnum_t  *tr_index = cs_interface_get_tr_index(interface);
+      const cs_lnum_t  *vtx_ids = cs_interface_get_elt_ids(interface);
+      const cs_lnum_t  *dist_vtx_ids = cs_interface_get_match_ids(interface);
 
       if (tr_index == NULL)
-        for (j = 0; j < (cs_int_t)fvm_interface_size(interface); j++)
-          vtx_interface_idx[local_num[j]] += 1;
+        for (j = 0; j < (cs_lnum_t)cs_interface_size(interface); j++)
+          vtx_interface_idx[vtx_ids[j] + 1] += 1;
 
       else
         for (j = tr_index[tr_id]; j < tr_index[tr_id+1]; j++)
-          vtx_interface_idx[local_num[j]] += 1;
+          vtx_interface_idx[vtx_ids[j] + 1] += 1;
 
       /* Create index */
 
       for (j = 0; j < n_vertices; j++)
         vtx_interface_idx[j+1] += vtx_interface_idx[j];
 
-      /* There must be only one distant_num per local_num when
-         we treat a specific rank and a specific periodicity.
+      /* There must be only one distant vertex id per vtx_id when
+         we handle a specific rank and a specific periodicity.
          So, we don't need a counter to fill dist_num_lst */
 
       if (tr_index == NULL) {
 
-        for (j = 0; j < (cs_int_t)fvm_interface_size(interface); j++) {
-          shift = vtx_interface_idx[local_num[j]-1];
-          dist_num_lst[shift] = distant_num[j];
+        for (j = 0; j < (cs_lnum_t)cs_interface_size(interface); j++) {
+          shift = vtx_interface_idx[vtx_ids[j]];
+          dist_num_lst[shift] = dist_vtx_ids[j] + 1;
         }
 
 
@@ -1497,8 +1497,8 @@ _define_dist_num_lst(const fvm_interface_set_t  *ifs,
       else {
 
         for (j = tr_index[tr_id]; j < tr_index[tr_id+1]; j++) {
-          shift = vtx_interface_idx[local_num[j]-1];
-          dist_num_lst[shift] = distant_num[j];
+          shift = vtx_interface_idx[vtx_ids[j]];
+          dist_num_lst[shift] = dist_vtx_ids[j] + 1;
         }
 
       }
@@ -1528,18 +1528,18 @@ _define_dist_num_lst(const fvm_interface_set_t  *ifs,
 
 static void
 _get_start_end_idx(const cs_mesh_t    *mesh,
-                   const cs_int_t     *index,
-                   const cs_int_t     *perio_lst,
-                   cs_int_t            rank_id,
-                   cs_int_t            tr_id,
-                   cs_int_t            type_id,
-                   cs_int_t           *p_start_idx,
-                   cs_int_t           *p_end_idx)
+                   const cs_lnum_t    *index,
+                   const cs_lnum_t    *perio_lst,
+                   cs_lnum_t           rank_id,
+                   cs_lnum_t           tr_id,
+                   cs_lnum_t           type_id,
+                   cs_lnum_t          *p_start_idx,
+                   cs_lnum_t          *p_end_idx)
 {
-  cs_int_t  i, n_par_gcells, n_per_gcells;
-  cs_int_t  start_idx = -1, end_idx = -1;
+  cs_lnum_t i, n_par_gcells, n_per_gcells;
+  cs_lnum_t start_idx = -1, end_idx = -1;
 
-  const cs_int_t  n_c_domains = mesh->halo->n_c_domains;
+  const cs_lnum_t n_c_domains = mesh->halo->n_c_domains;
 
   if (tr_id == 0) { /* Purelly parallel elements */
 
@@ -1604,7 +1604,7 @@ _get_start_end_idx(const cs_mesh_t    *mesh,
  *
  * parameters:
  *   mesh               <-- pointer to cs_mesh_t structure
- *   ifs                <-- pointer to fvm_interface_set_t structure
+ *   ifs                <-- pointer to cs_interface_set_t structure
  *   rank_id            <-- rank number to work with
  *   tr_id              <-- transformation id to work with
  *   cell_faces_idx     <-- "cell -> faces" connectivity index
@@ -1616,26 +1616,26 @@ _get_start_end_idx(const cs_mesh_t    *mesh,
 
 static void
 _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
-                                      const fvm_interface_set_t  *ifs,
+                                      const cs_interface_set_t  *ifs,
                                       int                   rank_id,
                                       int                   tr_id,
-                                      cs_int_t             *cell_faces_idx,
-                                      cs_int_t             *cell_faces_lst,
-                                      cs_int_t             *vtx_interface_idx,
-                                      cs_int_t             *vtx_tag,
-                                      cs_int_t             *gcell_dist_vtx_idx)
+                                      cs_lnum_t            *cell_faces_idx,
+                                      cs_lnum_t            *cell_faces_lst,
+                                      cs_lnum_t            *vtx_interface_idx,
+                                      cs_lnum_t            *vtx_tag,
+                                      cs_lnum_t            *gcell_dist_vtx_idx)
 {
-  cs_int_t  id, cell_id, i_fac, i_vtx, i_loop;
-  cs_int_t  start_idx, end_idx, vtx_id, fac_num, fac_id;
+  cs_lnum_t id, cell_id, i_fac, i_vtx, i_loop;
+  cs_lnum_t start_idx, end_idx, vtx_id, fac_num, fac_id;
 
-  cs_int_t  n_loops = 0;
-  cs_int_t  n_added_vertices = 0;
+  cs_lnum_t n_loops = 0;
+  cs_lnum_t n_added_vertices = 0;
 
   cs_halo_t  *halo = mesh->halo;
 
-  const cs_int_t  n_vertices = mesh->n_vertices;
-  const cs_int_t  *fac_vtx_idx = mesh->i_face_vtx_idx;
-  const cs_int_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
+  const cs_lnum_t n_vertices = mesh->n_vertices;
+  const cs_lnum_t *fac_vtx_idx = mesh->i_face_vtx_idx;
+  const cs_lnum_t *fac_vtx_lst = mesh->i_face_vtx_lst;
 
   const char err_corresp[]
     = N_("Repeated inconsistency in the halo construction.\n"
@@ -1745,7 +1745,7 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
  *
  * parameters:
  *   mesh               <-- pointer to cs_mesh_t structure
- *   ifs                <-- pointer to fvm_interface_set_t structure
+ *   ifs                <-- pointer to cs_interface_set_t structure
  *   rank_id            <-- rank number to work with
  *   tr_id              <-- transformation id to work with
  *   cell_faces_idx     <-- "cell -> faces" connectivity index
@@ -1760,27 +1760,27 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
 
 static void
 _fill_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
-                                     const fvm_interface_set_t  *ifs,
-                                     cs_int_t              rank_id,
-                                     cs_int_t              tr_id,
-                                     cs_int_t             *cell_faces_idx,
-                                     cs_int_t             *cell_faces_lst,
-                                     cs_int_t             *vtx_interface_idx,
-                                     cs_int_t             *dist_num_lst,
-                                     cs_int_t             *counter,
-                                     cs_int_t             *vtx_tag,
-                                     cs_int_t             *gcell_dist_vtx_idx,
-                                     cs_int_t             *gcell_dist_vtx_lst)
+                                     const cs_interface_set_t  *ifs,
+                                     cs_lnum_t             rank_id,
+                                     cs_lnum_t             tr_id,
+                                     cs_lnum_t            *cell_faces_idx,
+                                     cs_lnum_t            *cell_faces_lst,
+                                     cs_lnum_t            *vtx_interface_idx,
+                                     cs_lnum_t            *dist_num_lst,
+                                     cs_lnum_t            *counter,
+                                     cs_lnum_t            *vtx_tag,
+                                     cs_lnum_t            *gcell_dist_vtx_idx,
+                                     cs_lnum_t            *gcell_dist_vtx_lst)
 {
-  cs_int_t  i, id, cell_id, i_fac, i_vtx, i_loop;
-  cs_int_t  shift, vtx_id, fac_num, fac_id, start_idx, end_idx;
+  cs_lnum_t i, id, cell_id, i_fac, i_vtx, i_loop;
+  cs_lnum_t shift, vtx_id, fac_num, fac_id, start_idx, end_idx;
 
-  cs_int_t  n_loops = 0;
+  cs_lnum_t n_loops = 0;
   cs_halo_t  *halo = mesh->halo;
 
-  const cs_int_t  n_vertices = mesh->n_vertices;
-  const cs_int_t  *fac_vtx_idx = mesh->i_face_vtx_idx;
-  const cs_int_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
+  const cs_lnum_t n_vertices = mesh->n_vertices;
+  const cs_lnum_t *fac_vtx_idx = mesh->i_face_vtx_idx;
+  const cs_lnum_t *fac_vtx_lst = mesh->i_face_vtx_lst;
 
   _define_dist_num_lst(ifs,
                        halo->c_domain_rank[rank_id],
@@ -1870,7 +1870,7 @@ _fill_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
  *
  * parameters:
  *   mesh                 <-- pointer to cs_mesh_t structure
- *   interface_set        <-- pointer to fvm_interface_set_t structure
+ *   interface_set        <-- pointer to cs_interface_set_t structure
  *   cell_faces_idx       <-- "cell -> faces" connectivity index
  *   cell_faces_lst       <-- "cell -> faces" connectivity list
  *   p_gcell_dist_vtx_idx --> "ghost cell -> distant vertices" connect. index
@@ -1878,36 +1878,36 @@ _fill_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
  *---------------------------------------------------------------------------*/
 
 static void
-_create_send_gcell_vtx_connect(cs_mesh_t            *mesh,
-                               const fvm_interface_set_t  *interface_set,
-                               cs_int_t             *cell_faces_idx,
-                               cs_int_t             *cell_faces_lst,
-                               cs_int_t             *p_gcell_dist_vtx_idx[],
-                               cs_int_t             *p_gcell_dist_vtx_lst[])
+_create_send_gcell_vtx_connect(cs_mesh_t           *mesh,
+                               cs_interface_set_t  *interface_set,
+                               cs_lnum_t           *cell_faces_idx,
+                               cs_lnum_t           *cell_faces_lst,
+                               cs_lnum_t           *p_gcell_dist_vtx_idx[],
+                               cs_lnum_t           *p_gcell_dist_vtx_lst[])
 {
-  cs_int_t  i, id, rank_id;
+  cs_lnum_t i, id, rank_id;
 
-  cs_int_t  *gcell_dist_vtx_idx = NULL, *gcell_dist_vtx_lst = NULL;
-  cs_int_t  *vtx_interface_idx = NULL;
-  cs_int_t  *dist_num_lst = NULL;
-  cs_int_t  *vtx_tag = NULL;
-  cs_int_t  *counter = NULL;
+  cs_lnum_t *gcell_dist_vtx_idx = NULL, *gcell_dist_vtx_lst = NULL;
+  cs_lnum_t *vtx_interface_idx = NULL;
+  cs_lnum_t *dist_num_lst = NULL;
+  cs_lnum_t *vtx_tag = NULL;
+  cs_lnum_t *counter = NULL;
 
   cs_halo_t  *halo = mesh->halo;
 
-  const cs_int_t  max_lst_size = _get_list_buffer_size(interface_set);
-  const cs_int_t  n_ghost_cells = halo->n_send_elts[CS_HALO_EXTENDED];
-  const cs_int_t  n_vertices = mesh->n_vertices;
-  const cs_int_t  n_c_domains = halo->n_c_domains;
-  const cs_int_t  tr_index_size = mesh->n_transforms + 1;
+  const cs_lnum_t max_lst_size = _get_list_buffer_size(interface_set);
+  const cs_lnum_t n_ghost_cells = halo->n_send_elts[CS_HALO_EXTENDED];
+  const cs_lnum_t n_vertices = mesh->n_vertices;
+  const cs_lnum_t n_c_domains = halo->n_c_domains;
+  const cs_lnum_t tr_index_size = mesh->n_transforms + 1;
 
   if (n_ghost_cells == 0)
     return;
 
   /* Allocate and initialize buffers */
 
-  BFT_MALLOC(gcell_dist_vtx_idx, n_ghost_cells + 1, cs_int_t);
-  BFT_MALLOC(counter, n_ghost_cells, cs_int_t);
+  BFT_MALLOC(gcell_dist_vtx_idx, n_ghost_cells + 1, cs_lnum_t);
+  BFT_MALLOC(counter, n_ghost_cells, cs_lnum_t);
 
   gcell_dist_vtx_idx[0] = 0;
   for (i = 0; i < n_ghost_cells; i++) {
@@ -1915,13 +1915,13 @@ _create_send_gcell_vtx_connect(cs_mesh_t            *mesh,
     counter[i] = 0;
   }
 
-  BFT_MALLOC(vtx_tag, n_vertices, cs_int_t);
+  BFT_MALLOC(vtx_tag, n_vertices, cs_lnum_t);
 
   for (i = 0; i < n_vertices; i++)
     vtx_tag[i] = -1;
 
-  BFT_MALLOC(vtx_interface_idx, n_vertices + 1, cs_int_t);
-  BFT_MALLOC(dist_num_lst, max_lst_size, cs_int_t);
+  BFT_MALLOC(vtx_interface_idx, n_vertices + 1, cs_lnum_t);
+  BFT_MALLOC(dist_num_lst, max_lst_size, cs_lnum_t);
 
   for (i = 0; i < max_lst_size; i++)
     dist_num_lst[i] = -1;
@@ -1951,12 +1951,12 @@ _create_send_gcell_vtx_connect(cs_mesh_t            *mesh,
   for (i = 0; i < n_ghost_cells; i++)
     gcell_dist_vtx_idx[i+1] += gcell_dist_vtx_idx[i];
 
-  BFT_MALLOC(gcell_dist_vtx_lst, gcell_dist_vtx_idx[n_ghost_cells], cs_int_t);
+  BFT_MALLOC(gcell_dist_vtx_lst, gcell_dist_vtx_idx[n_ghost_cells], cs_lnum_t);
 
   for (i = 0; i < n_vertices; i++)
     vtx_tag[i] = -1;
 
-  /* Fill gcell_dist_vtx_lst */
+  cs_interface_set_add_match_ids(interface_set);
 
   for (rank_id = 0; rank_id < n_c_domains; rank_id++) {
 
@@ -1975,6 +1975,8 @@ _create_send_gcell_vtx_connect(cs_mesh_t            *mesh,
                                            gcell_dist_vtx_lst);
 
   } /* End of loop on ranks */
+
+  cs_interface_set_free_match_ids(interface_set);
 
   BFT_FREE(counter);
   BFT_FREE(vtx_tag);
@@ -2000,26 +2002,26 @@ _create_send_gcell_vtx_connect(cs_mesh_t            *mesh,
 
 static void
 _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
-                            cs_int_t   *send_gcell_dist_vtx_idx,
-                            cs_int_t   *send_gcell_dist_vtx_lst,
-                            cs_int_t   *p_gcell_dist_vtx_idx[],
-                            cs_int_t   *p_gcell_dist_vtx_lst[])
+                            cs_lnum_t  *send_gcell_dist_vtx_idx,
+                            cs_lnum_t  *send_gcell_dist_vtx_lst,
+                            cs_lnum_t  *p_gcell_dist_vtx_idx[],
+                            cs_lnum_t  *p_gcell_dist_vtx_lst[])
 {
-  cs_int_t  i, j, rank_id;
-  cs_int_t  send_start_idx, send_end_idx, start_idx, end_idx;
-  cs_int_t  n_send_elts, n_recv_elts;
+  cs_lnum_t i, j, rank_id;
+  cs_lnum_t send_start_idx, send_end_idx, start_idx, end_idx;
+  cs_lnum_t n_send_elts, n_recv_elts;
 
-  cs_int_t  send_buffer_size = 0;
+  cs_lnum_t send_buffer_size = 0;
 
-  cs_int_t  *send_idx_buffer = NULL;
-  cs_int_t  *gcell_dist_vtx_idx = NULL, *gcell_dist_vtx_lst = NULL;
-  cs_int_t  *send_buffer = NULL, *recv_buffer = NULL;
+  cs_lnum_t *send_idx_buffer = NULL;
+  cs_lnum_t *gcell_dist_vtx_idx = NULL, *gcell_dist_vtx_lst = NULL;
+  cs_lnum_t *send_buffer = NULL, *recv_buffer = NULL;
 
   cs_halo_t  *halo = mesh->halo;
 
-  const cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
-  const cs_int_t  n_c_domains = halo->n_c_domains;
-  const cs_int_t  n_ghost_cells = halo->n_elts[CS_HALO_EXTENDED];
+  const cs_lnum_t local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
+  const cs_lnum_t n_c_domains = halo->n_c_domains;
+  const cs_lnum_t n_ghost_cells = halo->n_elts[CS_HALO_EXTENDED];
 
 #if defined(HAVE_MPI)
   MPI_Status  status;
@@ -2034,8 +2036,8 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
     }
   }
 
-  BFT_MALLOC(send_idx_buffer, send_buffer_size, cs_int_t);
-  BFT_MALLOC(gcell_dist_vtx_idx, n_ghost_cells + 1, cs_int_t);
+  BFT_MALLOC(send_idx_buffer, send_buffer_size, cs_lnum_t);
+  BFT_MALLOC(gcell_dist_vtx_idx, n_ghost_cells + 1, cs_lnum_t);
 
   for (i = 0; i < n_ghost_cells + 1; i++)
     gcell_dist_vtx_idx[i] = 0;
@@ -2052,7 +2054,8 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
 
       for (i = halo->send_index[2*rank_id], j = 0;
            i < halo->send_index[2*rank_id+2]; i++, j++)
-        send_idx_buffer[j] =  send_gcell_dist_vtx_idx[i+1] - send_gcell_dist_vtx_idx[i];
+        send_idx_buffer[j] = ( send_gcell_dist_vtx_idx[i+1]
+                              - send_gcell_dist_vtx_idx[i]);
 
       n_send_elts =  halo->send_index[2*rank_id+2] - halo->send_index[2*rank_id];
       n_recv_elts =  halo->index[2*rank_id+2] - halo->index[2*rank_id];
@@ -2071,7 +2074,8 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
 
       for (i = halo->send_index[2*rank_id], j = 0;
            i < halo->send_index[2*rank_id+2]; i++, j++)
-        recv_buffer[j] = send_gcell_dist_vtx_idx[i+1] - send_gcell_dist_vtx_idx[i];
+        recv_buffer[j] = (  send_gcell_dist_vtx_idx[i+1]
+                          - send_gcell_dist_vtx_idx[i]);
 
     } /* rank == local_rank */
 
@@ -2084,7 +2088,7 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
   for (i = 0; i < n_ghost_cells; i++)
     gcell_dist_vtx_idx[i+1] += gcell_dist_vtx_idx[i];
 
-  BFT_MALLOC(gcell_dist_vtx_lst, gcell_dist_vtx_idx[n_ghost_cells], cs_int_t);
+  BFT_MALLOC(gcell_dist_vtx_lst, gcell_dist_vtx_idx[n_ghost_cells], cs_lnum_t);
 
   /* Exchange lists to define gcell_dist_vtx_lst */
 
@@ -2143,7 +2147,7 @@ _check_i_face_cells(cs_mesh_t  *mesh)
 
   cs_halo_t  *halo = mesh->halo;
 
-  const cs_int_t  n_c_domains = halo->n_c_domains;
+  const cs_lnum_t n_c_domains = halo->n_c_domains;
 
   for (i = 0; i < mesh->n_i_faces; i++) {
 
@@ -2194,8 +2198,8 @@ _check_i_face_cells(cs_mesh_t  *mesh)
  *   prev      <--  previous start index
  *   start     <--  start index in lnum and dnum
  *   end       <--  end index in lnum and dnum
- *   lnum      <--  local_num array in fvm_interface_t struct.
- *   dnum      <--  distant_num array in fvm_interface_t struct.
+ *   l_ids     <--  elt_ids array in cs_interface_t struct.
+ *   d_ids     <--  match_ids array in cs_interface_t struct.
  *   l2d_fids  <->  tag on local faces
  *---------------------------------------------------------------------------*/
 
@@ -2203,20 +2207,20 @@ static void
 _tag_interface_faces(int              prev,
                      int              start,
                      int              end,
-                     const cs_lnum_t  lnum[],
-                     const cs_lnum_t  dnum[],
-                     cs_int_t         l2d_fids[])
+                     const cs_lnum_t  l_ids[],
+                     const cs_lnum_t  d_ids[],
+                     cs_lnum_t        l2d_fids[])
 {
-  int  i;
+  cs_lnum_t  i;
 
   assert(l2d_fids != NULL);
 
   if (prev > -1) /* Reset previous face num. */
     for (i = prev; i < start; i++)
-      l2d_fids[lnum[i]-1] = -1;
+      l2d_fids[l_ids[i]] = -1;
 
   for (i = start; i < end; i++)
-    l2d_fids[lnum[i]-1] = dnum[i] - 1;
+    l2d_fids[l_ids[i]] = d_ids[i];
 
 }
 
@@ -2231,19 +2235,19 @@ _tag_interface_faces(int              prev,
  *---------------------------------------------------------------------------*/
 
 static void
-_update_i_face_cells(cs_mesh_t                  *mesh,
-                     const fvm_interface_set_t  *face_ifs,
-                     cs_int_t                   *cell_faces_idx,
-                     cs_int_t                   *cell_faces_lst)
+_update_i_face_cells(cs_mesh_t           *mesh,
+                     cs_interface_set_t  *face_ifs,
+                     cs_lnum_t           *cell_faces_idx,
+                     cs_lnum_t           *cell_faces_lst)
 {
   int  i, j, gcell_id, face_id, if_id, rank, shift, index_end;
   int  tr_id, start, end, length, n_interfaces, mpi_count, distant_rank;
 
   int  local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
   cs_halo_t  *halo = mesh->halo;
-  cs_int_t  *gcell_face_count = NULL, *l2d_fids = NULL;
-  cs_int_t  *send_buffer = NULL, *recv_buffer = NULL, *buffer = NULL;
-  cs_int_t  *send_shift = NULL, *recv_shift = NULL, *halo2ifs_rank = NULL;
+  cs_lnum_t *gcell_face_count = NULL, *l2d_fids = NULL;
+  cs_lnum_t *send_buffer = NULL, *recv_buffer = NULL, *buffer = NULL;
+  cs_lnum_t *send_shift = NULL, *recv_shift = NULL, *halo2ifs_rank = NULL;
 
   const int  n_init_perio = mesh->n_init_perio;
   const int  n_ranks = cs_glob_n_ranks;
@@ -2251,9 +2255,9 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
   const int  n_c_domains = halo->n_c_domains;
   const int  *s_index = halo->send_index;
   const int  *s_gcell_ids = halo->send_list;
-  const fvm_interface_t  *interface = NULL;
-  const cs_lnum_t  *loc_num = NULL;
-  const cs_lnum_t  *dist_num = NULL;
+  const cs_interface_t  *interface = NULL;
+  const cs_lnum_t  *loc_ids = NULL;
+  const cs_lnum_t  *dist_ids = NULL;
   const cs_lnum_t  *tr_index = NULL;
 
 #if defined(HAVE_MPI)
@@ -2271,12 +2275,12 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
   /* Get an interface set struct. on faces */
 
   assert(face_ifs != NULL);
-  n_interfaces = fvm_interface_set_size(face_ifs);
+  n_interfaces = cs_interface_set_size(face_ifs);
 
   /* Allocate auxiliary buffers */
 
-  BFT_MALLOC(l2d_fids, mesh->n_i_faces, cs_int_t);
-  BFT_MALLOC(halo2ifs_rank, n_c_domains, cs_int_t);
+  BFT_MALLOC(l2d_fids, mesh->n_i_faces, cs_lnum_t);
+  BFT_MALLOC(halo2ifs_rank, n_c_domains, cs_lnum_t);
 
   /* If there is an extended neighborhood, n_c_domains can be different
      from n_interfaces (c_rank with only vertices on the interface) */
@@ -2291,8 +2295,8 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
 
   for (if_id = 0; if_id < n_interfaces; if_id++) {
 
-    interface = fvm_interface_set_get(face_ifs, if_id);
-    distant_rank = fvm_interface_rank(interface);
+    interface = cs_interface_set_get(face_ifs, if_id);
+    distant_rank = cs_interface_rank(interface);
 
     for (i = 0; i < n_c_domains; i++)
       if (halo->c_domain_rank[i] == distant_rank)
@@ -2304,14 +2308,16 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
 
   /* First exchange number of faces linked to each ghost cells */
 
-  BFT_MALLOC(send_buffer, halo->n_send_elts[CS_HALO_EXTENDED], cs_int_t);
-  BFT_MALLOC(send_shift, n_c_domains + 1, cs_int_t);
+  BFT_MALLOC(send_buffer, halo->n_send_elts[CS_HALO_EXTENDED], cs_lnum_t);
+  BFT_MALLOC(send_shift, n_c_domains + 1, cs_lnum_t);
 
   send_shift[0] = 0;
   for (i = 0; i < halo->n_send_elts[CS_HALO_EXTENDED]; i++)
     send_buffer[i] = 0;
 
   /* Loop on communicating ranks to build send_buffer */
+
+  cs_interface_set_add_match_ids(face_ifs);
 
   for (rank = 0, shift = 0; rank < n_c_domains; rank++) {
 
@@ -2320,12 +2326,12 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
     if (if_id > -1) { /* This communicating rank shares elements
                          in the standard neighborhood */
 
-      interface = fvm_interface_set_get(face_ifs, if_id);
-      loc_num = fvm_interface_get_local_num(interface);
-      dist_num = fvm_interface_get_distant_num(interface);
-      tr_index = fvm_interface_get_tr_index(interface);
+      interface = cs_interface_set_get(face_ifs, if_id);
+      loc_ids = cs_interface_get_elt_ids(interface);
+      dist_ids = cs_interface_get_match_ids(interface);
+      tr_index = cs_interface_get_tr_index(interface);
 
-      assert(fvm_interface_rank(interface) == halo->c_domain_rank[rank]);
+      assert(cs_interface_rank(interface) == halo->c_domain_rank[rank]);
 
       /* Initalize l2d_fids */
 
@@ -2342,12 +2348,12 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
 
           if (tr_index != NULL) {
             _tag_interface_faces(-1, 0, tr_index[1],
-                                 loc_num, dist_num, l2d_fids);
+                                 loc_ids, dist_ids, l2d_fids);
             assert(n_init_perio > 0);
           }
           else {
-            _tag_interface_faces(-1, 0, fvm_interface_size(interface),
-                                 loc_num, dist_num, l2d_fids);
+            _tag_interface_faces(-1, 0, cs_interface_size(interface),
+                                 loc_ids, dist_ids, l2d_fids);
             assert(n_init_perio == 0);
           }
 
@@ -2356,7 +2362,7 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
           _tag_interface_faces(tr_index[tr_id-1],
                                tr_index[tr_id],
                                tr_index[tr_id+1],
-                               loc_num, dist_num, l2d_fids);
+                               loc_ids, dist_ids, l2d_fids);
 
         for (i = start; i < end; i++) {
 
@@ -2386,7 +2392,7 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
 
   /* Exchange data over the ranks  => build face_count */
 
-  BFT_MALLOC(gcell_face_count, halo->n_elts[CS_HALO_EXTENDED], cs_int_t);
+  BFT_MALLOC(gcell_face_count, halo->n_elts[CS_HALO_EXTENDED], cs_lnum_t);
 
   for (i = 0; i < halo->n_elts[CS_HALO_EXTENDED]; i++)
     gcell_face_count[i] = 0;
@@ -2471,7 +2477,7 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
 
   /* Build recv_shift */
 
-  BFT_MALLOC(recv_shift, n_c_domains + 1, cs_int_t);
+  BFT_MALLOC(recv_shift, n_c_domains + 1, cs_lnum_t);
 
   recv_shift[0] = 0;
   for (rank = 0; rank < n_c_domains; rank++) {
@@ -2483,8 +2489,8 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
   for (rank = 0; rank < n_c_domains; rank++)
     recv_shift[rank+1] += recv_shift[rank];
 
-  BFT_REALLOC(send_buffer, send_shift[n_c_domains], cs_int_t);
-  BFT_MALLOC(recv_buffer, recv_shift[n_c_domains], cs_int_t);
+  BFT_REALLOC(send_buffer, send_shift[n_c_domains], cs_lnum_t);
+  BFT_MALLOC(recv_buffer, recv_shift[n_c_domains], cs_lnum_t);
 
   /* Build send_buffer */
 
@@ -2494,10 +2500,10 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
 
     if (if_id > -1) {
 
-      interface = fvm_interface_set_get(face_ifs, if_id);
-      loc_num = fvm_interface_get_local_num(interface);
-      dist_num = fvm_interface_get_distant_num(interface);
-      tr_index = fvm_interface_get_tr_index(interface);
+      interface = cs_interface_set_get(face_ifs, if_id);
+      loc_ids = cs_interface_get_elt_ids(interface);
+      dist_ids = cs_interface_get_match_ids(interface);
+      tr_index = cs_interface_get_tr_index(interface);
       shift = send_shift[rank];
 
       /* Initalize l2d_fids */
@@ -2515,12 +2521,12 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
 
           if (tr_index != NULL) {
             _tag_interface_faces(-1, 0, tr_index[1],
-                                 loc_num, dist_num, l2d_fids);
+                                 loc_ids, dist_ids, l2d_fids);
             assert(n_init_perio > 0);
           }
           else {
-            _tag_interface_faces(-1, 0, fvm_interface_size(interface),
-                                 loc_num, dist_num, l2d_fids);
+            _tag_interface_faces(-1, 0, cs_interface_size(interface),
+                                 loc_ids, dist_ids, l2d_fids);
             assert(n_init_perio == 0);
           }
 
@@ -2529,7 +2535,7 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
           _tag_interface_faces(tr_index[tr_id-1],
                                tr_index[tr_id],
                                tr_index[tr_id+1],
-                               loc_num, dist_num, l2d_fids);
+                               loc_ids, dist_ids, l2d_fids);
 
         for (i = start; i < end; i++) {
 
@@ -2660,6 +2666,8 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
 
   /* Free memory */
 
+  cs_interface_set_free_match_ids(face_ifs);
+
   BFT_FREE(recv_buffer);
   BFT_FREE(send_buffer);
   BFT_FREE(send_shift);
@@ -2695,18 +2703,18 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
 static void
 _clean_halo(cs_mesh_t  *mesh)
 {
-  cs_int_t  rank_id, i, j;
+  cs_lnum_t rank_id, i, j;
 
   cs_halo_t  *halo = mesh->halo;
 
-  cs_int_t  n_c_domains = halo->n_c_domains;
-  cs_int_t  n_real_c_domains = 0;
-  cs_int_t  counter = 0;
-  cs_int_t  *new_c_domain_rank = NULL;
-  cs_int_t  *new_perio_lst = NULL;
-  cs_int_t  *new_index = NULL;
+  cs_lnum_t n_c_domains = halo->n_c_domains;
+  cs_lnum_t n_real_c_domains = 0;
+  cs_lnum_t counter = 0;
+  cs_lnum_t *new_c_domain_rank = NULL;
+  cs_lnum_t *new_perio_lst = NULL;
+  cs_lnum_t *new_index = NULL;
 
-  const cs_int_t  n_transforms = mesh->n_transforms;
+  const cs_lnum_t n_transforms = mesh->n_transforms;
 
   /* Is there something to do ? */
 
@@ -2720,11 +2728,11 @@ _clean_halo(cs_mesh_t  *mesh)
 
   /* halo->index, halo->perio_lst and n_c_domains need an update */
 
-  BFT_MALLOC(new_c_domain_rank, n_real_c_domains, cs_int_t);
-  BFT_MALLOC(new_index, 2*n_real_c_domains+1, cs_int_t);
+  BFT_MALLOC(new_c_domain_rank, n_real_c_domains, cs_lnum_t);
+  BFT_MALLOC(new_index, 2*n_real_c_domains+1, cs_lnum_t);
 
   if (n_transforms > 0)
-    BFT_MALLOC(new_perio_lst, 4*n_transforms*n_real_c_domains, cs_int_t);
+    BFT_MALLOC(new_perio_lst, 4*n_transforms*n_real_c_domains, cs_lnum_t);
 
   /* Define the new buffers */
 
@@ -2767,8 +2775,8 @@ _clean_halo(cs_mesh_t  *mesh)
 
   /* Reallocation of halo's buffers */
 
-  BFT_REALLOC(halo->index, 2*n_real_c_domains+1, cs_int_t);
-  BFT_REALLOC(halo->perio_lst, 4*n_transforms*n_real_c_domains, cs_int_t);
+  BFT_REALLOC(halo->index, 2*n_real_c_domains+1, cs_lnum_t);
+  BFT_REALLOC(halo->perio_lst, 4*n_transforms*n_real_c_domains, cs_lnum_t);
 
 }
 
@@ -2782,30 +2790,30 @@ _clean_halo(cs_mesh_t  *mesh)
  *
  * parameters:
  *   mesh             <-- pointer to cs_mesh_t structure.
- *   interface_set    <-- pointer to fvm_interface_set structure.
+ *   interface_set    <-- pointer to cs_interface_set structure.
  *   p_cell_faces_idx --> pointer to the connectivity index
  *   p_cell_faces_lst --> pointer to the connectivity list
  *----------------------------------------------------------------------------*/
 
 static void
-_create_gcell_faces_connect(cs_mesh_t                  *mesh,
-                            const fvm_interface_set_t  *vertex_ifs,
-                            cs_int_t                   *p_cell_faces_idx[],
-                            cs_int_t                   *p_cell_faces_lst[])
+_create_gcell_faces_connect(cs_mesh_t                 *mesh,
+                            const cs_interface_set_t  *vertex_ifs,
+                            cs_lnum_t                 *p_cell_faces_idx[],
+                            cs_lnum_t                 *p_cell_faces_lst[])
 {
-  cs_int_t  i, fac_id, i_vtx, id1, id2, shift, vtx_id;
+  cs_lnum_t i, fac_id, i_vtx, id1, id2, shift, vtx_id;
 
-  cs_int_t  *vtx_tag = NULL;
-  cs_int_t  *cell_buffer = NULL, *cell_tag = NULL, *counter = NULL;
-  cs_int_t  *cell_faces_idx = NULL;
-  cs_int_t  *cell_faces_lst = NULL;
+  cs_lnum_t *vtx_tag = NULL;
+  cs_lnum_t *cell_buffer = NULL, *cell_tag = NULL, *counter = NULL;
+  cs_lnum_t *cell_faces_idx = NULL;
+  cs_lnum_t *cell_faces_lst = NULL;
 
-  const cs_int_t  n_i_faces = mesh->n_i_faces;
-  const cs_int_t  n_b_faces = mesh->n_b_faces;
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  *face_cells = mesh->i_face_cells;
-  const cs_int_t  *fac_vtx_idx = mesh->i_face_vtx_idx;
-  const cs_int_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
+  const cs_lnum_t n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t *face_cells = mesh->i_face_cells;
+  const cs_lnum_t *fac_vtx_idx = mesh->i_face_vtx_idx;
+  const cs_lnum_t *fac_vtx_lst = mesh->i_face_vtx_lst;
 
   *p_cell_faces_idx = cell_faces_idx;
   *p_cell_faces_lst = cell_faces_lst;
@@ -2813,8 +2821,8 @@ _create_gcell_faces_connect(cs_mesh_t                  *mesh,
   if (vertex_ifs == NULL)
     return;
 
-  BFT_MALLOC(cell_faces_idx, n_cells+1, cs_int_t);
-  BFT_MALLOC(cell_buffer, 2*n_cells, cs_int_t);
+  BFT_MALLOC(cell_faces_idx, n_cells+1, cs_lnum_t);
+  BFT_MALLOC(cell_buffer, 2*n_cells, cs_lnum_t);
 
   cell_tag = &(cell_buffer[0]);
   counter = &(cell_buffer[n_cells]);
@@ -2825,7 +2833,7 @@ _create_gcell_faces_connect(cs_mesh_t                  *mesh,
     cell_tag[i] = -1;
   }
 
-  assert(sizeof(cs_int_t) == sizeof(cs_lnum_t));
+  assert(sizeof(cs_lnum_t) == sizeof(cs_lnum_t));
 
   _get_vertex_tag(mesh->n_vertices, vertex_ifs, &vtx_tag);
 
@@ -2885,7 +2893,7 @@ _create_gcell_faces_connect(cs_mesh_t                  *mesh,
     cell_tag[i] = -1;
   }
 
-  BFT_MALLOC(cell_faces_lst, cell_faces_idx[n_cells]-1, cs_int_t);
+  BFT_MALLOC(cell_faces_lst, cell_faces_idx[n_cells]-1, cs_lnum_t);
 
   for (fac_id = 0; fac_id < n_i_faces; fac_id++) {
 
@@ -2971,15 +2979,15 @@ _create_gcell_faces_connect(cs_mesh_t                  *mesh,
  *---------------------------------------------------------------------------*/
 
 void
-cs_mesh_halo_define(cs_mesh_t                  *mesh,
-                    const fvm_interface_set_t  *face_ifs,
-                    const fvm_interface_set_t  *vertex_ifs,
-                    cs_int_t                   *p_gcell_vtx_idx[],
-                    cs_int_t                   *p_gcell_vtx_lst[])
+cs_mesh_halo_define(cs_mesh_t           *mesh,
+                    cs_interface_set_t  *face_ifs,
+                    cs_interface_set_t  *vertex_ifs,
+                    cs_lnum_t           *p_gcell_vtx_idx[],
+                    cs_lnum_t           *p_gcell_vtx_lst[])
 {
-  cs_int_t  *send_gcell_vtx_idx = NULL, *send_gcell_vtx_lst = NULL;
-  cs_int_t  *gcell_vtx_idx = NULL, *gcell_vtx_lst = NULL;
-  cs_int_t  *gcell_faces_idx = NULL, *gcell_faces_lst = NULL;
+  cs_lnum_t *send_gcell_vtx_idx = NULL, *send_gcell_vtx_lst = NULL;
+  cs_lnum_t *gcell_vtx_idx = NULL, *gcell_vtx_lst = NULL;
+  cs_lnum_t *gcell_faces_idx = NULL, *gcell_faces_lst = NULL;
   cs_halo_t  *halo = mesh->halo;
 
   halo->n_local_elts = mesh->n_cells;
@@ -3070,7 +3078,7 @@ cs_mesh_halo_define(cs_mesh_t                  *mesh,
   /* Update mesh structure elements bound to halo management */
 
   if (mesh->n_ghost_cells > 0)
-    BFT_REALLOC(mesh->cell_family, mesh->n_cells_with_ghosts, cs_int_t);
+    BFT_REALLOC(mesh->cell_family, mesh->n_cells_with_ghosts, cs_lnum_t);
 
   cs_halo_update_buffers(halo);
 

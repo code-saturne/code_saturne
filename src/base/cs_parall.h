@@ -28,12 +28,6 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_interface.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -582,25 +576,6 @@ CS_PROCF (parbar, PARBAR)(void);
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compute the sum of real values for entities belonging to a fvm_interface_t
- * structure.
- *
- * Only the values of entities belonging to the interface are summed.
- *
- * parameters:
- *   interfaces --> pointer to a fvm_interface_set_t structure
- *   var_size   --> number of elements in var buffer
- *   stride     --> number of values (no interlaced) by entity
- *   var        <-> variable buffer
- *----------------------------------------------------------------------------*/
-
-void
-cs_parall_interface_sr(fvm_interface_set_t  *interfaces,
-                       cs_int_t              var_size,
-                       cs_int_t              stride,
-                       cs_real_t            *var);
 
 /*----------------------------------------------------------------------------*/
 

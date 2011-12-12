@@ -53,16 +53,16 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_file.h"
-#include "cs_mesh.h"
-#include "cs_io.h"
-
 #include "fvm_block_to_part.h"
 #include "fvm_io_num.h"
-#include "fvm_interface.h"
 #include "fvm_parall.h"
 #include "fvm_periodicity.h"
+
+#include "cs_base.h"
+#include "cs_file.h"
+#include "cs_interface.h"
+#include "cs_mesh.h"
+#include "cs_io.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -625,17 +625,17 @@ _read_cell_rank(cs_mesh_t       *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_face_type_g(cs_mesh_t                  *mesh,
-             cs_lnum_t                   n_faces,
-             const fvm_interface_set_t  *face_ifs,
-             const cs_lnum_t             face_cell[],
-             const cs_lnum_t             face_vertices_idx[],
-             char                        face_type[])
+_face_type_g(cs_mesh_t                 *mesh,
+             cs_lnum_t                  n_faces,
+             const cs_interface_set_t  *face_ifs,
+             const cs_lnum_t            face_cell[],
+             const cs_lnum_t            face_vertices_idx[],
+             char                       face_type[])
 {
   cs_lnum_t i;
   int j;
 
-  const int n_interfaces = fvm_interface_set_size(face_ifs);
+  const int n_interfaces = cs_interface_set_size(face_ifs);
 
   /* Mark base interior faces */
 
@@ -655,12 +655,12 @@ _face_type_g(cs_mesh_t                  *mesh,
 
   for (j = 0; j < n_interfaces; j++) {
 
-    const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, j);
-    cs_lnum_t face_if_size = fvm_interface_size(face_if);
-    const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+    const cs_interface_t *face_if = cs_interface_set_get(face_ifs, j);
+    cs_lnum_t face_if_size = cs_interface_size(face_if);
+    const cs_lnum_t *loc_id = cs_interface_get_elt_ids(face_if);
 
     for (i = 0; i < face_if_size; i++)
-      face_type[loc_num[i] - 1] = '\0';
+      face_type[loc_id[i]] = '\0';
 
   }
 
@@ -1063,9 +1063,9 @@ _extract_face_gc_id(cs_mesh_t        *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_face_ifs_to_interior(fvm_interface_set_t  *face_ifs,
-                      cs_lnum_t             n_faces,
-                      const char            face_type[])
+_face_ifs_to_interior(cs_interface_set_t  *face_ifs,
+                      cs_lnum_t            n_faces,
+                      const char           face_type[])
 {
   cs_lnum_t i;
 
@@ -1083,7 +1083,7 @@ _face_ifs_to_interior(fvm_interface_set_t  *face_ifs,
       i_face_id[i] = -1;
   }
 
-  fvm_interface_set_renumber(face_ifs, i_face_id);
+  cs_interface_set_renumber(face_ifs, i_face_id);
 
   BFT_FREE(i_face_id);
 }
@@ -1130,20 +1130,22 @@ static int _compare_couples(const void *x, const void *y)
  *----------------------------------------------------------------------------*/
 
 static void
-_extract_periodic_faces_g(const cs_mesh_t            *mesh,
-                          cs_mesh_builder_t          *mb,
-                          const fvm_interface_set_t  *face_ifs)
+_extract_periodic_faces_g(const cs_mesh_t           *mesh,
+                          cs_mesh_builder_t         *mb,
+                          const cs_interface_set_t  *face_ifs)
 {
   int i, j;
   cs_lnum_t k, l;
 
   int perio_count = 0;
-  cs_lnum_t  *send_index = NULL, *recv_index = NULL;
-  cs_gnum_t  *send_num = NULL, *recv_num = NULL;
+  cs_lnum_t  *send_index = NULL;
+  cs_gnum_t  *recv_num = NULL;
   int  *tr_id = NULL;
 
+  cs_datatype_t gnum_type = CS_GNUM_TYPE;
+
   const int n_perio = mesh->n_init_perio;
-  const int n_interfaces = fvm_interface_set_size(face_ifs);
+  const int n_interfaces = cs_interface_set_size(face_ifs);
   const cs_gnum_t *face_gnum = mesh->global_i_face_num;
 
   /* Allocate arrays in mesh builder (initializing per_face_idx) */
@@ -1180,96 +1182,27 @@ _extract_periodic_faces_g(const cs_mesh_t            *mesh,
   }
   assert(perio_count == n_perio);
 
-  BFT_MALLOC(send_index, n_interfaces + 1, cs_lnum_t);
-  BFT_MALLOC(recv_index, n_interfaces + 1, cs_lnum_t);
-  send_index[0] = 0;
-  recv_index[0] = 0;
-
   for (i = 0; i < n_interfaces; i++) {
-
-    cs_lnum_t send_size = 0;
-    cs_lnum_t recv_size = 0;
-
-    const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-    const cs_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
-
+    const cs_interface_t *face_if = cs_interface_set_get(face_ifs, i);
+    const cs_lnum_t *tr_index = cs_interface_get_tr_index(face_if);
     for (j = 0; j < n_perio; j++) {
       const cs_lnum_t n_tr_faces = (  tr_index[tr_id[j*2] + 1]
-                                     - tr_index[tr_id[j*2]]);
-      const cs_lnum_t n_rev_faces = (  tr_index[tr_id[j*2+1] + 1]
-                                      - tr_index[tr_id[j*2+1]]);
-      send_size += n_rev_faces;
-      recv_size += n_tr_faces;
+                                    - tr_index[tr_id[j*2]]);
       mb->n_perio_couples[j] += n_tr_faces;
     }
-
-    send_index[i+1] = send_index[i] + send_size;
-    recv_index[i+1] = recv_index[i] + recv_size;
   }
 
-  BFT_MALLOC(send_num, send_index[n_interfaces], cs_gnum_t);
-  BFT_MALLOC(recv_num, recv_index[n_interfaces], cs_gnum_t);
+  BFT_MALLOC(recv_num, cs_interface_set_n_elts(face_ifs), cs_gnum_t);
+
+  cs_interface_set_copy_array(face_ifs,
+                              gnum_type,
+                              1,
+                              true, /* src_on_parent */
+                              face_gnum,
+                              recv_num);
 
   /* Prepare send buffer (send reverse transformation values) */
 
-  for (i = 0, j = 0; i < n_interfaces; i++) {
-
-    const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-    const cs_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
-    const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
-
-    for (j = 0, l = send_index[i]; j < n_perio; j++) {
-
-      const cs_lnum_t start_id = tr_index[tr_id[j*2+1]];
-      const cs_lnum_t end_id = tr_index[tr_id[j*2+1] + 1];
-
-      for (k = start_id; k < end_id; k++)
-        send_num[l++] = face_gnum[loc_num[k]-1];
-    }
-  }
-
-  /* Exchange global face numbers */
-
-  {
-    MPI_Request  *request = NULL;
-    MPI_Status  *status  = NULL;
-
-    int request_count = 0;
-
-    BFT_MALLOC(request, n_interfaces*2, MPI_Request);
-    BFT_MALLOC(status, n_interfaces*2, MPI_Status);
-
-    for (i = 0; i < n_interfaces; i++) {
-      const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-      int distant_rank = fvm_interface_rank(face_if);
-      MPI_Irecv(recv_num + recv_index[i],
-                recv_index[i+1] - recv_index[i],
-                CS_MPI_GNUM,
-                distant_rank,
-                distant_rank,
-                cs_glob_mpi_comm,
-                &(request[request_count++]));
-    }
-
-    for (i = 0; i < n_interfaces; i++) {
-      const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-      int distant_rank = fvm_interface_rank(face_if);
-      MPI_Isend(send_num + send_index[i],
-                send_index[i+1] - send_index[i],
-                CS_MPI_GNUM,
-                distant_rank,
-                (int)cs_glob_rank_id,
-                cs_glob_mpi_comm,
-                &(request[request_count++]));
-    }
-
-    MPI_Waitall(request_count, request, status);
-
-    BFT_FREE(request);
-    BFT_FREE(status);
-  }
-
-  BFT_FREE(send_num);
   BFT_FREE(send_index);
 
   for (i = 0; i < n_perio; i++)
@@ -1282,29 +1215,38 @@ _extract_periodic_faces_g(const cs_mesh_t            *mesh,
 
   /* Copy face couples to mesh builder */
 
-  for (i = 0, j = 0; i < n_interfaces; i++) {
+  for (i = 0, j = 0, l = 0; i < n_interfaces; i++) {
 
-    const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-    const cs_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
-    const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+    const cs_interface_t *face_if = cs_interface_set_get(face_ifs, i);
+    const cs_lnum_t *tr_index = cs_interface_get_tr_index(face_if);
+    const cs_lnum_t *elt_id = cs_interface_get_elt_ids(face_if);
 
-    for (j = 0, l = recv_index[i]; j < n_perio; j++) {
+    l += tr_index[1];
+
+    for (j = 0; j < n_perio; j++) {
+
+      /* Count couples in direct periodicity */
 
       cs_lnum_t nc = mb->n_perio_couples[j]*2;
       const cs_lnum_t start_id = tr_index[tr_id[j*2]];
       const cs_lnum_t end_id = tr_index[tr_id[j*2] + 1];
 
       for (k = start_id; k < end_id; k++) {
-        cs_lnum_t f_id = loc_num[k] - 1;
+        cs_lnum_t f_id = elt_id[k];
         mb->perio_couples[j][nc++] = face_gnum[f_id];
         mb->perio_couples[j][nc++] = recv_num[l++];
       }
       mb->n_perio_couples[j] = nc/2;
+
+      /* Ignore couples in reverse periodicity */
+
+      l += tr_index[tr_id[j*2 + 1] + 1] - tr_index[tr_id[j*2 + 1]];
+
     }
+
   }
 
   BFT_FREE(recv_num);
-  BFT_FREE(recv_index);
   BFT_FREE(tr_id);
 
   /* Now sort couples in place for future use (more for consistency
@@ -2189,7 +2131,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   int  *default_face_rank = NULL;
   char *face_type = NULL;
-  fvm_interface_set_t *face_ifs = NULL;
+  cs_interface_set_t *face_ifs = NULL;
 
   fvm_block_to_part_t *d = NULL;
 
@@ -2375,13 +2317,13 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   BFT_FREE(_face_gvertices);
 
-  /* In case of periodicity, build an fvm_interface so as to obtain
+  /* In case of periodicity, build a cs_interface so as to obtain
      periodic face correspondants in local numbering (periodic couples
      need not be defined by the ranks owning one of the 2 members
      for the interface to be built correctly). */
 
   face_ifs
-    = fvm_interface_set_create(_n_faces,
+    = cs_interface_set_create(_n_faces,
                                NULL,
                                _face_num,
                                mesh->periodicity,
@@ -2412,7 +2354,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
   BFT_FREE(_face_cells);
 
   if (mr->n_perio == 0)
-    face_ifs = fvm_interface_set_destroy(face_ifs);
+    cs_interface_set_destroy(&face_ifs);
 
   _extract_face_vertices(mesh,
                          _n_faces,
@@ -2435,7 +2377,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
     _extract_periodic_faces_g(mesh,
                               mesh_builder,
                               face_ifs);
-    face_ifs = fvm_interface_set_destroy(face_ifs);
+    cs_interface_set_destroy(&face_ifs);
   }
 
   _extract_face_gc_id(mesh,

@@ -28,16 +28,11 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_interface.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_interface.h"
 #include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
@@ -60,11 +55,11 @@ BEGIN_C_DECLS
  *---------------------------------------------------------------------------*/
 
 void
-cs_mesh_halo_define(cs_mesh_t                  *mesh,
-                    const fvm_interface_set_t  *face_ifs,
-                    const fvm_interface_set_t  *vertex_ifs,
-                    cs_int_t                   *p_gcell_vtx_idx[],
-                    cs_int_t                   *p_gcell_vtx_lst[]);
+cs_mesh_halo_define(cs_mesh_t           *mesh,
+                    cs_interface_set_t  *face_ifs,
+                    cs_interface_set_t  *vertex_ifs,
+                    cs_int_t            *p_gcell_vtx_idx[],
+                    cs_int_t            *p_gcell_vtx_lst[]);
 
 /*----------------------------------------------------------------------------*/
 

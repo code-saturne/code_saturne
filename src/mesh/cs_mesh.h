@@ -35,11 +35,11 @@
 
 #include "fvm_group.h"
 #include "fvm_selector.h"
-#include "fvm_interface.h"
 #include "fvm_periodicity.h"
 
 #include "cs_base.h"
 #include "cs_halo.h"
+#include "cs_interface.h"
 #include "cs_numbering.h"
 
 /*----------------------------------------------------------------------------*/

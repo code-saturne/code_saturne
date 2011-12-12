@@ -33,6 +33,24 @@ else
   LIBS_PLE = $(PLE_LIBS)
 endif
 
+# Main part
+
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/lagr \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mei \
+-I$(top_srcdir)/src/gui \
+$(CPPFLAGS_PLE) \
+$(MPI_CPPFLAGS)
+
+AM_CFLAGS   = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_LDFLAGS  =
+
 check_PROGRAMS =
 
 # BFT tests
@@ -49,27 +67,22 @@ LDFLAGS_BFT_TESTS =
 LDADD_BFT_TESTS = $(top_builddir)/src/bft/libbft.la
 
 bft_backtrace_test_SOURCES  = bft_backtrace_test.c
-bft_backtrace_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
 bft_backtrace_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
 bft_backtrace_test_LDADD    = $(LDADD_BFT_TESTS)
 
 bft_error_test_SOURCES  = bft_error_test.c
-bft_error_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
 bft_error_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
 bft_error_test_LDADD    = $(LDADD_BFT_TESTS)
 
 bft_mem_usage_test_SOURCES  = bft_mem_usage_test.c
-bft_mem_usage_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
 bft_mem_usage_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
 bft_mem_usage_test_LDADD    = $(LDADD_BFT_TESTS)
 
 bft_mem_test_SOURCES  = bft_mem_test.c
-bft_mem_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
 bft_mem_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
 bft_mem_test_LDADD    = $(LDADD_BFT_TESTS)
 
 bft_printf_test_SOURCES  = bft_printf_test.c
-bft_printf_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
 bft_printf_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
 bft_printf_test_LDADD    = $(LDADD_BFT_TESTS)
 
@@ -79,8 +92,6 @@ check_PROGRAMS += \
 mei_test
 
 mei_test_SOURCES = mei_test_main.c mei_test_graph.c
-mei_test_CPPFLAGS = -I$(top_srcdir)/src/bft \
-        -I$(top_srcdir)/src/mei -I$(top_builddir)/src/mei
 mei_test_LDFLAGS =
 mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
         $(top_builddir)/src/bft/libbft.la -lm
@@ -90,13 +101,11 @@ mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
 check_PROGRAMS += \
 cs_core_test \
 cs_file_test \
-fvm_interface_test \
+cs_interface_test \
 fvm_selector_test \
 fvm_selector_postfix_test \
 fvm_sizes_test
 
-CPPFLAGS_CS_TESTS = -I$(top_srcdir)/src/base -I$(top_srcdir)/src/bft \
-       -I$(top_srcdir)/src/fvm $(CPPFLAGS_PLE) $(MPI_CPPFLAGS)
 LDFLAGS_CS_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
         $(PLE_LDFLAGS) $(MPI_LDFLAGS)
 LDADD_CS_TESTS = \
@@ -105,32 +114,26 @@ LDADD_CS_TESTS = \
         $(LIBPLE_LA) $(PLE_LIBS) $(MPI_LIBS) -lm
 
 cs_core_test_SOURCES  = cs_core_test.c
-cs_core_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
 cs_core_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_core_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_file_test_SOURCES  = cs_file_test.c
-cs_file_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
 cs_file_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_file_test_LDADD    = $(LDADD_CS_TESTS)
 
-fvm_interface_test_SOURCES  = fvm_interface_test.c
-fvm_interface_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
-fvm_interface_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
-fvm_interface_test_LDADD    = $(LDADD_CS_TESTS)
+cs_interface_test_SOURCES  = cs_interface_test.c
+cs_interface_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+cs_interface_test_LDADD    = $(LDADD_CS_TESTS)
 
 fvm_selector_test_SOURCES  = fvm_selector_test.c
-fvm_selector_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
 fvm_selector_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 fvm_selector_test_LDADD    = $(LDADD_CS_TESTS)
 
 fvm_selector_postfix_test_SOURCES  = fvm_selector_postfix_test.c
-fvm_selector_postfix_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
 fvm_selector_postfix_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 fvm_selector_postfix_test_LDADD    = $(LDADD_CS_TESTS)
 
 fvm_sizes_test_SOURCES  = fvm_sizes_test.c
-fvm_sizes_test_CPPFLAGS = $(CPPFLAGS_CS_TESTS)
 fvm_sizes_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 fvm_sizes_test_LDADD    = $(LDADD_CS_TESTS)
 

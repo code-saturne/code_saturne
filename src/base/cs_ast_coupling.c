@@ -42,29 +42,22 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-#include <bft_error.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_nodal.h>
-#include <fvm_interface.h>
-#include <fvm_nodal_extract.h>
-#include <fvm_nodal_project.h>
-#include <fvm_nodal_triangulate.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
+#include "bft_error.h"
+
+#include "fvm_nodal.h"
+
+#include "fvm_nodal_extract.h"
+#include "fvm_nodal_project.h"
+#include "fvm_nodal_triangulate.h"
+
 #include "cs_calcium.h"
+#include "cs_interface.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_connect.h"
