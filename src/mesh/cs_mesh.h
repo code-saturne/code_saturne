@@ -28,18 +28,15 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_defs.h>
-#include <fvm_group.h>
-#include <fvm_selector.h>
-#include <fvm_interface.h>
-#include <fvm_periodicity.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
+
+#include "cs_defs.h"
+
+#include "fvm_group.h"
+#include "fvm_selector.h"
+#include "fvm_interface.h"
+#include "fvm_periodicity.h"
 
 #include "cs_base.h"
 #include "cs_halo.h"
@@ -64,35 +61,35 @@ typedef struct {
 
   /* General features */
 
-  cs_int_t   dim;                  /* Space dimension */
-  cs_int_t   domain_num;           /* Local domain number */
-  cs_int_t   n_domains;            /* Number of domains */
+  cs_lnum_t  dim;                  /* Space dimension */
+  cs_lnum_t  domain_num;           /* Local domain number */
+  cs_lnum_t  n_domains;            /* Number of domains */
 
 
   /* Local dimensions */
 
-  cs_int_t   n_cells;              /* Number of cells */
-  cs_int_t   n_i_faces;            /* Number of internal faces */
-  cs_int_t   n_b_faces;            /* Number of border faces */
-  cs_int_t   n_vertices;           /* Number of vertices */
+  cs_lnum_t  n_cells;              /* Number of cells */
+  cs_lnum_t  n_i_faces;            /* Number of internal faces */
+  cs_lnum_t  n_b_faces;            /* Number of border faces */
+  cs_lnum_t  n_vertices;           /* Number of vertices */
 
-  cs_int_t   i_face_vtx_connect_size;  /* Size of the connectivity
+  cs_lnum_t  i_face_vtx_connect_size;  /* Size of the connectivity
                                           internal faces -> vertices */
-  cs_int_t   b_face_vtx_connect_size;  /* Size of the connectivity
+  cs_lnum_t  b_face_vtx_connect_size;  /* Size of the connectivity
                                           border faces -> vertices */
 
   /* Local structures */
 
   cs_real_t  *vtx_coord;           /* Vertex coordinates */
 
-  cs_int_t   *i_face_cells;        /* Internal faces -> cells connectivity */
-  cs_int_t   *b_face_cells;        /* Border faces -> cells connectivity */
+  cs_lnum_t  *i_face_cells;        /* Internal faces -> cells connectivity */
+  cs_lnum_t  *b_face_cells;        /* Border faces -> cells connectivity */
 
-  cs_int_t   *i_face_vtx_idx;      /* Internal faces -> vertices index */
-  cs_int_t   *i_face_vtx_lst;      /* Interior faces -> vertices connectivity */
+  cs_lnum_t  *i_face_vtx_idx;      /* Internal faces -> vertices index */
+  cs_lnum_t  *i_face_vtx_lst;      /* Interior faces -> vertices connectivity */
 
-  cs_int_t   *b_face_vtx_idx;      /* Boundary faces -> vertices index */
-  cs_int_t   *b_face_vtx_lst;      /* Boundary faces -> vertices connectivity */
+  cs_lnum_t  *b_face_vtx_idx;      /* Boundary faces -> vertices index */
+  cs_lnum_t  *b_face_vtx_lst;      /* Boundary faces -> vertices connectivity */
 
   /* Global dimension */
 
@@ -119,58 +116,60 @@ typedef struct {
 
   /* Parallelism and/or periodic features */
 
-  cs_halo_type_t  halo_type;       /* Halo type */
+  cs_halo_type_t  halo_type;         /* Halo type */
 
-  cs_int_t   n_cells_with_ghosts;  /* Total number of cells on the local rank
-                                      (n_cells + n_ghost_cells) */
-  cs_int_t   n_ghost_cells;        /* Number of "ghost" cells */
+  cs_lnum_t  n_cells_with_ghosts;    /* Total number of cells on the local rank
+                                        (n_cells + n_ghost_cells) */
+  cs_lnum_t  n_ghost_cells;          /* Number of "ghost" cells */
 
-  cs_halo_t  *halo;                /* Structure used to manage ghost cells */
+  cs_halo_t  *halo;                  /* Structure used to manage ghost cells */
 
   cs_numbering_t  *i_face_numbering; /* Interior face numbering info */
   cs_numbering_t  *b_face_numbering; /* Boundary face numbering info */
 
   /* Re-computable connectivity features */
 
-  cs_int_t   n_b_cells;             /* Number of boundary cells */
-  cs_int_t  *b_cells;               /* Boundary cell list */
+  cs_lnum_t   n_b_cells;             /* Number of boundary cells */
+  cs_lnum_t  *b_cells;               /* Boundary cell list */
 
   /* Extended neighborhood features */
 
-  cs_int_t  *cell_cells_idx;   /* "cell -> cells" connectivity index for
+  cs_lnum_t  *cell_cells_idx;  /* "cell -> cells" connectivity index for
                                   extended halo. Only defined if extended
                                   neighborhood is built. */
-  cs_int_t  *cell_cells_lst;   /* "cell -> cells" connectivity list for
+  cs_lnum_t  *cell_cells_lst;  /* "cell -> cells" connectivity list for
                                   extended halo. Only defined if extended
                                   neighborhood is built. */
 
-  cs_int_t  *gcell_vtx_idx;    /* ghost cells -> vertices index */
-  cs_int_t  *gcell_vtx_lst;    /* ghost cells -> vertices list */
+  cs_lnum_t  *gcell_vtx_idx;   /* ghost cells -> vertices index */
+  cs_lnum_t  *gcell_vtx_lst;   /* ghost cells -> vertices list */
 
   /* Group and family features */
 
-  cs_int_t    n_groups;    /* Number of groups */
-  cs_int_t   *group_idx;   /* Starting index in the in group_lst */
-  char       *group_lst;   /* List of group names */
+  cs_lnum_t   n_groups;            /* Number of groups */
+  cs_lnum_t  *group_idx;           /* Starting index in the in group_lst */
+  char       *group_lst;           /* List of group names */
 
-  cs_int_t    n_families;          /* Number of families */
-  cs_int_t    n_max_family_items;  /* Max. number of items for one family */
-  cs_int_t   *family_item;         /* Family items */
-  cs_int_t   *cell_family;         /* Cell family */
-  cs_int_t   *i_face_family;       /* Interior face family */
-  cs_int_t   *b_face_family;       /* Border face family */
+  cs_lnum_t   n_families;          /* Number of families */
+  cs_lnum_t   n_max_family_items;  /* Max. number of items for one family */
+  cs_lnum_t  *family_item;         /* Family items */
+  cs_lnum_t  *cell_family;         /* Cell family */
+  cs_lnum_t  *i_face_family;       /* Interior face family */
+  cs_lnum_t  *b_face_family;       /* Border face family */
 
-  fvm_group_class_set_t *class_defs;
-
-  fvm_selector_t *select_cells;       /* Cell selection object */
-  fvm_selector_t *select_i_faces;     /* Internal faces selection object */
-  fvm_selector_t *select_b_faces;     /* Border faces selection object */
+  fvm_group_class_set_t *class_defs;  /* Definition of group classes for
+                                         selection and postprocessing (built
+                                         from element families and their
+                                         descriptions) */
+  fvm_selector_t  *select_cells;      /* Cell selection object */
+  fvm_selector_t  *select_i_faces;    /* Internal faces selection object */
+  fvm_selector_t  *select_b_faces;    /* Border faces selection object */
 
   /* Status flags */
 
   cs_gnum_t n_g_free_faces;          /* Global number of boundary faces
-                                         which are in fact isolated */
-  int modified;                       /* Modification status */
+                                        which are in fact isolated */
+  int modified;                      /* Modification status */
 
 } cs_mesh_t;
 
