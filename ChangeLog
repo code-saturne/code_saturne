@@ -1,4 +1,9 @@
 * 12/12/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add missing initialization in warped face split parallel synchronization.
+  modified routine:
+    src/mesh/cs_mesh_warping.c
+
+* 12/12/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add missing array size update when cleaning interior faces with periodicity.
   modified routine:
     src/mesh/cs_join_perio.c
