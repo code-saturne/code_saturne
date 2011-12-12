@@ -353,6 +353,7 @@ _match_halo_face_cut_p(const cs_mesh_t             *mesh,
         }
       }
       for (k = tr_index[j*2+2]; k < tr_index[j*2+3]; k++) {
+        face_id = loc_num[k]-1;
         if (face_flag[face_id] != 0) {
           recv_count[i] +=  (  mesh->i_face_vtx_idx[face_id+1]
                              - mesh->i_face_vtx_idx[face_id]) - 2;
