@@ -67,6 +67,7 @@ class mpi_lib:
 
 class env_modules:
     modules = "@cs_env_modules@"
+    modules_cmd = "@cs_env_modules_cmd@"
 
 #-------------------------------------------------------------------------------
 

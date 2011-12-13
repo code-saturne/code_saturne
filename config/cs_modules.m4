@@ -81,6 +81,9 @@ elif test "x$with_modules" != "xno" ; then
 
 fi
 
+# Find the modulecmd executable
+AC_PATH_PROG([cs_env_modules_cmd], [modulecmd], [], [${MODULESHOME}/bin:$PATH])
+
 AC_SUBST(cs_env_modules)
 
 ])dnl

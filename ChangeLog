@@ -1,3 +1,11 @@
+* 13/12/2011 - David Monfort <david.monfort@edf.fr>
+  Improve the module environment detection.
+  modified files:
+    bin/cs_config.py.in
+    bin/cs_exec_environment.py
+    config/cs_modules.m4
+    Makefile.am
+
 * 29/11/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix crash when using inlet velocity formula using MEI.
   modified file:

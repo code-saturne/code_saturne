@@ -154,10 +154,10 @@ def set_modules():
     """
     Set environment modules if present.
     """
-    if env_modules.modules == "no" or not os.environ.has_key('MODULESHOME'):
+    if env_modules.modules == "no":
         return
 
-    cmd_prefix = os.path.join(os.environ['MODULESHOME'], 'bin', 'modulecmd')
+    cmd_prefix = env_modules.env_modulecmd
 
     if have_subprocess == True:
         cmds = ['purge']
