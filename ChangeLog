@@ -1,3 +1,6 @@
+* 13/12/2011 - David Monfort <david.monfort@edf.fr>
+  Release of Code_Saturne 2.0.4.
+
 * 13/12/2011 - Ralf Becker <ralf.becker@dlr.de>
   Fixe and improvements in the Libby-Williams models for the enthalpy
   calculation.
