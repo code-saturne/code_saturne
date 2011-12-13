@@ -357,7 +357,7 @@ not provide these libraries, there are several alternatives:
 
       When this is finished, the local Python interpreter contains
       the PyQt4 bindings, and may be used by \CS's \texttt{configure}
-      script by passing \texttt{PYTHON=<path\_to\_python\_executable}.
+      script by passing \texttt{--with-python-exec=<python\_bin\_prefix}.
      
 \item add Python Qt4 bindings as a Python extension module for an existing
       Python installation. This is a more elegant solution than the previous
@@ -1199,6 +1199,56 @@ For the front-end nodes, the following command may be used:
 \textcolor{red}{FCFLAGS}="-m64" \textbackslash \\
 \textcolor{red}{LDFLAGS}="-m64"
 }\end{minipage}}
+
+\section{Caveats}
+
+\subsubsection{Moving an existing installation}
+
+\textcolor{Red}{\emph{Never move an installed build}} of \CS.
+As the build system is basd on the GNU Autotools, not only
+are library paths hard-coded using \emph{rpath} type info,
+but the code's scripts also contain absolute paths.
+Using \texttt{LD\_LIBRARY\_PATH} or \texttt{LD\_PRELOAD}
+may allow the executable to run despite \emph{rpath} info
+not being up-to-date, but in environments where different library,
+versions are available, there is a strong risk of not using
+the correct library. In addition, the scripts will not work
+unless paths in the installed scripts are updated.
+If you are not able to update those paths without further
+explanation, you should not even think about moving the build.
+
+The mistake of moving an installed build is most often done not
+by beginners, but by more exerienced users or administrators who
+believe they know enough to force a behavior against the logic of the
+build system. Except for those experienced not only in installing
+codes but also in maintaining advanced Autotool scripts for
+at least one software package, this is usually presumptuous.
+
+If you need to test an installation in a test directory before
+installing it in a production directory, use the
+\texttt{make install DESTDIR=<test\_prefix>} provided
+by the Autotools mechanism rather than configuring an install for a
+test directory and then moving it to a production directory.
+Another less elegant but safe solution is to configure the build for
+installation to a test directory, and once it is tested,
+re-configure the build for installation to the final production
+directory, and rebuild and install.
+
+\subsubsection{Known issues with some packages}
+
+On quite a few clusters, some issues have been encountered
+when using versions of Open MPI built with the Intel compiler
+suite. Typically, crashes in the MPI-IO layers are almost
+guaranteed, but issues may also arise later, apparently  with some
+collectives, so disabling MPI-IO is not enough.
+
+Using Intel compilers for \CS itself and a build of Open MPI
+using the GNU compilers usually works fine, and the performance
+difference should be minimal (it can be higher using
+the GNU compilers also for \CS itself), so the issue is not
+in \CS itself, but it requires further investigation.
+In any case, avoiding this buggy combination may avoid you
+many wasted hours.
 
 \end{document}
 
