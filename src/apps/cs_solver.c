@@ -266,11 +266,7 @@ cs_run(void)
 
   cs_user_mesh_thinwall(cs_glob_mesh);
 
-  /* Smoothe mesh if required */
-
-  cs_user_mesh_smoothe(cs_glob_mesh);
-
-  /* Initialize extended connectivity, ghost cells and other
+  /* Initialize extended connectivity, ghost cells and other remaining
      parallelism-related structures */
 
   cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder);
@@ -284,6 +280,10 @@ cs_run(void)
 
   cs_post_add_free_faces();
   cs_mesh_discard_free_faces(cs_glob_mesh);
+
+  /* Smoothe mesh if required */
+
+  cs_user_mesh_smoothe(cs_glob_mesh);
 
   /* Triangulate warped faces if necessary */
 

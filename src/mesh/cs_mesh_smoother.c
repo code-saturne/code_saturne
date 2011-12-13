@@ -42,8 +42,6 @@
 #include <mpi.h>
 #endif
 
-
-
 /*----------------------------------------------------------------------------
  * BFT and FVM library headers
  *----------------------------------------------------------------------------*/
@@ -54,7 +52,6 @@
 
 #include <fvm_defs.h>
 #include <fvm_parall.h>
-
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -455,6 +452,7 @@ _get_local_tolerance(const cs_real_t   vtx_coords[],
 }
 
 #if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Exchange local vertex tolerances to get a global vertex tolerance.
  *
@@ -601,6 +599,7 @@ _get_global_tolerance(cs_mesh_t            *mesh,
   BFT_FREE(send_shift);
   BFT_FREE(g_vtx_tolerance);
 }
+
 #endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
@@ -655,7 +654,6 @@ _get_tolerance(cs_mesh_t   *mesh,
  * Unwarping algorithm, called by _unwarping
  *
  * parameters:
- *   ifs                 <--  pointer to a cs_interface_set_t structure
  *   mesh                <--  pointer to a cs_mesh_t structure
  *   i_face_norm         <--  surface normal of interior faces
  *   b_face_norm         <--  surface normal of border faces
@@ -672,8 +670,7 @@ _get_tolerance(cs_mesh_t   *mesh,
  *----------------------------------------------------------------------------*/
 
 static cs_real_t
-_unwarping_mvt(cs_interface_set_t   *ifs,
-               cs_mesh_t            *mesh,
+_unwarping_mvt(cs_mesh_t            *mesh,
                cs_real_t            *i_face_norm,
                cs_real_t            *b_face_norm,
                cs_real_t            *i_face_cog,
@@ -741,7 +738,7 @@ _unwarping_mvt(cs_interface_set_t   *ifs,
 
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-    if (mesh->i_face_cells[2*face_id] > 0 ) {
+    if (mesh->i_face_cells[2*face_id] <= mesh->n_cells) {
       start_id = mesh->i_face_vtx_idx[face_id] -1;
       end_id = mesh->i_face_vtx_idx[face_id + 1] -1;
       for (i = start_id; i < end_id; i++) {
@@ -762,16 +759,14 @@ _unwarping_mvt(cs_interface_set_t   *ifs,
     }
   }
 
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) { /* Parallel treatment : synchro over the ranks */
-    cs_interface_set_sum(ifs,
+  if (mesh->vtx_interfaces != NULL) {/* Parallel or periodic treatment */
+    cs_interface_set_sum(mesh->vtx_interfaces,
                          mesh->n_vertices,
                          3,
                          true,
                          CS_REAL_TYPE,
                          loc_vtx_mvt);
   }
-#endif
 
   for (i = 0; i < mesh->n_vertices; i++)
     for (coord_id = 0; coord_id < 3; coord_id++)
@@ -785,15 +780,13 @@ _unwarping_mvt(cs_interface_set_t   *ifs,
  * Compute normals for boundary vertices
  *
  * parameters:
- *   ifs   <--  pointer to an interface structure
  *   mesh         <--  pointer to a mesh structure
  *   b_face_norm  <--  normals associated with boundary faces
  *   b_vtx_norm   -->  normals associated with boundary vertices
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_vtx_normals(cs_interface_set_t  *ifs,
-                     cs_mesh_t           *mesh,
+_compute_vtx_normals(cs_mesh_t           *mesh,
                      cs_real_t           *b_face_norm,
                      cs_real_t           *b_vtx_norm)
 {
@@ -818,7 +811,7 @@ _compute_vtx_normals(cs_interface_set_t  *ifs,
   /* summing upon processors if necessary */
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
-    cs_interface_set_sum(ifs,
+    cs_interface_set_sum(mesh->vtx_interfaces,
                          mesh->n_vertices,
                          3,
                          true,
@@ -866,19 +859,6 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
   cs_real_t *b_face_cog = NULL;
   cs_real_t *b_vtx_norm = NULL;
   cs_real_t *_vtx_is_fixed = NULL;
-  cs_interface_set_t  *ifs = NULL;
-
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1)
-    ifs = cs_interface_set_create(mesh->n_vertices,
-                                  NULL,
-                                  mesh->global_vtx_num,
-                                  NULL,
-                                  0,
-                                  NULL,
-                                  NULL,
-                                  NULL);
-#endif /* defined(HAVE_MPI) */
 
   BFT_MALLOC(_vtx_is_fixed, mesh->n_vertices, cs_real_t);
   BFT_MALLOC(b_vtx_norm, 3*(mesh->n_vertices), cs_real_t);
@@ -898,8 +878,7 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
     b_face_norm[3*face + 2] /= rnorm_b;
   }
 
-  _compute_vtx_normals(ifs,
-                       mesh,
+  _compute_vtx_normals(mesh,
                        b_face_norm,
                        b_vtx_norm);
 
@@ -918,17 +897,14 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
     }
   }
 
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) { /* Parallel treatment : synchro over the ranks */
-    cs_interface_set_sum(ifs,
+  if (mesh->vtx_interfaces != NULL) {
+    cs_interface_set_sum(mesh->vtx_interfaces,
                          mesh->n_vertices,
                          1,
                          true,
                          CS_REAL_TYPE,
                          _vtx_is_fixed);
-    cs_interface_set_destroy(&ifs);
   }
-#endif
 
   for (j = 0; j < mesh->n_vertices; j++) {
     if (_vtx_is_fixed[j] > 0.1)
@@ -972,21 +948,10 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
   cs_real_t *b_face_cog = NULL;
   cs_real_t *b_face_warp = NULL;
   cs_real_t *i_face_warp = NULL;
-  cs_interface_set_t  *ifs = NULL;
 
-  if (cs_glob_n_ranks > 0 || mesh->periodicity != NULL) {
-    if (mesh->periodicity != NULL)
-      bft_error(__FILE__, __LINE__, 0,
-                "Smoothing in case of periodicity not yet handled.");
-    ifs = cs_interface_set_create(mesh->n_vertices,
-                                  NULL,
-                                  mesh->global_vtx_num,
-                                  NULL,
-                                  0,
-                                  NULL,
-                                  NULL,
-                                  NULL);
-  }
+  if (mesh->have_rotation_perio)
+    bft_error(__FILE__, __LINE__, 0,
+              "Smoothing in case of periodicity of rotation not yet handled.");
 
   bft_printf(_("\n Start unwarping algorithm\n\n"));
 
@@ -1036,8 +1001,7 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
       b_face_norm[3*face +2] /= rnorm_b;
     }
 
-    maxwarp = _unwarping_mvt(ifs,
-                             mesh,
+    maxwarp = _unwarping_mvt(mesh,
                              i_face_norm,
                              b_face_norm,
                              i_face_cog,
@@ -1089,7 +1053,7 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
         conv = true;
       }
     }
-    if (( (1 - maxwarp/maxwarp_p) > 0 && (1 - maxwarp/maxwarp_p) < eps )
+    if (   ((1 - maxwarp/maxwarp_p) > 0 && (1 - maxwarp/maxwarp_p) < eps)
         || iter == max_iter) {
       conv = true;
       bft_printf(_("\nUnwarping algorithm converged at iteration %d \n"), iter +1);
@@ -1107,11 +1071,6 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
     BFT_FREE(b_face_cog);
     iter++;
   }
-
-  /* Free vertex interfaces */
-
-  if (ifs != NULL)
-    cs_interface_set_destroy(&ifs);
 
   /* Output quality histograms */
 

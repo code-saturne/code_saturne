@@ -1460,6 +1460,9 @@ _discard_free_vertices(cs_mesh_t  *mesh)
       BFT_REALLOC(mesh->global_vtx_num, n_vertices, cs_gnum_t);
   }
 
+  if (mesh->vtx_interfaces != NULL)
+    cs_interface_set_renumber(mesh->vtx_interfaces, new_vertex_id);
+
   BFT_FREE(new_vertex_id);
 
   /* Build an I/O numbering to compact the global numbering */
@@ -2139,6 +2142,7 @@ cs_mesh_create(void)
 
   /* Halo features */
 
+  mesh->vtx_interfaces = NULL;
   mesh->halo_type = CS_HALO_N_TYPES;
   mesh->n_ghost_cells = 0;
   mesh->n_cells_with_ghosts = 0;
@@ -2268,6 +2272,8 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
     cs_halo_free_buffer();
   }
 
+  if (mesh->vtx_interfaces != NULL)
+    cs_interface_set_destroy(&(mesh->vtx_interfaces));
   mesh->halo = cs_halo_destroy(mesh->halo);
 
   /* Free numbering info */
@@ -2690,7 +2696,7 @@ cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
     }
 
     mesh->n_b_cells = n_b_cells;
-    BFT_MALLOC(mesh->b_cells, mesh->n_b_cells, cs_int_t);
+    BFT_REALLOC(mesh->b_cells, mesh->n_b_cells, cs_lnum_t);
 
     for (i = 0, n_b_cells = 0; i < mesh->n_cells; i++) {
       if (flag[i] == true)
@@ -2728,7 +2734,6 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
   cs_gnum_t  *g_vertex_num = NULL;
   cs_gnum_t  **periodic_couples = NULL;
 
-  cs_interface_set_t  *vertex_interfaces = NULL;
   cs_interface_set_t  *face_interfaces = NULL;
 
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
@@ -2748,17 +2753,17 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
     bft_printf("\n"
                " ----------------------------------------------------------\n");
 
+    if (mesh->n_init_perio > 1) {
+      bft_printf(_(" Composing periodicities\n"));
+      fvm_periodicity_combine(mesh->periodicity, 0);
+    }
+
     if (ivoset == 1) {
 
       bft_printf(_("\n Halo construction with extended neighborhood\n"
                    " ============================================\n\n"));
 
       mesh->halo_type = CS_HALO_EXTENDED;
-
-      if (mesh->n_init_perio > 1) {
-        bft_printf(_(" Composing periodicities\n"));
-        fvm_periodicity_combine(mesh->periodicity, 0);
-      }
 
     }
     else {
@@ -2851,14 +2856,14 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
     bft_printf(_(" Vertex interfaces creation\n"));
 
-    vertex_interfaces = cs_interface_set_create(n_vertices,
-                                                NULL,
-                                                g_vertex_num,
-                                                mesh->periodicity,
-                                                mesh->n_init_perio,
-                                                perio_num,
-                                                n_periodic_couples,
-                     (const cs_gnum_t *const *)periodic_couples);
+    mesh->vtx_interfaces = cs_interface_set_create(n_vertices,
+                                                   NULL,
+                                                   g_vertex_num,
+                                                   mesh->periodicity,
+                                                   mesh->n_init_perio,
+                                                   perio_num,
+                                                   n_periodic_couples,
+                         (const cs_gnum_t *const *)periodic_couples);
 
     if (mesh->global_vtx_num != g_vertex_num)
       BFT_FREE(g_vertex_num);
@@ -2887,21 +2892,20 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
     bft_printf(_(" Halo creation\n"));
     bft_printf_flush();
 
-    mesh->halo = cs_halo_create(vertex_interfaces);
+    mesh->halo = cs_halo_create(mesh->vtx_interfaces);
 
     bft_printf(_(" Halo definition\n"));
     bft_printf_flush();
 
     cs_mesh_halo_define(mesh,
                         face_interfaces,
-                        vertex_interfaces,
+                        mesh->vtx_interfaces,
                         &gcell_vtx_idx,
                         &gcell_vtx_lst);
 
     if (mesh->n_init_perio > 0)
       cs_halo_perio_update_buffer(mesh->halo);
 
-    cs_interface_set_destroy(&vertex_interfaces);
     cs_interface_set_destroy(&face_interfaces);
 
     t2 = cs_timer_wtime();

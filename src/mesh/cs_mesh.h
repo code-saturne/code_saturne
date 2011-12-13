@@ -69,23 +69,23 @@ typedef struct {
   /* Local dimensions */
 
   cs_lnum_t  n_cells;              /* Number of cells */
-  cs_lnum_t  n_i_faces;            /* Number of internal faces */
-  cs_lnum_t  n_b_faces;            /* Number of border faces */
+  cs_lnum_t  n_i_faces;            /* Number of interior faces */
+  cs_lnum_t  n_b_faces;            /* Number of boundary faces */
   cs_lnum_t  n_vertices;           /* Number of vertices */
 
   cs_lnum_t  i_face_vtx_connect_size;  /* Size of the connectivity
-                                          internal faces -> vertices */
+                                          interior faces -> vertices */
   cs_lnum_t  b_face_vtx_connect_size;  /* Size of the connectivity
-                                          border faces -> vertices */
+                                          boundary faces -> vertices */
 
   /* Local structures */
 
   cs_real_t  *vtx_coord;           /* Vertex coordinates */
 
-  cs_lnum_t  *i_face_cells;        /* Internal faces -> cells connectivity */
-  cs_lnum_t  *b_face_cells;        /* Border faces -> cells connectivity */
+  cs_lnum_t  *i_face_cells;        /* Interior faces -> cells connectivity */
+  cs_lnum_t  *b_face_cells;        /* Boundary faces -> cells connectivity */
 
-  cs_lnum_t  *i_face_vtx_idx;      /* Internal faces -> vertices index */
+  cs_lnum_t  *i_face_vtx_idx;      /* Interior faces -> vertices index */
   cs_lnum_t  *i_face_vtx_lst;      /* Interior faces -> vertices connectivity */
 
   cs_lnum_t  *b_face_vtx_idx;      /* Boundary faces -> vertices index */
@@ -94,15 +94,15 @@ typedef struct {
   /* Global dimension */
 
   cs_gnum_t   n_g_cells;           /* Global number of cells */
-  cs_gnum_t   n_g_i_faces;         /* Global number of internal faces */
-  cs_gnum_t   n_g_b_faces;         /* Global number of border faces */
+  cs_gnum_t   n_g_i_faces;         /* Global number of interior faces */
+  cs_gnum_t   n_g_b_faces;         /* Global number of boundary faces */
   cs_gnum_t   n_g_vertices;        /* Global number of vertices */
 
   /* Global numbering */
 
   cs_gnum_t  *global_cell_num;     /* Global cell numbering */
-  cs_gnum_t  *global_i_face_num;   /* Global internal face numbering */
-  cs_gnum_t  *global_b_face_num;   /* Global border face numbering */
+  cs_gnum_t  *global_i_face_num;   /* Global interior face numbering */
+  cs_gnum_t  *global_b_face_num;   /* Global boundary face numbering */
   cs_gnum_t  *global_vtx_num;      /* Global vertex numbering */
 
   /* Periodictity features */
@@ -122,7 +122,8 @@ typedef struct {
                                         (n_cells + n_ghost_cells) */
   cs_lnum_t  n_ghost_cells;          /* Number of "ghost" cells */
 
-  cs_halo_t  *halo;                  /* Structure used to manage ghost cells */
+  cs_interface_set_t  *vtx_interfaces;   /* Vertices interface set */
+  cs_halo_t           *halo;             /* Ghost cells structure */
 
   cs_numbering_t  *i_face_numbering; /* Interior face numbering info */
   cs_numbering_t  *b_face_numbering; /* Boundary face numbering info */
@@ -155,15 +156,15 @@ typedef struct {
   cs_lnum_t  *family_item;         /* Family items */
   cs_lnum_t  *cell_family;         /* Cell family */
   cs_lnum_t  *i_face_family;       /* Interior face family */
-  cs_lnum_t  *b_face_family;       /* Border face family */
+  cs_lnum_t  *b_face_family;       /* Boundary face family */
 
   fvm_group_class_set_t *class_defs;  /* Definition of group classes for
                                          selection and postprocessing (built
                                          from element families and their
                                          descriptions) */
-  fvm_selector_t  *select_cells;      /* Cell selection object */
-  fvm_selector_t  *select_i_faces;    /* Internal faces selection object */
-  fvm_selector_t  *select_b_faces;    /* Border faces selection object */
+  fvm_selector_t  *select_cells;      /* Cells selection object */
+  fvm_selector_t  *select_i_faces;    /* Interior faces selection object */
+  fvm_selector_t  *select_b_faces;    /* Boundary faces selection object */
 
   /* Status flags */
 
@@ -435,7 +436,7 @@ cs_mesh_order_vertices(cs_mesh_t  *const mesh);
 /*----------------------------------------------------------------------------
  * Compute or update mesh structure members the depend on other members,
  * but whose results may be reused, such as global number of elements
- * (cells, vertices, internal and border faces) and sync cell family.
+ * (cells, vertices, interior and boundary faces) and sync cell family.
  *
  * parameters:
  *   mesh   <->  pointer to a cs_mesh_t structure
@@ -443,6 +444,18 @@ cs_mesh_order_vertices(cs_mesh_t  *const mesh);
 
 void
 cs_mesh_update_auxiliary(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
+ * Creation and initialization of mesh face and vertex interfaces.
+ *
+ * parameters:
+ *   mesh  <->  pointer to mesh structure
+ *   mb    <->  pointer to mesh builder (in case of periodicity)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_interfaces(cs_mesh_t          *mesh,
+                        cs_mesh_builder_t  *mb);
 
 /*----------------------------------------------------------------------------
  * Creation and initialization of halo structures.
