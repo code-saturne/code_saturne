@@ -247,8 +247,8 @@ do iel = 1, ncel
 
 ! ---> Calcul de l'enthalpie
 
-      h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmin - hmax*fmax) &
-                / (fmin-fmax)
+      h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmax - hmax*fmin) &
+                / (fmax-fmin)
 
 ! ---> Calcul de la fraction massique des gaz (F, O et P)
 
@@ -643,8 +643,8 @@ do iel = 1, ncel
     sum17 = zero
 
     do idirac = 1, ndirac
-      h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmin - hmax*fmax) &
-                / (fmin-fmax)
+      h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmax - hmax*fmin) &
+                / (fmax-fmin)
 
 ! ---> Calcul de la fraction massique des gaz (F, O et P) en 1 et 2
 
