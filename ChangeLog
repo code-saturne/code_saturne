@@ -1,3 +1,12 @@
+* 13/12/2011 - Ralf Becker <ralf.becker@dlr.de>
+  Fixe and improvements in the Libby-Williams models for the enthalpy
+  calculation.
+  modified files:
+    src/cogz/lwcphy.f90
+    src/cogz/pdflwc.f90
+    src/cogz/pdfpp3.f90
+    src/cogz/pdfpp4.f90
+
 * 13/12/2011 - David Monfort <david.monfort@edf.fr>
   Improve the module environment detection.
   modified files:
