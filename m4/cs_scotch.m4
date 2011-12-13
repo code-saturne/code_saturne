@@ -27,7 +27,9 @@ dnl-----------------------------------------------------------------------------
 
 AC_DEFUN([CS_AC_TEST_SCOTCH], [
 
+cs_have_ptscotch_header=no
 cs_have_ptscotch=no
+cs_have_scotch_header=no
 cs_have_scotch=no
 
 AC_ARG_WITH(scotch,
@@ -73,11 +75,28 @@ if test "x$with_scotch" != "xno" ; then
 
   # Test for PT-SCOTCH first
 
-  CPPFLAGS="${CPPFLAGS} ${SCOTCH_CPPFLAGS} ${MPI_CPPFLAGS}"
+  # Check for ptscotch.h header
+  CPPFLAGS="$saved_CPPFLAGS $SCOTCH_CPPFLAGS $MPI_CPPFLAGS"
+  AC_CHECK_HEADERS([ptscotch.h],
+                   [cs_have_ptscotch_header=yes],
+                   [], 
+                   [])
+
+  if test "x$cs_have_ptscotch_header" = "xno" ; then
+    unset ac_cv_header_ptscotch_h
+    SCOTCH_CPPFLAGS="$saved_CPPFLAGS -I/usr/include/scotch $MPI_CPPFLAGS"
+    CPPFLAGS="$saved_CPPFLAGS $SCOTCH_CPPFLAGS"
+    AC_CHECK_HEADERS([ptscotch.h],
+                     [cs_have_ptscotch_header=yes],
+                     [], 
+                     [])
+  fi
+
   LDFLAGS="${LDFLAGS} ${SCOTCH_LDFLAGS} ${MPI_LDFLAGS}"
   SCOTCH_LIBS="-lptscotch -lptscotcherr -lm"
   LIBS="${LIBS} ${SCOTCH_LIBS}  ${MPI_LIBS}"
 
+  AC_MSG_CHECKING([for PT-SCOTCH])
   AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <stdio.h>
 #include <stdint.h>
@@ -86,16 +105,34 @@ if test "x$with_scotch" != "xno" ; then
 [[ SCOTCH_dgraphInit((void *)0, MPI_COMM_WORLD); ]])],
 [cs_have_ptscotch=yes],
 [cs_have_ptscotch=no])
+  AC_MSG_RESULT($cs_have_ptscotch)
 
   # Test for SCOTCH second
 
   if test "x$cs_have_ptscotch" = "xno"; then
 
-    CPPFLAGS="${saved_CPPFLAGS} ${SCOTCH_CPPFLAGS}"
+    # Check for scotch.h header
+    CPPFLAGS="$saved_CPPFLAGS $SCOTCH_CPPFLAGS"
+    AC_CHECK_HEADERS([scotch.h],
+                     [cs_have_scotch_header=yes],
+                     [], 
+                     [])
+
+    if test "x$cs_have_scotch_header" = "xno" ; then
+      unset ac_cv_header_scotch_h
+      SCOTCH_CPPFLAGS="$saved_CPPFLAGS -I/usr/include/scotch"
+      CPPFLAGS="$saved_CPPFLAGS $SCOTCH_CPPFLAGS"
+      AC_CHECK_HEADERS([scotch.h],
+                       [cs_have_scotch_header=yes],
+                       [], 
+                       [])
+    fi
+
     LDFLAGS="${saved_LDFLAGS} ${SCOTCH_LDFLAGS}"
     SCOTCH_LIBS="-lscotch -lscotcherr -lm"
     LIBS="${saved_LIBS} ${SCOTCH_LIBS}"
 
+    AC_MSG_CHECKING([for SCOTCH])
     AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <stdio.h>
 #include <stdint.h>
@@ -103,6 +140,7 @@ if test "x$with_scotch" != "xno" ; then
 [[ SCOTCH_graphInit((void *)0); ]])],
 [cs_have_scotch=yes],
 [cs_have_scotch=no])
+    AC_MSG_RESULT($cs_have_scotch)
 
   fi
 
