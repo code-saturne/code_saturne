@@ -25,6 +25,7 @@ subroutine pdflwc &
 
  ( ncelet , ncel  ,                                               &
    fm     , fp2m  , yfm    , yfp2m ,                              &
+   hm     ,                                                       &
    propce )
 
 !===============================================================================
@@ -71,6 +72,7 @@ subroutine pdflwc &
 ! fp2m             ! tr ! <-- ! variance de la fraction de melange             !
 ! yfm              ! tr ! <-- ! moyenne de la fraction massique                !
 ! yfp2m            ! tr ! <-- ! variance de la fraction massique               !
+! hm               ! tr ! <-- ! moyenne de l'enthalpie de melange              !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -107,6 +109,7 @@ integer          ncelet, ncel
 
 double precision fm(ncelet)   , fp2m(ncelet)
 double precision yfm(ncelet)  , yfp2m(ncelet)
+double precision hm(ncelet)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -212,9 +215,6 @@ do iel = 1, ncel
 
 
   fmp    =  max(min(fmax,fm(iel)),fmin)
-  yfmp = fmp-((fmp-max(zero,(fmp-fs(1))/(1.d0-fs(1))))            &
-                  /(fm(iel)-max(zero,                             &
-       (fm(iel)-fs(1))/(1.d0-fs(1))))*(fm(iel)-yfm(iel)))
   yfmp   =  max(min(yfm(iel),fmp),                                &
                     zero,(fmp-fs(1))/(1.d0-fs(1)))
   fp2mp  =  max(min(fp2m(iel),                                    &
@@ -247,8 +247,14 @@ do iel = 1, ncel
 
 ! ---> Calcul de l'enthalpie
 
-      h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmin - hmax*fmax) &
-                / (fmin-fmax)
+      if (     ippmod(icolwc).eq.0 &
+          .or. ippmod(icolwc).eq.2 &
+          .or. ippmod(icolwc).eq.4) then
+        h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmax - hmax*fmin) &
+                  / (fmax-fmin)
+      else
+        h(idirac) = hm(iel)
+      endif
 
 ! ---> Calcul de la fraction massique des gaz (F, O et P)
 
@@ -643,8 +649,15 @@ do iel = 1, ncel
     sum17 = zero
 
     do idirac = 1, ndirac
-      h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmin - hmax*fmax) &
-                / (fmin-fmax)
+
+      if (     ippmod(icolwc).eq.0 &
+          .or. ippmod(icolwc).eq.2 &
+          .or. ippmod(icolwc).eq.4) then
+        h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmax - hmax*fmin) &
+                  / (fmax-fmin)
+      else
+        h(idirac) = hm(iel)
+      endif
 
 ! ---> Calcul de la fraction massique des gaz (F, O et P) en 1 et 2
 

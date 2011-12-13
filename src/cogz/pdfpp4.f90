@@ -25,6 +25,7 @@ subroutine pdfpp4 &
 
  ( ncelet , ncel  ,                                               &
    fm     , fp2m  , yfm    , yfp2m , coyfp  ,                     &
+   hm     ,                                                       &
    propce )
 
 !===============================================================================
@@ -77,6 +78,7 @@ subroutine pdfpp4 &
 ! yfm              ! tr ! <-- ! moyenne de la fraction massique                !
 ! yfp2m            ! tr ! <-- ! variance de la fraction massique               !
 ! coyfp            ! tr ! <-- ! covariance                                     !
+! hm               ! tr ! <-- ! moyenne de l'enthalpie de melange              !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -115,6 +117,7 @@ integer          ncelet, ncel
 double precision fm(ncelet)   , fp2m(ncelet)
 double precision yfm(ncelet)  , yfp2m(ncelet)
 double precision coyfp(ncelet)
+double precision hm(ncelet)
 double precision propce(ncelet,*)
 
 !===============================================================================
@@ -313,8 +316,14 @@ coyfpp=coyfp(iel)
 
 ! ---> Calcul de l'enthalpie
 
-      h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmax - hmax*fmin) &
-                / (fmax-fmin)
+      if (     ippmod(icolwc).eq.0 &
+          .or. ippmod(icolwc).eq.2 &
+          .or. ippmod(icolwc).eq.4) then
+        h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmax - hmax*fmin) &
+                  / (fmax-fmin)
+      else
+        h(idirac) = hm(iel)
+      endif
 
 ! ---> Calcul de la fraction massique des gaz (F, O et P)
 
@@ -690,8 +699,14 @@ coyfpp=coyfp(iel)
 
 ! ---> Calcul de l'enthalpie
 
-    h(idirac) = ( (hmax-hmin)*f(idirac)                           &
-         + hmin*fmax - hmax*fmin) / (fmax-fmin)
+    if (     ippmod(icolwc).eq.0 &
+        .or. ippmod(icolwc).eq.2 &
+        .or. ippmod(icolwc).eq.4) then
+      h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmax - hmax*fmin) &
+                / (fmax-fmin)
+    else
+      h(idirac) = hm(iel)
+    endif
 
 ! ---> Calcul de la fraction massique des gaz (F, O et P) pour chaque pic
 

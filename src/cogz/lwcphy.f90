@@ -103,6 +103,8 @@ double precision coefg(ngazgm)
 double precision nbmol , temsmm
 double precision masmg
 
+double precision, allocatable, dimension(:) :: w1
+
 integer       ipass
 data          ipass /0/
 save          ipass
@@ -137,6 +139,19 @@ ipbrom = ipprob(irom)
 ! 2. DETERMINATION DES GRANDEURS THERMOCHIMIQUES MOYENNES
 !===============================================================================
 
+! if the enthalpy scalar is used, copy to w1
+
+if (ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or. ippmod(icolwc).eq.5) then
+
+  ! Allocate a work array
+  allocate(w1(ncelet))
+
+  do iel = 1, ncel
+    w1(iel) = rtp(iel,isca(ihm))
+  enddo
+
+endif
+
 
 if ( (ippmod(icolwc).eq.0) .or. (ippmod(icolwc).eq.1) ) then
 
@@ -145,6 +160,7 @@ if ( (ippmod(icolwc).eq.0) .or. (ippmod(icolwc).eq.1) ) then
    ( ncelet        , ncel          ,                              &
      rtp(1,isca(ifm))    , rtp(1,isca(ifp2m))  ,                  &
      rtp(1,isca(iyfm))   , rtp(1,isca(iyfp2m)) ,                  &
+     w1       ,                                                   &
      propce   )
 
 endif
@@ -157,6 +173,7 @@ endif
      rtp(1,isca(ifm))    , rtp(1,isca(ifp2m))  ,                  &
      rtp(1,isca(iyfm))   , rtp(1,isca(iyfp2m)) ,                  &
      rtp(1,isca(icoyfp)) ,                                        &
+     w1       ,                                                   &
      propce   )
 
  endif
@@ -169,9 +186,13 @@ endif
      rtp(1,isca(ifm))    , rtp(1,isca(ifp2m))  ,                  &
      rtp(1,isca(iyfm))   , rtp(1,isca(iyfp2m)) ,                  &
      rtp(1,isca(icoyfp)) ,                                        &
+     w1       ,                                                   &
      propce   )
 
  endif
+
+! Free memory
+if (allocated(w1)) deallocate(w1)
 
 !===============================================================================
 ! 3. CALCUL DE RHO ET DES FRACTIONS MASSIQUES DES ESPECES GLOBALES
