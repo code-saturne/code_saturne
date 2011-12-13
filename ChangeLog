@@ -1,3 +1,12 @@
+* 13/12/2011 - Ralf Becker <ralf.becker@dlr.de>
+  Fixe and improvements in the Libby-Williams models for the enthalpy
+  calculation.
+  modified files:
+    src/cogz/lwcphy.f90
+    src/cogz/pdflwc.f90
+    src/cogz/pdfpp3.f90
+    src/cogz/pdfpp4.f90
+
 * 12/12/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add missing initialization in warped face split parallel synchronization.
   modified routine:
