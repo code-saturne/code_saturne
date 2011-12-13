@@ -854,8 +854,9 @@ To clear all configuration info, use \texttt{make distclean}
 \section{Post-install\label{sec:post_install}}
 
 Once the code is installed, a post-install step may
-be used for computing environments using a batch system,
-or a separate front-end and build system:
+be necessary for computing environments using a batch system,
+for separate front-end and compute systems (such as Blue Gene
+systems), or for coupling with \syrthes 4 or Code\_Aster.
 
 Edit the \texttt{<install-prefix>/etc/code\_saturne.cfg},
 and uncomment and define the \texttt{batch} section.
@@ -882,7 +883,14 @@ the associated compute build.
 
 \section{Installing for \syrthes coupling\label{sec:syrthes}}
 
-When coupling with \syrthes using MPI, both \CS and \syrthes must
+Coupling with \syrthes 3 requires defining \texttt{--with-syrthes}
+at the \texttt{configure} stage, while coupling with \syrthes 4
+requires defining the path to \syrthes 4 at the post-install
+stage. If \CS is configured and built with \syrthes 3 support,
+defining the paths to \syrthes 4 will cause it to switch to
+that version, which has priority.
+
+When coupling with \syrthes 4, both \CS and \syrthes must
 use the same MPI library, and must use the same version of the
 PLE (Parallel Location and Exchange) library from \CS. By default, PLE
 is built as a sub-library of \CS, but a standalone version may be
@@ -892,8 +900,74 @@ script. \CS may then be configured to use the existing install of PLE
 using the \texttt{--with-ple} option. Similarly, \syrthes must also
 be configured to use PLE.
 
-Alternatively, \syrthes may simply be configured to use the PLE
+Alternatively, \syrthes 4 may simply be configured to use the PLE
 library from an existing \CS install.
+
+\section{Shell completion}
+
+If using the bash shell, you may source a bash completion file,
+so as to benefit from shell completion for \CS commands
+and options, either using 
+
+\texttt{. <install-prefix>/etc/bash\_completion.d/code\_saturne}
+
+or 
+
+\texttt{source <install-prefix>/etc/bash\_completion.d/code\_saturne}
+
+On some systems, only the latter syntax is effective. For greater
+comfort, you should save this setting in your \texttt{.bashrc}
+or \texttt{.bash\_profile} file.
+
+\section{Caveats}
+
+\subsubsection{Moving an existing installation}
+
+\textcolor{Red}{\emph{Never move an installed build}} of \CS.
+As the build system is basd on the GNU Autotools, not only
+are library paths hard-coded using \emph{rpath} type info,
+but the code's scripts also contain absolute paths.
+Using \texttt{LD\_LIBRARY\_PATH} or \texttt{LD\_PRELOAD}
+may allow the executable to run despite \emph{rpath} info
+not being up-to-date, but in environments where different library,
+versions are available, there is a strong risk of not using
+the correct library. In addition, the scripts will not work
+unless paths in the installed scripts are updated.
+If you are not able to update those paths without further
+explanation, you should not even think about moving the build.
+
+The mistake of moving an installed build is most often done not
+by beginners, but by more exerienced users or administrators who
+believe they know enough to force a behavior against the logic of the
+build system. Except for those experienced not only in installing
+codes but also in maintaining advanced Autotool scripts for
+at least one software package, this is usually presumptuous.
+
+If you need to test an installation in a test directory before
+installing it in a production directory, use the
+\texttt{make install DESTDIR=<test\_prefix>} provided
+by the Autotools mechanism rather than configuring an install for a
+test directory and then moving it to a production directory.
+Another less elegant but safe solution is to configure the build for
+installation to a test directory, and once it is tested,
+re-configure the build for installation to the final production
+directory, and rebuild and install.
+
+\subsubsection{Known issues with some packages}
+
+On quite a few clusters, some issues have been encountered
+when using versions of Open MPI built with the Intel compiler
+suite. Typically, crashes in the MPI-IO layers are almost
+guaranteed, but issues may also arise later, apparently  with some
+collectives, so disabling MPI-IO is not enough.
+
+Using Intel compilers for \CS itself and a build of Open MPI
+using the GNU compilers usually works fine, and the performance
+difference should be minimal (it can be higher using
+the GNU compilers also for \CS itself), so the issue is not
+in \CS itself, but it requires further investigation.
+In any case, avoiding this buggy combination may avoid you
+many wasted hours.
 
 \end{document}
 
