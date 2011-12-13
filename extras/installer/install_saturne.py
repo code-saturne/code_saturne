@@ -294,8 +294,8 @@ class Setup:
             Package(name="Code_Saturne",
                     description="Code_Saturne CFD tool",
                     package="code_saturne",
-                    version="2.1.0",
-                    archive="code_saturne-210.zip",
+                    version="2.1.1",
+                    archive="code_saturne-211.zip",
                     url=url_cs)
 
         p = self.packages['code_saturne']
