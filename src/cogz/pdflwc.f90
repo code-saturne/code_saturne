@@ -212,9 +212,6 @@ do iel = 1, ncel
 
 
   fmp    =  max(min(fmax,fm(iel)),fmin)
-  yfmp = fmp-((fmp-max(zero,(fmp-fs(1))/(1.d0-fs(1))))            &
-                  /(fm(iel)-max(zero,                             &
-       (fm(iel)-fs(1))/(1.d0-fs(1))))*(fm(iel)-yfm(iel)))
   yfmp   =  max(min(yfm(iel),fmp),                                &
                     zero,(fmp-fs(1))/(1.d0-fs(1)))
   fp2mp  =  max(min(fp2m(iel),                                    &
