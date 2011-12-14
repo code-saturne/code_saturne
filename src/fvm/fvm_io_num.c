@@ -1866,8 +1866,6 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure.
  *
- * The corresponding entities must be locally ordered.
- *
  * parameters:
  *   parent_entity_number <-- pointer to list of selected entitie's parent's
  *                            numbers, or NULL if all first n_ent entities
@@ -1888,16 +1886,15 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
                   size_t            n_entities,
                   int               share_parent_global)
 {
+  size_t  i;
+  cs_lnum_t  *order = NULL;
+
   fvm_io_num_t  *this_io_num = NULL;
 
   /* Initial checks */
 
   if (fvm_parall_get_size() < 2)
     return NULL;
-
-  assert(cs_order_gnum_test(parent_entity_number,
-                            parent_global_number,
-                            n_entities) == true);
 
 #if defined(HAVE_MPI)
 
@@ -1912,8 +1909,6 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
 
   if (n_entities > 0) {
 
-    size_t  i;
-
     /* Assign initial global numbers */
 
     if (parent_entity_number != NULL) {
@@ -1926,6 +1921,19 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
         this_io_num->_global_num[i] = parent_global_number[i];
     }
 
+    if (cs_order_gnum_test(NULL,
+                           this_io_num->_global_num,
+                           n_entities) == false) {
+      cs_gnum_t *tmp_num;
+      order = cs_order_gnum(NULL,
+                            this_io_num->_global_num,
+                            n_entities);
+      BFT_MALLOC(tmp_num, n_entities, cs_gnum_t);
+      for (i = 0; i < n_entities; i++)
+        tmp_num[i] = this_io_num->_global_num[order[i]];
+      memcpy(this_io_num->_global_num, tmp_num, n_entities*sizeof(cs_gnum_t));
+      BFT_FREE(tmp_num);
+    }
   }
 
   /* Order globally */
@@ -1936,6 +1944,16 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
   _fvm_io_num_global_order(this_io_num,
                            NULL,
                            fvm_parall_get_mpi_comm());
+
+  if (order != NULL) {
+    cs_gnum_t *tmp_num;
+    BFT_MALLOC(tmp_num, n_entities, cs_gnum_t);
+    for (i = 0; i < n_entities; i++)
+      tmp_num[order[i]] = this_io_num->_global_num[i];
+    memcpy(this_io_num->_global_num, tmp_num, n_entities*sizeof(cs_gnum_t));
+    BFT_FREE(tmp_num);
+    BFT_FREE(order);
+  }
 
   if (share_parent_global != 0)
     _fvm_io_num_try_to_set_shared(this_io_num,
