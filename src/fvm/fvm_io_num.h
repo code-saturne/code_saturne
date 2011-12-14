@@ -100,8 +100,6 @@ extern const char  *fvm_io_num_sfc_type_name[];
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure.
  *
- * The corresponding entities must be locally ordered.
- *
  * parameters:
  *   parent_entity_number <-- pointer to list of selected entitie's parent's
  *                            numbers, or NULL if all first nb_ent entities
