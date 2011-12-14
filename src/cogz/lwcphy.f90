@@ -220,16 +220,6 @@ ipbrom = ipprob(irom(iphas))
 ! 2. DETERMINATION DES GRANDEURS THERMOCHIMIQUES MOYENNES
 !===============================================================================
 
-! if the enthalpy scalar is used, copy to w1
-
-if (ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or. ippmod(icolwc).eq.5) then
-
-  do iel = 1, ncel
-    w1(iel) = rtp(iel,isca(ihm))
-  enddo
-
-endif
-
 
 if ( (ippmod(icolwc).eq.0) .or. (ippmod(icolwc).eq.1) ) then
 
@@ -238,7 +228,6 @@ if ( (ippmod(icolwc).eq.0) .or. (ippmod(icolwc).eq.1) ) then
    ( ncelet        , ncel          ,                              &
      rtp(1,isca(ifm))    , rtp(1,isca(ifp2m))  ,                  &
      rtp(1,isca(iyfm))   , rtp(1,isca(iyfp2m)) ,                  &
-     w1       ,                                                   &
      propce   )
 
 endif
@@ -251,7 +240,6 @@ endif
      rtp(1,isca(ifm))    , rtp(1,isca(ifp2m))  ,                  &
      rtp(1,isca(iyfm))   , rtp(1,isca(iyfp2m)) ,                  &
      rtp(1,isca(icoyfp)) ,                                        &
-     w1       ,                                                   &
      propce   )
 
  endif
@@ -264,7 +252,6 @@ endif
      rtp(1,isca(ifm))    , rtp(1,isca(ifp2m))  ,                  &
      rtp(1,isca(iyfm))   , rtp(1,isca(iyfp2m)) ,                  &
      rtp(1,isca(icoyfp)) ,                                        &
-     w1       ,                                                   &
      propce   )
 
  endif
