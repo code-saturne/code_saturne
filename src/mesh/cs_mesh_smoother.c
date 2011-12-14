@@ -43,19 +43,12 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT and FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-#include <fvm_defs.h>
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
 
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
@@ -808,16 +801,15 @@ _compute_vtx_normals(cs_mesh_t           *mesh,
     }
   }
 
-  /* summing upon processors if necessary */
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1)
+  /* summing upon processors (or periodic vertices) if necessary */
+
+  if (mesh->vtx_interfaces != NULL)
     cs_interface_set_sum(mesh->vtx_interfaces,
                          mesh->n_vertices,
                          3,
                          true,
                          CS_REAL_TYPE,
                          b_vtx_norm);
-#endif
 
   /* normalizing */
   for (i = 0; i < mesh->n_vertices; i++) {
