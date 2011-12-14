@@ -57,6 +57,7 @@ itrmas.tex \
 matrix.tex \
 mesh_algo.tex \
 navsto.tex \
+operat.tex \
 preduv.tex \
 recvmc.tex \
 resolp.tex \

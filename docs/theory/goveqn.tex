@@ -31,8 +31,8 @@ provide an overview before more detailed reading.
 In the following, $\rho $ stands for the density, $\vect{u}$ for the
 velocity field. A mass source term, $\Gamma $ , may present, but in most
 cases the right-hand side of the Mass equation is $\Gamma =0$. 
-\nomenclature[grho]{$\rho$}{density field}
-\nomenclature[rut1]{$\vect{u}$}{velocity field}
+\nomenclature[grho]{$\rho$}{density field \nomunit{$kg.m^{-3}$}}
+\nomenclature[rut1]{$\vect{u}$}{velocity field \nomunit{$m.s^{-1}$}}
 \nomenclature[ggamma ]{$\Gamma$}{mass source term}
 The continuity equation (also called mass equation) is displayed in (\ref{eq:mass}).
 
@@ -62,9 +62,9 @@ The momentum equation is:
 \end{equation}
 where $\vect{ST}_{\vect{u}}$ and $\tens{K}\,\vect{u}$ stand for explicit and implicit additional 
 momentum Source Terms
-\nomenclature[rstut1]{$\vect{ST}_{\vect{u}}$}{explicit additional momemtum Source Termes}
-\nomenclature[rkt2]{$\tens{K}$}{tensor of the velocity head loss}
-\nomenclature[gsigmat2]{$\tens{\sigma}$}{total stress tensor}
+\nomenclature[rstut1]{$\vect{ST}_{\vect{u}}$}{explicit additional momemtum Source Termes \nomunit{$kg.m^{-2}.s^{-2}$}}
+\nomenclature[rkt2]{$\tens{K}$}{tensor of the velocity head loss \nomunit{$kg.m^{-3}.s^{-1}$}}
+\nomenclature[gsigmat2]{$\tens{\sigma}$}{total stress tensor \nomunit{$Pa$}}
  which may be prescribed by the user (head loss, $\Gamma \vect{u}^{i}$ 
 contribution associated with a user-prescribed mass source term...).
 
@@ -76,13 +76,13 @@ $\tens{K}$ is a symetric positive tensor, by definition.
 \tens{\sigma}=\tens{\tau}-p\tens{Id}
 \end{equation}%
 where $\tens{\tau}$ is the viscous stress tensor,
-\nomenclature[rp ]{$p$}{pressure field}
-\nomenclature[gtaut2]{$\tens{\tau}$}{viscous stress tensor, which is the deviatoric part of the stress tensor}
+\nomenclature[rp ]{$p$}{pressure field \nomunit{$Pa$}}
+\nomenclature[gtaut2]{$\tens{\tau}$}{viscous stress tensor, which is the deviatoric part of the stress tensor \nomunit{$Pa$}}
  defined for a Newtonian fluid from $\mu =\mu_l $ (dynamic molecular viscosity) 
-\nomenclature[gmu]{$\mu$}{dynamic viscosity}
-\nomenclature[gmul]{$\mu_l$}{dynamic molecular viscosity}
+\nomenclature[gmu]{$\mu$}{dynamic viscosity \nomunit{$kg.m^{-1}.s^{-1}$}}
+\nomenclature[gmul]{$\mu_l$}{dynamic molecular viscosity \nomunit{$kg.m^{-1}.s^{-1}$}}
 and $\tens{S}$ (strain rate tensor) as:
-\nomenclature[rst2]{$\tens{S}$}{strain rate tensor}
+\nomenclature[rst2]{$\tens{S}$}{strain rate tensor \nomunit{$s^{-1}$}}
 \begin{equation}\label{eq:base_introd_tau}%Base_Introd_tau_eq}
 \tens{\tau}=2\,\mu \ \deviator{\tens{S}} = 2\,\mu \ \tens{S}-\frac{2}{3}\mu \ \trace{\tens{S}}\ \tens{Id},
 \end{equation}
@@ -154,9 +154,9 @@ _{2}}\frac{\varepsilon ^{2}}{k}+\Gamma \varepsilon ^{i}+ST_{\varepsilon },%
 \end{array}%
 \right.
 \end{equation}
-\nomenclature[rk]{$k$}{turbulent kinetic energy}
-\nomenclature[gepslion]{$ \varepsilon $}{turbulent kinetic energy dissipation}
-\nomenclature[rproduction]{$\mathcal{P}$}{turbulent kinetic energy production}
+\nomenclature[rk]{$k$}{turbulent kinetic energy \nomunit{$m^{2}.s^{-2}$}}
+\nomenclature[gepslion]{$ \varepsilon $}{turbulent kinetic energy dissipation \nomunit{$m^{2}.s^{-3}$}}
+\nomenclature[rproduction]{$\mathcal{P}$}{turbulent kinetic energy production \nomunit{$kg.m^{-1}.s^{-3}$}}
 where $\mathcal{P}$ is the production term created by mean shear:
 %
 \begin{equation}
@@ -174,7 +174,7 @@ where $\mathcal{P}$ is the production term created by mean shear:
 \rho k \dive \left( \vect{u} \right),
 \end{array}
 \end{equation}
-\nomenclature[rbuoyancy]{$\mathcal{G}$}{turbulent kinetic energy buoyancy term}
+\nomenclature[rbuoyancy]{$\mathcal{G}$}{turbulent kinetic energy buoyancy term \nomunit{$kg.m^{-1}.s^{-3}$}}
 and
 $\mathcal{G}$ is the production term created by gravity effects: 
 \begin{equation}
@@ -186,8 +186,8 @@ The turbulent viscosity is:
 \displaystyle \mu_t=\rho C_\mu\frac{k^2}{%
 \varepsilon}.
 \end{equation}
-\nomenclature[rstk]{$ST_{k}$}{additional turbulent kinetic energy source term}
-\nomenclature[rstepsilon]{$ST_{\varepsilon}$}{additional turbulent dissipation source term}
+\nomenclature[rstk]{$ST_{k}$}{additional turbulent kinetic energy source term \nomunit{$kg.m^{-1}.s^{-3}$}}
+\nomenclature[rstepsilon]{$ST_{\varepsilon}$}{additional turbulent dissipation source term \nomunit{$kg.m^{-1}.s^{-4}$}}
 $ST_{\varphi }$ ($\varphi =k$ or $\varepsilon $) stands for the additional
 source terms prescribed by the user (in rare cases only).
 
@@ -214,8 +214,8 @@ and $C_{\varepsilon_3}=1$ if $\mathcal{G}\leqslant0$ (stable stratification).
 \subsection{Equations for the Reynolds stress tensor components $R_{ij}$ 
 and $\varepsilon$ (\emph{LRR} model)}
 %
-\nomenclature[rrt2]{$\tens{R}$}{Reynolds stress tensor}
-\nomenclature[rrij]{$R_{ij}$}{componant $ij$ of the Reynolds stress tensor}
+\nomenclature[rrt2]{$\tens{R}$}{Reynolds stress tensor \nomunit{$m^{2}.s^{-2}$}}
+\nomenclature[rrij]{$R_{ij}$}{componant $ij$ of the Reynolds stress tensor \nomunit{$m^{2}.s^{-2}$}}
 
 \begin{equation}
 \left\{
@@ -233,8 +233,8 @@ and $\varepsilon$ (\emph{LRR} model)}
 \end{array}%
 \right.
 \end{equation}
-\nomenclature[rproductiont2]{$\tens{\mathcal{P}}$}{turbulent production tensor}
-\nomenclature[rbuoyancyt2]{$\tens{\mathcal{G}}$}{turbulent buoyancy production tensor}
+\nomenclature[rproductiont2]{$\tens{\mathcal{P}}$}{turbulent production tensor \nomunit{$kg.m^{-1}.s^{-3}$}}
+\nomenclature[rbuoyancyt2]{$\tens{\mathcal{G}}$}{turbulent buoyancy production tensor \nomunit{$kg.m^{-1}.s^{-3}$}}
 where
 $\tens{\mathcal{P}}$ stands for the turbulence production tensor associated
 with mean flow strain-rate and $\tens{\mathcal{G}}$ is stands for the
@@ -263,7 +263,7 @@ With these definition the following relations hold:
 \end{equation}
 
 $\tens{\Phi}$ is the term representing pressure-velocity correlations:
-\nomenclature[gphit2]{$\tens{\Phi}$}{pressure-velocity correlation tensor}
+\nomenclature[gphit2]{$\tens{\Phi}$}{pressure-velocity correlation tensor \nomunit{$kg.s^{-3}$}}
 \begin{equation}
 \displaystyle \tens{\Phi} = \tens{\phi_{1}}+ \tens{\phi_{2}}+ \tens{\phi_{3}}+ \tens{\phi_{w}},
 \end{equation}%
@@ -282,7 +282,7 @@ The term $\tens{\phi_{w}}$ is called ``wall echo term'' (by default, it is not
 accounted for: see \fort{turrij} \ref{ap:turrij}).
 
 The dissipation term, $\tens{\varepsilon}$ , is considered isotropic:
-\nomenclature[gepsilont2]{$\tens{\varepsilon}$}{turbulent kinetic energy dissipation tensor}
+\nomenclature[gepsilont2]{$\tens{\varepsilon}$}{turbulent kinetic energy dissipation tensor \nomunit{$m^{2}.s^{-3}$}}
 \begin{equation}
 \displaystyle \tens{\varepsilon}=\frac{2}{3}\ \varepsilon \tens{1}.
 \end{equation}
