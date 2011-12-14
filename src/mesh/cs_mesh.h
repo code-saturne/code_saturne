@@ -422,16 +422,14 @@ cs_mesh_discard_free_faces(cs_mesh_t  *mesh);
 /*----------------------------------------------------------------------------
  * Renumber vertices.
  *
- * We ensure:
- * If i < j then mesh->global_vtx_num[i] < mesh->global_vtx_num[j]
- * which is not insured by the initial numbering from the pre-processor.
+ * Ensure: if i < j then mesh->global_vtx_num[i] < mesh->global_vtx_num[j]
  *
  * parameters:
- *   mesh      <->  pointer to mesh structure
+ *   mesh  <->  pointer to mesh structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_order_vertices(cs_mesh_t  *const mesh);
+cs_mesh_order_vertices(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Compute or update mesh structure members the depend on other members,

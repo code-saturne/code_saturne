@@ -2438,24 +2438,21 @@ cs_mesh_discard_free_faces(cs_mesh_t  *mesh)
 /*----------------------------------------------------------------------------
  * Renumber vertices.
  *
- * We ensure:
- * If i < j then mesh->global_vtx_num[i] < mesh->global_vtx_num[j]
- * which is not ensured by the initial numbering from the pre-processor.
+ * Ensure: if i < j then mesh->global_vtx_num[i] < mesh->global_vtx_num[j]
  *
  * parameters:
- *   mesh      <->  pointer to mesh structure
+ *   mesh  <->  pointer to mesh structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_order_vertices(cs_mesh_t  *const mesh)
+cs_mesh_order_vertices(cs_mesh_t  *mesh)
 {
   cs_int_t  i, j, size, dim, n_vertices;
 
-  cs_int_t  *tmp_num = NULL;
+  cs_gnum_t  *tmp_num = NULL;
   cs_real_t  *tmp_coord = NULL;
   cs_lnum_t  *vertex_order = NULL;
   cs_lnum_t  *vertex_renum = NULL;
-  cs_gnum_t  *g_vertex_num = NULL;
 
   assert(mesh != NULL);
 
@@ -2469,14 +2466,7 @@ cs_mesh_order_vertices(cs_mesh_t  *const mesh)
 
   /* Compute the new vertex numbering */
 
-  BFT_MALLOC(g_vertex_num, n_vertices, cs_gnum_t);
-
-  for (i = 0; i < n_vertices; i++)
-    g_vertex_num[i] = mesh->global_vtx_num[i];
-
-  vertex_order = cs_order_gnum(NULL, g_vertex_num, (size_t)n_vertices);
-  BFT_FREE(g_vertex_num);
-
+  vertex_order = cs_order_gnum(NULL, mesh->global_vtx_num, (size_t)n_vertices);
   vertex_renum = cs_order_renumbering(vertex_order, (size_t)n_vertices);
   BFT_FREE(vertex_order);
 
@@ -2503,12 +2493,12 @@ cs_mesh_order_vertices(cs_mesh_t  *const mesh)
 
   /* Update global numbering */
 
-  BFT_MALLOC(tmp_num, n_vertices, cs_int_t);
+  BFT_MALLOC(tmp_num, n_vertices, cs_gnum_t);
 
   for (i = 0; i < n_vertices; i++)
     tmp_num[vertex_renum[i]] = mesh->global_vtx_num[i];
 
-  memcpy(mesh->global_vtx_num, tmp_num, (n_vertices * sizeof(cs_int_t)));
+  memcpy(mesh->global_vtx_num, tmp_num, (n_vertices * sizeof(cs_gnum_t)));
 
   /* Free memory */
 
