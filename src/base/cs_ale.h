@@ -144,18 +144,6 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
                           cs_real_t        *dt,
                           cs_real_t        *disp_proj);
 
-/*----------------------------------------------------------------------------
- * Destroy the associated fvm_interface_set_t structure if necessary
- *
- * Fortran Interface
- *
- * SUBROUTINE LBRALE
- * *****************
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (lbrale, LBRALE)(void);
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -1186,11 +1186,6 @@ if (nfpt1d.gt.0) then
   !==========
 endif
 
-if (iale.gt.0) then
-  call lbrale
-  !==========
-endif
-
 ! Free main array
 deallocate(ra)
 

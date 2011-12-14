@@ -58,8 +58,6 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-static cs_interface_set_t  *_ale_interface = NULL;
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -137,22 +135,13 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
 
   cs_real_t  *vtx_counter = NULL;
 
-  const cs_int_t  n_vertices = cs_glob_mesh->n_vertices;
-  const cs_int_t  n_cells = cs_glob_mesh->n_cells;
-  const cs_int_t  n_b_faces = cs_glob_mesh->n_b_faces;
-  const cs_int_t  n_i_faces = cs_glob_mesh->n_i_faces;
-  const cs_int_t  dim = cs_glob_mesh->dim;
+  const cs_mesh_t  *mesh = cs_glob_mesh;
 
-  if (cs_glob_mesh->global_vtx_num != NULL && _ale_interface == NULL)
-    _ale_interface
-      = cs_interface_set_create(n_vertices,
-                                NULL,
-                                cs_glob_mesh->global_vtx_num,
-                                NULL,
-                                0,
-                                NULL,
-                                NULL,
-                                NULL);
+  const cs_int_t  n_vertices = mesh->n_vertices;
+  const cs_int_t  n_cells = mesh->n_cells;
+  const cs_int_t  n_b_faces = mesh->n_b_faces;
+  const cs_int_t  n_i_faces = mesh->n_i_faces;
+  const cs_int_t  dim = mesh->dim;
 
   BFT_MALLOC(vtx_counter, n_vertices, cs_real_t);
 
@@ -236,21 +225,18 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
 
   } /* End of loop on border faces */
 
-  if (_ale_interface != NULL) {
-    cs_datatype_t elt_type
-      =   (sizeof(cs_real_t) == cs_datatype_size[CS_DOUBLE])
-        ? CS_DOUBLE : CS_FLOAT;
-    cs_interface_set_sum(_ale_interface,
+  if (mesh->vtx_interfaces != NULL) {
+    cs_interface_set_sum(mesh->vtx_interfaces,
                          n_vertices,
                          3,
                          false,
-                         elt_type,
+                         CS_REAL_TYPE,
                          disp_proj);
-    cs_interface_set_sum(_ale_interface,
+    cs_interface_set_sum(mesh->vtx_interfaces,
                          n_vertices,
                          1,
                          true,
-                         elt_type,
+                         CS_REAL_TYPE,
                          vtx_counter);
   }
 
@@ -259,7 +245,6 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
       disp_proj[vtx_id + i*n_vertices] /= vtx_counter[vtx_id];
 
   BFT_FREE(vtx_counter);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -306,26 +291,15 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
 
   cs_real_t  *vtx_counter = NULL;
 
-  const cs_int_t  n_vertices = cs_glob_mesh->n_vertices;
-  const cs_int_t  n_cells = cs_glob_mesh->n_cells;
-  const cs_int_t  n_b_faces = cs_glob_mesh->n_b_faces;
-  const cs_int_t  n_i_faces = cs_glob_mesh->n_i_faces;
-  const cs_int_t  dim = cs_glob_mesh->dim;
-  const cs_real_t  *vtx_coord = cs_glob_mesh->vtx_coord;
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_int_t  n_vertices = mesh->n_vertices;
+  const cs_int_t  n_cells = mesh->n_cells;
+  const cs_int_t  n_b_faces = mesh->n_b_faces;
+  const cs_int_t  n_i_faces = mesh->n_i_faces;
+  const cs_int_t  dim = mesh->dim;
+  const cs_real_t  *vtx_coord = mesh->vtx_coord;
   const cs_real_t  *cell_cen = cs_glob_mesh_quantities->cell_cen;
   const cs_real_t  *face_cen = cs_glob_mesh_quantities->b_face_cog;
-
-
-  if (cs_glob_mesh->global_vtx_num != NULL && _ale_interface == NULL)
-    _ale_interface
-      = cs_interface_set_create(n_vertices,
-                                NULL,
-                                cs_glob_mesh->global_vtx_num,
-                                NULL,
-                                0,
-                                NULL,
-                                NULL,
-                                NULL);
 
   BFT_MALLOC(vtx_counter, n_vertices, cs_real_t);
 
@@ -499,21 +473,18 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
 
   } /* End of loop on border faces */
 
-  if (_ale_interface != NULL) {
-    cs_datatype_t elt_type
-      =   (sizeof(cs_real_t) == cs_datatype_size[CS_DOUBLE])
-        ? CS_DOUBLE : CS_FLOAT;
-    cs_interface_set_sum(_ale_interface,
+  if (mesh->vtx_interfaces != NULL) {
+    cs_interface_set_sum(mesh->vtx_interfaces,
                          n_vertices,
                          3,
                          false,
-                         elt_type,
+                         CS_REAL_TYPE,
                          disp_proj);
-    cs_interface_set_sum(_ale_interface,
+    cs_interface_set_sum(mesh->vtx_interfaces,
                          n_vertices,
                          1,
                          true,
-                         elt_type,
+                         CS_REAL_TYPE,
                          vtx_counter);
   }
 
@@ -522,24 +493,6 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
       disp_proj[vtx_id + i*n_vertices] /= vtx_counter[vtx_id];
 
   BFT_FREE(vtx_counter);
-}
-
-/*----------------------------------------------------------------------------
- * Destroy if necessary the associated cs_interface_set_t structure
- *
- * Fortran Interface
- *
- * SUBROUTINE LBRALE
- * *****************
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (lbrale, LBRALE)(void)
-{
-
-  if (_ale_interface != NULL)
-    cs_interface_set_destroy(&_ale_interface);
-
 }
 
 /*----------------------------------------------------------------------------*/
