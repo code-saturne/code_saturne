@@ -25,6 +25,10 @@
 EXTRA_DIST = Doxyfile-pre Doxyfile-src Doxyfile-ui \
 mainpage.h images/icon.png examples/bft_error_example.c
 
+# Environment variables for LaTeX
+
+TEXINPUTS = $(top_srcdir)/docs/style/:
+
 doxygen-pre:
 	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
 	doxygen $(top_srcdir)/docs/doxygen/Doxyfile-pre

@@ -56,17 +56,17 @@ u_1 v_2 - u_2 v_1
 \end{table}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Diffenrencial operators and standard relationships}
+\section{Diffenrential operators and standard relationships}
 \begin{equation*}
 \begin{array}{c}
 %
 \begin{array}{r c l @{\hspace{3cm}} r c l }
-\divv \left(  \rot \, \vect{u}\right) &=&0  &
+\dive \left(  \rot \, \vect{u}\right) &=&0  &
 \rot  \left(  \gradv \, T\right)  &=&0 \\
-\divv \left( \alpha  \vect{u} \right) &=& \alpha \divv \, \vect{u} + \gradv \, \alpha . \vect{u}  &
+\dive \left( \alpha  \vect{u} \right) &=& \alpha \dive \, \vect{u} + \gradv \, \alpha . \vect{u}  &
 \rot \left( \alpha  \vect{u} \right) &=& \alpha \rot \, \vect{u} + \gradv \, \alpha  \times  \vect{u} \\
-\divv \left(   \vect{u} \times \vect{v} \right) &=& \vect{v}. \rot \, \vect{u} - \vect{u} . \rot \, \vect{v} &
-\rot \left( \rot \, \vect{u} \right) & = & \grad \left( \divv \, \vect{u} \right)  - \vect{\Delta } \, \vect{u}
+\dive \left(   \vect{u} \times \vect{v} \right) &=& \vect{v}. \rot \, \vect{u} - \vect{u} . \rot \, \vect{v} &
+\rot \left( \rot \, \vect{u} \right) & = & \grad \left( \dive \, \vect{u} \right)  - \vect{\Delta } \, \vect{u}
 \end{array}
 \\
 \grad \left( \vect{u}. \vect{v} \right) = \left( \ggrad  \vect{u} \right) . \vect{v}  \, + \,  \left( \ggrad  \vect{v} \right) . \vect{u} \, + \, \vect{u} \times \rot \, \vect{v}
@@ -82,9 +82,9 @@ u_1 v_2 - u_2 v_1
 \begin{tabular}{l | c | l | l @{}l@{\,} l  }
 Operators & Symbols & Definitions & Cartesian formulae \\
 \hline
-gradient & $\grad $ & $\nabla^{(n+1)} \left[ a^{(n)} \right] \, . \, \vect{ \mathrm{d}x} = \left. \mathrm{d} a^{(n)} \right|_{ \vect{ \mathrm{d}x}}$  & $\vect{\nabla} \,T = \dfrac{\partial T}{ \partial x_i} \vect{e}_i$ \\
+gradient & $\nabla $ & $\nabla^{(n+1)} \left[ a^{(n)} \right] \, . \, \vect{ \mathrm{d}x} = \left. \mathrm{d} a^{(n)} \right|_{ \vect{ \mathrm{d}x}}$  & $\vect{\nabla} \,T = \dfrac{\partial T}{ \partial x_i} \vect{e}_i$ \\
 &\emph{or}&& $\tens{\nabla} \, \vect{u} = \dfrac{\partial \vect{u}}{ \partial x_j} \otimes \vect{e}_j $&$ = $&$ \dfrac{\partial u_i }{ \partial x_j}  \vect{e}_i \otimes \vect{e}_j $ \\
-& $\gradv$ && $\nabla^{(n+1)} \left[ a^{(n)} \right] $&$ = $&$ \dfrac{\partial a^{(n)} }{ \partial x_{i_{n+1}} } \otimes \vect{e}_{i_{n+1}} $ \\
+& $\grad$ && $\nabla^{(n+1)} \left[ a^{(n)} \right] $&$ = $&$ \dfrac{\partial a^{(n)} }{ \partial x_{i_{n+1}} } \otimes \vect{e}_{i_{n+1}} $ \\
 \hline
 divergence & $\nabla .$ & $\nabla^{(n-1)}. \left[ a^{(n)} \right] = \nabla^{(n+1)} \left[ a^{(n)} \right] : \tens{1} $  &
 $ \divv \, \vect{u} = \dfrac{\partial u_i}{ \partial x_i}$ \\
