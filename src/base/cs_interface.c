@@ -4382,7 +4382,6 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
  *
  * Only the values of elements belonging to the interfaces are modified.
  *
- * \param[in]
  * \param[in]       ifs        pointer to a fvm_interface_set_t structure
  * \param[in]       n_elts     number of elements in var buffer
  * \param[in]       stride     number of values (non interlaced) by entity

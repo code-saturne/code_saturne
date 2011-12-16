@@ -1259,7 +1259,7 @@ cs_field_key_id_try(const char  *name)
  *
  * \param[in]  name            key name
  * \param[in]  default_value   default value associated with key
- * \param[in]  type flag       mask associated with field types with which the
+ * \param[in]  type_flag       mask associated with field types with which the
  *                             key may be associated, or 0
  *
  * \return  id associated with key
@@ -1294,7 +1294,7 @@ cs_field_define_key_int(const char  *name,
  *
  * \param[in]  name            key name
  * \param[in]  default_value   default value associated with key
- * \param[in]  type flag       mask associated with field types with which
+ * \param[in]  type_flag       mask associated with field types with which
  *                             the key may be associated, or 0
  *
  * \return  id associated with key
@@ -1329,7 +1329,7 @@ cs_field_define_key_double(const char  *name,
  *
  * \param[in]  name            key name
  * \param[in]  default_value   default value associated with key
- * \param[in]  type flag       mask associated with field types with which
+ * \param[in]  type_flag       mask associated with field types with which
  *                             the key may be associated, or 0
  *
  * \return  id associated with key

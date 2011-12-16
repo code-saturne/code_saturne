@@ -1115,7 +1115,6 @@ cs_order_lnum_allocated(const cs_lnum_t  list[],
  *
  * \param[in]  order   0 to n-1 ordering of entities by increasing attribute
  * \param[in]  nb_ent  number of entities considered
- * \param[in]  base    renumbering starting number (typically 0 or 1)
  *
  * \return  pointer to renumbering array (0 to n-1 numbering) indicating the
  *          new index of renumbered entities; The calling code is responsible

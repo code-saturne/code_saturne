@@ -2379,7 +2379,7 @@ cs_file_serializer_advance(cs_file_serializer_t  *s,
  * is to make a directory available, so if it already exists,
  * this is considered acceptable.
  *
- * \param[in]  pathname  name of new directory.
+ * \param[in]  path  name of new directory.
  *
  * \return 0 on success, -1 if an error occured (in which case errno
  *         contains the appropriate error code). If the underlying

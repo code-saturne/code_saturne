@@ -283,7 +283,7 @@ cs_log_strlen(const char  *str)
  * it is truncated.
  *
  * \param[out] dest      pointer to destination buffer
- * \param[in]  str       pointer to printable string
+ * \param[in]  src       pointer to printable string
  * \param[in]  width     desired printed length
  * \param[in]  destsize  destination buffer size
  *----------------------------------------------------------------------------*/
@@ -310,7 +310,7 @@ cs_log_strpad(char        *dest,
  * it is truncated.
  *
  * \param[out] dest      pointer to destination buffer
- * \param[in]  str       pointer to printable string
+ * \param[in]  src       pointer to printable string
  * \param[in]  width     desired printed length
  * \param[in]  destsize  destination buffer size
  *----------------------------------------------------------------------------*/
