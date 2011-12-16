@@ -3451,7 +3451,7 @@ _interface_set_copy_array_ni(const cs_interface_set_t  *ifs,
 
     else /* if (itf->rank != local_rank) */
       MPI_Irecv(_dest + j*stride_size,
-                itf->size,
+                itf->size*stride,
                 mpi_type,
                 itf->rank,
                 itf->rank,
@@ -3472,7 +3472,7 @@ _interface_set_copy_array_ni(const cs_interface_set_t  *ifs,
       cs_interface_t *itf = ifs->interfaces[i];
       if (itf->rank != local_rank)
         MPI_Isend(send_buf + j*stride_size,
-                  itf->size,
+                  itf->size*stride,
                   mpi_type,
                   itf->rank,
                   local_rank,
@@ -4115,7 +4115,7 @@ cs_interface_set_copy_array(const cs_interface_set_t  *ifs,
 
     else /* if (itf->rank != local_rank) */
         MPI_Irecv(_dest + j*stride_size,
-                  itf->size,
+                  itf->size*stride,
                   mpi_type,
                   itf->rank,
                   itf->rank,
@@ -4136,7 +4136,7 @@ cs_interface_set_copy_array(const cs_interface_set_t  *ifs,
       cs_interface_t *itf = ifs->interfaces[i];
       if (itf->rank != local_rank)
         MPI_Isend(send_buf + j*stride_size,
-                  itf->size,
+                  itf->size*stride,
                   mpi_type,
                   itf->rank,
                   local_rank,
