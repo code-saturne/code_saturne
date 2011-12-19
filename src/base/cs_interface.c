@@ -3378,6 +3378,7 @@ _interface_set_copy_array_ni(const cs_interface_set_t  *ifs,
   int i;
   cs_lnum_t j;
   int local_rank = 0;
+  int type_size = cs_datatype_size[datatype];
   int stride_size = cs_datatype_size[datatype]*stride;
   cs_lnum_t shift_size = cs_datatype_size[datatype]*n_elts;
   unsigned char *send_buf = NULL;
@@ -3411,7 +3412,7 @@ _interface_set_copy_array_ni(const cs_interface_set_t  *ifs,
 
   for (i = 0, j = 0; i < ifs->size; i++) {
 
-    cs_lnum_t k, l;
+    cs_lnum_t k, l, m;
     cs_interface_t *itf = ifs->interfaces[i];
     unsigned char *p = send_buf;
 
@@ -3419,8 +3420,10 @@ _interface_set_copy_array_ni(const cs_interface_set_t  *ifs,
 
     for (k = 0; k < itf->size; k++) {
       cs_lnum_t send_id = itf->elt_id[itf->send_order[k]];
-      for (l = 0; l < stride_size; l++)
-        p[k*stride_size + l] = _src[send_id + l*shift_size];
+      for (m = 0; m < stride; m++) {
+        for (l = 0; l < type_size; l++)
+          p[(k*stride + m) * type_size + l] = _src[send_id + m*shift_size + l];
+      }
     }
 
     j += itf->size;
