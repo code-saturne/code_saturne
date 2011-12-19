@@ -63,6 +63,7 @@
 #include "fvm_selector.h"
 
 #include "cs_coupling.h"
+#include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_connect.h"
@@ -793,6 +794,76 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 }
 
 /*----------------------------------------------------------------------------
+ * Log timing info
+ *----------------------------------------------------------------------------*/
+
+static void
+_all_comm_times(void)
+{
+  int coupl_id, ent_id;
+  cs_syr4_coupling_t *syr_coupling = NULL;
+
+  if (cs_glob_syr4_n_couplings == 0)
+    return;
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\nSYRTHES 4 coupling overheads\n"));
+
+  for (coupl_id = 0; coupl_id < cs_glob_syr4_n_couplings; coupl_id++) {
+
+    syr_coupling = cs_glob_syr4_couplings[coupl_id];
+
+    for (ent_id = 0; ent_id < 2; ent_id++) {
+
+      cs_syr4_coupling_ent_t
+        *ce = (ent_id == 0) ? syr_coupling->faces : syr_coupling->cells;
+      const char *ent_type[] = {N_("surface"), N_("volume")};
+
+      if (ce != NULL) {
+
+        double location_wtime, exchange_wtime;
+        double location_comm_wtime, exchange_comm_wtime;
+
+        if (syr_coupling->syr_name != NULL)
+          cs_log_printf(CS_LOG_PERFORMANCE,
+                        _("\n  %s (%s):\n\n"),
+                        syr_coupling->syr_name, _(ent_type[ent_id]));
+        else
+          cs_log_printf(CS_LOG_PERFORMANCE,
+                        _("\n  coupling %d (%s):\n\n"),
+                        coupl_id + 1, _(ent_type[ent_id]));
+
+        ple_locator_get_times(ce->locator,
+                              &location_wtime,
+                              NULL,
+                              &exchange_wtime,
+                              NULL);
+
+        ple_locator_get_comm_times(ce->locator,
+                                   &location_comm_wtime,
+                                   NULL,
+                                   &exchange_comm_wtime,
+                                   NULL);
+
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      _("    location time:                 %12.3f\n"
+                        "      communication and wait:      %12.3f\n"
+                        "    variable exchange time:        %12.3f\n"
+                        "      communication and wait:      %12.3f\n"),
+                      location_wtime, location_comm_wtime,
+                      exchange_wtime, exchange_comm_wtime);
+
+      }
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Destroy coupled entity helper structure.
  *
  * parameters:
@@ -1103,6 +1174,8 @@ cs_syr4_coupling_all_destroy(void)
 
   if (cs_glob_syr4_n_couplings == 0)
     return;
+
+  _all_comm_times();
 
   for (i_coupl = 0; i_coupl < cs_glob_syr4_n_couplings; i_coupl++) {
 
