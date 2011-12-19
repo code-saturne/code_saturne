@@ -24,7 +24,13 @@
 
 # Main part
 
-AM_CPPFLAGS =
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/mesh \
+$(MPI_CPPFLAGS)
+
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
 AM_FCFLAGS = \
@@ -35,13 +41,15 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS =
+pkginclude_HEADERS = \
+cs_les_filter.h
 
 # Library source files
 
 noinst_LTLIBRARIES = libcsturb.la
 
 libcsturb_la_SOURCES = \
+cs_les_filter.c \
 clipke.f90 \
 clipsa.f90 \
 clprij.f90 \

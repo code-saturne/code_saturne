@@ -1,9 +1,8 @@
-#ifndef __CS_EXT_NEIGHBOR_H__
-#define __CS_EXT_NEIGHBOR_H__
+#ifndef __CS_LES_FILTER_H__
+#define __CS_LES_FILTER_H__
 
 /*============================================================================
- * Fortran interfaces of functions needing a synchronization of the extended
- * neighborhood.
+ * Filters for dynamic models.
  *============================================================================*/
 
 /*
@@ -33,8 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -53,57 +50,28 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Reduce the "cell -> cells" connectivity for the  extended neighborhood
- * using a non-orthogonality criterion.
- *
- * Note: Only cells sharing only a vertex or vertices (not a face)
- *       belong to the "cell -> cells" connectivity.
+ * Compute filters for dynamic models. This function deals with the standard
+ * or extended neighborhood.
  *
  * Fortran Interface :
  *
- * SUBROUTINE REDVSE
+ * subroutine cfiltr (var, f_var, wbuf1, wbuf2)
  * *****************
- *    & ( ANOMAX )
  *
- * parameters:
- *   anomax  -->  non-orthogonality angle (rad) above which cells
- *                are selected for the extended neighborhood
+ * double precision(*) var[]   <-- array of variables to filter
+ * double precision(*) f_var[] --> filtered variable array
+ * double precision(*) wbuf1[] --- working buffer
+ * double precision(*) wbuf2[] --- working buffer
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax);
-
-/*----------------------------------------------------------------------------
- * Reduce the "cell -> cells" connectivity for the  extended neighborhood
- * using a non-orthogonality criterion.
- *
- * Note: Only cells sharing only a vertex or vertices (not a face)
- *       belong to the "cell -> cells" connectivity.
- *
- * parameters:
- *   mesh            <-> pointer to mesh structure
- *   mesh_quantities <-- associated mesh quantities
- *   non_ortho_max   <-- non-orthogonality angle (rad) above which cells
- *                       are selected for the extended neighborhood
- *----------------------------------------------------------------------------*/
-
-void
-cs_ext_neighborhood_reduce(cs_mesh_t                   *mesh,
-                           const cs_mesh_quantities_t  *mesh_quantities,
-                           double                       non_ortho_max);
-
-/*----------------------------------------------------------------------------
- * Create the  "cell -> cells" connectivity.
- *
- * parameters:
- *   mesh <-> pointer to a mesh structure
- *---------------------------------------------------------------------------*/
-
-void
-cs_ext_neighborhood_define(cs_mesh_t  *mesh);
+CS_PROCF (cfiltr, CFILTR)(cs_real_t  var[],
+                          cs_real_t  f_var[],
+                          cs_real_t  wbuf1[],
+                          cs_real_t  wbuf2[]);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_EXT_NEIGHBOR_H__ */
+#endif /* __CS_LES_FILTER_H__ */

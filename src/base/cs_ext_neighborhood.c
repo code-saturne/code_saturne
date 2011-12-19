@@ -920,15 +920,11 @@ _create_cell_cells_connect(cs_mesh_t   *mesh,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define a new "cell -> cells" connectivity for the  extended neighborhood
- * in case of computation of gradient whith the least squares algorithm
- * (imrgra = 3).
- * The "cell -> cells" connectivity is clipped by a non-orthogonality
- * criterion.
+ * Reduce the "cell -> cells" connectivity for the  extended neighborhood
+ * using a non-orthogonality criterion.
  *
- * Warning   :  Only cells sharing a vertex or vertices
- *              (not a face => mesh->face_cells) belong to the
- *              "cell -> cells" connectivity.
+ * Note: Only cells sharing only a vertex or vertices (not a face)
+ *       belong to the "cell -> cells" connectivity.
  *
  * Fortran Interface :
  *
@@ -944,6 +940,34 @@ _create_cell_cells_connect(cs_mesh_t   *mesh,
 void
 CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 {
+  cs_ext_neighborhood_reduce(cs_glob_mesh,
+                             cs_glob_mesh_quantities,
+                             *anomax);
+}
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Reduce the "cell -> cells" connectivity for the  extended neighborhood
+ * using a non-orthogonality criterion.
+ *
+ * Note: Only cells sharing only a vertex or vertices (not a face)
+ *       belong to the "cell -> cells" connectivity.
+ *
+ * parameters:
+ *   mesh            <-> pointer to mesh structure
+ *   mesh_quantities <-- associated mesh quantities
+ *   non_ortho_max   <-- non-orthogonality angle (rad) above which cells
+ *                       are selected for the extended neighborhood
+ *----------------------------------------------------------------------------*/
+
+void
+cs_ext_neighborhood_reduce(cs_mesh_t                   *mesh,
+                           const cs_mesh_quantities_t  *mesh_quantities,
+                           double                       non_ortho_max)
+{
   cs_int_t  i, face_id, cell_id, cell_i, cell_j;
   cs_gnum_t  init_cell_cells_connect_size;
 
@@ -956,8 +980,6 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
   cs_gnum_t  n_deleted_cells = 0;
   cs_int_t  previous_idx = 0, new_idx = -1;
 
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
   cs_int_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
   cs_int_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
   cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
@@ -967,7 +989,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
   const cs_int_t  n_cells = mesh->n_cells;
   const cs_int_t  *face_cells = mesh->i_face_cells;
 
-  const cs_real_t  cos_ij_fn_min = cos((*anomax));
+  const cs_real_t  cos_ij_fn_min = cos(non_ortho_max);
   const cs_real_t  *cell_cen = mesh_quantities->cell_cen;
 
   /* Currently limited to 1 call, but the algorithm would work just the same
@@ -1184,115 +1206,14 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 }
 
 /*----------------------------------------------------------------------------
- * Compute filters for dynamic models. This function deals with the standard
- * or extended neighborhood.
- *
- * Fortran Interface :
- *
- * SUBROUTINE CFILTR (VAR, F_VAR, WBUF1, WBUF2)
- * *****************
- *
- * DOUBLE PRECISION(*) var[]      --> array of variables to filter
- * DOUBLE PRECISION(*) f_var[]    --> filtered variable array
- * DOUBLE PRECISION(*) wbuf1[]    --> working buffer
- * DOUBLE PRECISION(*) wbuf2[]    --> working buffer
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (cfiltr, CFILTR)(cs_real_t    var[],
-                          cs_real_t    f_var[],
-                          cs_real_t    wbuf1[],
-                          cs_real_t    wbuf2[])
-{
-  cs_int_t  i, j, k;
-
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
-  const cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
-  const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
-
-  assert(cell_cells_idx != NULL);
-
-  /* Synchronize variable */
-
-  if (mesh->halo != NULL) {
-
-    cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, var);
-
-    if (mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_scal(mesh->halo,
-                                  CS_HALO_EXTENDED,
-                                  CS_HALO_ROTATION_COPY,
-                                  var);
-
-  }
-
-  /* Allocate and initialize working buffers */
-
-  for (i = 0; i < n_cells; i++) {
-    wbuf1[i] = 0;
-    wbuf2[i] = 0;
-  }
-
-  /* Define filtered variable array */
-
-  for (i = 0; i < n_cells; i++) {
-
-    wbuf1[i] += var[i] * cell_vol[i];
-    wbuf2[i] += cell_vol[i];
-
-    /* Loop on connected cells (without cells sharing a face) */
-
-    for (j = cell_cells_idx[i] - 1; j < cell_cells_idx[i+1] - 1; j++) {
-
-      k = cell_cells_lst[j] - 1;
-      wbuf1[i] += var[k] * cell_vol[k];
-      wbuf2[i] += cell_vol[k];
-
-    }
-
-  } /* End of loop on cells */
-
-  for (k = 0; k < mesh->n_i_faces; k++) {
-
-    i = mesh->i_face_cells[2*k] - 1;
-    j = mesh->i_face_cells[2*k + 1] - 1;
-
-    wbuf1[i] += var[j] * cell_vol[j];
-    wbuf2[i] += cell_vol[j];
-    wbuf1[j] += var[i] * cell_vol[i];
-    wbuf2[j] += cell_vol[i];
-
-  }
-
-  for (i = 0; i < n_cells; i++)
-    f_var[i] = wbuf1[i]/wbuf2[i];
-
-  /* Synchronize variable */
-
-  if (mesh->halo != NULL) {
-
-    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_var);
-
-    if (mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_scal(mesh->halo,
-                                  CS_HALO_STANDARD,
-                                  CS_HALO_ROTATION_COPY,
-                                  f_var);
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Create the  "cell -> cells" connectivity
+ * Create the  "cell -> cells" connectivity.
  *
  * parameters:
- *   mesh           <->  pointer to a mesh structure.
+ *   mesh <-> pointer to a mesh structure.
  *---------------------------------------------------------------------------*/
 
 void
-cs_ext_neighborhood_define(cs_mesh_t   *mesh)
+cs_ext_neighborhood_define(cs_mesh_t  *mesh)
 {
   cs_int_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
   cs_int_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
