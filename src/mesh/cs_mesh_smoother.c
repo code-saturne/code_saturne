@@ -115,7 +115,7 @@ _compute_distance(const double  a[3],
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_local_minmax(cs_int_t         n_vals,
+_compute_minmax(cs_int_t         n_vals,
                       const cs_real_t  var[],
                       cs_real_t       *min,
                       cs_real_t       *max)
@@ -128,8 +128,18 @@ _compute_local_minmax(cs_int_t         n_vals,
     _max = CS_MAX(_max, var[i]);
   }
 
-  *min = _min;
-  *max = _max;
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+    MPI_Allreduce(&_min, min, 1, CS_MPI_REAL, MPI_MIN,
+                  cs_glob_mpi_comm);
+
+    MPI_Allreduce(&_max, max, 1, CS_MPI_REAL, MPI_MAX,
+                  cs_glob_mpi_comm);
+  }
+
+#endif
+
 }
 
 /*----------------------------------------------------------------------------
@@ -212,8 +222,8 @@ _display_histograms(int        n_steps,
 static void
 _histogram(cs_lnum_t             n_vals,
            const cs_real_t       var[],
-           cs_real_t             _min,
-           cs_real_t             _max,
+           cs_real_t             min,
+           cs_real_t             max,
            cs_real_t             n_min,
            cs_real_t             n_max)
 {
@@ -221,29 +231,11 @@ _histogram(cs_lnum_t             n_vals,
   int        j, k;
 
   cs_real_t  step;
-  cs_real_t  max, min;
 
   cs_gnum_t count[10];
   const int  n_steps = 10;
 
   assert (sizeof(double) == sizeof(cs_real_t));
-
-  /* Default initialization */
-
-  min = _min;
-  max = _max;
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-    MPI_Allreduce(&_min, &min, 1, CS_MPI_REAL, MPI_MIN,
-                  cs_glob_mpi_comm);
-
-    MPI_Allreduce(&_max, &max, 1, CS_MPI_REAL, MPI_MAX,
-                  cs_glob_mpi_comm);
-  }
-
-#endif
 
   /* Define axis subdivisions */
 
@@ -288,8 +280,8 @@ _histogram(cs_lnum_t             n_vals,
 static void
 _int_face_histogram(const cs_mesh_t      *mesh,
                     const cs_real_t       var[],
-                    cs_real_t             _min,
-                    cs_real_t             _max,
+                    cs_real_t             min,
+                    cs_real_t             max,
                     cs_real_t             n_min,
                     cs_real_t             n_max)
 {
@@ -297,29 +289,12 @@ _int_face_histogram(const cs_mesh_t      *mesh,
   int        j, k;
 
   cs_real_t  step;
-  cs_real_t  max, min;
 
   cs_gnum_t count[8];
   const int  n_steps = 8;
 
   assert(sizeof(double) == sizeof(cs_real_t));
 
-   /* Default initialization */
-
-  min = _min;
-  max = _max;
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-    MPI_Allreduce(&_min, &min, 1, CS_MPI_REAL, MPI_MIN,
-                  cs_glob_mpi_comm);
-
-    MPI_Allreduce(&_max, &max, 1, CS_MPI_REAL, MPI_MAX,
-                  cs_glob_mpi_comm);
-  }
-
-#endif
 
   /* Define axis subdivisions */
 
@@ -884,7 +859,8 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
       face_norm = &b_face_norm[face*3];
       vtx_norm = &b_vtx_norm[(mesh->b_face_vtx_lst[j] -1)*3];
 
-      if (_DOT_PRODUCT_3D(face_norm, vtx_norm) < cos(feature_angle*_PI_/180.0))
+      if (_DOT_PRODUCT_3D(face_norm, vtx_norm) < cos(feature_angle*_PI_/180.0)
+          || feature_angle < DBL_MIN)
         _vtx_is_fixed[mesh->b_face_vtx_lst[j] -1] += 1;
     }
   }
@@ -1005,14 +981,14 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
                              frac);
 
     if (iter == 0) {
-     _compute_local_minmax(mesh->n_i_faces,
-                           i_face_warp,
-                           &minhist_i,
-                           &maxhist_i);
-     _compute_local_minmax(mesh->n_b_faces,
-                           b_face_warp,
-                           &minhist_b,
-                           &maxhist_b);
+     _compute_minmax(mesh->n_i_faces,
+                     i_face_warp,
+                     &minhist_i,
+                     &maxhist_i);
+     _compute_minmax(mesh->n_b_faces,
+                     b_face_warp,
+                     &minhist_b,
+                     &maxhist_b);
      bft_printf(_("\n  Histogram of the boundary faces warping"
                   " before unwarping algorithm:\n\n"));
 
@@ -1069,14 +1045,14 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
   {
     cs_real_t min_b, max_b, max_i, min_i;
 
-    _compute_local_minmax(mesh->n_i_faces,
-                          i_face_warp,
-                          &min_i,
-                          &max_i);
-    _compute_local_minmax(mesh->n_b_faces,
-                          b_face_warp,
-                          &min_b,
-                          &max_b);
+    _compute_minmax(mesh->n_i_faces,
+                    i_face_warp,
+                    &min_i,
+                    &max_i);
+    _compute_minmax(mesh->n_b_faces,
+                    b_face_warp,
+                    &min_b,
+                    &max_b);
 
     bft_printf(_("\n  Histogram of the boundary faces warping"
                  " after unwarping algorithm:\n\n"));
