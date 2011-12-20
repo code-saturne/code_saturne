@@ -115,10 +115,10 @@ _compute_distance(const double  a[3],
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_minmax(cs_int_t         n_vals,
-                      const cs_real_t  var[],
-                      cs_real_t       *min,
-                      cs_real_t       *max)
+_compute_minmax(cs_int_t            n_vals,
+                const cs_real_t     var[],
+                cs_real_t          *min,
+                cs_real_t          *max)
 {
   cs_int_t  i;
   cs_real_t  _min = DBL_MAX, _max = -DBL_MAX;
@@ -140,6 +140,10 @@ _compute_minmax(cs_int_t         n_vals,
 
 #endif
 
+  if (cs_glob_n_ranks == 1) {
+    *min = _min;
+    *max = _max;
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -156,12 +160,12 @@ _compute_minmax(cs_int_t         n_vals,
  *----------------------------------------------------------------------------*/
 
 static void
-_display_histograms(int        n_steps,
-                    cs_real_t  var_min,
-                    cs_real_t  var_max,
-                    cs_real_t  min,
-                    cs_real_t  max,
-                    cs_gnum_t  count[])
+_display_histograms(int           n_steps,
+                    cs_real_t     var_min,
+                    cs_real_t     var_max,
+                    cs_real_t     min,
+                    cs_real_t     max,
+                    cs_gnum_t     count[])
 {
   int  i, j;
   double var_step;
