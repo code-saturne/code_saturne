@@ -1520,11 +1520,16 @@ void CS_PROCF (uinpst, UINPST) ( const cs_int_t  *ntcabs,
   int i, id, nwriter;
   int iactive;
   char *frequency_choice;
+  char *id_s;
   mei_tree_t *ev_formula  = NULL;
   nwriter = cs_gui_get_tag_number("/analysis_control/output/writer", 1);
   for (i=1; i <= nwriter; i++) {
     id = 0;
-    id = atoi(cs_gui_output_type_choice("writer","id",i));
+    id_s = cs_gui_output_type_choice("writer","id",i);
+    if (id_s != NULL) {
+      id = atoi(id_s);
+      BFT_FREE(id_s);
+    }
     frequency_choice
       = cs_gui_output_type_options("writer", "period", "frequency", i);
     if (cs_gui_strcmp(frequency_choice, "formula")) {
