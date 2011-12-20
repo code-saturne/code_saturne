@@ -1,3 +1,8 @@
+* 20/12/2011 - David Monfort <david.monfort@edf.fr>
+  Fix module command use in for cs_solver generation.
+  modified file:
+    bin/cs_exec_environment.py
+
 * 14/12/2011 - David Monfort <david.monfort@edf.fr>
   Revert changes to the enthalpy calculation after a discussion with P. Plion.
 

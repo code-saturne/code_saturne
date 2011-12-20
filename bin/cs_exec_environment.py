@@ -157,7 +157,7 @@ def set_modules():
     if env_modules.modules == "no":
         return
 
-    cmd_prefix = env_modules.env_modulecmd
+    cmd_prefix = env_modules.modules_cmd
 
     if have_subprocess == True:
         cmds = ['purge']
