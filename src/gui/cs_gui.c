@@ -1472,6 +1472,41 @@ static double _get_profile_coordinate(const int id, const char *const x)
   return coordinate;
 }
 
+/*----------------------------------------------------------------------------
+ * Get output format for 1D profile
+ *
+ * parameters:
+ *   id           -->  number of 1D profile
+ *----------------------------------------------------------------------------*/
+
+static int _get_profile_format(const int id)
+{
+  char *path = NULL, *format_s = NULL;
+  int   format = 0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
+  cs_xpath_add_element_num(&path, "profile", id+1);
+  cs_xpath_add_element(&path, "format");
+  cs_xpath_add_attribute(&path, "name");
+  format_s = cs_gui_get_attribute_value(path);
+
+  if (format_s != NULL) {
+    if (cs_gui_strcmp(format_s, "CSV"))
+      format = 1;
+    else if (cs_gui_strcmp(format_s, "DAT"))
+      format = 0;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Invalid attribute value: %s \nXpath: %s\n"), format_s, path);
+    BFT_FREE(format_s);
+  }
+  
+  BFT_FREE(path);
+
+  return format;
+}
+
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/
@@ -4023,6 +4058,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
   char *title = NULL;
   char *name = NULL;
 
+  int output_format = 0;
   int fic_nbr = 0;
   int i, ii, iii, j;
   int npoint, iel1, irang1, iel, irangv;
@@ -4045,6 +4081,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
     /* for each profile, check the output frequency */
 
     output_frequency = _get_profile_coordinate(i, "output_frequency");
+    output_format = _get_profile_format(i);
 
     if ((output_frequency == -1 && *ntmabs == *ntcabs) ||
         (output_frequency > 0 && (*ntcabs % output_frequency) == 0)) {
@@ -4084,7 +4121,10 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
         }
 
         BFT_REALLOC(filename, strlen(filename) + 4 + 1, char);
-        strcat(filename, ".dat");
+        if (output_format == 0)
+          strcat(filename, ".dat");
+        else
+          strcat(filename, ".csv");
         file = fopen(filename, "w");
 
         if (file ==  NULL) {
@@ -4093,21 +4133,31 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
           break;
         }
 
-        fprintf(file, "# Code_Saturne 1D result's profile\n#\n");
-        fprintf(file, "# Iteration output: %i\n", *ntcabs);
-        fprintf(file, "# Time output:     %12.5e\n#\n", *ttcabs);
-        fprintf(file, "# Start point: x = %12.5e y = %12.5e z = %12.5e\n",
-                x1, y1, z1);
-        fprintf(file, "# End point:   x = %12.5e y = %12.5e z = %12.5e\n#\n",
-                x2, y2, z2);
-        fprintf(file, "#TITLE: %s\n", title);
-        fprintf(file, "#COLUMN_TITLES: Distance | X | Y | Z");
-        for (ii = 0 ; ii < nvar_prop ; ii++) {
-          char *buffer = _get_profile_label_name(i, ii);
-          fprintf(file, " | %s", buffer);
-          BFT_FREE(buffer);
+        if (output_format == 0) {
+          fprintf(file, "# Code_Saturne results 1D profile\n#\n");
+          fprintf(file, "# Iteration output: %i\n", *ntcabs);
+          fprintf(file, "# Time output:     %12.5e\n#\n", *ttcabs);
+          fprintf(file, "# Start point: x = %12.5e y = %12.5e z = %12.5e\n",
+                  x1, y1, z1);
+          fprintf(file, "# End point:   x = %12.5e y = %12.5e z = %12.5e\n#\n",
+                  x2, y2, z2);
+          fprintf(file, "#TITLE: %s\n", title);
+          fprintf(file, "#COLUMN_TITLES: Distance | X | Y | Z");
+          for (ii = 0 ; ii < nvar_prop ; ii++) {
+            char *buffer = _get_profile_label_name(i, ii);
+            fprintf(file, " | %s", buffer);
+            BFT_FREE(buffer);
+          }
+          fprintf(file, "\n");
         }
-        fprintf(file, "\n");
+        else
+          fprintf(file, "s, x, y, z");
+          for (ii = 0 ; ii < nvar_prop ; ii++) {
+            char *buffer = _get_profile_label_name(i, ii);
+            fprintf(file, ", %s", buffer);
+            BFT_FREE(buffer);
+          }
+          fprintf(file, "\n");
         BFT_FREE(filename);
         BFT_FREE(title);
       }
@@ -4183,9 +4233,19 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
 #endif
 
           if (cs_glob_rank_id <= 0) {
-            for (iii=0; iii < nvar_prop4; iii++)
-              fprintf(file, "%12.5e ", array[iii]);
-            fprintf(file, "\n");
+            if (output_format == 0) {
+              for (iii=0; iii < nvar_prop4; iii++)
+                fprintf(file, "%12.5e ", array[iii]);
+              fprintf(file, "\n");
+            }
+            else {
+              if (nvar_prop > 0) {
+                for (iii=0; iii < nvar_prop4 - 1; iii++)
+                  fprintf(file, "%12.5e, ", array[iii]);
+                fprintf(file, "%12.5e ", array[nvar_prop4 - 1]);
+              }
+              fprintf(file, "\n");
+            }
           }
         }
       }

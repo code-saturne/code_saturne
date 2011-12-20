@@ -199,6 +199,10 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.modelFreq.addItem(self.tr("at the end of the calculation"), "end")
         self.modelFreq.addItem(self.tr("at each 'n' time steps"), "frequency")
 
+        self.modelFormat = ComboModel(self.comboBoxFormat, 2, 1)
+        self.modelFormat.addItem(self.tr(".dat"), "DAT")
+        self.modelFormat.addItem(self.tr(".csv"), "CSV")
+
         # Connections
         self.connect(self.treeViewProfile,       SIGNAL("pressed(const QModelIndex &)"), self.slotSelectProfile)
         self.connect(self.pushButtonAdd,         SIGNAL("clicked()"), self.slotAddProfile)
@@ -207,6 +211,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.connect(self.pushButtonAddVar,      SIGNAL("clicked()"), self.slotAddVarProfile)
         self.connect(self.pushButtonSuppressVar, SIGNAL("clicked()"), self.slotDeleteVarProfile)
         self.connect(self.comboBoxFreq,          SIGNAL("activated(const QString&)"), self.slotFrequencyType)
+        self.connect(self.comboBoxFormat,        SIGNAL("activated(const QString&)"), self.slotFormatType)
 
         # Validators
         validatorFreq = IntValidator(self.lineEditFreq, min=0)
@@ -244,7 +249,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         #update list of profiles for view from xml file
         for lab in self.mdl.getProfilesLabelsList():
             self.entriesNumber = self.entriesNumber + 1
-            label, title, list, freq, x1, y1, z1, x2, y2, z2 = self.mdl.getProfileData(lab)
+            label, title, format, list, freq, x1, y1, z1, x2, y2, z2 = self.mdl.getProfileData(lab)
             self.__insertProfile(label, list)
 
         self.__eraseEntries()
@@ -294,13 +299,21 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         return choice, nfreq
 
 
+    @pyqtSignature("const QString&")
+    def slotFormatType(self, text):
+        """
+        Input choice for frequency for profile.
+        """
+        return self.modelFormat.dicoV2M[str(text)]
+
+
     def __infoProfile(self, row):
         """
         Return info from the argument entry.
         """
         label = self.modelProfile.getLabel(row)
-        lab, title, list, freq, x1, y1, z1, x2, y2, z2 = self.mdl.getProfileData(label)
-        return label, title, list, freq, x1, y1, z1, x2, y2, z2
+        lab, title, format, list, freq, x1, y1, z1, x2, y2, z2 = self.mdl.getProfileData(label)
+        return label, title, format, list, freq, x1, y1, z1, x2, y2, z2
 
 
     def __insertProfile(self, label, list):
@@ -347,6 +360,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             self.__insertProfile(label, var_prof)
 
             choice, freq = self.slotFrequencyType(self.comboBoxFreq.currentText())
+            format = self.slotFormatType(self.comboBoxFormat.currentText())
             title = str(self.lineEditTitle.text())
             if not title: title = label
             X1, ok = self.lineEditX1.text().toDouble()
@@ -356,7 +370,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             Y2, ok = self.lineEditY2.text().toDouble()
             Z2, ok = self.lineEditZ2.text().toDouble()
 
-            self.mdl.setProfile(label, title, var_prof, freq, X1, Y1, Z1, X2, Y2, Z2)
+            self.mdl.setProfile(label, title, format, var_prof, freq, X1, Y1, Z1, X2, Y2, Z2)
             self.__eraseEntries()
 
 
@@ -372,7 +386,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             msg   = self.tr("You must select an existing profile")
             QMessageBox.information(self, title, msg)
         else:
-            label, title, list, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
+            label, title, format, list, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
             self.modelProfile.deleteRow(row)
             self.mdl.deleteProfile(label)
             self.__eraseEntries()
@@ -390,7 +404,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             msg   = self.tr("You must select an existing profile")
             QMessageBox.information(self, title, msg)
         else:
-            old_label, title, vlist, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
+            old_label, title, format, vlist, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
 
             var_prof = [str(s) for s in self.modelDrop.stringList()]
             log.debug("slotEditProfile -> %s" % (var_prof,))
@@ -417,6 +431,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
                 self.treeViewProfile.dataChanged(idx, idx)
 
                 choice, freq = self.slotFrequencyType(self.comboBoxFreq.currentText())
+                format = self.slotFormatType(self.comboBoxFormat.currentText())
                 title = str(self.lineEditTitle.text())
                 if not title: title = new_label
                 X1, ok = self.lineEditX1.text().toDouble()
@@ -426,7 +441,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
                 Y2, ok = self.lineEditY2.text().toDouble()
                 Z2, ok = self.lineEditZ2.text().toDouble()
 
-                self.mdl.replaceProfile(old_label, new_label, title, var_prof, freq, X1, Y1, Z1, X2, Y2, Z2)
+                self.mdl.replaceProfile(old_label, new_label, title, format, var_prof, freq, X1, Y1, Z1, X2, Y2, Z2)
                 self.__eraseEntries()
 
 
@@ -438,10 +453,11 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         row = index.row()
         log.debug("slotSelectProfile -> %s" % (row,))
 
-        label, title, liste, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
+        label, title, format, liste, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
 
         self.lineEditTitle.setText(QString(str(title)))
         self.lineEditBaseName.setText(QString(str(label)))
+        self.modelFormat.setItem(str_model=format)
 
         if freq >= 1:
             self.modelFreq.setItem(str_model='frequency')

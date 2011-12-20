@@ -197,7 +197,7 @@ class ProfilesModel(Model):
         return list
 
 
-    def setProfile(self, label, title, list, freq, x1, y1, z1, x2, y2, z2):
+    def setProfile(self, label, title, format, list, freq, x1, y1, z1, x2, y2, z2):
         """
         Public method.
         Sets data to create one profile named I{label}.
@@ -209,6 +209,7 @@ class ProfilesModel(Model):
 
         label_xml = label + self.suffix
         node = self.node_prof.xmlInitNode('profile', label=label_xml)
+        node.xmlAddChild('format', name=format)
         for var in list:
             self.isInList(var, self.__var_prop_list)
             node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
@@ -217,7 +218,7 @@ class ProfilesModel(Model):
         self.__setCoordinates(label, x1, y1, z1, x2, y2, z2)
 
 
-    def replaceProfile(self, old_label, label, title, list, freq, x1, y1, z1, x2, y2, z2):
+    def replaceProfile(self, old_label, label, title, format, list, freq, x1, y1, z1, x2, y2, z2):
         """
         Public method.
         Replaces data from I{old_label} profile
@@ -235,8 +236,10 @@ class ProfilesModel(Model):
         node = self.node_prof.xmlGetNode('profile', label=old_label_xml)
         if node:
             node['title'] = ""
-            for tag in ('var_prop', 'output_frequency', 'x1', 'y1', 'z1', 'x2', 'y2', 'z2'):
+            for tag in ('format', 'var_prop', 'output_frequency',
+                        'x1', 'y1', 'z1', 'x2', 'y2', 'z2'):
                 node.xmlRemoveChild(tag)
+            node.xmlAddChild('format', name=format)
             for var in list:
                 self.isInList(var, self.__var_prop_list)
                 node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
@@ -270,6 +273,10 @@ class ProfilesModel(Model):
         node = self.node_prof.xmlGetNode('profile', label=label_xml)
         freq = node.xmlGetInt('output_frequency')
         title = node['title']
+        format = 'DAT'
+        f_node = node.xmlGetChildNode('format')
+        if f_node:
+            format = f_node['name']
         x1, y1, z1, x2, y2, z2 = self.__getCoordinates(label)
         for var in node.xmlGetChildNodeList('var_prop'):
             for name in self.__var_prop_list:
@@ -279,7 +286,7 @@ class ProfilesModel(Model):
         #label = label_xml[:-4]
         label = label_xml
 
-        return label, title, list, freq, x1, y1, z1, x2, y2, z2
+        return label, title, format, list, freq, x1, y1, z1, x2, y2, z2
 
 
 #-------------------------------------------------------------------------------
