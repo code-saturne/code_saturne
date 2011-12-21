@@ -1501,7 +1501,7 @@ static int _get_profile_format(const int id)
                 _("Invalid attribute value: %s \nXpath: %s\n"), format_s, path);
     BFT_FREE(format_s);
   }
-  
+
   BFT_FREE(path);
 
   return format;
