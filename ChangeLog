@@ -1,3 +1,11 @@
+* 22/12/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Ensure user shell (if Bourne shell compatible) is used for subprocesses.
+  This should avoid subtle bugs on some systems due to environments not being
+  complete, both for user source code compilation and when launching Salome.
+  modified files:
+    bin/cs_case.py
+    bin/cs_exec_environment.py
+
 * 13/12/2011 - David Monfort <david.monfort@edf.fr>
   Release of Code_Saturne 2.1.1.
 
