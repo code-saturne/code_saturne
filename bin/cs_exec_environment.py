@@ -25,7 +25,7 @@
 
 import datetime
 import fnmatch
-import os.path
+import os
 import subprocess
 import sys
 import tempfile
@@ -59,6 +59,22 @@ def abs_exec_path(path):
 
     return None
 
+#---------------------------------------------------------------------------
+
+def get_shell_type():
+    """
+    Get name of current shell if available.
+    (Bourne shell variants are handled, C-shell variants are not).
+    """
+
+    user_shell = os.getenv('SHELL')
+    if not user_shell:
+        user_shell = '/bin/sh'
+    elif user_shell[-3] == 'csh':
+        user_shell = '/bin/sh'
+
+    return user_shell
+
 #-------------------------------------------------------------------------------
 
 def run_command(cmd, echo = False, stdout = sys.stdout, stderr = sys.stderr):
@@ -78,7 +94,10 @@ def run_command(cmd, echo = False, stdout = sys.stdout, stderr = sys.stderr):
     if (stderr != sys.stderr):
         kwargs['stderr'] = stderr
 
-    p = subprocess.Popen(cmd, shell=True, **kwargs)
+    p = subprocess.Popen(cmd,
+                         shell=True,
+                         executable=get_shell_type(),
+                         **kwargs)
 
     p.communicate()
 
@@ -92,6 +111,7 @@ def get_command_output(cmd):
     """
     p = subprocess.Popen(cmd,
                          shell=True,
+                         executable=get_shell_type(),
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
     output = p.communicate()
@@ -109,6 +129,7 @@ def get_command_outputs(cmd):
     """
     p = subprocess.Popen(cmd,
                          shell=True,
+                         executable=get_shell_type(),
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
     return p.communicate()[0]

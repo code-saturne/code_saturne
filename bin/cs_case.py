@@ -619,7 +619,7 @@ class case:
 
         s = open(s_path, 'w')
 
-        user_shell = self.get_shell_name()
+        user_shell = cs_exec_environment.get_shell_type()
 
         s.write('#!' + user_shell + '\n\n')
 
@@ -769,22 +769,6 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def get_shell_name(self):
-        """
-        Get name of current shell if available.
-        (Bourne shell variants are handled, C-shell variants are not).
-        """
-
-        user_shell = os.getenv('SHELL')
-        if not user_shell:
-            user_shell = '/bin/sh'
-        elif user_shell[-3] == 'csh':
-            user_shell = '/bin/sh'
-
-        return user_shell
-
-    #---------------------------------------------------------------------------
-
     def generate_solver_mpmd_script(self, n_procs, mpi_env):
         """
         Generate MPMD dispatch file.
@@ -793,7 +777,7 @@ class case:
         e_path = os.path.join(self.exec_dir, 'mpmd_exec.sh')
         e = open(e_path, 'w')
 
-        user_shell = self.get_shell_name()
+        user_shell = cs_exec_environment.get_shell_type()
 
         e.write('#!' + user_shell + '\n\n')
         e.write('# Make sure to transmit possible additional '
@@ -986,7 +970,7 @@ class case:
         s_path = self.solver_script_path()
         s = open(s_path, 'w')
 
-        user_shell = self.get_shell_name()
+        user_shell = cs_exec_environment.get_shell_type()
 
         s.write('#!' + user_shell + '\n\n')
 
