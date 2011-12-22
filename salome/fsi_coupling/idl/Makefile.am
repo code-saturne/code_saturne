@@ -55,9 +55,9 @@ EXTRA_DIST = $(IDL_FILES)
 
 install-data-local: $(IDL_FILES)
 	$(INSTALL) -d  $(DESTDIR)$(salomepythondir)
+	export PYTHONPATH=$(OMNIIDLPYBE):$(OMNIIDLPYTHONPATH)$${PYTHONPATH:+:$$PYTHONPATH} \
 	ls $^ | while read file; do \
-	PYTHONPATH=$(OMNIIDLPYBE):$(OMNIIDLPYTHONPATH)$${PYTHONPATH:+:$$PYTHONPATH} \
-	$(OMNIIDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES) -C$(DESTDIR)$(salomepythondir) $$file; \
+	  $(OMNIIDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES) -C$(DESTDIR)$(salomepythondir) $$file; \
 	done
 
 uninstall-local:
