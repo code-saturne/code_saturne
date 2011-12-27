@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-12-19 10:41+0100\n"
+"POT-Creation-Date: 2011-12-27 18:54+0100\n"
 "PO-Revision-Date: 2011-10-13 19:39+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -8202,6 +8202,12 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid ""
+"Invalid attribute value: %s \n"
+"Xpath: %s\n"
+msgstr ""
+
+#, c-format
 msgid "Invalid turbulence model: %s.\n"
 msgstr ""
 
@@ -8400,12 +8406,6 @@ msgstr ""
 
 #, c-format
 msgid "No markup found: %s \n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Invalid attribute value: %s \n"
-"Xpath: %s\n"
 msgstr ""
 
 #, c-format
