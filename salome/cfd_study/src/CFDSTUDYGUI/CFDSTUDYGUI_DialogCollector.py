@@ -844,17 +844,7 @@ class GUIActivationDialogHandler(GUIActivationDialog):
         self.FileCheckBox = self.findChild(QtGui.QCheckBox,"FileCheckBox")
         self.FileCB = self.findChild(QtGui.QComboBox,"FileCB")
 
-
-        self.LangCheckBox = self.findChild(QtGui.QCheckBox,"LangCheckBox")
-        self.LangCB = self.findChild(QtGui.QComboBox,"LangCB")
-        #sync
-        self.LangCB.setEnabled(False)
-
-        self.LangCheckBox.hide()
-        self.LangCB.hide()
-
         self.connect(self.FileCheckBox, SIGNAL("clicked()"), self.slotUseXMLfileChange)
-        self.connect(self.LangCheckBox, SIGNAL("clicked()"), self.slotUseLangChange)
 
         self.connect(self.CaseCB, SIGNAL("activated(int)"), self.slotUpdateData)
 
@@ -881,12 +871,9 @@ class GUIActivationDialogHandler(GUIActivationDialog):
             self.setWindowTitle(self.tr("ICSACTIVATE_DLG_CAPTION"))
             self.CaseLabel.setTitle(self.tr("ICSACTIVATE_DLG_CASE_LABEL"))
             self.FileCheckBox.setChecked(False)
-            self.LangCheckBox.setChecked(False)
         elif CFD_Code() == CFD_Neptune:
             self.setWindowTitle(self.tr("IPBACTIVATE_DLG_CAPTION"))
             self.CaseLabel.setTitle(self.tr("IPBACTIVATE_DLG_CASE_LABEL"))
-            self.LangCheckBox.hide()
-            self.LangCB.hide()
 
 
     def slotUpdateData(self):
@@ -981,24 +968,13 @@ class GUIActivationDialogHandler(GUIActivationDialog):
         return self.FileCB.currentText().toLatin1()
 
 
-    def currentLanguage(self):
-        return str(self.LangCB.currentText().toLatin1())
-
-
     def isUseXmlFile(self):
         return self.FileCheckBox.isChecked()
-
-
-    def ifUseLangOption(self):
-        return self.LangCheckBox.isChecked()
 
 
     def slotUseXMLfileChange(self):
         self.FileCB.setEnabled(self.FileCheckBox.isChecked())
 
-
-    def slotUseLangChange(self):
-        self.LangCB.setEnabled(self.LangCheckBox.isChecked())
 
 
 class CFDSTUDYGUI_DialogCollector:

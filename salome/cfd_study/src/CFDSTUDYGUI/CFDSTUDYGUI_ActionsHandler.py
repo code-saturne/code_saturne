@@ -1738,12 +1738,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 # no 'CFDSTUDYGUI' file
                 return
 
-        if CFD_Code() == CFD_Saturne:
-            dlg = self.DialogCollector.GUIActivationDialog
-            if dlg.ifUseLangOption():
-                mess = "Language option not yet implemented "
-                if QMessageBox.warning(None, "Warning", mess, QMessageBox.Yes, QMessageBox.No) == QMessageBox.No:
-                    return
 
         xmlFiles = CFDSTUDYGUI_DataModel.ScanChildren(aDataObj, ".*")
         if self.DialogCollector.GUIActivationDialog.isUseXmlFile() and \
