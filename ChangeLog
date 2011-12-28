@@ -1,3 +1,13 @@
+* 28/12/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Upgrade SALOME requirement. Code_Saturne can now correctly detect both
+  SALOME 6.3 and 6.4 versions.
+  modified files:
+    bin/cs_config.py.in
+    bin/cs_salome.py
+    bin/runcase_aster.in
+    m4/cs_salome.m4
+    Makefile.am
+
 * 22/12/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Ensure user shell (if Bourne shell compatible) is used for subprocesses.
   This should avoid subtle bugs on some systems due to environments not being

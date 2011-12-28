@@ -114,8 +114,7 @@ salomepythondir=@pythondir@/salome
 #
 # SALOME
 #
-salomeenv=@SALOMEENV@
-salomepre=@SALOMEPRE@
+salomeenv="@SALOMEENVCMD@"
 salomekernelbindir=@SALOME_KERNEL@/bin/salome
 #
 # Code_Aster
@@ -403,8 +402,7 @@ $salomekernelbindir/appli_gen.py --prefix=$appli --config=$pkgdatadir/salome/fsi
 #
 localexec=$RUN_PATH/localexec
 echo '#!/bin/sh' > $localexec
-echo '. '${salomepre} >> $localexec
-echo '. '${salomeenv} >> $localexec
+echo ${salomeenv} >> $localexec
 echo 'export PATH='${RUN_PATH}'/bin:$PATH' >> $localexec
 echo 'appli='$appli >> $localexec
 echo '$appli/runSession killSalome.py' >> $localexec
