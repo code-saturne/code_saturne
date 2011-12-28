@@ -747,8 +747,8 @@ void CS_PROCF (cgdcel, CGDCEL)
   default: break;
   }
 
-  BFT_MALLOC(var_name, 7, char);
-  sprintf(var_name, "Var. %1d", *ivar);
+  BFT_MALLOC(var_name, 8, char);
+  sprintf(var_name, "Var. %2d", *ivar);
 
   if (update_stats == true) {
     t0 = cs_timer_time();
