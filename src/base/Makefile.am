@@ -297,30 +297,17 @@ $(top_srcdir)/users/base/ussmag.f90 \
 $(top_srcdir)/users/base/usstru.f90 \
 $(top_srcdir)/users/base/usthht.f90 \
 $(top_srcdir)/users/base/ustmgr.f90 \
-$(top_srcdir)/users/base/ustske.f90 \
-$(top_srcdir)/users/base/ustskw.f90 \
 $(top_srcdir)/users/base/ustsma.f90 \
-$(top_srcdir)/users/base/ustsns.f90 \
-$(top_srcdir)/users/base/ustsnv.f90 \
-$(top_srcdir)/users/base/ustsri.f90 \
-$(top_srcdir)/users/base/ustssa.f90 \
-$(top_srcdir)/users/base/ustssc.f90 \
-$(top_srcdir)/users/base/ustsv2.f90 \
 $(top_srcdir)/users/base/usvima.f90 \
 $(top_srcdir)/users/base/usvist.f90 \
 $(top_srcdir)/users/base/usvort.f90 \
 $(top_srcdir)/users/base/usvosy.f90 \
 $(top_srcdir)/users/base/usvpst.f90 \
-$(top_srcdir)/users/base/cs_user_join.c \
-$(top_srcdir)/users/base/cs_user_mesh_input.c \
-$(top_srcdir)/users/base/cs_user_mesh_modify.c \
-$(top_srcdir)/users/base/cs_user_mesh_smoothe.c \
-$(top_srcdir)/users/base/cs_user_mesh_thinwall.c \
-$(top_srcdir)/users/base/cs_user_periodicity.c \
+$(top_srcdir)/users/base/cs_user_coupling.c \
+$(top_srcdir)/users/base/cs_user_mesh.c \
 $(top_srcdir)/users/base/cs_user_postprocess.c \
-$(top_srcdir)/users/base/cs_user_saturne_coupling.c \
 $(top_srcdir)/users/base/cs_user_solver.c \
-$(top_srcdir)/users/base/cs_user_syrthes_coupling.c
+$(top_srcdir)/users/base/cs_user_source_terms.f90
 
 libcsbase_la_SOURCES += $(baseusers)
 

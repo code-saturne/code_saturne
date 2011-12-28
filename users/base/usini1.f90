@@ -43,7 +43,372 @@
 ! As a convention, "specific physics" defers to the following modules only:
 !   pulverized coal, gas combustion, electric arcs.
 
+! In addition, specific routines are provided for the definition of some
+!   "specific physics" options.
+!   These routines are described at the end of this file and will be activated
+!   when the corresponding option is selected in the usppmo routine.
+
 !-------------------------------------------------------------------------------
+
+
+!===============================================================================
+
+
+subroutine usppmo
+!================
+
+
+!===============================================================================
+! Purpose:
+! -------
+
+!    User subroutine.
+
+!    Define the use of a specific physics amongst the following:
+!      - combustion with gaz / coal / heavy fuel oil
+!      - compressible flows
+!      - electric arcs
+!      - atmospheric modelling
+!      - cooling towers modelling
+
+!    Only one specific physics module can be activated at once.
+
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use entsor
+use cstphy
+use ppppar
+use ppthch
+use ppincl
+use ppcpfu
+
+!===============================================================================
+
+implicit none
+
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!===============================================================================
+
+if(1.eq.1) then
+  return
+endif
+
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+!===============================================================================
+! 1.  Choice for a specific physics
+!===============================================================================
+
+! --- cod3p: Diffusion flame with complete fast chemistry (3 points)
+! ==========
+
+!        if = -1   module not activated
+!        if =  0   adiabatic model
+!        if =  1   extended model with enthalpy source term
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ippmod(icod3p) = -1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- coebu: Eddy-Break Up pre-mixed flame
+! ==========
+
+!        if = -1   module not activated
+!        if =  0   reference Spalding model
+!                   (adiabatic, homogeneous mixture fraction)
+!        if =  1   extended model with enthalpy source term
+!                   (homogeneous mixture fraction : perfect premix)
+!        if =  2   extended model with mixture fraction transport
+!                   (adiabatic, no variance of mixture fraction)
+!        if =  3   extended model with enthalpy and mixture fraction transport
+!                   (dilution, thermal losses, etc.)
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ippmod(icoebu) = -1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- colwc: Libby-Williams pre-mixed flame
+! ==========
+
+!        if = -1   module not activated
+!        if =  0   reference two-peak model with adiabatic condition
+!        if =  1   extended two-peak model with enthapy source terms
+!        if =  2   extended three-peak model, adiabatic
+!        if =  3   extended three-peak model with enthalpy source terms
+!        if =  4   extended four-peak model, adiabatic
+!        if =  5   extended four-peak model with enthalpy source terms
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ippmod(icolwc) = -1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- cp3pl: Pulverized coal combustion
+! ==========
+
+!        Description of granulometry
+!        Assumption of diffusion flame around particles
+!         (extension of 3-point fast chemistry "D3P")
+!        Between a mixture of gaseous fuels (volatiles matters, CO from char
+!                                            oxydation)
+!            and a mixture of oxidisers (air and water vapor)
+!        Enthalpy for both mix and solid phase are solved
+
+!        if = -1   module not activated
+!        if = 0    module activated
+!        if = 1    with drying
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ippmod(icp3pl) = -1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- cpl3c: Pulverized coal with Lagrangian reciprocal approach
+! ==========
+
+!        Not recently tested... at least outdated, may be obsolete
+
+!        if = -1   module not activated
+!        if = 0    module activated
+!        if = 1    with drying (NOT functional)
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ippmod(icpl3c) = -1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- cfuel: Heavy fuel oil combustion
+! ==========
+
+!        Progressive evaporation (temperature gap)
+!        Char residue
+!        Sulphur tracking
+
+!        if = -1   module not activated
+!        if = 0    module activated
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ippmod(icfuel) = -1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- coal :
+! ==========
+!
+!     Pulverized coal combustion
+!        Description of granulometry
+!        Assumption of diffusion flame around particles
+!         (extension of 3-point fast chemistry "D3P")
+!        Between a mixture of gaseous fuels (volatiles matters, CO from char
+!                                            oxydation)
+!            and a mixture of oxidisers (air and water vapor)
+!        Enthalpy for both mix and solid phase are solved
+!
+!        if = -1   module not activated
+!        if = 0    module activated
+!        if = 1    with drying
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ippmod(iccoal) = -1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- compf: Compressible flows
+! ==========
+
+!        if = -1   module not activated
+!        if = 0    module activated
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ippmod(icompf) = -1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- eljou: Joule effect
+! ==========
+
+!        if = -1   module not activated
+!        if = 1    Potentiel reel
+!        if = 2    Potentiel complexe
+!        if = 3    Potentiel reel     + CDL Transfo
+!        if = 4    Potentiel complexe + CDL Transfo
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ippmod(ieljou) = -1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- elarc: Electric arcs
+! ==========
+
+!        if = -1   module not activated
+!        if = 1    electric potential
+!        if = 2    electric potential and vector potential (hence 3D modelling)
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ippmod(ielarc) = -1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- atmos: Atmospheric flows
+! ==========
+
+!        if = -1   module not activated
+!        if = 0    standard modelling
+!        if = 1    dry atmosphere
+!        if = 2    humid atmosphere (NOT functional)
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ippmod(iatmos) = -1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- aeros: Cooling towers
+! ==========
+
+!        if = -1   module not activated
+!        if = 0    no model (NOT functional)
+!        if = 1    Poppe's model
+!        if = 2    Merkel's model
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ippmod(iaeros) = -1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+
+!===============================================================================
+! 2.  Specific physics module not available at the moment
+!===============================================================================
+
+! WARNING: The following modules ARE NOT functional!
+! =======
+
+! --- cobml: Premix model of Bray - Moss - Libby
+! ==========
+
+!        if = -1   module not activated
+
+ippmod(icobml) = -1
+
+! --- codeq: Diffusion flame with fast equilibrium chemistry
+! ==========
+
+!        if = -1   module not activated
+
+ippmod(icodeq) = -1
+
+! --- elion: Ionic mobility
+! ==========
+
+!        if = -1   module not activated
+
+ippmod(ielion) = -1
+
+
+!===============================================================================
+! 3.  Specific options related to herebefore modules
+!===============================================================================
+
+! These options are defined here at the moment, this might change in the future
+
+! --- Enthalpy-Temperature conversion law (for gas combustion modelling)
+
+!       if = 0   user-specified
+!       if = 1   tabulated by JANAF (default)
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+indjon = 1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- Kinetic model for NOx formation
+
+!         Only compatible with heavy fuel oil combustion
+
+!         if = 0  unused
+!         if = 1  activated
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ieqnox = 0
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- Kinetic model for CO <=> CO2
+
+!         Compatible with coal and heavy fuel oil combustion
+
+!         if = 0  unused (maximal conversion in turbulent model)
+!         if = 1  transport of CO2 mass fraction
+!         if = 2  transport of CO mass fraction
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ieqco2 = 0
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- Heteregoneous combustion by CO2
+
+!         Needs the activation of the CO2 transport equation
+!         Account for the reaction between char and CO2: C(s) + CO2 => 2 CO
+
+!         if = 0  unused
+!         if = 1  activated
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ihtco2 = 0
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+!----
+! Formats
+!----
+
+!----
+! End
+!----
+
+return
+end subroutine
 
 
 !===============================================================================
@@ -2063,6 +2428,2691 @@ ihisvr(ipp,1) = -1
 !----
 
 
+
+return
+end subroutine
+
+
+!===============================================================================
+
+
+subroutine usati1
+!================
+
+
+!===============================================================================
+! Purpose:
+! --------
+
+! Initialize non-standard calculation options for the atmospheric version.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use ppppar
+use atincl
+
+!===============================================================================
+
+implicit none
+
+!===============================================================================
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+
+if(1.eq.1) return
+
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+
+!===============================================================================
+! 1. Example of calculation options to modify
+!===============================================================================
+
+! Reading the meteo file
+
+imeteo = 1
+
+! Option for variable density and viscosity
+
+!   For each phase
+
+irovar = 0
+ivivar = 0
+
+!----
+! End
+!----
+
+return
+end subroutine
+
+
+!===============================================================================
+
+
+subroutine usd3p1
+!================
+
+
+!===============================================================================
+!  Features of this subroutine:
+!  ----------------------------
+!  1. Variable Output
+!     a. Transported Variables
+!     b. Variables of State; User definied Variables
+!
+!  2. Additional Calculation Options
+!     a. Density Relaxation
+!
+!  3. Physical Constants
+!     a.Dynamic Diffusion Coefficient
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use parall
+use period
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use ppincl
+use radiat
+
+!===============================================================================
+
+implicit none
+
+integer          ipp
+
+!===============================================================================
+!===============================================================================
+! 1. Variable Output
+!===============================================================================
+!    Function                             |  Key Word |   Indicator
+!    ---------------------------------------------------------------
+!    Variable Output in the result file   | ICHRVR()  | yes= 1  ; no=0
+!    Variable Output in the listing file  | ILISVR()  | yes= 1  ; no=0
+!    Output of the temporal evolution of  | IHISVR()  | yes=-1* ; no=0
+!    the variable at monitoring points    |           |
+!    -----------------------------------------------------------------
+!    *: Output for all monitoring points defined in subroutine usini1.f90
+!
+!===============================================================================
+! a. Transported Variables
+!===============================================================================
+
+! ---- Mean mixture fraction
+ipp = ipprtp(isca(ifm))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+! ---- Variance of mixture fraction
+ipp = ipprtp(isca(ifp2m))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+! ---- Enthalpy
+ if ( ippmod(icod3p).eq.1 ) then
+   ipp = ipprtp(isca(ihm))
+   ichrvr(ipp)  = 1
+   ilisvr(ipp)  = 1
+   ihisvr(ipp,1)= -1
+  endif
+
+
+!===============================================================================
+! b. Variables of State; User definied Variables
+!===============================================================================
+
+! ---- Temperature
+ipp = ipppro(ipproc(itemp))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+! ---- Fuel Mass fraction :    YM_Fuel
+ipp = ipppro(ipproc(iym(1)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+! ---- Oxydizer Mass fraction : YM_Oxy
+ipp = ipppro(ipproc(iym(2)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+! ---- Product Mass fraction : YM_Prod
+ipp = ipppro(ipproc(iym(3)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+! ---- Diffusion flame including gas radiation
+
+if ( iirayo.gt.0 ) then
+
+! ---- Absorption Coefficient
+  ipp = ipppro(ipproc(ickabs))
+  NOMVAR(IPP)   = 'KABS'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+! ---- Term T^4
+  ipp = ipppro(ipproc(it4m))
+  NOMVAR(IPP)   = 'TEMP4'
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+! ---- Term T^3
+  ipp = ipppro(ipproc(it3m))
+  NOMVAR(IPP)   = 'TEMP3'
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+endif
+
+
+!===============================================================================
+! 2. Additional Calculation Options
+!===============================================================================
+
+! -->  Density Relaxation
+!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
+
+srrom = 0.8d0
+
+
+!===============================================================================
+! 3. Physical Constants
+!===============================================================================
+
+!       DIFTL0: Dynamic Diffusion Coefficient (kg/(m s))
+diftl0 = 4.25d-5
+
+
+!----
+! END
+!----
+
+return
+end subroutine
+
+
+!===============================================================================
+
+
+subroutine usebu1
+
+!===============================================================================
+!  PURPOSE:
+!  --------
+!  1. Variable Output
+!     a. Transported Variables
+!     b. Variables of State; User definied Variables
+!
+!  2. Additional Calculation Options
+!     a. Density Relaxation
+!
+!  3. Physical Constants
+!     a.Dynamic Diffusion Coefficient
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use parall
+use period
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use ppincl
+use radiat
+
+!===============================================================================
+
+implicit none
+
+integer          ipp
+
+!===============================================================================
+!===============================================================================
+! 1. Variable Output
+!===============================================================================
+!    Function                             |  Key Word |   Indicator
+!    ---------------------------------------------------------------
+!    Variable Output in the result file   | ICHRVR()  | yes= 1  ; no=0
+!    Variable Output in the listing file  | ILISVR()  | yes= 1  ; no=0
+!    Output of the temporal evolution of  | IHISVR()  | yes=-1* ; no=0
+!    the variable at monitoring points    |           |
+!    -----------------------------------------------------------------
+!    *: Output for all monitoring points defined in subroutine usini1.f90
+!
+!===============================================================================
+! a. Transported Variables
+!===============================================================================
+! ---- Mass fraction of unburned (or fresh)  gas
+if ( ippmod(icoebu).ge.0 ) then
+  ipp = ipprtp(isca(iygfm))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
+! ---- Mean Mixture Fraction
+if ( ippmod(icoebu).ge.2 ) then
+  ipp = ipprtp(isca(ifm))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
+
+! ---- Enthalpy
+if ( ippmod(icoebu).eq.1 .or.                                     &
+     ippmod(icoebu).eq.3      ) then
+  ipp = ipprtp(isca(ihm))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
+
+!===============================================================================
+! b. Variables of State; User definied Variables
+!===============================================================================
+
+! ---- Temperature
+ipp = ipppro(ipproc(itemp))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+! ---- Mean mass fraction of Fuel:    YM_Fuel
+ipp = ipppro(ipproc(iym(1)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+! ---- Mean mass fraction of Oxidizer : YM_Oxy
+ipp = ipppro(ipproc(iym(2)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+! ---- Mean mass fraction of Product: YM_Prod
+ipp = ipppro(ipproc(iym(3)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+! ---- Premixed flame including gas radiation
+
+if ( iirayo.gt.0 ) then
+
+! ---- Absorption Coefficient
+  ipp = ipppro(ipproc(ickabs))
+  NOMVAR(IPP)   = 'KABS'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+! ---- Term T^4
+  ipp = ipppro(ipproc(it4m))
+  NOMVAR(IPP)   = 'TEMP4'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+! ---- Term T^3
+  ipp = ipppro(ipproc(it3m))
+  NOMVAR(IPP)   = 'TEMP3'
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+endif
+
+
+!===============================================================================
+! 2. Additional Calculation Options
+!===============================================================================
+
+! -->  Density Relaxation
+!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
+
+srrom = 0.8d0
+
+
+!===============================================================================
+! 3. Physical Constants
+!===============================================================================
+
+!       DIFTL0: Dynamic Diffusion Coefficient (kg/(m s))
+diftl0 = 4.25d-5
+
+!       cebu: EBU-model constant
+
+ cebu   = 2.5d0
+
+
+!----
+! END
+!----
+
+return
+end subroutine
+
+
+!===============================================================================
+
+
+subroutine uslwc1
+
+
+!===============================================================================
+!  PURPOSE:
+!  --------
+!  1. Variable Output
+!     a. Transported Variables
+!     b. Variables of State; User definied Variables
+!
+!  2. Additional Calculation Options
+!     a. Density Relaxation
+!
+!  3. Physical Constants
+!     a.Dynamic Diffusion Coefficient
+!     b.Constants of the Libby-Williams Model
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use parall
+use period
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use ppincl
+use radiat
+
+!===============================================================================
+
+implicit none
+
+integer          ipp, idirac
+
+!===============================================================================
+!===============================================================================
+! 1. Variable Output
+!===============================================================================
+!    Function                             |  Key Word |   Indicator
+!    ---------------------------------------------------------------
+!    Variable Output in the result file   | ICHRVR()  | yes= 1  ; no=0
+!    Variable Output in the listing file  | ILISVR()  | yes= 1  ; no=0
+!    Output of the temporal evolution of  | IHISVR()  | yes=-1* ; no=0
+!    the variable at monitoring points    |           |
+!    -----------------------------------------------------------------
+!    *: Output for all monitoring points defined in subroutine usini1.f90
+!
+!===============================================================================
+! a. Transported Variables
+!===============================================================================
+
+! ---- Mean Mixture Fraction
+if ( ippmod(icolwc).ge.0 ) then
+  ipp = ipprtp(isca(ifm))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+! ---- Variance of Mixture Fraction
+  ipp = ipprtp(isca(ifp2m))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+! ---- Fuel Mass fraction
+  ipp = ipprtp(isca(iyfm))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+! ---- Variance of Fuel Mass fraction
+  ipp = ipprtp(isca(iyfp2m))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
+if (ippmod(icolwc).ge.2) then
+    ipp = ipprtp(isca(icoyfp))
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+endif
+
+! ---- Enthalpy
+if ( ippmod(icolwc).eq.1 .or.                                     &
+     ippmod(icolwc).eq.3 .or.                                     &
+     ippmod(icolwc).eq.5    ) then
+  ipp = ipprtp(isca(ihm))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
+
+!===============================================================================
+! b. Variables of State; User definied Variables
+!===============================================================================
+
+! --- Source term
+  ipp = ipppro(ipproc(itsc))
+  NOMVAR(IPP)   = 'T.SOURCE'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+! --- Temperature in K
+  ipp = ipppro(ipproc(itemp))
+  NOMVAR(IPP)   = 'Temperature'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+! --- Fuel Mass fraction
+  ipp = ipppro(ipproc(iym(1)))
+  NOMVAR(IPP)   = 'YM_Fuel'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+! --- Oxidizer Mass fraction
+  ipp = ipppro(ipproc(iym(2)))
+  NOMVAR(IPP)   = 'YM_Oxyd'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+! --- Products Mass fraction
+  ipp = ipppro(ipproc(iym(3)))
+  NOMVAR(IPP)   = 'YM_Prod'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+  do idirac = 1, ndirac
+    ipp = ipppro(ipproc(irhol(idirac)))
+    WRITE(NOMVAR(IPP),'(A4,I1)') 'RHOL',IDIRAC
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+
+    ipp = ipppro(ipproc(iteml(idirac)))
+    WRITE(NOMVAR(IPP),'(A4,I1)') 'TEML',IDIRAC
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+
+    ipp = ipppro(ipproc(ifmel(idirac)))
+    WRITE(NOMVAR(IPP),'(A4,I1)') 'FMEL',IDIRAC
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+
+    ipp = ipppro(ipproc(ifmal(idirac)))
+    WRITE(NOMVAR(IPP),'(A4,I1)') 'FMAL',IDIRAC
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+
+    ipp = ipppro(ipproc(iampl(idirac)))
+    WRITE(NOMVAR(IPP),'(A4,I1)') 'AMPL',IDIRAC
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+
+    ipp = ipppro(ipproc(itscl(idirac)))
+    WRITE(NOMVAR(IPP),'(A4,I1)') 'TSCL',IDIRAC
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+
+    ipp = ipppro(ipproc(imaml(idirac)))
+    WRITE(NOMVAR(IPP),'(A4,I1)') 'MAML',IDIRAC
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+  enddo
+
+! ---- Premixed flame including gas radiation
+
+if ( iirayo.gt.0 ) then
+
+! ---- Absorption Coefficient
+  ipp = ipppro(ipproc(ickabs))
+  NOMVAR(IPP)   = 'KABS'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+! ---- Term T^4
+  ipp = ipppro(ipproc(it4m))
+  NOMVAR(IPP)   = 'TEMP4'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+! ---- Term T^3
+  ipp = ipppro(ipproc(it3m))
+  NOMVAR(IPP)   = 'TEMP3'
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+endif
+
+
+!===============================================================================
+! 2. Additional Calculation Options
+!===============================================================================
+
+! -->  Density Relaxation
+!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1))
+
+srrom = 0.95d0
+
+
+!===============================================================================
+! 3. Physical Constants
+!===============================================================================
+
+! --> DIFTL0: Dynamic Diffusion Coefficient (kg/(m s))
+diftl0 = 4.25d-5
+
+! --> Constants of the Libby-Williams Model
+
+! --- Reference velocity
+ vref = 60.d0
+! --- Reference length scale
+ lref = 0.1d0
+! --- Activation Temperature
+ ta   = 0.2d5
+! --- Cross-over Temperature (combustion of propane)
+ tstar= 0.12d4
+
+!----
+! END
+!----
+
+return
+end subroutine
+
+
+!===============================================================================
+
+
+subroutine uscfx1
+!================
+
+
+!===============================================================================
+! Purpose:
+! -------
+
+!    User subroutine.
+
+!    Initialize non standard options for the compressible flow scheme.
+
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+!    nom           !type!mode !                   role                         !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use parall
+use period
+use ppppar
+use ppthch
+use ppincl
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+
+! Local variables
+
+!===============================================================================
+
+!===============================================================================
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     This subroutine is  mandatory for compressible flow,
+!       thus the default (library reference) version stops immediately.
+!===============================================================================
+
+if(1.eq.1) then
+  write(nfecra,9000)
+  call csexit (1)
+endif
+
+ 9000 format(                                                     &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in compressible flow options definition',/,&
+'@    =======',/,                                                 &
+'@     The user subroutine ''uscfx1'' must be completed.',/,      &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/)
+
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+!===============================================================================
+! 1. Scheme options
+!===============================================================================
+
+! Specify if the hydrostatic equilibrium must be accounted for
+!     (yes = 1 , no = 0)
+
+icfgrp = 1
+
+!----
+! FIN
+!----
+
+return
+end subroutine
+
+
+!===============================================================================
+
+
+subroutine uscfx2
+!================
+
+
+! Purpose:
+! -------
+
+!    User subroutine.
+
+!    Set options for viscosity and conductivity for compressible flow.
+
+!    In addition to options set in the user subroutine 'usini1' (or in
+!    the GUI): this subroutine allows to set switches to indicate if the
+!    volumetric viscosity and the conductivity are constants. If they are,
+!    the subroutines allows to set their values.
+
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+!    nom           !type!mode !                   role                         !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use ppppar
+use ppthch
+use ppincl
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+! Local variables
+
+!===============================================================================
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     This subroutine is  mandatory for compressible flow,
+!       thus the default (library reference) version stops immediately.
+!===============================================================================
+
+if(1.eq.1) then
+  write(nfecra,9000)
+  call csexit (1)
+endif
+
+ 9000 format(                                                     &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input for compressible flow',/,    &
+'@    =======',/,                                                 &
+'@     The user subroutine ''uscfx2'' must be completed',/,       &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/)
+
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+!===============================================================================
+! 1. Physical properties
+!===============================================================================
+
+! --> Molecular thermal conductivity
+
+!       constant  : ivisls = 0
+!       variable  : ivisls = 1
+
+ivisls(itempk) = 0
+
+!       Reference molecular thermal conductivity
+!       visls0 = lambda0  (molecular thermal conductivity, W/(m K))
+
+!       WARNING: visls0 must be strictly positive
+!         (set a realistic value here even if conductivity is variable)
+
+visls0(itempk) = 3.d-2
+
+!       If the molecular thermal conductivity is variable, its values
+!         must be provided in the user subroutine 'uscfpv'
+
+
+! --> Volumetric molecular viscosity
+
+!       Reference volumetric molecular viscosity
+
+!       viscv0 = kappa0  (volumetric molecular viscosity, kg/(m s))
+!       iviscv = 0 : uniform  in space and constant in time
+!              = 1 : variable in space and time
+
+iviscv = 0
+viscv0 = 0.d0
+
+!       If the volumetric molecular viscosity is variable, its values
+!         must be provided in the user subroutine 'uscfpv'
+
+
+!----
+! End
+!----
+
+return
+end subroutine
+
+
+!===============================================================================
+
+
+subroutine uscpi1
+!================
+
+
+!===============================================================================
+!  PURPOSE   :
+!  ---------
+
+!  User's routine to control outing of variables for pulverised coal combustion
+!  (these parameters are in COMMON)
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use parall
+use period
+use ihmpre
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use ppincl
+use ppcpfu
+
+!===============================================================================
+
+implicit none
+
+integer          ipp , icla , icha
+
+!===============================================================================
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+! 0.  THIS TEST CERTIFY THIS VERY ROUTINE IS USED
+!     IN PLACE OF LIBRARY'S ONE
+!===============================================================================
+
+if (iihmpr.eq.1) then
+  return
+else
+  write(nfecra,9000)
+  call csexit (1)
+endif
+
+ 9000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ BEWARE : STOP during data inlet for pulverised coal     ',/,&
+'@    =========                                               ',/,&
+'@     THE USER SUBROUTINE uscpi1 have to be modified         ',/,&
+'@                                                            ',/,&
+'@  The computation will not start                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+
+!===============================================================================
+! 1. TRANSPORTED VARIABLES
+!===============================================================================
+
+! OUTLET chrono, listing, and histo
+!     if below vector are not allocated, default values will be used
+
+!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
+!       ILISVR( ) =  listing outlet (Yes 1/No  0)
+!       IHISVR( ) =  histo outlet (number of roiqu and number)
+!       if IHISVR(.,1)  = -1 every probes defined in usini1
+
+
+! --> Variables for the mix (carrying gas and coal particles)
+
+!      - Enthalpy
+ipp = ipprtp(isca(ihm))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+! --> Variables for coal particles
+
+do icla = 1, nclacp
+
+!       - Char mass fraction (in class ICLA)
+  ipp = ipprtp(isca(ixck(icla)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Coal mass fraction (in class ICLA)
+  ipp = ipprtp(isca(ixch(icla)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Number of particles for 1 kg mix (from class ICLA)
+  ipp = ipprtp(isca(inp(icla)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Enthalpy J/kg (for class ICLA)
+  ipp = ipprtp(isca(ih2(icla)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Water mass fraction (in class ICLA)
+  if ( ippmod(icp3pl) .eq. 1 ) then
+    ipp = ipprtp(isca(ixwt(icla)))
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  endif
+enddo
+
+! --> Variables for the carrier phase
+
+do icha = 1, ncharb
+
+!       - Mean of 1 mixture fraction
+!         (from light volatiles of char ICHA)
+  ipp = ipprtp(isca(if1m(icha)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Mean of 2 mixture fraction
+!         (from heavy volatiles of char ICHA)
+  ipp = ipprtp(isca(if2m(icha)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+enddo
+
+!     - Mean of 3 mixture fraction
+!       (C from heterogeneoux oxidation, of char, by O2)
+ipp = ipprtp(isca(if3m))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+!     - Meam of (6 ?) mixture fraction
+!       (C from heterogeneous reaction between char and CO2)
+if ( ihtco2 .eq. 1) then
+  ipp = ipprtp(isca(if3mc2))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
+!     - Variance of 4 mixture fraction
+!       (oxidisers)
+ipp = ipprtp(isca(if4p2m))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+!     - Mean of 5 mixture fraction
+!       (water vapor from drying)
+if ( ippmod(icp3pl) .eq. 1 ) then
+  ipp = ipprtp(isca(if5m))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
+!     - Mass fraction of CO2 or CO (relaxation to equilibrium)
+
+if ( ieqco2 .ge. 1 ) then
+  ipp = ipprtp(isca(iyco2))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
+!===============================================================================
+! 2. Sate variables
+!===============================================================================
+
+! OUTLET chrono, listing, and histo
+!     if below vector are not allocated, default values will be used
+
+!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
+!       ILISVR( ) =  listing outlet (Yes 1/No  0)
+!       IHISVR( ) =  histo outlet (number of roiqu and number)
+!       if IHISVR(.,1)  = -1 every probes defined in usini1
+
+! --> State varables for the mix
+
+!     - Mean Molar Mass
+ipp = ipppro(ipproc(immel))
+ichrvr(ipp)   = 0
+ilisvr(ipp)   = 0
+ihisvr(ipp,1) = -1
+
+! --> State variables for coal particles
+
+do icla = 1, nclacp
+
+!       - Particles' Temperature K (of class ICLA)
+  ipp = ipppro(ipproc(itemp2(icla)))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+!       - Particles' Density kg/m3 (of class ICLA)
+  ipp = ipppro(ipproc(irom2(icla)))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+!       - Particles' Diameter m (of class ICLA)
+  ipp = ipppro(ipproc(idiam2(icla)))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+!       - Rate of coal consumption  (s-1) < 0
+!         (for class ICLA)
+  ipp = ipppro(ipproc(igmdch(icla)))
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+!       - Rate of light volatiles exhaust (s-1) < 0
+!         (for class ICLA)
+  ipp = ipppro(ipproc(igmdv1(icla)))
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+!       - Rate of heavy volatile exhaust (s-1) < 0
+!         (de la classe ICLA)
+  ipp = ipppro(ipproc(igmdv2(icla)))
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+!       - Rate of char oxidation by O2 (s-1) < 0
+!         (from class ICLA)
+  ipp = ipppro(ipproc(igmhet(icla)))
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+!       - Rate of char gazeification by CO2 (s-1) < 0
+!         (from class ICLA)
+  if ( ihtco2 .eq. 1 ) then
+    ipp = ipppro(ipproc(ighco2(icla)))
+    ichrvr(ipp)   = 0
+    ilisvr(ipp)   = 0
+    ihisvr(ipp,1) = -1
+  endif
+
+!       - Rate of drying (s-1) < 0
+!         (from class ICLA)
+  if ( ippmod(icp3pl) .eq. 1 ) then
+    ipp = ipppro(ipproc(igmsec(icla)))
+    ichrvr(ipp)   = 0
+    ilisvr(ipp)   = 0
+    ihisvr(ipp,1) = -1
+  endif
+
+!       - Mass fraction (of class ICLA) in mix
+  ipp = ipppro(ipproc(ix2(icla)))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+enddo
+
+! --> State variables for carrier gas phase
+
+!     - Temperature of gas mixture
+ipp = ipppro(ipproc(itemp1))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - Mass fraction (among gases) of  CHx1m
+ipp = ipppro(ipproc(iym1(1)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of CHx2m
+ipp = ipppro(ipproc(iym1(2)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of CO
+ipp = ipppro(ipproc(iym1(3)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of O2
+ipp = ipppro(ipproc(iym1(4)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of CO2
+ipp = ipppro(ipproc(iym1(5)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of H2O
+ipp = ipppro(ipproc(iym1(6)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of N2
+ipp = ipppro(ipproc(iym1(7)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+
+!===============================================================================
+! 3. Computation OPTION
+!===============================================================================
+
+! --- Relaxation for density (Advisable when starting combustion computation)
+!                            (Forbidden for unstationnary computation)
+!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
+
+srrom = 0.95d0
+
+
+!===============================================================================
+! 4. Physical constants
+!===============================================================================
+
+! ---  Laminar viscosity for enthalpy (dynamical diffusivity) kg/(m.s)
+diftl0 = 4.25d-5
+
+
+!----
+! END
+!----
+
+return
+
+end subroutine
+
+
+!===============================================================================
+
+
+subroutine uscpl1
+!================
+
+
+!===============================================================================
+!  FONCTION  :
+!  ---------
+
+
+!   SOUS-PROGRAMME DU MODULE LAGRANGIEN COUPLE CHARBON PULVERISE :
+!   --------------------------------------------------------------
+
+!    ROUTINE UTILISATEUR POUR PHYSIQUE PARTICULIERE
+
+!      COMBUSTION EULERIENNE DE CHARBON PULVERISE ET
+!      TRANSPORT LAGRANGIEN DES PARTICULES DE CHARBON
+
+!    ROUTINE UTILISATEUR POUR ENTREE DES PARAMETRES DE CALCUL
+!      (COMMONS)
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+!    nom           !type!mode !                   role                         !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
+!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
+!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
+!            --- tableau de travail
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use parall
+use period
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use ppincl
+
+!===============================================================================
+
+implicit none
+
+integer          ipp , icha
+
+!===============================================================================
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
+!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
+!       ET NON CELLE DE LA BIBLIOTHEQUE
+!===============================================================================
+
+if(1.eq.1) then
+  write(nfecra,9000)
+  call csexit (1)
+endif
+
+ 9000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@     COMBUSTION CHARBON PULVERISE COUPLE AU                 ',/,&
+'@     TRANSPORT LAGRANGIEN DES PARTICULES DE CHARBON :       ',/,&
+'@     LE SOUS-PROGRAMME UTILISATEUR uscpl1 DOIT ETRE COMPLETE',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+
+!===============================================================================
+! 1. VARIABLES TRANSPORTEES
+!===============================================================================
+
+!  Sortie chrono, suivi listing, sortie histo
+!     Si l'on n'affecte pas les tableaux suivants,
+!     les valeurs par defaut seront utilisees
+
+!       ICHRVR( ) = sortie chono (oui 1/non 0)
+!       ILISVR( ) = suivi listing (oui 1/non 0)
+!       IHISVR( ) = sortie historique (nombre de sondes et numeros)
+!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes definies
+!                            dans usini1
+
+
+! --> Variables propres a la phase gaz continue
+
+!      - Enthalpie de la phase gaz continue
+ipp = ipprtp(isca(ihm))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+! --> Variables propres a la phase continue
+
+do icha = 1, ncharb
+
+!       - Moyenne du traceur 1
+!         (representatif des MV legeres du charbon ICHA)
+  ipp = ipprtp(isca(if1m(icha)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Moyenne du traceur 2
+!         (representatif des MV lourdes du charbon ICHA)
+  ipp = ipprtp(isca(if2m(icha)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+enddo
+
+!     - Moyenne du traceur 3 (representatif du C libere sous forme de CO
+!       lors de la combustion heterogene)
+ipp = ipprtp(isca(if3m))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+!     - Variance associe au traceur 4 (representatif de l'air)
+ipp = ipprtp(isca(if4p2m))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+!===============================================================================
+! 2. VARIABLES ALGEBRIQUES OU D'ETAT
+!===============================================================================
+
+!  Sortie chrono, suivi listing, sortie histo
+!     Si l'on n'affecte pas les tableaux suivants,
+!     les valeurs par defaut seront utilisees
+
+!       ICHRVR( ) = sortie chono (oui 1/non 0)
+!       ILISVR( ) = suivi listing (oui 1/non 0)
+!       IHISVR( ) = sortie historique (nombre de sondes et numeros)
+!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes definies
+!                            dans usini1
+
+! --> Variables algebriques propres a la suspension gaz - particules
+
+!     - Masse molaire du melange gazeux
+ipp = ipppro(ipproc(immel))
+ichrvr(ipp)   = 0
+ilisvr(ipp)   = 0
+ihisvr(ipp,1) = -1
+
+!     - Temperature du melange gazeux
+ipp = ipppro(ipproc(itemp1))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - Fraction massique (dans le melange gazeux) du CHx1m
+ipp = ipppro(ipproc(iym1(1)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - Fraction massique (dans le melange gazeux) du CHx2m
+ipp = ipppro(ipproc(iym1(2)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - Fraction massique (dans le melange gazeux) du CO
+ipp = ipppro(ipproc(iym1(3)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - Fraction massique (dans le melange gazeux) du O2
+ipp = ipppro(ipproc(iym1(4)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - Fraction massique (dans le melange gazeux) du CO2
+ipp = ipppro(ipproc(iym1(5)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - Fraction massique (dans le melange gazeux) du H2O
+ipp = ipppro(ipproc(iym1(6)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - Fraction massique (dans le melange gazeux) du N2
+ipp = ipppro(ipproc(iym1(7)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+
+!===============================================================================
+! 3. OPTIONS DE CALCUL
+!===============================================================================
+
+! --- Coefficient de relaxation de la masse volumique
+!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
+
+srrom = 0.8d0
+
+
+!===============================================================================
+! 4. CONSTANTES PHYSIQUES
+!===============================================================================
+
+! ---> Viscosite laminaire associee au scalaire enthalpie
+!       DIFTL0 (diffusivite dynamique en kg/(m s))
+diftl0 = 4.25d-5
+
+
+!----
+! FIN
+!----
+
+return
+
+end subroutine
+
+
+!===============================================================================
+
+
+subroutine user_coal_ini1
+!========================
+
+
+!===============================================================================
+!  PURPOSE   :
+!  ---------
+!  User's routine to control outing of variables for pulverised coal combustion
+!  (these parameters are in COMMON)
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use parall
+use period
+use ihmpre
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use ppincl
+use ppcpfu
+use cs_coal_incl
+
+!===============================================================================
+
+implicit none
+
+integer          ipp , icla , icha
+
+!===============================================================================
+
+
+!===============================================================================
+! 1. TRANSPORTED VARIABLES
+!===============================================================================
+
+! OUTLET chrono, listing, and histo
+!     if below vector are not allocated, default values will be used
+
+!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
+!       ILISVR( ) =  listing outlet (Yes 1/No  0)
+!       IHISVR( ) =  histo outlet (number of roiqu and number)
+!       if IHISVR(.,1)  = -1 every probes defined in usini1
+
+
+! --> Variables for the mix (carrying gas and coal particles)
+
+!      - Enthalpy
+ipp = ipprtp(isca(ihm))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+! --> Variables for coal particles
+
+do icla = 1, nclacp
+
+!       - Char mass fraction (in class ICLA)
+  ipp = ipprtp(isca(ixck(icla)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Coal mass fraction (in class ICLA)
+  ipp = ipprtp(isca(ixch(icla)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Number of particles for 1 kg mix (from class ICLA)
+  ipp = ipprtp(isca(inp(icla)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Enthalpy J/kg (for class ICLA)
+  ipp = ipprtp(isca(ih2(icla)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Water mass fraction (in class ICLA)
+  if ( ippmod(icp3pl) .eq. 1 ) then
+    ipp = ipprtp(isca(ixwt(icla)))
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  endif
+enddo
+
+! --> Variables for the carrier phase
+
+do icha = 1, ncharb
+
+!       - Mean of 1 mixture fraction
+!         (from light volatiles of char ICHA)
+  ipp = ipprtp(isca(if1m(icha)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Mean of 2 mixture fraction
+!         (from heavy volatiles of char ICHA)
+  ipp = ipprtp(isca(if2m(icha)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+enddo
+
+! ---- Variables propres a la phase continue
+  if ( noxyd .ge. 2 ) then
+    ipp = ipprtp(isca(if4m))
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  endif
+  if ( noxyd .eq. 3 ) then
+    ipp = ipprtp(isca(if5m))
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  endif
+  if ( ippmod(iccoal) .ge. 1 ) then
+    ipp = ipprtp(isca(if6m))
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  endif
+  ipp = ipprtp(isca(if7m))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+  if ( ihtco2 .eq. 1 ) then
+    ipp = ipprtp(isca(if8m))
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  endif
+  if ( ihth2o .eq. 1 ) then
+    ipp = ipprtp(isca(if9m))
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  endif
+!
+
+  ipp = ipprtp(isca(ifvp2m))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!
+  if ( ieqco2 .ge. 1 ) then
+    ipp = ipprtp(isca(iyco2))
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  endif
+  if ( ieqnox .ge. 1 ) then
+    ipp = ipprtp(isca(iyhcn))
+    NOMVAR(IPP)  = 'FR_HCN'
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+    ipp = ipprtp(isca(iyno))
+    NOMVAR(IPP)  = 'FR_NO'
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+    ipp = ipprtp(isca(ihox))
+    NOMVAR(IPP)  = 'Enth_Ox'
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  endif
+
+!===============================================================================
+! 2. Sate variables
+!===============================================================================
+
+! OUTLET chrono, listing, and histo
+!     if below vector are not allocated, default values will be used
+
+!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
+!       ILISVR( ) =  listing outlet (Yes 1/No  0)
+!       IHISVR( ) =  histo outlet (number of roiqu and number)
+!       if IHISVR(.,1)  = -1 every probes defined in usini1
+
+! --> State varables for the mix
+
+!     - Mean Molar Mass
+ipp = ipppro(ipproc(immel))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+! --> State variables for coal particles
+
+do icla = 1, nclacp
+
+!       - Particles' Temperature K (of class ICLA)
+  ipp = ipppro(ipproc(itemp2(icla)))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+!       - Particles' Density kg/m3 (of class ICLA)
+  ipp = ipppro(ipproc(irom2(icla)))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+!       - Particles' Diameter m (of class ICLA)
+  ipp = ipppro(ipproc(idiam2(icla)))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+!       - Rate of coal consumption  (s-1) < 0
+!         (for class ICLA)
+  ipp = ipppro(ipproc(igmdch(icla)))
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+!       - Rate of light volatiles exhaust (s-1) < 0
+!         (for class ICLA)
+  ipp = ipppro(ipproc(igmdv1(icla)))
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+!       - Rate of heavy volatile exhaust (s-1) < 0
+!         (de la classe ICLA)
+  ipp = ipppro(ipproc(igmdv2(icla)))
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+!       - Rate of char oxidation by O2 (s-1) < 0
+!         (from class ICLA)
+  ipp = ipppro(ipproc(igmhet(icla)))
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+!       - Rate of char gazeification by CO2 (s-1) < 0
+!         (from class ICLA)
+  if ( ihtco2 .eq. 1 ) then
+    ipp = ipppro(ipproc(ighco2(icla)))
+    ichrvr(ipp)   = 0
+    ilisvr(ipp)   = 0
+    ihisvr(ipp,1) = -1
+  endif
+
+!       - Rate of char gazeification by H2O (s-1) < 0
+!         (from class ICLA)
+  if ( ihth2o .eq. 1 ) then
+    ipp = ipppro(ipproc(ighh2o(icla)))
+    ichrvr(ipp)   = 0
+    ilisvr(ipp)   = 0
+    ihisvr(ipp,1) = -1
+  endif
+
+!       - Rate of drying (s-1) < 0
+!         (from class ICLA)
+  if ( ippmod(icp3pl) .eq. 1 ) then
+    ipp = ipppro(ipproc(igmsec(icla)))
+    ichrvr(ipp)   = 0
+    ilisvr(ipp)   = 0
+    ihisvr(ipp,1) = -1
+  endif
+
+!       - Mass fraction (of class ICLA) in mix
+  ipp = ipppro(ipproc(ix2(icla)))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+enddo
+
+! --> State variables for carrier gas phase
+
+!     - Temperature of gas mixture
+ipp = ipppro(ipproc(itemp1))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - Mass fraction (among gases) of  CHx1m
+ipp = ipppro(ipproc(iym1(1)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of CHx2m
+ipp = ipppro(ipproc(iym1(2)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of CO
+ipp = ipppro(ipproc(iym1(3)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of H2S
+ipp = ipppro(ipproc(iym1(4)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of H2
+ipp = ipppro(ipproc(iym1(5)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of HCN
+ipp = ipppro(ipproc(iym1(6)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of NH3
+ipp = ipppro(ipproc(iym1(7)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of O2
+ipp = ipppro(ipproc(iym1(8)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of CO2
+ipp = ipppro(ipproc(iym1(9)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of H2O
+ipp = ipppro(ipproc(iym1(10)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of SO2
+ipp = ipppro(ipproc(iym1(11)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of N2
+ipp = ipppro(ipproc(iym1(12)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!===============================================================================
+! 3. Computation OPTION
+!===============================================================================
+
+! --- Relaxation for density (Advisable when starting combustion computation)
+!                            (Forbidden for unstationnary computation)
+!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
+
+srrom = 0.95d0
+
+!===============================================================================
+! 4. Physical constants
+!===============================================================================
+
+! ---  Laminar viscosity for enthalpy (dynamical diffusivity) kg/(m.s)
+diftl0 = 4.25d-5
+
+!----
+! END
+!----
+
+
+end subroutine
+
+
+!===============================================================================
+
+
+subroutine user_fuel_ini1
+!========================
+
+!===============================================================================
+!  PURPOSE   :
+!  ---------
+
+!  USER ROUTINE FOR ALLOCATE COMPUTATION PARAMETERS DEALING WITH FUEL
+!    (COMMONS)
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use parall
+use period
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use cs_fuel_incl
+use ppincl
+use ppcpfu
+
+!===============================================================================
+
+implicit none
+
+integer          ipp , icla
+
+!===============================================================================
+
+!===============================================================================
+! 1. TRANSPORTED VARIABLES
+!===============================================================================
+
+! OUTLET chrono, listing, and histo
+!     if below vector are not allocated, default values will be used
+
+!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
+!       ILISVR( ) =  listing outlet (Yes 1/No  0)
+!       IHISVR( ) =  histo outlet (number of roiqu and number)
+!       if IHISVR(.,1)  = -1 every probes defined in usini1
+
+
+! --> Variables for the mix (carrying gas and coal particles)
+
+!      - Enthalpy
+
+ipp = ipprtp(isca(ihm))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+! --> Variables for droplets
+
+do icla = 1, nclafu
+!       - Fuel mass fraction
+  ipp = ipprtp(isca(iyfol(icla)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Number of droplets in mix (1/kg)
+  ipp = ipprtp(isca(ing(icla)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+!       - Fuel enthalpy (J/kg)
+  ipp = ipprtp(isca(ih2(icla)))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+enddo
+
+
+! --> Variables for carrying gas
+
+!       - Mean of 1 mixture fraction (fuel vapor)
+ipp = ipprtp(isca(ifvap))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+!     - Mean of 3 mixture fraction
+!       (carbon from heterogeneous oxidation of char)
+ipp = ipprtp(isca(if7m))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+!     - Variance of 4 mixture fraction (air)
+ipp = ipprtp(isca(ifvp2m))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+!     - YCO2
+
+if ( ieqco2 .ge. 1 ) then
+  ipp = ipprtp(isca(iyco2))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
+!     - HCN and NO
+
+if ( ieqnox .eq. 1 ) then
+  ipp = ipprtp(isca(iyhcn))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+  ipp = ipprtp(isca(iyno))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+  ipp = ipprtp(isca(ihox))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
+!===============================================================================
+! 2. State variables
+!===============================================================================
+
+! OUTLET chrono, listing, and histo
+!     if below vector are not allocated, default values will be used
+
+!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
+!       ILISVR( ) =  listing outlet (Yes 1/No  0)
+!       IHISVR( ) =  histo outlet (number of roiqu and number)
+!       if IHISVR(.,1)  = -1 every probes defined in usini1
+
+
+! --> Variables for the mix (carrying gas and coal particles)
+
+!     - Mean Molar Mass of gases in kg
+ipp = ipppro(ipproc(immel))
+ichrvr(ipp)   = 0
+ilisvr(ipp)   = 0
+ihisvr(ipp,1) = -1
+
+! --> Variables for droplets
+
+do icla = 1, nclafu
+!       - Droplets' Temperature in K
+  ipp = ipppro(ipproc(itemp2(icla)))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+!       - Droplet's Density in kg/m3
+  ipp = ipppro(ipproc(irom2(icla)))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+!       - Droplet's Diameter
+  ipp = ipppro(ipproc(idiam2(icla)))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+!       - Heat flux (between gases and ICLA class droplets)
+  ipp = ipppro(ipproc(ih1hlf(icla)))
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+!       - Evaporation mass flow rate (s-1) < 0
+  ipp = ipppro(ipproc(igmeva(icla)))
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+!       - Char combsution mass flow rate
+  ipp = ipppro(ipproc(igmhtf(icla)))
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+enddo
+
+! --> State variables for carrying gas
+
+!     - Temperature for gases only (not mixed with droplets)
+ipp = ipppro(ipproc(itemp1))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!      - Nothing
+ipp = ipppro(ipproc(iym1(1)))
+ichrvr(ipp)   = 0
+ilisvr(ipp)   = 0
+ihisvr(ipp,1) = -1
+
+!     -  Mass fraction of fuel vapor
+!          (relative to pure gases : not mixed with droplets ..)
+ipp = ipppro(ipproc(iym1(2)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of CO
+ipp = ipppro(ipproc(iym1(3)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of H2S
+ipp = ipppro(ipproc(iym1(4)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of H2
+ipp = ipppro(ipproc(iym1(5)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of HCN
+ipp = ipppro(ipproc(iym1(6)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of NH3
+ipp = ipppro(ipproc(iym1(7)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of O2
+ipp = ipppro(ipproc(iym1(8)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of CO2
+ipp = ipppro(ipproc(iym1(9)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of H2O
+ipp = ipppro(ipproc(iym1(10)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of SO2
+ipp = ipppro(ipproc(iym1(11)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - mass fraction (among gases) of N2
+ipp = ipppro(ipproc(iym1(12)))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - Carbone Bilan
+ipp = ipppro(ipproc(ibcarbone))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - Oxygen bilan
+ipp = ipppro(ipproc(iboxygen))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!     - Hydrogen bilan
+ipp = ipppro(ipproc(ibhydrogen))
+ichrvr(ipp)   = 1
+ilisvr(ipp)   = 1
+ihisvr(ipp,1) = -1
+
+!===============================================================================
+! 3. Computation OPTION
+!===============================================================================
+
+! --- Relaxation for density (Advisable when starting combustion computation)
+!                            (Forbidden for unstationnary computation)
+!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
+
+srrom = 0.7d0
+
+
+!===============================================================================
+! 4. Physical constants
+!===============================================================================
+
+! ---  Laminar viscosity for enthalpy (dynamical diffusivity) kg/(m.s)
+diftl0 = 4.25d-5
+
+!----
+! END
+!----
+
+return
+
+end subroutine
+
+
+!===============================================================================
+
+
+subroutine useli1
+!================
+
+
+!===============================================================================
+!  Purpose  :
+!  -------
+!          User subroutines for input of calculation parameters,
+!       and to initialize variables used for specific electric models,
+!
+!
+!                 by addition of what is done in  USINI1
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+!
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use ppppar
+use ppthch
+use ppincl
+use elincl
+
+!===============================================================================
+
+implicit none
+
+integer          ipp, iesp , idimve
+
+!===============================================================================
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+! 0. This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
+!===============================================================================
+
+if(1.eq.1) then
+  write(nfecra,9000)
+  call csexit (1)
+endif
+!
+ 9000 format(                                                     &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input',/,                          &
+'@    =======',/,                                                 &
+'@     The user subroutine ''useli1'' must be completed',/, &
+'@     for electric module',/,                                    &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/)
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+
+!===============================================================================
+! 1. SOLVED VARIABLES
+!===============================================================================
+
+!  Chronological output, logging in listing, history output
+!       if we do not assign the following array values,
+!       default values will be used!
+!
+!     ichrvr( ) = chonological output (yes 1/no 0)
+!     ilisvr( ) = logging in listing (yes 1/no 0)
+!     ihisvr( ) = history output (number of probes and their numbers)
+!     if ihisvr(.,1)  = -1, output for all probes
+!
+! --> Current variables for electric modules
+
+! ---- Enthalpy
+ipp = ipprtp(isca(ihm))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+! ---- Real component of the electrical potential
+ipp = ipprtp(isca(ipotr))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+!---- Mass fraction of the different constituants of the phase
+if ( ngazg .gt. 1 ) then
+  do iesp = 1, ngazg-1
+    ipp = ipprtp(isca(iycoel(iesp)))
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  enddo
+endif
+
+! --> Specific variables for Joule effect for direct conduction
+!     Imaginary component of electrical potential
+if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
+  ipp = ipprtp(isca(ipoti))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
+! --> Specific variables for electric arc in 3D
+!     vector potential components
+if ( ippmod(ielarc).ge.2 ) then
+  do idimve = 1, ndimve
+    ipp = ipprtp(isca(ipotva(idimve)))
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  enddo
+endif
+
+! --> Ionic conduction module
+!     Not available in the present version of the code
+
+!===============================================================================
+! 2. Algebric or state variables
+!===============================================================================
+
+! ---- Temperature
+ipp = ipppro(ipproc(itemp) )
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+! ---- Electric conductivity
+ipp = ipppro(ipproc(ivisls(ipotr)))
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+! ---- Joule effect Power
+ipp = ipppro(ipproc(iefjou) )
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
+
+! ---- Real component of the current density
+do idimve = 1, ndimve
+  ipp = ipppro(ipproc(idjr(idimve)) )
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+enddo
+
+! ---- Imaginary component of the current density
+if ( ippmod(ieljou).eq.4 ) then
+  do idimve = 1, ndimve
+    ipp = ipppro(ipproc(idji(idimve)) )
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  enddo
+endif
+
+if ( ippmod(ielarc).ge.1 ) then
+
+! ---- Electromagnetic Forces (Laplace forces)
+  do idimve = 1, ndimve
+    ipp = ipppro(ipproc(ilapla(idimve)) )
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  enddo
+
+! ---- Absorption oefficient  or Radiative sources term
+  if ( ixkabe.gt.0 ) then
+    ipp = ipppro(ipproc(idrad) )
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  endif
+endif
+
+! ---- Electric charge (volumic)
+if ( ippmod(ielion).ge.1 ) then
+  ipp = ipppro(ipproc(iqelec) )
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
+
+!===============================================================================
+! 3. Calculation options
+!===============================================================================
+
+! --> Relaxation coefficient for mass density
+!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
+srrom = 0.d0
+
+! --> "Electric variables" scaling (Joule effect or electric arc version)
+!      IELCOR = 0 : NO Correction
+!      IELCOR = 1 : CORRECTION
+ielcor = 0
+
+!     Imposed current intensity (electric arc ) in Amp
+!        and Imposed Power (Joule effect for glass melting applications) in Watt
+!       These values have to be positive
+!
+couimp = 0.d0
+puisim = 0.d0
+
+!     Initial Potential Difference (positive value)
+dpot = 0.d0
+
+
+!----
+! FIN
+!----
+
+return
+end subroutine
+
+
+!===============================================================================
+
+
+subroutine uscti1
+!================
+
+
+!===============================================================================
+!  FONCTION  :
+!  ---------
+
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use parall
+use period
+use ppppar
+use ppthch
+use ppincl
+use ctincl
+
+!===============================================================================
+
+implicit none
+
+double precision cpa,cpe,cpv,hv0,rhoe,visc,conduc
+
+!===============================================================================
+
+!===============================================================================
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
+!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
+!       ET NON CELLE DE LA BIBLIOTHEQUE
+!===============================================================================
+
+if(1.eq.1) then
+  write(nfecra,9000)
+  call csexit (1)
+endif
+
+ 9000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET LORS DE L''ENTREE DES DONNEES         ',/,&
+'@    =========                                               ',/,&
+'@                      MODULE AEROREFRIGERANTS               ',/,&
+'@                                                            ',/,&
+'@     LE SOUS-PROGRAMME UTILISATEUR usctin DOIT ETRE COMPLETE',/,&
+'@                                                            ',/,&
+'@     Ce sous-programme utilisateur permet de definir les    ',/,&
+'@       options generales. Il est indispensable.             ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+!===============================================================================
+! 1.  PARAMETRES POUR L'ECART DE TEMPERATURE IMPOSE
+!===============================================================================
+
+!     ACTIVATION
+iaeeri = 0
+
+!     ECART DE REFRIGERATION A IMPOSER
+vaeeri = 13.d0
+
+!     FREQUENCE DE MODIFICATION DE LA TEMPERATURE
+iaeerp = 5
+
+!     PAS DE TEMPERATURE POUR LE CALCUL DE LA PENTE DE ECARTREF(TEAU)
+paseri = 0.015d0
+
+!     MAXIMUM DE LA TEMPERATURE D'EAU CHAUDE MOYENNE PONDEREE
+aetemx = 80.d0
+
+!     MINIMUM DE LA TEMPERATURE D'EAU REFROIDIE MOYENNE PONDEREE
+aetemn = 10.d0
+
+!     NOMBRE DE ZONES D'ECHANGES AYANT UNE FRONTIERE ENTREE EAU
+
+nbzsup = 2
+
+!     LISTE DES NBZSUP ZONES D'ECHANGES EN BORD DE L'ENTREE EAU
+
+lizsup(1) = 1
+lizsup(2) = 2
+
+!     NOMBRE DE ZONES D'ECHANGES AYANT UNE FRONTIERE SORTIE EAU
+nbzinf = 2
+
+!     LISTE DES NBZINF ZONES D'ECHANGES EN BORD DE LA SORTIE EAU
+
+lizinf(1) = 1
+lizinf(2) = 2
+
+!     INSTANT ACTIVATION ECART IMPOSE
+
+inbaei = 1000.D0
+
+!===============================================================================
+! 2.  POST-PROCESSING DES ZONES D'ECHANGES
+!===============================================================================
+
+ichrze = 1
+
+!===============================================================================
+! 3.  CALCUL SUITE AEROREFRIGERANT
+!===============================================================================
+
+isuict = isuite
+
+!===============================================================================
+! 4.  PROPRIETES DE L'AIR
+!===============================================================================
+
+! Il est deconseille de modifier ici ces proprietes
+
+cpa    = 1006.0d0
+cpv    = 1831.0d0
+cpe    = 4179.0d0
+hv0    = 2501600.0d0
+rhoe   = 997.85615d0
+visc   = 1.765d-5
+conduc = 0.02493d0
+
+call ctprof &
+!==========
+( cpa, cpv, cpe, hv0, rhoe, visc, conduc, gx, gy, gz )
+
+!----
+! FIN
+!----
 
 return
 end subroutine

@@ -81,10 +81,8 @@ cs_gascomb.f90
 libcscomb_la_LDFLAGS = -no-undefined
 
 combusers = \
-$(top_srcdir)/users/comb/user_coal_ini1.f90 \
 $(top_srcdir)/users/comb/user_coal_iniv.f90 \
 $(top_srcdir)/users/comb/user_fuel_bcond.f90 \
-$(top_srcdir)/users/comb/user_fuel_ini1.f90 \
 $(top_srcdir)/users/comb/user_fuel_iniv.f90
 
 libcscomb_la_SOURCES += $(combusers)

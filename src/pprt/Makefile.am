@@ -67,13 +67,5 @@ pptycl.f90 \
 ppvarp.f90
 libcspprt_la_LDFLAGS = -no-undefined
 
-pprtusers = \
-$(top_srcdir)/users/pprt/usppmo.f90
-
-libcspprt_la_SOURCES += $(pprtusers)
-
-pprtdir = $(pkgdatadir)/users/pprt
-pprt_DATA = $(pprtusers)
-
 clean-local:
 	-rm -f *__genmod.f90 *.mod

@@ -63,8 +63,6 @@ cfblusers = \
 $(top_srcdir)/users/cfbl/uscfcl.f90 \
 $(top_srcdir)/users/cfbl/uscfpv.f90 \
 $(top_srcdir)/users/cfbl/uscfth.f90 \
-$(top_srcdir)/users/cfbl/uscfx1.f90 \
-$(top_srcdir)/users/cfbl/uscfx2.f90 \
 $(top_srcdir)/users/cfbl/uscfxi.f90
 
 libcscfbl_la_SOURCES += $(cfblusers)
