@@ -84,6 +84,7 @@ use entsor
 use cstphy
 use optcal
 use lagran
+use pointe, only: coefau, coefbu
 use mesh
 
 !===============================================================================
@@ -119,6 +120,8 @@ integer          nswrgp, imligp
 integer          ipcrom, ipbrom, ipcroo, ipbroo, iivar
 integer          iitsla
 double precision epsrgp, climgp, extrap
+
+logical          ilved
 
 double precision, allocatable, dimension(:) :: viscf, viscb, coefax
 double precision, allocatable, dimension(:) :: smbr, rovsdt
@@ -304,15 +307,13 @@ else
 
 !===============================================================================
 ! 2.b CALCUL DU GRADIENT DE VITESSE POUR LE RIJ SSG
-!     GRDVIT(IEL,I,J) = dUi/dxj(IEL)
+!     ATTENTION: GRDVIT(IEL,J,I) = dUi/dxj(IEL)
 !===============================================================================
 
 ! CALCUL DU GRADIENT DES 3 COMPOSANTES DE LA VITESSE
 
   iccocg = 1
   inc    = 1
-
-! GRADIENT SUIVANT X
 
   nswrgp = nswrgr(iu)
   imligp = imligr(iu)
@@ -321,46 +322,29 @@ else
   climgp = climgr(iu)
   extrap = extrag(iu)
 
-  call grdcel &
-  !==========
- ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-   grdvit(1,1,1)   )
-
-
-! Gradient suivant Y
-
-  nswrgp = nswrgr(iv)
-  imligp = imligr(iv)
-  iwarnp = iwarni(iv)
-  epsrgp = epsrgr(iv)
-  climgp = climgr(iv)
-  extrap = extrag(iv)
-
-  call grdcel &
-  !==========
- ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
-   grdvit(1,2,1)   )
-
-
-! Gradient suivant Z
-
-  nswrgp = nswrgr(iw)
-  imligp = imligr(iw)
-  iwarnp = iwarni(iw)
-  epsrgp = epsrgr(iw)
-  climgp = climgr(iw)
-  extrap = extrag(iw)
-
-  call grdcel &
-  !==========
- ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
-   grdvit(1,3,1)   )
+  if (ivelco.eq.1) then
+  
+    ilved = .false.
+  
+    call grdvec &
+    !==========
+  ( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+    iwarnp , nfecra ,                                              &
+    epsrgp , climgp , extrap ,                                     &
+    ilved  ,                                                       &
+    rtpa(1,iu) ,  coefau , coefbu,                                 &
+    grdvit  )
+  
+  else
+  
+    call grdvni &
+    !==========
+  ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
+    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+    rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
+    grdvit )
+  
+  endif
 
 endif
 
