@@ -282,7 +282,6 @@ zufall.f90
 
 baseusers = \
 $(top_srcdir)/users/base/usalcl.f90 \
-$(top_srcdir)/users/base/usalin.f90 \
 $(top_srcdir)/users/base/usaste.f90 \
 $(top_srcdir)/users/base/usclim.f90 \
 $(top_srcdir)/users/base/ushist.f90 \

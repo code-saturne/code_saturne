@@ -587,10 +587,9 @@ class Study:
             users = os.path.join(src, 'REFERENCE')
             shutil.copytree(users_distpath, users)
 
-            for file in ['usini1.f90','usalin.f90']:
-                f = os.path.join(users, 'base', file)
-                if os.path.isfile(f):
-                    comments(f, self.use_gui)
+            f = os.path.join(users, 'base', 'usini1.f90')
+            if os.path.isfile(f):
+                comments(f, self.use_gui)
 
         # Copy data and source files from another case
 

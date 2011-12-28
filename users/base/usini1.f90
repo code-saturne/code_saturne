@@ -2436,6 +2436,123 @@ end subroutine
 !===============================================================================
 
 
+subroutine usalin
+!================
+
+!===============================================================================
+!  Purpose :
+! --------
+
+! --- User subroutine dedicated to the use of ALE (Arbitrary Lagrangian Eulerian)
+!     method :
+!
+!          Here one defines parameters and input data dedicated to the use ALE
+!          method
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use optcal
+use albase
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+! Local variables
+
+!===============================================================================
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+
+if(1.eq.1) return
+
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+!===============================================================================
+!
+!     Here are some examples that can be adapted and changed by Code Saturne
+!     users.
+!
+!
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+! --- Activation of ALE (Arbitrary Lagrangian Eulerian) method
+iale = 1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+! --- Number of iterations for fluid initialization. Contrary to ntmabs (for example)
+!     nalinf is not an absolute iteration number, meaning that in case of
+!     restart calculation nalinf corresponds to the number of iterations
+!     for fuid initialization beginning from the first current iteration of
+!     the calculation restart. In general nalinf = 0 in that case.
+
+nalinf = 75
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+! --- Maximum number of iterations in case of implicit Fluid Structure Coupling with structural
+!     calculations (internal and/or external(i.e. using Code_Aster)). NALIMX = 1, in case of
+!     explicit FSI algorithm.
+
+nalimx = 15
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+! --- Relative precision of sub-cycling Fluid Structure Coupling algorithm.
+epalim = 1.d-5
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+! --- Mesh viscosity modeling (cf. usvima)
+!     0 : isotropic
+!     1 : orthotropic
+iortvm = 0
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+!----
+! FORMATS
+!----
+
+!----
+! End
+!----
+
+return
+end subroutine
+
+
+!===============================================================================
+
+
 subroutine usati1
 !================
 
