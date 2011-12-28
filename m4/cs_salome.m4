@@ -30,17 +30,20 @@ AC_ARG_WITH(salome,
             [AS_HELP_STRING([--with-salome=PATH],
                             [specify prefix directory for SALOME])],
             [if test "x$withval" = "x"; then
-               if test -z "$ROOT_SALOME"; then
-                 with_salome=no
-               else
+               if test "x$ROOT_SALOME" != "x"; then
                  with_salome=$ROOT_SALOME
+               elif test "x$INST_ROOT" != "x" -a "x$KERNEL_ROOT_DIR" != "x"; then
+                 with_salome=$INST_ROOT
+                 ROOT_SALOME=$INST_ROOT
+               else
+                 with_salome=no
                fi
              else
-               if test -z "$ROOT_SALOME"; then
+               if test "x$ROOT_SALOME" = "x"; then
                  ROOT_SALOME=$with_salome
                fi
              fi],
-            [if test -z "$ROOT_SALOME"; then
+            [if test "x$ROOT_SALOME" = "x"; then
                with_salome=no
              else
                with_salome=$ROOT_SALOME
@@ -48,38 +51,104 @@ AC_ARG_WITH(salome,
 
 if test "x$with_salome" != "xno" ; then
 
-  SALOMEENV=$(find $with_salome -maxdepth 1 -name envSalome*.sh 2>/dev/null)
-  SALOMEPRE=$(find $with_salome -maxdepth 1 -name prerequis*.sh 2>/dev/null)
+  # Environment if the SALOMEENV or SALOMEPRE variables were defined
+  # (for compatibility with Code_Saturne 2.1.1 configure options)
 
-  SALOMERUN="$ROOT_SALOME/runSalome"
+  if test "x$SALOMEENV" != "x" -o "x$SALOMEPRE" != "x" ; then
 
-  KERNEL_ROOT_DIR=$(. $SALOMEPRE ; . $SALOMEENV ; echo $KERNEL_ROOT_DIR)
-  GUI_ROOT_DIR=$(. $SALOMEPRE ; . $SALOMEENV ; echo $GUI_ROOT_DIR)
-  YACS_ROOT_DIR=$(. $SALOMEPRE ; . $SALOMEENV ; echo $YACS_ROOT_DIR)
+    # If only one of the 2 variables is defined, define the other
+    if test -z "$SALOMEENV"; then
+      SALOMEENV=$(find $with_salome -maxdepth 1 -name envSalome*.sh 2>/dev/null)
+    fi
+    if test -z "$SALOMEPRE"; then
+      SALOMEPRE=$(find $with_salome -maxdepth 1 -name prerequis*.sh 2>/dev/null)
+    fi
 
-  OMNIIDL=$(. $SALOMEPRE ; which omniidl)
+    SALOMEENVCMD=". $SALOMEPRE ; . $SALOMEENV"
+
+  # Environment if the path given is that of the Salome install
+
+  else
+
+    # Recommended environment file for salome-platform.org installer builds
+    if test "x$SALOMEENVCMD" = "x"; then
+      salome_env=$(find $with_salome -maxdepth 2 -name salome.sh | tail -1 2>/dev/null)
+      if test "x$salome_env" != "x"; then
+        SALOMEENVCMD=". $salome_env"
+      fi
+    fi
+
+    # Environment for EDF or "universal binaries" type build for Salome 6.4
+    # Note that ROOT_SALOME is required but not exported in all cases.
+    if test "x$SALOMEENVCMD" = "x"; then
+      salome_env=$(find $with_salome -maxdepth 1 -name salome_modules*.sh 2>/dev/null)
+      if test "x$salome_env" != "x"; then
+        salome_pre=$(find $with_salome -maxdepth 1 -name salome_prerequisites_*_appli.sh 2>/dev/null)
+        if test "x$salome_pre" != "x"; then
+          SALOMEENVCMD=". $salome_pre; export ROOT_SALOME=$with_salome; . $salome_env"
+          SALOMEPRE="$salome_pre"
+        fi
+      fi
+    fi
+
+    # Environment file for EDF builds for Salome 6.3
+    if test "x$SALOMEENVCMD" = "x"; then
+      salome_env=$(find $with_salome -maxdepth 1 -name envSalome*.sh 2>/dev/null)
+      if test "x$salome_env" != "x"; then
+        salome_pre=$(find $with_salome -maxdepth 1 -name prerequis*.sh 2>/dev/null)
+        if test "x$salome_pre" != "x"; then
+          SALOMEENVCMD=". $salome_pre;. $salome_env"
+          SALOMEPRE="$salome_pre"
+        fi
+      fi
+
+    fi
+
+    if test "x$SALOMERUN" = "x"; then
+      if test -f "$ROOT_SALOME/runSalome"; then
+        SALOMERUN="$ROOT_SALOME/runSalome"
+      fi
+    fi
+
+    unset salome_pre
+    unset salome_env
+
+  fi
+
+  KERNEL_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $KERNEL_ROOT_DIR)
+  GUI_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $GUI_ROOT_DIR)
+  YACS_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $YACS_ROOT_DIR)
+
+  OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
+
+  # SALOME prequisites root directory environment variable
+  salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $PREREQUISITES_ROOT_DIR)
+  if test x"$salome_pre_rootdir" = x; then
+    salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $PREREQUIS_ROOT_DIR)
+  fi
 
   # Make sure omniidl will correcly work by forcing PYTHONPATH
-  OMNIIDLPYTHONPATH=$(. $SALOMEPRE ; \
-for d in `find $PREREQUIS_ROOT_DIR -name omniidl_be`
+  OMNIIDLPYTHONPATH=$(for d in `find $salome_pre_rootdir -name omniidl_be`
 do
   dirname `ls $d/../_omniidlmodule.so 2>/dev/null` 2>/dev/null
 done)
 
   # Make sure Python backend of omniidl will be found
-  OMNIIDLPYBE=$(. $SALOMEPRE ; \
-for d in `find $PREREQUIS_ROOT_DIR -name omniidl_be`
+  OMNIIDLPYBE=$(for d in `find $salome_pre_rootdir -name omniidl_be`
 do
   dirname `ls $d/python.py 2>/dev/null` 2>/dev/null
 done)
 
 fi
 
+  unset salome_pre_root_dir
+
 AC_SUBST(OMNIIDLPYTHONPATH)
 
-AC_ARG_VAR([SALOMEENV], [SALOME environment script])
-AC_ARG_VAR([SALOMEPRE], [SALOME pre-requisites script])
-AC_ARG_VAR([SALOMERUN], [SALOME main script (usually runSalome)])
+AC_ARG_VAR([SALOMEENVCMD], [SALOME environment setting commands])
+AC_ARG_VAR([SALOMERUN], [SALOME main script (usually runSalome or runAppli)])
+
+AC_SUBST([SALOMEPRE])
 
 CS_AC_TEST_SALOME_KERNEL
 CS_AC_TEST_SALOME_GUI
