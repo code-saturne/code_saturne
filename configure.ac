@@ -783,6 +783,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  salome/fsi_coupling/src/FSI_MILIEU/Makefile
                  salome/fsi_coupling/src/FSI_SATURNE/Makefile
                  salome/cfd_study/Makefile
+                 salome/cfd_study/doc/Makefile
                  salome/cfd_study/idl/Makefile
                  salome/cfd_study/resources/Makefile
                  salome/cfd_study/src/Makefile
@@ -793,7 +794,6 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  docs/developper/Makefile docs/developper/graphics/Makefile
                  docs/install/Makefile
                  docs/refcard/Makefile docs/refcard/graphics/Makefile
-                 docs/salome/Makefile
                  docs/theory/Makefile docs/theory/graphics/Makefile
                  docs/tutorial/Makefile docs/tutorial/graphics/Makefile
                  docs/user/Makefile docs/user/graphics/Makefile

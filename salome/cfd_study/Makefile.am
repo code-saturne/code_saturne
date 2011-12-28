@@ -22,4 +22,8 @@
 
 #-------------------------------------------------------------------------------
 
-SUBDIRS = idl resources src 
+if HAVE_SPHINX
+SPHINX_SUBDIRS = doc
+endif
+
+SUBDIRS = idl resources src $(SPHINX_SUBDIRS)
