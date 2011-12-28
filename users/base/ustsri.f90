@@ -83,7 +83,7 @@ subroutine ustsri &
 !          with Pij=-Rik.dUj/dxk - Rjk.dUi/dxk
 !
 !   grdvit is the
-!          grdvit(ncelet,i,j) = dUi/dxj
+!          grdvit(ncelet,j,i) = dUi/dxj
 
 
 ! WARNING

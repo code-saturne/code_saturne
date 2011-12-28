@@ -1,4 +1,12 @@
-* 13/12/2011 - David Monfort <david.monfort@edf.fr>
+* 28/12/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Fix for the Rij-epsilon SSG model (wrong velocity gradient calculation).
+  modified routines:
+    src/turb/reseps.f90
+    src/turb/resssg.f90
+    src/turb/turrij.f90
+    users/base/ustsri.f90
+
+* 28/12/2011 - David Monfort <david.monfort@edf.fr>
   Release of Code_Saturne 2.1.2.
 
 * 28/12/2011 - Yvan Fournier <yvan.fournier@edf.fr>

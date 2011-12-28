@@ -353,31 +353,31 @@ endif
 do iel=1,ncel
 
   xprod(1,1) = -2.0d0*(rtpa(iel,ir11)*grdvit(iel,1,1) +         &
-                       rtpa(iel,ir12)*grdvit(iel,1,2) +         &
-                       rtpa(iel,ir13)*grdvit(iel,1,3) )
-  xprod(1,2) = -(      rtpa(iel,ir11)*grdvit(iel,2,1) +         &
+                       rtpa(iel,ir12)*grdvit(iel,2,1) +         &
+                       rtpa(iel,ir13)*grdvit(iel,3,1) )
+  xprod(1,2) = -(      rtpa(iel,ir11)*grdvit(iel,1,2) +         &
                        rtpa(iel,ir12)*grdvit(iel,2,2) +         &
-                       rtpa(iel,ir13)*grdvit(iel,2,3) )         &
+                       rtpa(iel,ir13)*grdvit(iel,3,2) )         &
                -(      rtpa(iel,ir12)*grdvit(iel,1,1) +         &
-                       rtpa(iel,ir22)*grdvit(iel,1,2) +         &
-                       rtpa(iel,ir23)*grdvit(iel,1,3) )
-  xprod(1,3) = -(      rtpa(iel,ir11)*grdvit(iel,3,1) +         &
-                       rtpa(iel,ir12)*grdvit(iel,3,2) +         &
+                       rtpa(iel,ir22)*grdvit(iel,2,1) +         &
+                       rtpa(iel,ir23)*grdvit(iel,3,1) )
+  xprod(1,3) = -(      rtpa(iel,ir11)*grdvit(iel,1,3) +         &
+                       rtpa(iel,ir12)*grdvit(iel,2,3) +         &
                        rtpa(iel,ir13)*grdvit(iel,3,3) )         &
                -(      rtpa(iel,ir13)*grdvit(iel,1,1) +         &
-                       rtpa(iel,ir23)*grdvit(iel,1,2) +         &
-                       rtpa(iel,ir33)*grdvit(iel,1,3) )
-  xprod(2,2) = -2.0d0*(rtpa(iel,ir12)*grdvit(iel,2,1) +         &
+                       rtpa(iel,ir23)*grdvit(iel,2,1) +         &
+                       rtpa(iel,ir33)*grdvit(iel,3,1) )
+  xprod(2,2) = -2.0d0*(rtpa(iel,ir12)*grdvit(iel,1,2) +         &
                        rtpa(iel,ir22)*grdvit(iel,2,2) +         &
-                       rtpa(iel,ir23)*grdvit(iel,2,3) )
-  xprod(2,3) = -(      rtpa(iel,ir12)*grdvit(iel,3,1) +         &
-                       rtpa(iel,ir22)*grdvit(iel,3,2) +         &
+                       rtpa(iel,ir23)*grdvit(iel,3,2) )
+  xprod(2,3) = -(      rtpa(iel,ir12)*grdvit(iel,1,3) +         &
+                       rtpa(iel,ir22)*grdvit(iel,2,3) +         &
                        rtpa(iel,ir23)*grdvit(iel,3,3) )         &
-               -(      rtpa(iel,ir13)*grdvit(iel,2,1) +         &
+               -(      rtpa(iel,ir13)*grdvit(iel,1,2) +         &
                        rtpa(iel,ir23)*grdvit(iel,2,2) +         &
-                       rtpa(iel,ir33)*grdvit(iel,2,3) )
-  xprod(3,3) = -2.0d0*(rtpa(iel,ir13)*grdvit(iel,3,1) +         &
-                       rtpa(iel,ir23)*grdvit(iel,3,2) +         &
+                       rtpa(iel,ir33)*grdvit(iel,3,2) )
+  xprod(3,3) = -2.0d0*(rtpa(iel,ir13)*grdvit(iel,1,3) +         &
+                       rtpa(iel,ir23)*grdvit(iel,2,3) +         &
                        rtpa(iel,ir33)*grdvit(iel,3,3) )
   xprod(2,1) = xprod(1,2)
   xprod(3,1) = xprod(1,3)
@@ -402,21 +402,21 @@ do iel=1,ncel
   xaniso(3,2) = xaniso(2,3)
 
   xstrai(1,1) = grdvit(iel,1,1)
-  xstrai(1,2) = 0.5d0*(grdvit(iel,1,2)+grdvit(iel,2,1))
-  xstrai(1,3) = 0.5d0*(grdvit(iel,1,3)+grdvit(iel,3,1))
+  xstrai(1,2) = 0.5d0*(grdvit(iel,2,1)+grdvit(iel,1,2))
+  xstrai(1,3) = 0.5d0*(grdvit(iel,3,1)+grdvit(iel,1,3))
   xstrai(2,1) = xstrai(1,2)
   xstrai(2,2) = grdvit(iel,2,2)
-  xstrai(2,3) = 0.5d0*(grdvit(iel,2,3)+grdvit(iel,3,2))
+  xstrai(2,3) = 0.5d0*(grdvit(iel,3,2)+grdvit(iel,2,3))
   xstrai(3,1) = xstrai(1,3)
   xstrai(3,2) = xstrai(2,3)
   xstrai(3,3) = grdvit(iel,3,3)
 
   xrotac(1,1) = 0.d0
-  xrotac(1,2) = 0.5d0*(grdvit(iel,1,2)-grdvit(iel,2,1))
-  xrotac(1,3) = 0.5d0*(grdvit(iel,1,3)-grdvit(iel,3,1))
+  xrotac(1,2) = 0.5d0*(grdvit(iel,2,1)-grdvit(iel,1,2))
+  xrotac(1,3) = 0.5d0*(grdvit(iel,3,1)-grdvit(iel,1,3))
   xrotac(2,1) = -xrotac(1,2)
   xrotac(2,2) = 0.d0
-  xrotac(2,3) = 0.5d0*(grdvit(iel,2,3)-grdvit(iel,3,2))
+  xrotac(2,3) = 0.5d0*(grdvit(iel,3,2)-grdvit(iel,2,3))
   xrotac(3,1) = -xrotac(1,3)
   xrotac(3,2) = -xrotac(2,3)
   xrotac(3,3) = 0.d0

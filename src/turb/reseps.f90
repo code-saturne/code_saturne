@@ -350,13 +350,13 @@ if (iturb.eq.30) then
 else
   do iel = 1, ncel
     w9(iel) = -( rtpa(iel,ir11)*grdvit(iel,1,1) +               &
-                 rtpa(iel,ir12)*grdvit(iel,1,2) +               &
-                 rtpa(iel,ir13)*grdvit(iel,1,3) +               &
                  rtpa(iel,ir12)*grdvit(iel,2,1) +               &
-                 rtpa(iel,ir22)*grdvit(iel,2,2) +               &
-                 rtpa(iel,ir23)*grdvit(iel,2,3) +               &
                  rtpa(iel,ir13)*grdvit(iel,3,1) +               &
+                 rtpa(iel,ir12)*grdvit(iel,1,2) +               &
+                 rtpa(iel,ir22)*grdvit(iel,2,2) +               &
                  rtpa(iel,ir23)*grdvit(iel,3,2) +               &
+                 rtpa(iel,ir13)*grdvit(iel,1,3) +               &
+                 rtpa(iel,ir23)*grdvit(iel,2,3) +               &
                  rtpa(iel,ir33)*grdvit(iel,3,3) )
   enddo
 endif
