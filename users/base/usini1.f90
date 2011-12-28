@@ -2477,6 +2477,8 @@ implicit none
 
 ! Local variables
 
+integer iutile
+
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -2496,7 +2498,10 @@ if(1.eq.1) return
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ! --- Activation of ALE (Arbitrary Lagrangian Eulerian) method
-iale = 1
+iutile = 0
+if (iutile.eq.1) then
+  iale = 1
+endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
