@@ -323,9 +323,9 @@ else
   extrap = extrag(iu)
 
   if (ivelco.eq.1) then
-  
+
     ilved = .false.
-  
+
     call grdvec &
     !==========
   ( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
@@ -334,16 +334,16 @@ else
     ilved  ,                                                       &
     rtpa(1,iu) ,  coefau , coefbu,                                 &
     grdvit  )
-  
+
   else
-  
+
     call grdvni &
     !==========
   ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
     rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
     grdvit )
-  
+
   endif
 
 endif
