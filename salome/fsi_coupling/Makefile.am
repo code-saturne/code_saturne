@@ -22,4 +22,4 @@
 
 #-------------------------------------------------------------------------------
 
-SUBDIRS = idl resources src 
+SUBDIRS = idl libmilieu resources src

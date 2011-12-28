@@ -765,7 +765,6 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  preprocessor/pre-post/Makefile preprocessor/util/Makefile
                  preprocessor/tools/Makefile
                  salome/Makefile
-                 salome/libmilieu/Makefile
                  src/Makefile      src/apps/Makefile src/gui/Makefile
                  src/bft/Makefile  src/fvm/Makefile  src/mei/Makefile
                  src/base/Makefile src/atmo/Makefile src/cfbl/Makefile
@@ -777,6 +776,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  salome/fsi_coupling/Makefile
                  salome/fsi_coupling/idl/Makefile
+                 salome/fsi_coupling/libmilieu/Makefile
                  salome/fsi_coupling/resources/Makefile
                  salome/fsi_coupling/src/Makefile
                  salome/fsi_coupling/src/FSI_ASTER/Makefile

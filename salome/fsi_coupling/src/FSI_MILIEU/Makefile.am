@@ -33,7 +33,7 @@ salomeinclude_HEADERS = FSI_MILIEU.hxx
 
 libFSI_MILIEUEngine_la_SOURCES = FSI_MILIEU.cxx 
 nodist_libFSI_MILIEUEngine_la_SOURCES =
-libFSI_MILIEUEngine_la_CXXFLAGS = -I$(top_builddir)/salome/fsi_coupling/idl  $(SALOME_INCLUDES) -I$(top_srcdir)/salome/libmilieu
-libFSI_MILIEUEngine_la_LIBADD  = $(top_builddir)/salome/libmilieu/libmilieu.la $(top_builddir)/salome/fsi_coupling/idl/libSalomeIDLFSI.la $(SALOME_LIBS)
+libFSI_MILIEUEngine_la_CXXFLAGS = -I$(top_builddir)/salome/fsi_coupling/idl  $(SALOME_INCLUDES) -I$(top_srcdir)/salome/fsi_coupling/libmilieu
+libFSI_MILIEUEngine_la_LIBADD  = $(top_builddir)/salome/fsi_coupling/libmilieu/libmilieu.la $(top_builddir)/salome/fsi_coupling/idl/libSalomeIDLFSI.la $(SALOME_LIBS)
 libFSI_MILIEUEngine_la_LDFLAGS = 
 
