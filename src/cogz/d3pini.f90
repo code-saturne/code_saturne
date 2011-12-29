@@ -215,10 +215,10 @@ if ( isuite.eq.0 ) then
 
 ! ----- On donne la main a l'utilisateur
 
-    call usd3pi                                                   &
-    !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+    call cs_user_initialization &
+    !==========================
+  ( nvar   , nscal  ,                                            &
+    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 
 ! ----- En periodique et en parallele,
 !       il faut echanger ces initialisations

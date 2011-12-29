@@ -144,32 +144,36 @@ endif
 !   - Sous-programme utilisateur
 !     ==========================
 
-call usiniv                                                       &
-!==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+if (ippmod(iphpar).eq.0) then
 
-!     Avec l'interface, il peut y avoir eu initialisation,
-!       meme si usiniv n'est pas utilise.
+  call cs_user_initialization &
+  !==========================
+( nvar   , nscal  ,                                            &
+  dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+
+  !     Avec l'interface, il peut y avoir eu initialisation,
+  !       meme si usiniv n'est pas utilise.
   if (isuite.eq.0 .and. iihmpr.eq.1) then
     iusini = 1
   endif
 
+else
 
-! ON FAIT DE LA PHYSIQUE PARTICULIERE
-!   On pourrait remonter la partie init non utilisateur de ppiniv avant lecamo
-!     dans iniva0, mais il faudrait quand meme conserver ici l'appel a
-!     ppiniv car il encapsule les appels aux ss pgm utilisateur similaires a
-!     usiniv.
-if (ippmod(iphpar).ge.1) then
+  ! ON FAIT DE LA PHYSIQUE PARTICULIERE
+  !   On pourrait remonter la partie init non utilisateur de ppiniv avant lecamo
+  !     dans iniva0, mais il faudrait quand meme conserver ici l'appel a
+  !     ppiniv car il encapsule les appels aux ss pgm utilisateur similaires a
+  !     usiniv.
 
   iusini = 1
 
-  call ppiniv                                                     &
+  call ppiniv &
   !==========
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+
 endif
+
 
 ! Si l'utilisateur a change Ptot, on change P* en consequence,
 ! sinon on met Ptot a P0 + rho.g.r

@@ -52,8 +52,7 @@ intprf.f90
 libcsatmo_la_LDFLAGS = -no-undefined
 
 atmousers =  \
-$(top_srcdir)/users/atmo/usatcl.f90 \
-$(top_srcdir)/users/atmo/usativ.f90
+$(top_srcdir)/users/atmo/usatcl.f90
 
 libcsatmo_la_SOURCES += $(atmousers)
 

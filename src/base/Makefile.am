@@ -286,7 +286,6 @@ $(top_srcdir)/users/base/usaste.f90 \
 $(top_srcdir)/users/base/usclim.f90 \
 $(top_srcdir)/users/base/ushist.f90 \
 $(top_srcdir)/users/base/usini1.f90 \
-$(top_srcdir)/users/base/usiniv.f90 \
 $(top_srcdir)/users/base/uskpdc.f90 \
 $(top_srcdir)/users/base/usmpst.f90 \
 $(top_srcdir)/users/base/usphyv.f90 \
@@ -303,6 +302,7 @@ $(top_srcdir)/users/base/usvort.f90 \
 $(top_srcdir)/users/base/usvosy.f90 \
 $(top_srcdir)/users/base/usvpst.f90 \
 $(top_srcdir)/users/base/cs_user_coupling.c \
+$(top_srcdir)/users/base/cs_user_initialization.f90 \
 $(top_srcdir)/users/base/cs_user_mesh.c \
 $(top_srcdir)/users/base/cs_user_postprocess.c \
 $(top_srcdir)/users/base/cs_user_solver.c \

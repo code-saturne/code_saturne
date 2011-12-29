@@ -167,16 +167,10 @@ endif
 ! 4. USER  OPTIONS
 !===============================================================================
 
-call usativ                                                       &
-!==========
- ( nvar   , nscal  ,                                              &
-   nbmetd , nbmett , nbmetm ,                                     &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   tmmet  , ztmet  , zdmet  ,                                     &
-   xmet   , ymet   , pmer   ,                                     &
-   ttmet  , qvmet  , umet   ,                                     &
-   vmet   , ekmet  , epmet  ,                                     &
-   rmet   , tpmet  , phmet  )
+call cs_user_initialization &
+!==========================
+( nvar   , nscal  ,                                            &
+  dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 
 
 !----

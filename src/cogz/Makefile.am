@@ -69,11 +69,8 @@ libcscogz_la_LDFLAGS = -no-undefined
 
 cogzusers = \
 $(top_srcdir)/users/cogz/usd3pc.f90 \
-$(top_srcdir)/users/cogz/usd3pi.f90 \
 $(top_srcdir)/users/cogz/usebuc.f90 \
-$(top_srcdir)/users/cogz/usebui.f90 \
-$(top_srcdir)/users/cogz/uslwcc.f90 \
-$(top_srcdir)/users/cogz/uslwci.f90
+$(top_srcdir)/users/cogz/uslwcc.f90
 
 libcscogz_la_SOURCES += $(cogzusers)
 

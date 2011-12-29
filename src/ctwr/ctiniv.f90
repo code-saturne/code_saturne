@@ -133,10 +133,10 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 ! 3. USER  OPTIONS
 !===============================================================================
 
-call usctiv                                                       &
-!==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+call cs_user_initialization &
+!==========================
+( nvar   , nscal  ,                                            &
+  dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 
 
 !----

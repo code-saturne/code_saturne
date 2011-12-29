@@ -284,10 +284,12 @@ endif
 !===============================================================================
 
 if (ipass.eq.1) then
-  call useliv                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+
+  call cs_user_initialization &
+  !==========================
+( nvar   , nscal  ,                                            &
+  dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+
 endif
 
 

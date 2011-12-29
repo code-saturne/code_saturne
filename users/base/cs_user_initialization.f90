@@ -22,56 +22,48 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine usctiv &
-!================
+subroutine cs_user_initialization &
+!================================
 
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR : INITIALISATION DES VARIABLES DE CALCUL
-!     POUR LA PHYSIQUE PARTICULIERE: VERSION ATMOSPHERIQUE
-!     PENDANT DE USINIV
+!    User subroutine.
 
-! Cette routine est appelee en debut de calcul (suite ou non)
-!     avant le debut de la boucle en temps
+!    Initialize variables
 
-! Elle permet d'INITIALISER ou de MODIFIER (pour les calculs suite)
-!     les variables de calcul,
-!     les valeurs du pas de temps
+! This subroutine is called at beginning of the computation
+! (restart or not) before the loop time step
 
+! This subroutine enables to initialize or modify (for restart)
+!     unkown variables and time step values
 
-! On dispose ici de ROM et VISCL initialises par RO0 et VISCL0
-!     ou relues d'un fichier suite
-! On ne dispose des variables VISCLS, CP (quand elles sont
-!     definies) que si elles ont pu etre relues dans un fichier
-!     suite de calcul
+! rom and viscl values are equal to ro0 and viscl0 or initialize
+! by reading the restart file
+! viscls and cp variables (when there are defined) have no value
+! excepted if they are read from a restart file
 
-! Les proprietes physiaues sont accessibles dans le tableau
-!     PROPCE (prop au centre), PROPFA (aux faces internes),
-!     PROPFB (prop aux faces de bord)
-!     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL)
-!      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL)
-!      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL)
-!      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
+! Physical quantities are defined in the following arrays:
+!  propce (physical quantities defined at cell center),
+!  propfa (physical quantities defined at interior face center),
+!  propfa (physical quantities defined at border face center).
+!
+! Examples:
+!  propce(iel, ipproc(irom  )) means rom  (iel)
+!  propce(iel, ipproc(iviscl)) means viscl(iel)
+!  propce(iel, ipproc(icp   )) means cp   (iel)
+!  propce(iel, ipproc(ivisls(iscal))) means visls(iel, iscal)
+!  propfa(ifac, ipprof(ifluma(ivar))) means flumas(ifac, ivar)
+!  propfb(ifac, ipprob(irom )) means romb  (ifac)
+!  propfb(ifac, ipprob(ifluma(ivar))) means flumab(ifac, ivar)
 
-!      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
-
-!      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC)
-!      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
-
-
-
-
-
-! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-!     SE FERA EN STANDARD DANS LE SOUS PROGRAMME USPHYV
-!     ET PAS ICI
-
+! Modification of the behaviour law of physical quantities (rom, viscl,
+! viscls, cp) is not done here. It is the purpose of the user subroutine
+! usphyv
 
 ! Cells identification
 ! ====================
@@ -81,20 +73,21 @@ subroutine usctiv &
 ! but a more thorough description can be found in the user guide.
 
 
+!-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
+! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
+! rtp(ncelet, *)   ! ra ! <-- ! computed variables at cell centers at current  !
+!                  !    !     ! time steps                                     !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
+! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
+!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -111,18 +104,28 @@ use pointe
 use numvar
 use optcal
 use cstphy
+use cstnum
 use entsor
 use parall
 use period
 use ppppar
 use ppthch
+use coincl
+use cpincl
 use ppincl
+use atincl
 use ctincl
+use elincl
+use ppcpfu
+use cs_coal_incl
+use cs_fuel_incl
 use mesh
 
 !===============================================================================
 
 implicit none
+
+! Arguments
 
 integer          nvar   , nscal
 
@@ -133,9 +136,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 ! Local variables
 
 integer          iel, iutile
-integer          ilelt, nlelt
-
-double precision d2s3
 
 integer, allocatable, dimension(:) :: lstelt
 
@@ -145,7 +145,7 @@ integer, allocatable, dimension(:) :: lstelt
 !===============================================================================
 
 if(1.eq.1) then
-!       Indicateur de non passage dans le sous-programme
+!       Tag to know if a call to this subroutine has already been done
   iusini = 0
   return
 endif
@@ -155,60 +155,64 @@ endif
 
 
 !===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
+! 1.  Initialization of local variables
 !===============================================================================
 
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
 
-d2s3 = 2.d0/3.d0
+!===============================================================================
+! 2. Unknown variables initialization:
+!      ONLY done if there is no restart computation
+!===============================================================================
 
-!===============================================================================
-! 2. INITIALISATION DES INCONNUES :
-!      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
-!===============================================================================
+! --- Example:  isca(1) is the variable number in RTP related to the first
+!               user-defined scalar variable
+!               rtp(iel,isca(1)) is the value of this variable in cell number
+!               iel.
 
 if (isuite.eq.0) then
 
-!   --- Initialisation de la temperature de l'air a 11 deg Celsius
-!                      de l'humidite de l'air a 0.0063
-!       pour toutes les cellules
-
   do iel = 1, ncel
-
-    rtp(iel,isca(itemp4)) = 11.d0
-    rtp(iel,isca(ihumid)) = 0.0063d0
-
-  enddo
-
-!   --- Initialisation de la temperature de l'air a 20 deg Celsius
-!                      de l'humidite de l'air a 0.012
-!                      de la vitesse
-!       uniquement pour les cellules de couleur 6
-
-  CALL GETCEL('6',NLELT,LSTELT)
-  !==========
-
-  do ilelt = 1, nlelt
-
-    iel = lstelt(ilelt)
-
-    rtp(iel,iu) = -0.5d0
-
-    rtp(iel,isca(itemp4)) = 20.d0
-    rtp(iel,isca(ihumid)) = 0.012d0
-
+    rtp(iel,isca(1)) = 25.d0
   enddo
 
 endif
 
-!----
-! FORMATS
-!----
+
+!===============================================================================
+! 3. Time step:
+!===============================================================================
+
+! --- Example: We do a computation restart with a variable in time and constant
+!              in space time step or with a variable in time and space time
+!              step. We want to modify the time step given by the reading of
+!              the restart file (in order to overcome a too slow evolution
+!              for instance)
+
+! The test below allows checking that the following example compiles
+! while disabling it by default.
+
+iutile = 0
+
+if(iutile.eq.0) return
+
+! ----------------------------------------------
+
+
+if(isuite.eq.1.and.(idtvar.eq.1.or.idtvar.eq.2)) then
+  do iel = 1, ncel
+    dt (iel) = 10.d0*dt(iel)
+  enddo
+endif
+
+!--------
+! Formats
+!--------
 
 !----
-! FIN
+! End
 !----
 
 ! Deallocate the temporary array

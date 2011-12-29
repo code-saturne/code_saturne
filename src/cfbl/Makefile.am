@@ -62,8 +62,7 @@ libcscfbl_la_LDFLAGS = -no-undefined
 cfblusers = \
 $(top_srcdir)/users/cfbl/uscfcl.f90 \
 $(top_srcdir)/users/cfbl/uscfpv.f90 \
-$(top_srcdir)/users/cfbl/uscfth.f90 \
-$(top_srcdir)/users/cfbl/uscfxi.f90
+$(top_srcdir)/users/cfbl/uscfth.f90
 
 libcscfbl_la_SOURCES += $(cfblusers)
 

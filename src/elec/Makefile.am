@@ -1,4 +1,4 @@
-## Process this file with automake to produce Makefile.in
+
 
 #-------------------------------------------------------------------------------
 
@@ -54,7 +54,6 @@ libcselec_la_LDFLAGS = -no-undefined
 elecusers = \
 $(top_srcdir)/users/elec/uselcl.f90 \
 $(top_srcdir)/users/elec/uselen.f90 \
-$(top_srcdir)/users/elec/useliv.f90 \
 $(top_srcdir)/users/elec/uselph.f90 \
 $(top_srcdir)/users/elec/uselrc.f90 \
 $(top_srcdir)/users/elec/usetcl.f90
