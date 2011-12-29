@@ -80,13 +80,5 @@ cs_fuel_verify.f90 \
 cs_gascomb.f90
 libcscomb_la_LDFLAGS = -no-undefined
 
-combusers = \
-$(top_srcdir)/users/comb/user_fuel_bcond.f90
-
-libcscomb_la_SOURCES += $(combusers)
-
-combdir = $(pkgdatadir)/users/comb
-comb_DATA = $(combusers)
-
 clean-local:
 	-rm -f *__genmod.f90 *.mod

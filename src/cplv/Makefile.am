@@ -75,14 +75,5 @@ cpvarp.f90 \
 cpveri.f90
 libcscplv_la_LDFLAGS = -no-undefined
 
-cplvusers = \
-$(top_srcdir)/users/cplv/uscpcl.f90 \
-$(top_srcdir)/users/cplv/uscplc.f90
-
-libcscplv_la_SOURCES += $(cplvusers)
-
-cplvdir = $(pkgdatadir)/users/cplv
-cplv_DATA = $(cplvusers)
-
 clean-local:
 	-rm -f *__genmod.f90 *.mod

@@ -781,27 +781,12 @@ do while (iterns.le.nterup)
   !     - Sous-programme utilisateur
   !       ==========================
 
-  if (ippmod(iphpar).eq.0) then
-
-    call usclim &
-    !==========
-  ( nvar   , nscal  ,                                              &
-    icodcl , itrifb , itypfb ,                                     &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , rcodcl )
-
-  else
-
-    ! ON FAIT DE LA PHYSIQUE PARTICULIERE
-
-    call ppclim &
-    !==========
+  call cs_user_boundary_conditions &
+  !===============================
   ( nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb , izfppp ,                            &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , rcodcl )
-
-  endif
 
   !     - Interface Code_Saturne
   !       ======================

@@ -67,15 +67,5 @@ pdfpp3.f90 \
 pdfpp4.f90
 libcscogz_la_LDFLAGS = -no-undefined
 
-cogzusers = \
-$(top_srcdir)/users/cogz/usd3pc.f90 \
-$(top_srcdir)/users/cogz/usebuc.f90 \
-$(top_srcdir)/users/cogz/uslwcc.f90
-
-libcscogz_la_SOURCES += $(cogzusers)
-
-cogzdir = $(pkgdatadir)/users/cogz
-cogz_DATA = $(cogzusers)
-
 clean-local:
 	-rm -f *__genmod.f90 *.mod

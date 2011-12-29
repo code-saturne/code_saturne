@@ -51,13 +51,5 @@ atvarp.f90 \
 intprf.f90
 libcsatmo_la_LDFLAGS = -no-undefined
 
-atmousers =  \
-$(top_srcdir)/users/atmo/usatcl.f90
-
-libcsatmo_la_SOURCES += $(atmousers)
-
-atmodir = $(pkgdatadir)/users/atmo
-atmo_DATA = $(atmousers)
-
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

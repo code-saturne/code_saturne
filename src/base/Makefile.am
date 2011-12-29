@@ -283,7 +283,6 @@ zufall.f90
 baseusers = \
 $(top_srcdir)/users/base/usalcl.f90 \
 $(top_srcdir)/users/base/usaste.f90 \
-$(top_srcdir)/users/base/usclim.f90 \
 $(top_srcdir)/users/base/ushist.f90 \
 $(top_srcdir)/users/base/usini1.f90 \
 $(top_srcdir)/users/base/uskpdc.f90 \
@@ -301,6 +300,7 @@ $(top_srcdir)/users/base/usvist.f90 \
 $(top_srcdir)/users/base/usvort.f90 \
 $(top_srcdir)/users/base/usvosy.f90 \
 $(top_srcdir)/users/base/usvpst.f90 \
+$(top_srcdir)/users/base/cs_user_boundary_conditions.f90 \
 $(top_srcdir)/users/base/cs_user_coupling.c \
 $(top_srcdir)/users/base/cs_user_initialization.f90 \
 $(top_srcdir)/users/base/cs_user_mesh.c \

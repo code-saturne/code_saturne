@@ -73,7 +73,6 @@ ctvarp.f90
 libcsctwr_la_LDFLAGS = -no-undefined
 
 ctwrusers = \
-$(top_srcdir)/users/ctwr/usctcl.f90 \
 $(top_srcdir)/users/ctwr/usctdz.f90
 
 libcsctwr_la_SOURCES += $(ctwrusers)

@@ -22,11 +22,11 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine usclim &
-!================
+subroutine cs_user_boundary_conditions &
+!=====================================
 
  ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb ,                                     &
+   icodcl , itrifb , itypfb , izfppp ,                            &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl )
 
@@ -97,7 +97,7 @@ subroutine usclim &
 !      iparoi   |   Wall (smooth)
 !      iparug   |   Rough wall
 
-!     These integers are defined elsewhere (in paramx.h header).
+!     These integers are defined elsewhere (in paramx.f90 module).
 !     Their value is greater than or equal to 1 and less than or  equal to
 !     ntypmx (value fixed in paramx.h)
 
@@ -281,6 +281,38 @@ subroutine usclim &
 !       the code).
 
 
+! Boundary condition types for compressible flows
+! ===============================================
+
+! En compressible, on ne peut affecter que les conditions aux
+!  limites predefinies
+
+!    IPAROI, ISYMET, IESICF, ISSPCF, ISOPCF, IERUCF, IEQHCF
+
+!    IPAROI : paroi standard
+!    ISYMET : symetrie standard
+
+!    IESICF, ISSPCF, ISOPCF, IERUCF, IEQHCF : entree/sortie
+
+! Pour les entrees/sorties, on peut
+!  imposer une valeur pour la turbulence et les scalaires
+!  passifs dans RCODCL(.,.,1) pour le cas ou le flux de masse
+!  serait entrant. Si on ne le fait pas, une condition de
+!  nul est appliquee.
+
+! IESICF : entree sortie imposee (par exemple entree supersonique)
+!         l'utilisateur impose la vitesse et toutes les
+!           variables thermodynamiques
+! ISSPCF : sortie supersonique
+!         l'utilisateur n'impose rien
+! ISOPCF : sortie subsonique a pression imposee
+!         l'utilisateur impose la pression
+! IERUCF : entree subsonique a vitesse et rho imposes
+!         l'utilisateur impose la vitesse et la masse volumique
+! IEQHCF : entree subsonique a debit et debit enthalpique imposes
+!         a implementer
+
+
 ! Consistency rules
 ! =================
 
@@ -349,8 +381,9 @@ subroutine usclim &
 !                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
-! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-! itypfb           ! ia ! --> ! boundary face types                            !
+! itrifb(nfabor)   ! ia ! <-- ! indirection for boundary faces ordering        !
+! itypfb(nfabor)   ! ia ! --> ! boundary face types                            !
+! izfppp(nfabor)   ! ia ! --> ! boundary face zone number                      !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -389,6 +422,16 @@ use entsor
 use parall
 use period
 use ihmpre
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use ppincl
+use ppcpfu
+use atincl
+use ctincl
+use elincl
+use cs_fuel_incl
 use mesh
 
 !===============================================================================
@@ -401,6 +444,7 @@ integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
+integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -411,10 +455,11 @@ double precision rcodcl(nfabor,nvar,3)
 ! Local variables
 
 integer          ifac, iel, ii, ivar
+integer          izone
 integer          ilelt, nlelt
 double precision uref2, d2s3
-double precision rhomoy, dh, ustar2
-double precision xintur
+double precision rhomoy, xdh, xustar2
+double precision xitur
 double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
@@ -508,21 +553,21 @@ do ilelt = 1, nlelt
   !     variable density)
 
   !     Hydraulic diameter
-  dh     = 0.075d0
+  xdh     = 0.075d0
 
   !   Calculation of friction velocity squared (ustar2)
   !     and of k and epsilon at the inlet (xkent and xeent) using
   !     standard laws for a circular pipe
   !     (their initialization is not needed here but is good practice).
   rhomoy = propfb(ifac,ipprob(irom))
-  ustar2 = 0.d0
+  xustar2 = 0.d0
   xkent  = epzero
   xeent  = epzero
 
   call keendb                                            &
   !==========
-( uref2, dh, rhomoy, viscl0, cmu, xkappa,   &
-  ustar2, xkent, xeent )
+( uref2, xdh, rhomoy, viscl0, cmu, xkappa,   &
+  xustar2, xkent, xeent )
 
   ! itytur is a flag equal to iturb/10
   if    (itytur.eq.2) then
@@ -593,9 +638,9 @@ do ilelt = 1, nlelt
 
   ! Hydraulic diameter
 
-  dh     = 0.075d0
+  xdh     = 0.075d0
   ! Turbulence intensity
-  xintur = 0.02d0
+  xitur = 0.02d0
 
   ! Calculation of k and epsilon at the inlet (xkent and xeent) using
   !   the turbulence intensity and standard laws for a circular pipe
@@ -605,7 +650,7 @@ do ilelt = 1, nlelt
 
   call keenin                                                   &
   !==========
-( uref2, xintur, dh, cmu, xkappa, xkent, xeent )
+( uref2, xitur, xdh, cmu, xkappa, xkent, xeent )
 
   ! itytur is a flag equal to iturb/10
   if    (itytur.eq.2) then
