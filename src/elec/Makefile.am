@@ -51,15 +51,5 @@ elvarp.f90 \
 elveri.f90
 libcselec_la_LDFLAGS = -no-undefined
 
-elecusers = \
-$(top_srcdir)/users/elec/uselen.f90 \
-$(top_srcdir)/users/elec/uselph.f90 \
-$(top_srcdir)/users/elec/uselrc.f90
-
-libcselec_la_SOURCES += $(elecusers)
-
-elecdir = $(pkgdatadir)/users/elec
-elec_DATA = $(elecusers)
-
 clean-local:
 	-rm -f *__genmod.f90 *.mod

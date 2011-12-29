@@ -54,17 +54,5 @@ raysol.f90 \
 rmodak.f90
 libcsrayt_la_LDFLAGS = -no-undefined
 
-raytusers = \
-$(top_srcdir)/users/rayt/usray1.f90 \
-$(top_srcdir)/users/rayt/usray2.f90 \
-$(top_srcdir)/users/rayt/usray3.f90 \
-$(top_srcdir)/users/rayt/usray4.f90 \
-$(top_srcdir)/users/rayt/usray5.f90
-
-libcsrayt_la_SOURCES += $(raytusers)
-
-raytdir = $(pkgdatadir)/users/rayt
-rayt_DATA = $(raytusers)
-
 clean-local:
 	-rm -f *__genmod.f90 *.mod

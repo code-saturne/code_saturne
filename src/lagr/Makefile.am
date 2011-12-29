@@ -105,25 +105,5 @@ lagune.f90 \
 ouestu.f90
 libcslagr_la_LDFLAGS = -no-undefined
 
-lagrusers = \
-$(top_srcdir)/users/lagr/uslabo.f90 \
-$(top_srcdir)/users/lagr/usladp.f90 \
-$(top_srcdir)/users/lagr/uslaed.f90 \
-$(top_srcdir)/users/lagr/uslaen.f90 \
-$(top_srcdir)/users/lagr/uslafe.f90 \
-$(top_srcdir)/users/lagr/uslag1.f90 \
-$(top_srcdir)/users/lagr/uslag2.f90 \
-$(top_srcdir)/users/lagr/uslain.f90 \
-$(top_srcdir)/users/lagr/uslapr.f90 \
-$(top_srcdir)/users/lagr/uslaru.f90 \
-$(top_srcdir)/users/lagr/uslast.f90 \
-$(top_srcdir)/users/lagr/uslatc.f90 \
-$(top_srcdir)/users/lagr/uslatp.f90
-
-libcslagr_la_SOURCES += $(lagrusers)
-
-lagrdir = $(pkgdatadir)/users/lagr
-lagr_DATA = $(lagrusers)
-
 clean-local:
 	-rm -f *__genmod.f90 *.mod

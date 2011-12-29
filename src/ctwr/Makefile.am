@@ -72,13 +72,5 @@ cttssc.f90 \
 ctvarp.f90
 libcsctwr_la_LDFLAGS = -no-undefined
 
-ctwrusers = \
-$(top_srcdir)/users/ctwr/usctdz.f90
-
-libcsctwr_la_SOURCES += $(ctwrusers)
-
-ctwrdir = $(pkgdatadir)/users/ctwr
-ctwr_DATA = $(ctwrusers)
-
 clean-local:
 	-rm -f *__genmod.f90 *.mod

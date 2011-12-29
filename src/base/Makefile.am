@@ -62,11 +62,6 @@ $(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
-# Add user_modules file to distribution as it is not automatically accounted
-# for by automake
-
-EXTRA_DIST = $(top_srcdir)/users/base/user_modules.f90
-
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
@@ -279,41 +274,6 @@ vissec.f90 \
 visecv.f90 \
 zufall.f90
 
-
-baseusers = \
-$(top_srcdir)/users/base/usalcl.f90 \
-$(top_srcdir)/users/base/usaste.f90 \
-$(top_srcdir)/users/base/ushist.f90 \
-$(top_srcdir)/users/base/usini1.f90 \
-$(top_srcdir)/users/base/uskpdc.f90 \
-$(top_srcdir)/users/base/usmpst.f90 \
-$(top_srcdir)/users/base/usphyv.f90 \
-$(top_srcdir)/users/base/usproj.f90 \
-$(top_srcdir)/users/base/uspt1d.f90 \
-$(top_srcdir)/users/base/ussmag.f90 \
-$(top_srcdir)/users/base/usstru.f90 \
-$(top_srcdir)/users/base/usthht.f90 \
-$(top_srcdir)/users/base/ustmgr.f90 \
-$(top_srcdir)/users/base/ustsma.f90 \
-$(top_srcdir)/users/base/usvima.f90 \
-$(top_srcdir)/users/base/usvist.f90 \
-$(top_srcdir)/users/base/usvort.f90 \
-$(top_srcdir)/users/base/usvosy.f90 \
-$(top_srcdir)/users/base/usvpst.f90 \
-$(top_srcdir)/users/base/cs_user_boundary_conditions.f90 \
-$(top_srcdir)/users/base/cs_user_coupling.c \
-$(top_srcdir)/users/base/cs_user_initialization.f90 \
-$(top_srcdir)/users/base/cs_user_mesh.c \
-$(top_srcdir)/users/base/cs_user_postprocess.c \
-$(top_srcdir)/users/base/cs_user_solver.c \
-$(top_srcdir)/users/base/cs_user_source_terms.f90
-
-libcsbase_la_SOURCES += $(baseusers)
-
-basedir = $(pkgdatadir)/users/base
-base_DATA = $(baseusers) \
-$(top_srcdir)/users/base/user_modules.f90
-
 # Conditionally compiled extensions
 
 if HAVE_PARAMEDMEM
@@ -329,4 +289,3 @@ endif
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
-# Library source files

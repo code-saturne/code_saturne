@@ -325,8 +325,8 @@ class Study:
             os.mkdir(src_syr)
             data_ref_syr = os.path.join(data_syr, 'REFERENCE')
             shutil.copytree(src_ref_syr, data_ref_syr)
-            users_ref_syr = os.path.join(src_syr, 'REFERENCE')
-            shutil.copytree(os.path.join(syr_home, 'usr'), users_ref_syr)
+            user_ref_syr = os.path.join(src_syr, 'REFERENCE')
+            shutil.copytree(os.path.join(syr_home, 'usr'), user_ref_syr)
 
 
     def create_syrthes_cases(self, repbase):
@@ -540,7 +540,7 @@ class Study:
 
         datadir = self.package.pkgdatadir
         data_distpath  = os.path.join(datadir, 'data')
-        users_distpath = os.path.join(datadir, 'users')
+        user_distpath = os.path.join(datadir, 'user')
 
         try:
             os.mkdir(casename)
@@ -584,10 +584,10 @@ class Study:
 
         if self.use_ref:
 
-            users = os.path.join(src, 'REFERENCE')
-            shutil.copytree(users_distpath, users)
+            user = os.path.join(src, 'REFERENCE')
+            shutil.copytree(user_distpath, user)
 
-            f = os.path.join(users, 'base', 'usini1.f90')
+            f = os.path.join(user, 'usini1.f90')
             if os.path.isfile(f):
                 comments(f, self.use_gui)
 

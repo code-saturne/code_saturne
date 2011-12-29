@@ -394,8 +394,8 @@ changelog:
 # Done with two sed passes (do not work otherwise)
 
 install-data-hook:
-	cd $(DESTDIR)$(pkgdatadir)/users && \
-	f90_user_files=`ls */*.f90 2>/dev/null`; \
+	cd $(DESTDIR)$(pkgdatadir)/user && \
+	f90_user_files=`ls *.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \
 	version1="\!                      Code_Saturne version $(VERSION)\n"; \
 	version2="\!                      --------------------------"; \
@@ -406,7 +406,7 @@ install-data-hook:
 	  $(SED) -e "/$${comment1}/,/$${comment2}/d" > "$${file}.tmp" && \
 	  mv "$${file}.tmp" "$${file}"; \
 	done ;\
-	c_user_files=`ls */*.c 2>/dev/null`; \
+	c_user_files=`ls *.c 2>/dev/null`; \
 	stubvers="\/\* VERS \*\/"; \
 	version="\/\* Code_Saturne version $(VERSION) \*\/"; \
 	comment="\/\* REMOVE_LINE_FOR_USE_OF_SUBROUTINE \*\/"; \
