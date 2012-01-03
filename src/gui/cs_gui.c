@@ -4150,7 +4150,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
           }
           fprintf(file, "\n");
         }
-        else
+        else {
           fprintf(file, "s, x, y, z");
           for (ii = 0 ; ii < nvar_prop ; ii++) {
             char *buffer = _get_profile_label_name(i, ii);
@@ -4158,6 +4158,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
             BFT_FREE(buffer);
           }
           fprintf(file, "\n");
+        }
         BFT_FREE(filename);
         BFT_FREE(title);
       }
