@@ -245,7 +245,7 @@ _apply_vector_transfo(cs_real_t    matrix[3][4],
  *----------------------------------------------------------------------------*/
 
 static void
-_apply_vector_rotation(cs_real_t   matrix[3][4],
+_apply_vector_rotation_ni(cs_real_t   matrix[3][4],
                        cs_real_t   x_in,
                        cs_real_t   y_in,
                        cs_real_t   z_in,
@@ -260,7 +260,7 @@ _apply_vector_rotation(cs_real_t   matrix[3][4],
 
 /*----------------------------------------------------------------------------
  * Compute a matrix/vector product to apply a transformation to a given
- * vector.
+ * interleaved vector.
  *
  * parameters:
  *   matrix[3][4] --> matrix of the transformation in homogeneous coord.
@@ -269,8 +269,8 @@ _apply_vector_rotation(cs_real_t   matrix[3][4],
  *----------------------------------------------------------------------------*/
 
 static void
-_apply_vector_rotation_i(cs_real_t    matrix[3][4],
-                         cs_real_t   *xyz)
+_apply_vector_rotation(cs_real_t    matrix[3][4],
+                       cs_real_t   *xyz)
 {
   cs_int_t  i;
 
@@ -301,25 +301,25 @@ _apply_vector_rotation_i(cs_real_t    matrix[3][4],
  *----------------------------------------------------------------------------*/
 
 static void
-_apply_tensor_rotation(cs_real_t   matrix[3][4],
-                       cs_real_t   in11,
-                       cs_real_t   in12,
-                       cs_real_t   in13,
-                       cs_real_t   in21,
-                       cs_real_t   in22,
-                       cs_real_t   in23,
-                       cs_real_t   in31,
-                       cs_real_t   in32,
-                       cs_real_t   in33,
-                       cs_real_t   *out11,
-                       cs_real_t   *out12,
-                       cs_real_t   *out13,
-                       cs_real_t   *out21,
-                       cs_real_t   *out22,
-                       cs_real_t   *out23,
-                       cs_real_t   *out31,
-                       cs_real_t   *out32,
-                       cs_real_t   *out33)
+_apply_tensor_rotation_ni(cs_real_t   matrix[3][4],
+                          cs_real_t   in11,
+                          cs_real_t   in12,
+                          cs_real_t   in13,
+                          cs_real_t   in21,
+                          cs_real_t   in22,
+                          cs_real_t   in23,
+                          cs_real_t   in31,
+                          cs_real_t   in32,
+                          cs_real_t   in33,
+                          cs_real_t   *out11,
+                          cs_real_t   *out12,
+                          cs_real_t   *out13,
+                          cs_real_t   *out21,
+                          cs_real_t   *out22,
+                          cs_real_t   *out23,
+                          cs_real_t   *out31,
+                          cs_real_t   *out32,
+                          cs_real_t   *out33)
 {
   cs_int_t  i, j, k;
   cs_real_t  tensorA[3][3], tensorB[3][3];
@@ -359,6 +359,41 @@ _apply_tensor_rotation(cs_real_t   matrix[3][4],
 
 }
 
+/*----------------------------------------------------------------------------
+ * Compute a matrix * tensor * Tmatrix product to apply a rotation to a
+ * given interleaved tensor
+ *
+ * parameters:
+ *   matrix[3][4]        --> transformation matric in homogeneous coords.
+ *                           last line = [0; 0; 0; 1] (Not used here)
+ *   tensor              <-> incoming 3x3 tensor
+ *----------------------------------------------------------------------------*/
+
+static void
+_apply_tensor_rotation(cs_real_t   matrix[3][4],
+                       cs_real_t   *tensor)
+{
+  cs_int_t  i, j, k, l;
+
+  cs_real_t  t[3][3];
+
+  for (k = 0; k < 3; k++) {
+    for (j = 0; j < 3; j++) {
+      t[k][j] = 0.;
+      for (l = 0; l < 3; l++)
+        t[k][j] += matrix[j][l] * tensor[k*3+l];
+    }
+  }
+
+  for (i = 0; i < 3; i++) {
+    for (j = 0; j < 3; j++) {
+      tensor[i*3+j] = 0.;
+      for (k = 0; k < 3; k++)
+        tensor[i*3+j] += matrix[i][k] * t[k][j];
+    }
+  }
+
+}
 /*----------------------------------------------------------------------------
  * Test if a halo seems compatible with the main mesh's periodic
  * transformations.
@@ -1346,25 +1381,25 @@ CS_PROCF (peinu2, PEINU2)(cs_real_t         *dudxyz)
         end_std = start_std + length;
 
         for (i = start_std; i < end_std; i++)
-          _apply_tensor_rotation(matrix,
-                                 dudxyz[GET_ID1(i,0,0)],
-                                 dudxyz[GET_ID1(i,0,1)],
-                                 dudxyz[GET_ID1(i,0,2)],
-                                 dudxyz[GET_ID1(i,1,0)],
-                                 dudxyz[GET_ID1(i,1,1)],
-                                 dudxyz[GET_ID1(i,1,2)],
-                                 dudxyz[GET_ID1(i,2,0)],
-                                 dudxyz[GET_ID1(i,2,1)],
-                                 dudxyz[GET_ID1(i,2,2)],
-                                 &dudxyz[GET_ID1(i,0,0)],
-                                 &dudxyz[GET_ID1(i,0,1)],
-                                 &dudxyz[GET_ID1(i,0,2)],
-                                 &dudxyz[GET_ID1(i,1,0)],
-                                 &dudxyz[GET_ID1(i,1,1)],
-                                 &dudxyz[GET_ID1(i,1,2)],
-                                 &dudxyz[GET_ID1(i,2,0)],
-                                 &dudxyz[GET_ID1(i,2,1)],
-                                 &dudxyz[GET_ID1(i,2,2)]);
+          _apply_tensor_rotation_ni(matrix,
+                                    dudxyz[GET_ID1(i,0,0)],
+                                    dudxyz[GET_ID1(i,0,1)],
+                                    dudxyz[GET_ID1(i,0,2)],
+                                    dudxyz[GET_ID1(i,1,0)],
+                                    dudxyz[GET_ID1(i,1,1)],
+                                    dudxyz[GET_ID1(i,1,2)],
+                                    dudxyz[GET_ID1(i,2,0)],
+                                    dudxyz[GET_ID1(i,2,1)],
+                                    dudxyz[GET_ID1(i,2,2)],
+                                    &dudxyz[GET_ID1(i,0,0)],
+                                    &dudxyz[GET_ID1(i,0,1)],
+                                    &dudxyz[GET_ID1(i,0,2)],
+                                    &dudxyz[GET_ID1(i,1,0)],
+                                    &dudxyz[GET_ID1(i,1,1)],
+                                    &dudxyz[GET_ID1(i,1,2)],
+                                    &dudxyz[GET_ID1(i,2,0)],
+                                    &dudxyz[GET_ID1(i,2,1)],
+                                    &dudxyz[GET_ID1(i,2,2)]);
 
         if (mesh->halo_type == CS_HALO_EXTENDED) {
 
@@ -1373,25 +1408,25 @@ CS_PROCF (peinu2, PEINU2)(cs_real_t         *dudxyz)
           end_ext = start_ext + length;
 
           for (i = start_ext; i < end_ext; i++)
-            _apply_tensor_rotation(matrix,
-                                   dudxyz[GET_ID1(i,0,0)],
-                                   dudxyz[GET_ID1(i,0,1)],
-                                   dudxyz[GET_ID1(i,0,2)],
-                                   dudxyz[GET_ID1(i,1,0)],
-                                   dudxyz[GET_ID1(i,1,1)],
-                                   dudxyz[GET_ID1(i,1,2)],
-                                   dudxyz[GET_ID1(i,2,0)],
-                                   dudxyz[GET_ID1(i,2,1)],
-                                   dudxyz[GET_ID1(i,2,2)],
-                                   &dudxyz[GET_ID1(i,0,0)],
-                                   &dudxyz[GET_ID1(i,0,1)],
-                                   &dudxyz[GET_ID1(i,0,2)],
-                                   &dudxyz[GET_ID1(i,1,0)],
-                                   &dudxyz[GET_ID1(i,1,1)],
-                                   &dudxyz[GET_ID1(i,1,2)],
-                                   &dudxyz[GET_ID1(i,2,0)],
-                                   &dudxyz[GET_ID1(i,2,1)],
-                                   &dudxyz[GET_ID1(i,2,2)]);
+            _apply_tensor_rotation_ni(matrix,
+                                      dudxyz[GET_ID1(i,0,0)],
+                                      dudxyz[GET_ID1(i,0,1)],
+                                      dudxyz[GET_ID1(i,0,2)],
+                                      dudxyz[GET_ID1(i,1,0)],
+                                      dudxyz[GET_ID1(i,1,1)],
+                                      dudxyz[GET_ID1(i,1,2)],
+                                      dudxyz[GET_ID1(i,2,0)],
+                                      dudxyz[GET_ID1(i,2,1)],
+                                      dudxyz[GET_ID1(i,2,2)],
+                                      &dudxyz[GET_ID1(i,0,0)],
+                                      &dudxyz[GET_ID1(i,0,1)],
+                                      &dudxyz[GET_ID1(i,0,2)],
+                                      &dudxyz[GET_ID1(i,1,0)],
+                                      &dudxyz[GET_ID1(i,1,1)],
+                                      &dudxyz[GET_ID1(i,1,2)],
+                                      &dudxyz[GET_ID1(i,2,0)],
+                                      &dudxyz[GET_ID1(i,2,1)],
+                                      &dudxyz[GET_ID1(i,2,2)]);
 
         } /* End if extended halo exists */
 
@@ -1998,12 +2033,12 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
         }
 
         for (i = start_std; i < end_std; i++)
-          _apply_vector_rotation_i(matrix, var + i*incvar);
+          _apply_vector_rotation(matrix, var + i*incvar);
 
         if (sync_mode == CS_HALO_EXTENDED) {
 
           for (i = start_ext; i < end_ext; i++)
-            _apply_vector_rotation_i(matrix, var + i*incvar);
+            _apply_vector_rotation(matrix, var + i*incvar);
 
         }
 
@@ -2101,13 +2136,13 @@ cs_halo_perio_sync_var_vect_ni(const cs_halo_t     *halo,
             y_in = var_y[n_elts + i];
             z_in = var_z[n_elts + i];
 
-            _apply_vector_rotation(matrix,
-                                   x_in,
-                                   y_in,
-                                   z_in,
-                                   &var_x[n_elts+i],
-                                   &var_y[n_elts+i],
-                                   &var_z[n_elts+i]);
+            _apply_vector_rotation_ni(matrix,
+                                      x_in,
+                                      y_in,
+                                      z_in,
+                                      &var_x[n_elts+i],
+                                      &var_y[n_elts+i],
+                                      &var_z[n_elts+i]);
           }
 
           if (sync_mode == CS_HALO_EXTENDED) {
@@ -2118,13 +2153,13 @@ cs_halo_perio_sync_var_vect_ni(const cs_halo_t     *halo,
               y_in = var_y[n_elts + i];
               z_in = var_z[n_elts + i];
 
-              _apply_vector_rotation(matrix,
-                                     x_in,
-                                     y_in,
-                                     z_in,
-                                     &var_x[n_elts+i],
-                                     &var_y[n_elts+i],
-                                     &var_z[n_elts+i]);
+              _apply_vector_rotation_ni(matrix,
+                                        x_in,
+                                        y_in,
+                                        z_in,
+                                        &var_x[n_elts+i],
+                                        &var_y[n_elts+i],
+                                        &var_z[n_elts+i]);
 
             }
 
@@ -2254,14 +2289,14 @@ cs_halo_perio_sync_var_tens_ni(const cs_halo_t  *halo,
           v32 = var32[n_elts + i];
           v33 = var33[n_elts + i];
 
-          _apply_tensor_rotation(matrix,
-                                 v11, v12, v13, v21, v22, v23,
-                                 v31, v32, v33,
-                                 &var11[n_elts + i], &var12[n_elts + i],
-                                 &var13[n_elts + i], &var21[n_elts + i],
-                                 &var22[n_elts + i], &var23[n_elts + i],
-                                 &var31[n_elts + i], &var32[n_elts + i],
-                                 &var33[n_elts + i]);
+          _apply_tensor_rotation_ni(matrix,
+                                    v11, v12, v13, v21, v22, v23,
+                                    v31, v32, v33,
+                                    &var11[n_elts + i], &var12[n_elts + i],
+                                    &var13[n_elts + i], &var21[n_elts + i],
+                                    &var22[n_elts + i], &var23[n_elts + i],
+                                    &var31[n_elts + i], &var32[n_elts + i],
+                                    &var33[n_elts + i]);
 
         }
 
@@ -2279,14 +2314,14 @@ cs_halo_perio_sync_var_tens_ni(const cs_halo_t  *halo,
             v32 = var32[n_elts + i];
             v33 = var33[n_elts + i];
 
-            _apply_tensor_rotation(matrix,
-                                   v11, v12, v13, v21, v22, v23,
-                                   v31, v32, v33,
-                                   &var11[n_elts + i], &var12[n_elts + i],
-                                   &var13[n_elts + i], &var21[n_elts + i],
-                                   &var22[n_elts + i], &var23[n_elts + i],
-                                   &var31[n_elts + i], &var32[n_elts + i],
-                                   &var33[n_elts + i]);
+            _apply_tensor_rotation_ni(matrix,
+                                      v11, v12, v13, v21, v22, v23,
+                                      v31, v32, v33,
+                                      &var11[n_elts + i], &var12[n_elts + i],
+                                      &var13[n_elts + i], &var21[n_elts + i],
+                                      &var22[n_elts + i], &var23[n_elts + i],
+                                      &var31[n_elts + i], &var32[n_elts + i],
+                                      &var33[n_elts + i]);
 
           }
 
@@ -2315,7 +2350,6 @@ cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
 {
   cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
-  cs_real_t  v11, v12, v13, v21, v22, v23, v31, v32, v33;
 
   cs_real_t  matrix[3][4];
 
@@ -2358,28 +2392,7 @@ cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
 
         for (i = start_std; i < end_std; i++) {
 
-          v11 = var[0 + 3*0 + 9*(n_elts + i)];
-          v12 = var[0 + 3*1 + 9*(n_elts + i)];
-          v13 = var[0 + 3*2 + 9*(n_elts + i)];
-          v21 = var[1 + 3*0 + 9*(n_elts + i)];
-          v22 = var[1 + 3*1 + 9*(n_elts + i)];
-          v23 = var[1 + 3*2 + 9*(n_elts + i)];
-          v31 = var[2 + 3*0 + 9*(n_elts + i)];
-          v32 = var[2 + 3*1 + 9*(n_elts + i)];
-          v33 = var[2 + 3*2 + 9*(n_elts + i)];
-
-          _apply_tensor_rotation(matrix,
-                                 v11, v12, v13, v21, v22, v23,
-                                 v31, v32, v33,
-                                 &var[0 + 3*0 + 9*(n_elts + i)],
-                                 &var[0 + 3*1 + 9*(n_elts + i)],
-                                 &var[0 + 3*2 + 9*(n_elts + i)],
-                                 &var[1 + 3*0 + 9*(n_elts + i)],
-                                 &var[1 + 3*1 + 9*(n_elts + i)],
-                                 &var[1 + 3*2 + 9*(n_elts + i)],
-                                 &var[2 + 3*0 + 9*(n_elts + i)],
-                                 &var[2 + 3*1 + 9*(n_elts + i)],
-                                 &var[2 + 3*2 + 9*(n_elts + i)]);
+          _apply_tensor_rotation(matrix, var + 9*(n_elts+i));
 
         }
 
@@ -2387,28 +2400,7 @@ cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
 
           for (i = start_ext; i < end_ext; i++) {
 
-            v11 = var[0 + 3*0 + 9*(n_elts + i)];
-            v12 = var[0 + 3*1 + 9*(n_elts + i)];
-            v13 = var[0 + 3*2 + 9*(n_elts + i)];
-            v21 = var[1 + 3*0 + 9*(n_elts + i)];
-            v22 = var[1 + 3*1 + 9*(n_elts + i)];
-            v23 = var[1 + 3*2 + 9*(n_elts + i)];
-            v31 = var[2 + 3*0 + 9*(n_elts + i)];
-            v32 = var[2 + 3*1 + 9*(n_elts + i)];
-            v33 = var[2 + 3*2 + 9*(n_elts + i)];
-
-            _apply_tensor_rotation(matrix,
-                                   v11, v12, v13, v21, v22, v23,
-                                   v31, v32, v33,
-                                   &var[0 + 3*0 + 9*(n_elts + i)],
-                                   &var[0 + 3*1 + 9*(n_elts + i)],
-                                   &var[0 + 3*2 + 9*(n_elts + i)],
-                                   &var[1 + 3*0 + 9*(n_elts + i)],
-                                   &var[1 + 3*1 + 9*(n_elts + i)],
-                                   &var[1 + 3*2 + 9*(n_elts + i)],
-                                   &var[2 + 3*0 + 9*(n_elts + i)],
-                                   &var[2 + 3*1 + 9*(n_elts + i)],
-                                   &var[2 + 3*2 + 9*(n_elts + i)]);
+            _apply_tensor_rotation(matrix, var + 9*(n_elts+i));
 
           }
 
@@ -2493,11 +2485,11 @@ cs_halo_perio_sync_var_diag_ni(const cs_halo_t  *halo,
           v22 = var22[n_elts + i];
           v33 = var33[n_elts + i];
 
-          _apply_tensor_rotation(matrix, v11, 0, 0,
-                                 0, v22, 0, 0, 0, v33,
-                                 &var11[n_elts + i], NULL, NULL,
-                                 NULL, &var22[n_elts + i], NULL,
-                                 NULL, NULL, &var33[n_elts + i]);
+          _apply_tensor_rotation_ni(matrix, v11, 0, 0,
+                                    0, v22, 0, 0, 0, v33,
+                                    &var11[n_elts + i], NULL, NULL,
+                                    NULL, &var22[n_elts + i], NULL,
+                                    NULL, NULL, &var33[n_elts + i]);
 
         }
 
@@ -2509,11 +2501,11 @@ cs_halo_perio_sync_var_diag_ni(const cs_halo_t  *halo,
             v22 = var22[n_elts + i];
             v33 = var33[n_elts + i];
 
-            _apply_tensor_rotation(matrix, v11, 0, 0,
-                                   0, v22, 0, 0, 0, v33,
-                                   &var11[n_elts + i], NULL, NULL,
-                                   NULL, &var22[n_elts + i], NULL,
-                                   NULL, NULL, &var33[n_elts + i]);
+            _apply_tensor_rotation_ni(matrix, v11, 0, 0,
+                                      0, v22, 0, 0, 0, v33,
+                                      &var11[n_elts + i], NULL, NULL,
+                                      NULL, &var22[n_elts + i], NULL,
+                                      NULL, NULL, &var33[n_elts + i]);
 
           }
 
@@ -2591,18 +2583,18 @@ cs_halo_perio_sync_var_diag(const cs_halo_t  *halo,
           v22 = var[1 + 3*(n_elts + i)];
           v33 = var[2 + 3*(n_elts + i)];
 
-          _apply_tensor_rotation(matrix,
-                                 v11,   0,   0,   0, v22,   0,
-                                 0,   0, v33,
-                                 &var[0 + 3*(n_elts + i)],
-                                 NULL,
-                                 NULL,
-                                 NULL,
-                                 &var[1 + 3*(n_elts + i)],
-                                 NULL,
-                                 NULL,
-                                 NULL,
-                                 &var[2 + 3*(n_elts + i)]);
+          _apply_tensor_rotation_ni(matrix,
+                                    v11,   0,   0,   0, v22,   0,
+                                    0,   0, v33,
+                                    &var[0 + 3*(n_elts + i)],
+                                    NULL,
+                                    NULL,
+                                    NULL,
+                                    &var[1 + 3*(n_elts + i)],
+                                    NULL,
+                                    NULL,
+                                    NULL,
+                                    &var[2 + 3*(n_elts + i)]);
 
         }
 
@@ -2614,18 +2606,18 @@ cs_halo_perio_sync_var_diag(const cs_halo_t  *halo,
             v22 = var[1 + 3*(n_elts + i)];
             v33 = var[2 + 3*(n_elts + i)];
 
-            _apply_tensor_rotation(matrix,
-                                   v11,   0,   0,   0, v22,   0,
-                                   0,   0, v33,
-                                   &var[0 + 3*(n_elts + i)],
-                                   NULL,
-                                   NULL,
-                                   NULL,
-                                   &var[1 + 3*(n_elts + i)],
-                                   NULL,
-                                   NULL,
-                                   NULL,
-                                   &var[2 + 3*(n_elts + i)]);
+            _apply_tensor_rotation_ni(matrix,
+                                      v11,   0,   0,   0, v22,   0,
+                                      0,   0, v33,
+                                      &var[0 + 3*(n_elts + i)],
+                                      NULL,
+                                      NULL,
+                                      NULL,
+                                      &var[1 + 3*(n_elts + i)],
+                                      NULL,
+                                      NULL,
+                                      NULL,
+                                      &var[2 + 3*(n_elts + i)]);
 
           }
 
