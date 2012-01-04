@@ -339,8 +339,6 @@ class ThermalRadiationModel(Model):
             self._setVariable_ray()
             self._setBoundCond()
             self._updateModelParameters(model)
-            OutputControlModel(self.case).setDomainBoundaryPostProStatus('on')
-
 
 
     def getNbDir(self):

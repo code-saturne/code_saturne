@@ -1,3 +1,8 @@
+* 04/01/2012 - David Monfort <david.monfort@edf.fr>
+  Fix the setup of radiative transfert modelling in the graphical interface.
+  modified routine:
+    gui/Pages/ThermalRadiationModel.py
+
 * 30/12/2011 - David Monfort <david.monfort@edf.fr>
   Release of Code_Saturne 2.1.3.
 
