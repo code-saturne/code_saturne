@@ -99,7 +99,7 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision drdxyz(ncelet-ncel,6,3)
+double precision drdxyz(3, 6, ncelet-ncel)
 
 ! Local variables
 

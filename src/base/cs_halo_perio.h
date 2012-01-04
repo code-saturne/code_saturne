@@ -369,16 +369,20 @@ CS_PROCF (peinu2, PEINU2)(cs_real_t         *dudxyz);
 /*----------------------------------------------------------------------------
  * Exchange buffers for PERINR
  *
- * Fortran Interface:
+ * Fortran Interface
  *
  * SUBROUTINE PEINR1 (VAR)
  * *****************
  *
- * INTEGER          ISOU          :  -> : component of the Reynolds stress tensor
- * DOUBLE PRECISION DRDXYZ        : <-> : gradient of the Reynolds stress tensor
+ * INTEGER          ISOU          : -> : component of the Reynolds stress tensor
+ * DOUBLE PRECISION DRDXYZ        : -> : gradient of the Reynolds stress tensor
  *                                       for ghost cells and for an explicit
  *                                       treatment of the periodicity.
- * DOUBLE PRECISION W1..3(NCELET) : -  : working buffers
+ * DOUBLE PRECISION GRADX(NCELET)
+ *                  GRADY(NCELET)
+ *                  GRADZ(NCELET) : -  : x, y, z components of the gradient of
+ *                                       the current component of the Reynolds
+ *                                       stress tensor.
  *
  * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
  *----------------------------------------------------------------------------*/
@@ -386,9 +390,9 @@ CS_PROCF (peinu2, PEINU2)(cs_real_t         *dudxyz);
 void
 CS_PROCF (peinr1, PEINR1)(const cs_int_t    *isou,
                           cs_real_t         *drdxyz,
-                          cs_real_t          w1[],
-                          cs_real_t          w2[],
-                          cs_real_t          w3[]);
+                          cs_real_t          gradx[],
+                          cs_real_t          grady[],
+                          cs_real_t          gradz[]);
 
 /*----------------------------------------------------------------------------
  * Apply rotation on the gradient of Reynolds stress tensor

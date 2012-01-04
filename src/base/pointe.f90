@@ -72,9 +72,9 @@ module pointe
   ! dudxy  ! (ncelet-ncel,3,3)   ! sauvegarde du gradient de la
   !        !                     ! vitesse en cas de rotation
   ! wdudxy ! (ncelet-ncel,3,3)   ! tableau de travail lie a dudxyz
-  ! drdxy  ! (ncelet-ncel,6,3)   ! sauvegarde du gradient de rij
+  ! drdxy  ! (3,6,ncelet-ncel)   ! sauvegarde du gradient de rij
   !        !                     ! en cas de rotation
-  ! wdrdxy ! (ncelet-ncel,6,3)   ! tableau de travail lie a drdxyz
+  ! wdrdxy ! (3,6,ncelet-ncel)   ! tableau de travail lie a drdxyz
 
   double precision, allocatable, dimension(:,:,:) :: dudxy, wdudxy
   double precision, allocatable, dimension(:,:,:) :: drdxy, wdrdxy
@@ -233,7 +233,7 @@ contains
     if (iperot.gt.0) then
       allocate(dudxy(ncelet-ncel,3,3), wdudxy(ncelet-ncel,3,3))
       if (itytur.eq.3) then
-        allocate(drdxy(ncelet-ncel,6,3), wdrdxy(ncelet-ncel,6,3))
+        allocate(drdxy(3,6,ncelet-ncel), wdrdxy(3,6,ncelet-ncel))
       endif
     endif
 

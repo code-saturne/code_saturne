@@ -290,7 +290,7 @@ _apply_vector_rotation(cs_real_t    matrix[3][4],
  * given tensor
  *
  * parameters:
- *   matrix[3][4]        --> transformation matric in homogeneous coords.
+ *   matrix[3][4]        --> transformation matrix in homogeneous coords.
  *                           last line = [0; 0; 0; 1] (Not used here)
  *   in11, in12, in13    --> incoming first line of the tensor
  *   in21, in22, in23    --> incoming second line of the tensor
@@ -364,7 +364,7 @@ _apply_tensor_rotation_ni(cs_real_t   matrix[3][4],
  * given interleaved tensor
  *
  * parameters:
- *   matrix[3][4]        --> transformation matric in homogeneous coords.
+ *   matrix[3][4]        --> transformation matrix in homogeneous coords.
  *                           last line = [0; 0; 0; 1] (Not used here)
  *   tensor              <-> incoming 3x3 tensor
  *----------------------------------------------------------------------------*/
@@ -392,6 +392,67 @@ _apply_tensor_rotation(cs_real_t   matrix[3][4],
         tensor[i*3+j] += matrix[i][k] * t[k][j];
     }
   }
+
+}
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* table giving the Reynolds stress component for [i][j] */
+
+static const int rij[3][3] = {{0, 3, 4},
+                                   {3, 1, 5},
+                                   {4, 5, 2}};
+
+
+/*----------------------------------------------------------------------------
+ * Compute the rotation of a third-order symmetric interleaved tensor
+ * (18 components)
+ * TENSOR_ijk = M_ip M_jq M_kr TENSOR_pqr
+ *
+ * parameters:
+ *   matrix[3][4]        --> transformation matrix in homogeneous coords.
+ *                           last line = [0; 0; 0; 1] (Not used here)
+ *   tensor              <-> incoming 3x3x3 tensor
+ *                           (in fact 3x6 due to symmetry)
+ *----------------------------------------------------------------------------*/
+
+static void
+_apply_tensor3sym_rotation(cs_real_t   matrix[3][4],
+                           cs_real_t   *tensor)
+{
+  cs_int_t  i, j, k, p, q, r;
+
+  cs_real_t  t1[3][3][3], t2[3][3][3];
+
+  for (p = 0; p < 3; p++) {
+    for (q = 0; q < 3; q++) {
+      for (k = 0; k < 3; k++) {
+        t1[p][q][k] = 0.;
+        for (r = 0; r < 3; r++)
+          t1[p][q][k] += matrix[k][r] * tensor[3*rij[p][q] + r];
+      }
+    }
+  }
+
+  for (i = 0; i < 3; i++) {
+    for (j = 0; j < 3; j++) {
+      for (k = 0; k < 3; k++) {
+        t2[i][j][k] = 0.;
+        for (p = 0; p < 3; p++) {
+          for (q = 0; q < 3; q++)
+            t2[i][j][k] += matrix[i][p] * matrix[j][q] * t1[p][q][k];
+        }
+      }
+    }
+  }
+
+  /* Output */
+
+  for (i = 0; i < 3; i++)
+    for (j = 0; j < 3; j++)
+      for (k = 0; k < 3; k++)
+        tensor[3*rij[i][j] + k] = t2[i][j][k];
 
 }
 /*----------------------------------------------------------------------------
@@ -494,14 +555,11 @@ _update_drdxyz(cs_int_t          h_cell_id,
 
   cs_mesh_t  *mesh = cs_glob_mesh;
 
-  const cs_int_t  n_ghost_cells = mesh->n_ghost_cells;
-  const cs_int_t  stride = 2*3*n_ghost_cells;
-
   if (call_id == 1) { /* First call */
 
     for (i = 0; i < 2*3; i++) {
       for (j = 0; j < 3; j++) {
-        id = h_cell_id + n_ghost_cells*i + stride*j;
+        id = j + 3*i + 3*6*h_cell_id;
         wdrdxy[id] = drdxyz[id];
         drdxyz[id] *= rom[cell_id];
       }
@@ -512,7 +570,7 @@ _update_drdxyz(cs_int_t          h_cell_id,
 
     for (i = 0; i < 2*3; i++) {
       for (j = 0; j < 3; j++) {
-        id = h_cell_id + n_ghost_cells*i + stride*j;
+        id = j + 3*i + 3*6*h_cell_id;
         drdxyz[id] = wdrdxy[id];
       }
     }
@@ -605,6 +663,90 @@ _peinur1(cs_int_t      strid_c,
   BFT_FREE(w_save);
 }
 
+/*----------------------------------------------------------------------------
+ * Exchange buffers for PERINR only
+ *
+ * parameters:
+ *   strid_v    --> stride on the variable
+ *   strid_e    --> stride on the element
+ *   dxyz       <-> gradient on the variable (drdxy)
+ *   w1, w2, w3 <-> working buffers
+ *----------------------------------------------------------------------------*/
+
+static void
+_peinr1(cs_int_t      strid_v,
+        cs_int_t      strid_e,
+        cs_real_t    *dxyz,
+        cs_real_t    *w1,
+        cs_real_t    *w2,
+        cs_real_t    *w3)
+{
+  cs_int_t  i, t_id, rank_id, shift;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
+
+  cs_mesh_t  *mesh = cs_glob_mesh;
+  cs_halo_t  *halo = mesh->halo;
+
+  const cs_int_t  n_cells = mesh->n_cells;
+  const cs_int_t  n_ghost_cells = mesh->n_cells_with_ghosts - mesh->n_cells;
+  const size_t    save_block_size = n_ghost_cells*sizeof(cs_real_t);
+  const cs_int_t  n_transforms = mesh->n_transforms;
+
+  cs_real_t *w_save = NULL;
+  BFT_MALLOC(w_save, n_ghost_cells*3, cs_real_t);
+
+  memcpy(w_save,                   w1+n_cells, save_block_size);
+  memcpy(w_save +  n_ghost_cells,  w2+n_cells, save_block_size);
+  memcpy(w_save+(2*n_ghost_cells), w3+n_cells, save_block_size);
+
+  cs_halo_sync_var(mesh->halo, mesh->halo_type, w1);
+  cs_halo_sync_var(mesh->halo, mesh->halo_type, w2);
+  cs_halo_sync_var(mesh->halo, mesh->halo_type, w3);
+
+  for (t_id = 0; t_id < n_transforms; t_id++) {
+
+    shift = 4 * halo->n_c_domains * t_id;
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      start_std = halo->perio_lst[shift + 4*rank_id];
+      length = halo->perio_lst[shift + 4*rank_id + 1];
+      end_std = start_std + length;
+
+      if (mesh->halo_type == CS_HALO_EXTENDED) {
+
+        start_ext = halo->perio_lst[shift + 4*rank_id + 2];
+        length = halo->perio_lst[shift + 4*rank_id + 3];
+        end_ext = start_ext + length;
+
+      }
+
+      for (i = start_std; i < end_std; i++) {
+        dxyz[0 + strid_v + strid_e*i] = w1[n_cells + i];
+        dxyz[1 + strid_v + strid_e*i] = w2[n_cells + i];
+        dxyz[2 + strid_v + strid_e*i] = w3[n_cells + i];
+      }
+
+      if (mesh->halo_type == CS_HALO_EXTENDED) {
+
+        for (i = start_ext; i < end_ext; i++) {
+          dxyz[0 + strid_v + strid_e*i] = w1[n_cells + i];
+          dxyz[1 + strid_v + strid_e*i] = w2[n_cells + i];
+          dxyz[2 + strid_v + strid_e*i] = w3[n_cells + i];
+        }
+
+      } /* End if extended halo */
+
+    } /* End of loop on ranks */
+
+  } /* End of loop on transformations */
+
+  memcpy(w1+n_cells, w_save,                   save_block_size);
+  memcpy(w2+n_cells, w_save +  n_ghost_cells,  save_block_size);
+  memcpy(w3+n_cells, w_save+(2*n_ghost_cells), save_block_size);
+
+  BFT_FREE(w_save);
+}
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
@@ -1137,7 +1279,7 @@ CS_PROCF (pering, PERING)(const cs_int_t    *ivar,
 {
   cs_int_t  i, rank_id, t_id, shift, tag;
   cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
-  cs_int_t  d_ph = 0, d_var = 0;
+  cs_int_t  d_var = 0;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_halo_t  *halo = mesh->halo;
@@ -1232,11 +1374,11 @@ CS_PROCF (pering, PERING)(const cs_int_t    *ivar,
       tag = 1;
 
       if (*ivar == *ir11) d_var = 0;
-      if (*ivar == *ir22) d_var = n_ghost_cells;
-      if (*ivar == *ir33) d_var = 2*n_ghost_cells;
-      if (*ivar == *ir12) d_var = 3*n_ghost_cells;
-      if (*ivar == *ir13) d_var = 4*n_ghost_cells;
-      if (*ivar == *ir23) d_var = 5*n_ghost_cells;
+      if (*ivar == *ir22) d_var = 1;
+      if (*ivar == *ir33) d_var = 2;
+      if (*ivar == *ir12) d_var = 3;
+      if (*ivar == *ir13) d_var = 4;
+      if (*ivar == *ir23) d_var = 5;
 
       if (*igrper == 1) {
 
@@ -1259,17 +1401,17 @@ CS_PROCF (pering, PERING)(const cs_int_t    *ivar,
             }
 
             for (i = start_std; i < end_std; i++) {
-              dpdx[n_cells + i] = drdxyz[i + d_var + 2*stride1*0 + d_ph];
-              dpdy[n_cells + i] = drdxyz[i + d_var + 2*stride1*1 + d_ph];
-              dpdz[n_cells + i] = drdxyz[i + d_var + 2*stride1*2 + d_ph];
+              dpdx[n_cells + i] = drdxyz[0 + d_var*3 + 18*i];
+              dpdy[n_cells + i] = drdxyz[1 + d_var*3 + 18*i];
+              dpdz[n_cells + i] = drdxyz[2 + d_var*3 + 18*i];
             }
 
             if (mesh->halo_type == CS_HALO_EXTENDED) {
 
               for (i = start_ext; i < end_ext; i++) {
-                dpdx[n_cells + i] = drdxyz[i + d_var + 2*stride1*0 + d_ph];
-                dpdy[n_cells + i] = drdxyz[i + d_var + 2*stride1*1 + d_ph];
-                dpdz[n_cells + i] = drdxyz[i + d_var + 2*stride1*2 + d_ph];
+                dpdx[n_cells + i] = drdxyz[0 + d_var*3 + 18*i];
+                dpdy[n_cells + i] = drdxyz[1 + d_var*3 + 18*i];
+                dpdz[n_cells + i] = drdxyz[2 + d_var*3 + 18*i];
               }
 
             } /* End if extended halo */
@@ -1449,7 +1591,11 @@ CS_PROCF (peinu2, PEINU2)(cs_real_t         *dudxyz)
  * DOUBLE PRECISION DRDXYZ        : -> : gradient of the Reynolds stress tensor
  *                                       for ghost cells and for an explicit
  *                                       treatment of the periodicity.
- * DOUBLE PRECISION W1..3(NCELET) : -  : working buffers
+ * DOUBLE PRECISION GRADX(NCELET)
+ *                  GRADY(NCELET)
+ *                  GRADZ(NCELET) : -  : x, y, z components of the gradient of
+ *                                       the current component of the Reynolds
+ *                                       stress tensor.
  *
  * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
  *----------------------------------------------------------------------------*/
@@ -1457,18 +1603,18 @@ CS_PROCF (peinu2, PEINU2)(cs_real_t         *dudxyz)
 void
 CS_PROCF (peinr1, PEINR1)(const cs_int_t    *isou,
                           cs_real_t         *drdxyz,
-                          cs_real_t          w1[],
-                          cs_real_t          w2[],
-                          cs_real_t          w3[])
+                          cs_real_t          gradx[],
+                          cs_real_t          grady[],
+                          cs_real_t          gradz[])
 {
   cs_mesh_t  *mesh = cs_glob_mesh;
 
   const cs_int_t  n_ghost_cells = mesh->n_ghost_cells;
   const cs_int_t  comp_id = *isou - 1;
-  const cs_int_t  strid_v = 2 * n_ghost_cells * 3;
-  const cs_int_t  strid_c = n_ghost_cells * comp_id;
+  const cs_int_t  strid_v = 3*comp_id;
+  const cs_int_t  strid_e = 3*6;
 
-  _peinur1(strid_c, strid_v, drdxyz, w1, w2, w3);
+  _peinr1(strid_v, strid_e, drdxyz, gradx, grady, gradz);
 }
 
 /*----------------------------------------------------------------------------
@@ -1483,31 +1629,24 @@ CS_PROCF (peinr1, PEINR1)(const cs_int_t    *isou,
  *                                       for ghost cells and for an explicit
  *                                       treatment of the periodicity.
  *
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
+ * Size of DRDXYZ = 3*6*n_ghost_cells
  *----------------------------------------------------------------------------*/
 
 void
 CS_PROCF (peinr2, PEINR2)(cs_real_t         *drdxyz)
 {
-  cs_int_t  i, i1, i2, j, k, l, m, rank_id, shift, t_id;
+  cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
   fvm_periodicity_type_t  perio_type;
 
   cs_real_t  matrix[3][4];
-  cs_real_t  tensa[3][3][3];
-  cs_real_t  tensb[3][3][3];
-  cs_real_t  tensc[3][3][3];
 
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_halo_t  *halo = mesh->halo;
 
   const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  n_ghost_cells = mesh->n_ghost_cells;
-  const cs_int_t  stride = 2 * 3 * n_ghost_cells;
   const cs_halo_type_t  halo_type = mesh->halo_type;
   const fvm_periodicity_t  *periodicity = mesh->periodicity;
-
-#define GET_ID2(elt_id, i, j)   ( elt_id + n_ghost_cells*i + stride*j )
 
   if (mesh->halo_type == CS_HALO_N_TYPES || halo == NULL)
     return;
@@ -1532,136 +1671,7 @@ CS_PROCF (peinr2, PEINR2)(cs_real_t         *drdxyz)
 
         for (i = start_std; i < end_std; i++) {
 
-          tensa[0][0][0] = drdxyz[GET_ID2(i,0,0)] * matrix[0][0] +
-                           drdxyz[GET_ID2(i,0,1)] * matrix[0][1] +
-                           drdxyz[GET_ID2(i,0,2)] * matrix[0][2];
-          tensa[0][1][0] = drdxyz[GET_ID2(i,3,0)] * matrix[0][0] +
-                           drdxyz[GET_ID2(i,3,1)] * matrix[0][1] +
-                           drdxyz[GET_ID2(i,3,2)] * matrix[0][2];
-          tensa[0][2][0] = drdxyz[GET_ID2(i,4,0)] * matrix[0][0] +
-                           drdxyz[GET_ID2(i,4,1)] * matrix[0][1] +
-                           drdxyz[GET_ID2(i,4,2)] * matrix[0][2];
-
-          tensa[0][0][1] = drdxyz[GET_ID2(i,0,0)] * matrix[1][0] +
-                           drdxyz[GET_ID2(i,0,1)] * matrix[1][1] +
-                           drdxyz[GET_ID2(i,0,2)] * matrix[1][2];
-          tensa[0][1][1] = drdxyz[GET_ID2(i,3,0)] * matrix[1][0] +
-                           drdxyz[GET_ID2(i,3,1)] * matrix[1][1] +
-                           drdxyz[GET_ID2(i,3,2)] * matrix[1][2];
-          tensa[0][2][1] = drdxyz[GET_ID2(i,4,0)] * matrix[1][0] +
-                           drdxyz[GET_ID2(i,4,1)] * matrix[1][1] +
-                           drdxyz[GET_ID2(i,4,2)] * matrix[1][2];
-
-          tensa[0][0][2] = drdxyz[GET_ID2(i,0,0)] * matrix[2][0] +
-                           drdxyz[GET_ID2(i,0,1)] * matrix[2][1] +
-                           drdxyz[GET_ID2(i,0,2)] * matrix[2][2];
-          tensa[0][1][2] = drdxyz[GET_ID2(i,3,0)] * matrix[2][0] +
-                           drdxyz[GET_ID2(i,3,1)] * matrix[2][1] +
-                           drdxyz[GET_ID2(i,3,2)] * matrix[2][2];
-          tensa[0][2][2] = drdxyz[GET_ID2(i,4,0)] * matrix[2][0] +
-                           drdxyz[GET_ID2(i,4,1)] * matrix[2][1] +
-                           drdxyz[GET_ID2(i,4,2)] * matrix[2][2];
-
-          tensa[1][0][0] = drdxyz[GET_ID2(i,3,0)] * matrix[0][0] +
-                           drdxyz[GET_ID2(i,3,1)] * matrix[0][1] +
-                           drdxyz[GET_ID2(i,3,2)] * matrix[0][2];
-          tensa[1][1][0] = drdxyz[GET_ID2(i,1,0)] * matrix[0][0] +
-                           drdxyz[GET_ID2(i,1,1)] * matrix[0][1] +
-                           drdxyz[GET_ID2(i,1,2)] * matrix[0][2];
-          tensa[1][2][0] = drdxyz[GET_ID2(i,5,0)] * matrix[0][0] +
-                           drdxyz[GET_ID2(i,5,1)] * matrix[0][1] +
-                           drdxyz[GET_ID2(i,5,2)] * matrix[0][2];
-
-          tensa[1][0][1] = drdxyz[GET_ID2(i,3,0)] * matrix[1][0] +
-                           drdxyz[GET_ID2(i,3,1)] * matrix[1][1] +
-                           drdxyz[GET_ID2(i,3,2)] * matrix[1][2];
-          tensa[1][1][1] = drdxyz[GET_ID2(i,1,0)] * matrix[1][0] +
-                           drdxyz[GET_ID2(i,1,1)] * matrix[1][1] +
-                           drdxyz[GET_ID2(i,1,2)] * matrix[1][2];
-          tensa[1][2][1] = drdxyz[GET_ID2(i,5,0)] * matrix[1][0] +
-                           drdxyz[GET_ID2(i,5,1)] * matrix[1][1] +
-                           drdxyz[GET_ID2(i,5,2)] * matrix[1][2];
-
-          tensa[1][0][2] = drdxyz[GET_ID2(i,3,0)] * matrix[2][0] +
-                           drdxyz[GET_ID2(i,3,1)] * matrix[2][1] +
-                           drdxyz[GET_ID2(i,3,2)] * matrix[2][2];
-          tensa[1][1][2] = drdxyz[GET_ID2(i,1,0)] * matrix[2][0] +
-                           drdxyz[GET_ID2(i,1,1)] * matrix[2][1] +
-                           drdxyz[GET_ID2(i,1,2)] * matrix[2][2];
-          tensa[1][2][2] = drdxyz[GET_ID2(i,5,0)] * matrix[2][0] +
-                           drdxyz[GET_ID2(i,5,1)] * matrix[2][1] +
-                           drdxyz[GET_ID2(i,5,2)] * matrix[2][2];
-
-          tensa[2][0][0] = drdxyz[GET_ID2(i,4,0)] * matrix[0][0] +
-                           drdxyz[GET_ID2(i,4,1)] * matrix[0][1] +
-                           drdxyz[GET_ID2(i,4,2)] * matrix[0][2];
-          tensa[2][1][0] = drdxyz[GET_ID2(i,5,0)] * matrix[0][0] +
-                           drdxyz[GET_ID2(i,5,1)] * matrix[0][1] +
-                           drdxyz[GET_ID2(i,5,2)] * matrix[0][2];
-          tensa[2][2][0] = drdxyz[GET_ID2(i,2,0)] * matrix[0][0] +
-                           drdxyz[GET_ID2(i,2,1)] * matrix[0][1] +
-                           drdxyz[GET_ID2(i,2,2)] * matrix[0][2];
-
-          tensa[2][0][1] = drdxyz[GET_ID2(i,4,0)] * matrix[1][0] +
-                           drdxyz[GET_ID2(i,4,1)] * matrix[1][1] +
-                           drdxyz[GET_ID2(i,4,2)] * matrix[1][2];
-          tensa[2][1][1] = drdxyz[GET_ID2(i,5,0)] * matrix[1][0] +
-                           drdxyz[GET_ID2(i,5,1)] * matrix[1][1] +
-                           drdxyz[GET_ID2(i,5,2)] * matrix[1][2];
-          tensa[2][2][1] = drdxyz[GET_ID2(i,2,0)] * matrix[1][0] +
-                           drdxyz[GET_ID2(i,2,1)] * matrix[1][1] +
-                           drdxyz[GET_ID2(i,2,2)] * matrix[1][2];
-
-          tensa[2][0][2] = drdxyz[GET_ID2(i,4,0)] * matrix[2][0] +
-                           drdxyz[GET_ID2(i,4,1)] * matrix[2][1] +
-                           drdxyz[GET_ID2(i,4,2)] * matrix[2][2];
-          tensa[2][1][2] = drdxyz[GET_ID2(i,5,0)] * matrix[2][0] +
-                           drdxyz[GET_ID2(i,5,1)] * matrix[2][1] +
-                           drdxyz[GET_ID2(i,5,2)] * matrix[2][2];
-          tensa[2][2][2] = drdxyz[GET_ID2(i,2,0)] * matrix[2][0] +
-                           drdxyz[GET_ID2(i,2,1)] * matrix[2][1] +
-                           drdxyz[GET_ID2(i,2,2)] * matrix[2][2];
-
-          for (j = 0; j < 3; j++)
-            for (l = 0; l < 3; l++)
-              for (k = 0; k < 3; k++) {
-                tensb[j][l][k] = 0.;
-                for (m = 0; m < 3; m++)
-                  tensb[j][l][k] += matrix[j][m] * tensa[l][m][k];
-              }
-
-          for (k = 0; k < 3; k++)
-            for (i1 = 0; i1 < 3; i1++)
-              for (i2 = 0; i2 < 3; i2++) {
-                tensc[k][i1][i2] = 0.;
-                for (l = 0; l < 3; l++)
-                  tensc[k][i1][i2] += matrix[k][l] * tensb[i1][l][i2];
-              }
-
-
-          drdxyz[GET_ID2(i,0,0)] = tensc[0][0][0];
-          drdxyz[GET_ID2(i,0,1)] = tensc[0][0][1];
-          drdxyz[GET_ID2(i,0,2)] = tensc[0][0][2];
-
-          drdxyz[GET_ID2(i,3,0)] = tensc[0][1][0];
-          drdxyz[GET_ID2(i,3,1)] = tensc[0][1][1];
-          drdxyz[GET_ID2(i,3,2)] = tensc[0][1][2];
-
-          drdxyz[GET_ID2(i,4,0)] = tensc[0][2][0];
-          drdxyz[GET_ID2(i,4,1)] = tensc[0][2][1];
-          drdxyz[GET_ID2(i,4,2)] = tensc[0][2][2];
-
-          drdxyz[GET_ID2(i,1,0)] = tensc[1][1][0];
-          drdxyz[GET_ID2(i,1,1)] = tensc[1][1][1];
-          drdxyz[GET_ID2(i,1,2)] = tensc[1][1][2];
-
-          drdxyz[GET_ID2(i,5,0)] = tensc[1][2][0];
-          drdxyz[GET_ID2(i,5,1)] = tensc[1][2][1];
-          drdxyz[GET_ID2(i,5,2)] = tensc[1][2][2];
-
-          drdxyz[GET_ID2(i,2,0)] = tensc[2][2][0];
-          drdxyz[GET_ID2(i,2,1)] = tensc[2][2][1];
-          drdxyz[GET_ID2(i,2,2)] = tensc[2][2][2];
+          _apply_tensor3sym_rotation(matrix, drdxyz + 18*i);
 
         } /* End of loop on standard ghost cells */
 
@@ -1673,135 +1683,7 @@ CS_PROCF (peinr2, PEINR2)(cs_real_t         *drdxyz)
 
           for (i = start_ext; i < end_ext; i++) {
 
-            tensa[0][0][0] = drdxyz[GET_ID2(i,0,0)] * matrix[0][0] +
-                             drdxyz[GET_ID2(i,0,1)] * matrix[0][1] +
-                             drdxyz[GET_ID2(i,0,2)] * matrix[0][2];
-            tensa[0][1][0] = drdxyz[GET_ID2(i,3,0)] * matrix[0][0] +
-                             drdxyz[GET_ID2(i,3,1)] * matrix[0][1] +
-                             drdxyz[GET_ID2(i,3,2)] * matrix[0][2];
-            tensa[0][2][0] = drdxyz[GET_ID2(i,4,0)] * matrix[0][0] +
-                             drdxyz[GET_ID2(i,4,1)] * matrix[0][1] +
-                             drdxyz[GET_ID2(i,4,2)] * matrix[0][2];
-
-            tensa[0][0][1] = drdxyz[GET_ID2(i,0,0)] * matrix[1][0] +
-                             drdxyz[GET_ID2(i,0,1)] * matrix[1][1] +
-                             drdxyz[GET_ID2(i,0,2)] * matrix[1][2];
-            tensa[0][1][1] = drdxyz[GET_ID2(i,3,0)] * matrix[1][0] +
-                             drdxyz[GET_ID2(i,3,1)] * matrix[1][1] +
-                             drdxyz[GET_ID2(i,3,2)] * matrix[1][2];
-            tensa[0][2][1] = drdxyz[GET_ID2(i,4,0)] * matrix[1][0] +
-                             drdxyz[GET_ID2(i,4,1)] * matrix[1][1] +
-                             drdxyz[GET_ID2(i,4,2)] * matrix[1][2];
-
-            tensa[0][0][2] = drdxyz[GET_ID2(i,0,0)] * matrix[2][0] +
-                             drdxyz[GET_ID2(i,0,1)] * matrix[2][1] +
-                             drdxyz[GET_ID2(i,0,2)] * matrix[2][2];
-            tensa[0][1][2] = drdxyz[GET_ID2(i,3,0)] * matrix[2][0] +
-                             drdxyz[GET_ID2(i,3,1)] * matrix[2][1] +
-                             drdxyz[GET_ID2(i,3,2)] * matrix[2][2];
-            tensa[0][2][2] = drdxyz[GET_ID2(i,4,0)] * matrix[2][0] +
-                             drdxyz[GET_ID2(i,4,1)] * matrix[2][1] +
-                             drdxyz[GET_ID2(i,4,2)] * matrix[2][2];
-
-            tensa[1][0][0] = drdxyz[GET_ID2(i,3,0)] * matrix[0][0] +
-                             drdxyz[GET_ID2(i,3,1)] * matrix[0][1] +
-                             drdxyz[GET_ID2(i,3,2)] * matrix[0][2];
-            tensa[1][1][0] = drdxyz[GET_ID2(i,1,0)] * matrix[0][0] +
-                             drdxyz[GET_ID2(i,1,1)] * matrix[0][1] +
-                             drdxyz[GET_ID2(i,1,2)] * matrix[0][2];
-            tensa[1][2][0] = drdxyz[GET_ID2(i,5,0)] * matrix[0][0] +
-                             drdxyz[GET_ID2(i,5,1)] * matrix[0][1] +
-                             drdxyz[GET_ID2(i,5,2)] * matrix[0][2];
-
-            tensa[1][0][1] = drdxyz[GET_ID2(i,3,0)] * matrix[1][0] +
-                             drdxyz[GET_ID2(i,3,1)] * matrix[1][1] +
-                             drdxyz[GET_ID2(i,3,2)] * matrix[1][2];
-            tensa[1][1][1] = drdxyz[GET_ID2(i,1,0)] * matrix[1][0] +
-                             drdxyz[GET_ID2(i,1,1)] * matrix[1][1] +
-                             drdxyz[GET_ID2(i,1,2)] * matrix[1][2];
-            tensa[1][2][1] = drdxyz[GET_ID2(i,5,0)] * matrix[1][0] +
-                             drdxyz[GET_ID2(i,5,1)] * matrix[1][1] +
-                             drdxyz[GET_ID2(i,5,2)] * matrix[1][2];
-
-            tensa[1][0][2] = drdxyz[GET_ID2(i,3,0)] * matrix[2][0] +
-                             drdxyz[GET_ID2(i,3,1)] * matrix[2][1] +
-                             drdxyz[GET_ID2(i,3,2)] * matrix[2][2];
-            tensa[1][1][2] = drdxyz[GET_ID2(i,1,0)] * matrix[2][0] +
-                             drdxyz[GET_ID2(i,1,1)] * matrix[2][1] +
-                             drdxyz[GET_ID2(i,1,2)] * matrix[2][2];
-            tensa[1][2][2] = drdxyz[GET_ID2(i,5,0)] * matrix[2][0] +
-                             drdxyz[GET_ID2(i,5,1)] * matrix[2][1] +
-                             drdxyz[GET_ID2(i,5,2)] * matrix[2][2];
-
-            tensa[2][0][0] = drdxyz[GET_ID2(i,4,0)] * matrix[0][0] +
-                             drdxyz[GET_ID2(i,4,1)] * matrix[0][1] +
-                             drdxyz[GET_ID2(i,4,2)] * matrix[0][2];
-            tensa[2][1][0] = drdxyz[GET_ID2(i,5,0)] * matrix[0][0] +
-                             drdxyz[GET_ID2(i,5,1)] * matrix[0][1] +
-                             drdxyz[GET_ID2(i,5,2)] * matrix[0][2];
-            tensa[2][2][0] = drdxyz[GET_ID2(i,2,0)] * matrix[0][0] +
-                             drdxyz[GET_ID2(i,2,1)] * matrix[0][1] +
-                             drdxyz[GET_ID2(i,2,2)] * matrix[0][2];
-
-            tensa[2][0][1] = drdxyz[GET_ID2(i,4,0)] * matrix[1][0] +
-                             drdxyz[GET_ID2(i,4,1)] * matrix[1][1] +
-                             drdxyz[GET_ID2(i,4,2)] * matrix[1][2];
-            tensa[2][1][1] = drdxyz[GET_ID2(i,5,0)] * matrix[1][0] +
-                             drdxyz[GET_ID2(i,5,1)] * matrix[1][1] +
-                             drdxyz[GET_ID2(i,5,2)] * matrix[1][2];
-            tensa[2][2][1] = drdxyz[GET_ID2(i,2,0)] * matrix[1][0] +
-                             drdxyz[GET_ID2(i,2,1)] * matrix[1][1] +
-                             drdxyz[GET_ID2(i,2,2)] * matrix[1][2];
-
-            tensa[2][0][2] = drdxyz[GET_ID2(i,4,0)] * matrix[2][0] +
-                             drdxyz[GET_ID2(i,4,1)] * matrix[2][1] +
-                             drdxyz[GET_ID2(i,4,2)] * matrix[2][2];
-            tensa[2][1][2] = drdxyz[GET_ID2(i,5,0)] * matrix[2][0] +
-                             drdxyz[GET_ID2(i,5,1)] * matrix[2][1] +
-                             drdxyz[GET_ID2(i,5,2)] * matrix[2][2];
-            tensa[2][2][2] = drdxyz[GET_ID2(i,2,0)] * matrix[2][0] +
-                             drdxyz[GET_ID2(i,2,1)] * matrix[2][1] +
-                             drdxyz[GET_ID2(i,2,2)] * matrix[2][2];
-
-            for (j = 0; j < 3; j++)
-              for (l = 0; l < 3; l++)
-                for (k = 0; k < 3; k++) {
-                  tensb[j][l][k] = 0.;
-                  for (m = 0; m < 3; m++)
-                    tensb[j][l][k] += matrix[j][m] * tensa[l][m][k];
-                }
-
-            for (k = 0; k < 3; k++)
-              for (i1 = 0; i1 < 3; i1++)
-                for (i2 = 0; i2 < 3; i2++) {
-                  tensc[k][i1][i2] = 0.;
-                  for (l = 0; l < 3; l++)
-                    tensc[k][i1][i2] += matrix[k][l] * tensb[i1][l][i2];
-                }
-
-            drdxyz[GET_ID2(i,0,0)] = tensc[0][0][0];
-            drdxyz[GET_ID2(i,0,1)] = tensc[0][0][1];
-            drdxyz[GET_ID2(i,0,2)] = tensc[0][0][2];
-
-            drdxyz[GET_ID2(i,3,0)] = tensc[0][1][0];
-            drdxyz[GET_ID2(i,3,1)] = tensc[0][1][1];
-            drdxyz[GET_ID2(i,3,2)] = tensc[0][1][2];
-
-            drdxyz[GET_ID2(i,4,0)] = tensc[0][2][0];
-            drdxyz[GET_ID2(i,4,1)] = tensc[0][2][1];
-            drdxyz[GET_ID2(i,4,2)] = tensc[0][2][2];
-
-            drdxyz[GET_ID2(i,1,0)] = tensc[1][1][0];
-            drdxyz[GET_ID2(i,1,1)] = tensc[1][1][1];
-            drdxyz[GET_ID2(i,1,2)] = tensc[1][1][2];
-
-            drdxyz[GET_ID2(i,5,0)] = tensc[1][2][0];
-            drdxyz[GET_ID2(i,5,1)] = tensc[1][2][1];
-            drdxyz[GET_ID2(i,5,2)] = tensc[1][2][2];
-
-            drdxyz[GET_ID2(i,2,0)] = tensc[2][2][0];
-            drdxyz[GET_ID2(i,2,1)] = tensc[2][2][1];
-            drdxyz[GET_ID2(i,2,2)] = tensc[2][2][2];
+            _apply_tensor3sym_rotation(matrix, drdxyz + 18*i);
 
           } /* End of loop on extended ghost cells */
 
