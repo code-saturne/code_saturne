@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2011 EDF S.A.
+# Copyright (C) 1998-2012 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -387,6 +387,16 @@ changelog:
       --authors=${top_srcdir}/extras/changelog/authors.xml \
       --output=${top_srcdir}/ChangeLog \
       ${top_srcdir} --revision {"$${today} 23:59"}:{"$${start} 00:00"}
+
+# Update Copyright
+
+update-copyright:
+	y=`date +%Y`; yold=$$(($$y-1)); \
+	lst=`find ${top_srcdir} -type d \( -name .svn -o -name .git -o -name "build*" \) -prune -o \( -type f -a ! -name Makefile.in \) -print`; \
+	for f in $$lst; do \
+	  echo $$f && \
+	  $(SED) -i "s/Copyright (C) 1998-$${yold} EDF S.A./Copyright (C) 1998-$$y EDF S.A./" $$f; \
+	done
 
 # Finish user files installation
 # - tag with the package version number
