@@ -102,9 +102,9 @@ static const cs_real_t  *_cs_glob_perio_last_backup[3] = {NULL, NULL, NULL};
 
 /* Table giving the Reynolds stress component for [i][j] */
 
-static const int rij[3][3] = {{0, 3, 4},
-                              {3, 1, 5},
-                              {4, 5, 2}};
+static const int _rij[3][3] = {{0, 3, 4},
+                               {3, 1, 5},
+                               {4, 5, 2}};
 
 /*============================================================================
  * Private function definitions
@@ -426,7 +426,7 @@ _apply_tensor3sym_rotation(cs_real_t   matrix[3][4],
       for (k = 0; k < 3; k++) {
         t1[p][q][k] = 0.;
         for (r = 0; r < 3; r++)
-          t1[p][q][k] += matrix[k][r] * tensor[3*rij[p][q] + r];
+          t1[p][q][k] += matrix[k][r] * tensor[3*_rij[p][q] + r];
       }
     }
   }
@@ -448,7 +448,7 @@ _apply_tensor3sym_rotation(cs_real_t   matrix[3][4],
   for (i = 0; i < 3; i++)
     for (j = 0; j < 3; j++)
       for (k = 0; k < 3; k++)
-        tensor[3*rij[i][j] + k] = t2[i][j][k];
+        tensor[3*_rij[i][j] + k] = t2[i][j][k];
 
 }
 

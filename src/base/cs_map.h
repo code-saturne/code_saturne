@@ -142,8 +142,8 @@ cs_map_name_to_id_size(const cs_map_name_to_id_t *m);
  * Return key in a map for a given index position.
  *
  * parameters:
- *   m  <-- pointer to map structure.
- *   id <-- key id
+ *   m     <-- pointer to map structure.
+ *   index <-- key index
  *
  * returns:
  *   pointer to key.
