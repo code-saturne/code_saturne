@@ -398,6 +398,10 @@ static void
 _gui_copy_varname(const char *varname, int ipp)
 {
   size_t l;
+
+  if (varname == NULL)
+    return;
+
   if (ipp < 1 || ipp > cs_glob_label->_cs_gui_last_var)
     bft_error(__FILE__, __LINE__, 0,
               _("Variable index %d out of bounds (1 to %d)"),
