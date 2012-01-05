@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-12-27 18:54+0100\n"
+"POT-Creation-Date: 2012-01-05 17:15+0100\n"
 "PO-Revision-Date: 2011-10-13 19:39+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5053,6 +5053,45 @@ msgstr ""
 "Le champ %s avec indicateur de type %d\n"
 "na pas de valeur associée au mot clé %d (%s)."
 
+msgid "Field"
+msgstr "Champ"
+
+msgid "Dim."
+msgstr ""
+
+msgid "Location"
+msgstr "Support"
+
+msgid "Id"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Fields of type: %s\n"
+"---------------\n"
+msgstr ""
+"\n"
+"Champs de type : %s\n"
+"----------------\n"
+
+msgid ""
+"\n"
+"Other fields:\n"
+"-------------\n"
+msgstr ""
+"\n"
+"Autres champs :\n"
+"---------------\n"
+
+#, c-format
+msgid "  %s %s %s %s Type flag\n"
+msgstr "  %s %s %s %s Indic. type\n"
+
+#, c-format
+msgid "  %s %s %s %s ---------\n"
+msgstr "  %s %s %s %s -----------\n"
+
 #, c-format
 msgid ""
 "\n"
@@ -5063,27 +5102,15 @@ msgstr ""
 
 #, c-format
 msgid ""
-"\n"
 "    Id:                         %d\n"
 "    Type:                       %d"
 msgstr ""
-"\n"
 "    Id :                        %d\n"
 "    Type :                      %d"
 
 #, c-format
-msgid " (%s"
-msgstr ""
-
-#, c-format
-msgid ", %s"
-msgstr ""
-
-msgid ")"
-msgstr ""
-
-msgid "\n"
-msgstr ""
+msgid "    Location:                   %s\n"
+msgstr "    Support :                   %s\n"
 
 msgid "    Dimension:                  1\n"
 msgstr "    Dimension :                 1\n"
@@ -5130,35 +5157,10 @@ msgstr "      %-24s %s\n"
 msgid "      %-24s %-10s (default)\n"
 msgstr "      %-24s %-10s (défaut)\n"
 
-#, c-format
-msgid ""
-"\n"
-"Fields of type: %s\n"
-"---------------\n"
-msgstr ""
-"\n"
-"Champs de type: %s\n"
-"---------------\n"
-
-msgid ""
-"\n"
-"Other fields:\n"
-"-------------\n"
-msgstr ""
-"\n"
-"Autres champs:\n"
-"-------------\n"
-
-msgid "Key word"
-msgstr "Mot clé"
-
 msgid "Default"
 msgstr "Défaut"
 
 msgid "Type"
-msgstr ""
-
-msgid "Id"
 msgstr ""
 
 msgid ""
@@ -5173,24 +5175,54 @@ msgstr ""
 "\n"
 
 #, c-format
-msgid "  %s %s %s %s Type flag\n"
-msgstr "  %s %s %s %s Indic. type\n"
+msgid "  %-24s %-12d integer %-4d "
+msgstr "  %-24s %-12d entier  %-4d "
 
 #, c-format
-msgid "  %s %s %s %s ---------\n"
-msgstr "  %s %s %s %s -----------\n"
+msgid "  %-24s %-12.3g real    %-4d "
+msgstr "  %-24s %-12.3g réel    %-4d "
 
 #, c-format
-msgid "  %-24s %-12d integer %-4d %-4d"
-msgstr "  %-24s %-12d entier  %-4d %-4d"
+msgid "  %-24s %-12s string  %-4d "
+msgstr "  %-24s %-12s chaîne  %-4d "
 
 #, c-format
-msgid "  %-24s %-12.3g real    %-4d %-4d"
-msgstr "  %-24s %-12.3g réel    %-4d %-4d"
+msgid ""
+"\n"
+"  Key: \"%s\", values per field\n"
+"  ----\n"
+msgstr ""
 
 #, c-format
-msgid "  %-24s %-12s string  %-4d %-4d"
-msgstr "  %-24s %-12s chaîne  %-4d %-4d"
+msgid "    %-24s %-10d (default)\n"
+msgstr "    %-24s %-10d (défaut)\n"
+
+#, c-format
+msgid "    %-24s %-10.3g\n"
+msgstr "    %-24s %-10.3g\n"
+
+#, c-format
+msgid "    %-24s %-10.3g (default)\n"
+msgstr "    %-24s %-10.3g (défaut)\n"
+
+#, c-format
+msgid "    %-24s %s\n"
+msgstr "    %-24s %s\n"
+
+#, c-format
+msgid "    %-24s %-10s (default)\n"
+msgstr "    %-24s %-10s (défaut)\n"
+
+msgid ""
+"\n"
+"Defined key values per field:\n"
+"-----------------------------\n"
+"\n"
+msgstr ""
+"\n"
+"Valeurs de clés définies par champ :\n"
+"------------------------------------\n"
+"\n"
 
 #, c-format
 msgid ""
@@ -9554,6 +9586,21 @@ msgstr ""
 "Le support de maillage demandé\n"
 "%d n'est pas défini.\n"
 
+msgid "global"
+msgstr "global"
+
+msgid "cells"
+msgstr "cellules"
+
+msgid "interior_faces"
+msgstr "faces intérieures"
+
+msgid "boundary_faces"
+msgstr "faces de bord"
+
+msgid "vertices"
+msgstr "sommets"
+
 #, c-format
 msgid ""
 "A selection criteria is given but no associated selector\n"
@@ -9842,3 +9889,10 @@ msgstr ""
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
 "\n"
+
+#~ msgid ""
+#~ "\n"
+#~ "  Multigrid coarsening type: %s\n"
+#~ msgstr ""
+#~ "\n"
+#~ "  Type d'agglomération multigrille : %s\n"

@@ -419,6 +419,33 @@ _find_or_add_key(const char  *name)
 }
 
 /*----------------------------------------------------------------------------
+ * Add type flag info to the current position in the setup log.
+ *
+ * parameters:
+ *   type <-- type flag
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_log_add_type_flag(int type)
+{
+  int i;
+  int n_loc_flags = 0;
+
+  for (i = 0; i < _n_type_flags; i++) {
+    if (type & _type_flag_mask[i]) {
+      if (n_loc_flags == 0)
+        cs_log_printf(CS_LOG_SETUP, " (%s", _(_type_flag_name[i]));
+      else
+        cs_log_printf(CS_LOG_SETUP, ", %s", _(_type_flag_name[i]));
+      n_loc_flags++;
+    }
+  }
+
+  if (n_loc_flags > 0)
+    cs_log_printf(CS_LOG_SETUP, ")");
+}
+
+/*----------------------------------------------------------------------------
  * Free strings associated to a key.
  *----------------------------------------------------------------------------*/
 
@@ -1775,16 +1802,126 @@ cs_field_get_key_str(const cs_field_t  *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Print info relative to all field definitions to log file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_log_defs(void)
+{
+  int i, j, cat_id;
+
+  int n_cat_fields = 0;
+
+  int mask_id_start = 2; /* _type_flag_*[CS_FIELD_VARIABLE] */
+  int mask_id_end = 6;   /* _type_flag_*[CS_FIELD_USER] */
+  int mask_prev = 0;
+
+  if (_n_fields == 0)
+    return;
+
+  /* Fields by category */
+
+  for (cat_id = mask_id_start; cat_id < mask_id_end + 1; cat_id++) {
+
+    n_cat_fields = 0;
+
+    for (i = 0; i < _n_fields; i++) {
+
+      char ilv_c = ' ';
+
+      const cs_field_t *f = _fields + i;
+
+      if (f->type & mask_prev)
+        continue;
+
+      if (cat_id == mask_id_end || f->type & _type_flag_mask[cat_id]) {
+
+        /* Print header for first field of each category */
+
+        if (n_cat_fields == 0) {
+
+          char tmp_s[4][64] =  {"", "", "", ""};
+
+          cs_log_strpad(tmp_s[0], _("Field"), 24, 64);
+          cs_log_strpad(tmp_s[1], _("Dim."), 4, 64);
+          cs_log_strpad(tmp_s[2], _("Location"), 20, 64);
+          cs_log_strpad(tmp_s[3], _("Id"), 4, 64);
+
+          /* Print logging header */
+
+          if (cat_id < mask_id_end)
+            cs_log_printf(CS_LOG_SETUP,
+                          _("\n"
+                            "Fields of type: %s\n"
+                            "---------------\n"), _(_type_flag_name[cat_id]));
+          else
+            cs_log_printf(CS_LOG_SETUP,
+                          _("\n"
+                            "Other fields:\n"
+                            "-------------\n"));
+          cs_log_printf(CS_LOG_SETUP, "\n");
+
+          cs_log_printf(CS_LOG_SETUP, _("  %s %s %s %s Type flag\n"),
+                        tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3]);
+
+          for (j = 0; j < 4; j++)
+            memset(tmp_s[j], '-', 64);
+
+          tmp_s[0][24] = '\0';
+          tmp_s[1][4] = '\0';
+          tmp_s[2][20] = '\0';
+          tmp_s[3][4] = '\0';
+
+          cs_log_printf(CS_LOG_SETUP, _("  %s %s %s %s ---------\n"),
+                        tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3]);
+
+        }
+
+        /* Print field info */
+
+        if (f->interleaved == false)
+          ilv_c = 'n';
+
+        cs_log_printf(CS_LOG_SETUP,
+                      "  %-24s %d %c  %-20s %-4d ",
+                      f->name, f->dim, ilv_c,
+                      _(cs_mesh_location_get_name(f->location_id)),
+                      f->id);
+
+        if (f->type != 0) {
+          cs_log_printf(CS_LOG_SETUP, "%-4d", f->type);
+          _log_add_type_flag(f->type);
+          cs_log_printf(CS_LOG_SETUP, "\n");
+        }
+        else
+          cs_log_printf(CS_LOG_SETUP, "0\n");
+
+        n_cat_fields++;
+
+      }
+
+    } /* End of loop on fields */
+
+    if (cat_id < mask_id_end)
+      mask_prev += _type_flag_mask[cat_id];
+
+  } /* End fo loop on categories */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print info relative to a given field to log file.
  *
  * \param[in]  f             pointer to field structure
- * \param[in]  log_defaults  if true, output defaults info
+ * \param[in]  log_keywords  log level for keywords (0: do not log,
+ *                           1: log non-default values, 2: log all)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_field_log_info(const cs_field_t  *f,
-                  bool               log_defaults)
+                  int                log_keywords)
 {
   if (f == NULL)
     return;
@@ -1796,9 +1933,11 @@ cs_field_log_info(const cs_field_t  *f,
                 _("\n"
                   "  Field: \"%s\"\n"), f->name);
 
+  if (log_keywords > 0)
+    cs_log_printf(CS_LOG_SETUP, "\n");
+
   cs_log_printf(CS_LOG_SETUP,
-                _("\n"
-                  "    Id:                         %d\n"
+                _("    Id:                         %d\n"
                   "    Type:                       %d"),
                 f->id, f->type);
 
@@ -1808,16 +1947,19 @@ cs_field_log_info(const cs_field_t  *f,
     for (i = 0; i < _n_type_flags; i++) {
       if (f->type & _type_flag_mask[i]) {
         if (n_loc_flags == 0)
-          cs_log_printf(CS_LOG_SETUP,_(" (%s"), _(_type_flag_name[i]));
+          cs_log_printf(CS_LOG_SETUP, " (%s", _(_type_flag_name[i]));
         else
-          cs_log_printf(CS_LOG_SETUP, _(", %s"), _(_type_flag_name[i]));
+          cs_log_printf(CS_LOG_SETUP, ", %s", _(_type_flag_name[i]));
         n_loc_flags++;
       }
     }
     if (n_loc_flags > 0)
-      cs_log_printf(CS_LOG_SETUP, _(")"));
-    cs_log_printf(CS_LOG_SETUP, _("\n"));
+      cs_log_printf(CS_LOG_SETUP, ")");
+    cs_log_printf(CS_LOG_SETUP, "\n");
   }
+
+  cs_log_printf(CS_LOG_SETUP, _("    Location:                   %s\n"),
+                cs_mesh_location_get_name(f->location_id));
 
   if (f->dim == 1)
     cs_log_printf(CS_LOG_SETUP, _("    Dimension:                  1\n"));
@@ -1834,7 +1976,7 @@ cs_field_log_info(const cs_field_t  *f,
     cs_log_printf(CS_LOG_SETUP,
                   _("    Values mapped from external definition\n"));
 
-  if (_n_keys > 0) {
+  if (_n_keys > 0 && log_keywords > 0) {
     int i;
     const char null_str[] = "(null)";
     cs_log_printf(CS_LOG_SETUP, _("\n    Associated key values:\n"));
@@ -1849,7 +1991,7 @@ cs_field_log_info(const cs_field_t  *f,
           if (kv->is_set == true)
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10d\n"),
                           key, *((int *)kv->val));
-          else if (log_defaults)
+          else if (log_keywords > 1)
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10d (default)\n"),
                           key, *((int *)kd->def_val));
         }
@@ -1857,7 +1999,7 @@ cs_field_log_info(const cs_field_t  *f,
           if (kv->is_set == true)
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10.3g\n"),
                           key, *((double *)kv->val));
-          else if (log_defaults)
+          else if (log_keywords > 1)
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10.3g (default)\n"),
                           key, *((double *)kd->def_val));
         }
@@ -1869,7 +2011,7 @@ cs_field_log_info(const cs_field_t  *f,
               s = null_str;
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %s\n"), key, s);
           }
-          else if (log_defaults) {
+          else if (log_keywords > 1) {
             s = *(const char **)(kd->def_val);
             if (s == NULL)
               s = null_str;
@@ -1886,82 +2028,74 @@ cs_field_log_info(const cs_field_t  *f,
 /*!
  * \brief Print info relative to all defined fields to log file.
  *
- * \param[in]  log_defaults  if true, output defaults info
+ * \param[in]  log_keywords  log level for keywords (0: do not log,
+ *                           1: log non-default values, 2: log all)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_field_log_fields(bool log_defaults)
+cs_field_log_fields(int  log_keywords)
 {
   int i, cat_id;
   const cs_field_t  *f;
 
   int n_cat_fields = 0;
-  int *field_id = NULL;
 
   int mask_id_start = 2; /* _type_flag_*[CS_FIELD_VARIABLE] */
   int mask_id_end = 6;   /* _type_flag_*[CS_FIELD_USER] */
+  int mask_prev = 0;
 
   if (_n_fields == 0)
     return;
 
-  BFT_MALLOC(field_id, _n_fields, int);
-
-  for (i = 0; i < _n_fields; i++)
-    field_id[i] = cs_map_name_to_id_try(_field_map,
-                                        cs_map_name_to_id_key(_field_map, i));
-
   /* Fields by category */
 
-  for (cat_id = mask_id_start; cat_id < mask_id_end; cat_id++) {
+  for (cat_id = mask_id_start; cat_id < mask_id_end + 1; cat_id++) {
+
     n_cat_fields = 0;
+
     for (i = 0; i < _n_fields; i++) {
-      if (field_id[i] < 0)
+
+      f = _fields + i;
+
+      if (f->type & mask_prev)
         continue;
-      f = _fields + field_id[i];
-      if (f->type & _type_flag_mask[cat_id]) {
-        if (n_cat_fields == 0)
-          cs_log_printf(CS_LOG_SETUP,
-                        _("\n"
-                          "Fields of type: %s\n"
-                          "---------------\n"), _type_flag_name[cat_id]);
-        cs_field_log_info(f, log_defaults);
+
+      if (cat_id == mask_id_end || f->type & _type_flag_mask[cat_id]) {
+
+        if (n_cat_fields == 0) {
+          if (cat_id < mask_id_end)
+            cs_log_printf(CS_LOG_SETUP,
+                          _("\n"
+                            "Fields of type: %s\n"
+                            "---------------\n"), _(_type_flag_name[cat_id]));
+          else
+            cs_log_printf(CS_LOG_SETUP,
+                          _("\n"
+                            "Other fields:\n"
+                            "-------------\n"));
+        }
+        cs_field_log_info(f, log_keywords);
         n_cat_fields++;
-        field_id[i] = -1;
+
       }
-    }
-  }
 
-  /* Other fields if present */
+    } /* End of loop on fields */
 
-  n_cat_fields = 0;
-  for (i = 0; i < _n_fields; i++) {
-    if (field_id[i] < 0)
-      continue;
-    f = _fields + field_id[i];
-    if (f->type & _type_flag_mask[cat_id]) {
-      if (n_cat_fields == 0)
-        cs_log_printf(CS_LOG_SETUP,
-                      _("\n"
-                        "Other fields:\n"
-                        "-------------\n"));
-      cs_field_log_info(f, log_defaults);
-      n_cat_fields++;
-      field_id[i] = -1;
-    }
-  }
+    if (cat_id < mask_id_end)
+      mask_prev += _type_flag_mask[cat_id];
 
-  BFT_FREE(field_id);
+  } /* End of loop on categories */
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print info relative to all defined field keys to log file.
+ * \brief Print info relative to all key definitions to log file.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_field_log_keys(void)
+cs_field_log_key_defs(void)
 {
   int i;
   char tmp_s[4][64] =  {"", "", "", ""};
@@ -1969,7 +2103,9 @@ cs_field_log_keys(void)
   if (_n_keys == 0)
     return;
 
-  cs_log_strpad(tmp_s[0], _("Key word"), 24, 64);
+  /* Print logging header */
+
+  cs_log_strpad(tmp_s[0], _("Field"), 24, 64);
   cs_log_strpad(tmp_s[1], _("Default"), 12, 64);
   cs_log_strpad(tmp_s[2], _("Type"), 7, 64);
   cs_log_strpad(tmp_s[3], _("Id"), 4, 64);
@@ -1998,43 +2134,157 @@ cs_field_log_keys(void)
                 tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3]);
 
   for (i = 0; i < _n_keys; i++) {
+
     int key_id = cs_map_name_to_id_try(_key_map,
                                        cs_map_name_to_id_key(_key_map, i));
     cs_field_key_def_t *kd = _key_defs + key_id;
     const char *key = cs_map_name_to_id_key(_key_map, i);
+
     if (kd->type_id == 'i') {
       cs_log_printf(CS_LOG_SETUP,
-                    _("  %-24s %-12d integer %-4d %-4d"),
-                    key, *((int *)kd->def_val), key_id, kd->type_flag);
+                    _("  %-24s %-12d integer %-4d "),
+                    key, *((int *)kd->def_val), key_id);
     }
     else if (kd->type_id == 'd') {
       cs_log_printf(CS_LOG_SETUP,
-                    _("  %-24s %-12.3g real    %-4d %-4d"),
-                    key, *((double *)kd->def_val), key_id, kd->type_flag);
+                    _("  %-24s %-12.3g real    %-4d "),
+                    key, *((double *)kd->def_val), key_id);
     }
     else if (kd->type_id == 's') {
       cs_log_printf(CS_LOG_SETUP,
-                    _("  %-24s %-12s string  %-4d %-4d"),
-                    key, (*((const char **)kd->def_val)), key_id,
-                    kd->type_flag);
+                    _("  %-24s %-12s string  %-4d "),
+                    key, (*((const char **)kd->def_val)), key_id);
     }
-    if (kd->type_flag != 0) {
-      int j;
-      int n_loc_flags = 0;
-      for (j = 0; j < _n_type_flags; j++) {
-        if (kd->type_flag & _type_flag_mask[j]) {
-          if (n_loc_flags == 0)
-            cs_log_printf(CS_LOG_SETUP, _(" (%s"), _(_type_flag_name[j]));
-          else
-            cs_log_printf(CS_LOG_SETUP, _(", %s"), _(_type_flag_name[j]));
-          n_loc_flags++;
+    if (kd->type_flag == 0)
+      cs_log_printf(CS_LOG_SETUP, "0\n");
+    else {
+      cs_log_printf(CS_LOG_SETUP, "%-4d", kd->type_flag);
+      _log_add_type_flag(kd->type_flag);
+      cs_log_printf(CS_LOG_SETUP, "\n");
+    }
+
+  } /* End of loop on keys */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print info relative to a given field key to log file.
+ *
+ * \param[in]  key_id        id of associated key
+ * \param[in]  log_defaults  if true, log default field values in addition to
+ *                           defined field values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_log_key_vals(int   key_id,
+                      bool  log_defaults)
+{
+  int i, cat_id, n_cat_fields;
+  cs_field_key_def_t *kd;
+
+  int mask_id_start = 2; /* _type_flag_*[CS_FIELD_VARIABLE] */
+  int mask_id_end = 6;   /* _type_flag_*[CS_FIELD_USER] */
+  int mask_prev = 0;
+  const char null_str[] = "(null)";
+
+
+  if (key_id < 0 || key_id >= _n_keys)
+    return;
+
+  kd = _key_defs + key_id;
+
+  /* Global indicators */
+  /*-------------------*/
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "  Key: \"%s\", values per field\n"
+                  "  ----\n"),
+                cs_map_name_to_id_reverse(_key_map, key_id));
+
+  /* Loop on categories, building a mask for previous categories
+     so as not to output data twice */
+
+  for (cat_id = mask_id_start; cat_id < mask_id_end + 1; cat_id++) {
+
+    n_cat_fields = 0;
+
+    for (i = 0; i < _n_fields; i++) {
+
+      const cs_field_t *f = _fields + i;
+
+      if (f->type & mask_prev)
+        continue;
+
+      if (cat_id == mask_id_end || f->type & _type_flag_mask[cat_id]) {
+
+        cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
+
+        if (kd->type_flag == 0 || (kd->type_flag & f->type)) {
+          if (kd->type_id == 'i') {
+            if (kv->is_set == true)
+              cs_log_printf(CS_LOG_SETUP, "    %-24s %d\n",
+                            f->name, *((int *)kv->val));
+            else if (log_defaults)
+              cs_log_printf(CS_LOG_SETUP, _("    %-24s %-10d (default)\n"),
+                            f->name, *((int *)kd->def_val));
+          }
+          else if (kd->type_id == 'd') {
+            if (kv->is_set == true)
+              cs_log_printf(CS_LOG_SETUP, _("    %-24s %-10.3g\n"),
+                          f->name, *((double *)kv->val));
+            else if (log_defaults)
+              cs_log_printf(CS_LOG_SETUP, _("    %-24s %-10.3g (default)\n"),
+                            f->name, *((double *)kd->def_val));
+          }
+          else if (kd->type_id == 's') {
+            const char *s;
+            if (kv->is_set == true) {
+              s = *((const char **)(kv->val));
+              if (s == NULL)
+                s = null_str;
+              cs_log_printf(CS_LOG_SETUP, _("    %-24s %s\n"), f->name, s);
+            }
+            else if (log_defaults) {
+              s = *(const char **)(kd->def_val);
+              if (s == NULL)
+                s = null_str;
+              cs_log_printf(CS_LOG_SETUP, _("    %-24s %-10s (default)\n"),
+                            f->name, s);
+            }
+          }
         }
       }
-      if (n_loc_flags > 0)
-        cs_log_printf(CS_LOG_SETUP, _(")"));
+
     }
-    cs_log_printf(CS_LOG_SETUP, _("\n"));
+
+    if (cat_id < mask_id_end)
+      mask_prev += _type_flag_mask[cat_id];
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print info relative to all given field keys to log file.
+ *
+ * \param[in]  log_defaults  if true, log default field values in addition to
+ *                           defined field values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_log_all_key_vals(bool  log_defaults)
+{
+  int i;
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "Defined key values per field:\n"
+                  "-----------------------------\n\n"));
+
+  for (i = 0; i < _n_keys; i++)
+    cs_field_log_key_vals(i, log_defaults);
 }
 
 /*----------------------------------------------------------------------------*/

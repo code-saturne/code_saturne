@@ -815,33 +815,66 @@ cs_field_get_key_str(const cs_field_t  *f,
                      int                key_id);
 
 /*----------------------------------------------------------------------------
+ * Print info relative to all field definitions to log file.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_log_defs(void);
+
+/*----------------------------------------------------------------------------
  * Print info relative to a given field to log file.
  *
  * parameters:
  *   f            <-- pointer to field structure
- *   log_defaults <-- if true, output defaults info
+ *   log_keywords <-- log level for keywords (0: do not log,
+ *                    1: log non-default values, 2: log all)
  *----------------------------------------------------------------------------*/
 
 void
 cs_field_log_info(const cs_field_t  *f,
-                  bool               log_defaults);
+                  int                log_keywords);
 
 /*----------------------------------------------------------------------------
  * Print info relative to all defined fields to log file.
  *
  * parameters:
- *   log_defaults <-- if true, output defaults info
+ *   log_keywords <-- log level for keywords (0: do not log,
+ *                    1: log non-default values, 2: log all)
  *----------------------------------------------------------------------------*/
 
 void
-cs_field_log_fields(bool log_defaults);
+cs_field_log_fields(int  log_keywords);
 
 /*----------------------------------------------------------------------------
- * Print info relative to all defined field keys to log file.
+ * Print info relative to all key definitions to log file.
  *----------------------------------------------------------------------------*/
 
 void
-cs_field_log_keys(void);
+cs_field_log_key_defs(void);
+
+/*----------------------------------------------------------------------------
+ * Print info relative to a given field key to log file.
+ *
+ * parameters:
+ *   int key_id   <-- id of associated key
+ *   log_defaults <-- if true, log default field values in addition to
+ *                    defined field values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_log_key_vals(int   key_id,
+                      bool  log_defaults);
+
+/*----------------------------------------------------------------------------
+ * Print info relative to all given field keys to log file.
+ *
+ * parameters:
+ *   log_defaults <-- if true, log default field values in addition to
+ *                    defined field values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_log_all_key_vals(bool  log_defaults);
 
 /*----------------------------------------------------------------------------
  * Define base keys.

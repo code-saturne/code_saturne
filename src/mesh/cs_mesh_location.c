@@ -254,19 +254,19 @@ cs_mesh_location_n_locations(void)
 void
 cs_mesh_location_initialize(void)
 {
-  cs_mesh_location_define("global",
+  cs_mesh_location_define(N_("global"),
                           CS_MESH_LOCATION_NONE,
                           NULL);
-  cs_mesh_location_define("cells",
+  cs_mesh_location_define(N_("cells"),
                           CS_MESH_LOCATION_CELLS,
                           NULL);
-  cs_mesh_location_define("interior_faces",
+  cs_mesh_location_define(N_("interior_faces"),
                           CS_MESH_LOCATION_INTERIOR_FACES,
                           NULL);
-  cs_mesh_location_define("boundary_faces",
+  cs_mesh_location_define(N_("boundary_faces"),
                           CS_MESH_LOCATION_BOUNDARY_FACES,
                           NULL);
-  cs_mesh_location_define("vertices",
+  cs_mesh_location_define(N_("vertices"),
                           CS_MESH_LOCATION_VERTICES,
                           NULL);
 }

@@ -87,6 +87,7 @@
 #include "cs_gui_particles.h"
 #include "cs_io.h"
 #include "cs_join.h"
+#include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_coherency.h"
 #include "cs_mesh_location.h"
@@ -255,8 +256,10 @@ cs_run(void)
 
   /* Print info on fields and associated keys */
 
-  cs_field_log_keys();
-  cs_field_log_fields(true);
+  cs_field_log_defs();
+  cs_field_log_key_defs();
+  cs_field_log_all_key_vals(true);
+  cs_log_printf_flush(CS_LOG_SETUP);
 
   /* Join meshes / build periodicity links if necessary */
 
