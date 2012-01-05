@@ -100,6 +100,12 @@ static size_t  _cs_glob_perio_halo_backup_id = 0;
 static cs_real_t  *_cs_glob_perio_halo_backup = NULL;
 static const cs_real_t  *_cs_glob_perio_last_backup[3] = {NULL, NULL, NULL};
 
+/* Table giving the Reynolds stress component for [i][j] */
+
+static const int rij[3][3] = {{0, 3, 4},
+                              {3, 1, 5},
+                              {4, 5, 2}};
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -394,16 +400,6 @@ _apply_tensor_rotation(cs_real_t   matrix[3][4],
   }
 
 }
-/*============================================================================
- * Static global variables
- *============================================================================*/
-
-/* table giving the Reynolds stress component for [i][j] */
-
-static const int rij[3][3] = {{0, 3, 4},
-                                   {3, 1, 5},
-                                   {4, 5, 2}};
-
 
 /*----------------------------------------------------------------------------
  * Compute the rotation of a third-order symmetric interleaved tensor
@@ -455,6 +451,7 @@ _apply_tensor3sym_rotation(cs_real_t   matrix[3][4],
         tensor[3*rij[i][j] + k] = t2[i][j][k];
 
 }
+
 /*----------------------------------------------------------------------------
  * Test if a halo seems compatible with the main mesh's periodic
  * transformations.
@@ -747,6 +744,7 @@ _peinr1(cs_int_t      strid_v,
 
   BFT_FREE(w_save);
 }
+
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
