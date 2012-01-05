@@ -55,11 +55,11 @@
 \newcommand{\divs}{\text{div}\,}
 \newcommand{\divv}{\underline{\text{div}}\,}
 \newcommand{\divt}{\underline{\underline{\text{div}}}\,}
-\newcommand{\grad}{\text{g}\underline{\text{rad}}\,}
+\newcommand{\grad}{\underline{\nabla}}
 \newcommand{\ggrad}{\text{g}\underline{\underline{\text{rad}}}\,}
-\newcommand{\gradv}{\text{g}\underline{\text{rad}}\,}
-\newcommand{\gradt}{\text{g}\underline{\underline{\text{rad}}}\,}
-\newcommand{\gradtt}{\text{g}\underline{\underline{\underline{\text{rad}}}}\,}
+\newcommand{\gradv}{\underline{\nabla}}
+\newcommand{\gradt}{\underline{\underline{\nabla}}}
+\newcommand{\gradtt}{\underline{\underline{\underline{\nabla}}}}
 \newcommand{\mat}[1]{\underline{\textrm{#1}}}
 \newcommand{\matt}[1]{\underline{\underline{\textrm{#1}}}}
 \newcommand{\rot}{\underline{\text{rot}}\ }
@@ -69,6 +69,34 @@
 \newcommand{\symmetric}[1]{#1^S}
 \newcommand{\trace}{tr}
 \newcommand{\deviator}[1]{#1^D}
+\newcommand{\norm}[1]{\left| #1 \right|}
+%
+% Discretization
+%
+\newcommand{\Facei}[1]{\mathcal{F}^{int}_{#1}} % set of internal faces
+\newcommand{\Faceb}[1]{\mathcal{F}^{ext}_{#1}} %set of boundary faces
+\newcommand{\Face}[1]{\mathcal{F}_{#1}} % set of faces
+\newcommand{\fij}{f_{ij}} % internal face
+\newcommand{\fib}{f_{b}} % boundary face
+\renewcommand{\ij}{ij} % orientated internal face value ("K, sigma" in sushi)
+\newcommand{\ib}{ib} % orientated internal face value ("K, sigma" in sushi)
+\newcommand{\celli}{i} % name of the current cell
+\newcommand{\centi}{I} % center of the current cell
+\newcommand{\centip}{I^\prime} % orthogonal center of the current cell
+\newcommand{\ipf}{I^\prime} % orthogonal center indice of the current cell
+\newcommand{\vol}[1]{\Omega_{#1}} % Volume of the cell #1 (K itself in sushi) 
+\newcommand{\cellj}{j} % name of the neighbouring face
+\newcommand{\centj}{J} % center of the neighbouring face
+\newcommand{\centjp}{J^\prime} % orthogonal center of the neighbouring cell
+\newcommand{\jpf}{J^\prime} % orthogonal center indice of the neighbouring cell
+\newcommand{\centf}{F} % center of the face
+\newcommand{\cento}{O} % intersection between the cell centers and the face 
+%
+\newcommand{\dd}{\mathrm{d}} % total derivative
+%
+\newcommand{\Neigh}[1]{Neigh\left(#1\right)}
+\newcommand{\Bound}[1]{Bound\left(#1\right)}
+%
 %
 \newcommand{\bm}[1]{\text{\boldmath $#1$ \unboldmath} \! \!}
 \newcommand{\comp}[1]{\textrm{#1}}
@@ -84,9 +112,7 @@
 % TODO remove
 \newcommand{\var}[1]{\ensuremath{\text{\texttt{#1}}}}
 %
-\newcommand{\Neigh}[1]{Neigh\left(#1\right)}
-\newcommand{\Bound}[1]{Bound\left(#1\right)}
-%
+
 % Definition of variables and keywords (used in the different tables)
 %
 \newbox\tempbox
