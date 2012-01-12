@@ -23,5 +23,5 @@
 #-------------------------------------------------------------------------------
 
 # Change to submission directory
-cd $SGE_O_WORKDIR
+if test -n "$SGE_O_WORKDIR" ; then cd $SGE_O_WORKDIR ; fi
 

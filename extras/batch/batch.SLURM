@@ -35,5 +35,5 @@
 #-------------------------------------------------------------------------------
 
 # Change to submission directory
-cd $SLURM_SUBMIT_DIR
+if test -n "$SLURM_SUBMIT_DIR" ; then cd $SLURM_SUBMIT_DIR ; fi
 

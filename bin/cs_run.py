@@ -121,8 +121,15 @@ def process_cmd_line(argv, pkg):
                 break
             casedir = os.path.split(casedir)[0]
 
-    if not casedir:
+    if not (os.path.isdir(data) and os.path.isdir(src)):
         casedir = None
+        cmd_line = sys.argv[0]
+        for arg in sys.argv[1:]:
+            cmd_line += ' ' + arg
+        err_str = 'Error:\n' + cmd_line + '\n' \
+            'run from directory \"' + str(os.getcwd()) + '\",\n' \
+            'which does not seem to be inside a case directory.\n'
+        sys.stderr.write(err_str)
 
     # Stages to run (if no filter given, all are done).
 
@@ -153,6 +160,9 @@ def main(argv, pkg):
 
     (casedir, run_id, param, suggest_id,
      prepare_data, run_solver, save_results) = process_cmd_line(argv, pkg)
+
+    if not casedir:
+        return 1
 
     if suggest_id:
         now = datetime.datetime.now()
