@@ -65,6 +65,7 @@ class package:
         self.cflags="@CS_CFLAGS@"
         self.cxxflags="@CS_CXXFLAGS@"
         self.fcflags="@CS_FCFLAGS@"
+        self.fcmoddir="@pkgincludedir@"
         self.fcmodinclude="@FCMODINCLUDE@"
         self.ldflags = "@CS_LDFLAGS@"
         self.libs = "-lsaturne -lmei -lbft @CS_LIBS@"
