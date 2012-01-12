@@ -71,12 +71,12 @@ BEGIN_C_DECLS
  *
  * The arguments to cs_sat_coupling_define are:
  *   saturne_name          <-- matching Code_Saturne application name
- *   volume_sup_criteria   <-- cell selection criteria for support
- *   boundary_sup_criteria <-- boundary face selection criteria for support
- *                             (not functional)
- *   volume_cpl_criteria   <-- cell selection criteria for coupled cells
  *   boundary_cpl_criteria <-- boundary face selection criteria for coupled
  *                             faces
+ *   volume_cpl_criteria   <-- cell selection criteria for coupled cells
+ *   boundary_sup_criteria <-- boundary face selection criteria for support
+ *                             (not functional)
+ *   volume_sup_criteria   <-- cell selection criteria for support
  *   verbosity             <-- verbosity level
  *
  * In the case of only 2 Code_Saturne instances, the 'saturne_name' argument
@@ -100,10 +100,10 @@ cs_user_saturne_coupling(void)
    *-------------------------------------------------------------------------*/
 
   cs_sat_coupling_define("SATURNE_01",
-                         "all[]",
-                         NULL,
-                         NULL,
                          "3 or 4",
+                         NULL,
+                         NULL,
+                         "all[]",
                          verbosity);
 
   /*-------------------------------------------------------------------------
@@ -115,9 +115,9 @@ cs_user_saturne_coupling(void)
    *-------------------------------------------------------------------------*/
 
   cs_sat_coupling_define("SATURNE_03",
+                         "coupled_faces",
                          "all[]",
                          NULL,
                          "all[]",
-                         "coupled_faces",
                          verbosity);
 }
