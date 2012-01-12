@@ -206,9 +206,9 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         cmd = cmd + " -I" + srcdir
         if pkg.fcmodinclude != "-I":
             cmd += " " + pkg.fcmodinclude + srcdir
-        cmd = cmd + " -I" + pkg.pkgincludedir
+        cmd = cmd + " -I" + pkg.fcmoddir
         if pkg.fcmodinclude != "-I":
-            cmd += " " + pkg.fcmodinclude + pkg.pkgincludedir
+            cmd += " " + pkg.fcmodinclude + pkg.fcmoddir
         cmd = cmd + " " + pkg.fcflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
