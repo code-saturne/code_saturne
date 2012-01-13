@@ -1,4 +1,9 @@
 * 13/01/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  GUI must load environment modules to avoid issues with subprocesses.
+  modified files:
+    bin/cs_gui.py
+
+* 13/01/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Make detection of initial run directory more robust.
   modified files:
     bin/cs_run.py

@@ -134,6 +134,9 @@ def main(argv, pkg):
     Start Qt and a session of the application.
     """
 
+    from cs_exec_environment import set_modules
+    set_modules(pkg)
+
     # Test the package name to know which modules have to be imported
     if pkg.name == 'code_saturne':
         from Base.MainView import MainView
