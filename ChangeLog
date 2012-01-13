@@ -1,3 +1,15 @@
+* 13/01/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Make detection of initial run directory more robust.
+  modified files:
+    bin/cs_run.py
+    extras/batch/batch.CCC
+    extras/batch/batch.LOADL
+    extras/batch/batch.LOADL_BG
+    extras/batch/batch.LSF
+    extras/batch/batch.PBS
+    extras/batch/batch.SGE
+    extras/batch/batch.SLURM
+
 * 12/01/2012 - David Monfort <david.monfort@edf.fr>
   Fix code/code coupling definition examples.
   modified routine:

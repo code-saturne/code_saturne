@@ -19,5 +19,5 @@
 #-------------------------------------------------------------------------------
 
 # Change to submission directory
-cd $PBS_O_WORKDIR
+if test -n "$PBS_O_WORKDIR" ; then cd $PBS_O_WORKDIR ; fi
 
