@@ -481,6 +481,7 @@ class Study:
      'n_procs_min': 1,
      'n_procs_max': None,
      'opt' : ''}               # Additional SYRTHES options
+                               # (ex.: postprocessing with '-v ens' or '-v med')
 """
             template = re.sub(e_dom, c, template)
             dict_str += template

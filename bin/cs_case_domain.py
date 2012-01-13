@@ -1686,6 +1686,18 @@ class syrthes_domain(base_domain):
         Retrieve results from the execution directory
         """
 
+        # Post-processing
+        if self.syrthes_case.post_mode != None:
+          retval = self.syrthes_case.postprocessing(mode = \
+                   self.syrthes_case.post_mode)
+        else:
+          retval = 0
+
+        if retval != 0:
+            err_str = '\n   Error during SYRTHES postprocessing\n'
+            raise RunCaseError(err_str)
+
+
         if self.exec_dir == self.result_dir:
             return
 
