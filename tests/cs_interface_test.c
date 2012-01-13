@@ -70,14 +70,15 @@ _init_periodicity(void)
   return p;
 }
 
-static cs_interface_set_t *
-_periodic_is(int                       comm_size,
-             int                       comm_rank,
-             cs_gnum_t                 n_side,
-             int                       n_periodic_lists,
-             const fvm_periodicity_t  *perio)
+static void
+_periodic_is_test(int                       comm_size,
+                  int                       comm_rank,
+                  cs_gnum_t                 n_side,
+                  int                       n_periodic_lists,
+                  const fvm_periodicity_t  *perio)
 {
-  cs_gnum_t ii, jj, kk, couple_id;
+  cs_lnum_t ii;
+  cs_gnum_t jj, kk, couple_id;
 
   cs_gnum_t n_max = n_side * n_side * n_side;
   cs_lnum_t n_elements = ((n_max+1)*4) / (3*comm_size);
@@ -86,6 +87,7 @@ _periodic_is(int                       comm_size,
   cs_lnum_t *n_periodic_couples = NULL;
   cs_gnum_t **periodic_couples = NULL;
   cs_gnum_t *global_number = NULL;
+  cs_real_t *var = NULL;
 
   cs_interface_set_t *ifset = NULL;
 
@@ -93,7 +95,7 @@ _periodic_is(int                       comm_size,
 
     BFT_MALLOC(global_number, n_elements, cs_gnum_t);
 
-    for (ii = 0; ii < (cs_gnum_t)n_elements; ii++) {
+    for (ii = 0; ii < n_elements; ii++) {
       global_number[ii] = (n_elements * 3 / 4) * comm_rank + ii + 1;
     }
     if (comm_rank == comm_size -1 && global_number[n_elements - 1] < n_max)
@@ -104,7 +106,7 @@ _periodic_is(int                       comm_size,
   BFT_MALLOC(n_periodic_couples, n_periodic_lists, cs_lnum_t);
   BFT_MALLOC(periodic_couples, n_periodic_lists, cs_gnum_t *);
 
-  for (ii = 0; ii < (cs_gnum_t)n_periodic_lists; ii++) {
+  for (ii = 0; ii < n_periodic_lists; ii++) {
 
     n_periodic_couples[ii] = 0;
     periodic_couples[ii] = NULL;
@@ -163,7 +165,7 @@ _periodic_is(int                       comm_size,
                                   n_periodic_couples,
                                   (const cs_gnum_t **const)periodic_couples);
 
-  for (ii = 0; ii < (cs_gnum_t)n_periodic_lists; ii++)
+  for (ii = 0; ii < n_periodic_lists; ii++)
     BFT_FREE(periodic_couples[ii]);
   BFT_FREE(periodic_couples);
   BFT_FREE(n_periodic_couples);
@@ -171,7 +173,33 @@ _periodic_is(int                       comm_size,
   if (comm_size > 1)
     BFT_FREE(global_number);
 
-  return ifset;
+  /* Now that interface set is created, dump info and run tests */
+
+  bft_printf("Periodic Interface on rank %d:\n\n", comm_rank);
+
+  cs_interface_set_add_match_ids(ifset);
+  cs_interface_set_dump(ifset);
+  cs_interface_set_free_match_ids(ifset);
+
+  bft_printf("Interface set sum test:\n\n", comm_rank);
+
+  BFT_MALLOC(var, n_elements*2, cs_real_t);
+
+  for (ii = 0; ii < n_elements; ii++) {
+    var[ii] = 1.0;
+    var[ii + n_elements] = 2.0;
+  }
+  cs_interface_set_sum(ifset,
+                       n_elements,
+                       2,
+                       false,
+                       CS_REAL_TYPE,
+                       var);
+  for (ii = 0; ii < n_elements; ii++)
+    bft_printf("%2d: %12.3f %12.3f\n", (int)ii, var[ii], var[ii + n_elements]);
+  BFT_FREE(var);
+
+  cs_interface_set_destroy(&ifset);
 }
 
 /*----------------------------------------------------------------------------
@@ -225,17 +253,17 @@ _bft_error_handler(const char  *nom_fic,
 int
 main (int argc, char *argv[])
 {
+  int ii;
   char mem_trace_name[32];
   int size = 1;
   int rank = 0;
   cs_interface_set_t *ifset = NULL;
   fvm_periodicity_t *perio = NULL;
 
+  cs_lnum_t n_elements = 20;
+
 #if defined(HAVE_MPI)
 
-  int ii;
-
-  cs_lnum_t n_elements = 20;
   cs_gnum_t *global_number = NULL;
 
   /* Initialization */
@@ -246,6 +274,9 @@ main (int argc, char *argv[])
     MPI_Comm_rank(cs_glob_mpi_comm, &rank);
     MPI_Comm_size(cs_glob_mpi_comm, &size);
   }
+
+#endif /* (HAVE_MPI) */
+
   bft_printf_proxy_set(_bft_printf_proxy);
   bft_error_handler_set(_bft_error_handler);
 
@@ -257,41 +288,35 @@ main (int argc, char *argv[])
 
   /* Build arbitrary interface */
 
-  BFT_MALLOC(global_number, n_elements, cs_gnum_t);
+  if (size > 1) {
 
-  for (ii = 0; ii < n_elements; ii++) {
-    global_number[ii] = (n_elements * 3 / 4) * rank + ii + 1;
+    BFT_MALLOC(global_number, n_elements, cs_gnum_t);
+
+    for (ii = 0; ii < n_elements; ii++)
+      global_number[ii] = (n_elements * 3 / 4) * rank + ii + 1;
+
+    ifset = cs_interface_set_create(n_elements,
+                                    NULL,
+                                    global_number,
+                                    NULL,
+                                    0,
+                                    NULL,
+                                    NULL,
+                                    NULL);
+
+    BFT_FREE(global_number);
+
+    bft_printf("Interface on rank %d:\n\n", rank);
+
+    cs_interface_set_add_match_ids(ifset);
+    cs_interface_set_dump(ifset);
+    cs_interface_set_free_match_ids(ifset);
+
+    /* We are finished for this interface */
+
+    cs_interface_set_destroy(&ifset);
+
   }
-
-  ifset = cs_interface_set_create(n_elements,
-                                  NULL,
-                                  global_number,
-                                  NULL,
-                                  0,
-                                  NULL,
-                                  NULL,
-                                  NULL);
-
-  BFT_FREE(global_number);
-
-  bft_printf("Interface on rank %d:\n\n", rank);
-
-  cs_interface_set_add_match_ids(ifset);
-  cs_interface_set_dump(ifset);
-  cs_interface_set_free_match_ids(ifset);
-
-  /* We are finished for this interface */
-
-  cs_interface_set_destroy(&ifset);
-
-#else
-
-  strcpy(mem_trace_name, "cs_interface_test_mem");
-  bft_mem_init(mem_trace_name);
-
-  bft_printf_proxy_set(_bft_printf_proxy);
-
-#endif /* (HAVE_MPI) */
 
   /* Now build interface with periodicity */
 
@@ -302,21 +327,14 @@ main (int argc, char *argv[])
   if (rank == 0)
     fvm_periodicity_dump(perio);
 
-  ifset = _periodic_is(size,
-                       rank,
-                       4, /* n vertices/cube side */
-                       3, /* n_periodic_lists */
-                       perio);
-
-  bft_printf("Periodic Interface on rank %d:\n\n", rank);
-
-  cs_interface_set_add_match_ids(ifset);
-  cs_interface_set_dump(ifset);
-  cs_interface_set_free_match_ids(ifset);
+  _periodic_is_test(size,
+                    rank,
+                    4, /* n vertices/cube side */
+                    3, /* n_periodic_lists */
+                    perio);
 
   /* We are finished */
 
-  cs_interface_set_destroy(&ifset);
   fvm_periodicity_destroy(perio);
 
   bft_mem_end();
