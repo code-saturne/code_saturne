@@ -107,6 +107,7 @@ ChangeLog.2007 \
 ChangeLog.2008 \
 ChangeLog.2009 \
 ChangeLog.2010 \
+ChangeLog.2011 \
 COMPATIBILITY \
 QUALITY_ASSURANCE \
 po/Makevars.template \
