@@ -3422,7 +3422,8 @@ _interface_set_copy_array_ni(const cs_interface_set_t  *ifs,
       cs_lnum_t send_id = itf->elt_id[itf->send_order[k]];
       for (m = 0; m < stride; m++) {
         for (l = 0; l < type_size; l++)
-          p[(k*stride + m) * type_size + l] = _src[send_id + m*shift_size + l];
+          p[(k*stride + m) * type_size + l]
+            = _src[send_id*type_size + m*shift_size + l];
       }
     }
 
