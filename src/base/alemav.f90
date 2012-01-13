@@ -127,8 +127,7 @@ endif
 !     Projection du deplacement calcule sur les noeuds
 
 ! Allocate a temporary array
-! TODO interleave dproj and depale
-allocate(dproj(nnod,3),meshv(3,ncelet))
+allocate(dproj(3,nnod),meshv(3,ncelet))
 allocate(gradm(3,3,ncelet))
 
 do iel = 1, ncelet
@@ -164,7 +163,7 @@ call aledis &
 do inod = 1, nnod
   if (impale(inod).eq.0) then
     do idim = 1, 3
-      depale(inod,idim) = depale(inod,idim) + dproj(inod,idim)
+      depale(inod,idim) = depale(inod,idim) + dproj(idim,inod)
     enddo
   endif
 enddo

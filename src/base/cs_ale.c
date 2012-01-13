@@ -308,7 +308,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
     vtx_counter[vtx_id] = 0.;
 
     for (i = 0; i < dim; i++)
-      disp_proj[n_vertices*i + vtx_id] = 0.;
+      disp_proj[i + dim*vtx_id] = 0.;
 
   }
 
@@ -339,7 +339,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
         cs_real_t cen1_node_z = -cell_cen[3*cell_id1+2] + vtx_coord[3*vtx_id+2];
         cs_real_t cen2_node_z = -cell_cen[3*cell_id2+2] + vtx_coord[3*vtx_id+2];
 
-        disp_proj[vtx_id] +=
+        disp_proj[dim*vtx_id] +=
           dvol1*dt[cell_id1]*(meshv[3*cell_id1] + gradm[9*cell_id1  ]*cen1_node_x
                                                 + gradm[9*cell_id1+3]*cen1_node_y
                                                 + gradm[9*cell_id1+6]*cen1_node_z)
@@ -347,7 +347,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
                                                 + gradm[9*cell_id2+3]*cen2_node_y
                                                 + gradm[9*cell_id2+6]*cen2_node_z);
 
-        disp_proj[vtx_id+n_vertices] +=
+        disp_proj[1 + dim*vtx_id] +=
           dvol1*dt[cell_id1]*(meshv[3*cell_id1+1] + gradm[9*cell_id1+1]*cen1_node_x
                                                   + gradm[9*cell_id1+4]*cen1_node_y
                                                   + gradm[9*cell_id1+7]*cen1_node_z)
@@ -355,7 +355,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
                                                   + gradm[9*cell_id2+4]*cen2_node_y
                                                   + gradm[9*cell_id2+7]*cen2_node_z);
 
-        disp_proj[vtx_id+2*n_vertices] +=
+        disp_proj[2 + dim*vtx_id] +=
           dvol1*dt[cell_id1]*(meshv[3*cell_id1+2] + gradm[9*cell_id1+2]*cen1_node_x
                                                   + gradm[9*cell_id1+5]*cen1_node_y
                                                   + gradm[9*cell_id1+8]*cen1_node_z)
@@ -387,7 +387,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
         vtx_counter[vtx_id] = 0.;
 
         for (i = 0; i < dim; i++)
-          disp_proj[vtx_id+i*n_vertices]=0.;
+          disp_proj[i + dim*vtx_id]=0.;
 
       }
     }
@@ -430,17 +430,17 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
                                                    + gradm[9*cell_id+5]*face_node_y
                                                    + gradm[9*cell_id+8]*face_node_z;
 
-        disp_proj[vtx_id] += dsurf*
+        disp_proj[dim*vtx_id] += dsurf*
           dt[cell_id]*(vel_node_x + cfbale[9*face_id  ]*vel_cen_x
                                   + cfbale[9*face_id+1]*vel_cen_y
                                   + cfbale[9*face_id+2]*vel_cen_z);
 
-        disp_proj[vtx_id + n_vertices] += dsurf*
+        disp_proj[2 + dim*vtx_id] += dsurf*
           dt[cell_id]*(vel_node_y + cfbale[9*face_id+3]*vel_cen_x
                                   + cfbale[9*face_id+4]*vel_cen_y
                                   + cfbale[9*face_id+5]*vel_cen_z);
 
-        disp_proj[vtx_id + 2*n_vertices] += dsurf*
+        disp_proj[2 + dim*vtx_id] += dsurf*
           dt[cell_id]*(vel_node_z + cfbale[9*face_id+6]*vel_cen_x
                                   + cfbale[9*face_id+7]*vel_cen_y
                                   + cfbale[9*face_id+8]*vel_cen_z);
@@ -454,19 +454,19 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
 
       else {
 
-        cs_real_t tempox = cfbale[9*face_id  ]*disp_proj[vtx_id]
-                         + cfbale[9*face_id+1]*disp_proj[vtx_id + n_vertices]
-                         + cfbale[9*face_id+2]*disp_proj[vtx_id + 2*n_vertices];
-        cs_real_t tempoy = cfbale[9*face_id+3]*disp_proj[vtx_id]
-                         + cfbale[9*face_id+4]*disp_proj[vtx_id + n_vertices]
-                         + cfbale[9*face_id+5]*disp_proj[vtx_id + 2*n_vertices];
-        cs_real_t tempoz = cfbale[9*face_id+6]*disp_proj[vtx_id]
-                         + cfbale[9*face_id+7]*disp_proj[vtx_id + n_vertices]
-                         + cfbale[9*face_id+8]*disp_proj[vtx_id + 2*n_vertices];
+        cs_real_t tempox = cfbale[9*face_id  ]*disp_proj[dim*vtx_id]
+                         + cfbale[9*face_id+1]*disp_proj[dim*vtx_id + 1]
+                         + cfbale[9*face_id+2]*disp_proj[dim*vtx_id + 2];
+        cs_real_t tempoy = cfbale[9*face_id+3]*disp_proj[dim*vtx_id]
+                         + cfbale[9*face_id+4]*disp_proj[dim*vtx_id + 1]
+                         + cfbale[9*face_id+5]*disp_proj[dim*vtx_id + 2];
+        cs_real_t tempoz = cfbale[9*face_id+6]*disp_proj[dim*vtx_id]
+                         + cfbale[9*face_id+7]*disp_proj[dim*vtx_id + 1]
+                         + cfbale[9*face_id+8]*disp_proj[dim*vtx_id + 2];
 
-        disp_proj[vtx_id] = tempox;
-        disp_proj[vtx_id + n_vertices] = tempoy;
-        disp_proj[vtx_id + 2*n_vertices] = tempoz;
+        disp_proj[  dim*vtx_id] = tempox;
+        disp_proj[1+dim*vtx_id] = tempoy;
+        disp_proj[2+dim*vtx_id] = tempoz;
 
       }
     }
@@ -477,7 +477,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
     cs_interface_set_sum(mesh->vtx_interfaces,
                          n_vertices,
                          3,
-                         false,
+                         true,
                          CS_REAL_TYPE,
                          disp_proj);
     cs_interface_set_sum(mesh->vtx_interfaces,
@@ -490,7 +490,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
 
   for (vtx_id = 0; vtx_id < n_vertices; vtx_id++)
     for (i = 0; i < dim; i++)
-      disp_proj[vtx_id + i*n_vertices] /= vtx_counter[vtx_id];
+      disp_proj[i + dim*vtx_id] /= vtx_counter[vtx_id];
 
   BFT_FREE(vtx_counter);
 }
