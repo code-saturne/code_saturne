@@ -1,3 +1,6 @@
+* 13/01/2012 - David Monfort <david.monfort@edf.fr>
+  Release of Code_Saturne 2.1.4.
+
 * 13/01/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   GUI must load environment modules to avoid issues with subprocesses.
   modified files:
