@@ -737,6 +737,17 @@ if test "x$cs_have_cplus_demangle" = "xyes"; then
   AC_DEFINE(HAVE_CPLUS_DEMANGLE, 1, HAVE_CPLUS_DEMANGLE)
 fi
 
+# Plugin modules support
+#-----------------------
+
+cs_have_plugins=no
+if test x$cs_have_dlloader = xyes ; then
+  # Test for different plugins here
+  cs_have_plugins=no
+fi
+
+AM_CONDITIONAL(HAVE_PLUGINS, test x$cs_have_plugins = xyes)
+
 #------------------------------------------------------------------------------
 # Internationalization
 #------------------------------------------------------------------------------

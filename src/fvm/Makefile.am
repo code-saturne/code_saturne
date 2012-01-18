@@ -83,12 +83,14 @@ fvm_to_cgns.h \
 fvm_to_med.h \
 fvm_to_ensight.h \
 fvm_to_ensight_case.h \
+fvm_to_medcoupling.h \
 fvm_writer_helper.h \
 fvm_writer_priv.h
 
 # Library source files
 
 lib_LTLIBRARIES =
+pkglib_LTLIBRARIES = 
 noinst_LTLIBRARIES = libfvm.la libfvm_filters.la
 libfvm_la_LIBADD = $(LTLIBINTL)
 libfvm_filters_la_LIBADD =
@@ -140,6 +142,20 @@ if HAVE_MED
 noinst_LTLIBRARIES += libfvm_med.la
 libfvm_filters_la_LIBADD += libfvm_med.la
 libfvm_med_la_SOURCES = fvm_to_med.c
+endif
+
+if HAVE_MEDCOUPLING
+fvm_medcoupling_la_CPPFLAGS = \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+$(CFLAGS_DBG) $(CFLAGS_OPT) \
+$(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
+pkglib_LTLIBRARIES += fvm_medcoupling.la
+fvm_medcoupling_la_SOURCES = fvm_to_medcoupling.cxx
+fvm_medcoupling_la_LDFLAGS = -module
+fvm_medcoupling_la_LIBADD = \
+$(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
+$(MEDCOUPLINGRUNPATH)
 endif
 
 libfvm_la_LDFLAGS = -no-undefined

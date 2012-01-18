@@ -36,6 +36,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(HAVE_DLOPEN)
+#include <dlfcn.h>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -105,6 +109,10 @@ static fvm_writer_format_t _fvm_writer_format_list[3] = {
     (  FVM_WRITER_FORMAT_HAS_POLYGON
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
     FVM_WRITER_TRANSIENT_CONNECT,
+    0,                                 /* dynamic library count */
+    NULL,                              /* dynamic library */
+    NULL,                              /* dynamic library name */
+    NULL,                              /* dynamic library prefix */
     NULL,                              /* n_version_strings_func */
     NULL,                              /* version_string_func */
     fvm_to_ensight_init_writer,        /* init_func */
@@ -124,6 +132,10 @@ static fvm_writer_format_t _fvm_writer_format_list[3] = {
      | FVM_WRITER_FORMAT_HAS_POLYGON
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
     FVM_WRITER_FIXED_MESH,
+    0,                                 /* dynamic library count */
+    NULL,                              /* dynamic library */
+    NULL,                              /* dynamic library name */
+    NULL,                              /* dynamic library prefix */
 #if defined(HAVE_MED)
     fvm_to_med_n_version_strings,      /* n_version_strings_func */
     fvm_to_med_version_string,         /* version_string_func */
@@ -154,6 +166,10 @@ static fvm_writer_format_t _fvm_writer_format_list[3] = {
     (  FVM_WRITER_FORMAT_USE_EXTERNAL
      | FVM_WRITER_FORMAT_HAS_POLYGON),
     FVM_WRITER_FIXED_MESH,
+    0,                                 /* dynamic library count */
+    NULL,                              /* dynamic library */
+    NULL,                              /* dynamic library name */
+    NULL,                              /* dynamic library prefix */
 #if defined(HAVE_CGNS)
     fvm_to_cgns_n_version_strings,     /* n_version_strings_func */
     fvm_to_cgns_version_string,        /* version_string_func */
@@ -176,7 +192,6 @@ static fvm_writer_format_t _fvm_writer_format_list[3] = {
     NULL
 #endif
   }
-
 };
 
 /*============================================================================
@@ -238,6 +253,152 @@ _fvm_writer_option_list(const char  *const option_list)
 
   return ret_list;
 }
+
+#if defined(HAVE_DLOPEN)
+
+/*----------------------------------------------------------------------------
+ * Get a shared library function pointer for a writer plugin
+ *
+ * parameters:
+ *   wf               <-- pointer to writer format structure
+ *   name             <-- name of function symbol in library
+ *   errors_are_fatal <-- abort if true, silently ignore if false
+ *
+ * returns:
+ *   pointer to function in shared library
+ *----------------------------------------------------------------------------*/
+
+static void *
+_get_dl_function_pointer(fvm_writer_format_t  *wf,
+                         const char           *name,
+                         bool                  errors_are_fatal)
+{
+  void  *retval = NULL;
+  char  *error = NULL;
+
+  assert(wf != NULL);
+  assert(wf->dl_lib != NULL);
+
+  dlerror();    /* Clear any existing error */
+
+  if (wf->dl_name = NULL)
+    retval = dlsym(wf->dl_lib, name);
+  else {
+    char *_name;
+    BFT_MALLOC(_name, strlen(wf->dl_prefix) + strlen(name) + 1, char);
+    sprintf(_name, "%s%s", wf->dl_prefix, name);
+    retval = dlsym(wf->dl_lib, _name);
+    BFT_FREE(_name);
+  }
+  error = dlerror();
+
+  if (error != NULL && errors_are_fatal)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error calling dlsym: %s\n"), error);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Load Plugin writer.
+ *
+ * parameters:
+ *   wf <-> pointer to library format writer.
+ *----------------------------------------------------------------------------*/
+
+void
+_load_plugin(fvm_writer_format_t  *wf)
+{
+  char  *lib_path = NULL;
+
+  /* Open from shared library */
+
+  BFT_MALLOC(lib_path, 3 + strlen(wf->dl_name) + 3 + 1, char);
+  sprintf(lib_path, "%s.so", wf->dl_name);
+
+  wf->dl_lib = dlopen(lib_path, RTLD_LAZY);
+
+  BFT_FREE(lib_path);
+
+  /* Increment reference count */
+
+  wf->dl_count += 1;
+
+  /* Load symbols from shared library */
+
+  if (wf->dl_lib == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error loading %s: %s."), lib_path, dlerror());
+
+  wf->n_version_strings_func
+    = _get_dl_function_pointer(wf, "n_version_strings", false);
+
+  wf->version_string_func
+    = _get_dl_function_pointer(wf, "version_string", false);
+
+  wf->init_func
+    = _get_dl_function_pointer(wf, "init_writer", true);
+
+  wf->finalize_func
+    = _get_dl_function_pointer(wf, "finalize_writer", true);
+
+  wf->set_mesh_time_func
+    = _get_dl_function_pointer(wf, "set_mesh_time", true);
+
+  wf->needs_tesselation_func
+    = _get_dl_function_pointer(wf, "needs_tesselation", false);
+
+  wf->export_nodal_func
+    = _get_dl_function_pointer(wf, "export_nodal", true);
+
+  wf->export_field_func
+    = _get_dl_function_pointer(wf, "export_field", true);
+
+  wf->flush_func
+    = _get_dl_function_pointer(wf, "flush", false);
+}
+
+/*----------------------------------------------------------------------------
+ * Unload Plugin writer.
+ *
+ * parameters:
+ *   wf <-> pointer to library format writer.
+ *----------------------------------------------------------------------------*/
+
+void
+_close_plugin(fvm_writer_format_t  *wf)
+{
+  char  *lib_path = NULL;
+
+  /* Open from shared library */
+
+  if (wf->dl_lib == NULL)
+    return;
+
+  if (dlclose(wf->dl_lib) != 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error unloading library: %s."), dlerror());
+
+  wf->dl_lib = NULL;
+
+  /* Decrement reference count */
+
+  wf->dl_count -= 1;
+
+  /* Reset pointers */
+
+  wf->n_version_strings_func = NULL;
+  wf->version_string_func = NULL;
+  wf->init_func = NULL;
+  wf->finalize_func = NULL;
+  wf->set_mesh_time_func = NULL;
+  wf->needs_tesselation_func = NULL;
+  wf->export_nodal_func = NULL;
+  wf->export_field_func = NULL;
+  wf->flush_func = NULL;
+}
+
+#endif /* defined(HAVE_DLOPEN)*/
 
 /*============================================================================
  * Semi-private function definitions (prototypes in fvm_writer_priv.h)
@@ -520,8 +681,15 @@ fvm_writer_format_available(int format_index)
   int retval = 0;
 
   if (format_index >= 0 && format_index < _fvm_writer_n_formats) {
+
     if (_fvm_writer_format_list[format_index].init_func != NULL)
       retval = 1;
+
+#if defined(HAVE_DLOPEN)
+    else if (_fvm_writer_format_list[format_index].dl_name != NULL)
+      retval = 1;
+#endif
+
   }
   return retval;
 }
@@ -662,7 +830,6 @@ fvm_writer_init(const char             *name,
               _("Format type \"%s\" required for case \"%s\" is not available"),
               format_name, name);
 
-
   /* Create directory */
 
   if (path != NULL) {
@@ -697,6 +864,13 @@ fvm_writer_init(const char             *name,
   strcpy(this_writer->name, name);
 
   this_writer->format = &(_fvm_writer_format_list[i]);
+
+  /* Load plugin if required */
+
+#if defined(HAVE_DLOPEN)
+  if (this_writer->format->dl_name != NULL)
+    _load_plugin(this_writer->format);
+#endif
 
   if (path) {
     BFT_MALLOC(this_writer->path, strlen(path) + 1, char);
@@ -773,6 +947,13 @@ fvm_writer_finalize(fvm_writer_t  *this_writer)
     this_writer->format_writer = finalize_func(this_writer->format_writer);
   else
     this_writer->format_writer = NULL;
+
+  /* Unload plugin if required */
+
+#if defined(HAVE_DLOPEN)
+  if (this_writer->format->dl_lib != NULL)
+    _close_plugin(this_writer->format);
+#endif
 
   BFT_FREE(this_writer);
 

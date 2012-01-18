@@ -141,6 +141,17 @@ typedef struct {
   fvm_writer_time_dep_t    max_time_dep; /* Maximum time dependency level
                                             possible with this format */
 
+  int                      dl_count;     /* Number of writers using the
+                                            dynamically loadable library
+                                            for this format, if relevant */
+  void                    *dl_lib;       /* Pointer to dynamically loadable
+                                            library, if used */
+  const char              *dl_name;      /* Prefix for name of dynamically
+                                            loadable library, or NULL */
+  const char              *dl_prefix;    /* Prefix for exported symbols of
+                                            dynamically loadable library,
+                                            or NULL */
+
   fvm_writer_n_version_strings_t  *n_version_strings_func;
   fvm_writer_version_string_t     *version_string_func;
   fvm_writer_init_t               *init_func;

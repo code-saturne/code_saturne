@@ -36,7 +36,14 @@ endif
 # Relocatable installation
 
 if HAVE_RELOCATABLE
-ORIGINRUNPATH = -R '\$$ORIGIN/../../lib'
+  ORIGINRUNPATH = -R '\$$ORIGIN/../../lib'
+  PLUGINRUNPATH_R = -R'\$$ORIGIN/../../lib/'$(PACKAGE)
+else
+  PLUGINRUNPATH_N = -R$(pkglibdir)
+endif
+
+if HAVE_PLUGINS
+  PLUGINRUNPATH = $(PLUGINRUNPATH_R)$(PLUGINRUNPATH_N)
 endif
 
 # Main part
@@ -57,7 +64,7 @@ AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
 # Global LDFLAGS must be used so as to handle the possibility of a CXX link.
 # Per-executable flags will override this global definition.
-AM_LDFLAGS = $(ORIGINRUNPATH)
+AM_LDFLAGS = $(ORIGINRUNPATH) $(PLUGINRUNPATH)
 
 # Library source files
 

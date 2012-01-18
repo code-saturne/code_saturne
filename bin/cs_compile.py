@@ -117,22 +117,27 @@ def process_cmd_line(argv, pkg):
 
 #-------------------------------------------------------------------------------
 
-def so_dirs_path(flags, rpath):
+def so_dirs_path(flags, pkg):
     """
     Assemble path for shared libraries in nonstandard directories.
     """
-    retval = ""
-    first = True
+    retval = " " + pkg.rpath
+    count = 0
+
+    pkg_lib = os.path.join(pkg.libdir, pkg.name)
+    if os.path.isdir(pkg_lib):
+        retval = retval + ":" + pkg_lib
+        count += 1
 
     args = flags.split(" ")
 
     for arg in args:
         if arg[0:2] == '-L' and arg[0:10] != '-L/usr/lib' and arg[0:6] != '-L/lib':
-            if first == True:
-                retval = " " + rpath + ":" + arg[2:]
-                first = False
-            else:
-                retval = retval + ":" + arg[2:]
+            retval = retval + ":" + arg[2:]
+            count += 1
+
+    if count == 0:
+        retval = ""
 
     return retval
 
@@ -226,7 +231,7 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         cmd = cmd + " " + pkg.ldflags + " " + pkg.libs
         cmd = cmd + " " + pkg.deplibs
         if pkg.rpath != "":
-            cmd = cmd + " " + so_dirs_path(cmd, pkg.rpath)
+            cmd = cmd + " " + so_dirs_path(cmd, pkg)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
@@ -303,7 +308,7 @@ def compile_and_link_syrthes(pkg, srcdir, destdir,
         cmd = cmd + " -lsyrcs"
         cmd = cmd + " " + build_syrthes.ldflags + " " + build_syrthes.libs
         if pkg.rpath != "":
-            cmd = cmd + " " + so_dirs_path(cmd, pkg.rpath)
+            cmd = cmd + " " + so_dirs_path(cmd, pkg)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
