@@ -743,7 +743,9 @@ fi
 cs_have_plugins=no
 if test x$cs_have_dlloader = xyes ; then
   # Test for different plugins here
-  cs_have_plugins=no
+  if test x$cs_have_medcoupling = xyes ; then
+    cs_have_plugins=yes
+  fi
 fi
 
 AM_CONDITIONAL(HAVE_PLUGINS, test x$cs_have_plugins = xyes)

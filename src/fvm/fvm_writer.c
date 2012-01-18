@@ -98,9 +98,9 @@ extern "C" {
 
 /* Number and status of defined formats */
 
-static const int _fvm_writer_n_formats = 3;
+static const int _fvm_writer_n_formats = 4;
 
-static fvm_writer_format_t _fvm_writer_format_list[3] = {
+static fvm_writer_format_t _fvm_writer_format_list[4] = {
 
   /* Built-in EnSight Gold writer */
   {
@@ -191,7 +191,30 @@ static fvm_writer_format_t _fvm_writer_format_list[3] = {
     NULL,
     NULL
 #endif
+  },
+
+  /* MEDCoupling writer (plugin) */
+  {
+    "MEDCoupling",
+    "6.3 +",
+    (  FVM_WRITER_FORMAT_USE_EXTERNAL
+     | FVM_WRITER_FORMAT_HAS_POLYGON),
+    FVM_WRITER_FIXED_MESH,
+    0,                                 /* dynamic library count */
+    NULL,                              /* dynamic library */
+    "fvm_medcoupling",                 /* dynamic library name */
+    "fvm_to_medcoupling_",             /* dynamic library prefix */
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
   }
+
 };
 
 /*============================================================================
@@ -621,6 +644,8 @@ fvm_writer_get_format_id(const char  *format_name)
 
   if (strncmp(tmp_name, "ensight", 7) == 0)
     strcpy(closest_name, "EnSight Gold");
+  else if (strncmp(tmp_name, "medcoupling", 11) == 0)
+    strcpy(closest_name, "MEDCoupling");
   else if (strncmp(tmp_name, "med", 3) == 0)
     strcpy(closest_name, "MED");
   else if (strncmp(tmp_name, "cgns", 4) == 0)

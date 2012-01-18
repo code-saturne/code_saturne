@@ -460,6 +460,8 @@ AC_ARG_WITH(salome-med,
                with_salome_med=yes
                MEDCOUPLING_CPPFLAGS="-I$withval/include/salome"
                MEDCOUPLING_LDFLAGS="-L$withval/lib/salome"
+               # Add the libdir to the runpath as libtool does not do this for modules
+               MEDCOUPLINGRUNPATH="-R$withval/lib/salome"
              fi],
             [with_salome_med=check])
 
@@ -558,6 +560,7 @@ AC_SUBST(cs_have_paramedmem)
 AC_SUBST(MEDCOUPLING_CPPFLAGS)
 AC_SUBST(MEDCOUPLING_LDFLAGS)
 AC_SUBST(MEDCOUPLING_LIBS)
+AC_SUBST(MEDCOUPLINGRUNPATH)
 AC_SUBST(PARAMEDMEM_CPPFLAGS)
 AC_SUBST(PARAMEDMEM_LDFLAGS)
 AC_SUBST(PARAMEDMEM_LIBS)
