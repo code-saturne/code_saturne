@@ -708,12 +708,6 @@ class MainView(QMainWindow, Ui_MainForm):
 
         log.debug("fileSave(): ok")
 
-        if self.case['batch'] and self.batch_lines:
-            batch = self.case['scripts_path'] + "/" + self.case['batch']
-            f = open(batch, 'w')
-            f.writelines(self.batch_lines)
-            f.close()
-
         msg = self.tr("%s saved" % file_name)
         self.statusbar.showMessage(msg, 2000)
 
@@ -818,6 +812,20 @@ class MainView(QMainWindow, Ui_MainForm):
             f = open(batch, 'w')
             f.writelines(self.batch_lines)
             f.close()
+
+        else:
+
+            try:
+                node_models = self.case.xmlGetNode('thermophysical_models')
+                node_cht = node_models.xmlGetNode('conjugate_heat_transfer')
+                node_syr = node_cht.xmlGetNode('external_coupling')
+                if len(node_syr.xmlGetNodeList('syrthes')) > 0:
+                    msg = "The Calculation management/Prepare batch page should be " \
+                        + "visited before saving so that the script file is updated " \
+                        + "relative to the XML file."
+                    QMessageBox.warning(self, self.package.code_name + ' Interface', msg)
+            except Exception:
+                pass
 
 
     @pyqtSignature("")
