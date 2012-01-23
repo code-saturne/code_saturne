@@ -29,7 +29,8 @@ subroutine fldtri &
 !================
 
  ( nproce ,                                                            &
-   dt     , tpucou , rtpa   , rtp    , propce , propfa , propfb , ra )
+   dt     , tpucou , rtpa   , rtp    , propce , propfa , propfb ,      &
+   coefa  , coefb  )
 
 !===============================================================================
 ! Purpose:
@@ -50,7 +51,8 @@ subroutine fldtri &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! ra(*)            ! ra ! <-- ! main work array                                !
+! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
+!  (nfabor, *)     !    !     !                                                !
 !__________________.____._____.________________________________________________.
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -94,13 +96,14 @@ double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision frcxt(ncelet,3)
-double precision ra(*)
+double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-integer          ii, ippu, ippv, ippw, ivar, iprop
-integer          imom, idtnm
-integer          iflid, nfld
+integer ii, ippu, ippv, ippw, ivar, iprop
+integer imom, idtnm
+integer iflid, nfld
+integer icondl, icondf
 
 integer          ifvar(nvppmx)
 
@@ -124,12 +127,33 @@ nfld = 0
 !----------------------
 
 ivar = ipr
+icondl = iclrtp(ivar, icoef)
+icondf = iclrtp(ivar, icoeff)
+
 call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
 !==========
+call fldbcm(ivarfl(ivar),                             &
+!==========
+            coefa(1, icondl), coefb(1, icondl),       &
+            coefa(1, icondf), coefb(1, icondf))
 
 ivar = iu
 call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
 !==========
+
+if (ivelco .eq. 0) then
+  icondl = iclrtp(ivar, icoef)
+  icondf = iclrtp(ivar, icoeff)
+  call fldbcm(ivarfl(ivar),                           &
+  !==========
+              coefa(1, icondl), coefb(1, icondl),     &
+              coefa(1, icondf), coefb(1, icondf))
+else
+  call fldbcm(ivarfl(ivar),                           &
+  !==========
+              coefau(1, 1), coefbu(1, 1, 1),          &
+              cofafu(1, 1), cofbfu(1, 1, 1))
+endif
 
 ! Turbulence
 !-----------
@@ -182,8 +206,14 @@ endif
 
 do ii = 1, nfld
   ivar = ifvar(ii)
+  icondl = iclrtp(ivar, icoef)
+  icondf = iclrtp(ivar, icoeff)
   call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
   !==========
+  call fldbcm(ivarfl(ivar),                           &
+  !==========
+              coefa(1, icondl), coefb(1, icondl),     &
+              coefa(1, icondf), coefb(1, icondf))
 enddo
 
 nfld = 0
@@ -195,6 +225,19 @@ if (iale.eq.1) then
   ivar = iuma
   call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
   !==========
+  if (ivelco .eq. 0) then
+    icondl = iclrtp(ivar, icoef)
+    icondf = iclrtp(ivar, icoeff)
+    call fldbcm(ivarfl(ivar),                         &
+    !==========
+                coefa(1, icondl), coefb(1, icondl),   &
+                coefa(1, icondf), coefb(1, icondf))
+  else
+    call fldbcm(ivarfl(ivar),                         &
+    !==========
+                cfaale(1, 1), cfbale(1, 1, 1),        &
+                cfaale(1, 1), cfbale(1, 1, 1))
+  endif
 endif
 
 ! User variables
@@ -203,8 +246,14 @@ endif
 do ii = 1, nscaus
   if (isca(ii) .gt. 0) then
     ivar = isca(ii)
+    icondl = iclrtp(ivar, icoef)
+    icondf = iclrtp(ivar, icoeff)
     call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
     !==========
+    call fldbcm(ivarfl(ivar),                         &
+    !==========
+                coefa(1, icondl), coefb(1, icondl),   &
+                coefa(1, icondf), coefb(1, icondf))
   endif
 enddo
 

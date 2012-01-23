@@ -422,7 +422,7 @@ call fldtri &
 !==========
  ( nproce ,                                                       &
    ra(idt)    , ra(itpuco) , ra(irtpa) , ra(irtp) ,               &
-   ra(ipropc) , propfa , propfb )
+   ra(ipropc) , propfa , propfb , coefa , coefb )
 
 call fldama
 !==========

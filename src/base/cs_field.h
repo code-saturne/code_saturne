@@ -66,6 +66,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Field handling error types */
+/*----------------------------*/
 
 typedef enum {
 
@@ -77,30 +78,49 @@ typedef enum {
 
 } cs_field_error_type_t;
 
-/* Field descriptor */
+/* Field boundary condition descriptor (for variables) */
+/*-----------------------------------------------------*/
 
 typedef struct {
 
-  const char        *name;         /* Canonical name */
-
-  int                id;           /* Field id */
-  int                type;         /* Field type flag */
-
-  int                dim;          /* Field dimension */
-  bool               interleaved;  /* is field interleaved ? */
-
   int                location_id;  /* Id of matching location */
 
-  int                n_time_vals;  /* Number of time values (1 or 2) */
+  cs_real_t         *a;            /* Explicit coefficient */
+  cs_real_t         *b;            /* Implicit coefficient */
+  cs_real_t         *af;           /* Explicit coefficient for flux */
+  cs_real_t         *bf;           /* Implicit coefficient for flux */
 
-  cs_real_t         *val;          /* For each active location, pointer
-                                      to matching values array */
+} cs_field_bc_coeffs_t;
 
-  cs_real_t         *val_pre;      /* For each active location, pointer
-                                      to matching previous values array
-                                      (if n_time_vals == 2) */
+/* Field descriptor */
+/*------------------*/
 
-  bool               is_owner;     /* Ownership flag for values */
+typedef struct {
+
+  const char             *name;         /* Canonical name */
+
+  int                     id;           /* Field id */
+  int                     type;         /* Field type flag */
+
+  int                     dim;          /* Field dimension */
+  bool                    interleaved;  /* is field interleaved ? */
+
+  int                     location_id;  /* Id of matching location */
+
+  int                     n_time_vals;  /* Number of time values (1 or 2) */
+
+  cs_real_t              *val;          /* For each active location, pointer
+                                           to matching values array */
+
+  cs_real_t              *val_pre;      /* For each active location, pointer
+                                           to matching previous values array
+                                           (if n_time_vals == 2) */
+
+  cs_field_bc_coeffs_t   *bc_coeffs;    /* Boundary condition coefficients,
+                                           for variable type fields */
+
+  bool                    is_owner;     /* Ownership flag for values
+                                           and boundary coefficients */
 
 } cs_field_t;
 
@@ -111,7 +131,7 @@ typedef struct {
 /*----------------------------------------------------------------------------
  * Define a field.
  *
- * Fortran interface; use flddef (see cs_fieldt_f2c.f90)
+ * Fortran interface; use flddef (see field.f90)
  *
  * subroutine fldde1 (name, lname, iexten, itycat, ityloc, idim, ilved,
  * *****************
@@ -192,6 +212,32 @@ void CS_PROCF (fldmap, FLDMAP)
 );
 
 /*----------------------------------------------------------------------------
+ * Map field boundary coefficient arrays.
+ *
+ * Fortran interface
+ *
+ * subroutine fldbcm (ifield, icpled, a, b, af, bf)
+ * *****************
+ *
+ * integer          ifield      : <-- : Field id
+ * cs_real_t*       a           : <-- : explicit BC coefficients array
+ * cs_real_t*       b           : <-- : implicit BC coefficients array
+ * cs_real_t*       af          : <-- : explicit flux BC coefficients array,
+ *                              :     : or a (or NULL)
+ * cs_real_t*       bf          : <-- : implicit flux BC coefficients array,
+ *                              :     : or a (or NULL)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (fldbcm, FLDBCM)
+(
+ const cs_int_t   *ifield,
+ cs_real_t        *a,
+ cs_real_t        *b,
+ cs_real_t        *af,
+ cs_real_t        *bf
+);
+
+/*----------------------------------------------------------------------------
  * Allocate arrays for all defined fields based on their location.
  *
  * Location sized must thus be known.
@@ -251,7 +297,7 @@ void CS_PROCF (fldpv1, FLDPV1)
  *
  * If the field has not been defined previously, -1 is returned.
  *
- * Fortran interface; use fldfid (see cs_fieldt_f2c.f90)
+ * Fortran interface; use fldfid (see field.f90)
  *
  * subroutine fldfi1 (name,   lname,  ifield)
  * *****************
@@ -275,7 +321,7 @@ void CS_PROCF (fldfi1, FLDFI1)
  *
  * If the key has not been defined previously, -1 is returned.
  *
- * Fortran interface; use fldkid (see cs_fieldt_f2c.f90)
+ * Fortran interface; use fldkid (see field.f90)
  *
  * subroutine fldki1 (name,   lname,  ikeyid)
  * *****************
@@ -384,7 +430,7 @@ void CS_PROCF (fldgkd, FLDGKD)
  * If the key id is not valid, or the value type or field category is not
  * compatible, a fatal error is provoked.
  *
- * Fortran interface; use fldsks (see cs_fieldt_f2c.f90)
+ * Fortran interface; use fldsks (see field.f90)
  *
  * subroutine fldsk1 (ifield, ikey, str, lstr)
  * *****************
@@ -411,7 +457,7 @@ void CS_PROCF (fldsk1, FLDSK1)
  * If the key id is not valid, or the value type or field category is not
  * compatible, a fatal error is provoked.
  *
- * Fortran interface; use fldgk1 (see cs_fieldt_f2c.f90)
+ * Fortran interface; use fldgk1 (see field.f90)
  *
  * subroutine fldgk1 (ifield, ikey, str, lstr)
  * *****************
@@ -495,6 +541,66 @@ void
 cs_field_map_values(cs_field_t   *f,
                     cs_real_t    *val,
                     cs_real_t    *val_pre);
+
+/*----------------------------------------------------------------------------
+ * Allocate boundary condition coefficient arrays.
+ *
+ * For fields on location CS_MESH_LOCATION_CELLS, boundary conditions
+ * are located on CS_MESH_LOCATION_BOUNDARY_FACES.
+ *
+ * Boundary condition coefficients are not currently supported for other
+ * locations (though support could be added by mapping a boundary->location
+ * indirection array in the cs_mesh_location_t structure).
+ *
+ * For multidimensional fields, arrays are assumed to have the same
+ * interleaving behavior as the field, unless components are coupled.
+ *
+ * For multidimensional fields with coupled components, interleaving
+ * is the norm, and implicit coefficients arrays are arrays of block matrices,
+ * not vectors, so the number of entris for each boundary face is
+ * dim*dim instead of dim.
+ *
+ * parameters:
+ *   f            <-- pointer to field structure
+ *   have_flux_bc <-- if true, flux BC coefficients (af and bf) are added
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_allocate_bc_coeffs(cs_field_t  *f,
+                            bool         have_flux_bc);
+
+/*----------------------------------------------------------------------------
+ * Map existing field boundary condition coefficient arrays.
+ *
+ * For fields on location CS_MESH_LOCATION_CELLS, boundary conditions
+ * are located on CS_MESH_LOCATION_BOUNDARY_FACES.
+ *
+ * Boundary condition coefficients are not currently supported for other
+ * locations (though support could be added by mapping a boundary->location
+ * indirection array in the cs_mesh_location_t structure).
+ *
+ * For multidimensional fields, arrays are assumed to have the same
+ * interleaving behavior as the field, unless components are coupled.
+ *
+ * For multidimensional fields with coupled components, interleaving
+ * is the norm, and implicit coefficients arrays are arrays of block matrices,
+ * not vectors, so the number of entris for each boundary face is
+ * dim*dim instead of dim.
+ *
+ * parameters:
+ *   f  <-> pointer to field structure
+ *   a  <-- explicit BC coefficients array
+ *   b  <-- implicit BC coefficients array
+ *   af <-- explicit flux BC coefficients array, or NULL
+ *   bf <-- implicit flux BC coefficients array, or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_map_bc_coeffs(cs_field_t  *f,
+                       cs_real_t   *a,
+                       cs_real_t   *b,
+                       cs_real_t   *af,
+                       cs_real_t   *bf);
 
 /*----------------------------------------------------------------------------
  * Destroy all defined fields.
@@ -879,11 +985,14 @@ cs_field_log_all_key_vals(bool  log_defaults);
 /*----------------------------------------------------------------------------
  * Define base keys.
  *
- * TODO: this should be moved to other application files, so as to separate
- *       the field "engine" from its usage.
- *       A recommened practice for different submodules would be to
- *       use "cs_<module>_key_init() functions de to define
- *       keys specific to a module.
+ * Keys defined by this function are:
+ *   "label"     (string)
+ *   "post_vis"  (integer)
+ *   "coupled"   (integer, restricted to CS_FIELD_VARIABLE)
+ *   "moment_dt" (integer, restricted to CS_FIELD_PROPERTY);
+ *
+ * A recommened practice for different submodules would be to use
+ * "cs_<module>_key_init() functions to define keys specific to those modules.
  *----------------------------------------------------------------------------*/
 
 void

@@ -310,6 +310,9 @@ _field_create(const char   *name,
 
   f->val = NULL;
   f->val_pre = NULL;
+
+  f->bc_coeffs = NULL;
+
   f->is_owner = true;
 
   /* Mark key values as not set */
@@ -601,6 +604,40 @@ void CS_PROCF (fldmap, FLDMAP)
   cs_field_t *f = cs_field_by_id(*ifield);
 
   cs_field_map_values(f, val, valp);
+}
+
+/*----------------------------------------------------------------------------
+ * Map field boundary coefficient arrays.
+ *
+ * Fortran interface
+ *
+ * subroutine fldbcm (ifield, icpled, a, b, af, bf)
+ * *****************
+ *
+ * integer          ifield      : <-- : Field id
+ * cs_real_t*       a           : <-- : explicit BC coefficients array
+ * cs_real_t*       b           : <-- : implicit BC coefficients array
+ * cs_real_t*       af          : <-- : explicit flux BC coefficients array,
+ *                              :     : or a (or NULL)
+ * cs_real_t*       bf          : <-- : implicit flux BC coefficients array,
+ *                              :     : or a (or NULL)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (fldbcm, FLDBCM)
+(
+ const cs_int_t   *ifield,
+ cs_real_t        *a,
+ cs_real_t        *b,
+ cs_real_t        *af,
+ cs_real_t        *bf
+)
+{
+  cs_real_t *_af = (af != a) ? af : NULL;
+  cs_real_t *_bf = (bf != b) ? bf : NULL;
+
+  cs_field_t *f = cs_field_by_id(*ifield);
+
+  cs_field_map_bc_coeffs(f, a, b, _af, _bf);
 }
 
 /*----------------------------------------------------------------------------
@@ -1095,6 +1132,164 @@ cs_field_map_values(cs_field_t   *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Allocate boundary condition coefficients arrays.
+ *
+ * For fields on location CS_MESH_LOCATION_CELLS, boundary conditions
+ * are located on CS_MESH_LOCATION_BOUNDARY_FACES.
+ *
+ * Boundary condition coefficients are not currently supported for other
+ * locations (though support could be added by mapping a boundary->location
+ * indirection array in the cs_mesh_location_t structure).
+ *
+ * For multidimensional fields, arrays are assumed to have the same
+ * interleaving behavior as the field, unless components are coupled.
+ *
+ * For multidimensional fields with coupled components, interleaving
+ * is the norm, and implicit coefficients arrays are arrays of block matrices,
+ * not vectors, so the number of entries for each boundary face is
+ * dim*dim instead of dim.
+ *
+ * \param[in, out]  f             pointer to field structure
+ * \param[in]       have_flux_bc  if true, flux bc coefficients (af and bf)
+ *                                are added
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_allocate_bc_coeffs(cs_field_t  *f,
+                            bool         have_flux_bc)
+{
+  /* Add boundary condition coefficients if required */
+
+  cs_lnum_t a_mult = f->dim;
+  cs_lnum_t b_mult = f->dim;
+
+  if (f->type & CS_FIELD_VARIABLE) {
+    int coupled = 0;
+    int coupled_key_id = cs_field_key_id_try("coupled");
+    if (coupled_key_id > -1)
+      coupled = cs_field_get_key_int(f, coupled_key_id);
+    if (coupled)
+      b_mult *= f->dim;
+  }
+
+  if (f->location_id == CS_MESH_LOCATION_CELLS) {
+
+    const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(location_id);
+
+    if (f->bc_coeffs == NULL) {
+
+      BFT_MALLOC(f->bc_coeffs, 1, cs_field_bc_coeffs_t);
+
+      f->bc_coeffs->location_id = location_id;
+
+      BFT_MALLOC(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t);
+      BFT_MALLOC(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t);
+
+      if (have_flux_bc) {
+        BFT_MALLOC(f->bc_coeffs->af,  n_elts[0]*a_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->bf,  n_elts[0]*b_mult, cs_real_t);
+      }
+      else {
+        f->bc_coeffs->af = NULL;
+        f->bc_coeffs->bf = NULL;
+      }
+
+    }
+
+    else {
+
+      BFT_REALLOC(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t);
+      BFT_REALLOC(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t);
+
+      if (have_flux_bc) {
+        BFT_REALLOC(f->bc_coeffs->af,  n_elts[0]*a_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->bf,  n_elts[0]*b_mult, cs_real_t);
+      }
+      else {
+        BFT_FREE(f->bc_coeffs->af);
+        BFT_FREE(f->bc_coeffs->bf);
+      }
+
+    }
+
+  }
+
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Field \"%s\"\n"
+                " has location %d, which does not support BC coefficients."),
+              f->name, f->location_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Map existing field boundary condition coefficient arrays.
+ *
+ * For fields on location CS_MESH_LOCATION_CELLS, boundary conditions
+ * are located on CS_MESH_LOCATION_BOUNDARY_FACES.
+ *
+ * Boundary condition coefficients are not currently supported for other
+ * locations (though support could be added by mapping a boundary->location
+ * indirection array in the cs_mesh_location_t structure).
+ *
+ * For multidimensional fields, arrays are assumed to have the same
+ * interleaving behavior as the field, unless components are coupled.
+ *
+ * For multidimensional fields with coupled components, interleaving
+ * is the norm, and implicit coefficients arrays are arrays of block matrices,
+ * not vectors, so the number of entris for each boundary face is
+ * dim*dim instead of dim.
+ *
+ * \param[in, out]  f   pointer to field structure
+ * \param[in]       a   explicit BC coefficients array
+ * \param[in]       b   implicit BC coefficients array
+ * \param[in]       af  explicit flux BC coefficients array, or NULL
+ * \param[in]       bf  implicit flux BC coefficients array, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_map_bc_coeffs(cs_field_t  *f,
+                       cs_real_t   *a,
+                       cs_real_t   *b,
+                       cs_real_t   *af,
+                       cs_real_t   *bf)
+{
+  /* Add boundary condition coefficients if required */
+
+  if (f->location_id == CS_MESH_LOCATION_CELLS) {
+
+    const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+
+    if (f->bc_coeffs == NULL) {
+      BFT_MALLOC(f->bc_coeffs, 1, cs_field_bc_coeffs_t);
+      f->bc_coeffs->location_id = location_id;
+    }
+    else {
+      BFT_FREE(f->bc_coeffs->a);
+      BFT_FREE(f->bc_coeffs->b);
+      BFT_FREE(f->bc_coeffs->af);
+      BFT_FREE(f->bc_coeffs->bf);
+    }
+
+    f->bc_coeffs->a = a;
+    f->bc_coeffs->b = b;
+    f->bc_coeffs->af = af;
+    f->bc_coeffs->bf = bf;
+
+  }
+
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Field \"%s\"\n"
+                " has location %d, which does not support BC coefficients."),
+              f->name, f->location_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Destroy all defined fields.
  */
 /*----------------------------------------------------------------------------*/
@@ -1109,6 +1304,15 @@ cs_field_destroy_all(void)
     if (f->is_owner) {
       BFT_FREE(f->val);
       BFT_FREE(f->val_pre);
+    }
+    if (f->bc_coeffs != NULL) {
+      if (f->is_owner == true) {
+        BFT_FREE(f->bc_coeffs->a);
+        BFT_FREE(f->bc_coeffs->b);
+        BFT_FREE(f->bc_coeffs->af);
+        BFT_FREE(f->bc_coeffs->bf);
+      }
+      BFT_FREE(f->bc_coeffs);
     }
   }
 
@@ -1148,7 +1352,8 @@ cs_field_allocate_or_map_all(void)
       if (f->val == NULL)
         bft_error(__FILE__, __LINE__, 0,
                   _("Field \"%s\"\n"
-                    " requires mapped values which have not been set."));
+                    " requires mapped values which have not been set."),
+                  f->name);
 
   }
 }
@@ -2291,21 +2496,25 @@ cs_field_log_all_key_vals(bool  log_defaults)
 /*!
  * \brief Define base keys.
  *
- * TODO: this should be moved to other application files, so as to separate
- *       the field "engine" from its usage.
- *       A recommened practice for different submodules would be to
- *       use "cs_<module>_key_init() functions de to define
- *       keys specific to a module.
+ * Keys defined by this function are:
+ *   "label"     (string)
+ *   "post_vis"  (integer)
+ *   "coupled"   (integer, restricted to CS_FIELD_VARIABLE)
+ *   "moment_dt" (integer, restricted to CS_FIELD_PROPERTY);
+ *
+ * A recommened practice for different submodules would be to use
+ * "cs_<module>_key_init() functions to define keys specific to those modules.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_field_define_keys_base(void)
 {
-  cs_field_define_key_int("post_vis", 0, 0);
-  cs_field_define_key_int("moment_dt", -1, CS_FIELD_PROPERTY);
-
   cs_field_define_key_str("label", NULL, 0);
+
+  cs_field_define_key_int("post_vis", 0, 0);
+  cs_field_define_key_int("coupled", 0, CS_FIELD_VARIABLE);
+  cs_field_define_key_int("moment_dt", -1, CS_FIELD_PROPERTY);
 }
 
 /*----------------------------------------------------------------------------*/

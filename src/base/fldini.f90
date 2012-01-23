@@ -81,7 +81,7 @@ implicit none
 
 integer          ii, ippu, ippv, ippw, ivar, iprop
 integer          imom, idtnm
-integer          keyvis, keylbl, iflid, ikeyid, ikeyvl, iopchr
+integer          keyvis, keylbl, keycpl, iflid, ikeyid, ikeyvl, iopchr
 integer          nfld, iinten, iexten, itycat, ityloc, idim1, idim3, ilved
 integer          iprev, inoprv
 integer          ifvar(nvppmx), iapro(npromx)
@@ -113,6 +113,10 @@ call fldkid(name, keyvis)
 
 name = 'label'
 call fldkid(name, keylbl)
+!==========
+
+name = 'coupled'
+call fldkid(name, keycpl)
 !==========
 
 ! Postprocessing level for variables
@@ -159,6 +163,11 @@ if (ichrvr(ipprtp(ivar)) .eq. 1) then
   call fldski(ivarfl(ivar), keyvis, iopchr)
   !==========
 endif
+if (ivelco .eq. 1) then
+  call fldski(ivarfl(ivar), keycpl, 1)
+  !==========
+endif
+
 ! All components point to same field
 ivarfl(iv) = ivarfl(iu)
 ivarfl(iw) = ivarfl(iu)
@@ -258,6 +267,10 @@ if (iale.eq.1) then
   !==========
   if (ichrvr(ipprtp(ivar)) .eq. 1) then
     call fldski(ivarfl(ivar), keyvis, iopchr)
+    !==========
+  endif
+  if (ivelco .eq. 1) then
+    call fldski(ivarfl(ivar), keycpl, 1)
     !==========
   endif
   ivarfl(ivma) = ivarfl(iuma)
