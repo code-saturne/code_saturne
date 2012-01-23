@@ -271,7 +271,15 @@ do ii = 1, nscaus
 
   if (isca(ii) .gt. 0) then
     ivar = isca(ii)
-    name = nomvar(ipprtp(ivar))
+    if (ii .eq. iscalt) then
+      if (iscsth(iscalt) .eq. 2) then
+        name = 'enthalpy'
+      else
+        name = 'temperature'
+      endif
+    else
+      name = nomvar(ipprtp(ivar))
+    endif
     call flddef(name, iinten, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
     !==========
     call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
