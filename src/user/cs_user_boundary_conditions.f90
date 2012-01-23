@@ -84,10 +84,10 @@ subroutine cs_user_boundary_conditions &
 !    -----------------------------------
 
 !     (inlet, free outlet, wall, symmetry), one defines a code in the 'itypfb'
-!     array (of dimensions number of boundary faces, number of phases).
+!     array (of dimensions number of boundary faces).
 !     This code will then be used by a non-user subroutine to assign the
-!     following conditions (scalars in particular will receive the conditions
-!     of the phase to which they are assigned). Thus:
+!     following conditions.
+!     Thus:
 
 !     Code      |  Boundary type
 !     --------------------------
@@ -516,7 +516,7 @@ d2s3 = 2.d0/3.d0
 !===============================================================================
 
 ! --- For boundary faces of color 2 and x <= 0.01,
-!     assign an inlet for all phases
+!     assign an inlet
 call getfbr('2 and x < 0.01', nlelt, lstelt)
 !==========
 
@@ -603,7 +603,7 @@ do ilelt = 1, nlelt
 
   endif
 
-  ! --- Handle scalars attached to the current phase
+  ! --- Handle scalars
   if(nscal.gt.0) then
     do ii = 1, nscal
       rcodcl(ifac,isca(ii),1) = 1.d0
@@ -612,7 +612,7 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- Prescribe at boundary faces of color 3 an inlet for all phases
+! --- Prescribe at boundary faces of color 3 an inlet
 call getfbr('3', nlelt, lstelt)
 !==========
 do ilelt = 1, nlelt
@@ -686,7 +686,7 @@ do ilelt = 1, nlelt
 
   endif
 
-  ! --- Handle scalars attached to the current phase
+  ! --- Handle scalars
   if(nscal.gt.0) then
     do ii = 1, nscal
       rcodcl(ifac,isca(ii),1) = 1.d0
@@ -695,7 +695,7 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- Prescribe at boundary faces of group 'outlet' an outlet for all phases
+! --- Prescribe at boundary faces of group 'outlet' an outlet
 call getfbr('outlet', nlelt, lstelt)
 !==========
 do ilelt = 1, nlelt
@@ -710,7 +710,7 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- Prescribe at boundary faces of color 5 a wall for all phases
+! --- Prescribe at boundary faces of color 5 a wall
 call getfbr('5', nlelt, lstelt)
 !==========
 do ilelt = 1, nlelt
@@ -750,7 +750,7 @@ do ilelt = 1, nlelt
   endif
 enddo
 
-! --- Prescribe at boundary faces of color 7 a rough wall for all phases
+! --- Prescribe at boundary faces of color 7 a rough wall
 call getfbr('7', nlelt, lstelt)
 !==========
 do ilelt = 1, nlelt
@@ -810,8 +810,8 @@ enddo
 ! --- Example of specific boundary conditions fully defined by the user,
 !     on the basis of wall conditions.
 !     selection (mass flow computation, specific logging, ...)
-!     We prescribe for color 1234 a wall for all phases, with in addition:
-!       - a Dirichlet condition on velocity of phase 1 (sliding wall
+!     We prescribe for color 1234 a wall, with in addition:
+!       - a Dirichlet condition on velocity (sliding wall
 !         with no-slip condition)
 !       - a Dirichlet condition on the first scalar.
 
@@ -847,7 +847,7 @@ enddo
 ! --- Example of specific boundary conditions fully defined by the user,
 !     with no definition of a specific type.
 !     We prescribe at color 5678 a homogeneous Neumann condition for
-!     all variables (whatever the phase).
+!     all variables.
 
 call getfbr('5678', nlelt, lstelt)
 !==========
@@ -872,7 +872,7 @@ enddo
 !     with the definition of a specific type, for example for future
 !     selection (mass flow computation, specific logging, ...)
 !     We prescribe for color 6789 a homogeneous Neumann condition for
-!     all variables (whatever the phase), except for the first
+!     all variables, except for the first
 !     scalar, for which we select a homogeneous Dirichlet.
 
 call getfbr('6789', nlelt, lstelt)
