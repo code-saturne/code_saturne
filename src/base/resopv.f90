@@ -184,7 +184,7 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:) :: w1, w7
+double precision, allocatable, dimension(:) :: res, divu
 double precision, dimension(:,:), allocatable :: gradp
 
 !===============================================================================
@@ -195,14 +195,12 @@ double precision, dimension(:,:), allocatable :: gradp
 
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac,2))
-allocate(w1(ncelet), w7(ncelet))
+allocate(res(ncelet), divu(ncelet))
 
-! --- Memoire
-
-! --- Impressions
+! --- Writting
 ipp    = ipprtp(ipr)
 
-! --- Conditions aux limites
+! --- Boundary conditions
 !     (ICLRTP(IPR,ICOEFF) pointe vers ICLRTP(IPR,ICOEF) si IPHYDR=0)
 iclipr = iclrtp(ipr,icoef)
 iclipf = iclrtp(ipr,icoeff)
@@ -210,8 +208,8 @@ icliup = iclrtp(iu ,icoef)
 iclivp = iclrtp(iv ,icoef)
 icliwp = iclrtp(iw ,icoef)
 
-! --- Grandeurs physiques
-ipcrom = ipproc(irom  )
+! --- Physical quantities
+ipcrom = ipproc(irom)
 if(icalhy.eq.1) then
   ipcroa = ipproc(iroma)
 else
@@ -221,7 +219,7 @@ ipbrom = ipprob(irom  )
 iflmas = ipprof(ifluma(ipr))
 iflmab = ipprob(ifluma(ipr))
 
-! --- Options de resolution
+! --- Solving options
 isym  = 1
 if( iconv (ipr).gt.0 ) then
   isym  = 2
@@ -313,19 +311,18 @@ if(irnpnw.ne.1) then
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
-   !velocity 3 interleaved components
    trav   ,                                                       &
    coefav , coefbv ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) )
 
   init = 1
   call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
-       ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
+       ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),res)
 
   if (ncesmp.gt.0) then
     do ii = 1, ncesmp
       iel = icetsm(ii)
-      w1(iel) = w1(iel) -volume(iel)*smacel(ii,ipr)
+      res(iel) = res(iel) -volume(iel)*smacel(ii,ipr)
     enddo
   endif
 
@@ -334,12 +331,12 @@ if(irnpnw.ne.1) then
   if (iilagr.eq.2 .and. ltsmas.eq.1) then
 
     do iel = 1, ncel
-      w1(iel) = w1(iel) -tslagr(iel,itsmas)
+      res(iel) = res(iel) -tslagr(iel,itsmas)
     enddo
 
   endif
 
-  call prodsc(ncelet,ncel,isqrt,w1,w1,rnormp)
+  call prodsc(ncelet,ncel,isqrt,res,res,rnormp)
 
   if(iwarni(ipr).ge.2) then
     chaine = nomvar(ipp)
@@ -537,7 +534,6 @@ else
   do iel=1,ncel
     arsr  = arakph/propce(iel,ipcrom)
     do isou = 1, 3
-      !interleaved tpucou
       trav(isou,iel) = vel(isou,iel) + arsr*tpucou(isou,iel)*trav(isou,iel)
     enddo
   enddo
@@ -549,7 +545,6 @@ if (irangp.ge.0.or.iperio.eq.1) then
   call synvin(trav)
   !==========
 endif
-
 
 init   = 1
 inc    = 1
@@ -571,11 +566,9 @@ call inimav                                                       &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
-   !velocity 3 components
    trav   ,                                                       &
    coefav , coefbv ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) )
-
 
 
 ! --- Projection aux faces des forces exterieures
@@ -684,6 +677,7 @@ if(arakph.gt.0.d0) then
    dt     , dt     , dt     )
 
     endif
+
 ! --- Correction du pas de temps
     unsara = 1.d0/arakph
     do iel = 1, ncel
@@ -704,6 +698,7 @@ if(arakph.gt.0.d0) then
     epsrgp = epsrgr(ipr )
     climgp = climgr(ipr )
     extrap = extrag(ipr )
+
     call itrmav                                                   &
     !==========
  ( nvar   , nscal  ,                                              &
@@ -850,20 +845,20 @@ enddo
 init = 1
 call divmas                                                       &
   (ncelet,ncel,nfac,nfabor,init,nfecra,                           &
-               ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w7)
+   ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),divu)
 
 ! --- Termes sources de masse
 if (ncesmp.gt.0) then
   do ii = 1, ncesmp
     iel = icetsm(ii)
-    w7(iel) = w7(iel) -volume(iel)*smacel(ii,ipr)
+    divu(iel) = divu(iel) -volume(iel)*smacel(ii,ipr)
   enddo
 endif
 
 ! ---> Termes sources Lagrangien
 if (iilagr.eq.2 .and. ltsmas.eq.1) then
   do iel = 1, ncel
-    w7(iel) = w7(iel) -tslagr(iel,itsmas)
+    divu(iel) = divu(iel) -tslagr(iel,itsmas)
   enddo
 endif
 
@@ -873,7 +868,7 @@ do 100 isweep = 1, nswmpr
 ! --- Mise a jour du second membre
 !     (signe "-" a cause de celui qui est implicitement dans la matrice)
   do iel = 1, ncel
-    smbr(iel) = - w7(iel) - smbr(iel)
+    smbr(iel) = - divu(iel) - smbr(iel)
   enddo
 
 ! --- Test de convergence du calcul
@@ -922,7 +917,9 @@ do 100 isweep = 1, nswmpr
     epsrgp = epsrgr(ipr)
     climgp = climgr(ipr)
     extrap = extrag(ipr)
+
     if (idtsca.eq.0) then
+
       call itrmas &
       !==========
  ( nvar   , nscal  ,                                              &
@@ -1196,7 +1193,7 @@ endif
 
 ! Free memory
 deallocate(dam, xam)
-deallocate(w1, w7)
+deallocate(res, divu)
 
 !--------
 ! FORMATS

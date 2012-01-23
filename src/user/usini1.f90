@@ -1362,6 +1362,21 @@ dtref  = 0.01d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
+! --- Segregated or coupled solver for the velocity components:
+!       0 for the segregated solver
+!       1 for the coupled solver
+!
+!     The coupled solver may improve the accuracy and the robustness of the
+!     simulation in case of periodicity of rotation, Corriolis source terms.
+!     It implicits the wall shear stress.
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+ivelco = 0
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+
 if (nmodpp.eq.0) then
 
   ! Number of the scalar representing temperature or enthalpy,
