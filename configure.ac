@@ -291,7 +291,7 @@ if test "x$cs_ibm_bg_type" != "x" \
 fi
 AC_SUBST(enable_shared)
 
-LT_INIT
+LT_INIT([dlopen])
 
 #------------------------------------------------------------------------------
 # Checks for typedefs, structures, and compiler characteristics.
@@ -628,43 +628,6 @@ AC_FUNC_FSEEKO
 
 AC_CHECK_SIZEOF([off_t])
 
-# Optional shared library support
-#--------------------------------
-
-cs_have_dlloader=no
-
-AC_ARG_ENABLE(dlloader,
-  [AS_HELP_STRING([--disable-dlloader], [disable dynamic shared library loading])],
-  [
-    case "${enableval}" in
-      yes) cs_have_dlloader=yes ;;
-      no)  cs_have_dlloader=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-dlloader]) ;;
-    esac
-  ],
-  [ cs_have_dlloader=yes ]
-)
-
-if test "x$cs_have_dlloader" = "xyes" ; then
-
-  saved_LIBS="$LIBS"
-  LIBS="$LIBS -ldl"
-
-  AC_MSG_CHECKING([for dlopen])
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <dlfcn.h>]],
-                 [[ dlopen("none.so", RTLD_LAZY);]])],
-                 [cs_have_dlloader=yes],
-                 [cs_have_dlloader=no])
-  AC_MSG_RESULT($cs_have_dlloader)
-  if test "x$cs_have_dlloader" = "xyes" ; then
-    AC_DEFINE([HAVE_DLOPEN], 1, [dlopen support])
-  else
-    LIBS="$saved_LIBS"
-    cs_have_dlloader=no
-  fi
-
-fi
-
 # Optional malloc hooks support (for glibc)
 #------------------------------
 
@@ -740,8 +703,11 @@ fi
 # Plugin modules support
 #-----------------------
 
+cs_have_dlloader=no
 cs_have_plugins=no
-if test x$cs_have_dlloader = xyes ; then
+if test $lt_cv_dlopen = dlopen ; then
+  cs_have_dlloader=yes
+  AC_DEFINE([HAVE_DLOPEN], 1, [dlopen support])
   # Test for different plugins here
   if test x$cs_have_medcoupling = xyes ; then
     cs_have_plugins=yes

@@ -953,26 +953,31 @@ cs_calcium_load_yacs(const char *lib_path)
     bft_error(__FILE__, __LINE__, 0,
               _("Error loading %s: %s."), lib_path, dlerror());
 
-  _cs_calcium_yacsinit
-    = _get_dl_function_pointer(_cs_calcium_yacslib, "yacsinit", true);
+  /* Function pointers need to be double-casted so as to first convert
+     a (void *) type to a memory address and then convert it back to the
+     original type. Otherwise, the compiler may issue a warning.
+     This is a valid ISO C construction. */
 
-  _cs_calcium_read_int
-    = _get_dl_function_pointer(_cs_calcium_yacslib, "cp_len", true);
+  _cs_calcium_yacsinit = (cs_calcium_yacsinit_t *) (intptr_t)
+    _get_dl_function_pointer(_cs_calcium_yacslib, "yacsinit", true);
 
-  _cs_calcium_write_int
-    = _get_dl_function_pointer(_cs_calcium_yacslib, "cp_een", true);
+  _cs_calcium_read_int = (cs_calcium_read_int_t *) (intptr_t)
+    _get_dl_function_pointer(_cs_calcium_yacslib, "cp_len", true);
 
-  _cs_calcium_read_float
-    = _get_dl_function_pointer(_cs_calcium_yacslib, "cp_lre", true);
+  _cs_calcium_write_int = (cs_calcium_write_int_t *) (intptr_t)
+    _get_dl_function_pointer(_cs_calcium_yacslib, "cp_een", true);
 
-  _cs_calcium_write_float
-    = _get_dl_function_pointer(_cs_calcium_yacslib, "cp_ere", true);
+  _cs_calcium_read_float = (cs_calcium_read_float_t *) (intptr_t)
+    _get_dl_function_pointer(_cs_calcium_yacslib, "cp_lre", true);
 
-  _cs_calcium_read_double
-    = _get_dl_function_pointer(_cs_calcium_yacslib, "cp_ldb", true);
+  _cs_calcium_write_float = (cs_calcium_write_float_t *) (intptr_t)
+    _get_dl_function_pointer(_cs_calcium_yacslib, "cp_ere", true);
 
-  _cs_calcium_write_double
-    = _get_dl_function_pointer(_cs_calcium_yacslib, "cp_edb", true);
+  _cs_calcium_read_double = (cs_calcium_read_double_t *) (intptr_t)
+    _get_dl_function_pointer(_cs_calcium_yacslib, "cp_ldb", true);
+
+  _cs_calcium_write_double = (cs_calcium_write_double_t *) (intptr_t)
+    _get_dl_function_pointer(_cs_calcium_yacslib, "cp_edb", true);
 
   if (   _cs_calcium_yacsinit == NULL
       || _cs_calcium_read_int == NULL

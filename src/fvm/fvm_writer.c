@@ -353,32 +353,37 @@ _load_plugin(fvm_writer_format_t  *wf)
     bft_error(__FILE__, __LINE__, 0,
               _("Error loading %s: %s."), lib_path, dlerror());
 
-  wf->n_version_strings_func
-    = _get_dl_function_pointer(wf, "n_version_strings", false);
+  /* Function pointers need to be double-casted so as to first convert
+     a (void *) type to a memory address and then convert it back to the
+     original type. Otherwise, the compiler may issue a warning.
+     This is a valid ISO C construction. */
 
-  wf->version_string_func
-    = _get_dl_function_pointer(wf, "version_string", false);
+  wf->n_version_strings_func = (fvm_writer_n_version_strings_t *) (intptr_t)
+    _get_dl_function_pointer(wf, "n_version_strings", false);
 
-  wf->init_func
-    = _get_dl_function_pointer(wf, "init_writer", true);
+  wf->version_string_func = (fvm_writer_version_string_t *) (intptr_t)
+    _get_dl_function_pointer(wf, "version_string", false);
 
-  wf->finalize_func
-    = _get_dl_function_pointer(wf, "finalize_writer", true);
+  wf->init_func = (fvm_writer_init_t *) (intptr_t)
+    _get_dl_function_pointer(wf, "init_writer", true);
 
-  wf->set_mesh_time_func
-    = _get_dl_function_pointer(wf, "set_mesh_time", true);
+  wf->finalize_func = (fvm_writer_finalize_t *) (intptr_t)
+    _get_dl_function_pointer(wf, "finalize_writer", true);
 
-  wf->needs_tesselation_func
-    = _get_dl_function_pointer(wf, "needs_tesselation", false);
+  wf->set_mesh_time_func = (fvm_writer_set_mesh_time_t *) (intptr_t)
+    _get_dl_function_pointer(wf, "set_mesh_time", true);
 
-  wf->export_nodal_func
-    = _get_dl_function_pointer(wf, "export_nodal", true);
+  wf->needs_tesselation_func = (fvm_writer_needs_tesselation_t *) (intptr_t)
+    _get_dl_function_pointer(wf, "needs_tesselation", false);
 
-  wf->export_field_func
-    = _get_dl_function_pointer(wf, "export_field", true);
+  wf->export_nodal_func = (fvm_writer_export_nodal_t *) (intptr_t)
+    _get_dl_function_pointer(wf, "export_nodal", true);
 
-  wf->flush_func
-    = _get_dl_function_pointer(wf, "flush", false);
+  wf->export_field_func = (fvm_writer_export_field_t *) (intptr_t)
+    _get_dl_function_pointer(wf, "export_field", true);
+
+  wf->flush_func = (fvm_writer_flush_t *) (intptr_t)
+    _get_dl_function_pointer(wf, "flush", false);
 }
 
 /*----------------------------------------------------------------------------

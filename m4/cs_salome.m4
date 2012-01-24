@@ -117,6 +117,7 @@ if test "x$with_salome" != "xno" ; then
 
   KERNEL_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $KERNEL_ROOT_DIR)
   GUI_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $GUI_ROOT_DIR)
+  MED_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $MED_ROOT_DIR)
   YACS_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $YACS_ROOT_DIR)
 
   OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
@@ -456,21 +457,35 @@ cs_have_paramedmem=no
 AC_ARG_WITH(salome-med,
             [AS_HELP_STRING([--with-salome-med=PATH],
                             [specify directory for MEDCoupling and ParaMEDMEM])],
-            [if test "x$withval" != "xno"; then
-               with_salome_med=yes
-               MEDCOUPLING_CPPFLAGS="-I$withval/include/salome"
-               MEDCOUPLING_LDFLAGS="-L$withval/lib/salome"
-               # Add the libdir to the runpath as libtool does not do this for modules
-               MEDCOUPLINGRUNPATH="-R$withval/lib/salome"
+            [if test "x$withval" = "x"; then
+               if test -z "$MED_ROOT_DIR"; then
+                 with_salome_med=yes
+               else
+                 with_salome_med=$MED_ROOT_DIR
+               fi
              fi],
-            [with_salome_med=check])
+            [if test -z "$MED_ROOT_DIR"; then
+               with_salome_med=check
+             else
+               with_salome_med=$MED_ROOT_DIR
+             fi])
 
 if test "x$with_salome_med" != "xno" ; then
+
+  if test x"$with_salome_med" != xyes -a x"$with_salome_med" != xcheck ; then
+    SALOME_MED="$with_salome_med"
+  else
+    SALOME_MED="/usr"
+  fi
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
+  MEDCOUPLING_CPPFLAGS="-I$SALOME_MED/include/salome"
+  MEDCOUPLING_LDFLAGS="-L$SALOME_MED/lib/salome"
+  # Add the libdir to the runpath as libtool does not do this for modules
+  MEDCOUPLINGRUNPATH="-R$SALOME_MED/lib/salome"
   MEDCOUPLING_LIBS="-lmedcoupling -linterpkernel"
 
   CPPFLAGS="${CPPFLAGS} ${MEDCOUPLING_CPPFLAGS}"
