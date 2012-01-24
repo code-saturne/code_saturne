@@ -357,20 +357,20 @@ _write_struct_header_dat(cs_time_plot_t    *p,
     fprintf(_f, _("# Structure: %i\n"
                   "#\n"), struct_id + 1);
     fprintf(_f, _("# Mass:       [%14.7e, %14.7e, %14.7e]\n"
-                  "              [%14.7e, %14.7e, %14.7e]\n"
-                  "              [%14.7e, %14.7e, %14.7e]\n\n"),
+                  "#             [%14.7e, %14.7e, %14.7e]\n"
+                  "#             [%14.7e, %14.7e, %14.7e]\n\n"),
             m_tmp[0], m_tmp[1], m_tmp[2],
             m_tmp[3], m_tmp[4], m_tmp[5],
             m_tmp[6], m_tmp[7], m_tmp[8]);
     fprintf(_f, _("# Damping:    [%14.7e, %14.7e, %14.7e]\n"
-                  "              [%14.7e, %14.7e, %14.7e]\n"
-                  "              [%14.7e, %14.7e, %14.7e]\n\n"),
+                  "#             [%14.7e, %14.7e, %14.7e]\n"
+                  "#             [%14.7e, %14.7e, %14.7e]\n\n"),
             d_tmp[0], d_tmp[1], d_tmp[2],
             d_tmp[3], d_tmp[4], d_tmp[5],
             d_tmp[6], d_tmp[7], d_tmp[8]);
     fprintf(_f, _("# Stiffness:  [%14.7e, %14.7e, %14.7e]\n"
-                  "              [%14.7e, %14.7e, %14.7e]\n"
-                  "              [%14.7e, %14.7e, %14.7e]\n\n"),
+                  "#             [%14.7e, %14.7e, %14.7e]\n"
+                  "#             [%14.7e, %14.7e, %14.7e]\n\n"),
             s_tmp[0], s_tmp[1], s_tmp[2],
             s_tmp[3], s_tmp[4], s_tmp[5],
             s_tmp[6], s_tmp[7], s_tmp[8]);

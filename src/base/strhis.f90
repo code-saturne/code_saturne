@@ -105,6 +105,12 @@ endif
 ! 2. Initialize output
 !===============================================================================
 
+! Create directory if required
+if (ipass.eq.1 .and. irangp.le.0) then
+  call csmkdr(emphis, len(emphis))
+  !==========
+endif
+
 if (ipass.eq.1 .and. irangp.le.0) then
 
   namevr(1 ) = "displacement x"
