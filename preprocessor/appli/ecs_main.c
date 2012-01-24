@@ -168,8 +168,6 @@ _lit_maillage(const ecs_cmd_t *cmd)
   ecs_maillage_t  *maillage = NULL;
   ecs_maillage_t  *maillage_lu = NULL;
 
-  const char titre[] = "Apres lecture du fichier de maillage ";
-
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   for (ific = 0; ific < cmd->n_num_maillage; ific++) {
@@ -370,8 +368,6 @@ main(int    argc,
   /* Communication avec le noyau */
 
   bool               passe_verif;
-
-  ecs_file_t        *fic_imp;
 
   ecs_maillage_t    *maillage;
 

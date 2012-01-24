@@ -108,10 +108,10 @@ static int
 _compare_names(const void  *a,
                const void  *b)
 {
-  return strcmp(*((const char **)a), *((const char **)b));
+  return strcmp(*((const char *const *)a), *((const char *const *)b));
 }
 
-#if defined(HAVE_MPI)
+#if 0 && defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Send group class set definition to distant rank.

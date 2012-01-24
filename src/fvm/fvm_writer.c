@@ -329,7 +329,7 @@ _get_dl_function_pointer(fvm_writer_format_t  *wf,
  *   wf <-> pointer to library format writer.
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _load_plugin(fvm_writer_format_t  *wf)
 {
   char  *lib_path = NULL;
@@ -388,11 +388,9 @@ _load_plugin(fvm_writer_format_t  *wf)
  *   wf <-> pointer to library format writer.
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _close_plugin(fvm_writer_format_t  *wf)
 {
-  char  *lib_path = NULL;
-
   /* Open from shared library */
 
   if (wf->dl_lib == NULL)

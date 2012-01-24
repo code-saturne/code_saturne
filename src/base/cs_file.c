@@ -1238,7 +1238,7 @@ static int
 _cs_file_compare_names(const void  *a,
                        const void  *b)
 {
-  return strcmp(*((const char **)a), *((const char **)b));
+  return strcmp(*((const char *const *)a), *((const char *const *)b));
 }
 
 /*=============================================================================

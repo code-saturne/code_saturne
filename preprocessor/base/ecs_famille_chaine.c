@@ -456,7 +456,7 @@ ecs_famille_chaine__cree_descr(ecs_famille_t   *famille,
 bool *
 ecs_famille_chaine__indic_fam_att(const ecs_famille_t  *fam_tete)
 {
-  size_t    ifam;
+  int       ifam;
   int       num_fam_max;
 
   const ecs_famille_t  *ptr_fam;
