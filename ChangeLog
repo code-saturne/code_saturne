@@ -1,3 +1,10 @@
+* 24/01/2012 - David Monfort <david.monfort@edf.fr>
+  Fixes for the BL v2-k model. Patch provided by Flavien Billard.
+  modified routines:
+    src/base/condli.f90
+    src/base/lecamp.f90
+    src/turb/visv2f.f90
+
 * 13/01/2012 - David Monfort <david.monfort@edf.fr>
   Release of Code_Saturne 2.1.4.
 
