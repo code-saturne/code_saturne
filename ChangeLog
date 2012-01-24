@@ -1,3 +1,8 @@
+* 24/01/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a double-periodicity issue (sequential fix ATM).
+  modified routine:
+    src/mesh/cs_mesh.c
+
 * 24/01/2012 - David Monfort <david.monfort@edf.fr>
   Minor fixes for the time monitoring outputs.
   modified routines:

@@ -1504,7 +1504,7 @@ _get_perio_faces_l(const cs_mesh_t    *mesh,
 
     dest_c_id = -1;
     if (c_id0 >= mesh->n_cells) {
-      perio_num = halo_perio_num[c_id0  - mesh->n_cells];
+      perio_num = halo_perio_num[c_id0 - mesh->n_cells];
       if (perio_num > 0) {
         dest_c_id = c_id1;
         src_c_id = c_id0;
@@ -1540,7 +1540,9 @@ _get_perio_faces_l(const cs_mesh_t    *mesh,
 
           /* If we have a match, update periodic couples */
 
-          if (src_c_num == loc_c_num && dest_c_num == loc_cell_num[dist_c_id]) {
+          if (   src_c_num == loc_c_num
+              && dest_c_num == loc_cell_num[dist_c_id]
+              && halo_perio_num[dist_c_id-mesh->n_cells] == -perio_num) {
             int perio_id = perio_num - 1;
             fvm_lnum_t couple_id = _n_perio_face_couples[perio_id];
             cell_face[k] = -1; /* Mark as used */
