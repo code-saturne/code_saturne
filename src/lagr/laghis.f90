@@ -367,9 +367,20 @@ if (modhis.eq.2) then
     do ipas  = 1, 1+nbclst
 
       do ipp = 1, 2*nvlsta
-        tplnum = nptpl + (ipas-1)*2*nvlsta + ipp
-        call tplend(tplnum, tplfmt)
-        !==========
+
+        iokhis = 0
+        if (ipp.le.nvlsta) then
+          if (ihslag(ipp).ge.1) iokhis = 1
+        else
+          if ((ipp-nvlsta).ne.ilpd .and. ihslag(ipp-nvlsta).eq.2) iokhis = 1
+        endif
+
+        if (iokhis.eq.1) then
+          tplnum = nptpl + (ipas-1)*2*nvlsta + ipp
+          call tplend(tplnum, tplfmt)
+          !==========
+        endif
+
       enddo
     enddo
 
