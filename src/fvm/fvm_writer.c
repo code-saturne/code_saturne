@@ -304,7 +304,7 @@ _get_dl_function_pointer(fvm_writer_format_t  *wf,
 
   dlerror();    /* Clear any existing error */
 
-  if (wf->dl_name = NULL)
+  if (wf->dl_name == NULL)
     retval = dlsym(wf->dl_lib, name);
   else {
     char *_name;
@@ -410,15 +410,17 @@ _close_plugin(fvm_writer_format_t  *wf)
 
   /* Reset pointers */
 
-  wf->n_version_strings_func = NULL;
-  wf->version_string_func = NULL;
-  wf->init_func = NULL;
-  wf->finalize_func = NULL;
-  wf->set_mesh_time_func = NULL;
-  wf->needs_tesselation_func = NULL;
-  wf->export_nodal_func = NULL;
-  wf->export_field_func = NULL;
-  wf->flush_func = NULL;
+  if (wf->dl_count == 0) {
+    wf->n_version_strings_func = NULL;
+    wf->version_string_func = NULL;
+    wf->init_func = NULL;
+    wf->finalize_func = NULL;
+    wf->set_mesh_time_func = NULL;
+    wf->needs_tesselation_func = NULL;
+    wf->export_nodal_func = NULL;
+    wf->export_field_func = NULL;
+    wf->flush_func = NULL;
+  }
 }
 
 #endif /* defined(HAVE_DLOPEN)*/
