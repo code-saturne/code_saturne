@@ -383,7 +383,7 @@ elseif(itytur.eq.3) then
   icl13  = iclrtp(ir13,icoef)
   icl23  = iclrtp(ir23,icoef)
   iclep  = iclrtp(iep,icoef)
-elseif(iturb.eq.50) then
+elseif(itytur.eq.5) then
   iclk   = iclrtp(ik ,icoef)
   iclep  = iclrtp(iep,icoef)
   iclphi = iclrtp(iphi,icoef)

@@ -758,10 +758,20 @@ elseif(itytph.eq.5) then
          rtp(1,iphi),ierror)
     nberro=nberro+ierror
 
-    RUBRIQ = 'fb_ce_phase'//CPHASE
-    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ifb),ierror)
-    nberro=nberro+ierror
+    if(iturph.eq.50.and.jturph.eq.50) then
+      RUBRIQ = 'fb_ce_phase'//CPHASE
+      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+           rtp(1,ifb),ierror)
+      nberro=nberro+ierror
+    elseif(iturph.eq.51.and.jturph.eq.51) then
+      RUBRIQ = 'al_ce_phase'//CPHASE
+      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+           rtp(1,ial),ierror)
+      nberro=nberro+ierror
+    endif
+    !     Si (phi-fbar -> BL-v2/k) ou (BL-v2/k -> phi-fbar)
+    !      on laisse pour al ou fb l'initialisations de iniva0
+
     !     * k-omega -> v2f
 
   else if(jturph.eq.60) then

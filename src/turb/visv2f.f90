@@ -190,6 +190,7 @@ do iel = 1, ncel
 
   s2(iel) = 2.d0*(s11**2 + s22**2 + s33**2)                   &
        + (dudy+dvdx)**2 + (dudz+dwdx)**2 + (dvdz+dwdy)**2
+  s2(iel) = sqrt(max(s2(iel),1.d-10))
 
 enddo
 
