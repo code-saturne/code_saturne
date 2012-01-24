@@ -164,7 +164,7 @@ istat (ivar) = 0
 idiff (ivar) = 1
 idifft(ivar) = 0
 idircl(ivar) = 1
-imgr  (ivar) = 1
+imgr  (ivar) = 0
 
 if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
   ivar = isca(ipoti)
@@ -173,7 +173,7 @@ if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
   idiff (ivar) = 1
   idifft(ivar) = 0
   idircl(ivar) = 1
-  imgr  (ivar) = 1
+  imgr  (ivar) = 0
 endif
 
 if(ippmod(ielarc).ge.2) then
