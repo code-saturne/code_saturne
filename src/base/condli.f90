@@ -33,7 +33,7 @@ subroutine condli &
 ! FONCTION :
 ! --------
 
-! TRADUCTION DES CONDITIONS AUX LIMITES FOURNIES PAR USCLIM.F
+! TRADUCTION DES CONDITIONS AUX LIMITES FOURNIES PAR cs_user_boundary
 ! SOUS UNE FORME "SIMPLEMENT" ADMISSIBLE PAR LE SOLVEUR
 
 ! CETTE TRADUCTION SE PRESENTE SOUS LA FORME D'UNE VALEUR PFAC DE
@@ -1000,7 +1000,7 @@ do ifac = 1, nfabor
   ! --- Grandeurs geometriques
   distbf = distb(ifac)
 
-  ! ON MET UN FLUX EN DT.GRAD P (W/m2) DANS USCLIM
+  ! ON MET UN FLUX EN DT.GRAD P (W/m2) DANS cs_user_boundary
   hint = dt(iel)/distbf
 
   ! On doit remodifier la valeur du  Dirichlet de pression de manière
@@ -1752,8 +1752,8 @@ if (allocated(rijipb)) deallocate(rijipb)
 '@                                                            ',/,&
 '@    Par securite, le calcul ne sera pas execute.            ',/,&
 '@                                                            ',/,&
-'@    Verifier les conditions aux limites dans usclim si le   ',/,&
-'@      domaine comporte des parois.                          ',/,&
+'@    Verifier les conditions aux limites dans                ',/,&
+'@      cs_user_boundary si le domaine comporte des parois.   ',/,&
 '@    Eliminer l''option IRIJEC de usini1 si le domaine ne    ',/,&
 '@      comporte pas de paroi (ou conditions ICODCL = 5 en    ',/,&
 '@      vitesse).                                             ',/,&
@@ -1800,8 +1800,8 @@ if (allocated(rijipb)) deallocate(rijipb)
 '@                                                            ',/,&
 '@    By safety, the calculation will not be run.             ',/,&
 '@                                                            ',/,&
-'@    Verify the boundary conditions in usclim if the domain  ',/,&
-'@      has any walls.                                        ',/,&
+'@    Verify the boundary conditions in cs_user_boundary in   ',/,&
+'@      if the domain has any walls.                          ',/,&
 '@    Remove the option IRIJEC from usini1 if the domain does ',/,&
 '@      not have any wall (or conditions ICODCL = 5 for the   ',/,&
 '@      velocity).                                            ',/,&

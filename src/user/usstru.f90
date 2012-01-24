@@ -43,7 +43,8 @@
 !     =============================
 
 ! Boundary faces may be identified using the 'getfbr' subroutine.
-! The syntax of this subroutine is described in the 'usclim' subroutine,
+! The syntax of this subroutine is described in the
+! 'cs_user_boundary_conditions' subroutine,
 ! but a more thorough description can be found in the user guide.
 
 
@@ -162,7 +163,8 @@ allocate(lstelt(nfabor))
 !    =============================
 
 !    Boundary faces may be identified using the 'getfbr' subroutine.
-!    The syntax of this subroutine is described in the 'usclim' subroutine,
+!    The syntax of this subroutine is described in the
+!    'cs_user_boundary_conditions' subroutine,
 !    but a more thorough description can be found in the user guide.
 
 

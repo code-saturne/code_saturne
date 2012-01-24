@@ -86,7 +86,7 @@ subroutine ustsns &
 ! The selection of cells where to apply the source terms is based on a getcel
 ! command. For more info on the syntax of the getcel command, refer to the
 ! user manual or to the comments on the similar command getfbr in the routine
-! usclim.
+! cs_user_boundary_conditions.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -316,7 +316,7 @@ subroutine ustsnv &
 ! The selection of cells where to apply the source terms is based on a getcel
 ! command. For more info on the syntax of the getcel command, refer to the
 ! user manual or to the comments on the similar command getfbr in the routine
-! usclim.
+! cs_user_boundary_conditions.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -544,7 +544,7 @@ subroutine ustssc &
 ! The selection of cells where to apply the source terms is based on a getcel
 ! command. For more info on the syntax of the getcel command, refer to the
 ! user manual or to the comments on the similar command getfbr in the routine
-! usclim.
+! cs_user_boundary_conditions.
 
 !
 ! STEEP SOURCE TERMS
@@ -883,7 +883,7 @@ subroutine ustske &
 ! The selection of cells where to apply the source terms is based on a getcel
 ! command. For more info on the syntax of the getcel command, refer to the
 ! user manual or to the comments on the similar command getfbr in the routine
-! usclim.
+! cs_user_boundary_conditions.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -1115,7 +1115,7 @@ subroutine ustskw &
 ! The selection of cells where to apply the source terms is based on a getcel
 ! command. For more info on the syntax of the getcel command, refer to the
 ! user manual or to the comments on the similar command getfbr in the routine
-! usclim.
+! cs_user_boundary_conditions.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -1354,7 +1354,7 @@ subroutine ustsri &
 ! The selection of cells where to apply the source terms is based on a getcel
 ! command. For more info on the syntax of the getcel command, refer to the
 ! user manual or to the comments on the similar command getfbr in the routine
-! usclim.
+! cs_user_boundary_conditions.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -1608,7 +1608,7 @@ subroutine ustsv2 &
 ! The selection of cells where to apply the source terms is based on a getcel
 ! command. For more info on the syntax of the getcel command, refer to the
 ! user manual or to the comments on the similar command getfbr in the routine
-! usclim.
+! cs_user_boundary_conditions.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -1849,7 +1849,7 @@ subroutine ustssa &
 ! The selection of cells where to apply the source terms is based on a getcel
 ! command. For more info on the syntax of the getcel command, refer to the
 ! user manual or to the comments on the similar command getfbr in the routine
-! usclim.
+! cs_user_boundary_conditions.
 
 !-------------------------------------------------------------------------------
 ! Arguments

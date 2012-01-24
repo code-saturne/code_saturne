@@ -63,7 +63,7 @@ module numvar
   !  (dans propce, propfa et propfb)
   !    le numero des proprietes est unique, quelle aue soit la
   !      localisation de ces dernieres (cellule, face, face de bord)
-  !    Voir usclim pour quelques exemples
+  !    Voir cs_user_boundary_conditions pour quelques exemples
 
   ! ipproc : pointeurs dans propce
   ! ipprof : pointeurs dans propfa

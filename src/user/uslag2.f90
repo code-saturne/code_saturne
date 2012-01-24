@@ -50,7 +50,8 @@ subroutine uslag2 &
 ! =============================
 
 ! Boundary faces may be identified using the 'getfbr' subroutine.
-! The syntax of this subroutine is described in the 'usclim' subroutine,
+! The syntax of this subroutine is described in the
+! 'cs_user_boundary_conditions' subroutine,
 ! but a more thorough description can be found in the user guide.
 
 
@@ -200,16 +201,17 @@ pis6 = pi / 6.d0
 !     --------------------------------
 
 !     For the Lagrangian module, the user defines nfrlag boundary zones
-!     from the color of the boundary faces, or more generally from their properties
-!     (colors, groups..) or from the boundary conditions prescribed in usclim, or
-!     even from their coordinates. To do that, we fill the ifrlag(nfabor) array
-!     which gives for every boundary face the number of the zone to which it belongs ifrlag(ifac)
+!     from the color of the boundary faces, or more generally from their
+!     properties (colors, groups..) or from the boundary conditions prescribed
+!     in cs_user_boundary_conditions, or even from their coordinates. To do
+!     that, we fill the ifrlag(nfabor) array which gives for every boundary
+!     face the number of the zone to which it belongs ifrlag(ifac)
 !
 !     Be careful, all the boundary faces must have been affected.
 !
 !     The number of the zones (thus the values of ifrlag(ifac)) is arbitrarily
-!     chosen by the user, but must be a positive integer and inferior or equal to
-!     nflagm (parameter prescribed in lagpar.h).
+!     chosen by the user, but must be a positive integer and inferior or equal
+!     to nflagm (parameter prescribed in lagpar.h).
 !
 !     Afterwards, we assign to every zone a type named itylag that will be used
 !     to impose global boundary conditions.

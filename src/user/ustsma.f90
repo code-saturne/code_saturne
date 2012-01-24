@@ -133,7 +133,7 @@ subroutine ustsma &
 ! The selection of cells where to apply the source terms is based on a getcel
 ! command. For more info on the syntax of the getcel command, refer to the
 ! user manual or to the comments on the similar command getfbr in the routine
-! usclim.
+! cs_user_boundary_conditions.
 
 
 !-------------------------------------------------------------------------------

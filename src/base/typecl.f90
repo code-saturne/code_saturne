@@ -165,7 +165,7 @@ pref = 0.d0
 
 
 !===============================================================================
-! 2.  Check consistency of types given in usclim
+! 2.  Check consistency of types given in cs_user_boundary_conditions
 !===============================================================================
 
 iok = 0

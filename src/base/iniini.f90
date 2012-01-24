@@ -894,7 +894,7 @@ iccvfg = 0
 imvisf = 0
 
 ! --- Type des CL, tables de tri
-!       Sera calcule apres usclim.
+!       Sera calcule apres cs_user_boundary_conditions.
 
 do ii = 1, ntypmx
   idebty(ii) = 0

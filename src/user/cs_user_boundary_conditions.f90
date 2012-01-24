@@ -487,9 +487,10 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in definition of boundary conditions',/,   &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usclim'' must be completed.',/, &
-'@',/,                                                            &
-'@  The calculation will not be run.',/,                          &
+'@  The user subroutine ''cs_user_boundary_conditions         ',/,&
+'@  must be completed.                                        ',/,&
+'@                                                            ',/,&
+'@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)

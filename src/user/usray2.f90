@@ -115,7 +115,8 @@ subroutine usray2 &
 ! =============================
 
 ! Boundary faces may be identified using the 'getfbr' subroutine.
-! The syntax of this subroutine is described in the 'usclim' subroutine,
+! The syntax of this subroutine is described in the
+! 'cs_user_boundary_conditions' subroutine,
 ! but a more thorough description can be found in the user guide.
 
 ! Note: these usefull constants are defined
@@ -298,7 +299,7 @@ tmax = grand + tkelvi
 !       the user defines his own choice by a number of zone
 !       IZFRDP(ifac) from color of the boundary face
 !         or more generally, their properties (color, groups ...),
-!         or boundary conditions specified in usclim,
+!         or boundary conditions specified in cs_user_boundary_conditions,
 !         or even of their coordinates.
 !     Warning: it is essential that ALL boundary faces
 !       have been assigned to a zone.

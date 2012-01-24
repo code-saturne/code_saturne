@@ -997,7 +997,7 @@ void CS_PROCF (uiray2, UIRAY2)
           bft_error(__FILE__, __LINE__, 0,
                     _("One tries to define radiative boundary conditions on boundary which is not a wall.\n"
                       "The definition of the boundaries natures given in GUI (wall, inlet, outlet,...) \n"
-                      "is modified in a users subroutine (like USCLIM, USCPCL,...). \n"
+                      "is modified in a users subroutine (like cs_user_boundary_conditions, USCPCL,...). \n"
                       "The radiative boundary conditions given in GUI must be coherent \n"
                       "with these new natures.\n"));
 

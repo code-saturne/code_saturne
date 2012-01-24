@@ -177,7 +177,7 @@ ivar = isca(iscal)
 ipcrom = ipproc(irom)
 ipcvst = ipproc(ivisct)
 
-! --- Numero des grandeurs physiques (voir usclim)
+! --- Numero des grandeurs physiques (voir cs_user_boundary_conditions)
 do idirac = 1, ndirac
   iptscl(idirac) = ipproc(itscl(idirac))
   ipfmal(idirac) = ipproc(ifmal(idirac))

@@ -161,8 +161,9 @@ ipp23p = 0
 ! 2.1  INITIALISATION
 ! ====================
 
-! Dans USCLIM, on se donne une grande liberte pour la specif. des c.l
-!  sur les variables. neanmoins pour limiter la plage des tests, on se
+! Dans cs_user_boundary_conditions, on se donne une grande liberte
+!  pour la specif. des c.l sur les variables.
+!  Neanmoins pour limiter la plage des tests, on se
 !  donne, pour l'instant, les contraintes suivantes :
 
 !   - meme type de c.l pour les 3 composantes de vitesse
@@ -1120,7 +1121,7 @@ endif
 '@         Le calcul ne sera pas execute.                     ',/,&
 '@                                                            ',/,&
 '@         Verifier les parametres donnes via l''interface    ',/,&
-'@           ou usclim.                                       ',/,&
+'@           ou cs_user_boundary_conditions.                  ',/,&
 '@                                                            ',/)
  1902 format(                                                           &
 '@                                                            ',/,&
@@ -1149,7 +1150,7 @@ endif
 '@         Le calcul ne sera pas execute.                     ',/,&
 '@                                                            ',/,&
 '@         Verifier les parametres donnes via l''interface    ',/,&
-'@           ou usclim.                                       ',/,&
+'@           ou cs_user_boundary_conditions.                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1223,7 +1224,7 @@ endif
 '@         The calculation will not be run.                   ',/,&
 '@                                                            ',/,&
 '@         Verify the parameters given via the interface or   ',/,&
-'@           usclim.                                          ',/,&
+'@           cs_user_boundary_conditions.                     ',/,&
 '@                                                            ',/)
  1902 format(                                                           &
 '@                                                            ',/,&
@@ -1252,7 +1253,7 @@ endif
 '@         The calculation will not be run.                   ',/,&
 '@                                                            ',/,&
 '@         Verify the parameters given via the interface or   ',/,&
-'@           usclim.                                          ',/,&
+'@           cs_user_boundary_conditions.                     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

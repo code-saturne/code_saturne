@@ -46,11 +46,13 @@ subroutine usalcl &
 ! Here one defines boundary conditions on a per-face basis.
 
 ! Boundary faces may be identified using the 'getfbr' subroutine.
-! The syntax of this subroutine is described in 'usclim' subroutine,
+! The syntax of this subroutine is described in
+! 'cs_user_boundary_conditions' subroutine,
 ! but a more thorough description can be found in the user guide.
 
 ! Boundary conditions setup for standard variables (pressure, velocity,
-! turbulence, scalars) is described precisely in 'usclim' subroutine.
+! turbulence, scalars) is described precisely in
+! 'cs_user_boundary_conditions' subroutine.
 
 ! Detailed explanation will be found in the theory guide.
 
@@ -238,20 +240,20 @@ subroutine usalcl &
 ! managed and modeled in Code_Saturne as follows :
 !  - If ialtyb(ifac) = ibfixe : mesh velocity equals 0. (In case of 'fluid sliding
 !  wall' modeling corresponding condition will be specified in Code_Saturne
-!  Interface or in 'usclim' subroutine.)
+!  Interface or in 'cs_user_boundary_conditions' subroutine.)
 !  - If ialtyb(ifac) = ivimpo : tangential mesh velocity is modeled as a sliding
 !  wall velocity in fluid boundary conditions unless a value for fluid sliding
 !  wall velocity has been specified by USER in Code_Saturne Interface
-!  or in 'usclim' subroutine.
+!  or in 'cs_user_boundary_conditions' subroutine.
 !  - If ialtyb(ifac) = igliss : tangential mesh velocity is not taken into account
 !  in fluid boundary conditions (In case of 'fluid sliding wall' modeling
 !  corresponding condition will be specified in Code_Saturne Interface
-!  or in 'usclim' subroutine.)
+!  or in 'cs_user_boundary_conditions' subroutine.)
 !  - If impale(inod) = 1 for all vertices of a boundary face : tangential mesh
 !  velocity value that has been derived from nodes displacement is modeled as a
 !  sliding wall velocity in fluid boundary conditions unless a value for fluid
 !  sliding wall velocity has been specified by USER in Code_Saturne Interface or
-!  in 'usclim' subroutine.
+!  in 'cs_user_boundary_conditions' subroutine.
 
 ! Note that mesh velocity has no influence on modeling of
 ! boundary faces with 'inlet' or 'free outlet' fluid boundary condition.
@@ -265,14 +267,16 @@ subroutine usalcl &
 ! ====================
 
 ! Cells may be identified using the 'getcel' subroutine.
-! The syntax of this subroutine is described in the 'usclim' subroutine,
+! The syntax of this subroutine is described in the
+! 'cs_user_boundary_conditions' subroutine,
 ! but a more thorough description can be found in the user guide.
 
 ! Faces identification
 ! ====================
 
 ! Faces may be identified using the 'getfbr' subroutine.
-! The syntax of this subroutine is described in the 'usclim' subroutine,
+! The syntax of this subroutine is described in the
+! 'cs_user_boundary_conditions' subroutine,
 ! but a more thorough description can be found in the user guide.
 !-------------------------------------------------------------------------------
 ! Arguments

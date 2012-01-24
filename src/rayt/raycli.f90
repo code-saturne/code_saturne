@@ -926,11 +926,11 @@ deallocate(text, tint)
 '@  Sur la face ',I10   ,', zone  ',I10   ,', ISOTHP a ete    ',/,&
 '@    renseigne dans usray2 (ISOTHP = ',I10   ,') alors que   ',/,&
 '@    la face n''a pas ete declaree de type IPAROI ou IPARUG  ',/,&
-'@    dans usclim.                                            ',/,&
+'@    dans cs_user_boundary_conditions.                       ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usray2 et usclim.                                ',/,&
+'@  Verifier usray2 et cs_user_boundary_conditions.           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

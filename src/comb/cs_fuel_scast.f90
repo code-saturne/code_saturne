@@ -198,7 +198,7 @@ ivar = isca(iscal)
 ! --- Nom de la variable associee au scalaire a traiter ISCAL
 chaine = nomvar(ipprtp(ivar))
 
-! --- Numero des grandeurs physiques (voir usclim)
+! --- Numero des grandeurs physiques (voir cs_user_boundary_conditions)
 ipcrom = ipproc(irom)
 ipcvst = ipproc(ivisct)
 
