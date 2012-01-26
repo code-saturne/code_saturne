@@ -145,18 +145,23 @@ libfvm_med_la_SOURCES = fvm_to_med.c
 endif
 
 if HAVE_MEDCOUPLING
+
 fvm_medcoupling_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 $(CFLAGS_DBG) $(CFLAGS_OPT) \
 $(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
 pkglib_LTLIBRARIES += fvm_medcoupling.la
+
 fvm_medcoupling_la_SOURCES = fvm_to_medcoupling.cxx
 fvm_medcoupling_la_LDFLAGS = -module -avoid-version
 fvm_medcoupling_la_LIBADD = \
 $(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
 $(MEDCOUPLINGRUNPATH)
+
+MEDCOUPLINGDLOPEN = -dlopen fvm_medcoupling.la
+
 endif
 
 libfvm_la_LDFLAGS = -no-undefined
-libfvm_filters_la_LDFLAGS = -no-undefined -dlopen fvm_medcoupling.la
+libfvm_filters_la_LDFLAGS = -no-undefined $(MEDCOUPLINGDLOPEN)
