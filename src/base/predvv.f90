@@ -977,6 +977,19 @@ if(iterns.eq.1) then
    coefa  , coefb  , ckupdc , smacel ,                            &
    tsexp  , tsimp  )
 
+  ! Coupling between two Code_Saturne
+  if (nbrcpl.gt.0) then
+  !vectorial interleaved exchange
+    call cscelv &
+    !==========
+ ( nvar   , nscal  ,                                              &
+   ivar   ,                                                       &
+   dt     , rtpa   , vela   ,                                     &
+   propce , propfa , propfb ,                                     &
+   coefa  , coefb  , coefav , coefbv ,                            &
+   tsexp  , tsimp  )
+  endif
+
 endif
 
 
