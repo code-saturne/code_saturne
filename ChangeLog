@@ -1,3 +1,8 @@
+* 26/01/2012 - Mathieu Guingo <mathieu.guingo@edf.fr>
+  Fix a memory leak in the graphical interface (Lagrangian setup).
+  modified routine:
+    src/gui/cs_gui_particles.c
+
 * 24/01/2012 - David Monfort <david.monfort@edf.fr>
   Remove the multigrid algorithm by default for electric variables.
   modified routine:
