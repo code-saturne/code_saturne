@@ -1,3 +1,9 @@
+* 26/01/2012 - David Monfort <david.monfort@edf.fr>
+  Fix missing memory allocation for some work arrays in the compressible
+  module.
+  modified routine:
+     src/cfbl/cfcdts.f90
+
 * 26/01/2012 - Mathieu Guingo <mathieu.guingo@edf.fr>
   Fix a memory leak in the graphical interface (Lagrangian setup).
   modified routine:

@@ -191,6 +191,10 @@ double precision, allocatable, dimension(:) :: dpvar, smbini, w1
 ! 1.  INITIALISATIONS
 !===============================================================================
 
+! Allocate temporary arrays
+allocate(dam(ncelet))
+allocate(xam(nfac,2))
+allocate(dpvar(ncelet), smbini(ncelet))
 
 ! NOMS
 chaine = nomvar(ipp)
