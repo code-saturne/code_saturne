@@ -169,7 +169,7 @@ integer          iagmax, nagmax, npstmg
 integer          ibsize
 
 double precision residu, phydr0
-double precision ardtsr, arsr  , arakph, unsara, thetap
+double precision ardtsr, arsr  , unsara, thetap
 double precision dtsrom, unsvom, romro0
 double precision epsrgp, climgp, extrap, epsilp
 double precision drom  , dronm1
@@ -232,8 +232,6 @@ else
   ireslp = mod(iresol(ipr),1000)
   ipol   = (iresol(ipr)-ireslp)/1000
 endif
-
-arakph = arak
 
 isqrt = 1
 
@@ -515,14 +513,14 @@ endif
 
 if (idtsca.eq.0) then
   do iel = 1, ncel
-    ardtsr  = arakph*(dt(iel)/propce(iel,ipcrom))
+    ardtsr  = arak*(dt(iel)/propce(iel,ipcrom))
     grad(iel,1) = rtp(iel,iu) + ardtsr*grad(iel,1)
     grad(iel,2) = rtp(iel,iv) + ardtsr*grad(iel,2)
     grad(iel,3) = rtp(iel,iw) + ardtsr*grad(iel,3)
   enddo
 else
   do iel=1,ncel
-    arsr  = arakph/propce(iel,ipcrom)
+    arsr  = arak/propce(iel,ipcrom)
     grad(iel,1) = rtp(iel,iu)+arsr*tpucou(iel,1)*grad(iel,1)
     grad(iel,2) = rtp(iel,iv)+arsr*tpucou(iel,2)*grad(iel,2)
     grad(iel,3) = rtp(iel,iw)+arsr*tpucou(iel,3)*grad(iel,3)
@@ -611,20 +609,20 @@ init   = 0
 inc    = 1
 iccocg = 1
 
-if(arakph.gt.0.d0) then
+if(arak.gt.0.d0) then
 
 ! --- Prise en compte de Arak : la viscosite face est multipliee
 !       Le pas de temps aussi. On retablit plus bas.
   do ifac = 1, nfac
-    viscf(ifac) = arakph*viscf(ifac)
+    viscf(ifac) = arak*viscf(ifac)
   enddo
   do ifac = 1, nfabor
-    viscb(ifac) = arakph*viscb(ifac)
+    viscb(ifac) = arak*viscb(ifac)
   enddo
 
   if (idtsca.eq.0) then
     do iel = 1, ncel
-      dt(iel) = arakph*dt(iel)
+      dt(iel) = arak*dt(iel)
     enddo
 
     nswrgp = nswrgr(ipr )
@@ -674,7 +672,7 @@ if(arakph.gt.0.d0) then
 
     endif
 ! --- Correction du pas de temps
-    unsara = 1.d0/arakph
+    unsara = 1.d0/arak
     do iel = 1, ncel
       dt(iel) = dt(iel)*unsara
     enddo
@@ -682,9 +680,9 @@ if(arakph.gt.0.d0) then
   else
 
     do iel = 1, ncel
-      tpucou(iel,1) = arakph*tpucou(iel,1)
-      tpucou(iel,2) = arakph*tpucou(iel,2)
-      tpucou(iel,3) = arakph*tpucou(iel,3)
+      tpucou(iel,1) = arak*tpucou(iel,1)
+      tpucou(iel,2) = arak*tpucou(iel,2)
+      tpucou(iel,3) = arak*tpucou(iel,3)
     enddo
 
     nswrgp = nswrgr(ipr )
@@ -735,7 +733,7 @@ if(arakph.gt.0.d0) then
     endif
 
 ! --- Correction du pas de temps
-    unsara = 1.d0/arakph
+    unsara = 1.d0/arak
     do iel = 1, ncel
       tpucou(iel,1) = unsara*tpucou(iel,1)
       tpucou(iel,2) = unsara*tpucou(iel,2)
