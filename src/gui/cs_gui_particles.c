@@ -1569,6 +1569,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
    }
    BFT_FREE(path1);
    BFT_FREE(path2);
+   BFT_FREE(faces_list);     
  }
 
 #if _XML_DEBUG_
