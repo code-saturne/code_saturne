@@ -97,7 +97,7 @@ integer          iinvpe
 integer          isqrt , iel   , ifac
 integer          inc   , iccocg, ivar
 integer          isweep, nittot, idtva0
-integer          ibsize, mmprpl
+integer          ibsize, mmprpl, nswrsl
 
 double precision relaxp, thetap, rnorm, residu, rnoini
 double precision dismax, dismin
@@ -211,7 +211,7 @@ iinvpe = 0
 if(iperio.eq.1) iinvpe = 1
 isqrt = 1
 ibsize = 1
-
+nswrsl = nswrsy
 110 continue
 
 ! Distance to wall is initialized to 0 for reconstruction
@@ -230,7 +230,7 @@ enddo
 ! -- Reconstruction loop;
 !   if NSWRSY = 1, we must solve twice
 
-do isweep = 0, nswrsy
+do isweep = 0, nswrsl
 
   call prodsc(ncelet,ncel,isqrt,smbdp,smbdp,rnorm)
   if (iwarny.ge.2) then
@@ -265,7 +265,7 @@ do isweep = 0, nswrsy
     !==========
   endif
 
-  if (isweep.lt.nswrsy) then
+  if (isweep.lt.nswrsl) then
     inc    = 0
     iccocg = 1
     ivar = 0
@@ -294,9 +294,11 @@ do iel = 1, ncel
   endif
 enddo
 
+if (irangp.ge.0) call parcmx(mmprpl)
+
 if (mmprpl.eq.1) then
-  if (nswrsy.gt.0) then
-    nswrsy = 0
+  if (nswrsl.gt.0) then
+    nswrsl = 0
     write(nfecra,9000)
     goto 110
   else
@@ -407,14 +409,14 @@ deallocate(w7, w8, w9)
 '@    =========                                               ',/,&
 '@  La solution du laplacien ne respecte pas le principe du   ',/,&
 '@  maximum. On recalcule le laplacien sans les               ',/,&
-'@  reconstructions (nswrsy = 0).                              ',/)
+'@  reconstructions.                                          ',/)
 
  9001   format(                                                         &
 '@                                                            ',/,&
 '@ @@ ATTENTION : Calcul de la distance a la paroi            ',/,&
 '@    =========                                               ',/,&
 '@  La solution du laplacien ne respecte pas le principe du   ',/,&
-'@  maximum. (lapalcien negatif : ', E14.6,')      ',/)
+'@  maximum. (lapalcien negatif : ', E14.6,')                 ',/)
 
 
 #else
@@ -444,7 +446,7 @@ deallocate(w7, w8, w9)
 '@    =========                                               ',/,&
 '@  The laplacian solution does not respect the maximum       ',/,&
 '@  principle. We recompute the laplacien without             ',/,&
-'@  reconstructions (nswrsy = 0).                              ',/)
+'@  reconstructions.                                          ',/)
 
  9001   format(                                                         &
 '@                                                            ',/,&
