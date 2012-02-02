@@ -106,19 +106,18 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
         # Prepare preprocessing
 
-        mesh_input = None
-        node = self.mdl.node_meshes.xmlGetNode('mesh_input', 'path')
-        if node:
-            mesh_input = node['path']
-            if mesh_input:
-                if not os.path.isabs(mesh_input):
-                    mesh_input = os.path.join(self.case['case_path'], mesh_input)
+        mesh_input = self.mdl.getMeshInput()
 
         if mesh_input:
+
+            if not os.path.isabs(mesh_input):
+                mesh_input = os.path.join(self.case['case_path'], mesh_input)
             try:
                 os.symlink(mesh_input, 'mesh_input')
             except AttributeError:
                 shutil.copy2(mesh_input, 'mesh_input')
+
+            self.__csProcess()
 
         else:
 
@@ -172,9 +171,9 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                             SIGNAL('finished(int, QProcess::ExitStatus)'),
                             self.__preProcess)
 
-        # Run Preprocessor
-
         self.proc.start(cmd)
+
+        # Run Preprocessor
 
         next_task = None
 
@@ -201,6 +200,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
 
     def __csProcess(self):
+
         # Run Kernel
         self.disconnect(self.proc,
                         SIGNAL('finished(int, QProcess::ExitStatus)'),
@@ -399,7 +399,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         line = self.out.getWriterOptions("-1")
         self.__updateOptionsFormat(line)
 
-        if not self.mdl.getMeshList():
+        if not (self.mdl.getMeshList() or self.mdl.getMeshInput()):
             self.toolButtonBatch.setEnabled(False)
 
 
