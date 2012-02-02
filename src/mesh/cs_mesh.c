@@ -1148,8 +1148,6 @@ _get_perio_faces_g(const cs_mesh_t    *mesh,
                                &cell_face_idx,
                                &cell_face);
 
-  BFT_FREE(halo_perio_num);
-
   /* Now match faces; faces already matched are marked so as not to be
      re-matched, in case faces have been split and multiple faces thus share
      the same cells (in which case we assume that subfaces are locally ordered
@@ -1180,7 +1178,9 @@ _get_perio_faces_g(const cs_mesh_t    *mesh,
 
         /* If we have a match, update periodic couples */
 
-        if (src_c_num == loc_c_num && dest_c_num == loc_cell_num[dist_c_id]) {
+        if (   src_c_num == loc_c_num
+            && dest_c_num == loc_cell_num[dist_c_id]
+            && halo_perio_num[dist_c_id-mesh->n_cells] == - (perio_id + 1)) {
           cs_lnum_t couple_id = _n_perio_face_couples[perio_id];
           cell_face[k] = -1; /* Mark as used */
           _perio_face_couples[perio_id][couple_id*2]
@@ -1191,6 +1191,8 @@ _get_perio_faces_g(const cs_mesh_t    *mesh,
       }
     }
   }
+
+  BFT_FREE(halo_perio_num);
 
   BFT_FREE(cell_face_idx);
   BFT_FREE(cell_face);
