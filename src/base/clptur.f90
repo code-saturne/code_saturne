@@ -149,6 +149,7 @@ integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icluf , iclvf , iclwf , iclphi, iclfb , iclal , iclomg
 integer          ipcrom, ipcvis, ipcvst, ipccp , ipccv
 integer          iclvar, ipcvsl, iclvaf
+integer          iclalp
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
 double precision utau, upx, upy, upz, usn
@@ -165,6 +166,8 @@ double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 double precision visclc, visctc, romc  , distbf, srfbnf, cpscv
 double precision cofimp, cofimpf, ypup
+double precision ekip
+
 
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
@@ -220,6 +223,7 @@ elseif(itytur.eq.3) then
   icl13  = iclrtp(ir13,icoef)
   icl23  = iclrtp(ir23,icoef)
   iclep  = iclrtp(iep,icoef)
+  if(iturb.eq.32) iclalp = iclrtp(ial, icoef)
 elseif(itytur.eq.5) then
   iclk   = iclrtp(ik ,icoef)
   iclep  = iclrtp(iep,icoef)
@@ -721,18 +725,61 @@ do ifac = 1, nfabor
     elseif(iturb.eq.0 .or.iturb.eq.10.or.           &
            itytur.eq.3) then
 
-!     Si ILOGPO=0, alors on a forcement IDEUCH=0
-      if(ilogpo.eq.0) then
-        uiptn  = utau                                             &
-             + uet*apow*bpow*yplus**bpow*(2.d0**(bpow-1.d0)-2.d0)
+      ! Dans le cadre de la ponderation elliptique, on ne doit pas
+      ! tenir compte des lois de paroi. On fait donc un test sur le modele
+      ! de turbulence :
+      ! si on est en LRR ou SSG on laisse les lois de paroi, si on est en
+      ! EBRSM, on impose l adherence.
+      if (iturb.eq.32) then
+        coefa(ifac,iclu)   = 0.d0
+        coefa(ifac,iclv)   = 0.d0
+        coefa(ifac,iclw)   = 0.d0
 
         ! Coupled solving of the velocity components
         if (ivelco.eq.1) then
-          if(yplus.ge.ypluli) then
+          cofimp  = 0.d0
+          cofimpf = visclc/(visclc+visctc)
+        endif
+
+      else
+
+        ! If ILOGPO=0, then IDEUCH=0
+        if(ilogpo.eq.0) then
+          uiptn  = utau                                             &
+               + uet*apow*bpow*yplus**bpow*(2.d0**(bpow-1.d0)-2.d0)
+
+          ! Coupled solving of the velocity components
+          if (ivelco.eq.1) then
+            if(yplus.ge.ypluli) then
+              ! On implicite le terme de bord pour le gradient de vitesse
+              ! Faute de calcul mis a part, a*yplus^b/U+ = uet^(b+1-1/d)
+              ypup = utau**(2.d0*dpow-1.d0)/apow**(2.d0*dpow)
+              cofimp  = 1.d0+bpow*uet**(bpow+1.d0-1.d0/dpow)*( 2.d0**(bpow-1.d0)-2.d0 )
+              ! On implicite le terme (rho*uet*uk)
+              !NB mu/(mu+muT) est la car la viscosite turbulente au bord est non nulle
+              cofimpf = visclc /(visclc+visctc)*ypup
+            else
+              !Dans la sous couche visceuse : U_F=0
+              cofimp  = 0.d0
+              cofimpf = visclc/(visclc+visctc)
+            endif
+          endif
+
+        else
+          ! If YPLUS=0, UIPTN is set to 0 to avoid division by 0.
+          ! By the way, in this case: UNTURB=0
+          if (yplus.gt.epzero) then
+            uiptn = utau - distbf*romc*uet*uk/xkappa/visclc*(     &
+                  deuxd0/yplus - und0/(deuxd0*yplus-dplus) )
+          else
+            uiptn = 0.d0
+          endif
+
+          ! Coupled solving of the velocity components
+          if (yplus.ge.ypluli) then
             ! On implicite le terme de bord pour le gradient de vitesse
-            ! Faute de calcul mis a part, a*yplus^b/U+ = uet^(b+1-1/d)
-            ypup = utau**(2.d0*dpow-1.d0)/apow**(2.d0*dpow)
-            cofimp  = 1.d0+bpow*uet**(bpow+1.d0-1.d0/dpow)*( 2.d0**(bpow-1.d0)-2.d0 )
+            ypup   =  yplus/(log(yplus)/xkappa +cstlog)
+            cofimp  = 1.d0-ypup/xkappa*(deuxd0/yplus - und0/(deuxd0*yplus-dplus) )
             ! On implicite le terme (rho*uet*uk)
             !NB mu/(mu+muT) est la car la viscosite turbulente au bord est non nulle
             cofimpf = visclc /(visclc+visctc)*ypup
@@ -741,41 +788,17 @@ do ifac = 1, nfabor
             cofimp  = 0.d0
             cofimpf = visclc/(visclc+visctc)
           endif
+
         endif
 
-      else
-!     Si YPLUS=0, on met UIPTN a 0 directement pour eviter une division
-!     par 0. De toute facon, dans ce cas UNTURB=0
-         if (yplus.gt.epzero) then
-            uiptn = utau - distbf*romc*uet*uk/xkappa/visclc*(     &
-                 deuxd0/yplus - und0/(deuxd0*yplus-dplus) )
-         else
-            uiptn = 0.d0
-         endif
+        uiptmx = max(uiptn*unturb,uiptmx)
+        uiptmn = min(uiptn*unturb,uiptmn)
+        if(uiptn*unturb.lt.-epzero) iuiptn = iuiptn + 1
 
-        ! Coupled solving of the velocity components
-        if (yplus.ge.ypluli) then
-          ! On implicite le terme de bord pour le gradient de vitesse
-          ypup   =  yplus/(log(yplus)/xkappa +cstlog)
-          cofimp  = 1.d0-ypup/xkappa*(deuxd0/yplus - und0/(deuxd0*yplus-dplus) )
-          ! On implicite le terme (rho*uet*uk)
-          !NB mu/(mu+muT) est la car la viscosite turbulente au bord est non nulle
-          cofimpf = visclc /(visclc+visctc)*ypup
-        else
-          !Dans la sous couche visceuse : U_F=0
-          cofimp  = 0.d0
-          cofimpf = visclc/(visclc+visctc)
-        endif
-
+        coefa(ifac,iclu)   = uiptn *tx*unturb *txn0
+        coefa(ifac,iclv)   = uiptn *ty*unturb *txn0
+        coefa(ifac,iclw)   = uiptn *tz*unturb *txn0
       endif
-
-      uiptmx = max(uiptn*unturb,uiptmx)
-      uiptmn = min(uiptn*unturb,uiptmn)
-      if(uiptn*unturb.lt.-epzero) iuiptn = iuiptn + 1
-
-      coefa(ifac,iclu)   = uiptn *tx*unturb *txn0
-      coefa(ifac,iclv)   = uiptn *ty*unturb *txn0
-      coefa(ifac,iclw)   = uiptn *tz*unturb *txn0
 
       coefa(ifac,iclu)   = coefa(ifac,iclu)  + rcodcx
       coefa(ifac,iclv)   = coefa(ifac,iclv)  + rcodcy
@@ -856,10 +879,8 @@ do ifac = 1, nfabor
         endif
       endif
 
-! Si (mu+mut) devient nul (modèles dynamiques), on impose une valeur bidon
-! (flux nul) mais ce n'est pas grave car le flux est vraiment nul à travers
-! cette face
-
+      ! If (mu+mut) becomes zero (dynamic models), an arbitrary value is set
+      ! (nul flux) but without any problems because teh flux is really zero at this face.
       if(visctc+visclc.le.0) then
         uiptnf = utau
         if (ivelco.eq.1) cofimpf= 1.d0
@@ -1039,62 +1060,67 @@ do ifac = 1, nfabor
 
       enddo
 
-      do isou = 1,6
+      ! for the LRR and the Standard SGG.
+      if ((iturb.eq.30).or.(iturb.eq.31)) then
 
-        if(isou.eq.1) then
-          iclvar = icl11
-          jj = 1
-          kk = 1
-        else if(isou.eq.2) then
-          iclvar = icl22
-          jj = 2
-          kk = 2
-        else if(isou.eq.3) then
-          iclvar = icl33
-          jj = 3
-          kk = 3
-        else if(isou.eq.4) then
-          iclvar = icl12
-          jj = 1
-          kk = 2
-        else if(isou.eq.5) then
-          iclvar = icl13
-          jj = 1
-          kk = 3
-        else if(isou.eq.6) then
-          iclvar = icl23
-          jj = 2
-          kk = 3
-        endif
+        do isou = 1,6
 
-        if (iclptr.eq.1) then
-          do ii = 1, 6
-            if(ii.ne.isou) then
-              coefa(ifac,iclvar) = coefa(ifac,iclvar) +           &
+          if(isou.eq.1) then
+            iclvar = icl11
+            jj = 1
+            kk = 1
+          else if(isou.eq.2) then
+            iclvar = icl22
+            jj = 2
+            kk = 2
+          else if(isou.eq.3) then
+            iclvar = icl33
+            jj = 3
+            kk = 3
+          else if(isou.eq.4) then
+            iclvar = icl12
+            jj = 1
+            kk = 2
+          else if(isou.eq.5) then
+            iclvar = icl13
+            jj = 1
+            kk = 3
+          else if(isou.eq.6) then
+            iclvar = icl23
+            jj = 2
+            kk = 3
+          endif
+
+          if (iclptr.eq.1) then
+            do ii = 1, 6
+              if(ii.ne.isou) then
+                coefa(ifac,iclvar) = coefa(ifac,iclvar) +           &
                    alpha(isou,ii) * rijipb(ifac,ii)
-            endif
-          enddo
-          coefb(ifac,iclvar) = alpha(isou,isou)
-        else
-          do ii = 1, 6
-            coefa(ifac,iclvar) = coefa(ifac,iclvar) +             &
-                 alpha(isou,ii) * rijipb(ifac,ii)
-          enddo
-          coefb(ifac,iclvar) = 0.d0
-        endif
+              endif
+            enddo
+            coefb(ifac,iclvar) = alpha(isou,isou)
+          else
+            do ii = 1, 6
+              coefa(ifac,iclvar) = coefa(ifac,iclvar) +             &
+                   alpha(isou,ii) * rijipb(ifac,ii)
+            enddo
+            coefb(ifac,iclvar) = 0.d0
+          endif
 
-        coefa(ifac,iclvar) = coefa(ifac,iclvar)  -                &
-                           (eloglo(jj,1)*eloglo(kk,2)+            &
-                            eloglo(jj,2)*eloglo(kk,1))*uet*uk
+          coefa(ifac,iclvar) = coefa(ifac,iclvar)  -                &
+                             (eloglo(jj,1)*eloglo(kk,2)+            &
+                              eloglo(jj,2)*eloglo(kk,1))*uet*uk
 
-!         si laminaire : tensions nulles
+          ! If laminar: zero Reynolds' stresses
 
-        if(unturb.le.epzero) then
-          coefa(ifac,iclvar) = 0.d0
-          coefb(ifac,iclvar) = 0.d0
-        endif
+          if (unturb.le.epzero) then
+            coefa(ifac,iclvar) = 0.d0
+            coefb(ifac,iclvar) = 0.d0
+          endif
 
-      enddo
+        enddo
+
+      endif
 
 ! ---> SCALAIRE EPSILON
 !      ICI AUSSI, POSSIBILITE DE FORME FLUX OU DIRICHLET ...
@@ -1103,17 +1129,31 @@ do ifac = 1, nfabor
 
 !     Si YPLUS=0, on met COEFA a 0 directement pour eviter une division
 !     par 0.
-      if (yplus.gt.epzero) then
-         coefa(ifac,iclep) = distbf*4.d0*uk**5*romc**2/           &
-              (xkappa*visclc**2*(yplus+dplus)**2)
-      else
-         coefa(ifac,iclep) = 0.d0
-      endif
-      if (iclptr.eq.1) then
-        coefb(ifac,iclep) = 1.d0
-      else
-        coefa(ifac,iclep) = rtp(iel,iclep) + coefa(ifac,iclep)
+      if ((iturb.eq.30).or.(iturb.eq.31)) then
+        if (yplus.gt.epzero) then
+           coefa(ifac,iclep) = distbf*4.d0*uk**5*romc**2/           &
+                (xkappa*visclc**2*(yplus+dplus)**2)
+        else
+           coefa(ifac,iclep) = 0.d0
+        endif
+        if (iclptr.eq.1) then
+          coefb(ifac,iclep) = 1.d0
+        else
+          coefa(ifac,iclep) = rtp(iel,iclep) + coefa(ifac,iclep)
+          coefb(ifac,iclep) = 0.d0
+        endif
+      elseif (iturb.eq.32) then
+        ! Use k at I'
+        ekip = 0.5d0*(rijipb(ifac,1)+rijipb(ifac,2)+rijipb(ifac,3))
+
+        coefa(ifac,iclep) = 2.d0*propce(iel,ipcvis)*ekip /       &
+                            (distbf**2*propce(iel,ipcrom))
         coefb(ifac,iclep) = 0.d0
+
+        ! Alpha
+        coefa(ifac,iclalp) = 0.0d0
+        coefb(ifac,iclalp) = 0.0d0
+
       endif
 
 !===============================================================================
@@ -1247,7 +1287,7 @@ do ifac = 1, nfabor
           endif
 
 !  Compressible : On suppose que le nombre de Pr doit etre
-!               defini de la meme façon que l'on resolve
+!               defini de la meme facon que l'on resolve
 !               en enthalpie ou en energie, soit Mu*Cp/Lambda.
 !               Si l'on resout en energie, on a calcule ci-dessus
 !               Mu*Cv/Lambda.
@@ -1312,9 +1352,9 @@ do ifac = 1, nfabor
 !       il faut que le flux soit traduit par ICLVAF.
 !     Si on n'a qu'un type de condition, peu importe (ICLVAF=ICLVAR)
 !     Pour le moment, dans cette version compressible, on impose un
-!       flux nul pour ICLVAR, lorsqu'il est différent de ICLVAF (cette
-!       condition ne sert qu'à la reconstruction des gradients et
-!       s'applique à l'energie totale qui inclut l'energie cinétique :
+!       flux nul pour ICLVAR, lorsqu'il est different de ICLVAF (cette
+!       condition ne sert qu'a la reconstruction des gradients et
+!       s'applique a l'energie totale qui inclut l'energie cinetique :
 
 
           if( icodcl(ifac,ivar).eq.5 ) then
@@ -1360,7 +1400,7 @@ do ifac = 1, nfabor
 !       lorsque la variable transportee est l'energie (compressible)
 !         ISCSTH(II).EQ.3 :
 !         on procede comme pour l'enthalpie avec CV au lieu de CP
-!         (rq : il n'y a pas d'hypothèse, sf en non orthogonal :
+!         (rq : il n'y a pas d'hypothese, sf en non orthogonal :
 !               le flux est le bon et le coef d'echange aussi)
 
 !      De meme dans condli.
@@ -1486,11 +1526,12 @@ if(iwarni(iu).ge.0) then
          write(nfecra,2020)  ntlast,ypluli
     if (itytur.eq.5)                                       &
          write(nfecra,2030)  ntlast,ypluli
-    if (itytur.eq.2.or.itytur.eq.3)                 &
+    ! No warnings in EBRSM
+    if (itytur.eq.2.or.iturb.eq.30.or.iturb.eq.31)         &
          write(nfecra,2040)  ntlast,ypluli
-    if (iwarni(iu).lt.2) then
+    if (iwarni(iu).lt.2.and.iturb.ne.32) then
       write(nfecra,2050)
-    else
+    elseif (iturb.ne.32) then
       write(nfecra,2060)
     endif
 

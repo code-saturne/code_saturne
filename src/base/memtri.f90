@@ -167,6 +167,11 @@ elseif(itytur.eq.3) then
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
   ivar = iep
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  ! Alpha is a new variable for the EBRSM
+  if (iturb.eq.32) then
+    ivar = ial
+    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  endif
 elseif(itytur.eq.5) then
   ivar = ik
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet

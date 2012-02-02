@@ -634,6 +634,13 @@ elseif(itytph.eq.3) then
            rtp(1,ivar),ierror)
       nberro=nberro+ierror
     enddo
+    if (jturph.eq.32) then
+
+      RUBRIQ = 'alp_ce_phase'//CPHASE
+      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                rtp(1,ial),ierror)
+      nberro=nberro+ierror
+    endif
 
     !     * k-omega -> rij
 

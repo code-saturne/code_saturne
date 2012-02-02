@@ -52,8 +52,10 @@ libcsturb_la_SOURCES = \
 cs_les_filter.c \
 clipke.f90 \
 clipsa.f90 \
+clpalp.f90 \
 clprij.f90 \
 clpv2f.f90 \
+resalp.f90 \
 reseps.f90 \
 resrij.f90 \
 resssg.f90 \

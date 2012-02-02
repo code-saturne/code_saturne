@@ -534,6 +534,7 @@ endif
 !      21...k-epsilon (linear production)
 !      30...Rij-epsilon, (standard LRR)
 !      31...Rij-epsilon (SSG)
+!      32...Rij-epsilon (EBRSM)
 !      40...LES (Smagorinsky)
 !      41...LES (Dynamic)
 !      42...LES (WALE)

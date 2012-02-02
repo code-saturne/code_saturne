@@ -104,11 +104,12 @@ integer          ibormo(nbmomx)
 
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
-double precision xekmin, xepmin, xomgmn, xphmin, xphmax, xalmin, xalmax
+double precision xekmin, xepmin, xomgmn, xphmin, xphmax
 double precision xnumin
 double precision x11min, x22min, x33min, valmom
 double precision vmomax(nbmomx), vmomin(nbmomx)
 double precision xxp0, xyp0, xzp0
+double precision xalmin, xalmax
 
 double precision rvoid(1)
 
@@ -349,6 +350,24 @@ if(iusini.eq.1.or.isuite.eq.1) then
     else
       write(nfecra,3030) x11min,x22min,x33min,xepmin
       iok = iok + 1
+    endif
+    if (iturb.eq.32) then
+      xalmin = rtp(1,ial)
+      xalmax = rtp(1,ial)
+      do iel = 1, ncel
+        xalmin = min(xalmin, rtp(iel,ial))
+        xalmax = max(xalmax, rtp(iel,ial))
+      enddo
+      if (irangp.ge.0) then
+        call parmin (xalmin)
+        !==========
+        call parmax (xalmax)
+        !==========
+      endif
+      if (xalmin.lt.0.or.xalmax.gt.1.d0) then
+        write(nfecra,3033) xalmin, xalmax
+        iok = iok + 1
+      endif
     endif
 
   elseif(iturb.eq.60) then
@@ -957,6 +976,28 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 3033 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
+'@    =========                                               ',/,&
+'@     EBRSM ALPHA<0 OU ALPHA>1                               ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@   Valeur minimale de alpha   = ',E14.5                      ,/,&
+'@   Valeur maximale de alpha   = ',E14.5                      ,/,&
+'@                                                            ',/,&
+'@  Verifier l''initialisation (usiniv et/ou interface)       ',/,&
+'@    ou le fichier suite                                     ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier suite     ',/,&
+'@    sont incorrectes, on peut les modifier par usiniv ou    ',/,&
+'@    par l''interface).                                      ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
  3040 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1276,6 +1317,27 @@ write(nfecra,3000)
 '@  The turbulence cannot be initialized                      ',/,&
 '@  Correct the value of UREF (usini1 or interface) or        ',/,&
 '@    initialize directly the turbulence with usiniv or       ',/,&
+'@    with the interface.                                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 3033 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
+'@    ========                                                ',/,&
+'@     EBRSM ALPHA<0 OU ALPHA>1                               ',/,&
+'@                                                            ',/,&
+'@  The calculation will not be run.                          ',/,&
+'@                                                            ',/,&
+'@   Minimum value of alpha   = ',E14.5                        ,/,&
+'@   Maximum value of alpha   = ',E14.5                        ,/,&
+'@                                                            ',/,&
+'@  Verify the initialization (usiniv and/or interface) or    ',/,&
+'@    the restart file                                        ',/,&
+'@  In the case where the values read in the restart file     ',/,&
+'@    are incorrect, they may be modified with usiniv or      ',/,&
 '@    with the interface.                                     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

@@ -269,6 +269,11 @@ elseif(itytur.eq.3) then
   IF(NOMVAR(IPPRTP(IEP   )) .EQ.' ') THEN
     NOMVAR(IPPRTP(IEP   )) = 'Dissip'
   endif
+  if (iturb.eq.32) then
+    if(nomvar(ipprtp(ial)) .eq.' ') then
+      nomvar(ipprtp(ial)) = 'Alphap'
+    endif
+  endif
 elseif(itytur.eq.5) then
   IF(NOMVAR(IPPRTP(IK    )) .EQ.' ') THEN
     NOMVAR(IPPRTP(IK    )) = 'EnTurb'
@@ -644,6 +649,17 @@ elseif(itytur.eq.3) then
     thetav(ir23) = 0.5d0
     thetav(iep ) = 0.5d0
   endif
+  if (iturb.eq.32) then
+    if (abs(thetav(ial)+999.d0).gt.epzero) then
+      write(nfecra,1031) 'VARIABLES  RIJ-EB','THETAV'
+      iok = iok + 1
+    elseif (ischtp.eq.1) then
+      thetav(ial) = 1.d0
+    elseif (ischtp.eq.2) then
+      thetav(ial) = 0.5d0
+    endif
+  endif
+
 elseif(iturb.eq.50) then
   if(abs(thetav(ik  )+999.d0).gt.epzero.or.              &
        abs(thetav(iep )+999.d0).gt.epzero.or.              &
@@ -892,6 +908,10 @@ elseif(itytur.eq.3) then
   cdtvar(ir13) = cdtvar(ir11)
   cdtvar(ir23) = cdtvar(ir11)
   cdtvar(iep ) = cdtvar(ir11)
+  ! cdtvar(ial) is useless because no time dependance in the equation of alpha.
+  if (iturb.eq.32) then
+    cdtvar(ial) = cdtvar(ir11)
+  endif
 elseif(itytur.eq.5) then
   cdtvar(iep ) = cdtvar(ik  )
   cdtvar(iphi) = cdtvar(ik  )

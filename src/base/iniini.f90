@@ -1138,6 +1138,26 @@ cssgr4  = 0.625d0
 cssgr5  = 0.20d0
 cssge2  = 1.83d0
 
+!   Rij EB-RSM
+cebms1  = 1.70d0
+cebms2  = 0.d0
+cebmr1  = 0.90d0
+cebmr2  = 0.80d0
+cebmr3  = 0.65d0
+cebmr4  = 0.625d0
+cebmr5  = 0.20d0
+! cebmr6  is used in the boyant term
+cebmr6  = 0.6d0
+csebm   = 0.21d0
+cebme2  = 1.83d0
+cebmmu  = 0.22d0
+xcl     = 0.122d0
+sigebm  = 1.15d0
+xa1     = 0.1d0
+xceta   = 80.d0
+xct     = 6.d0
+
+
 !   pour la LES
 xlesfl = 2.d0
 ales   = 1.d0

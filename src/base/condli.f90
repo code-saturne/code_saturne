@@ -172,6 +172,7 @@ integer          iclnu
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icluf , iclvf , iclwf , iclphi, iclfb , iclal , iclomg
 integer          iclvar, iclvaf, icluma, iclvma, iclwma
+integer          iclalp, ipcrom
 integer          nswrgp, imligp, iwarnp, icliva
 
 double precision sigma , cpp   , rkl
@@ -181,6 +182,8 @@ double precision epsrgp, climgp, extrap
 double precision xxp0, xyp0, xzp0
 double precision srfbnf, rnx   , rny   , rnz
 double precision upx   , upy   , upz   , vistot
+double precision xk, xe, xnu
+double precision xllke, xllkmg, xlldrb
 
 logical          ilved
 
@@ -383,6 +386,7 @@ elseif(itytur.eq.3) then
   icl13  = iclrtp(ir13,icoef)
   icl23  = iclrtp(ir23,icoef)
   iclep  = iclrtp(iep,icoef)
+  if (iturb.eq.32) iclalp = iclrtp(ial,icoef)
 elseif(itytur.eq.5) then
   iclk   = iclrtp(ik ,icoef)
   iclep  = iclrtp(iep,icoef)
@@ -1004,7 +1008,7 @@ do ifac = 1, nfabor
   hint = dt(iel)/distbf
 
   ! On doit remodifier la valeur du  Dirichlet de pression de manière
-  !  à retrouver P*. Car dans typecl.F on a travaillé avec la pression
+  !  à retrouver P*. Car dans typecl.f90 on a travaillé avec la pression
   ! totale fournie par l'utilisateur :  Ptotale= P*+ rho.g.r
   ! En compressible, on laisse RCODCL tel quel
 
@@ -1195,7 +1199,52 @@ elseif(itytur.eq.3) then
 
   enddo
 
-  ! ---> MODELES TYPE V2F (PHI_BAR et BL-V2/K)
+  !   --> ALPHA for the EBRSM
+
+  if(iturb.eq.32)then
+    ivar   = ial
+    iclvar = iclalp
+
+    ipcrom = ipproc(irom)
+
+    do ifac = 1, nfabor
+
+      iel = ifabor(ifac)
+
+      visclc = propce(iel,ipcvis)
+      flumbf = propfb(ifac,ipprob(ifluma(ivar)))
+
+      distbf = distb(ifac)
+
+      xk = 0.5d0*(rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))
+
+      xnu  = visclc/propce(iel,ipcrom)
+      ! Echelle de longueur integrale
+      xllke = xk**(3.d0/2.d0)/rtpa(iel,iep)
+      ! Echelle de longueur de Kolmogorov
+      xllkmg = xceta*(xnu**3/rtpa(iel,iep))**(0.25d0)
+      ! Echelle de longueur de Durbin
+      xlldrb = xcl*max(xllke,xllkmg)
+
+      hint = (xlldrb**2)/distbf
+
+      ! Dirichlet boundary condition
+      if (icodcl(ifac,ivar).eq.1) then
+        hext = rcodcl(ifac,ivar,2)
+        pimp = rcodcl(ifac,ivar,1)
+        coefa(ifac,iclvar) = hext*pimp/(hint +hext)
+        coefb(ifac,iclvar) = hint     /(hint +hext)
+      ! Neumann boundary condition
+      elseif (icodcl(ifac,ivar).eq.3) then
+        coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
+        coefb(ifac,iclvar) = 1.d0
+      endif
+
+    enddo
+  endif
+
+
+! ---> MODELES TYPE V2F (PHI_BAR et BL-V2/K)
 
 elseif(itytur.eq.5) then
 
@@ -1552,7 +1601,6 @@ if(nscal.ge.1) then
           coefb(ifac,iclvar)  = 1.d0
         endif
         if (isvhbl .gt. 0) hbord(ifac) = hint
-
 
         !--> Rayonnement :
 

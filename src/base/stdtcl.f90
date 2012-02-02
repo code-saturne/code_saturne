@@ -460,6 +460,9 @@ do ifac = 1, nfabor
           rcodcl(ifac,ir13,1) = 0.d0
           rcodcl(ifac,ir23,1) = 0.d0
           rcodcl(ifac,iep,1)  = xeent
+          if (iturb.eq.32) then
+            rcodcl(ifac,ial,1)  = 1.d0
+          endif
 
         elseif (itytur.eq.5) then
 
@@ -481,6 +484,13 @@ do ifac = 1, nfabor
 
       endif
 
+    endif
+
+    if (itypfb(ifac).eq.iparoi) then
+        ! condition automatique en paroi pour alpha
+        if (iturb.eq.32) then
+          rcodcl(ifac,ial,1)  = 0.d0
+        endif
     endif
 
   endif

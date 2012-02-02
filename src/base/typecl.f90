@@ -627,11 +627,11 @@ do ivar = 1, nvar
 enddo
 
 
-! 6.2 SORTIE (entrée-sortie libre) (ISOLIB)
+! 6.2 SORTIE (entree-sortie libre) (ISOLIB)
 ! ===================
 
 ! ---> La pression a un traitement Dirichlet, les vitesses 9
-!        (le reste Neumann, ou Dirichlet si donnée utilisateur,
+!        (le reste Neumann, ou Dirichlet si donnee utilisateur,
 !        sera traite plus tard)
 
 if (iphydr.eq.1) then
@@ -874,26 +874,26 @@ do ivar = 1, nvar
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 5
-        !         rcodcl(ifac,ivar,1) = Utilisateur
+        ! rcodcl(ifac,ivar,1) = Utilisateur
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
       endif
     enddo
-  elseif (                                                      &
+  elseif (                                                 &
        ( itytur.eq.2.and.                                  &
-       (ivar.eq.ik  .or.ivar.eq.iep) ).or.               &
+       (ivar.eq.ik  .or.ivar.eq.iep) ).or.                 &
        ( itytur.eq.3.and.                                  &
-       (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or. &
-       ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23.or. &
-       ivar.eq.iep)                    ).or.               &
+       (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.   &
+       ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23.or.    &
+       ivar.eq.iep.or.ivar.eq.ial)     ).or.               &
        ( iturb.eq.50.and.                                  &
-       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.  &
+       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.      &
        ivar.eq.ifb)                    ).or.               &
        ( iturb.eq.51.and.                                  &
-       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.  &
+       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.      &
        ivar.eq.ial)                    ).or.               &
        ( iturb.eq.60.and.                                  &
-       (ivar.eq.ik.or.ivar.eq.iomg)   ).or.               &
+       (ivar.eq.ik.or.ivar.eq.iomg)   ).or.                &
        ( iturb.eq.70.and.                                  &
        (ivar.eq.inusa)                    )    ) then
     do ii = ideb, ifin
@@ -934,26 +934,26 @@ do ivar = 1, nvar
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 6
-        !         rcodcl(ifac,ivar,1) = Utilisateur
+        ! rcodcl(ifac,ivar,1) = Utilisateur
         rcodcl(ifac,ivar,2) = rinfin
-        !         rcodcl(ifac,ivar,3) = Utilisateur
+        ! rcodcl(ifac,ivar,3) = Utilisateur
       endif
     enddo
-  elseif (                                                      &
+  elseif (                                                 &
        ( itytur.eq.2.and.                                  &
-       (ivar.eq.ik  .or.ivar.eq.iep) ).or.               &
+       (ivar.eq.ik  .or.ivar.eq.iep) ).or.                 &
        ( itytur.eq.3.and.                                  &
-       (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or. &
-       ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23.or. &
-       ivar.eq.iep)                    ).or.               &
+       (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.   &
+       ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23.or.    &
+       ivar.eq.iep.or.ivar.eq.ial)     ).or.               &
        ( iturb.eq.50.and.                                  &
-       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.  &
+       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.      &
        ivar.eq.ifb)                    ).or.               &
        ( iturb.eq.51.and.                                  &
-       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.  &
+       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.      &
        ivar.eq.ial)                    ).or.               &
        ( iturb.eq.60.and.                                  &
-       (ivar.eq.ik.or.ivar.eq.iomg)   ).or.               &
+       (ivar.eq.ik.or.ivar.eq.iomg)   ).or.                &
        ( iturb.eq.70.and.                                  &
        (ivar.eq.inusa)                    )    ) then
     do ii = ideb, ifin

@@ -164,15 +164,17 @@ ipbrom = ipprob(irom  )
 if(iwarni(iep).ge.1) then
   if (iturb.eq.30) then
     write(nfecra,1000)
-  else
+  elseif (iturb.eq.31) then
     write(nfecra,1001)
+  else
+    write(nfecra,1002)
   endif
 endif
 
 
-!     SI ITURB=30 (RIJ STD) ON STOCKE DIRECTEMENT LA PRODUCTION DANS
-!     LE TABLEAU PRODUC
-!     SI ITURB=31 (SSG) ON STOCKE LE GRADIENT DE VITESSE DANS GRDVIT
+! Si iturb=30 (rij std) on stocke directement la production dans
+! le tableau produc
+! Si iturb=31 (SSG) ou 32 (EBRSM) on stocke le gradient de vitesse dans grdvit
 
 !===============================================================================
 ! 2.a CALCUL DU TENSEUR DE PRODUCTION POUR LE RIJ STANDARD
@@ -180,7 +182,7 @@ endif
 
 if (iturb.eq.30) then
 
-  ! Allocate temporary arrays for gradients calculation
+  !FIXME compute the velocity gradient in once.  ! Allocate temporary arrays for gradients calculation
   allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
 
   do ii = 1 , 6
@@ -306,8 +308,8 @@ if (iturb.eq.30) then
 else
 
 !===============================================================================
-! 2.b CALCUL DU GRADIENT DE VITESSE POUR LE RIJ SSG
-!     ATTENTION: GRDVIT(IEL,J,I) = dUi/dxj(IEL)
+! 2.b Calcul du gradient de vitesse pour le Rij SSG et EBRSM
+!     ATTENTION: grdvit(iel,j,i) = dUi/dxj(IEL)
 !===============================================================================
 
 ! CALCUL DU GRADIENT DES 3 COMPOSANTES DE LA VITESSE
@@ -399,10 +401,8 @@ endif
 ! 4.  Boucle sur les variables Rij (6 variables)
 !     L'ordre est R11 R22 R33 R12 R13 R23 (La place de ces variables
 !     est IR11.    ..
-!     On resout les equation dans une routine semblable a covofi.F
+!     On resout les equation dans une routine semblable a covofi.f90
 !===============================================================================
-
-
 
 do isou = 1, 6
   if    (isou.eq.1) then
@@ -446,8 +446,8 @@ do isou = 1, 6
    tslage , tslagi ,                                              &
    smbr   , rovsdt )
 
-  else
-    !     Rij-epsilon SSG
+  elseif (iturb.eq.31.or.iturb.eq.32) then
+    ! Rij-epsilon SSG or EBRSM
     call resssg                                                   &
     !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
@@ -493,7 +493,12 @@ call reseps                                                       &
 ! 6. CLIPPING
 !===============================================================================
 
-iclip  = 2
+if (iturb.eq.32) then
+  iclip = 1
+else
+  iclip = 2
+endif
+
 call clprij                                                       &
 !==========
  ( ncelet , ncel   , nvar   ,                                     &
@@ -521,6 +526,9 @@ if (allocated(grdvit)) deallocate(grdvit)
  1001 format(/,                                                   &
 '   ** RESOLUTION DU Rij-EPSILON SSG             ',/,&
 '      -----------------------------             ',/)
+ 1002 format(/,                                                   &
+'   ** RESOLUTION DU Rij-EPSILON EBRSM                        ',/,&
+'      --------------------------------------------           ',/)
 
 #else
 
@@ -530,6 +538,9 @@ if (allocated(grdvit)) deallocate(grdvit)
  1001 format(/,                                                   &
 '   ** SOLVING Rij-EPSILON SSG'                   ,/,&
 '      -----------------------'                   ,/)
+ 1002 format(/,                                                   &
+'   ** SOLVING Rij-EPSILON EBRSM                              ',/,&
+'      --------------------------------------                 ',/)
 
 #endif
 

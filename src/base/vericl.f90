@@ -242,6 +242,7 @@ elseif(itytur.eq.3) then
   ipp13p = ipprtp(ir13)
   ipp23p = ipprtp(ir23)
   ippepp = ipprtp(iep)
+  if (iturb.eq.32) ippalp = ipprtp(ial)
 elseif(itytur.eq.5) then
   ippkip = ipprtp(ik )
   ippepp = ipprtp(iep)
@@ -422,14 +423,32 @@ elseif(itytur.eq.3) then
 
   do ifac = 1, nfabor
     icode = icodcl(ifac,iep)
-    if(icode.ne. 1.and.                icode.ne. 3.and.         &
-         icode.ne. 5.and.icode.ne. 6     ) then
+    if (icode.ne.1.and.icode.ne.3.and.icode.ne.5.and.icode.ne.6) then
       chaine=nomvar(ippepp)
       write(nfecra,1010)                                        &
            ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
       nstrij = nstrij + 1
     endif
   enddo
+
+  if (iturb.eq.32) then
+    do ifac = 1, nfabor
+      icode = icodcl(ifac,ial)
+      if (icode.ne.1.and.icode.ne.3.and.icode.ne.5.and.icode.ne.6) then
+        chaine=nomvar(ippalp)
+        write(nfecra,1010)                                      &
+          ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
+        nstrij = nstrij + 1
+      endif
+      ! No rought wall with EBRSM
+      do ivar = 1, nvar
+        if (icodcl(ifac,ivar).eq.6) then
+          write(nfecra,2000)
+          nstrij = nstrij + 1
+        endif
+      enddo
+    enddo
+  endif
 
   ! --- Conditions admissibles pour k, epsilon, phi et f_barre
 elseif (iturb.eq.50) then
@@ -613,6 +632,7 @@ elseif(itytur.eq.3) then
   ipp13p = ipprtp(ir13)
   ipp23p = ipprtp(ir23)
   ippepp = ipprtp(iep)
+  if (iturb.eq.32) ippalp = ipprtp(ial)
 elseif(itytur.eq.5) then
   ippkip = ipprtp(ik )
   ippepp = ipprtp(iep)
@@ -715,7 +735,7 @@ if(itytur.eq.2) then
 
   enddo
 
-elseif(itytur.eq.3) then
+elseif(iturb.eq.30.or.iturb.eq.31) then
 
   do ifac = 1, nfabor
 
@@ -781,6 +801,78 @@ elseif(itytur.eq.3) then
            icor11,icor22,icor33,                                   &
            icor12,icor13,icor23,                                   &
            icodce,icodcu,icodcv,icodcw
+      nsurij = nsurij + 1
+    endif
+
+  enddo
+
+elseif (iturb.eq.32) then
+  do ifac = 1, nfabor
+
+    icodcu = icodcl(ifac,iu)
+    icodcv = icodcl(ifac,iv)
+    icodcw = icodcl(ifac,iw)
+    icor11 = icodcl(ifac,ir11)
+    icor22 = icodcl(ifac,ir22)
+    icor33 = icodcl(ifac,ir33)
+    icor12 = icodcl(ifac,ir12)
+    icor13 = icodcl(ifac,ir13)
+    icor23 = icodcl(ifac,ir23)
+    icodce = icodcl(ifac,iep)
+    icodca = icodcl(ifac,ial)
+
+    if ( (icodcu.eq.5 .or. icodcv.eq.5 .or. icodcw.eq.5 .or.    &
+          icor11.eq.5 .or. icor22.eq.5 .or.                     &
+          icor33.eq.5 .or. icor12.eq.5 .or.                     &
+          icor13.eq.5 .or. icor23.eq.5 .or.                     &
+          icodce.eq.5 .or. icodca.eq.5            ) .and.       &
+         (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.    &
+          icor11.ne.5 .or. icor22.ne.5 .or.                     &
+          icor33.ne.5 .or. icor12.ne.5 .or.                     &
+          icor13.ne.5 .or. icor23.ne.5 .or.                     &
+          icodce.ne.5 .or. icodca.ne.5     )      ) then
+      write(nfecra,1041)                                        &
+        ifac,iprfml(ifmfbr(ifac),1),                            &
+        icor11,icor22,icor33,                                   &
+        icor12,icor13,icor23,                                   &
+        icodce,icodca, icodcu,icodcv,icodcw
+      nsurij = nsurij + 1
+    endif
+
+    if ( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.    &
+          icor11.eq.6 .or. icor22.eq.6 .or.                     &
+          icor33.eq.6 .or. icor12.eq.6 .or.                     &
+          icor13.eq.6 .or. icor23.eq.6 .or.                     &
+          icodce.eq.6 .or. icodca.eq.6     ) .and.              &
+         (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.    &
+          icor11.ne.6 .or. icor22.ne.6 .or.                     &
+          icor33.ne.6 .or. icor12.ne.6 .or.                     &
+          icor13.ne.6 .or. icor23.ne.6 .or.                     &
+          icodce.ne.6 .or. icodca.ne.6     )      ) then
+      write(nfecra,1041)                                        &
+        ifac,iprfml(ifmfbr(ifac),1),                            &
+        icor11,icor22,icor33,                                   &
+        icor12,icor13,icor23,                                   &
+        icodce,icodca, icodcu,icodcv,icodcw
+      nsurij = nsurij + 1
+    endif
+
+    if ( (icodcu.eq.4 .or. icodcv.eq.4 .or. icodcw.eq.4 .or.    &
+          icor11.eq.4 .or. icor22.eq.4 .or.                     &
+          icor33.eq.4 .or. icor12.eq.4 .or.                     &
+          icor13.eq.4 .or. icor23.eq.4                          &
+                                ) .and.                         &
+         (icodcu.ne.4 .or. icodcv.ne.4 .or. icodcw.ne.4 .or.    &
+          icor11.ne.4 .or. icor22.ne.4 .or.                     &
+          icor33.ne.4 .or. icor12.ne.4 .or.                     &
+          icor13.ne.4 .or. icor23.ne.4 .or.                     &
+          icodce.ne.3                                           &
+          .or.icodca.ne.3      ) ) then
+      write(nfecra,1041)                                        &
+        ifac,iprfml(ifmfbr(ifac),1),                            &
+        icor11,icor22,icor33,                                   &
+        icor12,icor13,icor23,                                   &
+        icodce, icodca,icodcu,icodcv,icodcw
       nsurij = nsurij + 1
     endif
 
@@ -1094,6 +1186,13 @@ endif
 '@     ICODCL RIJ-EPS ',7I5                                    ,/,&
 '@     ICODCL VITESSE ',3I5                                    ,/,&
 '@                                                            '  )
+ 1041 format(                                                           &
+'@                                                            ',/,&
+'@ INCOHERENCE COND. LIM. VITESSE-RIJ-EPSILON EBRSM           ',/,&
+'@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; RIJ-EPSILON     ',/,&
+'@     ICODCL RIJ-EPS ',8I5                                    ,/,&
+'@     ICODCL VITESSE ',3I5                                    ,/,&
+'@                                                            '  )
  1050 format(                                                           &
 '@                                                            ',/,&
 '@ INCOHERENCE COND. LIM. VITESSE-SCALAIRE                    ',/,&
@@ -1154,6 +1253,24 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 2000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,&
+'@           CONDITION DE PAROI RUGUEUSE CHOISIE              ',/,&
+'@    =========                                               ',/,&
+'@   CONDITION LIMITE INCOMPATIBLE AVEC LE MODELE EBRSM       ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute                             ',/,&
+'@                                                            ',/,&
+'@  Verifier les parametres donnes via l''interface ou        ',/,&
+'@    usclim :                                                ',/,&
+'@      modifier la condition de paroi rugueuse en            ',/,&
+'@               paroi lisse                                  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
 
 #else
 
@@ -1195,6 +1312,13 @@ endif
 '@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY-RIJ-EPSILON       ',/,&
 '@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; RIJ-EPSILON      ',/,&
 '@     ICODCL RIJ-EPS  ',7I5                                   ,/,&
+'@     ICODCL VELOCITY ',3I5                                   ,/,&
+'@                                                            '  )
+ 1041 format(                                                           &
+'@                                                            ',/,&
+'@ INCOHERENCY BOUND COND VELOCITY-VITESSE-RIJ-EPSILON EBRSM  ',/,&
+'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; RIJ-EPSILON     ',/, &
+'@     ICODCL RIJ-EPS  ',8I5                                   ,/,&
 '@     ICODCL VELOCITY ',3I5                                   ,/,&
 '@                                                            '  )
  1050 format(                                                           &
@@ -1254,6 +1378,22 @@ endif
 '@                                                            ',/,&
 '@         Verify the parameters given via the interface or   ',/,&
 '@           cs_user_boundary_conditions.                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ABORT DURING THE BOUNDARY CONDITIONS VERIF.    ',/,&
+'@    =========                                               ',/,&
+'@        ROUGH WALL BOUNDARY CONDITIONS INCOMPATIBLE         ',/,&
+'@                   WITH EBRSM MODEL                         ',/,&
+'@                                                            ',/,&
+'@         The calculation will not be run.                   ',/,&
+'@                                                            ',/,&
+'@         Verify the parameters given via the interface or   ',/,&
+'@           usclim.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

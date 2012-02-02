@@ -142,14 +142,15 @@ integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iptsta
-
+integer          iclalp, iii
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
-double precision epsrsp
+double precision epsrsp, alpha3
 double precision trprod , trrij ,csteps, rctse
 double precision grdpx,grdpy,grdpz,grdsn
 double precision surfn2
 double precision tseps , kseps , ceps2
 double precision tuexpe, thets , thetv , thetap, thetp1
+double precision prdeps, xttdrb, xttke , xttkmg
 
 double precision rvoid(1)
 
@@ -180,14 +181,18 @@ ipcvst = ipproc(ivisct)
 iflmas = ipprof(ifluma(iu))
 iflmab = ipprob(ifluma(iu))
 
+iclalp = iclrtp(ial,icoeff)
+
 iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
 
-!     Constante Ce2, qui vaut CE2 pour ITURB=30 et CSSGE2 pour ITRUB=31
+! Constante Ce2, qui vaut CE2 pour ITURB=30 et CSSGE2 pour ITRUB=31
 if (iturb.eq.30) then
   ceps2 = ce2
-else
+elseif (iturb.eq.31) then
   ceps2 = cssge2
+else
+  ceps2 = cebme2
 endif
 
 !     S pour Source, V pour Variable
@@ -364,13 +369,34 @@ endif
 
 !     Terme explicite (Production)
 
-do iel = 1, ncel
-!     Demi-traces
-  trprod = w9(iel)
-  trrij  = w8(iel)
-  w1(iel)   =             propce(iel,ipcroo)*volume(iel)*         &
-       ce1*rtpa(iel,iep)/trrij*trprod
-enddo
+! EBRSM
+if (iturb.eq.32) then
+  do iel = 1, ncel
+    ! Demi-traces
+    trprod = w9(iel)
+    trrij  = w8(iel)
+    ! Calcul de l echelle de temps de Durbin
+    xttke  = trrij/rtpa(iel,iep)
+    xttkmg = xct*sqrt(propce(iel,ipcvis)/propce(iel,ipcrom)     &
+                                        /rtpa(iel,iep))
+    xttdrb = max(xttke,xttkmg)
+
+    prdeps = trprod/rtpa(iel,iep)
+    alpha3 = rtp(iel,ial)**3
+
+    ! Compute of C_eps_1'
+    w1(iel) = propce(iel,ipcroo)*volume(iel)*                   &
+              ce1*(1.d0+xa1*(1.d0-alpha3)*prdeps)*trprod/xttdrb
+  enddo
+else
+  do iel = 1, ncel
+    ! Demi-traces
+    trprod = w9(iel)
+    trrij  = w8(iel)
+    w1(iel)   =             propce(iel,ipcroo)*volume(iel)*         &
+         ce1*rtpa(iel,iep)/trrij*trprod
+  enddo
+endif
 
 !     Si on extrapole les T.S : PROPCE
 if(isto2t.gt.0) then
@@ -386,11 +412,26 @@ else
 endif
 
 !     Terme implicite (Dissipation)
-do iel = 1, ncel
-  trrij  = w8(iel)
-  smbr(iel) = smbr(iel) - propce(iel,ipcrom)*volume(iel)*         &
-                         ceps2*rtpa(iel,iep)**2/trrij
-enddo
+
+! EBRSM
+if (iturb.eq.32) then
+  do iel = 1, ncel
+    trrij  = w8(iel)
+    ! Calcul de l echelle de temps de Durbin
+    xttke  = trrij/rtpa(iel,iep)
+    xttkmg = xct*sqrt(propce(iel,ipcvis)/propce(iel,ipcrom)     &
+                                        /rtpa(iel,iep))
+    xttdrb = max(xttke,xttkmg)
+    smbr(iel) = smbr(iel) - propce(iel,ipcrom)*volume(iel)*     &
+                             ceps2*rtpa(iel,iep)/xttdrb
+  enddo
+else
+  do iel = 1, ncel
+    trrij  = w8(iel)
+    smbr(iel) = smbr(iel) - propce(iel,ipcrom)*volume(iel)*     &
+                           ceps2*rtpa(iel,iep)**2/trrij
+  enddo
+endif
 
 ! ---> Matrice
 
@@ -399,11 +440,27 @@ if(isto2t.gt.0) then
 else
   thetap = 1.d0
 endif
-do iel = 1, ncel
-  trrij  = w8(iel)
-  rovsdt(iel) = rovsdt(iel) + ceps2*propce(iel,ipcrom)*volume(iel)&
-                     *rtpa(iel,iep)/trrij*thetap
-enddo
+
+! EBRSM
+if (iturb.eq.32) then
+  do iel = 1, ncel
+    trrij  = w8(iel)
+    ! Calcul de l echelle de temps de Durbin
+    xttke  = trrij/rtpa(iel,iep)
+    xttkmg = xct*sqrt(propce(iel,ipcvis)/propce(iel,ipcrom)     &
+                                        /rtpa(iel,iep))
+    xttdrb = max(xttke,xttkmg)
+    rovsdt(iel) = rovsdt(iel) +                                 &
+                  ceps2*propce(iel,ipcrom)*volume(iel)*         &
+                  thetap/xttdrb
+  enddo
+else
+  do iel = 1, ncel
+    trrij  = w8(iel)
+    rovsdt(iel) = rovsdt(iel) + ceps2*propce(iel,ipcrom)*volume(iel)&
+                       *rtpa(iel,iep)/trrij*thetap
+  enddo
+endif
 
 !===============================================================================
 ! 7. TERMES DE GRAVITE
@@ -445,10 +502,10 @@ endif
 
 !===============================================================================
 ! 8.a TERMES DE DIFFUSION  A.grad(Eps) : PARTIE EXTRADIAGONALE EXPLICITE
-!     RIJ STANDARD
+!     RIJ STANDARD (Daly Harlow: generalized gradient hypothesis method)
 !===============================================================================
 
-if (iturb.eq.30) then
+if (iturb.eq.30.or.iturb.eq.32) then
 
 ! ---> Calcul du grad(Eps)
 
@@ -474,13 +531,31 @@ if (iturb.eq.30) then
 
 ! ---> Calcul des termes extradiagonaux de A.grad(Eps)
 
-  do iel = 1 , ncel
-    trrij  = w8(iel)
-    csteps  = propce(iel,ipcroo) * crijep *trrij / rtpa(iel,iep)
-    w4(iel) = csteps * (rtpa(iel,ir12)*grad(iel,2) + rtpa(iel,ir13)*grad(iel,3))
-    w5(iel) = csteps * (rtpa(iel,ir12)*grad(iel,1) + rtpa(iel,ir23)*grad(iel,3))
-    w6(iel) = csteps * (rtpa(iel,ir13)*grad(iel,1) + rtpa(iel,ir23)*grad(iel,2))
-  enddo
+  ! EBRSM
+  if (iturb.eq.32) then
+    do iel = 1 , ncel
+      trrij  = w8(iel)
+      xttke  = trrij/rtpa(iel,iep)
+      xttkmg = xct*sqrt(propce(iel,ipcvis)/propce(iel,ipcrom)   &
+                                          /rtpa(iel,iep))
+      xttdrb = max(xttke,xttkmg)
+      csteps = propce(iel,ipcroo) * csebm/sigebm * xttdrb
+
+      w4(iel) = csteps * (rtpa(iel,ir12)*grad(iel,2) + rtpa(iel,ir13)*grad(iel,3))
+      w5(iel) = csteps * (rtpa(iel,ir12)*grad(iel,1) + rtpa(iel,ir23)*grad(iel,3))
+      w6(iel) = csteps * (rtpa(iel,ir13)*grad(iel,1) + rtpa(iel,ir23)*grad(iel,2))
+    enddo
+  else
+    do iel = 1 , ncel
+      trrij  = w8(iel)
+      !FIXME it should be csrij/sigmae instead of crijep
+      csteps  = propce(iel,ipcroo) * crijep *trrij / rtpa(iel,iep)
+
+      w4(iel) = csteps * (rtpa(iel,ir12)*grad(iel,2) + rtpa(iel,ir13)*grad(iel,3))
+      w5(iel) = csteps * (rtpa(iel,ir12)*grad(iel,1) + rtpa(iel,ir23)*grad(iel,3))
+      w6(iel) = csteps * (rtpa(iel,ir13)*grad(iel,1) + rtpa(iel,ir23)*grad(iel,2))
+    enddo
+  endif
 
 ! ---> Assemblage de { A.grad(Eps) } .S aux faces
 
@@ -509,27 +584,45 @@ if (iturb.eq.30) then
 
 !===============================================================================
 ! 8.b TERMES DE DIFFUSION  A.grad(Eps) : PARTIE DIAGONALE
-!     RIJ STANDARD
+!     RIJ STANDARD ou EBRSM
 !===============================================================================
 !     Implicitation de (grad(eps).n)n en gradient facette
 !     Si IDIFRE=1, terme correctif explicite
 !        grad(eps)-(grad(eps).n)n calcule en gradient cellule
 !     Les termes de bord sont uniquement pris en compte dans la partie
 !        en (grad(eps).n)n
-!     (W1,W2,W3) contient toujours le gradient de la variable traitee
+!     grad contient toujours le gradient de la variable traitee
 
 !     La synchronisation des halos du gradient de epsilon a ete faite dans
 !       grdcel. Pas utile de recommencer.
 
   if (idifre.eq.1) then
 
-    do iel = 1, ncel
-      trrij  = w8(iel)
-      csteps = propce(iel,ipcroo) * crijep *trrij/rtpa(iel,iep)
-      w4(iel)=csteps*rtpa(iel,ir11)
-      w5(iel)=csteps*rtpa(iel,ir22)
-      w6(iel)=csteps*rtpa(iel,ir33)
-    enddo
+    ! EBRSM
+    if (iturb.eq.32) then
+      do iel = 1, ncel
+        trrij  = w8(iel)
+        xttke  = trrij/rtpa(iel,iep)
+        xttkmg = xct*sqrt(propce(iel,ipcvis)/propce(iel,ipcrom)   &
+                                            /rtpa(iel,iep))
+        xttdrb = max(xttke,xttkmg)
+        csteps = propce(iel,ipcroo) * csebm/sigebm * xttdrb
+
+        w4(iel)=csteps*rtpa(iel,ir11)
+        w5(iel)=csteps*rtpa(iel,ir22)
+        w6(iel)=csteps*rtpa(iel,ir33)
+      enddo
+
+    else
+      do iel = 1, ncel
+        trrij  = w8(iel)
+        !FIXME it should be csrij/sigmae instead of crijep
+        csteps = propce(iel,ipcroo) * crijep *trrij/rtpa(iel,iep)
+        w4(iel)=csteps*rtpa(iel,ir11)
+        w5(iel)=csteps*rtpa(iel,ir22)
+        w6(iel)=csteps*rtpa(iel,ir33)
+      enddo
+    endif
 
 ! --->  TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
@@ -556,7 +649,7 @@ if (iturb.eq.30) then
       grdpz=grdpz-grdsn*surfac(3,ifac)/surfn2
 
       viscf(ifac)= 0.5d0*(                                        &
-           (w4(ii)+w4(jj))*grdpx*surfac(1,ifac)                   &
+            (w4(ii)+w4(jj))*grdpx*surfac(1,ifac)                  &
            +(w5(ii)+w5(jj))*grdpy*surfac(2,ifac)                  &
            +(w6(ii)+w6(jj))*grdpz*surfac(3,ifac))
 
@@ -591,13 +684,32 @@ if (iturb.eq.30) then
 ! ---> Viscosite orthotrope pour partie implicite
 
   if( idiff(ivar).ge. 1 ) then
-    do iel = 1, ncel
-      trrij  = w8(iel)
-      rctse = propce(iel,ipcrom) * crijep * trrij/rtpa(iel,iep)
-      w1(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir11)
-      w2(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir22)
-      w3(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir33)
-    enddo
+
+    ! EBRSM
+    if (iturb.eq.32) then
+      do iel = 1, ncel
+        trrij  = w8(iel)
+        xttke  = trrij/rtpa(iel,iep)
+
+        xttkmg = xct*sqrt(propce(iel,ipcvis)/propce(iel,ipcrom)   &
+                                            /rtpa(iel,iep))
+        xttdrb = max(xttke,xttkmg)
+        rctse  = propce(iel,ipcrom) * csebm/sigebm *xttdrb
+
+        w1(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir11)
+        w2(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir22)
+        w3(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir33)
+      enddo
+    else
+      do iel = 1, ncel
+        trrij  = w8(iel)
+        !FIXME it should be csrij/sigmae instead of crijep
+        rctse = propce(iel,ipcrom) * crijep * trrij/rtpa(iel,iep)
+        w1(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir11)
+        w2(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir22)
+        w3(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir33)
+      enddo
+    endif
 
     call visort                                                   &
     !==========
@@ -675,7 +787,6 @@ iescap = 0
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
-!MO      IPP    =
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)

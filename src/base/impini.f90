@@ -79,6 +79,7 @@ implicit none
 
 character        name*300, chaine*80
 integer          iok20 , iok21 , iok30 , iok31 , iok50 , iok51 , iok60
+integer          iok32
 integer          iok70
 integer          ii    , jj    , ivar  , iiesca, iest
 integer          ipp   , iwar  , imom
@@ -339,14 +340,14 @@ write(nfecra,2510)
 !   - Modeles
 
 write(nfecra,2515)                                              &
-     iturb,ideuch,ypluli,ilogpo,       &
+     iturb,ideuch,ypluli,ilogpo,                                &
      igrhok,iscalt
 if(iturb.eq.10) then
   write(nfecra,2516)                                            &
        xlomlg
 elseif(iturb.eq.20) then
   write(nfecra,2517)                                            &
-       almax ,uref  ,                                &
+       almax ,uref  ,                                           &
        iclkep,ikecou,igrake
   if (ikecou.eq.0 .and. idtvar.ge.0) then
     write(nfecra,2527) relaxv(ik),relaxv(iep)
@@ -372,6 +373,11 @@ elseif(iturb.eq.31) then
        almax ,uref  ,                                &
        irijnu,irijrb,                                &
        igrari,iclsyr,iclptr
+elseif(iturb.eq.32) then
+  write(nfecra,2525)                                            &
+    almax ,uref  ,                                              &
+    irijnu,irijrb,                                              &
+    igrari,iclsyr,iclptr
 elseif(itytur.eq.4) then
   write(nfecra,2521)                                            &
        csmago,cwale, xlesfl,ales,      &
@@ -416,6 +422,7 @@ iok20 = 0
 iok21 = 0
 iok30 = 0
 iok31 = 0
+iok32 = 0
 iok50 = 0
 iok51 = 0
 iok60 = 0
@@ -432,6 +439,9 @@ endif
 if(iturb.eq.31) then
   iok31 = 31
 endif
+if(iturb.eq.32) then
+  iok32 = 32
+endif
 if(iturb.eq.50) then
   iok50 = 50
 endif
@@ -447,18 +457,23 @@ endif
 if(iok20.gt.0) then
   write(nfecra,2531)ce1,ce2,sigmak,sigmae,cmu
 endif
-if(iok21.gt.0) then
+if (iok21.gt.0) then
   write(nfecra,2532)ce1,ce2,sigmak,sigmae,cmu
 endif
-if(iok30.gt.0) then
+if (iok30.gt.0) then
   write(nfecra,2533)ce1,ce2,crij1,crij2,crij3,crijep,csrij,       &
                     crijp1,crijp2,cmu
 endif
-if(iok31.gt.0) then
+if (iok31.gt.0) then
   write(nfecra,2534)cssgs1,cssgs2,cssgr1,cssgr2,cssgr3,cssgr4,    &
        cssgr5,csrij,crij3,ce1,cssge2,sigmae,cmu
 endif
-if(iok50.gt.0) then
+if (iok32.gt.0) then
+  write(nfecra,2539)cebms1,cebmr1,cebmr2,cebmr3,cebmr4,cebmr5,    &
+                    csebm,cebmr6,cebme2,ce1,sigebm,xa1,sigmak,     &
+                    xceta,xct
+endif
+if (iok50.gt.0) then
   write(nfecra,2535) cv2fa1,cv2fe2,sigmak,sigmae,cv2fmu,cv2fct,   &
        cv2fcl,cv2fet,cv2fc1,cv2fc2
 endif
@@ -466,7 +481,7 @@ if(iok51.gt.0) then
   write(nfecra,2538) cpale1,cpale2,cpale3,cpale4,sigmak,cpalse,cpalmu,cpalct, &
        cpalcl,cpalet,cpalc1,cpalc2
 endif
-if(iok60.gt.0) then
+if (iok60.gt.0) then
   write(nfecra,2536) ckwsk1,ckwsk2,ckwsw1,ckwsw2,ckwbt1,ckwbt2,   &
        ckwgm1,ckwgm2,ckwa1,ckwc1,cmu
 endif
@@ -574,6 +589,15 @@ write(nfecra,9900)
 '       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
 '       IKECOU = ',4X,I10,    ' (Mode de couplage k-omega    )',/,&
 '       IGRAKE = ',4X,I10,    ' (Prise en compte de gravite  )')
+ 2524 format(                                                           &
+'   - Rij-epsilon EBRSM     (ITURB = 32)                      ',/,&
+'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
+'       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
+'       IRIJNU = ',4X,I10,    ' (Stabilisation matricielle   )',/,&
+'       IRIJRB = ',4X,I10,    ' (Reconstruction aux bords    )',/,&
+'       IGRARI = ',4X,I10,    ' (Prise en compte de gravite  )',/,&
+'       ICLSYR = ',4X,I10,    ' (Implicitation en symetrie   )',/,&
+'       ICLPTR = ',4X,I10,    ' (Implicitation en paroi      )',/)
  2527 format(                                                           &
 '       RELAXV = ', E14.5,    ' pour k       (Relaxation)     ',/,&
 '       RELAXV = ', E14.5,    ' pour epsilon (Relaxation)     ',/)
@@ -647,20 +671,6 @@ write(nfecra,9900)
 '       CV2FET = ', E14.5,    ' (Constante C_eta             )',/,&
 '       CV2FC1 = ', E14.5,    ' (Constante C1                )',/,&
 '       CV2FC2 = ', E14.5,    ' (Constante C2                )',/)
- 2538 format(                                                           &
-'   - v2f BL-v2/k         (ITURB = 51)'                        ,/,&
-'       CPALE1 = ', E14.5,    ' (Cepsilon 1 : coef de Prod.  )',/,&
-'       CPALE2 = ', E14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
-'       CPALE3 = ', E14.5,    ' (Cepsilon 3 : coef terme E   )',/,&
-'       CPALE4 = ', E14.5,    ' (Cepsilon 4 : coef Diss. mod.)',/,&
-'       SIGMAK = ', E14.5,    ' (Prandtl relatif a k         )',/,&
-'       CPALSE = ', E14.5,    ' (Prandtl relatif a epsilon   )',/,&
-'       CPALMU = ', E14.5,    ' (Constante Cmu               )',/,&
-'       CPALCT = ', E14.5,    ' (Constante CT                )',/,&
-'       CPALCL = ', E14.5,    ' (Constante CL                )',/,&
-'       CPALET = ', E14.5,    ' (Constante C_eta             )',/,&
-'       CPALC1 = ', E14.5,    ' (Constante C1                )',/,&
-'       CPALC2 = ', E14.5,    ' (Constante C2                )',/)
  2536 format(                                                           &
 '   - k-omega SST         (ITURB = 60)'                        ,/,&
 '       CKWSK1 = ', E14.5,    ' (Constante sigma_k1          )',/,&
@@ -675,7 +685,7 @@ write(nfecra,9900)
 '       CKWC1  = ', E14.5,    ' (Cste c1 pour limiteur prod  )',/,&
 '       CMU    = ', E14.5,    ' (Cste Cmu (ou Beta*) pour    )',/,&
 '                                    conversion omega/epsilon)',/)
- 2537 format(                                                           &
+ 2537 format( &
 '   - Spalart-Allmaras    (ITURB = 70)'                        ,/,&
 '       CSAB1  = ', E14.5,    ' (Constante b1                )',/,&
 '       CSAB2  = ', E14.5,    ' (Constante b2                )',/,&
@@ -684,6 +694,38 @@ write(nfecra,9900)
 '       CSAW1  = ', E14.5,    ' (Constante w1                )',/,&
 '       CSAW2  = ', E14.5,    ' (Constante w2                )',/,&
 '       CSAW3  = ', E14.5,    ' (Constante w3                )',/)
+ 2538 format( &
+'   - v2f BL-v2/k         (ITURB = 51)'                        ,/,&
+'       CPALE1 = ', E14.5,    ' (Cepsilon 1 : coef de Prod.  )',/,&
+'       CPALE2 = ', E14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
+'       CPALE3 = ', E14.5,    ' (Cepsilon 3 : coef terme E   )',/,&
+'       CPALE4 = ', E14.5,    ' (Cepsilon 4 : coef Diss. mod.)',/,&
+'       SIGMAK = ', E14.5,    ' (Prandtl relatif a k         )',/,&
+'       CPALSE = ', E14.5,    ' (Prandtl relatif a epsilon   )',/,&
+'       CPALMU = ', E14.5,    ' (Constante Cmu               )',/,&
+'       CPALCT = ', E14.5,    ' (Constante CT                )',/,&
+'       CPALCL = ', E14.5,    ' (Constante CL                )',/,&
+'       CPALET = ', E14.5,    ' (Constante C_eta             )',/,&
+'       CPALC1 = ', E14.5,    ' (Constante C1                )',/,&
+'       CPALC2 = ', E14.5,    ' (Constante C2                )',/)
+ 2539 format( &
+'   - Rij-epsilon EBRSM     (ITURB = 32)'                      ,/,&
+'       CEBMS1 = ', E14.5,    ' (Coef Cs1                    )',/,&
+'       CEBMR1 = ', E14.5,    ' (Coef Cr1                    )',/,&
+'       CEBMR2 = ', E14.5,    ' (Coef Cr2                    )',/,&
+'       CEBMR3 = ', E14.5,    ' (Coef Cr3                    )',/,&
+'       CEBMR4 = ', E14.5,    ' (Coef Cr4                    )',/,&
+'       CEBMR5 = ', E14.5,    ' (Coef Cr5                    )',/,&
+'       CSEBM  = ', E14.5,    ' (Coef Cs diffusion de Rij    )',/,&
+'       CEBMR6 = ', E14.5,    ' (Coef terme de gravite       )',/,&
+'       CEBME2 = ', E14.5,    ' (Coef Ceps2                  )',/,&
+'       CE1    = ', E14.5,    ' (Coef Ceps1                  )',/,&
+'       SIGEBM = ', E14.5,    ' (Coef sigma_eps              )',/,&
+'       XA1    = ', E14.5,    ' (Coef A1                     )',/,&
+'       SIGMAK = ', E14.5,    ' (Coef sigma_k                )',/,&
+'       XCETA  = ', E14.5,    ' (Coef Ceta                   )',/,&
+'       XCT    = ', E14.5,    ' (Coef CT                     )',/)
+
  2540 format(/)
 
 #else
@@ -769,19 +811,29 @@ write(nfecra,9900)
 '       ICLKEP = ',4X,I10,    ' (k-epsilon clipping model    )',/,&
 '       IKECOU = ',4X,I10,    ' (k-epsilon coupling mode     )',/,&
 '       IGRAKE = ',4X,I10,    ' (Account for gravity         )')
- 2524 format(                                                           &
-'   - v2f BL-v2/k         (ITURB = 51)                        ',/,&
-'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
-'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
-'       ICLKEP = ',4X,I10,    ' (k-epsilon clipping model    )',/,&
-'       IKECOU = ',4X,I10,    ' (k-epsilon coupling mode     )',/,&
-'       IGRAKE = ',4X,I10,    ' (Account for gravity         )')
  2523 format(                                                           &
 '   - k-omega SST         (ITURB = 60)                        ',/,&
 '       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
 '       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
 '       IKECOU = ',4X,I10,    ' (k-epsilon coupling mode     )',/,&
 '       IGRAKE = ',4X,I10,    ' (Account for gravity         )')
+ 2524 format(                                                     &
+'   - v2f BL-v2/k         (ITURB = 51)                        ',/,&
+'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
+'       ICLKEP = ',4X,I10,    ' (k-epsilon clipping model    )',/,&
+'       IKECOU = ',4X,I10,    ' (k-epsilon coupling mode     )',/,&
+'       IGRAKE = ',4X,I10,    ' (Account for gravity         )')
+
+ 2525 format(                                                           &
+'   - Rij-epsilon EBRSM     (ITURB = 32)                      ',/,&
+'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
+'       IRIJNU = ',4X,I10,    ' (Matrix stabilization        )',/,&
+'       IRIJRB = ',4X,I10,    ' (Reconstruct at boundaries   )',/,&
+'       IGRARI = ',4X,I10,    ' (Account for gravity         )',/,&
+'       ICLSYR = ',4X,I10,    ' (Symmetry implicitation      )',/,&
+'       ICLPTR = ',4X,I10,    ' (Wall implicitation          )',/)
  2527 format(                                                           &
 '       RELAXV = ', E14.5,    ' for k        (Relaxation)     ',/,&
 '       RELAXV = ', E14.5,    ' for epsilon  (Relaxation)     ',/)
@@ -855,20 +907,6 @@ write(nfecra,9900)
 '       CV2FET = ', E14.5,    ' (C_eta constant              )',/,&
 '       CV2FC1 = ', E14.5,    ' (C1 constant                 )',/,&
 '       CV2FC2 = ', E14.5,    ' (C2 constant                 )',/)
- 2538 format(                                                           &
-'   - v2f BL-v2/k         (ITURB = 51)'                        ,/,&
-'       CPALE1 = ', E14.5,    ' (Cepsilon 1 : Prod. coeff.   )',/,&
-'       CPALE2 = ', E14.5,    ' (Cepsilon 2 : Diss. coeff.   )',/,&
-'       CPALE3 = ', E14.5,    ' (Cepsilon 3 : E term coeff.  )',/,&
-'       CPALE4 = ', E14.5,    ' (Cepsilon 4 : Mod Diss. coef.)',/,&
-'       SIGMAK = ', E14.5,    ' (Prandtl relative to k       )',/,&
-'       CPALSE = ', E14.5,    ' (Prandtl relative to epsilon )',/,&
-'       CPALMU = ', E14.5,    ' (Cmu constant               )',/,&
-'       CPALCT = ', E14.5,    ' (CT constant                )',/,&
-'       CPALCL = ', E14.5,    ' (CL constant                )',/,&
-'       CPALET = ', E14.5,    ' (C_eta constant             )',/,&
-'       CPALC1 = ', E14.5,    ' (C1 constant                )',/,&
-'       CPALC2 = ', E14.5,    ' (C2 constant                )',/)
  2536 format(                                                           &
 '   - k-omega SST         (ITURB = 60)                        ',/,&
 '       CKWSK1 = ', E14.5,    ' (sigma_k1 constant           )',/,&
@@ -892,6 +930,37 @@ write(nfecra,9900)
 '       CSAW1  = ', E14.5,    ' (w1 constant                 )',/,&
 '       CSAW2  = ', E14.5,    ' (w2 constant                 )',/,&
 '       CSAW3  = ', E14.5,    ' (w3 constant                 )',/)
+ 2538 format( &
+'   - v2f BL-v2/k         (ITURB = 51)'                        ,/,&
+'       CPALE1 = ', E14.5,    ' (Cepsilon 1 : Prod. coeff.   )',/,&
+'       CPALE2 = ', E14.5,    ' (Cepsilon 2 : Diss. coeff.   )',/,&
+'       CPALE3 = ', E14.5,    ' (Cepsilon 3 : E term coeff.  )',/,&
+'       CPALE4 = ', E14.5,    ' (Cepsilon 4 : Mod Diss. coef.)',/,&
+'       SIGMAK = ', E14.5,    ' (Prandtl relative to k       )',/,&
+'       CPALSE = ', E14.5,    ' (Prandtl relative to epsilon )',/,&
+'       CPALMU = ', E14.5,    ' (Cmu constant               )',/,&
+'       CPALCT = ', E14.5,    ' (CT constant                )',/,&
+'       CPALCL = ', E14.5,    ' (CL constant                )',/,&
+'       CPALET = ', E14.5,    ' (C_eta constant             )',/,&
+'       CPALC1 = ', E14.5,    ' (C1 constant                )',/,&
+'       CPALC2 = ', E14.5,    ' (C2 constant                )',/)
+ 2539  format( &
+'   - EBRSM Rij-epsilon     (ITURB = 32)'                      ,/,&
+'       CEBMS1 = ', E14.5,    ' (Cs1 coeff.                  )',/,&
+'       CEBMR1 = ', E14.5,    ' (Cr1 coeff.                  )',/,&
+'       CEBMR2 = ', E14.5,    ' (Cr2 coeff.                  )',/,&
+'       CEBMR3 = ', E14.5,    ' (Cr3 coeff.                  )',/,&
+'       CEBMR4 = ', E14.5,    ' (Cr4 coeff.                  )',/,&
+'       CEBMR5 = ', E14.5,    ' (Cr5 coeff.                  )',/,&
+'       CSEBM  = ', E14.5,    ' (Rij Cs diffusion coeff.     )',/,&
+'       CEBMR6 = ', E14.5,    ' (Gravity term coeff.         )',/,&
+'       CEBME2 = ', E14.5,    ' (Coef Ceps2                  )',/,&
+'       CE1    = ', E14.5,    ' (Coef Ceps1                  )',/,&
+'       SIGEBM = ', E14.5,    ' (Coef sigma_eps              )',/,&
+'       XA1    = ', E14.5,    ' (Coef A1                     )',/,&
+'       SIGMAK = ', E14.5,    ' (Coef sigma_k                )',/,&
+'       XCETA  = ', E14.5,    ' (Coef Ceta                   )',/,&
+'       XCT    = ', E14.5,    ' (Coef CT                     )',/)
 
  2540 format(/)
 

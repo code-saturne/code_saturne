@@ -82,7 +82,7 @@ integer          iok
 character        chaine*80, chain2*80
 integer          ii    , iis   , jj    , iisct
 integer          iscal , iest  , iiesca, ivar
-integer          itrbph, nbsccp
+integer          nbsccp
 integer          ipp   , imgrok, nbccou
 integer          iokpre, indest, itests, iiidef, istop
 integer          iresop, ipolop
@@ -867,18 +867,18 @@ endif
 
 !    Modele
 
-itrbph = iturb
-if ( itrbph.ne. 0.and.itrbph.ne.10.and.itrbph.ne.20.and.        &
-     itrbph.ne.21.and.itrbph.ne.30.and.itrbph.ne.31.and.        &
-     itrbph.ne.40.and.itrbph.ne.41.and.itrbph.ne.42.and.        &
-     itrbph.ne.50.and.itrbph.ne.51.and.itrbph.ne.60.and.itrbph.ne.70  ) then
-  WRITE(NFECRA,2600) 'ITURB  ',ITRBPH
+if ( iturb.ne. 0.and.iturb.ne.10.and.iturb.ne.20.and.        &
+     iturb.ne.21.and.iturb.ne.30.and.iturb.ne.31.and.        &
+     iturb.ne.32.and.                                        &
+     iturb.ne.40.and.iturb.ne.41.and.iturb.ne.42.and.        &
+     iturb.ne.50.and.iturb.ne.51.and.iturb.ne.60.and.iturb.ne.70  ) then
+  WRITE(NFECRA,2600) 'ITURB  ',iturb
   iok = iok + 1
 endif
 
 ! In lagrangian with two-way coupling, k-omega SST is forbidden (not
 ! properly implemented)
-if (itrbph.eq.60 .and. iilagr.eq.2) then
+if (iturb.eq.60 .and. iilagr.eq.2) then
   write(nfecra,2601) iilagr
   iok = iok + 1
 endif
@@ -903,9 +903,11 @@ if(nscal.ge.1) then
          'NOMBRE DE SCALAIRES            ',NSCAL
     iok = iok + 1
   endif
-  if(  (nvar.lt. 4+nscal               ) .or.                   &
+  if(  (nvar.lt. 4+nscal               ) .or.            &
        (nvar.lt. 6+nscal.and.itytur.eq.2).or.            &
-       (nvar.lt.11+nscal.and.itytur.eq.3).or.            &
+       (nvar.lt.11+nscal.and.iturb.eq.30).or.            &
+       (nvar.lt.11+nscal.and.iturb.eq.31).or.            &
+       (nvar.lt.12+nscal.and.iturb.eq.32).or.            &
        (nvar.lt. 8+nscal.and.itytur.eq.5).or.            &
        (nvar.lt. 6+nscal.and.iturb.eq.60).or.            &
        (nvar.lt. 5+nscal.and.iturb.eq.70)      ) then

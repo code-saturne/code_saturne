@@ -667,6 +667,12 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     NOMFLU(IR13)='fm_R13_phase'//CPHASE
     NOMFLU(IR23)='fm_R23_phase'//CPHASE
     NOMFLU(IEP)='fm_eps_phase'//CPHASE
+    if (iturb.eq.32.and.jturb.eq.32) then
+      nomflu(ial)='fm_alp_phase'//CPHASE
+    endif
+    if (iturb.eq.32.and.jturb.ne.32) then
+      nomflu(ial)='fm_eps_phase'//CPHASE
+    endif
   elseif (itytur.eq.3.and.jturb.eq.60) then
     NOMFLU(IR11)='fm_k_phase'//CPHASE
     NOMFLU(IR22)='fm_k_phase'//CPHASE
@@ -845,6 +851,12 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     NOMFLU(IR13)='fm_a_R13_phase'//CPHASE
     NOMFLU(IR23)='fm_a_R23_phase'//CPHASE
     NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
+    if (iturb.eq.32.and.jturb.eq.32) then
+      nomflu(ial)='fm_a_alp_phase'//CPHASE
+    endif
+    if (iturb.eq.32.and.jturb.ne.32) then
+      nomflu(ial)='fm_a_eps_phase'//CPHASE
+    endif
   elseif (itytur.eq.3.and.jturb.eq.60) then
     NOMFLU(IR11)='fm_a_k_phase'//CPHASE
     NOMFLU(IR22)='fm_a_k_phase'//CPHASE
@@ -853,6 +865,9 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     NOMFLU(IR13)='fm_a_k_phase'//CPHASE
     NOMFLU(IR23)='fm_a_k_phase'//CPHASE
     NOMFLU(IEP)='fm_a_omega_phase'//CPHASE
+    if (iturb.eq.32) then
+      nomflu(ial)='fm_a_omega_phase'//CPHASE
+    endif
   elseif (itytur.eq.5.and.jtytur.eq.2) then
     NOMFLU(IK)='fm_a_k_phase'//CPHASE
     NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
@@ -1033,6 +1048,12 @@ if (nfabok.eq.1) then
     NOMCLI(IR13)='_R13_phase'//CPHASE
     NOMCLI(IR23)='_R23_phase'//CPHASE
     NOMCLI(IEP)='_eps_phase'//CPHASE
+    if (iturb.eq.32.and.jturb.eq.32) then
+      nomcli(ial)='_alp_phase'//CPHASE
+    endif
+    if (iturb.eq.32.and.jturb.ne.32) then
+      nomcli(ial)='_eps_phase'//CPHASE
+    endif
   elseif (itytur.eq.5.and.jtytur.eq.5) then
     NOMCLI(IK)='_k_phase'//CPHASE
     NOMCLI(IEP)='_eps_phase'//CPHASE
@@ -1113,8 +1134,8 @@ if (nfabok.eq.1) then
 
   enddo
 
-!     Type symétrie (utilisé pour les gradients par moindres carrés
-!       sur support étendu, avec extrapolation du gradient au bord).
+!     Type symetrie (utilise pour les gradients par moindres carres
+!       sur support etendu, avec extrapolation du gradient au bord).
 
   RUBRIQ = 'isympa_fb_phase'//CPHASE
   itysup = 3
@@ -1130,8 +1151,8 @@ endif
 if (ilu.eq.1) then
 
 !     Si erreur, on previent mais pas stop :
-!       (on n'a pas forcement les coefs 2, on n'a pas forcément isympa
-!        si on prend les fichiers d'une version antérieure)
+!       (on n'a pas forcement les coefs 2, on n'a pas forcement isympa
+!        si on prend les fichiers d'une version anterieure)
   if (nberro.ne.0) then
     car54 =                                                       &
          'LECTURE DES CONDITIONS AUX LIMITES                    '
@@ -1291,6 +1312,11 @@ if(isto2t.gt.0) then
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          propce(1,iptsta+6),ierror)
     nberro=nberro+ierror
+    if (iturb.eq.32) then
+      do iel = 1, ncel
+        propce(iel,iptsta+7) = 0.d0
+      enddo
+    endif
 
     ilu = ilu + 1
 
@@ -1327,6 +1353,13 @@ if(isto2t.gt.0) then
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          propce(1,iptsta+6),ierror)
     nberro=nberro+ierror
+
+    if (iturb.eq.32.and.jturb.eq.32) then
+      RUBRIQ = 'tsource_tu_ce_alp_phase'//CPHASE
+      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                propce(1,iptsta+7),ierror)
+      nberro=nberro+ierror
+    endif
 
     ilu = ilu + 1
 

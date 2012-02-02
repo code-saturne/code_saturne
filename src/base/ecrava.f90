@@ -419,6 +419,9 @@ elseif (itytur == 3) then
   nomrtp(ir13)='R13_ce_phase'//cphase
   nomrtp(ir23)='R23_ce_phase'//cphase
   nomrtp(iep)='eps_ce_phase'//cphase
+  if (iturb.eq.32) then
+    nomrtp(ial)='alp_ce_phase'//cphase
+  endif
 elseif (itytur == 5) then
   nomrtp(ik)='k_ce_phase'//cphase
   nomrtp(iep)='eps_ce_phase'//cphase
@@ -820,6 +823,9 @@ if (iecaux.eq.1) then
     nomflu(IR13)='fm_R13_phase'//cphase
     nomflu(IR23)='fm_R23_phase'//cphase
     nomflu(IEP)='fm_eps_phase'//cphase
+    if (iturb.eq.32) then
+      nomflu(ial)='fm_alp_phase'//cphase
+    endif
   elseif (itytur.eq.5) then
     nomflu(IK)='fm_k_phase'//cphase
     nomflu(IEP)='fm_eps_phase'//cphase
@@ -915,6 +921,9 @@ if (iecaux.eq.1) then
     nomflu(IR13)='fm_a_R13_phase'//cphase
     nomflu(IR23)='fm_a_R23_phase'//cphase
     nomflu(IEP)='fm_a_eps_phase'//cphase
+    if (iturb.eq.32) then
+      nomflu(ial)='fm_a_alp_phase'//cphase
+    endif
   elseif (itytur.eq.5) then
     nomflu(IK)='fm_a_k_phase'//cphase
     nomflu(IEP)='fm_a_eps_phase'//cphase
@@ -1019,6 +1028,9 @@ if (iecaux.eq.1) then
     nomcli(IR13)='_R13_phase'//cphase
     nomcli(IR23)='_R23_phase'//cphase
     nomcli(IEP)='_eps_phase'//cphase
+    if (iturb.eq.32) then
+      nomcli(ial)='_alp_phase'//cphase
+    endif
   elseif (itytur.eq.5) then
     nomcli(IK)='_k_phase'//cphase
     nomcli(IEP)='_eps_phase'//cphase
@@ -1206,6 +1218,13 @@ if (iecaux.eq.1) then
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
            propce(1,iptsta+6),ierror)
       nberro=nberro+ierror
+
+      if (iturb.eq.32) then
+        rubriq = 'tsource_tu_ce_alp_phase'//cphase
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+7),ierror)
+        nberro=nberro+ierror
+      endif
 
       !          En v2f
     elseif(itytur.eq.5) then

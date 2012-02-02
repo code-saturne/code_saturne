@@ -396,13 +396,7 @@ if(ipass.eq.2) then
 
   ivar = 0
 
-  ! --- Pression : supposons ici qu'il n'y a qu'une pression
-  !       quelque soit le nombre de phases.
-  !     Le reste du code devrait se preter a l'extension, du fait
-  !       qu'il n'y a qu'ici qu'on fait cette hypothese (evidemment, il
-  !       faudrait ecrire un schema a deux pressions et remplacer navsto,
-  !       mais c'est un "detail"...relativement a ce qui nous occupe dans
-  !       le present sous-programme)
+  ! --- Pression
 
   ivar          = ivar + 1
   ipr    = ivar
@@ -436,6 +430,10 @@ if(ipass.eq.2) then
     ir23   = ivar
     ivar          = ivar + 1
     iep    = ivar
+    if (iturb.eq.32) then
+      ivar = ivar + 1
+      ial  = ivar
+    endif
   elseif(itytur.eq.5) then
     ivar          = ivar + 1
     ik     = ivar
@@ -512,6 +510,11 @@ if(ipass.eq.2) then
     iconv(ial)  = 0
     !     Pour alpha, on sait qu'on a un terme diagonal, meme si ISTAT=0,
     !       donc on ne decalera pas la diagonale
+    idircl(ial) = 0
+  elseif (iturb.eq.32) then
+    istat(ial)  = 0
+    iconv(ial)  = 0
+    ! Meme remarque pour alpha du EBRSM
     idircl(ial) = 0
   endif
   if (iale.eq.1) then
@@ -653,6 +656,7 @@ if(ipass.eq.2) then
     ifluma(ir13) = iprop
     ifluma(ir23) = iprop
     ifluma(iep ) = iprop
+    if (iturb.eq.32) ifluma(ial) = iprop
   elseif(itytur.eq.5) then
     ifluma(ik  ) = iprop
     ifluma(iep ) = iprop
@@ -824,7 +828,7 @@ if(ipass.eq.2) then
       endif
     enddo
 
- endif
+  endif
 
   do ii = 1, nscal
     if(ivisls(ii).gt.0) then
@@ -1244,6 +1248,7 @@ if(ipass.eq.3) then
       ifluaa(ir13) = iprop
       ifluaa(ir23) = iprop
       ifluaa(iep ) = iprop
+      if (iturb.eq.32) ifluaa(ial) = iprop
     elseif(itytur.eq.5) then
       ifluaa(ik  ) = iprop
       ifluaa(iep ) = iprop
@@ -1305,6 +1310,9 @@ if(ipass.eq.3) then
       iprop                 = iprop + 2-1
     elseif(itytur.eq.3) then
       iprop                 = iprop + 7-1
+      if (iturb.eq.32) then
+        iprop                 = iprop + 1
+      endif
     elseif(iturb.eq.50) then
       iprop                 = iprop + 4-1
     elseif(iturb.eq.70) then

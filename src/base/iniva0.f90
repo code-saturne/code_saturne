@@ -359,7 +359,13 @@ elseif(itytur.eq.3) then
       rtp(iel,iep)  = -grand
     enddo
 
-  endif
+    if(iturb.eq.32)then
+      do iel = 1, ncel
+        rtp(iel,ial) = 1.d0
+      enddo
+    endif
+
+ endif
 
 elseif(iturb.eq.60) then
 
@@ -486,11 +492,11 @@ do ifac = 1, nfabor
   itrifb(ifac) = 0
 enddo
 
-! Type symétrie : on en a besoin dans le cas du calcul des gradients
-!     par moindres carrés étendu avec extrapolation du gradient au bord
+! Type symetrie : on en a besoin dans le cas du calcul des gradients
+!     par moindres carres etendu avec extrapolation du gradient au bord
 !     La valeur 0 permet de ne pas extrapoler le gradient sur les faces.
-!     Habituellement, on évite l'extrapolation sur les faces de symétries
-!     pour ne pas tomber sur une indétermination et une matrice 3*3 non
+!     Habituellement, on evite l'extrapolation sur les faces de symetries
+!     pour ne pas tomber sur une indetermination et une matrice 3*3 non
 !     inversible dans les configurations 2D).
 do ifac = 1, nfabor
   isympa(ifac) = 0
@@ -547,6 +553,8 @@ endif
 if(isto2t.gt.0) then
   if(itytur.eq.2) jj = 2
   if(itytur.eq.3) jj = 7
+  if(iturb.eq.30.or.iturb.eq.31) jj = 7
+  if(iturb.eq.32) jj = 8
   if(iturb.eq.50) jj = 4
   if(iturb.eq.60) jj = 2
   if(iturb.eq.70) jj = 1

@@ -1475,6 +1475,17 @@ if (iccvfg.eq.0) then
 
   else if(itytur.eq.3) then
 
+    ! Calcul de Alpha pour l'EBRSM
+    if (iturb.eq.32) then
+
+      call resalp &
+      !==========
+    ( nvar   , nscal  ,                                              &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      coefa  , coefb  )
+
+    endif
+
     call turrij &
     !==========
   ( nvar   , nscal  ,                                              &
