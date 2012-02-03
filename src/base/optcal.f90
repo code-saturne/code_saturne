@@ -389,6 +389,15 @@ module optcal
 
   integer, save :: ivelco
 
+  ! swpdyn
+  !    = 1 sweeps de reconstruction sur le second membre de l'equation
+  !        de continuite variables 0 < nswrsm(ipr) et relaxv(ipr)
+  !        variable 0.1 < relaxv(ipr) < 1  (option seulement disponible
+  !        avec ivelco = 1)
+  !    = 0 option desactive
+
+  integer, save :: swpdyn
+
   ! ipucou algorithme couplage instationnaire vitesse/pression
 
   integer, save :: ipucou

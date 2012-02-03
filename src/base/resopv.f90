@@ -174,11 +174,11 @@ integer          iesdep
 integer          idtsca
 integer          iagmax, nagmax, npstmg
 integer          isou  , ibsize
-double precision residu, phydr0
+double precision residu, resold, phydr0
 double precision ardtsr, arsr  , unsara, thetap
 double precision dtsrom, unsvom, romro0
 double precision epsrgp, climgp, extrap, epsilp
-double precision drom  , dronm1
+double precision drom  , dronm1, tcrite, relaxp
 
 double precision rvoid(1)
 
@@ -861,6 +861,9 @@ if (iilagr.eq.2 .and. ltsmas.eq.1) then
 endif
 
 ! --- Boucle de reconstruction : debut
+isweep = 1
+relaxp = relaxv(ipr)
+
 do 100 isweep = 1, nswmpr
 
 ! --- Mise a jour du second membre
@@ -872,15 +875,32 @@ do 100 isweep = 1, nswmpr
 ! --- Test de convergence du calcul
 
   call prodsc(ncelet,ncel,isqrt,smbr,smbr,residu)
-  if (iwarni(ipr).ge.2) then
-     chaine = nomvar(ipp)
-     write(nfecra,1400)chaine(1:16),isweep,residu
-  endif
   if (isweep.eq.1) rnsmbr(ipp) = residu
 
+  if (swpdyn.eq.1) then
+    if (isweep.gt.1) then
+
+      if ((residu + 0.001*residu).gt.resold) then
+        relaxv(ipr) = max(0.8*relaxp, 0.1)
+      endif
+
+    endif
+    resold = residu
+  endif
+
+ if (iwarni(ipr).ge.2) then
+   chaine = nomvar(ipp)
+   write(nfecra,1440)chaine(1:16),isweep,residu/rnormp, relaxp
+ endif
 !  Test a modifier eventuellement
 ! (il faut qu'il soit plus strict que celui de gradco)
-  if( residu .le. 10.d0*epsrsm(ipr)*rnormp ) then
+  if (swpdyn.eq.1) then
+    tcrite = 100.d0*epsilo(ipr)*rnormp
+  else
+    tcrite = 10.d0*epsrsm(ipr)*rnormp
+  endif
+
+  if(residu.le.tcrite) then
 ! --- Si convergence, calcul de l'indicateur
 !                     mise a jour du flux de masse et sortie
 
@@ -1156,7 +1176,7 @@ do 100 isweep = 1, nswmpr
 
   endif
 
- 100  continue
+100 continue
 ! --- Boucle de reconstruction : fin
 
 if(iwarni(ipr).ge.2) then
@@ -1200,7 +1220,8 @@ deallocate(res, divu)
 #if defined(_CS_LANG_FR)
 
  1300 format(1X,A16,' : RESIDU DE NORMALISATION =', E14.6)
- 1400 format(1X,A16,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6)
+ 1440 format(1X,A16,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6,&
+             ', RELAXP = ',E14.6)
  1600 format(                                                     &
 '@                                                            ',/,&
 '@ @@ ATTENTION : ', A16,' ETAPE DE PRESSION                  ',/,&
@@ -1211,7 +1232,8 @@ deallocate(res, divu)
 #else
 
  1300 format(1X,A16,' : NORMED RESIDUALS = ', E14.6)
- 1400 format(1X,A16,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6)
+ 1440 format(1X,A16,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6,&
+             ', RELAXP = ',E14.6)
  1600 format(                                                     &
 '@'                                                            ,/,&
 '@ @@ WARNING: ', A16,' PRESSURE STEP '                        ,/,&

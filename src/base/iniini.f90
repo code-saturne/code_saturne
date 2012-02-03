@@ -868,6 +868,9 @@ irnpnw = 1
 
 ivelco = 0
 
+! relaxv(ipr) dynamique
+swpdyn = 0
+
 ! --- Couplage U-P
 !       Non active par defaut
 

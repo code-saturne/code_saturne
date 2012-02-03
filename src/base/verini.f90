@@ -1301,6 +1301,26 @@ if(ineedy.eq.1) then
 
 endif
 
+! --- Dynamic relaxv(ipr) option
+
+if (swpdyn.eq.1) then
+  if (ivelco.ne.1) then
+    write(nfecra,2741), ivelco
+  else
+    if (nswrsm(ipr).lt.20) then
+      nswrsm(ipr) = 20
+      write(nfecra,2742), nswrsm(ipr)
+    endif
+    if (isstpc(iu).eq.0.or.isstpc(iv).eq.0.or.isstpc(iw).eq.0) then
+      isstpc(iu) = 1
+      isstpc(iv) = 1
+      isstpc(iw) = 1
+
+      write(nfecra, 2743)
+    endif
+ endif
+endif
+
 
 !===============================================================================
 ! 2. MULTIGRILLE : TABLEAUX DU MULTIGRILLE : formats 3000
@@ -3473,6 +3493,47 @@ endif
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2741 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION :                                             ',/,&
+'@    =========                                               ',/,&
+'@    L''OPTION SPWDYN = 1 N''EST COMPATIBLE QU''AVEC         ',/,&
+'@    L''OPTION IVELCO = 1.                                   ',/,&
+'@    IVELCO VAUT ICI ',I10                                    ,/,&
+'@                                                            ',/,&
+'@  Le calcul continue, swpdyn = 1 non pris en compte.        ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2742 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION :                                             ',/,&
+'@    =========                                               ',/,&
+'@    OPTION SWPDYN = 1  : ON SOUHAITE NSWRSM(IPR) > 19       ',/,&
+'@    NSWRSM(IPR) VAUT ICI ',I10                               ,/,&
+'@                                                            ',/,&
+'@  Le calcul continue avec nswrsm(ipr) = 20.                  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2743 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION :                                             ',/,&
+'@    =========                                               ',/,&
+'@    OPTION SWPDYN = 1  : LE TEST DE PENTE SUR U, V, W DOIT  ',/,&
+'@    ETRE DESACTIVE.                                         ',/,&
+'@                                                            ',/,&
+'@  Le calcul continue avec :                                 ',/,&
+'@  isstpc(iu) = isstpc(iu) = isstpc(iu) = 1.                 ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -5892,6 +5953,47 @@ endif
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
 '@ Check the input data given via User Interface or in usini1.',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2741 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING:                                                ',/,&
+'@    =========                                               ',/,&
+'@    SWPDYN = 1 OPTION IS ONLY COMPATIBLE WITH IVELCO = 1    ',/,&
+'@    IVELCO HAS VALUE ',I10                                   ,/,&
+'@                                                            ',/,&
+'@  The calculation continue, spwdyn = 1 is not taken         ',/,&
+'@  into account.                                             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2742 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING:                                                ',/,&
+'@    =========                                               ',/,&
+'@    SWPDYN = 1 OPTION: WE WANT NSWRSM(IPR) > 19             ',/,&
+'@    NSWRSM(IPR) HAS VALUE ',I10                              ,/,&
+'@                                                            ',/,&
+'@  The calculation continue with nswrsm(ipr) = 20.           ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2743 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING:                                                ',/,&
+'@    =========                                               ',/,&
+'@    SWPDYN = 1 OPTION: THE SLOPE TEST ON U, V, W MUST BE    ',/,&
+'@    DEACTIVATED.                                            ',/,&
+'@                                                            ',/,&
+'@  The calculation continue with:                            ',/,&
+'@  isstpc(iu) = isstpc(iu) = isstpc(iu) = 1.                 ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
