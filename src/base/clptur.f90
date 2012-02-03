@@ -735,6 +735,8 @@ do ifac = 1, nfabor
         coefa(ifac,iclv)   = 0.d0
         coefa(ifac,iclw)   = 0.d0
 
+        uiptn = utau
+
         ! Coupled solving of the velocity components
         if (ivelco.eq.1) then
           cofimp  = 0.d0
@@ -791,14 +793,14 @@ do ifac = 1, nfabor
 
         endif
 
-        uiptmx = max(uiptn*unturb,uiptmx)
-        uiptmn = min(uiptn*unturb,uiptmn)
-        if(uiptn*unturb.lt.-epzero) iuiptn = iuiptn + 1
-
         coefa(ifac,iclu)   = uiptn *tx*unturb *txn0
         coefa(ifac,iclv)   = uiptn *ty*unturb *txn0
         coefa(ifac,iclw)   = uiptn *tz*unturb *txn0
       endif
+
+      uiptmx = max(uiptn*unturb,uiptmx)
+      uiptmn = min(uiptn*unturb,uiptmn)
+      if(uiptn*unturb.lt.-epzero) iuiptn = iuiptn + 1
 
       coefa(ifac,iclu)   = coefa(ifac,iclu)  + rcodcx
       coefa(ifac,iclv)   = coefa(ifac,iclv)  + rcodcy
