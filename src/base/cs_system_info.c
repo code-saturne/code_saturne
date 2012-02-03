@@ -140,7 +140,7 @@ _sys_info_cpu(char      *cpu_str,
     struct utsname  sys_config;
 
     if (uname(&sys_config) != -1)
-      strncpy(cpu_str, sys_config.machine, _cpu_str_max);
+      strncpy(cpu_str, sys_config.machine, cpu_str_max);
   }
 
 #endif /* HAVE_SYS_UTSNAME_H */
