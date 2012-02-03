@@ -204,6 +204,9 @@ class Case(object):
         """
         Run the case a thread.
         """
+        home = os.getcwd()
+        os.chdir(os.path.join(self.__dest, self.label, 'SCRIPTS'))
+
         run_id, run_dir = self.__suggest_run_id()
 
         while os.path.isdir(run_dir):
@@ -211,9 +214,6 @@ class Case(object):
             run_id, run_dir = self.__suggest_run_id()
 
         self.__updateRuncase(run_id)
-
-        home = os.getcwd()
-        os.chdir(os.path.join(self.__dest, self.label, 'SCRIPTS'))
 
         error, self.is_time = run_command("./runcase", self.__log)
         #t1 = RunThread("runcase", self.__log)
