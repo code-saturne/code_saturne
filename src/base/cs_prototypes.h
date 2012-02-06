@@ -213,8 +213,7 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const cs_real_t  statfb[],  /* <-- boundary face statistics (Lagrangian) */
  cs_real_t        tracel[],  /* --- work array for output cells */
  cs_real_t        trafac[],  /* --- work array for output interior faces */
- cs_real_t        trafbr[],  /* --- work array for output boundary faces */
- cs_real_t        ra[]       /* <-- RA floating-point array */
+ cs_real_t        trafbr[]   /* --- work array for output boundary faces */
 );
 
 /*----------------------------------------------------------------------------

@@ -802,17 +802,17 @@ _interpolate_elt_to_vtx(const cs_syr3_coupling_t  *syr_coupling,
  * Post process variables associated with SYRTHES couplings
  *
  * parameters:
- *   coupling_id         <--  Id of SYRTHES coupling
- *   nt_cur_abs          <--  Current time step
- *   t_cur_abs           <--  Current time value
+ *   coupling        <--  Void pointer to SYRTHES coupling structure
+ *   nt_cur_abs      <--  Current time step
+ *   t_cur_abs       <--  Current time value
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_syr3_coupling_post_function(int        coupling_id,
-                                cs_int_t   nt_cur_abs,
-                                cs_real_t  t_cur_abs)
+_cs_syr3_coupling_post_function(void       *coupling,
+                                cs_int_t    nt_cur_abs,
+                                cs_real_t   t_cur_abs)
 {
-  cs_syr3_coupling_t * syr_coupling = cs_syr3_coupling_by_id(coupling_id);
+  const cs_syr3_coupling_t  *syr_coupling = coupling;
 
   if (syr_coupling->post_mesh_id != 0) {
 
@@ -911,8 +911,8 @@ _post_init(cs_syr3_coupling_t  *syr_coupling)
 
   /* Register post processing function */
 
-  cs_post_add_time_dep_var(_cs_syr3_coupling_post_function,
-                           coupling_id);
+  cs_post_add_time_dep_output(_cs_syr3_coupling_post_function,
+                              (void *)syr_coupling);
 
   /* Update start and end (negative) numbers associated with
      dedicated post processing meshes */

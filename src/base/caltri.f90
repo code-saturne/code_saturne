@@ -1045,8 +1045,7 @@ call pstvar                                                       &
    ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
    ra(ipropc) , propfa , propfb ,                                 &
    coefa  , coefb  ,                                              &
-   statis , stativ , parbor ,                                     &
-   ra     )
+   statis , stativ , parbor )
 
 !===============================================================================
 ! 22. HISTORIQUES

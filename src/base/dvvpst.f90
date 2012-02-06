@@ -30,8 +30,7 @@ subroutine dvvpst &
    lstcel , lstfac , lstfbr ,                                     &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statce , stativ , statfb ,                   &
-   tracel , trafac , trafbr ,                                     &
-   ra     )
+   tracel , trafac , trafbr )
 
 !===============================================================================
 ! Purpose:
@@ -77,7 +76,6 @@ subroutine dvvpst &
 ! tracel(*)        ! tr ! <-- ! tab reel valeurs cellules post                 !
 ! trafac(*)        ! tr ! <-- ! tab reel valeurs faces int. post               !
 ! trafbr(*)        ! tr ! <-- ! tab reel valeurs faces bord post               !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -128,7 +126,6 @@ double precision statce(ncelet,nvlsta), statfb(nfabor,nvisbr)
 double precision stativ(ncelet,nvlsta)
 double precision tracel(ncelps*3)
 double precision trafac(nfacps*3), trafbr(nfbrps*3)
-double precision ra(*)
 
 ! Local variables
 
@@ -180,7 +177,7 @@ if (numtyp .eq. -1) then
     ientla = 0
     ivarpr = 1
 
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,            &
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,  &
     !==========
                 ntcabs, ttcabs, dispar, rbid, rbid)
 
@@ -197,7 +194,7 @@ if (numtyp .eq. -1) then
 
     if (ineeyp.eq.1) then
 
-      NAMEVR = 'Yplus'
+      namevr = 'Yplus'
       idimt = 1
       ientla = 0
       ivarpr = 1
@@ -363,33 +360,21 @@ else if (numtyp .eq. -2) then
     !==========
                 ntcabs, ttcabs, rbid, rbid, trafbr)
 
-  endif
+  endif ! end of test on output of y+
 
-  ! end of test on output of y+
-
-
-! --    1.2.2 TRAITEMENT DES VARIABLES AU BORD SANS RECONSTRUCTION
-!       -----------------------------------------------------------
+  !  1.2.2 Projection of variables at boundary with no reconstruction
+  !  ----------------------------------------------------------------
 
   if (mod(ipstdv, ipstcl).eq.0) then
 
-!       Le codage ci-dessous est relativement avance :
-!         il accede aux variables directement au travers du macro tableau RA
-!         il comprend un artifice "ISAUT" permettant de reperer les vecteurs
-!           a posttraiter
-
-
-!       Boucle sur les variables usuelles
-!       ---------------------------------
+    ! Loop on main cell-based variables
+    !----------------------------------
 
     isaut = 0
 
     do ivar = 1, nvar
 
-!         Variables post-traitables
-!         (ISAUT est utilise pour ne pas postraiter plusieurs fois les
-!          composantes 2 et 3 d'un vecteur, initialise a 0 avant la boucle
-!          sur IVAR)
+      ! isaut used here to avoid multiple output for vector components 2 and 3
 
       ipp = ipprtp(ivar)
 
@@ -403,36 +388,28 @@ else if (numtyp .eq. -2) then
         namevr = name80(1:32)
       endif
 
-!         Traitement des variables definies aux centres cellules à sortir
-!         ---------------------------------------------------------------
       if (isorva .eq. 1) then
 
+        ! if the sign of the index in ra is negative, we have a vector
 
-!         -> on verifie le signe du pointeur de la variable dans RA
-!         (si negatif, c'est un vecteur)
-
-!         -> dimension de la variable a ecrire
         idimt = 1
         if (ipp2ra(ipp).lt.0) then
           idimt = 3
           isaut = 2
         endif
 
-!           -> si l'on a une variable vectorielle, on supprime
-!              la partie X, Y, ou Z en derniere ou avant-derniere
-!              position dans le nom
+        ! For vectors, remove X, Y, or Z at the end of the name
 
-      if (idimt.eq.3) then
-        name80 = nomvar(ipp+1)
-        namev1 = name80(1:32)
-        name80 = nomvar(ipp+2)
-        namev2 = name80(1:32)
-        call pstsnv ( namevr , namev1 , namev2 )
-        !==========
-      endif
+        if (idimt.eq.3) then
+          name80 = nomvar(ipp+1)
+          namev1 = name80(1:32)
+          name80 = nomvar(ipp+2)
+          namev2 = name80(1:32)
+          call pstsnv ( namevr , namev1 , namev2 )
+          !==========
+        endif
 
-!         Calcul des valeurs (non-reconstruites) de la variable
-!         sur les faces de bord
+        !  Compute non-reconstructed values at boundary faces
 
         do kk = 0, idimt-1
 
@@ -450,7 +427,7 @@ else if (numtyp .eq. -2) then
 
         enddo
 
-!             Valeurs entrelacées, définies sur tableau de travail
+        ! Interleaved values, defined on work array
         ientla = 1
         ivarpr = 0
 
@@ -458,25 +435,19 @@ else if (numtyp .eq. -2) then
         !==========
                     ntcabs, ttcabs, rbid, rbid, trafbr)
 
-      endif
-!         Fin du traitement en cas de sortie de la variable
+      endif ! End of variable output
 
-    enddo
-!       Fin de la boucle sur les variables
+    enddo ! End of loop on variables
 
-  endif
-!     Fin du test sur sortie des variables
+  endif ! End of test on variable boundary values output
 
-
-
-!       1.2.3 TRAITEMENT FLUX THERMIQUE AU BORD
-!       ----------------------------------------
-!           Si on travaille en enthalpie, on calcule un flux d'enthalpie
+  ! Output thermal flux at boundary
+  ! -------------------------------
+  !  If working with enthalpy, compute an enthalpy flux
 
   if (mod(ipstdv,ipstft).eq.0) then
 
-    if (iscalt.gt.0 .and. nscal.gt.0 .and.                &
-         iscalt.le.nscal) then
+    if (iscalt.gt.0 .and. nscal.gt.0 .and. iscalt.le.nscal) then
 
       !       Initialisation
       do ii = 1, 32

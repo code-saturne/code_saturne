@@ -87,6 +87,7 @@ cs_opts.h \
 cs_order.h \
 cs_parall.h \
 cs_post.h \
+cs_post_default.h \
 cs_preprocessor_data.h \
 cs_prototypes.h \
 cs_renumber.h \
@@ -187,6 +188,7 @@ csopli.f90 \
 cs_opts.c \
 cs_parall.c \
 cs_post.c \
+cs_post_default.c \
 cs_post_f2c.f90 \
 cs_preprocessor_data.c \
 cs_renumber.c \

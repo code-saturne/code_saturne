@@ -60,8 +60,10 @@ BEGIN_C_DECLS
  * Output type masks
  */
 
-#define CS_POST_VOLUME               (1 << 0)  /* postprocess volume */
-#define CS_POST_BOUNDARY_NR          (1 << 1)  /* postprocess bundary
+#define CS_POST_ON_LOCATION          (1 << 0)  /* postprocess variables
+                                                  on their base location
+                                                  (volume for variables) */
+#define CS_POST_BOUNDARY_NR          (1 << 1)  /* postprocess boundary
                                                   without reconstruction */
 
 /*============================================================================
@@ -78,14 +80,103 @@ typedef enum {
   CS_POST_TYPE_double
 } cs_post_type_t;
 
-/* Function pointer associated with a specific post-processing variables
-   output: such functions are registered using the cs_post_add_time_dep_var(),
-   and all registered functions are automatically called by PSTVAR. */
+/*----------------------------------------------------------------------------
+ * Function pointer to elements selection definition.
+ *
+ * Each function of this sort may be used to select a given type of element,
+ * usually cells, interior faces, or boundary faces.
+ *
+ * If non-empty and not containing all elements, a list of elements of the
+ * main mesh should be allocated (using BFT_MALLOC) and defined by this
+ * function when called. This list's lifecycle is then managed by the
+ * postprocessing subsystem.
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_meshes()
+ *   with a fixed-mesh writer before the data pointed to goes out of scope;
+ *
+ * parameters:
+ *   input    <-> pointer to optional (untyped) value or structure.
+ *   n_elts   --> number of selected elements.
+ *   elt_list --> list of selected elements (0 to n-1 numbering).
+ *----------------------------------------------------------------------------*/
 
 typedef void
-(cs_post_time_dep_var_t) (int        instance_id,
-                          int        nt_cur_abs,
-                          cs_real_t  t_cur_abs);
+(cs_post_elt_select_t) (void        *input,
+                        cs_lnum_t   *n_elts,
+                        cs_lnum_t  **elt_list);
+
+/*----------------------------------------------------------------------------
+ * Function pointer associated with a specific post-processing output.
+ *
+ * Such functions are registered using the cs_post_add_time_dep_vars(),
+ * and all registered functions are automatically called by
+ * cs_post_write_vars().
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the output function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_var()
+ *   or similar before the data pointed to goes out of scope.
+ *
+ * parameters:
+ *   input      <-> pointer to optional (untyped) value or structure.
+ *   nt_cur_abs <-- current time step number
+ *   t_cur_abs  <-- absolute time at the current time step
+ *----------------------------------------------------------------------------*/
+
+typedef void
+(cs_post_time_dep_output_t) (void       *input,
+                             int         nt_cur_abs,
+                             cs_real_t   t_cur_abs);
+
+/*----------------------------------------------------------------------------
+ * Function pointer associated with a specific post-processing output
+ * on multiple meshes.
+ *
+ * Such functions are registered using the cs_post_add_time_mesh_dep_vars(),
+ * and all registered functions are automatically called by
+ * cs_post_write_vars().
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the output function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_var()
+ *   or similar before the data pointed to goes out of scope.
+ *
+ * parameters:
+ *   input       <-> pointer to optional (untyped) value or structure.
+ *   mesh_id     <-- id of the output mesh for the current call
+ *   cat_id      <-- category id of the output mesh for the current call
+ *   ent_flag    <-- indicate global presence of cells (ent_flag[0]), interior
+ *                   faces (ent_flag[1]), or boundary faces (ent_flag[2])
+ *   n_cells     <-- local number of cells of post_mesh
+ *   n_i_faces   <-- local number of interior faces of post_mesh
+ *   n_b_faces   <-- local number of boundary faces of post_mesh
+ *   cell_list   <-- list of cells (1 to n) of post-processing mesh
+ *   i_face_list <-- list of interior faces (1 to n) of post-processing mesh
+ *   b_face_list <-- list of boundary faces (1 to n) of post-processing mesh
+ *   nt_cur_abs  <-- current time step number
+ *   t_cur_abs   <-- current physical time
+ *   nt_cur_abs  <-- current time step number
+ *   t_cur_abs   <-- absolute time at the current time step
+ *----------------------------------------------------------------------------*/
+
+typedef void
+(cs_post_time_mesh_dep_output_t) (void             *input,
+                                  int               mesh_id,
+                                  int               cat_id,
+                                  int               ent_flag[3],
+                                  cs_lnum_t         n_cells,
+                                  cs_lnum_t         n_i_faces,
+                                  cs_lnum_t         n_b_faces,
+                                  const cs_lnum_t   cell_list[],
+                                  const cs_lnum_t   i_face_list[],
+                                  const cs_lnum_t   b_face_list[],
+                                  int               nt_cur_abs,
+                                  cs_real_t         t_cur_abs);
 
 /*=============================================================================
  * Global variables
@@ -169,63 +260,6 @@ void CS_PROCF (pstema, PSTEMA)
 );
 
 /*----------------------------------------------------------------------------
- * Loop on post-processing meshes to output variables
- *
- * Fortran interface:
- *
- * subroutine pstvar
- * *****************
- *                  ( ntcabs,
- *                    nvar,   nscal,  nvlsta, nvisbr,
- *                    ttcabs,
- *                    dt,     rtpa,   rtp,    propce, propfa, propfb,
- *                    coefa,  coefb,
- *                    statce, stativ, statfb,
- *                    ra)
- *
- * integer          ntcabs      : --> : current time step number
- * integer          nvar        : <-- : number of variables
- * integer          nscal       : <-- : number of scalars
- * integer          nvlsta      : <-- : number of statistical variables (lagr)
- * integer          nvisbr      : <-- : number of boundary stat. variables (lagr)
- * double precision ttcabs      : <-- : current physical time
- * double precision dt          : <-- : local time step
- * double precision rtpa        : <-- : cell variables at previous time step
- * double precision rtp         : <-- : cell variables
- * double precision propce      : <-- : cell physical properties
- * double precision propfa      : <-- : interior face physical properties
- * double precision propfb      : <-- : boundary face physical properties
- * double precision coefa       : <-- : boundary conditions array
- * double precision coefb       : <-- : boundary conditions array
- * double precision statce      : <-- : cell statistics (lagrangian)
- * double precision stativ      : <-- : cell variance statistics (lagrangian)
- * double precision statfb      : <-- : boundary face statistics (lagrangian)
- * double precision ra          : <-- : ra floating-point array
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstvar, PSTVAR)
-(
- const cs_int_t   *ntcabs,
- const cs_int_t   *nvar,
- const cs_int_t   *nscal,
- const cs_int_t   *nvlsta,
- const cs_int_t   *nvisbr,
- const cs_real_t  *ttcabs,
- const cs_real_t   dt[],
- const cs_real_t   rtpa[],
- const cs_real_t   rtp[],
- const cs_real_t   propce[],
- const cs_real_t   propfa[],
- const cs_real_t   propfb[],
- const cs_real_t   coefa[],
- const cs_real_t   coefb[],
- const cs_real_t   statce[],
- const cs_real_t   stativ[],
- const cs_real_t   statfb[],
-       cs_real_t   ra[]
-);
-
-/*----------------------------------------------------------------------------
  * Post-processing output of a variable defined on cells or faces of a mesh
  * using associated writers.
  *
@@ -266,6 +300,26 @@ void CS_PROCF (pstev1, PSTEV1)
  const cs_real_t   varfbr[]
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
+);
+
+/*----------------------------------------------------------------------------
+ * User override of default frequency or calculation end based output.
+ *
+ * Fortran interface:
+ *
+ * subroutine pstusn (ntmabs, ntcabs, ttcabs)
+ * *****************
+ *
+ * integer          ntmabs      : <-- : maximum time step number
+ * integer          ntcabs      : <-- : current time step number
+ * double precision ttcabs      : <-- : absolute time at the current time step
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstusn, PSTUSN)
+(
+ const cs_int_t  *ntmabs,
+ const cs_int_t  *ntcabs,
+ const cs_real_t *ttcabs
 );
 
 /*============================================================================
@@ -312,8 +366,8 @@ cs_post_define_writer(int                     writer_id,
                       const char             *fmt_opts,
                       fvm_writer_time_dep_t   time_dep,
                       bool                    output_at_end,
-                      cs_int_t                frequency_n,
-                      cs_real_t               frequency_t);
+                      int                     frequency_n,
+                      double                  frequency_t);
 
 /*----------------------------------------------------------------------------
  * Define a volume post-processing mesh.
@@ -338,31 +392,41 @@ cs_post_define_volume_mesh(int          mesh_id,
                            const int    writer_ids[]);
 
 /*----------------------------------------------------------------------------
- * Define a volume post-processing mesh using a cell list.
-
- * The list of cells to extract is sorted upon exit, whether it was sorted
- * upon calling or not.
+ * Define a volume post-processing mesh using a selection function.
+ *
+ * The selection may be updated over time steps if both the time_varying
+ * flag is set to true and the mesh is only associated with writers defined
+ * with the FVM_WRITER_TRANSIENT_CONNECT option.
+ *
+ * Note: if the cell_select_input pointer is non-NULL, it must point
+ * to valid data when the selection function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_meshes()
+ *   with a fixed-mesh writer before the data pointed to goes out of scope;
  *
  * parameters:
- *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
- *   mesh_name      <-- associated mesh name
- *   n_cells        <-- number of selected cells
- *   cell_list      <-> list of selected cells (1 to n numbering)
- *   add_groups     <-- if true, add group information if present
- *   auto_variables <-- if true, automatic output of main variables
- *   n_writers      <-- number of associated writers
- *   writer_ids     <-- ids of associated writers
+ *   mesh_id           <-- id of mesh to define (< 0 reserved, > 0 for user)
+ *   mesh_name         <-- associated mesh name
+ *   cell_select_func  <-- pointer to cells selection function
+ *   cell_select_input <-> pointer to optional input data for the cell
+ *                         selection function, or NULL
+ *   time_varying      <-- if true, try to redefine mesh at each output time
+ *   add_groups        <-- if true, add group information if present
+ *   auto_variables    <-- if true, automatic output of main variables
+ *   n_writers         <-- number of associated writers
+ *   writer_ids        <-- ids of associated writers
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_define_volume_mesh_by_list(int          mesh_id,
-                                   const char  *mesh_name,
-                                   cs_lnum_t    n_cells,
-                                   cs_lnum_t    cell_list[],
-                                   bool         add_groups,
-                                   bool         auto_variables,
-                                   int          n_writers,
-                                   const int    writer_ids[]);
+cs_post_define_volume_mesh_by_func(int                    mesh_id,
+                                   const char            *mesh_name,
+                                   cs_post_elt_select_t  *cell_select_func,
+                                   void                  *cell_select_input,
+                                   bool                   time_varying,
+                                   bool                   add_groups,
+                                   bool                   auto_variables,
+                                   int                    n_writers,
+                                   const int              writer_ids[]);
 
 /*----------------------------------------------------------------------------
  * Define a surface post-processing mesh.
@@ -389,35 +453,47 @@ cs_post_define_surface_mesh(int          mesh_id,
                             const int    writer_ids[]);
 
 /*----------------------------------------------------------------------------
- * Define a surface post-processing mesh using a face list.
+ * Define a surface post-processing mesh using selection functions.
  *
- * Lists of cells or faces to extract are sorted upon exit, whether they
- * were sorted upon calling or not.
+ * The selection may be updated over time steps if both the time_varying
+ * flag is set to true and the mesh is only associated with writers defined
+ * with the FVM_WRITER_TRANSIENT_CONNECT option.
+ *
+ * Note: if i_face_select_input or b_face_select_input pointer is non-NULL,
+ * it must point to valid data when the selection function is called,
+ * so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_meshes()
+ *   with a fixed-mesh writer before the data pointed to goes out of scope;
  *
  * parameters:
- *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
- *   mesh_name      <-- associated mesh name
- *   n_i_faces      <-- number of associated interior faces
- *   n_b_faces      <-- number of associated boundary faces
- *   i_face_list    <-> list of associated interior faces (1 to n numbering)
- *   b_face_list    <-> list of associated boundary faces (1 to n numbering)
- *   add_groups     <-- if true, add group information if present
- *   auto_variables <-- if true, automatic output of main variables
- *   n_writers      <-- number of associated writers
- *   writer_ids     <-- ids of associated writers
+ *   mesh_id             <-- id of mesh to define (< 0 reserved, > 0 for user)
+ *   mesh_name           <-- associated mesh name
+ *   i_face_select_func  <-- pointer to interior faces selection function
+ *   b_face_select_func  <-- pointer to boundary faces selection function
+ *   i_face_select_input <-> pointer to optional input data for the interior
+ *                           faces selection function, or NULL
+ *   b_face_select_input <-> pointer to optional input data for the boundary
+ *                           faces selection function, or NULL
+ *   time_varying        <-- if true, try to redefine mesh at each output time
+ *   add_groups          <-- if true, add group information if present
+ *   auto_variables      <-- if true, automatic output of main variables
+ *   n_writers           <-- number of associated writers
+ *   writer_ids          <-- ids of associated writers
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_define_surface_mesh_by_list(int          mesh_id,
-                                    const char  *mesh_name,
-                                    cs_lnum_t    n_i_faces,
-                                    cs_lnum_t    n_b_faces,
-                                    cs_lnum_t    i_face_list[],
-                                    cs_lnum_t    b_face_list[],
-                                    bool         add_groups,
-                                    bool         auto_variables,
-                                    int          n_writers,
-                                    const int    writer_ids[]);
+cs_post_define_surface_mesh_by_func(int                    mesh_id,
+                                    const char            *mesh_name,
+                                    cs_post_elt_select_t  *i_face_select_func,
+                                    cs_post_elt_select_t  *b_face_select_func,
+                                    void                  *i_face_select_input,
+                                    void                  *b_face_select_input,
+                                    bool                   time_varying,
+                                    bool                   add_groups,
+                                    bool                   auto_variables,
+                                    int                    n_writers,
+                                    const int              writer_ids[]);
 
 /*----------------------------------------------------------------------------
  * Create an alias to a post-processing mesh.
@@ -502,10 +578,10 @@ cs_post_define_existing_mesh(int           mesh_id,
  * the surface mesh with subdivided polygons.
  *
  * parameters:
- *   mesh_id <-- id of edges mesh to create (< 0 reserved, > 0 for user)
- *   base_mesh_id   <-- id of existing mesh (< 0 reserved, > 0 for user)
- *   n_writers  <-- number of associated writers
- *   writer_ids <-- ids of associated writers
+ *   mesh_id      <-- id of edges mesh to create (< 0 reserved, > 0 for user)
+ *   base_mesh_id <-- id of existing mesh (< 0 reserved, > 0 for user)
+ *   n_writers    <-- number of associated writers
+ *   writer_ids   <-- ids of associated writers
  *----------------------------------------------------------------------------*/
 
 void
@@ -513,6 +589,112 @@ cs_post_define_edges_mesh(int        mesh_id,
                           int        base_mesh_id,
                           int        n_writers,
                           const int  writer_ids[]);
+
+/*----------------------------------------------------------------------------
+ * Get a postprocessing meshes entity presence flag.
+ *
+ * This flag is an array of 3 integers, indicating the presence of elements
+ * of given types on at least one subdomain (i.e. rank):
+ *   0: presence of cells
+ *   1: presence of interior faces
+ *   2: presence of boundary faces
+ *
+ * parameters:
+ *   mesh_id <-- postprocessing mesh id
+ *
+ * returns:
+ *   pointer to entity presence flag
+ *----------------------------------------------------------------------------*/
+
+const int *
+cs_post_mesh_get_ent_flag(int  mesh_id);
+
+/*----------------------------------------------------------------------------
+ * Get a postprocessing mesh's number of cells.
+ *
+ * parameters:
+ *   mesh_id <-- postprocessing mesh id
+ *
+ * returns:
+ *   number of cells of postprocessing mesh.
+ *----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_post_mesh_get_n_cells(int  mesh_id);
+
+/*----------------------------------------------------------------------------
+ * Get a postprocessing mesh's list of cells.
+ *
+ * The array of cell ids must be of at least size
+ * cs_post_mesh_get_n_cells(mesh_id).
+ *
+ * parameters:
+ *   mesh_id  <-- postprocessing mesh id
+ *   cell_ids --> array of associated cell ids (0 to n-1 numbering,
+ *                relative to main mesh)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_get_cell_ids(int         mesh_id,
+                          cs_lnum_t  *cell_ids);
+
+/*----------------------------------------------------------------------------
+ * Get a postprocessing mesh's number of interior faces.
+ *
+ * parameters:
+ *   mesh_id <-- postprocessing mesh id
+ *
+ * returns:
+ *   number of cells of postprocessing mesh.
+ *----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_post_mesh_get_n_i_faces(int  mesh_id);
+
+/*----------------------------------------------------------------------------
+ * Get a postprocessing mesh's list of boundary faces.
+ *
+ * The array of boundary face ids must be of at least size
+ * cs_post_mesh_get_n_b_faces(mesh_id).
+ *
+ * parameters:
+ *   mesh_id    <-- postprocessing mesh id
+ *   i_face_ids --> array of associated interior faces ids
+ *                  (0 to n-1 numbering, relative to main mesh)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_get_i_face_ids(int        mesh_id,
+                            cs_lnum_t  i_face_ids[]);
+
+/*----------------------------------------------------------------------------
+ * Get a postprocessing mesh's number of boundary faces
+ *
+ * parameters:
+ *   mesh_id <-- postprocessing mesh id
+ *
+ * returns:
+ *   number of cells of postprocessing mesh.
+ *----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_post_mesh_get_n_b_faces(int  mesh_id);
+
+/*----------------------------------------------------------------------------
+ * Get a postprocessing mesh's list of boundary faces.
+ *
+ * The array of boundary face ids must be of at least size
+ * cs_post_mesh_get_n_b_faces(mesh_id).
+ *
+ * parameters:
+ *   mesh_id    <-- postprocessing mesh id
+ *   b_face_ids --> array of associated boundary faces ids
+ *                  (0 to n-1 numbering, relative to main mesh)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_get_b_face_ids(int        mesh_id,
+                            cs_lnum_t  b_face_ids[]);
 
 /*----------------------------------------------------------------------------
  * Remove a post-processing mesh.
@@ -554,7 +736,7 @@ cs_post_writer_exists(int  writer_id);
  *----------------------------------------------------------------------------*/
 
 fvm_writer_t *
-cs_post_get_writer(cs_int_t  writer_id);
+cs_post_get_writer(int  writer_id);
 
 /*----------------------------------------------------------------------------
  * Check for the existence of a post-processing mesh of the given id.
@@ -589,13 +771,13 @@ cs_post_mesh_exists(int  mesh_id);
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_modify_mesh(int       mesh_id,
-                    cs_int_t  n_cells,
-                    cs_int_t  n_i_faces,
-                    cs_int_t  n_b_faces,
-                    cs_int_t  cell_list[],
-                    cs_int_t  i_face_list[],
-                    cs_int_t  b_face_list[]);
+cs_post_modify_mesh(int        mesh_id,
+                    cs_lnum_t  n_cells,
+                    cs_lnum_t  n_i_faces,
+                    cs_lnum_t  n_b_faces,
+                    cs_lnum_t  cell_list[],
+                    cs_lnum_t  i_face_list[],
+                    cs_lnum_t  b_face_list[]);
 
 /*----------------------------------------------------------------------------
  * Return the default writer format name
@@ -699,12 +881,12 @@ cs_post_write_meshes(int     nt_cur_abs,
 void
 cs_post_write_var(int              mesh_id,
                   const char      *var_name,
-                  cs_int_t         var_dim,
+                  int              var_dim,
                   bool             interlace,
                   bool             use_parent,
                   cs_post_type_t   var_type,
-                  cs_int_t         nt_cur_abs,
-                  cs_real_t        t_cur_abs,
+                  int              nt_cur_abs,
+                  double           t_cur_abs,
                   const void      *cel_vals,
                   const void      *i_face_vals,
                   const void      *b_face_vals);
@@ -729,12 +911,12 @@ cs_post_write_var(int              mesh_id,
 void
 cs_post_write_vertex_var(int              mesh_id,
                          const char      *var_name,
-                         cs_int_t         var_dim,
+                         int              var_dim,
                          bool             interlace,
                          bool             use_parent,
                          cs_post_type_t   var_type,
-                         cs_int_t         nt_cur_abs,
-                         cs_real_t        t_cur_abs,
+                         int              nt_cur_abs,
+                         double           t_cur_abs,
                          const void      *vtx_vals);
 
 /*----------------------------------------------------------------------------
@@ -751,7 +933,7 @@ cs_post_write_vertex_var(int              mesh_id,
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_renum_cells(const cs_int_t  init_cell_num[]);
+cs_post_renum_cells(const cs_lnum_t  init_cell_num[]);
 
 /*----------------------------------------------------------------------------
  * Update references to parent mesh of post-processing meshes in case of
@@ -768,8 +950,8 @@ cs_post_renum_cells(const cs_int_t  init_cell_num[]);
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_renum_faces(const cs_int_t  init_i_face_num[],
-                    const cs_int_t  init_b_face_num[]);
+cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
+                    const cs_lnum_t  init_b_face_num[]);
 
 /*----------------------------------------------------------------------------
  * Initialize post-processing writers
@@ -802,6 +984,21 @@ cs_post_init_writers(void);
 
 void
 cs_post_init_meshes(int check_mask);
+
+/*----------------------------------------------------------------------------
+ * Loop on post-processing meshes to output variables.
+ *
+ * This handles all default fields output, as well as all
+ * registred output functions.
+ *
+ * parameters:
+ *   nt_cur_abs  <-- current time step number
+ *   t_cur_abs   <-- current physical time
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_write_vars(int     nt_cur_abs,
+                   double  t_cur_abs);
 
 /*----------------------------------------------------------------------------
  * Destroy all structures associated with post-processing
@@ -842,20 +1039,42 @@ int
 cs_post_init_error_writer_cells(void);
 
 /*----------------------------------------------------------------------------
- * Register a processing of a time-dependent variable to the call to PSTVAR.
+ * Register a processing of time-dependent variables to the call to
+ * cs_post_write_vars().
  *
- * The instance identifier associated with the function allows registering
- * the same function several times, with a diferent identifier allowing the
- * function to select a specific operation or data.
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the output function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_var()
+ *   or similar before the data pointed to goes out of scope.
  *
  * parameters:
- *   function    <-- function to register
- *   instance_id <-- instance id associated with this registration
+ *   function <-- function to register
+ *   input    <-> pointer to optional (untyped) value or structure.
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_add_time_dep_var(cs_post_time_dep_var_t  *function,
-                         int                      instance_id);
+cs_post_add_time_dep_output(cs_post_time_dep_output_t  *function,
+                            void                       *input);
+
+/*----------------------------------------------------------------------------
+ * Register a processing of time-dependent variables than can be output
+ * on different meshes to the call to cs_post_write_vars().
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the output function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_var()
+ *   or similar before the data pointed to goes out of scope.
+ *
+ * parameters:
+ *   function <-- function to register
+ *   input    <-> pointer to optional (untyped) value or structure.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_add_time_mesh_dep_output(cs_post_time_mesh_dep_output_t  *function,
+                                 void                            *input);
 
 /*----------------------------------------------------------------------------*/
 

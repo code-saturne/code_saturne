@@ -585,20 +585,6 @@ cs_ctwr_post_init(cs_int_t  ct_id,
                   cs_int_t  writer_id);
 
 /*----------------------------------------------------------------------------
- * Post process variables associated with exchange area
- *
- * parameters:
- *   coupling_id         -->  Id of exchange area
- *   nt_cur_abs          -->  Current time step
- *   t_cur_abs           -->  Current time value
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_post_function(cs_int_t   ct_id,
-                      cs_int_t   nt_cur_abs,
-                      cs_real_t  t_cur_abs);
-
-/*----------------------------------------------------------------------------
  * Get pointer to exchange area.
  *
  * parameters:

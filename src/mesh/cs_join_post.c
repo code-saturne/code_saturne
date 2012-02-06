@@ -35,24 +35,17 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *---------------------------------------------------------------------------*/
-
-#include <bft_error.h>
-#include <bft_mem.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *---------------------------------------------------------------------------*/
-
-#include <fvm_nodal.h>
-#include <fvm_nodal_order.h>
-#include <fvm_nodal_from_desc.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *---------------------------------------------------------------------------*/
 
+#include "bft_error.h"
+#include "bft_mem.h"
+
+#include "fvm_nodal.h"
+#include "fvm_nodal_order.h"
+#include "fvm_nodal_from_desc.h"
+
+#include "cs_mesh_connect.h"
 #include "cs_post.h"
 
 /*----------------------------------------------------------------------------
@@ -412,6 +405,7 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
 
   int  writer_ids[] = {_cs_join_post_param.writer_num};
   char  *mesh_name = NULL;
+  fvm_nodal_t *adj_mesh = NULL, *sel_mesh = NULL;
 
   if (_cs_join_post_initialized == false)
     return;
@@ -421,32 +415,42 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
   BFT_MALLOC(mesh_name, strlen("AdjacentJoinFaces_j") + 2 + 1, char);
   sprintf(mesh_name,"%s%02d", "AdjacentJoinFaces_j", join_param.num);
 
-  cs_post_define_surface_mesh_by_list(adj_mesh_id,
-                                      mesh_name,
-                                      join_select->n_i_adj_faces,
-                                      join_select->n_b_adj_faces,
-                                      join_select->i_adj_faces,
-                                      join_select->b_adj_faces,
-                                      false,
-                                      false,
-                                      1,
-                                      writer_ids);
+  adj_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                            mesh_name,
+                                            false, /* include families */
+                                            join_select->n_i_adj_faces,
+                                            join_select->n_b_adj_faces,
+                                            join_select->i_adj_faces,
+                                            join_select->b_adj_faces);
+
+  cs_post_define_existing_mesh(adj_mesh_id,
+                               adj_mesh,
+                               0,    /* dim_shift */
+                               true, /* transfer ownership */
+                               false,
+                               1,
+                               writer_ids);
 
   sel_mesh_id = cs_post_get_free_mesh_id();
 
   BFT_REALLOC(mesh_name, strlen("JoinFacesAfterMerge_j") + 2 + 1, char);
   sprintf(mesh_name,"%s%02d", "JoinFacesAfterMerge_j", join_param.num);
 
-  cs_post_define_surface_mesh_by_list(sel_mesh_id,
-                                      mesh_name,
-                                      0,
-                                      join_select->n_faces,
-                                      NULL,
-                                      join_select->faces,
-                                      false,
-                                      false,
-                                      1,
-                                      writer_ids);
+  sel_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                            mesh_name,
+                                            false, /* include families */
+                                            join_select->n_faces,
+                                            0,
+                                            join_select->faces,
+                                            NULL);
+
+  cs_post_define_existing_mesh(sel_mesh_id,
+                               sel_mesh,
+                               0,    /* dim_shift */
+                               true, /* transfer ownership */
+                               false,
+                               1,
+                               writer_ids);
 
   /* Post */
 
@@ -480,8 +484,9 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
 
   int  writer_ids[] = {_cs_join_post_param.writer_num};
   char  *mesh_name = NULL;
-  cs_int_t  *post_i_faces = NULL, *post_b_faces = NULL;
-  cs_int_t  post_i_mesh_id = cs_post_get_free_mesh_id();
+  cs_lnum_t  *post_i_faces = NULL, *post_b_faces = NULL;
+  fvm_nodal_t  *post_i_mesh = NULL;
+  int  post_i_mesh_id = cs_post_get_free_mesh_id();
 
   const int  n_new_i_faces = mesh->n_i_faces - n_old_i_faces;
   const int  n_new_b_faces = mesh->n_b_faces - n_old_b_faces + n_select_faces;
@@ -506,34 +511,45 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
   BFT_MALLOC(mesh_name, strlen("InteriorJoinedFaces_j") + 2 + 1, char);
   sprintf(mesh_name,"%s%02d", "InteriorJoinedFaces_j", join_param.num);
 
-  cs_post_define_surface_mesh_by_list(post_i_mesh_id,
-                                      mesh_name,
-                                      n_new_i_faces,
-                                      0,
-                                      post_i_faces,
-                                      NULL,
-                                      false,
-                                      false,
-                                      1,
-                                      writer_ids);
+  post_i_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                               mesh_name,
+                                               false, /* include families */
+                                               n_new_i_faces,
+                                               0,
+                                               post_i_faces,
+                                               NULL);
+
+  cs_post_define_existing_mesh(post_i_mesh_id,
+                               post_i_mesh,
+                               0,    /* dim_shift */
+                               true, /* transfer ownership */
+                               false,
+                               1,
+                               writer_ids);
 
   if (join_param.visualization > 1 && n_g_new_b_faces > 0) {
 
     cs_int_t  post_b_mesh_id = cs_post_get_free_mesh_id();
+    fvm_nodal_t  *post_b_mesh = NULL;
 
     BFT_REALLOC(mesh_name, strlen("BoundaryJoinedFaces_j") + 2 + 1, char);
     sprintf(mesh_name,"%s%02d", "BoundaryJoinedFaces_j", join_param.num);
 
-    cs_post_define_surface_mesh_by_list(post_b_mesh_id,
-                                        mesh_name,
-                                        0,
-                                        n_new_b_faces,
-                                        NULL,
-                                        post_b_faces,
-                                        false,
-                                        false,
-                                        1,
-                                        writer_ids);
+    post_b_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                 mesh_name,
+                                                 false, /* include families */
+                                                 0,
+                                                 n_new_b_faces,
+                                                 NULL,
+                                                 post_b_faces);
+
+    cs_post_define_existing_mesh(post_b_mesh_id,
+                                 post_b_mesh,
+                                 0,    /* dim_shift */
+                                 true, /* transfer ownership */
+                                 false,
+                                 1,
+                                 writer_ids);
 
   }
 
@@ -568,6 +584,7 @@ cs_join_post_cleaned_faces(cs_int_t         n_i_clean_faces,
   int  writer_ids[] = {_cs_join_post_param.writer_num};
   int  post_mesh_id = cs_post_get_free_mesh_id();
   char  *name = NULL;
+  fvm_nodal_t *export_mesh = NULL;
 
   if (_cs_join_post_initialized == false)
     return;
@@ -575,18 +592,23 @@ cs_join_post_cleaned_faces(cs_int_t         n_i_clean_faces,
   BFT_MALLOC(name, strlen("CleanFaces_j") + 2 + 1, char);
   sprintf(name,"%s%02d", "CleanFaces_j", param.num);
 
-  cs_post_define_surface_mesh_by_list(post_mesh_id,
-                                      name,
-                                      n_i_clean_faces,
-                                      n_b_clean_faces,
-                                      i_clean_faces,
-                                      b_clean_faces,
-                                      false,
-                                      false,
-                                      1,
-                                      writer_ids);
+  export_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                               name,
+                                               false, /* include families */
+                                               n_i_clean_faces,
+                                               n_b_clean_faces,
+                                               i_clean_faces,
+                                               b_clean_faces);
 
-  /* Otput post-processing data */
+  cs_post_define_existing_mesh(post_mesh_id,
+                               export_mesh,
+                               0,    /* dim_shift */
+                               true, /* transfer ownership */
+                               false,
+                               1,
+                               writer_ids);
+
+  /* Output post-processing data */
 
   cs_post_activate_writer(_cs_join_post_param.writer_num, 1);
   cs_post_write_meshes(1,0);

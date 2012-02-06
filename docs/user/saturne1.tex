@@ -3083,7 +3083,8 @@ define a subset of the mesh, for example:
 \item volumic initialization (cf. \texttt{usiniv},...),
 \item head-loss region (cf. \texttt{uskpdc}),
 \item source terms region (cf. \texttt{ustsns}, \texttt{ustssc}),
-\item advanced post-processing (cf. \texttt{usdpst}), \texttt{usproj}, ...),
+\item advanced post-processing (cf. \texttt{cs\_user\_postprocess.c},
+      \texttt{usproj}, ...),
 \end{list}
 
 This section explains how to define surface or volume sections,
@@ -5435,7 +5436,7 @@ mesh, or ``part'' created. The arguments of the function
        \item \texttt{fmt\_name}: choice of the output format:
         \begin{list}{$\rightarrow$}{}
                \item {\em EnSight Gold} ({\em EnSight} also accepted)
-               \item {\em MED\_fichier} ({\em MED} also accepted)
+               \item {\em MED}
                \item {\em CGNS}
          \end{list}
 The options are not case-sensitive, so {\em ensight} or {\em cgns} are valid, too.
@@ -5515,8 +5516,13 @@ modification (\texttt{time\_dep = FVM\_WRITER\_FIXED\_MESH}),
 a user post-processing mesh
 associated with the writers 1 and 2 will not be modifiable, but a
 mesh associated only with the writer 1 will be modifiable. The
-modification is done by means of the user subroutine \texttt{usmpst},
-which is called once per time step and per modifiable mesh.
+modification may be done by using the advanced
+cs\_post\_define\_volume\_mesh\_by\_func() or
+cs\_post\_define\_surface\_mesh\_by\_func(), associated with a user-defined
+selection function based on time-varying criteria (such as field values
+being above a given threshold). If the \texttt{time\_dep} argument is
+set to \texttt{true}, the mesh will be redefined using the selection
+function at each output time step for every modifiable mesh.
 
 It is possible to output variables which are normally automatically
 output on the main volume or boundary meshes to a user mesh which is a subset
@@ -5563,59 +5569,13 @@ mesh only if it contains local elements, global operations on that
 mesh would become impossible, leading to probable deadlocks or crashes.}
 
 %==================================
-\subsection{Modification of the mesh zones to post-process}
-%==================================
-
-\noindent
-\textit{Subroutine called only for each modifiable ``part'', at every
-active time step of an associated ``writer''.}
-
-The subroutine \texttt{usmpst} is used to modify the
-lists of cells, internal and boundary faces which define a ``user part'' (or
-post-processing mesh) defined through the user subroutine
-\texttt{usdpst} and associated only with ``writers''; allowing ``part''
-modifications over time ({\em i.e.} created with the
-parameter \texttt{indmod} = 2).
-
-At first, the corresponding lists contain the previously defined
-values. If these lists are modified for a given post-processing mesh, the
-argument \texttt{imodif} must be given the value 1.If this argument
- maintains it's initial value of 0, the code will not consider this
- "part" to have been modified away from that call and it will offer
- to bring it upto date. It is in fact at the end of an optimisation
- so there is no need to modify these "parts" within the definate and
- modifiable assembly (if in doubt, let imodif=1).
-
-Note that the \texttt{itypps} flag can be used to determine
-whether the current post-processing mesh contains cells
-(\texttt{itypps(1)} = 1), internal faces (\texttt{itypps(2)} = 1), or
-boundary faces (\texttt{itypps(2)} = 1) globally (as the number of local cells
- or faces of a processor could be 0, it doesn't provide sufficient
- information).
- If at any time, a given part contains no element of any type, all the
- values of itypes will be 0 and that number cannot be put in the part
-(\texttt {nummai}) to determine if it will affect the cells or
-faces\footnote{It is not expressly forbidden to associate cells with the
-``part'' at a certain timestep and faces at another, but this has not been tested}.
-
-The user may refer to the example, in which cells are selected according
-to a given criterion: \\
-- For a volume ``part'', cells for which the velocity exceeds a certain
-value. \\
-- For a surface ``part'', interior faces which are between a cell in
-which the velocity exceeds a certain value and a cell in which the
-velocity is lower than this value (and boundary faces neighboring a
-cell in which the velocity exceeds this value). This surface
-post-processing mesh corresponds therefore to an approximation of a
-velocity isosurface.
-
-%==================================
 \subsection{Definition of the variables to post-process}
 %==================================
 
-For the parts defined in \texttt{usdpst}, the subroutine \texttt{usvpst}
-is used to specify the variables to post-process (called for each ``part'', at every active time step of an
-associated ``writer'', see \texttt{usdpst}).
+For the mesh parts defined using the GUI or in \texttt{cs\_user\_postprocess.c},
+the \texttt{usvpst} subroutine  may be used to specify the variables to
+post-process (called for each ``part'', at every active time step of an
+associated ``writer'', see \texttt{cs\_user\_postprocess.c}.
 
 The output of a given variable is generated by means of a call to
 \texttt{psteva}, whose arguments are:
@@ -5681,8 +5641,9 @@ recommended not to generate the same variables at every call
 (corresponding to an active time step) for a given mesh, because the
 post-processing tool may have difficulties to deal with such a case. To
 generate outputs of different variables on the same mesh with different
-frequancies, it is recommended to create an alias of this mesh and to
-associate it with a different ``writer'' in the subroutine \texttt{usdpst}.}
+frequencies, it is recommended to create an alias of this mesh and to
+associate it with a different ``writer'' using the GUI or in
+\texttt{cs\_user\_postprocess.c}.}
 
 %==================================
 \subsection{Modification of the variables at the end of a time step}

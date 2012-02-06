@@ -33,22 +33,16 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include "bft_mem.h"
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include "fvm_writer.h"
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_error.h"
+
+#include "fvm_writer.h"
+
 #include "cs_base.h"
+#include "cs_field.h"
 #include "cs_mesh.h"
 #include "cs_selector.h"
 
@@ -63,6 +57,195 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*============================================================================
+ * Local (user defined) function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Example function for advanced selection of interior faces.
+ *
+ * Selects interior faces separating cells of group "2" from those
+ * of group "3", (assuming no cell has both colors).
+ *
+ * parameters:
+ *   input    <-> pointer to input (unused here)
+ *   n_faces  --> number of selected faces
+ *   face_ids --> array of selected face ids (0 to n-1 numbering)
+ *----------------------------------------------------------------------------*/
+
+static void
+_i_faces_select_example(void         *input,
+                        cs_lnum_t    *n_faces,
+                        cs_lnum_t   **face_ids)
+{
+  cs_lnum_t i, face_id;
+  cs_lnum_t n_families = 0;
+  cs_int_t *family_list = NULL;
+  int *family_mask = NULL;
+
+  cs_lnum_t n_i_faces = 0;
+  cs_lnum_t *i_face_ids = NULL;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  /* Allocate selection list */
+
+  BFT_MALLOC(i_face_ids, m->n_i_faces, cs_lnum_t);
+
+  /* Build mask on families matching groups "2" (1), "3" (2) */
+
+  BFT_MALLOC(family_list, m->n_families, cs_int_t);
+  BFT_MALLOC(family_mask, m->n_families, int);
+
+  for (i = 0; i < m->n_families; i++)
+    family_mask[i] = 0;
+
+  cs_selector_get_family_list("2",  &n_families, family_list);
+
+  for (i = 0; i < n_families; i++)
+    family_mask[family_list[i] - 1] += 1;
+
+  cs_selector_get_family_list("3",  &n_families, family_list);
+
+  for (i = 0; i < n_families; i++)
+    family_mask[family_list[i] - 1] += 2;
+
+  BFT_FREE(family_list);
+
+  /* Now that mask is built, test for adjacency */
+
+  for (face_id = 0; face_id < m->n_i_faces; face_id++) {
+
+    /* Adjacent cells  and flags */
+
+    cs_lnum_t c1 = m->i_face_cells[face_id*2] - 1;
+    cs_lnum_t c2 = m->i_face_cells[face_id*2 + 1] - 1;
+
+    int iflag1 = family_mask[m->cell_family[c1]];
+    int iflag2 = family_mask[m->cell_family[c2]];
+
+    /* Should the face belong to the extracted mesh ? */
+
+    if ((iflag1 == 1 && iflag2 == 2) || (iflag1 == 2 && iflag2 == 1)) {
+      i_face_ids[n_i_faces] = face_id;
+      n_i_faces += 1;
+    }
+
+  }
+
+  /* Free memory */
+
+  BFT_FREE(family_mask);
+  BFT_REALLOC(i_face_ids, n_i_faces, cs_lnum_t);
+
+  /* Set return values */
+
+  *n_faces = n_i_faces;
+  *face_ids = i_face_ids;
+}
+
+/*----------------------------------------------------------------------------
+ * Example function for selection of boundary faces.
+ *
+ * selects boundary faces of group "4".
+ *
+ * parameters:
+ *   input    <-> pointer to input (unused here)
+ *   n_faces  --> number of selected faces
+ *   face_ids --> array of selected face ids (0 to n-1 numbering)
+ *----------------------------------------------------------------------------*/
+
+static void
+_b_faces_select_example(void         *input,
+                        cs_lnum_t    *n_faces,
+                        cs_lnum_t   **face_ids)
+{
+  cs_lnum_t i;
+
+  cs_lnum_t n_b_faces = 0;
+  cs_lnum_t *b_face_ids = NULL;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  /* Allocate selection list */
+
+  BFT_MALLOC(b_face_ids, m->n_b_faces, cs_lnum_t);
+
+  /* Use simple selection function */
+
+  cs_selector_get_b_face_list("4", &n_b_faces, b_face_ids);
+
+  /* Convert from 1 to 0 based indexing */
+
+  for (i = 0; i < n_b_faces; i++)
+    b_face_ids[i] -= 1;
+
+  /* Adjust array to final size (cleaner, but not required) */
+
+  BFT_REALLOC(b_face_ids, n_b_faces, cs_lnum_t);
+
+  /* Set return values */
+
+  *n_faces = n_b_faces;
+  *face_ids = b_face_ids;
+}
+
+/*----------------------------------------------------------------------------
+ * Example function for selection of cells with scalar field values above
+ * a certain threshold.
+ *
+ * In this example, the selection is base on the value of a scalar field
+ * named "he_fraction" being above above 0.05.
+ *
+ * parameters:
+ *   input    <-> pointer to input (unused here)
+ *   n_cells  --> number of selected cells
+ *   cell_ids --> array of selected cell ids (0 to n-1 numbering)
+ *----------------------------------------------------------------------------*/
+
+static void
+_he_fraction_05_select(void        *input,
+                       cs_lnum_t   *n_cells,
+                       cs_lnum_t  **cell_ids)
+{
+  cs_lnum_t i;
+
+  cs_lnum_t _n_cells = 0;
+  cs_lnum_t *_cell_ids = NULL;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  cs_field_t *f = cs_field_by_name("He_fraction"); /* Get access to field */
+
+  if (f == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "No field with name \"He_fraction\" defined");
+
+  /* Before time loop, field is defined, but has no values yet,
+     so ignore that case (postprocessing mesh will be initially empty) */
+
+  if (f->val != NULL) {
+
+    BFT_MALLOC(_cell_ids, m->n_cells, cs_lnum_t); /* Allocate selection list */
+
+    for (i = 0; i < m->n_cells; i++) {
+      if (f->val[i] > 5.e-2) {
+        _cell_ids[_n_cells] = i;
+        _n_cells += 1;
+      }
+    }
+
+    BFT_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
+                                                    but not required) */
+
+  }
+
+  /* Set return values */
+
+  *n_cells = _n_cells;
+  *cell_ids = _cell_ids;
+}
 
 /*============================================================================
  * User function definitions
@@ -289,49 +472,6 @@ cs_user_postprocess_meshes(void)
 
   /*--------------------------------------------------------------------------*/
 
-  if (false) {
-
-    /* Example: select all cells, and will modify the selection in 'usmpst' */
-
-    const int n_writers = 1;
-    const int writer_ids[] = {3};  /* Associate to writer 3 */
-
-    cs_post_define_volume_mesh(2,                 /* mesh id */
-                               "Volume v > 0.5",
-                               "all[]",
-                               false,             /* add_groups */
-                               true,              /* auto_variables */
-                               n_writers,
-                               writer_ids);
-
-  }
-
-  /*--------------------------------------------------------------------------*/
-
-  if (false) {
-
-    /* Example: select all boundary faces, and will modify the selection
-       in 'usmpst'. */
-
-    const int n_writers = 1;
-    const int writer_ids[] = {3};  /* Associate to writer 3 */
-
-    const char *interior_criteria = NULL;
-    const char *boundary_criteria = "all[]";
-
-    cs_post_define_surface_mesh(3,                /* mesh id */
-                                "Surface iso v",
-                                interior_criteria,
-                                boundary_criteria,
-                                false,            /* add_groups */
-                                true,             /* auto_variables */
-                                n_writers,
-                                writer_ids);
-
-  }
-
-  /*--------------------------------------------------------------------------*/
-
   /* The same variables will be output through all writers associated
    * to a mesh. In cases where different variables of a same mesh should
    * be output throught different writers, the solution is to define one or
@@ -354,7 +494,7 @@ cs_user_postprocess_meshes(void)
     const int n_writers = 1;
     const int writer_ids[] = {4};  /* Associate to writer 4 */
 
-    cs_post_define_alias_mesh(4,                 /* mesh id */
+    cs_post_define_alias_mesh(2,                 /* mesh id */
                               -2,                /* aliased mesh id */
                               false,             /* auto_variables */
                               n_writers,
@@ -365,31 +505,36 @@ cs_user_postprocess_meshes(void)
   /*--------------------------------------------------------------------------*/
 
   /* More advanced mesh element selection is possible using
-   * cs_post_define_volume_mesh_by_list() or
-   * cs_post_define_surface_mesh_by_list(), which allow defining
+   * cs_post_define_volume_mesh_by_func() or
+   * cs_post_define_surface_mesh_by_func(), which allow defining
    * volume or surface meshes using user-defined element lists.
    *
-   * parameters for cs_post_define_volume_mesh_by_list():
-   *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
-   *   mesh_name      <-- associated mesh name
-   *   n_cells        <-- number of selected cells
-   *   cell_list      <-> list of selected cells (1 to n numbering)
-   *   add_groups     <-- if true, add group information if present
-   *   auto_variables <-- if true, automatic output of main variables
-   *   n_writers      <-- number of associated writers
-   *   writer_ids     <-- ids of associated writers
+   * parameters for cs_post_define_volume_mesh_by_func():
+   *   mesh_id           <-- id of mesh to define (< 0 reserved, > 0 for user)
+   *   mesh_name         <-- associated mesh name
+   *   cell_select_func  <-- pointer to cells selection function
+   *   cell_select_input <-> pointer to optional input data for the cell
+   *                         selection function, or NULL
+   *   time_varying      <-- if true, try to redefine mesh at each output time
+   *   add_groups        <-- if true, add group information if present
+   *   auto_variables    <-- if true, automatic output of main variables
+   *   n_writers         <-- number of associated writers
+   *   writer_ids        <-- ids of associated writers
    *
-   * parameters for cs_post_define_surface_mesh_by_list():
-   *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
-   *   mesh_name      <-- associated mesh name
-   *   n_i_faces      <-- number of associated interior faces
-   *   n_b_faces      <-- number of associated boundary faces
-   *   i_face_list    <-> list of associated interior faces (1 to n numbering)
-   *   b_face_list    <-> list of associated boundary faces (1 to n numbering)
-   *   add_groups     <-- if true, add group information if present
-   *   auto_variables <-- if true, automatic output of main variables
-   *   n_writers      <-- number of associated writers
-   *   writer_ids     <-- ids of associated writers */
+   * parameters for cs_post_define_surface_mesh_by_func():
+   *   mesh_id             <-- id of mesh to define (< 0 reserved, > 0 for user)
+   *   mesh_name           <-- associated mesh name
+   *   i_face_select_func  <-- pointer to interior faces selection function
+   *   b_face_select_func  <-- pointer to boundary faces selection function
+   *   i_face_select_input <-> pointer to optional input data for the interior
+   *                           faces selection function, or NULL
+   *   b_face_select_input <-> pointer to optional input data for the boundary
+   *                           faces selection function, or NULL
+   *   time_varying        <-- if true, try to redefine mesh at each output time
+   *   add_groups          <-- if true, add group information if present
+   *   auto_variables      <-- if true, automatic output of main variables
+   *   n_writers           <-- number of associated writers
+   *   writer_ids          <-- ids of associated writers */
 
   if (false) {
 
@@ -398,93 +543,44 @@ cs_user_postprocess_meshes(void)
        from those of group "3", (assuming no cell has both colors), as well as
        boundary faces of group "4". */
 
-    cs_lnum_t n_i_faces = 0, n_b_faces = 0;
-    cs_lnum_t *i_face_list = NULL, *b_face_list = NULL;
-
     const int n_writers = 1;
     const int writer_ids[] = {1};  /* Associate to writer 1 */
 
-    const cs_mesh_t *m = cs_glob_mesh;
-
-    /* Allocate selection lists */
-
-    BFT_MALLOC(i_face_list, m->n_i_faces, cs_lnum_t);
-    BFT_MALLOC(b_face_list, m->n_b_faces, cs_lnum_t);
-
-    /* Select interior faces */
-
-    {
-      cs_lnum_t i, face_id;
-      cs_lnum_t n_families = 0;
-      cs_int_t *family_list = NULL;
-      int *family_mask = NULL;
-
-      /* Build mask on families matching groups "2" (1), "3" (2) */
-
-      BFT_MALLOC(family_list, m->n_families, cs_int_t);
-      BFT_MALLOC(family_mask, m->n_families, int);
-
-      for (i = 0; i < m->n_families; i++)
-        family_mask[i] = 0;
-
-      cs_selector_get_family_list("2",  &n_families, family_list);
-
-      for (i = 0; i < n_families; i++)
-        family_mask[family_list[i] - 1] += 1;
-
-      cs_selector_get_family_list("3",  &n_families, family_list);
-
-      for (i = 0; i < n_families; i++)
-        family_mask[family_list[i] - 1] += 2;
-
-      BFT_FREE(family_list);
-
-      /* Now that mask is built, test for adjacency */
-
-      for (face_id = 0; face_id < m->n_i_faces; face_id++) {
-
-        /* Adjacent cells  and flags */
-
-        cs_lnum_t c1 = m->i_face_cells[face_id*2] - 1;
-        cs_lnum_t c2 = m->i_face_cells[face_id*2 + 1] - 1;
-
-        int iflag1 = family_mask[m->cell_family[c1]];
-        int iflag2 = family_mask[m->cell_family[c2]];
-
-        /* Should the face belong to the extracted mesh ? */
-
-        if ((iflag1 == 1 && iflag2 == 2) || (iflag1 == 2 && iflag2 == 1)) {
-          i_face_list[n_i_faces] = face_id + 1;
-          n_i_faces += 1;
-        }
-
-      }
-
-      BFT_FREE(family_mask);
-    }
-
-    /* Select boundary faces */
-
-    cs_selector_get_b_face_list("4", &n_b_faces, b_face_list);
-
     /* Define postprocessing mesh */
 
-    cs_post_define_surface_mesh_by_list(5,               /* mesh id */
+    cs_post_define_surface_mesh_by_func(3,               /* mesh id */
                                         "Mixed surface",
-                                        n_i_faces,
-                                        n_b_faces,
-                                        i_face_list,
-                                        b_face_list,
+                                        _i_faces_select_example,
+                                        _b_faces_select_example,
+                                        NULL,            /* i_faces_sel_input */
+                                        NULL,            /* b_faces_sel_input */
+                                        false,           /* time varying */
                                         false,           /* add_groups */
                                         false,           /* auto_variables */
                                         n_writers,
                                         writer_ids);
+  }
 
-    /* Free selection lists */
+  /* Advanced example:
+     Build a (time varying) volume mesh containing cells
+     with values of field named "He_fraction" > 0.05 */
 
-    BFT_FREE(i_face_list);
-    BFT_FREE(b_face_list);
+  if (false) {
 
+    const int n_writers = 1;
+    const int writer_ids[] = {2};  /* Associate to writer 1 */
+
+    /* Define postprocessing mesh */
+
+    cs_post_define_volume_mesh_by_func(4,               /* mesh id */
+                                       "He_fraction_05",
+                                       _he_fraction_05_select,
+                                       NULL,            /* _c_05_select_input */
+                                       true,            /* time varying */
+                                       false,           /* add_groups */
+                                       false,           /* auto_variables */
+                                       n_writers,
+                                       writer_ids);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -510,7 +606,7 @@ cs_user_postprocess_meshes(void)
     const int n_writers = 1;
     const int writer_ids[] = {4};  /* Associate to writer 4 */
 
-    cs_post_define_edges_mesh(6, /* mesh_id */
+    cs_post_define_edges_mesh(5, /* mesh_id */
                               1, /* base_mesh_id */
                               n_writers,
                               writer_ids);
@@ -550,33 +646,6 @@ cs_user_postprocess_activate(int     nt_max_abs,
     }
 
   }
-}
-
-/*============================================================================
- * Fortran-callable wrapper for user function definitions (do not remove).
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * User override of default frequency or calculation end based output.
- *
- * Fortran interface:
- *
- * subroutine pstusn (ntmabs, ntcabs, ttcabs)
- * *****************
- *
- * integer          ntmabs      : <-- : maximum time step number
- * integer          ntcabs      : <-- : current time step number
- * double precision ttcabs      : <-- : absolute time at the current time step
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstusn, PSTUSN)
-(
- const cs_int_t  *ntmabs,
- const cs_int_t  *ntcabs,
- const cs_real_t *ttcabs
-)
-{
-  cs_user_postprocess_activate(*ntmabs, *ntcabs, *ttcabs);
 }
 
 /*----------------------------------------------------------------------------*/

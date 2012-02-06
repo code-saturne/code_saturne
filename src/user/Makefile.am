@@ -102,7 +102,6 @@ uslaru.f90 \
 uslast.f90 \
 uslatc.f90 \
 uslatp.f90 \
-usmpst.f90 \
 usphyv.f90 \
 usproj.f90 \
 uspt1d.f90 \

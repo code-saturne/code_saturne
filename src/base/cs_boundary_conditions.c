@@ -102,6 +102,15 @@ typedef struct
  * Local Structure Definitions
  *----------------------------------------------------------------------------*/
 
+/* Face marker structure for selecting error postprocessing output faces. */
+
+typedef struct {
+
+  cs_lnum_t       n_faces;   /* Number of boundary faces */
+  unsigned char  *flag;      /* 0 for unmarked faces, 1 for marked faces */
+
+} _error_face_marker_t;
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -176,6 +185,70 @@ _min_gnum_face(cs_gnum_t  *face_gnum,
 #endif
 }
 
+/*----------------------------------------------------------------------------
+ * Function for selection of faces with boundary condition errors.
+ *
+ * parameters:
+ *   input    <-- pointer to input (face marker structure)
+ *   n_faces  --> number of selected faces
+ *   face_ids --> array of selected face ids (0 to n-1 numbering)
+ *----------------------------------------------------------------------------*/
+
+static void
+_post_error_faces_select(void         *input,
+                         cs_lnum_t    *n_faces,
+                         cs_lnum_t   **face_ids)
+{
+  cs_lnum_t face_id;
+
+  cs_lnum_t _n_faces = 0;
+  cs_lnum_t *_face_ids = NULL;
+
+  const _error_face_marker_t  *marker = input;
+
+  BFT_MALLOC(_face_ids, marker->n_faces, cs_lnum_t);
+
+  for (face_id = 0; face_id < marker->n_faces; face_id++) {
+    if (marker->flag[face_id] != 0)
+      _face_ids[_n_faces++] = face_id;
+  }
+
+  *n_faces = _n_faces;
+  *face_ids = _face_ids;
+}
+
+/*----------------------------------------------------------------------------
+ * Function for selection of faces with valid boundary conditions.
+ *
+ * parameters:
+ *   input    <-- pointer to input (face marker structure)
+ *   n_faces  --> number of selected faces
+ *   face_ids --> array of selected face ids (0 to n-1 numbering)
+ *----------------------------------------------------------------------------*/
+
+static void
+_post_valid_faces_select(void         *input,
+                         cs_lnum_t    *n_faces,
+                         cs_lnum_t   **face_ids)
+{
+  cs_lnum_t face_id;
+
+  cs_lnum_t _n_faces = 0;
+  cs_lnum_t *_face_ids = NULL;
+
+  const _error_face_marker_t  *marker = input;
+
+  BFT_MALLOC(_face_ids, marker->n_faces, cs_lnum_t);
+
+  for (face_id = 0; face_id < marker->n_faces; face_id++) {
+    if (marker->flag[face_id] != 0)
+      _face_ids[_n_faces++] = face_id;
+  }
+
+  *n_faces = _n_faces;
+  *face_ids = _face_ids;
+}
+
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/
@@ -229,10 +302,9 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
   /* local variables */
 
   cs_lnum_t  face_id;
+  _error_face_marker_t  marker;
 
   cs_gnum_t  n_errors = 0;
-
-  unsigned char  *face_marker = NULL;
 
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mesh_q = cs_glob_mesh_quantities;
@@ -241,10 +313,11 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
 
   /* Prepare face marker */
 
-  BFT_MALLOC(face_marker, n_b_faces, unsigned char);
+  marker.n_faces = n_b_faces;
+  BFT_MALLOC(marker.flag, marker.n_faces, unsigned char);
 
   for (face_id = 0; face_id < n_b_faces; face_id++)
-    face_marker[face_id] = 0;
+    marker.flag[face_id] = 0;
 
   /* Count and mark faces with problems */
 
@@ -268,7 +341,7 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
         else
           face_gnum = face_id + 1;
 
-        face_marker[face_id] = 1;
+        marker.flag[face_id] = 1;
 
         if (err_face_gnum == 0 || face_gnum < err_face_gnum) {
           int coo_id;
@@ -302,12 +375,11 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
   /* If post-processing is active, output boundary condition info */
   /*--------------------------------------------------------------*/
 
-  if (mesh->i_face_vtx_idx != NULL || mesh->b_face_vtx_idx) {
+  if (mesh->b_face_vtx_idx) {
 
     int ii;
 
-    cs_int_t face_list_size = 0;
-    cs_int_t *face_list = NULL;
+    cs_gnum_t n_valid_faces = 0;
     int mesh_id[2] = {0, 0};
 
     const int writer_id = -2;
@@ -317,26 +389,17 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
 
     cs_post_init_error_writer();
 
-    /* Prepare face marker */
-
-    BFT_MALLOC(face_list, n_b_faces, cs_int_t);
-
     /* Mesh for invalid faces */
-
-    face_list_size = 0;
-    for (face_id = 0; face_id < n_b_faces; face_id++) {
-      if (face_marker[face_id] != 0)
-        face_list[face_list_size++] = face_id + 1;
-    }
 
     mesh_id[0] = cs_post_get_free_mesh_id();
 
-    cs_post_define_surface_mesh_by_list(mesh_id[0],
+    cs_post_define_surface_mesh_by_func(mesh_id[0],
                                         _("Faces with B.C. error"),
-                                        0,
-                                        face_list_size,
                                         NULL,
-                                        face_list,
+                                        _post_error_faces_select,
+                                        NULL,
+                                        &marker,
+                                        false, /* time varying */
                                         true,  /* add groups if present */
                                         false, /* auto variables */
                                         1,
@@ -344,25 +407,24 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
 
     /* Mesh for valid faces */
 
-    face_list_size = 0;
     for (face_id = 0; face_id < n_b_faces; face_id++) {
-      if (face_marker[face_id] == 0)
-        face_list[face_list_size++] = face_id + 1;
+      if (marker.flag[face_id] == 0)
+        n_valid_faces += 1;
     }
 
-    n_errors = face_list_size;
-    fvm_parall_counter(&n_errors, 1);
+    fvm_parall_counter(&n_valid_faces, 1);
 
-    if (n_errors < mesh->n_g_b_faces) {
+    if (n_valid_faces > 0) {
 
       mesh_id[1] = cs_post_get_free_mesh_id();
 
-      cs_post_define_surface_mesh_by_list(mesh_id[1],
+      cs_post_define_surface_mesh_by_func(mesh_id[0],
                                           _("Faces with valid B.C.'s"),
-                                          0,
-                                          face_list_size,
                                           NULL,
-                                          face_list,
+                                          _post_valid_faces_select,
+                                          NULL,
+                                          &marker,
+                                          false, /* time varying */
                                           true,  /* add groups if present */
                                           false, /* auto variables */
                                           1,
@@ -370,11 +432,11 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
 
     }
 
-    BFT_FREE(face_marker);
-
     cs_post_activate_writer(writer_id, 1);
 
     cs_post_write_meshes(-1, 0.0);
+
+    BFT_FREE(marker.flag);
 
     {
       size_t name_size = 0;

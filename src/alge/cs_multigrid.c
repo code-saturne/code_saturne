@@ -856,29 +856,26 @@ _multigrid_add_post(cs_multigrid_t  *mg,
 }
 
 /*----------------------------------------------------------------------------
- * Post process variables associated with Syrthes couplings
+ * Post process variables associated with Multigrid hierarchy
  *
  * parameters:
- *   hierarchy_id        <--  id of multigrid hierarchy
- *   nt_cur_abs          <--  current time step
- *   t_cur_abs           <--  current time value
+ *   mgh        <-- multigrid hierarchy
+ *   nt_cur_abs <-- current time step
+ *   t_cur_abs  <-- current time value
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_multigrid_post_function(cs_int_t   hierarchy_id,
-                            cs_int_t   nt_cur_abs,
-                            cs_real_t  t_cur_abs)
+_cs_multigrid_post_function(void       *mgh,
+                            cs_int_t    nt_cur_abs,
+                            cs_real_t   t_cur_abs)
 {
   int ii;
   size_t name_len;
   char *var_name = NULL;
-  cs_multigrid_t *mg = NULL;
+  cs_multigrid_t *mg = mgh;
   const char *base_name = NULL;
 
   /* Return if necessary structures inconsistent or have been destroyed */
-
-  if (hierarchy_id < cs_glob_multigrid_n_systems)
-    mg = cs_glob_multigrid_systems[hierarchy_id];
 
   if (mg == NULL)
     return;
@@ -1924,7 +1921,8 @@ void CS_PROCF(clmlga, CLMLGA)
     if (mg->post_cell_max == 0) {
       int mg_id = _multigrid_id(mg);
       if (mg_id > -1)
-        cs_post_add_time_dep_var(_cs_multigrid_post_function, mg_id);
+        cs_post_add_time_dep_output(_cs_multigrid_post_function,
+                                    (void *)mg);
       mg->post_cell_max = *ncpost;
     }
 

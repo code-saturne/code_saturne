@@ -934,6 +934,52 @@ void CS_PROCF (lecctw, LECCTW)
   cs_glob_ctwr_suite = NULL;
 }
 
+/*----------------------------------------------------------------------------
+ * Post process variables associated with exchange area
+ *
+ * parameters:
+ *   ct                  -->  Void pointer to cooling tower function
+ *   nt_cur_abs          -->  Current time step
+ *   t_cur_abs           -->  Current time value
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_ctwr_post_function(void       *ct,
+                       cs_int_t    nt_cur_abs,
+                       cs_real_t   t_cur_abs)
+{
+  const cs_ctwr_zone_t  *_ct = ct;
+
+  if (_ct->post_mesh_id != 0) {
+
+    cs_post_write_var(_ct->post_mesh_id,
+                      _("T water"),
+                      1,
+                      false,
+                      false,
+                      CS_POST_TYPE_cs_real_t,
+                      nt_cur_abs,
+                      t_cur_abs,
+                      _ct->teau,
+                      NULL,
+                      NULL);
+
+    cs_post_write_var(_ct->post_mesh_id,
+                      _("Flux water"),
+                      1,
+                      false,
+                      false,
+                      CS_POST_TYPE_cs_real_t,
+                      nt_cur_abs,
+                      t_cur_abs,
+                      _ct->fem,
+                      NULL,
+                      NULL);
+
+  }
+
+}
+
 /*============================================================================
  * Fonctions publiques
  *============================================================================*/
@@ -2585,7 +2631,7 @@ cs_ctwr_post_init(cs_int_t  ct_id,
 
   /* Register post processing function */
 
-  cs_post_add_time_dep_var(cs_ctwr_post_function, ct_id);
+  cs_post_add_time_dep_output(_cs_ctwr_post_function, (void *)ct);
 
   /* Update start and end (negative) numbers associated with
      dedicated post processing meshes */
@@ -2594,52 +2640,6 @@ cs_ctwr_post_init(cs_int_t  ct_id,
     cs_glob_ct_post_mesh_ext[0] = mesh_id;
 
   cs_glob_ct_post_mesh_ext[1] = mesh_id;
-}
-
-/*----------------------------------------------------------------------------
- * Post process variables associated with exchange area
- *
- * parameters:
- *   coupling_id         -->  Id of exchange area
- *   nt_cur_abs          -->  Current time step
- *   t_cur_abs           -->  Current time value
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_post_function(cs_int_t   ct_id,
-                      cs_int_t   nt_cur_abs,
-                      cs_real_t  t_cur_abs)
-{
-  cs_ctwr_zone_t * ct = cs_ctwr_by_id(ct_id);
-
-  if (ct->post_mesh_id != 0) {
-
-    cs_post_write_var(ct->post_mesh_id,
-                      _("T water"),
-                      1,
-                      false,
-                      false,
-                      CS_POST_TYPE_cs_real_t,
-                      nt_cur_abs,
-                      t_cur_abs,
-                      ct->teau,
-                      NULL,
-                      NULL);
-
-    cs_post_write_var(ct->post_mesh_id,
-                      _("Flux water"),
-                      1,
-                      false,
-                      false,
-                      CS_POST_TYPE_cs_real_t,
-                      nt_cur_abs,
-                      t_cur_abs,
-                      ct->fem,
-                      NULL,
-                      NULL);
-
-  }
-
 }
 
 /*----------------------------------------------------------------------------
