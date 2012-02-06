@@ -1229,10 +1229,6 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
 
   if (write_mesh == true)
     post_mesh->nt_last = nt_cur_abs;
-
-  if (   post_mesh->mod_flag_max == FVM_WRITER_FIXED_MESH
-      && post_mesh->_exp_mesh != NULL)
-    fvm_nodal_reduce(post_mesh->_exp_mesh, 0);
 }
 
 /*----------------------------------------------------------------------------
@@ -3095,6 +3091,9 @@ cs_post_define_alias_mesh(int        mesh_id,
 
   post_mesh->cat_id = (auto_variables) ? -1 : mesh_id;
   /* may be fixed once the contents of the reference mesh are known */
+
+  BFT_MALLOC(post_mesh->name, strlen(ref_mesh->name) + 1, char);
+  strcpy(post_mesh->name, ref_mesh->name);
 }
 
 /*----------------------------------------------------------------------------
@@ -3651,18 +3650,24 @@ cs_post_write_meshes(int     nt_cur_abs,
   int  i;
   cs_post_mesh_t  *post_mesh;
 
-  /* Loops on meshes and writers */
+  /* Loops on meshes and writers for output */
 
   for (i = 0; i < _cs_post_n_meshes; i++) {
-
     post_mesh = _cs_post_meshes + i;
-
     _cs_post_write_mesh(post_mesh,
                         nt_cur_abs,
                         t_cur_abs);
-
   }
 
+  /* Now reduce mesh definitions if not required anymore
+     (must be done in separate loop to avoid issues with aliases) */
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+    post_mesh = _cs_post_meshes + i;
+    if (   post_mesh->mod_flag_max == FVM_WRITER_FIXED_MESH
+        && post_mesh->_exp_mesh != NULL)
+      fvm_nodal_reduce(post_mesh->_exp_mesh, 0);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -4325,6 +4330,16 @@ cs_post_init_meshes(int check_mask)
   for (i = 0; i < _cs_post_n_meshes; i++) {
     cs_post_mesh_t  *post_mesh = _cs_post_meshes + i;
     _cs_post_write_mesh(post_mesh, -1, 0.0);
+  }
+
+  /* Now reduce mesh definitions if not required anymore
+     (must be done in separate loop to avoid issues with aliases) */
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+    cs_post_mesh_t  *post_mesh = _cs_post_meshes + i;
+    if (   post_mesh->mod_flag_max == FVM_WRITER_FIXED_MESH
+        && post_mesh->_exp_mesh != NULL)
+      fvm_nodal_reduce(post_mesh->_exp_mesh, 0);
   }
 }
 
