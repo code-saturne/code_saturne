@@ -484,7 +484,7 @@ else if (numtyp .eq. -2) then
       enddo
 
       !       Nom de la variable
-      namevr = 'Flux thermique entrant W.m-2'
+      namevr = 'Input thermal flux W.m-2'
 
       !       Dimension de la variable (3 = vecteur, 1=scalaire)
       idimt = 1

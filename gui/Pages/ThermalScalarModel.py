@@ -155,8 +155,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
                                                  name="input_thermal_flux",
                                                  support="boundary")
             if not n['label']:
-##                n['label'] = "input_thermal_flux"
-                n['label'] = "Flux_thermique_entrant"
+                n['label'] = "input_thermal_flux"
 
         else:
             node = self.scalar_node.xmlGetNode('scalar', type='thermal')
