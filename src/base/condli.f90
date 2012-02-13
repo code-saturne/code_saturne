@@ -361,8 +361,7 @@ endif
 
 
 !===============================================================================
-! 6.  DEBUT DE LA BOUCLE SUR LES PHASES
-!        ET REPERAGE DES VARIABLES
+! 6.  REPERAGE DES VARIABLES
 !===============================================================================
 
 ! --- Variables
@@ -438,9 +437,6 @@ endif
 !            THBORD EST DANS LA BOUCLE POUR CONSTUIRE LE FLUX QUI SERT
 !            DANS RAYPAR.
 
-!        LE CAS PLUSIEURS PHASES COUPLEES AVEC SYRTHES N'EST PAS PREVU.
-!        LE CAS PLUSIEURS PHASES COUPLEES AVEC LE MODULE 1D  N'EST PAS PREVU.
-
 
 !        CECI POURRAIT EN PRATIQUE ETRE HORS DE LA BOUCLE.
 
@@ -456,7 +452,7 @@ allocate(grad(ncelet,3))
 !    eventuel de plusieurs temperatures (ie plusieurs couplages
 !    SYRTHES a la fois ; noter cependant que meme dans ce cas,
 !    une seule temperature sera recue de chaque couplage. En polyph,
-!    il faudrait ensuite reconstruire les enthalpies des phases ...
+!    il faudrait ensuite reconstruire les enthalpies ...
 !    plus tard si necessaire).
 !  Ici, il ne peut y avoir qu'un seul scalaire avec ICPSYR = 1 et
 !    ce uniquement s'il y a effectivement couplage avec SYRTHES
@@ -470,10 +466,10 @@ allocate(grad(ncelet,3))
 !  Pour le rayonnement
 !  -------------------
 !  On calcule la valeur en I' s'il y a une variable
-!    thermique sur la phase
+!    thermique
 
 
-!  On recherche l'unique scalaire qui convient pour la phase courante
+!  On recherche l'unique scalaire qui convient
 !     (ce peut etre T, H, ou E (en compressible))
 
 iscat = 0
@@ -726,12 +722,10 @@ endif
 deallocate(grad)
 
 !===============================================================================
-! 7.  TURBULENCE EN PAROI : TOUTES LES VARIABLES CONCERNEES PAR PHASE
+! 7.  TURBULENCE EN PAROI : TOUTES LES VARIABLES CONCERNEES
 !       (U,V,W,K,EPSILON,RIJ,TEMPERATURE)
 !===============================================================================
 ! --- On a besoin de COEFU et de RIJIPB (et THBORD pour le rayonnement)
-! --- On suppose que tout scalaire qui dispose de cl de paroi est
-!       associe a une phase (qui permet entre autre de calculer yplus)
 
 !     On initialise VISVDR a -999.D0.
 !     Dans clptur, on amortit la viscosite turbulente sur les cellules
@@ -992,7 +986,6 @@ do isou = 1, 3
 enddo
 
 
-! --- La boucle sur les phases continue
 !===============================================================================
 ! 9.  PRESSION : DIRICHLET, NEUMANN
 !===============================================================================
@@ -1043,7 +1036,6 @@ do ifac = 1, nfabor
 enddo
 
 
-! --- La boucle sur les phases continue
 !===============================================================================
 ! 10.  K, EPSILON, RIJ, V2F, OMEGA : DIRICHLET, NEUMANN
 !===============================================================================
@@ -1397,7 +1389,6 @@ elseif(iturb.eq.70) then
 
 endif
 
-! --- La boucle sur les phases continue
 !===============================================================================
 ! 11. SCALAIRES (AUTRES QUE PRESSION, K, EPSILON, RIJ, OMEGA, VARIANCES)
 !                     : DIRICHLET, NEUMANN

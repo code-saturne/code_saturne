@@ -645,88 +645,88 @@ if( irevmc.eq.0 ) then
   endif
 endif
 
-  ! In the ALE framework, we add the mesh velocity
-  if (iale.eq.1) then
+! In the ALE framework, we add the mesh velocity
+if (iale.eq.1) then
 
-    do iel = 1, ncelet
-      mshvel(1,iel) = rtp(iel,iuma)
-      mshvel(2,iel) = rtp(iel,ivma)
-      mshvel(3,iel) = rtp(iel,iwma)
+  do iel = 1, ncelet
+    mshvel(1,iel) = rtp(iel,iuma)
+    mshvel(2,iel) = rtp(iel,ivma)
+    mshvel(3,iel) = rtp(iel,iwma)
+  enddo
+
+  ! One temporary array needed for internal faces, in case some internal vertices
+  !  are moved directly by the user
+  allocate(intflx(nfac), bouflx(nfabor))
+
+  iflmas = ipprof(ifluma(iu))
+  iflmab = ipprob(ifluma(iu))
+  ipcrom = ipproc(irom)
+  ipbrom = ipprob(irom)
+
+  init   = 1
+  inc    = 1
+  iccocg = 1
+  iflmb0 = 1
+  nswrgp = nswrgr(iuma)
+  imligp = imligr(iuma)
+  iwarnp = iwarni(iuma)
+  epsrgp = epsrgr(iuma)
+  climgp = climgr(iuma)
+  extrap = extrag(iuma)
+
+  call inimav &
+  !==========
+( nvar   , nscal  ,                                              &
+  iu     ,                                                       &
+  iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
+  iwarnp , nfecra ,                                              &
+  epsrgp , climgp , extrap ,                                     &
+  propce(1,ipcrom), propfb(1,ipbrom),                            &
+  mshvel ,                                                       &
+  cfaale , cfbale ,                                              &
+  intflx , bouflx )
+
+  ! Here we need of the opposite of the mesh velocity.
+  do ifac = 1, nfabor
+    propfb(ifac,iflmab) = propfb(ifac,iflmab) - bouflx(ifac)
+  enddo
+
+  do ifac = 1, nfac
+    iecrw = 0
+    ddepx = 0.d0
+    ddepy = 0.d0
+    ddepz = 0.d0
+    icpt  = 0
+    do ii = ipnfac(ifac),ipnfac(ifac+1)-1
+      inod = nodfac(ii)
+      if (impale(inod).eq.0) iecrw = iecrw + 1
+      icpt = icpt + 1
+      ddepx = ddepx + disala(1,inod) + xyzno0(1,inod)-xyznod(1,inod)
+      ddepy = ddepy + disala(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
+      ddepz = ddepz + disala(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
     enddo
-
-    ! One temporary array needed for internal faces, in case some internal vertices
-    !  are moved directly by the user
-    allocate(intflx(nfac), bouflx(nfabor))
-
-    iflmas = ipprof(ifluma(iu))
-    iflmab = ipprob(ifluma(iu))
-    ipcrom = ipproc(irom)
-    ipbrom = ipprob(irom)
-
-    init   = 1
-    inc    = 1
-    iccocg = 1
-    iflmb0 = 1
-    nswrgp = nswrgr(iuma)
-    imligp = imligr(iuma)
-    iwarnp = iwarni(iuma)
-    epsrgp = epsrgr(iuma)
-    climgp = climgr(iuma)
-    extrap = extrag(iuma)
-
-    call inimav &
-    !==========
-  ( nvar   , nscal  ,                                              &
-    iu     ,                                                       &
-    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
-    iwarnp , nfecra ,                                              &
-    epsrgp , climgp , extrap ,                                     &
-    propce(1,ipcrom), propfb(1,ipbrom),                            &
-    mshvel ,                                                       &
-    cfaale , cfbale ,                                              &
-    intflx , bouflx )
-
-    ! Here we need of the opposite of the mesh velocity.
-    do ifac = 1, nfabor
-      propfb(ifac,iflmab) = propfb(ifac,iflmab) - bouflx(ifac)
-    enddo
-
-    do ifac = 1, nfac
-      iecrw = 0
-      ddepx = 0.d0
-      ddepy = 0.d0
-      ddepz = 0.d0
-      icpt  = 0
-      do ii = ipnfac(ifac),ipnfac(ifac+1)-1
-        inod = nodfac(ii)
-        if (impale(inod).eq.0) iecrw = iecrw + 1
-        icpt = icpt + 1
-        ddepx = ddepx + disala(1,inod) + xyzno0(1,inod)-xyznod(1,inod)
-        ddepy = ddepy + disala(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
-        ddepz = ddepz + disala(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
-      enddo
-      ! If all the face vertices have imposed displacement, w is evaluated from
-      !  this displacement
+    ! If all the face vertices have imposed displacement, w is evaluated from
+    !  this displacement
 !FIXME for me we should always do that:      if (iecrw.eq.0) then
-        iel1 = ifacel(1,ifac)
-        iel2 = ifacel(2,ifac)
-        dtfac = 0.5d0*(dt(iel1) + dt(iel2))
-        rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
-        propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(      &
-              ddepx*surfac(1,ifac)                                &
-             +ddepy*surfac(2,ifac)                                &
-             +ddepz*surfac(3,ifac) )/dtfac/icpt
-        ! Else w is calculated from the cell-centre mesh velocity
+      iel1 = ifacel(1,ifac)
+      iel2 = ifacel(2,ifac)
+      dtfac = 0.5d0*(dt(iel1) + dt(iel2))
+      rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
+      propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(      &
+            ddepx*surfac(1,ifac)                                &
+           +ddepy*surfac(2,ifac)                                &
+           +ddepz*surfac(3,ifac) )/dtfac/icpt
+      ! Else w is calculated from the cell-centre mesh velocity
 !!      else
 !!        ! Here we need of the opposite of the mesh velocity.
 !!        propfa(ifac,iflmas) = propfa(ifac,iflmas) - intflx(ifac)
 !!      endif
-    enddo
+  enddo
 
-    ! Free memory
-    deallocate(intflx, bouflx)
+  ! Free memory
+  deallocate(intflx, bouflx)
 
-  endif
+endif
 
 !FIXME for me we should do that before predvv
 ! Ajout de la vitesse du solide dans le flux convectif,
