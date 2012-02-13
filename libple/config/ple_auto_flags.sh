@@ -114,7 +114,7 @@ if test "x$ple_gcc" = "xgcc"; then
   test -n "$ple_cc_vers_patch" || ple_cc_vers_patch=0
 
   # Default compiler flags
-  cflags_default="-ansi -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused"
+  cflags_default="-std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused"
   cflags_default_dbg="-g"
   cflags_default_opt="-O2"
   cflags_default_prf="-pg"
@@ -128,10 +128,11 @@ if test "x$ple_gcc" = "xgcc"; then
       case "$host_cpu" in
         i686)
           case "$ple_cc_vendor-$ple_cc_version" in
-            gcc-2.9[56]*|gcc-3*|gcc-4*)
+            gcc-3*|gcc-4*)
               cflags_default_opt="$cflags_default_opt -march=i686"
-            ;;
+              ;;
           esac
+          ;;
       esac
       ;;
 
@@ -145,11 +146,6 @@ if test "x$ple_gcc" = "xgcc"; then
   # may not handle all flags)
 
   case "$ple_cc_vendor-$ple_cc_version" in
-
-    gcc-2.9[56]*)
-      cflags_default="$cflags_default -Wno-long-long"
-      ;;
-
     gcc-3.*|gcc-4.*)
       cflags_default="`echo $cflags_default | sed -e 's/-ansi/-std=c99/g'`"
       cflags_default="$cflags_default -Wfloat-equal"
@@ -157,10 +153,11 @@ if test "x$ple_gcc" = "xgcc"; then
 
   esac
 
-  case "$cs_cc_vendor-$cs_cc_version" in
-    gcc-4.[56]*)
+  case "$ple_cc_vendor-$ple_cc_version" in
+    gcc-3*|gcc-4.[01234]*)
+      ;;
+    *)
       cflags_default_opt="$cflags_default_opt -fexcess-precision=fast"
-      cflags_default_hot="$cflags_default_hot -fexcess-precision=fast"
       ;;
   esac
 
@@ -234,14 +231,14 @@ if test "x$ple_compiler_known" != "xyes" ; then
     ple_linker_set=yes
 
     # Default compiler flags
-    cflags_default="-q64"
+    cflags_default="-qlanglvl=stdc99 -q64"
     cflags_default_opt="-O2"
     cflags_default_dbg="-g"
     cflags_default_prf="-pg"
 
     # Default  linker flags
     ldflags_default=""
-    ldflags_default_opt="-g -O2"
+    ldflags_default_opt="-O2"
     ldflags_default_dbg="-g"
     ldflags_default_prf="-pg"
 
@@ -263,13 +260,40 @@ if test "x$ple_compiler_known" != "xyes" ; then
       elif test "$ple_ibm_bg_type" = "P" ; then
         cppflags_default="-I/bgsys/drivers/ppcfloor/comm/include"
         cflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450"
-        cflags_default_opt="-O2"
+        cflags_default_opt="-O1"
         cflags_default_dbg=""
         ldflags_default="-Wl,-allow-multiple-definition -L/bgsys/drivers/ppcfloor/comm/lib -lmpich.cnk -ldcmfcoll.cnk -ldcmf.cnk"
       fi
     fi
 
   fi
+fi
+
+# Otherwise, are we using pathcc ?
+#---------------------------------
+
+if test "x$ple_cc_compiler_known" != "xyes" ; then
+
+  $CC --version 2>&1 | grep 'PathScale' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is PathScale C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $CC --version > $outfile 2>&1
+    ple_ac_cc_version=`grep -i Compiler $outfile`
+    ple_cc_compiler_known=yes
+
+    # Default compiler flags
+    cflags_default="-c99 -noswitcherror"
+    cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
+    cflags_default_dbg="-g"
+    cflags_default_opt="-O2"
+    cflags_default_prf=""
+    cflags_default_omp="-openmp"
+
+  fi
+
 fi
 
 # Compiler still not identified
@@ -327,16 +351,24 @@ if test "x$ple_compiler_known" != "xyes" ; then
         ple_linker_set=yes
 
         # Default compiler flags
-        cflags_default="-Aa +e +DA2.0W"
+        cflags_default="-AC99 +e"
         cflags_default_opt="+O2"
         cflags_default_dbg="-g"
         cflags_default_prf="-G" # -G for gprof, -p for prof
 
         # Default linker flags
-        ldflags_default="+DA2.0W"
-        ldflags_default_opt="+O2"
+        ldflags_default="+FPVZOUD +U77"
+        ldflags_default_opt="+O1"
         ldflags_default_dbg="-g"
         ldflags_default_prf="-fbexe"
+
+        if test "$host_cpu" = "ia64" ; then
+          cflags_default="$cflags_default +DD64"
+          ldflags_default="$ldflags_default +DD64"
+        else
+          cflags_default="$cflags_default +DA2.0w"
+          ldflags_default="$ldflags_default +DA2.0w"
+        fi
 
       fi
       ;;
@@ -357,7 +389,7 @@ if test "x$ple_compiler_known" != "xyes" ; then
         ple_compiler_known=yes
 
         # Default compiler flags
-        cflags_default="-Xa"
+        cflags_default="-Xa -Xc99"
         cflags_default_opt="-xO2"
         cflags_default_dbg="-g"
         cflags_default_prf="-pg"

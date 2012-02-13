@@ -333,12 +333,14 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
       # Default compiler flags (we assume that MPI wrappers are used)
       cs_ibm_bg_type=`grep 'Blue Gene' $outfile | sed -e 's/.*Blue Gene\/\([A-Z]\).*/\1/'`
       if test "x$cs_ibm_bg_type" = "xL" ; then
-        cflags_default=""
+        cppflags_default="-I/bgl/BlueLight/ppcfloor/bglsys/include"
+        cflags_default="-qlanglvl=stdc99"
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
       elif test "x$cs_ibm_bg_type" = "xP" ; then
-        cflags_default="-I/bgsys/drivers/ppcfloor/arch/include"
+        cppflags_default="-I/bgsys/drivers/ppcfloor/comm/include"
+        cflags_default="-qlanglvl=stdc99"
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
@@ -661,6 +663,53 @@ else
 
 fi
 
+# Otherwise, are we using xlc ?
+#------------------------------
+
+if test "x$cs_cc_compiler_known" != "xyes" ; then
+
+  $CXX -qversion 2>&1 | grep 'XL C' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CXX' is IBM XL C/C++ compiler"
+
+    echo "compiler '$CC' is IBM XL C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $CXX -qversion > $outfile 2>&1
+    cs_ac_cxx_version=`grep 'XL C' $outfile`
+    cs_cc_compiler_known=yes
+
+    # Default compiler flags
+    cxxflags_default="-q64"
+    cxxflags_default_opt="-O3"
+    cxxflags_default_hot="-O3"
+    cxxflags_default_dbg="-g"
+    cxxflags_default_prf="-pg"
+    cxxflags_default_omp="-qsmp=omp"
+
+    # Adjust options for IBM Blue Gene cross-compiler
+
+    grep 'Blue Gene' $outfile > /dev/null
+    if test "$?" = "0" ; then
+      # Default compiler flags (we assume that MPI wrappers are used)
+      cs_ibm_bg_type=`grep 'Blue Gene' $outfile | sed -e 's/.*Blue Gene\/\([A-Z]\).*/\1/'`
+      if test "x$cs_ibm_bg_type" = "xL" ; then
+        cxxflags_default=""
+        cxxflags_default_opt="-O3"
+        cxxflags_default_hot="-O3 -qhot"
+        cxxflags_default_dbg="-g"
+      elif test "x$cs_ibm_bg_type" = "xP" ; then
+        cxxflags_default=""
+        cxxflags_default_opt="-O3"
+        cxxflags_default_hot="-O3 -qhot"
+        cxxflags_default_dbg="-g"
+      fi
+    fi
+
+  fi
+fi
+
 # Otherwise, are we using pathcc ?
 #---------------------------------
 
@@ -694,48 +743,6 @@ fi
 if test "x$cs_cxx_compiler_known" != "xyes" ; then
 
   case "$host_os" in
-
-    linux* | none)
-
-      # IBM Blue Gene
-      #--------------
-
-      $CXX -qversion 2>&1 | grep 'XL C' | grep 'Blue Gene' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CXX' is IBM XL C/C++ compiler for Blue Gene"
-
-        # Version strings for logging purposes and known compiler flag
-        $CXX -qversion > $outfile 2>&1
-        cs_ac_cxx_version=`grep 'XL C' $outfile`
-        cs_cxx_compiler_known=yes
-        cs_linker_set=yes
-
-        # Default compiler flags
-        cxxflags_default="-q64"
-        cxxflags_default_opt="-O3"
-        cxxflags_default_hot="-O3"
-        cxxflags_default_dbg="-g"
-        cxxflags_default_prf="-pg"
-        cxxflags_default_omp="-qsmp=omp"
-
-        # Default compiler flags
-        if test -d /bgl/BlueLight/ppcfloor/bglsys/include ; then
-          cxxflags_default=""
-          cxxflags_default_opt="-O3"
-          cxxflags_default_hot="-O3 -qhot"
-          cxxflags_default_dbg=""
-        elif test -d /bgsys/drivers/ppcfloor/comm/include ; then
-          cxxflags_default=""
-          cxxflags_default_opt="-O3"
-          cxxflags_default_hot="-O3 -qhot"
-          cxxflags_default_dbg=""
-        fi
-        cxxflags_default_prf="-pg"
-        cxxflags_default_omp="-qsmp=omp"
-
-      fi
-      ;;
 
     SUPER-UX*)
 
