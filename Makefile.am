@@ -399,34 +399,6 @@ update-copyright:
 	  $(SED) -i "s/Copyright (C) 1998-$${yold} EDF S.A./Copyright (C) 1998-$$y EDF S.A./" $$f; \
 	done
 
-# Finish user files installation
-# - tag with the package version number
-# - remove the test preventing from using a source file
-# Done with two sed passes (do not work otherwise)
-
-install-data-hook:
-	cd $(DESTDIR)$(pkgdatadir)/user && \
-	f90_user_files=`ls *.f90 2>/dev/null`; \
-	stubvers="^\!VERS\n"; \
-	version1="\!                      Code_Saturne version $(VERSION)\n"; \
-	version2="\!                      --------------------------"; \
-	comment1="^\! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START"; \
-	comment2="^\! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END"; \
-	for file in $${f90_user_files}; do \
-	  $(SED) -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" | \
-	  $(SED) -e "/$${comment1}/,/$${comment2}/d" > "$${file}.tmp" && \
-	  mv "$${file}.tmp" "$${file}"; \
-	done ;\
-	c_user_files=`ls *.c 2>/dev/null`; \
-	stubvers="\/\* VERS \*\/"; \
-	version="\/\* Code_Saturne version $(VERSION) \*\/"; \
-	comment="\/\* REMOVE_LINE_FOR_USE_OF_SUBROUTINE \*\/"; \
-	for file in $${c_user_files}; do \
-	  $(SED) -e "N;s/$${stubvers}/$${version}/" < "$${file}" | \
-	  $(SED) -e "/$${comment}/d" > "$${file}.tmp" && \
-	  mv "$${file}.tmp" "$${file}"; \
-	done
-
 dist-hook: changelog
 	\cp -f ${top_srcdir}/ChangeLog ${distdir}
 	-rm -rf `find $(distdir)/examples  -name .svn`
