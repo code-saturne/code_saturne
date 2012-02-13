@@ -269,6 +269,38 @@ if test "x$ple_compiler_known" != "xyes" ; then
   fi
 fi
 
+# Otherwise, are we using the Cray compiler ?
+#------------------------------------------
+
+if test "x$ple_cc_compiler_known" != "xyes" ; then
+
+  $CC -V 2>&1 | grep 'Cray C' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is Cray C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    ple_ac_cc_version=`$CC -V 2>&1 | grep "Cray C" | head -1`
+    ple_cc_compiler_known=yes
+    ple_linker_set=yes
+
+    # Default compiler flags
+    cflags_default=""                        # "-h c99" by default
+    cflags_default_opt="-O2"
+    cflags_default_hot="-O3"
+    cflags_default_dbg="-g"
+    cflags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
+    cflags_default_omp="-h omp"              # default: use "-h noomp" to disable
+
+    # Default  linker flags
+    ldflags_default="-z muldefs"
+    ldflags_default_opt="-O2"
+    ldflags_default_dbg="-g"
+    ldflags_default_prf="-h profile_generate"
+
+  fi
+fi
+
 # Otherwise, are we using pathcc ?
 #---------------------------------
 

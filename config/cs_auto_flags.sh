@@ -350,6 +350,38 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
   fi
 fi
 
+# Otherwise, are we using the Cray compiler ?
+#------------------------------------------
+
+if test "x$cs_cc_compiler_known" != "xyes" ; then
+
+  $CC -V 2>&1 | grep 'Cray C' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is Cray C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_cc_version=`$CC -V 2>&1 | grep "Cray C" | head -1`
+    cs_cc_compiler_known=yes
+    cs_linker_set=yes
+
+    # Default compiler flags
+    cflags_default=""                        # "-h c99" by default
+    cflags_default_opt="-O2"
+    cflags_default_hot="-O3"
+    cflags_default_dbg="-g"
+    cflags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
+    cflags_default_omp="-h omp"              # default: use "-h noomp" to disable
+
+    # Default  linker flags
+    ldflags_default="-z muldefs"
+    ldflags_default_opt="-O2"
+    ldflags_default_dbg="-g"
+    ldflags_default_prf="-h profile_generate"
+
+  fi
+fi
+
 # Otherwise, are we using pathcc ?
 #---------------------------------
 
@@ -737,6 +769,32 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
 
 fi
 
+# Otherwise, are we using the Cray compiler ?
+#------------------------------------------
+
+if test "x$cs_cc_compiler_known" != "xyes" ; then
+
+  $CXX -V 2>&1 | grep 'Cray C++' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CXX' is Cray C++"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_cxx_version=`$CXX -V 2>&1 | grep "Cray C++" | head -1`
+    cs_cxx_compiler_known=yes
+
+    # Default compiler flags
+    cxxflags_default=""                        # "-h c99" by default
+    cxxflags_default_opt="-O2"
+    cxxflags_default_hot="-O3"
+    cxxflags_default_dbg="-g"
+    cfxxlags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
+    cfxxlags_default_omp="-h omp"              # default: use "-h noomp" to disable
+
+  fi
+
+fi
+
 # Compiler still not identified
 #------------------------------
 
@@ -1054,6 +1112,30 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
         fcflags_default_hot="-O3 -qhot"
       fi
     fi
+
+  fi
+fi
+
+if test "x$cs_fc_compiler_known" != "xyes" ; then
+
+  # Are we using the Cray compiler ?
+  #-------------------------------
+
+  $FC -V 2>&1 | grep 'Cray Fortran' > /dev/null
+
+  if test "$?" = "0" ; then
+
+    echo "compiler '$FC' is Cray Fortran compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_fc_version=`$FC -V 2>&1 | grep "Cray Fortran" | head -1`
+    cs_fc_compiler_known=yes
+
+    fcflags_default="-eF -em"
+    fcflags_default_dbg="-g"
+    fcflags_default_opt="-O2"
+    fcflags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
+    fcflags_default_omp="-h omp"              # default: use "-h noomp" to disable
 
   fi
 fi
