@@ -1070,9 +1070,9 @@ _add_s_edge(cs_int_t         vertex_tag[],
 
       assert(v1_id != v2_id);
       if (v1_id < v2_id)
-        a = v1_id, b = v2_id;
+        a = v1_id + 1, b = v2_id + 1;
       else
-        a = v2_id, b = v1_id;
+        a = v2_id + 1, b = v1_id + 1;
 
       /* n_edges is assumed to be small */
       for (i = 0; i < tmp_size; i++) {
