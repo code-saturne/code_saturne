@@ -1741,24 +1741,56 @@ endif
 !===============================================================================
 
 if (ineedf.eq.1) then
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    visclc = propce(iel,ipproc(iviscl))
-    visctc = propce(iel,ipproc(ivisct))
-    if (itytur.eq.3) then
-      vistot = visclc
-    else
-      vistot = visclc + visctc
-    endif
-    distbf = distb(ifac)
-    srfbnf = surfbn(ifac)
-    forbr(1,ifac) = -vistot * ( coefa(ifac,icluf)  &
-         + (coefb(ifac,icluf)-1.d0)*coefu(ifac,1) )/distbf*srfbnf
-    forbr(2,ifac) = -vistot * ( coefa(ifac,iclvf)  &
-         + (coefb(ifac,iclvf)-1.d0)*coefu(ifac,2) )/distbf*srfbnf
-    forbr(3,ifac) = -vistot * ( coefa(ifac,iclwf)  &
-         + (coefb(ifac,iclwf)-1.d0)*coefu(ifac,3) )/distbf*srfbnf
-  enddo
+
+  if (ivelco.eq.0) then
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      visclc = propce(iel,ipproc(iviscl))
+      visctc = propce(iel,ipproc(ivisct))
+      if (itytur.eq.3) then
+        vistot = visclc
+      else
+        vistot = visclc + visctc
+      endif
+      distbf = distb(ifac)
+      srfbnf = surfbn(ifac)
+      forbr(1,ifac) = -vistot * ( coefa(ifac,icluf)  &
+           + (coefb(ifac,icluf)-1.d0)*coefu(ifac,1) )/distbf*srfbnf
+      forbr(2,ifac) = -vistot * ( coefa(ifac,iclvf)  &
+           + (coefb(ifac,iclvf)-1.d0)*coefu(ifac,2) )/distbf*srfbnf
+      forbr(3,ifac) = -vistot * ( coefa(ifac,iclwf)  &
+           + (coefb(ifac,iclwf)-1.d0)*coefu(ifac,3) )/distbf*srfbnf
+    enddo
+
+  ! Coupled solving of the velocity components
+  else
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      visclc = propce(iel,ipproc(iviscl))
+      visctc = propce(iel,ipproc(ivisct))
+      if (itytur.eq.3) then
+        vistot = visclc
+      else
+        vistot = visclc + visctc
+      endif
+      distbf = distb(ifac)
+      srfbnf = surfbn(ifac)
+      
+      ! The implicit term is added after having updated the velocity
+      forbr(1,ifac) = -vistot * ( cofafu(1,ifac)   &
+           + (cofbfu(1,1,ifac)-1.d0)*coefu(ifac,1) &
+           +  cofbfu(1,2,ifac)      *coefu(ifac,2) &
+           +  cofbfu(1,3,ifac)      *coefu(ifac,3) )/distbf*srfbnf
+      forbr(2,ifac) = -vistot * ( cofafu(2,ifac)   &
+           +  cofbfu(2,1,ifac)      *coefu(ifac,1) &
+           + (cofbfu(2,2,ifac)-1.d0)*coefu(ifac,2) &
+           +  cofbfu(2,3,ifac)      *coefu(ifac,2) )/distbf*srfbnf
+      forbr(3,ifac) = -vistot * ( coefau(3,ifac)   &
+           +  cofbfu(3,1,ifac)      *coefu(ifac,1) &
+           +  cofbfu(3,2,ifac)      *coefu(ifac,2) &
+           + (cofbfu(3,3,ifac)-1.d0)*coefu(ifac,3) )/distbf*srfbnf
+    enddo
+  endif
 endif
 
 ! Free memory
