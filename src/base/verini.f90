@@ -1305,11 +1305,11 @@ endif
 
 if (swpdyn.eq.1) then
   if (ivelco.ne.1) then
-    write(nfecra,2741), ivelco
+    write(nfecra,2741) ivelco
   else
     if (nswrsm(ipr).lt.20) then
       nswrsm(ipr) = 20
-      write(nfecra,2742), nswrsm(ipr)
+      write(nfecra,2742) nswrsm(ipr)
     endif
     if (isstpc(iu).eq.0.or.isstpc(iv).eq.0.or.isstpc(iw).eq.0) then
       isstpc(iu) = 1
