@@ -114,6 +114,9 @@ install-exec-local: $(libcsmodules_la_SOURCES)
 	files=`for p in $$modlist; do echo $$p; done | $(SED) -e 's|^.*/||'`; \
 	test -n "$$files" || exit 0; \
 	for p in $$files; do \
+	  if test ! -f $$p; then \
+	    p=`echo $$p | sed -e 's/.$(FCMODEXT)//' -e 's/\(^.*\)/\U\1/'`.$(FCMODEXT); \
+	  fi; \
 	  echo " $(INSTALL_HEADER) $$p '$(DESTDIR)$(pkgincludedir)'"; \
 	  $(INSTALL_HEADER) $$p "$(DESTDIR)$(pkgincludedir)" || exit $$?; \
 	done
@@ -122,9 +125,17 @@ uninstall-local:
 	@$(NORMAL_UNINSTALL)
 	@list='$(libcsmodules_la_SOURCES)'; test -n "$(pkgincludedir)" || list=; \
 	modlist=`for p in $$list; do echo $$p; done | $(SED) -e 's|.f90|.$(FCMODEXT)|g'`; \
-	files=`for p in $$modlist; do echo $$p; done | $(SED) -e 's|^.*/||'`; \
+	lcfiles=`for p in $$modlist; do echo $$p; done | $(SED) -e 's|^.*/||'`; \
 	test -d "$(DESTDIR)$(pkgincludedir)" || exit 0; \
-	test -n "$$files" || exit 0; \
+	test -n "$$lcfiles" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(pkgincludedir)' )"; \
+	files=""; \
+	for p in $$lcfiles; do \
+	  if test ! -f $$p; then \
+	    p=`echo $$p | sed -e 's/.$(FCMODEXT)//' -e 's/\(^.*\)/\U\1/'`.$(FCMODEXT); \
+	  fi; \
+	  files="$$files $$p"; \
+	done; \
 	echo " ( cd '$(DESTDIR)$(pkgincludedir)' && rm -f" $$files ")"; \
 	cd "$(DESTDIR)$(pkgincludedir)" && rm -f $$files
 	rmdir $(pkgincludedir) || exit 0
