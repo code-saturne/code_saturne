@@ -768,7 +768,7 @@ class OutputControlModel(Model):
             return 'Frequency_h_x'
         val = self.getMonitoringPointFrequency()
         if val == -1 :
-            return 'At the end'
+            return 'None'
         elif val == 1 :
             return 'At each step'
         else :

@@ -194,6 +194,7 @@ class SolutionDomainModel(MeshModel, Model):
         self.node_ecs        = self.case.xmlGetNode('solution_domain')
         self.node_meshes     = self.node_ecs.xmlInitNode('meshes_list')
         self.node_cut        = self.node_ecs.xmlInitNode('faces_cutting', "status")
+        self.node_smooth     = self.node_ecs.xmlInitNode('mesh_smoothing', "status")
         self.node_join       = self.node_ecs.xmlInitNode('joining')
         self.node_perio      = self.node_ecs.xmlInitNode('periodicity')
         self.node_standalone = self.node_ecs.xmlInitNode('standalone')
@@ -207,6 +208,7 @@ class SolutionDomainModel(MeshModel, Model):
         """
         defvalue = {}
         defvalue['cutting_status'] = "off"
+        defvalue['smooth_status']  = "off"
         defvalue['select_status']  = "off"
         defvalue['selector']       = "all[]"
         defvalue['fraction']       = 0.1
@@ -214,6 +216,7 @@ class SolutionDomainModel(MeshModel, Model):
         defvalue['verbosity']      = 1
         defvalue['visualization']  = 1
         defvalue['angle']          = 0.01
+        defvalue['smooth_angle']   = 25.
         defvalue['syrth_status']   = "off"
         defvalue['syrth_mesh_2d']  = "off"
         defvalue['sim_status']     = "on"
@@ -714,6 +717,47 @@ class SolutionDomainModel(MeshModel, Model):
         angle = self.node_cut.xmlGetDouble('warp_angle_max')
         if angle == None:
             angle = self.defaultValues()['angle']
+        return angle
+
+
+    def getSmoothingStatus(self):
+        """
+        Get status on tag "mesh_smoothing" from xml file
+        """
+        status = self.node_smooth['status']
+        if not status:
+            status = self.defaultValues()['smooth_status']
+            self.setSmoothingStatus(status)
+        return status
+
+
+    def setSmoothingStatus(self, status):
+        """
+        Put status on tag "mesh_smoothing" in xml file
+        """
+        self.isOnOff(status)
+        self.node_smooth['status'] = status
+
+
+    def setSmoothAngle(self, var):
+        """
+        input '--mesh_smoothing' parameter.
+        """
+        self.isGreaterOrEqual(var, 0.0)
+        self.isLowerOrEqual(var, 90.0)
+        if var != self.defaultValues()['smooth_angle']:
+            self.node_smooth.xmlSetData('smooth_angle', var)
+        else:
+            self.node_smooth.xmlRemoveChild('smooth_angle')
+
+
+    def getSmoothAngle(self):
+        """
+        get '--mesh_smoothing' parameters.
+        """
+        angle = self.node_smooth.xmlGetDouble('smooth_angle')
+        if angle == None:
+            angle = self.defaultValues()['smooth_angle']
         return angle
 
 

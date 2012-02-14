@@ -286,6 +286,7 @@ cs_run(void)
 
   /* Smoothe mesh if required */
 
+  cs_gui_mesh_smoothe(cs_glob_mesh);
   cs_user_mesh_smoothe(cs_glob_mesh);
 
   /* Triangulate warped faces if necessary */
