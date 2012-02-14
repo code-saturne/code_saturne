@@ -70,7 +70,7 @@ def process_cmd_line(argv):
 
     parser = OptionParser(usage="usage: %prog [options]")
 
-    parser.add_option("-f", "--file", dest="file_name", type="string",
+    parser.add_option("-p", "--param", dest="file_name", type="string",
                       metavar="<file>",
                       help="upload a previous case at the interface start")
 
@@ -89,7 +89,7 @@ def process_cmd_line(argv):
 
 
     if options.new and options.file_name:
-        parser.error("Options --new and --file are mutually exclusive")
+        parser.error("Options --new and --param are mutually exclusive")
 
     if options.new:
         options.file_name = "new case"
