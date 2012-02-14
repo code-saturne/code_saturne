@@ -1428,10 +1428,7 @@ _locate_on_edge_2d(cs_lnum_t           elt_num,
 
   len2 = _DOT_PRODUCT_2D(u, u);
 
-  if (len2 < _epsilon_denom)
-    return;
-
-  else if (tolerance < 0.0)
+  if (tolerance < 0.0)
     epsilon2 = HUGE_VAL;
 
   else
@@ -1452,7 +1449,10 @@ _locate_on_edge_2d(cs_lnum_t           elt_num,
 
     uv = u[0]*v[0] + u[1]*v[1];
 
-    isop_0 = uv / len2;
+    if (len2 >= _epsilon_denom)
+      isop_0 = uv / len2;
+    else
+      isop_0 = 0.5; /* for degenerate edges, use center */
 
     /* Set v to be the vector from the point to the closest point on
        the segment (if isop_0 < 0, v is already that vector) */
@@ -1560,9 +1560,6 @@ _locate_on_triangles_3d(cs_lnum_t           elt_num,
 
     det = (uu*vv - uv*uv);
 
-    if (det < _epsilon_denom)
-      continue;
-
     /* epsilon2 is based on maximum edge length (squared) */
 
     tmp_max = CS_MAX(vv, ww);
@@ -1589,8 +1586,14 @@ _locate_on_triangles_3d(cs_lnum_t           elt_num,
       ut = _DOT_PRODUCT(u, t);
       vt = _DOT_PRODUCT(v, t);
 
-      isop_0 = (ut*vv - vt*uv) / det;
-      isop_1 = (uu*vt - uv*ut) / det;
+      if (det >= _epsilon_denom) {
+        isop_0 = (ut*vv - vt*uv) / det;
+        isop_1 = (uu*vt - uv*ut) / det;
+      }
+      else { /* for degenerate triangles, use triangle center */
+        isop_0 = 0.5;
+        isop_1 = 0.5;
+      }
 
       _CROSS_PRODUCT(vect_tmp, u, v);
 
