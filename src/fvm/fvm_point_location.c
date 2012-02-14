@@ -157,7 +157,7 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-static double      _epsilon_denom = 1.e-14; /* Minimum denominator */
+static double      _epsilon_denom = 1.e-28; /* Minimum denominator */
 
 static int         _octree_max_levels = 18; /* Maximum number of levels */
 static cs_lnum_t   _octree_threshold = 4;   /* Number of points in octree node
