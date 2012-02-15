@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-02-06 12:25+0100\n"
+"POT-Creation-Date: 2012-02-15 12:29+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6031,11 +6031,13 @@ msgstr ""
 "Infomation sur le fichier suite numéro <%d> indisponible\n"
 "(fichier déjà fermé ou numéro invalide)."
 
-msgid "The checkpoint directory cannot be created"
-msgstr "Le répertoire de reprise n'a pas pu être créé"
+#, c-format
+msgid "The %s directory cannot be created"
+msgstr "Le répertoire %s ne peut être créé"
 
-msgid "The restart directory cannot be found"
-msgstr "Le répertoire de reprise ne peut pas être trouvé"
+#, c-format
+msgid "The %s directory cannot be found"
+msgstr "Le répertoire %s ne peut pas être trouvé"
 
 #, c-format
 msgid ""
@@ -9904,4 +9906,3 @@ msgstr ""
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
 "\n"
-

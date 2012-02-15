@@ -281,6 +281,8 @@ cs_restart_present(void);
  *
  * parameters:
  *   name <-- file name
+ *   path <-- optional directory name for output
+ *            (directory automatically created if necessary)
  *   mode <-- read or write
  *
  * returns:
@@ -289,6 +291,7 @@ cs_restart_present(void);
 
 cs_restart_t *
 cs_restart_create(const char         *name,
+                  const char         *path,
                   cs_restart_mode_t   mode);
 
 /*----------------------------------------------------------------------------

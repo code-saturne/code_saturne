@@ -909,7 +909,7 @@ void CS_PROCF (opnsui, OPNSUI)
   if (*ierror == CS_RESTART_SUCCES) {
 
     id = _new_restart_id();
-    _restart_pointer[id] = cs_restart_create(bufname, restart_mode);
+    _restart_pointer[id] = cs_restart_create(bufname, NULL, restart_mode);
 
     /* Return the position of the handle in the array
      * (id + 1 to have a 1 to n numbering, more conventional in Fortran) */
@@ -1252,6 +1252,8 @@ cs_restart_present(void)
  *
  * parameters:
  *   name <-- file name
+ *   path <-- optional directory name for output, or NULL for default
+ *            (directory automatically created if necessary)
  *   mode <-- read or write
  *
  * returns:
@@ -1260,71 +1262,65 @@ cs_restart_present(void)
 
 cs_restart_t *
 cs_restart_create(const char         *name,
+                  const char         *path,
                   cs_restart_mode_t   mode)
 {
   cs_restart_t  * restart;
 
-  char  *path = NULL;
   double timing[2];
+
+  char *_name = NULL;
+  size_t  ldir, lname;
+
+  const char  *_path = path;
+  const char _restart[] = "restart";
+  const char _checkpoint[] = "checkpoint";
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   timing[0] = cs_timer_wtime();
 
+  if (_path == NULL) {
+    if (mode == CS_RESTART_MODE_WRITE)
+      _path = _checkpoint;
+    else
+      _path = _restart;
+  }
+
   /* Create 'checkpoint' directory or read from 'restart' directory */
 
   if (mode == CS_RESTART_MODE_WRITE) {
-
-    const char  dir[] = "checkpoint";
-    size_t  ldir, lname;
-
-    ldir = strlen(dir);
-    lname = strlen(name);
-
-    if (cs_file_mkdir_default(dir) == 0) {
-      BFT_MALLOC(path, ldir + lname + 2, char);
-      strcpy(path, dir);
-      path[ldir] = _dir_separator;
-      path[ldir+1] = '\0';
-      strcat(path, name);
-      path[ldir+lname+1] = '\0';
-    }
-    else
+    if (cs_file_mkdir_default(_path) != 0)
       bft_error(__FILE__, __LINE__, 0,
-                _("The checkpoint directory cannot be created"));
-
+                _("The %s directory cannot be created"), _path);
   }
   else if (mode == CS_RESTART_MODE_READ) {
-
-    const char dir[] = "restart";
-    size_t  ldir, lname;
-
-    ldir = strlen(dir);
-    lname = strlen(name);
-
-    if (cs_file_isdir(dir) == 1) {
-      BFT_MALLOC(path, ldir + lname + 2, char);
-      strcpy(path, dir);
-      path[ldir] = _dir_separator;
-      path[ldir+1] = '\0';
-      strcat(path, name);
-      path[ldir+lname+1] = '\0';
-    }
-    else
+    if (cs_file_isdir(_path) == 0) {
       bft_error(__FILE__, __LINE__, 0,
-                _("The restart directory cannot be found"));
-
+                _("The %s directory cannot be found"), _path);
+    }
   }
+
+  ldir = strlen(_path);
+  lname = strlen(name);
+
+  BFT_MALLOC(_name, ldir + lname + 2, char);
+  
+  strcpy(_name, _path);
+  _name[ldir] = _dir_separator;
+  _name[ldir+1] = '\0';
+  strcat(_name, name);
+  _name[ldir+lname+1] = '\0';
 
   /* Allocate and initialize base structure */
 
   BFT_MALLOC(restart, 1, cs_restart_t);
 
-  BFT_MALLOC(restart->name, strlen(path) + 1, char);
+  BFT_MALLOC(restart->name, strlen(_name) + 1, char);
 
-  strcpy(restart->name, path);
+  strcpy(restart->name, _name);
 
-  BFT_FREE(path);
+  BFT_FREE(_name);
 
   /* Initialize other fields */
 

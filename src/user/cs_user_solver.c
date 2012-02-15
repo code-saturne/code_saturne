@@ -146,6 +146,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
   if (1 == 0)
   {
     restart = cs_restart_create("main",                 /* file name */
+                                NULL,                   /* force directory */
                                 CS_RESTART_MODE_READ);  /* read mode */
 
     cs_restart_read_section(restart,   /* restart file */
@@ -214,6 +215,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
   /* --------- */
 
   checkpoint = cs_restart_create("main",                  /* file name */
+                                 NULL,                    /* force directory */
                                  CS_RESTART_MODE_WRITE);  /* write mode */
 
   cs_restart_write_section(checkpoint,  /* restart file */

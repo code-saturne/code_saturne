@@ -149,7 +149,7 @@ cs_loc_ctwr_opnsuite(const char              *nomsui,
   /* Name treatment for the C API */
   nombuf = cs_base_string_f_to_c_create(nomsui, *lngnom);
 
-  cs_glob_ctwr_suite = cs_restart_create(nombuf, ireawr);
+  cs_glob_ctwr_suite = cs_restart_create(nombuf, NULL, ireawr);
 
   /* Free the memory if necessary */
   cs_base_string_f_to_c_free(&nombuf);
