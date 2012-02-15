@@ -589,7 +589,7 @@ write(nfecra,9900)
 '       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
 '       IKECOU = ',4X,I10,    ' (Mode de couplage k-omega    )',/,&
 '       IGRAKE = ',4X,I10,    ' (Prise en compte de gravite  )')
- 2524 format(                                                           &
+ 2525 format(                                                           &
 '   - Rij-epsilon EBRSM     (ITURB = 32)                      ',/,&
 '       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
 '       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
