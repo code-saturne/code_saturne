@@ -846,14 +846,14 @@ void CS_PROCF (indsui, INDSUI)
  *
  * Fortran interface
  *
- * SUBROUTINE OPNSUI (NOMSUI, LNGNOM, IREAWR, NUMSUI, IERROR)
+ * subroutine opnsui (nomsui, lngnom, ireawr, numsui, ierror)
  * *****************
  *
- * CHARACTER*       NOMSUI      : --> : Restart file name
- * INTEGER          LNGNOM      : --> : Restart file name length
- * INTEGER          IREAWR      : --> : 1: read; 2: write
- * INTEGER          NUMSUI      : <-- : Number of opened restart file
- * INTEGER          IERROR      : <-- : 0: success; < 0: error code
+ * character*       nomsui      : <-- : Restart file name
+ * integer          lngnom      : <-- : Restart file name length
+ * integer          ireawr      : <-- : 1: read; 2: write
+ * integer          numsui      : --> : Number of opened restart file
+ * integer          ierror      : --> : 0: success; < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (opnsui, OPNSUI)
@@ -872,7 +872,6 @@ void CS_PROCF (opnsui, OPNSUI)
   size_t   id;
 
   cs_restart_mode_t restart_mode;
-
 
   /* Initialization */
 
@@ -929,11 +928,11 @@ void CS_PROCF (opnsui, OPNSUI)
  *
  * Fortran interface
  *
- * SUBROUTINE CLSSUI (NUMSUI)
+ * subroutine clssui (numsui)
  * *****************
  *
- * INTEGER          NUMSUI      : <-> : number of restart file to close
- * INTEGER          IERROR      : <-- : 0: success; < 0: error code
+ * integer          numsui      : <-> : number of restart file to close
+ * integer          ierror      : --> : 0: success; < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (clssui, CLSSUI)
@@ -976,14 +975,14 @@ void CS_PROCF (clssui, CLSSUI)
  *
  * Fortran interface
  *
- * SUBROUTINE TSTSUI (NUMSUI, INDCEL, INDFAC, INDFBR, INDSOM)
+ * subroutine tstsui (numsui, indcel, indfac, indfbr, indsom)
  * *****************
  *
- * INTEGER          NUMSUI      : --> : Restart file number
- * INTEGER          INDCEL      : <-- : Matching cells flag
- * INTEGER          INDFAC      : <-- : Matching interior faces flag
- * INTEGER          INDFBR      : <-- : Matching boundary faces flag
- * INTEGER          INDSOM      : <-- : Matching vertices flag
+ * integer          numsui      : <-- : Restart file number
+ * integer          indcel      : --> : Matching cells flag
+ * integer          indfac      : --> : Matching interior faces flag
+ * integer          indfbr      : --> : Matching boundary faces flag
+ * integer          indsom      : --> : Matching vertices flag
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tstsui, TSTSUI)
@@ -1037,10 +1036,10 @@ void CS_PROCF (tstsui, TSTSUI)
  *
  * Fortran interface
  *
- * SUBROUTINE INFSUI (NUMSUI)
+ * subroutine infsui (numsui)
  * *****************
  *
- * INTEGER          NUMSUI      : --> : Restart file number
+ * integer          numsui      : <-- : Restart file number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (infsui, INFSUI)
@@ -1073,22 +1072,22 @@ void CS_PROCF (infsui, INFSUI)
  *
  * Fortran interface
  *
- * SUBROUTINE LECSUI (NUMSUI, NOMRUB, LNGNOM, ITYSUP, NBVENT, IRTYPE, TABVAR)
+ * subroutine lecsui (numsui, nomrub, lngnom, itysup, nbvent, irtype, tabvar)
  * *****************
  *
- * INTEGER          NUMSUI      : --> : Restart file number
- * CHARACTER*       NOMRUB      : --> : Section name
- * INTEGER          LNGNOM      : --> : Section name length
- * INTEGER          ITYSUP      : --> : Location type:
+ * integer          numsui      : <-- : Restart file number
+ * character*       nomrub      : <-- : Section name
+ * integer          lngnom      : <-- : Section name length
+ * integer          itysup      : <-- : Location type:
  *                              :     :  0: scalar (no location)
  *                              :     :  1: cells
  *                              :     :  2: interior faces
  *                              :     :  3: boundary faces
  *                              :     :  4: vertices (if available)
- * INTEGER          NBVENT      : --> : N. values per location entity
- * INTEGER          IRTYPE      : --> : 1 for integers, 2 for double precision
- * (?)              TABVAR      : <-> : Array of values to read
- * INTEGER          IERROR      : <-- : 0: success, < 0: error code
+ * integer          nbvent      : <-- : N. values per location entity
+ * integer          irtype      : <-- : 1 for integers, 2 for double precision
+ * (?)              tabvar      : <-> : Array of values to read
+ * integer          ierror      : --> : 0: success, < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (lecsui, LECSUI)
@@ -1152,22 +1151,22 @@ void CS_PROCF (lecsui, LECSUI)
  *
  * Fortran interface
  *
- * SUBROUTINE ECRSUI (NUMSUI, NOMRUB, LNGNOM, ITYSUP, NBVENT, IRTYPE, TABVAR)
+ * subroutine ecrsui (numsui, nomrub, lngnom, itysup, nbvent, irtype, tabvar)
  * *****************
  *
- * INTEGER          NUMSUI      : --> : Restart file number
- * CHARACTER*       NOMRUB      : --> : Section name
- * INTEGER          LNGNOM      : --> : Section name length
- * INTEGER          ITYSUP      : --> : Location type:
+ * integer          numsui      : <-- : Restart file number
+ * character*       nomrub      : <-- : Section name
+ * integer          lngnom      : <-- : Section name length
+ * integer          itysup      : <-- : Location type:
  *                              :     :  0: scalar (no location)
  *                              :     :  1: cells
  *                              :     :  2: interior faces
  *                              :     :  3: boundary faces
  *                              :     :  4: vertices (if available)
- * INTEGER          NBVENT      : --> : N. values per location entity
- * INTEGER          IRTYPE      : --> : 1 for integers, 2 for double precision
- * (?)              TABVAR      : --> : Array of values to write
- * INTEGER          IERROR      : <-- : 0: success, < 0: error code
+ * integer          nbvent      : <-- : N. values per location entity
+ * integer          irtype      : <-- : 1 for integers, 2 for double precision
+ * (?)              tabvar      : <-- : Array of values to write
+ * integer          ierror      : --> : 0: success, < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (ecrsui, ECRSUI)
