@@ -1,3 +1,14 @@
+* 16/02/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix missing handling of periodicity for mesh check using the GUI.
+  modified files:
+    gui/Pages/SolutionVerifView.py
+
+* 16/02/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix rename of postprocessing output from "results" to "quality" for
+  mesh check using the GUI.
+  modified files:
+    gui/Pages/SolutionVerifView.py
+
 * 26/01/2012 - David Monfort <david.monfort@edf.fr>
   Fix missing memory allocation for some work arrays in the compressible
   module.

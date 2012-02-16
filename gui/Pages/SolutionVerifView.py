@@ -320,7 +320,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         if joining != None:
             sd_node.xmlInitNode('joining').xmlChildsCopy(joining)
         if periodicity != None:
-            sd_node.xmlInitNode('solution_domain').xmlChildsCopy(periodicity)
+            sd_node.xmlInitNode('periodicity').xmlChildsCopy(periodicity)
 
         self.out2 = OutputControlModel(self.case2)
 
