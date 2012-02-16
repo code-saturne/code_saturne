@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2011 EDF S.A.
+# Copyright (C) 1998-2012 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -958,8 +958,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         # Combo models
 
         self.modelOutput         = QtPage.ComboModel(self.comboBoxOutput,3,1)
-        self.modelFrequency = QtPage.ComboModel(self.comboBoxFrequency,4,1)
-        self.modelTimeDependency         = QtPage.ComboModel(self.comboBoxTimeDependency,3,1)
+        self.modelFrequency      = QtPage.ComboModel(self.comboBoxFrequency,4,1)
+        self.modelTimeDependency = QtPage.ComboModel(self.comboBoxTimeDependency,3,1)
         self.modelFormat         = QtPage.ComboModel(self.comboBoxFormat,2,1)
         self.modelPolygon        = QtPage.ComboModel(self.comboBoxPolygon,3,1)
         self.modelPolyhedra      = QtPage.ComboModel(self.comboBoxPolyhedra,3,1)
@@ -1719,8 +1719,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.lineEditHisto.hide()
             self.lineEditFRHisto.hide()
             self.comboBoxProbeFmt.hide()
+            self.label.hide()
         else:
             self.comboBoxProbeFmt.show()
+            self.label.show()
 
         if histo == "At each step":
             nthist = 1
