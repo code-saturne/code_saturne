@@ -2,6 +2,7 @@
   Fix monitoring points frequency management in the graphical interface.
   modified file:
     gui/Pages/OutputControlModel.py
+    gui/Pages/OutputControlView.py
 
 * 16/02/2012 - Alexande Douce <alexandre.douce@edf.fr>
   Some fixes for the autovnv tool.
