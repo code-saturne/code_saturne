@@ -4271,59 +4271,8 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
 
 void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
 {
-    int i;
-
     cs_gui_boundary_conditions_free_memory(ncharb);
-
-    /* clean memory for global private structure vars */
-
-    for (i=0; i < cs_glob_var->nvar; i++)
-    {
-        BFT_FREE(cs_glob_var->type[i]);
-        BFT_FREE(cs_glob_var->head[i]);
-        BFT_FREE(cs_glob_var->name[i]);
-    }
-
-    for (i=0; i < cs_glob_var->nscaus + cs_glob_var->nscapp; i++)
-        BFT_FREE(cs_glob_var->label[i]);
-
-    for (i=0; i < cs_glob_var->nprop; i++)
-        BFT_FREE(cs_glob_var->properties_name[i]);
-
-    BFT_FREE(cs_glob_var->label);
-    BFT_FREE(cs_glob_var->model);
-    BFT_FREE(cs_glob_var->model_value);
-    BFT_FREE(cs_glob_var->rtp);
-    BFT_FREE(cs_glob_var->rphas);
-    BFT_FREE(cs_glob_var->pphas);
-    BFT_FREE(cs_glob_var->name);
-    BFT_FREE(cs_glob_var->type);
-    BFT_FREE(cs_glob_var->head);
-    BFT_FREE(cs_glob_var->properties_name);
-    BFT_FREE(cs_glob_var->properties_ipp);
-    BFT_FREE(cs_glob_var->propce);
-    BFT_FREE(cs_glob_var);
-
-
-    for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
-        BFT_FREE(cs_glob_label->_cs_gui_var_name[i]);
-
-    BFT_FREE(cs_glob_label->_cs_gui_var_name);
-    BFT_FREE(cs_glob_label);
-
-    /* clean memory for xml document */
-
-#if defined(HAVE_LIBXML2)
-    if (xpathCtx != NULL) xmlXPathFreeContext(xpathCtx);
-    if (node != NULL) xmlFreeNode(node);
-#endif
-
-    /* Shutdown libxml */
-
-#if defined(HAVE_LIBXML2)
-    xmlCleanupParser();
-    xmlMemoryDump();
-#endif
+    cs_gui_clean_memory();
 }
 
 /*============================================================================
@@ -4369,6 +4318,72 @@ cs_gui_get_sfc_partition_type(void)
   BFT_FREE(sfc);
 
   return retval;
+}
+
+/*-----------------------------------------------------------------------------
+ * Free memory: clean global private variables and libxml2 variables
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_clean_memory(void)
+{
+    int i;
+
+    /* clean memory for global private structure vars */
+
+    if (cs_glob_var->type != NULL)
+        for (i = 0; i < cs_glob_var->nvar; i++)
+            BFT_FREE(cs_glob_var->type[i]);
+    BFT_FREE(cs_glob_var->type);
+
+    if (cs_glob_var->head != NULL)
+        for (i = 0; i < cs_glob_var->nvar; i++)
+            BFT_FREE(cs_glob_var->head[i]);
+    BFT_FREE(cs_glob_var->head);
+
+    if (cs_glob_var->name != NULL)
+        for (i = 0; i < cs_glob_var->nvar; i++)
+            BFT_FREE(cs_glob_var->name[i]);
+    BFT_FREE(cs_glob_var->name);
+
+    if (cs_glob_var->label != NULL)
+        for (i = 0; i < cs_glob_var->nscaus + cs_glob_var->nscapp; i++)
+            BFT_FREE(cs_glob_var->label[i]);
+    BFT_FREE(cs_glob_var->label);
+
+    if (cs_glob_var->properties_name != NULL)
+        for (i = 0; i < cs_glob_var->nprop; i++)
+            BFT_FREE(cs_glob_var->properties_name[i]);
+    BFT_FREE(cs_glob_var->properties_name);
+
+    BFT_FREE(cs_glob_var->model);
+    BFT_FREE(cs_glob_var->model_value);
+    BFT_FREE(cs_glob_var->rtp);
+    BFT_FREE(cs_glob_var->rphas);
+    BFT_FREE(cs_glob_var->pphas);
+    BFT_FREE(cs_glob_var->properties_ipp);
+    BFT_FREE(cs_glob_var->propce);
+    BFT_FREE(cs_glob_var);
+
+    for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
+        BFT_FREE(cs_glob_label->_cs_gui_var_name[i]);
+
+    BFT_FREE(cs_glob_label->_cs_gui_var_name);
+    BFT_FREE(cs_glob_label);
+
+    /* clean memory for xml document */
+
+#if defined(HAVE_LIBXML2)
+    if (xpathCtx != NULL) xmlXPathFreeContext(xpathCtx);
+    if (node != NULL) xmlFreeNode(node);
+#endif
+
+    /* Shutdown libxml */
+
+#if defined(HAVE_LIBXML2)
+    xmlCleanupParser();
+    xmlMemoryDump();
+#endif
 }
 
 /*----------------------------------------------------------------------------
