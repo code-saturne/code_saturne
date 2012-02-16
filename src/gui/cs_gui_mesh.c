@@ -66,6 +66,7 @@
 #include "cs_join_perio.h"
 #include "cs_mesh.h"
 #include "cs_mesh_warping.h"
+#include "cs_mesh_smoother.h"
 #include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
@@ -537,6 +538,68 @@ cs_gui_mesh_define_periodicities(void)
   for (perio_id = 0; perio_id < n_perio; perio_id++)
     BFT_FREE(modes[perio_id]);
   BFT_FREE(modes);
+}
+
+/*----------------------------------------------------------------------------
+ * Mesh smoothing.
+ *
+ * parameters:
+ *   mesh <-> pointer to mesh structure to smoothe
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_smoothe(cs_mesh_t  *mesh)
+{
+  char  *path = NULL;
+  int mesh_smooting = 0;
+  double angle = 25.;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "solution_domain", "mesh_smoothing");
+  cs_xpath_add_attribute(&path, "status");
+
+  cs_gui_get_status(path, &mesh_smooting);
+
+  if (mesh_smooting) {
+
+    BFT_FREE(path);
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 3,
+                          "solution_domain",
+                          "mesh_smoothing",
+                          "smooth_angle");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &angle))
+      angle = 25.;
+
+#if _XML_DEBUG_
+  bft_printf("==> uicwf\n");
+  bft_printf("--mesh_smoothing = %d\n"
+             "--angle          = %f\n",
+             mesh_smooting, angle);
+#endif
+
+    int *vtx_is_fixed = NULL;
+
+    BFT_MALLOC(vtx_is_fixed, mesh->n_vertices, int);
+
+    /* Get fixed boundary vertices flag */
+
+    cs_mesh_smoother_fix_by_feature(mesh,
+                                    angle,
+                                    vtx_is_fixed);
+
+    /* Call unwarping smoother */
+
+    cs_mesh_smoother_unwarp(mesh, vtx_is_fixed);
+
+    /* Free memory */
+
+    BFT_FREE(vtx_is_fixed);
+  }
+  BFT_FREE(path);
 }
 
 /*----------------------------------------------------------------------------*/

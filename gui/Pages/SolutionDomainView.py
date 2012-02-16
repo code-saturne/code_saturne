@@ -658,10 +658,14 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.connect(self.pushButtonDeleteMesh, SIGNAL("clicked()"), self.slotDeleteMesh)
         self.connect(self.groupBoxWarp, SIGNAL("clicked(bool)"), self.slotFacesCutting)
         self.connect(self.lineEditWarp, SIGNAL("textChanged(const QString &)"), self.slotWarpParam)
+        self.connect(self.groupBoxMeshSmooth, SIGNAL("clicked(bool)"), self.slotMeshSmooth)
+        self.connect(self.lineEditMeshSmooth, SIGNAL("textChanged(const QString &)"), self.slotMeshSmoothParam)
 
         # 2.3) Set up validators
         validatorWarp = DoubleValidator(self.lineEditWarp, min=0.0)
         self.lineEditWarp.setValidator(validatorWarp)
+        validatorSmooth = DoubleValidator(self.lineEditMeshSmooth, min=0.0, max=90.0)
+        self.lineEditMeshSmooth.setValidator(validatorSmooth)
 
         # 2.4) Faces to join selection (Custom Widgets)
 
@@ -808,6 +812,20 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         v = self.mdl.getCutAngle()
         self.warp = v
         self.lineEditWarp.setText(str(self.warp))
+
+
+        # 5.3) Mesh Smoothing
+
+        if self.mdl.getSmoothingStatus() == 'on':
+            self.groupBoxMeshSmooth.setChecked(True)
+            self.slotMeshSmooth(True)
+        else:
+            self.groupBoxMeshSmooth.setChecked(False)
+            self.slotMeshSmooth(False)
+
+        v = self.mdl.getSmoothAngle()
+        self.smooth = v
+        self.lineEditMeshSmooth.setText(str(self.smooth))
 
 
     def MeshesResizeEvent(self, event):
@@ -1115,6 +1133,38 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         var, ok = text.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setCutAngle(var)
+
+
+    @pyqtSignature("bool")
+    def slotMeshSmooth(self, checked):
+        """
+        Private slot.
+
+        Do we use mesh smoothing ?
+
+        @type checked: C{True} or C{False}
+        @param checked: if C{True}, shows the QGroupBox mesh smooth parameters
+        """
+        self.groupBoxMeshSmooth.setFlat(not checked)
+        if checked:
+            self.mdl.setSmoothingStatus("on")
+            self.frameSmooth.show()
+        else:
+            self.mdl.setSmoothingStatus("off")
+            self.frameSmooth.hide()
+
+
+    @pyqtSignature("const QString&")
+    def slotMeshSmoothParam(self, text):
+        """
+        Private slot.
+
+        @type text: C{QString}
+        @param text: angle for mesh smoothing
+        """
+        var, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setSmoothAngle(var)
 
 
     @pyqtSignature("")
