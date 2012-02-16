@@ -213,10 +213,9 @@ class Parser(object):
 
         for n in self.root.getElementsByTagName("study"):
             label = str(n.attributes["label"].value)
-            if n.attributes["status"].value != "on":
-                raise ValueError, "Error: the getStudyNode method is used with the study %s turned off " % l
-
             if label == l:
+                if str(n.attributes["status"].value) != "on":
+                    raise ValueError, "Error: the getStudyNode method is used with the study %s turned off " % l
                 node = n
                 break
 
