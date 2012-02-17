@@ -1304,7 +1304,7 @@ cs_restart_create(const char         *name,
   lname = strlen(name);
 
   BFT_MALLOC(_name, ldir + lname + 2, char);
-  
+
   strcpy(_name, _path);
   _name[ldir] = _dir_separator;
   _name[ldir+1] = '\0';
