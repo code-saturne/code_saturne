@@ -48,14 +48,14 @@ example, $\rho g$ becomes $|\Omega _{i}|\rho_{i}\,g$.
 In this expression, $|\Omega _{i}|$ is the volume of cell $\Omega _{i}$ and 
 $\rho_{i}$ denotes the average of $\rho $ over the control volume
 (the cell) $\Omega _{i}$. When
-``reconstructions'' (in fact Taylor series) are required to reach a higher
+"reconstructions" (in fact Taylor series) are required to reach a higher
 order in space, the average value $\rho_{i}$ is assumed to be associated
 with the centre $I$ of $\Omega _{i}$.
 \nomenclature[riu]{$I$}{center of $\Omega_i$}
 
-The ``divergence'' terms (or ``flux'' terms, or again ``conservative''
+The" divergence" terms (or "flux" terms, or again "conservative"
 terms) are integrated using the Green relation to introduce cell faces
-values (and so, ``fluxes'' appear naturally). For example, a term such as 
+values (and so, "fluxes" appear naturally). For example, a term such as 
 $\dive \left(p \tens{1}\right)$ becomes\footnote{%
 If the cell $i$ is at the domain boundary, the sum becomes 
 $\sum\limits_{j\in \Neigh{i}}p_{ij}S_{ij}+\sum\limits_{b \in \Bound{i}
@@ -72,13 +72,13 @@ it. The value $p_{ij}$ is
 assumed to be associated with the centre $F$
 \nomenclature[rfu]{$F$}{center of the face $ij$ between cells $i$ and $j$}
  of the face $ij$ when
-``reconstructions'' are needed to reach a higher order in space.
+"reconstructions" are needed to reach a higher order in space.
 
 The precision of the value $p_{ij}$ determines the precision of the
 calculation of $\dive \left(p \tens{1}\right)$. For $p_{ij}$, it is possible to take a non-centred
 and non-interpolated value (upwind scheme for convection) or a linear
 interpolation between the values at the centres I and J of the neighbouring
-cells. Both methods are relatively straighforward but may lack consistence
+cells. Both methods are relatively straightforward but may lack consistence
 and precision for arbitrary meshes (and in particular on non-orthogonal
 meshes). A higher order in space may be reached if reconstruction techniques
 are used. The idea is to compute the value for $p_{ij}$ more precisely: to
@@ -91,15 +91,15 @@ of $p$ that motivated the need for a good interpolation of $p$ at $F_{ij}$.
 Hence, the computation of the space derivatives of $p$ requires to solve a
 system: this is done in an iterative manner (see \S~\ref{sec:space_discretization_it_grad} and \S~\ref{ap:gradrc}).
 
-Doing so allows to calculate the \textbf{``cell gradient''} of the variables.
-It is important to keep in mind that the ``cell gradient'' of a given variable
+Doing so allows to calculate the \textbf{"cell gradient"} of the variables.
+It is important to keep in mind that the "cell gradient" of a given variable
 represents the gradient of the variable in the cell and that it is obtained
 from the values of the variable interpolated at the cell faces.
 
-Similarly, the terms written as \textbf{``divergence of gradient''} are
+Similarly, the terms written as \textbf{"divergence of gradient"} are
 integrated to introduce face values. One has to calculate the gradient at
-each face (or ``face gradient'') in the direction normal to the face. This
-concept of ``face gradient'' is extremely important. The ``face gradient''
+each face (or "face gradient") in the direction normal to the face. This
+concept of "face gradient" is extremely important. The "face gradient"
 normal to a face can be easily calculated with just the values at the
 centres of the two cells that share the face (points $I$ and $J$ on 
 \figurename~\ref{fig:sketch_internal_external_faces}),%Base_Introd_fig_geom}), 
@@ -107,7 +107,7 @@ but this method is limited to orthogonal meshes.
 % fa modification : reconstruction is compulsory for consistence
 For consistence and to reach a higher order in space, the values of the
 variables at points $I'$ and $J'$ have to be used. These are calculated by a
-Taylor series from the values at $I$ and $J$ and from the ``cell gradient''
+Taylor series from the values at $I$ and $J$ and from the "cell gradient"
 previously determined.
 
 \begin{figure}[t]
@@ -132,7 +132,7 @@ previously determined.
 \subsection{Upwind}
 
 %-------------------------------------------------------------------------------
-\subsection{Centered}
+\subsection{Centred}
 
 %-------------------------------------------------------------------------------
 \subsection{Second Order Linear Upwind (SOLU)}
@@ -152,11 +152,271 @@ previously determined.
 %-------------------------------------------------------------------------------
 \section{Gradient calculation}
 
-Work in progress.
+The aim of the present section is to describe the algorithm available in \CS 
+to compute cell gradient for scalar or vector fields. The first one uses an 
+iterative process to handle with non-orthogonalities. It is robust but require 
+computational effort. The second one, the least square method, minimizes a 
+function. It is quick, but less accurate.
 
 %-------------------------------------------------------------------------------
-\subsection{Standard method: iterative porcess}\label{sec:space_discretization_it_grad}
-Work in progress.
+\subsection{Standard method: iterative process}\label{sec:space_discretization_it_grad}
+
+
+\subsubsection{General description}
+\begin{figure}[!htbcp]
+\centering
+\mbox{
+\subfigure[Interior face]{
+\includegraphics[width=0.4\textwidth]{facette}
+} \,
+\subfigure[Boundary face]{
+\includegraphics[width=0.4\textwidth]{facebord}
+}
+}
+\caption{\label{fig:geom_gradrc}
+Sketch of geometrical quantities.
+}
+\end{figure}
+
+Notations of the geometrical quantities are recalled in \figurename~\ref{fig:geom_gradrc}.
+To compute the cell gradient $\grad_{\celli} \Phi $ of the scalar field $\Phi$.
+By definition, it reads:
+\begin{equation}
+\norm{\vol{\celli}} \grad_{\celli} \Phi
+\equiv  \displaystyle
+\int_{\vol{\celli}}{\grad \Phi \, \dd \vol{} }
+\end{equation}
+
+
+
+In order to take mesh non-orthogonalities into account, a Taylor series ($1^{st}$-order) of $\grad_{\celli} \Phi$ is used as follows:
+
+\begin{equation}\label{eq:compute_gradrc1}
+\begin{array}{r c l}
+\norm{\vol{\celli}} \grad_{\celli} \Phi &  
+\equiv & \displaystyle
+\int_{\vol{\celli}}{\grad \Phi \, \dd \vol{} }
+= \sum\limits_{ \fij \in \Facei{\celli}} 
+\Phi_{\fij}\,{\vect S_{\ij }} 
++\sum\limits_{ \fib \in \Faceb{\celli}} 
+\Phi_{\fib}\,{\vect S_{\ib }} \\
+&\simeq &  \displaystyle 
+\sum\limits_{ \fij \in \Facei{\celli}} \left[ \Phi_{\cento}+ \grad_{\cento} \Phi \cdot \vect{\cento \centf} \right] \vect{S}_{\ij}+
+\sum\limits_{ \fib \in \Faceb{\celli}} \left[ \var {INC} A_{\fib} + B_{\fib} \Phi_{\ipf} \right] \vect{S}_{\ib}\\
+ & = &\displaystyle 
+\sum\limits_{ \fij \in \Facei{\celli}} 
+\left[
+\left( \alpha_{\ij} \Phi_\centi +
+(1 - \alpha_{\ij}) \Phi_\centj \right) \right] \vect{S}_{\ij} +
+\sum\limits_{ \fij \in \Facei{i}} \left[
+\grad_{\fij} \Phi  \cdot  \vect{\cento \centf} \right] \vect{S}_{\ij} \\
+&+&\displaystyle 
+\sum\limits_{ \fib \in \Faceb{\celli}} \left[ \var{INC} A_{\fib} + B_{\fib} \Phi_{\ipf} \right] \vect{S}_{\ib}\\
+\end{array}
+\end{equation}
+
+The variable $\var{INC}$ is set to $0$ for an increment of a variable
+\footnote{
+Then a homogeneous condition has to be imposed.
+},
+ to $1$ for the variable itself in order to take 
+correctly the boundary condition into account.
+
+Using the following $1^{st}$-order approximation
+\begin{equation}\notag
+\left\{\begin{array}{ll}
+\grad_{\fij} \Phi & = \displaystyle \frac{1}{2}\left[ \grad_{\centi} \Phi + \grad_{\centj} \Phi \right]\\
+\Phi_{\ipf}&= \Phi_{\centi} + \grad_{\centi} \Phi \cdot \vect{\centi \centip }
+\end{array}\right .
+\end{equation}
+Equation (\ref{eq:compute_gradrc1}) becomes:
+%
+\begin{equation*}
+\begin{array}{r c l}
+\norm{\vol{\celli}} \grad_{\celli} \Phi &=&
+\displaystyle
+\sum\limits_{\fij \in \Facei{\celli}}
+\left[\alpha_{\ij} \Phi_\celli
++ (1 - \alpha_{\ij}) \Phi_\cellj  + \frac{1}{2}  
+\left( \grad_\celli \Phi +\grad_\cellj \Phi\right) \cdot \vect{\cento \centf }  \right] {\vect S_{\ij}}\\
+&+& \displaystyle
+\sum\limits_{\fib \in \Faceb{\celli}}
+\left[ \var{INC}A_{\fib} +
+B_{\fib} \Phi_{\celli} + B_{\fib} \grad_{\celli} \Phi \cdot \vect{\centi \centip}
+\right] \vect{S}_{\ib}
+\end{array}
+\end{equation*}
+
+Bringing all $\grad_\celli \Phi$ terms all together on the left hand side, we have:
+%
+\begin{equation}\label{eq:gradrc_recontruit}
+\begin{array}{r c l}
+\displaystyle
+\norm{\vol{\celli}} \grad_{\celli} \Phi -
+\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2} \grad_\celli \Phi \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right)-
+\sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib} \grad_\celli \Phi \cdot \left( \vect{\centi \centip}  \otimes \vect{S}_{\ib} \right)
+= \\
+\displaystyle
+\sum\limits_{\fij \in \Facei{\celli}}\left[
+(\alpha_{\ij} \Phi_\celli + (1 - \alpha_{\ij}) \Phi_\cellj)\right] \vect{S}_{\ij}+
+\sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} \grad_\cellj \Phi \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
++
+\sum\limits_{\fib \in \Faceb{\celli}}\left[ \var{INC} A_{\fib} + B_{\fib} \Phi_\celli \right] \vect{S}_{\ib}
+\end{array}
+\end{equation}
+
+\subsubsection{Without reconstruction}
+On an orthogonal mesh, or if chosen, only $0^{th}$-order contributions are considered.
+Everything is as if
+$\vect{\centi \centip} = \vect{0}$ and $\vect{\cento \centf} = \vect{0}$ in the previous calculation:
+\begin{equation}\notag
+\begin{array}{ll}
+\norm{\vol{\celli}} \grad_\celli \Phi &\equiv \displaystyle \int_{\vol{\celli}} \grad \Phi\, \dd \vol{}
+=\sum\limits_{\fij \in \Facei{\celli}} \Phi_{\fij} \vect S_{\ij} + \sum\limits_{\fib \in \Faceb{\celli}} \Phi_{\fib} \vect{S}_{\ib} \\
+ &= \displaystyle
+ \sum\limits_{ \fij \in \Facei{\celli}}
+ \left[ \alpha_{\ij} \Phi_\centi +
+(1 - \alpha_{\ij}) \Phi_\centj \right] \vect S_{\ij}
++ \sum\limits_{ \fib \in \Faceb{\celli}} \left[ \var{INC} A_{\fib} + B_{\fib}\Phi_\centi \right] \vect{S}_{\ib}
+\end{array}
+\end{equation}
+hence
+\begin{multline}\label{eq:gradrc_nonrecontruit}
+\grad_\celli \Phi= \frac{1}{\norm{\vol{\celli}}} \left[
+\sum\limits_{\fij \in \Facei{\celli}}
+\left[\alpha_{\ij} \Phi_\centi + (1 - \alpha_{\ij}) \Phi_\centj) \right] \vect S_{\ij} \right.
++\left.\sum\limits_{\fib \in \Faceb{\celli}}(\var{INC} A_{\fib} + B_{\fib} \Phi_\centi
+) \vect{S}_{\ib} \right]
+\end{multline}
+
+\begin{remark}
+The non-reconstructed gradient is denoted by $ \grad_\celli^{NRec} \Phi  $, and is then 
+very easy to compute thank to the Equation (\ref{eq:gradrc_nonrecontruit}).
+However, it is neither accurate nor consistent on a non-orthogonal mesh.
+\end{remark}
+
+\subsubsection{Handling with reconstruction: iterative process}
+
+In order to solve system (\ref{eq:gradrc_recontruit}), all terms containing $\grad_\celli \Phi$ are implicit, whereas 
+all terms with $\grad_\cellj \Phi$ are explicit, we then use the series $\left( \delta \grad_\celli^k \Phi \right)_{k \in \mathbb{N}}$ defined by:
+%
+\begin{equation}
+\left\{\begin{array}{r c l}
+\delta \grad_\celli^0 \Phi &=& \grad_\celli^{NRec} \Phi \\
+\delta \grad_\celli^{k+1} \Phi &= &\grad_\celli^{k+1} \Phi - \grad_\celli^k \Phi
+\end{array}\right.
+\end{equation}
+%
+and the associated system is:
+
+\begin{equation}\label{eq:gradrc_recontruit_comp2}
+\begin{array}{c}
+\displaystyle
+\grad_{\celli}^{k+1} \Phi \cdot \left[\norm{\vol{\celli}} \tens{1} - 
+\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \vect{\cento \centf} \otimes \vect{S}_{\ij} -
+\sum\limits_{ \fib \in \Faceb{\celli}}  \vect{\centi \centip}  \otimes \vect{S}_{\ib}  \right]
+= \\
+\displaystyle
+\sum\limits_{\fij \in \Facei{\celli}}\left[
+(\alpha_{\ij} \Phi_\celli + (1 - \alpha_{\ij}) \Phi_\cellj)\right] \vect{S}_{\ij}+
+\sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} \grad_\cellj^k \Phi \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
+\displaystyle +
+\sum\limits_{\fib \in \Faceb{\celli}}\left[ \var{INC} A_{\fib} + B_{\fib} \Phi_\celli \right] \vect{S}_{\ib}
+\end{array}
+\end{equation}
+%
+or, as the following relationship stands:
+\begin{equation*}
+ \grad_\celli^{k+1} \Phi = \grad_\celli^k \Phi+ \delta \grad_\celli^{k+1} \Phi
+\end{equation*}
+
+\begin{equation}\label{eq:gradrc_recontruit_increment}
+\begin{array}{c}
+\displaystyle
+\delta \grad_{\celli}^{k+1} \Phi \cdot \left[\norm{\vol{\celli}} \tens{1} - 
+\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \vect{\cento \centf} \otimes \vect{S}_{\ij} -
+\sum\limits_{ \fib \in \Faceb{\celli}}  \vect{\centi \centip}  \otimes \vect{S}_{\ib}  \right]
+= \\
+\displaystyle
+ -\norm{\vol{\celli}}  \grad_{\celli}^{k} \Phi +
+\sum\limits_{\fij \in \Facei{\celli}}\left[
+(\alpha_{\ij} \Phi_\celli + (1 - \alpha_{\ij}) \Phi_\cellj)\right] \vect{S}_{\ij}+
+\sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} 
+\left(\grad_\celli^k \Phi + \grad_\cellj^k \Phi \right) \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
+\displaystyle +
+\sum\limits_{\fib \in \Faceb{\celli}}\left[ \var{INC} A_{\fib} + B_{\fib} \Phi_\celli \right] \vect{S}_{\ib}
+\end{array}
+\end{equation}
+
+The Equation (\ref{eq:gradrc_recontruit_increment}) is a local $3 \times 3$ matrix which unknowns are each of the three components of 
+the vector $\delta \grad_\celli^{k+1} \Phi$. Finally, for each cell $\celli$ we get:
+%
+\begin{equation}\label{eq:eq_systeme_matriciel_gradrc}
+\underbrace{
+\left[\begin{array}{c}
+\delta \grad_{\celli ,x}^{k+1} \Phi\\
+\delta \grad_{\celli ,y}^{k+1} \Phi\\ 
+\delta \grad_{\celli ,z}^{k+1} \Phi
+\end{array}\right]
+}_{\delta \grad_\celli^{k+1} \Phi }
+\cdot
+\underbrace{
+\left[\begin{array}{ccc}
+\displaystyle
+  C_{\celli , xx}
+& C_{\celli , xy}
+& C_{\celli , xz}\\
+\displaystyle
+  C_{\celli , yx}
+& C_{\celli , yy}
+& C_{\celli , yz}\\
+\displaystyle
+  C_{\celli , zx}
+& C_{\celli , zy}
+& C_{\celli , zz}
+\end{array}\right]
+}_{\tens{C}_{\celli}}
+=
+\underbrace{
+\left[\begin{array}{c}
+\displaystyle
+R^{k+1}_{\celli ,x}\\
+\displaystyle
+R^{k+1}_{\celli ,y}\\
+\displaystyle
+R^{k+1}_{\celli ,z}
+\end{array}\right]
+}_{\vect{R}^{k+1}_{\celli}}
+\end{equation}
+%
+with:
+%
+\begin{equation}\label{eq:eq_second_membre_gradrc}
+\left\{\begin{array}{rcl}
+\tens{C}_\celli  &=& 
+\displaystyle
+\norm{\vol{\celli}} \tens{1} - 
+\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \vect{\cento \centf} \otimes \vect{S}_{\ij} -
+\sum\limits_{ \fib \in \Faceb{\celli}}  \vect{\centi \centip}  \otimes \vect{S}_{\ib} \\
+\vect{R}^{k+1}_{\celli} &=&
+\displaystyle 
+ -\norm{\vol{\celli}}  \grad_{\celli}^{k} \Phi +
+\sum\limits_{\fij \in \Facei{\celli}}\left[
+(\alpha_{\ij} \Phi_\celli + (1 - \alpha_{\ij}) \Phi_\cellj)\right] \vect{S}_{\ij} \\
+&+& \displaystyle
+\sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} 
+\left(\grad_\celli^k \Phi + \grad_\cellj^k \Phi \right) \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
+&+& \displaystyle 
+\sum\limits_{\fib \in \Faceb{\celli}}\left[ \var{INC} A_{\fib} + B_{\fib} \Phi_\celli \right] \vect{S}_{\ib}
+\end{array}\right.
+\end{equation}
+
+The invert of the matrix $\tens{C}_{\celli}$ is used to compute $\left( \delta \grad_\celli^{k+1} \Phi \right)$ 
+and so $\left( \grad^{k+1}_{\celli} \Phi \right)$. The iterative process stops as soon as the Euclidean norm of the right-hand-side $\vect{R}^{k+1}_{\celli}$ tends toward zero (\emph{i.e.} when the Euclidean norm
+of $\left( \delta \grad^{k}_{\celli} \Phi \right)$ tends to zero) or when the number of iteration reaches the maximal number of iterations.
+
+
+
 
 %-------------------------------------------------------------------------------
 \subsection{Least-square method}
