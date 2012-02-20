@@ -285,7 +285,7 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "x$cs_ibm_bg_type" != "x" \
+if test "x$cs_ibm_bg_type" != "x" -o "$host_os" = darwin \
      -o "$host_os" = cygwin -o "$host_os" = mingw32 ; then
    enable_shared=no
 fi
