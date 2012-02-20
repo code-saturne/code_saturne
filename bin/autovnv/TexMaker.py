@@ -174,36 +174,36 @@ class Report1(TexWriter):
     def __init__(self, dest, label, log, report, xml):
         TexWriter.__init__(self, dest, label, log)
         self.appendLine("\\section{Summary}")
-        self.tabCreate(["Study / Case", "Compilation", "Run", "Time (s)", "Difference", "Threshold"])
+        self.tabCreate(["Study / Case", "Compilation", "Run", "Time (s)", "Difference"])
         self.xml = xml
         self.report = report
 
 
-    def add_row(self, studyLabel, caseLabel, is_compil, is_run, is_time, is_compare, is_diff, threshold):
+    def add_row(self, studyLabel, caseLabel, is_compil, is_run, is_time, is_compare, is_diff):
         if is_compare == "not done":
             threshold = "Not used"
             is_diff   = "Not used"
 
         label = "%s / %s" % (studyLabel, caseLabel)
         label = label.replace("_", "\_")
-        self.tabWrite([label, is_compil, is_run, is_time, is_diff, str(threshold)])
+        self.tabWrite([label, is_compil, is_run, is_time, is_diff])
 
 
     def close(self):
         self.tabClose()
 
         self.appendLine("\\section{Log}")
-        self.appendLine("\\begin{verbatim}")
+        self.appendLine("\\tiny\n\\begin{verbatim}")
         f = open(self.report)
         self.rawLine(f.read())
         f.close()
-        self.appendLine("\\end{verbatim}")
+        self.appendLine("\\end{verbatim}\n\\normalsize")
 
         self.appendLine("\\section{File of commands}")
-        self.appendLine("\\begin{verbatim}")
+        self.appendLine("\\tiny\n\\begin{verbatim}")
         self.rawLine(self.xml)
         self.appendLine("")
-        self.appendLine("\\end{verbatim}")
+        self.appendLine("\\end{verbatim}\n\\normalsize")
 
         self.write()
         return self.make_pdf()
@@ -220,23 +220,14 @@ class Report2(TexWriter):
         TexWriter.__init__(self, dest, label, log)
 
 
-    def add_row(self, values, studyLabel, caseLabel, threshold):
-        if not threshold:
-            threshold = "Default"
-
+    def add_row(self, values, studyLabel, caseLabel):
         nbvalue = len(values)
         row_max = 40
 
         if nbvalue:
-
-            if not threshold:
-                threshold = "Default"
-
-            self.appendLine("Threshold: %s" % threshold)
-
-            self.tabCreate(["Variable Name", "Diff. Max", "Diff. Mean"])
+            self.tabCreate(["Variable Name", "Diff. Max", "Diff. Mean", "Threshold"])
             for j in range(len(values)):
-                self.tabWrite([values[j][0], values[j][1], values[j][2]])
+                self.tabWrite([values[j][0], values[j][1], values[j][2], values[j][3]])
 
             self.tabClose()
             self.appendLine("\n \\newpage \n")

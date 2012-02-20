@@ -231,7 +231,7 @@ class Case(object):
         return error, run_id
 
 
-    def compare(self, r, d, thresold):
+    def compare(self, r, d, threshold, args):
         home = os.getcwd()
 
         repo = os.path.join(self.__repo, self.label,
@@ -248,8 +248,19 @@ class Case(object):
 
         cmd = self.__diff + ' ' + repo + ' ' + dest
 
-        if thresold != None:
-            cmd += ' --threshold ' + thresold
+        self.threshold = "default"
+        if threshold != None:
+            cmd += ' --threshold ' + threshold
+            self.threshold = threshold
+
+        if args != None:
+            cmd += (" " + args)
+            l = string.split(args)
+            try:
+                i = l.index('--threshold')
+                self.threshold = l[i+1]
+            except:
+                pass
 
         l = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout
         info = l.read().replace("\"", " ").replace(";", " ").replace(":", " ").split()
@@ -259,7 +270,7 @@ class Case(object):
         for i in range(len(info)):
             if info[i][:4] == 'Diff':
                 if info[i-3] not in ['i4', 'u4']:
-                    tab.append([info[i-7].replace("_", "\_"), info[i+3], info[i+5]])
+                    tab.append([info[i-7].replace("_", "\_"), info[i+3], info[i+5], self.threshold])
 
         os.chdir(home)
 
@@ -622,10 +633,10 @@ class Studies(object):
         """
         for l, s in self.studies:
             for case in s.Cases:
-                bool, repo, dest, threshold = self.__parser.getCompare(case.node)
-                if bool and case.is_run != "KO":
-                    node = self.__parser.getChild(case.node, "compare")
-                    self.__check_dirs(l, case.label, node, repo, dest)
+                compare, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
+                for i in range(len(nodes)):
+                    if compare[i] and case.is_run != "KO":
+                        self.__check_dirs(l, case.label, nodes[i], repo[i], dest[i])
 
 
     def compare(self):
@@ -636,10 +647,12 @@ class Studies(object):
             for l, s in self.studies:
                 self.reporting('  o Compare study: ' + l)
                 for case in s.Cases:
-                    case.is_compare, repo, dest, case.threshold = self.__parser.getCompare(case.node)
-                    if case.is_compare and case.is_run != "KO":
-                        self.reporting('    - compare %s' % case.label)
-                        case.diff_value = case.compare(repo, dest, case.threshold)
+                    is_compare, nodes, repo, dest, t, args = self.__parser.getCompare(case.node)
+                    for i in range(len(nodes)):
+                        if is_compare[i] and case.is_run != "KO":
+                            case.is_compare = "done"
+                            self.reporting('    - compare %s (%s)' % (case.label, args[i]))
+                            case.diff_value += case.compare(repo[i], dest[i], t[i], args[i])
 
 
     def check_script(self):
@@ -649,9 +662,9 @@ class Studies(object):
         """
         for l, s in self.studies:
             for case in s.Cases:
-                bool, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
-                if bool and case.is_run != "KO":
-                    for i in range(len(label)):
+                script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
+                for i in range(len(nodes)):
+                    if script[i] and case.is_run != "KO":
                         self.__check_dirs(l, case.label, nodes[i], repo[i], dest[i])
 
 
@@ -660,11 +673,11 @@ class Studies(object):
         Launch external additional scripts with arguments.
         """
         for l, s in self.studies:
-            self.reporting('  o Script study: ' + l)
+            self.reporting('  o Script postpro study: ' + l)
             for case in s.Cases:
-                bool, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
-                if bool and case.is_run != "KO":
-                    for i in range(len(label)):
+                script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
+                for i in range(len(label)):
+                    if script[i] and case.is_run != "KO":
                         cmd = os.path.join(self.getDestination(), l, "POST", label[i])
                         if os.path.isfile(cmd):
                             cmd += " " + args[i]
@@ -733,8 +746,7 @@ class Studies(object):
                              case.is_run,
                              case.is_time,
                              case.is_compare,
-                             is_nodiff,
-                             case.threshold)
+                             is_nodiff)
 
         attached_files.append(doc1.close())
 
@@ -746,19 +758,16 @@ class Studies(object):
                 doc2.appendLine("\\section{%s}" % l)
 
                 if s.matplotlib_figures:
-                    doc2.appendLine("\\subsection{Results}")
+                    doc2.appendLine("\\subsection{Results for case %s}" % case.label)
                     for png in s.matplotlib_figures:
                         doc2.addFigure(png)
 
                 for case in s.Cases:
-                    if case.is_compare:
-                        doc2.appendLine("\\subsection{%s}" % case.label)
+                    if case.is_compare == "done":
+                        doc2.appendLine("\\subsection{Comparison for case %s}" % case.label)
                         if case.diff_value:
-                            doc2.add_row(case.diff_value,
-                                         l,
-                                         case.label,
-                                         case.threshold)
-                        else:
+                            doc2.add_row(case.diff_value, l, case.label)
+                        elif self.__compare:
                             doc2.appendLine("No difference between the repository and the destination.")
 
             attached_files.append(doc2.close())

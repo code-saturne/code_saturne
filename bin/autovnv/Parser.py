@@ -313,31 +313,37 @@ class Parser(object):
         Read:
             <study label='STUDY' status='on'>
                 <case label='CASE1' status='on' compute="on" post="on">
-                    <compare repo="20110216-2047" dest="20110216-2147" threshold='1e-4'/>
+                    <compare repo="" dest="" args='--section Pressure --threshold 1e-2' status="on"/>
                 </case>
             </study>
         @type caseNode: C{DOM Element}
         @param caseNode: node of the current case
-        @rtype: C{True} or C{False}, C{String}, C{String}, C{Float}
+        @rtype: C{True} or C{False}, C{String}, C{String}, C{Float}, C{String}
         @return: if the cs_io_dump/compare markup exists, and value of the threshold
         """
-        nodes = caseNode.getElementsByTagName("compare")
+        compare, nodes, threshold, args, repo, dest = [], [], [], [], [], []
 
-        compare    = False
-        threshold  = None
-        repo       = None
-        dest       = None
-
-        if nodes:
-            compare = True
-            repo    = str(nodes[0].attributes["repo"].value)
-            dest    = str(nodes[0].attributes["dest"].value)
+        for node in caseNode.getElementsByTagName("compare"):
             try:
-                threshold = str(nodes[0].attributes["threshold"].value)
+                if str(node.attributes["status"].value) == 'on':
+                    compare.append(True)
+                else:
+                    compare.append(False)
             except:
-                threshold = None
+                compare.append(True)
+            nodes.append(node)
+            repo.append(str(node.attributes["repo"].value))
+            dest.append(str(node.attributes["dest"].value))
+            try:
+                args.append(str(node.attributes["args"].value))
+            except:
+                args.append(None)
+            try:
+                threshold.append(str(node.attributes["threshold"].value))
+            except:
+                threshold.append(None)
 
-        return compare, repo, dest, threshold
+        return compare, nodes, repo, dest, threshold, args
 
 
     def getScript(self, caseNode):
@@ -351,26 +357,28 @@ class Parser(object):
         @type caseNode: C{DOM Element}
         @param caseNode: node of the current case
         """
-        script = False
-        label, nodes, args, repo, dest = [], [], [], [], []
+        script, label, nodes, args, repo, dest = [], [], [], [], [], []
 
         for node in caseNode.getElementsByTagName("script"):
             if str(node.attributes["status"].value) == 'on':
-                script = True
-                label.append(str(node.attributes["label"].value))
-		nodes.append(node)
-                try:
-                    args.append(str(node.attributes["args"].value))
-                except:
-                    args.append("")
-                try:
-                    repo.append(str(node.attributes["repo"].value))
-                except:
-                    repo.append(None)
-                try:
-                    dest.append(str(node.attributes["dest"].value))
-                except:
-                    dest.append(None)
+                script.append(True)
+            else:
+                script.append(False)
+                
+            label.append(str(node.attributes["label"].value))
+            nodes.append(node)
+            try:
+                args.append(str(node.attributes["args"].value))
+            except:
+                args.append("")
+            try:
+                repo.append(str(node.attributes["repo"].value))
+            except:
+                repo.append(None)
+            try:
+                dest.append(str(node.attributes["dest"].value))
+            except:
+                dest.append(None)
 
         return script, label, nodes, args, repo, dest
 
