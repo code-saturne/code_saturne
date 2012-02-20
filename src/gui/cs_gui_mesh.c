@@ -554,6 +554,9 @@ cs_gui_mesh_smoothe(cs_mesh_t  *mesh)
   int mesh_smooting = 0;
   double angle = 25.;
 
+  if (!cs_gui_file_is_loaded())
+    return;
+
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "solution_domain", "mesh_smoothing");
   cs_xpath_add_attribute(&path, "status");
