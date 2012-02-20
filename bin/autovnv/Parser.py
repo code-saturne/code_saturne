@@ -275,7 +275,7 @@ class Parser(object):
                 d['post']    = str(node.attributes["post"].value)
                 for n in node.childNodes:
                     if n.nodeType == minidom.Node.ELEMENT_NODE and n.childNodes:
-                        if n.tagName not in ("compare", "script", "data"):
+                        if n.tagName not in ("compare", "prepro", "script", "data"):
                             d[n.tagName] = n.childNodes[0].data
 
                 data.append(d)
@@ -344,6 +344,35 @@ class Parser(object):
                 threshold.append(None)
 
         return compare, nodes, repo, dest, threshold, args
+
+
+    def getPrepro(self, caseNode):
+        """
+        Read:
+            <study label='STUDY' status='on'>
+                <case label='CASE1' status='on' compute="on" post="on">
+                    <prepro label="script_pre.py" args="" status="on"/>
+                </case>
+            </study>
+        @type caseNode: C{DOM Element}
+        @param caseNode: node of the current case
+        """
+        prepro, label, nodes, args = [], [], [], []
+
+        for node in caseNode.getElementsByTagName("prepro"):
+            if str(node.attributes["status"].value) == 'on':
+                prepro.append(True)
+            else:
+                prepro.append(False)
+
+            label.append(str(node.attributes["label"].value))
+            nodes.append(node)
+            try:
+                args.append(str(node.attributes["args"].value))
+            except:
+                args.append("")
+
+        return prepro, label, nodes, args
 
 
     def getScript(self, caseNode):

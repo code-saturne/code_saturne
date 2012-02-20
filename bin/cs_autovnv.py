@@ -220,6 +220,10 @@ def runAutoverif(pkg, opt_f, opt_v, opt_r, opt_c, opt_p, opt_to):
 
     studies.compilation()
 
+    # Preprocessing
+
+    studies.prepro()
+
     # Update and run all cases
 
     if opt_r:

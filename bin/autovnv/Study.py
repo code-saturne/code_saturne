@@ -553,6 +553,25 @@ class Studies(object):
             sys.exit(1)
 
 
+    def prepro(self):
+        """
+        Launch external additional scripts with arguments.
+        """
+        for l, s in self.studies:
+            self.reporting('  o Script prepro study: ' + l)
+            for case in s.Cases:
+                pre, label, nodes, args = self.__parser.getPrepro(case.node)
+                for i in range(len(label)):
+                    if pre[i]:
+                        cmd = os.path.join(self.getDestination(), l, "MESH", label[i])
+                        if os.path.isfile(cmd):
+                            cmd += " " + args[i]
+                            retcode, t = run_command(cmd, self.__log)
+                            self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
+                        else:
+                            self.reporting('    - script %s not found' % cmd)
+
+
     def run(self):
         """
         Update and run all cases.
