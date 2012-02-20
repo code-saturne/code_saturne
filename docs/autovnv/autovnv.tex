@@ -25,6 +25,7 @@
 \documentclass[a4paper,10pt,twoside]{csshortdoc}
 % MACROS SUPPLEMENTAIRES
 \usepackage{csmacros}
+\usepackage{longtable}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -279,17 +280,18 @@ successfull previous computations.
 The comparison is activated if the option \texttt{-c, --compare} is present in
 the command line.
 
-In order to compare two checkpoint files, the markup \texttt{<compare>} has to
+In order to compare two checkpoint files, markups \texttt{<compare>} have to
 be added as a child of the condidered case. In the following exemple, a
-checkpoint file comparison is switched on for the case \textit{Grid1}, whereas
-no comparision is planed for the case \textit{Grid2}. The comparison is done by
-the external script \texttt{cs\_io\_dump} with the option \texttt{--diff}.
+checkpoint file comparison is switched on for the case \textit{Grid1} (for all
+variables, with the default threshold), whereas no comparison is planed for
+the case \textit{Grid2}. The comparison is done by the external
+script \texttt{cs\_io\_dump} with the option \texttt{--diff}.
 
 \small
 \begin{verbatim}
 <study label='MyStudy1' status='on'>
     <case label='Grid1' status='on' compute="on" post="off">
-        <compare dest="" repo="" threshold="1.0e-5"/>
+        <compare dest="" repo="" status="on"/>
     </case>
     <case label='Grid2' status='on' compute="off" post="off"/>
 </study>
@@ -317,13 +319,89 @@ the \texttt{RESU} directory of the case, the id can be ommitted:
 \texttt{dest=""}, the id will be completed automatically;
 \end{list}
 
-\item \texttt{threshold}: real value above which a difference is considered
-significant (default: $1e-30$).
+\item \texttt{args}: additional options for the script \texttt{cs\_io\_dump}
+\begin{list}{$\diamond$}{}
+\item \texttt{--section}: name of a particular variable;
+\item \texttt{--threshold}: real value above which a difference is considered
+significant (default: $1e-30$ for all variables);
+\end{list}
+\item \texttt{status}: must be equal to \texttt{on} or \texttt{off}:
+activate or desactivate the markup.
 \end{list}
 
-Only the attributes \texttt{repo} and \texttt{dest} are mandatory.
+Only the attributes \texttt{repo}, \texttt{dest} and \texttt{status} are mandatory.
 
-\subsection{Run external additional scripts with arguments}
+Several comparisons with different options are permitted:
+\small
+\begin{verbatim}
+<study label='MyStudy1' status='on'>
+    <case label='Grid1' status='on' compute="on" post="off">
+        <compare dest="" repo="" args="--section Pressure --threshold=1000" status="on"/>
+        <compare dest="" repo="" args="--section VelocityX --threshold=1e-5" status="on"/>
+        <compare dest="" repo="" args="--section VelocityY --threshold=1e-3" status="on"/>
+    </case>
+</study>
+\end{verbatim}
+\normalsize
+
+Comparisons results will be sumarized in a table in the file
+\texttt{report\_detailed.pdf}  (see \ref{sec:restart}):
+
+\begin{center}
+\begin{longtable}{|l|l|l|l|}
+\hline
+\textbf{Variable Name} &\textbf{Diff. Max} &\textbf{Diff. Mean} &\textbf{Threshold} \\
+\hline
+\hline
+VelocityX &0.102701 &0.00307058 &1.0e-5 \\
+\hline
+VelocityY &0.364351 &0.00764912 &1.0e-3 \\
+\hline
+\end{longtable}
+\end{center}
+
+\subsection{Run external additional preprocessing scripts with arguments}
+
+The markup \texttt{<prepro>} has to be added as a child of the condidered case.
+
+\small
+\begin{verbatim}
+<study label='STUDY' status='on'>
+    <case label='CASE1' status='on' compute="on" post="on">
+        <prepro label="mesh_coarse.py" args="-n 1" status="on"/>
+    </case>
+</study>
+\end{verbatim}
+\normalsize
+
+The attributes are:
+\begin{list}{$\bullet$}{}
+\item \texttt{label}: the name of the file of the considered script;
+\item \texttt{status}: must be equal to \texttt{on} or \texttt{off}:
+activate or desactivate the markup;
+\item \texttt{args}: the command line to pass to the script.
+\end{list}
+
+Only the attributes \texttt{label} and \texttt{status} are mandatory.
+
+Several calls of the same script or to different scripts are permitted:
+\small
+\begin{verbatim}
+<study label="STUDY" status="on">
+    <case label="CASE1" status="on" compute="on" post="on">
+        <prepro label="script_pre1.py" args="-n 1" status="on"/>
+        <prepro label="script_pre2.py" args="-n 2" status="on"/>
+    </case>
+</study>
+\end{verbatim}
+\normalsize
+
+All preprocessing scripts must be in the \texttt{MESH} directory from
+the current study in the \textbf{repository}.
+The main objectif of running such external scripts is to create or modify
+meshes.
+
+\subsection{Run external additional postprocessing scripts with arguments}
 
 The launch of external scripts is activated if the option \texttt{-p, --post}
 is present in the command line.
@@ -378,6 +456,8 @@ Several calls of the same script or to different scripts are permitted:
 \end{verbatim}
 \normalsize
 
+All postprocessing scripts must be in the \texttt{POST} directory from
+the current study in the \textbf{repository}.
 The main objectif of running external scripts is to create or modify
 results in order to plot them.
 
