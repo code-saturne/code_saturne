@@ -396,7 +396,9 @@ class Studies(object):
         @param dif: name of the diff executable: C{cs_io_dump -d}.
         """
 
-        # Create the xml parser
+        # create a first xml parser only for 
+        #   the repository verification and
+        #   the destination creation
 
         self.__parser = Parser(f)
 
@@ -411,13 +413,17 @@ class Studies(object):
         except:
             pass
 
-        # initialize the parser and the plotter
+        # copy the xml file of parameters for update and restart
 
-        file = os.path.join(self.getDestination(), f)
+        file = os.path.join(self.getDestination(), \
+                            os.path.basename(f))
         try:
             shutil.copyfile(f, file)
         except:
             pass
+
+        # create a new parser, which is definitive and the plotter
+
         self.__parser  = Parser(file)
         self.__plotter = Plotter(self.__parser)
 
