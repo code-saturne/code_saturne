@@ -79,6 +79,7 @@ class LagrangianStatisticsModel(Model):
         default['statistics_groups_of_particles'] = 0
         default['volume_statistics'] = "off"
         default['iteration_start_volume'] = 1
+        default['iteration_steady_start_volume'] = default['iteration_start_volume']
         default['threshold_volume'] = 0.
 
         for v in self._defaultVariablesNamesVolume():
@@ -194,7 +195,7 @@ class LagrangianStatisticsModel(Model):
         Update the iteration value for start of volume statistics calculation.
         """
         self.isInt(value)
-        self.isGreaterOrEqual(value, 0)
+        self.isGreaterOrEqual(value, 0)      
         self.node_volume.xmlSetData('iteration_start_volume', value)
 
 
@@ -207,6 +208,27 @@ class LagrangianStatisticsModel(Model):
             value = self._defaultLagrangianStatisticsValues()['iteration_start_volume']
             self.setIterationStartVolume(value)
         return value
+
+
+    def setIterSteadyStartVolume(self, value):
+        """
+        Update the iteration value for start of steady volume statistics calculation.
+        """
+        self.isInt(value)
+        self.isGreaterOrEqual(value,0)
+        self.node_volume.xmlSetData('iteration_steady_start_volume', value)
+
+
+    def getIterSteadyStartVolume(self):
+        """
+        Return the iteration value for start of steady volume statistics calculation.
+        """
+        value = self.node_volume.xmlGetInt('iteration_steady_start_volume')
+        if value == None:
+            value = self._defaultLagrangianStatisticsValues()['iteration_steady_start_volume']
+            self.setIterSteadyStartVolume(value)
+        return value
+
 
 
     def setThresholdValueVolume(self, value):

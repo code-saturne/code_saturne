@@ -195,7 +195,7 @@ istala = 0
 
 nvlsts = 0
 
-!     Numero du pas de temps pour debut statistque
+!     Numero du pas de temps pour debut statistiques
 
 idstnt = 1
 
@@ -372,7 +372,7 @@ if (iihmpr.eq.1) then
    iensi1, iensi2, ntlal,  nbvis, nvisla,                          &
    ivisv1, ivisv2, ivistp, ivisdm, iviste,                         &
    ivismp, ivishp, ivisdk, ivisch, ivisck,                         &
-   istala, nbclst, seuil, idstnt,                                  &
+   istala, nbclst, seuil, idstnt,  nstist,                         &
    ihslag, iensi3, seuilf, nstbor,                                 &
    inbrbd, iflmbd, iangbd, ivitbd, iencbd, imoybr )
 

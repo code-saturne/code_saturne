@@ -334,18 +334,22 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         self.connect(self.lineEditNBCLST, SIGNAL("textChanged(const QString &)"), self.slotNBCLST)
 
         self.connect(self.groupBoxISTALA, SIGNAL("clicked()"), self.slotISTALA)
-        self.connect(self.lineEditIDSTNT, SIGNAL("textChanged(const QString &)"), self.slotIDSTNT)
+        self.connect(self.lineEditIDSTNT, SIGNAL("editingFinished()"), self.slotIDSTNT)
+        self.connect(self.lineEditNSTIST, SIGNAL("editingFinished()"), self.slotNSTIST)
+        
         self.connect(self.lineEditSEUIL,  SIGNAL("textChanged(const QString &)"), self.slotSEUIL)
 
         self.connect(self.groupBoxIENSI3, SIGNAL("clicked()"), self.slotIENSI3)
         self.connect(self.lineEditNSTBOR, SIGNAL("textChanged(const QString &)"), self.slotNSTBOR)
         self.connect(self.lineEditSEUILF, SIGNAL("textChanged(const QString &)"), self.slotSEUILF)
 
+
         validatorNBCLST = IntValidator(self.lineEditNBCLST, min=0) # max=100
         #validatorNBCLST.setExclusiveMin(True)
 
         validatorIDSTNT = IntValidator(self.lineEditIDSTNT, min=0)
         validatorIDSTNT.setExclusiveMin(True)
+        validatorNSTIST = IntValidator(self.lineEditNSTIST, min=0)
         validatorSEUIL = DoubleValidator(self.lineEditSEUIL, min=0.)
         validatorNSTBOR = IntValidator(self.lineEditNSTBOR, min=0)
         validatorNSTBOR.setExclusiveMin(True)
@@ -353,6 +357,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
 
         self.lineEditNBCLST.setValidator(validatorNBCLST)
         self.lineEditIDSTNT.setValidator(validatorIDSTNT)
+        self.lineEditNSTIST.setValidator(validatorNSTIST)
         self.lineEditSEUIL.setValidator(validatorSEUIL)
         self.lineEditNSTBOR.setValidator(validatorNSTBOR)
         self.lineEditSEUILF.setValidator(validatorSEUILF)
@@ -454,6 +459,9 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
             it = self.model.getIterationStartVolume()
             self.lineEditIDSTNT.setText(QString(str(it)))
 
+            it = self.model.getIterSteadyStartVolume()
+            self.lineEditNSTIST.setText(QString(str(it)))
+
             seuil = self.model.getThresholdValueVolume()
             self.lineEditSEUIL.setText(QString(str(seuil)))
 
@@ -464,15 +472,45 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
                 del self.modelVolumicNames
 
 
-    @pyqtSignature("const QString&")
-    def slotIDSTNT(self, text):
+    @pyqtSignature("")
+    def slotIDSTNT(self):
         """
         Input IDSTNT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
+            text = self.lineEditIDSTNT.text()
             value, ok = text.toInt()
-            self.model.setIterationStartVolume(value)
+            valnds =  self.model.getIterSteadyStartVolume()
 
+            if value > valnds:
+                self.lineEditNSTIST.setText(QString(str(value)))
+                self.model.setIterSteadyStartVolume(value)
+            else:
+                valndsl, ok3 = (self.lineEditNSTIST.text()).toInt()
+                self.model.setIterSteadyStartVolume(valndsl)
+
+            self.model.setIterationStartVolume(value)          
+
+
+    @pyqtSignature("")
+    def slotNSTIST(self):
+        """
+        Input NSTIST.
+        """
+        if self.sender().validator().state == QValidator.Acceptable:
+            text = self.lineEditNSTIST.text()
+            value, ok = text.toInt()
+            valids =  self.model.getIterationStartVolume()       
+ 
+            if value < valids:
+                self.lineEditIDSTNT.setText(QString(str(value)))
+                self.model.setIterationStartVolume(value)  
+            else:
+                validsl, ok3 = (self.lineEditIDSTNT.text()).toInt()
+                self.model.setIterationStartVolume(validsl)                
+      
+            self.model.setIterSteadyStartVolume(value)
+            
 
     @pyqtSignature("const QString&")
     def slotSEUIL(self, text):

@@ -855,6 +855,7 @@ void CS_PROCF(cfname, CFNAME)
  * INTEGER          NBCLST     <--   number of particle clusters
  * INTEGER          SEUIL      <--   limit statistical weight value for volumic stat.
  * INTEGER          IDSTNT     <--   iteration number for volumic statistics
+ * INTEGER          NSTIST     <--   iteration number for steady-state volumic statistics
  * CHAR             NOMLAG     <--   mean variable name of volumic statistics
  * CHAR             NOMLAV     <--   variance variable name of volumic statistics
  * INTEGER          IHSLAG     <--   output of variable
@@ -913,6 +914,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
                                 int *const nbclst,
                                 double *const seuil,
                                 int *const idstnt,
+                                int *const nstist,				
                                 int ihslag[],
                                 int *const iensi3,
                                 double *const seuilf,
@@ -1044,6 +1046,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   if (*istala == 1) {
     _get_double(seuil, 4, "lagrangian", "statistics", "volume", "threshold_volume");
     _get_int(idstnt, 4, "lagrangian", "statistics", "volume", "iteration_start_volume");
+    _get_int(nstist, 4, "lagrangian", "statistics", "volume", "iteration_steady_start_volume");
 
     /* labels */
 
@@ -1259,6 +1262,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   bft_printf("--istala = %i\n", *istala);
   if (*istala == 1) {
     bft_printf("--idstnt = %i\n", *idstnt);
+    bft_printf("--nstist = %i\n", *nstist);
     bft_printf("--seuil  = %f\n", *seuil);
 
     /*
