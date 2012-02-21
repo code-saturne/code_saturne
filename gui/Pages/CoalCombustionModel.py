@@ -548,7 +548,6 @@ class CoalCombustionModel(Variables, Model):
                     Boundary("coal_inlet", zone.getLabel(), self.case).deleteCoals()
 
             ThermalRadiationModel(self.case).setRadiativeModel('off')
-            ConjugateHeatTransferModel(self.case).setConjugateHeatTransferStatus('off')
             self.node_coal['model'] = 'off'
 
         else:

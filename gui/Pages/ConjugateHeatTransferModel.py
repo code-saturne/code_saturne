@@ -61,8 +61,7 @@ class ConjugateHeatTransferModel(Variables, Model):
 
         self.__node_models = self.__case.xmlGetNode('thermophysical_models')
         self.__node_cht    = self.__node_models.xmlInitNode('conjugate_heat_transfer')
-        self.__node_syr    = self.__node_cht.xmlInitNode('external_coupling', status="on")
-
+        self.__node_syr    = self.__node_cht.xmlInitNode('external_coupling')
 
     def defaultValues(self):
         """
@@ -81,17 +80,13 @@ class ConjugateHeatTransferModel(Variables, Model):
         return len(self.__node_syr.xmlGetNodeList('syrthes'))
 
 
-    def setConjugateHeatTransferStatus(self, status):
+    def deleteConjugateHeatTransfer(self):
         """
         Update the 'Conjugate heat transfer' status.
         @type status: C{String}
         @param status: set to "on" or "off" the conjugate heat transfer
         """
-        self.isOnOff(status)
-        self.__node_syr['status'] = status
-
-        if status == "off":
-            self.__node_syr.xmlRemoveChild('syrthes')
+        self.__node_syr.xmlRemoveChild('syrthes')
 
 
     def getSyrthesCouplingList(self):
@@ -140,7 +135,6 @@ class ConjugateHeatTransferModel(Variables, Model):
         self.setSyrthesVisualization(num, visualization)
         self.setSyrthesProjectionAxis(num, proj_axis)
         self.setSelectionCriteria(num, location)
-        self.setConjugateHeatTransferStatus("on")
 
         return num
 
