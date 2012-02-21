@@ -280,7 +280,7 @@ endif
 ! User variables
 !---------------
 
-do ii = 1, nscaus
+do ii = 1, nscal
 
   if (isca(ii) .gt. 0) then
     ivar = isca(ii)

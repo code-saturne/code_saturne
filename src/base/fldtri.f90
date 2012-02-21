@@ -91,7 +91,7 @@ implicit none
 
 ! Arguments
 
-integer          nproce
+integer          nproce, nscal
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
@@ -243,7 +243,9 @@ endif
 ! User variables
 !---------------
 
-do ii = 1, nscaus
+nscal = nscaus + nscapp
+
+do ii = 1, nscal
   if (isca(ii) .gt. 0) then
     ivar = isca(ii)
     icondl = iclrtp(ivar, icoef)
