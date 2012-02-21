@@ -33,6 +33,7 @@ import threading
 import string
 import time
 import logging
+import fnmatch
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -352,12 +353,25 @@ class Study(object):
             retval, t = run_command(cmd, self.__log)
             shutil.rmtree(os.path.join(self.__dest, "CASE1"))
 
-            # Link meshes
+            # Link meshes and copy other files
             ref = os.path.join(self.__repo, "MESH")
             if os.path.isdir(ref):
+                l = os.listdir(ref)
+                meshes = fnmatch.filter(l, '*.unv')   \
+                       + fnmatch.filter(l, '*.med')   \
+                       + fnmatch.filter(l, '*.case')  \
+                       + fnmatch.filter(l, '*.ngeom') \
+                       + fnmatch.filter(l, '*.ccm')   \
+                       + fnmatch.filter(l, '*.cgns')  \
+                       + fnmatch.filter(l, '*.neu')   \
+                       + fnmatch.filter(l, '*.msh')   \
+                       + fnmatch.filter(l, '*.des')
                 des = os.path.join(self.__dest, "MESH")
                 for m in os.listdir(ref):
-                    os.symlink(os.path.join(ref, m), os.path.join(des, m))
+                    if m in meshes:
+                        os.symlink(os.path.join(ref, m), os.path.join(des, m))
+                    else:
+                        shutil.copy2(os.path.join(ref, m), des)
 
             # Copy external scripts for post-processing
             ref = os.path.join(self.__repo, "POST")
@@ -566,7 +580,10 @@ class Studies(object):
                         cmd = os.path.join(self.getDestination(), l, "MESH", label[i])
                         if os.path.isfile(cmd):
                             cmd += " " + args[i]
+                            repbase = os.getcwd()
+                            os.chdir(os.path.join(self.getDestination(), l, "MESH"))
                             retcode, t = run_command(cmd, self.__log)
+                            os.chdir(repbase)
                             self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
                         else:
                             self.reporting('    - script %s not found' % cmd)
