@@ -163,7 +163,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
                 self.deleteScalar(node['label'])
             self._removeThermalTimeStep()
             ThermalRadiationModel(self.case).setRadiativeModel('off')
-            ConjugateHeatTransferModel(self.case).setConjugateHeatTransferStatus('off')
+            ConjugateHeatTransferModel(self.case).deleteConjugateHeatTransfer()
             self.node_therm.xmlRemoveChild('property',
                                            name="input_thermal_flux",
                                            support="boundary")
