@@ -630,17 +630,19 @@ class Studies(object):
         if rep != "":
             rep_f = os.path.join(result, rep, 'checkpoint', 'main')
             if not os.path.isfile(rep_f):
-                msg = "Study %s case %s:\nthe directory %s does not exist.\n" % \
+                msg = "Study %s case %s:\nthe directory %s does not exist.\nStop.\n" % \
                     (study_label, case_label, rep_f)
-                raise ValueError, msg
+                self.reporting(msg)
+                sys.exit(1)
 
         # 2. The result directory must be read automatically;
         #    check if there is a single result directory.
         elif rep == "":
             if not (len(os.listdir(result)) == 1):
-                msg = "Study %s case %s:\nthere is not a single result directory in %s\n" % \
+                msg = "Study %s case %s:\nthere is not a single result directory in %s\nStop.\n" % \
                     (study_label, case_label, result)
-                raise ValueError, msg
+                self.reporting(msg)
+                sys.exit(1)
 
         # 3. Update the file of parameters with the name of the result directory
             self.__parser.setAttribute(node, attr, os.listdir(result)[0])
@@ -662,16 +664,18 @@ class Studies(object):
             self.__check_dir(study_label, case_label, node, result, dest, "dest")
 
 
-    def check_compare(self):
+    def check_compare(self, dest=True):
         """
         Check coherency between xml file of parameters and repository.
-        Stops if one try to make a comparison with a file which does not exsist.
+        Stop if you try to make a comparison with a file which does not exsist.
         """
         for l, s in self.studies:
             for case in s.Cases:
                 compare, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
                 for i in range(len(nodes)):
                     if compare[i] and case.is_run != "KO":
+                        if not dest:
+                            dest[i]= None
                         self.__check_dirs(l, case.label, nodes[i], repo[i], dest[i])
 
 
@@ -691,16 +695,18 @@ class Studies(object):
                             case.diff_value += case.compare(repo[i], dest[i], t[i], args[i])
 
 
-    def check_script(self):
+    def check_script(self, dest=True):
         """
         Check coherency between xml file of parameters and repository.
-        Stops if one try to run a script with a file which does not exsist.
+        Stop if you try to run a script with a file which does not exsist.
         """
         for l, s in self.studies:
             for case in s.Cases:
                 script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
                 for i in range(len(nodes)):
                     if script[i] and case.is_run != "KO":
+                        if not dest:
+                            dest[i] = None
                         self.__check_dirs(l, case.label, nodes[i], repo[i], dest[i])
 
 
@@ -729,17 +735,20 @@ class Studies(object):
                             self.reporting('    - script %s not found' % cmd)
 
 
-    def check_plot(self):
+    def check_plot(self, dest=True):
         """
         Check coherency between xml file of parameters and repository.
-        Stops if one try to make a plot of a file which does not exsist.
+        Stop if you try to make a plot of a file which does not exsist.
         """
         for l, s in self.studies:
             for case in s.Cases:
                 if case.plot == "on" and case.is_run != "KO":
                     for node in self.__parser.getChilds(case.node, "data"):
                         plots, file, dest, repo = self.__parser.getResult(node)
+                        if not dest:
+                            dest[i] = None
                         self.__check_dirs(l, case.label, node, repo, dest)
+
 
     def plot(self):
         """

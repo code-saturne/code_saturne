@@ -212,6 +212,14 @@ def runAutoverif(pkg, opt_f, opt_v, opt_r, opt_c, opt_p, opt_to):
     studies.reporting(" Working directory:  " + os.getcwd())
     studies.reporting("\n")
 
+    # Check if xml for result directories in the repository are OK
+
+    if opt_c:
+        studies.check_compare(dest=False)
+    if opt_p:
+        studies.check_script(dest=False)
+        studies.check_plot(dest=False)
+
     # Create all studies and all cases
 
     studies.createStudies()
