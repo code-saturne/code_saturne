@@ -197,7 +197,6 @@ class SolutionDomainModel(MeshModel, Model):
         self.node_smooth     = self.node_ecs.xmlInitNode('mesh_smoothing', "status")
         self.node_join       = self.node_ecs.xmlInitNode('joining')
         self.node_perio      = self.node_ecs.xmlInitNode('periodicity')
-        self.node_standalone = self.node_ecs.xmlInitNode('standalone')
 
 
 #************************* Private methods *****************************
@@ -761,70 +760,6 @@ class SolutionDomainModel(MeshModel, Model):
         return angle
 
 
-    def getSimCommStatus(self):
-        """
-        Get status of tag ''similation_communication' into xml file
-        """
-        node = self.node_standalone.xmlInitNode('simulation_communication', 'status')
-        status = node['status']
-        if not status:
-            status = self.defaultValues()['sim_status']
-            self.setSimCommStatus(status)
-        return status
-
-
-    def setSimCommStatus(self, status):
-        """
-        Put status of tag ''similation_communication' into xml file
-        """
-        self.isOnOff(status)
-        node = self.node_standalone.xmlInitNode('simulation_communication', 'status')
-        node['status'] = status
-
-
-    def getPostProFormat(self):
-        """
-        Return choice of format for post processing output file
-        """
-        node = self.node_standalone.xmlInitNode('postprocessing_format', 'choice')
-        choice = node['choice']
-        if not choice:
-            choice = self.defaultValues()['postprocessing_format']
-            self.setPostProFormat(choice)
-        return choice
-
-
-    def setPostProFormat(self, choice):
-        """
-        Set choice of format for post processing output file
-        """
-        self.isInList(choice, ('EnSight', 'MED_fichier', 'CGNS'))
-        node = self.node_standalone.xmlInitNode('postprocessing_format', 'choice')
-        node['choice'] = choice
-
-
-    def getPostProOptionsFormat(self):
-        """
-        Return options for post processing output file
-        """
-        node = self.node_standalone.xmlInitNode('postprocessing_options', 'choice')
-        line = node['choice']
-        if not line:
-            line = self.defaultValues()['postprocessing_options']
-            self.setPostProOptionsFormat(line)
-        return line
-
-
-    def setPostProOptionsFormat(self, line):
-        """
-        Set options for post processing output file
-        """
-        list = string.split(line)
-        self.isList(list)
-        n = self.node_standalone.xmlInitNode('postprocessing_options', 'choice')
-        n['choice'] = line
-
-
 # Methods to manage periodicity :
 #==============================
 
@@ -1183,16 +1118,6 @@ class SolutionDomainModel(MeshModel, Model):
         return lines
 
 
-    def getSimCommCommand(self):
-        """
-        Get " --no-write " command line for preprocessor execution
-        """
-        lines = ''
-        node = self.node_standalone.xmlGetNode('simulation_communication')
-        if node and node['status'] == 'on':
-            lines = " --no-write "
-        return lines
-
 
     def getPostCommand(self):
         """
@@ -1264,18 +1189,6 @@ class SolutionDomainTestCase(ModelTest):
         assert mdl.getCutAngle() == 90, \
             'Could not get angle for faces_cutting'
 
-    def checkSetandGetSimCommStatus(self):
-        """ Check whether the status of node simulation_communication could be set and got"""
-        mdl = SolutionDomainModel(self.case)
-        mdl.setSimCommStatus('on')
-        doc = '''<standalone>
-                    <simulation_communication status="on"/>
-                 </standalone>'''
-
-        assert mdl.node_standalone == self.xmlNodeFromString(doc), \
-            'Could not set status of node simulation_communication'
-        assert mdl.getSimCommStatus() == 'on', \
-            'Could not get status of node simulation_communication'
 
     def checkgetPeriodicSelectionsCount(self):
         """ Check whether the number of periodicities could be got"""
@@ -1778,15 +1691,6 @@ class SolutionDomainTestCase(ModelTest):
         assert mdl.getReorientCommand() == cmd_orient,\
             'Reorient command is not verified in SolutionDomain Model'
 
-
-    def checkSimCommAndVerifMaillCommand(self):
-        """ Check whether simulation_communication command line could be got """
-        mdl = SolutionDomainModel(self.case)
-        mdl.setSimCommStatus('on')
-        cmd_sim = mdl.getSimCommCommand()
-        sim =' -sc '
-        assert mdl.getSimCommCommand() == sim,\
-            'Simulation_communication command is not verified in SolutionDomain Model'
 
     def checkPostCommand(self):
         """Check whether output postprocessing format command line could be got"""
