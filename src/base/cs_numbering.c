@@ -203,7 +203,7 @@ cs_numbering_dump(const cs_numbering_t  *numbering)
 
     for (i = 0; i < numbering->n_groups; i++) {
       for (j = 0; j < numbering->n_threads; j++) {
-        int k = i*numbering->n_groups + j;
+        int k = i*numbering->n_threads + j;
         bft_printf("      %2d       %2d      %3d   %d\n",
                    i, j, k, (int)(numbering->group_index[k]));
       }
