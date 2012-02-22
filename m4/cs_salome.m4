@@ -470,6 +470,11 @@ AC_ARG_WITH(salome-med,
                with_salome_med=$MED_ROOT_DIR
              fi])
 
+if test "x$with_salome_med" != "xno" -a "x$enable_shared" = "xno" ; then
+  AC_MSG_ERROR([SALOME MEDCoupling support plugin disabled as build is static only])
+  with_salome_med=no
+fi
+
 if test "x$with_salome_med" != "xno" ; then
 
   if test x"$with_salome_med" != xyes -a x"$with_salome_med" != xcheck ; then
