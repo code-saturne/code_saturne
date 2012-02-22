@@ -195,7 +195,7 @@ class LagrangianStatisticsModel(Model):
         Update the iteration value for start of volume statistics calculation.
         """
         self.isInt(value)
-        self.isGreaterOrEqual(value, 0)      
+        self.isGreaterOrEqual(value, 0)
         self.node_volume.xmlSetData('iteration_start_volume', value)
 
 
