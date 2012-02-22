@@ -664,7 +664,7 @@ class Studies(object):
             self.__check_dir(study_label, case_label, node, result, dest, "dest")
 
 
-    def check_compare(self, dest=True):
+    def check_compare(self, destination=True):
         """
         Check coherency between xml file of parameters and repository.
         Stop if you try to make a comparison with a file which does not exsist.
@@ -674,7 +674,7 @@ class Studies(object):
                 compare, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
                 for i in range(len(nodes)):
                     if compare[i] and case.is_run != "KO":
-                        if not dest:
+                        if destination == False:
                             dest[i]= None
                         self.__check_dirs(l, case.label, nodes[i], repo[i], dest[i])
 
@@ -695,7 +695,7 @@ class Studies(object):
                             case.diff_value += case.compare(repo[i], dest[i], t[i], args[i])
 
 
-    def check_script(self, dest=True):
+    def check_script(self, destination=True):
         """
         Check coherency between xml file of parameters and repository.
         Stop if you try to run a script with a file which does not exsist.
@@ -705,7 +705,7 @@ class Studies(object):
                 script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
                 for i in range(len(nodes)):
                     if script[i] and case.is_run != "KO":
-                        if not dest:
+                        if destination == False:
                             dest[i] = None
                         self.__check_dirs(l, case.label, nodes[i], repo[i], dest[i])
 
@@ -735,7 +735,7 @@ class Studies(object):
                             self.reporting('    - script %s not found' % cmd)
 
 
-    def check_plot(self, dest=True):
+    def check_plot(self, destination=True):
         """
         Check coherency between xml file of parameters and repository.
         Stop if you try to make a plot of a file which does not exsist.
@@ -745,8 +745,8 @@ class Studies(object):
                 if case.plot == "on" and case.is_run != "KO":
                     for node in self.__parser.getChilds(case.node, "data"):
                         plots, file, dest, repo = self.__parser.getResult(node)
-                        if not dest:
-                            dest[i] = None
+                        if destination == False:
+                            dest = None
                         self.__check_dirs(l, case.label, node, repo, dest)
 
 

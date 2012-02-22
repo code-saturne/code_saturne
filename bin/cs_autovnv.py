@@ -215,10 +215,10 @@ def runAutoverif(pkg, opt_f, opt_v, opt_r, opt_c, opt_p, opt_to):
     # Check if xml for result directories in the repository are OK
 
     if opt_c:
-        studies.check_compare(dest=False)
+        studies.check_compare(destination=False)
     if opt_p:
-        studies.check_script(dest=False)
-        studies.check_plot(dest=False)
+        studies.check_script(destination=False)
+        studies.check_plot(destination=False)
 
     # Create all studies and all cases
 
