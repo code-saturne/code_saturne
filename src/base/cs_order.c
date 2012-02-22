@@ -568,6 +568,118 @@ _order_lnum(const cs_lnum_t   number[],
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Descend binary tree for the lexicographical ordering of a strided
+ * cs_lnum_t array.
+ *
+ * parameters:
+ *   number    <-- pointer to numbers of entities that should be ordered.
+ *                 (if NULL, a default 1 to n numbering is considered)
+ *   stride    <-- stride of array (number of values to compare)
+ *   level     <-- level of the binary tree to descend
+ *   nb_ent    <-- number of entities in the binary tree to descend
+ *   order     <-> ordering array
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_order_lnum_descend_tree_s(const cs_lnum_t   number[],
+                           size_t            stride,
+                           size_t            level,
+                           const size_t      nb_ent,
+                           cs_lnum_t         order[])
+{
+  size_t i_save, i1, i2, j, lv_cur;
+
+  i_save = (size_t)(order[level]);
+
+  while (level <= (nb_ent/2)) {
+
+    lv_cur = (2*level) + 1;
+
+    if (lv_cur < nb_ent - 1) {
+
+      i1 = (size_t)(order[lv_cur+1]);
+      i2 = (size_t)(order[lv_cur]);
+
+      for (j = 0; j < stride; j++) {
+        if (number[i1*stride + j] != number[i2*stride + j])
+          break;
+      }
+
+      if (j < stride) {
+        if (number[i1*stride + j] > number[i2*stride + j])
+          lv_cur++;
+      }
+
+    }
+
+    if (lv_cur >= nb_ent) break;
+
+    i1 = i_save;
+    i2 = (size_t)(order[lv_cur]);
+
+    for (j = 0; j < stride; j++) {
+      if (number[i1*stride + j] != number[i2*stride + j])
+        break;
+    }
+
+    if (j == stride) break;
+    if (number[i1*stride + j] >= number[i2*stride + j]) break;
+
+    order[level] = order[lv_cur];
+    level = lv_cur;
+
+  }
+
+  order[level] = i_save;
+}
+
+/*----------------------------------------------------------------------------
+ * Order a strided array of global numbers lexicographically.
+ *
+ * parameters:
+ *   number   <-- array of entity numbers (if NULL, a default 1 to n
+ *                numbering is considered)
+ *   stride   <-- stride of array (number of values to compare)
+ *   order    --> pre-allocated ordering table
+ *   nb_ent   <-- number of entities considered
+ *----------------------------------------------------------------------------*/
+
+static void
+_order_lnum_s(const cs_lnum_t   number[],
+              size_t            stride,
+              cs_lnum_t         order[],
+              const size_t      nb_ent)
+{
+  size_t i;
+  cs_lnum_t o_save;
+
+  /* Initialize ordering array */
+
+  for (i = 0 ; i < nb_ent ; i++)
+    order[i] = i;
+
+  if (nb_ent < 2)
+    return;
+
+  /* Create binary tree */
+
+  i = (nb_ent / 2) ;
+  do {
+    i--;
+    _order_lnum_descend_tree_s(number, stride, i, nb_ent, order);
+  } while (i > 0);
+
+  /* Sort binary tree */
+
+  for (i = nb_ent - 1 ; i > 0 ; i--) {
+    o_save   = order[0];
+    order[0] = order[i];
+    order[i] = o_save;
+    _order_lnum_descend_tree_s(number, stride, 0, i, order);
+  }
+}
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1106,6 +1218,69 @@ cs_order_lnum_allocated(const cs_lnum_t  list[],
     }
 
   }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute a lexicographical ordering table associated with an array of
+ * strided local numbers.
+ *
+ * \param[in]   list    optional list (1 to n numbering) of selected entities
+ *                      (or NULL if all nb_ent are selected). This list may
+ *                      contain element numbers in any order
+ * \param[in]   number  array of all entity numbers (numbers of entity i start
+ *                      at number[i*stride] or number[(list[i] - 1)*stride])
+ *                      if list exists (if NULL, a default 1 to n numbering is
+ *                      considered)
+ * \param[in]   stride  stride of number array (number of values to compare)
+ * \param[out]  order   pointer to pre-allocated ordering table
+ * \param[in]   nb_ent  number of entities considered
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_order_lnum_allocated_s(const cs_lnum_t  list[],
+                          const cs_lnum_t  number[],
+                          size_t           stride,
+                          cs_lnum_t        order[],
+                          const size_t     nb_ent)
+{
+  size_t i, j;
+  cs_lnum_t *number_list;
+
+  /* Explicit numbering */
+
+  if (number != NULL) {
+
+    if (list != NULL) {
+      BFT_MALLOC(number_list, nb_ent*stride, cs_lnum_t);
+      for (i = 0 ; i < nb_ent ; i++) {
+        for (j = 0; j < stride; j++)
+          number_list[i*stride + j] = number[(list[i] - 1)*stride + j];
+      }
+      _order_lnum_s(number_list,
+                     stride,
+                     order,
+                     nb_ent);
+      BFT_FREE(number_list);
+    }
+    else
+      _order_lnum_s(number,
+                     stride,
+                     order,
+                     nb_ent);
+
+  }
+
+  /* Implicit numbering */
+
+  else
+
+    cs_order_lnum_allocated(list,
+                              NULL,
+                              order,
+                              nb_ent);
 
 }
 

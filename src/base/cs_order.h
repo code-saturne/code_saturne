@@ -260,6 +260,30 @@ cs_order_lnum_allocated(const cs_lnum_t  list[],
                         size_t           nb_ent);
 
 /*----------------------------------------------------------------------------
+ * Compute a lexicographical ordering table associated with an array of
+ * strided local numbers.
+ *
+ * parameters:
+ *   list   <-- optional list (1 to n numbering) of selected entities
+ *              (or NULL if all nb_ent are selected). This list may
+ *              contain element numbers in any order
+ *   number <-- array of all entity numbers (numbers of entity i start
+ *              at number[i*stride] or number[(list[i] - 1)*stride]) if
+ *              list exists (if NULL, a default 1 to n numbering is
+ *              considered)
+ *   stride <-- stride of number array (number of values to compare)
+ *   order  --> pointer to pre-allocated ordering table
+ *   nb_ent <-- number of entities considered
+ *----------------------------------------------------------------------------*/
+
+void
+cs_order_lnum_allocated_s(const cs_lnum_t  list[],
+                          const cs_lnum_t  number[],
+                          size_t           stride,
+                          cs_lnum_t        order[],
+                          size_t           nb_ent);
+
+/*----------------------------------------------------------------------------
  * Build local renumbering array based on ordering of entities.
  *
  * parameters:
