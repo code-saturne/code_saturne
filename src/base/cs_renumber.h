@@ -66,6 +66,16 @@ void
 cs_renumber_mesh(cs_mesh_t             *mesh,
                  cs_mesh_quantities_t  *mesh_quantities);
 
+/*----------------------------------------------------------------------------
+ * Test local operations related to renumbering.
+ *
+ * parameters:
+ *   mesh <-- pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_renumber_test(cs_mesh_t  *mesh);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

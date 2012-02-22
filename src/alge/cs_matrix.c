@@ -405,7 +405,7 @@ _3_3_zero_range(cs_real_t  *restrict y,
 }
 
 /*----------------------------------------------------------------------------
- * Descend binary tree for the ordering of a cs_gnum_t (integer) array.
+ * Descend binary tree for the ordering of a cs_lnum_t (integer) array.
  *
  * parameters:
  *   number    <-> pointer to elements that should be ordered
@@ -522,9 +522,9 @@ _sort_local(cs_lnum_t  number[],
  *----------------------------------------------------------------------------*/
 
 static cs_matrix_struct_native_t *
-_create_struct_native(int               n_cells,
-                      int               n_cells_ext,
-                      int               n_faces,
+_create_struct_native(cs_lnum_t         n_cells,
+                      cs_lnum_t         n_cells_ext,
+                      cs_lnum_t         n_faces,
                       const cs_lnum_t  *face_cell)
 {
   cs_matrix_struct_native_t  *ms;
@@ -1421,9 +1421,9 @@ _mat_vec_p_l_native_vector(bool                exclude_diag,
 
 static cs_matrix_struct_csr_t *
 _create_struct_csr(bool              have_diag,
-                   int               n_cells,
-                   int               n_cells_ext,
-                   int               n_faces,
+                   cs_lnum_t         n_cells,
+                   cs_lnum_t         n_cells_ext,
+                   cs_lnum_t         n_faces,
                    const cs_lnum_t  *face_cell)
 {
   int n_cols_max;
@@ -2205,9 +2205,9 @@ _mat_vec_p_l_csr_pf(bool                exclude_diag,
 
 static cs_matrix_struct_csr_sym_t *
 _create_struct_csr_sym(bool              have_diag,
-                       int               n_cells,
-                       int               n_cells_ext,
-                       int               n_faces,
+                       cs_lnum_t         n_cells,
+                       cs_lnum_t         n_cells_ext,
+                       cs_lnum_t         n_faces,
                        const cs_lnum_t  *face_cell)
 {
   int n_cols_max;
@@ -3299,7 +3299,7 @@ _mat_vec_p_l_msr_mkl(bool                exclude_diag,
   /* Add diagonal contribution */
 
   if (!exclude_diag && mc->d_val != NULL) {
-    int ii;
+    cs_lnum_t ii;
     const double *restrict da = mc->d_val;
 #   pragma omp parallel for
     for (ii = 0; ii < n_rows; ii++)
@@ -4313,15 +4313,18 @@ _variant_add(const char                        *name,
  * Build list of variants for tuning or testing.
  *
  * parameters:
- *   sym_flag             <-- 0: non-symmetric only, 1: symmetric only, 2: both
- *   block_flag           <-- 0: non-block only, 1: block only, 2: both
- *   n_variants           --> number of variants
- *   m_variant            --> array of matrix variants
+ *   sym_flag    <-- 0: non-symmetric only, 1: symmetric only, 2: both
+ *   block_flag  <-- 0: non-block only, 1: block only, 2: both
+ *   numbering   <-- vectorization or thread-related numbering info,
+ *                   or NULL
+ *   n_variants  --> number of variants
+ *   m_variant   --> array of matrix variants
  *----------------------------------------------------------------------------*/
 
 static void
 _build_variant_list(int                    sym_flag,
                     int                    block_flag,
+                    const cs_numbering_t  *numbering,
                     int                   *n_variants,
                     cs_matrix_variant_t  **m_variant)
 {
@@ -4365,6 +4368,40 @@ _build_variant_list(int                    sym_flag,
                n_variants,
                &n_variants_max,
                m_variant);
+
+  if (numbering != NULL) {
+
+#if defined(HAVE_OPENMP)
+    if (numbering->type == CS_NUMBERING_THREADS)
+      _variant_add(_("Native, OpenMP"),
+                   CS_MATRIX_NATIVE,
+                   block_flag,
+                   sym_flag,
+                   2, /* ed_flag */
+                   0, /* loop_length */
+                   _mat_vec_p_l_native_omp,
+                   _b_mat_vec_p_l_native_omp,
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
+#endif
+
+#if defined(SX) && defined(_SX) /* For vector machines */
+    if (numbering->type == CS_NUMBERING_VECTORIZE)
+      _variant_add(_("Native, vectorized"),
+                   CS_MATRIX_NATIVE,
+                   block_flag,
+                   sym_flag,
+                   2, /* ed_flag */
+                   0, /* loop_length */
+                   _mat_vec_p_l_native_vector,
+                   NULL,
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
+#endif
+
+  }
 
   _variant_add(_("CSR"),
                CS_MATRIX_CSR,
@@ -5503,6 +5540,7 @@ cs_matrix_variant_tuned(double                 t_measure,
 
   _build_variant_list(sym_flag,
                       block_flag,
+                      numbering,
                       &n_variants,
                       &m_variant);
 
@@ -5831,6 +5869,7 @@ cs_matrix_variant_test(cs_lnum_t              n_cells,
 
       _build_variant_list(sym_flag,
                           block_flag,
+                          numbering,
                           &n_variants,
                           &m_variant);
 

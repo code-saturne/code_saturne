@@ -2560,6 +2560,12 @@ cs_grid_coarsen(const cs_grid_t   *f,
   cs_int_t c_n_cells_ext = 0;
   cs_int_t c_n_faces = 0;
 
+  /* In mutithreaded case, use a matrix structure alowing threading
+     without a specific renumbering, as structures are rebuilt often */
+
+  cs_matrix_type_t coarse_matrix_type
+    = cs_glob_n_threads > 1 ? CS_MATRIX_CSR : CS_MATRIX_NATIVE;
+
   cs_real_t *rwc1 = NULL, *rwc2 = NULL, *rwc3 = NULL, *rwc4 = NULL;
 
   cs_grid_t *c = NULL;
@@ -2762,7 +2768,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
   }
 #endif
 
-  c->matrix_struct = cs_matrix_structure_create(CS_MATRIX_NATIVE,
+  c->matrix_struct = cs_matrix_structure_create(coarse_matrix_type,
                                                 true,
                                                 c->n_cells,
                                                 c->n_cells_ext,
