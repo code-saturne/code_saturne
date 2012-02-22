@@ -30,7 +30,7 @@
 
 #if defined(HAVE_CLOCK_GETTIME)
 #if !defined(_POSIX_C_SOURCE)
-#define _POSIX_C_SOURCE 199309L
+#define _POSIX_C_SOURCE 200112L
 #endif
 #endif
 
@@ -393,7 +393,8 @@ _cs_timer_initialize(void)
   }
 
   if (_cs_timer_cpu_method == CS_TIMER_DISABLE) {
-    if (clock_getcpuclockid(0) == 0) {
+    clockid_t clock_id;
+    if (clock_getcpuclockid(0, &clock_id) == 0) {
       /* ENOENT could be allowed with process binding,
          but binding needs to be checked. */
       if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_time) == 0) {
