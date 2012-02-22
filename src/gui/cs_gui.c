@@ -471,7 +471,7 @@ cs_gui_restart_parameters_status(const char *param, int *const keyword)
   char *path = NULL;
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "calcul_management", "start_restart", param);
+  cs_xpath_add_elements(&path, 3, "calculation_management", "start_restart", param);
 
   if (cs_gui_strcmp(param, "restart_rescue")) {
     cs_xpath_add_function_text(&path);
