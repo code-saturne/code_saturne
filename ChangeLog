@@ -1,3 +1,12 @@
+* 23/02/2012 - Alexande Douce <alexandre.douce@edf.fr>
+  Fixes and improvement for the autoVnV tool.
+  modified files:
+    bin/autovnv/Parser.py
+    bin/autovnv/Study.py
+    bin/autovnv/TexMaker.py
+    bin/cs_autovnv.py
+    doc/autovnv/autovnv.tex
+
 * 23/02/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix output format and input file path bugs in GUI mesh checking function.
   modified files:
