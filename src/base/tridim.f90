@@ -1342,9 +1342,12 @@ enddo
 
 ! Free memory
 if (nterup.gt.1) then
-  deallocate(uvwk)
-  deallocate(ximpa)
-  deallocate(trava)
+  deallocate(uvwk, trava)
+  if (ivelco.eq.0) then
+    deallocate(ximpa)
+  else
+    deallocate(ximpav)
+  endif
 endif
 
 ! Calcul sur champ de vitesse fige SUITE (a cause de la boule U/P)

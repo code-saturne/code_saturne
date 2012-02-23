@@ -1,3 +1,9 @@
+* 23/02/2012 - Martin Ferrand <martin.ferrand@edf.fr>
+  Fixes for the velocity-components coupling algorithm.
+  modified files:
+    src/base/condli.f90
+    src/base/tridim.f90
+
 * 23/02/2012 - Alexande Douce <alexandre.douce@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Miscellaneous fixes and cleaning for the GUI.
