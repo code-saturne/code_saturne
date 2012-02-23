@@ -852,6 +852,11 @@ if test x$cs_have_med2_headers = xyes ; then
   echo "          in future versions, MED >= 3.0 will be required."
   echo
 fi
+if test x$cs_have_cgns2_headers = xyes ; then
+  echo " Warning: CGNS version used is 2.5, which is deprecated."
+  echo "          in future versions, CGNS >= 3.1 will be required."
+  echo
+fi
 echo "The package has been configured. Type:"
 echo " make"
 echo " make install"

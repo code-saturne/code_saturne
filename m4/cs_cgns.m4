@@ -28,6 +28,8 @@ dnl-----------------------------------------------------------------------------
 AC_DEFUN([CS_AC_TEST_CGNS], [
 
 cs_have_cgns=no
+cs_have_cgns2_headers=no
+cs_have_cgns3_headers=no
 
 AC_ARG_WITH(cgns,
             [AS_HELP_STRING([--with-cgns=PATH],
@@ -77,6 +79,39 @@ if test "x$with_cgns" != "xno" ; then
   LDFLAGS="${LDFLAGS} ${CGNS_LDFLAGS} $HDF5_LDFLAGS"
   LIBS="${LIBS} ${CGNS_LIBS} $HDF5_LIBS"
 
+  # Check that a header file exists
+  #--------------------------------
+
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+[[#undef HAVE_MPI
+#include <cgnslib.h>]],
+[[#if CGNS_VERSION < 3100
+# error CGNS version >= 3.0 not found
+#endif
+]])],
+                    [AC_MSG_RESULT([CGNS >= 3.1.0 headers found])
+                     cs_have_cgns3_headers=yes
+                    ],
+                    [AC_MSG_RESULT([CGNS >= 3.1.0 headers not found])
+                    ])
+
+  if test "x$cs_have_cgns3_headers" = "xno"; then
+
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+[[#undef HAVE_MPI
+#include <cgnslib.h>]],
+[[#if CGNS_VERSION < 2500
+# error CGNS version >= 2.5 required
+#endif
+]])],
+                      [AC_MSG_RESULT([CGNS >= 2.5.0 headers found])
+                       cs_have_cgns2_headers=yes
+                      ],
+                      [AC_MSG_RESULT([CGNS >= 2.5.0 headers not found])
+                      ])
+
+  fi # end of test on CGNS 2 headers
+
   AC_CHECK_LIB(cgns, cg_coord_partial_write, 
                [ AC_DEFINE([HAVE_CGNS], 1, [CGNS file support])
                  cs_have_cgns=yes
@@ -102,6 +137,8 @@ if test "x$with_cgns" != "xno" ; then
   unset saved_LIBS
 
 fi
+
+unset cs_have_cgns3_headers
 
 AM_CONDITIONAL(HAVE_CGNS, test x$cs_have_cgns = xyes)
 
