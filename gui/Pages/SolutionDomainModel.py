@@ -220,8 +220,6 @@ class SolutionDomainModel(MeshModel, Model):
         defvalue['syrth_mesh_2d']  = "off"
         defvalue['sim_status']     = "on"
         defvalue['verif_mail']     = "on"
-        defvalue['postprocessing_format'] = "EnSight"
-        defvalue['postprocessing_options'] = "binary"
         defvalue['dir_cas']        = "default_case"
         defvalue['poly_status']    = "off"
         defvalue['perio_mode']     = "translation"

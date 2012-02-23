@@ -997,7 +997,6 @@ class OutputControlModelTestCase(ModelTest):
         model = OutputControlModel(self.case)
         model.setListingFrequency(12)
         doc = '''<output>
-                    <postprocessing_mesh_options choice="0"/>
                     <listing_printing_frequency>12</listing_printing_frequency>
                  </output>'''
         assert model.node_out== self.xmlNodeFromString(doc), \
@@ -1012,7 +1011,6 @@ class OutputControlModelTestCase(ModelTest):
         model = OutputControlModel(self.case)
         model.setMonitoringPointFrequency(15)
         doc = '''<output>
-                    <postprocessing_mesh_options choice="0"/>
                     <probe_recording_frequency>15</probe_recording_frequency>
                   </output>'''
         assert model.node_out== self.xmlNodeFromString(doc),\
@@ -1027,7 +1025,6 @@ class OutputControlModelTestCase(ModelTest):
         model = OutputControlModel(self.case)
         model.addMonitoringPoint(11.1, 22.2, 33.3)
         doc = '''<output>
-                    <postprocessing_mesh_options choice="0"/>
                     <probe name="1" status="on">
                         <probe_x>11.1</probe_x>
                         <probe_y>22.2</probe_y>
@@ -1048,7 +1045,6 @@ class OutputControlModelTestCase(ModelTest):
         model.addMonitoringPoint(5, 5.1, 5.21)
         model.replaceMonitoringPointCoordinates("2",5., 6, 7.)
         doc = '''<output>
-                    <postprocessing_mesh_options choice="0"/>
                     <probe name="1" status="on">
                         <probe_x>11.1</probe_x>
                         <probe_y>22.2</probe_y>
@@ -1073,7 +1069,6 @@ class OutputControlModelTestCase(ModelTest):
         model.addMonitoringPoint(9.,8.,7.)
         model.deleteMonitoringPoint("2")
         doc = '''<output>
-                    <postprocessing_mesh_options choice="0"/>
                     <probe name="1" status="on">
                         <probe_x>11.1</probe_x>
                         <probe_y>22.2</probe_y>
