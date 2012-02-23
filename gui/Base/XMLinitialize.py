@@ -203,10 +203,6 @@ class XMLinit(Variables):
             if node['id'] == None:
                 node['id'] = node['name']
 
-        for node in self.case.xmlGetNodeList('postprocessing_format',
-                                             choice='MED_fichier'):
-            node['choice'] = 'MED'
-
         oldnode = self.case.xmlGetNode('calcul_management')
         if oldnode:
             newnode = self.case.xmlInitNode('calculation_management')

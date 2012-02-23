@@ -1,4 +1,16 @@
 * 23/02/2012 - Alexande Douce <alexandre.douce@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Miscellaneous fixes and cleaning for the GUI.
+  modified files:
+    gui/Base/XMLinitialize.py
+    gui/Pages/OutputControlModel.py
+    gui/Pages/OutputControlView.py
+    gui/Pages/SolutionDomainModel.py
+    gui/Pages/SolutionVerifView.py
+    src/base/iniusi.f90
+    src/gui/cs_gui_output.c
+
+* 23/02/2012 - Alexande Douce <alexandre.douce@edf.fr>
   Fixes and improvement for the autoVnV tool.
   modified files:
     bin/autovnv/Parser.py

@@ -398,7 +398,7 @@ if(iihmpr.eq.1) then
 !     Options numériques globales
   relaxp = -999.d0
   extrap = 0.d0
-  imgrpr = 0
+  imgrpr = 1
   call csnum2 (ivisse, relaxp, ipucou, extrap, imrgra, imgrpr)
   !==========
   extrag(ipr) = extrap
