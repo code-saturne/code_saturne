@@ -751,6 +751,24 @@ _display_histograms(cs_lnum_t         n_vals,
 
 }
 
+#if defined(HAVE_IBM_RENUMBERING_LIB)
+
+/*----------------------------------------------------------------------------
+ * Try to apply renumbering of faces and cells for multiple threads.
+ *
+ * parameters:
+ *   mesh            <->  Pointer to global mesh structure
+ *   mesh_quantities <->  Pointer to global mesh quantities structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_renumber_for_threads_ibm(cs_mesh_t             *mesh,
+                          cs_mesh_quantities_t  *mesh_quantities)
+{
+}
+
+#endif /* defined(HAVE_IBM_RENUMBERING_LIB) */
+
 /*----------------------------------------------------------------------------
  * Descend binary tree for the ordering of a cs_lnum_t (integer) array.
  *
@@ -1851,10 +1869,21 @@ cs_renumber_mesh(cs_mesh_t             *mesh,
   p = getenv("CS_RENUMBER");
 
   if (p != NULL) {
+
     if (strcmp(p, "off") == 0) {
       bft_printf("\n Mesh renumbering off.\n\n");
       return;
     }
+
+#if defined(HAVE_IBM_RENUMBERING_LIB)
+    if (strcmp(p, "IBM") == 0) {
+      bft_printf("\n Use IBM Mesh renumbering.\n\n");
+      _renumber_for_threads_ibm(mesh, mesh_quantities);
+      _renumber_test(mesh);
+      return;
+    }
+#endif
+
   }
 
   /* Try vectorizing first, then renumber for Cache / OpenMP */
