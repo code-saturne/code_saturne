@@ -1,3 +1,13 @@
+* 23/02/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix output format and input file path bugs in GUI mesh checking function.
+  modified files:
+    gui/Pages/SolutionVerifView.py
+
+* 22/02/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix reading of frozen field option using GUI.
+  modified files:
+    src/gui/cs_gui.c
+
 * 20/02/2012 - David Monfort <david.monfort@edf.fr>
   Disable shared libraries for Darwin hosts.
   modified file:
