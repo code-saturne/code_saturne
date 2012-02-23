@@ -1085,54 +1085,6 @@ class SolutionDomainModel(MeshModel, Model):
             self._updateJoinSelectionNumbers()
 
 
-# In following methods we build the command to run the Preprocessor
-#==================================================================
-
-    def getMeshCommand(self):
-        """
-        Get mesh command line for preprocessor execution
-        """
-        lines = ''
-        nodeList = self.node_meshes.xmlGetNodeList('mesh', 'name')
-        mesh_mdl = MeshModel()
-        for meshNode in nodeList:
-            name   = meshNode['name']
-            format = meshNode['format']
-            mesh = self.case['mesh_path'] + '/' + name
-            lines += " -m " + mesh
-
-            if meshNode['format']:
-                lines += " --format " + meshNode['format']
-            if meshNode['num']:
-                lines += " --num " + meshNode['num']
-            if meshNode['grp_fac']:
-                lines += " --grp-fac " + meshNode['grp_fac']
-            if meshNode['grp_cel']:
-                lines += " --grp-cel " + meshNode['grp_cel']
-            if meshNode['reorient']:
-                lines += " --reorient"
-
-        lines += " "
-        return lines
-
-
-
-    def getPostCommand(self):
-        """
-        Get "--ensight" "--med" and/or "--cgns" command line for preprocessor execution
-        """
-        line  = ''
-        iok = 0
-        if self.getPostProFormat() == "EnSight":
-            line = ' --ensight '
-        if self.getPostProFormat() == "MED":
-            line = ' --med '
-        if self.getPostProFormat() == "CGNS":
-            line = ' --cgns '
-
-        return line
-
-
 #-------------------------------------------------------------------------------
 # SolutionDomain Model test case
 #-------------------------------------------------------------------------------
@@ -1663,17 +1615,6 @@ class SolutionDomainTestCase(ModelTest):
             'Could not set selection of faces for periodicities'
 
 
-    def checkMeshCommand(self):
-        """ Check whether  command for meshes could be set """
-        mdl = SolutionDomainModel(self.case)
-        mdl.case['mesh_path'] = 'MESH'
-        mdl.addMesh('fdc.des','des')
-        line = ''' -m MESH/fdc.des '''
-
-        assert mdl.getMeshCommand() == line,\
-            'Mesh command is not verified in SolutionDomain Model'
-
-
     def checkReorientSetAndGetStatusAndCommand(self):
         """ Check whether reorient status could be set and got and command line could be got """
         mdl = SolutionDomainModel(self.case)
@@ -1688,16 +1629,6 @@ class SolutionDomainTestCase(ModelTest):
         cmd_orient = ' --reorient '
         assert mdl.getReorientCommand() == cmd_orient,\
             'Reorient command is not verified in SolutionDomain Model'
-
-
-    def checkPostCommand(self):
-        """Check whether output postprocessing format command line could be got"""
-        mdl = SolutionDomainModel(self.case)
-        mdl.setPostProFormat('CGNS')
-
-        cmd_post = ' --cgns '
-        assert mdl.getPostCommand() == cmd_post,\
-            'Post command is not verified for postprocessing format in SolutionDomain Model'
 
 
 #-------------------------------------------------------------------------------
