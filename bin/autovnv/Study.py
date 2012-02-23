@@ -33,6 +33,7 @@ import threading
 import string
 import time
 import logging
+import fnmatch
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -231,7 +232,7 @@ class Case(object):
         return error, run_id
 
 
-    def compare(self, r, d, thresold):
+    def compare(self, r, d, threshold, args):
         home = os.getcwd()
 
         repo = os.path.join(self.__repo, self.label,
@@ -248,8 +249,19 @@ class Case(object):
 
         cmd = self.__diff + ' ' + repo + ' ' + dest
 
-        if thresold != None:
-            cmd += ' --threshold ' + thresold
+        self.threshold = "default"
+        if threshold != None:
+            cmd += ' --threshold ' + threshold
+            self.threshold = threshold
+
+        if args != None:
+            cmd += (" " + args)
+            l = string.split(args)
+            try:
+                i = l.index('--threshold')
+                self.threshold = l[i+1]
+            except:
+                pass
 
         l = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout
         info = l.read().replace("\"", " ").replace(";", " ").replace(":", " ").split()
@@ -259,7 +271,7 @@ class Case(object):
         for i in range(len(info)):
             if info[i][:4] == 'Diff':
                 if info[i-3] not in ['i4', 'u4']:
-                    tab.append([info[i-7].replace("_", "\_"), info[i+3], info[i+5]])
+                    tab.append([info[i-7].replace("_", "\_"), info[i+3], info[i+5], self.threshold])
 
         os.chdir(home)
 
@@ -341,12 +353,25 @@ class Study(object):
             retval, t = run_command(cmd, self.__log)
             shutil.rmtree(os.path.join(self.__dest, "CASE1"))
 
-            # Link meshes
+            # Link meshes and copy other files
             ref = os.path.join(self.__repo, "MESH")
             if os.path.isdir(ref):
+                l = os.listdir(ref)
+                meshes = fnmatch.filter(l, '*.unv')   \
+                       + fnmatch.filter(l, '*.med')   \
+                       + fnmatch.filter(l, '*.case')  \
+                       + fnmatch.filter(l, '*.ngeom') \
+                       + fnmatch.filter(l, '*.ccm')   \
+                       + fnmatch.filter(l, '*.cgns')  \
+                       + fnmatch.filter(l, '*.neu')   \
+                       + fnmatch.filter(l, '*.msh')   \
+                       + fnmatch.filter(l, '*.des')
                 des = os.path.join(self.__dest, "MESH")
                 for m in os.listdir(ref):
-                    os.symlink(os.path.join(ref, m), os.path.join(des, m))
+                    if m in meshes:
+                        os.symlink(os.path.join(ref, m), os.path.join(des, m))
+                    else:
+                        shutil.copy2(os.path.join(ref, m), des)
 
             # Copy external scripts for post-processing
             ref = os.path.join(self.__repo, "POST")
@@ -396,7 +421,9 @@ class Studies(object):
         @param dif: name of the diff executable: C{cs_io_dump -d}.
         """
 
-        # Create the xml parser
+        # create a first xml parser only for 
+        #   the repository verification and
+        #   the destination creation
 
         self.__parser = Parser(f)
 
@@ -411,13 +438,17 @@ class Studies(object):
         except:
             pass
 
-        # initialize the parser and the plotter
+        # copy the xml file of parameters for update and restart
 
-        file = os.path.join(self.getDestination(), f)
+        file = os.path.join(self.getDestination(), \
+                            os.path.basename(f))
         try:
             shutil.copyfile(f, file)
         except:
             pass
+
+        # create a new parser, which is definitive and the plotter
+
         self.__parser  = Parser(file)
         self.__plotter = Plotter(self.__parser)
 
@@ -536,6 +567,28 @@ class Studies(object):
             sys.exit(1)
 
 
+    def prepro(self):
+        """
+        Launch external additional scripts with arguments.
+        """
+        for l, s in self.studies:
+            self.reporting('  o Script prepro study: ' + l)
+            for case in s.Cases:
+                pre, label, nodes, args = self.__parser.getPrepro(case.node)
+                for i in range(len(label)):
+                    if pre[i]:
+                        cmd = os.path.join(self.getDestination(), l, "MESH", label[i])
+                        if os.path.isfile(cmd):
+                            cmd += " " + args[i]
+                            repbase = os.getcwd()
+                            os.chdir(os.path.join(self.getDestination(), l, "MESH"))
+                            retcode, t = run_command(cmd, self.__log)
+                            os.chdir(repbase)
+                            self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
+                        else:
+                            self.reporting('    - script %s not found' % cmd)
+
+
     def run(self):
         """
         Update and run all cases.
@@ -577,17 +630,19 @@ class Studies(object):
         if rep != "":
             rep_f = os.path.join(result, rep, 'checkpoint', 'main')
             if not os.path.isfile(rep_f):
-                msg = "Study %s case %s:\nthe directory %s does not exist.\n" % \
+                msg = "Study %s case %s:\nthe directory %s does not exist.\nStop.\n" % \
                     (study_label, case_label, rep_f)
-                raise ValueError, msg
+                self.reporting(msg)
+                sys.exit(1)
 
         # 2. The result directory must be read automatically;
         #    check if there is a single result directory.
         elif rep == "":
             if not (len(os.listdir(result)) == 1):
-                msg = "Study %s case %s:\nthere is not a single result directory in %s\n" % \
+                msg = "Study %s case %s:\nthere is not a single result directory in %s\nStop.\n" % \
                     (study_label, case_label, result)
-                raise ValueError, msg
+                self.reporting(msg)
+                sys.exit(1)
 
         # 3. Update the file of parameters with the name of the result directory
             self.__parser.setAttribute(node, attr, os.listdir(result)[0])
@@ -609,17 +664,19 @@ class Studies(object):
             self.__check_dir(study_label, case_label, node, result, dest, "dest")
 
 
-    def check_compare(self):
+    def check_compare(self, destination=True):
         """
         Check coherency between xml file of parameters and repository.
-        Stops if one try to make a comparison with a file which does not exsist.
+        Stop if you try to make a comparison with a file which does not exsist.
         """
         for l, s in self.studies:
             for case in s.Cases:
-                bool, repo, dest, threshold = self.__parser.getCompare(case.node)
-                if bool and case.is_run != "KO":
-                    node = self.__parser.getChild(case.node, "compare")
-                    self.__check_dirs(l, case.label, node, repo, dest)
+                compare, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
+                for i in range(len(nodes)):
+                    if compare[i] and case.is_run != "KO":
+                        if destination == False:
+                            dest[i]= None
+                        self.__check_dirs(l, case.label, nodes[i], repo[i], dest[i])
 
 
     def compare(self):
@@ -630,22 +687,26 @@ class Studies(object):
             for l, s in self.studies:
                 self.reporting('  o Compare study: ' + l)
                 for case in s.Cases:
-                    case.is_compare, repo, dest, case.threshold = self.__parser.getCompare(case.node)
-                    if case.is_compare and case.is_run != "KO":
-                        self.reporting('    - compare %s' % case.label)
-                        case.diff_value = case.compare(repo, dest, case.threshold)
+                    is_compare, nodes, repo, dest, t, args = self.__parser.getCompare(case.node)
+                    for i in range(len(nodes)):
+                        if is_compare[i] and case.is_run != "KO":
+                            case.is_compare = "done"
+                            self.reporting('    - compare %s (%s)' % (case.label, args[i]))
+                            case.diff_value += case.compare(repo[i], dest[i], t[i], args[i])
 
 
-    def check_script(self):
+    def check_script(self, destination=True):
         """
         Check coherency between xml file of parameters and repository.
-        Stops if one try to run a script with a file which does not exsist.
+        Stop if you try to run a script with a file which does not exsist.
         """
         for l, s in self.studies:
             for case in s.Cases:
-                bool, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
-                if bool and case.is_run != "KO":
-                    for i in range(len(label)):
+                script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
+                for i in range(len(nodes)):
+                    if script[i] and case.is_run != "KO":
+                        if destination == False:
+                            dest[i] = None
                         self.__check_dirs(l, case.label, nodes[i], repo[i], dest[i])
 
 
@@ -654,11 +715,11 @@ class Studies(object):
         Launch external additional scripts with arguments.
         """
         for l, s in self.studies:
-            self.reporting('  o Script study: ' + l)
+            self.reporting('  o Script postpro study: ' + l)
             for case in s.Cases:
-                bool, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
-                if bool and case.is_run != "KO":
-                    for i in range(len(label)):
+                script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
+                for i in range(len(label)):
+                    if script[i] and case.is_run != "KO":
                         cmd = os.path.join(self.getDestination(), l, "POST", label[i])
                         if os.path.isfile(cmd):
                             cmd += " " + args[i]
@@ -674,17 +735,20 @@ class Studies(object):
                             self.reporting('    - script %s not found' % cmd)
 
 
-    def check_plot(self):
+    def check_plot(self, destination=True):
         """
         Check coherency between xml file of parameters and repository.
-        Stops if one try to make a plot of a file which does not exsist.
+        Stop if you try to make a plot of a file which does not exsist.
         """
         for l, s in self.studies:
             for case in s.Cases:
                 if case.plot == "on" and case.is_run != "KO":
                     for node in self.__parser.getChilds(case.node, "data"):
                         plots, file, dest, repo = self.__parser.getResult(node)
+                        if destination == False:
+                            dest = None
                         self.__check_dirs(l, case.label, node, repo, dest)
+
 
     def plot(self):
         """
@@ -727,8 +791,7 @@ class Studies(object):
                              case.is_run,
                              case.is_time,
                              case.is_compare,
-                             is_nodiff,
-                             case.threshold)
+                             is_nodiff)
 
         attached_files.append(doc1.close())
 
@@ -740,19 +803,16 @@ class Studies(object):
                 doc2.appendLine("\\section{%s}" % l)
 
                 if s.matplotlib_figures:
-                    doc2.appendLine("\\subsection{Results}")
+                    doc2.appendLine("\\subsection{Results for case %s}" % case.label)
                     for png in s.matplotlib_figures:
                         doc2.addFigure(png)
 
                 for case in s.Cases:
-                    if case.is_compare:
-                        doc2.appendLine("\\subsection{%s}" % case.label)
+                    if case.is_compare == "done":
+                        doc2.appendLine("\\subsection{Comparison for case %s}" % case.label)
                         if case.diff_value:
-                            doc2.add_row(case.diff_value,
-                                         l,
-                                         case.label,
-                                         case.threshold)
-                        else:
+                            doc2.add_row(case.diff_value, l, case.label)
+                        elif self.__compare:
                             doc2.appendLine("No difference between the repository and the destination.")
 
             attached_files.append(doc2.close())
