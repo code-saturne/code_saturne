@@ -603,23 +603,26 @@ class StandardItemModelWriter(QStandardItemModel):
         row = index.row()
         col = index.column()
 
+        writer_id = self.dataWriter[row]['id']
         # Label
         if col == 0:
             old_plabel = self.dataWriter[row]['name']
             new_plabel = str(value.toString())
             self.dataWriter[row]['name'] = new_plabel
-            self.mdl.setWriterLabel(self.dataWriter[row]['id'], new_plabel)
+            self.mdl.setWriterLabel(writer_id, new_plabel)
 
-        if col == 2:
+        elif col == 2:
+            f_old = self.mdl.getWriterFormat(writer_id)
             self.dataWriter[row]['format'] = self.dicoV2M[str(value.toString())]
-            self.mdl.setWriterFormat(self.dataWriter[row]['id'],
-                                     self.dataWriter[row]['format'])
-
-        if col == 3:
+            if self.dataWriter[row]['format'] != f_old:
+                self.mdl.setWriterFormat(writer_id,
+                                         self.dataWriter[row]['format'])
+                self.mdl.setWriterOptions(writer_id, "")
+        elif col == 3:
             old_rep = self.dataWriter[row]['directory']
             new_rep = str(value.toString())
             self.dataWriter[row]['directory'] = new_rep
-            self.mdl.setWriterDirectory(self.dataWriter[row]['id'], new_rep)
+            self.mdl.setWriterDirectory(writer_id, new_rep)
 
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
@@ -978,8 +981,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelTimeDependency.addItem(self.tr("Fixed mesh"), 'fixed_mesh')
         self.modelTimeDependency.addItem(self.tr("Transient coordinates"), 'transient_coordinates')
         self.modelTimeDependency.addItem(self.tr("Transient connectivity"), 'transient_connectivity')
-
-        # ale = self.ale()
 
         self.modelFormat.addItem(self.tr("binary (native)"), 'binary')
         self.modelFormat.addItem(self.tr("binary (big-endian)"), 'big_endian')
@@ -1491,45 +1492,50 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
             opt_polygon = self.modelPolygon.dicoV2M[str(self.comboBoxPolygon.currentText())]
             opt_polyhed = self.modelPolyhedra.dicoV2M[str(self.comboBoxPolyhedra.currentText())]
-            if opt_polygon != 'display': line.append(opt_polygon)
-            if opt_polyhed != 'display': line.append(opt_polyhed)
+            if opt_polygon != 'display':
+                line.append(opt_polygon)
+            if opt_polyhed != 'display':
+                line.append(opt_polyhed)
 
-            l = string.join(line, ', ')
-            log.debug("slotOutputOptions-> OPTCHR = %s" % l)
+            l = string.join(line, ',')
+            log.debug("slotOutputOptions-> %s" % l)
             self.mdl.setWriterOptions(writer_id, l)
 
 
-    def __updateOptionsFormat(self, line, row): # called during initialization
+    def __updateOptionsFormat(self, options, row):
         """
         Update line for command of format's options at each modification of
         post processing format
         """
-        list = string.split(line, ',')
+        opts = string.split(options, ',')
         format = self.modelWriter.getItem(row)['format']
+        log.debug("__updateOptionsFormat-> format = %s" % format)
+        log.debug("__updateOptionsFormat-> options = %s" % options)
 
         # update widgets from the options list
 
-        self.modelFormat.setItem(str_model='binary')
-
-        for opt in list:
-
-            if opt in ['binary', 'big_endian', 'text'] :
+        for opt in opts:
+            if opt in ['binary', 'big_endian', 'text']:
                 self.modelFormat.setItem(str_model=opt)
 
-            if opt == 'discard polygons' or opt == 'divide_polygons':
+            elif opt == 'discard_polygons' or opt == 'divide_polygons':
                 self.modelPolygon.setItem(str_model=opt)
 
-            if opt == 'discard polyhedra' or opt == 'divide_polyhedra':
+            elif opt == 'discard_polyhedra' or opt == 'divide_polyhedra':
                 self.modelPolyhedra.setItem(str_model=opt)
 
-        if 'discard_polygons' not in list and 'divide_polygons' not in list:
+        # default
+
+        if 'binary' not in opts and 'big_endian' not in opts and 'text' not in opts:
+            self.modelFormat.setItem(str_model='binary')
+        if 'discard_polygons' not in opts and 'divide_polygons' not in opts:
             self.modelPolygon.setItem(str_model="display")
-        if 'discard_polyhedra' not in list and 'divide_polyhedra' not in list:
+        if 'discard_polyhedra' not in opts and 'divide_polyhedra' not in opts:
             self.modelPolyhedra.setItem(str_model="display")
 
         # enable and disable options related to the format
-        if format != "ensight":
 
+        if format != "ensight":
             if format == "cgns":
                 self.modelPolyhedra.setItem(str_model='divide_polyhedra')
                 self.modelPolyhedra.disableItem(str_model='display')

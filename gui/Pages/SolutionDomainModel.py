@@ -197,7 +197,6 @@ class SolutionDomainModel(MeshModel, Model):
         self.node_smooth     = self.node_ecs.xmlInitNode('mesh_smoothing', "status")
         self.node_join       = self.node_ecs.xmlInitNode('joining')
         self.node_perio      = self.node_ecs.xmlInitNode('periodicity')
-        self.node_standalone = self.node_ecs.xmlInitNode('standalone')
 
 
 #************************* Private methods *****************************
@@ -221,8 +220,6 @@ class SolutionDomainModel(MeshModel, Model):
         defvalue['syrth_mesh_2d']  = "off"
         defvalue['sim_status']     = "on"
         defvalue['verif_mail']     = "on"
-        defvalue['postprocessing_format'] = "EnSight"
-        defvalue['postprocessing_options'] = "binary"
         defvalue['dir_cas']        = "default_case"
         defvalue['poly_status']    = "off"
         defvalue['perio_mode']     = "translation"
@@ -761,70 +758,6 @@ class SolutionDomainModel(MeshModel, Model):
         return angle
 
 
-    def getSimCommStatus(self):
-        """
-        Get status of tag ''similation_communication' into xml file
-        """
-        node = self.node_standalone.xmlInitNode('simulation_communication', 'status')
-        status = node['status']
-        if not status:
-            status = self.defaultValues()['sim_status']
-            self.setSimCommStatus(status)
-        return status
-
-
-    def setSimCommStatus(self, status):
-        """
-        Put status of tag ''similation_communication' into xml file
-        """
-        self.isOnOff(status)
-        node = self.node_standalone.xmlInitNode('simulation_communication', 'status')
-        node['status'] = status
-
-
-    def getPostProFormat(self):
-        """
-        Return choice of format for post processing output file
-        """
-        node = self.node_standalone.xmlInitNode('postprocessing_format', 'choice')
-        choice = node['choice']
-        if not choice:
-            choice = self.defaultValues()['postprocessing_format']
-            self.setPostProFormat(choice)
-        return choice
-
-
-    def setPostProFormat(self, choice):
-        """
-        Set choice of format for post processing output file
-        """
-        self.isInList(choice, ('EnSight', 'MED_fichier', 'CGNS'))
-        node = self.node_standalone.xmlInitNode('postprocessing_format', 'choice')
-        node['choice'] = choice
-
-
-    def getPostProOptionsFormat(self):
-        """
-        Return options for post processing output file
-        """
-        node = self.node_standalone.xmlInitNode('postprocessing_options', 'choice')
-        line = node['choice']
-        if not line:
-            line = self.defaultValues()['postprocessing_options']
-            self.setPostProOptionsFormat(line)
-        return line
-
-
-    def setPostProOptionsFormat(self, line):
-        """
-        Set options for post processing output file
-        """
-        list = string.split(line)
-        self.isList(list)
-        n = self.node_standalone.xmlInitNode('postprocessing_options', 'choice')
-        n['choice'] = line
-
-
 # Methods to manage periodicity :
 #==============================
 
@@ -1152,64 +1085,6 @@ class SolutionDomainModel(MeshModel, Model):
             self._updateJoinSelectionNumbers()
 
 
-# In following methods we build the command to run the Preprocessor
-#==================================================================
-
-    def getMeshCommand(self):
-        """
-        Get mesh command line for preprocessor execution
-        """
-        lines = ''
-        nodeList = self.node_meshes.xmlGetNodeList('mesh', 'name')
-        mesh_mdl = MeshModel()
-        for meshNode in nodeList:
-            name   = meshNode['name']
-            format = meshNode['format']
-            mesh = self.case['mesh_path'] + '/' + name
-            lines += " -m " + mesh
-
-            if meshNode['format']:
-                lines += " --format " + meshNode['format']
-            if meshNode['num']:
-                lines += " --num " + meshNode['num']
-            if meshNode['grp_fac']:
-                lines += " --grp-fac " + meshNode['grp_fac']
-            if meshNode['grp_cel']:
-                lines += " --grp-cel " + meshNode['grp_cel']
-            if meshNode['reorient']:
-                lines += " --reorient"
-
-        lines += " "
-        return lines
-
-
-    def getSimCommCommand(self):
-        """
-        Get " --no-write " command line for preprocessor execution
-        """
-        lines = ''
-        node = self.node_standalone.xmlGetNode('simulation_communication')
-        if node and node['status'] == 'on':
-            lines = " --no-write "
-        return lines
-
-
-    def getPostCommand(self):
-        """
-        Get "--ensight" "--med" and/or "--cgns" command line for preprocessor execution
-        """
-        line  = ''
-        iok = 0
-        if self.getPostProFormat() == "EnSight":
-            line = ' --ensight '
-        if self.getPostProFormat() == "MED":
-            line = ' --med '
-        if self.getPostProFormat() == "CGNS":
-            line = ' --cgns '
-
-        return line
-
-
 #-------------------------------------------------------------------------------
 # SolutionDomain Model test case
 #-------------------------------------------------------------------------------
@@ -1264,18 +1139,6 @@ class SolutionDomainTestCase(ModelTest):
         assert mdl.getCutAngle() == 90, \
             'Could not get angle for faces_cutting'
 
-    def checkSetandGetSimCommStatus(self):
-        """ Check whether the status of node simulation_communication could be set and got"""
-        mdl = SolutionDomainModel(self.case)
-        mdl.setSimCommStatus('on')
-        doc = '''<standalone>
-                    <simulation_communication status="on"/>
-                 </standalone>'''
-
-        assert mdl.node_standalone == self.xmlNodeFromString(doc), \
-            'Could not set status of node simulation_communication'
-        assert mdl.getSimCommStatus() == 'on', \
-            'Could not get status of node simulation_communication'
 
     def checkgetPeriodicSelectionsCount(self):
         """ Check whether the number of periodicities could be got"""
@@ -1752,17 +1615,6 @@ class SolutionDomainTestCase(ModelTest):
             'Could not set selection of faces for periodicities'
 
 
-    def checkMeshCommand(self):
-        """ Check whether  command for meshes could be set """
-        mdl = SolutionDomainModel(self.case)
-        mdl.case['mesh_path'] = 'MESH'
-        mdl.addMesh('fdc.des','des')
-        line = ''' -m MESH/fdc.des '''
-
-        assert mdl.getMeshCommand() == line,\
-            'Mesh command is not verified in SolutionDomain Model'
-
-
     def checkReorientSetAndGetStatusAndCommand(self):
         """ Check whether reorient status could be set and got and command line could be got """
         mdl = SolutionDomainModel(self.case)
@@ -1777,25 +1629,6 @@ class SolutionDomainTestCase(ModelTest):
         cmd_orient = ' --reorient '
         assert mdl.getReorientCommand() == cmd_orient,\
             'Reorient command is not verified in SolutionDomain Model'
-
-
-    def checkSimCommAndVerifMaillCommand(self):
-        """ Check whether simulation_communication command line could be got """
-        mdl = SolutionDomainModel(self.case)
-        mdl.setSimCommStatus('on')
-        cmd_sim = mdl.getSimCommCommand()
-        sim =' -sc '
-        assert mdl.getSimCommCommand() == sim,\
-            'Simulation_communication command is not verified in SolutionDomain Model'
-
-    def checkPostCommand(self):
-        """Check whether output postprocessing format command line could be got"""
-        mdl = SolutionDomainModel(self.case)
-        mdl.setPostProFormat('CGNS')
-
-        cmd_post = ' --cgns '
-        assert mdl.getPostCommand() == cmd_post,\
-            'Post command is not verified for postprocessing format in SolutionDomain Model'
 
 
 #-------------------------------------------------------------------------------

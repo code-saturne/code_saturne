@@ -177,7 +177,7 @@ static void cs_gui_output_time_value(const char *const param,
  * Return the output format and options for postprocessing.
  *
  * parameters:
- *   param           -->  "postprocessing_format" or "postprocessing_options"
+ *   param           -->  "probe_format"
  *----------------------------------------------------------------------------*/
 
 static char *
