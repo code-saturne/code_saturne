@@ -1,3 +1,8 @@
+* 23/02/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix the domain partitioning script in some cases.
+  modified file:
+    bin/cs_case_domain.py
+
 * 23/02/2012 - Martin Ferrand <martin.ferrand@edf.fr>
   Fixes for the velocity-components coupling algorithm.
   modified files:
