@@ -5958,7 +5958,7 @@ msgid ""
 "\n"
 msgstr ""
 "\n"
-" Histogramme des nombres de threads pour les % par rang :\n"
+" Histogramme des nombres de threads pour les %s par rang :\n"
 "\n"
 
 #, c-format
@@ -5968,7 +5968,7 @@ msgid ""
 "\n"
 msgstr ""
 "\n"
-" Histogramme du nombre de groupes de threads pour les % par rang :\n"
+" Histogramme du nombre de groupes de threads pour les %s par rang :\n"
 "\n"
 
 #, c-format
@@ -6006,16 +6006,6 @@ msgstr ""
 "\n"
 "Vérification de la renumérotation de maillage pour les threads\n"
 "--------------------------------------------------------------\n"
-
-#, c-format
-msgid ""
-"\n"
-" Vectorization:\n"
-" --------------\n"
-"   interior faces: %d ranks (of %d)\n"
-"   boundary faces: %d ranks\n"
-"\n"
-msgstr ""
 
 #, c-format
 msgid ""
@@ -9254,21 +9244,6 @@ msgstr ""
 
 msgid "Synchronizing cell families\n"
 msgstr " Synchronisation des familles des cellules\n"
-
-msgid "    no value\n"
-msgstr "    aucune valeur\n"
-
-#, c-format
-msgid "    minimum value =         %10d\n"
-msgstr "    valeur minimale =       %10d\n"
-
-#, c-format
-msgid ""
-"    maximum value =         %10d\n"
-"\n"
-msgstr ""
-"    valeur maximale =       %10d\n"
-"\n"
 
 msgid ""
 "\n"
