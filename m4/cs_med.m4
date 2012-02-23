@@ -249,6 +249,7 @@ if test "x$with_med" != "xno" ; then
 
 fi
 
+unset cs_have_med2_headers
 unset cs_have_med3_headers
 
 AM_CONDITIONAL(HAVE_MED, test x$cs_have_med = xyes)
