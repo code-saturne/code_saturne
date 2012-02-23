@@ -835,7 +835,7 @@ echo " CCM support: "$cs_have_ccm""
 echo " HDF (Hierarchical Data Format) support: "$cs_have_hdf5""
 echo " CGNS (CFD General Notation System) support: "$cs_have_cgns""
 echo " MED (Model for Exchange of Data) support: "$cs_have_med""
-if (test x$cs_have_med = xyes) ; then
+if test x$cs_have_med = xyes ; then
   echo "   MED MPI I/O support: "$cs_have_med_mpi""
 fi
 echo " MEDCoupling support: "$cs_have_medcoupling""
@@ -847,6 +847,11 @@ echo " SALOME Kernel support: "$cs_have_salome_kernel""
 echo " Dynamic loader support (for YACS): "$cs_have_dlloader""
 echo " SYRTHES 3 coupling support: "$cs_have_syrthes""
 echo
+if test x$cs_have_med2_headers = xyes ; then
+  echo " Warning: MED version used is 2.3, which is deprecated.
+  echo "          in future versions, MED >= 3.0 will be required.
+  echo
+fi
 echo "The package has been configured. Type:"
 echo " make"
 echo " make install"
