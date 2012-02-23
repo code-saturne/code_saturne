@@ -1291,14 +1291,6 @@ Tools related to the \salome platform should preferably use
 \salome{}'s native \med format (export to \ideas universal is
 also possible, but has some limitations).
 
-The use of files of the ``Common Solver'' type\footnote{File type specifically
-developed for the early prototype versions of \CS (\texttt{tlc}) extension}
-is still in part possible but is deprecated. Such files are read directly
-from the Kernel, and this format is not handled by the launch
-scripts anymore. Many potentialities of \CS are not
-usable with this file format (mesh joining with hanging nodes, periodicity,
-parallel computing, ...).
-
 %==================================
 \subsubsection{Meshing remarks}
 %==================================
@@ -1311,7 +1303,7 @@ neighboring the wall needs to be greater than the thickness of the viscous
 sublayer (at the wall, $y^+>2.5$ is required, and $30<y^+<100$ is
 preferable). If the mesh does not match this constraint, the results may
 be false (particularly if thermal phenomena are involved). For more details
-on these constraints, see the keyword \texttt{ITURB}.
+on these constraints, see the keyword \texttt{iturb}.
 
 %==================================
 \subsection{Preprocessor command line options}
@@ -1343,12 +1335,6 @@ to search deep in the script for the Kernel command line. For more advanced
 usage, the main options are described below:
 
 \begin{list}{$\bullet$}{}
-\item \texttt{--solcom}: this option indicates that the Kernel will read the
-mesh directly, not using the Preprocessor output files. This is only possible
-with ``Common Solver'' type of mesh files (see \S\ref{prg_maillages} for
-restrictions).\\
-This option is obsolete, and is not handled by the launch script anymore.
-
 \item \texttt{--app-name}: specifies the application name. This is
 useful only in the case of code coupling, where the application name
 is used to distinguish between different code instances launched together.
