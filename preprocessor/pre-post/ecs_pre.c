@@ -63,7 +63,6 @@
 #ifdef HAVE_CCM
 #include "ecs_pre_ccm.h"
 #endif /* HAVE_CCM */
-#include "ecs_pre_comet.h"
 #include "ecs_pre_ens.h"
 #include "ecs_pre_gambit.h"
 #include "ecs_pre_gmsh.h"
@@ -136,14 +135,6 @@ static ecs_pre_format_desc_t _ecs_pre_formats[9] = {
     0,
 #endif
     ECS_PRE_FORMAT_CCM
-  },
-
-  {
-    "pro-STAR/STAR4",
-    ".ngeom",
-    "ngeom",
-    1,
-    ECS_PRE_FORMAT_COMET
   },
 
   {
@@ -397,10 +388,6 @@ ecs_pre__lit_maillage(const char        *nom_fic,
     break;
 
 #endif /* HAVE_CCM */
-
-  case ECS_PRE_FORMAT_COMET:
-    maillage = ecs_pre_comet__lit_maillage(nom_fic);
-    break;
 
   case ECS_PRE_FORMAT_ENS:
     maillage = ecs_pre_ens__lit_maillage(nom_fic,

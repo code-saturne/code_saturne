@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-02-23 14:21+0100\n"
+"POT-Creation-Date: 2012-02-23 15:31+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1301,166 +1301,6 @@ msgstr "  Nombre de zones    : %d\n"
 #, c-format
 msgid "Mesh entities are of dimension: %d\n"
 msgstr "Les entités de maillage sont de dimension : %d\n"
-
-#, c-format
-msgid ""
-"\n"
-"    Reading a vertices section\n"
-msgstr ""
-"\n"
-"    Lecture d'une section sommets\n"
-
-#, c-format
-msgid "         %10d vertices "
-msgstr "         %10d sommets "
-
-#, c-format
-msgid ""
-"of color %4d\n"
-"\n"
-msgstr ""
-"de couleur%4d\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-"    Reading vertices with double precision\n"
-msgstr ""
-"\n"
-"    Lecture de sommets en double précision\n"
-
-#, c-format
-msgid ""
-"\n"
-"    Reading an internal faces section\n"
-msgstr ""
-"\n"
-"    Lecture d'une section faces internes\n"
-
-#, c-format
-msgid "         %10d faces "
-msgstr "         %10d faces "
-
-#, c-format
-msgid ""
-"\n"
-"    Reading a boundary faces section\n"
-msgstr ""
-"\n"
-"    Lecture d'une section faces de bord\n"
-
-#, c-format
-msgid "         %10d boundary faces "
-msgstr "         %10d faces de bord "
-
-#, c-format
-msgid ""
-"\n"
-"    Reading a cells section\n"
-msgstr ""
-"\n"
-"    Lecture d'une section cellules\n"
-
-#, c-format
-msgid "         %10d cells "
-msgstr "         %10d cellules "
-
-#, c-format
-msgid ""
-"\n"
-"    Reading a Shell section\n"
-msgstr ""
-"\n"
-"    Lecture d'une section Shell\n"
-
-#, c-format
-msgid ""
-"\n"
-"    Caution: reading this type of section has not been validated\n"
-msgstr ""
-"\n"
-"    Attention : La lecture de ce type de section n'a pas été validée\n"
-
-#, c-format
-msgid ""
-"\n"
-"    Reading a Map section\n"
-msgstr ""
-"\n"
-"    Lecture d'une section Map\n"
-
-#, c-format
-msgid ""
-"\n"
-"    Reading an Interface section\n"
-msgstr ""
-"\n"
-"    Lecture d'une section Interface\n"
-
-#, c-format
-msgid ""
-"\n"
-"    Reading a Scalar section\n"
-msgstr ""
-"\n"
-"    Lecture d'une section Scalaire\n"
-
-#, c-format
-msgid ""
-"\n"
-"\n"
-"Reading mesh from file in pro-STAR/STAR4 format\n"
-"----------------------\n"
-msgstr ""
-"\n"
-"\n"
-"Lecture du fichier de maillage au format pro-STAR/STAR4\n"
-"------------------------------\n"
-
-#, c-format
-msgid "  \"ngeom\" file: %s\n"
-msgstr "  Fichier \"ngeom\" : %s\n"
-
-#, c-format
-msgid ""
-"\n"
-"  Header: %s\n"
-msgstr ""
-"\n"
-"  En-tête : %s\n"
-
-#, c-format
-msgid ""
-"\n"
-"  Version number: %10d\n"
-msgstr ""
-"\n"
-"  Numero de version : %10d\n"
-
-#, c-format
-msgid ""
-"\n"
-"       Finished reading the usable part of the file\n"
-"\n"
-msgstr ""
-"\n"
-"       Fin de lecture de la partie exploitable du fichier\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-"\n"
-"       unknown section type %2d\n"
-"          Premature end of reading\n"
-"\n"
-msgstr ""
-"\n"
-"\n"
-"       type de section %2d inconnu\n"
-"          Arrêt prématuré de la lecture\n"
-"\n"
 
 #, c-format
 msgid ""
@@ -9879,3 +9719,4 @@ msgstr ""
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
 "\n"
+

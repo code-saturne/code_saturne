@@ -51,7 +51,6 @@ ecs_post.h \
 ecs_post_med.h \
 ecs_pre_ccm.h \
 ecs_pre_cgns.h \
-ecs_pre_comet.h \
 ecs_pre_ens.h \
 ecs_pre_gambit.h \
 ecs_pre_gmsh.h \
@@ -81,7 +80,6 @@ ecs_post_med.c \
 ecs_pre.c \
 ecs_pre_ccm.c \
 ecs_pre_cgns.c \
-ecs_pre_comet.c \
 ecs_pre_ens.c \
 ecs_pre_gambit.c \
 ecs_pre_gmsh.c \

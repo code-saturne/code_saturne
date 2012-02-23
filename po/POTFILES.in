@@ -19,7 +19,6 @@ preprocessor/pre-post/ecs_post_med.c
 preprocessor/pre-post/ecs_pre.c
 preprocessor/pre-post/ecs_pre_ccm.c
 preprocessor/pre-post/ecs_pre_cgns.c
-preprocessor/pre-post/ecs_pre_comet.c
 preprocessor/pre-post/ecs_pre_ens.c
 preprocessor/pre-post/ecs_pre_gambit.c
 preprocessor/pre-post/ecs_pre_gmsh.c
