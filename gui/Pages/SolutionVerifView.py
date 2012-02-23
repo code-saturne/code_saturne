@@ -102,8 +102,9 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         os.mkdir(self.exec_dir)
         os.chdir(self.exec_dir)
 
-        self.fmt = self.out2.getWriterFormat("-1").lower()
+        self.fmt = OutputControlModel(self.case).getWriterFormat("-1").lower()
         self.out2.setWriterLabel("-1", "quality")
+        self.out2.setWriterFormat("-1", self.fmt)
 
         # Prepare preprocessing
 
@@ -132,9 +133,13 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
                 cmd = self.case['package'].get_preprocessor()
 
-                name   = meshNode['name']
+                mesh   = meshNode['name']
                 format = meshNode['format']
-                mesh = self.case['mesh_path'] + '/' + name
+                path   = meshNode['path']
+                if path != None:
+                    mesh = os.path.join(path, mesh)
+                if not os.path.isabs(mesh) and self.case['mesh_path'] != None:
+                    mesh = os.path.join(self.case['mesh_path'], mesh)
                 if meshNode['num']:
                     cmd += ' --num ' + meshNode['num']
                 if meshNode['reorient'] == 'on':
