@@ -289,13 +289,14 @@ class Setup:
         # Code_Saturne
 
         url_cs = "http://innovation.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/code_saturne/Releases/%s"
+        url_cs = "http://www.code-saturne.org/cms/sites/default/files/%s"
 
         self.packages['code_saturne'] = \
             Package(name="Code_Saturne",
                     description="Code_Saturne CFD tool",
                     package="code_saturne",
-                    version="2.1.4",
-                    archive="code_saturne-214.zip",
+                    version="2.1.5",
+                    archive="code_saturne-2.1.5.tar.gz",
                     url=url_cs)
 
         p = self.packages['code_saturne']
@@ -336,8 +337,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.0.3",
-                    archive="med-3.0.3.tar.gz",
+                    version="3.0.4",
+                    archive="med-3.0.4.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
@@ -349,7 +350,7 @@ class Setup:
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.4.4",
+                    version="1.4.5",
                     archive="openmpi-1.4.4.tar.gz",
                     url="http://www.open-mpi.org/software/ompi/v1.4/downloads/%s")
 
