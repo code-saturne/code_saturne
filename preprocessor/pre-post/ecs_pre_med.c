@@ -110,27 +110,16 @@ ecs_pre_med__cree(const char  *nom_fichier)
   ECS_MALLOC(fic->nom_fic, strlen(nom_fichier) + 1, char);
   strcpy(fic->nom_fic, nom_fichier);
 
-#if ECS_MED_VERSION == 2
-  fic->fid = MEDouvrir(fic->nom_fic, MED_LECTURE);
-#else
   fic->fid = MEDfileOpen(fic->nom_fic, MED_ACC_RDONLY);
-#endif
 
   if (fic->fid < 0)
     ecs_error(__FILE__, __LINE__, 0,
               _("MED: error opening file \"%s\"."), nom_fichier);
 
-#if ECS_MED_VERSION == 2
-  retval = MEDversionLire(fic->fid,
-                          &(fic->version[0]),
-                          &(fic->version[1]),
-                          &(fic->version[2]));
-#else
   retval = MEDfileNumVersionRd(fic->fid,
                                &(fic->version[0]),
                                &(fic->version[1]),
                                &(fic->version[2]));
-#endif
 
   if (retval < 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -156,11 +145,7 @@ ecs_pre_med__detruit(ecs_med_t  * fic)
 
   assert(fic != NULL);
 
-#if ECS_MED_VERSION == 2
-  retval = MEDfermer(fic->fid);
-#else
   retval = MEDfileClose(fic->fid);
-#endif
 
   if (retval != 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -327,13 +312,8 @@ ecs_loc_pre_med__lit_noeud(ecs_maillage_t   *maillage,
 
   med_err      ret_med = 0;
 
-#if ECS_MED_VERSION == 2
-  med_axis_type  repere_med;
-  char           uni_coord_med[3 * MED_SNAME_SIZE + 1];
-#else
-  med_bool       changement = MED_FALSE;
-  med_bool       transformation = MED_FALSE;
-#endif
+  med_bool     changement = MED_FALSE;
+  med_bool     transformation = MED_FALSE;
 
   char         nom_maillage_med[MED_NAME_SIZE + 1];
   char        *nom_noe_med;
@@ -343,17 +323,6 @@ ecs_loc_pre_med__lit_noeud(ecs_maillage_t   *maillage,
   strcpy(nom_maillage_med, nom_maillage);
 
   /* On recupere le nombre de noeuds */
-
-#if ECS_MED_VERSION == 2
-
-  nbr_noe_med = MEDnEntMaa(fic_maillage->fid,
-                           nom_maillage_med,
-                           MED_COOR,
-                           MED_NOEUD,
-                           (med_geometrie_element)0,
-                           (med_connectivite)0);
-
-#else
 
   nbr_noe_med = MEDmeshnEntity(fic_maillage->fid,
                                nom_maillage_med,
@@ -365,8 +334,6 @@ ecs_loc_pre_med__lit_noeud(ecs_maillage_t   *maillage,
                                MED_NODAL,
                                &changement,
                                &transformation);
-
-#endif
 
   if (nbr_noe_med < 0)
     ret_med = -1;
@@ -388,30 +355,12 @@ ecs_loc_pre_med__lit_noeud(ecs_maillage_t   *maillage,
   ECS_MALLOC(num_noe_med, nbr_noe_med,                       med_int);
   ECS_MALLOC(nom_noe_med, nbr_noe_med * MED_SNAME_SIZE + 1, char);
 
-#if ECS_MED_VERSION == 2
-
-  ret_med =   MEDcoordLire(fic_maillage->fid,
-                           nom_maillage_med,
-                           mdim_med,
-                           coord_med,
-                           MED_FULL_INTERLACE,
-                           MED_ALL,
-                           NULL,
-                           0,
-                           &repere_med,
-                           nom_noe_med,
-                           uni_coord_med);
-
-#else
-
   ret_med = MEDmeshNodeCoordinateRd(fic_maillage->fid,
                                     nom_maillage_med,
                                     MED_NO_DT,
                                     MED_NO_IT,
                                     MED_FULL_INTERLACE,
                                     coord_med);
-
-#endif
 
   if (ret_med != 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -526,13 +475,11 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
   med_int          * connect_med = NULL;
   med_int          * fam_ele_med = NULL;
 
-#if ECS_MED_VERSION == 3
   med_bool           changement = MED_FALSE;
   med_bool           transformation = MED_FALSE;
   med_int            nstep = 0;
   med_int            nocstpcorrespondence = 0;
   med_data_type      data_type = MED_CONNECTIVITY;
-#endif
 
   const int          n_typ_geo_ignore = 3;
   med_geometry_type  typ_geo_med_ignore[] = {MED_POINT1,
@@ -575,17 +522,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
     /* On regarde si le maillage MED comporte des éléments ignorés */
     /*-------------------------------------------------------------*/
 
-#if ECS_MED_VERSION == 2
-
-    nbr_ele_med = MEDnEntMaa(fic_maillage->fid,
-                             nom_maillage_med,
-                             MED_CONN,
-                             MED_NOEUD,
-                             typ_geo_med_ignore[ityp],
-                             MED_NOD);
-
-#else
-
     nbr_ele_med = MEDmeshnEntity(fic_maillage->fid,
                                  nom_maillage_med,
                                  MED_NO_DT,
@@ -597,23 +533,10 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                  &changement,
                                  &transformation);
 
-#endif
-
     if (nbr_ele_med < 0)
       ret_med = -1;
 
     else if (nbr_ele_med == 0) {
-
-#if ECS_MED_VERSION == 2
-
-      nbr_ele_med = MEDnEntMaa(fic_maillage->fid,
-                               nom_maillage_med,
-                               MED_CONN,
-                               MED_MAILLE,
-                               typ_geo_med_ignore[ityp],
-                               MED_NOD);
-
-#else
 
       nbr_ele_med = MEDmeshnEntity(fic_maillage->fid,
                                    nom_maillage_med,
@@ -625,8 +548,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                    MED_NODAL,
                                    &changement,
                                    &transformation);
-
-#endif
 
       if (nbr_ele_med < 0)
         ret_med = -1;
@@ -652,13 +573,8 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
   /* Vérification du nombre d'équivalences
      (pour connectivité faces non conformes éventuelle) */
 
-#if ECS_MED_VERSION == 2
-  nbr_equiv = MEDnEquiv(fic_maillage->fid,
-                        nom_maillage_med);
-#else
   nbr_equiv = MEDnEquivalence(fic_maillage->fid,
                               nom_maillage_med);
-#endif
 
   if (nbr_equiv < 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -674,16 +590,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
     for (ind_equiv = 0; ind_equiv < nbr_equiv; ind_equiv++) {
 
-#if ECS_MED_VERSION == 2
-
-      ret_med = MEDequivInfo(fic_maillage->fid,
-                             nom_maillage_med,
-                             ind_equiv + 1,
-                             nom_equiv,
-                             desc_equiv);
-
-#else
-
       ret_med = MEDequivalenceInfo(fic_maillage->fid,
                                    nom_maillage_med,
                                    ind_equiv + 1,
@@ -691,8 +597,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                    desc_equiv,
                                    &nstep,
                                    &nocstpcorrespondence);
-
-#endif
 
       if (ret_med < 0)
         ecs_error(__FILE__, __LINE__, 0,
@@ -735,17 +639,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
     typ_ent_med = MED_CELL;
 
-#if ECS_MED_VERSION == 2
-
-    nbr_ele_med = MEDnEntMaa(fic_maillage->fid,
-                             nom_maillage_med,
-                             MED_CONN,
-                             typ_ent_med,
-                             typ_geo_med,
-                             MED_NOD);
-
-#else
-
     nbr_ele_med = MEDmeshnEntity(fic_maillage->fid,
                                  nom_maillage_med,
                                  MED_NO_DT,
@@ -778,8 +671,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
     }
 
-#endif
-
     if (nbr_ele_med < 0)
       ret_med = -1;
 
@@ -789,17 +680,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
         typ_ent_med = MED_DESCENDING_EDGE;
       else if (edim_med == 2)
         typ_ent_med = MED_DESCENDING_FACE;
-
-#if ECS_MED_VERSION == 2
-
-      nbr_ele_med = MEDnEntMaa(fic_maillage->fid,
-                               nom_maillage_med,
-                               MED_CONN,
-                               typ_ent_med,
-                               typ_geo_med,
-                               MED_NOD);
-
-#else
 
       nbr_ele_med = MEDmeshnEntity(fic_maillage->fid,
                                    nom_maillage_med,
@@ -811,8 +691,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                    MED_NODAL,
                                    &changement,
                                    &transformation);
-
-#endif
 
       if (nbr_ele_med < 0)
         ret_med = -1;
@@ -873,21 +751,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
         taille = (ecs_int_t)nbr_ele_med * (ecs_int_t)taille_med;
         ECS_MALLOC(connect_med, taille, med_int);
 
-#if ECS_MED_VERSION == 2
-
-        ret_med = MEDconnLire(fic_maillage->fid,
-                              nom_maillage_med,
-                              mdim_med,
-                              connect_med,
-                              MED_FULL_INTERLACE,
-                              NULL, /* Pas de profil */
-                              0,
-                              typ_ent_med,
-                              typ_geo_med,
-                              MED_NOD);
-
-#else
-
         ret_med = MEDmeshElementConnectivityRd(fic_maillage->fid,
                                                nom_maillage_med,
                                                MED_NO_DT,
@@ -897,7 +760,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                                MED_NODAL,
                                                MED_FULL_INTERLACE,
                                                connect_med);
-#endif
 
         if (ret_med != 0)
           ecs_error(__FILE__, __LINE__, 0,
@@ -952,16 +814,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
         /* Taille du tableau des connectivites */
 
-#if ECS_MED_VERSION == 2
-
-        ret_med = MEDpolygoneInfo(fic_maillage->fid,
-                                  nom_maillage_med,
-                                  typ_ent_med,
-                                  MED_NOD,
-                                  &taille_med);
-
-#else
-
         taille_med = MEDmeshnEntity(fic_maillage->fid,
                                     nom_maillage_med,
                                     MED_NO_DT,
@@ -975,8 +827,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
         if (taille_med < 0)
           ret_med = -1;
-
-#endif
 
         if (ret_med != 0)
           ecs_error(__FILE__, __LINE__, 0,
@@ -994,18 +844,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
         /* Lecture de la connectivité des polygones */
 
-#if ECS_MED_VERSION == 2
-
-        ret_med = MEDpolygoneConnLire(fic_maillage->fid,
-                                      nom_maillage_med,
-                                      index_med,
-                                      nbr_ele_med + 1,
-                                      connect_med,
-                                      typ_ent_med,
-                                      MED_NOD);
-
-#else
-
         ret_med = MEDmeshPolygonRd(fic_maillage->fid,
                                    nom_maillage_med,
                                    MED_NO_DT,
@@ -1014,8 +852,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                    MED_NODAL,
                                    index_med,
                                    connect_med);
-
-#endif
 
         if (ret_med != 0)
           ecs_error(__FILE__, __LINE__, 0,
@@ -1059,16 +895,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
         /* Taille du tableau des connectivites */
 
-#if ECS_MED_VERSION == 2
-
-        ret_med = MEDpolyedreInfo(fic_maillage->fid,
-                                  nom_maillage_med,
-                                  MED_NOD,
-                                  &n_index_f_med,
-                                  &taille_med);
-
-#else
-
         ret_med = 0;
 
         n_index_f_med = MEDmeshnEntity(fic_maillage->fid,
@@ -1103,8 +929,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
         }
 
-#endif
-
         if (ret_med != 0)
           ecs_error(__FILE__, __LINE__, 0,
                     _("MED: error reading file \"%s\".\n"
@@ -1129,19 +953,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
         /* Lecture de la connectivité des polyèdres */
 
-#if ECS_MED_VERSION == 2
-
-        ret_med = MEDpolyedreConnLire(fic_maillage->fid,
-                                      nom_maillage_med,
-                                      index_med,
-                                      nbr_ele_med + 1,
-                                      index_f_med,
-                                      n_index_f_med,
-                                      connect_med,
-                                      MED_NOD);
-
-#else
-
         ret_med = MEDmeshPolyhedronRd(fic_maillage->fid,
                                       nom_maillage_med,
                                       MED_NO_DT,
@@ -1151,7 +962,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                       index_med,
                                       index_f_med,
                                       connect_med);
-#endif
 
         if (ret_med != 0)
           ecs_error(__FILE__, __LINE__, 0,
@@ -1269,17 +1079,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
       /* Lecture des numéros de familles */
 
-#if ECS_MED_VERSION == 2
-
-      ret_med = MEDfamLire(fic_maillage->fid,
-                           nom_maillage_med,
-                           fam_ele_med,
-                           nbr_ele_med,
-                           typ_ent_med,
-                           typ_geo_med);
-
-#else
-
       ret_med = MEDmeshEntityFamilyNumberRd(fic_maillage->fid,
                                             nom_maillage_med,
                                             MED_NO_DT,
@@ -1287,8 +1086,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                             typ_ent_med,
                                             typ_geo_med,
                                             fam_ele_med);
-
-#endif
 
       /* Convention MED : si pas de familles, numéros = 0 */
 
@@ -1324,18 +1121,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
         med_int *corres = NULL;
         ecs_int_t *copy_fac_connect = NULL;
 
-#if ECS_MED_VERSION == 2
-
-        nbr_corres = MEDnCorres(fic_maillage->fid,
-                                nom_maillage_med,
-                                nom_equiv,
-                                typ_ent_med,
-                                typ_geo_med);
-
-        if (nbr_corres < 0)
-          ret_med = -1;
-
-#else
         ret_med = MEDequivalenceCorrespondenceSize(fic_maillage->fid,
                                                    nom_maillage_med,
                                                    nom_equiv,
@@ -1344,8 +1129,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                                    typ_ent_med,
                                                    typ_geo_med,
                                                    &nbr_corres);
-
-#endif
 
         if (ret_med < 0)
           ecs_error(__FILE__, __LINE__, 0,
@@ -1363,18 +1146,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
           ECS_MALLOC(corres, nbr_corres*2, med_int);
 
-#if ECS_MED_VERSION == 2
-
-          ret_med = MEDequivLire(fic_maillage->fid,
-                                 nom_maillage_med,
-                                 nom_equiv,
-                                 corres,
-                                 nbr_corres,
-                                 typ_ent_med,
-                                 typ_geo_med);
-
-#else
-
           ret_med = MEDequivalenceCorrespondenceRd(fic_maillage->fid,
                                                    nom_maillage_med,
                                                    nom_equiv,
@@ -1383,8 +1154,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                                    typ_ent_med,
                                                    typ_geo_med,
                                                    corres);
-
-#endif
 
         }
 
@@ -1475,13 +1244,8 @@ ecs_loc_pre_med__lit_famille(const ecs_med_t  *fic_maillage,
 
   /* On récupere le nombre de familles */
 
-#if ECS_MED_VERSION == 2
-  nbr_fam_med = MEDnFam(fic_maillage->fid,
-                        nom_maillage_med);
-#else
   nbr_fam_med = MEDnFamily(fic_maillage->fid,
                            nom_maillage_med);
-#endif
 
   if (nbr_fam_med < 0)
     ret_med = -1;
@@ -1514,18 +1278,12 @@ ecs_loc_pre_med__lit_famille(const ecs_med_t  *fic_maillage,
     /* Récupération du nombre d'attributs */
     /*------------------------------------*/
 
-#if ECS_MED_VERSION == 2
-    nbr_att_med = MEDnAttribut(fic_maillage->fid,
-                               nom_maillage_med,
-                               ifam_med + 1);
-#else
     if (fic_maillage->version[0] == 2)
       nbr_att_med = MEDnFamily23Attribute(fic_maillage->fid,
                                           nom_maillage_med,
                                           ifam_med + 1);
     else
       nbr_att_med = 0;
-#endif
 
     if (nbr_att_med < 0)
       ret_med = -1;
@@ -1540,15 +1298,9 @@ ecs_loc_pre_med__lit_famille(const ecs_med_t  *fic_maillage,
     /* Récupération du nombre de groupes */
     /*-----------------------------------*/
 
-#if ECS_MED_VERSION == 2
-    nbr_grp_med = MEDnGroupe(fic_maillage->fid,
-                             nom_maillage_med,
-                             ifam_med + 1);
-#else
     nbr_grp_med = MEDnFamilyGroup(fic_maillage->fid,
                                   nom_maillage_med,
                                   ifam_med + 1);
-#endif
 
     if (nbr_grp_med < 0)
       ret_med = -1;
@@ -1580,22 +1332,6 @@ ecs_loc_pre_med__lit_famille(const ecs_med_t  *fic_maillage,
 
     ECS_MALLOC(grp_des_med, nbr_grp_med * MED_LNAME_SIZE + 1, char);
 
-#if ECS_MED_VERSION == 2
-
-    ret_med = MEDfamInfo(fic_maillage->fid,
-                         nom_maillage_med,
-                         ifam_med + 1,
-                         nom_fam_med,
-                         &num_fam_med,
-                         att_ide_med,
-                         att_val_med,
-                         att_des_med,
-                         &nbr_att_med,
-                         grp_des_med,
-                         &nbr_grp_med);
-
-#else
-
     if (fic_maillage->version[0] == 2)
       ret_med = MEDfamily23Info(fic_maillage->fid,
                                 nom_maillage_med,
@@ -1614,8 +1350,6 @@ ecs_loc_pre_med__lit_famille(const ecs_med_t  *fic_maillage,
                               nom_fam_med,
                               &num_fam_med,
                               grp_des_med);
-
-#endif
 
     if (num_fam_med != 0) {
 
@@ -1810,14 +1544,12 @@ ecs_pre_med__lit_maillage(const char  *nom_fic_maillage,
   int            num_maillage_med = 1;
   med_mesh_type  type_maillage_med;
 
-#if ECS_MED_VERSION == 3
   char              dtunit[MED_LNAME_SIZE + 1];
   char              axisname[MED_SNAME_SIZE*3 + 1];
   char              axisunit[MED_SNAME_SIZE*3 + 1];
   med_sorting_type  sortingtype;
   med_int           nstep;
   med_axis_type     axistype;
-#endif
 
   /* Création d'un maillage initialement vide (valeur de retour) */
 
@@ -1839,11 +1571,7 @@ ecs_pre_med__lit_maillage(const char  *nom_fic_maillage,
 
   /* Vérification et traitements selon le nombre de maillages */
 
-#if ECS_MED_VERSION == 2
-  nbr_maillages_med = MEDnMaa(fic_maillage->fid);
-#else
   nbr_maillages_med = MEDnMesh(fic_maillage->fid);
-#endif
 
   if (nbr_maillages_med < 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -1853,14 +1581,6 @@ ecs_pre_med__lit_maillage(const char  *nom_fic_maillage,
   if (nbr_maillages_med > 1) {
     printf(_("\n  The file contains multiple meshes:\n"));
     for (ind = 0; ind < nbr_maillages_med; ind++) {
-#if ECS_MED_VERSION == 2
-      ret_med =MEDmaaInfo(fic_maillage->fid,
-                          ind + 1,
-                          nom_maillage_med,
-                          &mdim_med,
-                          &type_maillage_med,
-                          desc_maillage_med);
-#else
       ret_med = MEDmeshInfo(fic_maillage->fid,
                             ind + 1,
                             nom_maillage_med,
@@ -1874,7 +1594,6 @@ ecs_pre_med__lit_maillage(const char  *nom_fic_maillage,
                             &axistype,
                             axisname,
                             axisunit);
-#endif
       if (ret_med != 0)
         ecs_error(__FILE__, __LINE__, 0,
                   _("MED: error reading file \"%s\"."),
@@ -1899,20 +1618,6 @@ ecs_pre_med__lit_maillage(const char  *nom_fic_maillage,
   else
     num_maillage_med = ECS_MAX(1, num_maillage);
 
-#if ECS_MED_VERSION == 2
-  ret_med = MEDmaaInfo(fic_maillage->fid,
-                       num_maillage_med,
-                       nom_maillage_med,
-                       &mdim_med,
-                       &type_maillage_med,
-                       desc_maillage_med);
-  if (ret_med == 0) {
-    dim_e = MEDdimEspaceLire(fic_maillage->fid,
-                             nom_maillage_med);
-    if (dim_e < 0)
-      dim_e = mdim_med;
-  }
-#else
   ret_med = MEDmeshInfo(fic_maillage->fid,
                         num_maillage_med,
                         nom_maillage_med,
@@ -1926,7 +1631,6 @@ ecs_pre_med__lit_maillage(const char  *nom_fic_maillage,
                         &axistype,
                         axisname,
                         axisunit);
-#endif
 
   if (ret_med != 0)
     ecs_error(__FILE__, __LINE__, 0,

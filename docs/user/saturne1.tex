@@ -1166,7 +1166,7 @@ Documentation:     & online documentation, also available at:
 \hline
 \end{tabular}
 
-\subsubsubsection{\med 2.3 or \med 3.0}\hyperdef{sec}{med}{}
+\subsubsubsection{\med}\hyperdef{sec}{med}{}
 \label{fmtdesc:med}
 
 Initially defined by EDF R\&D, this format (\emph{Mod\`ele d'\'echanges de Donn\'ees},
@@ -1175,8 +1175,8 @@ a \med working group comprising members of EDF R\&D and CEA (the \CS team
 being represented). This is the reference format for the
 \href{http://www.opencascade.org/SALOME/Salome.html}{\emph SALOME} environment.
 This format is quite complete, allowing the definition of all ``classical''
-element types, in nodal or descending connectivity. Since \med 2.2 in 2003,
-this format may handle polygonal faces and polyhedral cells,
+element types, in nodal or descending connectivity.
+It may handle polygonal faces and polyhedral cells,
 as well as the definition of structured meshes.
 
 This format, which requires a library also depending on the free HDF5 library,
@@ -1187,29 +1187,31 @@ with the possibility (unused by \CS) of defining variables only on a subset
 
 The \med library is available under a \href{http://www.gnu.org}{LGPL} licence,
 and is even packaged in some Linux distributions
-(at least Debian and Ubuntu). Versions 2.3.5 and older require HDF5 1.6,
-version 2.3.6 may compile with either HDF5 1.6 or HDF5 1.8 (if the latter
-has HDF5 1.6 compatibility enabled).
+(at least Debian and Ubuntu). \CS requires at least \med 3.0.2, which in turn
+requires HDF5 1.8. This format is upwards-compatible with \med 2.3,
+so files in that version of the format may be read, though not output.
 
 \smallskip \noindent
 \begin{tabular}[top]{|p{4.5cm}%
                      |>{\PreserveBackslash\raggedright\hspace{0pt}}p{10.5cm}|}
 \hline
-Default extension: & {\tt .med}\\
+Default extension:    & {\tt .med}\\
 \hline
-File type:         & portable binary, based on the HDF5 library
-                     (\url{http://www.hdfgroup.org/HDF5/index.html})\\
+File type:            & portable binary, based on the HDF5 library
+                       (\url{http://www.hdfgroup.org/HDF5/index.html})\\
 \hline
-Surface elements:  & triangles, quadrangles, simple polygons\\
+Surface elements:     & triangles, quadrangles, simple polygons\\
 \hline
-Volume elements:   & tetrahedra, pyramids, prisms, hexahedra, simple polyhedra\\
+Volume elements:      & tetrahedra, pyramids, prisms, hexahedra, simple polyhedra\\
 \hline
-Zone selection:    & element families ({\it i.e.} colors and groups)\\
+Zone selection:       & element families ({\it i.e.} colors and groups)\\
 \hline
-Compatibility:     & \med 2.3.5, \med 2.3.6, or \med 3.0.2 and above
+Input compatibility:  & \med 2.3 or \med 3.0
                      (only unstructured nodal connectivity is supported)\\
 \hline
-Documentation:     & online documentation. Download link at \url{http://files.salome-platform.org/Salome/other/med-3.0.3.tar.gz}\\
+Output compatibility: & \med 3.0 and above \\
+\hline
+Documentation:        & online documentation. Download link at \url{http://files.salome-platform.org/Salome/other/med-3.0.4.tar.gz}\\
 \hline
 \end{tabular}
 

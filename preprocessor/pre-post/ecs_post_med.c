@@ -137,17 +137,10 @@ ecs_post_med__detruit_cas(ecs_med_t  *cas_med)
     /* Destruction du cas */
 
     if (cas_med->fid != 0) {
-#if ECS_MED_VERSION == 2
-      if (MEDfermer(cas_med->fid) != 0)
-        ecs_error(__FILE__, __LINE__, 0,
-                  _("MED: error closing file \"%s\"."),
-                  cas_med->nom_fic);
-#else
       if (MEDfileClose(cas_med->fid) != 0)
         ecs_error(__FILE__, __LINE__, 0,
                   _("MED: error closing file \"%s\"."),
                   cas_med->nom_fic);
-#endif
     }
 
     ECS_FREE(cas_med->nom_cas);
@@ -188,11 +181,9 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
 
   char  desc_maillage_med[MED_COMMENT_SIZE + 1] = "";
 
-#if ECS_MED_VERSION == 3
   char  dtunit[MED_LNAME_SIZE + 1] = "s";
   char  axisname[MED_SNAME_SIZE*3 + 1];
   char  axisunit[MED_SNAME_SIZE*3 + 1];
-#endif
 
   med_err      ret_med = 0;
 
@@ -205,11 +196,7 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
 
   if (cas_med->fid == 0) {
 
-#if ECS_MED_VERSION == 2
-    cas_med->fid = MEDouvrir(cas_med->nom_fic, MED_CREATION);
-#else
     cas_med->fid = MEDfileOpen(cas_med->nom_fic, MED_ACC_CREAT);
-#endif
 
     if (cas_med->fid < 0)
       ecs_error(__FILE__, __LINE__, 0,
@@ -225,7 +212,6 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
     desc_maillage_med[ind] = ' ';
   desc_maillage_med[MED_COMMENT_SIZE] = '\0';
 
-#if ECS_MED_VERSION == 3
   for (ind = 0; ind < MED_SNAME_SIZE*3; ind++) {
     axisname[ind] = ' ';
     axisunit[ind] = ' ';
@@ -237,7 +223,6 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
   for (ind = 0; ind < 3; ind++)
     axisunit[ind * MED_SNAME_SIZE] = 'm';
   axisunit[MED_SNAME_SIZE*3] = '\0';
-#endif
 
   /* Vérification que le maillage n'a pas déjà été défini */
 
@@ -281,16 +266,6 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
 
   /* Initialisation du maillage */
 
-#if ECS_MED_VERSION == 2
-
-  ret_med = MEDmaaCr(cas_med->fid,
-                     maillage_med->nom_maillage_med,
-                     3,
-                     MED_NON_STRUCTURE,
-                     desc_maillage_med);
-
-#else
-
   ret_med = MEDmeshCr(cas_med->fid,
                       maillage_med->nom_maillage_med,
                       (med_int)3,
@@ -303,21 +278,11 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
                       axisname,
                       axisunit);
 
-#endif
-
   if (ret_med != 0)
     ecs_error(__FILE__, __LINE__, 0,
               _("MED: error writing file \"%s\".\n"
                 "Name of mesh to create: \"%s\"\n"),
               cas_med->nom_fic, maillage_med->nom_maillage_med, (int)3);
-
-#if ECS_MED_VERSION == 2
-
-  ret_med = MEDdimEspaceCr(cas_med->fid,
-                           maillage_med->nom_maillage_med,
-                           (med_int)3);
-
-#endif
 
   if (ret_med != 0)
     ecs_error(__FILE__, __LINE__, 0,

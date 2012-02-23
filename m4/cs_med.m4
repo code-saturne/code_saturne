@@ -29,8 +29,7 @@ AC_DEFUN([CS_AC_TEST_MED], [
 
 cs_have_med=no
 cs_have_med_mpi=no
-cs_have_med2_headers=no
-cs_have_med3_headers=no
+cs_have_med_headers=no
 cs_have_med_link_cxx=no
 
 # Configure options
@@ -98,39 +97,39 @@ if test "x$with_med" != "xno" ; then
 [[#if !defined(MED_MAJOR_NUM)
 # error MED_MAJOR_NUM not defined
 #endif
-#if MED_MAJOR_NUM == 2 && MED_MINOR_NUM < 9
-# error MED version >= 2.9.0 required
+#if MED_MAJOR_NUM < 3
+# error MED version >= 3.0.0 required
 #endif
 ]])],
-                    [AC_MSG_RESULT([MED >= 2.9.0 headers found])
-                     cs_have_med3_headers=yes
+                    [AC_MSG_RESULT([MED >= 3.0 headers found])
+                     cs_have_med_headers=yes
                     ],
-                    [AC_MSG_RESULT([MED >= 2.9.0 headers not found])
+                    [AC_MSG_RESULT([MED >= 3.0 headers not found])
                     ])
 
-  if test "x$cs_have_med3_headers" = "xno"; then
+  if test "x$cs_have_med_headers" = "xno"; then
 
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 [[#include <med.h>]],
 [[#if !defined(MED_NUM_MAJEUR)
 # error MED_NUM_MAJEUR not defined
 #endif
-#if MED_NUM_MAJEUR == 2 && MED_NUM_MINEUR == 3 && MED_NUM_RELEASE < 3
-# error MED version > 2.3.4 required
+#if MED_NUM_MAJEUR != 2 || MED_NUM_MINEUR != 3
+# error MED version > 2.3 tested here
 #endif
 ]])],
-                      [AC_MSG_RESULT([MED >= 2.3.4 headers found])
-                       cs_have_med2_headers=yes
+                      [AC_MSG_FAILURE([MED 2.3 headers found, but MED 3.0 or above is required.
+If you do not need MED format support, you may use the --without-med configure option.
+Otherwise, you need to provide a MED 3.0 library and development headers.])
                       ],
-                      [AC_MSG_RESULT([MED >= 2.3.4 headers not found])
-                      ])
+                      [])
 
-  fi # end of test on cs_have_med3_headers
+  fi # end of test on cs_have_med_headers
 
   # Check for a MED 3.x library
   #----------------------------
 
-  if test "x$cs_have_med3_headers" = "xyes"; then
+  if test "x$cs_have_med_headers" = "xyes"; then
 
     AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#undef HAVE_MPI
@@ -193,35 +192,6 @@ if test "x$with_med" != "xno" ; then
 
     fi
 
-  # Check for a MED 2.3.x library
-  #----------------------------
-
-  elif test "x$cs_have_med2_headers" = "xyes"; then
-
-    AC_CHECK_LIB(medC, MEDfamCr, 
-                 [ AC_DEFINE([HAVE_MED], 1, [MED file support])
-                   cs_have_med=yes
-                 ], 
-                 [ AC_MSG_WARN([no MED file support])
-                 ],
-                 )
-
-    if test "x$cs_have_med" = "xno"; then
-  
-      # try linking with C++ in case of static MED library
-
-      AC_LANG_PUSH(C++)
-      AC_CHECK_LIB(medC, MEDfamCr, 
-                   [ AC_DEFINE([HAVE_MED], 1, [MED file support])
-                     cs_have_med=yes; cs_have_med_link_cxx=yes
-                   ], 
-                   [ AC_MSG_WARN([no MED file support])
-                   ],
-                   )
-      AC_LANG_POP(C++)
-
-    fi
-
   fi
 
   # Report MED support
@@ -249,8 +219,7 @@ if test "x$with_med" != "xno" ; then
 
 fi
 
-unset cs_have_med2_headers
-unset cs_have_med3_headers
+unset cs_have_med_headers
 
 AM_CONDITIONAL(HAVE_MED, test x$cs_have_med = xyes)
 

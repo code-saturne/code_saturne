@@ -190,29 +190,12 @@ ecs_med__version_shlib(void)
   med_int   med_mineur;
   med_int   med_release;
 
-#if ECS_MED_VERSION == 2
-  MEDversionDonner(&med_majeur, &med_mineur, &med_release);
-#else
   MEDlibraryNumVersion(&med_majeur, &med_mineur, &med_release);
-#endif
 
   ecs_glob_med_ver_maj  = med_majeur;
   ecs_glob_med_ver_min  = med_mineur;
   ecs_glob_med_ver_rel  = med_release;
 
-#if ECS_MED_VERSION == 2
-  {
-    unsigned  hdf5_majeur;
-    unsigned  hdf5_mineur;
-    unsigned  hdf5_release;
-
-    H5get_libversion(&hdf5_majeur, &hdf5_mineur, &hdf5_release);
-
-    ecs_glob_hdf5_ver_maj = hdf5_majeur;
-    ecs_glob_hdf5_ver_min = hdf5_mineur;
-    ecs_glob_hdf5_ver_rel = hdf5_release;
-  }
-#else
   {
     med_int  hdf5_majeur;
     med_int  hdf5_mineur;
@@ -224,7 +207,6 @@ ecs_med__version_shlib(void)
     ecs_glob_hdf5_ver_min = hdf5_mineur;
     ecs_glob_hdf5_ver_rel = hdf5_release;
   }
-#endif
 }
 
 /*----------------------------------------------------------------------------*/

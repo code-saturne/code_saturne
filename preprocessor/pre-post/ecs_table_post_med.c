@@ -283,29 +283,12 @@ ecs_loc_table_post_med__ecr_fam(const char           *prefixe_nom_fam,
 
   /* Appel à la fonction d'écriture MED */
 
-#if ECS_MED_VERSION == 2
-
-  ret_med = MEDfamCr(cas_med->fid,
-                     nom_maillage_med,
-                     nom_fam_med,
-                     num_fam_med,
-                     NULL,
-                     NULL,
-                     NULL,
-                     0,
-                     grp_nom_med,
-                     nbr_grp_med);
-
-#else
-
   ret_med = MEDfamilyCr(cas_med->fid,
                         nom_maillage_med,
                         nom_fam_med,
                         num_fam_med,
                         nbr_grp_med,
                         grp_nom_med);
-
-#endif
 
   if (ret_med != 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -378,29 +361,12 @@ ecs_table_post_med__ecr_famille(const char           *nom_maillage,
   strcpy(nom_fam_med, "FAMILLE_");
   strcat(nom_fam_med, str_num_fam_med);
 
-#if ECS_MED_VERSION == 2
-
-  ret_med = MEDfamCr(cas_med->fid,
-                     maillage_med->nom_maillage_med,
-                     nom_fam_med,
-                     num_fam_med,
-                     NULL,
-                     NULL,
-                     NULL,
-                     0,
-                     NULL,
-                     0);
-
-#else
-
   ret_med = MEDfamilyCr(cas_med->fid,
                         maillage_med->nom_maillage_med,
                         nom_fam_med,
                         num_fam_med,
                         0,
                         NULL);
-
-#endif
 
   if (ret_med != 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -512,25 +478,6 @@ ecs_table_post_med__ecr_som(const char         *nom_maillage,
                                                 3,
                                                 &bool_libere_coo_noe);
 
-#if ECS_MED_VERSION == 2
-
-  ret_med = MEDnoeudsEcr(cas_med->fid,
-                         maillage_med->nom_maillage_med,
-                         (med_int)3,
-                         coo_noe_med,
-                         MED_FULL_INTERLACE,
-                         MED_CART,
-                         nom_coo_med,
-                         uni_coo_med,
-                         NULL,
-                         MED_FAUX,
-                         NULL,
-                         MED_FAUX,
-                         fam_noe_med,
-                         nbr_noe_med);
-
-#else
-
   ret_med = MEDmeshNodeCoordinateWr(cas_med->fid,
                                     maillage_med->nom_maillage_med,
                                     MED_NO_DT,
@@ -539,7 +486,6 @@ ecs_table_post_med__ecr_som(const char         *nom_maillage,
                                     MED_FULL_INTERLACE,
                                     nbr_noe_med,
                                     coo_noe_med);
-#endif
 
   if (ret_med != 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -708,20 +654,6 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
 
       nbr_ele_med = (med_int)nbr_elt_typ_geo;
 
-#if ECS_MED_VERSION == 2
-
-      ret_med = MEDconnEcr(cas_med->fid,
-                           maillage_med->nom_maillage_med,
-                           3,
-                           connect_med,
-                           MED_FULL_INTERLACE,
-                           nbr_ele_med,
-                           MED_MAILLE,
-                           typ_geo_med,
-                           MED_NOD);
-
-#else
-
       ret_med = MEDmeshElementConnectivityWr(cas_med->fid,
                                              maillage_med->nom_maillage_med,
                                              MED_NO_DT,
@@ -733,7 +665,6 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
                                              MED_FULL_INTERLACE,
                                              nbr_ele_med,
                                              connect_med);
-#endif
 
       if (ret_med != 0)
         ecs_error(__FILE__, __LINE__, 0,
@@ -763,18 +694,6 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
       for (ind = 0; ind < (size_t)nbr_som_med; ind++)
         connect_med[ind] = def_val_tab[pos_elt + ind];
 
-#if ECS_MED_VERSION == 2
-
-      ret_med = MEDpolygoneConnEcr(cas_med->fid,
-                                   maillage_med->nom_maillage_med,
-                                   index_med,
-                                   (med_int)(nbr_elt_typ_geo + 1),
-                                   connect_med,
-                                   MED_MAILLE,
-                                   MED_NOD);
-
-#else
-
       ret_med = MEDmeshPolygonWr(cas_med->fid,
                                  maillage_med->nom_maillage_med,
                                  MED_NO_DT,
@@ -785,8 +704,6 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
                                  (med_int)(nbr_elt_typ_geo + 1),
                                  index_med,
                                  connect_med);
-
-#endif
 
       if (ret_med != 0)
         ecs_error(__FILE__, __LINE__, 0,
@@ -890,19 +807,6 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
 
       assert(isom == (size_t)nbr_som_med);
 
-#if ECS_MED_VERSION == 2
-
-      ret_med = MEDpolyedreConnEcr(cas_med->fid,
-                                   maillage_med->nom_maillage_med,
-                                   index_med,
-                                   (med_int)(nbr_elt_typ_geo + 1),
-                                   index_f_med,
-                                   index_med[nbr_elt_typ_geo],
-                                   connect_med,
-                                   MED_NOD);
-
-#else
-
       ret_med = MEDmeshPolyhedronWr(cas_med->fid,
                                     maillage_med->nom_maillage_med,
                                     MED_NO_DT,
@@ -915,7 +819,6 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
                                     index_med[nbr_elt_typ_geo],
                                     index_f_med,
                                     connect_med);
-#endif
 
       if (ret_med != 0)
         ecs_error(__FILE__, __LINE__, 0,
@@ -932,17 +835,6 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
     /* Familles MED des éléments */
     /*---------------------------*/
 
-#if ECS_MED_VERSION == 2
-
-    ret_med = MEDfamEcr(cas_med->fid,
-                        maillage_med->nom_maillage_med,
-                        fam_ele_med + cpt_elt,
-                        nbr_elt_typ_geo,
-                        MED_MAILLE,
-                        typ_geo_med);
-
-#else
-
     ret_med = MEDmeshEntityFamilyNumberWr(cas_med->fid,
                                           maillage_med->nom_maillage_med,
                                           MED_NO_DT,
@@ -951,8 +843,6 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
                                           typ_geo_med,
                                           nbr_elt_typ_geo,
                                           fam_ele_med + cpt_elt);
-
-#endif
 
     if (ret_med != 0)
       ecs_error(__FILE__, __LINE__, 0,

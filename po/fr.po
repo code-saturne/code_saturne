@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-02-15 12:29+0100\n"
+"POT-Creation-Date: 2012-02-23 14:21+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6009,6 +6009,13 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Conflicts detected using mesh renumbering:\n"
+"  for interior faces: %llu\n"
+"  for boundary faces: %llu"
+msgstr ""
+
+#, c-format
+msgid ""
 "===========================================================\n"
 "   ** Stop to avoid exceeding time allocation.\n"
 "      ----------------------------------------\n"
@@ -7931,28 +7938,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"MEDmaaCr() failed to create a new med_mesh.\n"
-"Associated med_mesh name: \"%s\"\n"
-"Associated writer name: \"%s\"\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"MEDdimEspaceCr() failed to set spacial dimension for a new med_mesh.\n"
-"Associated med_mesh name: \"%s\"\n"
-"Associated writer name: \"%s\"\n"
-msgstr ""
-
-#, c-format
-msgid ""
 "MEDmeshCr() failed to create a new med_mesh.\n"
-"Associated med_mesh name: \"%s\"\n"
-"Associated writer name: \"%s\"\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"MEDfamCr() failed to create family %dfor a new med_mesh.\n"
 "Associated med_mesh name: \"%s\"\n"
 "Associated writer name: \"%s\"\n"
 msgstr ""
@@ -7994,13 +7980,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-"MEDcoordEcr() failed to write coords:\"%s\"\n"
-"Associated writer: \"%s\"\n"
-"Associated med_mesh: \"%s\"\n"
-msgstr ""
-
-#, c-format
-msgid ""
 "MEDmeshNodeCoordinateWr() failed to write coords.\n"
 "Associated writer: \"%s\"\n"
 "Associated med_mesh: \"%s\"\n"
@@ -8008,23 +7987,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"MEDfamEcr() failed to write family numbers:\n"
-"Associated writer: \"%s\"\n"
-"Associated med_mesh_name: \"%s\"\n"
-"Associated MED geometrical element: \"%i\"\n"
-msgstr ""
-
-#, c-format
-msgid ""
 "MEDmeshEntityFamilyNumberWr() failed to write family numbers:\n"
-"Associated writer: \"%s\"\n"
-"Associated med_mesh_name: \"%s\"\n"
-"Associated MED geometrical element: \"%i\"\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"MEDconnEcr() failed to write connectivity:\n"
 "Associated writer: \"%s\"\n"
 "Associated med_mesh_name: \"%s\"\n"
 "Associated MED geometrical element: \"%i\"\n"
@@ -8040,29 +8003,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"MEDconnEcr() failed to write strided connectivity:\n"
-"Associated writer: \"%s\"\n"
-"Associated med_mesh_name: \"%s\"\n"
-"Associated MED geometrical element: \"%i\"\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"MEDpolygoneConnEcr() failed to write connectivity:\n"
-"Associated writer: \"%s\"\n"
-"Associated med_mesh_name: \"%s\"\n"
-msgstr ""
-
-#, c-format
-msgid ""
 "MEDmeshPolygonWr() failed to write connectivity:\n"
-"Associated writer: \"%s\"\n"
-"Associated med_mesh_name: \"%s\"\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"MEDpolyedreConnEcr() failed to write connectivity:\n"
 "Associated writer: \"%s\"\n"
 "Associated med_mesh_name: \"%s\"\n"
 msgstr ""
@@ -8079,14 +8020,6 @@ msgstr "Nom de fichier MED vide."
 
 #, c-format
 msgid ""
-"MEDouvrir() failed to open file: %s\n"
-"Associated writer: \"%s\"\n"
-msgstr ""
-"MEDouvrir() n'a pas pu ouvrir le fichier : %s\n"
-"Gestionnaire associé : \"%s\"\n"
-
-#, c-format
-msgid ""
 "MEDfileOpen() failed to open file: %s\n"
 "Associated writer: \"%s\"\n"
 msgstr ""
@@ -8094,20 +8027,8 @@ msgstr ""
 "Gestionnaire associé : \"%s\"\n"
 
 #, c-format
-msgid "MEDfermer() failed to close file \"%s\"\n"
-msgstr "MEDfermer() n'a pas pu fermer le fichier \"%s\"\n"
-
-#, c-format
 msgid "MEDfileClose() failed to close file \"%s\"\n"
 msgstr "MEDfileClose() n'a pas pu fermer le fichier \"%s\"\n"
-
-#, c-format
-msgid ""
-"MEDouvrir() failed to re-open file: %s\n"
-"Associated writer: \"%s\"\n"
-msgstr ""
-"MEDouvrir() n'a pas pu réouvrir le fichier : %s\n"
-"Gestionnaire associé : \"%s\"\n"
 
 #, c-format
 msgid ""
