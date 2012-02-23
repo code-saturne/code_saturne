@@ -862,7 +862,7 @@ class domain(base_domain):
         Tests if the partitioner is available and partitioning is defined.
         """
 
-        if self.n_procs < 2:
+        if self.n_procs < 2 and self.partition_list == None:
             self.exec_partition = False
 
         if (self.exec_partition == False):
