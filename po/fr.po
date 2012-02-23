@@ -3490,6 +3490,12 @@ msgstr ""
 msgid "Native, Bull algorithm"
 msgstr ""
 
+msgid "Native, OpenMP"
+msgstr ""
+
+msgid "Native, vectorized"
+msgstr ""
+
 msgid "CSR, with prefetch"
 msgstr ""
 
@@ -5929,6 +5935,77 @@ msgstr ""
 "  1 :   partition basée sur la numérotation initiale\n"
 "  2-5 : partition basée sur une courbe fractale\n"
 "et non %d."
+
+msgid "    no value\n"
+msgstr "    aucune valeur\n"
+
+#, c-format
+msgid "    minimum value =         %10d\n"
+msgstr "    valeur minimale =       %10d\n"
+
+#, c-format
+msgid ""
+"    maximum value =         %10d\n"
+"\n"
+msgstr ""
+"    valeur maximale =       %10d\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+" Histogram of thread pools size for %s per rank:\n"
+"\n"
+msgstr ""
+"\n"
+" Histogramme des nombres de threads pour les % par rang :\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+" Histogram of threading groups count for %s per rank:\n"
+"\n"
+msgstr ""
+"\n"
+" Histogramme du nombre de groupes de threads pour les % par rang :\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+" Number of thread pools for %s :          %d\n"
+" Number of threading groups for %s :      %d\n"
+msgstr ""
+"\n"
+" Nombre de threads pour les %s :                 %d\n"
+" Nombre de groupes de threads pour les %s :      %d\n"
+
+msgid "interior faces"
+msgstr "faces intérieures"
+
+msgid "boundary faces"
+msgstr "faces de bord"
+
+#, c-format
+msgid ""
+"\n"
+" Vectorization:\n"
+" --------------\n"
+"   interior faces: %d ranks (of %d)\n"
+"   boundary faces: %d ranks\n"
+"\n"
+msgstr ""
+
+msgid ""
+"\n"
+"Checking mesh renumbering for threads:\n"
+"-------------------------------------\n"
+"\n"
+msgstr ""
+"\n"
+"Vérification de la renumérotation de maillage pour les threads\n"
+"--------------------------------------------------------------\n"
 
 #, c-format
 msgid ""

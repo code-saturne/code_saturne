@@ -1333,7 +1333,7 @@ _log_threading_info(const char  *elt_type_name,
     MPI_Allgather(&loc_buffer, 1, CS_MPI_LNUM,
                   rank_buffer, 1, CS_MPI_LNUM, cs_glob_mpi_comm);
     bft_printf
-      (_("\n Histogram of thread pools count for %s per rank:\n\n"),
+      (_("\n Histogram of thread pools size for %s per rank:\n\n"),
        elt_type_name);
     _display_histograms(n_domains, rank_buffer);
 
