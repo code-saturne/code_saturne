@@ -1248,18 +1248,6 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
           for (i = 0; i < n; i++)
             _global_connect_s[i] = global_connect_s[i];
         }
-#if (CGNS_VERSION < 3000)
-        retval = cg_section_partial_write(writer->index,
-                                          base->index,
-                                          zone_index,
-                                          section_name,
-                                          cgns_elt_type,
-                                          elt_start,
-                                          elt_end,
-                                          0, /* unsorted boundary elements */
-                                          _global_connect_s,
-                                          &section_index);
-#else
         retval = cg_section_partial_write(writer->index,
                                           base->index,
                                           zone_index,
@@ -1277,7 +1265,6 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
                                              elt_start,
                                              elt_end,
                                              _global_connect_s);
-#endif /* (CGNS_VERSION >= 3000) */
         if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
           BFT_FREE(_global_connect_s);
       }
@@ -1562,18 +1549,6 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
           for (i = 0; i < n; i++)
             _global_connect_s[i] = global_connect_s[i];
         }
-#if (CGNS_VERSION < 3000)
-        retval = cg_section_partial_write(writer->index,
-                                          base->index,
-                                          zone_index,
-                                          section_name,
-                                          cgns_elt_type,
-                                          elt_start,
-                                          elt_end,
-                                          0, /* unsorted boundary elements */
-                                          _global_connect_s,
-                                          &section_index);
-#else
         retval = cg_section_partial_write(writer->index,
                                           base->index,
                                           zone_index,
@@ -1591,7 +1566,6 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
                                              elt_start,
                                              elt_end,
                                              _global_connect_s);
-#endif /* (CGNS_VERSION >= 3000) */
         if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
           BFT_FREE(_global_connect_s);
       }
@@ -1712,18 +1686,6 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
         for (i = 0; i < n; i++)
           _vertex_num[i] = vertex_num[i];
       }
-#if (CGNS_VERSION < 3000)
-      retval = cg_section_partial_write(writer->index,
-                                        base->index,
-                                        zone_index,
-                                        section_name,
-                                        cgns_elt_type,
-                                        elt_start,
-                                        elt_end,
-                                        0, /* unsorted boundary elements */
-                                        _vertex_num,
-                                        &section_index);
-#else
       retval = cg_section_partial_write(writer->index,
                                         base->index,
                                         zone_index,
@@ -1741,7 +1703,6 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
                                            elt_start,
                                            elt_end,
                                            _vertex_num);
-#endif /* (CGNS_VERSION >= 3000) */
       if (sizeof(cgsize_t) > sizeof(cs_lnum_t))
         BFT_FREE(_vertex_num);
     }
@@ -1899,18 +1860,6 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
           for (i = 0; i < j; i++)
             _global_connect_s[i] = global_connect_s[i];
         }
-#if (CGNS_VERSION < 3000)
-        retval = cg_section_partial_write(writer->index,
-                                          base->index,
-                                          zone_index,
-                                          section_name,
-                                          cgns_elt_type,
-                                          elt_start,
-                                          elt_end,
-                                          0, /* unsorted boundary elements */
-                                          _global_connect_s,
-                                          &section_index);
-#else
         retval = cg_section_partial_write(writer->index,
                                           base->index,
                                           zone_index,
@@ -1928,7 +1877,6 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
                                              elt_start,
                                              elt_end,
                                              _global_connect_s);
-#endif /* (CGNS_VERSION >= 3000) */
         if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
           BFT_FREE(_global_connect_s);
       }

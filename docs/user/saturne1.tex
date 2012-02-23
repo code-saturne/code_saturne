@@ -1177,10 +1177,10 @@ Documentation:        & online documentation. Download link at \url{http://files
 \hline
 \end{tabular}
 
-\subsubsubsection{CGNS 2.5 or CGNS 3.1}\hyperdef{sec}{cgns}{}
+\subsubsubsection{CGNS}\hyperdef{sec}{cgns}{}
 \label{fmtdesc:cgns}
 
-Promoted especially by NASA, Boeing, and ICEM~CFD (as well as ONERA in France),
+Promoted especially by the AIAA, NASA, Boeing Commercial, and ANSYS ICEM CFD (as well as ONERA in France),
 this format(\emph{CFD General Notation System}) is quite well established in
 the world of CFD. The concept is similar to that of \med, with a bigger
 emphasis on normalization of variable names or calculation information, and
@@ -1241,28 +1241,33 @@ Regarding support of polygons (\emph{ngons} in the CGNS standard), even the
 verification tools published alongside the CGNS library are unable
 to handle them, and report errors in valid files containing such elements.
 VisIt 1.11.1 reports an error when a mesh contains such faces, while
-\ensightg 8 ignores them. CGNS 3 allows for polyhedra, but as this is a
-recent developpement, it is not supported yet by \CS.
+\ensightg 8 ignores them.
+For mesh input, some ICEM CFD versions used a CGNS 3 beta library,
+which led to some issues. CGNS 3 output from ICEM CFD 13 is known to work well with
+\CS.
 
 \smallskip \noindent
 \begin{tabular}[top]{|p{4.5cm}%
                      |>{\PreserveBackslash\raggedright\hspace{0pt}}p{10.5cm}|}
 \hline
-Default extension: & {\tt .cgns}\\
+Default extension:    & {\tt .cgns}\\
 \hline
-File type:         & portable binary (uses the ADF library specific to CGNS, or HDF5)\\
+File type:            & portable binary (uses the ADF library specific to CGNS, or HDF5)\\
 \hline
-Surface elements:  & triangles, quadrangles, simple polygons\\
+Surface elements:     & triangles, quadrangles, simple polygons\\
 \hline
-Volume elements:   & tetrahedra, pyramids, prisms, hexahedra\\
+Volume elements:      & tetrahedra, pyramids, prisms, hexahedra
+                        (simple polyhedra allowed by CGNS 3 but not supported yet)\\
 \hline
-Zone selection:    & Surface zone selection using boundary conditions, no volume zone
-                     selection, but the \pcs allows creation of groups associated to
-                     zones or sections in the mesh using mesh selection sub-options\\
+Zone selection:       & Surface zone selection using boundary conditions, no volume zone
+                        selection, but the \pcs allows creation of groups associated to
+                        zones or sections in the mesh using mesh selection sub-options\\
 \hline
-Compatibility:     & CGNS 2.5 or CGNS 3.1\\
+Input compatibility:  & CGNS 2.5 or CGNS 3.1\\
 \hline
-Documentation:     & See CGNS site: \url{http://www.cgns.org}\\
+Output compatibility: & CGNS 3.1\\
+\hline
+Documentation:        & See CGNS site: \url{http://www.cgns.org}\\
 \hline
 \end{tabular}
 

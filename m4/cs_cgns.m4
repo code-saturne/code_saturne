@@ -28,6 +28,7 @@ dnl-----------------------------------------------------------------------------
 AC_DEFUN([CS_AC_TEST_CGNS], [
 
 cs_have_cgns=no
+cs_have_cgns_headers=no
 
 AC_ARG_WITH(cgns,
             [AS_HELP_STRING([--with-cgns=PATH],
@@ -77,17 +78,51 @@ if test "x$with_cgns" != "xno" ; then
   LDFLAGS="${LDFLAGS} ${CGNS_LDFLAGS} $HDF5_LDFLAGS"
   LIBS="${LIBS} ${CGNS_LIBS} $HDF5_LIBS"
 
-  AC_CHECK_LIB(cgns, cg_coord_partial_write, 
-               [ AC_DEFINE([HAVE_CGNS], 1, [CGNS file support])
-                 cs_have_cgns=yes
-               ], 
-               [if test "x$with_cgns" != "xcheck" ; then
-                  AC_MSG_FAILURE([CGNS support is requested (requires CGNS >= 2.4), but test for CGNS failed!])
-                else
-                  AC_MSG_WARN([no CGNS file support (requires CGNS >= 2.4)])
-                fi
-               ],
-               )
+  # Check that a header file exists and that the version is compatible
+  #-------------------------------------------------------------------
+
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+[[#undef HAVE_MPI
+#include <cgnslib.h>]],
+[[#if CGNS_VERSION < 3100
+# error CGNS version >= 3.0 not found
+#endif
+]])],
+                    [AC_MSG_RESULT([CGNS >= 3.1.0 headers found])
+                     cs_have_cgns_headers=yes
+                    ],
+                    [AC_MSG_RESULT([CGNS >= 3.1.0 headers not found])
+                    ])
+
+  if test "x$cs_have_cgns_headers" = "xno"; then
+
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+[[#undef HAVE_MPI
+#include <cgnslib.h>]],
+[[#if CGNS_VERSION <= 2400
+# error CGNS version >= 2.4 tested here
+#endif
+]])],
+                      [AC_MSG_FAILURE([CGNS < 3.1 headers found, but CGNS 3.1 or above is required.
+If you do not need CGNS format support, you may use the --without-cgns configure option.
+Otherwise, you need to provide a CGNS 3.1 library and development headers.])
+                      ],
+                      [])
+
+  fi # end of test on CGNS 2 headers
+
+  # Check for a CGNS 3.1+ library
+  #------------------------------
+
+  if test "x$cs_have_cgns_headers" = "xyes"; then
+
+    AC_CHECK_LIB(cgns, cg_coord_partial_write, 
+                 [ AC_DEFINE([HAVE_CGNS], 1, [CGNS file support])
+                   cs_have_cgns=yes
+                 ], 
+                 [])
+
+  fi
 
   if test "x$cs_have_cgns" != "xyes"; then
     CGNS_LIBS=""
@@ -101,7 +136,20 @@ if test "x$with_cgns" != "xno" ; then
   unset saved_LDFLAGS
   unset saved_LIBS
 
+  # Report CGNS support
+  #-------------------
+
+  if test "x$cs_have_cgns" = "xno" ; then
+    if test "x$with_cgns" != "xcheck" ; then
+      AC_MSG_FAILURE([CGNS support is requested, but test for CGNS failed!])
+    else
+      AC_MSG_WARN([no CGNS file support])
+    fi
+  fi
+
 fi
+
+unset cs_have_cgns_headers
 
 AM_CONDITIONAL(HAVE_CGNS, test x$cs_have_cgns = xyes)
 
