@@ -216,7 +216,7 @@ iel = itepa(ip,jisor)
 !===============================================================================
 ! 2. Reference frame change:
 !---------------------------
-!global reference frame --> in the local reference frame for the boundary face
+! global reference frame --> local reference frame for the boundary face
 !===============================================================================
 
 isens = 1
@@ -232,7 +232,7 @@ call  lagprj                                                        &
        dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,           &
        dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13)  )
 
-! 2.2 - vu fluid velocity
+! 2.2 - flow-seen velocity
 
 call  lagprj                                                        &
 !===========
@@ -254,7 +254,7 @@ call  lagprj                                                        &
       dlgeo(ifac, 8)  , dlgeo(ifac, 9) , dlgeo(ifac,10) ,           &
       dlgeo(ifac,11)  , dlgeo(ifac,12) , dlgeo(ifac,13) )
 
-! 2.4 - fluid velocity
+! 2.4 - flow velocity
 
 call  lagprj                                                        &
 !===========
@@ -333,7 +333,7 @@ endif
 ! 3. Integration of the EDS on the particles
 !===============================================================================
 
-!  Recovery of the turbulent kinetic energy
+!  Retrieve of the turbulent kinetic energy
 
 if (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) then
   enertur = rtpa(iel,ik)
@@ -353,7 +353,7 @@ call lagcli                                                       &
      tepa(ip,jryplu),tepa(ip,jrinpf), enertur, ggp(1), vflui(1),  &
      gdpr(1), piilp(1), depint )
 
-!  Integration in the 2 others directions
+!  Integration in the 2 other directions
 
 do id = 2,3
 
@@ -384,7 +384,7 @@ do id = 2,3
   ter3x = cc * tci
   ter4x = (dtp - aa) * force
 
-!---> Terms for the vu fluid
+!---> Terms for the flow-seen velocity
 
   ter1f = vvue(id) * aux2
   ter2f = tci * (1.d0-aux2)
@@ -428,12 +428,12 @@ do id = 2,3
 
   ter5x = p21 * vagaus(ip,i0) + p22 * vagaus(ip,3+i0)
 
-!---> Integral on the vu fluid velocity
+!---> Integral for the flow-seen velocity
 
   p11 = sqrt( gama2*aux6 )
   ter3f = p11*vagaus(ip,i0)
 
-!---> Integral on the particles velocity
+!---> Integral for particles velocity
 
   aux9  = 0.5d0 * tlp(id) * (1.d0 - aux2*aux2)
   aux10 = 0.5d0 * taup(ip) * (1.d0 - aux1*aux1)
@@ -469,7 +469,7 @@ do id = 2,3
 
   depl(id) = ter1x + ter2x + ter3x + ter4x + ter5x
 
-!---> vu fluid velocity
+!---> flow-seen velocity
 
   vvue(id) = ter1f + ter2f + ter3f
 
@@ -483,7 +483,7 @@ enddo
 !===============================================================================
 ! 3. Reference frame change:
 !---------------------------
-!local reference frame for the boundary face  --> in the global reference frame
+!local reference frame for the boundary face  --> global reference frame
 !===============================================================================
 
 isens = 2
@@ -510,7 +510,7 @@ call lagprj                                                       &
       dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,          &
       dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13)  )
 
-! 3.3 - vu fluid velocity
+! 3.3 - flow-seen velocity
 
 call lagprj                                                       &
 !==========

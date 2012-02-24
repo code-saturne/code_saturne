@@ -363,7 +363,7 @@ endif
             ter3x = cc * tci
             ter4x = (dtp - aa) * force
 
-            !---> vu fluid terms
+            !---> flow-seen velocity terms
 
             ter1f = ettpa(ip,juf+i0) * aux2
             ter2f = tci * (1.d0-aux2)
@@ -380,7 +380,7 @@ endif
 
             !---> (2.3) Coefficients computation for the stochastic integral
 
-            !---> Integral on the particles position
+            !---> Integral for particles position
 
             gama2  = 0.5d0 * (1.d0 - aux2*aux2 )
             omegam = 0.5d0 * aux4 * ( aux5 - aux2*aa )                  &
@@ -412,12 +412,12 @@ endif
 
             ter5x = p21 * vagaus(ip,id) + p22 * vagaus(ip,3+id)
 
-            !---> integral on the vu fluid velocity
+            !---> integral for the flow-seen velocity
 
             p11 = sqrt( gama2*aux6 )
             ter3f = p11*vagaus(ip,id)
 
-            !---> integrale on the particules velocity
+            !---> integral for the particles velocity
 
             aux9  = 0.5d0 * tlag(ip,id) * (1.d0 - aux2*aux2)
             aux10 = 0.5d0 * taup(ip) * (1.d0 - aux1*aux1)
@@ -451,7 +451,7 @@ endif
                  + p33 * vagaus(ip,6+id)
 
             !
-            ! Update of the particle state vector
+            ! Update of the particle state-vector
             !
 
             ettp(ip,jxp+i0) = ettpa(ip,jxp+i0)                         &

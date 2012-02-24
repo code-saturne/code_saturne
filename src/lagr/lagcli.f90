@@ -104,7 +104,7 @@ double precision diamp , romp , taup ,yplus , dx   , dintrf, gnorm, depint
  double precision rapkvp
 
 !===============================================================================
-! 1. Initialization
+! 1. Initializations
 !===============================================================================
 
 ! Ratio between k and v'
@@ -113,24 +113,24 @@ rapkvp = 0.39d0
 
 
 ! The temporal parameters estimated from the DNS computations
-! and written in adimensional
+! and written in adimensional form
 
 tlag2 = 3.d0 * tvisq
 tstruc = 30.d0 * tvisq
 tdiffu = 10.d0 * tvisq
 ttotal = tstruc + tdiffu
 
-! The velocity Vstruc is estimated as the square of the half turbulent kinetic
-! energy which corresponds to v' in most of the part of the turbulent boundary
+! The velocity Vstruc is estimated as the square-root of turbulent kinetic
+! energy times rapkvp, which corresponds roughly to v' in most of the turbulent boundary
 ! layer
 
 vstruc = sqrt(enertur * rapkvp)
 
-! With Vstruc we are able to estimate Kdif to obtain a flux into the modeled
-! zone. kdif is equal to sqrt(k/(4*pi)) in the middle of the flow
-! (which is the theorical value of the standard Langevin model with a C0 = 2.1)
+! From Vstruc we estimate the diffusion coefficient Kdif to balance the fluxes.
+! Kdif is roughly equal to sqrt(k/(4*pi)) in the core flow
+! (which is the theoretical value of the standard Langevin model with a C0 = 2.1)
 ! such as:     flux_langevin = sig / sqrt(2*pi)       = v' / sqrt(2*pi)
-!          and          (v') = k * C0 /( 1 + 3*C0/2 ) = approx. k/2
+!                   and (v') = k * C0 /( 1 + 3*C0/2 ) = approx. k/2 (see Minier & Pozorski, 1999)
 
 if (ttotal .gt. (sqrt(pi * rapkvp)*tstruc)) then
   kdif = sqrt(enertur / tlag2) * (ttotal - sqrt(pi * rapkvp)*tstruc) /  tdiffu
@@ -153,7 +153,7 @@ call zufall(2,unif)
 indint = 0
 
 !===============================================================================
-! 2. Integration of EDS on the particles
+! 2. Treatment of the 'degenerated' cases (marko = 10, 20, 30)
 !===============================================================================
 
 if (marko.eq.10) then
@@ -182,6 +182,16 @@ else if (marko.eq.30) then
   endif
 
 endif
+
+!===============================================================================
+! 2. Call of different subroutines given the value of marko
+!
+! marko = 1 --> sweep phase --> call of lagswe
+! marko = 2 or 12 --> diffusion phase --> call of lagdif
+! marko = 3 --> ejection phase --> call of lageje
+! marko = 0 --> inner-zone diffusion
+!
+!===============================================================================
 
 rpart = diamp * 0.5d0
 

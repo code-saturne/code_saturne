@@ -198,7 +198,7 @@ dd1 = thet*(etl - etp)
 ee1 = l1p
 
 !---------------------------------------------------
-! Auxiliary terms of the brownian movement
+! Auxiliary terms for Brownian motion
 !---------------------------------------------------
 
 xiubr  = 0.5d0 * (kdifbrtp * l1p) ** 2
@@ -241,7 +241,7 @@ ggaome = k2the2*( tlmtp*(tlag2*l1l + l1p*(-taup))                 &
 
 
 !------------------------------------------------------
-!  Choleski's decomposition
+!  Choleski decomposition
 !------------------------------------------------------
 
 !  P11 Computation
@@ -275,7 +275,7 @@ endif
 p33 = sqrt(max(zero,ome2 - p31**2 - p32**2))
 
 !-----------------------------------------------------------
-!  Brownian movement
+!  Brownian motion term
 !-----------------------------------------------------------
 p11br = ubr
 
@@ -297,7 +297,7 @@ terp = p21*vagaus(1)+ p22*vagaus(2)
 terx = p31*vagaus(1)+ p32*vagaus(2)+p33*vagaus(3)
 
 !-----------------------------------------------------------
-!  Brownian movement
+!  Brownian motion
 !-----------------------------------------------------------
 
 terpbr = p11br * vagausbr(1)
@@ -413,7 +413,7 @@ else
     pgagga = thet*(pgam2 - ketoi2*tltp/tlptp*l3)
 
 !------------------------------------------------------
-!  Choleski's decomposition
+!  Choleski decomposition
 !------------------------------------------------------
 
 !  P11 computation
