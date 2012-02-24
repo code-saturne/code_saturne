@@ -131,33 +131,20 @@ void CS_PROCF(astgeo, ASTGEO)
   cs_real_t  *almax
 )
 {
-  int i,j, n_faces, nbpts;
+  int j, n_faces;
   int n_nodes;
-  int max = 0;
 
   fvm_nodal_t  *ifs_mesh;
 
-  cs_gnum_t *num_glob_points = NULL;
-  cs_gnum_t *num_glob_points_tot = NULL;
-
-  cs_int_t *index = NULL;
   cs_int_t *faces_color = NULL;
   cs_int_t *nodes_color = NULL;
-  cs_int_t *inter_nodes_color = NULL;
 
-  cs_real_t *coords = NULL;
-  cs_real_t *inter_coords = NULL;
   cs_real_t *faces_coords = NULL;
   cs_real_t *nodes_coords = NULL;
-  cs_real_t *coords_rang0 = NULL;
 
   cs_real_t *b_face_cog = cs_glob_mesh_quantities->b_face_cog;
 
   cs_ast_coupling_t  *ast_coupling = cs_glob_ast_coupling;
-
-#if defined(HAVE_MPI)
-  MPI_Status status;
-#endif
 
   n_faces = *(nbfast);
 

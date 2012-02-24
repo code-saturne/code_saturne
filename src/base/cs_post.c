@@ -1372,33 +1372,6 @@ _cs_post_assmb_var_faces(const fvm_nodal_t  *exp_mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Transform an array of flags (markers) to a list
- *
- * parameters:
- *   list_size <-> size of array, then list
- *   list      <-> array of flags, then list
- *
- * returns:
- *   size of list
- *----------------------------------------------------------------------------*/
-
-static cs_lnum_t
-_cs_post_marker_to_list(cs_int_t  list_size,
-                        cs_int_t  list[])
-{
-  cs_lnum_t  cpt, ind;
-
-  for (cpt = 0, ind = 0; ind < list_size; ind++) {
-    if (list[ind] != 0) {
-      list[ind] = 0;
-      list[cpt++] = ind + 1;
-    }
-  }
-
-  return cpt;
-}
-
-/*----------------------------------------------------------------------------
  * Loop on post-processing meshes to output variables
  *
  * parameters:
@@ -4205,7 +4178,7 @@ cs_post_write_vars(int     nt_cur_abs,
 
   int i, j;
   int dim_ent;
-  cs_lnum_t   ind_cel, ind_fac, b_f_num_shift;
+  cs_lnum_t   ind_fac, b_f_num_shift;
   cs_lnum_t   n_elts, n_elts_max;
 
   bool       active;

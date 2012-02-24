@@ -337,7 +337,7 @@ _init_all_mpi_syr(void)
   int n_apps = 0;
   int n_matched_apps = 0;
   int n_syr3_apps = 0, n_syr4_apps = 0;
-  int syr_app_id = -1, syr_app_type = 0;
+  int syr_app_id = -1;
 
   const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
 
@@ -354,12 +354,10 @@ _init_all_mpi_syr(void)
     if (strncmp(ai.app_type, "SYRTHES 4", 9) == 0) {
       n_syr4_apps += 1;
       syr_app_id = i;
-      syr_app_type = 4;
     }
     else if (strncmp(ai.app_type, "SYRTHES 3", 9) == 0) {
       n_syr3_apps += 1;
       syr_app_id = i;
-      syr_app_type = 3;
     }
   }
 

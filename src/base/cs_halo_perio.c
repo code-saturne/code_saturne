@@ -1605,9 +1605,6 @@ CS_PROCF (peinr1, PEINR1)(const cs_int_t    *isou,
                           cs_real_t          grady[],
                           cs_real_t          gradz[])
 {
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  const cs_int_t  n_ghost_cells = mesh->n_ghost_cells;
   const cs_int_t  comp_id = *isou - 1;
   const cs_int_t  strid_v = 3*comp_id;
   const cs_int_t  strid_e = 3*6;
