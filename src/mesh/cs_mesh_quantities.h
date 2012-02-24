@@ -66,6 +66,8 @@ typedef struct {
   cs_real_t  *dijpf;          /* Vector I'J' for interior faces */
   cs_real_t  *diipb;          /* Vector II'  for border faces */
   cs_real_t  *dofij;          /* Vector OF   for interior faces */
+  cs_real_t  *diipf;          /* Vector II'  for interior faces */
+  cs_real_t  *djjpf;          /* Vector JJ'  for interior faces */
 
   cs_real_t  *i_dist;         /* Distance between the cell center and
                                  the center of gravity of interior faces */
@@ -167,6 +169,18 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities);
 void
 cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                            cs_mesh_quantities_t  *mesh_quantities);
+                           
+/*----------------------------------------------------------------------------
+ * Compute mesh quantities
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_sup_vectors(const cs_mesh_t       *mesh,
+                               cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
  * Compute internal and border face normal.

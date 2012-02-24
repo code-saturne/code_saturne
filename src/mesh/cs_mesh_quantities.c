@@ -1156,6 +1156,98 @@ _compute_face_vectors(const cs_int_t   dim,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Compute some vectors to handle non-orthogonalities.
+ *
+ * Let a face and I, J the centers of neighboring cells
+ *   (only I is defined for a border face)
+ *
+ * The face is oriented from I to J, with Nij its normal.
+ *   (border faces are oriented towards the exterior)
+ * The norm of Nij is 1.
+ * The face surface is Sij.
+ *
+ * I' and J' are defined as the orthogonal projection of I and J on the line
+ * orthogonal to the face passing through the center of gravity F of the face.
+ *   (only I' is defined for a border face)
+ *
+ * We compute here the vector II' for interior faces (diipf)
+ *                 the vector JJ' for interior faces (djjpf)
+ *
+ * We also have the following formulae
+ *   II' = IG - (IG.Nij)Nij
+ *   JJ' = JG - (JG.Nij)Nij
+ *
+ * parameters:
+ *   dim            <--  dimension
+ *   n_i_faces      <--  number of interior faces
+ *   i_face_cells   <--  interior "faces -> cells" connectivity
+ *   i_face_norm    <--  surface normal of interior faces
+ *   i_face_cog     <--  centre of gravity of interior faces
+ *   i_face_surf    <--  interior faces surface
+ *   cell_cen       <--  cell center
+ *   diipf          -->  vector ii' for interior faces
+ *   djjpf          -->  vector jj' for interior faces
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_face_sup_vectors(const cs_int_t   dim,
+                          const cs_int_t   n_i_faces,
+                          const cs_int_t   i_face_cells[],
+                          const cs_real_t  i_face_normal[],
+                          const cs_real_t  i_face_cog[],
+                          const cs_real_t  i_face_surf[],
+                          const cs_real_t  cell_cen[],
+                                cs_real_t  diipf[],
+                                cs_real_t  djjpf[])
+{
+  cs_int_t face_id;
+  cs_int_t cell_id1, cell_id2;
+
+  cs_real_t diipp, djjpp;
+  cs_real_t surfnx, surfny, surfnz;
+  cs_real_t vecigx, vecigy, vecigz, vecjgx, vecjgy, vecjgz;
+
+  /* Interior faces */
+
+  for (face_id = 0; face_id < n_i_faces; face_id++) {
+
+    cell_id1 = i_face_cells[2*face_id] - 1;
+    cell_id2 = i_face_cells[2*face_id  + 1] - 1;
+
+    /* Normalized normal */
+    surfnx = i_face_normal[face_id*dim]     / i_face_surf[face_id];
+    surfny = i_face_normal[face_id*dim + 1] / i_face_surf[face_id];
+    surfnz = i_face_normal[face_id*dim + 2] / i_face_surf[face_id];
+
+    /* ---> IG and JG */
+    vecigx = i_face_cog[face_id*dim]     - cell_cen[cell_id1*dim];
+    vecigy = i_face_cog[face_id*dim + 1] - cell_cen[cell_id1*dim + 1];
+    vecigz = i_face_cog[face_id*dim + 2] - cell_cen[cell_id1*dim + 2];
+    
+    vecjgx = i_face_cog[face_id*dim]     - cell_cen[cell_id2*dim];
+    vecjgy = i_face_cog[face_id*dim + 1] - cell_cen[cell_id2*dim + 1];
+    vecjgz = i_face_cog[face_id*dim + 2] - cell_cen[cell_id2*dim + 2];
+
+    /* ---> DIIPP = IG.Nij */
+    diipp = vecigx*surfnx + vecigy*surfny + vecigz*surfnz;
+    
+    /* ---> DJJPP = JG.Nij */
+    djjpp = vecjgx*surfnx + vecjgy*surfny + vecjgz*surfnz;
+
+    /* ---> DIIPF = IG - (IG.Nij)Nij */
+    diipf[face_id*dim]     = vecigx - diipp*surfnx;
+    diipf[face_id*dim + 1] = vecigy - diipp*surfny;
+    diipf[face_id*dim + 2] = vecigz - diipp*surfnz;
+    
+    /* ---> DJJPF = JG - (JG.Nij)Nij */
+    djjpf[face_id*dim]     = vecjgx - djjpp*surfnx;
+    djjpf[face_id*dim + 1] = vecjgy - djjpp*surfny;
+    djjpf[face_id*dim + 2] = vecjgz - djjpp*surfnz;
+
+  }
+}
+
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
@@ -1248,6 +1340,8 @@ cs_mesh_quantities_create(void)
   mesh_quantities->dijpf = NULL;
   mesh_quantities->diipb = NULL;
   mesh_quantities->dofij = NULL;
+  mesh_quantities->diipf = NULL;
+  mesh_quantities->djjpf = NULL;
 
   return (mesh_quantities);
 }
@@ -1279,6 +1373,8 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
   BFT_FREE(mesh_quantities->dijpf);
   BFT_FREE(mesh_quantities->diipb);
   BFT_FREE(mesh_quantities->dofij);
+  BFT_FREE(mesh_quantities->diipf);
+  BFT_FREE(mesh_quantities->djjpf);
 
   BFT_FREE(mesh_quantities);
 
@@ -1509,6 +1605,37 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
       bft_printf(_("\nAbort due to the detection of a negative control "
                    "volume.\n"));
     }
+}
+/*----------------------------------------------------------------------------
+ * Compute mesh quantities -> vectors II' and JJ'
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_sup_vectors(const cs_mesh_t       *mesh,
+                               cs_mesh_quantities_t  *mesh_quantities)
+{
+  cs_int_t  dim = mesh->dim;
+  cs_int_t  n_i_faces = mesh->n_i_faces;
+
+  if (mesh_quantities->diipf == NULL)
+    BFT_MALLOC(mesh_quantities->diipf, n_i_faces*dim, cs_real_t);
+
+  if (mesh_quantities->djjpf == NULL)
+    BFT_MALLOC(mesh_quantities->djjpf, n_i_faces*dim, cs_real_t);
+
+  _compute_face_sup_vectors(dim,
+                            mesh->n_i_faces,
+                            mesh->i_face_cells,
+                            mesh_quantities->i_face_normal,
+                            mesh_quantities->i_face_cog,
+                            mesh_quantities->i_face_surf,
+                            mesh_quantities->cell_cen,
+                            mesh_quantities->diipf,
+                            mesh_quantities->djjpf);
 }
 
 /*----------------------------------------------------------------------------
