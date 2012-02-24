@@ -169,7 +169,7 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities);
 void
 cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                            cs_mesh_quantities_t  *mesh_quantities);
-                           
+
 /*----------------------------------------------------------------------------
  * Compute mesh quantities
  *
