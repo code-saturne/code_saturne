@@ -761,6 +761,7 @@ mltmmn = 300
 mltmgl = 500
 mltmmr = 1
 mltmst = 1
+mlttyp = 0
 
 rlxp1 = 0.95d0
 

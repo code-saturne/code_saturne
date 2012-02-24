@@ -448,7 +448,7 @@ endif
 call usipsu(nmodpp , iverif)
 !==========
 
-call clmopt(mltmmn, mltmgl, mltmmr, mltmst)
+call clmopt(mltmmn, mltmgl, mltmmr, mltmst, mlttyp)
 !==========
 
 call indsui(isuite)

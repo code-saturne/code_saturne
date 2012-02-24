@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-02-23 15:31+0100\n"
+"POT-Creation-Date: 2012-02-24 10:39+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3217,6 +3217,15 @@ msgstr ""
 "Erreur de connectivité :\n"
 "La face %d voit la cellule %d des deux cotés."
 
+msgid "algebraic, natural face traversal"
+msgstr "algébrique, faces dans l'ordre naturel"
+
+msgid "algebraic, face traveral by criteria"
+msgstr "algébrique, faces ordonnées par critère"
+
+msgid "algebraic, face traversal by Hilbert SFC"
+msgstr "algébrique, faces ordonnées par courbe de Hilbert"
+
 #, c-format
 msgid ""
 "\n"
@@ -3232,6 +3241,14 @@ msgstr ""
 "    nombre total limite de cellules grossières: %d\n"
 "    nombre limite de rangs actifs:              %d\n"
 "    nombre de rangs par regroupement:           %d\n"
+
+#, c-format
+msgid ""
+"\n"
+"  Multigrid coarsening type: %s\n"
+msgstr ""
+"\n"
+"  Type d'agglomération multigrille : %s\n"
 
 msgid "native"
 msgstr "native"
@@ -9719,4 +9736,3 @@ msgstr ""
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
 "\n"
-

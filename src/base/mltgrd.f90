@@ -39,6 +39,7 @@ module mltgrd
   !   mltmgl : global number of cells under which merging should take place
   !   mltmmr : number of active ranks under which no merging is done
   !   mltmst : number of ranks over which merging takes place (stride)
+  !   mlttyp : multigrid coarsening type (face traversal order)
   !
   !   nagmx0 : parametre construction de  maillage automatique
   !   iagmx0 : parametre construction de  maillage automatique
@@ -47,7 +48,7 @@ module mltgrd
   !            maillage fin (modulo ncpmgr(ivar))
 
   integer, save :: ncegrm, ngrmax
-  integer, save :: mltmmn, mltmgl, mltmst, mltmmr
+  integer, save :: mltmmn, mltmgl, mltmst, mltmmr, mlttyp
   integer, save :: nagmx0(nvarmx), iagmx0(nvarmx), ncpmgr(nvarmx)
 
   !=============================================================================

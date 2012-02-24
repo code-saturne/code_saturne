@@ -67,6 +67,7 @@ extern void CS_PROCF (autmgr, AUTMGR)
  const cs_real_t   surfaf[],    /* <-- fine grid face surface vectors */
  const cs_real_t   volumf[],    /* <-- fine grid cell volumes */
  const cs_real_t   xyzfin[],    /* <-- fine grid cell centers */
+       cs_int_t    iordf[],     /* <-> Face traversal ordering */
        cs_int_t    irscel[],    /* --> Fine -> coarse cell connectivity */
        cs_int_t    indic[],     /* --- work array of size ncelfe */
        cs_int_t    inombr[],    /* --- work array of size ncelfe */

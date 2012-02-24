@@ -1505,6 +1505,9 @@ endif
 ! mltmgl = 500  ! global number of cells under which merging takes place
 ! mltmmr = 1    ! number of active ranks under which no merging is done
 ! mltmst = 4    ! number of ranks over which merging takes place
+! mlttyp = 0    ! 0: loop over faces to coarsen in natural order
+!               ! 1: loop over faces to coarsen in criteria order
+!               ! 3: loop over faces to coarsen in Hilbert order
 
 imgr(ipr) = 1
 

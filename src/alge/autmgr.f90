@@ -26,7 +26,7 @@ subroutine autmgr &
     ( igr    , isym   , iagmax , nagmax ,                         &
       ncelf  , ncelfe , nfacf  , iwarnp , ifacef ,                &
       daf    , xaf    , surfaf , volumf , xyzfin ,                &
-      irscel ,                                                    &
+      iordf  , irscel ,                                           &
       indic  , inombr , irsfac , indicf , w1     , w2 )
 
 !===============================================================================
@@ -52,7 +52,7 @@ subroutine autmgr &
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! ifacef(2, nfacf) ! ia ! <-- ! fine grid interior face -> cells connectivity  !
 ! daf(ncelf)       ! ra ! <-- ! fine grid matrix diagonal terms                !
-! xaf(nfacf, isym) ! ra ! <-- ! fine grid matrix extra-diagonal terms          !
+! xaf(nfacf*isym)  ! ra ! <-- ! fine grid matrix extra-diagonal terms          !
 ! surfaf(3, nfacf) ! ra ! <-- ! fine grid face surfaces                        !
 ! volumf(ncelf)    ! ra ! <-- ! fine grid cell volumes                         !
 ! xyzfin(3, ncelf) ! ra ! <-- ! fine grid cell centers                         !
@@ -89,7 +89,7 @@ integer          ncelf, ncelfe, nfacf
 integer          iwarnp
 
 integer          ifacef(2, nfacf)
-integer          irscel(ncelfe)
+integer          iordf(nfacf), irscel(ncelfe)
 integer          indic(ncelfe), inombr(ncelfe)
 integer          indicf(nfacf), irsfac(nfacf)
 
@@ -100,14 +100,15 @@ double precision w1(ncelfe), w2(ncelfe)
 
 ! Local variables
 
-double precision critr, epslon, xaf1, xaf2
-
-integer          ncelg, ncelgg, icel, ifac , ifac1, icelg
+integer          ncelg, ncelgg, icel, ifac , ifac1, ifac2, icelg
 integer          nfacn,nfacnr,npass,npasmx
 integer          inditt, noaglo, ngros, incvoi
 integer          i, j, imin, imax
 
+double precision epslon, xaf1, xaf2
+
 integer, allocatable, dimension(:) :: ihist
+double precision, allocatable, dimension(:) :: critr
 
 !===============================================================================
 
@@ -127,9 +128,10 @@ do icel = 1, ncelfe
   irscel(icel) = 0
   inombr(icel) = 1
 enddo
+
 do ifac = 1, nfacf
   indicf(ifac) = ifac
-  irsfac(ifac) = ifac
+  irsfac(ifac) = 0
 enddo
 
 ! Compute cardinality (number of neighbors for each cell -1)
@@ -145,6 +147,10 @@ ncelg  = 0
 nfacnr = nfacf
 npass  = 0
 noaglo = ncelf
+
+allocate(critr(nfacf))
+
+critr = 2.d0
 
 ! Passes
 
@@ -180,8 +186,6 @@ do while (npass .lt. npasmx)
 
   nfacnr = 0
 
-  ! Loop on non-eliminated faces
-
   do ifac1 = 1, nfacn
 
     ifac = irsfac(ifac1)
@@ -193,15 +197,38 @@ do while (npass .lt. npasmx)
     ! the communication pattern and require a more complex algorithm).
 
     if (i.le.ncelf .and. j.le.ncelf) then
-
-      inditt = 0
       xaf1 = xaf((ifac-1)*isym + 1)
       xaf2 = xaf(ifac*isym)
-      xaf1 = max(-xaf1,1.d-15)
-      xaf2 = max(-xaf2,1.d-15)
-      critr  = (daf(i)/indic(i))*(daf(j)/indic(j))/(xaf1*xaf2)
+      xaf1 = max(-xaf1, 1.d-15)
+      xaf2 = max(-xaf2, 1.d-15)
+      critr(ifac1) = (daf(i)/indic(i))*(daf(j)/indic(j))/(xaf1*xaf2)
+    endif
 
-      if (critr.lt.(1.d0-epslon) .and. irscel(i)*irscel(j).le.0) then
+  enddo
+
+  ! order faces by criteria (0 to n-1 numbering)
+
+  call clmlgo(nfacn, critr, iordf)
+  !==========
+
+  ! Loop on non-eliminated faces
+
+  do ifac1 = 1, nfacn
+
+    ifac2 = iordf(ifac1) + 1
+    ifac = irsfac(ifac2)
+    i = ifacef(1,ifac)
+    j = ifacef(2,ifac)
+
+    ! Exclude faces on parallel or periodic boundary, so as not to
+    ! coarsen the grid across those boundaries (which would change
+    ! the communication pattern and require a more complex algorithm).
+
+    if (i.le.ncelf .and. j.le.ncelf) then
+
+      inditt = 0
+
+      if (critr(ifac2).lt.(1.d0-epslon) .and. irscel(i)*irscel(j).le.0) then
 
         if (irscel(i).gt.0 .and. irscel(j).le.0) then
           if(inombr(irscel(i)) .le. iagmax) then
@@ -226,8 +253,9 @@ do while (npass .lt. npasmx)
       endif
 
       if (inditt.eq.0 .and. irscel(i)*irscel(j).le.0) then
-        nfacnr = nfacnr +1
+        nfacnr = nfacnr + 1
         indicf(nfacnr) = ifac
+        iordf(nfacnr) = nfacnr - 1
       endif
 
     endif
@@ -337,6 +365,8 @@ if (noaglo .ne. ncelf) then
   write(nfecra,*) ' Bug in autmgr, contact support.'
   call csexit(1)
 endif
+
+deallocate(critr)
 
 !--------
 ! Formats

@@ -79,8 +79,9 @@ void CS_PROCF(clmopt, CLMOPT)
                                *     merging should take place */
  const cs_int_t   *mltmmr,    /* <-- Number of active ranks under which no
                                *     merging takes place */
- const cs_int_t   *mltmst     /* <-- Number of ranks over which merging
+ const cs_int_t   *mltmst,    /* <-- Number of ranks over which merging
                                *     takes place */
+ const cs_int_t   *mlttyp     /* <-- Coarsening algorithm selection */
 );
 
 /*----------------------------------------------------------------------------
@@ -90,6 +91,17 @@ void CS_PROCF(clmopt, CLMOPT)
 void CS_PROCF(clmimp, CLMIMP)
 (
  void
+);
+
+/*----------------------------------------------------------------------------
+ * Order an array of real numbers by increasing value.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(clmlgo, CLMLGO)
+(
+ const cs_int_t   *nfac,      /* <-- Number of internal faces */
+ const cs_real_t   critr[],   /* <-- Array to order */
+ cs_int_t          iord[]     /* <-> ordering */
 );
 
 /*=============================================================================
@@ -400,13 +412,18 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
  *                            takes place, or NULL
  *   merge_stride         --> number of ranks over which merging takes place,
  *                            or NULL
+ *   coarsening_type      --> coarsening type:
+ *                             0: algebraic with natural face traversal;
+ *                             1: algebraic with face traveral by criteria;
+ *                             2: algebraic with Hilbert face traversal;
  *----------------------------------------------------------------------------*/
 
 void
 cs_grid_get_defaults(int  *merge_mean_threshold,
                      int  *merge_glob_threshold,
                      int  *merge_min_ranks,
-                     int  *merge_stride);
+                     int  *merge_stride,
+                     int  *coarsening_type);
 
 /*----------------------------------------------------------------------------
  * Set the default parameters for multigrid coarsening.
@@ -419,13 +436,18 @@ cs_grid_get_defaults(int  *merge_mean_threshold,
  *   merge_min_ranks      <-- number of active ranks under which no merging
  *                            takes place
  *   merge_stride         <-- number of ranks over which merging takes place
+ *   coarsening_type      <-- coarsening type:
+ *                             0: algebraic with natural face traversal;
+ *                             1: algebraic with face traveral by criterai;
+ *                             2: algebraic with Hilbert face traversal;
  *----------------------------------------------------------------------------*/
 
 void
 cs_grid_set_defaults(int  merge_mean_threshold,
                      int  merge_glob_threshold,
                      int  merge_min_ranks,
-                     int  merge_stride);
+                     int  merge_stride,
+                     int  coarsening_type);
 
 /*----------------------------------------------------------------------------
  * Return the merge_stride if merging is active.

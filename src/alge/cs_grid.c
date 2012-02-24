@@ -73,6 +73,7 @@
 #include "cs_sles.h"
 
 #include "fvm_defs.h"
+#include "fvm_hilbert.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -212,6 +213,10 @@ static int       *_grid_ranks = NULL;
 static MPI_Comm  *_grid_comm = NULL;
 
 #endif /* defined(HAVE_MPI) */
+
+/* Select grid coarsening algorithm */
+
+static int        _grid_coarsening_type = 0;
 
 /*============================================================================
  * Private function definitions
@@ -977,6 +982,192 @@ _coarsen(const cs_grid_t   *f,
                  &(c->_face_cell));
 
   c->face_cell = c->_face_cell;
+}
+
+/*----------------------------------------------------------------------------
+ * Descend binary tree for the ordering of an array of real values.
+ *
+ * parameters:
+ *   val       <-- pointer to entities that should be ordered.
+ *   level     <-- level of the binary tree to descend
+ *   nb_ent    <-- number of entities in the binary tree to descend
+ *   order     <-> ordering array
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_order_real_descend_tree(const cs_real_t   val[],
+                         size_t            level,
+                         const size_t      nb_ent,
+                         cs_lnum_t         order[])
+{
+  size_t i_save, i1, i2, lv_cur;
+
+  i_save = (size_t)(order[level]);
+
+  while (level <= (nb_ent/2)) {
+
+    lv_cur = (2*level) + 1;
+
+    if (lv_cur < nb_ent - 1) {
+
+      i1 = (size_t)(order[lv_cur+1]);
+      i2 = (size_t)(order[lv_cur]);
+
+      if (val[i1] > val[i2]) lv_cur++;
+    }
+
+    if (lv_cur >= nb_ent) break;
+
+    i1 = i_save;
+    i2 = (size_t)(order[lv_cur]);
+
+    if (val[i1] >= val[i2]) break;
+
+    order[level] = order[lv_cur];
+    level = lv_cur;
+
+  }
+
+  order[level] = i_save;
+}
+
+/*----------------------------------------------------------------------------
+ * Order an array of doubles.
+ *
+ * parameters:
+ *   val      <-- pointer to entities that should be ordered.
+ *   order    <-- pre-allocated ordering table
+ *   nb_ent   <-- number of entities considered
+ *----------------------------------------------------------------------------*/
+
+static void
+_order_real_local(const cs_real_t   val[],
+                  cs_lnum_t         order[],
+                  const size_t      nb_ent)
+{
+  size_t i;
+  cs_lnum_t o_save;
+
+  /* Initialize ordering array */
+
+  for (i = 0 ; i < nb_ent ; i++)
+    order[i] = i;
+
+  if (nb_ent < 2)
+    return;
+
+  /* Create binary tree */
+
+  i = (nb_ent / 2) ;
+  do {
+    i--;
+    _order_real_descend_tree(val, i, nb_ent, order);
+  } while (i > 0);
+
+  /* Sort binary tree */
+
+  for (i = nb_ent - 1 ; i > 0 ; i--) {
+    o_save   = order[0];
+    order[0] = order[i];
+    order[i] = o_save;
+    _order_real_descend_tree(val, 0, i, order);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Descend binary tree for the ordering of Hilbert code couples.
+ *
+ * parameters:
+ *   val       <-- pointer to entities that should be ordered.
+ *   level     <-- level of the binary tree to descend
+ *   nb_ent    <-- number of entities in the binary tree to descend
+ *   order     <-> ordering array
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_order_hilbert_descend_tree(const fvm_hilbert_code_t  val[],
+                            size_t                    level,
+                            const size_t              nb_ent,
+                            cs_lnum_t                 order[])
+{
+  size_t i_save, i1, i2, lv_cur;
+
+  i_save = (size_t)(order[level]);
+
+  while (level <= (nb_ent/2)) {
+
+    lv_cur = (2*level) + 1;
+
+    if (lv_cur < nb_ent - 1) {
+
+      i1 = (size_t)(order[lv_cur+1]);
+      i2 = (size_t)(order[lv_cur]);
+
+      if (val[i1*2] >= val[i2*2]) {
+        if (val[i1*2] > val[i2*2] || val[i1*2+1] > val[i2*2+1])
+          lv_cur++;
+      }
+    }
+
+    if (lv_cur >= nb_ent) break;
+
+    i1 = i_save;
+    i2 = (size_t)(order[lv_cur]);
+
+    if (val[i1*2] >= val[i2*2]) {
+      if (val[i1*2] > val[i2*2] || val[i1*2+1] >= val[i2*2+1])
+        break;
+    }
+
+    order[level] = order[lv_cur];
+    level = lv_cur;
+
+  }
+
+  order[level] = i_save;
+}
+
+/*----------------------------------------------------------------------------
+ * Order an array of Hilbert codes couples.
+ *
+ * parameters:
+ *   val      <-- pointer to entities that should be ordered.
+ *   order    <-- pre-allocated ordering table
+ *   nb_ent   <-- number of entities considered
+ *----------------------------------------------------------------------------*/
+
+static void
+_order_hilbert2_local(const fvm_hilbert_code_t  val[],
+                      cs_lnum_t                 order[],
+                      const size_t              nb_ent)
+{
+  size_t i;
+  cs_lnum_t o_save;
+
+  /* Initialize ordering array */
+
+  for (i = 0 ; i < nb_ent ; i++)
+    order[i] = i;
+
+  if (nb_ent < 2)
+    return;
+
+  /* Create binary tree */
+
+  i = (nb_ent / 2) ;
+  do {
+    i--;
+    _order_hilbert_descend_tree(val, i, nb_ent, order);
+  } while (i > 0);
+
+  /* Sort binary tree */
+
+  for (i = nb_ent - 1 ; i > 0 ; i--) {
+    o_save   = order[0];
+    order[0] = order[i];
+    order[i] = o_save;
+    _order_hilbert_descend_tree(val, 0, i, order);
+  }
 }
 
 #if defined(HAVE_MPI)
@@ -2085,6 +2276,67 @@ _merge_grids(cs_grid_t  *g,
 
 #endif /* defined(HAVE_MPI) */
 
+/*----------------------------------------------------------------------------
+ * Determine face traversal order.
+ *
+ * parameters:
+ *   g     <-- Grid structure
+ *   order --> Face ordering
+ *----------------------------------------------------------------------------*/
+
+static void
+_order_face_traversal(const cs_grid_t   *g,
+                      cs_lnum_t          order[])
+{
+  cs_lnum_t ii;
+  cs_lnum_t n_faces = g->n_faces;
+
+  if (_grid_coarsening_type == 2) {
+
+    cs_coord_t extents[6];
+    fvm_hilbert_code_t  *c_h_code = NULL;
+    fvm_hilbert_code_t  *f_h_code = NULL;
+
+    BFT_MALLOC(f_h_code, g->n_faces*2, fvm_hilbert_code_t);
+    BFT_MALLOC(c_h_code, g->n_cells_ext, fvm_hilbert_code_t);
+
+#if defined(HAVE_MPI)
+    fvm_hilbert_get_coord_extents(3, g->n_cells_ext, g->cell_cen, extents,
+                                  MPI_COMM_NULL);
+#else
+    fvm_hilbert_get_coord_extents(3, g->n_cells_ext, g->cell_cen, extents);
+#endif
+
+    fvm_hilbert_encode_coords(3, extents, g->n_cells_ext, g->cell_cen,
+                              c_h_code);
+
+    for (ii = 0; ii < n_faces; ii++) {
+      double c0 = c_h_code[g->face_cell[ii*2] - 1];
+      double c1 = c_h_code[g->face_cell[ii*2 + 1] - 1];
+      if (c0 < c1) {
+        f_h_code[ii*2] = c0;
+        f_h_code[ii*2+1] = c1;
+      }
+      else {
+        f_h_code[ii*2] = c1;
+        f_h_code[ii*2+1] = c0;
+      }
+    }
+
+    BFT_FREE(c_h_code);
+
+    _order_hilbert2_local(f_h_code, order, g->n_faces);
+
+    BFT_FREE(f_h_code);
+  }
+
+  else {
+    for (ii = 0; ii < n_faces; ii++)
+      order[ii] = ii;
+  }
+
+}
+
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
@@ -2149,11 +2401,12 @@ void CS_PROCF(clmopt, CLMOPT)
                                *     merging should take place */
  const cs_int_t   *mltmmr,    /* <-- Number of active ranks under which no
                                *     merging takes place */
- const cs_int_t   *mltmst     /* <-- Number of ranks over which merging
+ const cs_int_t   *mltmst,    /* <-- Number of ranks over which merging
                                *     takes place */
+ const cs_int_t   *mlttyp     /* <-- Coarsening algorithm selection */
 )
 {
-  cs_grid_set_defaults(*mltmmn, *mltmgl, *mltmmr, *mltmst);
+  cs_grid_set_defaults(*mltmmn, *mltmgl, *mltmmr, *mltmst, *mlttyp);
 }
 
 /*----------------------------------------------------------------------------
@@ -2166,6 +2419,21 @@ void CS_PROCF(clmimp, CLMIMP)
 )
 {
   cs_grid_log_defaults();
+}
+
+/*----------------------------------------------------------------------------
+ * Order an array of real numbers by increasing value.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(clmlgo, CLMLGO)
+(
+ const cs_int_t   *nfac,      /* <-- Number of internal faces */
+ const cs_real_t   critr[],   /* <-- Array to order */
+ cs_int_t          iord[]     /* <-> ordering */
+)
+{
+  if (_grid_coarsening_type == 1)
+    _order_real_local(critr, iord, *nfac);
 }
 
 /*============================================================================
@@ -2601,6 +2869,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
     cs_int_t iagmax = *max_agglomeration;
     cs_int_t *indic = NULL, *inombr = NULL;
     cs_int_t *irsfac = NULL, *indicf = NULL;
+    cs_int_t *iordf = NULL;
     cs_real_t *w1 = NULL, *w2 = NULL;
 
     /* Allocate working arrays */
@@ -2615,13 +2884,18 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
     /* Determine fine->coarse cell connectivity (agglomeration) */
 
+    BFT_MALLOC(iordf, f_n_faces, cs_int_t);
+
+    _order_face_traversal(f, iordf);
+
     CS_PROCF(autmgr, AUTMGR) (&igr, &isym, &iagmax, &nagmax,
                               &f_n_cells, &f_n_cells_ext, &f_n_faces, &iwarnp,
                               f->face_cell,
                               f->da, f->xa,
                               f->face_normal, f->cell_vol, f->cell_cen,
-                              c->coarse_cell,
+                              iordf, c->coarse_cell,
                               indic, inombr, irsfac, indicf, w1, w2);
+    BFT_FREE(iordf);
 
     /* Free working arrays */
 
@@ -3275,13 +3549,18 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
  *                            takes place, or NULL
  *   merge_stride         --> number of ranks over which merging takes place,
  *                            or NULL
+ *   coarsening_type      --> coarsening type:
+ *                             0: algebraic with natural face traversal;
+ *                             1: algebraic with face traveral by criterai;
+ *                             2: algebraic with Hilbert face traversal;
  *----------------------------------------------------------------------------*/
 
 void
 cs_grid_get_defaults(int  *merge_mean_threshold,
                      int  *merge_glob_threshold,
                      int  *merge_min_ranks,
-                     int  *merge_stride)
+                     int  *merge_stride,
+                     int  *coarsening_type)
 {
 #if defined(HAVE_MPI)
   if (merge_mean_threshold != NULL)
@@ -3302,6 +3581,9 @@ cs_grid_get_defaults(int  *merge_mean_threshold,
   if (merge_stride != NULL)
     *merge_stride = 0;
 #endif
+
+  if (coarsening_type != NULL)
+    *coarsening_type = _grid_coarsening_type;
 }
 
 /*----------------------------------------------------------------------------
@@ -3315,13 +3597,18 @@ cs_grid_get_defaults(int  *merge_mean_threshold,
  *   merge_min_ranks      <-- number of active ranks under which no merging
  *                            takes place
  *   merge_stride         <-- number of ranks over which merging takes place
+ *   coarsening_type      <-- coarsening type:
+ *                             0: algebraic with natural face traversal;
+ *                             1: algebraic with face traveral by criterai;
+ *                             2: algebraic with Hilbert face traversal;
  *----------------------------------------------------------------------------*/
 
 void
 cs_grid_set_defaults(int  merge_mean_threshold,
                      int  merge_glob_threshold,
                      int  merge_min_ranks,
-                     int  merge_stride)
+                     int  merge_stride,
+                     int  coarsening_type)
 {
 #if defined(HAVE_MPI)
   _grid_merge_threshold[0] = merge_mean_threshold;
@@ -3329,6 +3616,8 @@ cs_grid_set_defaults(int  merge_mean_threshold,
   _grid_merge_min_ranks = merge_min_ranks;
   _grid_merge_stride = merge_stride;
 #endif
+
+  _grid_coarsening_type = coarsening_type;
 }
 
 /*----------------------------------------------------------------------------
@@ -3358,6 +3647,11 @@ cs_grid_get_merge_stride(void)
 void
 cs_grid_log_defaults(void)
 {
+  const char *coarsening_type[3]
+     = {N_("algebraic, natural face traversal"),
+        N_("algebraic, face traveral by criteria"),
+        N_("algebraic, face traversal by Hilbert SFC")};
+
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     bft_printf(_("\n"
@@ -3369,6 +3663,10 @@ cs_grid_log_defaults(void)
                _grid_merge_threshold[0], _grid_merge_threshold[1],
                _grid_merge_min_ranks, _grid_merge_stride);
 #endif
+
+  bft_printf(_("\n"
+               "  Multigrid coarsening type: %s\n"),
+             _(coarsening_type[_grid_coarsening_type + 1]));
 }
 
 /*----------------------------------------------------------------------------
