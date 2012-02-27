@@ -1,3 +1,8 @@
+* 27/02/2012 - Martin Ferrand <martin.ferrand@edf.fr>
+  Fix vorticity calculation in Spalart-Allmaras model.
+  modified file:
+    src/turb/turbsa.f90
+
 * 23/02/2012 - David Monfort <david.monfort@edf.fr>
   Release Code_Saturne 2.1.5.
   modified files:
