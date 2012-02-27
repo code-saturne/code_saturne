@@ -1427,7 +1427,7 @@ if(iappel.eq.1) then
 !     TPUCOU POUR LA PHASE D'IMPLICITATION
 !     Attention, il faut regarder s'il y a des pdc sur un proc quelconque,
 !       pas uniquement en local.
-!TODO modify the tpucou array for the correction step 
+!TODO modify the tpucou array for the correction step
 ! in case of Coriolis force or head loss
   if((ncpdct.gt.0).and.(ipucou.eq.0)) then
     do iel = 1,ncel
