@@ -753,49 +753,31 @@ if (icorio.eq.1.and.iphydr.eq.0) then
   ! termes explicites
   if (iterns.eq.1) then
 
-    ! Si on extrapole les termes source en temps :
-    if(isno2t.gt.0) then
+    ! Si on n'itere pas sur navsto : TRAV
+    if (nterup.eq.1) then
 
       do iel = 1, ncel
         cx = omegay*vela(3,iel) - omegaz*vela(2,iel)
         cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
         cz = omegax*vela(2,iel) - omegay*vela(1,iel)
         romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
-        propce(iel,iptsna  ) = propce(iel,iptsna  ) + romvom*cx
-        propce(iel,iptsna+1) = propce(iel,iptsna+1) + romvom*cy
-        propce(iel,iptsna+2) = propce(iel,iptsna+2) + romvom*cz
+        trav(1,iel) = trav(1,iel) + romvom*cx
+        trav(2,iel) = trav(2,iel) + romvom*cy
+        trav(3,iel) = trav(3,iel) + romvom*cz
       enddo
 
-    ! Si on n'extrapole pas les termes source en temps :
+    ! Si on itere sur navsto : TRAVA
     else
 
-      ! Si on n'itere pas sur navsto : TRAV
-      if (nterup.eq.1) then
-
-        do iel = 1, ncel
-          cx = omegay*vela(3,iel) - omegaz*vela(2,iel)
-          cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
-          cz = omegax*vela(2,iel) - omegay*vela(1,iel)
-          romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
-          trav(1,iel) = trav(1,iel) + romvom*cx
-          trav(2,iel) = trav(2,iel) + romvom*cy
-          trav(3,iel) = trav(3,iel) + romvom*cz
-        enddo
-
-      ! Si on itere sur navsto : TRAVA
-      else
-
-        do iel = 1, ncel
-          cx = omegay*vela(3,iel) - omegaz*vela(2,iel)
-          cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
-          cz = omegax*vela(2,iel) - omegay*vela(1,iel)
-          romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
-          trava(1,iel) = trava(1,iel) + romvom*cx
-          trava(2,iel) = trava(2,iel) + romvom*cy
-          trava(3,iel) = trava(3,iel) + romvom*cz
-        enddo
-
-      endif
+      do iel = 1, ncel
+        cx = omegay*vela(3,iel) - omegaz*vela(2,iel)
+        cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
+        cz = omegax*vela(2,iel) - omegay*vela(1,iel)
+        romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
+        trava(1,iel) = trava(1,iel) + romvom*cx
+        trava(2,iel) = trava(2,iel) + romvom*cy
+        trava(3,iel) = trava(3,iel) + romvom*cz
+      enddo
 
     endif
   endif
@@ -863,7 +845,7 @@ if( idiff(iu).ge. 1 ) then
 !       pour le second membre (selon Rij ou non)
 
   !FIXME we do NOT extrapolate the viscosity here, whereas we do extrapolate for
-  !the second viscosity
+  ! the second viscosity
   if (itytur.eq.3) then
     do iel = 1, ncel
       w1(iel) = propce(iel,ipcvis)
@@ -1098,7 +1080,6 @@ if(iappel.eq.1) then
       fimp(isou,isou,iel) =                                       &
          istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)     &
          -iconv(ivar)*w1(iel)*thetav(ivar)
-!TODO add Coriolis terms in the cross terms of fimp
       do jsou = 1, 3
         if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
       enddo
@@ -1164,16 +1145,13 @@ if(iappel.eq.1) then
 endif
 
 
-! ---> PERTES DE CHARGE
+! ---> Head loss
 
-!  Au second appel, on n'a pas besoin de fimp
+!  At the second call, fimp is not needed anymore
 if(iappel.eq.1) then
   if (ncepdp.gt.0) then
-    if(isno2t.gt.0) then
-      thetap = thetav(ivar)
-    else
-      thetap = 1.d0
-    endif
+    ! The theta-scheme for the head loss is the same as the other terms
+    thetap = thetav(ivar)
     do ielpdc = 1, ncepdp
       iel = icepdc(ielpdc)
       romvom = propce(iel,ipcrom)*volume(iel)*thetap
@@ -1194,6 +1172,28 @@ if(iappel.eq.1) then
       fimp(2,3,iel) = fimp(2,3,iel) + romvom*cpdc23
       fimp(3,2,iel) = fimp(3,2,iel) + romvom*cpdc23
     enddo
+  endif
+endif
+
+
+! --->  Coriolis source terms
+
+!  At the second call, fimp is not needed anymore
+if(iappel.eq.1) then
+  if (icorio.eq.1) then
+    ! The theta-scheme for the Coriolis term is the same as the other terms
+    thetap = thetav(ivar)
+
+    do iel = 1, ncel
+      romvom = propce(iel,ipcrom)*volume(iel)*thetap
+      fimp(1,2,iel) = fimp(1,2,iel) + 2.d0*romvom*omegaz
+      fimp(2,1,iel) = fimp(2,1,iel) - 2.d0*romvom*omegaz
+      fimp(1,3,iel) = fimp(1,3,iel) - 2.d0*romvom*omegay
+      fimp(3,1,iel) = fimp(3,1,iel) + 2.d0*romvom*omegay
+      fimp(2,3,iel) = fimp(2,3,iel) + 2.d0*romvom*omegax
+      fimp(3,2,iel) = fimp(3,2,iel) - 2.d0*romvom*omegax
+    enddo
+
   endif
 endif
 
@@ -1427,6 +1427,8 @@ if(iappel.eq.1) then
 !     TPUCOU POUR LA PHASE D'IMPLICITATION
 !     Attention, il faut regarder s'il y a des pdc sur un proc quelconque,
 !       pas uniquement en local.
+!TODO modify the tpucou array for the correction step 
+! in case of Coriolis force or head loss
   if((ncpdct.gt.0).and.(ipucou.eq.0)) then
     do iel = 1,ncel
       do isou=1,3
