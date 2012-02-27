@@ -1710,7 +1710,7 @@ if (ineedf.eq.1) then
       endif
       distbf = distb(ifac)
       srfbnf = surfbn(ifac)
-      
+
       ! The implicit term is added after having updated the velocity
       forbr(1,ifac) = -vistot * ( cofafu(1,ifac)   &
            + (cofbfu(1,1,ifac)-1.d0)*coefu(ifac,1) &
