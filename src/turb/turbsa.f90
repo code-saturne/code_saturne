@@ -252,7 +252,7 @@ else
 endif
 
 
-! TINSSA = 2 OMEGA**2 = DUDY**2 + DVDX**2 + DUDZ**2 + DWDX**2 + DVDZ**2 + DWDY**2
+! TINSSA =  OMEGA**2 = DUDY**2 + DVDX**2 + DUDZ**2 + DWDX**2 + DVDZ**2 + DWDY**2
 !                     - 2*DUDY*DVDX - 2*DUDZ*DWDX - 2*DVDZ*DWDY
 !
 !        = 2 Oij.Oij
@@ -401,7 +401,7 @@ do iel = 1, ncel
   chi3  = chi**3
   fv1   = chi3/(chi3 + cv13 )
   fv2   = 1.d0 - nusa /(nu0 + nusa*fv1)
-  taussa= max(sqrt(tinssa(iel)*0.5d0)+nusa/(xkappa*distbf)**2*fv2, epzero)
+  taussa= max(sqrt(tinssa(iel))+nusa/(xkappa*distbf)**2*fv2, epzero)
 
   ! Computation of fw
   rsa   = min( nusa/(taussa*(xkappa*distbf)**2),10.D0)
