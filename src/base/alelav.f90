@@ -99,7 +99,7 @@ integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp, ivisep
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, thetv
-double precision epsrsp
+double precision epsrsp, prosrf
 double precision relaxp
 
 double precision rvoid(1)
@@ -139,12 +139,16 @@ endif
 ! Density at the boundary
 ipbrom = ipprob(irom)
 
-!TODO make the direction displacement not always z
+! The mesh move in the direction of the gravity in case of free-surface
 do ifac = 1, nfabor
   if (ialtyb(ifac) .eq. ifresf) then
-    cfaale(1,ifac) = 0.d0
-    cfaale(2,ifac) = 0.d0
-    cfaale(3,ifac) = propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*surfbo(3,ifac))
+    prosrf = gx*surfbo(1,ifac) + gy*surfbo(2,ifac) + gz*surfbo(3,ifac)
+    cfaale(1,ifac) = gx*                                     &
+       propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*prosrf)
+    cfaale(2,ifac) = gy*                                     &
+       propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*prosrf)
+    cfaale(3,ifac) = gz*                                     &
+       propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*prosrf)
     do isou = 1, 3
       do jsou = 1, 3
         cfbale(isou,jsou,ifac) = 0.d0

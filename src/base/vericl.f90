@@ -88,6 +88,7 @@ use optcal
 use cstnum
 use cstphy
 use entsor
+use albase
 use ppppar
 use ppthch
 use ppincl
@@ -111,6 +112,7 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
+double precision grav2
 character*80     chaine
 integer          ifac, ivar, icode
 integer          nstoni        , nstvit, nstopp
@@ -612,6 +614,23 @@ if(nscal.ge.1) then
       endif
     enddo
   enddo
+endif
+
+! --- Check if the gravity is non zero in case of free-surface
+iok = 0
+do ifac = 1, nfabor
+  grav2 = gx**2 + gy**2 + gz**2
+  if (ialtyb(ifac).eq.ifresf) then
+    if (grav2.le.epzero**2) then
+      write(nfecra,2001)
+      iok = 1
+    endif
+  endif
+enddo
+
+if (iok.ne.0) then
+  call csexit (1)
+  !==========
 endif
 
 ! 2.4 VERIFICATIONS DES COHERENCES INTER VARIABLES INTRA PHASE
@@ -1265,9 +1284,26 @@ endif
 '@  Le calcul ne sera pas execute                             ',/,&
 '@                                                            ',/,&
 '@  Verifier les parametres donnes via l''interface ou        ',/,&
-'@    usclim :                                                ',/,&
+'@    cs_user_boundary_conditions :                           ',/,&
 '@      modifier la condition de paroi rugueuse en            ',/,&
 '@               paroi lisse                                  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2001 format( &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,&
+'@           CONDITION DE SURFACE LIBRE EN ALE.               ',/,&
+'@    =========                                               ',/,&
+'@   CONDITION LIMITE INCOMPATIBLE SANS GRAVITE               ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute                             ',/,&
+'@                                                            ',/,&
+'@  Verifier les parametres donnes via l''interface ou        ',/,&
+'@    usini1 :                                                ',/,&
+'@      modifier la gravite                                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1393,10 +1429,28 @@ endif
 '@         The calculation will not be run.                   ',/,&
 '@                                                            ',/,&
 '@         Verify the parameters given via the interface or   ',/,&
-'@           usclim.                                          ',/,&
+'@           cs_user_boundary_conditions.                     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+2001 format( &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ABORT DURING THE BOUNDARY CONDITIONS CHECKING. ',/,&
+'@    =======                                                 ',/,&
+'@           FREE-SURFACE CONDITION IN ALE                    ',/,&
+'@   MUST BE COMBINED WITH A NON ZERO GRAVITY TERM!           ',/,&
+'@                                                            ',/,&
+'@         The calculation will not be run.                   ',/,&
+'@                                                            ',/,&
+'@         Verify the parameters given via the interface or   ',/,&
+'@           usini1.                                          ',/,&
+'@      modify the gravity.                                   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
 
 #endif
 
