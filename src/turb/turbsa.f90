@@ -83,7 +83,6 @@ use cstnum
 use cstphy
 use optcal
 use mesh
-!We have to know if there is any rough wall
 use parall
 use pointe, only: dispar, coefau, coefbu
 
@@ -131,40 +130,40 @@ double precision romvsd
 double precision visct , rom
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
-double precision thets, thetv, thetp1, thetap
+double precision thetv, thetp1, thetap
 double precision tuexpn
 double precision cofbnu
 double precision chi  , chi3, taussa, nusa, distbf, fw, fv1, fv2
 double precision gsa , rsa , dsigma, cv13
-double precision surfn, nu0, dsa0, hssa
+double precision surfn, nu0, dsa0, hssa, omega, sbar, cst2, cst3
 
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: viscf, viscb
-double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:) :: smbrsa, tinssa, divu
+double precision, allocatable, dimension(:) :: tsimp
+double precision, allocatable, dimension(:) :: rhssa, tinssa, trgrdu
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:,:) :: gradv
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4
-double precision, allocatable, dimension(:) :: w7
+double precision, allocatable, dimension(:) :: w1
+double precision, allocatable, dimension(:) :: trgrdn, vort
+double precision, allocatable, dimension(:) :: tsexp
 
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet))
-allocate(smbrsa(ncelet))
-allocate(tinssa(ncelet), divu(ncelet))
+allocate(tsimp(ncelet))
+allocate(trgrdn(ncelet), vort(ncelet))
+allocate(rhssa(ncelet))
+allocate(tinssa(ncelet), trgrdu(ncelet))
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet))
-allocate(w7(ncelet))
+allocate(w1(ncelet))
+allocate(tsexp(ncelet))
 
 icliup = iclrtp(iu,icoef)
 
@@ -174,10 +173,6 @@ ipcvis = ipproc(iviscl)
 iflmas = ipprof(ifluma(iu))
 iflmab = ipprob(ifluma(iu))
 ipbrom = ipprob(irom  )
-
-! S pour source, V pour variable
-!terme source grandeur turbulente
-thets  = thetst
 
 ivar   = inusa
 thetv  = thetav(ivar)
@@ -199,19 +194,29 @@ if(isto2t.gt.0) then
   endif
 endif
 
-! extrapolation des TS?
+! If source terms are extrapolated
 if(isto2t.gt.0) then
   iptsta = ipproc(itstua)
 else
   iptsta = 0
 endif
 
+if(iwarni(inusa).ge.1) then
+  write(nfecra,1000)
+endif
+
 ! Calculation of some constants
 dsigma = 1.d0 / csasig
 cv13 = csav1**3
 
+! To avoid numerical problem, constant used to prevent taussa from
+! being negative (see Oliver TA 2008)
+cst2 = 0.7d0
+cst3 = 0.9d0
+
 !===============================================================================
-! 2. CALCUL DE OmegaIJ OmegaIJ ET DE DIVU ET NORME DE GRAD NUSA
+! 2. Compute the vorticity omega, the trace of the velocity gradient
+!    and the gradient of nusa
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
@@ -236,7 +241,7 @@ if (ivelco.eq.1) then
 ( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
-  ilved ,                                                        &
+  ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
   gradv  )
 
@@ -252,17 +257,17 @@ else
 endif
 
 
-! TINSSA =  OMEGA**2 = DUDY**2 + DVDX**2 + DUDZ**2 + DWDX**2 + DVDZ**2 + DWDY**2
-!                     - 2*DUDY*DVDX - 2*DUDZ*DWDX - 2*DVDZ*DWDY
+! vort = omega**2 = dudy**2 + dvdx**2 + dudz**2 + dwdx**2 + dvdz**2 + dwdy**2
+!                - 2*dudy*dvdx - 2*dudz*dwdx - 2*dvdz*dwdy
 !
 !        = 2 Oij.Oij
-! DIVU = DUDX + DVDY + DWDZ
+! trgrdu = dudx + dvdy + dwdz
 
 do iel = 1, ncel
-  tinssa(iel) = (gradv(iel,2,1) - gradv(iel,1,2))**2   &
-              + (gradv(iel,3,1) - gradv(iel,1,3))**2   &
-              + (gradv(iel,3,2) - gradv(iel,2,3))**2
-  divu(iel) = gradv(iel,1,1) + gradv(iel,2,2) + gradv(iel,3,3)
+  vort(iel) = (gradv(iel,2,1) - gradv(iel,1,2))**2   &
+            + (gradv(iel,3,1) - gradv(iel,1,3))**2   &
+            + (gradv(iel,3,2) - gradv(iel,2,3))**2
+  trgrdu(iel) = gradv(iel,1,1) + gradv(iel,2,2) + gradv(iel,3,3)
 enddo
 
 ! Free memory
@@ -271,7 +276,7 @@ deallocate(gradv)
 ! Allocate a temporary array for the gradient calculation
 allocate(grad(ncelet,3))
 
-! CALCUL DE GRAD nusa
+! Compute the gradient of nusa
 
 nswrgp = nswrgr(inusa)
 imligp = imligr(inusa)
@@ -289,68 +294,24 @@ call grdcel &
    rtpa(1,inusa)  , coefa(1,iclvar) , coefb(1,iclvar) ,           &
    grad   )
 
-! SMBRSA = GRADnu**2
-
+! trgrdn = GRAD(nusa)**2
 do iel = 1, ncel
-  smbrsa(iel) = grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2
+  trgrdn(iel) = grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2
 enddo
 
 ! Free memory
 deallocate(grad)
 
 !===============================================================================
-! 3. PRISE EN COMPTE DES TERMES SOURCES UTILISATEURS
-!
-
-!      On passe 2 Omega**2 = TINSSA et la divergence DIVU
-!      Tableaux de travail                        W1, W2, W3, W4, W5, W6
-!                                VISCF VISCB SMBRSA W8 W9
-!      La partie a expliciter est stockee dans    W7
-!      La partie a impliciter est stockee dans    DAM
-!      En sortie de l'etape on conserve           TINSSA, DIVU,
-!                                                 W7, DAM
-!===============================================================================
-do iel = 1, ncel
-  dam(iel) = 0.d0
-  w7 (iel) = 0.d0
-enddo
-
-call ustssa                                                       &
-!==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel , tinssa , divu   ,          &
-   w7     , dam    )
-
-! On libere W1, W2, W3, W4, W5, W6, W8, W9,
-!           VISCF, VISCB, SMBRSA,
-
-!===============================================================================
-! 4. CALCUL DU TERME DE GRAVITE
+! 3. Compute the buoyant term
 !===============================================================================
 
 ! Gravity is not taken into account at the moment
 
-
 !===============================================================================
-! 5. TERME D'ACCUMULATION DE MASSE -(dRO/dt)*Volume
+! 4. Source terms are finalized
 
-!      Le terme est stocke dans         W1
-!      En sortie de l'etape on conserve W1, TINSSA, DIVU, SMBRSA, W7, DAM
-!===============================================================================
-
-init = 1
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-               ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
-
-!===============================================================================
-! 6. ON FINALISE LE CALCUL DES TERMES SOURCES
-
-!      Les termes sont stockes dans     SMBRSA
-!      En sortie de l'etape on conserve W1, TINSTSA, DIVU,
-!                                       SMBRSA,
-!                                       W7 , DAM
+!      stored in rhssa
 !===============================================================================
 
 ! Herebelow, we only handle  the case where all the walls have the same roughness
@@ -381,14 +342,15 @@ if(irangp.ge.0) then
   endif
 endif
 
-!     Si on extrapole les termes sources et rho  , il faut ici rho^n
-!                                        et visct, il faut ici visct^n
+! If source terms are extrapolated, rho is rho^n
+!                                 visct is visct^n
 do iel = 1, ncel
 
   visct = propce(iel,ipcvto)
   rom   = propce(iel,ipcroo)
   ! Kinematic viscosity
   nu0   = propce(iel,ipcvis)/rom
+  ! We have to know if there is any rough wall
   distbf= dispar(iel)
   ! viscosity of SA
   nusa  = rtpa(iel,inusa)
@@ -401,20 +363,28 @@ do iel = 1, ncel
   chi3  = chi**3
   fv1   = chi3/(chi3 + cv13 )
   fv2   = 1.d0 - nusa /(nu0 + nusa*fv1)
-  taussa= max(sqrt(tinssa(iel))+nusa/(xkappa*distbf)**2*fv2, epzero)
+
+  ! Numerical fix to prevent taussa to be smaller than 0
+  ! (reported in Oliver T.A. 2008)
+  sbar = nusa/(xkappa*distbf)**2*fv2
+  omega = sqrt(vort(iel))
+
+  if (sbar.ge.cst2*omega) then
+    taussa = omega+sbar
+  else
+    taussa = omega*(1.d0 + &
+                   (cst2**2*omega+cst3*sbar)/((cst3-2.d0*cst2)*omega-sbar))
+  endif
 
   ! Computation of fw
-  rsa   = min( nusa/(taussa*(xkappa*distbf)**2),10.D0)
+  rsa   = min(nusa/(taussa*(xkappa*distbf)**2), 10.d0)
   gsa   = rsa + csaw2*(rsa**6-rsa)
-  fw    = gsa*( (1.D0+csaw3**6)/(gsa**6+csaw3**6))**(1.D0/6.D0)
+  fw    = gsa*( (1.d0+csaw3**6)/(gsa**6+csaw3**6))**(1.d0/6.d0)
 
-  ! SMBRSA = Grad nu . Grad nu
-  smbrsa(iel) = volume(iel)*rom*(                                 &
-  !  1/SIGMA
-  !  -----
-     dsigma * csab2*smbrsa(iel)+csab1*taussa*nusa-csaw1*fw*(nusa/distbf)**2)
+  rhssa(iel) = volume(iel)*rom*(                                 &
+     dsigma * csab2*trgrdn(iel)+csab1*taussa*nusa-csaw1*fw*(nusa/distbf)**2)
 
-  ! implicitation of the negative source term of the SA equation.
+  ! Implicitation of the negative source terms of the SA equation.
   ! NB : this term could be negative, and if so, then we explicit it.
   tinssa(iel) = (max(csaw1*fw*nusa/distbf**2-csab1*taussa,0.d0)         &
                       )*rom*volume(iel)
@@ -422,171 +392,149 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 7. PRISE EN COMPTE DES TERMES SOURCES UTILISATEURS
-!                        ET ACCUMULATION DE MASSE    : PARTIE EXPLICITE
-!      On utilise                       W1,  W7, DAM
-!      Le terme est stocke dans         SMBRSA
-!      En sortie de l'etape on conserve W1, TINSSA, DIVU,
-!                                       SMBRSA
-!                                       W7, DAM
+! 5. Take user source terms into account
+
+!      omega**2 = vort and the trace of the velocity gradient = trgrdu
+!        are available
+!      The explicit part is stored in    tsexp
+!      The implicit part is stored in    tsimp
+!===============================================================================
+do iel = 1, ncel
+  tsimp(iel) = 0.d0
+  tsexp (iel) = 0.d0
+enddo
+
+call ustssa                                                       &
+!==========
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   icepdc , icetsm , itypsm ,                                     &
+   dt     , rtpa   , propce , propfa , propfb ,                   &
+   coefa  , coefb  , ckupdc , smacel , vort   , trgrdu ,          &
+   tsexp  , tsimp )
+
+!===============================================================================
+! 6. Compute -d/dt(rho)*Volume
+
+!      stored in w1
 !===============================================================================
 
-!     Si on extrapole les T.S.
-if(isto2t.gt.0) then
+init = 1
+
+call divmas &
+!==========
+ ( ncelet , ncel   , nfac   , nfabor , init   , nfecra ,          &
+   ifacel ,ifabor  , propfa(1,iflmas), propfb(1,iflmab), w1 )
+
+
+!===============================================================================
+! 7. User source terms and d/dt(rho) and div(rho u) are taken into account
+
+!      stored in rhssa
+!===============================================================================
+
+! If source terms are extrapolated
+if (isto2t.gt.0) then
 
   do iel = 1, ncel
 
-!       Sauvegarde de Ts^(n-1) (Term Utilisateur EXPlicite Nusa)
+     ! Ts^(n-1) (Term User EXPlicit Nusa)
      tuexpn =propce(iel,iptsta)
 
-!       Pour la suite et le pas de temps suivant
-!       On stoque les TS explicites du temps n (TS model + TS utilisateur)
-    propce(iel,iptsta) = smbrsa(iel) + w7(iel)
+    ! The explicit user source terms are stored for the next time step
+    ! On stoque les TS explicites du temps n (TS model + TS utilisateur)
+    propce(iel,iptsta) = rhssa(iel) + tsexp(iel)
 
-!       Termes dependant de la variable resolue et theta PROPCE
 
-!                               Div(rhoU)*nusa^n
-!                               -------   ---------------
-    smbrsa(iel) = iconv(inusa)*w1(iel)  *rtpa(iel,inusa)            &
-!        -Thetas*PROPCE^(n-1)
-!          ----- ------
-         - thets*tuexpn
+    ! --- Extrapolated explicit source terms
+    rhssa(iel) = iconv(inusa)*w1(iel)  *rtpa(iel,inusa)            &
+         - thetst*tuexpn
 
-!       On suppose -DAM > 0 : on implicite
-!         le terme utilisateur dependant de la variable resolue
+    rhssa(iel) = tsimp(iel)*rtpa(iel,inusa) + rhssa(iel)
 
-!                 Ts_imp  * nusa^n
-!                 --------  ---------------
-    smbrsa(iel) = dam(iel)*rtpa(iel,inusa) + smbrsa(iel)
+    ! --- Implicit user source terms
+    ! Her it is assumed that -tsimp > 0. That is why it is implicited
+    tinssa(iel) = tinssa(iel) - tsimp(iel)*thetv
 
   enddo
 
-!     Si on n'extrapole pas les T.S. : W7 --> TS explicite
+! If source terms are not extrapolated, then they are directly added to the RHS
 else
   do iel = 1, ncel
-    smbrsa(iel) = smbrsa(iel) + dam(iel)*rtpa(iel,inusa) + w7(iel)  &
+    rhssa(iel) = rhssa(iel) + tsimp(iel)*rtpa(iel,inusa) + tsexp(iel)  &
          +iconv(inusa)*w1(iel)*rtpa(iel,inusa)
+
+    ! --- Implicit user source terms
+    tinssa(iel) = tinssa(iel) + max(-tsimp(iel),zero)
   enddo
 endif
 
-!===============================================================================
-! 8 PRISE EN COMPTE DES TERMES SOURCES LAGRANGIEN : PARTIE EXPLICITE
-!     COUPLAGE RETOUR
-!===============================================================================
-
-! Not accounted for at the moment.
-
-!===============================================================================
-! 9. AJOUT DES TERMES SOURCES DE MASSE EXPLICITES
-
-!       Les parties implicites eventuelles sont conservees dans W2 et W3
-!         et utilisees dans la phase d'implicitation cv/diff
-
-!       Les termes sont stockes dans     SMBRSA, W2, W3
-!       En sortie de l'etape on conserve W1, TINSSA, DIVU,
-!                                        SMBRSA,
-!                                        DAM, W9, W2, W3
-!===============================================================================
-
-if (ncesmp.gt.0) then
-
-  do iel = 1, ncel
-    w2(iel) = 0.d0
-    w3(iel) = 0.d0
-  enddo
-
-!       Entier egal a 1 (pour navsto : nb de sur-iter)
-  iiun = 1
-
-!       On incremente SMBRSA par -Gamma RTPA et ROVSDT par Gamma (*theta)
-  ivar = inusa
-
-  call catsma &
-  !==========
- ( ncelet , ncel   , ncesmp , iiun   ,                            &
-                                 isto2t , thetv        ,          &
-   icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
-   smbrsa , w2     , w4 )
-
-!       Si on extrapole les TS on met Gamma Pinj dans PROPCE
-  if(isto2t.gt.0) then
-    do iel = 1, ncel
-      propce(iel,iptsta ) = propce(iel,iptsta ) + w4(iel)
-    enddo
-!       Sinon on le met directement dans SMBRSA
-  else
-    do iel = 1, ncel
-      smbrsa(iel) = smbrsa(iel) + w4(iel)
-    enddo
-  endif
-
-endif
-
-!     ON LIBERE                       W4
-
-!     Finalisation des termes sources
-if(isto2t.gt.0) then
-  thetp1 = 1.d0 + thets
-  do iel = 1, ncel
-!                               (1+thetas)* PROPCE^n
-!                               ------      ------------------
-    smbrsa(iel) = smbrsa(iel) + thetp1    * propce(iel,iptsta)
-  enddo
-endif
-
-!===============================================================================
-! 10. TERMES INSTATIONNAIRES
-
-!     On utilise                       W1, W2, W3, W7, W8
-!                                      DAM, W9
-!     Les termes sont stockes dans     TINSSA
-!     En sortie de l'etape on conserve SMBRSA, TINSSA
-!===============================================================================
-
-! --- PARTIE EXPLICITE
-
-! --- RHO/DT et DIV
-!     Extrapolation ou non, meme forme par coherence avec bilsc2
-
+! --- rho/dt and div(rho u)
+!     Extrapolated or not in coherence with bilsc2
 do iel = 1, ncel
   rom = propce(iel,ipcrom)
   romvsd = rom*volume(iel)/dt(iel)
 
-! TINSSA already contains the negativ implicited source term
+  ! tinssa already contains the negativ implicited source term
   tinssa(iel) = tinssa(iel)                                        &
                +istat(inusa)*romvsd                                &
                -iconv(inusa)*w1(iel)*thetv
 enddo
 
-! --- Source de masse (le theta est deja inclus par catsma)
+
+!===============================================================================
+! 8.Lagrangian source terms (Explicit part)
+!===============================================================================
+
+! Not accounted for at the moment.
+
+!===============================================================================
+! 9. Explicit mass source terms
+
+!    Gamma*RTPAi is stored in w1
+!===============================================================================
+
 if (ncesmp.gt.0) then
-  do iel = 1, ncel
-    tinssa(iel) = tinssa(iel) + w2(iel)
-  enddo
+
+  ! Integer equal to 1. (in navsto: nb of sub-iteration)
+  iiun = 1
+
+  ! --- Explicit and Implicit part
+  !     -Gamma RTPA is added to the RHS and Gamma*theta to tinssa
+  ivar = inusa
+
+  call catsma &
+  !==========
+ ( ncelet , ncel   , ncesmp , iiun   ,                            &
+                              isto2t , thetv ,                    &
+   icetsm , itypsm(1,ivar) ,                                      &
+   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
+   rhssa  , tinssa , w1 )
+
+  ! --- Explicit part: Gamma*RTPAi
+  !     (if we extrapolate source terms, Gamma*RTPAi is stored in propce)
+  if(isto2t.gt.0) then
+    do iel = 1, ncel
+      propce(iel,iptsta) = propce(iel,iptsta) + w1(iel)
+    enddo
+  else
+    do iel = 1, ncel
+      rhssa(iel) = rhssa(iel) + w1(iel)
+    enddo
+  endif
+
 endif
 
-!----------------------------------
-! --- Termes sources utilisateurs?
-!... Implicitation des TS?
+! Finalization of the extrapolated explicit source terms
 if(isto2t.gt.0) then
+  thetp1 = 1.d0 + thetst
   do iel = 1, ncel
-    tinssa(iel) = tinssa(iel) -dam(iel)*thetv
-  enddo
-else
-  do iel = 1, ncel
-    tinssa(iel) = tinssa(iel) + max(-dam(iel),zero)
+    rhssa(iel) = rhssa(iel) + thetp1    * propce(iel,iptsta)
   enddo
 endif
 
 !===============================================================================
-! 11. RESOLUTION
-
-!       On utilise                      SMBRSA, TINSSA,
-!       Tableaux de travail             W1, W2, W3, W4, W5, W6
+! 10. Solving of the transport equation on nusa
 !===============================================================================
-
-! ---> Traitement de nusa
 
 ivar = inusa
 iclvar = iclrtp(ivar,icoef )
@@ -594,14 +542,14 @@ iclvaf = iclrtp(ivar,icoeff)
 
 ipp    = ipprtp(ivar)
 
-!    "VITESSE" DE DIFFUSION FACETTE
+! Face viscosity
 
-if( idiff(ivar).ge. 1 ) then
+if (idiff(ivar).ge.1) then
 
   do iel = 1, ncel
     rom = propce(iel,ipcrom)
-    ! diffusibility: 1/SIGMA*(mu_laminaire+ rho*nusa)
-    ! nusa  = rtpa(iel,inusa)
+
+    ! diffusibility: 1/sigma*(mu_laminaire+ rho*nusa)
     w1(iel) = dsigma *( propce(iel,ipcvis)                        &
                         + idifft(ivar)*rtpa(iel,inusa)*rom )
   enddo
@@ -622,18 +570,21 @@ if( idiff(ivar).ge. 1 ) then
     surfn = surfbn(ifac)
 
     ! Smooth wall
-    if(    itypfb(ifac).eq.iparoi) then
+    if (itypfb(ifac).eq.iparoi) then
       viscb(ifac) = dsigma * propce(iel,ipcvis)*surfn/distb(ifac)
 
     ! Rough wall
-    elseif(itypfb(ifac).eq.iparug) then
+    elseif (itypfb(ifac).eq.iparug) then
 
       rom = propce(iel,ipcrom)
+
       ! dsa0 is recomputed in case of many different roughness
       cofbnu = coefb(ifac,iclvar)
+
       ! Roughness of the wall
       dsa0   = distb(ifac) *cofbnu/(1.d0-cofbnu)
       hssa   = exp(8.5d0*xkappa)*dsa0
+
       ! For rough walls: nusa_F*(IprF/d0+1) = nusa_Ipr
       viscb(ifac) = dsigma * ( propce(iel,ipcvis)                    &
                    + idifft(ivar)*rtpa(iel,inusa)*rom                &
@@ -654,7 +605,7 @@ else
 
 endif
 
-!     RESOLUTION
+! --- Solving
 
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
@@ -681,7 +632,7 @@ extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 thetap = thetav(ivar)
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -695,8 +646,7 @@ call codits                                                       &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-!  ------   ------
-   tinssa , smbrsa , rtp(1,ivar)     ,                            &
+   tinssa , rhssa  , rtp(1,ivar)     ,                            &
    rvoid  )
 
 
@@ -716,12 +666,12 @@ call clipsa                                                       &
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dam)
-deallocate(smbrsa)
-deallocate(tinssa, divu)
-deallocate(w1, w2, w3)
-deallocate(w4)
-deallocate(w7)
+deallocate(tsimp)
+deallocate(rhssa)
+deallocate(tinssa, trgrdu)
+deallocate(trgrdn, vort)
+deallocate(w1)
+deallocate(tsexp)
 
 !--------
 ! FORMATS
@@ -730,16 +680,13 @@ deallocate(w7)
 #if defined(_CS_LANG_FR)
 
  1000 format(/,                                                   &
-'   ** PHASE ',I4,' RESOLUTION DE SPALART-ALLMARAS            ',/,&
+'   ** RESOLUTION DE SPALART-ALLMARAS                         ',/,&
 '      ------------------------------------                   ',/)
- 1100 format(1X,A8,' : BILAN EXPLICITE = ',E14.5)
-
 #else
 
  1000 format(/,                                                   &
-'   ** PHASE ',I4,' SOLVING SPALART-A'                         ,/,&
+'   ** SOLVING SPALART-ALLMARAS      '                         ,/,&
 '      ------------------------------'                         ,/)
- 1100 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
 #endif
 
 !----
