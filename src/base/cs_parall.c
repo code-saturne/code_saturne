@@ -59,7 +59,6 @@ BEGIN_C_DECLS
  * Local structure and type definitions
  *============================================================================*/
 
-#define CS_PARALL_DEBUG_COUNT   0
 #define CS_PARALL_ARRAY_SIZE  500
 
 typedef struct
@@ -72,34 +71,6 @@ typedef struct
 /*============================================================================
  *  Global static variables
  *============================================================================*/
-
-/* Counter of the number of call for each function */
-
-#if CS_PARALL_DEBUG_COUNT
-static  cs_int_t n_total_par_calls = 0;
-static  cs_int_t n_pargve_calls = 0;
-static  cs_int_t n_parcmx_calls = 0;
-static  cs_int_t n_parcmn_calls = 0;
-static  cs_int_t n_parcpt_calls = 0;
-static  cs_int_t n_parsom_calls = 0;
-static  cs_int_t n_parmax_calls = 0;
-static  cs_int_t n_parmin_calls = 0;
-static  cs_int_t n_parmxl_calls = 0;
-static  cs_int_t n_parmnl_calls = 0;
-static  cs_int_t n_parism_calls = 0;
-static  cs_int_t n_parimx_calls = 0;
-static  cs_int_t n_parimn_calls = 0;
-static  cs_int_t n_parrsm_calls = 0;
-static  cs_int_t n_parrmx_calls = 0;
-static  cs_int_t n_parrmn_calls = 0;
-static  cs_int_t n_parbci_calls = 0;
-static  cs_int_t n_parbcr_calls = 0;
-static  cs_int_t n_paragv_calls = 0;
-static  cs_int_t n_parfpt_calls = 0;
-static  cs_int_t n_parhis_calls = 0;
-static  cs_int_t n_parcel_calls = 0;
-static  cs_int_t n_interface_sr_calls = 0;
-#endif
 
 /*=============================================================================
  * Private function definitions
@@ -137,12 +108,6 @@ CS_PROCF (parcmx, PARCMX)(cs_int_t  *counter)
   *counter = global_max;
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parcmx\n",
-         cs_glob_rank_id, n_parcmx_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -173,12 +138,6 @@ CS_PROCF (parcmn, PARCMN)(cs_int_t  *counter)
   *counter = global_max;
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parcmn\n",
-         cs_glob_rank_id, n_parcmn_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -209,12 +168,6 @@ CS_PROCF (parcpt, PARCPT)(cs_int_t  *counter)
   *counter = global_sum;
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parcpt\n",
-         cs_glob_rank_id, n_parcpt_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -246,12 +199,6 @@ CS_PROCF (parsom, PARSOM)(cs_real_t  *var)
   *var = global_sum;
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parsom\n",
-         cs_glob_rank_id, n_parsom_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -282,12 +229,6 @@ CS_PROCF (parmax, PARMAX)(cs_real_t  *var)
   *var = global_max;
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parmax\n",
-         cs_glob_rank_id, n_parmax_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -318,12 +259,6 @@ CS_PROCF (parmin, PARMIN)(cs_real_t  *var)
   *var = global_min;
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parmin\n",
-         cs_glob_rank_id, n_parmin_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -364,12 +299,6 @@ CS_PROCF (parmxl, PARMXL)(cs_int_t   *nbr,
   MPI_Bcast(xyzvar, *nbr, CS_MPI_REAL, val_max.rank, cs_glob_mpi_comm);
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parmxl\n",
-         cs_glob_rank_id, n_parmxl_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -412,12 +341,6 @@ CS_PROCF (parmnl, PARMNL)(cs_int_t   *nbr,
   MPI_Bcast(xyzvar, *nbr, CS_MPI_REAL, val_min.rank, cs_glob_mpi_comm);
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parmnl\n",
-         cs_glob_rank_id, n_parmnl_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -471,12 +394,6 @@ CS_PROCF (parism, PARISM)(cs_int_t  *n_elts,
   }
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parism\n",
-         cs_glob_rank_id, n_parism_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -530,12 +447,6 @@ CS_PROCF (parimx, PARIMX)(cs_int_t  *n_elts,
   }
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf ("irang = %d, iappel = %d, tot = %d, parimx\n",
-          cs_glob_rank_id, n_parimx_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -589,12 +500,6 @@ CS_PROCF (parimn, PARIMN)(cs_int_t  *n_elts,
   }
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parimn\n",
-         cs_glob_rank_id, n_parimn_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -648,12 +553,6 @@ CS_PROCF (parrsm, PARRSM)(cs_int_t   *n_elts,
   }
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parrsm\n",
-         cs_glob_rank_id, n_parrsm_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -707,12 +606,6 @@ CS_PROCF (parrmx, PARRMX)(cs_int_t   *n_elts,
   }
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parrmx\n",
-         cs_glob_rank_id, n_parrmx_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -766,12 +659,6 @@ CS_PROCF (parrmn, PARRMN)(cs_int_t   *n_elts,
   }
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parrmn\n",
-         cs_glob_rank_id, n_parrmn_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -798,12 +685,6 @@ CS_PROCF (parbci, PARBCI)(cs_int_t   *irank,
   MPI_Bcast(array, *n_elts, CS_MPI_INT, *irank, cs_glob_mpi_comm);
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parbci\n",
-         cs_glob_rank_id, n_parbci_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -832,12 +713,6 @@ CS_PROCF (parbcr, PARBCR)(cs_int_t   *irank,
   MPI_Bcast(array, *n_elts, CS_MPI_REAL, *irank, cs_glob_mpi_comm);
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parbcr\n",
-         cs_glob_rank_id, n_parbcr_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -890,12 +765,6 @@ CS_PROCF (paragv, PARAGV)(cs_int_t   *n_elts,
   BFT_FREE(shift);
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, paragv\n",
-         cs_glob_rank_id, n_paragv_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -944,12 +813,6 @@ CS_PROCF (parfpt, PARFPT)(cs_int_t   *node,
   *ndrang = buf[1];
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parfpt\n",
-         cs_glob_rank_id, n_parfpt_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -987,12 +850,6 @@ CS_PROCF (parhis, PARHIS)(cs_int_t   *node,
   MPI_Bcast(varcap, 1, CS_MPI_REAL, *ndrang, cs_glob_mpi_comm);
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf ("irang = %d, iappel = %d, tot = %d, parhis\n",
-          cs_glob_rank_id, n_parhis_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1028,12 +885,6 @@ CS_PROCF (parcel, PARCEL)(cs_int_t   *lnum,
   MPI_Bcast(gnum, 1, CS_MPI_INT, *rankid, cs_glob_mpi_comm);
 
 #endif
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parcel\n",
-         cs_glob_rank_id, n_parcel_calls++, n_total_par_calls++);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------
