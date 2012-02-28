@@ -193,12 +193,10 @@ _assign_vertex_coords(const cs_mesh_t    *mesh,
   med_coords->alloc(n_vtx, dim);
 
   if (vtx_id != NULL) {
-    int vtx_count = 0;
     for (i = 0; i < mesh->n_vertices; i++) {
       if (vtx_id[i] > -1) {
         for (j = 0; j < dim; j++)
-          med_coords->setIJ(vtx_count, j, vertex_coords[i*dim + j]);
-        vtx_count += 1;
+          med_coords->setIJ(vtx_id[i], j, vertex_coords[i*dim + j]);
       }
     }
   }
@@ -210,7 +208,7 @@ _assign_vertex_coords(const cs_mesh_t    *mesh,
   }
 
   med_mesh->setCoords(med_coords);
-  /*  med_coords->decrRef(); */
+  med_coords->decrRef();
 
   return;
 }
@@ -239,6 +237,9 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
   int elt_buf_size = 4;
   int *elt_buf = NULL;
   cs_lnum_t *vtx_id = NULL;
+
+  const int perm_tri[4] = {0, 2, 1};
+  const int perm_quad[4] = {0, 3, 2, 1};
 
   /* Mark and renumber vertices */
 
@@ -284,12 +285,17 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
   /* Assign faces */
 
   BFT_MALLOC(elt_buf, elt_buf_size, int);
+  med_mesh->allocateCells(n_elts);
 
   for (i = 0; i < n_elts; i++) {
 
     cs_lnum_t eid = (elts_list != NULL) ? elts_list[i] - 1 : i;
 
+    assert(eid >= 0 && eid < mesh->n_b_faces);
+
     int n_vtx = mesh->b_face_vtx_idx[eid+1] - mesh->b_face_vtx_idx[eid];
+
+    cs_lnum_t connect_start = mesh->b_face_vtx_idx[eid] - 1;
 
     if (n_vtx > elt_buf_size) { /* reallocate buffer if required */
       elt_buf_size *= 2;
@@ -299,23 +305,21 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
     switch(n_vtx) {
     case 3:
       type = INTERP_KERNEL::NORM_TRI3;
-      elt_buf[0] = vtx_id[0];
-      elt_buf[1] = vtx_id[2];
-      elt_buf[2] = vtx_id[1];
+      for (j = 0; j < 3; j++)
+        elt_buf[j]
+          = vtx_id[mesh->b_face_vtx_lst[connect_start + perm_tri[j]] - 1];
       break;
     case 4:
-      type = INTERP_KERNEL::NORM_POLYGON;
-      elt_buf[0] = vtx_id[0];
-      elt_buf[1] = vtx_id[3];
-      elt_buf[2] = vtx_id[2];
-      elt_buf[3] = vtx_id[1];
+      type = INTERP_KERNEL::NORM_QUAD4;
+      for (j = 0; j < 4; j++)
+        elt_buf[j]
+          = vtx_id[mesh->b_face_vtx_lst[connect_start + perm_quad[j]] - 1];
       break;
     default:
       type = INTERP_KERNEL::NORM_POLYGON;
-      for (j = mesh->b_face_vtx_idx[eid+1] - 1, k = 0;
-           j >= mesh->b_face_vtx_idx[eid+1];
-           j--, k++)
-        elt_buf[k] = vtx_id[mesh->b_face_vtx_lst[j-1] - 1];
+      for (j = 0; j < n_vtx; j++)
+        elt_buf[j]
+          = vtx_id[mesh->b_face_vtx_lst[connect_start + n_vtx - 1 - j] - 1];
       break;
     }
 
@@ -521,7 +525,7 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
         /* Add separator after first face */
         if (j > cell_faces_idx[i])
           elt_buf[n_vtx++] = -1;
-          
+
         /* Add face vertices */
         if (cell_faces_num[j-1] > 0) {
           for (k = v_id_start; k < v_id_end; k++)
@@ -611,7 +615,7 @@ _init_mesh(cs_paramedmem_coupling_t  *coupling,
 
   if (mesh->direction & 2)
     mesh->para_mesh[1] = new ParaMESH(mesh->med_mesh,
-                                      *(coupling->send_dec->getTargetGrp()),
+                                      *(coupling->recv_dec->getTargetGrp()),
                                       "target mesh");
 }
 
@@ -626,7 +630,7 @@ static void
 _destroy_mesh(_paramedmem_mesh_t **mesh)
 {
   _paramedmem_mesh_t *m = *mesh;
-  
+
   if (m == NULL)
     return;
 
@@ -779,7 +783,7 @@ cs_paramedmem_define_mesh(cs_paramedmem_coupling_t  *coupling,
 
   mesh->para_mesh[0] = NULL;
   mesh->para_mesh[1] = NULL;
- 
+
   /* Add as new MEDCoupling mesh structure */
 
   id = coupling->n_meshes;
@@ -856,7 +860,7 @@ cs_paramedmem_mesh_get_n_elts(const cs_paramedmem_coupling_t *coupling,
 {
   cs_lnum_t retval = 0;
 
-  if (mesh_id >0)
+  if (mesh_id >= 0)
     retval = coupling->meshes[mesh_id]->n_elts;
 
   return retval;
@@ -876,7 +880,7 @@ cs_paramedmem_mesh_get_elt_list(const cs_paramedmem_coupling_t *coupling,
 {
   const cs_lnum_t *retval = NULL;
 
-  if (mesh_id >0)
+  if (mesh_id >= 0)
     retval = coupling->meshes[mesh_id]->elt_list;
 
   return retval;
@@ -956,9 +960,11 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
     f = MEDCouplingFieldDouble::New(type, td);
 
   coupling->fields[f_id]->td = td;
+  coupling->fields[f_id]->mesh_id = mesh_id;
 
-  /* f->setNature(ConservativeVolumic);
-     should be set by caller depending on field nature */
+  /* TODO: setNature should be set by caller to allow for more options */
+
+  f->setNature(ConservativeVolumic);
 
   f->setName(name);
 
@@ -974,6 +980,7 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
 
   array->alloc(n_locs, dim);
   f->setArray(array);
+  f->getArray()->decrRef();
 
   /* Update coupling structure */
 
@@ -981,7 +988,7 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
   coupling->fields[f_id]->dim = dim;
 
   coupling->fields[f_id]->f = f;
-  coupling->fields[f_id]->pf = NULL;
+  //coupling->fields[f_id]->pf = NULL;
 
   coupling->n_fields++;
 
@@ -1088,7 +1095,6 @@ cs_paramedmem_field_export(cs_paramedmem_coupling_t  *coupling,
   /*---------------------*/
 
   f->getArray()->declareAsNew();
-  f->getArray()->decrRef();
 }
 
 /*----------------------------------------------------------------------------
@@ -1133,10 +1139,6 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *coupling,
         field_values[mesh->elt_list[i]*dim + j] = val_ptr[i*dim + j];
     }
   }
-
-  /* Cleanup */
-
-  f->getArray()->decrRef();
 }
 
 /*----------------------------------------------------------------------------*/

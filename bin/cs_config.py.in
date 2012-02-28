@@ -101,7 +101,8 @@ class config:
         # List of optionnal libraries
 
         self.optlibs = ['adf', 'blas', 'ccm', 'cgns', 'hdf5', 'libxml2',
-                        'med', 'salomemed', 'metis', 'mpi', 'scotch']
+                        'med', 'medcoupling', 'paramedmem',
+                        'metis', 'mpi', 'scotch']
         self.libs = {}
 
         # Python-related information
@@ -186,7 +187,7 @@ class config:
                          ldflags = "@MEDCOUPLING_LDFLAGS@",
                          libs = "@MEDCOUPLING_LIBS@")
 
-        self.libs['paramedmed'] = \
+        self.libs['paramedmem'] = \
             prerequisite("PARAMEDMEM",
                          have = "@cs_have_paramedmem@",
                          cppflags = "@PARAMEDMEM_CPPFLAGS@",
