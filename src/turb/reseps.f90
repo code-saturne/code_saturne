@@ -181,8 +181,6 @@ ipcvst = ipproc(ivisct)
 iflmas = ipprof(ifluma(iu))
 iflmab = ipprob(ifluma(iu))
 
-iclalp = iclrtp(ial,icoeff)
-
 iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
 
@@ -371,6 +369,9 @@ endif
 
 ! EBRSM
 if (iturb.eq.32) then
+
+  iclalp = iclrtp(ial,icoeff)
+
   do iel = 1, ncel
     ! Demi-traces
     trprod = w9(iel)
@@ -388,7 +389,9 @@ if (iturb.eq.32) then
     w1(iel) = propce(iel,ipcroo)*volume(iel)*                   &
               ce1*(1.d0+xa1*(1.d0-alpha3)*prdeps)*trprod/xttdrb
   enddo
+
 else
+
   do iel = 1, ncel
     ! Demi-traces
     trprod = w9(iel)
@@ -396,6 +399,7 @@ else
     w1(iel)   =             propce(iel,ipcroo)*volume(iel)*         &
          ce1*rtpa(iel,iep)/trrij*trprod
   enddo
+
 endif
 
 !     Si on extrapole les T.S : PROPCE

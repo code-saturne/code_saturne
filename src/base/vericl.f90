@@ -618,15 +618,17 @@ endif
 
 ! --- Check if the gravity is non zero in case of free-surface
 iok = 0
-do ifac = 1, nfabor
-  grav2 = gx**2 + gy**2 + gz**2
-  if (ialtyb(ifac).eq.ifresf) then
-    if (grav2.le.epzero**2) then
-      write(nfecra,2001)
-      iok = 1
+if (iale.eq.1) then
+  do ifac = 1, nfabor
+    grav2 = gx**2 + gy**2 + gz**2
+    if (ialtyb(ifac).eq.ifresf) then
+      if (grav2.le.epzero**2) then
+        write(nfecra,2001)
+        iok = 1
+      endif
     endif
-  endif
-enddo
+  enddo
+endif
 
 if (iok.ne.0) then
   call csexit (1)
