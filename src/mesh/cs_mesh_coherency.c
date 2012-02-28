@@ -292,7 +292,6 @@ cs_mesh_coherency_check(void)
 
     cs_halo_perio_sync_var_vect_ni(mesh->halo,
                                    mesh->halo_type,
-                                   CS_HALO_ROTATION_COPY,
                                    delta_buffer,
                                    delta_buffer +   n_cells_with_ghosts,
                                    delta_buffer + 2*n_cells_with_ghosts);

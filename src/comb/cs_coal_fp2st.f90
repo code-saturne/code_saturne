@@ -113,7 +113,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 integer           iel    , ifac   , ivar   ,ivar0 , ivarsc
 integer           icla   , icha   , numcha
 integer           inc    , iccocg , nswrgp , imligp , iwarnp
-integer           iphydp , itenso , idimte
+integer           iphydp
 integer           ipcrom , ipcvst , ipcx2c
 integer           ixchcl , ixckcl , ixnpcl , ipcgd1 , ipcgd2
 integer           iold
@@ -220,22 +220,9 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 
 ! En periodique et parallele, echange avant calcul du gradient
 
-!    Parallele
-  if(irangp.ge.0) then
-    call parcom(f1f2)
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(f1f2)
     !==========
-  endif
-
-!    Periodique
-  if(iperio.eq.1) then
-    idimte = 0
-    itenso = 0
-    call percom                                           &
-    !==========
-  ( idimte , itenso ,                                     &
-    f1f2   , f1f2   , f1f2 ,                              &
-    f1f2   , f1f2   , f1f2 ,                              &
-    f1f2   , f1f2   , f1f2    )
   endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable

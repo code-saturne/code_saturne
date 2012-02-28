@@ -78,8 +78,6 @@ typedef struct
 #if CS_PARALL_DEBUG_COUNT
 static  cs_int_t n_total_par_calls = 0;
 static  cs_int_t n_pargve_calls = 0;
-static  cs_int_t n_parcom_calls = 0;
-static  cs_int_t n_parcve_calls = 0;
 static  cs_int_t n_parcmx_calls = 0;
 static  cs_int_t n_parcmn_calls = 0;
 static  cs_int_t n_parcpt_calls = 0;
@@ -110,67 +108,6 @@ static  cs_int_t n_interface_sr_calls = 0;
 /*============================================================================
  *  Public function definitions for Fortran API
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Update a buffer on cells in case of parallelism
- *
- * This function copies values of the cells in the standard send_halo
- * (local cells) to ghost cells on distant ranks.
- *
- * Fortran interface :
- *
- * SUBROUTINE PARCOM (VAR)
- * *****************
- *
- * DOUBLE PRECISION VAR(NCELET) : <-> : variable on cells, output is an update
- *                                      of VAR(NCEL+1..NCELET)
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parcom, PARCOM)(cs_real_t  var[])
-{
-
-  if (cs_glob_mesh->have_rotation_perio != 0)
-    cs_halo_perio_save_rotation(cs_glob_mesh->halo, CS_HALO_STANDARD, var);
-
-  cs_halo_sync_var(cs_glob_mesh->halo, CS_HALO_STANDARD, var);
-
-#if CS_PARALL_DEBUG_COUNT
-  printf("irang = %d, iappel = %d, tot = %d, parcom\n",
-         cs_glob_rank_id, n_parcom_calls++, n_total_par_calls++);
-#endif
-
-}
-
-/*----------------------------------------------------------------------------
- * Update a buffer on cells in case of parallelism
- *
- * This function copies values of the cells in the entire (i.e. std + ext)
- * send_halo (local cells) to ghost cells on distant ranks.
- *
- * PVAR has to be well allocated => n_cells + n_cells_with_ghosts where
- * n_cells_with_ghosts = n_std_ghost_cells + n_ext_ghost_cells.
- *
- * Fortran interface :
- *
- * SUBROUTINE PARCVE
- * *****************
- *
- * DOUBLE PRECISION  PVAR      : <-> : variable buffer to sync
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parcve, PARCVE)(cs_real_t  pvar[])
-{
-
-  cs_halo_sync_var(cs_glob_mesh->halo, CS_HALO_EXTENDED, pvar);
-
-#if CS_PARALL_DEBUG_COUNT
-  printf ("irang = %d, iappel = %d, tot = %d, parcve\n",
-          cs_glob_rank_id, n_parcve_calls++, n_total_calls++);
-#endif
-
-}
 
 /*----------------------------------------------------------------------------
  * Compute the maximum value of a counter (int) for the entire domain in

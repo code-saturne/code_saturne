@@ -29,56 +29,55 @@ subroutine grdcel &
    grad   )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
 
-! APPEL DES DIFFERENTES ROUTINES DE CALCUL DE GRADIENT CELLULE
+! Call different cell gradient subroutines
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ivar             ! e  ! <-- ! numero de la variable                          !
+! ivar             ! i  ! <-- ! numero de la variable                          !
 !                  !    !     !   destine a etre utilise pour la               !
 !                  !    !     !   periodicite uniquement (pering)              !
 !                  !    !     !   on pourra donner ivar=0 si la                !
 !                  !    !     !   variable n'est ni une composante de          !
 !                  !    !     !   la vitesse, ni une composante du             !
 !                  !    !     !   tenseur des contraintes rij                  !
-! imrgra           ! e  ! <-- ! methode de reconstruction du gradient          !
+! imrgra           ! i  ! <-- ! methode de reconstruction du gradient          !
 !                  !    !     !  0 reconstruction 97                           !
 !                  !    !     !  1 moindres carres                             !
 !                  !    !     !  2 moindres carres support etendu              !
 !                  !    !     !    complet                                     !
 !                  !    !     !  3 moindres carres avec selection du           !
 !                  !    !     !    support etendu                              !
-! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
+! inc              ! i  ! <-- ! indicateur = 0 resol sur increment             !
 !                  !    !     !              1 sinon                           !
-! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
+! iccocg           ! i  ! <-- ! indicateur = 1 pour recalcul de cocg           !
 !                  !    !     !              0 sinon                           !
-! nswrgp           ! e  ! <-- ! nombre de sweep pour reconstruction            !
+! nswrgp           ! i  ! <-- ! nombre de sweep pour reconstruction            !
 !                  !    !     !             des gradients                      !
-! imligp           ! e  ! <-- ! methode de limitation du gradient              !
+! imligp           ! i  ! <-- ! methode de limitation du gradient              !
 !                  !    !     !  < 0 pas de limitation                         !
 !                  !    !     !  = 0 a partir des gradients voisins            !
 !                  !    !     !  = 1 a partir du gradient moyen                !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
-! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
+! nfecra           ! i  ! <-- ! unite du fichier sortie std                    !
 ! epsrgp           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! pvar  (ncelet    ! tr ! <-- ! variable (pression)                            !
-! coefap,coefbp    ! tr ! <-- ! tableaux des cond lim pour pvar                !
+! pvar  (ncelet    ! ra ! <-- ! variable (pression)                            !
+! coefap,coefbp    ! ra ! <-- ! tableaux des cond lim pour pvar                !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
-! grad(ncelet,3)   ! tr ! --> ! gradient de pvar                               !
+! grad(ncelet,3)   ! ra ! --> ! gradient de pvar                               !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -108,11 +107,7 @@ double precision grad(ncelet,3)
 ! Local variables
 
 integer          iphydp
-integer          idimte , itenso
-integer          iiu,iiv,iiw
-integer          iitytu
-integer          iir11,iir22,iir33
-integer          iir12,iir13,iir23
+integer          idimtr, irpvar
 integer          imlini
 
 double precision rvoid(1)
@@ -121,64 +116,55 @@ double precision climin
 !===============================================================================
 
 !===============================================================================
-! 0. PREPARATION POUR PERIODICITE DE ROTATION
+! 0. Preparation for periodicity of rotation
 !===============================================================================
 
-! Par defaut, on traitera le gradient comme un vecteur ...
-!   (i.e. on suppose que c'est le gradient d'une grandeurs scalaire)
+! By default, the gradient will be treated as a vector ...
+!   (i.e. we assume it is the gradient of a scalar field)
 
-! S'il n'y a pas de rotation, les echanges d'informations seront
-!   faits par percom (implicite)
+! If there is no rotation, halos are synchronized by synvec/synvni
+!   (periodicity is implicit)
 
-! S'il y a une ou des periodicites de rotation,
-!   on determine si la variables est un vecteur (vitesse)
-!   ou un tenseur (de Reynolds)
-!   pour lui appliquer dans percom le traitement adequat.
-!   On positionne IDIMTE et ITENSO
-!   et on recupere le gradient qui convient.
-! Notons que si on n'a pas, auparavant, calcule et stocke les gradients
-!   du halo on ne peut pas les recuperer ici (...).
-!   Aussi ce sous programme est-il appele dans phyvar (dans perinu perinr)
-!   pour calculer les gradients au debut du pas de temps et les stocker
-!   dans DUDXYZ et DRDXYZ
+! If rotational periodicities are present,
+!   we determine if the variable is a vector (velocity) or a tensor
+!   (Reynolds stresses) so as to apply the necessary treatment.
+!   We set idimtr and we retrieve the matching gradient.
+! Note that if halo gradients have not been saved before, they cannot be
+!   retrieved here (...)
+!   So this subroutine is called by phyvar (in perinu perinr)
+!   to compute gradients at the beginning of the time step and save them
+!   in dudxyz et drdxyz
 
-! Il est necessaire que ITENSO soit toujours initialise, meme hors
-!   periodicite, donc on l'initialise au prealable a sa valeur par defaut.
+! It si necessary for idimtr to always be initialized, even with no
+!   periodicity of rotation, so it's default value is set.
 
-idimte = 1
-itenso = 0
+idimtr = 0
 
-if(iperio.eq.1) then
+if (iperot.eq.1) then
 
-!       On recupere d'abord certains pointeurs necessaires a PERING
-
-    call pergra                                                   &
-    !==========
-  ( iiu    , iiv    , iiw    ,                                    &
-    iitytu ,                                                      &
-    iir11  , iir22  , iir33  , iir12  , iir13  , iir23  )
+  call pergra(ivar, idimtr, irpvar)
+  !==========
 
   call pering                                                     &
   !==========
-  ( ivar   ,                                                      &
-    idimte , itenso , iperot , iguper , igrper ,                  &
-    iiu    , iiv    , iiw    , iitytu ,                           &
-    iir11  , iir22  , iir33  , iir12  , iir13  , iir23  ,         &
+  ( idimtr , irpvar , iguper , igrper ,                           &
     grad(1,1) , grad(1,2) , grad(1,3) ,                           &
     dudxy  , drdxy  )
+
 endif
 
 !===============================================================================
-! 1. CALCUL DU GRADIENT
+! 1. Compute gradient
 !===============================================================================
 
 ! This subroutine is never used to compute the pressure gradient
+
 iphydp = 0
 
 call cgdcel                                                       &
 !==========
  ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivar   ,          &
-   imrgra , inc    , iccocg , nswrgp , idimte , itenso , iphydp , &
+   imrgra , inc    , iccocg , nswrgp , idimtr , iphydp ,          &
    iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
    ifacel , ifabor , icelbr , isympa ,                            &
    volume , surfac , surfbo , surfbn , pond,                      &

@@ -3473,23 +3473,11 @@ _pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
 
     /* Update distant ghost cells */
 
-    if (matrix->halo != NULL) {
-
-      if (   matrix->halo->n_transforms > 0
-          && rotation_mode == CS_HALO_ROTATION_IGNORE)
-        cs_halo_perio_save_rotation(cs_glob_mesh->halo, CS_HALO_STANDARD, x);
-
-      cs_halo_sync_var(matrix->halo, CS_HALO_STANDARD, x);
-
-      /* Synchronize periodic values */
-
-      if (matrix->halo->n_transforms > 0)
-        cs_halo_perio_sync_var_scal(matrix->halo,
-                                    CS_HALO_STANDARD,
-                                    rotation_mode,
-                                    x);
-
-    }
+    if (matrix->halo != NULL)
+      cs_halo_sync_component(matrix->halo,
+                             CS_HALO_STANDARD,
+                             rotation_mode,
+                             x);
 
   }
 

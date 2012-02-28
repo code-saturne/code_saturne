@@ -104,6 +104,7 @@ static int _cs_glob_halo_use_barrier = 1;
  * parameters:
  *   halo      <-- pointer to halo structure
  *   sync_mode <-- kind of halo treatment (standard or extended)
+ *   stride    <-- number of (interlaced) values by entity
  *   var       <-- variable whose halo rotation terms are to be saved
  *                 (size: halo->n_local_elts + halo->n_elts[opt_type])
  *----------------------------------------------------------------------------*/
@@ -111,17 +112,18 @@ static int _cs_glob_halo_use_barrier = 1;
 static void
 _save_rotation_values(const cs_halo_t  *halo,
                       cs_halo_type_t    sync_mode,
+                      int               stride,
                       const cs_real_t   var[])
 {
-  cs_int_t  i, rank_id, shift, t_id;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_lnum_t  i, j, rank_id, shift, t_id;
+  cs_lnum_t  start_std, end_std, length, start_ext, end_ext;
 
   size_t  save_count = 0;
 
   cs_real_t  *save_buffer = _cs_glob_halo_rot_backup;
 
   const int  n_transforms = halo->n_transforms;
-  const cs_int_t  n_elts  = halo->n_local_elts;
+  const cs_lnum_t  n_elts  = halo->n_local_elts;
   const fvm_periodicity_t *periodicity = halo->periodicity;
 
   assert(halo != NULL);
@@ -144,8 +146,10 @@ _save_rotation_values(const cs_halo_t  *halo,
         length = halo->perio_lst[shift + 4*rank_id + 1];
         end_std = start_std + length;
 
-        for (i = start_std; i < end_std; i++)
-          save_buffer[save_count++] = var[i];
+        for (i = start_std; i < end_std; i++) {
+          for (j = 0; j < stride; j++)
+            save_buffer[save_count++] = var[i*stride + j];
+        }
 
         if (sync_mode == CS_HALO_EXTENDED) {
 
@@ -153,8 +157,10 @@ _save_rotation_values(const cs_halo_t  *halo,
           length = halo->perio_lst[shift + 4*rank_id + 3];
           end_ext = start_ext + length;
 
-          for (i = start_ext; i < end_ext; i++)
-            save_buffer[save_count++] = var[i];
+          for (i = start_ext; i < end_ext; i++) {
+            for (j = 0; j < stride; j++)
+              save_buffer[save_count++] = var[i*stride + j];
+          }
 
         }
 
@@ -171,22 +177,24 @@ _save_rotation_values(const cs_halo_t  *halo,
  * parameters:
  *   halo      <-- pointer to halo structure
  *   sync_mode <-- kind of halo treatment (standard or extended)
+ *   stride    <-- number of (interlaced) values by entity
  *   var       <-> variable whose halo rotation terms are to be restored
  *----------------------------------------------------------------------------*/
 
 static void
 _restore_rotation_values(const cs_halo_t  *halo,
                          cs_halo_type_t    sync_mode,
+                         int               stride,
                          cs_real_t         var[])
 {
-  cs_int_t  i, rank_id, shift, t_id;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_lnum_t  i, j, rank_id, shift, t_id;
+  cs_lnum_t  start_std, end_std, length, start_ext, end_ext;
 
   size_t restore_count = 0;
 
   const cs_real_t  *save_buffer = _cs_glob_halo_rot_backup;
   const int  n_transforms = halo->n_transforms;
-  const cs_int_t  n_elts  = halo->n_local_elts;
+  const cs_lnum_t  n_elts  = halo->n_local_elts;
   const fvm_periodicity_t *periodicity = halo->periodicity;
 
   if (sync_mode == CS_HALO_N_TYPES)
@@ -209,8 +217,10 @@ _restore_rotation_values(const cs_halo_t  *halo,
         length = halo->perio_lst[shift + 4*rank_id + 1];
         end_std = start_std + length;
 
-        for (i = start_std; i < end_std; i++)
-          var[i] = save_buffer[restore_count++];
+        for (i = start_std; i < end_std; i++) {
+          for (j = 0; j < stride; j++)
+            var[i*stride + j] = save_buffer[restore_count++];
+        }
 
         if (sync_mode == CS_HALO_EXTENDED) {
 
@@ -218,8 +228,10 @@ _restore_rotation_values(const cs_halo_t  *halo,
           length = halo->perio_lst[shift + 4*rank_id + 3];
           end_ext = start_ext + length;
 
-          for (i = start_ext; i < end_ext; i++)
-            var[i] = save_buffer[restore_count++];
+          for (i = start_ext; i < end_ext; i++) {
+            for (j = 0; j < stride; j++)
+              var[i*stride + j] = save_buffer[restore_count++];
+          }
 
         }
 
@@ -236,19 +248,21 @@ _restore_rotation_values(const cs_halo_t  *halo,
  * parameters:
  *   halo      <-- pointer to halo structure
  *   sync_mode <-- kind of halo treatment (standard or extended)
+ *   stride    <-- number of (interlaced) values by entity
  *   var       <-> variable whose halo rotation terms are to be zeroed
  *----------------------------------------------------------------------------*/
 
 static void
 _zero_rotation_values(const cs_halo_t  *halo,
                       cs_halo_type_t    sync_mode,
+                      int               stride,
                       cs_real_t         var[])
 {
-  cs_int_t  i, rank_id, shift, t_id;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_lnum_t  i, j, rank_id, shift, t_id;
+  cs_lnum_t  start_std, end_std, length, start_ext, end_ext;
 
   const int  n_transforms = halo->n_transforms;
-  const cs_int_t  n_elts  = halo->n_local_elts;
+  const cs_lnum_t  n_elts  = halo->n_local_elts;
   const fvm_periodicity_t *periodicity = halo->periodicity;
 
   if (sync_mode == CS_HALO_N_TYPES)
@@ -271,8 +285,10 @@ _zero_rotation_values(const cs_halo_t  *halo,
         length = halo->perio_lst[shift + 4*rank_id + 1];
         end_std = start_std + length;
 
-        for (i = start_std; i < end_std; i++)
-          var[i] = 0.0;
+        for (i = start_std; i < end_std; i++) {
+          for (j = 0; j < stride; j++)
+            var[i*stride + j] = 0.0;
+        }
 
         if (sync_mode == CS_HALO_EXTENDED) {
 
@@ -280,8 +296,10 @@ _zero_rotation_values(const cs_halo_t  *halo,
           length = halo->perio_lst[shift + 4*rank_id + 3];
           end_ext = start_ext + length;
 
-          for (i = start_ext; i < end_ext; i++)
-            var[i] = 0.0;
+          for (i = start_ext; i < end_ext; i++) {
+            for (j = 0; j < stride; j++)
+              var[i*stride + j] = 0.0;
+          }
 
         }
 
@@ -309,9 +327,9 @@ _zero_rotation_values(const cs_halo_t  *halo,
 cs_halo_t *
 cs_halo_create(cs_interface_set_t  *ifs)
 {
-  cs_int_t  i, tmp_id, perio_lst_size;
+  cs_lnum_t  i, tmp_id, perio_lst_size;
 
-  cs_int_t  loc_id = -1;
+  cs_lnum_t  loc_id = -1;
 
   cs_halo_t  *halo = NULL;
 
@@ -1255,9 +1273,10 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
  * the behavior is the same as that of cs_halo_sync_var().
  *
  * parameters:
- *   halo      <-- pointer to halo structure
- *   sync_mode <-- synchronization mode (standard or extended)
- *   var       <-> pointer to variable value array
+ *   halo        <-- pointer to halo structure
+ *   sync_mode   <-- synchronization mode (standard or extended)
+ *   rotation_op <-- rotation operation
+ *   var         <-> pointer to variable value array
  *----------------------------------------------------------------------------*/
 
 void
@@ -1268,15 +1287,63 @@ cs_halo_sync_component(const cs_halo_t    *halo,
 {
   if (   halo->n_rotations > 0
       && rotation_op == CS_HALO_ROTATION_IGNORE)
-    _save_rotation_values(halo, sync_mode, var);
+    _save_rotation_values(halo, sync_mode, 1, var);
 
   cs_halo_sync_var(halo, sync_mode, var);
 
   if (halo->n_rotations > 0) {
     if (rotation_op == CS_HALO_ROTATION_IGNORE)
-      _restore_rotation_values(halo, sync_mode, var);
+      _restore_rotation_values(halo, sync_mode, 1, var);
     else if (rotation_op == CS_HALO_ROTATION_ZERO)
-      _zero_rotation_values(halo, sync_mode, var);
+      _zero_rotation_values(halo, sync_mode, 1, var);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Update array of strided vector variable components (floating-point)
+ * halo values in case of parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * If rotation_op is equal to CS_HALO_ROTATION_IGNORE, halo values
+ * corresponding to periodicity with rotation are left unchanged from their
+ * previous values.
+ *
+ * If rotation_op is equal to CS_HALO_ROTATION_ZERO, halo values
+ * corresponding to periodicity with rotation are set to 0.
+ *
+ * If rotation_op is equal to CS_HALO_ROTATION_COPY, halo values
+ * corresponding to periodicity with rotation are exchanged normally, so
+ * the behavior is the same as that of cs_halo_sync_var_strided().
+ *
+ * parameters:
+ *   halo        <-- pointer to halo structure
+ *   sync_mode   <-- synchronization mode (standard or extended)
+ *   rotation_op <-- rotation operation
+ *   var         <-> pointer to variable value array
+ *   stride      <-- number of (interlaced) values by entity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_components_strided(const cs_halo_t    *halo,
+                                cs_halo_type_t      sync_mode,
+                                cs_halo_rotation_t  rotation_op,
+                                cs_real_t           var[],
+                                int                 stride)
+{
+  if (   halo->n_rotations > 0
+      && rotation_op == CS_HALO_ROTATION_IGNORE)
+    _save_rotation_values(halo, sync_mode, stride, var);
+
+  cs_halo_sync_var_strided(halo, sync_mode, var, stride);
+
+  if (halo->n_rotations > 0) {
+    if (rotation_op == CS_HALO_ROTATION_IGNORE)
+      _restore_rotation_values(halo, sync_mode, stride, var);
+    else if (rotation_op == CS_HALO_ROTATION_ZERO)
+      _zero_rotation_values(halo, sync_mode, stride, var);
   }
 
 }

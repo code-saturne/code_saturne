@@ -118,17 +118,8 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t  var[],
 
   /* Synchronize variable */
 
-  if (mesh->halo != NULL) {
-
+  if (mesh->halo != NULL)
     cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, var);
-
-    if (mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_scal(mesh->halo,
-                                  CS_HALO_EXTENDED,
-                                  CS_HALO_ROTATION_COPY,
-                                  var);
-
-  }
 
   /* Allocate and initialize working buffers */
 
@@ -173,17 +164,8 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t  var[],
 
   /* Synchronize variable */
 
-  if (mesh->halo != NULL) {
-
+  if (mesh->halo != NULL)
     cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_var);
-
-    if (mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_scal(mesh->halo,
-                                  CS_HALO_STANDARD,
-                                  CS_HALO_ROTATION_COPY,
-                                  f_var);
-
-  }
 }
 
 /*----------------------------------------------------------------------------*/

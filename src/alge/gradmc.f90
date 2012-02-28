@@ -24,7 +24,7 @@ subroutine gradmc &
 !================
 
  ( ncelet , ncel   , nfac   , nfabor , ncelbr ,                   &
-   inc    , iccocg , nswrgp , idimte , itenso , iphydp , imrgra , &
+   inc    , iccocg , nswrgp , idimtr , iphydp , imrgra ,          &
    iwarnp , nfecra , epsrgp , extrap ,                            &
    ifacel , ifabor , icelbr , ipcvse , ielvse , isympa ,          &
    volume , surfac , surfbo , surfbn , pond   ,                   &
@@ -53,91 +53,77 @@ subroutine gradmc &
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! ncelbr           ! e  ! <-- ! nombre d'elements ayant au  moins              !
-! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
+! ncelbr           ! i  ! <-- ! nombre d'elements ayant au  moins              !
+! inc              ! i  ! <-- ! indicateur = 0 resol sur increment             !
 !                  !    !     !              1 sinon                           !
-! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
+! iccocg           ! i  ! <-- ! indicateur = 1 pour recalcul de cocg           !
 !                  !    !     !              0 sinon                           !
-! nswrgp           ! e  ! <-- ! nombre de sweep pour reconstruction            !
+! nswrgp           ! i  ! <-- ! nombre de sweep pour reconstruction            !
 !                  !    !     !             des gradients                      !
-! idimte           ! e  ! <-- ! dimension de la varible (maximum 3)            !
-!                  !    !     ! 0 : scalaire (var11) ou assimile               !
-!                  !    !     !     scalaire                                   !
-!                  !    !     ! 1 : vecteur (var11,var22,var33)                !
-!                  !    !     ! 2 : tenseur d'ordre 2 (varij)                  !
-! itenso           ! e  ! <-- ! pour l'explicitation de la rotation            !
-!                  !    !     ! 0 : scalaire (var11)                           !
-!                  !    !     ! 1 : composante de vecteur ou de                !
-!                  !    !     !     tenseur (var11) implcite pour la           !
-!                  !    !     !     translation                                !
-!                  !    !     !11 : reprend le traitement itenso=1 et          !
-!                  !    !     !     composante de vecteur ou de                !
-!                  !    !     !     tenseur (var11) annulee  pour la           !
-!                  !    !     !     rotation                                   !
-!                  !    !     ! 2 : vecteur (var11 et var22 et var33)          !
-!                  !    !     !     implicite pour la translation              !
-! iphydp           ! e  ! <-- ! indicateur de prise en compte de la            !
+! idimtr           ! i  ! <-- ! 0 if ivar does not match a vector or tensor    !
+!                  !    !     !   or there is no periodicity of rotation       !
+!                  !    !     ! 1 for velocity, 2 for Reynolds stress          !
+! iphydp           ! i  ! <-- ! indicateur de prise en compte de la            !
 !                  !    !     ! pression hydrostatique                         !
-! imrgra           ! e  ! <-- ! methode de reconstruction du gradient          !
+! imrgra           ! i  ! <-- ! methode de reconstruction du gradient          !
 !                  !    !     !  0 reconstruction 97                           !
 !                  !    !     !  1 moindre carre                               !
 !                  !    !     !  2 moindre carre support etendu                !
 !                  !    !     !  3 moindre carre support etendu redui          !
 !                  !    !     !  4 reconstr avec init moindres carres          !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
-! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
+! nfecra           ! i  ! <-- ! unite du fichier sortie std                    !
 ! epsrgp           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !
 ! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! ifacel(2,nfac    ! te ! <-- ! no des elts voisins d'une face intern          !
-! ifabor(nfabor    ! te ! <-- ! no de l'elt voisin d'une face de bord          !
-! icelbr           ! te ! <-- ! numero global des elements ayant au            !
+! ifacel(2,nfac    ! ia ! <-- ! no des elts voisins d'une face intern          !
+! ifabor(nfabor    ! ia ! <-- ! no de l'elt voisin d'une face de bord          !
+! icelbr           ! ia ! <-- ! numero global des elements ayant au            !
 ! (ncelbr)         !    !     !  moins une face de bord                        !
 !                  !    !     !  ranges par numero croissant                   !
-! ipcvse           ! te ! <-- ! position dans ielvse des voisins               !
+! ipcvse           ! ia ! <-- ! position dans ielvse des voisins               !
 ! (ncel  )         !    !     !  etendus des cellules                          !
-! ielvse (*)       ! te ! <-- ! numero des voisins etendus des cellul          !
-! isympa(nfabor    ! te ! <-- ! nul sur les symetries                          !
-! volume(ncelet    ! tr ! <-- ! volume des elements                            !
-! surfac(3,nfac    ! tr ! <-- ! surf vectorielle des surfaces interne          !
-! surfbo           ! tr ! <-- ! surf vectorielle des surfaces de bord          !
+! ielvse (*)       ! ia ! <-- ! numero des voisins etendus des cellul          !
+! isympa(nfabor    ! ia ! <-- ! nul sur les symetries                          !
+! volume(ncelet    ! ra ! <-- ! volume des elements                            !
+! surfac(3,nfac    ! ra ! <-- ! surf vectorielle des surfaces interne          !
+! surfbo           ! ra ! <-- ! surf vectorielle des surfaces de bord          !
 !   (3,nfabor)     !    !     !                                                !
-! surfbn           ! tr ! <-- ! norme de la surface des faces de bord          !
+! surfbn           ! ra ! <-- ! norme de la surface des faces de bord          !
 ! (nfabor)         !    !     !                                                !
-! pond(nfac)       ! tr ! <-- ! ponderation geometrique (entre 0 et 1          !
-! dist(nfac)       ! tr ! <-- ! dist entre les projections orthogonal          !
+! pond(nfac)       ! ra ! <-- ! ponderation geometrique (entre 0 et 1          !
+! dist(nfac)       ! ra ! <-- ! dist entre les projections orthogonal          !
 !                  !    !     !  sur la normale a une face des centre          !
 !                  !    !     !  volumes voisins                               !
-! distbr(nfabor    ! tr ! <-- ! dist du centre a la face de bord               !
-! dijpf(3,nfac)    ! tr ! <-- ! vect i'j', i' (resp. j') projection            !
+! distbr(nfabor    ! ra ! <-- ! dist du centre a la face de bord               !
+! dijpf(3,nfac)    ! ra ! <-- ! vect i'j', i' (resp. j') projection            !
 !                  !    !     !  du centre i (resp. j) sur la normale          !
 !                  !    !     !  a la face interne                             !
-! diipb            ! tr ! <-- ! vect ii', ii projection du centre i            !
+! diipb            ! ra ! <-- ! vect ii', ii projection du centre i            !
 !   (3,nfabor)     !    !     !  sur la normale a la face de bord              !
-! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
+! xyzcen           ! ra ! <-- ! point associes aux volumes de control          !
 !  (3,ncelet       !    !     !                                                !
-! cdgfac           ! tr ! <-- ! point associes aux facettes fluides            !
+! cdgfac           ! ra ! <-- ! point associes aux facettes fluides            !
 !  (3,nfac)        !    !     !                                                !
-! cdgfbo           ! tr ! <-- ! points associes aux facettes de bord           !
+! cdgfbo           ! ra ! <-- ! points associes aux facettes de bord           !
 !  (3,nfabor)      !    !     !                                                !
-! coefap, b        ! tr ! <-- ! tableaux des cond lim pour pvar                !
+! coefap, b        ! ra ! <-- ! tableaux des cond lim pour pvar                !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
-! pvar  (ncelet    ! tr ! <-- ! variable (ncelet + v. etendu eventuel          !
-! fextx,y,z        ! tr ! <-- ! force exterieure generant la pression          !
+! pvar  (ncelet    ! ra ! <-- ! variable (ncelet + v. etendu eventuel          !
+! fextx,y,z        ! ra ! <-- ! force exterieure generant la pression          !
 !   (ncelet)       !    !     !  hydrostatique                                 !
-! cocgb            ! tr ! <-- ! contribution des faces internes a              !
+! cocgb            ! ra ! <-- ! contribution des faces internes a              !
 !  (ncelbr,3,3)    !    !     !  cocg (cellules de bord)                       !
-! cocg             ! tr ! <-- ! couplage des composantes du gradient           !
+! cocg             ! ra ! <-- ! couplage des composantes du gradient           !
 !  ncelet,3,3      !    !     ! modifie eventuellement aux bords               !
-! dpdx dpdy        ! tr ! --> ! gradient de pvar                               !
-! dpdz (ncelet     ! tr !     !                                                !
-! bx,y,z(ncelet    ! tr ! --- ! tableau de travail pour le grad de p           !
+! dpdx dpdy        ! ra ! --> ! gradient de pvar                               !
+! dpdz (ncelet     ! ra !     !                                                !
+! bx,y,z(ncelet    ! ra ! --- ! tableau de travail pour le grad de p           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -158,7 +144,7 @@ implicit none
 
 integer          ncelet , ncel   , nfac   , nfabor , ncelbr
 integer          inc    , iccocg , nswrgp
-integer          idimte , itenso , iphydp , imrgra
+integer          idimtr , iphydp , imrgra
 integer          iwarnp , nfecra
 double precision epsrgp , extrap
 
@@ -315,26 +301,20 @@ if( nswrgp.le.1 ) then
     dpdz(iel) = bz(iel)*unsvol
   enddo
 
-!     TRAITEMENT DU PARALLELISME
+  ! Synchronize halos
 
-  if(irangp.ge.0) then
-    call parcom (dpdx)
-    !==========
-    call parcom (dpdy)
-    !==========
-    call parcom (dpdz)
-    !==========
-  endif
-
-!     TRAITEMENT DE LA PERIODICITE
-
-  if(iperio.eq.1) then
-    call percom                                                   &
-    !==========
-  ( idimte , itenso ,                                             &
-    dpdx   , dpdx   , dpdx  ,                                     &
-    dpdy   , dpdy   , dpdy  ,                                     &
-    dpdz   , dpdz   , dpdz  )
+  if (irangp.ge.0 .or. iperio.eq.1) then
+    if (idimtr .eq. 0) then
+      call synvec(dpdx, dpdy, dpdz)
+      !==========
+    else
+      call syncmp(dpdx)
+      !===========
+      call syncmp(dpdy)
+      !===========
+      call syncmp(dpdz)
+      !===========
+    endif
   endif
 
   return
@@ -1051,35 +1031,28 @@ if (iphydp.eq.1) then
   enddo
 endif
 
-!     TRAITEMENT DU PARALLELISME
+! Synchronize halos
 
-  if(irangp.ge.0) then
-    call parcom (dpdx)
+if (irangp.ge.0 .or. iperio.eq.1) then
+  if (idimtr .eq. 0) then
+    call synvec(dpdx, dpdy, dpdz)
     !==========
-    call parcom (dpdy)
-    !==========
-    call parcom (dpdz)
-    !==========
+  else
+    call syncmp(dpdx)
+    !===========
+    call syncmp(dpdy)
+    !===========
+    call syncmp(dpdz)
+    !===========
   endif
-
-!     TRAITEMENT DE LA PERIODICITE
-
-  if(iperio.eq.1) then
-    call percom                                                   &
-    !==========
-  ( idimte , itenso ,                                             &
-    dpdx   , dpdx   , dpdx  ,                                     &
-    dpdy   , dpdy   , dpdy  ,                                     &
-    dpdz   , dpdz   , dpdz  )
-  endif
-
+endif
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 !----
-! FIN
+! End
 !----
 
 return

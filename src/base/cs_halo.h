@@ -348,9 +348,10 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
  * the behavior is the same as that of cs_halo_sync_var().
  *
  * parameters:
- *   halo      <-- pointer to halo structure
- *   sync_mode <-- synchronization mode (standard or extended)
- *   var       <-> pointer to variable value array
+ *   halo        <-- pointer to halo structure
+ *   sync_mode   <-- synchronization mode (standard or extended)
+ *   rotation_op <-- rotation operation
+ *   var         <-> pointer to variable value array
  *----------------------------------------------------------------------------*/
 
 void
@@ -358,6 +359,40 @@ cs_halo_sync_component(const cs_halo_t    *halo,
                        cs_halo_type_t      sync_mode,
                        cs_halo_rotation_t  rotation_op,
                        cs_real_t           var[]);
+
+/*----------------------------------------------------------------------------
+ * Update array of strided vector variable components (floating-point)
+ * halo values in case of parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * If rotation_op is equal to CS_HALO_ROTATION_IGNORE, halo values
+ * corresponding to periodicity with rotation are left unchanged from their
+ * previous values.
+ *
+ * If rotation_op is equal to CS_HALO_ROTATION_ZERO, halo values
+ * corresponding to periodicity with rotation are set to 0.
+ *
+ * If rotation_op is equal to CS_HALO_ROTATION_COPY, halo values
+ * corresponding to periodicity with rotation are exchanged normally, so
+ * the behavior is the same as that of cs_halo_sync_var_strided().
+ *
+ * parameters:
+ *   halo        <-- pointer to halo structure
+ *   sync_mode   <-- synchronization mode (standard or extended)
+ *   rotation_op <-- rotation operation
+ *   var         <-> pointer to variable value array
+ *   stride      <-- number of (interlaced) values by entity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_components_strided(const cs_halo_t    *halo,
+                                cs_halo_type_t      sync_mode,
+                                cs_halo_rotation_t  rotation_op,
+                                cs_real_t           var[],
+                                int                 stride);
 
 /*----------------------------------------------------------------------------
  * Set MPI_Barrier usage flag.

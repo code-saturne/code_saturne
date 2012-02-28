@@ -1511,6 +1511,9 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
     cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED,
                              mesh_quantities->cell_cen, 3);
+    if (mesh->n_init_perio > 0)
+      cs_halo_perio_sync_coords(mesh->halo, mesh->halo_type,
+                                mesh_quantities->cell_cen);
 
     cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, mesh_quantities->cell_vol);
 
@@ -1534,17 +1537,6 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
     }
 #endif
-
-    if (mesh->n_init_perio > 0) {
-
-       cs_halo_perio_sync_coords(mesh->halo, mesh->halo_type,
-                                 mesh_quantities->cell_cen);
-
-       cs_halo_perio_sync_var_scal(mesh->halo,
-                                   mesh->halo_type,
-                                   CS_HALO_ROTATION_COPY,
-                                   mesh_quantities->cell_vol);
-    }
 
   }
 

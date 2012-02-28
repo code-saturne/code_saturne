@@ -243,6 +243,40 @@ void CS_PROCF(synsca, SYNSCA)
 );
 
 /*----------------------------------------------------------------------------
+ * Update a scalar array in case of parallelism and/or periodicity,
+ * using an extended halo.
+ *
+ * Fortran interface:
+ *
+ * subroutine synsce(var)
+ * *****************
+ *
+ * var   : <-> : scalar array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(synsce, SYNSCE)
+(
+ cs_real_t  var[]
+);
+
+/*----------------------------------------------------------------------------
+ * Update a scalar array in case of parallelism and/or periodicity,
+ * ignoring periodicity of rotation
+ *
+ * Fortran interface:
+ *
+ * subroutine syncmp(var)
+ * *****************
+ *
+ * var   : <-> : scalar array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(syncmp, SYNCMP)
+(
+ cs_real_t  var[]
+);
+
+/*----------------------------------------------------------------------------
  * Update a vector array in case of parallelism and/or periodicity.
  *
  * Fortran interface:
@@ -274,6 +308,24 @@ void CS_PROCF(synvec, SYNVEC)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(synvin, SYNVIN)
+(
+ cs_real_t  var[]
+);
+
+/*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity,
+ * ignoring periodicity of rotation.
+ *
+ * Fortran interface:
+ *
+ * subroutine synvnr(var)
+ * *****************
+ *
+ * var   : <-> : interleaved vector (of dimension 3)
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (synvnr, SYNVNR)
 (
  cs_real_t  var[]
 );
@@ -486,12 +538,46 @@ cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh);
 /*----------------------------------------------------------------------------
  * Update a scalar array in case of parallelism and/or periodicity.
  *
+ * Note: this function is only present so that a C equivalent to the
+ *       Fortran wrappers is available. In C code, directly using
+ *       cs_halo_sync_var() is preferred.
+ *
  * parameters:
  *   var  <->  scalar array
  *----------------------------------------------------------------------------*/
 
 void
 cs_mesh_sync_var_scal(cs_real_t  *var);
+
+/*----------------------------------------------------------------------------
+ * Update a scalar array in case of parallelism and/or periodicity,
+ * using an extended halo.
+ *
+ * Note: this function is only present so that a C equivalent to the
+ *       Fortran wrappers is available. In C code, directly using the
+ *       cs_halo_sync_var() is preferred.
+ *
+ * parameters:
+ *   var  <->  scalar array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_scal_ext(cs_real_t  *var);
+
+/*----------------------------------------------------------------------------
+ * Update a component of a vector for parallelism and/or periodicity,
+ * ignoring periodicity of rotation.
+ *
+ * Note: this function is only present so that a C equivalent to the
+ *       Fortran wrappers is available. In C code, directly using the
+ *       cs_halo_sync_var() is preferred.
+ *
+ * parameters:
+ *   var  <->  scalar array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_component(cs_real_t  *var);
 
 /*----------------------------------------------------------------------------
  * Update a vector array in case of parallelism and/or periodicity.
@@ -516,6 +602,16 @@ cs_mesh_sync_var_vect_ni(cs_real_t  *var1,
 
 void
 cs_mesh_sync_var_vect(cs_real_t  *var);
+
+/*----------------------------------------------------------------------------
+ * Update a components of a vector for parallelism and/or periodicity,
+ * ignoring periodicity of rotation.
+ *
+ *   var                  <-> gradient components (interleaved)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_vect_no_rotation(cs_real_t  *var);
 
 /*----------------------------------------------------------------------------
  * Update a diagonal tensor array in case of parallelism and/or periodicity.

@@ -23,31 +23,34 @@
 subroutine pergra &
 !================
 
- ( ju     , jv     , jw     ,                                     &
-   jtytur ,                                                       &
-   jr11   , jr22   , jr33   , jr12   , jr13   , jr23   )
+ ( ivar   , idimtr , irpvar )
 
 !===============================================================================
-! FONCTION :
+! Purpose:
 ! --------
 
-! Recuperation de certains COMMON necessaires a PERING
-
+! Indicate if the variable considered is a component of a vector or tensor
+! in the presence of periodicity of rotation
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ju, jv, jw       ! te ! --> ! numero de variable pour u, v, w                !
-! jtytur           ! te ! --> ! indicateur modele de turbulence                !
-! jr11...jr23      ! te ! --> ! numero de variable pour rij                    !
+! ivar             ! i  ! <-- ! variable number                                !
+! idimtr           ! i  ! --> ! 0 if ivar does not match a vector or tensor    !
+!                  !    !     !   or there is no periodicity of rotation       !
+!                  !    !     ! 1 for velocity, 2 for Reynolds stress          !
+! irpvar           ! i  ! --> ! -1 if ivar does not match a vector or tensor   !
+!                  !    !     ! In presence of periodicity of rotation:        !
+!                  !    !     !  0 for iu, 1 for iv, 2 for iw                  !
+!                  !    !     !  0 for ir11, 1 for ir22, 2 for ir33,           !
+!                  !    !     !  3 for ir12, 4 for ir13, 5 for ir23            !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -57,6 +60,7 @@ subroutine pergra &
 use paramx
 use numvar
 use optcal
+use period
 
 !===============================================================================
 
@@ -64,43 +68,46 @@ implicit none
 
 ! Arguments
 
-integer          ju,jv,jw
-integer          jtytur
-integer          jr11,jr22,jr33
-integer          jr12,jr13,jr23
+integer, intent(in)  :: ivar
+integer, intent(out) :: idimtr, irpvar
 
 ! Local variables
 
 !===============================================================================
 
+idimtr = 0
+irpvar = -1
 
-! Recuperation des COMMON de "optcal"
+if (iperot .eq. 0) return
 
-jtytur = itytur
-
-! Recuperation des COMMON de "numvar"
-
-ju   = iu
-jv   = iv
-jw   = iw
-if(itytur.eq.3) then
-  jr11 = ir11
-  jr22 = ir22
-  jr33 = ir33
-  jr12 = ir12
-  jr13 = ir13
-  jr23 = ir23
-else
-  jr11 = 0
-  jr22 = 0
-  jr33 = 0
-  jr12 = 0
-  jr13 = 0
-  jr23 = 0
+if (ivar.eq. iu) then
+  idimtr = 1
+  irpvar = 0
+else if (ivar.eq. iv) then
+  idimtr = 1
+  irpvar = 1
+else if (ivar.eq. iw) then
+  idimtr = 1
+  irpvar = 2
+else if (itytur.eq.3) then
+  if (ivar.eq. ir11) then
+    irpvar = 0
+  else if (ivar.eq. ir22) then
+    irpvar = 1
+  else if (ivar.eq. ir33) then
+    irpvar = 2
+  else if (ivar.eq. ir12) then
+    irpvar = 3
+  else if (ivar.eq. ir13) then
+    irpvar = 4
+  else if (ivar.eq. ir23) then
+    irpvar = 5
+  endif
+  if (irpvar .ge. 0) idimtr = 2
 endif
 
 !----
-! FIN
+! End
 !----
 
 return

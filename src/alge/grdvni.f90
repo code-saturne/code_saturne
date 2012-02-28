@@ -115,11 +115,8 @@ double precision gradv(3*3*ncelet)
 
 integer          iel, isou, ivarloc
 integer          iphydp
-integer          idimte , itenso
+integer          idimtr, irpvar
 integer          iiu,iiv,iiw
-integer          iitytu
-integer          iir11,iir22,iir33
-integer          iir12,iir13,iir23
 integer          imlini
 
 double precision rvoid(1)
@@ -134,14 +131,13 @@ double precision rvoid(1)
 !   (i.e. on suppose que c'est le gradient d'une grandeurs scalaire)
 
 ! S'il n'y a pas de rotation, les echanges d'informations seront
-!   faits par percom (implicite)
+!   faits par syngra/syngin (implicite)
 
 ! S'il y a une ou des periodicites de rotation,
 !   on determine si la variables est un vecteur (vitesse)
 !   ou un tenseur (de Reynolds)
-!   pour lui appliquer dans percom le traitement adequat.
-!   On positionne IDIMTE et ITENSO
-!   et on recupere le gradient qui convient.
+!   pour lui appliquer dans syngra/syngin le traitement adequat.
+!   On positionne IDIMTR et on recupere le gradient qui convient.
 ! Notons que si on n'a pas, auparavant, calcule et stocke les gradients
 !   du halo on ne peut pas les recuperer ici (...).
 !   Aussi ce sous programme est-il appele dans phyvar (dans perinu perinr)
@@ -152,58 +148,38 @@ double precision rvoid(1)
 !   periodicite, donc on l'initialise au prealable a sa valeur par defaut.
 
 
-if(iperio.eq.1) then
+if (iperot.eq.1) then
 
-  idimte = 1
-  itenso = 0
-
-  ! On recupere d'abord certains pointeurs necessaires a PERING
-
-  call pergra                                                     &
+  call pergra(ivar, idimtr, irpvar)
   !==========
-  ( iiu    , iiv    , iiw    ,                                    &
-    iitytu ,                                                      &
-    iir11  , iir22  , iir33  , iir12  , iir13  , iir23  )
 
-  ivarloc = ivar
+  if (idimtr .gt. 0) then
 
-  call pering                                                     &
-  !==========
-  ( ivarloc,                                                      &
-    idimte , itenso , iperot , iguper , igrper ,                  &
-    iiu    , iiv    , iiw    , iitytu ,                           &
-    iir11  , iir22  , iir33  , iir12  , iir13  , iir23  ,         &
-    gradv(1), gradv(1+1*ncelet), gradv(1+2*ncelet),               &
-    dudxy  , drdxy  )
+    call pering                                                   &
+    !==========
+    ( idimtr, irpvar, iguper , igrper ,                           &
+      gradv(1), gradv(1+1*ncelet), gradv(1+2*ncelet),             &
+      dudxy  , drdxy  )
 
-  ivarloc = ivarloc + 1
+    irpvar = irpvar + 1
 
-  call pering                                                     &
-  !==========
-  ( ivarloc,                                                      &
-    idimte , itenso , iperot , iguper , igrper ,                  &
-    iiu    , iiv    , iiw    , iitytu ,                           &
-    iir11  , iir22  , iir33  , iir12  , iir13  , iir23  ,         &
-    gradv(1+3*ncelet), gradv(1+4*ncelet), gradv(1+5*ncelet),      &
-    dudxy  , drdxy  )
+    call pering                                                   &
+    !==========
+    ( idimtr, irpvar, iguper , igrper ,                           &
+      gradv(1+3*ncelet), gradv(1+4*ncelet), gradv(1+5*ncelet),    &
+      dudxy  , drdxy  )
 
-  ivarloc = ivarloc + 1
+    irpvar = irpvar + 1
 
-  call pering                                                     &
-  !==========
-  ( ivarloc,                                                      &
-    idimte , itenso , iperot , iguper , igrper ,                  &
-    iiu    , iiv    , iiw    , iitytu ,                           &
-    iir11  , iir22  , iir33  , iir12  , iir13  , iir23  ,         &
-    gradv(1+6*ncelet), gradv(1+7*ncelet), gradv(1+8*ncelet),      &
-    dudxy  , drdxy  )
+    call pering                                                   &
+    !==========
+    ( idimtr, irpvar, iguper , igrper ,                           &
+      gradv(1+6*ncelet), gradv(1+7*ncelet), gradv(1+8*ncelet),    &
+      dudxy  , drdxy  )
+
+  endif
 
 endif
-
-
-
-
-
 
 !===============================================================================
 ! 1. COMPUTATION OF THE GARDIENT
@@ -217,7 +193,7 @@ ivarloc = ivar
 call cgdcel &
 !==========
  ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivarloc,          &
-   imrgra , inc    , iccocg , nswrgp , idimte , itenso , iphydp , &
+   imrgra , inc    , iccocg , nswrgp , idimtr , iphydp ,          &
    iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
    ifacel , ifabor , icelbr , isympa ,                            &
    volume , surfac , surfbo , surfbn , pond,                      &
@@ -234,7 +210,7 @@ ivarloc = ivarloc+1
 call cgdcel &
 !==========
  ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivarloc,          &
-   imrgra , inc    , iccocg , nswrgp , idimte , itenso , iphydp , &
+   imrgra , inc    , iccocg , nswrgp , idimtr , iphydp ,          &
    iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
    ifacel , ifabor , icelbr , isympa ,                            &
    volume , surfac , surfbo , surfbn , pond,                      &
@@ -251,7 +227,7 @@ ivarloc = ivarloc+1
 call cgdcel &
 !==========
  ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivarloc,          &
-   imrgra , inc    , iccocg , nswrgp , idimte , itenso , iphydp , &
+   imrgra , inc    , iccocg , nswrgp , idimtr , iphydp ,          &
    iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
    ifacel , ifabor , icelbr , isympa ,                            &
    volume , surfac , surfbo , surfbn , pond,                      &

@@ -42,44 +42,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Update a buffer on cells in case of parallelism
- *
- * This function copies values of the cells in the send_halo (local cells) to
- * ghost cells on distant ranks.
- *
- * Fortran interface :
- *
- * SUBROUTINE PARCOM (VAR)
- * *****************
- *
- * DOUBLE PRECISION VAR(NCELET) : <-> : variable on cells, output is an update
- *                                      of VAR(NCEL+1..NCELET)
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parcom, PARCOM)(cs_real_t  var[]);
-
-/*----------------------------------------------------------------------------
- * Update a buffer on cells in case of parallelism
- *
- * This function copies values of the cells in the entire (i.e. std + ext)
- * send_halo (local cells) to ghost cells on distant ranks.
- *
- * PVAR has to be well allocated => n_cells + n_cells_with_ghosts where
- * n_cells_with_ghosts = n_std_ghost_cells + n_ext_ghost_cells.
- *
- * Fortran interface :
- *
- * SUBROUTINE PARCVE
- * *****************
- *
- * DOUBLE PRECISION  PVAR      : <-> : variable buffer to sync
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parcve, PARCVE)(cs_real_t  pvar[]);
-
-/*----------------------------------------------------------------------------
  * Compute the maximum value of a counter (int) for the entire domain in
  * case of parallelism.
  *

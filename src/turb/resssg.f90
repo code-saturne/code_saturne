@@ -779,11 +779,11 @@ else
 !     Les termes de bord sont uniquement pris en compte dans la partie
 !        en (grad(Rij).n)n
 
-!     Attention en periodicite on percom-ise le gradient comme si c'etait
+!     Attention en periodicite on syngra-ise le gradient comme si c'etait
 !       un vecteur (alors que dans grdcel on l'a fait comme si c'etait
 !       un tenseur ...).
 !     A modifier eventuellement. Pour le moment on conserve donc
-!       PERCOM et PARCOM.
+!       SYNGRA.
 
   if (idifre.eq.1) then
 

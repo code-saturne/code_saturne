@@ -132,7 +132,6 @@ integer          ntrela
 integer          isvhb , isvtb
 integer          ii    , jj    , ippcp , ientha, ippcv
 integer          ipcrom, ipcroa
-integer          idimte, itenso
 integer          iflua , iflub
 integer          iterns, inslst, icvrge, ivsvdr
 integer          iflmas, iflmab
@@ -278,70 +277,39 @@ endif
 
 
 
-! ---> Parallelisme
+! ---> Halo synchronization
 
-if(irangp.ge.0) then
+if (irangp.ge.0 .or. iperio.eq.1) then
 
   do ivar = 1, nvar
-    call parcve (rtp(1,ivar))
+    call synsce (rtp(1,ivar))
     !==========
   enddo
 
 endif
 
-! ---> Periodicite
+! ---> Periodicity of rotation
 
-if(iperio.eq.1) then
+if (iperio.eq.1) then
 
-!  -- Vitesse
+  !  -- Vitesse
 
-  idimte = 1
-  itenso = 0
-  call percve &
+  call perrve (rtp(1,iu), rtp(1,iv), rtp(1,iw))
   !==========
-( idimte , itenso ,                                  &
-  rtp(1,iu), rtp(1,iu), rtp(1,iu),                   &
-  rtp(1,iv), rtp(1,iv), rtp(1,iv),                   &
-  rtp(1,iw), rtp(1,iw), rtp(1,iw))
 
-!  -- Tenseur de Reynolds
+  !  -- Reynolds stress tensor
 
-  if(itytur.eq.3) then
-    idimte = 2
-    itenso = 0
-    call percve &
+  if (itytur.eq.3) then
+    call perrte &
     !==========
-  ( idimte , itenso ,                                     &
-    rtp(1,ir11), rtp(1,ir12), rtp(1,ir13),                &
-    rtp(1,ir12), rtp(1,ir22), rtp(1,ir23),                &
+  ( rtp(1,ir11), rtp(1,ir12), rtp(1,ir13),           &
+    rtp(1,ir12), rtp(1,ir22), rtp(1,ir23),           &
     rtp(1,ir13), rtp(1,ir23), rtp(1,ir33) )
   endif
 
-!  -- Remarque pour le v2f
-!     v2 (donc phi) est lie a une orientation locale, on peut donc le traiter
-!     comme un scalaire dans la periodicite de rotation
-
-
-!  -- Variables scalaires
-
-  do ivar = 1, nvar
-    if(ivar.ne.iu.and.ivar.ne.iv.and.ivar.ne.iw.and.       &
-         (itytur.ne.3.or.                                  &
-         (ivar.ne.ir11.and.ivar.ne.ir22.and.       &
-         ivar.ne.ir33.and.ivar.ne.ir12.and.       &
-         ivar.ne.ir13.and.ivar.ne.ir23))) then
-
-      idimte = 0
-      itenso = 0
-      call percve                                               &
-      !==========
-    ( idimte , itenso ,                                         &
-      rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-      rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-      rtp(1,ivar), rtp(1,ivar), rtp(1,ivar) )
-
-    endif
-  enddo
+  !  -- Note for v2f:
+  !     v2 (thus phi) is oriented locally, and is handled as a scalar
+  !     regarding periodicity of rotation
 
 endif
 
@@ -352,28 +320,22 @@ endif
 !     PROPCE(1,IPPROC(IROMA))
 !===============================================================================
 
-if(ipass.eq.1) then
+if (ipass.eq.1) then
 
 ! --- Communication de FRCXT
   if (iphydr.eq.1) then
 
-    if(irangp.ge.0) then
-      call parcve (frcxt(1,1))
+    if (irangp.ge.0 .or. iperio.eq.1) then
+      call synsce (frcxt(1,1))
       !==========
-      call parcve (frcxt(1,2))
+      call synsce (frcxt(1,2))
       !==========
-      call parcve (frcxt(1,3))
+      call synsce (frcxt(1,3))
       !==========
     endif
-    if(iperio.eq.1) then
-      idimte = 1
-      itenso = 0
-      call percve                                               &
+    if (iperio.eq.1) then
+      call perrve (frcxt(1,1), frcxt(1,2), frcxt(1,3))
       !==========
-    ( idimte , itenso ,                                           &
-      frcxt(1,1),frcxt(1,1),frcxt(1,1),         &
-      frcxt(1,2),frcxt(1,2),frcxt(1,2),         &
-      frcxt(1,3),frcxt(1,3),frcxt(1,3) )
     endif
 
   endif
@@ -382,19 +344,9 @@ if(ipass.eq.1) then
   if (icalhy.eq.1) then
 
     ipcrom = ipproc(irom  )
-    if(irangp.ge.0) then
-      call parcve (propce(1,ipcrom))
+    if (irangp.ge.0 .or. iperio.eq.1) then
+      call synsce (propce(1,ipcrom))
       !==========
-    endif
-    if(iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percve                                               &
-      !==========
-    ( idimte , itenso ,                                           &
-      propce(1,ipcrom),propce(1,ipcrom),propce(1,ipcrom),         &
-      propce(1,ipcrom),propce(1,ipcrom),propce(1,ipcrom),         &
-      propce(1,ipcrom),propce(1,ipcrom),propce(1,ipcrom) )
     endif
 
   endif

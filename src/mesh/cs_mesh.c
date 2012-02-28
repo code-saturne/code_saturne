@@ -1941,6 +1941,46 @@ void CS_PROCF(synsca, SYNSCA)
 }
 
 /*----------------------------------------------------------------------------
+ * Update a scalar array in case of parallelism and/or periodicity,
+ * using an extended halo.
+ *
+ * Fortran interface:
+ *
+ * subroutine synsce(var)
+ * *****************
+ *
+ * var   : <-> : scalar array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(synsce, SYNSCE)
+(
+ cs_real_t  var[]
+)
+{
+  cs_mesh_sync_var_scal_ext(var);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a scalar array in case of parallelism and/or periodicity,
+ * ignoring periodicity of rotation
+ *
+ * Fortran interface:
+ *
+ * subroutine syncmp(var)
+ * *****************
+ *
+ * var   : <-> : scalar array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(syncmp, SYNCMP)
+(
+ cs_real_t  var[]
+)
+{
+  cs_mesh_sync_var_component(var);
+}
+
+/*----------------------------------------------------------------------------
  * Update a vector array in case of parallelism and/or periodicity.
  *
  * Fortran interface:
@@ -1980,6 +2020,27 @@ void CS_PROCF(synvin, SYNVIN)
 )
 {
   cs_mesh_sync_var_vect(var);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity,
+ * ignoring periodicity of rotation.
+ *
+ * Fortran interface:
+ *
+ * subroutine synvnr(var)
+ * *****************
+ *
+ * var   : <-> : interleaved vector (of dimension 3)
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (synvnr, SYNVNR)
+(
+ cs_real_t  var[]
+)
+{
+  cs_mesh_sync_var_vect_no_rotation(var);
 }
 
 /*----------------------------------------------------------------------------
@@ -2271,10 +2332,8 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
 
   /* Free halo structure */
 
-  if (mesh == cs_glob_mesh) {
-    cs_halo_perio_free_buffer();
+  if (mesh == cs_glob_mesh)
     cs_halo_free_buffer();
-  }
 
   if (mesh->vtx_interfaces != NULL)
     cs_interface_set_destroy(&(mesh->vtx_interfaces));
@@ -2897,9 +2956,6 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
                         &gcell_vtx_idx,
                         &gcell_vtx_lst);
 
-    if (mesh->n_init_perio > 0)
-      cs_halo_perio_update_buffer(mesh->halo);
-
     cs_interface_set_destroy(&face_interfaces);
 
     t2 = cs_timer_wtime();
@@ -3297,6 +3353,10 @@ cs_mesh_init_selectors(void)
 /*----------------------------------------------------------------------------
  * Update a scalar array in case of parallelism and/or periodicity.
  *
+ * Note: this function is only present so that a C equivalent to the
+ *       Fortran wrappers is available. In C code, directly using the
+ *       cs_halo_sync_var() is preferred.
+ *
  * parameters:
  *   var  <->  scalar array
  *----------------------------------------------------------------------------*/
@@ -3306,15 +3366,53 @@ cs_mesh_sync_var_scal(cs_real_t  *var)
 {
   const cs_halo_t  *halo = cs_glob_mesh->halo;
 
-  if (halo == NULL) return;
+  if (halo != NULL)
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, var);
+}
 
-  cs_halo_sync_var(halo, CS_HALO_STANDARD, var);
+/*----------------------------------------------------------------------------
+ * Update a scalar array in case of parallelism and/or periodicity,
+ * using an extended halo.
+ *
+ * Note: this function is only present so that a C equivalent to the
+ *       Fortran wrappers is available. In C code, directly using the
+ *       cs_halo_sync_var() is preferred.
+ *
+ * parameters:
+ *   var  <->  scalar array
+ *----------------------------------------------------------------------------*/
 
-  if (cs_glob_mesh->n_init_perio > 0)
-    cs_halo_perio_sync_var_scal(halo,
-                                CS_HALO_STANDARD,
-                                CS_HALO_ROTATION_COPY,
-                                var);
+void
+cs_mesh_sync_var_scal_ext(cs_real_t  *var)
+{
+  const cs_halo_t  *halo = cs_glob_mesh->halo;
+
+  if (halo != NULL)
+    cs_halo_sync_var(halo, CS_HALO_EXTENDED, var);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a component of a vector for parallelism and/or periodicity,
+ * ignoring periodicity of rotation.
+ *
+ * Note: this function is only present so that a C equivalent to the
+ *       Fortran wrappers is available. In C code, directly using the
+ *       cs_halo_sync_var() is preferred.
+ *
+ * parameters:
+ *   var  <->  scalar array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_component(cs_real_t  *var)
+{
+  const cs_halo_t  *halo = cs_glob_mesh->halo;
+
+  if (halo != NULL)
+    cs_halo_sync_component(halo,
+                           CS_HALO_STANDARD,
+                           CS_HALO_ROTATION_IGNORE,
+                           var);
 }
 
 /*----------------------------------------------------------------------------
@@ -3342,7 +3440,6 @@ cs_mesh_sync_var_vect_ni(cs_real_t  *var1,
   if (cs_glob_mesh->n_init_perio > 0)
     cs_halo_perio_sync_var_vect_ni(halo,
                                    CS_HALO_STANDARD,
-                                   CS_HALO_ROTATION_COPY,
                                    var1, var2, var3);
 }
 
@@ -3367,6 +3464,27 @@ cs_mesh_sync_var_vect(cs_real_t  *var)
                                 CS_HALO_STANDARD,
                                 var,
                                 3);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a components of a vector for parallelism and/or periodicity,
+ * ignoring periodicity of rotation.
+ *
+ *   var                  <-> gradient components (interleaved)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_vect_no_rotation(cs_real_t  *var)
+{
+  const cs_halo_t  *halo = cs_glob_mesh->halo;
+
+  if (halo == NULL) return;
+
+  cs_halo_sync_components_strided(halo,
+                                  CS_HALO_STANDARD,
+                                  CS_HALO_ROTATION_IGNORE,
+                                  var,
+                                  3);
 }
 
 /*----------------------------------------------------------------------------

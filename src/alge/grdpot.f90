@@ -116,7 +116,7 @@ double precision grad(ncelet,3)
 
 ! Local variables
 
-integer          idimte , itenso
+integer          idimtr
 integer          iiu,iiv,iiw
 integer          iitytu
 integer          iir11,iir22,iir33
@@ -133,8 +133,7 @@ double precision climin
 
 ! The gradient of a potential (pressure, ...) is a vector
 
-idimte = 1
-itenso = 0
+idimtr = 0
 
 !===============================================================================
 ! 1. CALCUL DU GRADIENT
@@ -144,7 +143,7 @@ itenso = 0
 call cgdcel                                                       &
 !==========
  ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivar   ,          &
-   imrgra , inc    , iccocg , nswrgp , idimte , itenso , iphydp , &
+   imrgra , inc    , iccocg , nswrgp , idimtr , iphydp ,          &
    iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
    ifacel , ifabor , icelbr , isympa ,                            &
    volume , surfac , surfbo , surfbn , pond,                      &

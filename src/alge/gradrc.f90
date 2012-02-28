@@ -24,7 +24,7 @@ subroutine gradrc &
 !================
 
  ( ncelet , ncel   , nfac   , nfabor , ncelbr ,                   &
-   imrgra , inc    , iccocg , nswrgp , idimte , itenso , iphydp , &
+   imrgra , inc    , iccocg , nswrgp , idimtr , iphydp ,          &
    iwarnp , nfecra , epsrgp , extrap ,                            &
    ifacel , ifabor , icelbr , ivar   ,                            &
    volume , surfac , surfbo , pond   , xyzcen , cdgfac , cdgfbo , &
@@ -62,22 +62,9 @@ subroutine gradrc &
 !                  !    !     !              0 sinon                           !
 ! nswrgp           ! e  ! <-- ! nombre de sweep pour reconstruction            !
 !                  !    !     !             des gradients                      !
-! idimte           ! e  ! <-- ! dimension de la varible (maximum 3)            !
-!                  !    !     ! 0 : scalaire (var11) ou assimile               !
-!                  !    !     !     scalaire                                   !
-!                  !    !     ! 1 : vecteur (var11,var22,var33)                !
-!                  !    !     ! 2 : tenseur d'ordre 2 (varij)                  !
-! itenso           ! e  ! <-- ! pour l'explicitation de la rotation            !
-!                  !    !     ! 0 : scalaire (var11)                           !
-!                  !    !     ! 1 : composante de vecteur ou de                !
-!                  !    !     !     tenseur (var11) implcite pour la           !
-!                  !    !     !     translation                                !
-!                  !    !     !11 : reprend le traitement itenso=1 et          !
-!                  !    !     !     composante de vecteur ou de                !
-!                  !    !     !     tenseur (var11) annulee  pour la           !
-!                  !    !     !     rotation                                   !
-!                  !    !     ! 2 : vecteur (var11 et var22 et var33)          !
-!                  !    !     !     implicite pour la translation              !
+! idimtr           ! i  ! <-- ! 0 if ivar does not match a vector or tensor    !
+!                  !    !     !   or there is no periodicity of rotation       !
+!                  !    !     ! 1 for velocity, 2 for Reynolds stress          !
 ! ivar             ! e  ! <-- ! indicateur du numero de la variable            !
 !                  !    !     ! (ou 0 si variable non resolue)                 !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
@@ -107,6 +94,9 @@ subroutine gradrc &
 !                  !    !     !  a la face interne                             !
 ! diipb            ! tr ! <-- ! vect ii', ii projection du centre i            !
 !   (3,nfabor)     !    !     !  sur la normale a la face de bord              !
+! dofij(3,nfac)    ! tr ! --> ! vecteur of pour les faces internes             !
+!                  !    !     ! o : intersection de ij et la face              !
+!                  !    !     ! f : centre de la face                          !
 ! coefap, b        ! tr ! <-- ! tableaux des cond lim pour pvar                !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
 ! pvar  (ncelet    ! tr ! <-- ! variable                                       !
@@ -119,9 +109,6 @@ subroutine gradrc &
 ! dpdx dpdy        ! tr ! <-- ! gradient de pvar                               !
 ! dpdz (ncelet     ! tr !     !   (halo rempli pour la periodicite)            !
 ! bx,y,z(ncelet    ! tr ! --- ! tableau de travail pour le grad de p           !
-! dofij(3,nfac)    ! tr ! --> ! vecteur of pour les faces internes             !
-!                  !    !     ! o : intersection de ij et la face              !
-!                  !    !     ! f : centre de la face                          !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -150,7 +137,7 @@ implicit none
 
 integer          ncelet , ncel   , nfac   , nfabor , ncelbr
 integer          imrgra , inc    , iccocg , nswrgp
-integer          ivar   , idimte , itenso , iphydp
+integer          ivar   , idimtr , iphydp
 integer          iwarnp , nfecra
 double precision epsrgp , extrap
 
@@ -199,7 +186,6 @@ save             ipass
 isqrt = 1
 nswmax = nswrgp
 isweep = 1
-
 
 !===============================================================================
 ! 2. CALCUL SANS RECONSTRUCTION
@@ -299,26 +285,20 @@ if (imrgra.eq.0) then
     dpdz(iel) = bz(iel)*unsvol
   enddo
 
-!     TRAITEMENT DU PARALLELISME
+  ! Synchronize halos
 
-  if(irangp.ge.0) then
-    call parcom (dpdx)
-    !==========
-    call parcom (dpdy)
-    !==========
-    call parcom (dpdz)
-    !==========
-  endif
-
-!     TRAITEMENT DE LA PERIODICITE
-
-  if(iperio.eq.1) then
-    call percom                                                   &
-    !==========
-    ( idimte , itenso ,                                           &
-      dpdx   , dpdx   , dpdx  ,                                   &
-      dpdy   , dpdy   , dpdy  ,                                   &
-      dpdz   , dpdz   , dpdz  )
+  if (irangp.ge.0 .or. iperio.eq.1) then
+    if (idimtr .eq. 0) then
+      call synvec(dpdx, dpdy, dpdz)
+      !==========
+    else
+      call syncmp(dpdx)
+      !===========
+      call syncmp(dpdy)
+      !===========
+      call syncmp(dpdz)
+      !===========
+    endif
   endif
 
 endif
@@ -726,29 +706,21 @@ do iel =1,ncel
 
 enddo
 
+! Synchronize halos
 
-!     TRAITEMENT DU PARALLELISME
-
-if(irangp.ge.0) then
-  call parcom (dpdx)
-  !==========
-  call parcom (dpdy)
-  !==========
-  call parcom (dpdz)
-  !==========
+if (irangp.ge.0 .or. iperio.eq.1) then
+  if (idimtr .eq. 0) then
+    call synvec(dpdx, dpdy, dpdz)
+    !==========
+  else
+    call syncmp(dpdx)
+    !===========
+    call syncmp(dpdy)
+    !===========
+    call syncmp(dpdz)
+    !===========
+  endif
 endif
-
-!     TRAITEMENT DE LA PERIODICITE
-
-if(iperio.eq.1) then
-  call percom                                                     &
-  !==========
-  ( idimte , itenso ,                                             &
-    dpdx   , dpdx   , dpdx  ,                                     &
-    dpdy   , dpdy   , dpdy  ,                                     &
-    dpdz   , dpdz   , dpdz  )
-endif
-
 
 ! ---> TEST DE CONVERGENCE
 

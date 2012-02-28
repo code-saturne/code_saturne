@@ -248,8 +248,8 @@ extern void CS_PROCF (gradmc, GRADMC)
  const cs_int_t   *inc,      /* <-- 0 or 1: increment or not */
  const cs_int_t   *iccocg,   /* <-- 1 or 0: recompute COCG or not */
  const cs_int_t   *nswrgp,   /* <-- >1: with reconstruction */
- const cs_int_t   *idimte,   /* <-- 0, 1, 2: scalar, vector, tensor */
- const cs_int_t   *itenso,   /* <-- for rotational periodicity */
+ const cs_int_t   *idimtr,   /* <-- 0, 1, 2: scalar, vector, tensor
+                                    for rotational periodicity */
  const cs_int_t   *iphydp,   /* <-- use hydrosatatic pressure */
  const cs_int_t   *imrgra,   /* <-- gradient computation mode */
  const cs_int_t   *iwarnp,   /* <-- verbosity level */
@@ -284,12 +284,12 @@ extern void CS_PROCF (gradmc, GRADMC)
                                     on boundary's interior faces */
        cs_real_t   cocg[],   /* <-> contribution to COCG of cells on
                                     on boundary's boundary faces */
-       cs_real_t   dpdx[],   /* --> gradient x component */
-       cs_real_t   dpdy[],   /* --> gradient y component */
-       cs_real_t   dpdz[],   /* --> gradient z component */
-       cs_real_t   bx[],     /* --- local work array */
-       cs_real_t   by[],     /* --- local work array */
-       cs_real_t   bz[]      /* --- local work array */
+       cs_real_t   dpdx[],   /* --> gradient x component             */
+       cs_real_t   dpdy[],   /* --> gradient y component             */
+       cs_real_t   dpdz[],   /* --> gradient z component             */
+       cs_real_t   bx[],     /* --- local work array                 */
+       cs_real_t   by[],     /* --- local work array                 */
+       cs_real_t   bz[]      /* --- local work array                 */
 );
 
 /*----------------------------------------------------------------------------
@@ -298,50 +298,50 @@ extern void CS_PROCF (gradmc, GRADMC)
 
 extern void CS_PROCF (gradrc, GRADRC)
 (
- const cs_int_t   *const ncelet,      /* --> number of extended cells         */
- const cs_int_t   *const ncel,        /* --> number of cells                  */
- const cs_int_t   *const nfac,        /* --> number of internal faces         */
- const cs_int_t   *const nfabor,      /* --> number of boundary faces         */
- const cs_int_t   *const ncelbr,      /* --> number of cells on boundary      */
- const cs_int_t   *const imrgra,      /* --> gradient computation mode        */
- const cs_int_t   *const inc,         /* --> 0 or 1: increment or not         */
- const cs_int_t   *const iccocg,      /* --> 1 or 0: recompute COCG or not    */
- const cs_int_t   *const nswrgp,      /* --> >1: with reconstruction          */
- const cs_int_t   *const idimte,      /* --> 0, 1, 2: scalar, vector, tensor  */
- const cs_int_t   *const itenso,      /* --> for rotational periodicity       */
- const cs_int_t   *const iphydp,      /* --> use hydrosatatic pressure        */
- const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
- const cs_int_t   *const nfecra,      /* --> standard output unit             */
- const cs_real_t  *const epsrgp,      /* --> precision for iterative gradient
+ const cs_int_t   *const ncelet,      /* <-- number of extended cells         */
+ const cs_int_t   *const ncel,        /* <-- number of cells                  */
+ const cs_int_t   *const nfac,        /* <-- number of internal faces         */
+ const cs_int_t   *const nfabor,      /* <-- number of boundary faces         */
+ const cs_int_t   *const ncelbr,      /* <-- number of cells on boundary      */
+ const cs_int_t   *const imrgra,      /* <-- gradient computation mode        */
+ const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
+ const cs_int_t   *const iccocg,      /* <-- 1 or 0: recompute COCG or not    */
+ const cs_int_t   *const nswrgp,      /* <-- >1: with reconstruction          */
+ const cs_int_t   *const idimtr,      /* <-- 0, 1, 2: scalar, vector, tensor
+                                             for rotational periodicity       */
+ const cs_int_t   *const iphydp,      /* <-- use hydrosatatic pressure        */
+ const cs_int_t   *const iwarnp,      /* <-- verbosity level                  */
+ const cs_int_t   *const nfecra,      /* <-- standard output unit             */
+ const cs_real_t  *const epsrgp,      /* <-- precision for iterative gradient
                                              calculation                      */
- const cs_real_t  *const extrap,      /* --> extrapolate gradient at boundary */
- const cs_int_t          ifacel[],    /* --> interior face->cell connectivity */
- const cs_int_t          ifabor[],    /* --> boundary face->cell connectivity */
- const cs_int_t          icelbr[],    /* --> list of cells on boundary        */
- const cs_int_t   *const ivar,        /* --> variable number                  */
- const cs_real_t         volume[],    /* --> cell volumes                     */
- const cs_real_t         surfac[],    /* --> surfaces of internal faces       */
- const cs_real_t         surfbo[],    /* --> surfaces of boundary faces       */
- const cs_real_t         pond[],      /* --> interior faces geometric weight  */
- const cs_real_t         xyzcen[],    /* --> cell centers                     */
- const cs_real_t         cdgfac[],    /* --> interior face centers of gravity */
- const cs_real_t         cdgfbo[],    /* --> boundary face centers of gravity */
- const cs_real_t         dijpf[],     /* --> interior faces I'J' vector       */
- const cs_real_t         diipb[],     /* --> boundary faces II' vector        */
- const cs_real_t         dofij[],     /* --> interior faces OF vector         */
- const cs_real_t         fextx[],     /* --> components of the exterior force */
+ const cs_real_t  *const extrap,      /* <-- extrapolate gradient at boundary */
+ const cs_int_t          ifacel[],    /* <-- interior face->cell connectivity */
+ const cs_int_t          ifabor[],    /* <-- boundary face->cell connectivity */
+ const cs_int_t          icelbr[],    /* <-- list of cells on boundary        */
+ const cs_int_t   *const ivar,        /* <-- variable number                  */
+ const cs_real_t         volume[],    /* <-- cell volumes                     */
+ const cs_real_t         surfac[],    /* <-- surfaces of internal faces       */
+ const cs_real_t         surfbo[],    /* <-- surfaces of boundary faces       */
+ const cs_real_t         pond[],      /* <-- interior faces geometric weight  */
+ const cs_real_t         xyzcen[],    /* <-- cell centers                     */
+ const cs_real_t         cdgfac[],    /* <-- interior face centers of gravity */
+ const cs_real_t         cdgfbo[],    /* <-- boundary face centers of gravity */
+ const cs_real_t         dijpf[],     /* <-- interior faces I'J' vector       */
+ const cs_real_t         diipb[],     /* <-- boundary faces II' vector        */
+ const cs_real_t         dofij[],     /* <-- interior faces OF vector         */
+ const cs_real_t         fextx[],     /* <-- components of the exterior force */
  const cs_real_t         fexty[],     /*     generating the hydrostatic       */
  const cs_real_t         fextz[],     /*     pressure                         */
- const cs_real_t         coefap[],    /* --> boundary condition term          */
- const cs_real_t         coefbp[],    /* --> boundary condition term          */
- const cs_real_t         pvar[],      /* --> gradient's base variable         */
+ const cs_real_t         coefap[],    /* <-- boundary condition term          */
+ const cs_real_t         coefbp[],    /* <-- boundary condition term          */
+ const cs_real_t         pvar[],      /* <-- gradient's base variable         */
        cs_real_t         cocgb[],     /* <-> contribution to COCG of cells
                                              on boundary's internal faces     */
        cs_real_t         cocg[],      /* <-> contribution to COCG of cells
                                              on boundary's boundary faces     */
-       cs_real_t         dpdx[],      /* <-- gradient x component             */
-       cs_real_t         dpdy[],      /* <-- gradient y component             */
-       cs_real_t         dpdz[],      /* <-- gradient z component             */
+       cs_real_t         dpdx[],      /* --> gradient x component             */
+       cs_real_t         dpdy[],      /* --> gradient y component             */
+       cs_real_t         dpdz[],      /* --> gradient z component             */
        cs_real_t         bx[],        /* --- local work array                 */
        cs_real_t         by[],        /* --- local work array                 */
        cs_real_t         bz[]         /* --- local work array                 */
@@ -353,37 +353,37 @@ extern void CS_PROCF (gradrc, GRADRC)
 
 extern void CS_PROCF (gradrv, GRADRV)
 (
- const cs_int_t   *const ncelet,      /* --> number of extended cells         */
- const cs_int_t   *const ncel,        /* --> number of cells                  */
- const cs_int_t   *const nfac,        /* --> number of internal faces         */
- const cs_int_t   *const nfabor,      /* --> number of boundary faces         */
- const cs_int_t   *const imrgra,      /* --> gradient computation mode        */
- const cs_int_t   *const inc,         /* --> 0 or 1: increment or not         */
- const cs_int_t   *const nswrgp,      /* --> >1: with reconstruction          */
- const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
- const cs_int_t   *const nfecra,      /* --> standard output unit             */
- const cs_real_t  *const epsrgp,      /* --> precision for iterative gradient
+ const cs_int_t   *const ncelet,      /* <-- number of extended cells         */
+ const cs_int_t   *const ncel,        /* <-- number of cells                  */
+ const cs_int_t   *const nfac,        /* <-- number of internal faces         */
+ const cs_int_t   *const nfabor,      /* <-- number of boundary faces         */
+ const cs_int_t   *const imrgra,      /* <-- gradient computation mode        */
+ const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
+ const cs_int_t   *const nswrgp,      /* <-- >1: with reconstruction          */
+ const cs_int_t   *const iwarnp,      /* <-- verbosity level                  */
+ const cs_int_t   *const nfecra,      /* <-- standard output unit             */
+ const cs_real_t  *const epsrgp,      /* <-- precision for iterative gradient
                                              calculation                      */
- const cs_real_t  *const extrap,      /* --> extrapolate gradient at boundary */
- const cs_int_t          ifacel[],    /* --> interior face->cell connectivity */
- const cs_int_t          ifabor[],    /* --> boundary face->cell connectivity */
+ const cs_real_t  *const extrap,      /* <-- extrapolate gradient at boundary */
+ const cs_int_t          ifacel[],    /* <-- interior face->cell connectivity */
+ const cs_int_t          ifabor[],    /* <-- boundary face->cell connectivity */
  const cs_int_t   *const ivar,        /* --> variable number                  */
- const cs_real_t         volume[],    /* --> cell volumes                     */
- const cs_real_t         surfac[],    /* --> surfaces of internal faces       */
- const cs_real_t         surfbo[],    /* --> surfaces of boundary faces       */
- const cs_real_t         pond[],      /* --> interior faces geometric weight  */
- const cs_real_t         xyzcen[],    /* --> cell centers                     */
- const cs_real_t         cdgfac[],    /* --> interior face centers of gravity */
- const cs_real_t         cdgfbo[],    /* --> boundary face centers of gravity */
- const cs_real_t         dijpf[],     /* --> interior faces I'J' vector       */
- const cs_real_t         diipb[],     /* --> boundary faces II' vector        */
- const cs_real_t         dofij[],     /* --> interior faces OF vector         */
- const cs_real_t         coefap[],    /* --> boundary condition term          */
- const cs_real_t         coefbp[],    /* --> boundary condition term          */
- const cs_real_t         pvar[],      /* --> gradient's base variable         */
+ const cs_real_t         volume[],    /* <-- cell volumes                     */
+ const cs_real_t         surfac[],    /* <-- surfaces of internal faces       */
+ const cs_real_t         surfbo[],    /* <-- surfaces of boundary faces       */
+ const cs_real_t         pond[],      /* <-- interior faces geometric weight  */
+ const cs_real_t         xyzcen[],    /* <-- cell centers                     */
+ const cs_real_t         cdgfac[],    /* <-- interior face centers of gravity */
+ const cs_real_t         cdgfbo[],    /* <-- boundary face centers of gravity */
+ const cs_real_t         dijpf[],     /* <-- interior faces I'J' vector       */
+ const cs_real_t         diipb[],     /* <-- boundary faces II' vector        */
+ const cs_real_t         dofij[],     /* <-- interior faces OF vector         */
+ const cs_real_t         coefap[],    /* <-- boundary condition term          */
+ const cs_real_t         coefbp[],    /* <-- boundary condition term          */
+ const cs_real_t         pvar[],      /* <-- gradient's base variable         */
        cs_real_t         cocg[],      /* <-> contribution to COCG of cells
                                              on boundary's boundary faces     */
-       cs_real_t         grad[]       /* <-- gradient                         */
+       cs_real_t         grad[]       /* --> gradient                         */
 );
 
 /*----------------------------------------------------------------------------
@@ -547,6 +547,35 @@ void CS_PROCF (usmpst, USMPST)
  cs_real_t        tracel[],  /* --- work array for output cells */
  cs_real_t        trafac[],  /* --- work array for output interior faces */
  cs_real_t        trafbr[]   /* --- work array for output boundary faces */
+);
+
+/*----------------------------------------------------------------------------
+ * Indicate if the variable considered is a component of a vector or tensor
+ * in the presence of periodicity of rotation
+ *
+ * Fortran interface:
+ *
+ * subroutine pergra (ivar, ipvar)
+ * *****************
+ *
+ * integer    ivar      : <-- : variable number
+ * integer    idimtr    : --> : 0 if ivar does not match a vector or tensor
+ *                      :     :   or there is no periodicity of rotation
+ *                      :     : 1 for velocity, 2 for Reynolds stress
+ *                      :     :   in case of periodicity of rotation
+ * integer    irpvar    : --> : -1 if ivar does not match a vector or tensor
+ *                      :     :    or there is no periodicity of rotation
+ *                      :     : In presence of periodicity of rotation:
+ *                      :     :  0 for iu, 1 for iv, 2 for iw
+ *                      :     :  0 for ir11, 1 for ir22, 2 for ir33,
+ *                      :     :  3 for ir12, 4 for ir13, 5 for ir23
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pergra, PERGRA)
+(
+ const cs_int_t  *ivar,
+ const cs_int_t  *idimtr,
+ const cs_int_t  *irpvar
 );
 
 /*----------------------------------------------------------------------------

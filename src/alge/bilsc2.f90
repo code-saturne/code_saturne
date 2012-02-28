@@ -154,11 +154,7 @@ double precision smbrp(ncelet)
 character*80     chaine
 character*8      cnom
 integer          ifac,ii,jj,infac,iel,iupwin, iij, iii, iok
-integer          itenso, idimte
-integer          iiu,iiv,iiw
-integer          iitytu
-integer          iir11,iir22,iir33
-integer          iir12,iir13,iir23
+integer          idimtr, irpvar
 double precision pfac,pfacd,flui,fluj,flux,fluxi,fluxj
 double precision difx,dify,difz,djfx,djfy,djfz
 double precision pif,pjf,pip,pjp,pir,pjr,pipr,pjpr
@@ -300,7 +296,7 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
     pfac = inc*coefap(ifac )                                    &
-         +coefbp(ifac )*(pvar(ii)+diipbx*grad(ii,1)              &
+         +coefbp(ifac )*(pvar(ii)+diipbx*grad(ii,1)             &
          +diipby*grad(ii,2)+diipbz*grad(ii,3) )
     dpdxa(ii) = dpdxa(ii) +pfac*surfbo(1,ifac )
     dpdya(ii) = dpdya(ii) +pfac*surfbo(2,ifac )
@@ -314,52 +310,23 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
     dpdza(iel) = dpdza(iel)*unsvol
   enddo
 
-!     TRAITEMENT DU PARALLELISME
+  ! Synchronization for parallelism or periodicity
 
-  if(irangp.ge.0) then
-    call parcom (dpdxa)
-    !==========
-    call parcom (dpdya)
-    !==========
-    call parcom (dpdza)
+  if (irangp.ge.0 .or. iperio.eq.1) then
+    call synvec(dpdxa, dpdya, dpdza)
     !==========
   endif
 
-! TRAITEMENT DE LA PERIODICITE
-
-!  On echange pour la translation
-!   pour la rotation, on prend le gradient simple (pas de temps precedent)
-
-  if(iperio.eq.1) then
-
-!        Pour les rotations
-!          avec la vitesse et les tensions de Reynolds,
-!          on utilise la valeur du gradient simple (PERING) a defaut de mieux.
-!        Dans les autres cas, on echange DPDXA
-
-!        On recupere d'abord certains COMMON necessaires a PERING
-
-    call pergra                                                   &
+  if (iperot.eq.1) then
+    call pergra(ivar, idimtr, irpvar)
     !==========
-  ( iiu    , iiv    , iiw    ,                                    &
-    iitytu ,                                                      &
-    iir11  , iir22  , iir33  , iir12  , iir13  , iir23  )
-
-    call pering                                                   &
-    !==========
-  ( ivar   ,                                                      &
-    idimte , itenso , iperot , iguper , igrper ,                  &
-    iiu    , iiv    , iiw    , iitytu ,                           &
-    iir11  , iir22  , iir33  , iir12  , iir13  , iir23  ,         &
-    dpdxa  , dpdya  , dpdza  ,                                    &
-    dudxy  , drdxy  )
-
-    call percom                                                   &
-    !==========
-  ( idimte , itenso ,                                             &
-    dpdxa  , dpdxa  , dpdxa ,                                     &
-    dpdya  , dpdya  , dpdya ,                                     &
-    dpdza  , dpdza  , dpdza )
+    if (idimtr .gt. 0) then
+      call pering                                               &
+      !==========
+      ( idimtr , irpvar , iguper , igrper ,                     &
+        dpdxa, dpdya, dpdza,                                    &
+        dudxy  , drdxy  )
+    endif
   endif
 
 endif

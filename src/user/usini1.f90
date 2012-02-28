@@ -1384,6 +1384,9 @@ if (nmodpp.eq.0) then
   !   or -1 if there is none.
   ! When the choice is done by the Code_Saturne GUI, the scalar representing
   !   the temperature or enthalpy is always the first.
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
   iscalt = -1
 
 ! If there is a temperature or enthalpy variable:
@@ -1391,6 +1394,8 @@ if (nmodpp.eq.0) then
     ! we indicate if it is the temperature (=1) or the enthalpy (=2).
     iscsth(iscalt) = 1
   endif
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 endif
 

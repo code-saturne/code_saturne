@@ -273,10 +273,9 @@ iinvpe = 0
 if(iperio.eq.1) then
 
 
-!    Par defaut, toutes les periodicites seront traitees dans percom,
+!    Par defaut, toutes les periodicites seront traitees,
 !      les variables etant assimilees a des scalaires (meme si ce sont
 !      des composantes de vecteurs ou de tenseur)
-  idimte = 0
   itenso = 0
 
   iinvpe = 1
@@ -288,15 +287,14 @@ if(iperio.eq.1) then
 
     !    Pour la vitesse et les tensions de Reynolds, et les tpucou
     !      seules seront echangees les informations sur les faces periodiques
-    !      de translation dans percom ; on ne touche pas aux informations
+    !      de translation ; on ne touche pas aux informations
     !      relatives aux faces de periodicite de rotation.
-    idimte = 0
     itenso = 1
 
     !      Lors de la resolution par increments, on echangera egalement les
     !      informations relatives aux faces de periodicite de translation.
     !      Pour les faces de periodicite de rotation, l'increment sera
-    !      annule dans percom (iinvpe=2).
+    !      annule en appelant syncmp au lieu de synsca (iinvpe=2).
     iinvpe = 2
 
   endif
@@ -499,22 +497,18 @@ do 100 isweep = 1, nswmod
     pvar(iel) = pvar(iel)+dpvar(iel)
   enddo
 
-! ---> TRAITEMENT DU PARALLELISME
+! ---> Handle parallelism and periodicity
+!      (periodicity of rotation is not ensured here)
 
-if(irangp.ge.0) call parcom (pvar)
-                !==========
-
-! ---> TRAITEMENT DE LA PERIODICITE : SEULE LA PERIODICITE IMPLICITE
-!      EST ASSUREE (SCALAIRE ET TRANSLATION DE VECTEUR ET DE TENSEUR)
-
-if(iperio.eq.1) then
-  call percom                                                     &
-  !==========
-  ( idimte , itenso ,                                             &
-    pvar   , pvar   , pvar  ,                                     &
-    pvar   , pvar   , pvar  ,                                     &
-    pvar   , pvar   , pvar  )
-endif
+  if (irangp.ge.0 .or. iperio.eq.1) then
+    if (itenso.eq.0) then
+      call synsca (pvar)
+      !==========
+    else if (itenso.eq.1) then
+      call syncmp (pvar)
+      !==========
+    endif
+  endif
 
 ! ---> TEST DE CONVERGENCE
 

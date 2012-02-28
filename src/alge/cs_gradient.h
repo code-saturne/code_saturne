@@ -84,8 +84,8 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_int_t   *const inc,         /* --> 0 or 1: increment or not         */
  const cs_int_t   *const iccocg,      /* --> 1 or 0: recompute COCG or not    */
  const cs_int_t   *const nswrgp,      /* --> >1: with reconstruction          */
- const cs_int_t   *const idimte,      /* --> 0, 1, 2: scalar, vector, tensor  */
- const cs_int_t   *const itenso,      /* --> for rotational periodicity       */
+ const cs_int_t   *const idimtr,      /* --> 0, 1, 2: scalar, vector, tensor
+                                             in case of rotation              */
  const cs_int_t   *const iphydp,      /* --> use hydrosatatic pressure        */
  const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
  const cs_int_t   *const nfecra,      /* --> standard output unit             */

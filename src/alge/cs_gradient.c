@@ -254,34 +254,36 @@ _find_or_add_system(const char          *name,
  * extended neighborhood.
  *
  * parameters:
- *   imrgra         --> type of computation for the gradient
- *   imligp         --> type of clipping for the computation of the gradient
- *   iwarnp         --> output level
- *   itenso         --> for rotational periodicity
- *   climgp         --> clipping coefficient for the computation of the gradient
- *   var            --> variable
- *   dpdx           --> X component of the pressure gradient
- *   dpdy           --> Y component of the pressure gradient
- *   dpdz           --> Z component of the pressure gradient
+ *   imrgra         <-- type of computation for the gradient
+ *   imligp         <-- type of clipping for the computation of the gradient
+ *   iwarnp         <-- output level
+ *   idimtr         <-- 0 for scalars or without rotational periodicity,
+ *                      1 or 2 for vectors or tensors in case of rotational
+ *                      periodicity
+ *   climgp         <-- clipping coefficient for the computation of the gradient
+ *   var            <-- variable
+ *   dpdx           <-> X component of the pressure gradient
+ *   dpdy           <-> Y component of the pressure gradient
+ *   dpdz           <-> Z component of the pressure gradient
  *----------------------------------------------------------------------------*/
 
 static void
 _gradient_clipping(const cs_int_t   *imrgra,
                    const cs_int_t   *imligp,
                    const cs_int_t   *iwarnp,
-                   const cs_int_t   *itenso,
+                   const cs_int_t   *idimtr,
                    const cs_real_t  *climgp,
                    cs_real_t         var[],
                    cs_real_t         dpdx[],
                    cs_real_t         dpdy[],
                    cs_real_t         dpdz[])
 {
-  cs_int_t  i, i1, i2, j, k;
+  cs_lnum_t  i, i1, i2, j, k;
   cs_real_t  dist[3];
   cs_real_t  dvar, dist1, dist2, dpdxf, dpdyf, dpdzf;
   cs_real_t  global_min_factor, global_max_factor, factor1, factor2;
 
-  cs_int_t  n_clip = 0, n_g_clip =0;
+  cs_gnum_t  n_clip = 0, n_g_clip =0;
   cs_real_t  min_factor = 1;
   cs_real_t  max_factor = 0;
   cs_real_t  *restrict buf = NULL, *restrict clip_factor = NULL;
@@ -290,11 +292,11 @@ _gradient_clipping(const cs_int_t   *imrgra,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_int_t  n_i_faces = mesh->n_i_faces;
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
-  const cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
-  const cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
+  const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
   const cs_real_t  *cell_cen = cs_glob_mesh_quantities->cell_cen;
 
   const cs_halo_t *halo = mesh->halo;
@@ -315,7 +317,7 @@ _gradient_clipping(const cs_int_t   *imrgra,
 
     if (*imligp == 1) {
 
-      if (*itenso == 2){
+      if (*idimtr > 0){
         cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, dpdx);
         cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, dpdy);
         cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, dpdz);
@@ -325,7 +327,6 @@ _gradient_clipping(const cs_int_t   *imrgra,
         cs_halo_sync_var(halo, halo_type, dpdy);
         cs_halo_sync_var(halo, halo_type, dpdz);
         cs_halo_perio_sync_var_vect_ni(halo, halo_type,
-                                       CS_HALO_ROTATION_COPY,
                                        dpdx, dpdy, dpdz);
       }
 
@@ -487,7 +488,7 @@ _gradient_clipping(const cs_int_t   *imrgra,
     /* Synchronize variable */
 
     if (halo != NULL) {
-      if (*itenso == 2) {
+      if (*idimtr > 0) {
         cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, denom);
         cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, denum);
       }
@@ -585,9 +586,7 @@ _gradient_clipping(const cs_int_t   *imrgra,
 
     /* Sum number of clippings */
 
-    assert(sizeof(cs_int_t) == sizeof(int));
-
-    MPI_Allreduce(&n_clip, &n_g_clip, 1, CS_MPI_INT,
+    MPI_Allreduce(&n_clip, &n_g_clip, 1, CS_MPI_GNUM,
                   MPI_SUM, cs_glob_mpi_comm);
 
     n_clip = n_g_clip;
@@ -599,15 +598,15 @@ _gradient_clipping(const cs_int_t   *imrgra,
   /* Output warning if necessary */
 
   if (*iwarnp > 1)
-    bft_printf(_(" GRADIENT LIMITATION in %10d cells\n"
-                 "    MINIMUM FACTOR = %14.5e; MAXIMUM FACTOR = %14.5e\n"),
-               n_clip, min_factor, max_factor);
+    bft_printf(_(" Gradient limitation in %llu cells\n"
+                 "   minimum factor = %14.5e; maximum factor = %14.5e\n"),
+               (unsigned long long)n_clip, min_factor, max_factor);
 
   /* Synchronize dpdx, dpdy, dpdz */
 
   if (halo != NULL) {
 
-    if (*itenso == 2) {
+    if (*idimtr > 0) {
 
       /* If the gradient is not treated as a "true" vector */
 
@@ -624,7 +623,6 @@ _gradient_clipping(const cs_int_t   *imrgra,
 
       cs_halo_perio_sync_var_vect_ni(halo,
                                      halo_type,
-                                     CS_HALO_ROTATION_COPY,
                                      dpdx, dpdy, dpdz);
 
     }
@@ -658,8 +656,8 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_int_t   *const inc,         /* --> 0 or 1: increment or not         */
  const cs_int_t   *const iccocg,      /* --> 1 or 0: recompute COCG or not    */
  const cs_int_t   *const nswrgp,      /* --> >1: with reconstruction          */
- const cs_int_t   *const idimte,      /* --> 0, 1, 2: scalar, vector, tensor  */
- const cs_int_t   *const itenso,      /* --> for rotational periodicity       */
+ const cs_int_t   *const idimtr,      /* --> 0, 1, 2: scalar, vector, tensor
+                                             in case of rotation              */
  const cs_int_t   *const iphydp,      /* --> use hydrosatatic pressure        */
  const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
  const cs_int_t   *const nfecra,      /* --> standard output unit             */
@@ -710,8 +708,6 @@ void CS_PROCF (cgdcel, CGDCEL)
   cs_gradient_info_t *gradient_info = NULL;
   cs_timer_t t0, t1;
 
-  char *var_name = NULL;
-
   cs_int_t  *ipcvse = NULL;
   cs_int_t  *ielvse = NULL;
 
@@ -747,10 +743,9 @@ void CS_PROCF (cgdcel, CGDCEL)
   default: break;
   }
 
-  BFT_MALLOC(var_name, 8, char);
-  sprintf(var_name, "Var. %2d", *ivar);
-
   if (update_stats == true) {
+    char var_name[32];
+    snprintf(var_name, 31, "Var. %2d", *ivar); var_name[31] = '\0';
     t0 = cs_timer_time();
     gradient_info = _find_or_add_system(var_name, gradient_type);
   }
@@ -762,17 +757,17 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   if (*imrgra != 0 && halo != NULL) {
 
-    if (*itenso == 2)
+    if (*idimtr > 0)
       cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, pvar);
     else
       cs_halo_sync_var(halo, halo_type, pvar);
 
     /* TODO: check if fext* components are all up to date, in which
-     *       case we need no special treatment for *itenso = 2 */
+     *       case we need no special treatment for *idimtr > 0 */
 
     if (*iphydp != 0) {
 
-      if (*itenso == 2){
+      if (*idimtr > 0){
         cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fextx);
         cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fexty);
         cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fextz);
@@ -781,8 +776,7 @@ void CS_PROCF (cgdcel, CGDCEL)
         cs_halo_sync_var(halo, halo_type, fextx);
         cs_halo_sync_var(halo, halo_type, fexty);
         cs_halo_sync_var(halo, halo_type, fextz);
-        cs_halo_perio_sync_var_vect_ni(halo, halo_type, CS_HALO_ROTATION_COPY,
-                                       fextx, fexty, fextz);
+        cs_halo_perio_sync_var_vect_ni(halo, halo_type, fextx, fexty, fextz);
       }
     }
 
@@ -799,7 +793,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
     CS_PROCF (gradrc, GRADRC)
       (ncelet, ncel  , nfac  , nfabor, ncelbr,
-       imrgra, inc   , iccocg, nswrgp, idimte, itenso, iphydp,
+       imrgra, inc   , iccocg, nswrgp, idimtr, iphydp,
        iwarnp, nfecra, epsrgp, extrap,
        ifacel, ifabor, icelbr, ivar  ,
        volume, surfac, surfbo, pond  , xyzcen, cdgfac, cdgfbo,
@@ -814,7 +808,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
     CS_PROCF(gradmc, GRADMC)
       (ncelet, ncel  , nfac  , nfabor, ncelbr,
-       inc   , iccocg, nswrgp, idimte, itenso, iphydp, imrgra,
+       inc   , iccocg, nswrgp, idimtr, iphydp, imrgra,
        iwarnp, nfecra, epsrgp, extrap,
        ifacel, ifabor, icelbr, ipcvse, ielvse, isympa,
        volume, surfac, surfbo, surfbn, pond  ,
@@ -833,7 +827,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
     CS_PROCF(gradmc, GRADMC)
       (ncelet, ncel  , nfac  , nfabor, ncelbr,
-       inc   , iccocg, nswrgp, idimte, itenso, iphydp, imrgra,
+       inc   , iccocg, nswrgp, idimtr, iphydp, imrgra,
        iwarnp, nfecra, epsrgp, extrap,
        ifacel, ifabor, icelbr, ipcvse, ielvse, isympa,
        volume, surfac, surfbo, surfbn, pond  ,
@@ -844,12 +838,12 @@ void CS_PROCF (cgdcel, CGDCEL)
        dpdx  , dpdy  , dpdz  ,
        bx    , by    , bz    );
 
-    _gradient_clipping(imrgra, &_imlini, iwarnp, itenso, &_climin,
+    _gradient_clipping(imrgra, &_imlini, iwarnp, idimtr, &_climin,
                        pvar  , dpdx    , dpdy  , dpdz  );
 
     CS_PROCF (gradrc, GRADRC)
       (ncelet, ncel  , nfac  , nfabor, ncelbr,
-       imrgra, inc   , iccocg, nswrgp, idimte, itenso, iphydp,
+       imrgra, inc   , iccocg, nswrgp, idimtr, iphydp,
        iwarnp, nfecra, epsrgp, extrap,
        ifacel, ifabor, icelbr, ivar  ,
        volume, surfac, surfbo, pond  , xyzcen, cdgfac, cdgfbo,
@@ -861,7 +855,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   }
 
-  _gradient_clipping(imrgra, imligp, iwarnp, itenso, climgp,
+  _gradient_clipping(imrgra, imligp, iwarnp, idimtr, climgp,
                      pvar  , dpdx  , dpdy  , dpdz  );
 
   if (update_stats == true) {
@@ -870,7 +864,6 @@ void CS_PROCF (cgdcel, CGDCEL)
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
 
-  BFT_FREE(var_name);
   BFT_FREE(_aux_vectors);
 }
 
@@ -927,10 +920,7 @@ void CS_PROCF (cgdvec, CGDVEC)
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
 
   cs_gradient_info_t *gradient_info = NULL;
-  double  wt_start = 0.0, wt_stop = 0.0;
-  double  cpu_start = 0.0, cpu_stop = 0.0;
-
-  char *var_name = NULL;
+  cs_timer_t t0, t1;
 
   cs_int_t  *ipcvse = NULL;
   cs_int_t  *ielvse = NULL;
@@ -948,12 +938,10 @@ void CS_PROCF (cgdvec, CGDVEC)
   default: break;
   }
 
-  BFT_MALLOC(var_name, 7, char);
-  sprintf(var_name, "Var. %1d", *ivar);
-
   if (update_stats == true) {
-    wt_start = cs_timer_wtime();
-    cpu_start = cs_timer_cpu_time();
+    char var_name[32];
+    snprintf(var_name, 31, "Var. %2d", *ivar); var_name[31] = '\0';
+    t0 = cs_timer_time();
     gradient_info = _find_or_add_system(var_name, gradient_type);
   }
 
@@ -988,18 +976,12 @@ void CS_PROCF (cgdvec, CGDVEC)
   /* TODO *imrgra == 1 || *imrgra == 2 || *imrgra == 3 || *imrgra == 4 */
 
   /* TODO _gradient_clipping */
+
   if (update_stats == true) {
-
-    wt_stop = cs_timer_wtime();
-    cpu_stop = cs_timer_cpu_time();
-
     gradient_info->n_calls += 1;
-
-    CS_TIMER_COUNTER_INIT(gradient_info->t_tot);
-
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
-
-  BFT_FREE(var_name);
 }
 
 /*============================================================================
