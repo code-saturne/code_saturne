@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_H__
-#define __CS_LAGR_H__
+#ifndef __CS_LAGR_SNTOGR_H__
+#define __CS_LAGR_SNTOGR_H__
 
 /*============================================================================
  * Utilitarian functions for the diphasic lagrangian module
@@ -69,7 +69,7 @@ CS_PROCF (csieee,CSIEEE)(void);
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (coloca,COLOCA)(cs_real_t  *pvalmax,
+CS_PROCF (colosg,COLOSG)(cs_real_t  *pvalmax,
                          cs_real_t  *px,
                          cs_real_t  *py,
                          cs_real_t  *pz,
@@ -102,7 +102,7 @@ CS_PROCF (coloca,COLOCA)(cs_real_t  *pvalmax,
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (coturn,COTURN)(cs_real_t   *pvalmax,
+CS_PROCF (cotusg,COTUSG)(cs_real_t   *pvalmax,
                          cs_real_t   *px,
                          cs_real_t   *py,
                          cs_real_t   *pz,
@@ -122,4 +122,4 @@ CS_PROCF (coturn,COTURN)(cs_real_t   *pvalmax,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_H__ */
+#endif /* __CS_LAGR_SNTOGR_H__ */

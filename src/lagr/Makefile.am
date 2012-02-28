@@ -44,15 +44,17 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
-cs_lagr.h \
+cs_lagr_snap_to_grid.h \
+cs_lagr_utils.h \
 cs_lagr_perio.h
 
 # Library source files
 
 noinst_LTLIBRARIES = libcslagr.la
 libcslagr_la_SOURCES = \
-cs_lagr.c \
+cs_lagr_snap_to_grid.c \
 cs_lagr_perio.c \
+cs_lagr_utils.c \
 diverv.f90 \
 enslag.f90 \
 enswaf.f90 \
@@ -102,7 +104,8 @@ lagstf.f90 \
 lagswe.f90 \
 lagtri.f90 \
 lagune.f90 \
-ouestu.f90
+ouessg.f90 \
+ouestu.f90 
 libcslagr_la_LDFLAGS = -no-undefined
 
 clean-local:

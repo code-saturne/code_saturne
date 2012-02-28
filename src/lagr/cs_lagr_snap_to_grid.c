@@ -50,7 +50,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr.h"
+#include "cs_lagr_snap_to_grid.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -490,7 +490,7 @@ CS_PROCF (csieee,CSIEEE)(void)
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (coloca,COLOCA)(cs_real_t  *pvalmax,
+CS_PROCF (colosg,COLOSG)(cs_real_t  *pvalmax,
                          cs_real_t  *px,
                          cs_real_t  *py,
                          cs_real_t  *pz,
@@ -555,7 +555,7 @@ CS_PROCF (coloca,COLOCA)(cs_real_t  *pvalmax,
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (coturn,COTURN)(cs_real_t   *pvalmax,
+CS_PROCF (cotusg,COTUSG)(cs_real_t   *pvalmax,
                          cs_real_t   *px,
                          cs_real_t   *py,
                          cs_real_t   *pz,

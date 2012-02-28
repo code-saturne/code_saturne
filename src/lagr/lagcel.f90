@@ -416,16 +416,34 @@ do ip = 1,nbpart
         endif
 #endif
 
-        call ouestu                                               &
-        !==========
-   (    nfecra , ndim   , nnod ,                                  &
-        ierror ,                                                  &
-        ettpa(ip,jxp)  , ettpa(ip,jyp)  , ettpa(ip,jzp)  ,        &
-        ettp(ip,jxp)   , ettp(ip,jyp)   , ettp(ip,jzp)   ,        &
-        cdgfac(1,ifac)    , cdgfac(2,ifac)    , cdgfac(3,ifac)   ,&
-        xyzcen(1,iel)     , xyzcen(2,iel)     , xyzcen(3,iel)    ,&
-        itypfo , iconfo , xyznod ,                                &
-        indian )
+        if (istogr.eq.0) then
+
+           call ouestu                                               &
+           !==========
+      (    nfecra , ndim   , nnod ,                                  &
+           ierror ,                                                  &
+           ettpa(ip,jxp)  , ettpa(ip,jyp)  , ettpa(ip,jzp)  ,        &
+           ettp(ip,jxp)   , ettp(ip,jyp)   , ettp(ip,jzp)   ,        &
+           cdgfac(1,ifac)    , cdgfac(2,ifac)    , cdgfac(3,ifac)   ,&
+           xyzcen(1,iel)     , xyzcen(2,iel)     , xyzcen(3,iel)    ,&
+           itypfo , iconfo , xyznod ,                                &
+           indian )
+
+        else
+
+           call ouessg                                               &
+           !==========
+      (    nfecra , ndim   , nnod ,                                  &
+           ierror ,                                                  &
+           ettpa(ip,jxp)  , ettpa(ip,jyp)  , ettpa(ip,jzp)  ,        &
+           ettp(ip,jxp)   , ettp(ip,jyp)   , ettp(ip,jzp)   ,        &
+           cdgfac(1,ifac)    , cdgfac(2,ifac)    , cdgfac(3,ifac)   ,&
+           xyzcen(1,iel)     , xyzcen(2,iel)     , xyzcen(3,iel)    ,&
+           itypfo , iconfo , xyznod ,                                &
+           indian )
+
+        endif
+
 
 #if DEBUG_LAGCEL
         if (impltg.eq.1) write(nfecra,9004) ip , ifac , indian
@@ -974,16 +992,36 @@ do ip = 1,nbpart
        endif
 #endif
 
-       call ouestu                                               &
-       !==========
-  (    nfecra , ndim   , nnod ,                                  &
-       ierror ,                                                  &
-       ettpa(ip,jxp)  , ettpa(ip,jyp)  , ettpa(ip,jzp)  ,        &
-       ettp(ip,jxp)   , ettp(ip,jyp)   , ettp(ip,jzp)   ,        &
-       cdgfbo(1,ifac)    , cdgfbo(2,ifac)    , cdgfbo(3,ifac)   ,&
-       xyzcen(1,iel)     , xyzcen(2,iel)     , xyzcen(3,iel)    ,&
-       itypfo , iconfo , xyznod ,                                &
-       indian )
+
+        if (istogr.eq.0) then
+
+           call ouestu                                               &
+           !==========
+      (    nfecra , ndim   , nnod ,                                  &
+           ierror ,                                                  &
+           ettpa(ip,jxp)  , ettpa(ip,jyp)  , ettpa(ip,jzp)  ,        &
+           ettp(ip,jxp)   , ettp(ip,jyp)   , ettp(ip,jzp)   ,        &
+           cdgfbo(1,ifac)    , cdgfbo(2,ifac)    , cdgfbo(3,ifac)   ,&
+           xyzcen(1,iel)     , xyzcen(2,iel)     , xyzcen(3,iel)    ,&
+           itypfo , iconfo , xyznod ,                                &
+           indian )
+
+        else
+
+           call ouessg                                               &
+           !==========
+      (    nfecra , ndim   , nnod ,                                  &
+           ierror ,                                                  &
+           ettpa(ip,jxp)  , ettpa(ip,jyp)  , ettpa(ip,jzp)  ,        &
+           ettp(ip,jxp)   , ettp(ip,jyp)   , ettp(ip,jzp)   ,        &
+           cdgfbo(1,ifac)    , cdgfbo(2,ifac)    , cdgfbo(3,ifac)   ,&
+           xyzcen(1,iel)     , xyzcen(2,iel)     , xyzcen(3,iel)    ,&
+           itypfo , iconfo , xyznod ,                                &
+           indian )
+
+        endif
+
+
 
 #if DEBUG_LAGCEL
        if (impltg.eq.1) write(nfecra,9002) ip , ifac , indian

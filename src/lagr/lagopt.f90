@@ -86,12 +86,6 @@ integer  ii , ip , irf , icha , i1 , i2 , i3, iok
 ! 0. INITIALISATION
 !===============================================================================
 
-!  Vérification que la norme IEEE 754 est respectée par l'architecture.
-!  Dans le cas contraire la trajectographie des particules du module
-!  lagrangien est susceptible de ne pas fonctionner correctement.
-
-call csieee
-!==========
 
 !===============================================================================
 ! 1. INITIALISATIONS PAR DEFAUT DU MODULE LAGRANGIEN
@@ -333,6 +327,10 @@ nstbor = 1
 
 seuilf = 0.d0
 
+!     Type de calcul de determinant demande
+
+istogr = 0
+
 !     INFORMATIONS A ENREGISTRER
 
 inbrbd = 0
@@ -396,6 +394,18 @@ if (iilagr.eq.0) return
 !===============================================================================
 ! 2.2 VERIFICATION DES INITIALISATIONS UTILISATEUR DU MODULE LAGRANGIEN
 !===============================================================================
+
+if (istogr.eq.1) then
+
+   !  Vérification que la norme IEEE 754 est respectée par l'architecture
+   !  si la methode "snap to grid" est demandee pour le calcul du determinant.
+   !  Dans le cas contraire la trajectographie des particules du module
+   !  lagrangien est susceptible de ne pas fonctionner correctement.
+
+   call csieee
+   !==========
+
+endif
 
 ! on doit verifier toutes les options entrees par l'utilisateur
 !  qui est inventif

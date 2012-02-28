@@ -550,5 +550,15 @@ module lagran
   double precision, save ::  timlag(9999)
 
   !=============================================================================
+  ! 17. Type de methode de calcul de determinant pour la trajectographie
+
+
+  !... ISTOGR  : Activation de la methode "Snap to grid"
+  !              istogr =  0 : Calcul simple du determinant
+  !              istogr =  1 : Methode "Snap to grid" activee
+
+  integer, save ::           istogr
+
+  !=============================================================================
 
 end module lagran
