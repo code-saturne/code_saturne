@@ -56,7 +56,7 @@ Vincent Robin         (ENSMA, Poitiers, France)
 
 The Code_Saturne Kernel may contain code by Olivier Devillers
 (INRIA, Sophia-Antipolis, France) for Lagrangian particle
-trajectory tracking (cs_lagrang.c routine)
+trajectory tracking (cs_lagr_snap_to_grid.c routine)
 
 The Code_Saturne Kernel may contain code by Wes Petersen
 (ETHZ, Zurich, Switzerland) for random number generation
