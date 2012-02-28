@@ -144,7 +144,6 @@ src/gui/cs_gui_particles.c
 src/gui/cs_gui_radiative_transfer.c
 src/gui/cs_gui_specific_physics.c
 src/gui/cs_gui_util.c
-src/lagr/cs_lagr.c
 src/lagr/cs_lagr_perio.c
 src/mei/mei_evaluate.c
 src/mei/mei_hash_table.c
