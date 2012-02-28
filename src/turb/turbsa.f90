@@ -377,7 +377,11 @@ do iel = 1, ncel
   endif
 
   ! Computation of fw
-  rsa   = min(nusa/(taussa*(xkappa*distbf)**2), 10.d0)
+  if (nusa.ge.10.d0*taussa*(xkappa*distbf)**2) then
+    rsa = 10.d0
+  else
+    rsa   = nusa/(taussa*(xkappa*distbf)**2)
+  endif
   gsa   = rsa + csaw2*(rsa**6-rsa)
   fw    = gsa*( (1.d0+csaw3**6)/(gsa**6+csaw3**6))**(1.d0/6.d0)
 
