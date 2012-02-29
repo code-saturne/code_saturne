@@ -24,7 +24,7 @@ subroutine projtv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgu , imligu ,          &
+   init   , inc    , imrgra , nswrgu , imligu ,                   &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu ,                                              &
    fextx  , fexty  , fextz  ,                                     &
@@ -57,8 +57,6 @@ subroutine projtv &
 !                  !    !     !              1 sinon                           !
 ! imrgra           ! e  ! <-- ! indicateur = 0 gradrc 97                       !
 !                  ! e  ! <-- !            = 1 gradmc 99                       !
-! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
-!                  !    !     !              0 sinon                           !
 ! nswrgu           ! e  ! <-- ! nombre de sweep pour reconstruction            !
 !                  !    !     !             des gradients                      !
 ! imligu           ! e  ! <-- ! methode de limitation du gradient              !
@@ -96,7 +94,7 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          init   , inc    , imrgra , iccocg
+integer          init   , inc    , imrgra
 integer          nswrgu , imligu
 integer          iwarnu , nfecra
 double precision epsrgu , climgu

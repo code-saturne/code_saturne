@@ -157,10 +157,10 @@ if (ivelco.eq.1) then
 
   call grdvec &
   !==========
-( iu  , imrgra , inc    , iccocg ,                      &
+( iu  , imrgra , inc    ,                               &
   nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
   nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
-  ilved ,                                               &
+  ilved  ,                                              &
   rtpa(1,iu) ,  coefau , coefbu,                        &
   gradv  )
 

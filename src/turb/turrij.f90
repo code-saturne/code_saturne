@@ -330,7 +330,7 @@ else
 
     call grdvec &
     !==========
-  ( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+  ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
     iwarnp , nfecra ,                                              &
     epsrgp , climgp , extrap ,                                     &
     ilved  ,                                                       &

@@ -291,7 +291,6 @@ if(irnpnw.ne.1) then
 
   init   = 1
   inc    = 1
-  iccocg = 1
   iflmb0 = 1
   if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
   nswrgp  = 1
@@ -305,7 +304,7 @@ if(irnpnw.ne.1) then
   !==========
  ( nvar   , nscal  ,                                              &
    iu     ,                                                       &
-   iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
+   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
@@ -546,7 +545,6 @@ endif
 
 init   = 1
 inc    = 1
-iccocg = 1
 iflmb0 = 1
 if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
 nswrgp = nswrgr(iu )
@@ -560,7 +558,7 @@ call inimav                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
    iu     ,                                                       &
-   iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
+   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
@@ -597,7 +595,7 @@ if (iphydr.eq.1) then
     call projtv                                                   &
     !==========
  ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
+   init   , inc    , imrgra , nswrgp , imligp ,                   &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
@@ -713,7 +711,6 @@ if(arak.gt.0.d0) then
     if (iphydr.eq.1) then
       init   = 0
       inc    = 0
-      iccocg = 1
       nswrgp = nswrgr(ipr)
       imligp = imligr(ipr)
       iwarnp = iwarni(ipr)
@@ -727,7 +724,7 @@ if(arak.gt.0.d0) then
       call projtv                                                 &
       !==========
  ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
+   init   , inc    , imrgra , nswrgp , imligp ,                   &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &

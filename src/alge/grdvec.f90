@@ -23,7 +23,7 @@
 subroutine grdvec &
 !================
 
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( ivar   , imrgra , inc    , nswrgp , imligp ,                   &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ilved  ,                                                       &
    pvar   , coefav , coefbv ,                                     &
@@ -56,8 +56,6 @@ subroutine grdvec &
 !                  !    !     !    support etendu                              !
 ! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
 !                  !    !     !              1 sinon                           !
-! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
-!                  !    !     !              0 sinon                           !
 ! nswrgp           ! e  ! <-- ! nombre de sweep pour reconstruction            !
 !                  !    !     !             des gradients                      !
 ! imligp           ! e  ! <-- ! methode de limitation du gradient              !
@@ -104,7 +102,7 @@ implicit none
 
 ! Arguments
 
-integer          ivar   , imrgra , inc    , iccocg , nswrgp
+integer          ivar   , imrgra , inc    , nswrgp
 integer          imligp ,iwarnp  , nfecra
 double precision epsrgp , climgp , extrap
 

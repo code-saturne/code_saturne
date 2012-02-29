@@ -428,7 +428,6 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 !       Pour gagner du temps, on ne reconstruit pas.
   init   = 1
   inc    = 0
-  iccocg = 1
   iflmb0 = 1
   nswrp  = 1
   imligp = imligr(iu )
@@ -441,7 +440,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   !==========
  ( nvar   , nscal  ,                                              &
    iu     ,                                                       &
-   iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
+   iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
@@ -1513,7 +1512,6 @@ elseif(iappel.eq.2) then
 !        RESIDU SECOND MEMBRE(Un+1,Pn+1) + RHO*VOLUME*( Un+1 - Un )/DT
 
   inc = 1
-  iccocg = 1
 !     Pas de relaxation en stationnaire
   idtva0 = 0
 
@@ -1525,7 +1523,7 @@ elseif(iappel.eq.2) then
   !==========
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg , ivisep ,          &
+   ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    vel    , vel    ,                                              &
@@ -1560,7 +1558,6 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   ! Pour gagner du temps, on ne reconstruit pas.
   init   = 1
   inc    = 1
-  iccocg = 1
   iflmb0 = 1
   nswrp  = 1
   imligp = imligr(iu )
@@ -1573,7 +1570,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   !==========
  ( nvar   , nscal  ,                                              &
    iu     ,                                                       &
-   iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
+   iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom),                            &

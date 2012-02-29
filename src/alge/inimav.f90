@@ -25,7 +25,7 @@ subroutine inimav &
 
  ( nvar   , nscal  ,                                              &
    ivar   ,                                                       &
-   iflmb0 , init   , inc    , imrgra , iccocg , nswrgu , imligu , &
+   iflmb0 , init   , inc    , imrgra , nswrgu , imligu ,          &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu , extrau ,                                     &
    rom    , romb   ,                                              &
@@ -120,7 +120,7 @@ implicit none
 
 integer          nvar   , nscal
 integer          ivar
-integer          iflmb0 , init   , inc    , imrgra , iccocg
+integer          iflmb0 , init   , inc    , imrgra
 integer          nswrgu , imligu
 integer          iwarnu , nfecra
 double precision epsrgu , climgu , extrau
@@ -244,7 +244,7 @@ if( nswrgu.gt.1 ) then
 
   call grdvec &
   !==========
-( ivar   , imrgra , inc    , iccocg , nswrgu , imligu ,          &
+( ivar   , imrgra , inc    , nswrgu , imligu ,                   &
   iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
   ilved  ,                                                       &
   qdm    , coefaq , coefbv ,                                     &

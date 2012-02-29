@@ -101,7 +101,7 @@ double precision depale(nnod,3), xyzno0(3,nnod)
 integer          inod
 integer          iel
 integer          idim
-integer          inc, iccocg
+integer          inc
 
 logical          ilved
 
@@ -138,12 +138,11 @@ enddo
 
 
 ilved = .true.
-iccocg = 0
 inc = 1
 
 call grdvec &
 !==========
-( iuma   , imrgra , inc    , iccocg ,                            &
+( iuma   , imrgra , inc    ,                                     &
   nswrgr(iuma)    , imligr(iuma)    , iwarni(iuma) ,             &
   nfecra , epsrgr(iuma), climgr(iuma), extrag(iuma),             &
   ilved  ,                                                       &

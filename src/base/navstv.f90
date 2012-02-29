@@ -317,7 +317,6 @@ if( iprco.le.0 ) then
 
   init   = 1
   inc    = 1
-  iccocg = 1
   iflmb0 = 1
   if (iale.eq.1) iflmb0 = 0
   nswrgp = nswrgr(iu)
@@ -331,7 +330,7 @@ if( iprco.le.0 ) then
   !==========
  ( nvar   , nscal  ,                                              &
    iu     ,                                                       &
-   iflmb0 , init   , inc    , imrgra ,iccocg , nswrgp , imligp ,  &
+   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
@@ -359,7 +358,6 @@ if( iprco.le.0 ) then
 
     init   = 1
     inc    = 1
-    iccocg = 1
     iflmb0 = 1
     nswrgp = nswrgr(iuma)
     imligp = imligr(iuma)
@@ -372,7 +370,7 @@ if( iprco.le.0 ) then
     !==========
   ( nvar   , nscal  ,                                              &
     iu     ,                                                       &
-    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
+    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
     iwarnp , nfecra ,                                              &
     epsrgp , climgp , extrap ,                                     &
     propce(1,ipcrom), propfb(1,ipbrom),                            &
@@ -665,7 +663,6 @@ if (iale.eq.1) then
 
   init   = 1
   inc    = 1
-  iccocg = 1
   iflmb0 = 1
   nswrgp = nswrgr(iuma)
   imligp = imligr(iuma)
@@ -678,7 +675,7 @@ if (iale.eq.1) then
   !==========
 ( nvar   , nscal  ,                                              &
   iu     ,                                                       &
-  iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
+  iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
   propce(1,ipcrom), propfb(1,ipbrom),                            &
@@ -811,7 +808,6 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   init   = 1
   inc    = 1
-  iccocg = 1
   iflmb0 = 1
   if (iale.eq.1) iflmb0 = 0
   nswrgp = nswrgr(iu)
@@ -825,7 +821,7 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   !==========
  ( nvar   , nscal  ,                                              &
    iu     ,                                                       &
-   iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
+   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom),                            &

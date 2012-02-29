@@ -596,7 +596,7 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
 
       call grdvec &
       !==========
-    ( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+    ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
       iwarnp , nfecra ,                                              &
       epsrgp , climgp , extrap ,                                     &
       ilved ,                                                        &

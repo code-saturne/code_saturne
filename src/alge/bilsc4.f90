@@ -25,7 +25,7 @@ subroutine bilsc4 &
 
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg , ivisep ,          &
+   ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    vel    , vela   ,                                              &
@@ -83,8 +83,6 @@ subroutine bilsc4 &
 !                  !    !     !              1 sinon                           !
 ! imrgra           ! e  ! <-- ! indicateur = 0 gradrc 97                       !
 !                  ! e  ! <-- !            = 1 gradmc 99                       !
-! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
-!                  !    !     !              0 sinon                           !
 ! ivisep           ! e  ! <-- ! indicateur = 1 pour la prise en compte         !
 !                  !    !     !                div(T Grad(vel))                !
 !                  !    !     !                -2/3 Grad(div(vel))             !
@@ -154,7 +152,7 @@ integer          nvar   , nscal
 integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
-integer          inc    , imrgra , iccocg , ivisep
+integer          inc    , imrgra , ivisep
 integer          iwarnp , ippu   , ippv   , ippw
 
 double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
@@ -265,11 +263,10 @@ if( (idiffp.ne.0 .and. ircflp.eq.1) .or. ivisep.eq.1 .or.         &
 
 
   ilved = .true.
-  iccocg = 0
 
   call grdvec &
   !==========
-( iu     , imrgra , inc    , iccocg ,nswrgp , imligp ,           &
+( iu     , imrgra , inc    , nswrgp , imligp ,                   &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
   ilved  ,                                                       &
   vel    , coefav , coefbv ,                                     &
