@@ -369,7 +369,7 @@ do iel = 1, ncel
   sbar = nusa/(xkappa*distbf)**2*fv2
   omega = sqrt(vort(iel))
 
-  if (sbar.ge.cst2*omega) then
+  if (sbar.ge.-cst2*omega) then
     taussa = omega+sbar
   else
     taussa = omega*(1.d0 + &
