@@ -246,7 +246,7 @@ character*80     chaine
 character*16     cnom(3)
 integer          lchain
 integer          isym,ireslp,ireslq,ipol,isqrt
-integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
+integer          inc,isweep,niterf,iel,icycle,nswmod
 integer          iinvpe,iinvpp
 integer          idtva0
 integer          iagmax, nagmax, npstmg
@@ -357,13 +357,12 @@ thetex = 1.d0 - thetap
 if(abs(thetex).gt.epzero) then
   inc    = 1
 ! ON POURRAIT METTRE ICCOCG A 0 DANS LES APPELS SUIVANT
-  iccocg = 1
 
   call bilsc4                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg , ivisep ,          &
+   ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
    pvar   , pvara  ,                                              &
@@ -408,7 +407,6 @@ do 100 isweep = 1, nswmod
 !      ON NE RECALCULE COCG QU'AU PREMIER PASSAGE (PRESQUE)
 
   if( isweep.eq.1) then
-    iccocg = 1
 
 !  On est entre avec un smb explicite base sur PVARA.
 !     si on initialise avec PVAR avec autre chose que PVARA
@@ -424,7 +422,6 @@ do 100 isweep = 1, nswmod
     enddo
 
   else
-    iccocg = 0
     do iel = 1, ncel
 !     SMBINI CONTIENT LES TERMES INSTAT, EN DIV(RHO U) ET SOURCE DE MASSE
 !     DU SECOND MEMBRE  MIS A JOUR A CHAQUE SWEEP
@@ -442,7 +439,7 @@ do 100 isweep = 1, nswmod
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg , ivisep ,          &
+   ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  ,                                              &
@@ -596,7 +593,6 @@ if (iescap.gt.0) then
   enddo
 
   inc    = 1
-  iccocg = 1
 !     On calcule sans relaxation meme en stationnaire
   idtva0 = 0
 
@@ -604,7 +600,7 @@ if (iescap.gt.0) then
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg , ivisep ,          &
+   ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  ,                                              &
