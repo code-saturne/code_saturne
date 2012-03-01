@@ -354,7 +354,7 @@ extras/bash_completion/code_saturne
 # Install global option file
 
 sysconf_DATA = \
-extras/code_saturne.cfg
+extras/code_saturne.cfg.template
 
 # Install SALOME related files
 
