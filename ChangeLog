@@ -1,3 +1,8 @@
+* 02/03/2012 - Cyril Baudry <cyril.baudry@edf.fr>
+  Fix meteo boundary conditions setup with GUI.
+  modified file:
+    gui/Pages/BoundaryConditionsMeteoView.py
+
 * 27/02/2012 - Martin Ferrand <martin.ferrand@edf.fr>
   Fix vorticity calculation in Spalart-Allmaras model.
   modified file:
