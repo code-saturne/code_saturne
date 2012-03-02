@@ -1,3 +1,8 @@
+* 02/03/2012 - Cyril Baudry <cyril.baudry@edf.fr>
+  Fix meteo boundary conditions setup with GUI.
+  modified file:
+    gui/Pages/BoundaryConditionsMeteoView.py
+
 * 02/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix installation issue with modules causing errors with code_saturne compile.
   modified files:
