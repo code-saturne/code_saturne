@@ -97,8 +97,8 @@ edit = sed \
 	-e 's|@mpi_type[@]|$(mpi_type)|g' \
 	-e 's|@mpi_bindir[@]|$(mpi_bindir)|g' \
 	-e 's|@mpi_libdir[@]|$(mpi_libdir)|g' \
-	-e 's|@cs_env_modules[@]|$(cs_env_modules)|g' \
 	-e 's|@cs_env_modules_cmd[@]|$(cs_env_modules_cmd)|g' \
+	-e 's|@cs_env_modules[@]|$(cs_env_modules)|g' \
 	-e 's|@PYTHON_VERSION[@]|$(PYTHON_VERSION)|g' \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g'
