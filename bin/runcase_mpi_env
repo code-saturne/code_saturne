@@ -101,20 +101,10 @@ if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
 # Temporarily set the architecture name (for EDF purposes)
   NOM_ARCH=`uname -s`
   if [ "$NOM_ARCH" = "Linux" ] ; then
-    if [ $(grep -c "Calibre 7" /etc/issue) -ne 0 ] ; then
-      NOM_ARCH=calibre7
-    elif [ $(grep -c "Calibre 5" /etc/issue) -ne 0 ] ; then
-      NOM_ARCH=calibre5
-    elif [ -d /bgsys/drivers/ppcfloor ] ; then
-      NOM_ARCH=Blue_Gene_P
-    elif [ "`hostname | cut -c1-6`" = "titane" ] ; then
+    if [ "`hostname | cut -c1-6`" = "titane" ] ; then
       NOM_ARCH=titane
     elif [ "`hostname | cut -c1-7`" = "platine" ] ; then
       NOM_ARCH=platine
-    elif [ "`hostname | cut -c1-5`" = "clala" -o "`hostname`" = "clay1pfr" ] ; then
-      NOM_ARCH=clamart2
-    elif [ "`hostname | cut -c1-4`" = "noec" -o "`hostname | cut -c 1-7`" = "noeuser" ] ; then
-      NOM_ARCH=ivanoe
     fi
   fi
 # Default values
@@ -125,17 +115,7 @@ if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
     export PATH=${CS_MPI_PATH}:$PATH
   fi
 #
-  if [ "$NOM_ARCH" = "ivanoe" ] ; then
-    type mpdboot > /dev/null 2>&1
-    if [ $? = 0 ] ; then
-      # If we are using Intel MPI (MPICH2)
-      MPIRUN="mpirun -f ${LOADL_HOSTFILE} -np ${LOADL_TOTAL_TASKS}"
-    else
-      # If we are using Open MPI (MPICH2)
-      MPIRUN="mpirun --machinefile ${LOADL_HOSTFILE} -n ${LOADL_TOTAL_TASKS}"
-    fi
-#
-  elif [ "$NOM_ARCH" = "platine" ] ; then
+  if [ "$NOM_ARCH" = "platine" ] ; then
     MPIRUN="srun -n ${NUMBER_OF_PROCESSORS}"
 #
   elif [ "$NOM_ARCH" = "titane" ] ; then
