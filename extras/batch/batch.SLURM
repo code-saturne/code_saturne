@@ -6,7 +6,7 @@
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=12
 #SBATCH --time=0:30:00
-#SBATCH --partition=para
+#SBATCH --partition=compute
 #SBATCH --output=nameandcaseo%j
 #SBATCH --error=nameandcasee%j
 #SBATCH --job-name=nameandcase
