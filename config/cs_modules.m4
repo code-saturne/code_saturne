@@ -48,6 +48,9 @@ if test "x$with_modules" = "xcheck" ; then
     try_modules=""
     try_modules_p=""
 
+    outfile=cs_ac_config_modules-tmp
+
+(
     oldIFS=$IFS; IFS=:
     for m in $LOADEDMODULES; do try_modules="$try_modules $m"; done
     IFS=$oldIFS
@@ -68,7 +71,12 @@ if test "x$with_modules" = "xcheck" ; then
         fi
       done
     done
+    echo "$cs_env_modules" > $outfile
     module list
+)
+
+    cs_env_modules=`cat $outfile`
+    rm -fr $outfile
 
   fi
 

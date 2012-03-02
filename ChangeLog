@@ -1,3 +1,8 @@
+* 02/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Test for environment modules in subshell to preserve environment variables.
+  modified files:
+    config/cs_modules.m4
+
 * 02/03/2012 - Cyril Baudry <cyril.baudry@edf.fr>
   Fix meteo boundary conditions setup with GUI.
   modified file:
@@ -6,7 +11,7 @@
 * 02/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix installation issue with modules causing errors with code_saturne compile.
   modified files:
-    bin/batch.SLURM
+    Makefile.am
 
 * 02/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Update default queue name for SLURM to match that of the EDF IVANOE cluster.
