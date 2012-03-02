@@ -4,7 +4,7 @@
 #
 #SBATCH --ntasks=2
 #SBATCH --time=0:30:00
-#SBATCH --partition=para
+#SBATCH --partition=compute
 #SBATCH --output nometcaso.%j 
 #SBATCH --error nometcase.%j 
 #SBATCH --job-name=nometcas
