@@ -858,9 +858,11 @@ be necessary for computing environments using a batch system,
 for separate front-end and compute systems (such as Blue Gene
 systems), or for coupling with \syrthes 4 or Code\_Aster.
 
-Edit the \texttt{<install-prefix>/etc/code\_saturne.cfg},
-and uncomment and define the \texttt{batch} section.
-The name of the batch system should match one of the templates \\
+Copy or rename the \texttt{<install-prefix>/etc/code\_saturne.cfg.template} to \\
+\texttt{<install-prefix>/etc/code\_saturne.cfg},
+and uncomment and define the applicable sections.
+
+If used, the name of the batch system should match one of the templates \\
 in \texttt{<install-prefix>/share/code\_saturne/batch},
 and those may also be edited if necessary to match the local
 batch configuration{\footnote Some batch systems allow a wide
