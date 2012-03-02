@@ -189,9 +189,8 @@ do inbcou = 1, nbccou
       endif
 
       cecoef = volume(iel)/cp
-      tsexp = ctbexp(iloc) * cecoef
+      tsexp = (ctbexp(iloc) - ctbimp(iloc)*tfluid(iloc))* cecoef
       tsimp = ctbimp(iloc) * cecoef
-      tsimp = max(tsimp, zero)       ! To avoid a loss of diagonal dominance
 
       crvexp(iel) = crvexp(iel) + tsexp
       crvimp(iel) = crvimp(iel) + tsimp

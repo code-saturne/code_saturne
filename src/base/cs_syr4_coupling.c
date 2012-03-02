@@ -167,7 +167,7 @@ static cs_syr4_coupling_t  **cs_glob_syr4_couplings = NULL;
 static int  cs_glob_syr4_post_mesh_ext[2] = {0, 1};
 
 static int  cs_syr4_coupling_conservativity = 0; /* No forcing by default */
-static int  cs_syr4_coupling_implicit = 0;
+static int  cs_syr4_coupling_implicit = 1;
 
 /*============================================================================
  * Private function definitions
