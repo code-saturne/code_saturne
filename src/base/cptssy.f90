@@ -116,8 +116,8 @@ if (iscalt.ne.iscal) then
 endif
 
 if (iscalt.eq.iscal) then
-  if (iscsth(iscalt).ne.1) then
-    return
+  if (iscsth(iscalt).ne.-1) then
+    write(nfecra, 1000)
   endif
 endif
 
@@ -220,20 +220,20 @@ return
 
  1000 format(                                                     &
 '@                                                            ',/,&
-'@ @@ ATTENTION : COUPLAGE VOLUMIQUE SYRTHES AVEC UN SCALAIRE ',/,&
-'@      QUI EST DIFFERENT DE LA TEMPERATURE                   ',/,&
+'@ @@ ATTENTION : COUPLAGE VOLUMIQUE SYRTHES :                ',/,&
+'@      LA TEMPERATURE N''EST PAS CONFIGUREE EN °C.           ',/,&
 '@    =========                                               ',/,&
-'@      OPTION NON VALIDE                                     ',/,&
+'@    Le calcul continue.                                     ',/,&
 '@                                                            ')
 
 #else
 
  1000 format(                                                     &
 '@                                                            ',/,&
-'@ @@ WARNING: SYRTHES VOLUME COUPLING WITH A SCALAR          ',/,&
-'@       DIFFERENT FROM TEMPERATURE                           ',/,&
+'@ @@ WARNING: SYRTHES VOLUME COUPLING:                       ',/,&
+'@      THE TEMPERATURE IS NOT CONFIGURED IN °C.              ',/,&
 '@    ========                                                ',/,&
-'@      OPTION NOT POSSIBLE                                   ',/,&
+'@    The calculation continue.                               ',/,&
 '@                                                            ')
 
 #endif

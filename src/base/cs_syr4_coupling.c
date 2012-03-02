@@ -167,7 +167,7 @@ static cs_syr4_coupling_t  **cs_glob_syr4_couplings = NULL;
 static int  cs_glob_syr4_post_mesh_ext[2] = {0, 1};
 
 static int  cs_syr4_coupling_conservativity = 0; /* No forcing by default */
-static int  cs_syr4_coupling_implicit = 1;
+static int  cs_syr4_coupling_implicit = 0;
 
 /*============================================================================
  * Private function definitions
@@ -1637,7 +1637,7 @@ cs_syr4_coupling_ts_contrib(cs_syr4_coupling_t  *syr_coupling,
 
   if (cs_syr4_coupling_implicit == 0) { /* Explicit treatment */
 
-    for (i = 0; ent->n_elts; i++) {
+    for (i = 0; i < ent->n_elts; i++) {
       ctbexp[i] = -hvol[i] * (tf[i] - solid_temp[i]);
       ctbimp[i] = 0.0;
     }
@@ -1645,7 +1645,7 @@ cs_syr4_coupling_ts_contrib(cs_syr4_coupling_t  *syr_coupling,
   }
   else { /* Implicit treatment */
 
-    for (i = 0; ent->n_elts; i++) {
+    for (i = 0; i < ent->n_elts; i++) {
       ctbexp[i] = hvol[i] * solid_temp[i];
       ctbimp[i] = hvol[i];
     }
