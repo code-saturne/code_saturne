@@ -1,4 +1,9 @@
 * 02/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  On IVANOE, revert Intel compiler from 12.0.3.174 to 11.1.072.
+  modified files:
+    bin/lance
+
+* 02/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a priori detection of process rank for MPMD when using
   mpirun/mpiexec (and not srun) under SLURM.
   modified files:

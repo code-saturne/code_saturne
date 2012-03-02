@@ -170,10 +170,10 @@ elif [ "$NOM_ARCH" = "titane" ] ; then
   module purge
   module load intel/11.1.056
   module load bullxmpi/1.0.2
-  module load gcc/4.4.0 # some gcc path necessary for icc in bach mode
+  module load gcc/4.4.0 # some gcc path necessary for icc in batch mode
 elif [ "$NOM_ARCH" = "ivanoe" ] ; then
   module purge
-  module load intel_compilers/12.0.3.174
+  module load intel_compilers/11.1.072
   module load open_mpi/gcc/1.4.3
 fi
 #
