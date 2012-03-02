@@ -1,4 +1,9 @@
 * 02/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update default queue name for SLURM to match that of the EDF IVANOE cluster.
+  modified files:
+    bin/batch.SLURM
+
+* 02/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a priori detection of process rank for MPMD when using
   mpirun/mpiexec (and not srun) under SLURM.
   modified files:
