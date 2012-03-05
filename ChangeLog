@@ -1,3 +1,9 @@
+ 05/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update external library versions and comments in the installer.
+  modified files:
+    extras/installer/install_saturne.py
+    extras/installer/setup
+
 * 02/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Test for environment modules in subshell to preserve environment variables.
   modified file:

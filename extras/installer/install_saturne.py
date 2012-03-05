@@ -97,6 +97,7 @@ class Package:
         self.install_dir = None
         self.config_opts = ''
         self.log_file = sys.stdout
+        self.cxx = None
         self.cc = None
         self.fc = None
         self.vpath_support = True
@@ -205,21 +206,47 @@ class Package:
             shutil.copytree(self.source_dir, build_dir)
         os.chdir(build_dir)
 
-        # Set command line for configure pass
         configure = os.path.join(self.source_dir, 'configure')
-        if self.install_dir is not None:
-            configure = configure + ' --prefix=' + self.install_dir
-        configure = configure + ' ' + self.config_opts
+        if os.path.isfile(configure):
 
-        # Add compilers
-        if self.cc is not None: configure = configure + ' CC=\"' + self.cc + '\"'
-        if self.fc is not None: configure = configure + ' FC=\"' + self.fc + '\"'
+            # Set command line for configure pass
 
-        # Install the package and clean build directory
-        run_command(configure, "Configure", self.name, self.log_file)
-        run_command("make", "Compile", self.name, self.log_file)
-        run_command("make install", "Install", self.name, self.log_file)
-        run_command("make clean", "Clean", self.name, self.log_file)
+            if self.install_dir is not None:
+                configure = configure + ' --prefix=' + self.install_dir
+            configure = configure + ' ' + self.config_opts
+
+            # Add compilers
+            if self.cxx is not None: configure += ' CXX=\"' + self.cc + '\"'
+            if self.cc is not None: configure += ' CC=\"' + self.cc + '\"'
+            if self.fc is not None: configure += ' FC=\"' + self.fc + '\"'
+
+            # Install the package and clean build directory
+            run_command(configure, "Configure", self.name, self.log_file)
+            run_command("make", "Compile", self.name, self.log_file)
+            run_command("make install", "Install", self.name, self.log_file)
+            run_command("make clean", "Clean", self.name, self.log_file)
+
+        elif os.path.isfile(os.path.join(self.source_dir, 'CMakeLists.txt')):
+
+            # Set command line for CMake pass
+
+            cmake = 'cmake'
+            if self.install_dir is not None:
+                cmake += ' -D CMAKE_INSTALL_PREFIX=' + self.install_dir
+            cmake += ' ' + self.config_opts
+
+            # Add compilers
+            if self.cxx is not None: cmake += ' -D CMAKE_CXX_COMPILER=\"' + self.cc + '\"'
+            if self.cc is not None: cmake += ' -D CMAKE_C_COMPILER=\"' + self.cc + '\"'
+            if self.fc is not None: cmake += ' -D CMAKE_Fortran_COMPILER=\"' + self.fc + '\"'
+
+            cmake += ' ' + self.source_dir
+
+            # Install the package and clean build directory
+            run_command(cmake, "Configure", self.name, self.log_file)
+            run_command("make VERBOSE=1", "Compile", self.name, self.log_file)
+            run_command("make install VERBOSE=1", "Install", self.name, self.log_file)
+            run_command("make clean", "Clean", self.name, self.log_file)
 
         # End of installation
         os.chdir(current_dir)
@@ -303,21 +330,6 @@ class Setup:
         p.use = 'yes'
         p.installation = 'yes'
 
-        # CGNS library
-
-        self.packages['cgns'] = \
-            Package(name="CGNS",
-                    description="CFD General Notation System",
-                    package="cgnslib",
-                    version="2.5.5",
-                    archive="cgnslib_2.5-5.tar.gz",
-                    url="http://sourceforge.net/projects/cgns/files/cgnslib_2.5/Release%%205/%s/download")
-
-        p = self.packages['cgns']
-        p.config_opts = "--enable-64bit --enable-lfs"
-        p.vpath_support = False
-        p.create_install_dirs = True
-
         # HDF5 library
 
         self.packages['hdf5'] = \
@@ -326,10 +338,23 @@ class Setup:
                     package="hdf5",
                     version="1.8.8",
                     archive="hdf5-1.8.8.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/current/src/%s")
+                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.8/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
+
+        # CGNS library
+
+        self.packages['cgns'] = \
+            Package(name="CGNS",
+                    description="CFD General Notation System",
+                    package="cgnslib",
+                    version="3.1.3",
+                    archive="cgnslib_3.1.3-4.tar.gz",
+                    url="http://sourceforge.net/projects/cgns/files/cgnslib_3.1/%s/download")
+
+        p = self.packages['cgns']
+        p.config_opts = "-D ENABLE_64BIT=ON -D ENABLE_SCOPING=ON"
 
         # MED library
 
@@ -351,19 +376,18 @@ class Setup:
                     description="Message Passing Interface",
                     package="openmpi",
                     version="1.4.5",
-                    archive="openmpi-1.4.4.tar.gz",
+                    archive="openmpi-1.4.5.tar.gz",
                     url="http://www.open-mpi.org/software/ompi/v1.4/downloads/%s")
 
-        # Libxml2 library (official url "ftp://xmlsoft.org/libxml2/%s")
+        # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
 
         self.packages['libxml2'] = \
             Package(name="libxml2",
                     description="XML library",
                     package="libxml2",
-                    version="2.6.32",
-                    archive="libxml2-2.6.32.tar.gz",
-                    url="ftp://fr.rpmfind.net/pub/libxml/%s")
-
+                    version="2.7.8",
+                    archive="libxml2-sources-2.7.8.tar.gz",
+                    url="ftp://xmlsoft.org/libxml2/%s")
 
         p = self.packages['libxml2']
         p.config_opts = "--with-ftp=no --with-http=no"
@@ -404,6 +428,7 @@ class Setup:
                 elif key == 'language': self.language = list[1]
                 elif key == 'use_arch': self.use_arch = list[1]
                 elif key == 'arch': self.arch = list[1]
+                elif key == 'compCxx': self.cxx = list[1]
                 elif key == 'compC': self.cc = list[1]
                 elif key == 'compF': self.fc = list[1]
                 elif key == 'mpiCompC': self.mpicc = list[1]
@@ -689,6 +714,18 @@ Check the setup file and some utilities presence.
         if self.disable_frontend == 'yes':
             config_opts = config_opts + " --disable-frontend"
 
+        # HDF5 (needed for MED and recommended for CGNS)
+
+        if hdf5.use == 'no':
+            config_opts = config_opts + " --without-hdf5"
+        else:
+            cgns.config_opts += " -D ENABLE_HDF5=ON"
+            if hdf5.install_dir is not None:
+                config_opts = config_opts + " --with-hdf5=" + hdf5.install_dir
+                med.config_opts += " --with-hdf5=" + hdf5.install_dir
+                cgns.config_opts += " -D HDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include" \
+                    + " -D HDF5_LIBRARY=" + hdf5.install_dir + "/lib/libhdf5.so"
+
         # CGNS
 
         if cgns.use == 'no':
@@ -696,17 +733,6 @@ Check the setup file and some utilities presence.
         else:
             if cgns.install_dir is not None:
                 config_opts = config_opts + " --with-cgns=" + cgns.install_dir
-
-        # HDF5
-
-        if hdf5.use == 'no':
-            config_opts = config_opts + " --without-hdf5"
-        else:
-            if hdf5.install_dir is not None:
-                config_opts = config_opts + " --with-hdf5=" + hdf5.install_dir
-                # HDF5 is also needed for MED build
-                med.config_opts = med.config_opts + \
-                    " --with-hdf5=" + hdf5.install_dir
 
         # MED
 
@@ -927,8 +953,10 @@ syrthes   %(syrthes)s
 # HDF5 is also often available on large systems such as
 # IBM Blue Gene or Cray XT.
 #
-#   For massively parallel architectures, it is
-# recommended to use the system's default MPI library.
+#   For clusters using high-speed networks,  it is highly
+# recommended to use the system's default MPI library, as
+# this is already configured to use the correct drivers,
+# and to support the local resource manager.
 #
 #   Libxml2 is needed to read xml files output by the
 # Graphical User Interface.
