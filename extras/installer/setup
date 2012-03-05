@@ -51,9 +51,11 @@ mpiCompC
 disable_gui  no
 #
 #--------------------------------------------------------
-# Python is mandatory to launch the Graphical User
+# Python is required to launch the Graphical User
 # Interface and to use Code_Saturne scripts.
-# It has to be compiled with PyQt 4 support.
+#
+# for Graphical User Interface, PyQt 4 support
+# must be available.
 #
 # It is highly recommended to use the Python provided
 # by the distribution and to install PyQt through
@@ -101,9 +103,9 @@ scotch
 # SYRTHES installation path for an optional coupling.
 #
 # Only coupling with the SYRTHES thermal code version 3
-# is handled at the moment.
+# is handled by Code_Saturne version 2.0.
 #
-# SYRTHES has to be installed before Code_Saturne for
+# SYRTHES should be installed before Code_Saturne for
 # a correct detection. However, it is still possible to
 # update the scripts after Code_Saturne installation.
 #--------------------------------------------------------

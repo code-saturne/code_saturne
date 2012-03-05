@@ -208,31 +208,53 @@ class Package:
 
         # Set command line for configure pass
         configure = os.path.join(self.source_dir, 'configure')
-        if self.install_dir is not None:
-            configure = configure + ' --prefix=' + self.install_dir
-        configure = configure + ' ' + self.config_opts
+        if os.path.isfile(configure):
+            if self.install_dir is not None:
+                configure = configure + ' --prefix=' + self.install_dir
+            configure = configure + ' ' + self.config_opts
 
-        # Add compilers
-        if self.cc is not None: configure = configure + ' CC=\"' + self.cc + '\"'
-        if self.fc is not None: configure = configure + ' FC=\"' + self.fc + '\"'
+            # Add compilers
+            if self.cc is not None: configure += ' CC=\"' + self.cc + '\"'
+            if self.fc is not None: configure += ' FC=\"' + self.fc + '\"'
 
-        # Install the package
-        run_command(configure, "Configure", self.name, self.log_file)
-        run_command("make", "Compile", self.name, self.log_file)
-        run_command("make install", "Install", self.name, self.log_file)
+            # Install the package
+            run_command(configure, "Configure", self.name, self.log_file)
+            run_command("make", "Compile", self.name, self.log_file)
+            run_command("make install", "Install", self.name, self.log_file)
 
-        # Install pdf documentation if needed
-        if self.installation_pdf == 'yes':
-            try:
-                run_command("make pdf", "Generate documentation",
-                            self.name, self.log_file)
-                run_command("make install-pdf", "Install documentation",
-                            self.name, self.log_file)
-            except:
-                pass
+            # Install pdf documentation if needed
+            if self.installation_pdf == 'yes':
+                try:
+                    run_command("make pdf", "Generate documentation",
+                                self.name, self.log_file)
+                    run_command("make install-pdf", "Install documentation",
+                                self.name, self.log_file)
+                except:
+                    pass
 
-        # Clean build directory
-        run_command("make clean", "Clean", self.name, self.log_file)
+            # Clean build directory
+            run_command("make clean", "Clean", self.name, self.log_file)
+
+        elif os.path.isfile(os.path.join(self.source_dir, 'CMakeLists.txt')):
+
+            # Set command line for CMake pass
+
+            cmake = 'cmake'
+            if self.install_dir is not None:
+                cmake += ' -D CMAKE_INSTALL_PREFIX=' + self.install_dir
+            cmake += ' ' + self.config_opts
+
+            # Add compilers
+            if self.cc is not None: cmake += ' -D CMAKE_C_COMPILER=\"' + self.cc + '\"'
+            if self.fc is not None: cmake += ' -D CMAKE_Fortran_COMPILER=\"' + self.fc + '\"'
+
+            cmake += ' ' + self.source_dir
+
+            # Install the package and clean build directory
+            run_command(cmake, "Configure", self.name, self.log_file)
+            run_command("make VERBOSE=1", "Compile", self.name, self.log_file)
+            run_command("make install VERBOSE=1", "Install", self.name, self.log_file)
+            run_command("make clean", "Clean", self.name, self.log_file)
 
         # End of installation
         os.chdir(current_dir)
@@ -363,21 +385,6 @@ class Setup:
         p = self.packages['ncs']
         p.use_lib_mpi_wrapper = True
 
-        # CGNS library
-
-        self.packages['cgns'] = \
-            Package(name="CGNS",
-                    description="CFD General Notation System",
-                    package="cgnslib",
-                    version="2.5.5",
-                    archive="cgnslib_2.5-5.tar.gz",
-                    url="http://sourceforge.net/projects/cgns/files/cgnslib_2.5/Release%%205/%s/download")
-
-        p = self.packages['cgns']
-        p.config_opts = "--enable-64bit --enable-lfs"
-        p.vpath_support = False
-        p.create_install_dirs = True
-
         # HDF5 library
 
         self.packages['hdf5'] = \
@@ -386,10 +393,25 @@ class Setup:
                     package="hdf5",
                     version="1.8.8",
                     archive="hdf5-1.8.8.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/current/src/%s")
+                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.8/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
+
+        # CGNS library
+
+        self.packages['cgns'] = \
+            Package(name="CGNS",
+                    description="CFD General Notation System",
+                    package="cgnslib",
+                    version="3.1.3",
+                    archive="cgnslib_3.1.3-4.tar.gz",
+                    url="http://sourceforge.net/projects/cgns/files/cgnslib_3.1/%s/download")
+
+        p = self.packages['cgns']
+        p.config_opts = "-D ENABLE_64BIT=ON -D ENABLE_SCOPING=ON"
+        p.vpath_support = True
+        p.create_install_dirs = True
 
         # MED library
 
@@ -397,8 +419,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.0.3",
-                    archive="med-3.0.3.tar.gz",
+                    version="3.0.4",
+                    archive="med-3.0.4.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
@@ -410,20 +432,19 @@ class Setup:
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.4.4",
-                    archive="openmpi-1.4.4.tar.gz",
+                    version="1.4.5",
+                    archive="openmpi-1.4.5.tar.gz",
                     url="http://www.open-mpi.org/software/ompi/v1.4/downloads/%s")
 
-        # Libxml2 library (official url "ftp://xmlsoft.org/libxml2/%s")
+        # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
 
         self.packages['libxml2'] = \
             Package(name="libxml2",
                     description="XML library",
                     package="libxml2",
-                    version="2.6.32",
-                    archive="libxml2-2.6.32.tar.gz",
-                    url="ftp://fr.rpmfind.net/pub/libxml/%s")
-
+                    version="2.7.8",
+                    archive="libxml2-sources-2.7.8.tar.gz",
+                    url="ftp://xmlsoft.org/libxml2/%s")
 
         p = self.packages['libxml2']
         p.config_opts = "--with-ftp=no --with-http=no"
@@ -432,7 +453,7 @@ class Setup:
 
         self.packages['swig'] = \
             Package(name="Swig",
-                    description="Wrapper Python",
+                    description="Python Wrapper generator",
                     package="swig",
                     version="1.3.40",
                     archive="swig-1.3.40.tar.gz",
@@ -805,6 +826,24 @@ Check the setup file and some utilities presence.
 
         ncs.config_opts = ncs.config_opts + " --with-prepro=" + ecs.install_dir
 
+        # HDF5
+
+        if med.use == 'yes':
+            med.config_opts += " --with-hdf5=" + hdf5.install_dir
+        if cgns.use == 'yes':
+            cgns.config_opts += " -D ENABLE_HDF5=ON"
+            if hdf5.install_dir[0:4] != '/usr':
+                cgns.config_opts += " -D HDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include" \
+                    + " -D HDF5_LIBRARY=" + hdf5.install_dir + "/lib/libhdf5.so"
+
+        for p in [fvm, ecs]:
+            if hdf5.use == 'no':
+                p.config_opts = p.config_opts + " --without-hdf5"
+            else:
+                if hdf5.install_dir is not None:
+                    p.config_opts = p.config_opts + \
+                        " --with-hdf5=" + hdf5.install_dir
+
         # CGNS
 
         for p in [fvm, ecs]:
@@ -814,19 +853,6 @@ Check the setup file and some utilities presence.
                 if cgns.install_dir is not None:
                     p.config_opts = p.config_opts + \
                         " --with-cgns=" + cgns.install_dir
-
-        # HDF5
-
-        if med.use == 'yes':
-            med.config_opts = med.config_opts + " --with-hdf5=" + hdf5.install_dir
-
-        for p in [fvm, ecs]:
-            if hdf5.use == 'no':
-                p.config_opts = p.config_opts + " --without-hdf5"
-            else:
-                if hdf5.install_dir is not None:
-                    p.config_opts = p.config_opts + \
-                        " --with-hdf5=" + hdf5.install_dir
 
         # MED
 
