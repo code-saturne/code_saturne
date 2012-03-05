@@ -31,6 +31,11 @@ use_arch  no
 arch
 #
 #--------------------------------------------------------
+# C++ compiler
+#--------------------------------------------------------
+compCxx
+#
+#--------------------------------------------------------
 # C compiler
 #--------------------------------------------------------
 compC
@@ -56,9 +61,11 @@ disable_gui  no
 disable_frontend  no
 #
 #--------------------------------------------------------
-# Python is mandatory to launch the Graphical User
+# Python is required to launch the Graphical User
 # Interface and to use Code_Saturne scripts.
-# It has to be compiled with PyQt 4 support.
+#
+# for Graphical User Interface, PyQt 4 support
+# must be available.
 #
 # It is highly recommended to use the Python provided
 # by the distribution and to install PyQt through
@@ -106,11 +113,13 @@ scotch
 # SYRTHES installation path for an optional coupling.
 #
 # Only coupling with the SYRTHES thermal code version 3
-# is handled at the moment.
-#
-# SYRTHES has to be installed before Code_Saturne for
-# a correct detection. However, it is still possible to
+# is handled by this script, in which case SYRTHES
+# should be installed before Code_Saturne for a correct
+# detection. However, it is still possible to
 # update the scripts after Code_Saturne installation.
+#
+# For SYRTHES 4, configuration is a post-install step,
+# by editing <install_prefix>/etc/code_saturne.cfg.
 #--------------------------------------------------------
 syrthes
 #
@@ -126,10 +135,14 @@ syrthes
 #
 # Open MPI (or MPICH2)
 #
-#   For Linux workstations, MPI, HDF5, and even MED
+#   For Linux workstations, MPI, HDF5, CGNS, and even MED
 # packages may be available through the package manager.
 # HDF5 is also often available on large systems such as
 # IBM Blue Gene or Cray XT.
+#
+#   To install CGNS, the CMake configuration/installation
+# is required (it is available in most Linux
+# distributions)
 #
 #   For massively parallel architectures, it is
 # recommended to use the system's default MPI library.
