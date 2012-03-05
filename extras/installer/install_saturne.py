@@ -263,7 +263,7 @@ class Setup:
         self.optlibs = ['cgns', 'hdf5', 'med', 'mpi', 'libxml2']
 
         # Code_Saturne version
-        self.version = '2.3-alpha'
+        self.version = '2.2'
 
         # Logging file
         self.log_file = sys.stdout
