@@ -362,9 +362,14 @@ cs_system_info(void)
 #if defined(HAVE_OPENMP)
   {
     int t_id = omp_get_thread_num();
-    if (t_id == 0)
+    if (t_id == 0) {
       bft_printf("  %s%d\n", _("OpenMP threads:      "),
-                 omp_get_num_threads());
+                 omp_get_max_threads());
+      if (omp_get_dynamic())
+        bft_printf("  %s%d\n", _("Dynamic scheduling allowed"));
+      bft_printf("  %s%d\n", _("Processors/node:     "),
+                 omp_get_num_procs());
+    }
   }
 #endif
 }

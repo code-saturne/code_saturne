@@ -112,9 +112,7 @@ contains
 
     ! Numberings for OpenMP loops on interior faces
 
-    if (nthrdi.gt.1 .and. ngrpi.gt.1) then
-
-      iompli = 0
+    if (nthrdi.gt.1 .or. ngrpi.gt.1) then
 
       do ii = 1, nthrdi
         do jj = 1, ngrpi
@@ -127,9 +125,7 @@ contains
 
     ! Numberings for OpenMP loops on boundary faces
 
-    if (nthrdb.gt.1 .and. ngrpb.gt.1) then
-
-      iomplb = 0
+    if (nthrdb.gt.1 .or. ngrpb.gt.1) then
 
       do ii = 1, nthrdb
         do jj = 1, ngrpb

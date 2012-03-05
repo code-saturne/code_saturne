@@ -570,7 +570,7 @@ main(int    argc,
     {
       t_id = omp_get_thread_num();
       if (t_id == 0)
-        cs_glob_n_threads = omp_get_num_threads();
+        cs_glob_n_threads = omp_get_max_threads();
     }
   }
 #endif

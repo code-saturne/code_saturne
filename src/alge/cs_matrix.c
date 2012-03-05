@@ -5032,11 +5032,6 @@ cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix)
   if (matrix == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("The matrix is not defined."));
-  if (   matrix->type == CS_MATRIX_CSR
-      || matrix->type == CS_MATRIX_CSR_SYM)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Not supported with %."),
-              _(cs_matrix_type_name[matrix->type]));
 
   return matrix->b_size;
 }

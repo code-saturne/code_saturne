@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-02-28 11:14+0100\n"
+"POT-Creation-Date: 2012-03-05 13:56+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3382,9 +3382,6 @@ msgstr ""
 msgid "The matrix is not defined."
 msgstr "La matrice n'est pas définie."
 
-msgid "Not supported with %."
-msgstr ""
-
 msgid "Matrix is missing a vector multiply function."
 msgstr ""
 
@@ -3411,6 +3408,22 @@ msgid ""
 "------------------------------------------------\n"
 "\n"
 msgstr ""
+
+#, c-format
+msgid ""
+"Dump of matrixes in %s format\n"
+"is not operational yet."
+msgstr ""
+"L'impression des matrices au format %s \n"
+"n'est pas encore opérationnelle."
+
+#, c-format
+msgid ""
+"Extraction of diagonal dominance of matrixes in %s format\n"
+"is not operational yet."
+msgstr ""
+"L'extraction de la diagonale dominance de matrices au format %s \n"
+"n'est pas encore opérationnelle."
 
 msgid "Construction:"
 msgstr "Construction :"
@@ -4778,46 +4791,6 @@ msgstr ""
 " Taille de la connectivité cellules-cellules filtrée :  %12llu\n"
 " %llu connexions supprimées, soit un ratio de %4.2g %% utilisées\n"
 
-#, c-format
-msgid ""
-"Error writing file \"%s\":\n"
-"\n"
-"  %s"
-msgstr ""
-"Erreur à l'écriture du fichier \"%s\" :\n"
-"\n"
-"  %s"
-
-#, c-format
-msgid "Error writing file \"%s\""
-msgstr "Erreur à la lecture du fichier \"%s\""
-
-#, c-format
-msgid ""
-"MPI IO error for file: %s\n"
-"Error type: %s"
-msgstr ""
-"Erreur MPI IO pour le fichier : %s\n"
-"Type d'erreur : %s"
-
-#, c-format
-msgid ""
-"Error serializing data:\n"
-"\n"
-"  requested range: [%llu, %llu[\n"
-"  local range:     [%llu, %llu["
-msgstr ""
-
-#, c-format
-msgid ""
-"Error opening directory \"%s\":\n"
-"\n"
-"  %s"
-msgstr ""
-"Erreur à l'ouverture du répertoire \"%s\" :\n"
-"\n"
-"  %s"
-
 msgid "intensive"
 msgstr "intensif"
 
@@ -5092,6 +5065,46 @@ msgstr ""
 "Valeurs de clés définies par champ :\n"
 "------------------------------------\n"
 "\n"
+
+#, c-format
+msgid ""
+"Error writing file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à l'écriture du fichier \"%s\" :\n"
+"\n"
+"  %s"
+
+#, c-format
+msgid "Error writing file \"%s\""
+msgstr "Erreur à la lecture du fichier \"%s\""
+
+#, c-format
+msgid ""
+"MPI IO error for file: %s\n"
+"Error type: %s"
+msgstr ""
+"Erreur MPI IO pour le fichier : %s\n"
+"Type d'erreur : %s"
+
+#, c-format
+msgid ""
+"Error serializing data:\n"
+"\n"
+"  requested range: [%llu, %llu[\n"
+"  local range:     [%llu, %llu["
+msgstr ""
+
+#, c-format
+msgid ""
+"Error opening directory \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à l'ouverture du répertoire \"%s\" :\n"
+"\n"
+"  %s"
 
 #, c-format
 msgid ""
@@ -6648,13 +6661,19 @@ msgid "pset size:         "
 msgstr ""
 
 msgid "Torus dimensions:    "
-msgstr ""
+msgstr "Dimensions du tore : "
 
 msgid "appnum attribute:"
 msgstr "attribut appnum :"
 
 msgid "OpenMP threads:      "
 msgstr "Threads OpenMP :     "
+
+msgid "Dynamic scheduling allowed"
+msgstr "Ordonnancement dynamique possible"
+
+msgid "Processors/node:     "
+msgstr "Processeurs/noeud :  "
 
 #, c-format
 msgid "Error opening file: \"%s\""
