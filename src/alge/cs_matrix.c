@@ -1060,10 +1060,10 @@ _mat_vec_p_l_native_omp(bool                exclude_diag,
 
       const cs_lnum_t *restrict face_cel_p = ms->face_cell;
 
-      for (g_id=0; g_id < n_groups; g_id++) {
+      for (g_id = 0; g_id < n_groups; g_id++) {
 
 #       pragma omp parallel for private(face_id, ii, jj)
-        for (t_id=0; t_id < n_threads; t_id++) {
+        for (t_id = 0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
                face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
@@ -1080,10 +1080,10 @@ _mat_vec_p_l_native_omp(bool                exclude_diag,
 
       const cs_lnum_t *restrict face_cel_p = ms->face_cell;
 
-      for (g_id=0; g_id < n_groups; g_id++) {
+      for (g_id = 0; g_id < n_groups; g_id++) {
 
 #       pragma omp parallel for private(face_id, ii, jj)
-        for (t_id=0; t_id < n_threads; t_id++) {
+        for (t_id = 0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
                face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
@@ -1158,7 +1158,7 @@ _b_mat_vec_p_l_native_omp(bool                exclude_diag,
       for (g_id=0; g_id < n_groups; g_id++) {
 
 #       pragma omp parallel for private(face_id, ii, jj, kk)
-        for (t_id=0; t_id < n_threads; t_id++) {
+        for (t_id = 0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
                face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
@@ -1178,10 +1178,10 @@ _b_mat_vec_p_l_native_omp(bool                exclude_diag,
 
       const cs_lnum_t *restrict face_cel_p = ms->face_cell;
 
-      for (g_id=0; g_id < n_groups; g_id++) {
+      for (g_id = 0; g_id < n_groups; g_id++) {
 
 #       pragma omp parallel for private(face_id, ii, jj, kk)
-        for (t_id=0; t_id < n_threads; t_id++) {
+        for (t_id = 0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
                face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
