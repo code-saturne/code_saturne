@@ -264,6 +264,14 @@ typedef int      cs_int_t;      /* Fortran integer */
 typedef double   cs_real_t;     /* Fortran double precision */
 typedef char     cs_byte_t;     /* Byte (untyped memory unit) */
 
+/* Vector or array block types */
+
+typedef cs_lnum_t  cs_lnum_2_t[2];      /* Vector of 2 local numbers */
+
+typedef cs_real_t  cs_real_3_t[3];      /* Vector of 3 real values */
+typedef cs_real_t  cs_real_4_t[4];      /* Vector of 4 real values */
+typedef cs_real_t  cs_real_33_t[3][3];  /* Matrix of 3x3 real values */
+
 /* Mappings to MPI datatypes */
 /*---------------------------*/
 
