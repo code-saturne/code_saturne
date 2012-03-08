@@ -922,7 +922,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
       }
     }
   }
-  
+
   BFT_FREE(rhs);
 
 }
