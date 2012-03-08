@@ -145,7 +145,7 @@ _compute_cell_cocg(const cs_mesh_t      *m,
 
   cs_lnum_t  cell_id, face_id, i, j, cell_id1, cell_id2;
   cs_real_t  pfac, vecfac, ddet;
-  cs_real_t  vol;
+  cs_real_t  dvol1, dvol2;
 
   cs_real_t  cocg11, cocg12, cocg13, cocg21, cocg22, cocg23;
   cs_real_t  cocg31, cocg32, cocg33;
@@ -154,16 +154,16 @@ _compute_cell_cocg(const cs_mesh_t      *m,
   /* compute the dimensionless matrix COCG for each cell*/
 
   for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
-    vol = cell_vol[cell_id];
-    cocg[cell_id][0][0]= vol;
+    dvol1 = cell_vol[cell_id];
+    cocg[cell_id][0][0]= 1.0;
     cocg[cell_id][0][1]= 0.0;
     cocg[cell_id][0][2]= 0.0;
     cocg[cell_id][1][0]= 0.0;
-    cocg[cell_id][1][1]= vol;
+    cocg[cell_id][1][1]= 1.0;
     cocg[cell_id][1][2]= 0.0;
     cocg[cell_id][2][0]= 0.0;
     cocg[cell_id][2][1]= 0.0;
-    cocg[cell_id][2][2]= vol;
+    cocg[cell_id][2][2]= 1.0;
   }
 
   /* Interior face treatment */
@@ -172,14 +172,17 @@ _compute_cell_cocg(const cs_mesh_t      *m,
     cell_id1 = i_face_cells[face_id][0] - 1;
     cell_id2 = i_face_cells[face_id][1] - 1;
 
+    dvol1 = 1./cell_vol[cell_id1];
+    dvol2 = 1./cell_vol[cell_id2];
+
     for (i = 0; i < 3; i++) {
 
       pfac = -0.5*dofij[face_id][i];
 
       for (j = 0; j < 3; j++) {
         vecfac = pfac*i_face_normal[face_id][j];
-        cocg[cell_id1][i][j] += vecfac;
-        cocg[cell_id2][i][j] -= vecfac;
+        cocg[cell_id1][i][j] += vecfac * dvol1;
+        cocg[cell_id2][i][j] -= vecfac * dvol2;
       }
     }
   }

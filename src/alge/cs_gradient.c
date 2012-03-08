@@ -654,12 +654,10 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
                             const cs_real_3_t  (*restrict coefav),
                             const cs_real_33_t (*restrict coefbv),
                             const cs_real_3_t  (*restrict pvar),
-                            cs_real_33_t       (*restrict rhs),
                             cs_real_33_t       (*restrict gradv))
 {
   /* Local variables */
 
-  const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_faces = m->n_i_faces;
   const int n_b_faces = m->n_b_faces;
@@ -678,7 +676,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
   cs_lnum_t  cell_id, face_id, i, j, cell_id1, cell_id2;
   cs_real_t  pfac, pond, epzero;
-  cs_real_t  dvol;
+  cs_real_t  dvol, dvol1, dvol2;
 
   epzero = 1.e-12;
 
@@ -696,7 +694,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
   for (cell_id = 0; cell_id < n_cells_ext; cell_id++)
     for (j = 0; j < 3; j++)
       for (i = 0; i < 3; i++)
-        rhs[cell_id][j][i] = 0.0;
+        gradv[cell_id][j][i] = 0.0;
 
   /* Interior face treatment */
 
@@ -705,12 +703,14 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
     cell_id2 = i_face_cells[face_id][1] - 1;
 
     pond = weight[face_id];
+    dvol1 = 1./cell_vol[cell_id1];
+    dvol2 = 1./cell_vol[cell_id2];
 
     for (i = 0; i < 3; i++) {
       pfac   = pond * pvar[cell_id1][i] + (1.0-pond) * pvar[cell_id2][i];
       for (j = 0; j < 3; j++) {
-        rhs[cell_id1][j][i] += pfac * i_face_normal[face_id][j];
-        rhs[cell_id2][j][i] -= pfac * i_face_normal[face_id][j];
+        gradv[cell_id1][j][i] += pfac * i_face_normal[face_id][j] * dvol1;
+        gradv[cell_id2][j][i] -= pfac * i_face_normal[face_id][j] * dvol2;
       }
     }
   }
@@ -720,25 +720,17 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
   for (face_id = 0; face_id < n_b_faces; face_id++) {
     cell_id = b_face_cells[face_id] - 1;
 
+    dvol = 1./cell_vol[cell_id];
+
     for (i = 0; i < 3; i++) {
       pfac = inc*coefav[face_id][i] + coefbv[face_id][0][i] * pvar[cell_id][0]
                                     + coefbv[face_id][1][i] * pvar[cell_id][1]
                                     + coefbv[face_id][2][i] * pvar[cell_id][2];
       for (j = 0; j < 3; j++)
-        rhs[cell_id][j][i] += pfac * b_face_normal[face_id][j];
+        gradv[cell_id][j][i] += pfac * b_face_normal[face_id][j]*dvol;
 
     }
   }
-
-  /* Finalization */
-
-  for (cell_id = 0; cell_id < n_cells; cell_id++) {
-    dvol = 1./cell_vol[cell_id];
-    for (i = 0; i < 3; i++)
-      for (j = 0; j < 3; j++)
-        gradv[cell_id][i][j] = rhs[cell_id][i][j]*dvol;
-  }
-
 
   /* Periodicity and parallelism treatment */
 
@@ -779,7 +771,6 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                            const cs_real_3_t  (*restrict coefav),
                            const cs_real_33_t (*restrict coefbv),
                            const cs_real_3_t  (*restrict pvar),
-                           cs_real_33_t       (*restrict rhs),
                            cs_real_33_t       (*restrict gradv))
 {
   /* Local variables */
@@ -806,13 +797,15 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
     = (const cs_real_3_t *restrict)fvq->dofij;
   cs_real_33_t (*restrict cocg) = fvq->cocg;
 
+  cs_real_33_t *rhs;
 
   cs_lnum_t  cell_id, face_id, i, j, k, cell_id1, cell_id2;
   cs_real_t  pfac, l2_norm, l2_residual, vecfac, pond, epzero;
-  cs_real_t  vol;
+  cs_real_t  dvol, dvol1, dvol2;
 
   int isweep;
 
+  BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
 
   epzero = 1.e-12;
 
@@ -821,7 +814,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
   /* L2 norm */
 
-  l2_norm = sqrt(cs_dot(9*n_cells, (cs_real_t *)rhs, (cs_real_t *)rhs));
+  l2_norm = sqrt(cs_dot(9*n_cells, (cs_real_t *)gradv, (cs_real_t *)gradv));
   l2_residual = l2_norm;
 
   if (l2_norm > epzero) {
@@ -833,12 +826,11 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
       /* Computation of the Right Hand Side*/
 
-      for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-        vol = cell_vol[cell_id];
+      for (cell_id = 0; cell_id < n_cells_ext; cell_id++)
         for (j = 0; j < 3; j++)
           for (i = 0; i < 3; i++)
-            rhs[cell_id][j][i] = -gradv[cell_id][j][i]*vol;
-      }
+            rhs[cell_id][j][i] = -gradv[cell_id][j][i];
+
 
       /* Interior face treatment */
 
@@ -847,6 +839,9 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
         cell_id1 = i_face_cells[face_id][0] - 1;
         cell_id2 = i_face_cells[face_id][1] - 1;
         pond = weight[face_id];
+
+        dvol1 = 1./cell_vol[cell_id1];
+        dvol2 = 1./cell_vol[cell_id2];
 
         for (i = 0; i < 3; i++) {
           pfac = pond*pvar[cell_id1][i] + (1.0-pond)*pvar[cell_id2][i];
@@ -857,8 +852,8 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
           for (j = 0; j < 3; j++) {
 
-            rhs[cell_id1][j][i] += pfac * i_face_normal[face_id][j];
-            rhs[cell_id2][j][i] -= pfac * i_face_normal[face_id][j];
+            rhs[cell_id1][j][i] += pfac * i_face_normal[face_id][j] * dvol1;
+            rhs[cell_id2][j][i] -= pfac * i_face_normal[face_id][j] * dvol2;
 
           }
         }
@@ -869,6 +864,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
       for (face_id = 0; face_id < n_b_faces; face_id++) {
 
         cell_id = b_face_cells[face_id] - 1;
+        dvol = 1./cell_vol[cell_id];
 
         for (i = 0; i < 3; i++) {
 
@@ -885,7 +881,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
           }
 
           for (j = 0; j < 3; j++)
-            rhs[cell_id][j][i] += pfac * b_face_normal[face_id][j];
+            rhs[cell_id][j][i] += pfac * b_face_normal[face_id][j] * dvol;
 
         }
       }
@@ -926,7 +922,8 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
       }
     }
   }
-
+  
+  BFT_FREE(rhs);
 
 }
 
@@ -1205,10 +1202,6 @@ void CS_PROCF (cgdvec, CGDVEC)
   cs_int_t  *ipcvse = NULL;
   cs_int_t  *ielvse = NULL;
 
-  cs_real_33_t *rhs;
-
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
-
   bool update_stats = true;
   cs_gradient_type_t gradient_type = CS_GRADIENT_N_TYPES;
 
@@ -1251,7 +1244,6 @@ void CS_PROCF (cgdvec, CGDVEC)
                                 coefav,
                                 coefbv,
                                 pvar,
-                                rhs,
                                 gradv);
 
     /* If reconstructions are required */
@@ -1267,15 +1259,12 @@ void CS_PROCF (cgdvec, CGDVEC)
                                  coefav,
                                  coefbv,
                                  pvar,
-                                 rhs,
                                  gradv);
 
   }
   /* TODO *imrgra == 1 || *imrgra == 2 || *imrgra == 3 || *imrgra == 4 */
 
   /* TODO _gradient_clipping */
-
-  BFT_FREE(rhs);
 
   if (update_stats == true) {
     gradient_info->n_calls += 1;
