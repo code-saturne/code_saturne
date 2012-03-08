@@ -454,6 +454,10 @@ call clmopt(mltmmn, mltmgl, mltmmr, mltmst, mlttyp)
 call indsui(isuite)
 !==========
 
+! Choose if the 3x3 dimensionless matrix cocg is computed
+! True for ivelco = 1.
+call comcoc(ivelco)
+
 ! --- Varpos
 !      3ieme passage
 call varpos(nmodpp)

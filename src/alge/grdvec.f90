@@ -128,16 +128,11 @@ double precision, dimension(:,:,:), allocatable :: gradvi
 ! the velocity and the gradient fields are interleaved
 if (ilved) then
 
-  call cgdvec                                                     &
+  call cgdvec &
   !==========
- ( ncelet , ncel   , nfac   , nfabor , ivar   ,                   &
-   imrgra , inc    , nswrgp ,                                     &
-   iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
-   ifacel , ifabor , isympa ,                                     &
-   volume , surfac , surfbo , surfbn , pond   ,                   &
-   dist   , distb  , dijpf  , diipb  , dofij  ,                   &
-   xyzcen , cdgfac , cdgfbo , coefav , coefbv , pvar   ,          &
-   cocgu  ,                                                       &
+ ( ivar   ,                                                       &
+   imrgra , inc    , nswrgp , iwarnp , imligp , epsrgp , climgp , &
+   coefav , coefbv , pvar   ,                                     &
    gradv  )
 
 ! We interleave the velocity
@@ -153,18 +148,12 @@ else
     enddo
   enddo
 
-  call cgdvec                                                     &
+  call cgdvec &
   !==========
- ( ncelet , ncel   , nfac   , nfabor , ivar   ,                   &
-   imrgra , inc    , nswrgp ,                                     &
-   iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
-   ifacel , ifabor , isympa ,                                     &
-   volume , surfac , surfbo , surfbn , pond   ,                   &
-   dist   , distb  , dijpf  , diipb  , dofij  ,                   &
-   xyzcen , cdgfac , cdgfbo , coefav , coefbv , pvari  ,          &
-   cocgu  ,                                                       &
+ ( ivar   ,                                                       &
+   imrgra , inc    , nswrgp , iwarnp , imligp , epsrgp , climgp , &
+   coefav , coefbv , pvari  ,                                     &
    gradvi )
-
 
   do isou = 1, 3
     do jsou = 1, 3

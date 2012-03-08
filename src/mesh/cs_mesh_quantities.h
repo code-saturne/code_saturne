@@ -69,6 +69,8 @@ typedef struct {
   cs_real_t  *diipf;          /* Vector II'  for interior faces */
   cs_real_t  *djjpf;          /* Vector JJ'  for interior faces */
 
+  cs_real_33_t (*cocg);       /* Interleaved cocg matrix */
+
   cs_real_t  *i_dist;         /* Distance between the cell center and
                                  the center of gravity of interior faces */
   cs_real_t  *b_dist;         /* Distance between the cell center and
@@ -115,6 +117,26 @@ extern cs_mesh_quantities_t  *cs_glob_mesh_quantities;
 void
 CS_PROCF (algcen, ALGCEN) (cs_int_t  *const iopt);
 
+/*----------------------------------------------------------------------------
+ * Query of the option for computing cocg matrix.
+ *
+ * This function returns 0 or 1 according to the selected option.
+ *
+ * Fortran interface :
+ *
+ * SUBROUTINE COMCOC (IOPT)
+ * *****************
+ *
+ * INTEGER          IOPT        : <-> : Choice of the algorithm
+ *                                      < 0 : query
+ *                                        0 : No computation
+ *                                        1 : computation of the
+ *                                            3x3 dimensionless matrix cocg
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (comcoc, COMCOC) (cs_int_t  *const iopt);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -134,6 +156,22 @@ CS_PROCF (algcen, ALGCEN) (cs_int_t  *const iopt);
 
 int
 cs_mesh_quantities_cell_cen_choice(const int algo_choice);
+
+/*----------------------------------------------------------------------------
+ * Query or modification of the option for computing cocg.
+ *
+ *  < 0 : query
+ *    0 : Not compute cocg (default choice)
+ *    1 : compute the dimensionless cocg matrix
+ *
+ * algo_choice  <--  choice of the option.
+ *
+ * returns:
+ *  0 or 1 according to the selected option.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_mesh_quantities_compute_cocg(const int algo_choice);
 
 /*----------------------------------------------------------------------------
  * Create a mesh quantities structure.

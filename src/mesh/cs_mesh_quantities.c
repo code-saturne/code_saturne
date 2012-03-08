@@ -105,10 +105,124 @@ cs_mesh_quantities_t  *cs_glob_mesh_quantities = NULL;
 
 static int cs_glob_mesh_quantities_cell_cen = 0;
 
+/* Choice of the option for computing cocg or not */
+
+static int cs_glob_mesh_quantities_compute_cocg = 0;
+
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Compute 3x3 matrix cocg
+ *
+ * parameters:
+ *   dim             <--  dimension
+ *   m               <--  mesh
+ *   fvq             <->  mesh quantities
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_cell_cocg(const cs_mesh_t      *m,
+                   cs_mesh_quantities_t *fvq)
+{
+  /* Local variables */
+
+  const int n_cells = m->n_cells;
+  const int n_cells_with_ghosts = m->n_cells_with_ghosts;
+  const int n_i_faces = m->n_i_faces;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict dofij
+    = (const cs_real_3_t *restrict)fvq->dofij;
+  cs_real_33_t *restrict cocg
+    = fvq->cocg;
+
+  cs_lnum_t  cell_id, face_id, i, j, cell_id1, cell_id2;
+  cs_real_t  pfac, vecfac, ddet;
+  cs_real_t  vol;
+
+  cs_real_t  cocg11, cocg12, cocg13, cocg21, cocg22, cocg23;
+  cs_real_t  cocg31, cocg32, cocg33;
+  cs_real_t  a11, a12, a13, a21, a22, a23, a31, a32, a33;
+
+  /* compute the dimensionless matrix COCG for each cell*/
+
+  for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
+    vol = cell_vol[cell_id];
+    cocg[cell_id][0][0]= vol;
+    cocg[cell_id][0][1]= 0.0;
+    cocg[cell_id][0][2]= 0.0;
+    cocg[cell_id][1][0]= 0.0;
+    cocg[cell_id][1][1]= vol;
+    cocg[cell_id][1][2]= 0.0;
+    cocg[cell_id][2][0]= 0.0;
+    cocg[cell_id][2][1]= 0.0;
+    cocg[cell_id][2][2]= vol;
+  }
+
+  /* Interior face treatment */
+
+  for (face_id = 0; face_id < n_i_faces; face_id++) {
+    cell_id1 = i_face_cells[face_id][0] - 1;
+    cell_id2 = i_face_cells[face_id][1] - 1;
+
+    for (i = 0; i < 3; i++) {
+
+      pfac = -0.5*dofij[face_id][i];
+
+      for (j = 0; j < 3; j++) {
+        vecfac = pfac*i_face_normal[face_id][j];
+        cocg[cell_id1][i][j] += vecfac;
+        cocg[cell_id2][i][j] -= vecfac;
+      }
+    }
+  }
+
+  /* 3x3 Matrix inversion*/
+
+  for (cell_id = 0; cell_id < n_cells; cell_id++) {
+
+    cocg11 = cocg[cell_id][0][0];
+    cocg12 = cocg[cell_id][0][1];
+    cocg13 = cocg[cell_id][0][2];
+    cocg21 = cocg[cell_id][1][0];
+    cocg22 = cocg[cell_id][1][1];
+    cocg23 = cocg[cell_id][1][2];
+    cocg31 = cocg[cell_id][2][0];
+    cocg32 = cocg[cell_id][2][1];
+    cocg33 = cocg[cell_id][2][2];
+
+    a11=cocg22*cocg33-cocg32*cocg23;
+    a12=cocg32*cocg13-cocg12*cocg33;
+    a13=cocg12*cocg23-cocg22*cocg13;
+    a21=cocg31*cocg23-cocg21*cocg33;
+    a22=cocg11*cocg33-cocg31*cocg13;
+    a23=cocg21*cocg13-cocg11*cocg23;
+    a31=cocg21*cocg32-cocg31*cocg22;
+    a32=cocg31*cocg12-cocg11*cocg32;
+    a33=cocg11*cocg22-cocg21*cocg12;
+
+    ddet = 1.0/(cocg11*a11 +cocg21*a12+cocg31*a13);
+
+    cocg[cell_id][0][0] = a11*ddet;
+    cocg[cell_id][0][1] = a12*ddet;
+    cocg[cell_id][0][2] = a13*ddet;
+    cocg[cell_id][1][0] = a21*ddet;
+    cocg[cell_id][1][1] = a22*ddet;
+    cocg[cell_id][1][2] = a23*ddet;
+    cocg[cell_id][2][0] = a31*ddet;
+    cocg[cell_id][2][1] = a32*ddet;
+    cocg[cell_id][2][2] = a33*ddet;
+
+  }
+
+}
 /*----------------------------------------------------------------------------
  * Compute quantities associated to faces (border or internal)
  *
@@ -1277,6 +1391,30 @@ CS_PROCF (algcen, ALGCEN) (cs_int_t  *const iopt)
 
   *iopt = iopt_ret;
 }
+/*----------------------------------------------------------------------------
+ * Query of the option for computing cocg matrix.
+ *
+ * This function returns 0 or 1 according to the selected option.
+ *
+ * Fortran interface :
+ *
+ * SUBROUTINE COMCOC (IOPT)
+ * *****************
+ *
+ * INTEGER          IOPT        : <-> : Choice of the algorithm
+ *                                      < 0 : query
+ *                                        0 : No computation
+ *                                        1 : computation of the
+ *                                            3x3 dimensionless matrix cocg
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (comcoc, COMCOC) (cs_int_t  *const iopt)
+{
+  int  iopt_ret = cs_mesh_quantities_compute_cocg((int)(*iopt));
+
+  *iopt = iopt_ret;
+}
 
 /*=============================================================================
  * Public function definitions
@@ -1313,6 +1451,36 @@ cs_mesh_quantities_cell_cen_choice(const int algo_choice)
 }
 
 /*----------------------------------------------------------------------------
+ * Query or modification of the option for computing cocg.
+ *
+ *  < 0 : query
+ *    0 : Not compute cocg (default choice)
+ *    1 : compute the dimensionless cocg matrix
+ *
+ * algo_choice  <--  choice of the option.
+ *
+ * returns:
+ *  0 or 1 according to the selected option.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_mesh_quantities_compute_cocg(const int algo_choice)
+{
+  if (algo_choice > 1)
+    bft_error(__FILE__, __LINE__,0,
+              _("The option selection indicator for the cocg computation\n"
+                "can take the following values:\n"
+                "  0: Not compute cocg dimensionless matric\n"
+                "  1: Compute cocg matrix\n"
+                "and not %d."), cs_glob_mesh_quantities_compute_cocg);
+
+  else if (algo_choice >= 0)
+    cs_glob_mesh_quantities_compute_cocg = algo_choice;
+
+  return cs_glob_mesh_quantities_compute_cocg;
+}
+
+/*----------------------------------------------------------------------------
  * Create a mesh quantities structure.
  *
  * returns:
@@ -1342,6 +1510,7 @@ cs_mesh_quantities_create(void)
   mesh_quantities->dofij = NULL;
   mesh_quantities->diipf = NULL;
   mesh_quantities->djjpf = NULL;
+  mesh_quantities->cocg = NULL;
 
   return (mesh_quantities);
 }
@@ -1375,6 +1544,7 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
   BFT_FREE(mesh_quantities->dofij);
   BFT_FREE(mesh_quantities->diipf);
   BFT_FREE(mesh_quantities->djjpf);
+  BFT_FREE(mesh_quantities->cocg);
 
   BFT_FREE(mesh_quantities);
 
@@ -1447,6 +1617,13 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
   if (mesh_quantities->dofij == NULL)
     BFT_MALLOC(mesh_quantities->dofij, n_i_faces*dim, cs_real_t);
+
+  /* Compute 3x3 cocg dimensionless matrix */
+
+  if (cs_glob_mesh_quantities_compute_cocg == 1) {
+    if (mesh_quantities->cocg == NULL)
+      BFT_MALLOC(mesh_quantities->cocg, n_cells_with_ghosts, cs_real_33_t);
+  }
 
   /* Compute centres of gravity, normals, and surfaces of interior faces */
 
@@ -1576,6 +1753,12 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                         mesh_quantities->dijpf,
                         mesh_quantities->diipb,
                         mesh_quantities->dofij);
+
+  /* Compute 3x3 cocg dimensionless matrix */
+
+  if (cs_glob_mesh_quantities_compute_cocg == 1)
+    _compute_cell_cocg(mesh, mesh_quantities);
+
 
   /* Print some information on the control volumes, and check min volume */
 
