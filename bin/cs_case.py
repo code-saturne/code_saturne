@@ -641,6 +641,8 @@ class case:
                         + ':$LD_LIBRARY_PATH\n')
         s.write('\n')
 
+        s.write('cd ' + p_args[0] + '\n\n')
+
         # Boot MPI daemons if necessary
 
         if mpi_env.gen_hostsfile != None:
@@ -670,7 +672,6 @@ class case:
 
         p_args = d.partitioner_command()
 
-        s.write('cd ' + p_args[0] + '\n\n')
         s.write('# Run partitioner.\n')
         s.write(mpi_cmd + p_args[1] + mpi_cmd_args + p_args[2] + ' $@\n')
 
