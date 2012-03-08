@@ -357,17 +357,19 @@ class Study(object):
             ref = os.path.join(self.__repo, "MESH")
             if os.path.isdir(ref):
                 l = os.listdir(ref)
-                meshes = fnmatch.filter(l, '*.unv')   \
-                       + fnmatch.filter(l, '*.med')   \
-                       + fnmatch.filter(l, '*.case')  \
-                       + fnmatch.filter(l, '*.ngeom') \
-                       + fnmatch.filter(l, '*.ccm')   \
-                       + fnmatch.filter(l, '*.cgns')  \
-                       + fnmatch.filter(l, '*.neu')   \
-                       + fnmatch.filter(l, '*.msh')   \
-                       + fnmatch.filter(l, '*.des')
+                meshes = []
+                for cpr in ["", ".gz"]:
+                    for fmt in ["unv",
+                                "med",
+                                "ngeom",
+                                "ccm",
+                                "cgns",
+                                "neu",
+                                "msh",
+                                "des"]:
+                        meshes += fnmatch.filter(l, "*." + fmt + cpr)
                 des = os.path.join(self.__dest, "MESH")
-                for m in os.listdir(ref):
+                for m in l:
                     if m in meshes:
                         os.symlink(os.path.join(ref, m), os.path.join(des, m))
                     else:
