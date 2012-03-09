@@ -23,7 +23,7 @@
 subroutine autmgr &
 !================
 
-    ( igr    , isym   , iagmax , nagmax ,                         &
+    ( igr    , isym   , nagmax ,                                  &
       ncelf  , ncelfe , nfacf  , iwarnp , ifacef ,                &
       daf    , xaf    , surfaf , volumf , xyzfin ,                &
       iordf  , irscel ,                                           &
@@ -44,8 +44,7 @@ subroutine autmgr &
 !__________________!____!_____!________________________________________________!
 ! igr              ! i  ! <-- ! coarse grid level                              !
 ! isym             ! i  ! <-- ! 1: symmetric matrix; 2: non-symmetric matrix   !
-! iagmax           ! i  ! <-> ! max. fine cells per coarse cell                !
-! nagmax           ! i  ! <-- ! max. fine cells per coarse cell target         !
+! nagmax           ! i  ! <-- ! max. fine cells per coarse cell                !
 ! ncelf            ! i  ! <-- ! number of cells in fine grid                   !
 ! ncelfe           ! i  ! <-- ! extended number of cells in fine grid          !
 ! nfacf            ! i  ! <-- ! number of interior faces in fine grid          !
@@ -84,7 +83,7 @@ implicit none
 
 ! Arguments
 
-integer          igr, isym, iagmax, nagmax
+integer          igr, isym, nagmax
 integer          ncelf, ncelfe, nfacf
 integer          iwarnp
 
@@ -102,7 +101,7 @@ double precision w1(ncelfe), w2(ncelfe)
 
 integer          ncelg, ncelgg, icel, ifac , ifac1, ifac2, icelg
 integer          nfacn,nfacnr,npass,npasmx
-integer          inditt, noaglo, ngros, incvoi
+integer          inditt, noaglo, ngros, incvoi, iagmax
 integer          i, j, imin, imax
 
 double precision epslon, xaf1, xaf2
@@ -122,6 +121,8 @@ incvoi = 1
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+iagmax = 1
 
 do icel = 1, ncelfe
   indic(icel) = -1

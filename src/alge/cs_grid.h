@@ -270,10 +270,10 @@ cs_grid_get_comm(const cs_grid_t  *g);
  * Create coarse grid from fine grid.
  *
  * parameters:
- *   f                   <-- Fine grid structure
- *   verbosity           <-- Verbosity level
- *   agglomeration_limit <-- Maximum allowed fine cells per coarse cell
- *   max_agglomeration   <-> Maximum fine cells per coarse cell
+ *   f                    <-- Fine grid structure
+ *   verbosity            <-- Verbosity level
+ *   agglomeration_limit  <-- Maximum allowed fine cells per coarse cell
+ *   relaxation_parameter <-- P0/P1 relaxation factor
  *
  * returns:
  *   coarse grid structure
@@ -283,7 +283,6 @@ cs_grid_t *
 cs_grid_coarsen(const cs_grid_t  *f,
                 int               verbosity,
                 int               agglomeration_limit,
-                int              *max_agglomeration,
                 double            relaxation_parameter);
 
 /*----------------------------------------------------------------------------

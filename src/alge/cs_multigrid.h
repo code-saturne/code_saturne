@@ -69,7 +69,6 @@ void CS_PROCF(clmlga, CLMLGA)
  const cs_int_t   *nfac,      /* <-- Number of internal faces */
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
- cs_int_t         *iagmax,    /* <-> Maximum agglomeration count */
  const cs_int_t   *nagmax,    /* <-- Agglomeration count limit */
  const cs_int_t   *ncpost,    /* <-- If > 0, postprocess coarsening, using
                                      coarse cell numbers modulo ncpost */

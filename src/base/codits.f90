@@ -216,7 +216,7 @@ integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
 integer          idimte,itenso,iinvpe, iinvpp
 integer          idtva0
-integer          iagmax, nagmax, npstmg
+integer          nagmax, npstmg
 integer          ibsize
 
 double precision residu,rnorm
@@ -328,7 +328,6 @@ if (imgrp.gt.0) then
 
   chaine = nomvar(ipp)
   iwarnp = iwarni(ivar)
-  iagmax = iagmx0(ivar)
   nagmax = nagmx0(ivar)
   npstmg = ncpmgr(ivar)
   lchain = 16
@@ -337,7 +336,7 @@ if (imgrp.gt.0) then
   !==========
  ( chaine(1:16) ,    lchain ,                                     &
    ncelet , ncel   , nfac   ,                                     &
-   isym   , iagmax , nagmax , npstmg , iwarnp ,                   &
+   isym   , nagmax , npstmg , iwarnp ,                            &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
    dam    , xam    )

@@ -41,15 +41,14 @@ module mltgrd
   !   mltmst : number of ranks over which merging takes place (stride)
   !   mlttyp : multigrid coarsening type (face traversal order)
   !
-  !   nagmx0 : parametre construction de  maillage automatique
-  !   iagmx0 : parametre construction de  maillage automatique
-  !   ncpmgr : si > 0, active le post traitement de l'agglomeration, en
-  !            projetant les numeros de cellules grossieres sur le
-  !            maillage fin (modulo ncpmgr(ivar))
+  !   nagmx0 : maximum aggregation per grid level
+  !   ncpmgr : if > 0, activates post-processing output of aggregation,
+  !            by projecting the coarse cell numbers (modulo ncpmgr(ivar))
+  !            on the finest mesh
 
   integer, save :: ncegrm, ngrmax
   integer, save :: mltmmn, mltmgl, mltmst, mltmmr, mlttyp
-  integer, save :: nagmx0(nvarmx), iagmx0(nvarmx), ncpmgr(nvarmx)
+  integer, save :: nagmx0(nvarmx), ncpmgr(nvarmx)
 
   !=============================================================================
 

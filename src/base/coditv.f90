@@ -249,7 +249,7 @@ integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iel,icycle,nswmod
 integer          iinvpe,iinvpp
 integer          idtva0
-integer          iagmax, nagmax, npstmg
+integer          nagmax, npstmg
 double precision thetex
 
 integer          isou , jsou, ifac

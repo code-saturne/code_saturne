@@ -55,7 +55,6 @@ extern void CS_PROCF (autmgr, AUTMGR)
 (
  const cs_int_t   *igr,         /* <-- new grid level (0 = base) */
  const cs_int_t   *isym,        /* <-- 1: symmetric; 2 nonsymmteric */
- const cs_int_t   *iagmax,      /* <-- max fine cells per coarse cell */
  const cs_int_t   *nagmax,      /* <-- fine cells per coarse cell limit */
  const cs_int_t   *ncelf,       /* <-- number of cells in fine grid */
  const cs_int_t   *ncelfe,      /* <-- number of cells with halo in fine grid */

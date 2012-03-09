@@ -172,7 +172,7 @@ integer          nitmap, imgrp , ncymap, nitmgp
 integer          iinvpe, indhyd
 integer          iesdep
 integer          idtsca
-integer          iagmax, nagmax, npstmg
+integer          nagmax, npstmg
 integer          isou  , ibsize
 double precision residu, resold, phydr0
 double precision ardtsr, arsr  , unsara, thetap
@@ -803,7 +803,6 @@ if (imgr(ipr).gt.0) then
 
   chaine = nomvar(ipp)
   iwarnp = iwarni(ipr)
-  iagmax = iagmx0(ipr)
   nagmax = nagmx0(ipr)
   npstmg = ncpmgr(ipr)
   lchain = 16
@@ -812,7 +811,7 @@ if (imgr(ipr).gt.0) then
   !==========
  ( chaine(1:16) ,   lchain ,                                      &
    ncelet , ncel   , nfac   ,                                     &
-   isym   , iagmax , nagmax , npstmg , iwarnp ,                   &
+   isym   , nagmax , npstmg , iwarnp ,                            &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
    dam    , xam    )

@@ -121,7 +121,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iinvpe
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
-integer          iagmax, nagmax, npstmg
+integer          nagmax, npstmg
 integer          ibsize
 
 double precision residu, rnorm , rnrmf , rnrmdf
@@ -284,9 +284,8 @@ if (imgr(ipr).gt.0) then
 
 !   --- Creation de la hierarchie de maillages
 
-  CHAINE = 'PresHydr'
+  chaine = 'PresHydr'
   iwarnp = iwarni(ipr)
-  iagmax = iagmx0(ipr)
   nagmax = nagmx0(ipr)
   npstmg = ncpmgr(ipr)
   lchain = 8
@@ -295,7 +294,7 @@ if (imgr(ipr).gt.0) then
   !==========
  ( chaine(1:8) ,     lchain ,                                     &
    ncelet , ncel   , nfac   ,                                     &
-   isym   , iagmax , nagmax , npstmg , iwarnp ,                   &
+   isym   , nagmax , npstmg , iwarnp ,                            &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
    dam    , xam    )

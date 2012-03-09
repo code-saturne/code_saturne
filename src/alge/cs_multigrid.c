@@ -1720,7 +1720,6 @@ void CS_PROCF(clmlga, CLMLGA)
  const cs_int_t   *nfac,      /* <-- Number of internal faces */
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
- cs_int_t         *iagmax,    /* <-> Maximum agglomeration count */
  const cs_int_t   *nagmax,    /* <-- Agglomeration count limit */
  const cs_int_t   *ncpost,    /* <-- If > 0, postprocess coarsening, using
                                      coarse cell numbers modulo ncpost */
@@ -1837,7 +1836,7 @@ void CS_PROCF(clmlga, CLMLGA)
     if (*iwarnp > 2)
       bft_printf(_("\n   building level %2d grid\n"), grid_lv);
 
-    g = cs_grid_coarsen(g, *iwarnp, *nagmax, iagmax, *rlxp1);
+    g = cs_grid_coarsen(g, *iwarnp, *nagmax, *rlxp1);
 
     cs_grid_get_info(g,
                      &grid_lv,

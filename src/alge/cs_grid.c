@@ -2799,10 +2799,10 @@ cs_grid_get_comm(const cs_grid_t  *g)
  * Create coarse grid from fine grid.
  *
  * parameters:
- *   f                   <-- Fine grid structure
- *   verbosity           <-- Verbosity level
- *   agglomeration_limit <-- Maximum allowed fine cells per coarse cell
- *   max_agglomeration   <-> Maximum fine cells per coarse cell
+ *   f                    <-- Fine grid structure
+ *   verbosity            <-- Verbosity level
+ *   agglomeration_limit  <-- Maximum allowed fine cells per coarse cell
+ *   relaxation_parameter <-- P0/P1 relaxation factor
  *
  * returns:
  *   coarse grid structure
@@ -2812,7 +2812,6 @@ cs_grid_t *
 cs_grid_coarsen(const cs_grid_t   *f,
                 int                verbosity,
                 int                agglomeration_limit,
-                int               *max_agglomeration,
                 double             relaxation_parameter)
 {
   cs_int_t iappel, iusmgr;
@@ -2866,7 +2865,6 @@ cs_grid_coarsen(const cs_grid_t   *f,
   if (iusmgr == 0) {
 
     cs_int_t nagmax = agglomeration_limit;
-    cs_int_t iagmax = *max_agglomeration;
     cs_int_t *indic = NULL, *inombr = NULL;
     cs_int_t *irsfac = NULL, *indicf = NULL;
     cs_int_t *iordf = NULL;
@@ -2888,7 +2886,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
     _order_face_traversal(f, iordf);
 
-    CS_PROCF(autmgr, AUTMGR) (&igr, &isym, &iagmax, &nagmax,
+    CS_PROCF(autmgr, AUTMGR) (&igr, &isym, &nagmax,
                               &f_n_cells, &f_n_cells_ext, &f_n_faces, &iwarnp,
                               f->face_cell,
                               f->da, f->xa,
@@ -2906,8 +2904,6 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
     BFT_FREE(w1);
     w2 = NULL;
-
-    *max_agglomeration = iagmax;
   }
 
   /* User coarsening */
