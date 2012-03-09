@@ -77,7 +77,6 @@ divmas.f90 \
 divrij.f90 \
 gradmc.f90 \
 gradrc.f90 \
-gradrv.f90 \
 grdcel.f90 \
 grdvec.f90 \
 grdvni.f90 \

@@ -36,7 +36,6 @@ module pointe
 
   ! cocg   ! ncelet*9                ! stockage pour gradient
   ! cocgb  ! ncelbr*9                ! stockage pour gradient bord
-  ! cocgu  ! ncelet*9                ! stockage pour gradient vectoriel
   ! coci   ! ncelet*9                ! stockage pour gradient si init. par mc
   ! cocib  ! ncelbr*9                ! stockage pour gradient bord si init. par
   ! dispar ! ncelet                  ! distance a la face de type 5 (phase 1) la
@@ -50,7 +49,6 @@ module pointe
   !                                    mobiles EN ALE
 
   double precision, allocatable, dimension(:,:,:) :: cocg, cocgb, coci, cocib
-  double precision, allocatable, dimension(:,:,:) :: cocgu
 
   double precision, allocatable, dimension(:,:) :: forbr
   double precision, allocatable, dimension(:) :: dispar, yplpar
@@ -203,7 +201,6 @@ contains
     ! Gradient calculation
 
     allocate(cocg(ncelet,3,3), cocgb(ncelbr,3,3))
-    if (ivelco.eq.1) allocate(cocgu(3,3,ncelet))
     if (imrgra.eq.4 .or. iverif.eq.1) then
       allocate(coci(ncelet,3,3), cocib(ncelbr,3,3))
     endif
@@ -281,7 +278,6 @@ contains
     if (allocated(izctsm)) deallocate(izctsm)
     if (allocated(izft1d)) deallocate(izft1d)
     deallocate(cocg, cocgb)
-    if (allocated(cocgu)) deallocate(cocgu)
     if (allocated(coefau)) deallocate(coefau, cofafu, coefbu, cofbfu)
     if (allocated(cfaale)) deallocate(cfaale, cfbale)
     if (allocated(coci)) deallocate(coci, cocib)
