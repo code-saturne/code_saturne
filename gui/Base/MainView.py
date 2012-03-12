@@ -52,6 +52,8 @@ from PyQt4.QtGui  import *
 # Application modules
 #-------------------------------------------------------------------------------
 
+import cs_info
+
 from Base.MainForm import Ui_MainForm
 from Base.IdView import IdView
 from Base.BrowserView import BrowserView
@@ -69,6 +71,7 @@ except:
 from Pages.WelcomeView import WelcomeView
 from Pages.IdentityAndPathesModel import IdentityAndPathesModel
 
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -78,36 +81,43 @@ log = logging.getLogger("MainView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Main Window
+# Base Main Window
 #-------------------------------------------------------------------------------
 
-class MainView(QMainWindow, Ui_MainForm):
-
+class MainView(object):
+    """
+    Abstract class
+    """
     NextId = 1
     Instances = set()
 
-    def __init__(self,
-                 package          = None,
-                 cmd_case         = "",
-                 cmd_salome       = None):
+    def __new__(cls, cmd_package = None, cmd_case = "", cmd_salome = None):
         """
-        Initializes a Main Window for a new document:
-          1. finish the Main Window layout
-          2. connection betwenn signal and slot
-          3. Ctrl+C signal handler
-          4. create some instance variables
-          5. restore system settings
-
-        @type cmd_case:
-        @param cmd_case:
+        Factory
         """
-        QMainWindow.__init__(self)
-        Ui_MainForm.__init__(self)
+        if cmd_package.name == 'code_saturne':
+            return MainViewSaturne.__new__(MainViewSaturne, cmd_package, cmd_case, cmd_salome)
+        elif cmd_package.name == 'neptune_cfd':
+            from core.MainView import MainViewNeptune
+            return MainViewNeptune.__new__(MainViewNeptune, cmd_package, cmd_case, cmd_salome)
 
-        self.setupUi(self)
 
+    @staticmethod
+    def updateInstances(qobj):
+        """
+        Overwrites the Instances set with a set that contains only those
+        window instances that are still alive.
+        """
+        MainView.Instances = set([window for window \
+                in MainView.Instances if isAlive(window)])
+
+
+
+    def ui_initialize(self):
         self.setAttribute(Qt.WA_DeleteOnClose)
         MainView.Instances.add(self)
+        
+        self.setWindowTitle(self.package.code_name + " GUI")
 
         self.Id = IdView()
         self.dockWidgetIdentity.setWidget(self.Id)
@@ -138,8 +148,6 @@ class MainView(QMainWindow, Ui_MainForm):
 
         self.connect(self.openXtermAction,      SIGNAL("activated()"), self.openXterm)
         self.connect(self.displayCaseAction,    SIGNAL("activated()"), self.displayCase)
-        self.connect(self.reload_modulesAction, SIGNAL("activated()"), self.reload_modules)
-        self.connect(self.reload_pageAction,    SIGNAL("activated()"), self.reload_page)
 
         self.connect(self.IdentityAction, SIGNAL("toggled(bool)"), self.dockWidgetIdentityDisplay)
         self.connect(self.BrowserAction,  SIGNAL("toggled(bool)"), self.dockWidgetBrowserDisplay)
@@ -149,11 +157,6 @@ class MainView(QMainWindow, Ui_MainForm):
         self.connect(self.actionFont,            SIGNAL("activated()"), self.setFontSize)
 
         self.connect(self.displayLicenceAction,   SIGNAL("activated()"), self.displayLicence)
-        #self.connect(self.displayConfigAction,   SIGNAL("activated()"), self.displayConfig)
-        self.connect(self.displayCSManualAction,  SIGNAL("activated()"), self.displayCSManual)
-        self.connect(self.displayCSTutorialAction, SIGNAL("activated()"), self.displayCSTutorial)
-        self.connect(self.displayCSKernelAction,  SIGNAL("activated()"), self.displayCSKernel)
-        self.connect(self.displayCSRefcardAction,  SIGNAL("activated()"), self.displayCSRefcard)
 
         # connection for page layout
 
@@ -163,16 +166,6 @@ class MainView(QMainWindow, Ui_MainForm):
         # Ctrl+C signal handler (allow to shutdown the GUI with Ctrl+C)
 
         signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-        # create some instance variables
-
-        self.cmd_case    = cmd_case
-        self.salome      = cmd_salome
-        self.batch_type  = cs_batch_type
-        self.batch       = None
-        self.batch_file  = 'runcase'
-        self.batch_lines = []
-        self.package     = package
 
         self.resize(800, 700)
         #self.setMaximumSize(QSize(2000, 900))
@@ -203,8 +196,6 @@ class MainView(QMainWindow, Ui_MainForm):
                 app = QCoreApplication.instance()
                 app.setFont(font)
 
-        title = self.tr("Code_Saturne GUI")
-        self.setWindowTitle(title)
         self.updateRecentFileMenu()
         QTimer.singleShot(0, self.loadInitialFile)
 
@@ -212,16 +203,6 @@ class MainView(QMainWindow, Ui_MainForm):
         self.statusbar.showMessage(self.tr("Ready"), 5000)
 #        self.setMaximumSize(QSize(700, 600))
 #        self.setMinimumSize(QSize(700, 600))
-
-
-    @staticmethod
-    def updateInstances(qobj):
-        """
-        Overwrites the Instances set with a set that contains only those
-        window instances that are still alive.
-        """
-        MainView.Instances = set([window for window \
-                in MainView.Instances if isAlive(window)])
 
 
     def loadInitialFile(self):
@@ -334,42 +315,6 @@ class MainView(QMainWindow, Ui_MainForm):
                 self.recentFiles.takeLast()
 
 
-    def initializeBatchRunningWindow(self):
-        """
-        initializes variables concerning the display of batchrunning
-        """
-        self.IdPthMdl = IdentityAndPathesModel(self.case)
-        fic = self.IdPthMdl.getXmlFileName()
-
-        if not fic:
-            file_name = os.getcwd()
-            if os.path.basename(f) == 'DATA': file_name = os.path.dirname(file_name)
-            self.IdPthMdl.setCasePath(file_name)
-        else:
-            file_dir = os.path.split(fic)[0]
-            if file_dir:
-                self.IdPthMdl.setCasePath(os.path.split(file_dir)[0])
-                if not os.path.basename(file_dir) == 'DATA':
-                    self.IdPthMdl.setCasePath(file_dir)
-            else:
-                file_dir = os.path.split(os.getcwd())[0]
-                self.IdPthMdl.setCasePath(file_dir)
-
-        for p, rep in [('data_path',     'DATA'),
-                       ('resu_path',     'RESU'),
-                       ('user_src_path', 'SRC'),
-                       ('scripts_path',  'SCRIPTS')]:
-            self.IdPthMdl.setPathI(p,file_dir + '/' + rep)
-        self.IdPthMdl.setRelevantSubdir("yes", "")
-
-        self.IdPthMdl.setPathI('mesh_path',
-                               os.path.abspath(os.path.split(file_dir)[0] + '/' + 'MESH'))
-        self.case['batch'] =  self.batch_file
-        del IdentityAndPathesModel
-
-        self.updateStudyId()
-
-
     def closeEvent(self, event):
         """
         public slot
@@ -452,7 +397,8 @@ class MainView(QMainWindow, Ui_MainForm):
             self.case = XMLengine.Case(package=self.package)
             self.case.root()['version'] = XML_DOC_VERSION
             XMLinit(self.case)
-            title = self.tr("New parameters set") + " - " + self.tr(self.package.code_name) + self.tr(" GUI")
+            title = self.tr("New parameters set") + \
+                     " - " + self.tr(self.package.code_name) + self.tr(" GUI")
             self.setWindowTitle(title)
 
             self.Browser.configureTree(self.case)
@@ -471,7 +417,7 @@ class MainView(QMainWindow, Ui_MainForm):
             self.case['saved'] = "yes"
 
         else:
-            MainView(package=self.package, cmd_case="new case").show()
+            MainView(cmd_package=self.package, cmd_case="new case").show()
 
 
     def fileAlreadyLoaded(self, f):
@@ -515,7 +461,7 @@ class MainView(QMainWindow, Ui_MainForm):
         # check if the file to load is not already loaded
         if hasattr(self, 'case'):
             if not self.fileAlreadyLoaded(file_name):
-                MainView(package=self.package, cmd_case = file_name).show()
+                MainView(cmd_package=self.package, cmd_case = file_name).show()
         else:
             self.loadFile(file_name)
 
@@ -556,6 +502,13 @@ class MainView(QMainWindow, Ui_MainForm):
 
         try:
             XMLinit(self.case)
+        except InputError, e:
+            err = QErrorMessage(self)
+            msg = e.msg
+            err.showMessage(msg)
+            if hasattr(self, 'case'):
+                delattr(self, 'case')
+            return
         except:
             err = QErrorMessage(self)
             msg = self.tr("XML file reading error. "\
@@ -629,7 +582,7 @@ class MainView(QMainWindow, Ui_MainForm):
 
         if hasattr(self, 'case'):
             if not self.fileAlreadyLoaded(file_name):
-                MainView(package=self.package, cmd_case = file_name).show()
+                MainView(cmd_package=self.package, cmd_case = file_name).show()
         else:
             self.loadFile(file_name)
 
@@ -744,6 +697,54 @@ class MainView(QMainWindow, Ui_MainForm):
                 self.statusbar.showMessage(msg, 2000)
 
 
+    def displayManual(self, manual, reader = None):
+        """
+        private method
+
+        open a manual
+        """
+        argv_info = ['--guide']
+        argv_info.append(manual)
+        cs_info.main(argv_info, self.package)
+
+
+    def initializeBatchRunningWindow(self):
+        """
+        initializes variables concerning the display of batchrunning
+        """
+        self.IdPthMdl = IdentityAndPathesModel(self.case)
+        fic = self.IdPthMdl.getXmlFileName()
+
+        if not fic:
+            file_name = os.getcwd()
+            if os.path.basename(f) == 'DATA': file_name = os.path.dirname(file_name)
+            self.IdPthMdl.setCasePath(file_name)
+        else:
+            file_dir = os.path.split(fic)[0]
+            if file_dir:
+                self.IdPthMdl.setCasePath(os.path.split(file_dir)[0])
+                if not os.path.basename(file_dir) == 'DATA':
+                    self.IdPthMdl.setCasePath(file_dir)
+            else:
+                file_dir = os.path.split(os.getcwd())[0]
+                self.IdPthMdl.setCasePath(file_dir)
+
+        for p, rep in [('data_path',     'DATA'),
+                       ('resu_path',     'RESU'),
+                       ('user_src_path', 'SRC'),
+                       ('scripts_path',  'SCRIPTS')]:
+            self.IdPthMdl.setPathI(p,file_dir + '/' + rep)
+        self.IdPthMdl.setRelevantSubdir("yes", "")
+
+        self.IdPthMdl.setPathI('mesh_path',
+                               os.path.abspath(os.path.split(file_dir)[0] + '/' + 'MESH'))
+        self.case['batch'] =  self.batch_file
+        del IdentityAndPathesModel
+
+        self.updateStudyId()
+
+
+
     def batchFileUpdate(self):
         """
         Update the run command
@@ -828,163 +829,6 @@ class MainView(QMainWindow, Ui_MainForm):
                 pass
 
 
-    @pyqtSignature("")
-    def reload_modules(self):
-        """
-        public slot
-
-        reload all the currently loaded modules, and then update the GUI
-        """
-        log.debug("reload_modules()")
-        title = self.tr("Warning")
-        msg = self.tr("This reloads all the currently loaded modules. "\
-                      "This is a feature useful only for developers.  You might "\
-                      "see funny behaviour for already instantiated objects.\n\n"\
-                      "Are you sure you want to do this?")
-
-        ans = QMessageBox.question(self, title, msg,
-                                   QMessageBox.Yes|
-                                   QMessageBox.No)
-
-        if ans == QMessageBox.Yes:
-            self.scrollArea.widget().close()
-            reload_all_modules()
-            p = displaySelectedPage(self.case['currentPage'],
-                                    self,
-                                    self.case,
-                                    stbar=self.statusbar,
-                                    study=self.Id,
-                                    tree=self.Browser)
-            self.scrollArea.setWidget(p)
-
-
-    @pyqtSignature("")
-    def reload_page(self):
-        """
-        public slot
-
-        reload the current loaded page
-        """
-        log.debug("reload_page()")
-        title = self.tr("Warning")
-        msg = self.tr("This reloads all the current loaded page. "\
-                      "This is a feature useful only for developers. You might "\
-                      "see funny behaviour for already instantiated objects.\n\n"\
-                      "Are you sure you want to do this?")
-
-        ans = QMessageBox.question(self, title, msg,
-                                   QMessageBox.Yes|
-                                   QMessageBox.No)
-
-        if ans == QMessageBox.Yes:
-            self.scrollArea.widget().close()
-            reload_current_page()
-            p = displaySelectedPage(self.case['currentPage'],
-                                    self,
-                                    self.case,
-                                    stbar=self.statusbar,
-                                    study=self.Id,
-                                    tree=self.Browser)
-            self.scrollArea.setWidget(p)
-
-
-    @pyqtSignature("")
-    def displayAbout(self):
-        """
-        public slot
-
-        the About dialog window shows:
-         - title
-         - version
-         - contact
-        """
-        msg = self.package.code_name + "\n"                      +\
-              "version " + self.package.version + "\n\n"    +\
-              "For information about this application "  +\
-              "please contact:\n\n"                      +\
-              self.package.bugreport + "\n\n"               +\
-              "Please visit our site:\n"                 +\
-              self.package.url
-        QMessageBox.about(self, self.package.name + ' Interface', msg)
-
-
-    @pyqtSignature("")
-    def displayLicence(self):
-        """
-        public slot
-
-        GNU GPL license dialog window
-        """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see COPYING file") # TODO
-
-
-    @pyqtSignature("")
-    def displayConfig(self):
-        """
-        public slot
-
-        configuration information window
-        """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see config.py") # TODO
-
-
-    def displayManual(self, manual, reader = None):
-        """
-        private method
-
-        open a manual
-        """
-        try:
-            import cs_info
-        except:
-            QMessageBox.warning(self, self.package.code_name + ' Interface',
-                                "The module 'cs_info' is not available.")
-            return
-        argv_info = ['--guide']
-        argv_info.append(manual)
-        cs_info.main(argv_info, self.package)
-
-
-    @pyqtSignature("")
-    def displayCSManual(self):
-        """
-        public slot
-
-        open the user manual
-        """
-        self.displayManual('user')
-
-
-    @pyqtSignature("")
-    def displayCSTutorial(self):
-        """
-        public slot
-
-        open the tutorial for Code_Saturne
-        """
-        self.displayManual('tutorial')
-
-
-    @pyqtSignature("")
-    def displayCSKernel(self):
-        """
-        public slot
-
-        open the theory and programmer's guide
-        """
-        self.displayManual('theory')
-
-
-    @pyqtSignature("")
-    def displayCSRefcard(self):
-        """
-        public slot
-
-        open the quick reference card for Code_Saturne
-        """
-        self.displayManual('refcard')
-
-
     @pyqtSignature("const QModelIndex &")
     def displayNewPage(self, index):
         """
@@ -1034,9 +878,48 @@ class MainView(QMainWindow, Ui_MainForm):
         display the Welcome (and the default) page
         """
         self.page = WelcomeView()
-        #self.page.resize(600,500)
         self.scrollArea.setWidget(self.page)
-        #self.gridlayout2.addWidget(self.page, 0, 0)
+
+
+    @pyqtSignature("")
+    def displayAbout(self):
+        """
+        public slot
+
+        the About dialog window shows:
+         - title
+         - version
+         - contact
+        """
+        msg = self.package.code_name + "\n"                      +\
+              "version " + self.package.version + "\n\n"    +\
+              "For information about this application "  +\
+              "please contact:\n\n"                      +\
+              self.package.bugreport + "\n\n"               +\
+              "Please visit our site:\n"                 +\
+              self.package.url
+        QMessageBox.about(self, self.package.name + ' Interface', msg)
+
+
+    @pyqtSignature("")
+    def displayLicence(self):
+        """
+        public slot
+
+        GNU GPL license dialog window
+        """
+        QMessageBox.about(self, self.package.code_name + ' Interface', "see COPYING file") # TODO
+
+
+    @pyqtSignature("")
+    def displayConfig(self):
+        """
+        public slot
+
+        configuration information window
+        """
+        QMessageBox.about(self, self.package.code_name + ' Interface', "see config.py") # TODO
+
 
 
     @pyqtSignature("")
@@ -1080,6 +963,94 @@ class MainView(QMainWindow, Ui_MainForm):
         """
         return text
 
+#-------------------------------------------------------------------------------
+# Main Window for Code_Saturne
+#-------------------------------------------------------------------------------     
+        
+class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
+
+    def __new__(cls, cmd_package = None, cmd_case = "", cmd_salome = None):
+        return super(MainViewSaturne, cls). __new__(cls, cmd_package, cmd_case, cmd_salome)
+
+
+    def __init__(self,
+                 cmd_package      = None,
+                 cmd_case         = "",
+                 cmd_salome       = None):
+        """
+        Initializes a Main Window for a new document:
+          1. finish the Main Window layout
+          2. connection betwenn signal and slot
+          3. Ctrl+C signal handler
+          4. create some instance variables
+          5. restore system settings
+
+        @type cmd_case:
+        @param cmd_case:
+        """
+        QMainWindow.__init__(self)
+        Ui_MainForm.__init__(self)
+
+        self.setupUi(self)
+
+        # create some instance variables
+
+        self.cmd_case    = cmd_case
+        self.salome      = cmd_salome
+        self.batch_type  = cs_batch_type
+        self.batch       = None
+        self.batch_file  = 'runcase'
+        self.batch_lines = []
+        self.package     = cmd_package
+
+        self.ui_initialize()
+
+        self.connect(self.displayCSManualAction,  SIGNAL("activated()"), self.displayCSManual)
+        self.connect(self.displayCSTutorialAction, SIGNAL("activated()"), self.displayCSTutorial)
+        self.connect(self.displayCSKernelAction,  SIGNAL("activated()"), self.displayCSKernel)
+        self.connect(self.displayCSRefcardAction,  SIGNAL("activated()"), self.displayCSRefcard)
+
+
+    @pyqtSignature("")
+    def displayCSManual(self):
+        """
+        public slot
+
+        open the user manual
+        """
+        self.displayManual('user')
+
+
+    @pyqtSignature("")
+    def displayCSTutorial(self):
+        """
+        public slot
+
+        open the tutorial for Code_Saturne
+        """
+        self.displayManual('tutorial')
+
+
+    @pyqtSignature("")
+    def displayCSKernel(self):
+        """
+        public slot
+
+        open the theory and programmer's guide
+        """
+        self.displayManual('theory')
+
+
+    @pyqtSignature("")
+    def displayCSRefcard(self):
+        """
+        public slot
+
+        open the quick reference card for Code_Saturne
+        """
+        self.displayManual('refcard')
+
+#-------------------------------------------------------------------------------
 
 def isAlive(qobj):
     """
@@ -1095,13 +1066,6 @@ def isAlive(qobj):
         return False
     return True
 
-
 #-------------------------------------------------------------------------------
-# Local main program
+# End
 #-------------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    Main = MainView()
-    Main.show()
-    sys.exit(app.exec_())

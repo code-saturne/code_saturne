@@ -47,7 +47,7 @@ from Base.Common import *
 
 class GuiParam(object):
     """
-    Language default chooser, and bell ON/OFF switch.
+    Global options management.
     """
     # 'fr' or 'en' (default)
     #
@@ -58,14 +58,6 @@ class GuiParam(object):
 
     # Force English anyway as nearly no translation is available
     lang = 'en'
-
-    # 'on' (default) or 'off'
-    #
-    beep = 'on'
-
-    # pdf reader
-    #
-    pdfReader = 'on'
 
     # debug
     #

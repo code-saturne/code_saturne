@@ -60,6 +60,13 @@ if map(int, string.split(PYQT_VERSION_STR, ".")) < [4, 3, 0]:
                      "(found %s)." % PYQT_VERSION_STR)
 
 #-------------------------------------------------------------------------------
+# Application modules
+#-------------------------------------------------------------------------------
+
+from Base.MainView import MainView
+import Base.MainView
+
+#-------------------------------------------------------------------------------
 # Processes the passed command line arguments
 #-------------------------------------------------------------------------------
 
@@ -116,10 +123,8 @@ def main(argv, pkg):
 
     # Test the package name to know which modules have to be imported
     if pkg.name == 'code_saturne':
-        from Base.MainView import MainView
         icons_path = os.path.join(pkg.pkgpythondir, 'Base', 'icons')
     else:
-        from core.MainView import MainView
         icons_path = os.path.join(pkg.pkgpythondir, 'core', 'icons')
 
     case, spl = process_cmd_line(argv)
@@ -143,11 +148,10 @@ def main(argv, pkg):
         app.processEvents()
         QTimer.singleShot(1500, splash.hide)
 
-    main = MainView(package = pkg,
-                    cmd_case = case)
+    mv = MainView(cmd_package = pkg, cmd_case = case)
 
     try:
-        main.show()
+        mv.show()
         if spl:
             app.processEvents()
             app.restoreOverrideCursor()
