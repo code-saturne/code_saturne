@@ -1685,9 +1685,11 @@ _renumber_for_vectorizing(cs_mesh_t             *mesh,
   /* Update mesh */
 
   if (ivecti > 0)
-    mesh->i_face_numbering = cs_numbering_create_vectorized(vector_size);
+    mesh->i_face_numbering
+      = cs_numbering_create_vectorized(mesh->n_i_faces, vector_size);
   if (ivectb > 0)
-    mesh->b_face_numbering = cs_numbering_create_vectorized(vector_size);
+    mesh->b_face_numbering
+      = cs_numbering_create_vectorized(mesh->n_b_faces, vector_size);
 
   /* Output info */
 
@@ -1892,6 +1894,11 @@ cs_renumber_mesh(cs_mesh_t             *mesh,
 
   if (retval == 0)
     _renumber_for_threads(mesh, mesh_quantities);
+
+  if (mesh->i_face_numbering == NULL)
+    mesh->i_face_numbering = cs_numbering_create_default(mesh->n_i_faces);
+  if (mesh->b_face_numbering == NULL)
+    mesh->b_face_numbering = cs_numbering_create_default(mesh->n_b_faces);
 
   _renumber_test(mesh);
 }

@@ -70,7 +70,8 @@ BEGIN_C_DECLS
 
 /* Names for numbering types */
 
-const char  *cs_numbering_type_name[] = {N_("vectorization"),
+const char  *cs_numbering_type_name[] = {N_("default"),
+                                         N_("vectorization"),
                                          N_("threads")};
 
 /*============================================================================
@@ -82,9 +83,41 @@ const char  *cs_numbering_type_name[] = {N_("vectorization"),
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Create a default numbering information structure.
+ *
+ * parameters:
+ *   n_faces  <-- number of associated faces
+ *
+ * returns:
+ *   pointer to created cs_numbering_t structure
+ *---------------------------------------------------------------------------*/
+
+cs_numbering_t *
+cs_numbering_create_default(cs_lnum_t  n_faces)
+{
+  cs_numbering_t  *numbering = NULL;
+
+  BFT_MALLOC(numbering, 1, cs_numbering_t);
+
+  numbering->type = CS_NUMBERING_DEFAULT;
+
+  numbering->vector_size = 1;
+
+  numbering->n_threads = 1;
+  numbering->n_groups = 1;
+
+  BFT_MALLOC(numbering->group_index, 2, cs_lnum_t);
+  numbering->group_index[0] = 0;
+  numbering->group_index[1] = n_faces;
+
+  return numbering;
+}
+
+/*----------------------------------------------------------------------------
  * Create a numbering information structure in case of vectorization.
  *
  * parameters:
+ *   n_faces     <-- number of associated faces
  *   vector_size <-- vector size used for this vectorization
  *
  * returns:
@@ -92,7 +125,8 @@ const char  *cs_numbering_type_name[] = {N_("vectorization"),
  *---------------------------------------------------------------------------*/
 
 cs_numbering_t *
-cs_numbering_create_vectorized(int  vector_size)
+cs_numbering_create_vectorized(cs_lnum_t  n_faces,
+                               int        vector_size)
 {
   cs_numbering_t  *numbering = NULL;
 
@@ -105,7 +139,9 @@ cs_numbering_create_vectorized(int  vector_size)
   numbering->n_threads = 1;
   numbering->n_groups = 1;
 
-  numbering->group_index = NULL;
+  BFT_MALLOC(numbering->group_index, 2, cs_lnum_t);
+  numbering->group_index[0] = 0;
+  numbering->group_index[1] = n_faces;
 
   return numbering;
 }
@@ -164,8 +200,7 @@ cs_numbering_destroy(cs_numbering_t  **numbering)
 
     cs_numbering_t  *_n = *numbering;
 
-    if (_n->group_index != NULL)
-      BFT_FREE(_n->group_index);
+    BFT_FREE(_n->group_index);
 
     BFT_FREE(*numbering);
   }

@@ -55,6 +55,7 @@ BEGIN_C_DECLS
 
 typedef enum {
 
+  CS_NUMBERING_DEFAULT,    /* Default numbering */
   CS_NUMBERING_VECTORIZE,  /* Numbered for vectorization */
   CS_NUMBERING_THREADS     /* Numbered for threads */
 
@@ -96,9 +97,23 @@ extern const char  *cs_numbering_type_name[];
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Create a default numbering information structure.
+ *
+ * parameters:
+ *   n_faces  <-- number of associated faces
+ *
+ * returns:
+ *   pointer to created cs_numbering_t structure
+ *---------------------------------------------------------------------------*/
+
+cs_numbering_t *
+cs_numbering_create_default(cs_lnum_t  n_faces);
+
+/*----------------------------------------------------------------------------
  * Create a numbering information structure in case of vectorization.
  *
  * parameters:
+ *   n_faces     <-- number of associated faces
  *   vector_size <-- vector size used for this vectorization
  *
  * returns:
@@ -106,7 +121,8 @@ extern const char  *cs_numbering_type_name[];
  *---------------------------------------------------------------------------*/
 
 cs_numbering_t *
-cs_numbering_create_vectorized(int  vector_size);
+cs_numbering_create_vectorized(cs_lnum_t  n_faces,
+                               int        vector_size);
 
 /*----------------------------------------------------------------------------
  * Create a numbering information structure in case of threading.
