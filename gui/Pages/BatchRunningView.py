@@ -26,6 +26,9 @@
 This module contains the following classes and function:
 - BatchRunningUserFilesDialogView
 - BatchRunningAdvancedOptionsDialogView
+- BatchRunningStopByIterationDialogView
+- BatchRunningListingLinesDisplayedDialogView
+- ListingDialogView
 - BatchRunningView
 """
 
@@ -35,6 +38,7 @@ This module contains the following classes and function:
 
 import os, sys
 import string, types
+import re
 import logging
 import subprocess
 
@@ -45,6 +49,9 @@ import subprocess
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
+import cs_case
+import cs_exec_environment
+
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
@@ -52,10 +59,12 @@ from PyQt4.QtGui  import *
 from Pages.BatchRunningForm import Ui_BatchRunningForm
 from Pages.BatchRunningUserFilesDialogForm import Ui_BatchRunningUserFilesDialogForm
 from Pages.BatchRunningAdvancedOptionsDialogForm import Ui_BatchRunningAdvancedOptionsDialogForm
+from Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRunningStopByIterationDialogForm
 
 from Base.Common import cs_batch_type
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
+from Base.CommandMgrDialogView import CommandMgrDialogView
 from Pages.BatchRunningModel import BatchRunningModel
 from Pages.ScriptRunningModel import ScriptRunningModel
 from Pages.LocalizationModel import LocalizationModel, Zone
@@ -193,6 +202,7 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
         """
         return text
 
+#-------------------------------------------------------------------------------
 
 class QListModel(QStandardItemModel):
     def __init__(self, row,  column,  parent=None):
@@ -209,6 +219,7 @@ class QListModel(QStandardItemModel):
 
         return result
 
+#-------------------------------------------------------------------------------
 
 class DataDelegate(QItemDelegate):
     def __init__(self, parent=None, path=None):
@@ -495,11 +506,175 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         """
         return text
 
+#------------------------------------------------------------------------------- 
+# Popup window class: stop the computation at a iteration
+#-------------------------------------------------------------------------------
+
+class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterationDialogForm):
+    """
+    Advanced dialog for stop the computation at a given iteration
+    """
+    def __init__(self, parent, default):
+        """
+        Constructor
+        """
+        QDialog.__init__(self, parent)
+
+        Ui_BatchRunningStopByIterationDialogForm.__init__(self)
+        self.setupUi(self)
+
+        self.setWindowTitle(self.tr("Stop"))
+
+        self.default = default
+        self.result  = self.default.copy()
+
+        v = IntValidator(self.lineEditStopIter, min=1)
+        self.lineEditStopIter.setValidator(v)
+
+        # Previous values
+        self.iter = self.default['iter']
+        self.lineEditStopIter.setText(QString(str(self.iter)))
+
+        self.connect(self.lineEditStopIter,
+                     SIGNAL("textChanged(const QString &)"),
+                     self.__slotStopIter)
+
+
+    @pyqtSignature("const QString &")
+    def __slotStopIter(self, text):
+        """
+        Private slot to set a iteration number to stop the code.
+        """
+        iter, ok = text.toInt()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.iter = iter
+
+
+    def get_result(self):
+        """
+        Method to get the result
+        """
+        return self.result
+
+
+    def accept(self):
+        """
+        Method called when user clicks 'OK'
+        """
+        self.result['iter'] = self.iter
+        QDialog.accept(self)
+
+
+    def reject(self):
+        """
+        Method called when user clicks 'Cancel'
+        """
+        QDialog.reject(self)
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+
+class ListingDialogView(CommandMgrDialogView):
+    def __init__(self, parent, case, title, cmd_list):
+        self.case = case
+
+        CommandMgrDialogView.__init__(self, parent, title, cmd_list, self.case['scripts_path'])
+
+        self.connect(self.pushButtonStop,   SIGNAL('clicked()'), self.__slotStop)
+        self.connect(self.pushButtonStopAt, SIGNAL('clicked()'), self.__slotStopAt)
+
+        self.exec_dir = ""
+        self.suffix   = ""
+        self.listing  = "listing"
+
+        self.slotProcess()
+
+
+    def slotReadFromStdout(self):
+        """
+        Public slot to handle the readyReadStandardOutput signal of the process.
+        """
+        if self.proc is None:
+            return
+        self.proc.setReadChannel(QProcess.StandardOutput)
+
+        while self.proc and self.proc.canReadLine():
+            ba = self.proc.readLine()
+            if ba.isNull(): return
+            str = QString()
+            s = QString(str.fromUtf8(ba.data()))[:-1]
+            self.logText.append(s)
+            self.__execDir(s)
+
+
+    def __execDir(self, s):
+        """
+        Private method. Find the directory of the code execution.
+        """
+        if self.suffix:
+            return
+
+        # Read directly the run directory from the sdtout of the code.
+        if not self.exec_dir:
+            if s.indexOf(QString("Result directory")) != -1:
+                self.exec_dir = "Result directory"
+        elif self.exec_dir == "Result directory":
+            self.exec_dir = string.join(string.split(str(s)), ' ')
+            title = os.path.basename(self.exec_dir)
+            self.setWindowTitle(title)
+            self.suffix = title
+
+
+    def __stopExec(self, iter, msg):
+        """
+        Private method. Stops the code.
+        """
+        line = "\n" + str(iter) + "\n\n"
+        ficstp = os.path.join(self.exec_dir, "ficstp")
+        f = open(ficstp, 'w')
+        f.write(line)
+        f.close()
+        QMessageBox.warning(self, self.tr("Warning"), msg)
+
+
+    @pyqtSignature("")
+    def __slotStop(self):
+        """
+        Private slot. Stops the code at the end of the current iteration.
+        """
+        iter = 1
+        msg = self.tr("Stop at the end of the current iteration.")
+        self.__stopExec(iter, msg)
+
+
+    @pyqtSignature("")
+    def __slotStopAt(self):
+        """
+        Private slot. Stops the code at the end of the given iteration.
+        """
+        default = {}
+        default['iter'] = 100
+        dlg = BatchRunningStopByIterationDialogView(self, default)
+        if dlg.exec_():
+            result = dlg.get_result()
+            msg = self.tr("Stop at iteration number: %i" % result['iter'])
+            self.__stopExec(result['iter'], msg)
+
+
+    @pyqtSignature("QProcess::ProcessState")
+    def slotStateChanged(self, state):
+        """
+        Public slot. Handle the current status of the process.
+        """
+        bool = not(state == QProcess.NotRunning)
+        self.pushButtonKill.setEnabled(bool)
+        self.pushButtonStop.setEnabled(bool)
+        self.pushButtonStopAt.setEnabled(bool)
 
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
-
 
 class BatchRunningView(QWidget, Ui_BatchRunningForm):
     """
@@ -519,6 +694,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.setupUi(self)
 
         self.case = case
+        self.parent = parent
 
         self.mdl = ScriptRunningModel(self.case)
 
@@ -788,7 +964,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         batch = os.path.join(self.case['scripts_path'], self.case['batch'])
 
         if key == None:
-            cmd = 'nice nohup ' + batch + ' | tee ' + batch + '.log &'
+            run_id, run_title = self.__suggest_run_id()
+            self.__updateRuncase(run_id)
+            cmd = batch
+            key = 'localhost'
         elif key[0:3] == 'CCC':
             cmd = 'qsub ' + batch
         elif key[0:5] == 'LOADL':
@@ -805,8 +984,66 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         if self.case['salome']:
             from Pages import  SalomeHandler
             SalomeHandler.runSolver(self.case, batch)
+        elif key == 'localhost':
+            dlg = ListingDialogView(self.parent, self.case, run_title, [cmd])
+            dlg.show()
         else:
-            os.system(cmd)
+            return cs_exec_environment.run_command(cmd)
+
+
+    def __suggest_run_id(self):
+        """
+        Return an id.
+        """
+        cmd = os.path.join(self.case['package'].bindir,
+                           self.case['package'].name)
+        cmd += " run --suggest-id"
+        r_title = subprocess.Popen(cmd,
+                                   shell=True,
+                                   stdout=subprocess.PIPE).stdout.read()[:-1]
+        r_id = os.path.join(self.case['resu_path'], r_title)
+
+        run_id = r_id
+        run_title = r_title
+        j = 1
+        while os.path.isdir(run_id):
+            j += 1
+            run_id = r_id + "_" + str(j)
+            run_title = r_title + "(" + str(j) + ")"
+
+        return os.path.basename(run_id), run_title
+
+
+    def __updateRuncase(self, run_id):
+        """
+        Update the command line in the launcher C{runcase}.
+        """
+        runcase = os.path.join(self.case['scripts_path'], "runcase")
+
+        try:
+            run_ref_f = file(runcase, mode='r')
+        except IOError:
+            print "Error: can not opening %s\n" % runcase
+            sys.exit(1)
+        lines = run_ref_f.readlines()
+        run_ref_f.close()
+
+        pattern = r'^\\' + self.case['package'].name
+
+        for i in range(len(lines)):
+            if re.search(pattern, lines[i]):
+                l = lines[i].split()
+                if "--id" in l:
+                    l[l.index("--id") + 1] = run_id
+                else:
+                    l.append("--id")
+                    l.append(run_id)
+                lines[i] = string.join(l)
+
+        run_new_f = file(runcase, mode='w')
+        run_new_f.writelines(lines)
+        run_new_f.close()
+
 
 
     def getCommandOutput(self, cmd):

@@ -128,6 +128,7 @@ AnalysisFeaturesForm.ui \
 AtmosphericFlowsForm.ui \
 BatchRunningAdvancedOptionsDialogForm.ui \
 BatchRunningForm.ui \
+BatchRunningStopByIterationDialogForm.ui \
 BatchRunningUserFilesDialogForm.ui \
 BodyForcesForm.ui \
 BoundaryConditionsCoalInletForm.ui \

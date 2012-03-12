@@ -26,6 +26,7 @@
 
 PYFILES = \
 BrowserView.py \
+CommandMgrDialogView.py \
 Common.py \
 IdView.py \
 MainView.py \
@@ -40,6 +41,8 @@ XMLvariables.py
 
 UIFILES = \
 BrowserForm.ui \
+CommandMgrLinesDisplayedDialogForm.ui \
+CommandMgrDialogForm.ui \
 IdForm.ui \
 MainForm.ui
 
