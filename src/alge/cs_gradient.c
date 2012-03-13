@@ -251,8 +251,8 @@ _find_or_add_system(const char          *name,
 }
 
 /*----------------------------------------------------------------------------
- * Clip the gradient if necessary. This function deals with the standard or
- * extended neighborhood.
+ * Clip the gradient of a scalar if necessary. This function deals with
+ * the standard or extended neighborhood.
  *
  * parameters:
  *   imrgra         <-- type of computation for the gradient
@@ -269,15 +269,15 @@ _find_or_add_system(const char          *name,
  *----------------------------------------------------------------------------*/
 
 static void
-_gradient_clipping(const cs_int_t   *imrgra,
-                   const cs_int_t   *imligp,
-                   const cs_int_t   *iwarnp,
-                   const cs_int_t   *idimtr,
-                   const cs_real_t  *climgp,
-                   cs_real_t         var[],
-                   cs_real_t         dpdx[],
-                   cs_real_t         dpdy[],
-                   cs_real_t         dpdz[])
+_scalar_gradient_clipping(const cs_int_t   *imrgra,
+                          const cs_int_t   *imligp,
+                          const cs_int_t   *iwarnp,
+                          const cs_int_t   *idimtr,
+                          const cs_real_t  *climgp,
+                          cs_real_t         var[],
+                          cs_real_t         dpdx[],
+                          cs_real_t         dpdy[],
+                          cs_real_t         dpdz[])
 {
   cs_lnum_t  i, i1, i2, j, k;
   cs_real_t  dist[3];
@@ -634,6 +634,413 @@ _gradient_clipping(const cs_int_t   *imrgra,
 }
 
 /*----------------------------------------------------------------------------
+ * Clip the gradient of a vector if necessary. This function deals with the
+ * standard or extended neighborhood.
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   halo_type      <-- halo type (extended or not)
+ *   clipping_type  <-- type of clipping for the computation of the gradient
+ *   verbosity      <-- output level
+ *   climgp         <-- clipping coefficient for the computation of the gradient
+ *   pvar           <-- variable
+ *   gradv          <-> gradient of pvar
+ *   pvar           <-- variable
+ *----------------------------------------------------------------------------*/
+
+static void
+_vector_gradient_clipping(const cs_mesh_t              *m,
+                          const cs_mesh_quantities_t   *fvq,
+                          const cs_halo_type_t          halo_type,
+                          const cs_int_t                clipping_type,
+                          const cs_int_t                verbosity,
+                          const cs_real_t               climgp,
+                          const cs_real_3_t   *restrict pvar,
+                          cs_real_33_t        *restrict gradv)
+{
+  /* Local variables */
+
+  cs_lnum_t  cell_id, cell_id1, cell_id2, cidx, face_id, i, j;
+  cs_real_3_t dist, grad_dist1, grad_dist2;
+  cs_real_t  dvar_sq, dist_sq1, dist_sq2;
+  cs_real_t  global_min_factor, global_max_factor, factor1, factor2;
+
+  cs_gnum_t  n_clip = 0, n_g_clip =0;
+  cs_real_t  min_factor = 1;
+  cs_real_t  max_factor = 0;
+  cs_real_t  clipp_coef_sq = climgp*climgp;
+  cs_real_t  *restrict buf = NULL, *restrict clip_factor = NULL;
+  cs_real_t  *restrict denom = NULL, *restrict denum = NULL;
+
+  const cs_lnum_t  n_i_faces = m->n_i_faces;
+  const cs_lnum_t  n_cells = m->n_cells;
+  const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict cell_cells_idx
+    = (const cs_lnum_t *restrict)m->cell_cells_idx;
+  const cs_lnum_t *restrict cell_cells_lst
+    = (const cs_lnum_t *restrict)m->cell_cells_lst;
+
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+
+  const cs_halo_t *halo = m->halo;
+
+  if (clipping_type < 0)
+    return;
+
+  /* The gradient and the variable must be already synchronized */
+
+  /* Allocate and initialize working buffers */
+
+  if (clipping_type == 1)
+    BFT_MALLOC(buf, 3*n_cells_ext, cs_real_t);
+  else
+    BFT_MALLOC(buf, 2*n_cells_ext, cs_real_t);
+
+  denum = buf;
+  denom = buf + n_cells_ext;
+
+  if (clipping_type == 1)
+    clip_factor = buf + 2*n_cells_ext;
+
+  /* Initialization */
+
+  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    denum[cell_id] = 0;
+    denom[cell_id] = 0;
+    if (clipping_type == 1)
+      clip_factor[cell_id] = (cs_real_t)DBL_MAX;
+  }
+
+  /* Remark:
+     denum: holds the maximum l2 norm of the variation of the gradient squared
+     denom: holds the maximum l2 norm of the variation of the variable squared */
+
+  /* First clipping Algorithm: based on the cell gradient */
+  /*------------------------------------------------------*/
+
+  if (clipping_type == 0) {
+
+    for (face_id = 0; face_id < n_i_faces; face_id++) {
+
+      cell_id1 = i_face_cells[face_id][0] - 1;
+      cell_id2 = i_face_cells[face_id][1] - 1;
+
+      for (i = 0; i < 3; i++)
+        dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
+
+      for (i = 0; i < 3; i++) {
+
+        grad_dist1[i] = gradv[cell_id1][0][i] * dist[0]
+                      + gradv[cell_id1][1][i] * dist[1]
+                      + gradv[cell_id1][2][i] * dist[2];
+
+        grad_dist2[i] = gradv[cell_id2][0][i] * dist[0]
+                      + gradv[cell_id2][1][i] * dist[1]
+                      + gradv[cell_id2][2][i] * dist[2];
+
+      }
+
+      dist_sq1 = grad_dist1[0]*grad_dist1[0]
+               + grad_dist1[1]*grad_dist1[1]
+               + grad_dist1[2]*grad_dist1[2];
+
+      dist_sq2 = grad_dist2[0]*grad_dist2[0]
+               + grad_dist2[1]*grad_dist2[1]
+               + grad_dist2[2]*grad_dist2[2];
+
+      dvar_sq = (pvar[cell_id1][0]-pvar[cell_id2][0])
+               *(pvar[cell_id1][0]-pvar[cell_id2][0])
+              + (pvar[cell_id1][1]-pvar[cell_id2][1])
+               *(pvar[cell_id1][1]-pvar[cell_id2][1])
+              + (pvar[cell_id1][2]-pvar[cell_id2][2])
+               *(pvar[cell_id1][2]-pvar[cell_id2][2]);
+
+      denum[cell_id1] = CS_MAX(denum[cell_id1], dist_sq1);
+      denum[cell_id2] = CS_MAX(denum[cell_id2], dist_sq2);
+      denom[cell_id1] = CS_MAX(denom[cell_id1], dvar_sq);
+      denom[cell_id2] = CS_MAX(denom[cell_id2], dvar_sq);
+
+    } /* End of loop on faces */
+
+    /* Complement for extended neighborhood */
+
+    if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
+
+      for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
+        for (cidx = cell_cells_idx[cell_id1];
+             cidx < cell_cells_idx[cell_id1+1];
+             cidx++) {
+
+          cell_id2 = cell_cells_lst[cidx-1] - 1;
+
+          for (i = 0; i < 3; i++)
+            dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
+
+          for (i = 0; i < 3; i++)
+            grad_dist1[i] = gradv[cell_id1][0][i] * dist[0]
+                          + gradv[cell_id1][1][i] * dist[1]
+                          + gradv[cell_id1][2][i] * dist[2];
+
+
+          dist_sq1 = grad_dist1[0]*grad_dist1[0]
+                   + grad_dist1[1]*grad_dist1[1]
+                   + grad_dist1[2]*grad_dist1[2];
+
+          dvar_sq = (pvar[cell_id1][0]-pvar[cell_id2][0])
+                   *(pvar[cell_id1][0]-pvar[cell_id2][0])
+                  + (pvar[cell_id1][1]-pvar[cell_id2][1])
+                   *(pvar[cell_id1][1]-pvar[cell_id2][1])
+                  + (pvar[cell_id1][2]-pvar[cell_id2][2])
+                   *(pvar[cell_id1][2]-pvar[cell_id2][2]);
+
+          denum[cell_id1] = CS_MAX(denum[cell_id1], dist_sq1);
+          denom[cell_id1] = CS_MAX(denom[cell_id1], dvar_sq);
+
+        }
+      }
+
+    } /* End for extended halo */
+
+  }
+
+  /* Second clipping Algorithm: based on the face gradient */
+  /*-------------------------------------------------------*/
+
+  else if (clipping_type == 1) {
+
+    for (face_id = 0; face_id < n_i_faces; face_id++) {
+
+      cell_id1 = i_face_cells[face_id][0] - 1;
+      cell_id2 = i_face_cells[face_id][1] - 1;
+
+      for (i = 0; i < 3; i++)
+        dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
+
+      for (i = 0; i < 3; i++)
+        grad_dist1[i] = 0.5*(
+                       (gradv[cell_id1][0][i]+gradv[cell_id2][0][i])*dist[0]
+                      +(gradv[cell_id1][1][i]+gradv[cell_id2][1][i])*dist[1]
+                      +(gradv[cell_id1][2][i]+gradv[cell_id2][2][i])*dist[2]);
+
+      dist_sq1 = grad_dist1[0]*grad_dist1[0]
+               + grad_dist1[1]*grad_dist1[1]
+               + grad_dist1[2]*grad_dist1[2];
+
+      dvar_sq = (pvar[cell_id1][0]-pvar[cell_id2][0])
+               *(pvar[cell_id1][0]-pvar[cell_id2][0])
+              + (pvar[cell_id1][1]-pvar[cell_id2][1])
+               *(pvar[cell_id1][1]-pvar[cell_id2][1])
+              + (pvar[cell_id1][2]-pvar[cell_id2][2])
+               *(pvar[cell_id1][2]-pvar[cell_id2][2]);
+
+      denum[cell_id1] = CS_MAX(denum[cell_id1], dist_sq1);
+      denum[cell_id2] = CS_MAX(denum[cell_id2], dist_sq1);
+      denom[cell_id1] = CS_MAX(denom[cell_id1], dvar_sq);
+      denom[cell_id2] = CS_MAX(denom[cell_id2], dvar_sq);
+
+    } /* End of loop on faces */
+
+    /* Complement for extended neighborhood */
+
+    if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
+
+      for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
+        for (cidx = cell_cells_idx[cell_id1];
+             cidx < cell_cells_idx[cell_id1+1];
+             cidx++) {
+
+          cell_id2 = cell_cells_lst[cidx-1] - 1;
+
+          for (i = 0; i < 3; i++)
+            dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
+
+          for (i = 0; i < 3; i++)
+            grad_dist1[i] = 0.5*(
+                           (gradv[cell_id1][0][i]+gradv[cell_id2][0][i])*dist[0]
+                          +(gradv[cell_id1][1][i]+gradv[cell_id2][1][i])*dist[1]
+                          +(gradv[cell_id1][2][i]+gradv[cell_id2][2][i])*dist[2]);
+
+          dist_sq1 = grad_dist1[0]*grad_dist1[0]
+                   + grad_dist1[1]*grad_dist1[1]
+                   + grad_dist1[2]*grad_dist1[2];
+
+          dvar_sq = (pvar[cell_id1][0]-pvar[cell_id2][0])
+                   *(pvar[cell_id1][0]-pvar[cell_id2][0])
+                  + (pvar[cell_id1][1]-pvar[cell_id2][1])
+                   *(pvar[cell_id1][1]-pvar[cell_id2][1])
+                  + (pvar[cell_id1][2]-pvar[cell_id2][2])
+                   *(pvar[cell_id1][2]-pvar[cell_id2][2]);
+
+          denum[cell_id1] = CS_MAX(denum[cell_id1], dist_sq1);
+          denom[cell_id1] = CS_MAX(denom[cell_id1], dvar_sq);
+
+        }
+      }
+
+    } /* End for extended neighborhood */
+
+    /* Synchronize variable */
+
+    if (halo != NULL) {
+      cs_mesh_sync_var_scal(denom);
+      cs_mesh_sync_var_scal(denum);
+    }
+
+  } /* End if clipping_type == 1 */
+
+  /* Clipping of the gradient if denum/denom > climgp**2 */
+
+  /* First clipping Algorithm: based on the cell gradient */
+  /*------------------------------------------------------*/
+
+  if (clipping_type == 0) {
+
+    for (cell_id = 0; cell_id < n_cells; cell_id++) {
+
+      if (denum[cell_id] > clipp_coef_sq * denom[cell_id]) {
+
+        factor1 = sqrt(clipp_coef_sq * denom[cell_id]/denum[cell_id]);
+
+
+        for (i = 0; i < 3; i++)
+          for (j = 0; j < 3; j++)
+            gradv[cell_id][i][j] *= factor1;
+
+        min_factor = CS_MIN( factor1, min_factor);
+        max_factor = CS_MAX( factor1, max_factor);
+        n_clip++;
+
+      } /* If clipping */
+
+    } /* End of loop on cells */
+
+  }
+
+  /* Second clipping Algorithm: based on the face gradient */
+  /*-------------------------------------------------------*/
+
+  else if (clipping_type == 1) {
+
+    for (face_id = 0; face_id < n_i_faces; face_id++) {
+
+      cell_id1 = i_face_cells[face_id][0] - 1;
+      cell_id2 = i_face_cells[face_id][1] - 1;
+
+      factor1 = 1.0;
+      if (denum[cell_id1] > clipp_coef_sq * denom[cell_id1])
+        factor1 = sqrt(clipp_coef_sq * denom[cell_id1]/denum[cell_id1]);
+
+      factor2 = 1.0;
+      if (denum[cell_id2] > clipp_coef_sq * denom[cell_id2])
+        factor2 = sqrt(clipp_coef_sq * denom[cell_id2]/denum[cell_id2]);
+
+      min_factor = CS_MIN(factor1, factor2);
+
+      clip_factor[cell_id1] = CS_MIN( clip_factor[cell_id1], min_factor);
+      clip_factor[cell_id2] = CS_MIN( clip_factor[cell_id2], min_factor);
+
+    } /* End of loop on faces */
+
+    /* Complement for extended neighborhood */
+
+    if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
+
+      for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
+
+        min_factor = 1.0;
+
+        for (cidx = cell_cells_idx[cell_id1]; cidx < cell_cells_idx[cell_id1+1]; cidx++) {
+
+          cell_id2 = cell_cells_lst[cidx-1] - 1;
+          factor2 = 1.0;
+
+          if (denum[cell_id2] > clipp_coef_sq * denom[cell_id2])
+            factor2 = sqrt(clipp_coef_sq * denom[cell_id2]/denum[cell_id2]);
+
+          min_factor = CS_MIN(min_factor, factor2);
+
+        }
+
+        clip_factor[cell_id1] = CS_MIN(clip_factor[cell_id1], min_factor);
+
+      } /* End of loop on cells */
+
+    } /* End for extended neighborhood */
+
+    for (cell_id = 0; cell_id < n_cells; cell_id++) {
+
+
+      for (i = 0; i < 3; i++)
+        for (j = 0; j < 3; j++)
+          gradv[cell_id][i][j] *= clip_factor[cell_id];
+
+      if (clip_factor[cell_id] < 0.99) {
+
+        max_factor = CS_MAX(max_factor, clip_factor[cell_id]);
+        min_factor = CS_MIN(min_factor, clip_factor[cell_id]);
+        n_clip++;
+
+      }
+
+    } /* End of loop on cells */
+
+  } /* End if clipping_type == 1 */
+
+  /* Update min/max and n_clip in case of parallelism */
+  /*--------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+
+  if (m->n_domains > 1) {
+
+    assert(sizeof(cs_real_t) == sizeof(double));
+
+    /* Global Max */
+
+    MPI_Allreduce(&max_factor, &global_max_factor, 1, CS_MPI_REAL,
+                  MPI_MAX, cs_glob_mpi_comm);
+
+    max_factor = global_max_factor;
+
+    /* Global min */
+
+    MPI_Allreduce(&min_factor, &global_min_factor, 1, CS_MPI_REAL,
+                  MPI_MIN, cs_glob_mpi_comm);
+
+    min_factor = global_min_factor;
+
+    /* Sum number of clippings */
+
+    MPI_Allreduce(&n_clip, &n_g_clip, 1, CS_MPI_GNUM,
+                  MPI_SUM, cs_glob_mpi_comm);
+
+    n_clip = n_g_clip;
+
+  } /* If n_domains > 1 */
+
+#endif /* defined(HAVE_MPI) */
+
+  /* Output warning if necessary */
+
+  if (verbosity > 1)
+    bft_printf(_(" Gradient of a vector limitation in %llu cells\n"
+                 "   minimum factor = %14.5e; maximum factor = %14.5e\n"),
+               (unsigned long long)n_clip, min_factor, max_factor);
+
+  /* Synchronize the updated Gradient */
+
+  if (halo != NULL)
+    cs_mesh_sync_var_tens((cs_real_t *)gradv);
+
+  BFT_FREE(buf);
+}
+
+/*----------------------------------------------------------------------------
  * Initialize the gradient of a vector for gradient reconstruction.
  *
  * A non-reconstructed gradient is computed at this stage.
@@ -650,11 +1057,11 @@ _gradient_clipping(const cs_int_t   *imrgra,
 static void
 _initialize_vector_gradient(const cs_mesh_t              *m,
                             const cs_mesh_quantities_t   *fvq,
-                            double                        inc,
-                            const cs_real_3_t  (*restrict coefav),
-                            const cs_real_33_t (*restrict coefbv),
-                            const cs_real_3_t  (*restrict pvar),
-                            cs_real_33_t       (*restrict gradv))
+                            const cs_int_t                inc,
+                            const cs_real_3_t   *restrict coefav,
+                            const cs_real_33_t  *restrict coefbv,
+                            const cs_real_3_t   *restrict pvar,
+                            cs_real_33_t        *restrict gradv)
 {
   /* Local variables */
 
@@ -768,10 +1175,10 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                            int                           nswrgp,
                            int                           verbosity,
                            double                        epsrgp,
-                           const cs_real_3_t  (*restrict coefav),
-                           const cs_real_33_t (*restrict coefbv),
-                           const cs_real_3_t  (*restrict pvar),
-                           cs_real_33_t       (*restrict gradv))
+                           const cs_real_3_t   *restrict coefav,
+                           const cs_real_33_t  *restrict coefbv,
+                           const cs_real_3_t   *restrict pvar,
+                           cs_real_33_t        *restrict gradv)
 {
   /* Local variables */
 
@@ -795,7 +1202,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
     = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *restrict)fvq->dofij;
-  cs_real_33_t (*restrict cocg) = fvq->cocg;
+  cs_real_33_t *restrict cocg = fvq->cocg_it;
 
   cs_real_33_t *rhs;
 
@@ -927,6 +1334,206 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
 }
 
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of a vector using least-squares reconstruction for
+ * non-orthogonal meshes (nswrgp > 1).
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   halo_type      <-- halo type (extended or not)
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   coefav         <-- B.C. coefficients for boundary face normals
+ *   coefbv         <-- B.C. coefficients for boundary face normals
+ *   pvar           <-- variable
+ *   gradv          <-> gradient of pvar
+ *----------------------------------------------------------------------------*/
+
+static void
+_lsq_vector_gradient(const cs_mesh_t              *m,
+                     const cs_mesh_quantities_t   *fvq,
+                     const cs_halo_type_t          halo_type,
+                     const cs_int_t                inc,
+                     const cs_real_3_t   *restrict coefav,
+                     const cs_real_33_t  *restrict coefbv,
+                     const cs_real_3_t   *restrict pvar,
+                     cs_real_33_t        *restrict gradv)
+{
+  /* Local variables */
+
+  const int n_cells = m->n_cells;
+  const int n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_lnum_t *restrict cell_cells_idx
+    = (const cs_lnum_t *restrict)m->cell_cells_idx;
+  const cs_lnum_t *restrict cell_cells_lst
+    = (const cs_lnum_t *restrict)m->cell_cells_lst;
+
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+  cs_real_33_t *restrict cocg = fvq->cocg_lsq;
+
+  cs_lnum_t  cell_id, cidx, face_id, cell_id1, cell_id2, i, j, k;
+  int        g_id, t_id;
+  cs_real_t  pfac, ddc;
+  cs_real_3_t  dc;
+  cs_real_4_t  fctb;
+
+  cs_real_33_t *rhs;
+
+  BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
+
+  /* By default, handle the gradient as a tensor
+     (i.e. we assume it is the gradient of a vector field) */
+
+  if (m->halo != NULL)
+    cs_mesh_sync_var_vect((cs_real_t *)pvar);
+
+  /* Compute Right-Hand Side */
+  /*-------------------------*/
+
+    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+      for (i = 0; i < 3; i++)
+        for (j = 0; j < 3; j++)
+          rhs[cell_id][i][j] = 0.0;
+    }
+
+  /* Contribution from interior faces */
+
+  for (g_id = 0; g_id < n_i_groups; g_id++) {
+
+#   pragma omp parallel for private(face_id, cell_id1, cell_id2,\
+                                    i, j, pfac, dc, fctb, ddc)
+    for (t_id = 0; t_id < n_i_threads; t_id++) {
+
+      for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cell_id1 = i_face_cells[face_id][0] - 1;
+        cell_id2 = i_face_cells[face_id][1] - 1;
+
+        for (i = 0; i < 3; i++)
+          dc[i] = cell_cen[cell_id2][i] - cell_cen[cell_id1][i];
+
+        ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        for (i = 0; i < 3; i++) {
+          pfac =  (pvar[cell_id2][i] - pvar[cell_id1][i]) * ddc;
+
+          for (j = 0; j < 3; j++) {
+            fctb[j] = dc[j] * pfac;
+            rhs[cell_id1][j][i] += fctb[j];
+            rhs[cell_id2][j][i] += fctb[j];
+          }
+        }
+
+      } /* loop on faces */
+
+    } /* loop on threads */
+
+  } /* loop on thread groups */
+
+  /* Contribution from extended neighborhood */
+
+  if (halo_type == CS_HALO_EXTENDED) {
+
+#   pragma omp parallel for private(cidx, cell_id2, dc, pfac, ddc, i, j)
+    for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
+      for (cidx = cell_cells_idx[cell_id1];
+           cidx < cell_cells_idx[cell_id1+1];
+           cidx++) {
+
+        cell_id2 = cell_cells_lst[cidx - 1] - 1;
+
+        for (i = 0; i < 3; i++)
+          dc[i] = cell_cen[cell_id2][i] - cell_cen[cell_id1][i];
+
+        ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        for (i = 0; i < 3; i++) {
+
+          pfac = (pvar[cell_id2][i] - pvar[cell_id1][i]) * ddc;
+
+          for (j = 0; j < 3; j++) {
+            rhs[cell_id1][j][i] += dc[j] * pfac;
+          }
+        }
+      }
+    }
+
+  } /* End for extended neighborhood */
+
+  /* Contribution from boundary faces */
+
+  for (g_id = 0; g_id < n_b_groups; g_id++) {
+
+#   pragma omp parallel for private(face_id, cell_id1, i, j, pfac, dc, ddc)
+    for (t_id = 0; t_id < n_b_threads; t_id++) {
+
+      for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cell_id1 = b_face_cells[face_id] - 1;
+
+        for (i = 0; i < 3; i++)
+          dc[i] = b_face_cog[face_id][i] - cell_cen[cell_id1][i];
+
+        ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+
+        for (i = 0; i < 3; i++) {
+          pfac = (coefav[face_id][i]*inc
+               + ( coefbv[face_id][0][i] * pvar[cell_id1][0]
+                 + coefbv[face_id][1][i] * pvar[cell_id1][1]
+                 + coefbv[face_id][2][i] * pvar[cell_id1][2]
+                 -                         pvar[cell_id1][i])) * ddc;
+
+          for (j = 0; j < 3; j++)
+            rhs[cell_id1][j][i] += dc[j] * pfac;
+        }
+
+      } /* loop on faces */
+
+    } /* loop on threads */
+
+  } /* loop on thread groups */
+
+
+  /* Compute gradient */
+  /*------------------*/
+
+  for (cell_id = 0; cell_id < n_cells; cell_id++)
+    for (j = 0; j < 3; j++)
+      for (i = 0; i < 3; i++) {
+
+        gradv[cell_id][j][i] = 0.0;
+
+        for (k = 0; k < 3; k++)
+          gradv[cell_id][j][i] += rhs[cell_id][k][i] * cocg[cell_id][k][j];
+
+      }
+
+  /* Periodicity and parallelism treatment */
+
+  if (m->halo != NULL)
+    cs_mesh_sync_var_tens((cs_real_t *)gradv);
+
+  BFT_FREE(rhs);
+}
 
 /*============================================================================
  * Public function definitions for Fortran API
@@ -1134,8 +1741,15 @@ void CS_PROCF (cgdcel, CGDCEL)
        dpdx  , dpdy  , dpdz  ,
        bx    , by    , bz    );
 
-    _gradient_clipping(imrgra, &_imlini, iwarnp, idimtr, &_climin,
-                       pvar  , dpdx    , dpdy  , dpdz  );
+    _scalar_gradient_clipping(imrgra,
+                             &_imlini,
+                              iwarnp,
+                              idimtr,
+                             &_climin,
+                              pvar,
+                              dpdx,
+                              dpdy,
+                              dpdz);
 
     CS_PROCF (gradrc, GRADRC)
       (ncelet, ncel  , nfac  , nfabor, ncelbr,
@@ -1151,8 +1765,15 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   }
 
-  _gradient_clipping(imrgra, imligp, iwarnp, idimtr, climgp,
-                     pvar  , dpdx  , dpdy  , dpdz  );
+  _scalar_gradient_clipping(imrgra,
+                            imligp,
+                            iwarnp,
+                            idimtr,
+                            climgp,
+                            pvar,
+                            dpdx,
+                            dpdy,
+                            dpdz);
 
   if (update_stats == true) {
     gradient_info->n_calls += 1;
@@ -1182,17 +1803,14 @@ void CS_PROCF (cgdvec, CGDVEC)
  const cs_real_t        *const epsrgp,  /* --> precision for iterative gradient
                                                calculation                    */
  const cs_real_t        *const climgp,  /* --> clipping coefficient           */
- const cs_real_3_t  (*restrict coefav), /* --> boundary condition term        */
- const cs_real_33_t (*restrict coefbv), /* --> boundary condition term        */
- const cs_real_3_t  (*restrict pvar),   /* --> gradient's base variable       */
-       cs_real_33_t (*restrict gradv)   /* <-- gradient of the variable       */
+ const cs_real_3_t   *restrict coefav,  /* --> boundary condition term        */
+ const cs_real_33_t  *restrict coefbv,  /* --> boundary condition term        */
+ const cs_real_3_t   *restrict pvar,    /* --> gradient's base variable       */
+       cs_real_33_t  *restrict gradv    /* <-- gradient of the variable       */
 )
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-
-  const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
-
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
 
@@ -1224,10 +1842,6 @@ void CS_PROCF (cgdvec, CGDVEC)
 
   if (*imrgra == 2 || *imrgra ==  3)
     halo_type = CS_HALO_EXTENDED;
-
-  /* Synchronize variable */
-
-  /* TODO imrgra != 0 */
 
   /* "cell -> cells" connectivity for the extended neighborhood */
 
@@ -1262,9 +1876,81 @@ void CS_PROCF (cgdvec, CGDVEC)
                                  gradv);
 
   }
-  /* TODO *imrgra == 1 || *imrgra == 2 || *imrgra == 3 || *imrgra == 4 */
+  else if (*imrgra == 1 || *imrgra == 2 || *imrgra == 3) {
 
-  /* TODO _gradient_clipping */
+    /* If NO reconstruction are required */
+
+    if (*nswrgp <= 1)
+      _initialize_vector_gradient(mesh,
+                                  fvq,
+                                 *inc,
+                                  coefav,
+                                  coefbv,
+                                  pvar,
+                                  gradv);
+
+    /* Reconstruction with Least square method */
+
+    else
+      _lsq_vector_gradient(mesh,
+                           fvq,
+                           halo_type,
+                          *inc,
+                           coefav,
+                           coefbv,
+                           pvar,
+                           gradv);
+
+  }
+  else if (*imrgra == 4) {
+
+    /* Clipping algorithm and clipping factor */
+
+    const cs_int_t  _imlini = 1;
+    const cs_real_t _climin = 1.5;
+
+    /* Initialization by the Least square method */
+
+    _lsq_vector_gradient(mesh,
+                         fvq,
+                         halo_type,
+                        *inc,
+                         coefav,
+                         coefbv,
+                         pvar,
+                         gradv);
+
+    _vector_gradient_clipping(mesh,
+                              fvq,
+                              halo_type,
+                             _imlini,
+                             *iwarnp,
+                             _climin,
+                              pvar,
+                              gradv);
+
+    _iterative_vector_gradient(mesh,
+                               fvq,
+                              *ivar,
+                              *inc,
+                              *nswrgp,
+                              *iwarnp,
+                              *epsrgp,
+                               coefav,
+                               coefbv,
+                               pvar,
+                               gradv);
+
+  }
+
+   _vector_gradient_clipping(mesh,
+                             fvq,
+                             halo_type,
+                            *imligp,
+                            *iwarnp,
+                            *climgp,
+                             pvar,
+                             gradv);
 
   if (update_stats == true) {
     gradient_info->n_calls += 1;

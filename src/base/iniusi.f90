@@ -90,7 +90,7 @@ integer          ii, iscal , nmodpp
 integer          nscmax, nesmax, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
 integer          ialgce, imgrpr, icwfps
-integer          iappel
+integer          iappel, ioptit, ioplsq
 double precision relaxp, extrap, cwfthr
 
 !===============================================================================
@@ -454,9 +454,24 @@ call clmopt(mltmmn, mltmgl, mltmmr, mltmst, mlttyp)
 call indsui(isuite)
 !==========
 
-! Choose if the 3x3 dimensionless matrix cocg is computed
-! True for ivelco = 1.
-call comcoc(ivelco)
+! Choose if the 3x3 dimensionless matrix cocg is computed for the iterative
+! algorithm and the Least square method for ivelco = 1.
+if (ivelco.eq.1) then
+  if (imrgra.eq.0) then
+    ioptit = 1
+    ioplsq = 0
+  elseif (imrgra.eq.2.or.imrgra.eq.3) then
+    ioptit = 0
+    ioplsq = 1
+  elseif (imrgra.eq.4) then
+    ioptit = 1
+    ioplsq = 1
+  endif
+else
+  ioptit = 0
+  ioplsq = 0
+endif
+call comcoc(ioptit, ioplsq)
 
 ! --- Varpos
 !      3ieme passage

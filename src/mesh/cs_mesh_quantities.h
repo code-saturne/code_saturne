@@ -69,8 +69,6 @@ typedef struct {
   cs_real_t     *diipf;          /* Vector II'  for interior faces */
   cs_real_t     *djjpf;          /* Vector JJ'  for interior faces */
 
-  cs_real_33_t  *cocg;           /* Interleaved cocg matrix */
-
   cs_real_t     *i_dist;         /* Distance between the cell center and
                                     the center of gravity of interior faces */
   cs_real_t     *b_dist;         /* Distance between the cell center and
@@ -81,6 +79,11 @@ typedef struct {
   cs_real_t      min_vol;        /* Minimum cell volume */
   cs_real_t      max_vol;        /* Maximum cell volume */
   cs_real_t      tot_vol;        /* Total volume */
+
+  cs_real_33_t  *cocg_it;        /* Interleaved cocg matrix
+                                    for iterative gradients */
+  cs_real_33_t  *cocg_lsq;       /* Interleaved cocg matrix
+                                    for least square gradients */
 
 } cs_mesh_quantities_t ;
 
@@ -118,24 +121,30 @@ void
 CS_PROCF (algcen, ALGCEN) (cs_int_t  *const iopt);
 
 /*----------------------------------------------------------------------------
- * Query of the option for computing cocg matrix.
+ * Query of the option for computing cocg matrix for the iterative algo
+ * and for the Least square method.
  *
  * This function returns 0 or 1 according to the selected option.
  *
  * Fortran interface :
  *
- * SUBROUTINE COMCOC (IOPT)
+ * SUBROUTINE COMCOC (IOPTIT, IOPLSQ)
  * *****************
  *
- * INTEGER          IOPT        : <-> : Choice of the algorithm
+ * INTEGER          IOPTIT        : <-> : Choice of the algorithm
  *                                      < 0 : query
  *                                        0 : No computation
  *                                        1 : computation of the
- *                                            3x3 dimensionless matrix cocg
+ *                                            3x3 dimensionless matrix cocg_it
+ * INTEGER          IOPTLSQ       : <-> : Choice of the algorithm
+ *                                      < 0 : query
+ *                                        0 : No computation
+ *                                        1 : computation of the
+ *                                            3x3 dimensionless matrix cocg_lsq
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (comcoc, COMCOC) (cs_int_t  *const iopt);
+CS_PROCF (comcoc, COMCOC) (cs_int_t  *const ioptit, cs_int_t  *const ioplsq);
 
 /*=============================================================================
  * Public function prototypes
@@ -158,7 +167,8 @@ int
 cs_mesh_quantities_cell_cen_choice(const int algo_choice);
 
 /*----------------------------------------------------------------------------
- * Query or modification of the option for computing cocg.
+ * Query or modification of the option for computing cocg for the iterative
+ * algorithm.
  *
  *  < 0 : query
  *    0 : Not compute cocg (default choice)
@@ -171,7 +181,24 @@ cs_mesh_quantities_cell_cen_choice(const int algo_choice);
  *----------------------------------------------------------------------------*/
 
 int
-cs_mesh_quantities_compute_cocg(const int algo_choice);
+cs_mesh_quantities_compute_cocg_it(const int algo_choice);
+
+/*----------------------------------------------------------------------------
+ * Query or modification of the option for computing cocg for the Least
+ * square method.
+ *
+ *  < 0 : query
+ *    0 : Not compute cocg (default choice)
+ *    1 : compute the dimensionless cocg matrix
+ *
+ * algo_choice  <--  choice of the option.
+ *
+ * returns:
+ *  0 or 1 according to the selected option.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_mesh_quantities_compute_cocg_lsq(const int algo_choice);
 
 /*----------------------------------------------------------------------------
  * Create a mesh quantities structure.
