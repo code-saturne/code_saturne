@@ -422,14 +422,15 @@ _scalar_gradient_clipping(int                    imrgra,
                           cs_real_3_t  *restrict dpdxyz)
 {
   int        g_id, t_id;
+  cs_gnum_t  t_n_clip;
   cs_lnum_t  face_id, ii, jj, ll, cidx;
   cs_real_t  dist[3];
   cs_real_t  dvar, dist1, dist2, dpdxf, dpdyf, dpdzf;
   cs_real_t  global_min_factor, global_max_factor, factor1, factor2;
+  cs_real_t  t_min_factor, t_max_factor;
 
   cs_gnum_t  n_clip = 0, n_g_clip = 0;
-  cs_real_t  min_factor = 1;
-  cs_real_t  max_factor = 0;
+  cs_real_t  min_factor = 1, max_factor = 0;
   cs_real_t  *restrict buf = NULL, *restrict clip_factor = NULL;
   cs_real_t  *restrict denom = NULL, *restrict denum = NULL;
 
@@ -650,24 +651,39 @@ _scalar_gradient_clipping(int                    imrgra,
 
   if (imligp == 0) {
 
-#   pragma omp parallel for private(factor1, \
-                                    min_factor, max_factor) reduction(+:n_clip)
-    for (ii = 0; ii < n_cells; ii++) {
+    t_min_factor = min_factor;
+    t_max_factor = max_factor;
 
-      if (denum[ii] > climgp * denom[ii]) {
+#   pragma omp parallel private(t_min_factor, t_max_factor, factor1, t_n_clip)
+    {
+      t_n_clip = 0;
+      t_min_factor = min_factor; t_max_factor = max_factor;
 
-        factor1 = climgp * denom[ii]/denum[ii];
-        dpdxyz[ii][0] *= factor1;
-        dpdxyz[ii][1] *= factor1;
-        dpdxyz[ii][2] *= factor1;
+#     pragma omp for
+      for (ii = 0; ii < n_cells; ii++) {
 
-        min_factor = CS_MIN(factor1, min_factor);
-        max_factor = CS_MAX(factor1, max_factor);
-        n_clip++;
+        if (denum[ii] > climgp * denom[ii]) {
 
-      } /* If clipping */
+          factor1 = climgp * denom[ii]/denum[ii];
+          dpdxyz[ii][0] *= factor1;
+          dpdxyz[ii][1] *= factor1;
+          dpdxyz[ii][2] *= factor1;
 
-    } /* End of loop on cells */
+          t_min_factor = CS_MIN(factor1, t_min_factor);
+          t_max_factor = CS_MAX(factor1, t_max_factor);
+          t_n_clip++;
+
+        } /* If clipping */
+
+      } /* End of loop on cells */
+
+#     pragma omp critical
+      {
+        min_factor = CS_MIN(min_factor, t_min_factor);
+        max_factor = CS_MAX(max_factor, t_max_factor);
+        n_clip += t_n_clip;
+      }
+    } /* End of omp parallel construct */
 
   }
   else if (imligp == 1) {
@@ -751,20 +767,32 @@ _scalar_gradient_clipping(int                    imrgra,
 
     } /* End for extended neighborhood */
 
-#   pragma omp parallel for private(ll, \
-                                    max_factor, min_factor) reduction(+:n_clip)
-    for (ii = 0; ii < n_cells; ii++) {
+#   pragma omp parallel private(t_min_factor, t_max_factor, t_n_clip, ll)
+    {
+      t_n_clip = 0;
+      t_min_factor = min_factor; t_max_factor = max_factor;
 
-      for (ll = 0; ll < 3; ll++)
-        dpdxyz[ii][ll] *= clip_factor[ii];
+#     pragma omp for
+      for (ii = 0; ii < n_cells; ii++) {
 
-      if (clip_factor[ii] < 0.99) {
-        max_factor = CS_MAX(max_factor, clip_factor[ii]);
-        min_factor = CS_MIN(min_factor, clip_factor[ii]);
-        n_clip++;
+        for (ll = 0; ll < 3; ll++)
+          dpdxyz[ii][ll] *= clip_factor[ii];
+
+        if (clip_factor[ii] < 0.99) {
+          t_max_factor = CS_MAX(t_max_factor, clip_factor[ii]);
+          t_min_factor = CS_MIN(t_min_factor, clip_factor[ii]);
+          t_n_clip++;
+        }
+
+      } /* End of loop on cells */
+
+#     pragma omp critical
+      {
+        min_factor = CS_MIN(min_factor, t_min_factor);
+        max_factor = CS_MAX(max_factor, t_max_factor);
+        n_clip += t_n_clip;
       }
-
-    } /* End of loop on cells */
+    } /* End of omp parallel construct */
 
   } /* End if imligp == 1 */
 
@@ -938,7 +966,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
     for (g_id = 0; g_id < n_i_groups; g_id++) {
 
 #     pragma omp parallel for private(face_id, ii, jj, pfac, fctb)
-
       for (t_id = 0; t_id < n_i_threads; t_id++) {
 
         for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -971,7 +998,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 
 #     pragma omp parallel for private(face_id, ii, pfac)
-
       for (t_id = 0; t_id < n_b_threads; t_id++) {
 
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -1003,7 +1029,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
     for (g_id = 0; g_id < n_i_groups; g_id++) {
 
 #     pragma omp parallel for private(face_id, ii, jj, pfac, fctb)
-
       for (t_id = 0; t_id < n_i_threads; t_id++) {
 
         for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -1046,7 +1071,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 
 #     pragma omp parallel for private(face_id, ii, pfac)
-
       for (t_id = 0; t_id < n_b_threads; t_id++) {
 
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -1306,7 +1330,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 
 #     pragma omp parallel for private(face_id, ii, ll, mm)
-
       for (t_id = 0; t_id < n_b_threads; t_id++) {
 
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -2424,12 +2447,13 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
                           const cs_real_3_t   *restrict pvar,
                           cs_real_33_t        *restrict gradv)
 {
-  /* Local variables */
-
+  int        g_id, t_id;
+  cs_gnum_t  t_n_clip;
   cs_lnum_t  cell_id, cell_id1, cell_id2, cidx, face_id, i, j;
   cs_real_3_t dist, grad_dist1, grad_dist2;
   cs_real_t  dvar_sq, dist_sq1, dist_sq2;
   cs_real_t  global_min_factor, global_max_factor, factor1, factor2;
+  cs_real_t  t_max_factor, t_min_factor;
 
   cs_gnum_t  n_clip = 0, n_g_clip =0;
   cs_real_t  min_factor = 1;
@@ -2438,9 +2462,11 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
   cs_real_t  *restrict buf = NULL, *restrict clip_factor = NULL;
   cs_real_t  *restrict denom = NULL, *restrict denum = NULL;
 
-  const cs_lnum_t  n_i_faces = m->n_i_faces;
-  const cs_lnum_t  n_cells = m->n_cells;
-  const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
@@ -2474,6 +2500,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
   /* Initialization */
 
+# pragma omp parallel for
   for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     denum[cell_id] = 0;
     denom[cell_id] = 0;
@@ -2490,52 +2517,67 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
   if (clipping_type == 0) {
 
-    for (face_id = 0; face_id < n_i_faces; face_id++) {
+    for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-      cell_id1 = i_face_cells[face_id][0] - 1;
-      cell_id2 = i_face_cells[face_id][1] - 1;
+#     pragma omp parallel for private(face_id, cell_id1, cell_id2, i, \
+                                      dist, grad_dist1, grad_dist2, \
+                                      dist_sq1, dist_sq2, dvar_sq)
+      for (t_id = 0; t_id < n_i_threads; t_id++) {
 
-      for (i = 0; i < 3; i++)
-        dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
+        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
 
-      for (i = 0; i < 3; i++) {
+          cell_id1 = i_face_cells[face_id][0] - 1;
+          cell_id2 = i_face_cells[face_id][1] - 1;
 
-        grad_dist1[i] = gradv[cell_id1][0][i] * dist[0]
-                      + gradv[cell_id1][1][i] * dist[1]
-                      + gradv[cell_id1][2][i] * dist[2];
+          for (i = 0; i < 3; i++)
+            dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
 
-        grad_dist2[i] = gradv[cell_id2][0][i] * dist[0]
-                      + gradv[cell_id2][1][i] * dist[1]
-                      + gradv[cell_id2][2][i] * dist[2];
+          for (i = 0; i < 3; i++) {
 
-      }
+            grad_dist1[i] =   gradv[cell_id1][0][i] * dist[0]
+                            + gradv[cell_id1][1][i] * dist[1]
+                            + gradv[cell_id1][2][i] * dist[2];
 
-      dist_sq1 = grad_dist1[0]*grad_dist1[0]
-               + grad_dist1[1]*grad_dist1[1]
-               + grad_dist1[2]*grad_dist1[2];
+            grad_dist2[i] =   gradv[cell_id2][0][i] * dist[0]
+                            + gradv[cell_id2][1][i] * dist[1]
+                            + gradv[cell_id2][2][i] * dist[2];
 
-      dist_sq2 = grad_dist2[0]*grad_dist2[0]
-               + grad_dist2[1]*grad_dist2[1]
-               + grad_dist2[2]*grad_dist2[2];
+          }
 
-      dvar_sq = (pvar[cell_id1][0]-pvar[cell_id2][0])
-               *(pvar[cell_id1][0]-pvar[cell_id2][0])
-              + (pvar[cell_id1][1]-pvar[cell_id2][1])
-               *(pvar[cell_id1][1]-pvar[cell_id2][1])
-              + (pvar[cell_id1][2]-pvar[cell_id2][2])
-               *(pvar[cell_id1][2]-pvar[cell_id2][2]);
+          dist_sq1 =   grad_dist1[0]*grad_dist1[0]
+                     + grad_dist1[1]*grad_dist1[1]
+                     + grad_dist1[2]*grad_dist1[2];
 
-      denum[cell_id1] = CS_MAX(denum[cell_id1], dist_sq1);
-      denum[cell_id2] = CS_MAX(denum[cell_id2], dist_sq2);
-      denom[cell_id1] = CS_MAX(denom[cell_id1], dvar_sq);
-      denom[cell_id2] = CS_MAX(denom[cell_id2], dvar_sq);
+          dist_sq2 =   grad_dist2[0]*grad_dist2[0]
+                     + grad_dist2[1]*grad_dist2[1]
+                     + grad_dist2[2]*grad_dist2[2];
 
-    } /* End of loop on faces */
+          dvar_sq =     (pvar[cell_id1][0]-pvar[cell_id2][0])
+                      * (pvar[cell_id1][0]-pvar[cell_id2][0])
+                    +   (pvar[cell_id1][1]-pvar[cell_id2][1])
+                      * (pvar[cell_id1][1]-pvar[cell_id2][1])
+                    +   (pvar[cell_id1][2]-pvar[cell_id2][2])
+                      * (pvar[cell_id1][2]-pvar[cell_id2][2]);
+
+          denum[cell_id1] = CS_MAX(denum[cell_id1], dist_sq1);
+          denum[cell_id2] = CS_MAX(denum[cell_id2], dist_sq2);
+          denom[cell_id1] = CS_MAX(denom[cell_id1], dvar_sq);
+          denom[cell_id2] = CS_MAX(denom[cell_id2], dvar_sq);
+
+        } /* End of loop on faces */
+
+      } /* End of loop on threads */
+
+    } /* End of loop on thread groups */
 
     /* Complement for extended neighborhood */
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
+#     pragma omp parallel for private(cidx, cell_id2, i, dist, \
+                                      grad_dist1, dist_sq1, dvar_sq)
       for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
         for (cidx = cell_cells_idx[cell_id1];
              cidx < cell_cells_idx[cell_id1+1];
@@ -2547,21 +2589,21 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
             dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
 
           for (i = 0; i < 3; i++)
-            grad_dist1[i] = gradv[cell_id1][0][i] * dist[0]
-                          + gradv[cell_id1][1][i] * dist[1]
-                          + gradv[cell_id1][2][i] * dist[2];
+            grad_dist1[i] =   gradv[cell_id1][0][i] * dist[0]
+                            + gradv[cell_id1][1][i] * dist[1]
+                            + gradv[cell_id1][2][i] * dist[2];
 
 
-          dist_sq1 = grad_dist1[0]*grad_dist1[0]
-                   + grad_dist1[1]*grad_dist1[1]
-                   + grad_dist1[2]*grad_dist1[2];
+          dist_sq1 =   grad_dist1[0]*grad_dist1[0]
+                     + grad_dist1[1]*grad_dist1[1]
+                     + grad_dist1[2]*grad_dist1[2];
 
-          dvar_sq = (pvar[cell_id1][0]-pvar[cell_id2][0])
-                   *(pvar[cell_id1][0]-pvar[cell_id2][0])
-                  + (pvar[cell_id1][1]-pvar[cell_id2][1])
-                   *(pvar[cell_id1][1]-pvar[cell_id2][1])
-                  + (pvar[cell_id1][2]-pvar[cell_id2][2])
-                   *(pvar[cell_id1][2]-pvar[cell_id2][2]);
+          dvar_sq =     (pvar[cell_id1][0]-pvar[cell_id2][0])
+                      * (pvar[cell_id1][0]-pvar[cell_id2][0])
+                    +   (pvar[cell_id1][1]-pvar[cell_id2][1])
+                      * (pvar[cell_id1][1]-pvar[cell_id2][1])
+                    +   (pvar[cell_id1][2]-pvar[cell_id2][2])
+                      * (pvar[cell_id1][2]-pvar[cell_id2][2]);
 
           denum[cell_id1] = CS_MAX(denum[cell_id1], dist_sq1);
           denom[cell_id1] = CS_MAX(denom[cell_id1], dvar_sq);
@@ -2578,35 +2620,47 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
   else if (clipping_type == 1) {
 
-    for (face_id = 0; face_id < n_i_faces; face_id++) {
+    for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-      cell_id1 = i_face_cells[face_id][0] - 1;
-      cell_id2 = i_face_cells[face_id][1] - 1;
+#     pragma omp parallel for private(face_id, cell_id1, cell_id2, i, \
+                                      dist, grad_dist1, dist_sq1, dvar_sq)
+      for (t_id = 0; t_id < n_i_threads; t_id++) {
 
-      for (i = 0; i < 3; i++)
-        dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
+        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
 
-      for (i = 0; i < 3; i++)
-        grad_dist1[i] = 0.5*(
-                       (gradv[cell_id1][0][i]+gradv[cell_id2][0][i])*dist[0]
-                      +(gradv[cell_id1][1][i]+gradv[cell_id2][1][i])*dist[1]
-                      +(gradv[cell_id1][2][i]+gradv[cell_id2][2][i])*dist[2]);
+          cell_id1 = i_face_cells[face_id][0] - 1;
+          cell_id2 = i_face_cells[face_id][1] - 1;
 
-      dist_sq1 = grad_dist1[0]*grad_dist1[0]
-               + grad_dist1[1]*grad_dist1[1]
-               + grad_dist1[2]*grad_dist1[2];
+          for (i = 0; i < 3; i++)
+            dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
 
-      dvar_sq = (pvar[cell_id1][0]-pvar[cell_id2][0])
-               *(pvar[cell_id1][0]-pvar[cell_id2][0])
-              + (pvar[cell_id1][1]-pvar[cell_id2][1])
-               *(pvar[cell_id1][1]-pvar[cell_id2][1])
-              + (pvar[cell_id1][2]-pvar[cell_id2][2])
-               *(pvar[cell_id1][2]-pvar[cell_id2][2]);
+          for (i = 0; i < 3; i++)
+            grad_dist1[i]
+              = 0.5 * (  (gradv[cell_id1][0][i]+gradv[cell_id2][0][i])*dist[0]
+                       + (gradv[cell_id1][1][i]+gradv[cell_id2][1][i])*dist[1]
+                       + (gradv[cell_id1][2][i]+gradv[cell_id2][2][i])*dist[2]);
 
-      denum[cell_id1] = CS_MAX(denum[cell_id1], dist_sq1);
-      denum[cell_id2] = CS_MAX(denum[cell_id2], dist_sq1);
-      denom[cell_id1] = CS_MAX(denom[cell_id1], dvar_sq);
-      denom[cell_id2] = CS_MAX(denom[cell_id2], dvar_sq);
+          dist_sq1 =   grad_dist1[0]*grad_dist1[0]
+                     + grad_dist1[1]*grad_dist1[1]
+                     + grad_dist1[2]*grad_dist1[2];
+
+          dvar_sq =     (pvar[cell_id1][0]-pvar[cell_id2][0])
+                      * (pvar[cell_id1][0]-pvar[cell_id2][0])
+                    +   (pvar[cell_id1][1]-pvar[cell_id2][1])
+                      * (pvar[cell_id1][1]-pvar[cell_id2][1])
+                    +   (pvar[cell_id1][2]-pvar[cell_id2][2])
+                      * (pvar[cell_id1][2]-pvar[cell_id2][2]);
+
+          denum[cell_id1] = CS_MAX(denum[cell_id1], dist_sq1);
+          denum[cell_id2] = CS_MAX(denum[cell_id2], dist_sq1);
+          denom[cell_id1] = CS_MAX(denom[cell_id1], dvar_sq);
+          denom[cell_id2] = CS_MAX(denom[cell_id2], dvar_sq);
+
+        } /* End of loop on threads */
+
+      } /* End of loop on thread groups */
 
     } /* End of loop on faces */
 
@@ -2614,6 +2668,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
+#     pragma omp parallel for private(cidx, cell_id2, i, dist, \
+                                      grad_dist1, dist_sq1, dvar_sq)
       for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
         for (cidx = cell_cells_idx[cell_id1];
              cidx < cell_cells_idx[cell_id1+1];
@@ -2625,21 +2681,21 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
             dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
 
           for (i = 0; i < 3; i++)
-            grad_dist1[i] = 0.5*(
-                           (gradv[cell_id1][0][i]+gradv[cell_id2][0][i])*dist[0]
-                          +(gradv[cell_id1][1][i]+gradv[cell_id2][1][i])*dist[1]
-                          +(gradv[cell_id1][2][i]+gradv[cell_id2][2][i])*dist[2]);
+            grad_dist1[i]
+              = 0.5 * (  (gradv[cell_id1][0][i]+gradv[cell_id2][0][i])*dist[0]
+                       + (gradv[cell_id1][1][i]+gradv[cell_id2][1][i])*dist[1]
+                       + (gradv[cell_id1][2][i]+gradv[cell_id2][2][i])*dist[2]);
 
-          dist_sq1 = grad_dist1[0]*grad_dist1[0]
-                   + grad_dist1[1]*grad_dist1[1]
-                   + grad_dist1[2]*grad_dist1[2];
+          dist_sq1 =   grad_dist1[0]*grad_dist1[0]
+                     + grad_dist1[1]*grad_dist1[1]
+                     + grad_dist1[2]*grad_dist1[2];
 
-          dvar_sq = (pvar[cell_id1][0]-pvar[cell_id2][0])
-                   *(pvar[cell_id1][0]-pvar[cell_id2][0])
-                  + (pvar[cell_id1][1]-pvar[cell_id2][1])
-                   *(pvar[cell_id1][1]-pvar[cell_id2][1])
-                  + (pvar[cell_id1][2]-pvar[cell_id2][2])
-                   *(pvar[cell_id1][2]-pvar[cell_id2][2]);
+          dvar_sq =     (pvar[cell_id1][0]-pvar[cell_id2][0])
+                      * (pvar[cell_id1][0]-pvar[cell_id2][0])
+                    +   (pvar[cell_id1][1]-pvar[cell_id2][1])
+                      * (pvar[cell_id1][1]-pvar[cell_id2][1])
+                    +   (pvar[cell_id1][2]-pvar[cell_id2][2])
+                      * (pvar[cell_id1][2]-pvar[cell_id2][2]);
 
           denum[cell_id1] = CS_MAX(denum[cell_id1], dist_sq1);
           denom[cell_id1] = CS_MAX(denom[cell_id1], dvar_sq);
@@ -2665,24 +2721,39 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
   if (clipping_type == 0) {
 
-    for (cell_id = 0; cell_id < n_cells; cell_id++) {
+#   pragma omp parallel private(t_min_factor, t_max_factor, t_n_clip, \
+                                factor1, i, j)
+    {
+      t_n_clip = 0;
+      t_min_factor = min_factor; t_max_factor = max_factor;
 
-      if (denum[cell_id] > clipp_coef_sq * denom[cell_id]) {
+#     pragma omp for
+      for (cell_id = 0; cell_id < n_cells; cell_id++) {
 
-        factor1 = sqrt(clipp_coef_sq * denom[cell_id]/denum[cell_id]);
+        if (denum[cell_id] > clipp_coef_sq * denom[cell_id]) {
 
+          factor1 = sqrt(clipp_coef_sq * denom[cell_id]/denum[cell_id]);
 
-        for (i = 0; i < 3; i++)
-          for (j = 0; j < 3; j++)
-            gradv[cell_id][i][j] *= factor1;
+          for (i = 0; i < 3; i++) {
+            for (j = 0; j < 3; j++)
+              gradv[cell_id][i][j] *= factor1;
+          }
 
-        min_factor = CS_MIN( factor1, min_factor);
-        max_factor = CS_MAX( factor1, max_factor);
-        n_clip++;
+          t_min_factor = CS_MIN(factor1, t_min_factor);
+          t_max_factor = CS_MAX(factor1, t_max_factor);
+          t_n_clip++;
 
-      } /* If clipping */
+        } /* If clipping */
 
-    } /* End of loop on cells */
+      } /* End of loop on cells */
+
+#     pragma omp critical
+      {
+        min_factor = CS_MIN(min_factor, t_min_factor);
+        max_factor = CS_MAX(max_factor, t_max_factor);
+        n_clip += t_n_clip;
+      }
+    } /* End of omp parallel construct */
 
   }
 
@@ -2691,35 +2762,50 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
   else if (clipping_type == 1) {
 
-    for (face_id = 0; face_id < n_i_faces; face_id++) {
+    for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-      cell_id1 = i_face_cells[face_id][0] - 1;
-      cell_id2 = i_face_cells[face_id][1] - 1;
+#     pragma omp parallel for private(face_id, cell_id1, cell_id2, \
+                                      factor1, factor2, min_factor)
+      for (t_id = 0; t_id < n_i_threads; t_id++) {
 
-      factor1 = 1.0;
-      if (denum[cell_id1] > clipp_coef_sq * denom[cell_id1])
-        factor1 = sqrt(clipp_coef_sq * denom[cell_id1]/denum[cell_id1]);
+        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
 
-      factor2 = 1.0;
-      if (denum[cell_id2] > clipp_coef_sq * denom[cell_id2])
-        factor2 = sqrt(clipp_coef_sq * denom[cell_id2]/denum[cell_id2]);
+          cell_id1 = i_face_cells[face_id][0] - 1;
+          cell_id2 = i_face_cells[face_id][1] - 1;
 
-      min_factor = CS_MIN(factor1, factor2);
+          factor1 = 1.0;
+          if (denum[cell_id1] > clipp_coef_sq * denom[cell_id1])
+            factor1 = sqrt(clipp_coef_sq * denom[cell_id1]/denum[cell_id1]);
 
-      clip_factor[cell_id1] = CS_MIN( clip_factor[cell_id1], min_factor);
-      clip_factor[cell_id2] = CS_MIN( clip_factor[cell_id2], min_factor);
+          factor2 = 1.0;
+          if (denum[cell_id2] > clipp_coef_sq * denom[cell_id2])
+            factor2 = sqrt(clipp_coef_sq * denom[cell_id2]/denum[cell_id2]);
 
-    } /* End of loop on faces */
+          min_factor = CS_MIN(factor1, factor2);
+
+          clip_factor[cell_id1] = CS_MIN(clip_factor[cell_id1], min_factor);
+          clip_factor[cell_id2] = CS_MIN(clip_factor[cell_id2], min_factor);
+
+        } /* End of loop on faces */
+
+      } /* End of loop on threads */
+
+    } /* End of loop on thread groups */
 
     /* Complement for extended neighborhood */
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
+#     pragma omp parallel for private(cidx, cell_id2, min_factor, factor2)
       for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
 
         min_factor = 1.0;
 
-        for (cidx = cell_cells_idx[cell_id1]; cidx < cell_cells_idx[cell_id1+1]; cidx++) {
+        for (cidx = cell_cells_idx[cell_id1];
+             cidx < cell_cells_idx[cell_id1+1];
+             cidx++) {
 
           cell_id2 = cell_cells_lst[cidx-1] - 1;
           factor2 = 1.0;
@@ -2737,22 +2823,35 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
     } /* End for extended neighborhood */
 
-    for (cell_id = 0; cell_id < n_cells; cell_id++) {
+#   pragma omp parallel private(t_min_factor, t_max_factor, factor1, \
+                                t_n_clip, i, j)
+    {
+      t_n_clip = 0;
+      t_min_factor = min_factor; t_max_factor = max_factor;
 
+#     pragma omp for
+      for (cell_id = 0; cell_id < n_cells; cell_id++) {
 
-      for (i = 0; i < 3; i++)
-        for (j = 0; j < 3; j++)
-          gradv[cell_id][i][j] *= clip_factor[cell_id];
+        for (i = 0; i < 3; i++) {
+          for (j = 0; j < 3; j++)
+            gradv[cell_id][i][j] *= clip_factor[cell_id];
+        }
 
-      if (clip_factor[cell_id] < 0.99) {
+        if (clip_factor[cell_id] < 0.99) {
+          t_max_factor = CS_MAX(t_max_factor, clip_factor[cell_id]);
+          t_min_factor = CS_MIN(t_min_factor, clip_factor[cell_id]);
+          t_n_clip++;
+        }
 
-        max_factor = CS_MAX(max_factor, clip_factor[cell_id]);
-        min_factor = CS_MIN(min_factor, clip_factor[cell_id]);
-        n_clip++;
+      } /* End of loop on cells */
 
+#     pragma omp critical
+      {
+        min_factor = CS_MIN(min_factor, t_min_factor);
+        max_factor = CS_MAX(max_factor, t_max_factor);
+        n_clip += t_n_clip;
       }
-
-    } /* End of loop on cells */
+    } /* End of omp parallel construct */
 
   } /* End if clipping_type == 1 */
 
@@ -2828,11 +2927,17 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
                             const cs_real_3_t   *restrict pvar,
                             cs_real_33_t        *restrict gradv)
 {
-  /* Local variables */
+  int g_id, t_id;
+  cs_lnum_t  cell_id, face_id, i, j, cell_id1, cell_id2;
+  cs_real_t  pfac, pond, dvol, dvol1, dvol2;
 
-  const int n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_faces = m->n_i_faces;
-  const int n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
@@ -2846,12 +2951,6 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *restrict)fvq->b_face_normal;
 
-  cs_lnum_t  cell_id, face_id, i, j, cell_id1, cell_id2;
-  cs_real_t  pfac, pond, epzero;
-  cs_real_t  dvol, dvol1, dvol2;
-
-  epzero = 1.e-12;
-
   /* By default, handle the gradient as a tensor
      (i.e. we assume it is the gradient of a vector field) */
 
@@ -2863,53 +2962,83 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
   /* Initialization */
 
-  for (cell_id = 0; cell_id < n_cells_ext; cell_id++)
-    for (j = 0; j < 3; j++)
+# pragma omp parallel for private(i, j)
+  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (j = 0; j < 3; j++) {
       for (i = 0; i < 3; i++)
         gradv[cell_id][j][i] = 0.0;
-
-  /* Interior face treatment */
-
-  for (face_id = 0; face_id < n_i_faces; face_id++) {
-    cell_id1 = i_face_cells[face_id][0] - 1;
-    cell_id2 = i_face_cells[face_id][1] - 1;
-
-    pond = weight[face_id];
-    dvol1 = 1./cell_vol[cell_id1];
-    dvol2 = 1./cell_vol[cell_id2];
-
-    for (i = 0; i < 3; i++) {
-      pfac   = pond * pvar[cell_id1][i] + (1.0-pond) * pvar[cell_id2][i];
-      for (j = 0; j < 3; j++) {
-        gradv[cell_id1][j][i] += pfac * i_face_normal[face_id][j] * dvol1;
-        gradv[cell_id2][j][i] -= pfac * i_face_normal[face_id][j] * dvol2;
-      }
     }
   }
 
-  /* Boundar face treatment */
+  /* Interior faces contribution */
 
-  for (face_id = 0; face_id < n_b_faces; face_id++) {
-    cell_id = b_face_cells[face_id] - 1;
+  for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-    dvol = 1./cell_vol[cell_id];
+#   pragma omp parallel for private(face_id, cell_id1, cell_id2, i, j,  \
+                                    pond, dvol1, dvol2, pfac)
+    for (t_id = 0; t_id < n_i_threads; t_id++) {
 
-    for (i = 0; i < 3; i++) {
-      pfac = inc*coefav[face_id][i] + coefbv[face_id][0][i] * pvar[cell_id][0]
-                                    + coefbv[face_id][1][i] * pvar[cell_id][1]
-                                    + coefbv[face_id][2][i] * pvar[cell_id][2];
-      for (j = 0; j < 3; j++)
-        gradv[cell_id][j][i] += pfac * b_face_normal[face_id][j]*dvol;
+      for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           face_id++) {
 
-    }
-  }
+        cell_id1 = i_face_cells[face_id][0] - 1;
+        cell_id2 = i_face_cells[face_id][1] - 1;
+
+        pond = weight[face_id];
+        dvol1 = 1./cell_vol[cell_id1];
+        dvol2 = 1./cell_vol[cell_id2];
+
+        for (i = 0; i < 3; i++) {
+          pfac   = pond * pvar[cell_id1][i] + (1.0-pond) * pvar[cell_id2][i];
+          for (j = 0; j < 3; j++) {
+            gradv[cell_id1][j][i] += pfac * i_face_normal[face_id][j] * dvol1;
+            gradv[cell_id2][j][i] -= pfac * i_face_normal[face_id][j] * dvol2;
+          }
+        }
+
+      } /* End of loop on faces */
+
+    } /* End of loop on threads */
+
+  } /* End of loop on thread groups */
+
+  /* Boundary face treatment */
+
+  for (g_id = 0; g_id < n_b_groups; g_id++) {
+
+#   pragma omp parallel for private(face_id, cell_id, i,j, dvol, pfac)
+    for (t_id = 0; t_id < n_b_threads; t_id++) {
+
+      for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cell_id = b_face_cells[face_id] - 1;
+
+        dvol = 1./cell_vol[cell_id];
+
+        for (i = 0; i < 3; i++) {
+          pfac =   inc*coefav[face_id][i]
+                 + coefbv[face_id][0][i] * pvar[cell_id][0]
+                 + coefbv[face_id][1][i] * pvar[cell_id][1]
+                 + coefbv[face_id][2][i] * pvar[cell_id][2];
+          for (j = 0; j < 3; j++)
+            gradv[cell_id][j][i] += pfac * b_face_normal[face_id][j]*dvol;
+        }
+
+      } /* loop on faces */
+
+    } /* loop on threads */
+
+  } /* loop on thread groups */
 
   /* Periodicity and parallelism treatment */
 
   if (m->halo != NULL)
     cs_mesh_sync_var_tens((cs_real_t *)gradv);
-
 }
+
 /*----------------------------------------------------------------------------
  * Compute the gradient of a vector with an iterative technique in order to
  * handle non-orthoganalities (nswrgp > 1).
@@ -2945,12 +3074,21 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                            const cs_real_3_t   *restrict pvar,
                            cs_real_33_t        *restrict gradv)
 {
-  /* Local variables */
+  int isweep, g_id, t_id;
+  cs_lnum_t  cell_id, face_id, i, j, k, cell_id1, cell_id2;
+  cs_real_t  pfac, l2_norm, l2_residual, vecfac, pond;
+  cs_real_t  dvol, dvol1, dvol2;
 
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_faces = m->n_i_faces;
-  const int n_b_faces = m->n_b_faces;
+  cs_real_33_t *rhs;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
@@ -2969,17 +3107,9 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
     = (const cs_real_3_t *restrict)fvq->dofij;
   cs_real_33_t *restrict cocg = fvq->cocg_it;
 
-  cs_real_33_t *rhs;
-
-  cs_lnum_t  cell_id, face_id, i, j, k, cell_id1, cell_id2;
-  cs_real_t  pfac, l2_norm, l2_residual, vecfac, pond, epzero;
-  cs_real_t  dvol, dvol1, dvol2;
-
-  int isweep;
-
   BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
 
-  epzero = 1.e-12;
+  const cs_real_t epzero = 1.e-12;
 
   /* Gradient reconstruction to handle non-orthogonal meshes */
   /*---------------------------------------------------------*/
@@ -2998,73 +3128,101 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
       /* Computation of the Right Hand Side*/
 
-      for (cell_id = 0; cell_id < n_cells_ext; cell_id++)
-        for (j = 0; j < 3; j++)
+#     pragma omp parallel for private(i, j)
+      for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+        for (j = 0; j < 3; j++) {
           for (i = 0; i < 3; i++)
             rhs[cell_id][j][i] = -gradv[cell_id][j][i];
-
+        }
+      }
 
       /* Interior face treatment */
 
-      for (face_id = 0; face_id < n_i_faces; face_id++) {
+      for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-        cell_id1 = i_face_cells[face_id][0] - 1;
-        cell_id2 = i_face_cells[face_id][1] - 1;
-        pond = weight[face_id];
+#       pragma omp parallel for private(face_id, cell_id1, cell_id2, \
+                                        i, j, k, pond, dvol1, dvol2, pfac)
+        for (t_id = 0; t_id < n_i_threads; t_id++) {
 
-        dvol1 = 1./cell_vol[cell_id1];
-        dvol2 = 1./cell_vol[cell_id2];
+          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+               face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+               face_id++) {
 
-        for (i = 0; i < 3; i++) {
-          pfac = pond*pvar[cell_id1][i] + (1.0-pond)*pvar[cell_id2][i];
+            cell_id1 = i_face_cells[face_id][0] - 1;
+            cell_id2 = i_face_cells[face_id][1] - 1;
+            pond = weight[face_id];
 
-          for (k = 0; k < 3; k++)
-            pfac += 0.5*(gradv[cell_id1][k][i] + gradv[cell_id2][k][i])
-                  * dofij[face_id][k];
+            dvol1 = 1./cell_vol[cell_id1];
+            dvol2 = 1./cell_vol[cell_id2];
 
-          for (j = 0; j < 3; j++) {
+            for (i = 0; i < 3; i++) {
+              pfac = pond*pvar[cell_id1][i] + (1.0-pond)*pvar[cell_id2][i];
 
-            rhs[cell_id1][j][i] += pfac * i_face_normal[face_id][j] * dvol1;
-            rhs[cell_id2][j][i] -= pfac * i_face_normal[face_id][j] * dvol2;
+              for (k = 0; k < 3; k++)
+                pfac += 0.5 * (gradv[cell_id1][k][i] + gradv[cell_id2][k][i])
+                            * dofij[face_id][k];
 
-          }
-        }
-      }
+              for (j = 0; j < 3; j++) {
+                rhs[cell_id1][j][i] += pfac * i_face_normal[face_id][j] * dvol1;
+                rhs[cell_id2][j][i] -= pfac * i_face_normal[face_id][j] * dvol2;
+              }
+            }
 
-      /* Boundar face treatment */
+          } /* loop on faces */
 
-      for (face_id = 0; face_id < n_b_faces; face_id++) {
+        } /* loop on threads */
 
-        cell_id = b_face_cells[face_id] - 1;
-        dvol = 1./cell_vol[cell_id];
+      } /* loop on thread groups */
 
-        for (i = 0; i < 3; i++) {
+      /* Boundary face treatment */
 
-          pfac = inc*coefav[face_id][i];
+      for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-          for (k = 0; k < 3; k++) {
+#       pragma omp parallel for private(face_id, cell_id, dvol, i, j, k, \
+                                        pfac, vecfac)
+        for (t_id = 0; t_id < n_b_threads; t_id++) {
 
-            vecfac =  pvar[cell_id][k]
-                   + gradv[cell_id][0][k] * diipb[face_id][0]
-                   + gradv[cell_id][1][k] * diipb[face_id][1]
-                   + gradv[cell_id][2][k] * diipb[face_id][2];
-            pfac += coefbv[face_id][k][i] * vecfac;
+          for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+               face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+               face_id++) {
 
-          }
+            cell_id = b_face_cells[face_id] - 1;
+            dvol = 1./cell_vol[cell_id];
 
-          for (j = 0; j < 3; j++)
-            rhs[cell_id][j][i] += pfac * b_face_normal[face_id][j] * dvol;
+            for (i = 0; i < 3; i++) {
 
-        }
-      }
+              pfac = inc*coefav[face_id][i];
+
+              for (k = 0; k < 3; k++) {
+                vecfac =   pvar[cell_id][k]
+                         + gradv[cell_id][0][k] * diipb[face_id][0]
+                         + gradv[cell_id][1][k] * diipb[face_id][1]
+                         + gradv[cell_id][2][k] * diipb[face_id][2];
+                pfac += coefbv[face_id][k][i] * vecfac;
+              }
+
+              for (j = 0; j < 3; j++)
+                rhs[cell_id][j][i] += pfac * b_face_normal[face_id][j] * dvol;
+
+            }
+
+          } /* loop on faces */
+
+        } /* loop on threads */
+
+      } /* loop on thread groups */
 
       /* Increment of the gradient */
 
-      for (cell_id = 0; cell_id < n_cells; cell_id++)
-        for (j = 0; j < 3; j++)
-          for (i = 0; i < 3; i++)
+#     pragma omp parallel for private(i, j, k)
+      for (cell_id = 0; cell_id < n_cells; cell_id++) {
+        for (j = 0; j < 3; j++) {
+          for (i = 0; i < 3; i++) {
             for (k = 0; k < 3; k++)
               gradv[cell_id][j][i] += rhs[cell_id][k][i] * cocg[cell_id][k][j];
+          }
+        }
+      }
 
       /* Periodicity and parallelism treatment */
 
@@ -3096,7 +3254,6 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
   }
 
   BFT_FREE(rhs);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -3274,7 +3431,6 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
     } /* loop on threads */
 
   } /* loop on thread groups */
-
 
   /* Compute gradient */
   /*------------------*/
@@ -3552,18 +3708,18 @@ void CS_PROCF (cgdcel, CGDCEL)
 void CS_PROCF (cgdvec, CGDVEC)
 (
  const cs_int_t         *const ivar,
- const cs_int_t         *const imrgra,  /* --> gradient computation mode      */
- const cs_int_t         *const inc,     /* --> 0 or 1: increment or not       */
- const cs_int_t         *const nswrgp,  /* --> >1: with reconstruction        */
- const cs_int_t         *const iwarnp,  /* --> verbosity level                */
- const cs_int_t         *const imligp,  /* --> type of clipping               */
- const cs_real_t        *const epsrgp,  /* --> precision for iterative gradient
-                                               calculation                    */
- const cs_real_t        *const climgp,  /* --> clipping coefficient           */
- const cs_real_3_t   *restrict coefav,  /* --> boundary condition term        */
- const cs_real_33_t  *restrict coefbv,  /* --> boundary condition term        */
- const cs_real_3_t   *restrict pvar,    /* --> gradient's base variable       */
-       cs_real_33_t  *restrict gradv    /* <-- gradient of the variable       */
+ const cs_int_t         *const imrgra,  /* <-- gradient computation mode      */
+ const cs_int_t         *const inc,     /* <-- 0 or 1: increment or not       */
+ const cs_int_t         *const nswrgp,  /* <-- >1: with reconstruction        */
+ const cs_int_t         *const iwarnp,  /* <-- verbosity level                */
+ const cs_int_t         *const imligp,  /* <-- type of clipping               */
+ const cs_real_t        *const epsrgp,  /* <-- precision for iterative
+                                               gradient calculation           */
+ const cs_real_t        *const climgp,  /* <-- clipping coefficient           */
+ const cs_real_3_t   *restrict coefav,  /* <-- boundary condition term        */
+ const cs_real_33_t  *restrict coefbv,  /* <-- boundary condition term        */
+ const cs_real_3_t   *restrict pvar,    /* <-- gradient's base variable       */
+       cs_real_33_t  *restrict gradv    /* <-> gradient of the variable       */
 )
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -3602,7 +3758,7 @@ void CS_PROCF (cgdvec, CGDVEC)
 
     _initialize_vector_gradient(mesh,
                                 fvq,
-                               *inc,
+                                *inc,
                                 coefav,
                                 coefbv,
                                 pvar,
@@ -3613,11 +3769,11 @@ void CS_PROCF (cgdvec, CGDVEC)
     if (*nswrgp > 1)
       _iterative_vector_gradient(mesh,
                                  fvq,
-                                *ivar,
-                                *inc,
-                                *nswrgp,
-                                *iwarnp,
-                                *epsrgp,
+                                 *ivar,
+                                 *inc,
+                                 *nswrgp,
+                                 *iwarnp,
+                                 *epsrgp,
                                  coefav,
                                  coefbv,
                                  pvar,
@@ -3631,7 +3787,7 @@ void CS_PROCF (cgdvec, CGDVEC)
     if (*nswrgp <= 1)
       _initialize_vector_gradient(mesh,
                                   fvq,
-                                 *inc,
+                                  *inc,
                                   coefav,
                                   coefbv,
                                   pvar,
@@ -3643,7 +3799,7 @@ void CS_PROCF (cgdvec, CGDVEC)
       _lsq_vector_gradient(mesh,
                            fvq,
                            halo_type,
-                          *inc,
+                           *inc,
                            coefav,
                            coefbv,
                            pvar,
@@ -3662,7 +3818,7 @@ void CS_PROCF (cgdvec, CGDVEC)
     _lsq_vector_gradient(mesh,
                          fvq,
                          halo_type,
-                        *inc,
+                         *inc,
                          coefav,
                          coefbv,
                          pvar,
@@ -3671,19 +3827,19 @@ void CS_PROCF (cgdvec, CGDVEC)
     _vector_gradient_clipping(mesh,
                               fvq,
                               halo_type,
-                             _imlini,
-                             *iwarnp,
-                             _climin,
+                              _imlini,
+                              *iwarnp,
+                              _climin,
                               pvar,
                               gradv);
 
     _iterative_vector_gradient(mesh,
                                fvq,
-                              *ivar,
-                              *inc,
-                              *nswrgp,
-                              *iwarnp,
-                              *epsrgp,
+                               *ivar,
+                               *inc,
+                               *nswrgp,
+                               *iwarnp,
+                               *epsrgp,
                                coefav,
                                coefbv,
                                pvar,
@@ -3694,9 +3850,9 @@ void CS_PROCF (cgdvec, CGDVEC)
    _vector_gradient_clipping(mesh,
                              fvq,
                              halo_type,
-                            *imligp,
-                            *iwarnp,
-                            *climgp,
+                             *imligp,
+                             *iwarnp,
+                             *climgp,
                              pvar,
                              gradv);
 
