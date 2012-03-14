@@ -75,8 +75,6 @@ bilsc4.f90 \
 crstgr.f90 \
 divmas.f90 \
 divrij.f90 \
-gradmc.f90 \
-gradrc.f90 \
 grdcel.f90 \
 grdvec.f90 \
 grdvni.f90 \
@@ -91,7 +89,6 @@ itrmav.f90 \
 matrdt.f90 \
 matrix.f90 \
 matrxv.f90 \
-prods3.f90 \
 prodsc.f90 \
 projts.f90 \
 projtv.f90 \

@@ -72,79 +72,59 @@ extern const char *cs_gradient_type_name[];
  * Public function prototypes for Fortran API
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of scalar field or component of vector or
+ * tensor field.
+ *----------------------------------------------------------------------------*/
+
 void CS_PROCF (cgdcel, CGDCEL)
 (
- const cs_int_t   *const ncelet,      /* --> number of extended cells         */
- const cs_int_t   *const ncel,        /* --> number of cells                  */
- const cs_int_t   *const nfac,        /* --> number of internal faces         */
- const cs_int_t   *const nfabor,      /* --> number of boundary faces         */
- const cs_int_t   *const ncelbr,      /* --> number of cells on boundary      */
- const cs_int_t   *const ivar,
- const cs_int_t   *const imrgra,      /* --> gradient computation mode        */
- const cs_int_t   *const inc,         /* --> 0 or 1: increment or not         */
- const cs_int_t   *const iccocg,      /* --> 1 or 0: recompute COCG or not    */
- const cs_int_t   *const nswrgp,      /* --> >1: with reconstruction          */
- const cs_int_t   *const idimtr,      /* --> 0, 1, 2: scalar, vector, tensor
+ const cs_int_t   *const ivar,        /* <-- variable number                  */
+ const cs_int_t   *const imrgra,      /* <-- gradient computation mode        */
+ const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
+ const cs_int_t   *const iccocg,      /* <-- 1 or 0: recompute COCG or not    */
+ const cs_int_t   *const imobil,      /* <-- 1 for mobile mesh, 0 otherwise   */
+ const cs_int_t   *const iale,        /* <-- 1 for ALE, 0 otherwise           */
+ const cs_int_t   *const nswrgp,      /* <-- >1: with reconstruction          */
+ const cs_int_t   *const idimtr,      /* <-- 0, 1, 2: scalar, vector, tensor
                                              in case of rotation              */
- const cs_int_t   *const iphydp,      /* --> use hydrosatatic pressure        */
- const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
- const cs_int_t   *const nfecra,      /* --> standard output unit             */
- const cs_int_t   *const imligp,      /* --> type of clipping                 */
- const cs_real_t  *const epsrgp,      /* --> precision for iterative gradient
+ const cs_int_t   *const iphydp,      /* <-- use hydrosatatic pressure        */
+ const cs_int_t   *const iwarnp,      /* <-- verbosity level                  */
+ const cs_int_t   *const imligp,      /* <-- type of clipping                 */
+ const cs_real_t  *const epsrgp,      /* <-- precision for iterative gradient
                                              calculation                      */
- const cs_real_t  *const extrap,      /* --> extrapolate gradient at boundary */
- const cs_real_t  *const climgp,      /* --> clipping coefficient             */
- const cs_int_t          ifacel[],    /* --> interior face->cell connectivity */
- const cs_int_t          ifabor[],    /* --> boundary face->cell connectivity */
- const cs_int_t          icelbr[],    /* --> list of cells on boundary        */
- const cs_int_t          isympa[],    /* --> indicator for symmetry faces     */
- const cs_real_t         volume[],    /* --> cell volumes                     */
- const cs_real_t         surfac[],    /* --> surfaces of internal faces       */
- const cs_real_t         surfbo[],    /* --> surfaces of boundary faces       */
- const cs_real_t         surfbn[],    /* --> norm of surfbo                   */
- const cs_real_t         pond[],      /* --> interior faces geometric weight  */
- const cs_real_t         dist[],      /* --> interior faces I' to J' distance */
- const cs_real_t         distbr[],    /* --> boundary faces I' to J' distance */
- const cs_real_t         dijpf[],     /* --> interior faces I'J' vector       */
- const cs_real_t         diipb[],     /* --> boundary faces II' vector        */
- const cs_real_t         dofij[],
-       cs_real_t         fextx[],     /* --> components of the exterior force */
+ const cs_real_t  *const extrap,      /* <-- extrapolate gradient at boundary */
+ const cs_real_t  *const climgp,      /* <-- clipping coefficient             */
+ const cs_int_t          isympa[],    /* <-- indicator for symmetry faces     */
+       cs_real_t         fextx[],     /* <-- components of the exterior force */
        cs_real_t         fexty[],     /*     generating the hydrostatic       */
        cs_real_t         fextz[],     /*     pressure                         */
- const cs_real_t         xyzcen[],    /* --> cell centers                     */
- const cs_real_t         cdgfac[],    /* --> interior face centers of gravity */
- const cs_real_t         cdgfbo[],    /* --> boundary face centers of gravity */
- const cs_real_t         coefap[],    /* --> boundary condition term          */
- const cs_real_t         coefbp[],    /* --> boundary condition term          */
-       cs_real_t         pvar[],      /* --> gradient's base variable         */
-       cs_real_t         cocgb[],     /* <-> contribution to COCG of cells
-                                             on boundary's internal faces     */
-       cs_real_t         cocg[],      /* <-> contribution to COCG of cells
-                                             on boundary's boundary faces     */
-       cs_real_t         cocib[],     /* <-> contribution to COCG of cells
-                                             on boundary's internal faces     */
-       cs_real_t         coci[],      /* <-> contribution to COCG of cells
-                                             on boundary's boundary faces     */
-       cs_real_t         grad[]       /* <-- gradient                         */
+ const cs_real_t         coefap[],    /* <-- boundary condition term          */
+ const cs_real_t         coefbp[],    /* <-- boundary condition term          */
+       cs_real_t         pvar[],      /* <-- gradient's base variable         */
+       cs_real_t         grad[]       /* <-> gradient                         */
 );
+
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of vector field.
+ *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cgdvec, CGDVEC)
 (
  const cs_int_t         *const ivar,
- const cs_int_t         *const imrgra,  /* --> gradient computation mode      */
- const cs_int_t         *const inc,     /* --> 0 or 1: increment or not       */
- const cs_int_t         *const nswrgp,  /* --> >1: with reconstruction        */
- const cs_int_t         *const iwarnp,  /* --> verbosity level                */
- const cs_int_t         *const imligp,  /* --> type of clipping               */
- const cs_real_t        *const epsrgp,  /* --> precision for iterative gradient
-                                               calculation                    */
- const cs_real_t        *const climgp,  /* --> clipping coefficient           */
- const cs_real_3_t  (*restrict coefav), /* --> boundary condition term        */
- const cs_real_33_t (*restrict coefbv), /* --> boundary condition term        */
- const cs_real_3_t  (*restrict pvar),   /* --> gradient's base variable       */
-       cs_real_33_t (*restrict gradv)   /* <-- gradient of the variable       */
+ const cs_int_t         *const imrgra,  /* <-- gradient computation mode      */
+ const cs_int_t         *const inc,     /* <-- 0 or 1: increment or not       */
+ const cs_int_t         *const nswrgp,  /* <-- >1: with reconstruction        */
+ const cs_int_t         *const iwarnp,  /* <-- verbosity level                */
+ const cs_int_t         *const imligp,  /* <-- type of clipping               */
+ const cs_real_t        *const epsrgp,  /* <-- precision for iterative
+                                               gradient calculation           */
+ const cs_real_t        *const climgp,  /* <-- clipping coefficient           */
+ const cs_real_3_t  (*restrict coefav), /* <-- boundary condition term        */
+ const cs_real_33_t (*restrict coefbv), /* <-- boundary condition term        */
+ const cs_real_3_t  (*restrict pvar),   /* <-- gradient's base variable       */
+       cs_real_33_t (*restrict gradv)   /* <-> gradient of the variable       */
 );
-
 
 /*=============================================================================
  * Public function prototypes

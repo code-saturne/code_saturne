@@ -80,6 +80,15 @@ typedef struct {
   cs_real_t      max_vol;        /* Maximum cell volume */
   cs_real_t      tot_vol;        /* Total volume */
 
+  cs_real_33_t  *cocgb_s_it;     /* coupling of gradient compponents for
+                                    iterative reconstruction at boundary */
+  cs_real_33_t  *cocg_s_it;      /* coupling of gradient compponents for
+                                    iterative reconstruction */
+  cs_real_33_t  *cocgb_s_lsq;    /* coupling of gradient compponents for
+                                    least-square reconstruction at boundary */
+  cs_real_33_t  *cocg_s_lsq;     /* coupling of gradient compponents for
+                                    least-square reconstruction */
+
   cs_real_33_t  *cocg_it;        /* Interleaved cocg matrix
                                     for iterative gradients */
   cs_real_33_t  *cocg_lsq;       /* Interleaved cocg matrix

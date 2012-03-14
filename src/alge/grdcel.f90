@@ -85,6 +85,8 @@ subroutine grdcel &
 !===============================================================================
 
 use paramx
+use albase
+use cplsat
 use pointe
 use parall
 use period
@@ -163,16 +165,9 @@ iphydp = 0
 
 call cgdcel                                                       &
 !==========
- ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivar   ,          &
-   imrgra , inc    , iccocg , nswrgp , idimtr , iphydp ,          &
-   iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
-   ifacel , ifabor , icelbr , isympa ,                            &
-   volume , surfac , surfbo , surfbn , pond,                      &
-   dist   , distb  , dijpf  , diipb  , dofij  ,                   &
-   rvoid  , rvoid  , rvoid  ,                                     &
-   xyzcen , cdgfac , cdgfbo, coefap , coefbp , pvar   ,           &
-   cocgb  , cocg   ,                                              &
-   cocib  , coci   ,                                              &
+ ( ivar   , imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
+   idimtr , iphydp , iwarnp , imligp , epsrgp , extrap , climgp , &
+   isympa , rvoid  , rvoid  , rvoid  , coefap , coefbp , pvar   , &
    grad   )
 
 return

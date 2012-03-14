@@ -192,53 +192,31 @@ ivarloc = ivar
 
 call cgdcel &
 !==========
- ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivarloc,          &
-   imrgra , inc    , iccocg , nswrgp , idimtr , iphydp ,          &
-   iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
-   ifacel , ifabor , icelbr , isympa ,                            &
-   volume , surfac , surfbo , surfbn , pond,                      &
-   dist   , distb  , dijpf  , diipb  , dofij  ,                   &
-   rvoid  , rvoid  , rvoid  ,                                     &
-   xyzcen , cdgfac , cdgfbo ,                                     &
+ ( ivarloc, imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
+   idimtr , iphydp , iwarnp , imligp , epsrgp , extrap , climgp , &
+   isympa , rvoid  , rvoid  , rvoid  ,                            &
    coefav(1)       , coefbv(1)       , vel(1) ,                   &
-   cocgb  , cocg   ,                                              &
-   cocib  , coci   ,                                              &
    gradv(1)     )
 
 ivarloc = ivarloc+1
 
 call cgdcel &
 !==========
- ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivarloc,          &
-   imrgra , inc    , iccocg , nswrgp , idimtr , iphydp ,          &
-   iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
-   ifacel , ifabor , icelbr , isympa ,                            &
-   volume , surfac , surfbo , surfbn , pond,                      &
-   dist   , distb  , dijpf  , diipb  , dofij  ,                   &
-   rvoid  , rvoid  , rvoid  ,                                     &
-   xyzcen , cdgfac , cdgfbo ,                                     &
+ ( ivarloc, imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
+   idimtr , iphydp , iwarnp , imligp , epsrgp , extrap , climgp , &
+   isympa , rvoid  , rvoid  , rvoid  ,                            &
    coefav(1+ndimfb), coefbv(1+ndimfb), vel(1+ncelet)   ,          &
-   cocgb  , cocg   ,                                              &
-   cocib  , coci   ,                                              &
    gradv(1+3*ncelet)     )
 
 ivarloc = ivarloc+1
 
 call cgdcel &
 !==========
- ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivarloc,          &
-   imrgra , inc    , iccocg , nswrgp , idimtr , iphydp ,          &
-   iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
-   ifacel , ifabor , icelbr , isympa ,                            &
-   volume , surfac , surfbo , surfbn , pond,                      &
-   dist   , distb  , dijpf  , diipb  , dofij  ,                   &
-   rvoid  , rvoid  , rvoid  ,                                     &
-   xyzcen , cdgfac , cdgfbo ,                                     &
+ ( ivarloc, imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
+   idimtr , iphydp , iwarnp , imligp , epsrgp , extrap , climgp , &
+   isympa , rvoid  , rvoid  , rvoid  ,                            &
    coefav(1+2*ndimfb), coefbv(1+2*ndimfb), vel(1+2*ncelet),       &
-   cocgb  , cocg   ,                                              &
-   cocib  , coci   ,                                              &
    gradv(1+6*ncelet)  )
-
 
 return
 end subroutine

@@ -93,6 +93,8 @@ subroutine grdpot &
 !===============================================================================
 
 use paramx
+use albase
+use cplsat
 use pointe
 use parall
 use period
@@ -128,7 +130,7 @@ double precision climin
 !===============================================================================
 
 !===============================================================================
-! 0. INITIALISATION
+! 0. Initialization
 !===============================================================================
 
 ! The gradient of a potential (pressure, ...) is a vector
@@ -136,22 +138,14 @@ double precision climin
 idimtr = 0
 
 !===============================================================================
-! 1. CALCUL DU GRADIENT
+! 1. Compute gradient
 !===============================================================================
-
 
 call cgdcel                                                       &
 !==========
- ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivar   ,          &
-   imrgra , inc    , iccocg , nswrgp , idimtr , iphydp ,          &
-   iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
-   ifacel , ifabor , icelbr , isympa ,                            &
-   volume , surfac , surfbo , surfbn , pond,                      &
-   dist   , distb  , dijpf  , diipb  , dofij  ,                   &
-   fextx  , fexty  , fextz  ,                                     &
-   xyzcen , cdgfac , cdgfbo, coefap , coefbp , pvar   ,           &
-   cocgb  , cocg   ,                                              &
-   cocib  , coci   ,                                              &
+ ( ivar   , imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
+   idimtr , iphydp , iwarnp , imligp , epsrgp , extrap , climgp , &
+   isympa , fextx  , fexty  , fextz  , coefap , coefbp , pvar   , &
    grad   )
 
 return

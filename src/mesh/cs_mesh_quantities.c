@@ -1671,9 +1671,9 @@ cs_mesh_quantities_compute_cocg_it(const int algo_choice)
   if (algo_choice > 1)
     bft_error(__FILE__, __LINE__,0,
               _("The option selection indicator for the cocg computation\n"
-                "can take the following values:\n"
-                "  0: Not compute cocg dimensionless matric\n"
-                "  1: Compute cocg matrix\n"
+                "for vector gradients can take the following values:\n"
+                "  0: do not compute cocg dimensionless matrices\n"
+                "  1: compute cocg matrices\n"
                 "and not %d."), cs_glob_mesh_quantities_compute_cocg_it);
 
   else if (algo_choice >= 0)
@@ -1702,9 +1702,9 @@ cs_mesh_quantities_compute_cocg_lsq(const int algo_choice)
   if (algo_choice > 1)
     bft_error(__FILE__, __LINE__,0,
               _("The option selection indicator for the cocg computation\n"
-                "can take the following values:\n"
-                "  0: Not compute cocg dimensionless matric\n"
-                "  1: Compute cocg matrix\n"
+                "for vector gradients can take the following values:\n"
+                "  0: do not compute cocg dimensionless matrices\n"
+                "  1: compute cocg matrices\n"
                 "and not %d."), cs_glob_mesh_quantities_compute_cocg_lsq);
 
   else if (algo_choice >= 0)
@@ -1743,6 +1743,10 @@ cs_mesh_quantities_create(void)
   mesh_quantities->dofij = NULL;
   mesh_quantities->diipf = NULL;
   mesh_quantities->djjpf = NULL;
+  mesh_quantities->cocgb_s_it = NULL;
+  mesh_quantities->cocg_s_it = NULL;
+  mesh_quantities->cocgb_s_lsq = NULL;
+  mesh_quantities->cocg_s_lsq = NULL;
   mesh_quantities->cocg_it = NULL;
   mesh_quantities->cocg_lsq = NULL;
 
@@ -1778,6 +1782,10 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
   BFT_FREE(mesh_quantities->dofij);
   BFT_FREE(mesh_quantities->diipf);
   BFT_FREE(mesh_quantities->djjpf);
+  BFT_FREE(mesh_quantities->cocgb_s_it);
+  BFT_FREE(mesh_quantities->cocg_s_it);
+  BFT_FREE(mesh_quantities->cocgb_s_lsq);
+  BFT_FREE(mesh_quantities->cocg_s_lsq);
   BFT_FREE(mesh_quantities->cocg_it);
   BFT_FREE(mesh_quantities->cocg_lsq);
 
@@ -1929,7 +1937,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
     cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED,
                              mesh_quantities->cell_cen, 3);
     if (mesh->n_init_perio > 0)
-      cs_halo_perio_sync_coords(mesh->halo, mesh->halo_type,
+      cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED,
                                 mesh_quantities->cell_cen);
 
     cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, mesh_quantities->cell_vol);

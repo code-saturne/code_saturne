@@ -644,6 +644,8 @@ cs_halo_update_buffers(const cs_halo_t *halo)
 
     }
 
+    save_count *= 3;
+
     if (save_count > _cs_glob_halo_rot_backup_size) {
       _cs_glob_halo_rot_backup_size = save_count;
       BFT_REALLOC(_cs_glob_halo_rot_backup,

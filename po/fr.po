@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-03-05 13:56+0100\n"
+"POT-Creation-Date: 2012-03-14 12:32+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3211,6 +3211,38 @@ msgstr ""
 
 #, c-format
 msgid ""
+" %s; variable: %2d; converged in %d sweeps\n"
+" %*s  normed residual: %11.4e; norm: %11.4e\n"
+msgstr ""
+" %s; variable : %2d; convergée en %d itératins\n"
+" %*s  résidu normé : %11.4e; norme : %11.4e\n"
+
+#, c-format
+msgid ""
+" Warning:\n"
+" --------\n"
+"   %s; variable: %2d; sweeps: %d\n"
+"   %*s  normed residual: %11.4e; norm: %11.4e\n"
+msgstr ""
+" Attention :\n"
+" ---------\n"
+"   %s; variable: %2d; itérations : %d\n"
+"   %*s  résidu normé : %11.4e; norme : %11.4e\n"
+
+#, c-format
+msgid ""
+" Gradient of a vector limitation in %llu cells\n"
+"   minimum factor = %14.5e; maximum factor = %14.5e\n"
+msgstr ""
+" Limitation de gradient de vecteur en %llu cellules\n"
+"   facteur minimum = %14.5e ; facteur maximum = %14.5e\n"
+
+#, c-format
+msgid " %s: isweep = %d, residue norm: %e, norm: %e, var_num = %d\n"
+msgstr " %s: isweep = %d, norme du résidu : %e, norme : %e, num_var = %d\n"
+
+#, c-format
+msgid ""
 "Connectivity error:\n"
 "Face %d has same cell %d on both sides."
 msgstr ""
@@ -5423,6 +5455,9 @@ msgstr "temps"
 msgid "calls"
 msgstr "appels"
 
+msgid "default"
+msgstr "défaut"
+
 msgid "vectorization"
 msgstr "vectorisation"
 
@@ -5439,7 +5474,7 @@ msgid ""
 "                   (default: working directory base name)\n"
 msgstr ""
 " --app-name        <app_name> pour nommer cette instance du code\n"
-"                   (défault : nom de base du répertoire de travail)\n"
+"                   (défaut : nom de base du répertoire de travail)\n"
 
 #, c-format
 msgid ""
@@ -9570,6 +9605,20 @@ msgstr ""
 "des cellules peut prendre les valeurs suivantes :\n"
 "  0 : calcul basé sur les centres et surfaces des faces\n"
 "  1 : calcul basé sur les sommets\n"
+"et non %d."
+
+#, c-format
+msgid ""
+"The option selection indicator for the cocg computation\n"
+"for vector gradients can take the following values:\n"
+"  0: do not compute cocg dimensionless matrices\n"
+"  1: compute cocg matrices\n"
+"and not %d."
+msgstr ""
+"L'indicateur de choix de calcul de cocg pour les gradients\n"
+"de vecteurs peut prendre les valeurs suivantes :\n"
+"  0: ne pas calculer les matrices adimensionnelles cocg\n"
+"  1: calculer les matrices adimensionnelles cocg\n"
 "et non %d."
 
 #, c-format
