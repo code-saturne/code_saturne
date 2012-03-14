@@ -1302,11 +1302,11 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
       end_id = start_id;
 
     if (end_id > mesh->n_b_faces)
-      end_id = mesh->n_b_faces + 1;
-    else if (end_id < mesh->n_b_faces + 1) {
+      end_id = mesh->n_b_faces;
+    else if (end_id + 1 < mesh->n_b_faces) {
       cs_lnum_t c_id = mesh->b_face_cells[end_id];
       while (   mesh->b_face_cells[end_id + 1] == c_id
-             && end_id < mesh->n_b_faces + 1)
+             && end_id < mesh->n_b_faces)
         end_id += 1;
     }
 
