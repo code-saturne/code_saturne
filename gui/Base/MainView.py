@@ -116,7 +116,7 @@ class MainView(object):
     def ui_initialize(self):
         self.setAttribute(Qt.WA_DeleteOnClose)
         MainView.Instances.add(self)
-        
+
         self.setWindowTitle(self.package.code_name + " GUI")
 
         self.Id = IdView()
@@ -965,8 +965,8 @@ class MainView(object):
 
 #-------------------------------------------------------------------------------
 # Main Window for Code_Saturne
-#-------------------------------------------------------------------------------     
-        
+#-------------------------------------------------------------------------------
+
 class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
     def __new__(cls, cmd_package = None, cmd_case = "", cmd_salome = None):

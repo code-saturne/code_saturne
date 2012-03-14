@@ -506,7 +506,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         """
         return text
 
-#------------------------------------------------------------------------------- 
+#-------------------------------------------------------------------------------
 # Popup window class: stop the computation at a iteration
 #-------------------------------------------------------------------------------
 
