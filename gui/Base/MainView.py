@@ -122,7 +122,6 @@ class MainView(object):
         self.Id = IdView()
         self.dockWidgetIdentity.setWidget(self.Id)
 
-        self.Browser = BrowserView()
         self.dockWidgetBrowser.setWidget(self.Browser)
 
         self.scrollArea = QScrollArea(self.frame)
@@ -871,16 +870,6 @@ class MainView(object):
             raise
 
 
-    def displayWelcomePage(self):
-        """
-        private method
-
-        display the Welcome (and the default) page
-        """
-        self.page = WelcomeView()
-        self.scrollArea.setWidget(self.page)
-
-
     @pyqtSignature("")
     def displayAbout(self):
         """
@@ -1003,12 +992,23 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.batch_lines = []
         self.package     = cmd_package
 
+        self.Browser = BrowserView()
         self.ui_initialize()
 
         self.connect(self.displayCSManualAction,  SIGNAL("activated()"), self.displayCSManual)
         self.connect(self.displayCSTutorialAction, SIGNAL("activated()"), self.displayCSTutorial)
         self.connect(self.displayCSKernelAction,  SIGNAL("activated()"), self.displayCSKernel)
         self.connect(self.displayCSRefcardAction,  SIGNAL("activated()"), self.displayCSRefcard)
+
+
+    def displayWelcomePage(self):
+        """
+        private method
+
+        display the Welcome (and the default) page
+        """
+        self.page = WelcomeView()
+        self.scrollArea.setWidget(self.page)
 
 
     @pyqtSignature("")
