@@ -1288,7 +1288,7 @@ _fact_lu33(const cs_real_t   *ad,
   cs_real_t * _ad_inv = NULL;
   const cs_real_t * _ad = NULL;
 
-# pragma omp parallel for if(n_blocks > THR_MIN)
+# pragma omp parallel for private(_ad, _ad_inv) if(n_blocks > THR_MIN)
   for (i = 0; i < n_blocks; i++) {
     _ad_inv = &ad_inv[9*i];
     _ad = &ad[9*i];
@@ -1432,7 +1432,8 @@ _block_3_jacobi(const char             *var_name,
 
     res2 = 0.0;
 
-#   pragma omp parallel for private(jj, kk, r) reduction(+:res2) if(n_blocks > THR_MIN)
+#   pragma omp parallel for private(jj, kk, r, temp) \
+                            reduction(+:res2) if(n_blocks > THR_MIN)
     for (ii = 0; ii < n_blocks; ii++) {
       _fw_and_bw_lu33(ad_inv + 9*ii,
                       vx + 3*ii,
