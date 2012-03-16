@@ -1382,7 +1382,7 @@ ivelco = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-iporo = 0
+iporos = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
@@ -1867,6 +1867,8 @@ almax = -grand
 !         Moment <rho u v> is calculated from time step 10000.
 
 
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
 !     The test on iutile allows deactivation of the instructions
 !       (which are only given as an example).
 
@@ -1886,6 +1888,8 @@ if (iutile.eq.1) then
   ntdmom(imom)   =  10000
 
 endif
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !----
 ! Formats
