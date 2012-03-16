@@ -109,7 +109,7 @@ _new_item(const char *const key)
   BFT_MALLOC(new->key, strlen(key)+1, char);
 
   BFT_MALLOC(new->data, 1, data_t);
- 
+
   return new;
 }
 

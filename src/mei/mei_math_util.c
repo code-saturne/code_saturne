@@ -126,7 +126,7 @@ _user_data_strcmp(const char *s1,
 /*-----------------------------------------------------------------------------*/
 /*!
  * \brief Read a single user data set.
- * 
+ *
  * \param [in] filename name of the file that contents the data set
  */
 /*-----------------------------------------------------------------------------*/
@@ -235,7 +235,7 @@ _user_data_reader(const char *filename)
   while(!strncmp(line, "\n", 1) || !strncmp(line, "#", 1))
     fgets(line, SIZE_MAX ,fr);
 
-  BFT_MALLOC(buff, SIZE_MAX, char); 
+  BFT_MALLOC(buff, SIZE_MAX, char);
   saveptr = buff;
 
   string_tok = strtok_r(line, separator, &buff);
@@ -286,7 +286,7 @@ _user_data_reader(const char *filename)
       }
       else {
 
-        BFT_MALLOC(buff, SIZE_MAX, char); 
+        BFT_MALLOC(buff, SIZE_MAX, char);
         saveptr = buff;
         string_tok = strtok_r(line, separator, &buff);
 
@@ -335,7 +335,7 @@ _user_data_reader(const char *filename)
 /*-----------------------------------------------------------------------------*/
 /*!
  * \brief Create a single user data set in the array data.
- * 
+ *
  * \param [in] filename name of the file that contents the data set
  */
 /*-----------------------------------------------------------------------------*/
@@ -404,7 +404,7 @@ _user_data_interp(const mei_user_data_t *d,
 
   if (x > values[row - 1][c1 - 1]) {
     /* if the x value is after the table */
-    y = values[row - 2][c2 - 1] + 
+    y = values[row - 2][c2 - 1] +
         (x - values[row - 2][c1 - 1]) *
         (values[row - 1][c2 - 1] - values[row - 2][c2 - 1]) /
         (values[row - 1][c1 - 1] - values[row - 2][c1 - 1]);
@@ -457,7 +457,7 @@ mei_interp1d(const char *filename,
              const double x)
 {
     int data_index = -1;
- 
+
     if (data_length > 0) {
         /* Data exists: search if data are alerady read */
         for (int i = 0; i < data_length; i++) {
