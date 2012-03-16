@@ -332,7 +332,7 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
 
     int n_elts_max = 0;
     fvm_selector_t *selector = NULL;
-    cs_mesh_location_t  *ml = _mesh_location;
+    cs_mesh_location_t  *ml = _mesh_location + i;
 
     ml->mesh = mesh;
 
