@@ -268,22 +268,21 @@ isqrt = 1
 ! PRISE EN COMPTE DE LA PERIODICITE
 
 !    Initialisation pour test avant promav
+itenso = 0
 iinvpe = 0
 
-if(iperio.eq.1) then
-
+if (iperio.eq.1) then
 
 !    Par defaut, toutes les periodicites seront traitees,
 !      les variables etant assimilees a des scalaires (meme si ce sont
 !      des composantes de vecteurs ou de tenseur)
-  itenso = 0
 
   iinvpe = 1
 
-  if(ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw.or.     &
-       ivar.eq.ir11.or.ivar.eq.ir12.or.             &
-       ivar.eq.ir13.or.ivar.eq.ir22.or.             &
-       ivar.eq.ir23.or.ivar.eq.ir33) then
+  if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw.or.   &
+      ivar.eq.ir11.or.ivar.eq.ir12.or.             &
+      ivar.eq.ir13.or.ivar.eq.ir22.or.             &
+      ivar.eq.ir23.or.ivar.eq.ir33) then
 
     !    Pour la vitesse et les tensions de Reynolds, et les tpucou
     !      seules seront echangees les informations sur les faces periodiques
