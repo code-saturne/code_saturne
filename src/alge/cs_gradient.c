@@ -251,6 +251,33 @@ _find_or_add_system(const char          *name,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute L2 norm.
+ *
+ * parameters:
+ *   n_elts <-- Local number of elements
+ *   x      <-- array of 3-vectors
+ *----------------------------------------------------------------------------*/
+
+static double
+_l2_norm_1(cs_lnum_t            n_elts,
+           cs_real_t  *restrict x)
+{
+  double s = cs_dot(n_elts, x, x);
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+    double _s;
+    MPI_Allreduce(&s, &_s, 1, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
+    s = _s;
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  return (sqrt(s));
+}
+
+/*----------------------------------------------------------------------------
  * Compute triple L2 norm, summing result over axes.
  *
  * The input array is assumed to be interleaved with block of 4 values,
@@ -262,8 +289,8 @@ _find_or_add_system(const char          *name,
  *----------------------------------------------------------------------------*/
 
 static double
-_norm_3(cs_lnum_t              n_elts,
-        cs_real_4_t  *restrict x)
+_l2_norm_3(cs_lnum_t              n_elts,
+           cs_real_4_t  *restrict x)
 {
   cs_lnum_t ii;
   double s[3];
@@ -1479,7 +1506,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
   /* Compute normalization residue */
 
-  rnorm = _norm_3(n_cells, rhsv);
+  rnorm = _l2_norm_3(n_cells, rhsv);
 
   if (fvq->max_vol > 1)
     rnorm /= fvq->max_vol;
@@ -1722,7 +1749,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
     /* Convergence test */
 
-    residue = _norm_3(n_cells, rhsv);
+    residue = _l2_norm_3(n_cells, rhsv);
 
     if (fvq->max_vol > 1)
       residue /= fvq->max_vol;
@@ -3116,7 +3143,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
   /* L2 norm */
 
-  l2_norm = sqrt(cs_dot(9*n_cells, (cs_real_t *)gradv, (cs_real_t *)gradv));
+  l2_norm = _l2_norm_1(9*n_cells, (cs_real_t *)gradv);
   l2_residual = l2_norm;
 
   if (l2_norm > epzero) {
@@ -3231,7 +3258,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
       /* Convergence test (L2 norm) */
 
-      l2_residual = sqrt(cs_dot(9*n_cells, (cs_real_t *)rhs, (cs_real_t *)rhs));
+      l2_residual = _l2_norm_1(9*n_cells, (cs_real_t *)rhs);
 
     } /* End of the iterative process */
 
