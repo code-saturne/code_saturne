@@ -27,6 +27,7 @@
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
 $(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
@@ -69,10 +70,8 @@ cs_matrix.c \
 cs_matrix_util.c \
 cs_multigrid.c \
 cs_sles.c \
-autmgr.f90 \
 bilsc2.f90 \
 bilsc4.f90 \
-crstgr.f90 \
 divmas.f90 \
 divrij.f90 \
 grdcel.f90 \
