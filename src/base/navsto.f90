@@ -571,8 +571,7 @@ if( irevmc.eq.1 ) then
 
   call recvmc                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
-   propce(1,ipcrom), flint  , flbrd  ,                            &
+ ( propce(1,ipcrom), flint  , flbrd  ,                            &
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     )
 
@@ -585,12 +584,11 @@ if( irevmc.eq.1 ) then
   ! Free memory
   deallocate(flint, flbrd)
 
-elseif( irevmc.eq.2 ) then
+else if(irevmc.eq.2) then
 
   call recvmc &
   !==========
-( nvar   , nscal  ,                                              &
-  propce(1,ipcrom), propfa(1,iflmas), propfb(1,iflmab),          &
+( propce(1,ipcrom), propfa(1,iflmas), propfb(1,iflmab),          &
   rtp(1,iu), rtp(1,iv), rtp(1,iw),                               &
   w4     , w5     , w6     )
 
