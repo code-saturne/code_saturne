@@ -108,6 +108,7 @@ subroutine inimas &
 use paramx
 use dimens, only: ndimfb
 use pointe
+use optcal, only: iporos
 use parall
 use period
 use mesh
@@ -172,24 +173,47 @@ elseif(init.ne.0) then
   call csexit (1)
 endif
 
-do iel = 1, ncel
-  qdmx(iel) = rom(iel)*ux(iel)
-  qdmy(iel) = rom(iel)*uy(iel)
-  qdmz(iel) = rom(iel)*uz(iel)
-enddo
+! Without porosity
+if (iporos.eq.0) then
+  do iel = 1, ncel
+    qdmx(iel) = rom(iel)*ux(iel)
+    qdmy(iel) = rom(iel)*uy(iel)
+    qdmz(iel) = rom(iel)*uz(iel)
+  enddo
 
-! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+  ! Periodicity and parallelism treatment
 
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synvec(qdmx, qdmy, qdmz)
-  !==========
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(qdmx, qdmy, qdmz)
+  endif
+
+  do ifac =1, nfabor
+    coefqa(ifac,1) = romb(ifac)*coefax(ifac)
+    coefqa(ifac,2) = romb(ifac)*coefay(ifac)
+    coefqa(ifac,3) = romb(ifac)*coefaz(ifac)
+  enddo
+
+! With porosity
+else
+  do iel = 1, ncel
+    qdmx(iel) = rom(iel)*ux(iel)*porosi(iel)
+    qdmy(iel) = rom(iel)*uy(iel)*porosi(iel)
+    qdmz(iel) = rom(iel)*uz(iel)*porosi(iel)
+  enddo
+
+  ! Periodicity and parallelism treatment
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(qdmx, qdmy, qdmz)
+  endif
+
+  do ifac =1, nfabor
+    iel = ifabor(ifac)
+    coefqa(ifac,1) = romb(ifac)*coefax(ifac)*porosi(iel)
+    coefqa(ifac,2) = romb(ifac)*coefay(ifac)*porosi(iel)
+    coefqa(ifac,3) = romb(ifac)*coefaz(ifac)*porosi(iel)
+  enddo
 endif
-
-do ifac =1, nfabor
-  coefqa(ifac,1) = romb(ifac)*coefax(ifac)
-  coefqa(ifac,2) = romb(ifac)*coefay(ifac)
-  coefqa(ifac,3) = romb(ifac)*coefaz(ifac)
-enddo
 
 !===============================================================================
 ! 2.  CALCUL DU FLUX DE MASSE SANS TECHNIQUE DE RECONSTRUCTION

@@ -70,7 +70,7 @@ use cstphy
 use entsor
 use numvar
 use optcal
-use pointe, only: forbr
+use pointe, only: forbr, porosi
 use parall
 use period
 use ppppar
@@ -159,6 +159,13 @@ endif
 if (itytur.ne.3 .and. itytur.ne.4) then
   do iel = 1, ncel
     secvis(iel) = secvis(iel) + d2s3m*propce(iel,ipcvst)
+  enddo
+endif
+
+! With porosity
+if (iporos.eq.1) then
+  do iel = 1, ncel
+    secvis(iel) = secvis(iel)*porosi(iel)
   enddo
 endif
 

@@ -132,12 +132,14 @@ module pointe
   ! icetsm ! ncetsm*nvar             ! numero des cellules avec tsmasse
   ! itypsm ! ncetsm                  ! type de tsm
   ! izctsm ! ncelet                  ! zone de tsm
-  ! smacel ! ncetsm*nvar             ! valeur de tsm
 
   integer, save :: ncetsm
   integer, allocatable, dimension(:) :: icetsm, izctsm
   integer, allocatable, dimension(:,:) :: itypsm
   double precision, allocatable, dimension(:,:) :: smacel
+
+  ! porosi ! ncelet                  ! value of the porosity
+  double precision, allocatable, dimension(:) :: porosi
 
 contains
 
@@ -197,6 +199,12 @@ contains
     if (ivelco.eq.1) then
       allocate(coefau(3,nfabor),cofafu(3,nfabor))
       allocate(coefbu(3,3,nfabor),cofbfu(3,3,nfabor))
+    endif
+
+    ! Porosity array when needed
+
+    if (iporos.eq.1) then
+      allocate(porosi(ncelet))
     endif
 
     ! Wall-distance calculation
@@ -265,6 +273,7 @@ contains
     if (allocated(izctsm)) deallocate(izctsm)
     if (allocated(izft1d)) deallocate(izft1d)
     if (allocated(coefau)) deallocate(coefau, cofafu, coefbu, cofbfu)
+    if (allocated(porosi)) deallocate(porosi)
     if (allocated(cfaale)) deallocate(cfaale, cfbale)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)

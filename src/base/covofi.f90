@@ -35,8 +35,8 @@ subroutine covofi &
 ! FONCTION :
 ! ----------
 
-! RESOLUTION DES EQUATIONS CONVECTION DIFFUSION TERME SOURCE
-!   POUR UN SCALAIRE SUR UN PAS DE TEMPS
+! Solving the advection/diffusion equation (with source terms) for a scalar
+! quantity over a time step
 
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
@@ -94,6 +94,7 @@ use cstphy
 use cstnum
 use ppppar
 use ppthch
+use pointe, only: porosi
 use coincl
 use cpincl
 use cs_fuel_incl
@@ -150,7 +151,7 @@ double precision smbexp
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
@@ -427,34 +428,6 @@ if (ncesmp.gt.0) then
 endif
 
 
-!     TERME D'ACCUMULATION DE MASSE -(dRO/dt)*VOLUME
-
-init = 1
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-               ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
-
-!     Extrapolation ou non, le terme d'accumulation de masse va dans SMBRS
-do iel = 1, ncel
-  smbrs(iel) = smbrs(iel)                                         &
-              + iconv(ivar)*w1(iel)*rtpa(iel,ivar)
-enddo
-
-!     Extrapolation ou non le terme d'accumulation de masse a la meme forme
-!       par coherence avec bilsc2
-do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel) - iconv(ivar)*w1(iel)*thetv
-enddo
-
-
-!     TERME INSTATIONNAIRE
-
-do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel)                                       &
-           + istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)
-enddo
-
-
-
 !    SI ON CALCULE LA VARIANCE DES FLUCTUATIONS D'UN SCALAIRE,
 !      ON RAJOUTE LES TERMES DE PRODUCTION ET DE DISSIPATION
 
@@ -599,6 +572,52 @@ else
 
 endif
 
+! --> Mass aggregation term: -(dRHO/dt)*volume
+
+init = 1
+call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
+               ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
+
+! Without porosity
+if (iporos.eq.0) then
+
+  ! With or without extrapolation, the mass aggregation term goes to th r.h.s.
+  do iel = 1, ncel
+    smbrs(iel) = smbrs(iel)                                         &
+               + iconv(ivar)*w1(iel)*rtpa(iel,ivar)
+  enddo
+
+  ! --> Non stationnary term and mass aggregation term
+  ! Remark:
+  !  with or without extrapolation in time, the mass aggregation term
+  !  is always the same by coherence with bilsc2
+  do iel = 1, ncel
+    rovsdt(iel) = rovsdt(iel)                                        &
+                + istat(ivar)*propce(iel,ipcrom)*volume(iel)/dt(iel) &
+                - iconv(ivar)*w1(iel)*thetv
+  enddo
+
+! With porosity
+else
+
+  ! With or without extrapolation, the mass aggregation term goes to th r.h.s.
+  do iel = 1, ncel
+    smbrs(iel) = smbrs(iel)*porosi(iel)                             &
+               + iconv(ivar)*w1(iel)*rtpa(iel,ivar)
+  enddo
+
+  ! --> Non stationnary term and mass aggregation term
+  ! Remark:
+  !  with or without extrapolation in time, the mass aggregation term
+  !  is always the same by coherence with bilsc2
+  do iel = 1, ncel
+    rovsdt(iel) = ( rovsdt(iel)                                        &
+                  + istat(ivar)*propce(iel,ipcrom)*volume(iel)/dt(iel) &
+                  ) * porosi(iel)                                      &
+                - iconv(ivar)*w1(iel)*thetv
+  enddo
+
+endif
 
 !===============================================================================
 ! 3. RESOLUTION

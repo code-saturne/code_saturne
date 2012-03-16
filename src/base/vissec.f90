@@ -103,7 +103,7 @@ use cstphy
 use entsor
 use numvar
 use optcal
-use pointe, only: forbr
+use pointe, only: forbr, porosi
 use parall
 use period
 use ppppar
@@ -216,6 +216,13 @@ if (irangp.ge.0.or.iperio.eq.1) then
   !==========
 endif
 
+! Synchronization of the porosity array
+if (iporos.eq.1) then
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(porosi)
+    !==========
+  endif
+endif
 
 !===============================================================================
 ! 2.  CALCUL DES TERMES EN GRAD_TRANSPOSE
@@ -280,8 +287,12 @@ do isou = 1, 3
       enddo
     endif
 
-
-
+    ! With porosity
+    if (iporos.eq.1) then
+      do iel = 1, ncelet
+        w4(iel) = w4(iel)*porosi(iel)
+      enddo
+    endif
 
 ! On initialise TRAV(NCEL+1, NCELET)
 !     (valeur bidon, mais pas NaN : les calculs sur le halo sont

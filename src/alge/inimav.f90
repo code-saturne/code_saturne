@@ -108,6 +108,7 @@ subroutine inimav &
 use paramx
 use dimens, only: ndimfb
 use pointe
+use optcal, only: iporos
 use parall
 use period
 use mesh
@@ -150,11 +151,10 @@ allocate(coefaq(3,ndimfb))
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1.  Initialization
 !===============================================================================
 
-! ---> CALCUL DE LA QTE DE MOUVEMENT
-
+! ---> Momentum computation
 
 if( init.eq.1 ) then
   do ifac = 1, nfac
@@ -169,37 +169,61 @@ elseif(init.ne.0) then
   call csexit (1)
 endif
 
-do iel = 1, ncel
-  do isou = 1, 3
-    qdm(isou,iel) = rom(iel)*vel(isou,iel)
+! Without porosity
+if (iporos.eq.0) then
+  do iel = 1, ncel
+    do isou = 1, 3
+      qdm(isou,iel) = rom(iel)*vel(isou,iel)
+    enddo
   enddo
-enddo
 
-! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+  ! ---> Periodicity and parallelism treatment
 
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synvin(qdm)
-  !==========
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvin(qdm)
+  endif
+
+  do ifac =1, nfabor
+    do isou = 1, 3
+      coefaq(isou,ifac) = romb(ifac)*coefav(isou,ifac)
+    enddo
+  enddo
+
+! With porosity
+else
+  do iel = 1, ncel
+    do isou = 1, 3
+      qdm(isou,iel) = rom(iel)*vel(isou,iel)*porosi(iel)
+    enddo
+  enddo
+
+  ! ---> Periodicity and parallelism treatment
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvin(qdm)
+  endif
+
+  do ifac =1, nfabor
+    iel = ifabor(ifac)
+    do isou = 1, 3
+      coefaq(isou,ifac) = romb(ifac)*coefav(isou,ifac)*porosi(iel)
+    enddo
+  enddo
 endif
 
-do ifac =1, nfabor
-  do isou = 1, 3
-    coefaq(isou,ifac) = romb(ifac)*coefav(isou,ifac)
-  enddo
-enddo
 !===============================================================================
-! 2.  CALCUL DU FLUX DE MASSE SANS TECHNIQUE DE RECONSTRUCTION
+! 2. Compute mass flux without recontructions
 !===============================================================================
 
 if( nswrgu.le.1 ) then
 
-!     FLUX DE MASSE SUR LES FACETTES FLUIDES
+  ! --> Interior faces
 
   do ifac = 1, nfac
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
     pnd = pond(ifac)
-    ! Components U, V, W
+    ! u, v, w Components
     do isou = 1, 3
       flumas(ifac) = flumas(ifac) +                                        &
          (pnd*qdm(isou,ii)+(1.d0-pnd)*qdm(isou,jj)) *surfac(isou,ifac)
@@ -207,11 +231,11 @@ if( nswrgu.le.1 ) then
   enddo
 
 
-!     FLUX DE MASSE SUR LES FACETTES DE BORD
+  ! --> Border faces
 
   do ifac = 1, nfabor
     ii = ifabor(ifac)
-    ! Components U, V, W
+    ! u, v, w Components
     do isou = 1, 3
       pfac = inc*coefaq(isou,ifac)
 

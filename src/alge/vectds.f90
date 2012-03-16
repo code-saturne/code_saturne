@@ -59,6 +59,7 @@ subroutine vectds &
 
 use paramx
 use pointe
+use optcal, only: iporos
 use parall
 use period
 use mesh
@@ -74,48 +75,79 @@ double precision valf(nfac), valb(nfabor)
 
 ! Local variables
 
-integer          ifac, iel1, iel2
+integer          ifac, iel1, iel2, iel
 double precision valfx, valfy, valfz
 
 !===============================================================================
 
-! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+! ---> Periodicity and parallelism treatment
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synvec(vectx, vecty, vectz)
   !==========
 endif
 
+! Without porosity
+if (iporos.eq.0) then
+  do ifac = 1 , nfac
 
-do ifac = 1 , nfac
+    iel1 = ifacel(1,ifac)
+    iel2 = ifacel(2,ifac)
 
-  iel1 = ifacel(1,ifac)
-  iel2 = ifacel(2,ifac)
+    valfx =       pond(ifac)  * vectx(iel1) +                       &
+            (1.d0-pond(ifac)) * vectx(iel2)
+    valfy =       pond(ifac)  * vecty(iel1) +                       &
+            (1.d0-pond(ifac)) * vecty(iel2)
+    valfz =       pond(ifac)  * vectz(iel1) +                       &
+            (1.d0-pond(ifac)) * vectz(iel2)
 
-  valfx =       pond(ifac)  * vectx(iel1) +                       &
-          (1.d0-pond(ifac)) * vectx(iel2)
-  valfy =       pond(ifac)  * vecty(iel1) +                       &
-          (1.d0-pond(ifac)) * vecty(iel2)
-  valfz =       pond(ifac)  * vectz(iel1) +                       &
-          (1.d0-pond(ifac)) * vectz(iel2)
+    valf(ifac) = valfx*surfac(1,ifac) +                             &
+                 valfy*surfac(2,ifac) +                             &
+                 valfz*surfac(3,ifac)
+  enddo
 
-  valf(ifac) = valfx*surfac(1,ifac) +                             &
-               valfy*surfac(2,ifac) +                             &
-               valfz*surfac(3,ifac)
- enddo
+  do ifac = 1 , nfabor
 
- do ifac = 1 , nfabor
-
-!     On met VALB a zero, ce qui revient a negliger la partie
-!       extradiagonale du tenseur de diffusion au bord.
-!MO          IEL1 = IFABOR(IFAC)
-!MOC
-!MO          VALB(IFAC) = VECTX(IEL1)*SURFBO(1,IFAC) +
-!MO     &                 VECTY(IEL1)*SURFBO(2,IFAC) +
-!MO     &                 VECTZ(IEL1)*SURFBO(3,IFAC)
+  !     On met VALB a zero, ce qui revient a negliger la partie
+  !       extradiagonale du tenseur de diffusion au bord.
+  !MO          IEL1 = IFABOR(IFAC)
+  !MOC
+  !MO          VALB(IFAC) = VECTX(IEL1)*SURFBO(1,IFAC) +
+  !MO     &                 VECTY(IEL1)*SURFBO(2,IFAC) +
+  !MO     &                 VECTZ(IEL1)*SURFBO(3,IFAC)
     valb(ifac) = 0.d0
 
- enddo
+  enddo
 
- return
- end
+! With porosity
+else
+  do ifac = 1 , nfac
+
+    iel1 = ifacel(1,ifac)
+    iel2 = ifacel(2,ifac)
+
+    valfx = pond(ifac) * vectx(iel1) * porosi(iel1) +       &
+      (1.d0-pond(ifac))* vectx(iel2) * porosi(iel2)
+    valfy = pond(ifac) * vecty(iel1) * porosi(iel1) +       &
+      (1.d0-pond(ifac))* vecty(iel2) * porosi(iel2)
+    valfz = pond(ifac) * vectz(iel1) * porosi(iel1) +       &
+      (1.d0-pond(ifac))* vectz(iel2) * porosi(iel2)
+
+    valf(ifac) = valfx * surfac(1,ifac) + &
+                 valfy * surfac(2,ifac) + &
+                 valfz * surfac(3,ifac)
+  enddo
+
+  do ifac = 1 , nfabor
+    valb(ifac) = 0.d0
+  enddo
+
+endif
+
+!----
+! End
+!----
+
+return
+
+end subroutine

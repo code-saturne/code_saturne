@@ -68,6 +68,7 @@ subroutine visort &
 
 use paramx
 use pointe
+use optcal, only: iporos
 use parall
 use period
 use mesh
@@ -86,102 +87,177 @@ double precision viscf(nfac), viscb(nfabor)
 
 ! Local variables
 
-integer          ifac, ii, jj
-double precision viscxi, viscxj, viscyi, viscyj, visczi, visczj
-double precision sx2, sy2, sz2, distbf, pnd, surfn
+integer          ifac, iel, ii, jj, isou
+double precision visci(3), viscj(3), surf2(3)
+double precision pnd
 
 !===============================================================================
 
-! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+! ---> Periodicity and parallelism treatment
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call syndia(w1, w2, w3)
-  !==========
 endif
 
+! Without porosity
+if (iporos.eq.0) then
 
-if( imvisf.eq.0 ) then
+  ! Arithmetic mean
+  if (imvisf.eq.0) then
 
-  do ifac = 1, nfac
+    do ifac = 1, nfac
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
 
-    surfn = surfan(ifac)
+      visci(1) = w1(ii)
+      viscj(1) = w1(jj)
+      visci(2) = w2(ii)
+      viscj(2) = w2(jj)
+      visci(3) = w3(ii)
+      viscj(3) = w3(jj)
 
-    viscxi = w1(ii)
-    viscxj = w1(jj)
-    viscyi = w2(ii)
-    viscyj = w2(jj)
-    visczi = w3(ii)
-    visczj = w3(jj)
+      do isou = 1, 3
+        surf2(isou) = surfac(isou,ifac)**2
+      enddo
 
-    sx2    = surfac(1,ifac)**2
-    sy2    = surfac(2,ifac)**2
-    sz2    = surfac(3,ifac)**2
+      viscf(ifac) = 0.5d0*(                                         &
+         (visci(1)+viscj(1))*surf2(1)                               &
+       + (visci(2)+viscj(2))*surf2(2)                               &
+       + (visci(3)+viscj(3))*surf2(3) ) / (surfan(ifac)*dist(ifac))
 
-    viscf(ifac) = 0.5d0*(                                         &
-       (viscxi+viscxj)*sx2                                        &
-     + (viscyi+viscyj)*sy2                                        &
-     + (visczi+visczj)*sz2 ) / (surfn*dist(ifac))
+    enddo
+
+  ! Harmonic mean
+  else
+
+    do ifac = 1, nfac
+
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
+
+      pnd  = pond(ifac)
+
+      visci(1) = w1(ii)
+      viscj(1) = w1(jj)
+      visci(2) = w2(ii)
+      viscj(2) = w2(jj)
+      visci(3) = w3(ii)
+      viscj(3) = w3(jj)
+
+      do isou = 1, 3
+        surf2(isou) = surfac(isou,ifac)**2
+      enddo
+
+      viscf(ifac) = &
+        ( visci(1)*viscj(1)*surf2(1)/(pnd*visci(1)+(1.d0-pnd)*viscj(1))  &
+        + visci(2)*viscj(2)*surf2(2)/(pnd*visci(2)+(1.d0-pnd)*viscj(2))  &
+        + visci(3)*viscj(3)*surf2(3)/(pnd*visci(3)+(1.d0-pnd)*viscj(3))  &
+        ) / (surfan(ifac)*dist(ifac))
+
+    enddo
+
+  endif
+
+  do ifac = 1, nfabor
+
+    ii = ifabor(ifac)
+
+    visci(1) = w1(ii)
+    visci(2) = w2(ii)
+    visci(3) = w3(ii)
+
+    do isou = 1, 3
+      surf2(isou) = surfac(isou,ifac)**2
+    enddo
+
+    viscb(ifac) = (visci(1)*surf2(1) + visci(2)*surf2(2) + visci(3)*surf2(3)) &
+                / (surfbn(ifac)*distb(ifac))
 
   enddo
 
+! With porosity
 else
 
-  do ifac = 1,nfac
+  ! Arithmetic mean
+  if (imvisf.eq.0) then
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
+    do ifac = 1, nfac
 
-    surfn = surfan(ifac)
-    pnd  = pond(ifac)
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
 
-    viscxi = w1(ii)
-    viscxj = w1(jj)
-    viscyi = w2(ii)
-    viscyj = w2(jj)
-    visczi = w3(ii)
-    visczj = w3(jj)
+      visci(1) = w1(ii)
+      viscj(1) = w1(jj)
+      visci(2) = w2(ii)
+      viscj(2) = w2(jj)
+      visci(3) = w3(ii)
+      viscj(3) = w3(jj)
 
-    sx2    = surfac(1,ifac)**2
-    sy2    = surfac(2,ifac)**2
-    sz2    = surfac(3,ifac)**2
+      do isou = 1, 3
+        surf2(isou) = surfac(isou,ifac)**2
+      enddo
 
-    viscf(ifac) =                                                 &
-      ( viscxi*viscxj*sx2                                         &
-              /(pnd*viscxi+(1.d0-pnd)*viscxj)                     &
-      + viscyi*viscyj*sy2                                         &
-              /(pnd*viscyi+(1.d0-pnd)*viscyj)                     &
-      + visczi*visczj*sz2                                         &
-              /(pnd*visczi+(1.d0-pnd)*visczj)                     &
-       ) /(surfn*dist(ifac))
+      viscf(ifac) = 0.5d0*(                                         &
+         (visci(1)+viscj(1))*surf2(1)                               &
+       + (visci(2)+viscj(2))*surf2(2)                               &
+       + (visci(3)+viscj(3))*surf2(3) ) / (surfan(ifac)*dist(ifac))
+
+    enddo
+
+  ! Harmonic mean
+  else
+
+    do ifac = 1, nfac
+
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
+
+      pnd  = pond(ifac)
+
+      visci(1) = w1(ii)
+      viscj(1) = w1(jj)
+      visci(2) = w2(ii)
+      viscj(2) = w2(jj)
+      visci(3) = w3(ii)
+      viscj(3) = w3(jj)
+
+      do isou = 1, 3
+        surf2(isou) = surfac(isou,ifac)**2
+      enddo
+
+      viscf(ifac) = &
+        ( visci(1)*viscj(1)*surf2(1)/(pnd*visci(1)+(1.d0-pnd)*viscj(1))  &
+        + visci(2)*viscj(2)*surf2(2)/(pnd*visci(2)+(1.d0-pnd)*viscj(2))  &
+        + visci(3)*viscj(3)*surf2(3)/(pnd*visci(3)+(1.d0-pnd)*viscj(3))  &
+        ) / (surfan(ifac)*dist(ifac))
+
+    enddo
+
+  endif
+
+  do ifac = 1, nfabor
+
+    ii = ifabor(ifac)
+
+    visci(1) = w1(ii)
+    visci(2) = w2(ii)
+    visci(3) = w3(ii)
+
+    do isou = 1, 3
+      surf2(isou) = surfac(isou,ifac)**2
+    enddo
+
+    viscb(ifac) = (visci(1)*surf2(1) + visci(2)*surf2(2) + visci(3)*surf2(3)) &
+                / (surfbn(ifac)*distb(ifac))
+
   enddo
+
 
 endif
 
-do ifac=1,nfabor
-
-  ii = ifabor(ifac)
-
-  surfn = surfbn(ifac)
-  distbf = distb(ifac)
-
-  viscxi = w1(ii)
-  viscyi = w2(ii)
-  visczi = w3(ii)
-
-  sx2    = surfbo(1,ifac)**2
-  sy2    = surfbo(2,ifac)**2
-  sz2    = surfbo(3,ifac)**2
-
-  viscb(ifac) =                                                   &
-    (viscxi*sx2+viscyi*sy2+visczi*sz2)/(surfn*distbf)
-
-enddo
-
 !----
-! FIN
+! End
 !----
 
 return

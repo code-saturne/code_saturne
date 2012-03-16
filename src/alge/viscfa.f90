@@ -61,6 +61,7 @@ subroutine viscfa &
 !===============================================================================
 
 use paramx
+use optcal, only: iporos
 use pointe
 use parall
 use period
@@ -80,62 +81,106 @@ double precision viscf(nfac), viscb(nfabor)
 
 ! Local variables
 
-integer          ifac, ii, jj
+integer          ifac, iel, ii, jj
 double precision visci, viscj, surfn, distbf, pnd
 
 !===============================================================================
 
-! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+
+! ---> Periodicity and parallelism treatment
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(vistot)
-  !==========
 endif
 
+! Without porosity
+if (iporos.eq.0) then
+  if (imvisf.eq.0) then
 
-if( imvisf.eq.0 ) then
+    do ifac = 1, nfac
 
-  do ifac = 1, nfac
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-    visci = vistot(ii)
-    viscj = vistot(jj)
-    surfn = surfan(ifac)
+      visci = vistot(ii)
+      viscj = vistot(jj)
 
-    viscf(ifac) = 0.5d0*( visci +viscj )*surfn/dist(ifac)
+      viscf(ifac) = 0.5d0*(visci+viscj)*surfan(ifac)/dist(ifac)
+
+    enddo
+
+  else
+
+    do ifac = 1,nfac
+
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
+
+      visci = vistot(ii)
+      viscj = vistot(jj)
+      pnd  = pond(ifac)
+
+      viscf(ifac) = visci*viscj                                          &
+                  / (pnd*visci+(1.d0-pnd)*viscj)*surfan(ifac)/dist(ifac)
+
+    enddo
+
+  endif
+
+  do ifac = 1, nfabor
+
+    ii = ifabor(ifac)
+
+    viscb(ifac) = vistot(ii)*surfbn(ifac)/distb(ifac)
 
   enddo
 
+! With porosity
 else
+  if (imvisf.eq.0) then
 
-  do ifac = 1,nfac
+    do ifac = 1, nfac
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-    visci = vistot(ii)
-    viscj = vistot(jj)
-    surfn = surfan(ifac)
-    pnd  = pond(ifac)
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
 
-    viscf(ifac) = visci*viscj / (pnd*visci+(1.d0-pnd)*viscj) * surfn/dist(ifac)
+      visci = vistot(ii) * porosi(ii)
+      viscj = vistot(jj) * porosi(jj)
+
+      viscf(ifac) = 0.5d0*(visci+viscj)*surfan(ifac)/dist(ifac)
+
+    enddo
+
+  else
+
+    do ifac = 1,nfac
+
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
+      visci = vistot(ii) * porosi(ii)
+      viscj = vistot(jj) * porosi(jj)
+      surfn = surfan(ifac)
+      pnd  = pond(ifac)
+
+      viscf(ifac) = visci*viscj &
+                  / (pnd*visci+(1.d0-pnd)*viscj)*surfan(ifac)/dist(ifac)
+
+    enddo
+
+  endif
+
+  do ifac = 1, nfabor
+
+    ii = ifabor(ifac)
+
+    viscb(ifac) = vistot(ii)*surfbn(ifac)/distb(ifac)*porosi(ii)
 
   enddo
 
 endif
-
-do ifac = 1, nfabor
-
-  ii = ifabor(ifac)
-  surfn = surfbn(ifac)
-  distbf = distb(ifac)
-
-  viscb(ifac) = vistot(ii)*surfn/distbf
-
-enddo
 
 !----
-! FIN
+! End
 !----
 
 return

@@ -126,7 +126,7 @@ subroutine preduv &
 use paramx
 use dimens, only: ndimfb
 use numvar
-use pointe, only: forbr
+use pointe, only: forbr, porosi
 use entsor
 use cstphy
 use cstnum
@@ -248,6 +248,10 @@ else
   iptsna = 0
 endif
 
+! Compute the porosity if needed
+if (iterns.eq.1.and.iporos.eq.1) then
+  call usporo
+endif
 
 !===============================================================================
 ! 2.  GRADIENT DE PRESSION ET GRAVITE
@@ -341,6 +345,14 @@ call grdpot &
    rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
    grad   )
 
+! With porosity
+if (iporos.eq.1) then
+  do iel = 1, ncel
+    grad(iel,1) = grad(iel,1)*porosi(iel)
+    grad(iel,2) = grad(iel,2)*porosi(iel)
+    grad(iel,3) = grad(iel,3)*porosi(iel)
+  enddo
+endif
 
 !    Calcul des efforts aux parois (partie 2/5), si demande
 !    La pression a la face est calculee comme dans gradrc/gradmc
@@ -600,6 +612,15 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
    rtpa(1,ik)   , coefa(1,iclik)  , coefb(1,iclik)  ,             &
    grad   )
 
+  ! With porosity
+  if (iporos.eq.1) then
+    do iel = 1, ncel
+      grad(iel,1) = grad(iel,1)*porosi(iel)
+      grad(iel,2) = grad(iel,2)*porosi(iel)
+      grad(iel,3) = grad(iel,3)*porosi(iel)
+    enddo
+  endif
+
   d2s3 = 2.d0/3.d0
 
 !     Si on extrapole les termes source en temps : PROPCE
@@ -683,7 +704,7 @@ if (ivisse.eq.1.and.iterns.eq.1) then
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
    trav   ,                                                       &
-!        ------
+!  ------
    viscf  , viscb  )
 
 !     Si on extrapole les termes source en temps :
@@ -758,6 +779,15 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , trav   )
 
+  ! With porosity
+  if (iporos.eq.1) then
+    do iel = 1, ncel
+      trav(iel,1) = trav(iel,1)*porosi(iel)
+      trav(iel,2) = trav(iel,2)*porosi(iel)
+      trav(iel,3) = trav(iel,3)*porosi(iel)
+    enddo
+  endif
+
 !     Si on itere sur navsto, on utilise TRAVA ; sinon TRAV
     if(nterup.gt.1) then
       do iel = 1, ncel
@@ -805,6 +835,14 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , trav   )
 
+  ! With porosity
+  if (iporos.eq.1) then
+    do iel = 1, ncel
+      trav(iel,1) = trav(iel,1)*porosi(iel)
+      trav(iel,2) = trav(iel,2)*porosi(iel)
+      trav(iel,3) = trav(iel,3)*porosi(iel)
+    enddo
+  endif
 
 !     Si on extrapole les termes source en temps :
 !       PROPCE recoit les termes extradiagonaux et
@@ -849,7 +887,7 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
 endif
 
 
-! ---> TERMES DE CORIOLIS
+! ---> TERMES DE CORIOLIS ! FIXME with porosity
 !     SI IPHYDR=1 LE TERME A DEJA ETE PRIS EN COMPTE AVANT
 
 if (icorio.eq.1.and.iphydr.eq.0) then
@@ -1088,6 +1126,7 @@ do isou = 1, 3
 
 !     Le calcul des parties implicite et explicite des termes sources
 !       utilisateurs est faite uniquement a la premiere iter sur navsto.
+! FIXME with porosity
   if(iterns.eq.1) then
 
     call ustsns                                                 &
@@ -1170,7 +1209,6 @@ do isou = 1, 3
   call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
                            ifacel,ifabor,flumas,flumab,w1)
 
-
 !     On ajoute a TRAV ou TRAVA la partie issue des termes implicites
   if(iterns.eq.1) then
     if(nterup.gt.1) then
@@ -1186,11 +1224,23 @@ do isou = 1, 3
 
   if(iappel.eq.1) then
 !     Extrapolation ou non, meme forme par coherence avec bilsc2
-    do iel = 1, ncel
-      rovsdt(iel) =                                               &
-         istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)     &
-         -iconv(ivar)*w1(iel)*thetav(ivar)
-    enddo
+
+    ! Without porosity
+    if (iporos.eq.0) then
+
+      do iel = 1, ncel
+        rovsdt(iel) = istat(ivar)*propce(iel,ipcrom)/dt(iel)*volume(iel) &
+                    - iconv(ivar)*w1(iel)*thetav(ivar)
+      enddo
+
+    ! With porosity
+    else
+
+      do iel = 1, ncel
+        rovsdt(iel) = istat(ivar)*propce(iel,ipcrom)/dt(iel)*volume(iel)
+      enddo
+
+    endif
 
 !     Le remplissage de ROVSDT est toujours indispensable,
 !       meme si on peut se contenter de n'importe quoi pour IAPPEL=2.
@@ -1241,7 +1291,7 @@ do isou = 1, 3
       do ielpdc = 1, ncepdp
         iel = icepdc(ielpdc)
         rovsdt(iel) = rovsdt(iel) +                               &
-        propce(iel,ipcrom)*volume(iel)*ckupdc(ielpdc,isou)*thetap
+          propce(iel,ipcrom)*volume(iel)*ckupdc(ielpdc,isou)*thetap
       enddo
     endif
   endif
@@ -1363,6 +1413,13 @@ do isou = 1, 3
     enddo
   endif
 
+  ! With porosity
+  if (iporos.eq.1) then
+    do iel = 1, ncel
+      rovsdt(iel) = rovsdt(iel)*porosi(iel)           &
+                  - iconv(ivar)*w1(iel)*thetav(ivar)
+    enddo
+  endif
 
 ! ---> PARAMETRES POUR LA RESOLUTION DU SYSTEME OU LE CALCUL DE l'ESTIMATEUR
 
@@ -1371,7 +1428,6 @@ do isou = 1, 3
   ireslp = iresol(ivar)
   ndircp = ndircl(ivar)
   nitmap = nitmax(ivar)
-!MO        IMRGRA
   nswrsp = nswrsm(ivar)
   nswrgp = nswrgr(ivar)
   imligp = imligr(ivar)
@@ -1381,7 +1437,6 @@ do isou = 1, 3
   imgrp  = imgr  (ivar)
   ncymxp = ncymax(ivar)
   nitmfp = nitmgf(ivar)
-!MO        IPP
   iwarnp = iwarni(ivar)
   blencp = blencv(ivar)
   epsilp = epsilo(ivar)

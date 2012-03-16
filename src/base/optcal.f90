@@ -389,6 +389,12 @@ module optcal
 
   integer, save :: ivelco
 
+  !   iporos
+  !     = 1 Taking porosity into account
+  !     = 0 Standard algorithm (Without porosity)
+
+  integer, save :: iporos
+
   ! swpdyn
   !    = 1 sweeps de reconstruction sur le second membre de l'equation
   !        de continuite variables 0 < nswrsm(ipr) et relaxv(ipr)

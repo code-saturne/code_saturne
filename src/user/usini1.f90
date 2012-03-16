@@ -1361,8 +1361,6 @@ dtref  = 0.01d0
 !    If specific physics are not activated
 !       (coal, combustion, electric arcs: see usppmo):
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 ! --- Segregated or coupled solver for the velocity components:
 !       0 for the segregated solver
 !       1 for the coupled solver
@@ -1374,6 +1372,17 @@ dtref  = 0.01d0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ivelco = 0
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- Solver taking a pscalar porosity into account:
+!       0 No porosity taken into account (Standard)
+!       1 Porosity taken into account
+!
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+iporo = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 

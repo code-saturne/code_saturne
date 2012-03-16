@@ -128,7 +128,7 @@ subroutine predvv &
 use paramx
 use dimens, only: ndimfb
 use numvar
-use pointe, only: forbr
+use pointe, only: forbr, porosi
 use entsor
 use cstphy
 use cstnum
@@ -269,6 +269,12 @@ else
   iptsna = 0
 endif
 
+! Compute the porosity if needed
+if (iterns.eq.1.and.iporos.eq.1) then
+  call usporo
+endif
+
+
 !===============================================================================
 ! 2.  GRADIENT DE PRESSION ET GRAVITE
 !===============================================================================
@@ -360,6 +366,14 @@ call grdpot &
    rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
    grad   )
 
+! With porosity
+if (iporos.eq.1) then
+  do iel = 1, ncel
+    grad(iel,1) = grad(iel,1)*porosi(iel)
+    grad(iel,2) = grad(iel,2)*porosi(iel)
+    grad(iel,3) = grad(iel,3)*porosi(iel)
+  enddo
+endif
 
 !    Calcul des efforts aux parois (partie 2/5), si demande
 !    La pression a la face est calculee comme dans gradrc/gradmc
@@ -620,6 +634,15 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
 
   d2s3 = 2.d0/3.d0
 
+  ! With porosity
+  if (iporos.eq.1) then
+    do iel = 1, ncel
+      grad(iel,1) = grad(iel,1)*porosi(iel)
+      grad(iel,2) = grad(iel,2)*porosi(iel)
+      grad(iel,3) = grad(iel,3)*porosi(iel)
+    enddo
+  endif
+
   ! Si on extrapole les termes source en temps : PROPCE
   if(isno2t.gt.0) then
     ! Calcul de rho^n grad k^n      si rho non extrapole
@@ -720,6 +743,14 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
    propce , propfa , propfb ,                                     &
    coefa  , coefb  , ckupdc , trav   )
 
+  ! With porosity
+  if (iporos.eq.1) then
+    do iel = 1, ncel
+      trav(iel,1) = trav(iel,1)*porosi(iel)
+      trav(iel,2) = trav(iel,2)*porosi(iel)
+      trav(iel,3) = trav(iel,3)*porosi(iel)
+    enddo
+  endif
     ! Si on itere sur navsto, on utilise TRAVA ; sinon TRAV
     if(nterup.gt.1) then
       do iel = 1, ncel
@@ -743,7 +774,7 @@ endif
 
 
 !-------------------------------------------------------------------------------
-! ---> TERMES DE CORIOLIS
+! ---> TERMES DE CORIOLIS !FIXME with porosity
 !     SI IPHYDR=1 LE TERME A DEJA ETE PRIS EN COMPTE AVANT
 
 if (icorio.eq.1.and.iphydr.eq.0) then
@@ -943,16 +974,16 @@ do iel = 1, ncel
   enddo
 enddo
 
-ivar = iu
 ipp  = ipprtp(iu)
 !     Le calcul des parties implicite et explicite des termes sources
 !       utilisateurs est faite uniquement a la premiere iter sur navstv.
+! FIXME with porosity
 if(iterns.eq.1) then
 
   call ustsnv                                                     &
   !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   ,                                                       &
+   iu   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
@@ -964,7 +995,7 @@ if(iterns.eq.1) then
     call cscelv &
     !==========
  ( nvar   , nscal  ,                                              &
-   ivar   ,                                                       &
+   iu   ,                                                       &
    dt     , rtpa   , vela   ,                                     &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  , coefav , coefbv ,                            &
@@ -1060,13 +1091,13 @@ if(iterns.eq.1) then
   if(nterup.gt.1) then
     do iel = 1, ncel
       do isou = 1, 3
-        trava(isou,iel) = trava(isou,iel) + iconv(ivar)*w1(iel)*vela(isou,iel)
+        trava(isou,iel) = trava(isou,iel) + iconv(iu)*w1(iel)*vela(isou,iel)
       enddo
     enddo
   else
     do iel = 1, ncel
       do isou = 1, 3
-        trav(isou,iel) = trav(isou,iel) + iconv(ivar)*w1(iel)*vela(isou,iel)
+        trav(isou,iel) = trav(isou,iel) + iconv(iu)*w1(iel)*vela(isou,iel)
       enddo
     enddo
   endif
@@ -1074,16 +1105,33 @@ endif
 
 if(iappel.eq.1) then
 !     Extrapolation ou non, meme forme par coherence avec bilsc2
-  do iel = 1, ncel
-    do isou = 1, 3
-      fimp(isou,isou,iel) =                                       &
-         istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)     &
-         -iconv(ivar)*w1(iel)*thetav(ivar)
-      do jsou = 1, 3
-        if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
+
+  ! Without porosity
+  if (iporos.eq.0) then
+    do iel = 1, ncel
+      do isou = 1, 3
+        fimp(isou,isou,iel) = &
+           istat(iu)*propce(iel,ipcrom)/dt(iel)*volume(iel)     &
+          -iconv(iu)*w1(iel)*thetav(iu)
+        do jsou = 1, 3
+          if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
+        enddo
       enddo
     enddo
-  enddo
+
+  ! With porosity: the term div(rho u) is added afterwards
+  else
+    do iel = 1, ncel
+      do isou = 1, 3
+        fimp(isou,isou,iel) = &
+           istat(iu)*propce(iel,ipcrom)/dt(iel)*volume(iel)
+        do jsou = 1, 3
+          if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
+        enddo
+      enddo
+    enddo
+
+  endif
 
 !     Le remplissage de FIMP est toujours indispensable,
 !       meme si on peut se contenter de n'importe quoi pour IAPPEL=2.
@@ -1101,7 +1149,7 @@ endif
 
 if(iappel.eq.1) then
   if(isno2t.gt.0) then
-    thetap = thetav(ivar)
+    thetap = thetav(iu)
     if(iterns.gt.1) then
       do iel = 1, ncel
         do isou = 1, 3
@@ -1150,7 +1198,7 @@ endif
 if(iappel.eq.1) then
   if (ncepdp.gt.0) then
     ! The theta-scheme for the head loss is the same as the other terms
-    thetap = thetav(ivar)
+    thetap = thetav(iu)
     do ielpdc = 1, ncepdp
       iel = icepdc(ielpdc)
       romvom = propce(iel,ipcrom)*volume(iel)*thetap
@@ -1181,7 +1229,7 @@ endif
 if(iappel.eq.1) then
   if (icorio.eq.1) then
     ! The theta-scheme for the Coriolis term is the same as the other terms
-    thetap = thetav(ivar)
+    thetap = thetav(iu)
 
     do iel = 1, ncel
       romvom = propce(iel,ipcrom)*volume(iel)*thetap
@@ -1208,20 +1256,18 @@ if (ncesmp.gt.0) then
 !       ROVSDT a chaque iteration recoit Gamma
   allocate(gavinj(3,ncelet))
   if(nterup.eq.1) then
-    ivar = iu
     call catsmv                                                   &
     !==========
-  ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(ivar),       &
-    icetsm , itypsm(1,ivar),                                      &
-    volume , vela , smacel(1,ivar) ,smacel(1,ipr) ,               &
+  ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
+    icetsm , itypsm(1,iu),                                      &
+    volume , vela , smacel(1,iu) ,smacel(1,ipr) ,               &
     trav   , fimp , gavinj )
   else
-    ivar = iu
     call catsmv                                                   &
     !==========
-  ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(ivar),       &
-    icetsm , itypsm(1,ivar),                                      &
-    volume , vela , smacel(1,ivar) ,smacel(1,ipr) ,               &
+  ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
+    icetsm , itypsm(1,iu),                                      &
+    volume , vela , smacel(1,iu) ,smacel(1,ipr) ,               &
     trava  , fimp  , gavinj )
   endif
 
@@ -1340,34 +1386,49 @@ if ( ippmod(ielarc) .ge. 1 ) then
   enddo
 endif
 
+! With porosity: has to be done just before calling coditv
+if (iporos.eq.1) then
+  do iel = 1, ncel
+    do isou = 1, 3
+      do jsou = 1, 3
+        if (isou.eq.jsou) then
+          fimp(isou,jsou,iel) = fimp(isou,jsou,iel)*porosi(iel) &
+                              - iconv(iu)*w1(iel)*thetav(iu)
+        else
+          fimp(isou,jsou,iel) = fimp(isou,jsou,iel)*porosi(iel)
+        endif
+      enddo
+    enddo
+  enddo
+endif
+
 ! ---> PARAMETRES POUR LA RESOLUTION DU SYSTEME OU LE CALCUL DE l'ESTIMATEUR
-ivar = iu
 
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
-ireslp = iresol(ivar)
-ndircp = ndircl(ivar)
-nitmap = nitmax(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
-imgrp  = imgr  (ivar)
-ncymxp = ncymax(ivar)
-nitmfp = nitmgf(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
-thetap = thetav(ivar)
+iconvp = iconv (iu)
+idiffp = idiff (iu)
+ireslp = iresol(iu)
+ndircp = ndircl(iu)
+nitmap = nitmax(iu)
+nswrsp = nswrsm(iu)
+nswrgp = nswrgr(iu)
+imligp = imligr(iu)
+ircflp = ircflu(iu)
+ischcp = ischcv(iu)
+isstpp = isstpc(iu)
+imgrp  = imgr  (iu)
+ncymxp = ncymax(iu)
+nitmfp = nitmgf(iu)
+iwarnp = iwarni(iu)
+blencp = blencv(iu)
+epsilp = epsilo(iu)
+epsrsp = epsrsm(iu)
+epsrgp = epsrgr(iu)
+climgp = climgr(iu)
+extrap = extrag(iu)
+relaxp = relaxv(iu)
+thetap = thetav(iu)
 
-ippu   = ipprtp(ivar)
+ippu   = ipprtp(iu)
 ippv   = ipprtp(iv)
 ippw   = ipprtp(iw)
 
@@ -1384,7 +1445,7 @@ if(iappel.eq.1) then
     call coditv &
     !==========
  ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+   idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
@@ -1404,7 +1465,7 @@ if(iappel.eq.1) then
     call coditv &
     !==========
  ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+   idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
@@ -1470,7 +1531,7 @@ if(iappel.eq.1) then
     call coditv &
     !==========
  ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+   idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
@@ -1522,7 +1583,7 @@ elseif(iappel.eq.2) then
   call bilsc4 &
   !==========
  ( nvar   , nscal  ,                                              &
-   idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+   idtva0 , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
