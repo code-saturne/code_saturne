@@ -719,6 +719,7 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
 
   cs_int_t end_shift = 0;
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
+  unsigned char *src;
   unsigned char *restrict _val = val;
 
   if (sync_mode == CS_HALO_STANDARD)
@@ -762,6 +763,29 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
 
     }
 
+    /* Assemble buffers for halo exchange;
+       with threading, use dynamic scheduling ,as this is probably a small loop */
+
+    #pragma omp parallel for private(start, length, src, i, j) schedule(dynamic)
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        start = halo->send_index[2*rank_id];
+        length = (  halo->send_index[2*rank_id + end_shift]
+                  - halo->send_index[2*rank_id]);
+
+        src = build_buffer + start*size;
+
+        for (i = 0; i < length; i++) {
+          for (j = 0; j < size; j++)
+            src[i*size + j] = _val[halo->send_list[start + i]*size + j];
+        }
+
+      }
+
+    }
+
     /* We wait for posting all receives (often recommended) */
 
     if (_cs_glob_halo_use_barrier)
@@ -775,20 +799,11 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
-        unsigned char *src;
-
         start = halo->send_index[2*rank_id];
         length = (  halo->send_index[2*rank_id + end_shift]
                   - halo->send_index[2*rank_id]);
 
-        src = build_buffer + start*size;
-
-        for (i = 0; i < length; i++) {
-          for (j = 0; j < size; j++)
-            src[i*size + j] = _val[halo->send_list[start + i]*size + j];
-        }
-
-        MPI_Isend(src,
+        MPI_Isend(build_buffer + start*size,
                   length*size,
                   MPI_UNSIGNED_CHAR,
                   halo->c_domain_rank[rank_id],
@@ -877,9 +892,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
-        buffer = num + halo->n_local_elts + start;
-
-        MPI_Irecv(buffer,
+        MPI_Irecv(num + halo->n_local_elts + start,
                   length,
                   CS_MPI_INT,
                   halo->c_domain_rank[rank_id],
@@ -893,16 +906,11 @@ cs_halo_sync_num(const cs_halo_t  *halo,
 
     }
 
-    /* We wait for posting all receives (often recommended) */
+    /* Assemble buffers for halo exchange;
+       with threading, use dynamic scheduling ,as this is probably a small loop */
 
-    if (_cs_glob_halo_use_barrier)
-      MPI_Barrier(cs_glob_mpi_comm);
-
-    /* Send data to distant ranks */
-
+    #pragma omp parallel for private(start, length, i) schedule(dynamic)
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      /* If this is not the local rank */
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
@@ -913,9 +921,26 @@ cs_halo_sync_num(const cs_halo_t  *halo,
         for (i = 0; i < length; i++)
           build_buffer[start + i] = num[halo->send_list[start + i]];
 
-        buffer = build_buffer + start;
+      }
 
-        MPI_Isend(buffer,
+    }
+
+    /* We wait for posting all receives (often recommended) */
+
+    if (_cs_glob_halo_use_barrier)
+      MPI_Barrier(cs_glob_mpi_comm);
+
+    /* Send data to distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        start = halo->send_index[2*rank_id];
+        length =   halo->send_index[2*rank_id + end_shift]
+                 - halo->send_index[2*rank_id];
+
+        MPI_Isend(build_buffer + start,
                   length,
                   CS_MPI_INT,
                   halo->c_domain_rank[rank_id],
@@ -976,14 +1001,8 @@ cs_halo_sync_var(const cs_halo_t  *halo,
 {
   cs_lnum_t i, start, length;
 
-  cs_int_t end_shift = 0;
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
-
-  if (sync_mode == CS_HALO_STANDARD)
-    end_shift = 1;
-
-  else if (sync_mode == CS_HALO_EXTENDED)
-    end_shift = 2;
+  const cs_lnum_t end_shift = (sync_mode == CS_HALO_STANDARD) ? 1 : 2;
 
 #if defined(HAVE_MPI)
 
@@ -1004,9 +1023,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
-        buffer = var + halo->n_local_elts + start;
-
-        MPI_Irecv(buffer,
+        MPI_Irecv(var + halo->n_local_elts + start,
                   length,
                   CS_MPI_REAL,
                   halo->c_domain_rank[rank_id],
@@ -1020,16 +1037,11 @@ cs_halo_sync_var(const cs_halo_t  *halo,
 
     }
 
-    /* We wait for posting all receives (often recommended) */
+    /* Assemble buffers for halo exchange;
+       with threading, use dynamic scheduling ,as this is probably a small loop */
 
-    if (_cs_glob_halo_use_barrier)
-      MPI_Barrier(cs_glob_mpi_comm);
-
-    /* Send data to distant ranks */
-
+    #pragma omp parallel for private(start, length, i) schedule(dynamic)
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      /* If this is not the local rank */
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
@@ -1040,9 +1052,26 @@ cs_halo_sync_var(const cs_halo_t  *halo,
         for (i = 0; i < length; i++)
           build_buffer[start + i] = var[halo->send_list[start + i]];
 
-        buffer = build_buffer + start;
+      }
 
-        MPI_Isend(buffer,
+    }
+
+    /* We wait for posting all receives (often recommended) */
+
+    if (_cs_glob_halo_use_barrier)
+      MPI_Barrier(cs_glob_mpi_comm);
+
+    /* Send data to distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        start = halo->send_index[2*rank_id];
+        length =   halo->send_index[2*rank_id + end_shift]
+                 - halo->send_index[2*rank_id];
+
+        MPI_Isend(build_buffer + start,
                   length,
                   CS_MPI_REAL,
                   halo->c_domain_rank[rank_id],
@@ -1166,16 +1195,11 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
 
     }
 
-    /* We wait for posting all receives (often recommended) */
+    /* Assemble buffers for halo exchange;
+       with threading, use dynamic scheduling ,as this is probably a small loop */
 
-    if (_cs_glob_halo_use_barrier)
-      MPI_Barrier(cs_glob_mpi_comm);
-
-    /* Send data to distant ranks */
-
+    #pragma omp parallel for private(start, length, i, j) schedule(dynamic)
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      /* If this is not the local rank */
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
@@ -1201,9 +1225,28 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
           }
         }
 
-        buffer = build_buffer + start*stride;
+      }
 
-        MPI_Isend(buffer,
+    }
+
+    /* We wait for posting all receives (often recommended) */
+
+    if (_cs_glob_halo_use_barrier)
+      MPI_Barrier(cs_glob_mpi_comm);
+
+    /* Send data to distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      /* If this is not the local rank */
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        start = halo->send_index[2*rank_id];
+        length = (  halo->send_index[2*rank_id + end_shift]
+                  - halo->send_index[2*rank_id]);
+
+        MPI_Isend(build_buffer + start*stride,
                   length*stride,
                   CS_MPI_REAL,
                   halo->c_domain_rank[rank_id],
