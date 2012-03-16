@@ -4,24 +4,25 @@
  *============================================================================*/
 
 /*
-  This file is part of the "Mathematical Expression Interpreter" library.
+  This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 2008-2010  EDF
+  Copyright (C) 1998-2012 EDF S.A.
 
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
 
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
 
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
+
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -80,6 +81,11 @@ size_t len;
     return VAR;
 }
 
+"interp1d" {
+    strncpy(yylval.sIndex, yytext, yyleng+1);
+    mei_glob_column += yyleng;
+    return IN1D;
+}
 
 "min"|"max"|"atan2"|"mod" {
     strncpy(yylval.sIndex, yytext, yyleng+1);
@@ -99,7 +105,7 @@ size_t len;
 "print"         {mei_glob_column+=5; return PRINT; }
 
 
-[_a-zA-Z][_a-zA-Z0-9]* {
+[_a-zA-Z][\._a-zA-Z0-9]* {
     strncpy(yylval.sIndex, yytext, yyleng+1);
     if (yyleng+1 > 200)
         bft_error(__FILE__, __LINE__, 0, "Error: identifier is to long\n");

@@ -50,7 +50,7 @@ extern "C" {
 
 typedef struct
 {
-    double value;               /* value of constant */
+    double value;  /*!< value of constant */
 } const_node_t;
 
 /*!
@@ -59,9 +59,9 @@ typedef struct
 
 typedef struct
 {
-    char *i;
-    int l;
-    int c;
+    char *i;    /*!< label of the identifier */
+    int l;      /*!< line number */
+    int c;      /*!< column number */
 } id_node_t;
 
 /*!
@@ -70,10 +70,10 @@ typedef struct
 
 typedef struct
 {
-    char *name;
-    int l;
-    int c;
-    struct _mei_node_t *op;
+    char *name;              /*!< label of the function */
+    int l;                   /*!< line number */
+    int c;                   /*!< column number */
+    struct _mei_node_t *op;  /*!< variable of the function */
 } func_node_t;
 
 /*!
@@ -82,12 +82,27 @@ typedef struct
 
 typedef struct
 {
-    char *name;
-    int l;
-    int c;
-    int nops;                   /* number of operands */
-    struct _mei_node_t *op[];   /* operands (expandable) */
+    char *name;                 /*!< label of the operand  */
+    int l;                      /*!< line number  */
+    int c;                      /*!< column number  */
+    int nops;                   /*!< number of operands */
+    struct _mei_node_t *op[];   /*!< list of variable of the function */
 } func2_node_t;
+
+/*!
+ * \brief Function of interpolation 1D
+ */
+
+typedef struct
+{
+    char *name;              /*!< label of the interpolation function */
+    char *data;              /*!< name of the file of the data  */
+    int l;                   /*!< line number  */
+    int c;                   /*!< column number  */
+    int col1;                /*!< column number in the file for interpolation  */
+    int col2;                /*!< column number in the file for interpolation  */
+    struct _mei_node_t *op;  /*!< variable to be interpolate  */
+} interp1d_node_t;
 
 /*!
  * \brief Operators node
@@ -95,9 +110,9 @@ typedef struct
 
 typedef struct
 {
-    int oper;                   /* operator */
-    int nops;                   /* number of operands */
-    struct _mei_node_t *op[];   /* operands (expandable) */
+    int oper;                   /*!< operator */
+    int nops;                   /*!< number of operands */
+    struct _mei_node_t *op[];   /*!< list of operands (expandable) */
 } opr_node_t;
 
 /*!
@@ -106,11 +121,12 @@ typedef struct
 
 typedef union
 {
-    const_node_t con;        /* constants */
-    id_node_t    id;         /* identifiers */
-    func_node_t  func;       /* function with one argument  */
-    func2_node_t funcx;      /* function with two, three, or four arguments */
-    opr_node_t   opr;        /* operators */
+    const_node_t con;         /* constants */
+    id_node_t    id;          /* identifiers */
+    func_node_t  func;        /* function with one argument  */
+    func2_node_t funcx;       /* function with two, three, or four arguments */
+    interp1d_node_t interp1d; /* function of 1D interpolation */
+    opr_node_t   opr;         /* operators */
 } node_type_t;
 
 /*!
@@ -122,9 +138,9 @@ typedef union
 
 struct _mei_node_t
 {
-    mei_flag_t      flag;       /* type of node */
-    hash_table_t   *ht;
-    node_type_t    *type;
+    mei_flag_t      flag;       /*!< type of node */
+    hash_table_t   *ht;         /*!< pointer of the hash table of the expression */
+    node_type_t    *type;       /*!< type of node */
 };
 
 /*!
@@ -137,25 +153,126 @@ typedef struct _mei_node_t mei_node_t;
  * Public function prototypes
  *============================================================================*/
 
-mei_node_t *mei_const_node(const double value);
+/*----------------------------------------------------------------------------*/
+/* Build a node for a constant.
+ *
+ * param [in] value real value of the constant
+ *
+ * return built node
+ */
+/*----------------------------------------------------------------------------*/
 
-mei_node_t *mei_id_node(char *const variable);
+mei_node_t *
+mei_const_node(const double value);
 
-mei_node_t *mei_func_node(char *const name, mei_node_t *const expr);
+/*----------------------------------------------------------------------------*/
+/* Build a node for a variable.
+ *
+ * param [in] variable label of the variable
+ *
+ * return built node
+ */
+/*----------------------------------------------------------------------------*/
 
-mei_node_t *mei_funcx_node(char *const function, const int nops, ...);
+mei_node_t *
+mei_id_node(const char *variable);
 
-mei_node_t *mei_opr_node(const int oper, const int nops, ...);
+/*----------------------------------------------------------------------------*/
+/* Build a node for a function of a single variable.
+ *
+ * param [in] function label of the function
+ * param [in] expr node that represents the variable of the function
+ *
+ * return built node
+ */
+/*----------------------------------------------------------------------------*/
 
-void mei_free_node(mei_node_t *p);
+mei_node_t *
+mei_func_node(const char *const,
+              mei_node_t *const expr);
 
-char* mei_label_node(mei_node_t *p);
+/*----------------------------------------------------------------------------*/
+/* Build a node for a function of a several variables.
+ *
+ * param [in] function label of the function
+ * param [in] nops number of variables
+ * param [in] ...  list of nodes which represent variables of the function
+ *
+ * return built node
+ */
+/*----------------------------------------------------------------------------*/
+
+mei_node_t *
+mei_funcx_node(const char *function,
+               const int nops,
+               ...);
+
+/*----------------------------------------------------------------------------*/
+/* Build a node for an 1D interpolation.
+ *
+ * param [in] function interp1d
+ * param [in] data name of the file which contains data
+ * param [in] col1 abscissa for interpolation
+ * param [in] col2 ordinate for interpolation
+ * param [in] expr node that represents the variable to be interpolate
+ *
+ * return built node
+ */
+/*----------------------------------------------------------------------------*/
+
+mei_node_t *
+mei_interp1d_node(const char *function,
+                  const mei_node_t *data,
+                  const mei_node_t *col1,
+                  const mei_node_t *col2,
+                  const mei_node_t *expr);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Build a node for an operators and its operands.
+ *
+ * param [in] oper operator
+ * param [in] nops number of operand
+ * param [in] ...  list of nodes which represent operands
+ *
+ * return built node
+ */
+/*----------------------------------------------------------------------------*/
+
+mei_node_t *
+mei_opr_node(const int oper,
+             const int nops,
+             ...);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Return label of a node.
+ *
+ * param [in] n node
+ *
+ * return label of a node
+ */
+/*----------------------------------------------------------------------------*/
+
+char *
+mei_label_node(mei_node_t *p);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Free memory.
+ *
+ * param [in] n node
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+mei_free_node(mei_node_t *p);
 
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+ #endif /* __cplusplus */
 
 #endif /* __NODE_H__ */
 

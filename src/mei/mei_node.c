@@ -64,9 +64,16 @@ extern "C" {
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a node for a constant.
  *
- *----------------------------------------------------------------------------*/
+ * \param [in] value real value of the constant
+ *
+ * \return built node
+ */
+/*----------------------------------------------------------------------------*/
+
 
 mei_node_t*
 mei_const_node(const double value)
@@ -84,12 +91,18 @@ mei_const_node(const double value)
     return node;
 }
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a node for a variable.
  *
- *----------------------------------------------------------------------------*/
+ * \param [in] variable label of the variable
+ *
+ * \return built node
+ */
+/*----------------------------------------------------------------------------*/
 
 mei_node_t*
-mei_id_node(char *const variable)
+mei_id_node(const char *variable)
 {
     mei_node_t *node = NULL;
     size_t length;
@@ -111,12 +124,20 @@ mei_id_node(char *const variable)
     return node;
 }
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a node for a function of a single variable.
  *
- *----------------------------------------------------------------------------*/
+ * \param [in] function label of the function
+ * \param [in] expr node that represents the variable of the function
+ *
+ * \return built node
+ */
+/*----------------------------------------------------------------------------*/
 
 mei_node_t*
-mei_func_node(char *const function, mei_node_t *const expr)
+mei_func_node(const char *function,
+              mei_node_t *const expr)
 {
     mei_node_t *node = NULL;
     size_t length;
@@ -141,12 +162,22 @@ mei_func_node(char *const function, mei_node_t *const expr)
     return node;
 }
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a node for a function of a several variables.
  *
- *----------------------------------------------------------------------------*/
+ * \param [in] function label of the function
+ * \param [in] nops number of variables
+ * \param [in] ...  list of nodes which represent variables of the function
+ *
+ * \return built node
+ */
+/*----------------------------------------------------------------------------*/
 
 mei_node_t*
-mei_funcx_node(char *const function, const int nops, ...)
+mei_funcx_node(const char *function,
+               const int nops,
+               ...)
 {
     va_list ap;
     mei_node_t *node = NULL;
@@ -192,12 +223,72 @@ mei_funcx_node(char *const function, const int nops, ...)
     return node;
 }
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a node for an 1D interpolation.
  *
- *----------------------------------------------------------------------------*/
+ * \param [in] function interp1d
+ * \param [in] data name of the file which contains data
+ * \param [in] col1 abscissa for interpolation
+ * \param [in] col2 ordinate for interpolation
+ * \param [in] expr node that represents the variable to be interpolate
+ *
+ * \return built node
+ */
+/*----------------------------------------------------------------------------*/
 
 mei_node_t*
-mei_opr_node(const int oper, const int nops, ...)
+mei_interp1d_node(const char *function,
+                  const mei_node_t *data,
+                  const mei_node_t *col1,
+                  const mei_node_t *col2,
+                  const mei_node_t *expr)
+{
+    mei_node_t *node = NULL;
+    size_t length;
+    size_t nodeSize;
+
+    nodeSize = sizeof(interp1d_node_t) + sizeof(mei_node_t);
+
+    BFT_MALLOC(node, 1, mei_node_t);
+
+    BFT_MALLOC(node->type, nodeSize, node_type_t);
+
+    length = strlen(function)+1;
+    BFT_MALLOC(node->type->interp1d.name, length, char);
+    strncpy(node->type->interp1d.name, function, length);
+    node->type->interp1d.c  = mei_glob_column-length+1;
+
+    length = strlen(data->type->id.i)+1;
+    BFT_MALLOC(node->type->interp1d.data, length, char);
+    strncpy(node->type->interp1d.data, data->type->id.i, length);
+
+    node->flag = INTERP1D;
+    node->ht = NULL;
+    node->type->interp1d.op = expr;
+    node->type->interp1d.l  = mei_glob_line;
+    node->type->interp1d.col1  = (int) col1->type->con.value;
+    node->type->interp1d.col2  = (int) col2->type->con.value;
+
+    return node;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a node for an operators and its operands.
+ *
+ * \param [in] oper operator
+ * \param [in] nops number of operand
+ * \param [in] ...  list of nodes which represent operands
+ *
+ * \return built node
+ */
+/*----------------------------------------------------------------------------*/
+
+mei_node_t*
+mei_opr_node(const int oper,
+             const int nops,
+             ...)
 {
     va_list ap;
     mei_node_t *node = NULL;
@@ -222,11 +313,15 @@ mei_opr_node(const int oper, const int nops, ...)
     return node;
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a label for a node.
+ * \brief Return label of a node.
  *
  * \param [in] n node
+ *
+ * \return label of a node
  */
+/*----------------------------------------------------------------------------*/
 
 char *
 mei_label_node(mei_node_t *n)
@@ -251,6 +346,10 @@ mei_label_node(mei_node_t *n)
     {
         return n->type->funcx.name;
     }
+    else if (n->flag == INTERP1D)
+    {
+        return n->type->interp1d.name;
+    }
     else if (n->flag == OPR)
     {
         BFT_MALLOC(buff, 256, char);
@@ -263,11 +362,13 @@ mei_label_node(mei_node_t *n)
     return buff;
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Free memory.
  *
  * \param [in] n node
  */
+/*----------------------------------------------------------------------------*/
 
 void
 mei_free_node(mei_node_t *n)
@@ -291,6 +392,12 @@ mei_free_node(mei_node_t *n)
         for (i = 0; i < n->type->funcx.nops; i++)
             mei_free_node(n->type->funcx.op[i]);
     }
+    else if (n->flag == INTERP1D)
+    {
+        BFT_FREE(n->type->interp1d.name);
+        BFT_FREE(n->type->interp1d.data);
+        mei_free_node(n->type->interp1d.op);
+    }
     else if (n->flag == OPR)
     {
         for (i = 0; i < n->type->opr.nops; i++)
@@ -298,6 +405,7 @@ mei_free_node(mei_node_t *n)
     }
     BFT_FREE(n->type);
     BFT_FREE(n);
+    return;
 }
 
 /*----------------------------------------------------------------------------*/

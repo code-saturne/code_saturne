@@ -46,7 +46,18 @@ extern "C" {
  * \brief List of the different type of symbol
  */
 
-typedef enum { CONSTANT, ID, FUNC1, FUNC2, FUNC3, FUNC4, OPR } mei_flag_t;
+typedef enum {
+
+  CONSTANT,
+  ID,
+  FUNC1,
+  FUNC2,
+  FUNC3,
+  FUNC4,
+  INTERP1D,
+  OPR
+
+} mei_flag_t;
 
 /*============================================================================
  * Type definition
@@ -77,6 +88,12 @@ typedef double (*func3_t) (double, double, double);
 typedef double (*func4_t) (double, double, double, double);
 
 /*!
+ * \brief Type definition for pointer to a function of for 1D interpolation
+ */
+
+typedef double (*interp1d_t) (char*, int, int, double);
+
+/*!
  * \brief Type definition for data of each element contained in the hash table
  */
 
@@ -84,16 +101,17 @@ typedef union {
   double value;    /*!< Constant or variable value.  */
   func1_t func;    /*!< Pointer to function with one argument */
   func2_t f2;      /*!< Pointer to function with two argument */
+  interp1d_t i1d;  /*!< Pointer to function for 1D interpolation */
 } data_t;
 
 /*!
- * \brief Type definition for each bucket of the hash table
+ * \brief Type definition for each record of the hash table
  */
 
 struct item {
   char        *key;  /*!< Pointeur to string */
   mei_flag_t   type; /*!< Constant, variable, function,... */
-  data_t      *data; /*!< Data of the current bucket */
+  data_t      *data; /*!< Data of the current record */
   struct item *next; /*!< Pointer to next element */
 };
 
@@ -104,7 +122,7 @@ struct item {
 struct HashTable {
   int           n_inter; /*!< number of interpreters associated with
                            the current table of symbols */
-  int           record;  /*!< number of buckets of the hash table*/
+  int           record;  /*!< number of records of the hash table*/
   int           length;  /*!< length of the hash table */
   struct item **table;   /*!< 'table' is a list of pointers on 'item' */
 };
@@ -121,32 +139,65 @@ typedef struct HashTable hash_table_t;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui cree une table de hachage
+ * Initialize the hash table to the size (modulo) asked for.
+ * Allocates space for the correct number of pointers and sets them to NULL.
+ *
+ * param [in] htable hash table
+ * param [in] modulo size of the hash table
  *----------------------------------------------------------------------------*/
 
+void mei_hash_table_create(hash_table_t *const htable,
+                           const int modulo);
 
-void mei_hash_table_create(hash_table_t *const htable, const int modulo);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui initialise la table de hachage
- *----------------------------------------------------------------------------*/
-
+/*----------------------------------------------------------------------------*/
+/*
+ * Initialize the hash table with default symbols
+ *
+ * param [in] htable hash table
+ */
+/*----------------------------------------------------------------------------*/
 
 void mei_hash_table_init(hash_table_t *htable);
 
-
-void mei_hash_table_dump(hash_table_t *htable);
-
-
-void mei_hash_table_item_print(struct item *item);
-
+/*----------------------------------------------------------------------------*/
+/*
+ * Destroy a hash table.
+ *
+ * param [in] htable hash table
+ */
+/*----------------------------------------------------------------------------*/
 
 void mei_hash_table_free(hash_table_t *htable);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * Find a record in a hash table.
+ *
+ * param [in] htable hash table
+ * param [in] key key
+ *
+ * return a pointer containing the record
+ */
+/*----------------------------------------------------------------------------*/
 
-struct item * mei_hash_table_lookup(hash_table_t *htable, const char *key);
+struct item * mei_hash_table_lookup(hash_table_t *htable,
+                                    const char *key);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * Insert a record in a hash table.
+ *
+ * param [in] htable hash table
+ * param [in] key key associated to the record
+ * param [in] type flag associated to the record
+ * param [in] value store a value if the record if a real
+ * param [in] f1 pointer on a one argument function
+ * param [in] f2 pointer on a two argument function
+ * param [in] f3 pointer on a three argument function
+ * param [in] f4 pointer on a four argument function
+ * param [in] i1d pointer on a 1D interpolation function
+ */
+/*----------------------------------------------------------------------------*/
 
 void mei_hash_table_insert(hash_table_t *const htable,
                            const char *const  key,
@@ -155,10 +206,42 @@ void mei_hash_table_insert(hash_table_t *const htable,
                            const func1_t func,
                            const func2_t f2,
                            const func3_t f3,
-                           const func4_t f4);
+                           const func4_t f4,
+                           const interp1d_t i1d);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * Find a record in a hash table.
+ *
+ * param [in] htable hash table
+ * param [in] key key
+ *
+ * return a pointer containing the record
+ */
+/*----------------------------------------------------------------------------*/
 
-struct item* mei_hash_table_find(hash_table_t *htable, const char *key);
+struct item* mei_hash_table_find(hash_table_t *htable,
+                                 const char *key);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Dump of table contents for debuging purpose.
+ *
+ * param [in] htable hash table
+ */
+/*----------------------------------------------------------------------------*/
+
+void mei_hash_table_dump(hash_table_t *htable);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Dump function of a single record.
+ *
+ * param [in] item record
+ */
+/*----------------------------------------------------------------------------*/
+
+void mei_hash_table_item_print(struct item *item);
 
 /*----------------------------------------------------------------------------*/
 

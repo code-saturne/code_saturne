@@ -4,23 +4,23 @@
  *============================================================================*/
 
 /*
-  This file is part of the "Mathematical Expression Interpreter" library.
+  This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 2008-2010  EDF
+  Copyright (C) 1998-2012 EDF S.A.
 
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
 
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
 
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 /*----------------------------------------------------------------------------
@@ -56,7 +56,7 @@
 };
 
 %token <iValue> NUMBER
-%token <sIndex> VAR FUN1 FUN2 FUN3 FUN4
+%token <sIndex> VAR FUN1 FUN2 FUN3 FUN4 IN1D
 %token WHILE IF PRINT
 %nonassoc IFX
 %nonassoc ELSE
@@ -112,6 +112,7 @@ expr:
         | FUN2 '(' expr ',' expr ')'                   { $$ = mei_funcx_node($1, 2, $3, $5); }
         | FUN3 '(' expr ',' expr ',' expr ')'          { $$ = mei_funcx_node($1, 3, $3, $5, $7); }
         | FUN4 '(' expr ',' expr ',' expr ',' expr ')' { $$ = mei_funcx_node($1, 4, $3, $5, $7, $9); }
+        | IN1D '(' expr ',' expr ',' expr ',' expr ')' { $$ = mei_interp1d_node($1, $3, $5, $7, $9); }
         | '!' expr                                     { $$ = mei_opr_node('!',     1, $2); }
         | '-' expr %prec UMINUS                        { $$ = mei_opr_node(UMINUS,  1, $2); }
         | '+' expr %prec UPLUS                         { $$ = mei_opr_node(UPLUS,   1, $2); }

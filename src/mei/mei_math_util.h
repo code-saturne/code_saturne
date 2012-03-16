@@ -36,8 +36,48 @@
 #include <math.h>
 
 /*============================================================================
+ * Type definitions
+ *============================================================================*/
+ 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Structure associated to a single user data set for 1D interpolation
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef struct {
+    int col;               /*!< number of columns                            */
+    int row;               /*!< number of lines                              */
+    double **values;       /*!< values for the data set                      */
+    char *name;            /*!< name of the file which contenbt the data set */
+    char *commentaries;    /*!< user commentaries                            */
+} mei_user_data_t;
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Return an interpolated value.
+ *
+ * param [in] filename char
+ * param [in] c1 double
+ * param [in] c2 double
+ * param [in] x variable to interpolate
+ *
+ * return interpolated value
+ *----------------------------------------------------------------------------*/
+
+double
+mei_interp1d(const char *filename, const int c1, const int c2, const double x);
+
+/*-----------------------------------------------------------------------------*/
+/*
+ * Destroy all user data set for 1D interpolation.
+ */
+/*-----------------------------------------------------------------------------*/
+
+void mei_data_free(void);
 
 /*----------------------------------------------------------------------------
  * Return the max value from two doubles.
@@ -48,7 +88,7 @@
  *----------------------------------------------------------------------------*/
 
 double
-mei_max(double x1, double x2);
+mei_max(const double x1, const double x2);
 
 /*----------------------------------------------------------------------------
  * Return the min value from two doubles.
@@ -59,7 +99,8 @@ mei_max(double x1, double x2);
  *----------------------------------------------------------------------------*/
 
 double
-mei_min(double x1, double x2);
+mei_min(const double x1, const double x2);
 
+/*-----------------------------------------------------------------------------*/
 
 #endif

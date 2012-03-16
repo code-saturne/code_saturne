@@ -26,6 +26,8 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -91,12 +93,14 @@ extern "C" {
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Copy the symbol table pointer into the each node of the interpreter.
  *
  * \param [in] n node of the interpreter
  * \param [in] h table of symbols
  */
+/*----------------------------------------------------------------------------*/
 
 static void
 _init_symbol_table(mei_node_t    *n,
@@ -119,12 +123,16 @@ _init_symbol_table(mei_node_t    *n,
     for (i = 0; i < n->type->funcx.nops; i++)
       _init_symbol_table(n->type->funcx.op[i], h);
   }
+  else if (n->flag == INTERP1D) {
+    _init_symbol_table(n->type->interp1d.op, h);
+  }
   else if (n->flag == OPR) {
     for (i = 0; i < n->type->opr.nops; i++)
       _init_symbol_table(n->type->opr.op[i], h);
   }
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the number of errors related to the use of undefined symbol
  * in the expression.
@@ -132,6 +140,7 @@ _init_symbol_table(mei_node_t    *n,
  * \param [in] p node of an interpreter
  * \return number of undefined symbol
  */
+/*----------------------------------------------------------------------------*/
 
 static int
 _check_symbol(mei_node_t  *p)
@@ -184,7 +193,7 @@ _check_symbol(mei_node_t  *p)
       /* it is normally impossible to arrive here */
       /* because the parser has already checked function names */
 
-      bft_error(__FILE__, __LINE__, 0, "Error: _check_symbol\n");
+      bft_error(__FILE__, __LINE__, 0, _("Error: _check_symbol\n"));
 
       return 1;
     }
@@ -196,7 +205,7 @@ _check_symbol(mei_node_t  *p)
       /* It is normally impossible to arrive here */
       /* because the parser has already checked function names */
 
-      bft_error(__FILE__, __LINE__, 0, "Error: _check_symbol\n");
+      bft_error(__FILE__, __LINE__, 0, _("Error: _check_symbol\n"));
 
       return 1;
     }
@@ -205,12 +214,25 @@ _check_symbol(mei_node_t  *p)
     return iok;
 
   case FUNC3:
-    bft_error(__FILE__, __LINE__, 0, "not implemented yet \n");
+    bft_error(__FILE__, __LINE__, 0, _("not implemented yet \n"));
     break;
 
   case FUNC4:
-    bft_error(__FILE__, __LINE__, 0, "not implemented yet \n");
+    bft_error(__FILE__, __LINE__, 0, _("not implemented yet \n"));
     break;
+
+  case INTERP1D:
+    if (mei_hash_table_lookup(p->ht, p->type->interp1d.name) == NULL) {
+
+      /* it is normally impossible to arrive here */
+      /* because the parser has already checked function names */
+
+      bft_error(__FILE__, __LINE__, 0, _("Error: _check_symbol\n"));
+
+      return 1;
+    }
+    return _check_symbol(p->type->interp1d.op);
+
 
   case OPR:
 
@@ -234,6 +256,7 @@ _check_symbol(mei_node_t  *p)
                             NULL,
                             NULL,
                             NULL,
+                            NULL,
                             NULL);
       return _check_symbol(p->type->opr.op[1]);
 
@@ -253,17 +276,19 @@ _check_symbol(mei_node_t  *p)
     }
   }
 
-  bft_error(__FILE__, __LINE__, 0, "Error: _check_symbol\n");
+  bft_error(__FILE__, __LINE__, 0, _("Error: _check_symbol\n"));
 
   return iok;
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the evaluation of the expression.
  *
  * \param [in] p node of an interpreter
  * \return value of evaluated expression
  */
+/*----------------------------------------------------------------------------*/
 
 static double
 _evaluate(mei_node_t  *p)
@@ -271,6 +296,7 @@ _evaluate(mei_node_t  *p)
   double t1, t2;
   func1_t f1;
   func2_t f2;
+  interp1d_t i1d;
 
   if (!p) return 0;
 
@@ -291,12 +317,20 @@ _evaluate(mei_node_t  *p)
     return f2(_evaluate(p->type->funcx.op[0]), _evaluate(p->type->funcx.op[1]));
 
   case FUNC3:
-    bft_error(__FILE__, __LINE__, 0, "not implemented\n");
+    bft_error(__FILE__, __LINE__, 0, _("not implemented\n"));
     break;
 
   case FUNC4:
-    bft_error(__FILE__, __LINE__, 0, "not implemented\n");
+    bft_error(__FILE__, __LINE__, 0, _("not implemented\n"));
     break;
+
+  case INTERP1D:
+    i1d = (mei_hash_table_lookup(p->ht, p->type->interp1d.name))->data->i1d;
+
+    return i1d(p->type->interp1d.data,
+               p->type->interp1d.col1,
+               p->type->interp1d.col2,
+               _evaluate(p->type->interp1d.op));
 
   case OPR:
 
@@ -330,6 +364,7 @@ _evaluate(mei_node_t  *p)
                             NULL,
                             NULL,
                             NULL,
+                            NULL,
                             NULL);
       return 0;
 
@@ -354,7 +389,7 @@ _evaluate(mei_node_t  *p)
       if (t2)
         return t1 / t2;
       else
-        bft_error(__FILE__, __LINE__, 0, "Error: floating point exception\n");
+        bft_error(__FILE__, __LINE__, 0, _("Error: floating point exception\n"));
 
     case '^':
       return pow(_evaluate(p->type->opr.op[0]), _evaluate(p->type->opr.op[1]));
@@ -391,11 +426,13 @@ _evaluate(mei_node_t  *p)
   return 0;
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Store error message.
  *
  * \param [in] ev interpreter
  */
+/*----------------------------------------------------------------------------*/
 
 static void
 _manage_error(mei_tree_t  *ev)
@@ -421,6 +458,7 @@ _manage_error(mei_tree_t  *ev)
   }
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Check if the symbol \em str exists in the expression stored
  *  in \em ev. Return 0 if the symbol exists in the symbol table, 1 if not.
@@ -429,6 +467,7 @@ _manage_error(mei_tree_t  *ev)
  * \param [in] str symbol to find
  * \return 0 if the symbol exists in the symbol table, 1 if not
  */
+/*----------------------------------------------------------------------------*/
 
 static int
 _find_symbol(mei_tree_t  *ev,
@@ -466,6 +505,7 @@ _find_symbol(mei_tree_t  *ev,
  * Public function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Returns a new interpreter. The node member is empty,
  * the string member contains the mathematical expression and
@@ -474,6 +514,7 @@ _find_symbol(mei_tree_t  *ev,
  * \param [in] expr string characters of the mathematical expression
  * \return new empty interpreter
  */
+/*----------------------------------------------------------------------------*/
 
 mei_tree_t*
 mei_tree_new(const char *const expr)
@@ -507,6 +548,7 @@ mei_tree_new(const char *const expr)
     return ev;
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Returns a new interpreter. The node member is empty,
  * the string member contains the mathematical expression and
@@ -517,6 +559,7 @@ mei_tree_new(const char *const expr)
  * \param [in] symbol_table shared table of symbols
  * \return new empty interpreter
  */
+/*----------------------------------------------------------------------------*/
 
 mei_tree_t*
 mei_tree_new_with_shared_symbols(const char   *const expr,
@@ -552,12 +595,14 @@ mei_tree_new_with_shared_symbols(const char   *const expr,
     return ev;
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Returns a new table of symbols.
  * The table contains standard mathematical symbols.
  *
  * \return table of symbols
  */
+/*----------------------------------------------------------------------------*/
 
 hash_table_t*
 mei_table_symbols_new(void)
@@ -573,6 +618,7 @@ mei_table_symbols_new(void)
     return ht;
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Call the yacc parser.
  * Return 0 if the parsing is ok, or the number of errors, if errors occurs.
@@ -580,6 +626,7 @@ mei_table_symbols_new(void)
  * \param [in] ev interpreter
  * \return number of parsing errors
  */
+/*----------------------------------------------------------------------------*/
 
 int
 mei_tree_builder(mei_tree_t *ev)
@@ -669,6 +716,7 @@ mei_tree_builder(mei_tree_t *ev)
     return mei_glob_ierr_list;
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Inserts a constant (label and value) in the table of symbols
  * associated to an interpreter.
@@ -677,6 +725,7 @@ mei_tree_builder(mei_tree_t *ev)
  * \param [in] str   label of the constant
  * \param [in] value value associated to the constant
  */
+/*----------------------------------------------------------------------------*/
 
 void
 mei_tree_insert(mei_tree_t    *ev,
@@ -693,9 +742,11 @@ mei_tree_insert(mei_tree_t    *ev,
                         NULL,
                         NULL,
                         NULL,
+                        NULL,
                         NULL);
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Inserts a constant (label and value) in a table of symbols.
  *
@@ -703,6 +754,7 @@ mei_tree_insert(mei_tree_t    *ev,
  * \param [in]  str          label of the constant
  * \param [in]  value        value associated to the constant
  */
+/*----------------------------------------------------------------------------*/
 
 void
 mei_symbol_table_insert(hash_table_t  *symbol_table,
@@ -719,18 +771,20 @@ mei_symbol_table_insert(hash_table_t  *symbol_table,
                         NULL,
                         NULL,
                         NULL,
+                        NULL,
                         NULL);
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Check if the symbol \em str exists in the expression stored
  * in \em ev.
- * Return 0 if the symbol exists in the symbol table, 1 if not.
  *
  * \param [in] ev  interpreter in which we want to know if str exists
  * \param [in] str symbol to find
  * \return 0 if the symbol exists in the symbol table, 1 if not
  */
+/*----------------------------------------------------------------------------*/
 
 int
 mei_tree_find_symbol(mei_tree_t  *ev,
@@ -754,9 +808,9 @@ mei_tree_find_symbol(mei_tree_t  *ev,
   return _find_symbol(ev, str);
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Check if the symbol \em str from a list exists in the expression.
- * Return 0 if all symbols exist, otherwise return the number of errors.
  * The list of missing symbols is stored in \em ev->labels.
  *
  * \param [in]  ev     interpreter
@@ -764,6 +818,7 @@ mei_tree_find_symbol(mei_tree_t  *ev,
  * \param [in]  symbol list of symbols
  * \return 0 if all symbols exist, otherwise return the number of errors
  */
+/*----------------------------------------------------------------------------*/
 
 int
 mei_tree_find_symbols(mei_tree_t   *ev,
@@ -792,6 +847,7 @@ mei_tree_find_symbols(mei_tree_t   *ev,
   return iok;
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Returns a value of the \em str symbol (variable or constant)
  *  from table of symbols of \em ev interpreter.
@@ -800,6 +856,7 @@ mei_tree_find_symbols(mei_tree_t   *ev,
  * \param [in]   str name of the symbol
  * \return value of a symbol
  */
+/*----------------------------------------------------------------------------*/
 
 double
 mei_tree_lookup(mei_tree_t  *ev,
@@ -814,12 +871,13 @@ mei_tree_lookup(mei_tree_t  *ev,
 
   if (!item) {
     bft_error(__FILE__, __LINE__, 0,
-              "Error in mei_tree_lookup function: "
-              "%s does not exist in the symbol table\n", str);
+              _("Error in mei_tree_lookup function: "
+                "%s does not exist in the symbol table\n"), str);
   }
   return item->data->value;
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Evaluates the expression \em ev :
  *   1) computes all values for variables inside the expression
@@ -828,6 +886,7 @@ mei_tree_lookup(mei_tree_t  *ev,
  * \param [in] ev interpreter
  * \return value from the intrepreted expression
  */
+/*----------------------------------------------------------------------------*/
 
 double
 mei_evaluate(mei_tree_t  *ev)
@@ -836,11 +895,13 @@ mei_evaluate(mei_tree_t  *ev)
   return _evaluate(ev->node);
 }
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Free memory and return NULL.
  *
  * \param [in] ev interpreter
  */
+/*----------------------------------------------------------------------------*/
 
 void
 mei_tree_destroy(mei_tree_t  *ev)

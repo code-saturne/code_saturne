@@ -58,9 +58,10 @@ extern "C" {
 #include "mei_hash_table.h"
 
 /*============================================================================
- * Private function definitions
+ * Private functions definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Hash function.
  *
@@ -69,6 +70,7 @@ extern "C" {
  *
  * \return value associated to the key s
  */
+/*----------------------------------------------------------------------------*/
 
 static unsigned
 _hash(const char *const s, const int modulo)
@@ -84,9 +86,16 @@ _hash(const char *const s, const int modulo)
   return h;
 }
 
-/*----------------------------------------------------------------------------
- *  Allocation d'une struct item
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate a structure \em item which contain a record in the hash
+ *        table.
+ *
+ * \param [in] key key
+ *
+ * \return a structure item
+ */
+/*----------------------------------------------------------------------------*/
 
 static struct item*
 _new_item(const char *const key)
@@ -95,39 +104,29 @@ _new_item(const char *const key)
 
   /* Allocate item proper */
   BFT_MALLOC(new, 1, struct item);
-  if (new == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "Error in memory allocation\n");
 
   /* Allocate memory for string */
   BFT_MALLOC(new->key, strlen(key)+1, char);
-  if (new->key == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "Error in memory allocation\n");
 
   BFT_MALLOC(new->data, 1, data_t);
-  if (new->data == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "Error in memory allocation\n");
-
+ 
   return new;
 }
 
-
 /*============================================================================
- *  Fonctions publiques
+ * Public functions definitions
  *============================================================================*/
 
-
-/*----------------------------------------------------------------------------
- *  Fonction qui alloue une table de hachage
- *----------------------------------------------------------------------------*/
-
-/* Initialize the hash table to the size (modulo) asked for.
- * Allocates space for the correct number of pointers and sets them to NULL.
- * If it can't allocate sufficient memory, signals error by setting the size
- * of the table to 0.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the hash table to the size (modulo) asked for.
+ *        Allocates space for the correct number of pointers and sets them
+ *        to NULL.
+ *
+ * \param [in] htable hash table
+ * \param [in] modulo size of the hash table
  */
+/*----------------------------------------------------------------------------*/
 
 void
 mei_hash_table_create(hash_table_t *const htable, const int modulo)
@@ -140,13 +139,7 @@ mei_hash_table_create(hash_table_t *const htable, const int modulo)
   htable->record  = 0;
   htable->table   = NULL;
 
-  /* htable memory allocation */
   BFT_MALLOC(htable->table, modulo, struct item*);
-  if (htable->table == NULL) {
-    htable->length = 0;
-    bft_error(__FILE__, __LINE__, 0,
-              "Error in memory allocation\n");
-  }
 
   /*htable default initialization: at the beginning all lists are empty */
   for (i = 0; i < modulo; i++)
@@ -154,13 +147,16 @@ mei_hash_table_create(hash_table_t *const htable, const int modulo)
 }
 
 
-/*----------------------------------------------------------------------------
- * Insert an element in a hash table
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find a record in a hash table.
  *
- * If the element is already present in the hash table, the pointer
- * to it is returned. Otherwise, a new element is added, and a pointer
- * to that element is added.
- *----------------------------------------------------------------------------*/
+ * \param [in] htable hash table
+ * \param [in] key key
+ *
+ * \return a pointer containing the record
+ */
+/*----------------------------------------------------------------------------*/
 
 struct item*
 mei_hash_table_find(hash_table_t *const htable, const char *const key)
@@ -175,15 +171,27 @@ mei_hash_table_find(hash_table_t *const htable, const char *const key)
 
   /* Parcours de la liste */
   for ( p = l; p != 0; p = p->next)
-    if (strcmp(p->key, key) == 0) return p;
+    if (strcmp(p->key, key) == 0)
+      return p;
 
   return NULL;
 }
 
-
-/*----------------------------------------------------------------------------
- * Insertion d'un identificateur dans une table
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Insert a record in a hash table.
+ *
+ * \param [in] htable hash table
+ * \param [in] key key associated to the record
+ * \param [in] type flag associated to the record
+ * \param [in] value store a value if the record if a real
+ * \param [in] f1 pointer on a one argument function
+ * \param [in] f2 pointer on a two argument function
+ * \param [in] f3 pointer on a three argument function
+ * \param [in] f4 pointer on a four argument function
+ * \param [in] i1d pointer on a 1D interpolation function
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 mei_hash_table_insert(hash_table_t *const htable,
@@ -193,7 +201,8 @@ mei_hash_table_insert(hash_table_t *const htable,
                       const func1_t f1,
                       const func2_t f2,
                       const func3_t f3,
-                      const func4_t f4)
+                      const func4_t f4,
+                      const interp1d_t i1d)
 {
   unsigned v;
   struct item* item = mei_hash_table_find(htable, key);
@@ -216,6 +225,9 @@ mei_hash_table_insert(hash_table_t *const htable,
     } else if (type == FUNC4) {
       bft_error(__FILE__, __LINE__, 0, "not implemented yet \n");
 
+    } else if (type == INTERP1D) {
+      item->data->i1d = i1d;
+
     } else {
       item->data->value = value;
     }
@@ -234,9 +246,16 @@ mei_hash_table_insert(hash_table_t *const htable,
 }
 
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find a record in a hash table.
  *
- *----------------------------------------------------------------------------*/
+ * \param [in] htable hash table
+ * \param [in] key key
+ *
+ * \return a pointer containing the record
+ */
+/*----------------------------------------------------------------------------*/
 
 
 struct item*
@@ -248,23 +267,27 @@ mei_hash_table_lookup(hash_table_t *const htable, const char *const key)
 
   v = _hash(key, htable->length);
 
-  /* Lookup for name in hash table bucket corresponding to above hash value. */
+  /* Lookup for name in hash table record corresponding to above hash value. */
 
   item = htable->table[v];
 
   while (item) {
     next = item->next;
-    if (!strcmp(item->key, key)) return item;
+    if (!strcmp(item->key, key))
+      return item;
     item = next;
   }
 
   return NULL;
 }
 
-
-/*----------------------------------------------------------------------------
- *  Destruction de la table de hachage
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a hash table.
+ *
+ * \param [in] htable hash table
+ */
+/*----------------------------------------------------------------------------*/
 
 
 void
@@ -292,10 +315,13 @@ mei_hash_table_free(hash_table_t *const htable)
   BFT_FREE(htable->table);
 }
 
-
-/*----------------------------------------------------------------------------
- *  Fonction qui initialise la table de hachage
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the hash table with default symbols
+ *
+ * \param [in] htable hash table
+ */
+/*----------------------------------------------------------------------------*/
 
 
 void
@@ -307,7 +333,8 @@ mei_hash_table_init(hash_table_t *const htable)
   static const char *constants_names[] = { "e", "pi" };
 
   /* predefined constants values */
-  static const double constants[] = {2.7182818284590452354, 3.14159265358979323846};
+  static const double constants[] = {2.7182818284590452354,
+                                     3.14159265358979323846};
 
   /* predefined functions names with one arguments*/
   static const char *functions_names[] = { "exp",  "log",   "sqrt",
@@ -329,6 +356,13 @@ mei_hash_table_init(hash_table_t *const htable)
   /* predefined functions pointers to functions to calculate them */
   static double (*functions2[]) (double, double) = { atan2, mei_min, mei_max, fmod };
 
+  /* predefined functions names with two arguments*/
+  static const char *interp1d_names[] = { "interp1d" };
+
+  /* predefined functions pointers to functions to calculate them */
+  static double (*interp1d[]) (char*, int, int, double) = { mei_interp1d };
+
+
 
   j = sizeof(constants_names) / sizeof(constants_names[0]);
   for (i = 0; i < j; i++)
@@ -336,6 +370,7 @@ mei_hash_table_init(hash_table_t *const htable)
                           constants_names[i],
                           CONSTANT,
                           constants[i],
+                          NULL,
                           NULL,
                           NULL,
                           NULL,
@@ -350,6 +385,7 @@ mei_hash_table_init(hash_table_t *const htable)
                           functions[i],
                           NULL,
                           NULL,
+                          NULL,
                           NULL);
 
   j = sizeof(functions2_names) / sizeof(functions2_names[0]);
@@ -361,14 +397,29 @@ mei_hash_table_init(hash_table_t *const htable)
                           NULL,
                           functions2[i],
                           NULL,
+                          NULL,
                           NULL);
+
+  j = sizeof(interp1d_names) / sizeof(interp1d_names[0]);
+  for (i = 0; i < j; i++)
+    mei_hash_table_insert(htable,
+                          interp1d_names[i],
+                          INTERP1D,
+                          0,
+                          NULL,
+                          NULL,
+                          NULL,
+                          NULL,
+                          interp1d[i]);
 }
 
-
-/*----------------------------------------------------------------------------
- *  Impression des item de la table de hachage pour debugage
- *----------------------------------------------------------------------------*/
-
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Dump function of a single record.
+ *
+ * \param [in] item record
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 mei_hash_table_item_print(struct item *item)
@@ -376,17 +427,23 @@ mei_hash_table_item_print(struct item *item)
   /* Affichage d'une liste */
   while (item != NULL) {
     printf("%s -> %i \n", item->key, item->type);
-    if (item->type != FUNC1 && item->type != FUNC2 && item->type != FUNC3  && item->type != FUNC4)
+    if (item->type != FUNC1 &&
+        item->type != FUNC2 &&
+        item->type != FUNC3 &&
+        item->type != FUNC4 &&
+        item->type != INTERP1D)
       printf("valeur : %f\n", item->data->value);
     item = item->next;
   }
 }
 
-
-/*----------------------------------------------------------------------------
- * Dump of table contents for debuging purpose
- *----------------------------------------------------------------------------*/
-
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Dump of table contents for debuging purpose.
+ *
+ * \param [in] htable hash table
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 mei_hash_table_dump(hash_table_t *const htable)
@@ -400,11 +457,11 @@ mei_hash_table_dump(hash_table_t *const htable)
   }
 }
 
-
 /*============================================================================
  * Test
  *============================================================================*/
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 #undef _TEST_
 #ifdef _TEST_
@@ -430,6 +487,10 @@ main_test(int argc, char *argv[])
 
 #endif
 
+#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+
+
+/*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 }

@@ -4371,6 +4371,8 @@ cs_gui_clean_memory(void)
     BFT_FREE(cs_glob_label->_cs_gui_var_name);
     BFT_FREE(cs_glob_label);
 
+    mei_data_free();
+
     /* clean memory for xml document */
 
 #if defined(HAVE_LIBXML2)

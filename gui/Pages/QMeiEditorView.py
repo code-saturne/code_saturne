@@ -102,8 +102,7 @@ class QMeiHighlighter(QSyntaxHighlighter):
          'acos', 'asin', 'atan', 'atan2', 'cosh', 'sinh',
          'tanh', 'abs', 'mod', 'int', 'min', 'max',
          'pi', 'e', 'while', 'if', 'else', 'print',
-         'raise', 'return', 'try', 'while', 'yield',
-         'None', 'True', 'False',
+         'while', 'interp1d'
     ]
 
     operators = [
@@ -201,10 +200,10 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                   "<b>exp</b>: exponential<br>"\
                   "<b>sqrt</b>: square root<br>"\
                   "<b>log</b>: napierian logarithm<br>"\
-                  "<b>acos</b>: arccosine<br>"\
+                  "<b>acos</b>: arc cosine<br>"\
                   "<b>asin</b>: arcsine<br>"\
-                  "<b>atan</b>: arctangent<br>"\
-                  "<b>atan2</b>: arctangent<br>"\
+                  "<b>atan</b>: arc tangent<br>"\
+                  "<b>atan2</b>: arc tangent (two variables)<br>"\
                   "<b>cosh</b>: hyperbolic cosine<br>"\
                   "<b>sinh</b>: hyperbolic sine<br>"\
                   "<b>tanh</b>: hyperbolic tangent<br>"\
@@ -213,6 +212,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                   "<b>int</b>: floor<br>"\
                   "<b>min</b>: minimum<br>"\
                   "<b>max</b>: maximum<br>"\
+                  "<b>interp1d</b>: 1D linear interpolation<br>"\
                   "<br>"\
                   "<big><u>Useful constants:</u></big><br>"\
                   "<b>pi</b> = 3.14159265358979323846<br>"\
@@ -221,7 +221,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                   "<big><u>Operators and statements:</u></big><br>"\
                   "<b><code> + - * / ^ </code></b><br>"\
                   "<b><code>! &lt; &gt; &lt;= &gt;= == != && || </code></b><br>"\
-                  "<b><code>while if else</code></b><br>"\
+                  "<b><code>while if else print</code></b><br>"\
                   "")
 
         # lay out the text

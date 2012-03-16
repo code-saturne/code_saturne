@@ -5314,6 +5314,134 @@ For the variance, do not take into account the scalar $\varphi_i$ in the environ
 where $\varphi\ne\varphi_i$ generates a variance source.
 
 %==================================
+\subsection{User law editor of the GUI}
+%==================================
+
+A formula interpretor is embeded in \CS, which can be use throught the GUI.
+In order to call the formula editor of the GUI, click on the button:
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=1cm]{gui_formula_button}
+\label{fig:mei_button}
+\end{center}
+\end{figure}
+
+The formula editor is a window composed from three tab:
+\begin{list}{$\bullet$}{}
+\item User expression
+
+This tab is the formula editor. At the opening of the
+window only the required symbols are display.
+The syntaxic colorization shows to the user symbols which are
+required symbols, functions, or user variables.
+Each expression must be closed by a semicolum (``;''). The
+required symbols must be present in the final user law. A
+syntaxic checker is used when the user click on the OK button.
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=8cm]{gui_formula_interface}
+\caption{Example of the user law editor}
+\label{fig:mei_editor}
+\end{center}
+\end{figure}
+
+\item Predefined symbols
+
+There are three types of symbol \\
+
+\underline{Useful functions:}
+
+\texttt{cos}: cosine
+
+\texttt{sin}: sinus
+
+\texttt{tan}: tangent
+
+\texttt{exp}: exponential
+
+\texttt{sqrt}: square root
+
+\texttt{log}: napierian logarithm
+
+\texttt{acos}: arc cosine
+
+\texttt{asin}: arc sine           
+
+\texttt{atan(x)}: arc tangent (arc tangent of x in radians; the return value is in the range [-pi/2, pi/2])
+ 
+\texttt{atan2(y,x)}: arc tangent (arc tangent of y/x in radians; the return value is in the range [-pi, pi])
+
+\texttt{cosh}: hyperbolic cosine
+
+\texttt{sinh}: hyperbolic sine
+
+\texttt{tanh}: hyperbolic tangent
+
+\texttt{abs}: absolute value
+
+\texttt{mod}: modulo
+
+\texttt{int}: floor
+
+\texttt{min}: minimum
+
+\texttt{max}: maximum
+
+\texttt{interp1d}: 1D linear interpolation\\
+
+
+\underline{Useful constants:}
+
+pi = 3.14159265358979323846
+
+e = 2.718281828459045235\\
+
+
+\underline{Operators and statements:}
+
+$+$ \qquad$-$\qquad $*$\qquad $/$ \qquad$\wedge$ 
+
+! \qquad $<$ \qquad $>$ \qquad $<=$ \qquad $>=$ \qquad $==$ \qquad $!=$ \qquad $\&\&$ \qquad $\mid\mid$ 
+
+\texttt{while} \texttt{if} \texttt{else} \texttt{print}
+
+
+\item Examples
+
+This tab displays examples of formula, which could be copy and paste.
+
+\end{list}
+
+\underline{External data}
+
+Throught the predefined function \texttt{interp1d} it is possible to use
+external data inside a user law. This function allows to make linear interpolation
+from a data file (\texttt{.dat} or \texttt{.csv}) by selecting two colomns in this file
+for the abscissa and ordinate of a function. In a ``\texttt{.dat}'' data file, tabular
+values are stored in plain-text form and are separated by a blank. In a comma-separated values
+(``\texttt{.csv}'') file, values are separated by a comma ``\texttt{,}''.
+For both format, lines begining by ``\texttt{#}'' are considered as a commentaries.
+
+To use this fonction:
+
+\texttt{interp1d(file.csv, i, j, x)}
+
+with :
+\begin{itemize}
+\item file.csv, the name of the the file
+\item i, the colomn number for the abscissa
+\item j, the colomn number for the ordinate
+\item x, the number for witch the linear interpolation is looked
+\end{itemize}
+The function return a linear interpolation for the x value
+if it is in the range of the abscissa definition, or a
+linear extrapolation if it is out of this range.
+
+NB : the abscissa value must be in the growing order.
+
+%==================================
 \section{Results analysis}
 %==================================
 
