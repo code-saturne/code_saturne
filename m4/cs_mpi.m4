@@ -393,7 +393,13 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                     cs_have_mpi_one_sided=yes],
                    [cs_have_mpi_one_sided=no])
     AC_MSG_RESULT($cs_have_mpi_one_sided)
-
+    AC_MSG_CHECKING([for MPI2 features])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                   [[ MPI_Allreduce(MPI_IN_PLACE, (void *)0, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); ]])],
+                   [AC_DEFINE([HAVE_MPI_IN_PLACE], 1, [MPI_IN_PLACE support])
+                   have_mpi_in_place=yes],
+                   [have_mpi_in_place=no])
+    AC_MSG_RESULT($have_mpi_in_place)
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"
