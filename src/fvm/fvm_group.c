@@ -302,7 +302,7 @@ _group_class_dump(const fvm_group_class_t  *this_group_class,
   bft_printf("\n"
              "    _group_class[%3d]: %p\n"
              "    n_groups:          %d\n",
-             id, this_group_class,
+             id, (const void *)this_group_class,
              this_group_class->n_groups);
 
   if (this_group_class->n_groups > 0) {
@@ -573,7 +573,7 @@ fvm_group_class_set_dump(const fvm_group_class_set_t  *this_group_class_set)
 
   bft_printf("  _group_class_set: %p\n"
              "  size:             %d\n",
-             class_set,
+             (const void *)class_set,
              class_set->size);
 
   if (class_set->size > 0) {

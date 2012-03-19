@@ -921,7 +921,8 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
           bft_error(__FILE__, __LINE__, 0,
                     _("cg_coord_partial_write() failed to write coords:\n"
                       "Associated writer: \"%s\"\n"
-                      "Associated base: \"%s\"\n"),
+                      "Associated base: \"%s\"\n"
+                      "CGNS error:%s"),
                     writer->name, base->name, cg_get_error());
 
       } /* End if rank == 0 */
@@ -999,7 +1000,8 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
                           _("cg_coord_partial_write() failed to write "
                             "extra vertices coords:\n"
                             "Associated writer: \"%s\"\n"
-                            "Associated base: \"%s\"\n"),
+                            "Associated base: \"%s\"\n"
+                            "CGNS error:%s"),
                           writer->name, base->name, cg_get_error());
 
             } /* End if rank == 0 */

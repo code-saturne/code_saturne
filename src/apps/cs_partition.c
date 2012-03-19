@@ -667,7 +667,8 @@ _read_global_count(cs_io_t             *inp,
     bft_error(__FILE__, __LINE__, 0,
               _("Section: \"%s\" of file \"%s\" has  %d values per\n"
                 "location where 0 or 1 were expected."),
-              header->sec_name, cs_io_get_name(inp), header->n_location_vals);
+              header->sec_name, cs_io_get_name(inp),
+              (int)(header->n_location_vals));
 
   /* Ensure type of value matches */
 
@@ -721,7 +722,8 @@ _read_adjacency_array(cs_io_t                         *inp,
     bft_error(__FILE__, __LINE__, 0,
               _("Section: \"%s\" of file \"%s\" has  %d values per\n"
                 "location where 2 were expected."),
-              header->sec_name, cs_io_get_name(inp), header->n_location_vals);
+              header->sec_name, cs_io_get_name(inp),
+              (int)header->n_location_vals);
 
   /* Ensure type of value matches */
 

@@ -440,7 +440,8 @@ _get_local_tolerance(cs_join_param_t  param,
   }
   else
     bft_error(__FILE__, __LINE__, 0,
-              "  Tolerance computation mode (%d) is not defined\n");
+              "  Tolerance computation mode (%d) is not defined\n",
+              param.tcm);
 
 }
 

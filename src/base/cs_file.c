@@ -2156,7 +2156,7 @@ cs_file_dump(const cs_file_t  *f)
              (f->semantics & CS_FILE_EXPLICIT_OFFSETS) >> 2,
              (f->semantics & CS_FILE_INDIVIDUAL_POINTERS) >> 3,
              f->rank, f->n_ranks, (int)(f->swap_endian),
-             f->sh);
+             (const void *)f->sh);
 
 #if defined(HAVE_MPI)
   bft_printf("Associated communicator:  %llu\n",

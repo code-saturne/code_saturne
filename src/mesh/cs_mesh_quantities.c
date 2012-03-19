@@ -2261,7 +2261,7 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
   const cs_real_t  *b_fac_surf = mesh_quantities->b_face_surf;
 
   bft_printf("\n\nDUMP OF A MESH QUANTITIES STRUCTURE: %p\n\n",
-             mesh_quantities);
+             (const void *)mesh_quantities);
 
   if (mesh_quantities == NULL)
     return;

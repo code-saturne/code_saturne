@@ -378,11 +378,11 @@ cs_resource_get_max_timestep(int   ts_cur,
         (_("===============================================================\n"
            "   ** Remaining time management\n"
            "      -------------------------\n"
-           "      Remaining time allocated to the job       : ', 14.5e\n"
-           "      Estimated time for another time step      : ', 14.5e\n"
-           "        mean time for a time step               : ', 14.5e\n"
-           "        time for the previous time step         : ', 14.5e\n"
-           "        security margin                         : ', 14.5e\n"
+           "      Remaining time allocated to the job       : ', %14.5e\n"
+           "      Estimated time for another time step      : ', %14.5e\n"
+           "        mean time for a time step               : ', %14.5e\n"
+           "        time for the previous time step         : ', %14.5e\n"
+           "        security margin                         : ', %14.5e\n"
            "===============================================================\n"),
          trestc, t_it_sup, tmoy00, t_it_prev, t_margin);
 

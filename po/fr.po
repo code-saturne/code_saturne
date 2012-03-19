@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-03-14 12:32+0100\n"
+"POT-Creation-Date: 2012-03-19 17:33+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3249,6 +3249,29 @@ msgstr ""
 "Erreur de connectivité :\n"
 "La face %d voit la cellule %d des deux cotés."
 
+#, c-format
+msgid ""
+"       fine   grid anisotropy: min      = %12.5e\n"
+"                               max      = %12.5e\n"
+"       coarse grid anisotropy: min      = %12.5e\n"
+"                               max      = %12.5e\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"       minimum xag_p1 / xag_p0          = %12.5e\n"
+"       maximum xag_p1 / xag_p0          = %12.5e\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"       fine   grid diag. dominance: min = %12.5e\n"
+"                                    max = %12.5e\n"
+"       coarse grid diag. dominance: min = %12.5e\n"
+"                                    max = %12.5e\n"
+"\n"
+msgstr ""
+
 msgid "algebraic, natural face traversal"
 msgstr "algébrique, faces dans l'ordre naturel"
 
@@ -5428,8 +5451,9 @@ msgstr "  mode : CS_IO_MODE_READ\n"
 msgid "  mode: CS_IO_MODE_WRITE\n"
 msgstr "  mode : CS_IO_MODE_WRITE\n"
 
-msgid "  MPI communicator: %l\n"
-msgstr "  Communicateur MPI : %l\n"
+#, c-format
+msgid "  MPI communicator: %ld\n"
+msgstr "  Communicateur MPI : %ld\n"
 
 #, c-format
 msgid ""
@@ -5918,25 +5942,26 @@ msgstr ""
 "      numéro de pas de temps maximal mis à : %d\n"
 "========================================================\n"
 
+#, c-format
 msgid ""
 "===============================================================\n"
 "   ** Remaining time management\n"
 "      -------------------------\n"
-"      Remaining time allocated to the job       : ', 14.5e\n"
-"      Estimated time for another time step      : ', 14.5e\n"
-"        mean time for a time step               : ', 14.5e\n"
-"        time for the previous time step         : ', 14.5e\n"
-"        security margin                         : ', 14.5e\n"
+"      Remaining time allocated to the job       : ', %14.5e\n"
+"      Estimated time for another time step      : ', %14.5e\n"
+"        mean time for a time step               : ', %14.5e\n"
+"        time for the previous time step         : ', %14.5e\n"
+"        security margin                         : ', %14.5e\n"
 "===============================================================\n"
 msgstr ""
 "===============================================================\n"
 "   ** Gestion du temps restant\n"
 "      ------------------------\n"
-"      Temps restant alloué à la tâche           : ', 14.5e\n"
-"      Temps estimé pour un nouveau pas de temps : ', 14.5e\n"
-"        temps moyen par pas de temps            : ', 14.5e\n"
-"        temps pour le pas de temps précédent    : ', 14.5e\n"
-"        marge de sécurité                       : ', 14.5e\n"
+"      Temps restant alloué à la tâche           : ', %14.5e\n"
+"      Temps estimé pour un nouveau pas de temps : ', %14.5e\n"
+"        temps moyen par pas de temps            : ', %14.5e\n"
+"        temps pour le pas de temps précédent    : ', %14.5e\n"
+"        marge de sécurité                       : ', %14.5e\n"
 "===============================================================\n"
 
 #, c-format
@@ -7638,6 +7663,7 @@ msgid ""
 "cg_coord_partial_write() failed to write coords:\n"
 "Associated writer: \"%s\"\n"
 "Associated base: \"%s\"\n"
+"CGNS error:%s"
 msgstr ""
 
 #, c-format
@@ -7645,6 +7671,7 @@ msgid ""
 "cg_coord_partial_write() failed to write extra vertices coords:\n"
 "Associated writer: \"%s\"\n"
 "Associated base: \"%s\"\n"
+"CGNS error:%s"
 msgstr ""
 
 #, c-format
@@ -8192,7 +8219,8 @@ msgid ""
 "Time elapsed defining values using MEI: %12.5f\n"
 msgstr ""
 
-msgid "Number of periodicities (%d) and modes (%) do not match."
+#, c-format
+msgid "Number of periodicities (%d) and modes (%d) do not match."
 msgstr ""
 
 #, c-format
@@ -8200,7 +8228,7 @@ msgid "Periodicity mode \"%s\" unknown."
 msgstr "Mode de périodicité \"%s\" inconnu."
 
 #, c-format
-msgid "Unknow ale property choice %s.\n"
+msgid "Unknow ale property choice %d.\n"
 msgstr ""
 
 #, c-format
@@ -8352,6 +8380,54 @@ msgstr ""
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
+
+msgid "Error: _check_symbol\n"
+msgstr ""
+
+msgid "not implemented yet \n"
+msgstr ""
+
+msgid "not implemented\n"
+msgstr ""
+
+msgid "Error: floating point exception\n"
+msgstr "Erreur : exception en virgule flottante\n"
+
+#, c-format
+msgid ""
+"Error in mei_tree_lookup function: %s does not exist in the symbol table\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The user data file: %s needed by interp1d is not found.\n"
+"Add this data file to the list of users file to copy \n"
+"in the computational directory.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"interp1d: the file extention expected is dat or csv.  Extension found: %s\n"
+msgstr ""
+
+#, c-format
+msgid "At least two lines are expected in %s.\n"
+msgstr ""
+
+#, c-format
+msgid "At least two columns are expected in %s.\n"
+msgstr ""
+
+#, c-format
+msgid "In the file %s, line %i, there is a wrong value :%s\n"
+msgstr ""
+
+#, c-format
+msgid "The file %s does not have a correct structure at line %i.\n"
+msgstr ""
+
+msgid "Abscissa colomn is not in the rigth order.\n"
+msgstr ""
 
 msgid ""
 "\n"
@@ -8944,8 +9020,8 @@ msgstr ""
 #, c-format
 msgid ""
 " Inconsistent values between:\n"
-"    block_info.local_size  %8d\n"
-"    builder->n_faces:      %8d\n"
+"    block_info.local_size  %8ld\n"
+"    builder->n_faces:      %8ld\n"
 " These values should be equal.\n"
 msgstr ""
 

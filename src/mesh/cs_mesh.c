@@ -3926,10 +3926,10 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 {
   cs_int_t  i, j;
 
-  bft_printf("\n\nDUMP OF THE MESH STRUCTURE: %p\n\n",mesh);
+  bft_printf("\n\nDUMP OF THE MESH STRUCTURE: %p\n\n", (const void *)mesh);
 
   bft_printf("space dim :        %d\n"
-             "n_domains :        %d\n",
+             "n_domains :        %d\n"
              "domain_num:        %d\n",
              mesh->dim, mesh->n_domains, mesh->domain_num);
 
@@ -4035,7 +4035,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
     cs_halo_t  *halo = mesh->halo;
 
-    bft_printf("\nHalo information: %p\n", halo);
+    bft_printf("\nHalo information: %p\n", (const void *)halo);
 
     bft_printf("n_c_domains:              %d\n", halo->n_c_domains);
     bft_printf("n_ghost_cells:            %d\n", mesh->n_ghost_cells);

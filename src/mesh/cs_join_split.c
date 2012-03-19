@@ -1660,10 +1660,10 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
   if ((int)block_info.local_size != builder->n_faces)
     bft_error(__FILE__, __LINE__, 0,
               _(" Inconsistent values between:\n"
-                "    block_info.local_size  %8d\n"
-                "    builder->n_faces:      %8d\n"
+                "    block_info.local_size  %8ld\n"
+                "    builder->n_faces:      %8ld\n"
                 " These values should be equal.\n"),
-              block_info.local_size, builder->n_faces);
+              (long)block_info.local_size, (long)builder->n_faces);
 
   /* Compute the number of new faces */
 

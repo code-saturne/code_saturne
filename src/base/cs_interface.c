@@ -235,7 +235,7 @@ _cs_interface_dump(const cs_interface_t  *itf)
              "  associated rank:       %d\n"
              "  size:                  %llu\n"
              "  transform index size:  %d\n",
-             itf,
+             (const void *)itf,
              itf->rank,
              (unsigned long long)(itf->size),
              itf->tr_index_size);
@@ -243,7 +243,7 @@ _cs_interface_dump(const cs_interface_t  *itf)
   if (itf->tr_index_size > 0) {
     bft_printf("  transform index:\n");
     for (i = 0; i < itf->tr_index_size; i++)
-      bft_printf("    %5d %lu\n", i, itf->tr_index[i]);
+      bft_printf("    %5d %lu\n", i, (unsigned long)itf->tr_index[i]);
   }
 
 
@@ -4769,7 +4769,7 @@ cs_interface_set_dump(const cs_interface_set_t  *ifs)
 
   bft_printf("  interface list: %p\n"
              "  n interfaces:   %d\n",
-             ifs, ifs->size);
+             (const void *)ifs, ifs->size);
 
   for (i = 0, j = 0; i < ifs->size; i++) {
     bft_printf("\n  interface %d:\n", i);
@@ -4778,7 +4778,7 @@ cs_interface_set_dump(const cs_interface_set_t  *ifs)
   }
 
   if (ifs->periodicity != NULL)
-    bft_printf("\n  periodicity %p:\n", ifs->periodicity);
+    bft_printf("\n  periodicity %p:\n", (const void *)(ifs->periodicity));
 }
 
 /*----------------------------------------------------------------------------*/

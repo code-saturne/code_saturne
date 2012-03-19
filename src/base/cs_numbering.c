@@ -228,7 +228,8 @@ cs_numbering_dump(const cs_numbering_t  *numbering)
              "  vector_size:    %d\n"
              "  n_threads:      %d\n"
              "  n_groups:       %d\n",
-             numbering, cs_numbering_type_name[numbering->type],
+             (const void *)numbering, cs_numbering_type_name[numbering->type],
+             numbering->vector_size,
              numbering->n_threads, numbering->n_groups);
 
   if (numbering->group_index != NULL) {

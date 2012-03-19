@@ -261,7 +261,7 @@ _compute_n_ents(const cs_restart_t  *r,
     bft_error(__FILE__, __LINE__, 0,
               _("Location number %d given for restart file\n"
                 "\"%s\" is not valid."),
-              location_id, r->name);
+              (int)location_id, r->name);
 
   return retval;
 }
@@ -1699,7 +1699,8 @@ cs_restart_read_section(cs_restart_t  *restart,
     if (rec_id >= index_size) {
       header = cs_io_get_indexed_sec_header(restart->fh, rec_id_tmp);
       bft_printf(_("  %s: section \"%s\" at location id %d but not at %d.\n"),
-                 restart->name, sec_name, header.location_id, location_id);
+                 restart->name, sec_name,
+                 (int)(header.location_id), (int)location_id);
       return CS_RESTART_ERR_LOCATION;
     }
   }

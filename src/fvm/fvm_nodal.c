@@ -523,7 +523,7 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
   bft_printf("\n"
              "Connectivity_size:     %llu\n"
              "Stride:                %d\n"
-             "Number of faces:       %d\n",
+             "Number of faces:       %ld\n",
              (unsigned long long)(this_section->connectivity_size),
              this_section->stride,
              (long)(this_section->n_faces));
@@ -535,9 +535,11 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
              "  vertex_index:         %p\n"
              "  vertex_num:           %p\n"
              "  parent_element_num:   %p\n",
-             this_section->face_index, this_section->face_num,
-             this_section->vertex_index, this_section->vertex_num,
-             this_section->parent_element_num);
+             (const void *)this_section->face_index,
+             (const void *)this_section->face_num,
+             (const void *)this_section->vertex_index,
+             (const void *)this_section->vertex_num,
+             (const void *)this_section->parent_element_num);
 
   bft_printf("\n"
              "Pointers to local arrays:\n"
@@ -545,11 +547,14 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
              "  _face_num:            %p\n"
              "  _vertex_index:        %p\n"
              "  _vertex_num:          %p\n"
-             "  _parent_element_num:  %p\n",
+             "  _parent_element_num:  %p\n"
              "  gc_id:                %p\n",
-             this_section->_face_index, this_section->_face_num,
-             this_section->_vertex_index, this_section->_vertex_num,
-             this_section->_parent_element_num, this_section->gc_id);
+             (const void *)this_section->_face_index,
+             (const void *)this_section->_face_num,
+             (const void *)this_section->_vertex_index,
+             (const void *)this_section->_vertex_num,
+             (const void *)this_section->_parent_element_num,
+             (const void *)this_section->gc_id);
 
   if (this_section->face_index != NULL) {
     bft_printf("\nPolyhedra -> faces (polygons) connectivity:\n\n");
@@ -2304,15 +2309,15 @@ fvm_nodal_dump(const fvm_nodal_t  *this_nodal)
                "Pointers to shareable arrays:\n"
                "  vertex_coords:        %p\n"
                "  parent_vertex_num:    %p\n",
-               this_nodal->vertex_coords,
-               this_nodal->parent_vertex_num);
+               (const void *)this_nodal->vertex_coords,
+               (const void *)this_nodal->parent_vertex_num);
 
     bft_printf("\n"
                "Pointers to local arrays:\n"
                "  _vertex_coords:       %p\n"
                "  _parent_vertex_num:   %p\n",
-               this_nodal->_vertex_coords,
-               this_nodal->_parent_vertex_num);
+               (const void *)this_nodal->_vertex_coords,
+               (const void *)this_nodal->_parent_vertex_num);
 
     /* Output coordinates depending on parent numbering */
 

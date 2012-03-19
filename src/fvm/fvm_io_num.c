@@ -2532,12 +2532,12 @@ fvm_io_num_dump(const fvm_io_num_t  *const this_io_num)
   bft_printf("\n"
              "  pointer to shareable array:\n"
              "    global_num:                     %p\n",
-             this_io_num->global_num);
+             (const void *)this_io_num->global_num);
 
   bft_printf("\n"
              "  pointer to local array:\n"
              "    _global_num:                    %p\n",
-             this_io_num->global_num);
+             (const void *)this_io_num->global_num);
 
   if (this_io_num->global_num_size > 0) {
 

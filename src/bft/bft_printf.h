@@ -72,9 +72,20 @@ typedef int (bft_printf_flush_proxy_t) (void);
  *   to end output strings
  */
 
+#if defined(__GNUC__)
+
 int
 bft_printf(const char  *const format,
-           ...);
+           ...)
+  __attribute__((format(printf, 1, 2)));
+
+#else
+
+int
+bft_printf(const char  *const format,
+           ...)
+
+#endif
 
 /*
  * Flush for output of bft_printf() with modifiable behavior.

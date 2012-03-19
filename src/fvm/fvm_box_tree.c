@@ -858,7 +858,7 @@ _new_node(fvm_box_tree_t     *bt,
     bft_error(__FILE__, __LINE__, 0,
               _("Error adding a new node in box tree (%p).\n"
                 "Max level reached. Current level: %u and Max level: %d\n"),
-              bt, morton_code.L, bt->max_level);
+              (void *)bt, morton_code.L, bt->max_level);
 
   node->is_leaf = true;
   node->morton_code = morton_code;
@@ -2751,7 +2751,7 @@ fvm_box_tree_dump(fvm_box_tree_t  *bt)
     return;
   }
 
-  bft_printf("\nBox tree: %p\n\n", bt);
+  bft_printf("\nBox tree: %p\n\n", (void *)bt);
 
   bft_printf("  n_max_nodes:  %d\n\n"
              "  n_nodes:      %d\n",

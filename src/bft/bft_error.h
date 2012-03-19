@@ -71,12 +71,26 @@ typedef void (bft_error_handler_t) (const char    *const file_name,
  *   ... :           <-- variable arguments based on format string.
  */
 
+#if defined(__GNUC__)
+
+void
+bft_error(const char  *const file_name,
+          const int          line_num,
+          const int          sys_error_code,
+          const char  *const format,
+          ...)
+  __attribute__((format(printf, 4, 5)));
+
+#else
+
 void
 bft_error(const char  *const file_name,
           const int          line_num,
           const int          sys_error_code,
           const char  *const format,
           ...);
+
+#endif
 
 /*
  * Returns the error handler associated with the bft_error() function.

@@ -310,7 +310,7 @@ get_ale_property_choice(void)
         choice = ale_property_choice_user_subroutine;
     else
         bft_error(__FILE__, __LINE__, 0,
-            _("Unknow ale property choice %s.\n"), choice);
+            _("Unknow ale property choice %d.\n"), choice);
     BFT_FREE(choice_str);
     BFT_FREE(path);
     return choice;

@@ -438,7 +438,7 @@ void CS_PROCF (lect1d,LECT1D)
               _("Abort while opening the 1D-wall thermal module restart file "
                 "in read mode.\n"
                 "Verify the existence and the name of the restart file: %s\n"),
-              *nomsui);
+              nomsui);
 
 
   /* Pointer to the global restart structure */
@@ -487,7 +487,7 @@ void CS_PROCF (lect1d,LECT1D)
                   "\n"
                   "Verify that the restart file corresponds to a\n"
                   "restart file for the 1D-wall thermal module.\n"),
-                *nomsui);
+                nomsui);
 
     version = *tabvar;
 
@@ -831,7 +831,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
               _("Abort while opening the 1D-wall thermal module restart "
                 "file in write mode.\n"
                 "Verify the existence and the name of the restart file: %s\n"),
-              *nomsui);
+              nomsui);
 
 
   /* Pointer to the global restart structure */

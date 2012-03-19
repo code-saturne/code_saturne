@@ -1340,7 +1340,7 @@ fvm_periodicity_dump(const fvm_periodicity_t  *this_periodicity)
   int  level = 0;
 
   bft_printf("\n"
-             "Periodicity:          %p\n", this_periodicity);
+             "Periodicity:          %p\n", (const void *)this_periodicity);
 
   if (this_periodicity == NULL) {
     bft_printf("\n");

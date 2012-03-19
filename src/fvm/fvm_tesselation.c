@@ -919,8 +919,8 @@ _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
                 "maximum number of vertices per polygon: %u\n"
                 "maximum integer encoded on %d/3 = %d bits: %ld\n"),
               (unsigned)n_triangles_max,
-              sizeof(fvm_tesselation_encoding_t)*8,
-              _ENCODING_BITS, (long)(2<<_ENCODING_BITS));
+              (int)(sizeof(fvm_tesselation_encoding_t)*8),
+              (int)_ENCODING_BITS, (long)(2<<_ENCODING_BITS));
 
   /* Destroy previous tesselation description if present */
 
@@ -3039,7 +3039,7 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
 
   bft_printf("\n"
              "Stride:                %d\n"
-             "Number of faces:       %d\n",
+             "Number of faces:       %ld\n",
              this_tesselation->stride,
              (long)(this_tesselation->n_faces));
 
@@ -3047,18 +3047,21 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
              "Pointers to shared arrays:\n"
              "  vertex_coords         %p\n"
              "  parent_vertex_num     %p\n"
+             "  face_index:           %p\n"
              "  face_num:             %p\n"
              "  vertex_index:         %p\n"
              "  vertex_num:           %p\n",
-             this_tesselation->vertex_coords,
-             this_tesselation->parent_vertex_num,
-             this_tesselation->face_index, this_tesselation->face_num,
-             this_tesselation->vertex_index, this_tesselation->vertex_num);
+             (const void *)this_tesselation->vertex_coords,
+             (const void *)this_tesselation->parent_vertex_num,
+             (const void *)this_tesselation->face_index,
+             (const void *)this_tesselation->face_num,
+             (const void *)this_tesselation->vertex_index,
+             (const void *) this_tesselation->vertex_num);
 
   bft_printf("\n"
              "Pointers to shared global numbering:\n"
              "  global_element_num    %p\n",
-             this_tesselation->global_element_num);
+             (const void *)this_tesselation->global_element_num);
 
 
   /* Basic information */
@@ -3097,25 +3100,25 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
   bft_printf("\n"
              "Pointers to shareable arrays:\n"
              "  encoding:  %p\n",
-             this_tesselation->encoding);
+             (const void *)this_tesselation->encoding);
 
   for (i = 0; i < this_tesselation->n_sub_types; i++) {
     if (this_tesselation->sub_elt_index[i] != NULL)
       bft_printf("  sub_elt_index[%s]: %p\n",
                  fvm_elements_type_name[this_tesselation->sub_type[i]],
-                 this_tesselation->sub_elt_index[i]);
+                 (const void *)this_tesselation->sub_elt_index[i]);
   }
 
   bft_printf("\n"
              "Pointers to local arrays:\n"
              "  _encoding: %p\n",
-             this_tesselation->_encoding);
+             (const void *)this_tesselation->_encoding);
 
   for (i = 0; i < this_tesselation->n_sub_types; i++) {
     if (this_tesselation->sub_elt_index[i] != NULL)
       bft_printf("  _sub_elt_index[%s]: %p\n",
                  fvm_elements_type_name[this_tesselation->sub_type[i]],
-                 this_tesselation->_sub_elt_index[i]);
+                 (const void *)this_tesselation->_sub_elt_index[i]);
   }
 
   if (this_tesselation->encoding != NULL) {

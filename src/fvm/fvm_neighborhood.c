@@ -1200,7 +1200,7 @@ fvm_neighborhood_dump(const fvm_neighborhood_t  *n)
   cs_lnum_t   i, j;
 
   bft_printf("\n"
-             "Neighborhood information: %p\n\n", n);
+             "Neighborhood information: %p\n\n", (const void *)n);
 
   if (n == NULL)
     return;
@@ -1221,9 +1221,10 @@ fvm_neighborhood_dump(const fvm_neighborhood_t  *n)
                (long)(n->comm));
 #endif
 
-  bft_printf("CPU time:           %f\n"
-             "Wall-clock time:    %f\n\n",
-             n->cpu_time, n->wtime);
+  bft_printf("CPU time:           %f construction, %f query\n"
+             "Wall-clock time:    %f construction, %f query\n\n",
+             n->cpu_time[0], n->cpu_time[1],
+             n->wtime[0], n->wtime[1]);
 
   for (i = 0; i < n->n_elts; i++) {
 

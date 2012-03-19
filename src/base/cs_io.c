@@ -1361,7 +1361,7 @@ _echo_data(size_t          echo,
   if (echo * 2 < _n_elts) {
     echo_end = echo;
     bft_printf(_("    %d first and last elements%s:\n"),
-               echo, loc_glob);
+               (int)echo, loc_glob);
   }
   else {
     echo_end = _n_elts;
@@ -2786,7 +2786,9 @@ cs_io_set_cs_lnum(cs_io_sec_header_t  *header,
                 "Type expected for section: "
                 "\"%s\" is a signed integer\n"
                 "and is not convertible from type read: \"%s\"."),
-              cs_file_get_name(cs_io->f), cs_io->type_name);
+              cs_file_get_name(cs_io->f),
+              header->sec_name,
+              cs_io->type_name);
 
   assert(sizeof(cs_lnum_t) == 4 || sizeof(cs_lnum_t) == 8);
 
@@ -2821,7 +2823,8 @@ cs_io_set_cs_gnum(cs_io_sec_header_t  *header,
                 "Type expected for section: "
                 "\"%s\" is an unsigned integer\n"
                 "and is not convertible from type read: \"%s\"."),
-              cs_file_get_name(cs_io->f), cs_io->type_name);
+              cs_file_get_name(cs_io->f), header->sec_name,
+              cs_io->type_name);
 
   assert(sizeof(cs_gnum_t) == 4 || sizeof(cs_gnum_t) == 8);
 
@@ -2851,7 +2854,9 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
               _("Error reading file: \"%s\".\n"
                 "Type expected for section: \"%s\"\n"
                 "is \"r4\" or \"r8\" (real), and not \"%s\"."),
-              cs_file_get_name(cs_io->f), cs_io->type_name);
+              cs_file_get_name(cs_io->f),
+              header->sec_name,
+              cs_io->type_name);
 }
 
 /*----------------------------------------------------------------------------
@@ -3511,12 +3516,12 @@ cs_io_dump(const cs_io_t  *cs_io)
 
   bft_printf(_("  contents: \"%s\"\n"), cs_io->contents);
   if (cs_io->mode == CS_IO_MODE_READ)
-    bft_printf(_("  mode: CS_IO_MODE_READ\n"), cs_io->contents);
+    bft_printf(_("  mode: CS_IO_MODE_READ\n"));
   else if (cs_io->mode == CS_IO_MODE_WRITE)
-    bft_printf(_("  mode: CS_IO_MODE_WRITE\n"), cs_io->contents);
+    bft_printf(_("  mode: CS_IO_MODE_WRITE\n"));
 
 #if defined(HAVE_MPI)
-  bft_printf(_("  MPI communicator: %l\n"), (long)(cs_io->comm));
+  bft_printf(_("  MPI communicator: %ld\n"), (long)(cs_io->comm));
 #endif
 
   bft_printf(_("  default header size: %lu\n"

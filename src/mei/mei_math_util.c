@@ -44,12 +44,17 @@ extern "C" {
 #include <fcntl.h>
 #include <assert.h>
 
+#if defined(HAVE_UNISTD_H)
+# include <unistd.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * Fichiers `include' locaux
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
 #include <bft_error.h>
+#include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -83,7 +88,8 @@ static int data_length = 0;     /* number of user data set                     *
 static void
 _user_data_dump(const mei_user_data_t *d)
 {
-    bft_printf("\n\nDUMP OF THE MEI_USER_DATA STRUCTURE: %p\n\n", d);
+    bft_printf("\n\nDUMP OF THE MEI_USER_DATA STRUCTURE: %p\n\n",
+               (const void *)d);
 
     bft_printf("  name:              %s\n",   d->name);
     bft_printf("  commentaries:\n%s\n",       d->commentaries);

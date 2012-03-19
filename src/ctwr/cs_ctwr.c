@@ -475,7 +475,7 @@ void CS_PROCF (ecrctw, ECRCTW)
               _("Abort while opening the cooling tower module restart "
                 "file in write mode.\n"
                 "Verify the existence and the name of the restart file: %s\n"),
-              *nomsui);
+              nomsui);
 
   for (ict=0; ict < cs_glob_ct_nbr; ict++) {
 
@@ -653,7 +653,7 @@ void CS_PROCF (lecctw, LECCTW)
               _("Abort while opening the cooling tower AERO module restart file "
                 "in read mode.\n"
                 "Verify the existence and the name of the restart file: %s\n"),
-              *nomsui);
+              nomsui);
 
 
   /* Pointer to the global restart structure */

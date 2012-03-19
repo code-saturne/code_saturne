@@ -3222,7 +3222,7 @@ fvm_selector_postfix_dump(const fvm_selector_postfix_t  *pf,
           else if (n_groups > 0)
             bft_printf("    %d (group: \"%s\")\n", val, group_name[val]);
           else
-            bft_printf("    %d (group id)\n");
+            bft_printf("    %d (group id)\n", val);
         }
         else if (type == PF_ATTRIBUTE_ID) {
           if (val < 0)
@@ -3230,7 +3230,7 @@ fvm_selector_postfix_dump(const fvm_selector_postfix_t  *pf,
           else if (n_attributes > 0)
             bft_printf("    %d (attribute: %d)\n", val, attribute[val]);
           else
-            bft_printf("    %d (attribute id)\n");
+            bft_printf("    %d (attribute id)\n", val);
         }
         else
           bft_printf("    %d\n", val);

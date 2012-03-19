@@ -1225,7 +1225,8 @@ fvm_selector_dump(const fvm_selector_t  *this_selector)
              "  Number of evaluations:              %d\n"
              "  Wall-clock time in evaluations:     %f\n",
              ts->dim, (int)ts->n_elements,
-             ts->group_class_id, ts->_group_class_id,
+             (const void *)ts->group_class_id,
+             (const void *)ts->_group_class_id,
              ts->group_class_id_base,
              ts->n_group_classes, ts->n_groups, ts->n_attributes,
              ts->n_evals, ts->eval_wtime);
@@ -1265,15 +1266,16 @@ fvm_selector_dump(const fvm_selector_t  *this_selector)
              "  Shared normals;                     %p\n"
              "  Private normals:                    %p\n"
              "  Operations list:                    %p\n",
-             ts->coords, ts->_coords, ts->normals, ts->_normals,
-             ts->_operations);
+             (const void *)ts->coords, (const void *)ts->_coords,
+             (const void *)ts->normals, (const void *)ts->_normals,
+             (const void *)ts->_operations);
 
   if (ts->n_group_classes > 0) {
     bft_printf("  Number of elements per group class:\n");
     for (i = 0; i < ts->n_group_classes; i++) {
       bft_printf("    %d (%p)\n",
                  (int)ts->_n_group_class_elements[i],
-                 ts->_group_class_elements[i]);
+                 (const void *)ts->_group_class_elements[i]);
     }
   }
 

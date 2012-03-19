@@ -463,7 +463,7 @@ cs_gui_mesh_define_periodicities(void)
 
   if (n_modes != n_perio)
     bft_error(__FILE__, __LINE__, 0,
-              _("Number of periodicities (%d) and modes (%) do not match."),
+              _("Number of periodicities (%d) and modes (%d) do not match."),
               n_perio, n_modes);
 
   BFT_FREE(path);

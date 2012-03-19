@@ -1433,8 +1433,10 @@ cs_halo_dump(const cs_halo_t  *halo,
              "  periodicity:    %p\n"
              "  n_rotations:    %d\n"
              "  n_local_elts:   %d\n",
-             halo, halo->n_transforms, halo->n_c_domains,
-             halo->periodicity, halo->n_rotations, halo->n_local_elts);
+             (const void *)halo,
+             halo->n_transforms, halo->n_c_domains,
+             (const void *)halo->periodicity,
+             halo->n_rotations, halo->n_local_elts);
 
   bft_printf("\nRanks on halo frontier:\n");
   for (i = 0; i < halo->n_c_domains; i++)

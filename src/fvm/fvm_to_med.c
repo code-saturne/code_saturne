@@ -1338,7 +1338,7 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
   else
     bft_error(__FILE__, __LINE__, 0 ,
               "Unexpected cs_coord_t datatype size (%d).",
-              sizeof(cs_coord_t));
+              (int)(sizeof(cs_coord_t)));
 
   if (sizeof(med_float) == sizeof(double))
     mpi_datatype = MPI_DOUBLE;
@@ -1347,7 +1347,7 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
   else
     bft_error(__FILE__, __LINE__, 0 ,
               "Unexpected med_float datatype size (%d).",
-              sizeof(med_float));
+              (int)(sizeof(med_float)));
 
   /* Compute extra vertices buffer size if necessary */
 
@@ -1570,7 +1570,7 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
   else
     bft_error(__FILE__, __LINE__, 0 ,
               "Unexpected cs_coord_t datatype size (%d).",
-              sizeof(cs_coord_t));
+              (int)(sizeof(cs_coord_t)));
 
   /* Compute extra vertex coordinates if present */
 
@@ -2762,7 +2762,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
                 _("MEDmeshPolygonWr() failed to write connectivity:\n"
                   "Associated writer: \"%s\"\n"
                   "Associated med_mesh_name: \"%s\"\n"),
-                writer->name, med_mesh->name, med_section_type);
+                writer->name, med_mesh->name);
 
   } /* rank == 0 */
 
@@ -2897,7 +2897,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_sections,
               _("MEDmeshPolygonWr() failed to write connectivity:\n"
                 "Associated writer: \"%s\"\n"
                 "Associated med_mesh_name: \"%s\"\n"),
-              writer->name, med_mesh->name, med_section_type);
+              writer->name, med_mesh->name);
 
   BFT_FREE(med_global_vtx_idx);
 
@@ -3230,7 +3230,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
                 _("MEDmeshPolyhedronWr() failed to write connectivity:\n"
                   "Associated writer: \"%s\"\n"
                   "Associated med_mesh_name: \"%s\"\n"),
-                writer->name, med_mesh->name, med_section_type);
+                writer->name, med_mesh->name);
 
   } /* rank == 0 */
 
@@ -3398,7 +3398,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_sections,
               _("MEDmeshPolyhedronWr() failed to write connectivity:\n"
                 "Associated writer: \"%s\"\n"
                 "Associated med_mesh_name: \"%s\"\n"),
-              writer->name, med_mesh->name, med_section_type);
+              writer->name, med_mesh->name);
 
   BFT_FREE(med_cell_lengths);
   BFT_FREE(med_face_lengths);
