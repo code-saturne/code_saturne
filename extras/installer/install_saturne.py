@@ -327,7 +327,7 @@ class Setup:
         # Packages definition
         self.packages = {}
 
-        url_cs = "http://innovation.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/code_saturne/Releases/%s"
+        url_cs = "http://code-saturne.org/releases/%s"
 
         # BFT library
 
@@ -336,7 +336,7 @@ class Setup:
                     description="Basic Functions and Tools",
                     package="bft",
                     version="1.1.5",
-                    archive="bft-115.zip",
+                    archive="bft-1.1.5.tar.gz",
                     url=url_cs)
 
         # FVM library
@@ -346,7 +346,7 @@ class Setup:
                     description="Finite Volume Mesh",
                     package="fvm",
                     version="0.15.3",
-                    archive="fvm-0153.zip",
+                    archive="fvm-0.15.3.tar.gz",
                     url=url_cs)
 
         p = self.packages['fvm']
@@ -359,7 +359,7 @@ class Setup:
                     description="Mathematical Expressions Interpreter",
                     package="mei",
                     version="1.0.3",
-                    archive="mei-103.zip",
+                    archive="mei-1.0.3.tar.gz",
                     url=url_cs)
 
         # Code_Saturne Preprocessor
@@ -369,7 +369,7 @@ class Setup:
                     description="Code_Saturne Preprocessor",
                     package="ecs",
                     version="2.0.2",
-                    archive="ecs-202.zip",
+                    archive="ecs-2.0.2.tar.gz",
                     url=url_cs)
 
         # Code_Saturne Kernel
@@ -378,8 +378,8 @@ class Setup:
             Package(name="NCS",
                     description="Code_Saturne Kernel",
                     package="ncs",
-                    version="2.0.4",
-                    archive="ncs-204.zip",
+                    version="2.0.5",
+                    archive="ncs-2.0.5.tar.gz",
                     url=url_cs)
 
         p = self.packages['ncs']
