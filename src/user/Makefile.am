@@ -76,11 +76,11 @@ cs_user_coupling.c \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization.f90 \
 cs_user_mesh.c \
-cs_user_parameters.c \
-cs_user_particles_tracking.c \
+cs_user_parameters.f90 \
+cs_user_particle_tracking.f90 \
 cs_user_physical_properties.f90 \
 cs_user_postprocess.c \
-cs_user_radiative_transfer.c \
+cs_user_radiative_transfer.f90 \
 cs_user_solver.c \
 cs_user_source_terms.f90 \
 usalcl.f90 \
