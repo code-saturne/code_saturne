@@ -1759,7 +1759,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
         bft_printf(_(" %s; variable: %2d; converged in %d sweeps\n"
                      " %*s  normed residual: %11.4e; norm: %11.4e\n"),
                    __func__, var_num, n_sweeps,
-                   strlen(__func__), " ", residue/rnorm, rnorm);
+                   (int)(strlen(__func__)), " ", residue/rnorm, rnorm);
       break;
     }
 
@@ -1771,7 +1771,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                  "   %s; variable: %2d; sweeps: %d\n"
                  "   %*s  normed residual: %11.4e; norm: %11.4e\n"),
                  __func__, var_num, n_sweeps,
-                 strlen(__func__), " ", residue/rnorm, rnorm);
+               (int)(strlen(__func__)), " ", residue/rnorm, rnorm);
   }
 }
 
