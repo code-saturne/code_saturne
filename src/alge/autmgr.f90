@@ -44,7 +44,7 @@ subroutine autmgr &
 !__________________!____!_____!________________________________________________!
 ! igr              ! i  ! <-- ! coarse grid level                              !
 ! isym             ! i  ! <-- ! 1: symmetric matrix; 2: non-symmetric matrix   !
-! iagmax           ! i  ! <-> ! max. fine cells per coarse cell                !
+! iagmax           ! i  ! --> ! max. fine cells per coarse cell                !
 ! nagmax           ! i  ! <-- ! max. fine cells per coarse cell target         !
 ! ncelf            ! i  ! <-- ! number of cells in fine grid                   !
 ! ncelfe           ! i  ! <-- ! extended number of cells in fine grid          !
@@ -141,6 +141,7 @@ do ifac = 1, nfacf
   indic(j) = indic(j) + 1
 enddo
 
+iagmax = 1
 ncelg  = 0
 nfacnr = nfacf
 npass  = 0

@@ -154,13 +154,15 @@ class package:
         # Determine path (by absolute or local name)
         pythondir = os.path.normpath(version)
         prefix = os.path.normpath(self.exec_prefix)
-        if not os.path.isabs(pythondir):
-            if self.pkgpythondir.find(prefix) > -1:
-                postfix = self.pkgpythondir[len(prefix)+1:]
+        if self.pkgpythondir.find(prefix) > -1:
+            postfix = self.pkgpythondir[len(prefix)+1:]
+            if not os.path.isabs(pythondir):
                 prefix = os.path.split(prefix)[0]
-                pythondir = os.path.normpath(os.path.join(prefix,
-                                                          version,
-                                                          postfix))
+            else:
+                prefix = version
+            pythondir = os.path.normpath(os.path.join(prefix,
+                                                      version,
+                                                      postfix))
 
         # load alternate package
         if os.path.isdir(pythondir):
