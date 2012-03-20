@@ -94,6 +94,9 @@ BEGIN_C_DECLS
 
 #define CS_SIMD_SIZE(s) (((s-1)/16+1)*16)
 
+/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
+#define THR_MIN 128
+
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -183,9 +186,6 @@ const char *cs_sles_type_name[] = {N_("Conjugate gradient"),
 #if defined(HAVE_MPI)
 MPI_Comm _cs_sles_mpi_reduce_comm = MPI_COMM_NULL;
 #endif
-
-/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
-#define THR_MIN 0
 
 /*============================================================================
  * Private function definitions
