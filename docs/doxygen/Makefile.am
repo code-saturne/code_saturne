@@ -29,17 +29,20 @@ mainpage.h images/icon.png examples/bft_error_example.c
 
 TEXINPUTS = $(top_srcdir)/docs/style/:
 
+# Overload doxygen executable
+
+DOXYGEN = export TEXINPUTS="$(TEXINPUTS)"; \
+  srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
+  doxygen
+
 doxygen-pre:
-	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
-	doxygen $(top_srcdir)/docs/doxygen/Doxyfile-pre
+	$(DOXYGEN) $(top_srcdir)/docs/doxygen/Doxyfile-pre
 
 doxygen-src:
-	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
-	doxygen $(top_srcdir)/docs/doxygen/Doxyfile-src
+	$(DOXYGEN) $(top_srcdir)/docs/doxygen/Doxyfile-src
 
 doxygen-ui:
-	srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
-	doxygen $(top_srcdir)/docs/doxygen/Doxyfile-ui
+	$(DOXYGEN) $(top_srcdir)/docs/doxygen/Doxyfile-ui
 
 doxygen: doxygen-pre doxygen-src doxygen-ui
 
