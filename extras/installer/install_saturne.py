@@ -315,15 +315,14 @@ class Setup:
 
         # Code_Saturne
 
-        url_cs = "http://innovation.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/code_saturne/Releases/%s"
-        url_cs = "http://www.code-saturne.org/cms/sites/default/files/%s"
+        url_cs = "http://code-saturne.org/releases/%s"
 
         self.packages['code_saturne'] = \
             Package(name="Code_Saturne",
                     description="Code_Saturne CFD tool",
                     package="code_saturne",
-                    version="2.1.5",
-                    archive="code_saturne-2.1.5.tar.gz",
+                    version="2.1.6",
+                    archive="code_saturne-2.1.6.tar.gz",
                     url=url_cs)
 
         p = self.packages['code_saturne']
