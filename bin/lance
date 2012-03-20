@@ -162,11 +162,7 @@ export CS_HOME
 #
 . $CS_HOME/bin/cs_profile
 #
-if [ "$NOM_ARCH" = "platine" ] ; then
-  module purge
-  module load intel/11.1.056
-  module load mpibull2/1.3.9-18.s
-elif [ "$NOM_ARCH" = "titane" ] ; then
+if [ "$NOM_ARCH" = "titane" ] ; then
   module purge
   module load intel/11.1.056
   module load bullxmpi/1.0.2

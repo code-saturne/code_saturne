@@ -1,3 +1,6 @@
+* 20/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Removed support for installation on retired CCRT "Platine" cluster.
+
 * 02/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   On IVANOE, update batch template for default compute queue.
   modified files:

@@ -48,14 +48,12 @@ if [ "$NOM_ARCH" = "Linux" ] ; then
     NOM_ARCH=Blue_Gene_P
   elif [ "`hostname | cut -c1-6`" = "titane" ] ; then
     NOM_ARCH=titane
-  elif [ "`hostname | cut -c1-7`" = "platine" ] ; then
-    NOM_ARCH=platine
   fi
 fi
 
 # Code_Saturne version
 
-if [ "$NOM_ARCH" = "titane" -o "$NOM_ARCH" = "platine" ] ; then 
+if [ "$NOM_ARCH" = "titane" ] ; then 
   CS_ROOT=/home/cont002/saturne/Code_Saturne/1.3
 elif [ "$NOM_ARCH" = "Blue_Gene_P" ] ; then 
   CS_ROOT=/gpfs/home/saturne/Code_Saturne/1.3
