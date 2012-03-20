@@ -93,6 +93,15 @@ BEGIN_C_DECLS
 #define HUGE_VAL  1.E+12
 #endif
 
+/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
+#define CS_THR_MIN 128
+
+/* SIMD unit size to ensure SIMD alignement (2 to 4 required on most
+ * current architectures, so 16 should be enough on most architectures
+ * through at least 2012) */
+
+#define CS_SIMD_SIZE(s) (((s-1)/16+1)*16)
+
 /*=============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -1356,6 +1365,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
     cs_lnum_t n_cells_max
       = cs_grid_get_n_cells_max(mg->grid_hierarchy[level]);
     wr_size = CS_MAX(wr_size, (size_t)n_cells_max);
+    wr_size = CS_SIMD_SIZE(wr_size);
   }
 
   if (aux_size >= wr_size) {
@@ -1383,7 +1393,8 @@ _multigrid_cycle(cs_multigrid_t      *mg,
     alloc_size = 0;
 
     for (level = 1; level < mg->n_levels; level++)
-      alloc_size += cs_grid_get_n_cells_max(mg->grid_hierarchy[level]);
+      alloc_size
+        += CS_SIMD_SIZE(cs_grid_get_n_cells_max(mg->grid_hierarchy[level]));
 
     BFT_MALLOC(_rhs_vx_val, alloc_size*2, cs_real_t);
 
@@ -1392,7 +1403,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
     for (level = 2; level < mg->n_levels; level++) {
       cs_lnum_t _n_cells_ext_prev
-        = cs_grid_get_n_cells_max(mg->grid_hierarchy[level-1]);
+        = CS_SIMD_SIZE(cs_grid_get_n_cells_max(mg->grid_hierarchy[level-1]));
       _rhs[level] = _rhs[level - 1] + _n_cells_ext_prev;
       _vx[level] = _vx[level - 1] + _n_cells_ext_prev;
     }
@@ -1465,6 +1476,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
                               _vx[level],
                               wr);
 
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (ii = 0; ii < n_cells; ii++)
       wr[ii] = _rhs_level[ii] - wr[ii];
 
@@ -1515,6 +1527,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
     f = c;
 
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (ii = 0; ii < n_cells; ii++) /* Initialize correction */
       _vx[level+1][ii] = 0.0;
 
@@ -1616,6 +1629,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
       cs_grid_prolong_cell_var(c, f, _vx[level+1], wr);
 
+#     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (ii = 0; ii < n_cells; ii++)
         _f_vx[ii] += wr[ii];
 

@@ -95,6 +95,9 @@ BEGIN_C_DECLS
 #define HUGE_VAL  1.E+12
 #endif
 
+/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
+#define THR_MIN 128
+
 /*=============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -332,6 +335,7 @@ _coarse_init(const cs_grid_t *f)
 
   BFT_MALLOC(c->coarse_cell, f->n_cells_ext, cs_lnum_t);
 
+# pragma omp parallel for if(f->n_cells_ext > THR_MIN)
   for (ii = 0; ii < f->n_cells_ext; ii++)
     c->coarse_cell[ii] = 0;
 
@@ -398,13 +402,17 @@ _coarsen_faces(const cs_grid_t    *fine,
   BFT_MALLOC(_coarse_face, f_n_faces, cs_lnum_t);
   BFT_MALLOC(_c_face_cell, f_n_faces*2, cs_lnum_t);
 
-  for (face_id = 0; face_id < f_n_faces; _coarse_face[face_id++] = 0);
+# pragma omp parallel for if(f_n_faces > THR_MIN)
+  for (face_id = 0; face_id < f_n_faces; face_id++)
+    _coarse_face[face_id] = 0;
 
   /* Allocate index */
 
   BFT_MALLOC(c_cell_cell_idx, c_n_cells + 1, cs_lnum_t);
 
-  for (ii = 0; ii <= c_n_cells; c_cell_cell_idx[ii++] = 0);
+# pragma omp parallel for if(c_n_cells > THR_MIN)
+  for (ii = 0; ii <= c_n_cells; ii++)
+    c_cell_cell_idx[ii] = 0;
 
   for (face_id = 0; face_id < f_n_faces; face_id++) {
 
@@ -431,16 +439,20 @@ _coarsen_faces(const cs_grid_t    *fine,
              c_cell_cell_idx[c_n_cells],
              cs_lnum_t);
 
-  for (ii = 0, connect_size = c_cell_cell_idx[c_n_cells];
-       ii < connect_size;
-       c_cell_cell_face[ii++] = 0);
+  connect_size = c_cell_cell_idx[c_n_cells];
+
+# pragma omp parallel for if(connect_size > THR_MIN)
+  for (ii = 0; ii < connect_size; ii++)
+    c_cell_cell_face[ii] = 0;
 
   /* Use a counter for array population, as array will usually
      not be fully populated */
 
   BFT_MALLOC(c_cell_cell_cnt, c_n_cells, cs_lnum_t);
 
-  for (ii = 0; ii < c_n_cells; c_cell_cell_cnt[ii++] = 0);
+# pragma omp parallel for if(c_n_cells > THR_MIN)
+  for (ii = 0; ii < c_n_cells; ii++)
+    c_cell_cell_cnt[ii] = 0;
 
   /* Build connectivity */
 
@@ -615,6 +627,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
       length =   halo->send_index[2*local_rank_id + 2]
                - halo->send_index[2*local_rank_id];
 
+#     pragma omp parallel for if(length > THR_MIN)
       for (i = 0; i < length; i++)
         _coarse_cell[i] = coarse_send[start + i];
 
@@ -668,7 +681,9 @@ _coarsen_halo(const cs_grid_t   *f,
   c_halo->n_send_elts[0] = 0;
   c_halo->n_send_elts[1] = 0;
 
-  for (ii = f->n_cells; ii < f->n_cells_ext; coarse_cell[ii++] = 0);
+# pragma omp parallel for if(f->n_cells_ext > THR_MIN)
+  for (ii = f->n_cells; ii < f->n_cells_ext; ii++)
+    coarse_cell[ii] = 0;
 
   /* Allocate and initialize counters */
 
@@ -676,9 +691,11 @@ _coarsen_halo(const cs_grid_t   *f,
   BFT_MALLOC(sub_num, c_n_cells, cs_lnum_t);
   BFT_MALLOC(coarse_send, n_f_send, cs_lnum_t);
 
+# pragma omp parallel for if(c_n_cells > THR_MIN)
   for (ii = 0; ii < c_n_cells; ii++)
     sub_num[ii] = -1;
 
+# pragma omp parallel for if(n_f_send > THR_MIN)
   for (ii = 0; ii < n_f_send; ii++)
     coarse_send[ii] = -1;
 
@@ -937,6 +954,7 @@ _coarsen(const cs_grid_t   *f,
 
   /* Sanity check */
 
+# pragma omp parallel for private(ii, jj) if(f_n_faces > THR_MIN)
   for (face_id = 0; face_id < f_n_faces; face_id++) {
     ii = f_face_cell[face_id*2]     - 1;
     jj = f_face_cell[face_id*2 + 1] - 1;
@@ -1451,7 +1469,7 @@ _merge_halo_data(cs_halo_t   *h,
                  cs_lnum_t    new_halo_cell_num[])
 {
   int  rank_id, prev_rank_id, tr_id, prev_section_id;
-  cs_lnum_t  ii, cur_id, section_id, src_id, prev_src_id;
+  cs_lnum_t  ii, ii_0, ii_1, cur_id, section_id, src_id, prev_src_id;
 
   int   stride = (h->n_transforms > 0) ? 3 : 2;
   int   n_c_domains_ini = h->n_c_domains;
@@ -1491,10 +1509,8 @@ _merge_halo_data(cs_halo_t   *h,
 
     for (rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
       for (tr_id = 0; tr_id < h->n_transforms; tr_id++) {
-        cs_lnum_t ii_0
-          = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id];
-        cs_lnum_t ii_1
-          = ii_0 + h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1];
+        ii_0 = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id];
+        ii_1 = ii_0 + h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1];
         for (ii = ii_0; ii < ii_1; ii++)
           tmp_num[ii*3 + 1] = tr_id + 1;
       }
@@ -2023,6 +2039,7 @@ _append_face_data(cs_grid_t   *g,
     cs_lnum_t face_id = 0;
 
     /* Filter face connectivity then send it */
+
     for (face_id = 0; face_id < n_faces; face_id++) {
       cs_lnum_t p_face_id = face_list[face_id];
       g->_face_cell[face_id*2] = g->_face_cell[p_face_id*2];
@@ -2459,15 +2476,18 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
   if (fine_grid->symmetric == true)
     isym = 1;
 
+# pragma omp parallel for if(f_n_cells_ext > THR_MIN)
   for (ii = 0; ii < f_n_cells_ext; ii++) {
     c_cardinality[ii] = -1;
     f_c_cell[ii] = 0;
     c_aggr_count[ii] = 1;
   }
 
+# pragma omp parallel for if(f_n_faces > THR_MIN)
   for (face_id = 0; face_id < f_n_faces; face_id++) {
     merge_flag[face_id] = face_id +1;
     f_c_face[face_id] = 0;
+    aggr_crit[face_id] = 2.;
   }
 
   /* Compute cardinality (number of neighbors for each cell -1) */
@@ -2479,9 +2499,6 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
     c_cardinality[ii] += 1;
     c_cardinality[jj] += 1;
   }
-
-  for (ii = 0; ii < f_n_faces; ii++)
-    aggr_crit[ii] = 2.;
 
   /* Passes */
 
@@ -2495,12 +2512,14 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
     _max_aggregation++;
     _max_aggregation = CS_MIN(_max_aggregation, max_aggregation);
 
+#   pragma omp parallel for if(n_faces > THR_MIN)
     for (face_id = 0; face_id < n_faces; face_id++) {
       f_c_face[face_id] = merge_flag[face_id];
       merge_flag[face_id] = 0;
     }
 
     if (n_faces < f_n_faces) {
+#     pragma omp parallel for if(f_n_faces > THR_MIN)
       for (face_id = n_faces; face_id < f_n_faces; face_id++) {
         merge_flag[face_id] = 0;
         f_c_face[face_id] = 0;
@@ -2513,6 +2532,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
 
     /* Increment number of neighbors */
 
+#   pragma omp parallel for if(f_n_cells > THR_MIN)
     for (ii = 0; ii < f_n_cells; ii++)
       c_cardinality[ii] += inc_nei;
 
@@ -2599,6 +2619,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
 
     /* Check the number of coarse cells created */
     aggr_count = 0;
+#   pragma omp parallel for reduction(+:aggr_count) if(f_n_cells > THR_MIN)
     for (ii = 0; ii < f_n_cells; ii++) {
       if (f_c_cell[ii] < 1)
         aggr_count++;
@@ -2615,7 +2636,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
   /* Finish assembly */
   for (ii = 0; ii < f_n_cells; ii++) {
     if (f_c_cell[ii] < 1) {
-      f_c_cell[ii] = c_n_cells +1;
+      f_c_cell[ii] = c_n_cells + 1;
       c_n_cells++;
     }
   }
@@ -2749,6 +2770,7 @@ _compute_coarse_cell_quantities(const cs_grid_t  *fine_grid,
 
   /* Compute volume and center of coarse cells */
 
+# pragma omp parallel for if(c_n_cells_ext > THR_MIN)
   for (ic = 0; ic < c_n_cells_ext; ic++) {
     c_cell_vol[ic] = 0.;
     c_cell_cen[3*ic]    = 0.;
@@ -2764,6 +2786,7 @@ _compute_coarse_cell_quantities(const cs_grid_t  *fine_grid,
     c_cell_cen[3*ic +2] += f_cell_vol[ii]*f_cell_cen[3*ii +2];
   }
 
+# pragma omp parallel for if(c_n_cells > THR_MIN)
   for (ic = 0; ic < c_n_cells; ic++) {
     c_cell_cen[3*ic]    /= c_cell_vol[ic];
     c_cell_cen[3*ic +1] /= c_cell_vol[ic];
@@ -2836,6 +2859,7 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
   /* P0 restriction of matrixes, "interior" surface: */
   /* xag0(nfacg), surfag(3,nfacgl), xagxg0(2,nfacg) */
 
+# pragma omp parallel for if(c_n_faces*6 > THR_MIN)
   for (c_face = 0; c_face < c_n_faces; c_face++) {
     c_xa0[c_face] = 0.;
     c_face_normal[3*c_face]    = 0.;
@@ -2883,8 +2907,11 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
 
   /* Initialize non differential fine grid term saved in w1 */
 
+# pragma omp parallel for if(f_n_cells > THR_MIN)
   for (ii = 0; ii < f_n_cells; ii++)
     w1[ii] = f_da[ii];
+
+# pragma omp parallel for if(f_n_cells_ext - f_n_cells > THR_MIN)
   for (ii = f_n_cells; ii < f_n_cells_ext; ii++)
     w1[ii] = 0.;
 
@@ -2898,19 +2925,9 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
 
   /* Initialize coarse matrix storage on (c_da, c_xa) */
 
+# pragma omp parallel for if(c_n_cells_ext > THR_MIN)
   for (ic = 0; ic < c_n_cells_ext; ic++)
     c_da[ic] = 0.;
-
-  if (isym == 1) {
-    for (c_face = 0; c_face < c_n_faces; c_face++)
-      c_xa[c_face] = 0.;
-  }
-  else {
-    for (c_face = 0; c_face < c_n_faces; c_face++) {
-      c_xa[2*c_face]    = 0.;
-      c_xa[2*c_face +1] = 0.;
-    }
-  }
 
   /* Extradiagonal terms */
   /* (symmetric matrixes for now, even with non symmetric storage isym = 2) */
@@ -2918,10 +2935,12 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
   /* Matrix initialized to c_xa0 (interp=0) */
 
   if (isym == 1) {
+#   pragma omp parallel for if(c_n_faces > THR_MIN)
     for (c_face = 0; c_face < c_n_faces; c_face++)
       c_xa[c_face] = c_xa0[c_face];
   }
   else {
+#   pragma omp parallel for if(c_n_faces*2 > THR_MIN)
     for (c_face = 0; c_face < c_n_faces; c_face++) {
       c_xa[2*c_face]    = c_xa0[c_face];
       c_xa[2*c_face +1] = c_xa0[c_face];
@@ -3198,8 +3217,11 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
   {
     BFT_REALLOC(w1, c_n_cells_ext, cs_real_t);
 
+#   pragma omp parallel for if(c_n_cells > THR_MIN)
     for (ic = 0; ic < c_n_cells; ic++)
       w1[ic] = CS_ABS(c_da[ic]);
+
+#   pragma omp parallel for if(c_n_cells_ext - c_n_cells > THR_MIN)
     for (ic = c_n_cells; ic < c_n_cells_ext; ic++)
       w1[ic] = 0.;
 
@@ -3377,6 +3399,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
 
   BFT_MALLOC(g->xa0ij, n_faces*3, cs_real_t);
 
+# pragma omp parallel for private(ii, jj, kk) if(n_faces > THR_MIN)
   for (face_id = 0; face_id < n_faces; face_id++) {
     ii = face_cell[face_id*2] - 1;
     jj = face_cell[face_id*2 + 1] - 1;
@@ -3848,6 +3871,7 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
 
   coarse_cell = c->coarse_cell;
 
+# pragma omp parallel for if(c_n_cells_ext > THR_MIN)
   for (ii = 0; ii < c_n_cells_ext; ii++)
     c_var[ii] = 0.0;
 
@@ -3922,6 +3946,7 @@ cs_grid_prolong_cell_num(const cs_grid_t  *c,
 
   coarse_cell = c->coarse_cell;
 
+# pragma omp parallel for if(f_n_cells > THR_MIN)
   for (ii = 0; ii < f_n_cells; ii++)
     f_num[ii] = _c_num[coarse_cell[ii] - 1];
 }
@@ -3989,6 +4014,7 @@ cs_grid_prolong_cell_var(const cs_grid_t  *c,
 
   coarse_cell = c->coarse_cell;
 
+# pragma omp parallel for if(f_n_cells > THR_MIN)
   for (ii = 0; ii < f_n_cells; ii++)
     f_var[ii] = _c_var[coarse_cell[ii] - 1];
 }
@@ -4415,7 +4441,7 @@ cs_grid_log_defaults(void)
                  "    total coarse cells merge threshold: %d\n"
                  "    minimum ranks merge threshold:      %d\n"
                  "    merge stride:                       %d\n"),
-               _grid_merge_threshold[0], _grid_merge_threshold[1],
+               (int)(_grid_merge_threshold[0]), (int)(_grid_merge_threshold[1]),
                _grid_merge_min_ranks, _grid_merge_stride);
 #endif
 
