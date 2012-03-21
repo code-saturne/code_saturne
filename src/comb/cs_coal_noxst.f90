@@ -733,9 +733,9 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
                   else
                     val(i) = 0.d0
                   endif
-                else 
+                else
                     val(i) = 0.d0
-                endif 
+                endif
               enddo
 
               do i = 1, npart
