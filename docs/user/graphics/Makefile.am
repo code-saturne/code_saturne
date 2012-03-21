@@ -50,6 +50,8 @@ gui_coal_solution_control.png \
 gui_coal_time_average.png \
 gui_density_law.png \
 gui_fluid_props.png \
+gui_formula_button.png \
+gui_formula_interface.png \
 gui_global_res_parameters.png \
 gui_gravity_hyd_pressure.png \
 gui_head_loss_coeffs.png \
