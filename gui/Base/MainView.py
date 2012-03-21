@@ -491,24 +491,7 @@ class MainView(object):
         # Cleaning the '\n' and '\t' from file_name (except in formula)
         self.case.xmlCleanAllBlank(self.case.xmlRootNode())
 
-        try:
-            self.initCase()
-        except InputError, e:
-            err = QErrorMessage(self)
-            msg = e.msg
-            err.showMessage(msg)
-            if hasattr(self, 'case'):
-                delattr(self, 'case')
-            return
-        except:
-            err = QErrorMessage(self)
-            msg = self.tr("XML file reading error. "\
-                          "Perhaps the version of the file is to old.")
-            err.showMessage(msg)
-            if hasattr(self, 'case'):
-                delattr(self, 'case')
-            return
-
+        self.initCase()
         self.Browser.configureTree(self.case)
         self.dockWidgetBrowserDisplay(True)
 
@@ -989,16 +972,24 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
     def initCase(self):
         """
-        Initializes the case with default xml nodes
+        Initializes the new case with default xml nodes.
+        If previous case, just check if all mandatory nodes exist.
         """
-        XMLinit(self.case)
+        try:
+            XMLinit(self.case)
+        except:
+            err = QErrorMessage(self)
+            msg = self.tr("XML file reading error. "\
+                          "Perhaps the version of the file is to old.")
+            err.showMessage(msg)
+            if hasattr(self, 'case'):
+                delattr(self, 'case')
+            return
 
 
     def displayWelcomePage(self):
         """
-        private method
-
-        display the Welcome (and the default) page
+        Display the Welcome (and the default) page
         """
         self.page = WelcomeView()
         self.scrollArea.setWidget(self.page)
