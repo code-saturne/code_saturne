@@ -20,6 +20,140 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file codits.f90
+!>
+!> \brief This function solves an advection diffusion equation with source terms
+!> for one time step for the variable \f$ a \f$.
+!>
+!> The equation reads:
+!>
+!> \f[
+!> f_s^{imp}(a^{n+1}-a^n) + \dive (a^{n+1} \rho \vect {u} - \mu \grad a^{n+1})
+!> = Rhs
+!> \f]
+!>
+!> This equation is rewritten as:
+!>
+!> \f[
+!> f_s^{imp} \delta a + \dive (\delta a \rho \vect{u} - \mu \grad \delta a)
+!> = Rhs_1
+!> \f]
+!>
+!> where \f$ \delta a = a^{n+1} - a^n\f$ and
+!> \f$ Rhs_1 = Rhs - \dive( a^n \rho \vect{u} - \mu \grad a^n)\f$
+!>
+!>
+!> It is in fact solved with the following iterative process:
+!>
+!> \f[
+!> f_s^{imp} \delta a^k + \dive (\delta a^k \rho \vect{u}-\mu\grad\delta a^k)
+!> = Rhs^k
+!> \f]
+!>
+!> where \f$Rhs^k=Rhs-f_s^{imp}(a^k-a^n)-\dive(a^k\rho\vect{u}-\mu\grad a^k)\f$
+!>
+!> Be careful, it is forbidden to modify \f$ f_s^{imp} \f$ here!
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     idtvar        indicateur du schema temporel
+!> \param[in]     ivar          index of the current variable
+!> \param[in]     iconvp        indicator
+!>                               - 1 convection,
+!>                               - 0 sinon
+!> \param[in]     idiffp        indicator
+!>                               - 1 diffusion,
+!>                               - 0 sinon
+!> \param[in]     ireslp        indicator
+!>                               - 0 conjugate gradient
+!>                               - 1 jacobi
+!>                               - 2 bi-cgstab
+!> \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
+!> \param[in]     nitmap        maximum number of iteration to solve
+!>                               the iterative process
+!> \param[in]     imrgra        indicateur
+!>                               - 0 iterative gradient
+!>                               - 1 least square gradient
+!> \param[in]     nswrsp        number of reconstruction sweeps for the
+!>                               Right Hand Side
+!> \param[in]     nswrgp        number of reconstruction sweeps for the
+!>                               gradients
+!> \param[in]     imligp        clipping gradient method
+!>                               - < 0 no clipping
+!>                               - = 0 thank to neighbooring gradients
+!>                               - = 1 thank to the mean gradient
+!> \param[in]     ircflp        indicator
+!>                               - 1 flux reconstruction,
+!>                               - 0 otherwise
+!> \param[in]     ischcp        indicator
+!>                               - 1 centred
+!>                               - 0 2nd order
+!> \param[in]     isstpp        indicator
+!>                               - 1 without slope test
+!>                               - 0 with slope test
+!> \param[in]     iescap        compute the predictor indicator if 1
+!> \param[in]     imgrp         indicator
+!>                               - 0 no multi-grid
+!>                               - 1 otherwise
+!> \param[in]     ipp           index of the variable for post-processing
+!> \param[in]     iwarnp        verbosity
+!> \param[in]     blencp        fraction of upwinding
+!> \param[in]     epsilp        precision pour resol iter
+!> \param[in]     epsrgp        relative precision for the gradient
+!>                               reconstruction
+!> \param[in]     climgp        clipping coeffecient for the computation of
+!>                               the gradient
+!> \param[in]     extrap        coefficient for extrapolation of the gradient
+!> \param[in]     relaxp        coefficient of relaxation
+!> \param[in]     thetap        weightening coefficient for the theta-schema,
+!>                               - thetap = 0: explicit scheme
+!>                               - thetap = 0.5: time-centred
+!>                               scheme (mix between Crank-Nicolson and
+!>                               Adams-Bashforth)
+!>                               - thetap = 1: implicit scheme
+!> \param[in]     pvara         variable at the previous time step
+!>                               \f$ a^n \f$
+!> \param[in]     pvark         variable at the previous sub-iteration
+!>                               \f$ a^k \f$.
+!>                               If you sub-iter on Navier-Stokes, then
+!>                               it allows to initialize by something else than
+!>                               pvara (usually pvar=pvara)
+!> \param[in]     coefap        boundary condition array for the variable
+!>                               (Explicit part)
+!> \param[in]     coefbp        boundary condition array for the variable
+!>                               (Impplicit part)
+!> \param[in]     cofafp        boundary condition array for the diffusion
+!>                               of the variable (Explicit part)
+!> \param[in]     cofbfp        boundary condition array for the diffusion
+!>                               of the variable (Implicit part)
+!> \param[in]     flumas        mass flux at interior faces
+!> \param[in]     flumab        mass flux at boundary faces
+!> \param[in]     viscfm        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+!>                               at interior faces for the matrix
+!> \param[in]     viscbm        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+!>                               at border faces for the matrix
+!> \param[in]     viscfs        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+!>                               at interior faces for the r.h.s.
+!> \param[in]     viscbs        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+!>                               at border faces for the r.h.s.
+!> \param[in]     rovsdt        \f$ f_s^{imp} \f$
+!> \param[in]     smbrp         Right hand side \f$ Rhs^k \f$
+!> \param[in,out] pvar          current variable
+!> \param[out]    eswork        prediction-stage error estimator
+!>                              (if iescap > 0)
+!_______________________________________________________________________________
+
 subroutine codits &
 !================
 
@@ -36,134 +170,6 @@ subroutine codits &
    rovsdt , smbrp  , pvar   ,                                     &
    eswork )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! RESOLUTION SUR UN PAS DE TEMPS D'UNE EQUATION DE CONVECTION
-! /DIFFUSION/TERME SOURCE POUR LA VARIABLE PVAR
-
-! ROVSDT.( PVAR -PVARA )
-!        (    ->           --->          )
-!   + DIV( RO.U  PVAR -VISC GRAD( PVAR ) ).VOLUME  = S
-!        (                               )
-
-! ON RESOUT EN FAIT :
-
-! ROVSDT.DPVAR
-!        (    ->            --->           )
-!   + DIV( RO.U  DPVAR -VISC GRAD( DPVAR ) ).VOLUME  = SMBR1
-!        (                                 )
-! AVEC
-!  SMBR1 = S
-!        (    ->n           --->           )
-!   - DIV( RO.U  PVARA -VISC GRAD( PVARA ) ).VOLUME
-!        (                                 )
-! ET DPVAR = INCREMENT VARIABLE PVAR = PVAR-PVARA
-
-
-! ET PLUS EXACTEMENT
-
-! ROVSDT.DPVAR
-!        (    ->            --->           )
-!   + DIV( RO.U  DPVAR -VISC GRAD( DPVAR ) ).VOLUME  = SMBR2
-!        (                                 )
-! AVEC
-!  SMBR2 = S - ROVSDT.( PVARi -PVARA )
-!        (    ->n           --->           )
-!   - DIV( RO.U  PVARi -VISC GRAD( PVARi ) ).VOLUME
-!        (                                 )
-! ET DPVAR = INCREMENT VARIABLE PVAR = PVAR-PVARi
-
-
-
-! ATTENTION : IL EST INTERDIT DE MODIFIER ROVSDT ICI
-!                    ========             ======
-
-!             il sert 32 fois dans le rayonnement (raysol).
-!             et dans le calcul de y+ (distyp)
-
-
-
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! idtvar           ! e  ! <-- ! indicateur du schema temporel                  !
-! ivar             ! e  ! <-- ! variable traitee                               !
-! iconvp           ! e  ! <-- ! indicateur = 1 convection, 0 sinon             !
-! idiffp           ! e  ! <-- ! indicateur = 1 diffusion , 0 sinon             !
-! ndircp           ! e  ! <-- ! indicateur = 0 si decalage diagonale           !
-! ireslp           ! e  ! <-- ! indicateur = 0 gradco                          !
-!                  !    !     !            = 1 jacobi                          !
-!                  !    !     !            = 2 bi-cgstab                       !
-! imrgra           ! e  ! <-- ! indicateur = 0 gradrc 97                       !
-!                  ! e  ! <-- !            = 1 gradmc 99                       !
-! nswrsp           ! e  ! <-- ! nombre de sweep pour reconstruction            !
-!                  !    !     !             du second membre                   !
-! nswrgp           ! e  ! <-- ! nombre de sweep pour reconstruction            !
-!                  !    !     !             des gradients                      !
-! imligp           ! e  ! <-- ! methode de limitation du gradient              !
-!                  !    !     !  < 0 pas de limitation                         !
-!                  !    !     !  = 0 a partir des gradients voisins            !
-!                  !    !     !  = 1 a partir du gradient moyen                !
-! ircflp           ! e  ! <-- ! indicateur = 1 rec flux ; 0 sinon              !
-! ischcp           ! e  ! <-- ! indicateur = 1 centre , 0 2nd order            !
-! isstpp           ! e  ! <-- ! indicateur = 1 sans test de pente              !
-!                  !    !     !            = 0 avec test de pente              !
-! iescap           ! e  ! <-- ! =1 calcul de l'indicateur prediction           !
-! imgrp            ! e  ! <-- ! indicateur = 0 pas de mgm                      !
-!                  !    !     !            = 1 sinon                           !
-! nitmap           ! e  ! <-- ! nombre max d'iter pour resol iterativ          !
-! ipp              ! e  ! <-- ! numero de variable pour post                   !
-! iwarnp           ! i  ! <-- ! verbosity                                      !
-! nfecrl           ! e  ! <-- ! unite du fichier sortie std                    !
-! blencp           ! r  ! <-- ! 1 - proportion d'upwind                        !
-! epsilp           ! r  ! <-- ! precision pour resol iter                      !
-! epsrgp           ! r  ! <-- ! precision relative pour la                     !
-!                  !    !     !  reconstruction des gradients 97               !
-! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
-! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! relaxp           ! r  ! <-- ! coefficient de relaxation                      !
-! thetap           ! r  ! <-- ! coefficient de ponderation pour le             !
-!                  !    !     ! theta-schema (on ne l'utilise pour le          !
-!                  !    !     ! moment que pour u,v,w et les scalaire          !
-!                  !    !     ! - thetap = 0.5 correspond a un schema          !
-!                  !    !     !   totalement centre en temps (mixage           !
-!                  !    !     !   entre crank-nicolson et adams-               !
-!                  !    !     !   bashforth)                                   !
-! pvara(ncelet     ! tr ! <-- ! variable resolue (instant precedent)           !
-! pvark(ncelet     ! tr ! <-- ! variable de la sous-iteration                  !
-!                  !    !     !  precedente. pour un point fixe sur            !
-!                  !    !     !  navsto elle permet d'initialiser par          !
-!                  !    !     !  autre chose que pvara (elle vaut              !
-!                  !    !     !  pvar=pvara pour les scalaires)                !
-! coefap, b        ! tr ! <-- ! tableaux des cond lim pour p                   !
-!   (nfabor)       !    !     !  sur la normale a la face de bord              !
-! cofafp, b        ! tr ! <-- ! tableaux des cond lim pour le flux de          !
-!   (nfabor)       !    !     !  diffusion de p                                !
-! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
-! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
-! viscfm(nfac)     ! tr ! <-- ! visc*surface/dist aux faces internes           !
-!                  !    !     !  pour la matrice                               !
-! viscbm(nfabor    ! tr ! <-- ! visc*surface/dist aux faces de bord            !
-!                  !    !     !  pour la matrice                               !
-! viscfs(nfac)     ! tr ! <-- ! idem viscfm pour second membre                 !
-! viscbs(nfabor    ! tr ! <-- ! idem viscbm pour second membre                 !
-! rovsdt(ncelet    ! tr ! <-- ! rho*volume/dt                                  !
-! smbrp(ncelet     ! tr ! <-- ! bilan au second membre                         !
-! pvar (ncelet     ! tr ! <-- ! variable resolue                               !
-! eswork(ncelet)   ! ra ! <-- ! prediction-stage error estimator (iescap > 0)  !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -195,7 +201,6 @@ integer          ncymxp , nitmfp
 integer          ipp    , iwarnp
 double precision blencp , epsilp , epsrgp , climgp , extrap
 double precision relaxp , thetap , epsrsp
-
 
 double precision pvara(ncelet), pvark(ncelet)
 double precision coefap(nfabor), coefbp(nfabor)
@@ -229,15 +234,14 @@ double precision, allocatable, dimension(:) :: dpvar, smbini, w1
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 0.  Initialization
 !===============================================================================
 
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac,2))
 allocate(dpvar(ncelet), smbini(ncelet))
 
-
-! NOMS
+! Names
 chaine = nomvar(ipp)
 cnom   = chaine(1:16)
 
@@ -301,7 +305,7 @@ if (iperio.eq.1) then
 endif
 
 !===============================================================================
-! 1.  CONSTRUCTION MATRICE "SIMPLIFIEE" DE RESOLUTION
+! 1.  Building of the "simplified" matrix
 !===============================================================================
 
 call matrix                                                       &
@@ -344,8 +348,8 @@ endif
 
 
 !===============================================================================
-! 2.  BOUCLES SUR LES NON ORTHOGONALITES
-!       (A PARTIR DE LA SECONDE ITERATION)
+! 2. Iterative process to handle non orthogonlaities (starting rom the second
+! iteration).
 !===============================================================================
 
 ! Application du theta schema
@@ -530,8 +534,8 @@ if(iwarnp.ge.2) then
 endif
 
 !===============================================================================
-! 3.  SORTIE OU CALCUL D'ESTIMATEURS POUR LES VITESSES
-!       A L'ETAPE DE PREDICTION
+! 3. After having computed the new value, an estimator is computed for the
+! prediction step of the velocity.
 !===============================================================================
 
  200  continue
@@ -619,7 +623,7 @@ deallocate(dpvar, smbini)
 !12345678 : CV-DIF-TS 2000 IT - RES= 1234567890234 NORME= 12345678901234
 !ATTENTION 12345678 : NON CONVERGENCE DU SYSTEME CONV-DIFF-TS
 !----
-! FIN
+! End
 !----
 
 end subroutine
