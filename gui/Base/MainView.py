@@ -395,7 +395,7 @@ class MainView(object):
         if not hasattr(self, 'case'):
             self.case = XMLengine.Case(package=self.package)
             self.case.root()['version'] = XML_DOC_VERSION
-            XMLinit(self.case)
+            self.initCase()
             title = self.tr("New parameters set") + \
                      " - " + self.tr(self.package.code_name) + self.tr(" GUI")
             self.setWindowTitle(title)
@@ -404,15 +404,7 @@ class MainView(object):
             self.dockWidgetBrowserDisplay(True)
 
             self.case['salome'] = self.salome
-
-            p = displaySelectedPage('Identity and paths',
-                                    self,
-                                    self.case,
-                                    stbar=self.statusbar,
-                                    study=self.Id,
-                                    tree=self.Browser)
-            self.scrollArea.setWidget(p)
-
+            self.scrollArea.setWidget(self.displayFisrtPage())
             self.case['saved'] = "yes"
 
         else:
@@ -500,7 +492,7 @@ class MainView(object):
         self.case.xmlCleanAllBlank(self.case.xmlRootNode())
 
         try:
-            XMLinit(self.case)
+            self.initCase()
         except InputError, e:
             err = QErrorMessage(self)
             msg = e.msg
@@ -530,13 +522,7 @@ class MainView(object):
         msg = self.tr("Loaded: %s" % fn)
         self.statusbar.showMessage(msg, 2000)
 
-        p = displaySelectedPage('Identity and paths',
-                                self,
-                                self.case,
-                                stbar=self.statusbar,
-                                study=self.Id,
-                                tree=self.Browser)
-        self.scrollArea.setWidget(p)
+        self.scrollArea.setWidget(self.displayFisrtPage())
 
         self.case['saved'] = "yes"
 
@@ -1001,6 +987,13 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.connect(self.displayCSRefcardAction,  SIGNAL("activated()"), self.displayCSRefcard)
 
 
+    def initCase(self):
+        """
+        Initializes the case with default xml nodes
+        """
+        XMLinit(self.case)
+
+
     def displayWelcomePage(self):
         """
         private method
@@ -1009,6 +1002,18 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         self.page = WelcomeView()
         self.scrollArea.setWidget(self.page)
+
+
+    def displayFisrtPage(self):
+        """
+        Display the first page if a file of parameters (new or previous) is loaded
+        """
+        return displaySelectedPage('Identity and paths',
+                                    self,
+                                    self.case,
+                                    stbar=self.statusbar,
+                                    study=self.Id,
+                                    tree=self.Browser)
 
 
     @pyqtSignature("")
