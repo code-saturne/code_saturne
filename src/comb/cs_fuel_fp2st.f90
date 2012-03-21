@@ -244,12 +244,6 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
                 +2.d0*propce(iel,ipcvst)*volume(iel)/sigmas(iscal)           &
                  *(grad(iel,1)**2.d0 + grad(iel,2)**2.d0 + grad(iel,3)**2.d0)&
                  *x1(iel) -rhovst*rtpa(iel,ivar)
-!
-! Correction : "valeur fatale" pour la variance
-!
-   smbrs(iel) = smbrs(iel)+rhovst*( (1.d0-1.d0/x1(iel))*rtpa(iel,ivar)       &
-                                   +(1.d0-x1(iel))     *(f1f2(iel)**2.d0) )
-!
   enddo
 
 endif

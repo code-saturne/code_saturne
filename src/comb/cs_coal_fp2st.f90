@@ -250,17 +250,11 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 
     rhovst = propce(iel,ipproc(irom1))*xe/(xk*rvarfl(iscal))*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
-    smbrs(iel) = smbrs(iel)                                          &
-                + 2.d0*propce(iel,ipcvst)*volume(iel)/sigmas(iscal)  &
-                 *( grad(iel,1)**2.d0 + grad(iel,2)**2.d0                  &
+    smbrs(iel) = smbrs(iel)                                            &
+                + 2.d0*propce(iel,ipcvst)*volume(iel)/sigmas(iscal)    &
+                 *( grad(iel,1)**2.d0 + grad(iel,2)**2.d0              &
                   + grad(iel,3)**2.d0 )*x1(iel) - rhovst*rtpa(iel,ivar)
-!
-! Correction : "valeur fatale" pour la variance
-!
-   smbrs(iel) = smbrs(iel)                                           &
-               + rhovst*( (1.d0-1.d0/x1(iel))*rtpa(iel,ivar)         &
-                         +(1.d0-x1(iel))*(f1f2(iel)**2.d0) )
-!
+
   enddo
 
 endif
