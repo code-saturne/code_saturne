@@ -1,5 +1,8 @@
- 20/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+ 21/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Release Code_Saturne 2.1.6.
+
+21/03/2012 - Dorothée Senechal <dorothee.senechal@edf.fr>
+  Fixes for coal and fuel combustion models.
 
  05/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Update external library versions and comments in the installer.

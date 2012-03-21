@@ -140,6 +140,15 @@ if ( ieqco2 .ge. 1 ) then
   iyco2 = iscapp(is)
 endif
 
+if ( ieqnox .eq. 1 ) then
+  is = is+1
+  iyhcn = iscapp(is)
+  is = is+1
+  iyno  = iscapp(is)
+  is = is+1
+  itaire = iscapp(is)
+endif
+
 !   - Interface Code_Saturne
 !     ======================
 !     Construction de l'indirection entre la numerotation du noyau et XML

@@ -242,7 +242,9 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
 !
   do iel=1,ncel
 !
-    if ( indpdf(iel) .eq. 1 ) then
+    if ((indpdf(iel).eq.1).and.           &
+        (fs3no (iel).gt.fs4no(iel)).and.  &
+        (fs4no (iel).lt.1.d0)) then
 !
 !  Calcul de Yo2 dans l'oxydant
 !            Yo2 en fs4
@@ -259,6 +261,8 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
       gt1 = lro*qqq/(2.d0*fs3no(iel))
       gt2 = lro*rrr
       gt3 = doxyd(iel)
+      yo2cb = 0.d0
+
       if (  propce(iel, ipproc(iym1(io2))) .gt. 0.d0 ) then
         yo2ox = propce(iel, ipproc(iym1(io2)))/(-gt1+gt2+gt3)
 !
@@ -266,7 +270,6 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
         yo2oxmax = max(yo2oxmax,yo2ox)
 !
         yo2moy = propce(iel, ipproc(iym1(io2)))
-        yo2cb  = 0.d0
         dirac  =  dfuel(iel)*yo2cb + doxyd(iel)*yo2ox
 !
         bb1 = max(0.D0      ,pdfm1(iel))
@@ -477,6 +480,9 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
 !
 !   Calcul de l'enthalpie du charbon a Tfuel
 !
+     xxf = 0.d0
+     hhf = 0.d0
+
      do numcha=1,ncharb
 !
 !        H(mv1,TFUEL)
@@ -721,11 +727,15 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
                                      *(yo2cb**0.5d0)
 !
               do i = 1, npart+1
-                if ( gs(i) .le. fs3no(iel) ) then
-                  val(i) = kk3*exp(-ee3/tt(i))*hrec(iel)*(yyo2(i)**0.5d0)
-                else
-                  val(i) = 0.d0
-                endif
+                if (yyo2(i).gt.0.d0) then
+                  if (gs(i).le.fs3no(iel)) then
+                    val(i) = kk3*exp(-ee3/tt(i))*hrec(iel)*(yyo2(i)**0.5d0)
+                  else
+                    val(i) = 0.d0
+                  endif
+                else 
+                    val(i) = 0.d0
+                endif 
               enddo
 
               do i = 1, npart
