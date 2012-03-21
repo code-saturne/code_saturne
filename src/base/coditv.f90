@@ -33,8 +33,8 @@
 !>
 !> \f[
 !> \tens{f_s}^{imp}(\vect{a}^{n+1}-\vect{a}^n)
-!> + \divt \left( \vect{a}^{n+1} \otimes \rho \vect {u}
-!>              - \mu \gradv \vect{a}^{n+1}\right)
+!> + \divv \left( \vect{a}^{n+1} \otimes \rho \vect {u}
+!>              - \mu \gradt \vect{a}^{n+1}\right)
 !> = \vect{Rhs}
 !> \f]
 !>
@@ -42,14 +42,14 @@
 !>
 !> \f[
 !> \tens{f_s}^{imp} \delta \vect{a}
-!> + \divt \left( \delta \vect{a} \otimes \rho \vect{u}
-!>              - \mu \gradv \delta \vect{a} \right)
-!> = \vect{Rhs}_1
+!> + \divv \left( \delta \vect{a} \otimes \rho \vect{u}
+!>              - \mu \gradt \delta \vect{a} \right)
+!> = \vect{Rhs}^1
 !> \f]
 !>
 !> where \f$ \delta \vect{a} = \vect{a}^{n+1} - \vect{a}^n\f$ and
-!> \f$ \vect{Rhs}_1 = \vect{Rhs}
-!> - \divt \left( \vect{a}^n \otimes \rho \vect{u}
+!> \f$ \vect{Rhs}^1 = \vect{Rhs}
+!> - \divv \left( \vect{a}^n \otimes \rho \vect{u}
 !>              - \mu \gradt \vect{a}^n \right)\f$
 !>
 !>
@@ -57,8 +57,8 @@
 !>
 !> \f[
 !> \tens{f_s}^{imp} \delta \vect{a}^k
-!> + \divt \left( \delta \vect{a}^k \otimes \rho \vect{u}
-!>              - \mu \gradv \delta a^k \right)
+!> + \divv \left( \delta \vect{a}^k \otimes \rho \vect{u}
+!>              - \mu \gradt \delta a^k \right)
 !> = \vect{Rhs}^k
 !> \f]
 !>

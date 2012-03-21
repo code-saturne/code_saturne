@@ -20,6 +20,72 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file inimav.f90
+!>
+!> \brief This function add \f$ \rho \vect{u} \cdot \vect{S}_\ij\f$ to the mass
+!> flux \f$ \dot{m}_\fij \f$.
+!>
+!> For the reconstruction, \f$ \grad \left(\rho \vect{u} \right) \f$ is
+!> computed with the following approximated boundary conditions:
+!>  - \f$ \vect{A}_{\rho u} = \rho_\fib \vect{A}_u \f$
+!>  - \f$ \tens{B}_{\rho u} = \tens{B}_u \f$
+!>
+!> For the mass flux at the boundary we have:
+!> \f[
+!> \dot{m}_\fib = \left[ \rho_\fib \vect{A}_u  + \rho_\fib \tens{B}_u \vect{u}
+!> + \tens{B}_u \left(\gradv \vect{u} \cdot \vect{\centi \centip}\right)\right]
+!> \cdot \vect{S}_\ij
+!> \f]
+!> The last equation uses some approximations detailed in the theory guide.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ivar          index of the current variable
+!> \param[in]     iflmb0        the mass flux is set to 0 on walls and
+!>                               symmetries if = 1
+!> \param[in]     init          the mass flux is initialize to 0 if > 0
+!> \param[in]     inc           indicator
+!>                               - 0 solve an increment
+!>                               - 1 otherwise
+!> \param[in]     imrgra        indicator
+!>                               - 0 iterative gradient
+!>                               - 1 least square gradient
+!> \param[in]     nswrgu        number of sweeps for the reconstruction
+!>                               of the gradients
+!> \param[in]     imligu        clipping gradient method
+!>                               - < 0 no clipping
+!>                               - = 0 thank to neighbooring gradients
+!>                               - = 1 thank to the mean gradient
+!> \param[in]     iwarnu        verbosity
+!> \param[in]     nfecra        unit of the standard output file
+!> \param[in]     epsrgu        relative precision for the gradient
+!>                               reconstruction
+!> \param[in]     climgu        clipping coeffecient for the computation of
+!>                               the gradient
+!> \param[in]     extrau        coefficient for extrapolation of the gradient
+!> \param[in]     isympa        face indicator to set the mass flux to 0
+!>                              (symmetries and walls with coupled BCs)
+!> \param[in]     rom           cell density
+!> \param[in]     romb          border face density
+!> \param[in]     vel           vector variable
+!> \param[in]     coefav        boundary condition array for the variable
+!>                               (Explicit part - vector array )
+!> \param[in]     coefbv        boundary condition array for the variable
+!>                               (Impplicit part - 3x3 tensor array)
+!> \param[in,out] flumas        interior mass flux \f$ \dot{m}_\fij \f$
+!> \param[in,out] flumab        border mass flux \f$ \dot{m}_\fib \f$
+!_______________________________________________________________________________
+
 subroutine inimav &
 !================
 
@@ -33,72 +99,6 @@ subroutine inimav &
    coefav , coefbv ,                                              &
    flumas , flumab )
 
-!===============================================================================
-! FONCTION :
-! ----------
-!                                                              -->
-! INCREMENTATION DU FLUX DE MASSE A PARTIR DU CHAMP VECTORIEL ROM.U
-!  .     .          -->   -->
-!  m   = m   +(rom* U ) . n
-!   ij    ij         ij    ij
-
-
-! Pour la reconstruction, grad(rho u) est calcule avec des
-! conditions aux limites approchees :
-!    COEFA(rho u) = ROMB * COEFA(u)
-!    COEFB(rho u) = COEFB (u)
-
-! et pour le flux de masse au bord on ecrit
-!  FLUMAB = [ROMB*COEFA(u) + ROMB*COEFB(u)*Ui
-!                + COEFB(u)*II'.grad(rho u) ].Sij
-! ce qui utilise de petites approximations sur les
-! non-orthogonalites (cf. notice)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ivar             ! e  ! <-- ! variable                                       !
-! iflmb0           ! e  ! <-- ! =1 : flux de masse annule sym-paroi            !
-! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
-! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
-!                  !    !     !              1 sinon                           !
-! imrgra           ! e  ! <-- ! indicateur = 0 gradrc 97                       !
-!                  ! e  ! <-- !            = 1 gradmc 99                       !
-! nswrgu           ! e  ! <-- ! nombre de sweep pour reconstruction            !
-!                  !    !     !             des gradients                      !
-! imligu           ! e  ! <-- ! methode de limitation du gradient              !
-!                  !    !     !  < 0 pas de limitation                         !
-!                  !    !     !  = 0 a partir des gradients voisins            !
-!                  !    !     !  = 1 a partir du gradient moyen                !
-! iwarnu           ! e  ! <-- ! niveau d'impression                            !
-! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
-! epsrgu           ! r  ! <-- ! precision relative pour la                     !
-!                  !    !     !  reconstruction des gradients 97               !
-! climgu           ! r  ! <-- ! coef gradient*distance/ecart                   !
-! extrau           ! r  ! <-- ! coef extrap gradient                           !
-! isympa           ! te ! <-- ! zero pour annuler le flux de masse             !
-! (nfabor     )    !    !     !(symetries et parois avec cl couplees)          !
-!                  !    !     ! un sinon                                       !
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! rom(ncelet       ! tr ! <-- ! masse volumique aux cellules                   !
-! romb(nfabor)     ! tr ! <-- ! masse volumique aux bords                      !
-! vel(3,ncelet)    ! tr ! <-- ! vitesse                                        !
-! coefav, b        ! tr ! <-- ! tableaux des cond lim pour ux, uy, uz          !
-!   (3,nfabor)     !    !     !  sur la normale a la face de bord              !
-! coefbv, q        ! tr ! <-- ! tableaux des cond lim pour ux, uy, uz          !
-!   (3,3,nfabor)   !    !     !  sur la normale a la face de bord              !
-! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
-! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================

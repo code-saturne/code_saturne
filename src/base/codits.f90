@@ -32,29 +32,33 @@
 !> The equation reads:
 !>
 !> \f[
-!> f_s^{imp}(a^{n+1}-a^n) + \dive (a^{n+1} \rho \vect {u} - \mu \grad a^{n+1})
+!> f_s^{imp}(a^{n+1}-a^n)
+!> + \divs \left( a^{n+1} \rho \vect {u} - \mu \grad a^{n+1} \right)
 !> = Rhs
 !> \f]
 !>
 !> This equation is rewritten as:
 !>
 !> \f[
-!> f_s^{imp} \delta a + \dive (\delta a \rho \vect{u} - \mu \grad \delta a)
-!> = Rhs_1
+!> f_s^{imp} \delta a
+!> + \divs \left( \delta a \rho \vect{u} - \mu \grad \delta a \right)
+!> = Rhs^1
 !> \f]
 !>
 !> where \f$ \delta a = a^{n+1} - a^n\f$ and
-!> \f$ Rhs_1 = Rhs - \dive( a^n \rho \vect{u} - \mu \grad a^n)\f$
+!> \f$ Rhs^1 = Rhs - \divs( a^n \rho \vect{u} - \mu \grad a^n)\f$
 !>
 !>
 !> It is in fact solved with the following iterative process:
 !>
 !> \f[
-!> f_s^{imp} \delta a^k + \dive (\delta a^k \rho \vect{u}-\mu\grad\delta a^k)
+!> f_s^{imp} \delta a^k
+!> + \divs \left(\delta a^k \rho \vect{u}-\mu\grad\delta a^k \right)
 !> = Rhs^k
 !> \f]
 !>
-!> where \f$Rhs^k=Rhs-f_s^{imp}(a^k-a^n)-\dive(a^k\rho\vect{u}-\mu\grad a^k)\f$
+!> where \f$Rhs^k=Rhs-f_s^{imp}(a^k-a^n)
+!> - \divs \left( a^k\rho\vect{u}-\mu\grad a^k \right)\f$
 !>
 !> Be careful, it is forbidden to modify \f$ f_s^{imp} \f$ here!
 !-------------------------------------------------------------------------------
@@ -82,7 +86,7 @@
 !> \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
 !> \param[in]     nitmap        maximum number of iteration to solve
 !>                               the iterative process
-!> \param[in]     imrgra        indicateur
+!> \param[in]     imrgra        indicator
 !>                               - 0 iterative gradient
 !>                               - 1 least square gradient
 !> \param[in]     nswrsp        number of reconstruction sweeps for the
