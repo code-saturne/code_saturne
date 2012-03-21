@@ -257,26 +257,9 @@ do iel = 1, ncel
   f7m(iel)  = f7m(iel)    *uns1pw
   f8m(iel)  = f8m(iel)    *uns1pw
   f9m(iel)  = f9m(iel)    *uns1pw
-!
-!  fvp2m(iel)= fvp2m(iel)  *uns1pw
-!
-! correction variance : uniquement phase 1
-!
-  fvp2m(iel)= fvp2m(iel)*uns1pw - x2(iel)*((f1m(iel)+f2m(iel))**2.d0)
-  if ( fvp2m(iel) .lt. 0.d0 ) then
-    nbclip1 = nbclip1 + 1
-    valmin = min(valmin,fvp2m(iel))
-    fvp2m(iel)= 0.d0
-  endif
-  fvp2max =(f1m(iel)+f2m(iel))*(1.d0-(f1m(iel)+f2m(iel)))
-  if ( fvp2m(iel) .gt. fvp2max  ) then
-    nbclip2 = nbclip2 + 1
-    valmax = max(valmax,fvp2m(iel))
-    fvp2m(iel)= fvp2max
-  endif
-!
-! fin correction
-!
+
+  fvp2m(iel)= fvp2m(iel)  *uns1pw
+
   f3m(iel) = 1.d0                                        &
            -( f1m(iel)+f2m(iel)+f4m(iel)+f5m(iel)        &
              +f6m(iel)+f7m(iel)+f8m(iel)+f9m(iel) )
