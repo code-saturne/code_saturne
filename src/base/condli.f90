@@ -20,6 +20,95 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function :
+! --------
+
+!> Translation of the boundary conditions given by cs_user_boundary_conditions
+!> in a form that fits to the solver.
+!>
+!> The value at a border face \f$ \fib \f$ stored in the face center
+!> \f$ \centf \f$ is written as:
+!> \f[
+!> P_\centf = A_P + B_P P_\centi
+!> \f]
+!> where \f$ P_\centi \f$ is the value of the variable \f$ P \f$ at the
+!> neighbooring cell.
+!>
+!> Warning:
+!> - if we consider an increment of a variable, the boundary condition
+!>   reads:
+!>   \f[
+!>   \dd \left(P_\centf \right) = B_P \dd \left( P_\centi \right)
+!>   \f]
+!>
+!> - for a vector field such as the veclocity \f$ \vect{u} \f$ the boundary
+!>   conditions may read:
+!>   \f[
+!>   \vect{u}_\centf = \vect{A}_u + \tens{B}_u \vect{u}_\centi
+!>   \f]
+!>   where \f$ \tens{B}_u \f$ is a 3x3 tensor matrix and coupled veclocity
+!>   components next to a boundary. This is only available when the option
+!>   ivelco is ste to 1.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     isvhb         indicator to save exchange coeffient
+!>                               at the walls
+!> \param[in]     isvtb         indicator to save the temperature at
+!>                               the walls
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rought wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!> \param[in,out] isostd        indicator for standard outlet
+!>                               and reference face index
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in,out] rcodcl        boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughtness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
+!> \param[out]    coefa         explicit boundary condition coefficient
+!> \param[out]    coefb         implicit boundary condition coefficient
+!>
+!> \param[out]    visvdr        viscosite dynamique ds les cellules
+!>                               de bord apres amortisst de v driest
+!> \param[out]    hbord         coefficients d'echange aux bords
+!>
+!> \param[out]    thbord        boundary temperature in \f$ centip \f$
+!>                               (more exaclty the energetic variable)
+!> \param[in]     frcxt         external force responsible for the hydrostatic
+!>                               pressure
+!_______________________________________________________________________________
+
 subroutine condli &
 !================
 
@@ -28,91 +117,6 @@ subroutine condli &
    icodcl , isostd ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  , visvdr , hbord  , thbord , frcxt  )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! TRADUCTION DES CONDITIONS AUX LIMITES FOURNIES PAR cs_user_boundary
-! SOUS UNE FORME "SIMPLEMENT" ADMISSIBLE PAR LE SOLVEUR
-
-! CETTE TRADUCTION SE PRESENTE SOUS LA FORME D'UNE VALEUR PFAC DE
-! LA VARIABLE P CONSIDEREE A LA FACETTE :
-!        PFAC = COEFA +COEFB.P(I)
-! P(I) : VALEUR DE LA VARIABLE DANS LA CELLULE FLUIDE ADJACENTE
-
-! ATTENTION : SI ON CONSIDERE L'INCREMENT DE LA VARIABLE, LA C.L SE
-! REDUIT A : d(PFAC) = COEFB.d(P(I))
-
-! CAS PARTICULIER DES VITESSES :
-! --> C.L PEUVENT COUPLER LES 3 COMPOSANTES DE VITESSES
-!         (POUR L'INSTANT CE N'EST PAS LE CAS)
-
-!  UXFAC = COEFAX +COEFBX  *UX(I) +COEFU(1)*UY(I) +COEFU(2)*UZ(I)
-!  UYFAC = COEFAY +COEFU(1)*UX(I) +COEFBY  *UY(I) +COEFU(3)*UZ(I)
-!  UZFAC = COEFAZ +COEFU(2)*UX(I) +COEFU(3)*UY(I) +COEFBZ  *UZ(I)
-
-! On dispose du tableau de tri des faces de bord du
-!   pas de temps precedent (sauf au premier pas de temps, ou
-!   ITRIFB n'a pas ete renseigne)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
-!                  !    !     !  coefficients d'echange aux bords              !
-! isvtb            ! e  ! <-- ! indicateur de sauvegarde des                   !
-!                  !    !     !  temperatures aux bords                        !
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
-! isostd           ! te ! --> ! indicateur de sortie standard                  !
-!    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! visvdr(ncelet)   ! tr ! --> ! viscosite dynamique ds les cellules            !
-!                  !    !     !  de bord apres amortisst de v driest           !
-! hbord            ! tr ! --> ! coefficients d'echange aux bords               !
-! (nfabor)         !    !     !                                                !
-! thbord           ! tr ! --> ! temperature aux bords en i'                    !
-! (nfabor)         !    !     !    (plus exactmt : var. energetique)           !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
-!                  !    !     !  hydrostatique                                 !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
