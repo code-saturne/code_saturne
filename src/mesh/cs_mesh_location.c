@@ -392,6 +392,8 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
                     i,
                     ml->n_elts,
                     &(ml->elt_list));
+    else
+      ml->n_elts[0] = n_elts_max;
 
     ml->n_elts[1] = ml->n_elts[0];
     ml->n_elts[2] = ml->n_elts[0];
