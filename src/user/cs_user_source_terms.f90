@@ -168,7 +168,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -184,7 +184,7 @@ allocate(lstelt(ncel))
 
 ipp    = ipprtp(ivar)
 
-if(iwarni(ivar).ge.1) then
+if (iwarni(ivar).ge.1) then
   chaine = nomvar(ipp)
   write(nfecra,1000) chaine(1:8)
 endif
@@ -222,7 +222,7 @@ ipcrom = ipproc(irom  )
 
 iutile = 0
 
-if(iutile.eq.0) return
+if (iutile.eq.0) return
 
 ! ----------------------------------------------
 
@@ -398,7 +398,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -414,7 +414,7 @@ allocate(lstelt(ncel))
 
 ipp    = ipprtp(ivar)
 
-if(iwarni(ivar).ge.1) then
+if (iwarni(ivar).ge.1) then
   chaine = nomvar(ipp)
   write(nfecra,1000) chaine(1:8)
 endif
@@ -452,7 +452,7 @@ ipcrom = ipproc(irom  )
 
 iutile = 0
 
-if(iutile.eq.0) return
+if (iutile.eq.0) return
 
 ! ----------------------------------------------
 
@@ -653,7 +653,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -683,7 +683,7 @@ iiscvr = iscavr(iscal)
 ! --- Index number of the density in the propce array
 ipcrom = ipproc(irom)
 
-if(iwarni(ivar).ge.1) then
+if (iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
 
@@ -721,7 +721,7 @@ endif
 
 iutile = 0
 
-if(iutile.eq.0) return
+if (iutile.eq.0) return
 
 ! ----------------------------------------------
 
@@ -765,7 +765,7 @@ endif
 
 iutile = 0
 
-if(iutile.eq.0) return
+if (iutile.eq.0) return
 
 ! ----------------------------------------------
 
@@ -958,7 +958,7 @@ double precision creexp(ncelet), creimp(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom
+integer          iel, ipcrom, iutile
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -968,7 +968,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -985,7 +985,7 @@ allocate(lstelt(ncel))
 ! --- Index number of the density in the propce array
 ipcrom = ipproc(irom)
 
-if(iwarni(ik).ge.1) then
+if (iwarni(ik).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -1003,6 +1003,16 @@ endif
 !      With xx = 2.d0, ff=3.d0 and tau = 4.d0
 
 !===============================================================================
+
+! It is quite frequent to forget to remove this example when it is
+!  not needed. Therefore the following test is designed to prevent
+!  any bad surprise.
+
+iutile = 0
+
+if (iutile.eq.0) return
+
+! ----------------------------------------------
 
 ! --- Explicit source terms
 
@@ -1194,7 +1204,7 @@ double precision crwexp(ncelet), crwimp(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom
+integer          iel, ipcrom, iutile
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -1204,7 +1214,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -1221,7 +1231,7 @@ allocate(lstelt(ncel))
 ! --- Index number of the density in the propce array
 ipcrom = ipproc(irom)
 
-if(iwarni(ik).ge.1) then
+if (iwarni(ik).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -1239,6 +1249,16 @@ endif
 !      With xx = 2.d0, ff=3.d0 and tau = 4.d0
 
 !===============================================================================
+
+! It is quite frequent to forget to remove this example when it is
+!  not needed. Therefore the following test is designed to prevent
+!  any bad surprise.
+
+iutile = 0
+
+if (iutile.eq.0) return
+
+! ----------------------------------------------
 
 ! --- Explicit source terms
 
@@ -1430,7 +1450,7 @@ double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom
+integer          iel, ipcrom, iutile
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -1440,7 +1460,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -1457,7 +1477,7 @@ allocate(lstelt(ncel))
 ! --- Index number of the density in the propce array
 ipcrom = ipproc(irom)
 
-if(iwarni(ir11).ge.1) then
+if (iwarni(ir11).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -1476,11 +1496,21 @@ endif
 
 !===============================================================================
 
+! It is quite frequent to forget to remove this example when it is
+!  not needed. Therefore the following test is designed to prevent
+!  any bad surprise.
+
+iutile = 0
+
+if (iutile.eq.0) return
+
+! ----------------------------------------------
+
 
 ! ---  For R11
 !      -------
 
-if(ivar.eq.ir11) then
+if (ivar.eq.ir11) then
 
   ff  = 3.d0
   tau = 4.d0
@@ -1502,7 +1532,7 @@ if(ivar.eq.ir11) then
 ! ---  For epsilon
 !      -----------
 
-elseif(ivar.eq.iep) then
+elseif (ivar.eq.iep) then
 
   xx  = 2.d0
 
@@ -1682,7 +1712,7 @@ double precision produc(ncelet), gphigk(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom
+integer          iel, ipcrom, iutile
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -1692,7 +1722,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -1709,7 +1739,7 @@ allocate(lstelt(ncel))
 ! --- Index number of the density in the propce array
 ipcrom = ipproc(irom)
 
-if(iwarni(ifb).ge.1) then
+if (iwarni(ifb).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -1727,10 +1757,20 @@ endif
 
 !===============================================================================
 
+! It is quite frequent to forget to remove this example when it is
+!  not needed. Therefore the following test is designed to prevent
+!  any bad surprise.
+
+iutile = 0
+
+if (iutile.eq.0) return
+
+! ----------------------------------------------
+
 ! ---  For f_bar
 !      ---------
 
-if(ivar.eq.ifb) then
+if (ivar.eq.ifb) then
 
   xx  = 2.d0
 
@@ -1748,7 +1788,7 @@ if(ivar.eq.ifb) then
 ! ---  For phi
 !      -------
 
-elseif(ivar.eq.iphi) then
+elseif (ivar.eq.iphi) then
 
   ff  = 3.d0
   tau = 4.d0
@@ -1921,7 +1961,7 @@ double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom
+integer          iel, ipcrom, iutile
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -1931,7 +1971,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -1948,7 +1988,7 @@ allocate(lstelt(ncel))
 ! --- Index number of the density in the propce array
 ipcrom = ipproc(irom)
 
-if(iwarni(inusa).ge.1) then
+if (iwarni(inusa).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -1962,6 +2002,16 @@ endif
 !      With xx = 2.d0, ff=3.d0 and tau = 4.d0
 
 !===============================================================================
+
+! It is quite frequent to forget to remove this example when it is
+!  not needed. Therefore the following test is designed to prevent
+!  any bad surprise.
+
+iutile = 0
+
+if (iutile.eq.0) return
+
+! ----------------------------------------------
 
 ! --- Explicit source terms
 

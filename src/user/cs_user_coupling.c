@@ -101,12 +101,13 @@ cs_user_syrthes_coupling(void)
    * Boundary faces of group '3' coupled with instance named 'SYRTHES_01'.
    *-------------------------------------------------------------------------*/
 
-  cs_syr_coupling_define("SYRTHES_01",
-                         "3",             /* boundary criteria */
-                         NULL,            /* volume_criteria */
-                         ' ',             /* projection_axis */
-                         verbosity,
-                         plot);
+  if (false)
+    cs_syr_coupling_define("SYRTHES_01",
+                           "3",             /* boundary criteria */
+                           NULL,            /* volume_criteria */
+                           ' ',             /* projection_axis */
+                           verbosity,
+                           plot);
 
   /*-------------------------------------------------------------------------
    * Example 2:
@@ -115,12 +116,13 @@ cs_user_syrthes_coupling(void)
    * named 'SYRTHES_02'.
    *-------------------------------------------------------------------------*/
 
-  cs_syr_coupling_define("SYRTHES_02",
-                         "Wall",          /* boundary criteria */
-                         NULL,            /* volume_criteria */
-                         'z',             /* projection_axis */
-                         verbosity,
-                         plot);
+  if (false)
+    cs_syr_coupling_define("SYRTHES_02",
+                           "Wall",          /* boundary criteria */
+                           NULL,            /* volume_criteria */
+                           'z',             /* projection_axis */
+                           verbosity,
+                           plot);
 
   /*-------------------------------------------------------------------------
    * Example 3:
@@ -129,12 +131,13 @@ cs_user_syrthes_coupling(void)
    * SYRTHES instance named 'Solid' (volume coupling).
    *-------------------------------------------------------------------------*/
 
-  cs_syr_coupling_define("Solid",
-                         NULL,                          /* boundary */
-                         "box[0., 0., 0., 1., 1., 1.]", /* volume */
-                         ' ',                           /* projection */
-                         verbosity,
-                         plot);
+  if (false)
+    cs_syr_coupling_define("Solid",
+                           NULL,                          /* boundary */
+                           "box[0., 0., 0., 1., 1., 1.]", /* volume */
+                           ' ',                           /* projection */
+                           verbosity,
+                           plot);
 
   /* By default, conservativity forcing flag is switched off (value 0)
      If one wants to switch on the conservativity forcing flag:
@@ -187,12 +190,13 @@ cs_user_saturne_coupling(void)
    * - all cells available as location support
    *-------------------------------------------------------------------------*/
 
-  cs_sat_coupling_define("SATURNE_01",
-                         "3 or 4",
-                         NULL,
-                         NULL,
-                         "all[]",
-                         verbosity);
+  if (false)
+    cs_sat_coupling_define("SATURNE_01",
+                           "3 or 4",
+                           NULL,
+                           NULL,
+                           "all[]",
+                           verbosity);
 
   /*-------------------------------------------------------------------------
    * Example 2: coupling with instance "SATURNE_03".
@@ -202,12 +206,13 @@ cs_user_saturne_coupling(void)
    * - all cells available as location support
    *-------------------------------------------------------------------------*/
 
-  cs_sat_coupling_define("SATURNE_03",
-                         "coupled_faces",
-                         "all[]",
-                         NULL,
-                         "all[]",
-                         verbosity);
+  if (false)
+    cs_sat_coupling_define("SATURNE_03",
+                           "coupled_faces",
+                           "all[]",
+                           NULL,
+                           "all[]",
+                           verbosity);
 }
 
 END_C_DECLS

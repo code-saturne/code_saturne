@@ -1360,8 +1360,6 @@ dtref  = 0.01d0
 !    If specific physics are not activated
 !       (coal, combustion, electric arcs: see usppmo):
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 ! --- Segregated or coupled solver for the velocity components:
 !       0 for the segregated solver
 !       1 for the coupled solver
@@ -1376,13 +1374,15 @@ ivelco = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-
 if (nmodpp.eq.0) then
 
   ! Number of the scalar representing temperature or enthalpy,
   !   or -1 if there is none.
   ! When the choice is done by the Code_Saturne GUI, the scalar representing
   !   the temperature or enthalpy is always the first.
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
   iscalt = -1
 
 ! If there is a temperature or enthalpy variable:
@@ -1390,6 +1390,8 @@ if (nmodpp.eq.0) then
     ! we indicate if it is the temperature (=1) or the enthalpy (=2).
     iscsth(iscalt) = 1
   endif
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 endif
 
@@ -1849,6 +1851,8 @@ almax = -grand
 !         Moment <rho u v> is calculated from time step 10000.
 
 
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
 !     The test on iutile allows deactivation of the instructions
 !       (which are only given as an example).
 
@@ -1868,6 +1872,8 @@ if (iutile.eq.1) then
   ntdmom(imom)   =  10000
 
 endif
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !----
 ! Formats

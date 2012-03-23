@@ -588,7 +588,7 @@ class Study:
             user = os.path.join(src, 'REFERENCE')
             shutil.copytree(user_distpath, user)
 
-            f = os.path.join(user, 'usini1.f90')
+            f = os.path.join(user, 'cs_user_parameters.f90')
             if os.path.isfile(f):
                 comments(f, self.use_gui)
 
