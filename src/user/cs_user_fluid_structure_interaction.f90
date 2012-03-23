@@ -123,7 +123,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 
 
-if(1.eq.1) then
+if (1.eq.1) then
   nbstru = 0
   return
 endif
@@ -155,7 +155,8 @@ allocate(lstelt(nfabor))
 !    beginning with integer value '1'.
 
 
-!    In following example, boundary faces with color 4 belong to internal structure '1'.
+!    In following example, boundary faces with color 4 belong
+!    to internal structure '1'.
 !    Boundary faces with color 2 belong to internal structure '2'.
 !    The total number of internal structures equals 2.
 
@@ -168,7 +169,7 @@ allocate(lstelt(nfabor))
 !    but a more thorough description can be found in the user guide.
 
 
-CALL GETFBR('4',NLELT,LSTELT)
+call getfbr('4', nlelt, lstelt)
 !==========
 
 do ilelt = 1, nlelt
@@ -179,7 +180,7 @@ do ilelt = 1, nlelt
 
 enddo
 
-CALL GETFBR('6',NLELT,LSTELT)
+call getfbr('6', nlelt, lstelt)
 !==========
 
 do ilelt = 1, nlelt
@@ -192,24 +193,27 @@ enddo
 
 ! --- For each internal structure one can here define :
 !     - an initial velocity VSTR0
-!     - an initial displacement XSTR0 (i.e. XSTR0 is the value of the displacement XSTR
-!       compared to the initial mesh at time t = 0)
-!     - a displacement compared to equilibrium XSTREQ (i.e. XSTREQ is the initial displacement
-!       of the internal structure compared to its position at equilibrium; at each
-!       time step t and for a displacement XSTR(t) associated internal structure will be
-!       subjected to a force -k*(XSTR(t)+XSTREQ) due to the spring).
+!     - an initial displacement XSTR0 (i.e. XSTR0 is the value of the
+!       displacement XSTR compared to the initial mesh at time t = 0)
+!     - a displacement compared to equilibrium XSTREQ (i.e. XSTREQ is the
+!       initial displacement of the internal structure compared to its position
+!       at equilibrium; at each time step t and for a displacement XSTR(t)
+!       associated internal structure will be subjected to a force
+!       -k*(XSTR(t)+XSTREQ) due to the spring).
 
-! --- Note that XSTR0, XSTREQ and VSTR0 arrays are initialized at the beginning of the calculations
-!     to the value of 0.
+! --- Note that XSTR0, XSTREQ and VSTR0 arrays are initialized at the beginning
+!     of the calculations to the value of 0.
 
-! --- When starting a calculation using ALE, or re-starting a calculation with ALE basing
-!     on a first calculation without ALE, an initial iteration 0 is automatically calculated
-!     in order to take initial arrays XSTR0, VSTR0 and XSTREQ into account. In another case
-!     add the following expression 'italin=1' in subroutine 'usalin', so that the code can
-!     deal with arrays XSTR0, VSTR0 or XSTREQ.
+! --- When starting a calculation using ALE, or re-starting a calculation with
+!     ALE basing on a first calculation without ALE, an initial iteration 0 is
+!     automatically calculated in order to take initial arrays XSTR0, VSTR0 and
+!     XSTREQ into account. In another case add the following expression 'italin=1'
+!     in subroutine 'usalin', so that the code can deal with arrays
+!     XSTR0, VSTR0 or XSTREQ.
 
 ! --- In the following example :
-!     - internal structure '1' has got an initial displacement XSTR0 = 2 (m) in 'y' direction and
+!     - internal structure '1' has got an initial displacement
+!       XSTR0 = 2 (m) in 'y' direction and
 !     a displacement compared to equilibrium XSTREQ = 1 (m) in 'y' direction, too.
 !     - Initial velocity in 'z' direction of structure '2' equals VSTR0=-0.5 (m/s).
 
@@ -228,18 +232,18 @@ vstr0(3,2)  =-0.5d0
 !              at iteration 'n' and 'n-1'.
 !       - fluid force sent to structure internal solver = CFOPRE * F(n)
 !                                                        + (1.D0-CFOPRE) * F(n-1)
-!             F(n) and F(n-1) stand for fluid force acting on the structure respectively
-!              at iteration 'n' and 'n-1'.
+!             F(n) and F(n-1) stand for fluid force acting on the structure
+!              respectively at iteration 'n' and 'n-1'.
 
 aexxst =  0.5d0
 bexxst =  0.0d0
 cfopre =  2.d0
 
-! --- Activation of structural history output (i.e. displacement, structural velocity,
-!     structural acceleration anf fluid force)
+! --- Activation of structural history output (i.e. displacement, structural
+!     velocity, structural acceleration anf fluid force)
 !     (ihistr=0, not activated ; ihistr=1, activated)
-!     The value of structural history output step is the same as the one for standard
-!     variables ('NTHIST').
+!     The value of structural history output step is the same as the one for
+!     standard variables ('NTHIST').
 ihistr = 1
 
 ! Deallocate the temporary array
@@ -265,7 +269,8 @@ subroutine usstr2 &
 ! Purpose :
 ! ---------
 
-! --- Definition of structural parameters in case of Fluid Structure internal coupling :
+! --- Definition of structural parameters in case of Fluid Structure internal
+!     coupling :
 !                 Mass, Friction, Stiffness anf Fluid Stresses.
 !
 !-------------------------------------------------------------------------------
@@ -342,7 +347,7 @@ double precision theta, sint, cost, xm, xc, xk, fx, fy
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
@@ -362,35 +367,39 @@ if(1.eq.1) return
 !     - its Friction coefficient C (XCSTRU)
 !     - its Stiffness K           (XKSTRU)
 
-!     FORSTR array gives fluid stresses acting on each internal structure. Moreover
-!     it's possible to take external forces (gravity for example )into account, too.
+!     FORSTR array gives fluid stresses acting on each internal structure.
+!     Moreover it's possible to take external forces (gravity for example) into
+!     account, too.
 
-!     XSTR array indicates the displacement of the structure compared to its position
-!     in initial mesh.
+!     XSTR array indicates the displacement of the structure compared to its
+!     position in the initial mesh.
 
-!     XSTR0 array gives the displacement of the structures in initial mesh compared to
-!     structural equilibrium.
+!     XSTR0 array gives the displacement of the structures in initial mesh
+!     compared to structural equilibrium.
 
 !     VSTR array stands for structural velocity.
 
-!     XSTR, XSTR0, and VSTR arrays are DATA tables that can be used to define arrays
-!     Mass, Friction and Stiffness. THOSE ARE NOT TO BE MODIFIED.
+!     XSTR, XSTR0, and VSTR arrays are DATA tables that can be used to define
+!     arrays Mass, Friction and Stiffness. THOSE ARE NOT TO BE MODIFIED.
 
 !     The 3D structural equation that is solved is the following one :
 
 !       M.X'' + C.X' + K.(X+X0) = F   (1)
 !       = -     = -    =  - --    -
 
-!       X stands for the structural displacement compared to initil mesh postition (XSTR)
+!       X stands for the structural displacement compared to initil mesh
+!         postition (XSTR)
 !       -
-!       X0 represents the displacement of the structure in initial mesh compared to equilibrium
+!       X0 represents the displacement of the structure in initial mesh
+!          compared to equilibrium
 !       --
 
 !       Note that M, C and K are 3x3 matrices.
 !                 =  =     =
 !       Equation (1) is solved using a Newmark HHT algorithm.
-!       Note that the time step used to solve this equation (DTSTR) can be different from the one of fluid
-!       calculations. USER is free to define DTSTR array. At the beginning of the calculation DTSTR is
+!       Note that the time step used to solve this equation (DTSTR) can be
+!       different from the one of fluid calculations. USER is free to define
+!       DTSTR array. At the beginning of the calculation DTSTR is
 !       initialized to the value of DTCEL (Fluid time step).
 !
 
@@ -407,8 +416,9 @@ do istr = 1, nbstru
 
 enddo
 
-! --- Example 1): In following example structure '1' is defined as an isotropic system (i.e. matrices
-!     M, C and K are diagonal) : mass equals 5 kg, stiffness equals 2 N/m and friction
+! --- Example 1): In following example structure '1' is defined as an isotropic
+!     system (i.e. matrices M, C and K are diagonal) : mass equals 5 kg,
+!     stiffness equals 2 N/m and friction
 !     =  =     =
 !     coefficient equals 3 kg.s .
 
@@ -418,13 +428,18 @@ do ii = 1, 3
   xkstru(ii,ii,1) = 3.d0
 enddo
 
-! --- Example 2): In this example structure '2' is subjected to the following movement :
-!               - In plane xOy the movement is locally defined along an axis (OX). Structural parameters
-!                 in X direction are called xm, xc and xk. The angle of inclination between global (Ox) axis
-!                 and local (OX) axis is called THETA. Movement in local (OY) direction is imposed to be rigid.
-!               - In 'z' direction the movement is modeled to be oscillating and harmonic (meaning that
-!                 there is no friction). Mass equals 1. kg and stiffness equals 1. N/m. Fluid stresses in that direction
-!                 are taken into account. Moreover the structure is also subjected to an external oscillating
+! --- Example 2): In this example structure '2' is subjected to the following
+!                 movement :
+!               - In plane xOy the movement is locally defined along an axis
+!                 (OX). Structural parameters in X direction are called
+!                 xm, xc and xk. The angle of inclination between global (Ox)
+!                 axis and local (OX) axis is called THETA. Movement in local (OY)
+!                 direction is imposed to be rigid.
+!               - In 'z' direction the movement is modeled to be oscillating and
+!                 harmonic (meaning that there is no friction). Mass equals 1. kg
+!                 and stiffness equals 1. N/m. Fluid stresses in that direction
+!                 are taken into account. Moreover the structure is also
+!                 subjected to an external oscillating
 !                 force Fz_ext = 3 * cos(4*t).
 
 
@@ -437,13 +452,15 @@ theta = pi/6.d0
 cost = cos(theta)
 sint = sin(theta)
 
-!               FX, FY, and FZ stand for the local fluid forces components. They are defined as follows, using gobal
-!               components of fluid forces Fx, Fy and Fz .
-!               FX =  COST*Fx + SINT*Fy
-!               FY = -SINT*Fx + COST*Fy
-!               FZ = Fz
+! FX, FY, and FZ stand for the local fluid forces components.
+! They are defined as follows, using gobal components of
+! fluid forces Fx, Fy and Fz.
+!   fx =  cost*Fx + sint*Fy
+!   fy = -sint*Fx + cost*Fy
+!   fz = Fz
 
-!               After changing of basis, the problem can be described as follows, using global coordinates:
+! After changing of basis, the problem can be described as follows,
+! using global coordinates:
 
 xm = 1.d0
 xc = 3.d-1
@@ -558,7 +575,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 
 
-if(1.eq.1) then
+if (1.eq.1) then
   nbaste = 0
   return
 endif
@@ -606,7 +623,7 @@ allocate(lstelt(nfabor))
 
 !================================================================================
 
-CALL GETFBR('2 and X < 2.0',NLELT,LSTELT)
+call getfbr('2 and X < 2.0', nlelt, lstelt)
 !==========
 
 do ilelt = 1, nlelt
@@ -618,7 +635,7 @@ do ilelt = 1, nlelt
 enddo
 
 
-CALL GETFBR('2 and X > 2.0',NLELT,LSTELT)
+call getfbr('2 and X > 2.0', nlelt, lstelt)
 !==========
 
 do ilelt = 1, nlelt

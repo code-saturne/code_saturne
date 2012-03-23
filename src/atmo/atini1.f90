@@ -29,7 +29,7 @@ subroutine atini1
 !  ---------
 
 !   INIT DES OPTIONS DES VARIABLES POUR LA VERSION ATMOSPHERIQUE
-!      EN COMPLEMENT DE CE QUI A DEJA ETE FAIT DANS USINI1
+!      EN COMPLEMENT DE CE QUI A DEJA ETE FAIT DANS USIPSU
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -248,13 +248,13 @@ call usati1
 '@                                                            ',/,&
 '@  La valeur de ISCALT est renseignee automatiquement.       ',/,&
 '@                                                            ',/,&
-'@  L''utilisateur ne doit pas la renseigner dans usini1, or  ',/,&
+'@  L''utilisateur ne doit pas la renseigner dans usipsu, or  ',/,&
 '@    elle a ete affectee comme suit :                        ',/,&
 '@    ISCALT = ',I10                                           ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier usipsu (dans cs_user_parameters.f90)             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -268,14 +268,14 @@ call usati1
 '@                                                            ',/,&
 '@  Les valeurs de ISCSTH sont renseignees automatiquement.   ',/,&
 '@                                                            ',/,&
-'@  L''utilisateur ne doit pas les renseigner dans usini1, or ',/,&
+'@  L''utilisateur ne doit pas les renseigner dans usipsu, or ',/,&
 '@    pour le scalaire ',I10   ,' correspondant au scalaire   ',/,&
 '@    physique particuliere ',I10   ,' on a                   ',/,&
 '@    ISCSTH(',I10   ,') = ',I10                               ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier usipsu (cs_user_parameters.f90)                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

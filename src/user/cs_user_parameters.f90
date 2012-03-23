@@ -488,8 +488,8 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usipph'' must be completed',/, &
-'@       in file usini1.f90',/,                                   &
+'@     The user subroutine ''usipph'' must be completed',/,       &
+'@       in file cs_user_parameters.f90',/,                       &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
 '@',/,                                                            &
@@ -513,8 +513,6 @@ endif
 !       ===
 
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 !     If we are using the Code_Saturne GUI:
 
 !       we will find in the user subroutines commented examples
@@ -522,8 +520,6 @@ endif
 
 !       If necessary, the user may uncomment them and adapt them to
 !       his needs.
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
@@ -558,8 +554,8 @@ iturb = 20
 
 !     For these specific physics, ICP MUST NOT BE MODIFIED here, and the
 !       following options are forced:
-!          coal and combustion: constant CP constant;
-!          electric arcs:       variable CP.
+!          coal and combustion: constant Cp;
+!          electric arcs:       variable Cp.
 
 !     Caution:    complete usphyv with the law defining Cp
 !     =========   if and only if variable Cp has been selected here
@@ -658,8 +654,8 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usinsc'' must be completed',/, &
-'@       in file usini1.f90',/,                                   &
+'@     The user subroutine ''usinsc'' must be completed',/,       &
+'@       in file cs_user_parameters.f90',/,                       &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
 '@',/,                                                            &
@@ -683,8 +679,6 @@ endif
 !       ===
 
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 !     If we are using the Code_Saturne GUI:
 
 !       we will find in the user subroutines commented examples
@@ -692,8 +686,6 @@ endif
 
 !       If necessary, the user may uncomment them and adapt them to
 !       his needs.
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
@@ -711,7 +703,7 @@ endif
 !        - mass fractions of transported scalars
 !        - the variance of another user scalar
 
-!     The maximum number of scalars is defined by 'nscamx' in paramx.h;
+!     The maximum number of scalars is defined by 'nscamx' in paramx;
 !       it is the maximum admissible value for: nscaus + nscapp.
 
 
@@ -815,8 +807,8 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usipsc'' must be completed',/, &
-'@       in file usini1.f90',/,                                   &
+'@     The user subroutine ''usipsc'' must be completed',/,       &
+'@       in file cs_user_parameters.f90',/,                       &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
 '@',/,                                                            &
@@ -840,8 +832,6 @@ endif
 !       ===
 
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 !     If we are using the Code_Saturne GUI:
 
 !       we will find in the user subroutines commented examples
@@ -849,8 +839,6 @@ endif
 
 !       If necessary, the user may uncomment them and adapt them to
 !       his needs.
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
@@ -1038,8 +1026,8 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usipgl'' must be completed',/, &
-'@       in file usini1.f90',/,                                   &
+'@     The user subroutine ''usipgl'' must be completed',/,       &
+'@       in file cs_user_parameters.f90',/,                       &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
 '@',/,                                                            &
@@ -1063,8 +1051,6 @@ endif
 !       ===
 
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 !     If we are using the Code_Saturne GUI:
 
 !       we will find in the user subroutines commented examples
@@ -1072,8 +1058,6 @@ endif
 
 !       If necessary, the user may uncomment them and adapt them to
 !       his needs.
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
@@ -1240,8 +1224,8 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usipsu'' must be completed',/, &
-'@       in file usini1.f90',/,                                   &
+'@     The user subroutine ''usipsu'' must be completed',/,       &
+'@       in file cs_user_parameters.f90',/,                       &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
 '@',/,                                                            &
@@ -1264,8 +1248,6 @@ endif
 !     The number of physical properties and variables is known here.
 
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 !     If we are using the Code_Saturne GUI:
 
 !       we will find in the user subroutines commented examples
@@ -1274,13 +1256,11 @@ endif
 !       If necessary, the user may uncomment them and adapt them to
 !       his needs.
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 !===============================================================================
 
 
-! Calculation options (optcal.h)
-! ==============================
+! Calculation options (optcal)
+! ============================
 
 !     In case of restart, read auxiliary restart file ileaux (= 1) or not (0).
 
@@ -1563,8 +1543,8 @@ endif
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! Physical constants (cstphy.h)
-! =============================
+! Physical constants (cstphy)
+! ===========================
 
 ! --- gravity (g in m/s2, with the sign in the calculation coordinate axes).
 
@@ -1990,8 +1970,8 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usipes'' must be completed',/, &
-'@       in file usini1.f90',/,                                   &
+'@     The user subroutine ''usipes'' must be completed',/,       &
+'@       in file cs_user_parameters.f90',/,                       &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
 '@',/,                                                            &
@@ -2014,8 +1994,6 @@ endif
 !     The number of physical properties and variables is known here.
 
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 !     If we are using the Code_Saturne GUI:
 
 !       we will find in the user subroutines commented examples
@@ -2024,12 +2002,10 @@ endif
 !       If necessary, the user may uncomment them and adapt them to
 !       his needs.
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 !===============================================================================
 
 !===============================================================================
-! 1. Input-output (entsor.h)
+! 1. Input-output (entsor)
 !===============================================================================
 
 ! --- write auxiliary restart file iecaux = 1 yes, 0 no
@@ -2128,7 +2104,7 @@ xyzcap(3,4) = 0.01d0
 ! Current dynamic variables
 
 ! pressure variable
-ipp = ipprtp(ipr   )
+ipp = ipprtp(ipr)
 nomvar(ipp)   = 'Pressure'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
@@ -2138,7 +2114,7 @@ if (icorio.eq.1) then
 endif
 
 ! variable v1x
-ipp = ipprtp(iu    )
+ipp = ipprtp(iu)
 nomvar(ipp)   = 'VelocityX'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
@@ -2148,7 +2124,7 @@ if (icorio.eq.1) then
 endif
 
 ! v1y variable
-ipp = ipprtp(iv    )
+ipp = ipprtp(iv)
 nomvar(ipp)   = 'VelocityY'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
@@ -2158,7 +2134,7 @@ if (icorio.eq.1) then
 endif
 
 ! v1z variable
-ipp = ipprtp(iw    )
+ipp = ipprtp(iw)
 nomvar(ipp)   = 'VelocityZ'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
@@ -2170,14 +2146,14 @@ endif
 if (itytur.eq.2) then
 
   ! turbulent kinetic energy
-  ipp = ipprtp(ik    )
+  ipp = ipprtp(ik)
   nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
-  ipp = ipprtp(iep   )
+  ipp = ipprtp(iep)
   nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
@@ -2186,49 +2162,49 @@ if (itytur.eq.2) then
 elseif (itytur.eq.3) then
 
   ! Reynolds stresses
-  ipp = ipprtp(ir11  )
+  ipp = ipprtp(ir11)
   nomvar(ipp)   = 'R11'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
-  ipp = ipprtp(ir22  )
+  ipp = ipprtp(ir22)
   nomvar(ipp)   = 'R22'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
-  ipp = ipprtp(ir33  )
+  ipp = ipprtp(ir33)
   nomvar(ipp)   = 'R33'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
-  ipp = ipprtp(ir12  )
+  ipp = ipprtp(ir12)
   nomvar(ipp)   = 'R12'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
-  ipp = ipprtp(ir13  )
+  ipp = ipprtp(ir13)
   nomvar(ipp)   = 'R13'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
-  ipp = ipprtp(ir23  )
+  ipp = ipprtp(ir23)
   nomvar(ipp)   = 'R23'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
-  ipp = ipprtp(iep   )
+  ipp = ipprtp(iep)
   nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
@@ -2237,28 +2213,28 @@ elseif (itytur.eq.3) then
 elseif (iturb.eq.50) then
 
   ! turbulent kinetic energy
-  ipp = ipprtp(ik    )
+  ipp = ipprtp(ik)
   nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
-  ipp = ipprtp(iep   )
+  ipp = ipprtp(iep)
   nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! phi
-  ipp = ipprtp(iphi  )
+  ipp = ipprtp(iphi)
   nomvar(ipp)   = 'Phi'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! f_bar
-  ipp = ipprtp(ifb   )
+  ipp = ipprtp(ifb)
   nomvar(ipp)   = 'f_bar'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
@@ -2267,28 +2243,28 @@ elseif (iturb.eq.50) then
 elseif (iturb.eq.51) then
 
   ! turbulent kinetic energy
-  ipp = ipprtp(ik    )
+  ipp = ipprtp(ik)
   nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
-  ipp = ipprtp(iep   )
+  ipp = ipprtp(iep)
   nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! phi
-  ipp = ipprtp(iphi  )
+  ipp = ipprtp(iphi)
   nomvar(ipp)   = 'Phi'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! alpha
-  ipp = ipprtp(ial   )
+  ipp = ipprtp(ial)
   nomvar(ipp)   = 'Alpha'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
@@ -2297,14 +2273,14 @@ elseif (iturb.eq.51) then
 elseif (iturb.eq.60) then
 
   ! turbulent kinetic energy
-  ipp = ipprtp(ik    )
+  ipp = ipprtp(ik)
   nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! omega
-  ipp = ipprtp(iomg  )
+  ipp = ipprtp(iomg)
   nomvar(ipp)   = 'Omega'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
@@ -2313,7 +2289,7 @@ elseif (iturb.eq.60) then
 elseif (iturb.eq.70) then
 
   ! Spalart-Allmaras variable (viscosity-like)
-  ipp = ipprtp(inusa )
+  ipp = ipprtp(inusa)
   nomvar(ipp)   = 'NuTilda'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
@@ -2359,15 +2335,15 @@ endif
 
 ! Density variable (output for post-processing only if variable or
 !                   in the case of specific physics)
-ipp = ipppro(ipproc(irom  ))
+ipp = ipppro(ipproc(irom))
 nomvar(ipp)   = 'Density'
 ichrvr(ipp)   = max(irovar,nmodpp)
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ! specific heat
-if (icp   .gt.0) then
-  ipp = ipppro(ipproc(icp   ))
+if (icp .gt. 0) then
+  ipp = ipppro(ipproc(icp))
   nomvar(ipp)   = 'Specific Heat'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
@@ -2581,7 +2557,7 @@ iortvm = 0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !----
-! FORMATS
+! Formats
 !----
 
 !----
@@ -2727,7 +2703,7 @@ integer          ipp
 !    Output of the temporal evolution of  | IHISVR()  | yes=-1* ; no=0
 !    the variable at monitoring points    |           |
 !    -----------------------------------------------------------------
-!    *: Output for all monitoring points defined in subroutine usini1.f90
+!    *: Output for all monitoring points
 !
 !===============================================================================
 ! a. Transported Variables
@@ -2746,7 +2722,7 @@ ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
 ! ---- Enthalpy
- if ( ippmod(icod3p).eq.1 ) then
+ if (ippmod(icod3p).eq.1) then
    ipp = ipprtp(isca(ihm))
    ichrvr(ipp)  = 1
    ilisvr(ipp)  = 1
@@ -2784,25 +2760,25 @@ ihisvr(ipp,1) = -1
 
 ! ---- Diffusion flame including gas radiation
 
-if ( iirayo.gt.0 ) then
+if (iirayo.gt.0) then
 
 ! ---- Absorption Coefficient
   ipp = ipppro(ipproc(ickabs))
-  NOMVAR(IPP)   = 'KABS'
+  nomvar(ipp)   = 'KABS'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
 ! ---- Term T^4
   ipp = ipppro(ipproc(it4m))
-  NOMVAR(IPP)   = 'TEMP4'
+  nomvar(ipp)   = 'TEMP4'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
 ! ---- Term T^3
   ipp = ipppro(ipproc(it3m))
-  NOMVAR(IPP)   = 'TEMP3'
+  nomvar(ipp)   = 'TEMP3'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
@@ -2829,7 +2805,7 @@ diftl0 = 4.25d-5
 
 
 !----
-! END
+! End
 !----
 
 return
@@ -2892,13 +2868,13 @@ integer          ipp
 !    Output of the temporal evolution of  | IHISVR()  | yes=-1* ; no=0
 !    the variable at monitoring points    |           |
 !    -----------------------------------------------------------------
-!    *: Output for all monitoring points defined in subroutine usini1.f90
+!    *: Output for all monitoring points
 !
 !===============================================================================
 ! a. Transported Variables
 !===============================================================================
 ! ---- Mass fraction of unburned (or fresh)  gas
-if ( ippmod(icoebu).ge.0 ) then
+if (ippmod(icoebu).ge.0) then
   ipp = ipprtp(isca(iygfm))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -2906,7 +2882,7 @@ if ( ippmod(icoebu).ge.0 ) then
 endif
 
 ! ---- Mean Mixture Fraction
-if ( ippmod(icoebu).ge.2 ) then
+if (ippmod(icoebu).ge.2) then
   ipp = ipprtp(isca(ifm))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -2915,8 +2891,7 @@ endif
 
 
 ! ---- Enthalpy
-if ( ippmod(icoebu).eq.1 .or.                                     &
-     ippmod(icoebu).eq.3      ) then
+if (ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3) then
   ipp = ipprtp(isca(ihm))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -2954,25 +2929,25 @@ ihisvr(ipp,1) = -1
 
 ! ---- Premixed flame including gas radiation
 
-if ( iirayo.gt.0 ) then
+if (iirayo.gt.0) then
 
 ! ---- Absorption Coefficient
   ipp = ipppro(ipproc(ickabs))
-  NOMVAR(IPP)   = 'KABS'
+  nomvar(ipp)   = 'KABS'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
 ! ---- Term T^4
   ipp = ipppro(ipproc(it4m))
-  NOMVAR(IPP)   = 'TEMP4'
+  nomvar(ipp)   = 'TEMP4'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
 ! ---- Term T^3
   ipp = ipppro(ipproc(it3m))
-  NOMVAR(IPP)   = 'TEMP3'
+  nomvar(ipp)   = 'TEMP3'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
@@ -3003,7 +2978,7 @@ diftl0 = 4.25d-5
 
 
 !----
-! END
+! End
 !----
 
 return
@@ -3068,14 +3043,14 @@ integer          ipp, idirac
 !    Output of the temporal evolution of  | IHISVR()  | yes=-1* ; no=0
 !    the variable at monitoring points    |           |
 !    -----------------------------------------------------------------
-!    *: Output for all monitoring points defined in subroutine usini1.f90
+!    *: Output for all monitoring points
 !
 !===============================================================================
 ! a. Transported Variables
 !===============================================================================
 
 ! ---- Mean Mixture Fraction
-if ( ippmod(icolwc).ge.0 ) then
+if (ippmod(icolwc).ge.0) then
   ipp = ipprtp(isca(ifm))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -3108,9 +3083,9 @@ if (ippmod(icolwc).ge.2) then
 endif
 
 ! ---- Enthalpy
-if ( ippmod(icolwc).eq.1 .or.                                     &
-     ippmod(icolwc).eq.3 .or.                                     &
-     ippmod(icolwc).eq.5    ) then
+if (ippmod(icolwc).eq.1 .or.                                     &
+    ippmod(icolwc).eq.3 .or.                                     &
+    ippmod(icolwc).eq.5) then
   ipp = ipprtp(isca(ihm))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -3124,74 +3099,74 @@ endif
 
 ! --- Source term
   ipp = ipppro(ipproc(itsc))
-  NOMVAR(IPP)   = 'T.SOURCE'
+  nomvar(ipp)   = 'T.SOURCE'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 ! --- Temperature in K
   ipp = ipppro(ipproc(itemp))
-  NOMVAR(IPP)   = 'Temperature'
+  nomvar(ipp)   = 'Temperature'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 ! --- Fuel Mass fraction
   ipp = ipppro(ipproc(iym(1)))
-  NOMVAR(IPP)   = 'YM_Fuel'
+  nomvar(ipp)   = 'YM_Fuel'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 ! --- Oxidizer Mass fraction
   ipp = ipppro(ipproc(iym(2)))
-  NOMVAR(IPP)   = 'YM_Oxyd'
+  nomvar(ipp)   = 'YM_Oxyd'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 ! --- Products Mass fraction
   ipp = ipppro(ipproc(iym(3)))
-  NOMVAR(IPP)   = 'YM_Prod'
+  nomvar(ipp)   = 'YM_Prod'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   do idirac = 1, ndirac
     ipp = ipppro(ipproc(irhol(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'RHOL',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'RHOL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(iteml(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'TEML',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'TEML', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(ifmel(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'FMEL',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'FMEL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(ifmal(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'FMAL',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'FMAL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(iampl(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'AMPL',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'AMPL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(itscl(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'TSCL',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'TSCL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(imaml(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'MAML',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'MAML', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
@@ -3199,25 +3174,25 @@ endif
 
 ! ---- Premixed flame including gas radiation
 
-if ( iirayo.gt.0 ) then
+if (iirayo.gt.0) then
 
 ! ---- Absorption Coefficient
   ipp = ipppro(ipproc(ickabs))
-  NOMVAR(IPP)   = 'KABS'
+  nomvar(ipp)   = 'KABS'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
 ! ---- Term T^4
   ipp = ipppro(ipproc(it4m))
-  NOMVAR(IPP)   = 'TEMP4'
+  nomvar(ipp)   = 'TEMP4'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
 ! ---- Term T^3
   ipp = ipppro(ipproc(it3m))
-  NOMVAR(IPP)   = 'TEMP3'
+  nomvar(ipp)   = 'TEMP3'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
@@ -3254,7 +3229,7 @@ diftl0 = 4.25d-5
  tstar= 0.12d4
 
 !----
-! END
+! End
 !----
 
 return
@@ -3358,7 +3333,7 @@ endif
 icfgrp = 1
 
 !----
-! FIN
+! End
 !----
 
 return
@@ -3379,7 +3354,7 @@ subroutine uscfx2
 
 !    Set options for viscosity and conductivity for compressible flow.
 
-!    In addition to options set in the user subroutine 'usini1' (or in
+!    In addition to options set in the user subroutine 'uscfx1' (or in
 !    the GUI): this subroutine allows to set switches to indicate if the
 !    volumetric viscosity and the conductivity are constants. If they are,
 !    the subroutines allows to set their values.
@@ -3593,7 +3568,7 @@ endif
 !       ICHRVR( ) =  chono outlet (Yes 1/No  0)
 !       ILISVR( ) =  listing outlet (Yes 1/No  0)
 !       IHISVR( ) =  histo outlet (number of roiqu and number)
-!       if IHISVR(.,1)  = -1 every probes defined in usini1
+!       if IHISVR(.,1)  = -1 every monitoring point
 
 
 ! --> Variables for the mix (carrying gas and coal particles)
@@ -3633,7 +3608,7 @@ do icla = 1, nclacp
   ihisvr(ipp,1)= -1
 
 !       - Water mass fraction (in class ICLA)
-  if ( ippmod(icp3pl) .eq. 1 ) then
+  if (ippmod(icp3pl) .eq. 1) then
     ipp = ipprtp(isca(ixwt(icla)))
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
@@ -3686,7 +3661,7 @@ ihisvr(ipp,1)= -1
 
 !     - Mean of 5 mixture fraction
 !       (water vapor from drying)
-if ( ippmod(icp3pl) .eq. 1 ) then
+if (ippmod(icp3pl) .eq. 1) then
   ipp = ipprtp(isca(if5m))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -3695,7 +3670,7 @@ endif
 
 !     - Mass fraction of CO2 or CO (relaxation to equilibrium)
 
-if ( ieqco2 .ge. 1 ) then
+if (ieqco2 .ge. 1) then
   ipp = ipprtp(isca(iyco2))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -3712,7 +3687,7 @@ endif
 !       ICHRVR( ) =  chono outlet (Yes 1/No  0)
 !       ILISVR( ) =  listing outlet (Yes 1/No  0)
 !       IHISVR( ) =  histo outlet (number of roiqu and number)
-!       if IHISVR(.,1)  = -1 every probes defined in usini1
+!       if IHISVR(.,1)  = -1 every monitoring point
 
 ! --> State varables for the mix
 
@@ -3774,7 +3749,7 @@ do icla = 1, nclacp
 
 !       - Rate of char gazeification by CO2 (s-1) < 0
 !         (from class ICLA)
-  if ( ihtco2 .eq. 1 ) then
+  if (ihtco2 .eq. 1) then
     ipp = ipppro(ipproc(ighco2(icla)))
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
@@ -3783,7 +3758,7 @@ do icla = 1, nclacp
 
 !       - Rate of drying (s-1) < 0
 !         (from class ICLA)
-  if ( ippmod(icp3pl) .eq. 1 ) then
+  if (ippmod(icp3pl) .eq. 1) then
     ipp = ipppro(ipproc(igmsec(icla)))
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
@@ -3869,7 +3844,7 @@ diftl0 = 4.25d-5
 
 
 !----
-! END
+! End
 !----
 
 return
@@ -3982,8 +3957,7 @@ endif
 !       ICHRVR( ) = sortie chono (oui 1/non 0)
 !       ILISVR( ) = suivi listing (oui 1/non 0)
 !       IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes definies
-!                            dans usini1
+!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes
 
 
 ! --> Variables propres a la phase gaz continue
@@ -4038,8 +4012,7 @@ ihisvr(ipp,1)= -1
 !       ICHRVR( ) = sortie chono (oui 1/non 0)
 !       ILISVR( ) = suivi listing (oui 1/non 0)
 !       IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes definies
-!                            dans usini1
+!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes
 
 ! --> Variables algebriques propres a la suspension gaz - particules
 
@@ -4118,7 +4091,7 @@ diftl0 = 4.25d-5
 
 
 !----
-! FIN
+! End
 !----
 
 return
@@ -4190,7 +4163,7 @@ integer          ipp , icla , icha
 !       ICHRVR( ) =  chono outlet (Yes 1/No  0)
 !       ILISVR( ) =  listing outlet (Yes 1/No  0)
 !       IHISVR( ) =  histo outlet (number of roiqu and number)
-!       if IHISVR(.,1)  = -1 every probes defined in usini1
+!       if IHISVR(.,1)  = -1 every probe
 
 
 ! --> Variables for the mix (carrying gas and coal particles)
@@ -4230,7 +4203,7 @@ do icla = 1, nclacp
   ihisvr(ipp,1)= -1
 
 !       - Water mass fraction (in class ICLA)
-  if ( ippmod(icp3pl) .eq. 1 ) then
+  if (ippmod(icp3pl) .eq. 1) then
     ipp = ipprtp(isca(ixwt(icla)))
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
@@ -4259,19 +4232,19 @@ do icha = 1, ncharb
 enddo
 
 ! ---- Variables propres a la phase continue
-  if ( noxyd .ge. 2 ) then
+  if (noxyd .ge. 2) then
     ipp = ipprtp(isca(if4m))
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   endif
-  if ( noxyd .eq. 3 ) then
+  if (noxyd .eq. 3) then
     ipp = ipprtp(isca(if5m))
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   endif
-  if ( ippmod(iccoal) .ge. 1 ) then
+  if (ippmod(iccoal) .ge. 1) then
     ipp = ipprtp(isca(if6m))
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
@@ -4281,13 +4254,13 @@ enddo
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
-  if ( ihtco2 .eq. 1 ) then
+  if (ihtco2 .eq. 1) then
     ipp = ipprtp(isca(if8m))
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   endif
-  if ( ihth2o .eq. 1 ) then
+  if (ihth2o .eq. 1) then
     ipp = ipprtp(isca(if9m))
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
@@ -4301,25 +4274,25 @@ enddo
   ihisvr(ipp,1)= -1
 
 !
-  if ( ieqco2 .ge. 1 ) then
+  if (ieqco2 .ge. 1) then
     ipp = ipprtp(isca(iyco2))
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   endif
-  if ( ieqnox .ge. 1 ) then
+  if (ieqnox .ge. 1) then
     ipp = ipprtp(isca(iyhcn))
-    NOMVAR(IPP)  = 'FR_HCN'
+    nomvar(ipp)  = 'FR_HCN'
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
     ipp = ipprtp(isca(iyno))
-    NOMVAR(IPP)  = 'FR_NO'
+    nomvar(ipp)  = 'FR_NO'
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
     ipp = ipprtp(isca(ihox))
-    NOMVAR(IPP)  = 'Enth_Ox'
+    nomvar(ipp)  = 'Enth_Ox'
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
@@ -4335,7 +4308,7 @@ enddo
 !       ICHRVR( ) =  chono outlet (Yes 1/No  0)
 !       ILISVR( ) =  listing outlet (Yes 1/No  0)
 !       IHISVR( ) =  histo outlet (number of roiqu and number)
-!       if IHISVR(.,1)  = -1 every probes defined in usini1
+!       if IHISVR(.,1)  = -1 every probe
 
 ! --> State varables for the mix
 
@@ -4397,7 +4370,7 @@ do icla = 1, nclacp
 
 !       - Rate of char gazeification by CO2 (s-1) < 0
 !         (from class ICLA)
-  if ( ihtco2 .eq. 1 ) then
+  if (ihtco2 .eq. 1) then
     ipp = ipppro(ipproc(ighco2(icla)))
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
@@ -4406,7 +4379,7 @@ do icla = 1, nclacp
 
 !       - Rate of char gazeification by H2O (s-1) < 0
 !         (from class ICLA)
-  if ( ihth2o .eq. 1 ) then
+  if (ihth2o .eq. 1) then
     ipp = ipppro(ipproc(ighh2o(icla)))
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
@@ -4415,7 +4388,7 @@ do icla = 1, nclacp
 
 !       - Rate of drying (s-1) < 0
 !         (from class ICLA)
-  if ( ippmod(icp3pl) .eq. 1 ) then
+  if (ippmod(icp3pl) .eq. 1) then
     ipp = ipppro(ipproc(igmsec(icla)))
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
@@ -4528,7 +4501,7 @@ srrom = 0.95d0
 diftl0 = 4.25d-5
 
 !----
-! END
+! End
 !----
 
 
@@ -4599,7 +4572,7 @@ integer          ipp , icla
 !       ICHRVR( ) =  chono outlet (Yes 1/No  0)
 !       ILISVR( ) =  listing outlet (Yes 1/No  0)
 !       IHISVR( ) =  histo outlet (number of roiqu and number)
-!       if IHISVR(.,1)  = -1 every probes defined in usini1
+!       if IHISVR(.,1)  = -1 every probe
 
 
 ! --> Variables for the mix (carrying gas and coal particles)
@@ -4657,7 +4630,7 @@ ihisvr(ipp,1)= -1
 
 !     - YCO2
 
-if ( ieqco2 .ge. 1 ) then
+if (ieqco2 .ge. 1) then
   ipp = ipprtp(isca(iyco2))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -4666,7 +4639,7 @@ endif
 
 !     - HCN and NO
 
-if ( ieqnox .eq. 1 ) then
+if (ieqnox .eq. 1) then
   ipp = ipprtp(isca(iyhcn))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -4691,7 +4664,7 @@ endif
 !       ICHRVR( ) =  chono outlet (Yes 1/No  0)
 !       ILISVR( ) =  listing outlet (Yes 1/No  0)
 !       IHISVR( ) =  histo outlet (number of roiqu and number)
-!       if IHISVR(.,1)  = -1 every probes defined in usini1
+!       if IHISVR(.,1)  = -1 every monitoring point
 
 
 ! --> Variables for the mix (carrying gas and coal particles)
@@ -4860,7 +4833,7 @@ srrom = 0.7d0
 diftl0 = 4.25d-5
 
 !----
-! END
+! End
 !----
 
 return
@@ -4880,9 +4853,6 @@ subroutine useli1
 !  -------
 !          User subroutines for input of calculation parameters,
 !       and to initialize variables used for specific electric models,
-!
-!
-!                 by addition of what is done in  USINI1
 !
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -4979,7 +4949,7 @@ ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
 !---- Mass fraction of the different constituants of the phase
-if ( ngazg .gt. 1 ) then
+if (ngazg .gt. 1) then
   do iesp = 1, ngazg-1
     ipp = ipprtp(isca(iycoel(iesp)))
     ichrvr(ipp)  = 1
@@ -4990,7 +4960,7 @@ endif
 
 ! --> Specific variables for Joule effect for direct conduction
 !     Imaginary component of electrical potential
-if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
+if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
   ipp = ipprtp(isca(ipoti))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -4999,7 +4969,7 @@ endif
 
 ! --> Specific variables for electric arc in 3D
 !     vector potential components
-if ( ippmod(ielarc).ge.2 ) then
+if (ippmod(ielarc) .ge. 2) then
   do idimve = 1, ndimve
     ipp = ipprtp(isca(ipotva(idimve)))
     ichrvr(ipp)  = 1
@@ -5016,7 +4986,7 @@ endif
 !===============================================================================
 
 ! ---- Temperature
-ipp = ipppro(ipproc(itemp) )
+ipp = ipppro(ipproc(itemp))
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
@@ -5028,42 +4998,42 @@ ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
 ! ---- Joule effect Power
-ipp = ipppro(ipproc(iefjou) )
+ipp = ipppro(ipproc(iefjou))
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
 ! ---- Real component of the current density
 do idimve = 1, ndimve
-  ipp = ipppro(ipproc(idjr(idimve)) )
+  ipp = ipppro(ipproc(idjr(idimve)))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 enddo
 
 ! ---- Imaginary component of the current density
-if ( ippmod(ieljou).eq.4 ) then
+if (ippmod(ieljou).eq.4) then
   do idimve = 1, ndimve
-    ipp = ipppro(ipproc(idji(idimve)) )
+    ipp = ipppro(ipproc(idji(idimve)))
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   enddo
 endif
 
-if ( ippmod(ielarc).ge.1 ) then
+if (ippmod(ielarc).ge.1) then
 
 ! ---- Electromagnetic Forces (Laplace forces)
   do idimve = 1, ndimve
-    ipp = ipppro(ipproc(ilapla(idimve)) )
+    ipp = ipppro(ipproc(ilapla(idimve)))
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   enddo
 
 ! ---- Absorption oefficient  or Radiative sources term
-  if ( ixkabe.gt.0 ) then
-    ipp = ipppro(ipproc(idrad) )
+  if (ixkabe.gt.0) then
+    ipp = ipppro(ipproc(idrad))
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
@@ -5071,8 +5041,8 @@ if ( ippmod(ielarc).ge.1 ) then
 endif
 
 ! ---- Electric charge (volumic)
-if ( ippmod(ielion).ge.1 ) then
-  ipp = ipppro(ipproc(iqelec) )
+if (ippmod(ielion).ge.1) then
+  ipp = ipppro(ipproc(iqelec))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
@@ -5092,7 +5062,7 @@ srrom = 0.d0
 !      IELCOR = 1 : CORRECTION
 ielcor = 0
 
-!     Imposed current intensity (electric arc ) in Amp
+!     Imposed current intensity (electric arc) in Amp
 !        and Imposed Power (Joule effect for glass melting applications) in Watt
 !       These values have to be positive
 !
@@ -5104,7 +5074,7 @@ dpot = 0.d0
 
 
 !----
-! FIN
+! End
 !----
 
 return
@@ -5119,9 +5089,10 @@ subroutine uscti1
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
+! Definition of cooling tower model and exchange zones
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -5270,7 +5241,7 @@ call ctprof &
 ( cpa, cpv, cpe, hv0, rhoe, visc, conduc, gx, gy, gz )
 
 !----
-! FIN
+! End
 !----
 
 return

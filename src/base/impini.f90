@@ -29,7 +29,7 @@ subroutine impini
 !  ---------
 
 ! IMPRESSION DES PARAMETRES DE CALCUL APRES INTERVENTION
-!   UTILISATEUR DANS usini1
+!   UTILISATEUR DANS cs_user_parameters.f90
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.

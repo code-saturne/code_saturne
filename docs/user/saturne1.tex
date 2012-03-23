@@ -247,8 +247,8 @@ version of the code, ...).
 &                                   & specific physics modules)\\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/SRC:}}&{\bf \CS user subroutines }\\
 &        \texttt{REFERENCE}         &  Examples of a user subroutines\\
-&        \texttt{usclim.f90}        &  user subroutines used for the present calculation\\
-&        \texttt{usini1.f90} &\\
+&        \texttt{cs\_user\_boundary\_conditions.f90}  &  user subroutines used for the present calculation\\
+&        \texttt{cs\_user\_parameters.f90} &\\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/RESU/20110509-1920:}}&{\bf results} for the
                                                              calculation 20110509-1920\\
 &        \texttt{postprocessing}    &directory containing the \CS post-processing output\\
@@ -410,9 +410,9 @@ compulsory.
     \begin{list}{}{}
         \item {\em compulsory without Graphical User Interface:}
         \begin{list}{-}{}
-            \item \texttt{usini1} to specify the calculation parameters
+            \item \texttt{cs\_user\_parameters.f90} to specify the calculation parameters
 
-            \item \texttt{usclim} to manage the boundary conditions
+            \item \texttt{cs\_user\_boundary\_conditions} to manage the boundary conditions
         \end{list}
 
         \item {\em  very useful:}
@@ -420,7 +420,7 @@ compulsory.
             \item \texttt{usphyv} to manage the variable physical
                   properties (fluid density, viscosity ...)
 
-            \item \texttt{usiniv} to manage the non-standard initialisations
+            \item \texttt{cs\_user\_initialization} to manage the non-standard initialisations
         \end{list}
     \end{list}
 
@@ -430,7 +430,7 @@ compulsory.
     \begin{list}{}{}
         \item {\em compulsory:}
         \begin{list}{-}{}
-            \item \texttt{usini1} to specify the calculation parameters
+            \item \texttt{cs\_user\_parameters.f90} to specify the calculation parameters
 
             \item \texttt{usppmo} to select a specific physics module and
                combustion model
@@ -461,7 +461,7 @@ compulsory.
     \begin{list}{}{}
         \item {\em compulsory without Graphical User Interface:}
         \begin{list}{-}{}
-            \item \texttt{usini1} to specify the calculation parameters
+            \item \texttt{cs\_user\_parameters.f90} to specify the calculation parameters
 
             \item \texttt{usppmo} to select the specific physics module
 
@@ -490,7 +490,7 @@ compulsory.
     \begin{list}{}{}
        \item {\em compulsory:}
         \begin{list}{-}{}
-            \item \texttt{usini1} to specify the calculation parameters
+            \item \texttt{cs\_user\_parameters.f90} to specify the calculation parameters
 
             \item \texttt{usppmo} to select the specific physics module
 
@@ -521,7 +521,7 @@ compulsory.
     \begin{list}{}{}
         \item {\em compulsory:}
         \begin{list}{-}{}
-            \item \texttt{usini1} to specify the calculation parameters
+            \item \texttt{cs\_user\_parameters.f90} to specify the calculation parameters
 
             \item \texttt{usppmo} to select the specific physics module
 
@@ -686,7 +686,7 @@ the Partitioner in parallel.
 %==================================
 \label{prg_ficstp}%
 During a calculation, it is possible to change the limit time step number
-(\texttt{ntmabs}) specified through the Interface or in \texttt{usini1}.
+(\texttt{ntmabs}) specified through the Interface or in \texttt{cs\_user\_parameters.f90}.
 To do so, a file named \texttt{ficstp} must be placed in the temporary
 execution directory (see \S\ref{prg_temporarydirectory}).
 This file must contain a blank first line and
@@ -1508,10 +1508,10 @@ There are some limitations to the changes that can be made between the Interface
 and the user routines. In particular, it is not possible to specify a certain
 number of solved variables in the Interface and change it in the user routines
 (for example, it is not possible to specify the use of a $k-\varepsilon$ model
-in the Interface and change it to $R_{ij}-\varepsilon$ in \texttt{usini1.f90}, or
-to define additional scalars in \texttt{usini1} with respect to the
+in the Interface and change it to $R_{ij}-\varepsilon$ in \texttt{cs\_user\_parameters.f90}, or
+to define additional scalars in \texttt{cs\_user\_parameters.f90} with respect to the
 Interface). Also, all boundaries should be referenced in the Interface, even if
-the associated conditions are intended to be modified in \texttt{usclim}, and
+the associated conditions are intended to be modified in \texttt{cs\_user\_boundary\_conditions}, and
 their nature (entry, outlet, wall\footnote{smooth and rough walls are considered
 of the same nature}, symmetry) should not be changed.
 
@@ -1521,8 +1521,8 @@ should:\\
 - set the boundary conditions corresponding to the wall and the output
 using the Graphical Interface\\
 - set a dummy boundary condition for the inlet (uniform velocity for instance)
-- set the proper velocity profile at inlet in \texttt{usclim}. The wall and
-output areas do not need to appear in \texttt{usclim}. The dummy velocity
+- set the proper velocity profile at inlet in \texttt{cs\_user\_boundary\_conditions}. The wall and
+output areas do not need to appear in \texttt{cs\_user\_boundary\_conditions}. The dummy velocity
 entered in the Interface will not be taken into account.
 
 The Graphical User Interface is launched with the \texttt{./SaturneGUI} command
@@ -1590,18 +1590,18 @@ other parameters specified through the Interface.
 
 \minititre{Note: option \texttt{--nogui} of the \texttt{code\_saturne~create} command}
 When a calculation is using the Interface but, for some reason, some extra
-parameters need to be specified in the subroutine \texttt{usini1}, the latter
+parameters need to be specified in the subroutine \texttt{cs\_user\_parameters.f90}, the latter
 must be placed in the directory \texttt{SRC}. But, while doing this, all the
-parameters appearing in \texttt{usini1} will also be taken into account. In
-order to prevent the user from having to respecify in \texttt{usini1} all that
+parameters appearing in \texttt{cs\_user\_parameters.f90} will also be taken into account. In
+order to prevent the user from having to respecify in \texttt{cs\_user\_parameters.f90} all that
 he has already specified through the Interface, \texttt{code\_saturne~create} automatically
-comments out the examples in \texttt{usini1} (\texttt{Cex} at the beginning of
+comments out the examples in \texttt{cs\_user\_parameters.f90} (\texttt{Cex} at the beginning of
 each line) while copying it in the directory \texttt{REFERENCE}. Therefore, the user
-only needs to uncomment the specific parts of \texttt{usini1} he wants to modify,
+only needs to uncomment the specific parts of \texttt{cs\_user\_parameters.f90} he wants to modify,
 and the rest of the examples will be ignored.\\
 On the contrary, if the Interface will not be used, then all the parameters in
-\texttt{usini1} have to be specified. In that case, using the \texttt{--nogui}
-option of \texttt{code\_saturne~create} will prevent it from commenting \texttt{usini1}
+\texttt{cs\_user\_parameters.f90} have to be specified. In that case, using the \texttt{--nogui}
+option of \texttt{code\_saturne~create} will prevent it from commenting \texttt{cs\_user\_parameters.f90}
 out, thus saving the user the tedious task of uncommenting all the lines (and
 the risk of skipping some of them).
 
@@ -1934,8 +1934,8 @@ variables at the previous time step}
 \underline{About \texttt{rtp} and \texttt{rtpa}}
 
 The indexes allowing to mark out the different variables (from 1 to
-\texttt{nvar}) are integers available in a ``common'' file called
-\texttt{numvar.h}.
+\texttt{nvar}) are integers available in a ``module'' called
+\texttt{numvar}.
 
 For example, \texttt{ipr} refers to the variable ``pressure'':
 the pressure in the cell \texttt{iel} at the current time step is
@@ -2021,7 +2021,7 @@ $\overline{f}$), the following are highly important:
       $\overline{\varphi^\prime\varphi^\prime}$ for a fluctuating scalar
       $\varphi$ ). This can be made either {\em via} the
       interface or by indicating \texttt{iscavr(j)=k}\index{\texttt{iscavr}} in
-      \texttt{usini1} (if the scalar in question is not a ``user''
+      \texttt{cs\_user\_parameters.f90} (if the scalar in question is not a ``user''
       scalar, the selection is made automatically). For instance, if \texttt{j}
       and \texttt{k} are ``user'' scalars, the variable $\varphi$ corresponding
       to \texttt{k} is the variable number \texttt{isca(k)=isca(iscavr(j))},
@@ -2224,10 +2224,10 @@ array of reals.
 \item It is the case for the specific heat $C_p$.
 \begin{list}{-}{}
 \item If $C_p$ is constant, it can be specified in
-      the interface or by indicating \texttt{icp=0} in \texttt{usini1},
+      the interface or by indicating \texttt{icp=0} in \texttt{cs\_user\_parameters.f90},
       and the property will be stored in the real number \texttt{cp0}.
 \item If $C_p$ is variable, it can be specified in the interface or by
-      indicating \texttt{icp=1} in \texttt{usini1}. The code will then
+      indicating \texttt{icp=1} in \texttt{cs\_user\_parameters.f90}. The code will then
       modify this value to make \texttt{icp} refer to the effective
       property number corresponding to the specific heat,
       in a way which is transparent for the user. For each cell
@@ -2237,10 +2237,10 @@ array of reals.
 \item It is the same for the diffusivity $K$ of each scalar \texttt{iscal}.
 \begin{list}{-}{}
 \item If $k$ is constant, it can be specified in the interface or by
-      indicating \texttt{ivisls(iscal)=0} in \texttt{usini1}, and the property
+      indicating \texttt{ivisls(iscal)=0} in \texttt{cs\_user\_parameters.f90}, and the property
       will be stored in the real number \texttt{visls0(iscal)}.
 \item If $k$ is variable, it can be specified in the interface or by
-      indicating \texttt{ivisls(iscal)=1} in \texttt{usini1}. The code will then
+      indicating \texttt{ivisls(iscal)=1} in \texttt{cs\_user\_parameters.f90}. The code will then
       modify this value to make \texttt{ivisls(iscal)} refer to the effective
       property number corresponding to the diffusivity of the scalar
       \texttt{iscal}, in a way which is transparent for the user. For each cell
@@ -2343,7 +2343,7 @@ allows to simplify the coding with \texttt{isympa(ifac)=ia(iismph+ifac-1)}}
 sort the boundary faces according to their boundary condition type \texttt{itypfb}}
 
 \variab{itypfb}{itypfb(nfabor)}{ia}{Boundary condition type at the
-boundary face \texttt{ifac} (see user subroutine \texttt{usclim})}
+boundary face \texttt{ifac} (see user subroutine \texttt{cs\_user\_boundary\_conditions})}
 
 \variab{uetbor}{uetbor(nfabor)}{ra}{Friction velocity at the wall,
 in the case of a LES calculation with van Driest-wall damping}
@@ -2467,7 +2467,7 @@ The second index of the array \texttt{iclrtp} allows to have several sets of
 boundary conditions for each variable. The ``standard'' boundary
 conditions are determined by \texttt{ijcl=icoef}, where \texttt{icoef} is a
 parameter which is fixed automatically by the code, and can be accessed to in the
-``common'' file \texttt{numvar.h}. More specificic or advanced boundary
+``module'' \texttt{numvar}. More specificic or advanced boundary
 conditions can be accessed to with \texttt{ijcl=icoeff}. \\
 In practice, for a variable \texttt{ivar} whose value $\phi_{I'}$ in a
 boundary cell is known, the value at the corresponding boundary face
@@ -2586,7 +2586,7 @@ The user can check in a subroutine
       $p$ being the number of the current processor)
 \end{list}
 Attention must be paid to the coding of the user subroutines. If
-conventionnal subroutines like \texttt{usini1} or \texttt{usclim}
+conventionnal subroutines like \texttt{cs\_user\_parameters.f90} or \texttt{cs\_user\_boundary\_conditions}
 usually do not cause any problem, some kind of developments are more
 complicated. The most usual cases are dealt with below. \\ Examples are
 given in the subroutine \texttt{usproj}.
@@ -3021,7 +3021,7 @@ number of cells of the different meshes} and make restart files
 incompatible. Should that problem arise when making a calculation restart on a
 different architecture, the solution is to ignore the \texttt{auxiliary}
 file and use only the \texttt{main} file, by setting \texttt{ileaux = 0}
-in \texttt{usini1.f90}}
+in \texttt{cs\_user\_parameters.f90}}
 
 %==================================
 \subsubsection{Using selection criteria in user subroutines}
@@ -3033,9 +3033,9 @@ user subroutines, a collection of utility subroutines is provided. The aim is to
 define a subset of the mesh, for example:
 
 \begin{list}{-}{}
-\item boundary regions (cf. \texttt{usclim}, \texttt{uscpcl},
+\item boundary regions (cf. \texttt{cs\_user\_boundary\_conditions}, \texttt{uscpcl},
 \texttt{usray2}, \texttt{uslag2},...),
-\item volumic initialization (cf. \texttt{usiniv},...),
+\item volumic initialization (cf. \texttt{cs\_user\_initialization},...),
 \item head-loss region (cf. \texttt{uskpdc}),
 \item source terms region (cf. \texttt{ustsns}, \texttt{ustssc}),
 \item advanced post-processing (cf. \texttt{cs\_user\_postprocess.c},
@@ -3077,7 +3077,7 @@ internal faces which have a normal direction to the vector (1,0,0),
 \end{list}
 
 The user may then use a loop on the selected elements.
-For instance, in the subroutine \texttt{usclim} used to impose
+For instance, in the subroutine \texttt{cs\_user\_boundary\_conditions} used to impose
 boundary  conditions, let us consider the boundary faces of color
 number 2 and which have the coordinate $X <= 0.01$ (so
 that \verb+call getfbr('2 and x <= 0.01', nlelt,lstelt)+);
@@ -3870,19 +3870,19 @@ and frees will be logged.
 \subsection{Initialisation of the main parameters}
 %==================================
 
-This operation is done in the Graphical User Interface (GUI) or by using the user subroutine \texttt{usini1}.
-In the GUI, the initialisation is performed by filling the parameters displayed in Figs. \ref{fig:6_GUI} to \ref{fig:28_GUI}. If the option 'Mobile mesh' is activated in Fig. \ref{fig:6_GUI}, please see Section \ref{sec:ALE} for more details. In fig. \ref{fig:11_GUI}, the equivalent initialisations occur in the subroutine \texttt{usiniv} when the GUI is not used.
+This operation is done in the Graphical User Interface (GUI) or by using the user subroutine \texttt{cs\_user\_parameters.f90}.
+In the GUI, the initialisation is performed by filling the parameters displayed in Figs. \ref{fig:6_GUI} to \ref{fig:28_GUI}. If the option 'Mobile mesh' is activated in Fig. \ref{fig:6_GUI}, please see Section \ref{sec:ALE} for more details. In fig. \ref{fig:11_GUI}, the equivalent initialisations occur in the subroutine \texttt{cs\_user\_initialization} when the GUI is not used.
 The headings filled for the initialisation are the followings:
 \begin{list}{-}{}
 \item Thermophysical model options: ALE mobile mesh,
       turbulence model, thermal model, see figs. \ref{fig:6_GUI} to \ref{fig:8_GUI}.
-\item Additional scalars: definition, initialisation of the scalars, and physical characteristics, see figs. \ref{fig:11_GUI} and \ref{fig:12_GUI}. In fig. \ref{fig:12_GUI}, the initial values are given in the subroutine \texttt{usiniv} if the GUI is not used, see Section \ref{sec:usiniv}.
+\item Additional scalars: definition, initialisation of the scalars, and physical characteristics, see figs. \ref{fig:11_GUI} and \ref{fig:12_GUI}. In fig. \ref{fig:12_GUI}, the initial values are given in the subroutine \texttt{cs\_user\_initialization} if the GUI is not used, see Section \ref{sec:cs_user_initialization}.
 \item Physical properties: reference pressure, fluid characteristics, gravity, see figs. \ref{fig:13_GUI} to \ref{fig:15_GUI}. If non-constant values are used for the fluid properties, and if the GUI is not used, see Section \ref{sec:usphyv}.
 \item Numerical parameters: number and type of time steps, and advanced parameters for the numerical solution of the equations, see figs. \ref{fig:21_GUI} to \ref{fig:23_GUI}.
 \item Calculation control: parameters related to the time averages, the time step, the
       locations of the probes where some variables will be monitored over time
       (if the GUI is not used, this information is specified in Section
-      \ref{sec:usiniv}), the definition of the frequency of the outputs in the calculation
+      \ref{sec:cs_user_initialization}), the definition of the frequency of the outputs in the calculation
       listing, the postprocessing output writer frequency and format options, and
       the postprocessing output meshes and variables selection, see
       figs. \ref{fig:24_GUI}, \ref{gui_output_log}, \ref{gui_output_writers},
@@ -4019,10 +4019,10 @@ The headings filled for the initialisation are the followings:
 \end{center}
 \end{figure}
 
-In the case of a calculation launched using the interface, the subroutine \texttt{usini1} is only
+In the case of a calculation launched using the interface, the subroutine \texttt{cs\_user\_parameters.f90} is only
 used to modify high-level parameters which can not be managed by the
 interface. In the case of a code utilisation without interface, this
-subroutine is compulsory and all the headings must be completed. \texttt{usini1} is used to indicate the value of different calculation
+subroutine is compulsory and all the headings must be completed. \texttt{cs\_user\_parameters.f90} is used to indicate the value of different calculation
 basic parameters: constant and uniform physical values, parameters of
 numerical schemes, input-output management...\\
 It is called only during the calculation initialisation.
@@ -4030,7 +4030,7 @@ It is called only during the calculation initialisation.
 For more details about the different parameters, please refer to the key
 word list (\S\ref{prg_motscles}).
 
-\texttt{usini1} is in fact constituted of 6 seperate subroutines:  \texttt{usipph},
+\texttt{cs\_user\_parameters.f90} is in fact constituted of 6 seperate subroutines:  \texttt{usipph},
  \texttt{usinsc}, \texttt{usipsc}, \texttt{usipgl},
 \texttt{usipsu} and \texttt{usipes}. Each one controls various
  specific parameters. The key words which are not featured in the supplied example
@@ -4038,7 +4038,7 @@ can be provided by the user in \texttt{SRC/REFERENCE/base}; in this case,
 understanding of the comments is required to add the key words in the appropriate
 subroutine, it will ensure that the value
 has been well defined). The modifiable parameters in each of the subroutines of
-\texttt{usini1} are:
+\texttt{cs\_user\_parameters.f90} are:
 
 \begin{list}{$\bullet$}{}
 \item \texttt{usipph}: \texttt{iturb} and \texttt{icp} (don't modify these
@@ -4070,10 +4070,10 @@ the user must indicate \texttt{iscavr(jj)=kk}
 \noindent
 $\bullet\ $ When using the interface, only the
 additional parameters (which can not be defined in the interface)
-should appear in \texttt{usini1}. To spare the user the necessity to
+should appear in \texttt{cs\_user\_parameters.f90}. To spare the user the necessity to
 delete the other parameters given as examples in the subroutine, the
 setup program \texttt{code\_saturne~create} comments automatically all the
-example lines of \texttt{usini1} with a code ``\texttt{!ex}''. The user
+example lines of \texttt{cs\_user\_parameters.f90} with a code ``\texttt{!ex}''. The user
 needs then only to remove comments at the lines which are useful for his
 case. This function of
 \texttt{code\_saturne~create} can be deactivated with
@@ -4106,10 +4106,10 @@ may still be defined easily.
 
 %==================================
 %==================================
-\subsection{Non-default variables initialisation} \label{sec:usiniv}
+\subsection{Non-default variables initialisation} \label{sec:cs_user_initialization}
 %==================================
 
-The non-default variables initialisation is performed in the subroutine \texttt{usiniv} (called only during the calculation initialisation).\\ At the calculation beginning, the variables are initialised
+The non-default variables initialisation is performed in the subroutine \texttt{cs\_user\_initialization} (called only during the calculation initialisation).\\ At the calculation beginning, the variables are initialised
 automatically by the code. Velocities and scalars are set to 0 (or \texttt{scamax} or \texttt{scamin} if 0 is outside the acceptable
 scalar variation range), and the turbulent variables are estimated from
 \texttt{uref} and \texttt{almax}. \\
@@ -4125,7 +4125,7 @@ For $\varphi$ and $\overline{f}$ in the v2f model:\\
 \texttt{rtp(iel,iphiph) = 2/3}\\
 \texttt{rtp(iel,ifbiph) = 0}
 
-The subroutine \texttt{usiniv} allows if necessary to initialise certain
+The subroutine \texttt{cs\_user\_initialization} allows if necessary to initialise certain
 variables to values closer to their estimated final values, in order to
 obtain a faster convergence.
 
@@ -4138,28 +4138,28 @@ variable specific heat, ...) in the case of a calculation restart.
 \begin{list}{-}{}
 \item For calculations with constant and uniform time step
       (\texttt{idtvar}=0), the value of the time step is \texttt{dtref},
-      given in the parametric file of the interface or \texttt{usini1}.
+      given in the parametric file of the interface or \texttt{cs\_user\_parameters.f90}.
 \item For calculations with a non-constant time step
       (\texttt{idtvar}=1 or 2) which is not a calculation restart,
       the value of \texttt{dtref} given in the parametric file of the interface
-      or in \texttt{usini1} is used to initialise the time step.
+      or in \texttt{cs\_user\_parameters.f90} is used to initialise the time step.
 \item For calculations with a non-constant time step
       (\texttt{idtvar}=1 or 2) which is a restart of a
       calculation whose time step type was different (for instance, restart
       using a variable time step of a calculation run using a constant time
       step), the value of \texttt{dtref}, given in the parametric file of the
-      interface or in \texttt{usini1}, is used to initialise the time step.
+      interface or in \texttt{cs\_user\_parameters.f90}, is used to initialise the time step.
 \item For calculations with non-constant time step
       (\texttt{idtvar}=1 or 2) which is a restart of a
       calculation whose time step type was the same (for instance, restart with
       \texttt{idtvar}=1 of a calculation run with \texttt{idtvar}=1), the time
       step is read from the restart file and the value of \texttt{dtref} given
-      in the parametric file of the interface, or in \texttt{usini1}, is not used.
+      in the parametric file of the interface, or in \texttt{cs\_user\_parameters.f90}, is not used.
 \end{list}
 It follows, that for a calculation with a non-constant time step (\texttt{idtvar}=1
 or 2) which is a restart of a calculation in which
 \texttt{idtvar} had the same value, \texttt{dtref} does not allow to modify the
-time step. The user subroutine \texttt{usiniv} allows to modify the array
+time step. The user subroutine \texttt{cs\_user\_initialization} allows to modify the array
 \texttt{dt} which contains the value of the time step read from the restart file
 (array whose size is \texttt{ncelet}, defined at the cell centers whatever the
 chosen time step type is).
@@ -4168,12 +4168,12 @@ chosen time step type is).
 specific physics module} (\texttt{nscapp.gt.0}), 
 one of the subroutines
 \texttt{usebui}, \texttt{usd3pi}, \texttt{uslwci} or \texttt{uscpiv} 
-should be used (depending on the activated module) instead of \texttt{usiniv}.
+should be used (depending on the activated module) instead of \texttt{cs\_user\_initialization}.
 
 %==================================
 \subsection{Manage boundary conditions}
 %==================================
-The boundary conditions can be specified in the Graphical User Interface (GUI) under the heading ``Boundary conditions'' or in the user subroutine \texttt{usclim} called every time step. With the GUI, each region and the type of boundary condition associated to it are defined in fig. \ref{fig:19_GUI}. Then, the parameters of the boundary condition are specified in fig. \ref{fig:20_GUI}. The colors of the boundary faces may be read directly from a ``listing'' file created by the Preprocessor. This file can be generated directly by the interface under the heading ``Definition of boundary regions $\rightarrow$ Add from Preprocessor listing $\rightarrow$ import groups and references from Preprocessor listing'', see fig. \ref{fig:19_GUI}.
+The boundary conditions can be specified in the Graphical User Interface (GUI) under the heading ``Boundary conditions'' or in the user subroutine \texttt{cs\_user\_boundary\_conditions} called every time step. With the GUI, each region and the type of boundary condition associated to it are defined in fig. \ref{fig:19_GUI}. Then, the parameters of the boundary condition are specified in fig. \ref{fig:20_GUI}. The colors of the boundary faces may be read directly from a ``listing'' file created by the Preprocessor. This file can be generated directly by the interface under the heading ``Definition of boundary regions $\rightarrow$ Add from Preprocessor listing $\rightarrow$ import groups and references from Preprocessor listing'', see fig. \ref{fig:19_GUI}.
 %
 \begin{figure}[!ht]
 \begin{center}
@@ -4191,15 +4191,15 @@ The boundary conditions can be specified in the Graphical User Interface (GUI) u
 \end{center}
 \end{figure}
 
-\texttt{usclim} is the second compulsory subroutine for every calculation launched
+\texttt{cs\_user\_boundary\_conditions} is the second compulsory subroutine for every calculation launched
 without interface (except in the case of specific physics where the
 corresponding boundary condition user subroutine must be used)  \\
-When the subroutine is used, \texttt{usclim} is used to define complex
+When the subroutine is used, \texttt{cs\_user\_boundary\_conditions} is used to define complex
 boundary conditions (input profiles, conditions varying in time, ...)
 which could not be specified by the means of the interface, and only these
 need to be defined. In the case of a calculation launched without the
-interface, all the boundary conditions must appear in \texttt{usclim}.\\
-\texttt{usclim} is essentially constituted of loops on boundary
+interface, all the boundary conditions must appear in \texttt{cs\_user\_boundary\_conditions}.\\
+\texttt{cs\_user\_boundary\_conditions} is essentially constituted of loops on boundary
 face subsets. Several sequences 
 of \verb+call getfbr+ \verb+('criterion', nlelt, lstelt)+ (cf.
 \S\ref{fvm_selector}) allow to select 
@@ -4372,7 +4372,7 @@ choose a value $N$ and to fully specify the boundary conditions (see
 \texttt{ntypmx\index{ntypmx}} (maximum number of boundary face types), and of
 course different from the values \texttt{ientre}, \texttt{iparoi},
 \texttt{iparug}, \texttt{isymet}, \texttt{isolib} and \texttt{iindef} (the values
-of these variables are given in the file \texttt{paramx.h}). This allows to
+of these variables are given in the \texttt{paramx} module). This allows to
 easily isolate some boundary faces, in order for instance to calculate balances.
 
 %==================================
@@ -4601,7 +4601,7 @@ is generated by a Langevin equation. It is in the subroutine \texttt{usvort}
 \textit{subroutine called for each time step}
 
 To allow the application of the vortex method, an indicator must be informed of
-the method in the user subroutine \texttt{usini1}(ivrtex=1)
+the method in the user subroutine \texttt{cs\_user\_parameters.f90}(ivrtex=1)
 
 The subroutine \texttt{usvort} contains 3 seperate parts:
 
@@ -4678,7 +4678,7 @@ If \texttt{icas}=2, \texttt{lld} represents the diameter of the circular pipe.
 If \texttt{icas}=4, \texttt{udebit} ,\texttt{kdebit} and \texttt{edebit} are
 defined for each inlet, these give respectively,
 initial speed, turbulent energy level and the dissipation level. These can be used to
- obtain their magnitude using the correlations in the user routine \texttt{usclim} for
+ obtain their magnitude using the correlations in the user routine \texttt{cs\_user\_boundary\_conditions} for
  fully developed flow in a pipe.
 
  The case independant parameters are defined as follows:
@@ -4796,18 +4796,18 @@ may produce negative density values).
 \begin{list}{$\bullet$}{}
 \item If one wishes to impose a variable density or variable viscosity in
       \texttt{usphyv}, it must be flagged either in the interface or in
-      \texttt{usini1}(\texttt{irovar}=1, \texttt{ivivar}=1).
+      \texttt{cs\_user\_parameters.f90}(\texttt{irovar}=1, \texttt{ivivar}=1).
 \item In order to impose a physical property ($\rho$, $\mu$,
       $\lambda$, $C_p$)\footnote{except for some specific physics} a reference
-      value should be provided in the interface or in \texttt{usini1} (in
+      value should be provided in the interface or in \texttt{cs\_user\_parameters.f90} (in
       particular for $\rho$, the pressure will be function of $\rho_0 gz$)
 \item By default, the $C_p$ coefficient and the
       diffusivity for the scalars \texttt{iscal} ($\lambda/C_p$ for the
       temperature) are considered as constant in time and uniform in
       space, with the values \texttt{cp0} and \texttt{visls0(iscal)}
-      specified in the interface or in \texttt{usini1}.\\
+      specified in the interface or in \texttt{cs\_user\_parameters.f90}.\\
 To assign a variable value to $C_p$, the user \textbf{must}t specify it in the
-      interface or assign the value 1 to \texttt{icp} in \texttt{usini1},
+      interface or assign the value 1 to \texttt{icp} in \texttt{cs\_user\_parameters.f90},
       and fill for each cell \texttt{iel} the array
       \texttt{propce(iel,ipccp)} in \texttt{usphyv}. Completing the array
       \texttt{propce(iel,ipccp)} while \texttt{icp=0} induces array
@@ -4815,14 +4815,14 @@ To assign a variable value to $C_p$, the user \textbf{must}t specify it in the
 
 \item In the same way, to have variable diffusivities for the scalars
       \texttt{iscal}, the user \textbf{must} specify it in the interface or give the value
-      1 to \texttt{ivisls(iscal)} in \texttt{usini1}, and complete for each cell
+      1 to \texttt{ivisls(iscal)} in \texttt{cs\_user\_parameters.f90}, and complete for each cell
       \texttt{iel} the array \texttt{propce(iel,ipcvsl)} in \texttt{usphyv}.
       Completing \texttt{propce(iel,ipcvsl)} while \texttt{ivisls(iscal)}=0
       induces memory overwriting problems and produces wrong results.\\
 
 {\em Example}: If scalars 1 and 3 have a constant and uniform
       diffusivity, and if scalars 2 and 4 have a variable diffusivity,
-      the following values must be set in \texttt{usini1}: \\
+      the following values must be set in \texttt{cs\_user\_parameters.f90}: \\
       \texttt{ivisls(1)}=0, \texttt{ivisls(2)}=1, \texttt{ivisls(3)}=0
       and \texttt{ivisls(4)}=1. \\
       The indicators \texttt{ivisls(2)} and \texttt{ivisls(4)} are then
@@ -5570,7 +5570,7 @@ separated. Negative numbers are reserved for the non-user items. For
 instance,the mesh numbers -1 and -2 correspond respectively to the global
 mesh and to boundary faces, generated by default, and the writer -1
 corresponds to the usual post-processing case defined {\em via}
-\texttt{usini1} or {\em via} the interface.
+\texttt{cs\_user\_parameters.f90} or {\em via} the interface.
 
 The user chooses the numbers corresponding to the post-processing
 meshes and writers he wants to create. These numbers must be positive
@@ -5772,7 +5772,7 @@ The thermal balance example is particularly interesting.
 %==================================
 \label{prg_ushist}
 
-The interface and the subroutine \texttt{usini1} allow to manage the
+The interface and the subroutine \texttt{cs\_user\_parameters.f90} allow to manage the
 ``automatic'' chronological record files in an autonomous way:
 position of the probes, printing frequency and related variables. The
 results are written in a different file for each variable. These files
@@ -5809,10 +5809,10 @@ directory works as follows:
 \end{list}
 
 {\em WARNING: The use of {\em\texttt{ushist}} neither erases nor replaces the
-parameters given in the interface or in {\em\texttt{usini1}}. Therefore, in
+parameters given in the interface or in {\em\texttt{cs\_user\_parameters.f90}}. Therefore, in
 the case of the use of {\em\texttt{ushist}}, and to avoid the creation
 of useless files, the user should set {\em \texttt{ncapt}=0} in the interface or
-in {\em \texttt{usini1}} to deactivate the automatic production of
+in {\em \texttt{cs\_user\_parameters.f90}} to deactivate the automatic production of
 chronological records}.\\
 In addition, {\em \texttt{ushist}} generates supplementary result
 files.
@@ -6190,7 +6190,7 @@ study case. Their content is described below.
   8     &    1   238         &    \texttt{ngazg\index{ngazg}}   & Number of species                         \\
         &                    &    \texttt{npo\index{npo}}       & Number of given temperature points for    \\
         &                    &                         & the tabulated physical properties                  \\
-        &                    &                         & (\texttt{npo} $\leqslant$ \texttt{npot} set in \texttt{ppthch.h})             \\
+        &                    &                         & (\texttt{npo} $\leqslant$ \texttt{npot} set in \texttt{ppthch})             \\
         &                    &                         & So there will be \texttt{ngazg} blocks of \texttt{npo} lines each    \\ \hline
   9     &\#                            ... &           & Free comment                                       \\ \hline
  14     &        0           & \texttt{ixkabe\index{ixkabe}} & Radiation options for \texttt{xkabe\index{xkabe}}   \\ \hline
@@ -6283,7 +6283,7 @@ between different initialisation zones if needed.
 
 {\em WARNING: in the case of a specific physics modeling, all the
 variables will be initialised here, even the potential user scalars: {\em
-\texttt{usiniv}} is no longer used.}
+\texttt{cs\_user\_initialization}} is no longer used.}
 
 
 \begin{list}{$\bullet$}{}
@@ -6345,23 +6345,23 @@ For coal combustion, it is possible to manage the boundary conditions in the Gra
 
 For gas combustion or if the GUI is not used for coal combustion, the use of \texttt{usebuc} (called at every time step),
 \texttt {usd3pc}, \texttt{uslwcc}, \texttt{uscpcl} or \texttt{uscplc} is as
-mandatory as \texttt{usini1} and \texttt{usppmo} to run a calculation involving specific physics. The way of using them is the same as using
-\texttt{usclim} in the framework of standard calculations, that is, run several loops on the boundary faces lists (cf. \S\ref{fvm_selector})
+mandatory as \texttt{cs\_user\_parameters.f90} and \texttt{usppmo} to run a calculation involving specific physics. The way of using them is the same as using
+\texttt{cs\_user\_boundary\_conditions} in the framework of standard calculations, that is, run several loops on the boundary faces lists (cf. \S\ref{fvm_selector})
 marked out by their colors, groups, or  geometrical criterion, where
 the type of face, the type of boundary condition for each variable and
 eventually the value of each variable are defined.
 
 {\em WARNING: In the case of a specific physics modeling, all the
 boundary conditions for every variable must be defined here, even for
-the eventual user scalars: {\em \texttt{usclim}} is not used at all.}\\
+the eventual user scalars: {\em \texttt{cs\_user\_boundary\_conditions}} is not used at all.}\\
 
 In the case of a specific physics modeling, a zone number \texttt{izone}
 \footnote{\texttt{izone} must be less than the maximum number of boundary
 zone allowable by the code, \texttt{nozppm}. This is fixed at 2000 in
- \texttt{pppvar.h};not to be modified} (for
+ \texttt{pppvar};not to be modified} (for
 instance the color \texttt{icoul}) is associated with every boundary face, in
 order to gather together all the boundary faces of the same type. In
-comparison to \texttt{usclim}, the main change from the user point of
+comparison to \texttt{cs\_user\_boundary\_conditions}, the main change from the user point of
 view concerns the faces whose boundary conditions belong to the type
 \texttt{itypfb=ientre\index{ientre}}:
 
@@ -6499,7 +6499,7 @@ In the case of coal combustion, time averages, chronological records and listing
 In this section, ``specific physics'' refers to gas combustion or
 pulverised coal combustion.
 
-For gas combustion or if the GUI is not used for coal combustion, the 3 subroutines \texttt{usebu1, usd3p1, uslwc1, uscpi1} and \texttt{uscpl1} can be used to complete \texttt{usini1} for the
+For gas combustion or if the GUI is not used for coal combustion, the 3 subroutines \texttt{usebu1, usd3p1, uslwc1, uscpi1} and \texttt{uscpl1} can be used to complete \texttt{cs\_user\_parameters.f90} for the
 considered specific physics. These subroutines are called at the calculation start.
 They allow to:
 \begin{list}{$\bullet$}{}
@@ -6508,14 +6508,14 @@ They allow to:
              \texttt{ichrvr\index{ichrvr}(ipp)}), follow-ups in the listings
              (indicator \texttt{ilisvr\index{ilisvr}(ipp)}) and to activate
              chronological records at the probes defined in
-             \texttt{usini1} (indicators \texttt{ihisvr(ipp)}).\\
-The way of doing it is the same as in \texttt{usini1} and the writing
-      frequencies of these ouputs are set by \texttt{usini1}. The values
+             \texttt{cs\_user\_parameters.f90} (indicators \texttt{ihisvr(ipp)}).\\
+The way of doing it is the same as in \texttt{cs\_user\_parameters.f90} and the writing
+      frequencies of these ouputs are set by \texttt{cs\_user\_parameters.f90}. The values
       of the indicators \texttt{ipp} are
       \texttt{ipp=ipppro\index{ipppro}(ipproc\index{ipproc}(ivar))}, with \texttt{ivar}
       the number of the specific physics variable.
 Concerning the main variables (velocity, pressure, etc ...) the user
-      must still complete \texttt{usini1} if he wants to get
+      must still complete \texttt{cs\_user\_parameters.f90} if he wants to get
       chronological records, printings in the listing or chronological
       outputs.
 The variables which can be activated by the user for each specific
@@ -6667,7 +6667,7 @@ $\rho^{n+1}=\texttt{srrom}*\rho^{n}+(1-\texttt{srrom})\rho^{n+1}$\\
 %==================================
 \subsubsection{Initialisation of transported variables}
 %==================================
-To initialise or modify (in case of a continuation) values of transported variables and of the time step, the subroutine \texttt{usfuiv} is used. It is similar to \texttt{usiniv}. It is called at the beginning of every computation (new or continuation) before the time loop.
+To initialise or modify (in case of a continuation) values of transported variables and of the time step, the subroutine \texttt{usfuiv} is used. It is similar to \texttt{cs\_user\_initialization}. It is called at the beginning of every computation (new or continuation) before the time loop.
 
 Physical properties are stored in \texttt{propce} (cell center), \texttt{propfa} (inner face) and \texttt{propfb}. For instance, \texttt{propce(iel, ipproc(irom  ))} is \texttt{rom(iel)}, the mean density (in $kg.m^{-3}$), and \texttt{propfa(ifac,ipprof(ifluma(ivar)))} is \texttt{flumas(IFAC,IVAR)}, the convective flux of the variable \texttt{ivar}.\\
 Physical properties (\texttt{rom, viscl, cp, ...}) are computed in \texttt{ppphyv} and are not to be modified here.
@@ -6693,7 +6693,7 @@ The presence of a fuel combustion module variable in the listing, {\itshape hist
 \begin{list}{-}{}
 \item \texttt{ichrvr}: chronological output (1:yes / 0:no)
 \item \texttt{ilisvr}: listing output (1:yes / 0:no)
-\item \texttt{ihisvr}: {\itshape histo} output (number of probes and probe numbers), if $= -1$, every probes defined in \texttt{usini1} will be found in the {\itshape histo} files
+\item \texttt{ihisvr}: {\itshape histo} output (number of probes and probe numbers), if $= -1$, every probes defined in \texttt{cs\_user\_parameters.f90} will be found in the {\itshape histo} files
 \end{list}
 
 Calculation options such as a the relaxation parameter the for density (recommended when starting a combustion computation but forbidden for unstationnary computations) can also be set, as well as physical constants like the the laminar viscosity for the enthalpy.
@@ -6802,11 +6802,11 @@ calculation, and in the other, the coupling between the thermal
 scalar (temperature or enthalpy), and the radiation module at the
 calculation domain boundaries. It must be noted that the boundary conditions
 concerning the thermal scalar which may have been defined in the
-subroutine \texttt{usclim} will be modified by the radiation module
+subroutine \texttt{cs\_user\_boundary\_conditions} will be modified by the radiation module
 according to the data given in \texttt{usray2} (cf. \S\ref{fvm_selector}).\\
 A zone number must be given to each boundary face \footnote{this must be less
  than the maximum allowable by the code, \texttt{nozrdm}. This is fixed at 2000
- in \texttt{radiat.h} and cannot be modified.}and, specifically for
+ in \texttt{radiat} and cannot be modified.}and, specifically for
 the walls, a boundary condition type and an initialisation temperature
 (in Kelvin). The initialisation temperature is only used to make the
 solving implicit at the first time step. The zone number allows to assign
@@ -6829,7 +6829,7 @@ each boundary face. There are five different types:
 
 \item \texttt{\textbf{iprefl}}: for a reflecting wall face, calculation of the
       temperature by means of a flux balance.
- This is fixed at 2000 in \texttt{radiat.h} and cannot be modified.
+ This is fixed at 2000 in \texttt{radiat} and cannot be modified.
 
 \item \texttt{\textbf{ifgrno}}: gray or black wall face to which a conduction
       flux is imposed,
@@ -7286,13 +7286,13 @@ Lagrangian module. The main numerical variables are described below.
 \variab{ifrlag}{ifrlag(nfabor)}{ia}{In the Lagrangian module, the user
 defines \texttt{nfrlag\index{nfrlag}} boundary zones from the color of the
 boundary faces, or more generally from their properties (colors, groups
-...), from the boundary conditions defined in \texttt{usclim}, or even
+...), from the boundary conditions defined in \texttt{cs\_user\_boundary\_conditions}, or even
 from their coordinates. To do so, the array \texttt{ifrlag(nfabor)} giving for
 each face \texttt{ifac} the number \texttt{ifrlag(ifac)} corresponding to the zone to
 which it belongs, is completed. The zone numbers ({\em i.e.} the values
 of \texttt{ifrlag(ifac)}) are chosen freely by the user, but must be strictly
 positive integers inferior or equal to \texttt{nflagm\index{nflagm}} (parameter
-stored in lagpar.h, whose default value is 100). A zone type is
+stored in lagpar, whose default value is 100). A zone type is
 associated with every zone; it will be used to impose global boundary
 conditions. \emph{WARNING: it is essential that every boundary face
 belongs to a zone.}}
@@ -7303,7 +7303,7 @@ of particles sharing the same physical properties and the same
 characteristics concerning the injection in the calculation domain} of
 entering particles is given: \texttt{iusncl(izone)} = \texttt{nbclas}.
 By default, the number of particle classes is zero. The maximum number of
-classes is \texttt{nclagm\index{nclagm}} (parameter stored in lagpar.h,
+classes is \texttt{nclagm\index{nclagm}} (parameter stored in lagpar,
 whose default value is 20).}
 
 \variablist{iusclb}{iusclb(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones
@@ -7805,7 +7805,7 @@ activated, it is recommended to:
 \begin{list}{-}{}
  \item use the option ``time step variable in time and uniform in
        space'' (\texttt{idtvar}=1) with a maximum Courant number of 0.4
-       (\texttt{coumax}=0.4): these choices must be written in \texttt{usini1}
+       (\texttt{coumax}=0.4): these choices must be written in \texttt{cs\_user\_parameters.f90}
  \item keep the convective numerical schemes proposed by default.
 \end{list}
 
@@ -7816,7 +7816,7 @@ activated, it is recommended to:
 \noindent
 \textit{Subroutines called at each time step.}
 
-The subroutines \texttt{uscfx1} and \texttt{uscfx2} complete \texttt{usini1}.
+The subroutines \texttt{uscfx1} and \texttt{uscfx2} complete \texttt{cs\_user\_parameters.f90}.
 
 \texttt{uscfx1} allows to set non standard calculation options related to the
 compressible module, and in particular to fill in the key word \texttt{icfgrp}
@@ -7839,9 +7839,9 @@ the volumetric viscosity the following pieces of information:
 
 The use of \texttt{uscfcl}
 is compulsory when running a calculation that uses the compressible module, just
-as it is in both \texttt{usini1} and \texttt{usppmo}. The
+as it is in both \texttt{cs\_user\_parameters.f90} and \texttt{usppmo}. The
 way of using it is the same as the way of using
-\texttt{usclim} in the framework of standard calculations, that is to
+\texttt{cs\_user\_boundary\_conditions} in the framework of standard calculations, that is to
 say several loops on the boundary faces lists (cf. \S\ref{fvm_selector})
 marked out by their colors, groups, or  geometrical criterion, where
 the type of face, the type of boundary condition for each variable and
@@ -7849,7 +7849,7 @@ eventually the value of each variable are defined.
 
 {\em WARNING: in the case of a calculation using the compressible
 module, the boundary conditions of all the variables are defined here,
-even those of the eventual user scalars: {\em \texttt{usclim}} is not
+even those of the eventual user scalars: {\em \texttt{cs\_user\_boundary\_conditions}} is not
 used at all.}
 
 In the compressible module, the different available boundary conditions
@@ -7875,10 +7875,10 @@ the user may have access to several geometric variables to discriminate
 between different initialisation zones if needed.
 
 {\em WARNING: in the case of a specific physics modeling, all the
-variables are initialised here: {\em \texttt{usiniv}} is not used at
+variables are initialised here: {\em \texttt{cs\_user\_initialization}} is not used at
 all.}
 
-This subroutine works like \texttt{usiniv} for velocity,
+This subroutine works like \texttt{cs\_user\_initialization} for velocity,
 turbulence and passive scalars. Concerning pressure, density,
 temperature and specific total energy, only 2 variables out of the 4 are
 independant. The user may also initialise the variable pair he wants
@@ -7927,21 +7927,21 @@ The subroutine \texttt{useliv} allows the user to initialise some of the specifi
  that the zones can be treated separately if needed.
 
 {\em WARNING: For the specific physics, it is here that all variables are initialised:
- \texttt{usiniv} is not used}
+ \texttt{cs\_user\_initialization} is not used}
 
-This subroutine works like \texttt{usiniv}. The values of potential and its
+This subroutine works like \texttt{cs\_user\_initialization}. The values of potential and its
 constituents are initialised if required.
 
 It should be noted that the enthalpy is relevant.
 
 \begin{list}{-}{}
 \item For the electric arc module, the enthalpy value is taken from the temperature
- of reference \texttt{t0} (given in \texttt{usini1}) from the temperature-enthalpy
+ of reference \texttt{t0} (given in \texttt{cs\_user\_parameters.f90}) from the temperature-enthalpy
  tables
  supplied in the data file \texttt{dp\_ELE.} The user must not intervene here.
 \item For the Joule effect module, the value of enthalpy must be specified by the user
 . An example is given of how to obtain the enthalpy from the temperature of reference
- \texttt{t0}(given in \texttt{usini1}), the temperature-enthalpy law must be
+ \texttt{t0}(given in \texttt{cs\_user\_parameters.f90}), the temperature-enthalpy law must be
 supplied. A code is suggested in the sub routine \texttt{usthht}(which is there for
  the determination of physical properties).
 \end{list}
@@ -7982,9 +7982,9 @@ subroutine can be re-used for the initialisation of the variables(\texttt{useliv
 \noindent
 \textit {subroutine called at each time step.}
 
-As much as \texttt{usini1} and \texttt{usppmo}, the use of \texttt{usecl}
+As much as \texttt{cs\_user\_parameters.f90} and \texttt{usppmo}, the use of \texttt{usecl}
 is required to run an electric calculation. The main use is the same as
-occurs in \texttt{usclim} for the standard \CS calculations, for which 
+occurs in \texttt{cs\_user\_boundary\_conditions} for the standard \CS calculations, for which 
 different loops on the boundary faces is defined. Each faces list is
 built with the use of selection criteria (cf. \S\ref{fvm_selector}),
 and is referenced by their group(s), their color(s) or geometrical
@@ -7993,15 +7993,15 @@ and finally the value of each variable or imposed flow are fixed.
 
 {\em WARNING:for the electric module, the boundary conditions of all
  the variables are defined here,
-even for those of the eventual user scalars: {\em \texttt{usclim}} is not
+even for those of the eventual user scalars: {\em \texttt{cs\_user\_boundary\_conditions}} is not
 used at all.}
 
 For the electric module, each boundary face is associated with a number
  \texttt{izone} \footnote{\texttt{izone} must be less than the maximum
  value allowed by the code, \texttt{nozzppm}. This is fixed at 2000 in \texttt
-{ppvar.h} and cannot be modified.}(the color \texttt{icoul} for example) in
+{ppvar} and cannot be modified.}(the color \texttt{icoul} for example) in
  order to group together all the boundary faces of the same type. In the report
- \texttt{usclim}, the main change from the users point of view concerns the
+ \texttt{cs\_user\_boundary\_conditions}, the main change from the users point of view concerns the
  specification of the boundary conditions of the potential, which isn't
  implied by default. The Dirichlet and Neumann conditions must be imposed
  explicitly using \texttt{icodcl} and \texttt{rcodcl} (as would be done for
@@ -8059,7 +8059,7 @@ there is only 1 varialbe for the potential,  called "real potential". Pay attent
 \textit{Subroutine called every time step.}
 
 This subroutine is compulsory when the electrical module is used. It
- manages the boundary conditions for variables unknown by \texttt{usclim}.
+ manages the boundary conditions for variables unknown by \texttt{cs\_user\_boundary\_conditions}.
  It calculates:
 \begin{list}{$\bullet$}{}
 \item  the intensity at each electrode
@@ -8076,20 +8076,20 @@ Finally, a test is performed to check if the offset is zero or if a boundary
 %==================================
 \label{prg_useli1}%
 
-The subroutine \texttt{useli1} is completed in \texttt{usini1} for the specific
+The subroutine \texttt{useli1} is completed in \texttt{cs\_user\_parameters.f90} for the specific
  physics. It is called at each time step. It allows:
 \begin{list}{$\bullet$}{}
 \item to activate the variables in the specific physics module, the chronological
 outputs (\texttt{ichrvr(ipp)} indicators), the listings (\texttt{ilisvr(ipp)}
 indicators) and the
-historical exits at the probes defined in \texttt{usini1} (\texttt{ihisvr(ipp)}
+historical exits at the probes defined in \texttt{cs\_user\_parameters.f90} (\texttt{ihisvr(ipp)}
 indicators).
-The functions are the same as in \texttt{usini1} and the script frequency of the
-exits are fixed using \texttt{usini1.} The indicators \texttt{ipp} are for the
+The functions are the same as in \texttt{cs\_user\_parameters.f90} and the script frequency of the
+exits are fixed using \texttt{cs\_user\_parameters.f90}. The indicators \texttt{ipp} are for the
  value \texttt{ipp=ipppro} (\texttt{ipproc(ivar)}, with \texttt{ivar}, the number
  of specific physics variables. With the main variables
  which concern the user (velocity, pressure, etc), the user must always use
- \texttt{usini1} if the history, the listings, or the chronological files are required.
+ \texttt{cs\_user\_parameters.f90} if the history, the listings, or the chronological files are required.
  The variables which the user can activate are marked out. The number of variables in
 the calculation is given in \texttt{ivar} (defined by
 \texttt{propce(iel,ipproc(iprop)} for cell \texttt{iel}):
@@ -8255,7 +8255,7 @@ The following paragraphs are relevant if the GUI is not used.
 \minititre{Subroutine \texttt{usalin}}
 \noindent
 \textit{Subroutine called at the start.}
-This subroutine completes \texttt{usini1}.
+This subroutine completes \texttt{cs\_user\_parameters.f90}.
 
 \texttt{usalin} allows to set option for the ale module, and in
 particular to active the ale module
@@ -8323,8 +8323,8 @@ The boundary conditions can be managed with the Graphical User Interface (GUI)
 \minititre{Subroutine \texttt{usalcl}}
 When the GUI is not used, the use of \texttt{usalcl} is mandatory to run
  a calculation using
-the ale module just as it is in \texttt{usini1}. The way of using it
-is the same as the way of using \texttt{usclim} in the framework of
+the ale module just as it is in \texttt{cs\_user\_parameters.f90}. The way of using it
+is the same as the way of using \texttt{cs\_user\_boundary\_conditions} in the framework of
 standard calculations, that is to say a loop on the boundary faces
 marked out by their colour (or more generally by a property of their
 family), where the type of boundary condition of velocity mesh for
@@ -8335,7 +8335,7 @@ The main numerical variables are described below.
 \variab{ialtyb}{ialtyb(nfabor)}{ia}{In the ale module, the user
 defines the velocity mesh from the colour of the boundary faces, or
 more generally from their properties (colours, groups, ...), from the
-boundary conditions defined in \texttt{usclim}, or even from their
+boundary conditions defined in \texttt{cs\_user\_boundary\_conditions}, or even from their
 coordinates. To do so, the array \texttt{ialtyb(nfabor)} gives for each face
 \texttt{ifac} the velocity mesh boundary condition types marked out by the key
 words \texttt{ivimpo\index{ivimpo}}, \texttt{igliss\index{igliss}},
@@ -8355,7 +8355,7 @@ words \texttt{ivimpo\index{ivimpo}}, \texttt{igliss\index{igliss}},
 
  The tangential velocity mesh is taken like a tape speed under the
  boundary conditions of wall for the fluid, except if wall velocity
- was specified by the user in the interface or usclim (in which case
+ was specified by the user in the interface or cs\_user\_boundary\_conditions (in which case
  it is this speed which is considered).
 \end{list}
 
@@ -8524,7 +8524,7 @@ in the table of the ``Equation parameters'' item.
 
 When the GUI is not used, \texttt{usativ} allows to initialise or modify
  (in case of a restarted calculation) the calculation variables and the 
-values of the time step. It plays a similar role as \texttt{usiniv} for 
+values of the time step. It plays a similar role as \texttt{cs\_user\_initialization} for 
 the additional variables introduced with the air-cooling module. The 
 quantities that can be initialised here in user-selected zones are:
 \begin{list}{-}{}
@@ -8552,7 +8552,7 @@ atmospherical calculations. These parameters are for instance:
 %==================================
 
 The user subroutine \texttt{usatcl} allows to define the boundary conditions of the variables
- unknown by \texttt{usclim}. It is called at each time step. Boundary conditions are 
+ unknown by \texttt{cs\_user\_boundary\_conditions}. It is called at each time step. Boundary conditions are 
 applied to mesh faces selected using the subroutine '\texttt{getfbr}' for instance. For 
 each type of boundary condition, these faces are grouped as physical zones characterised
  by an arbitrary number \texttt{izone} chosen by the user. If a boundary condition is 
@@ -8585,7 +8585,7 @@ The subroutine \texttt{uscti1} contains calculation parameters such as:
 The subroutine \texttt{usctiv} allows to initialise or modify 
 (in case of a restarted calculation) the calculation variables and the
  values of the time step. It is called only during the calculation 
-initialisation. It plays a similar role as \texttt{usiniv} for the 
+initialisation. It plays a similar role as \texttt{cs\_user\_initialization} for the 
 additional variables introduced with the air-cooling module. The 
 quantities that can be initialised here in user-selected zones are:
 \begin{list}{-}{}
@@ -8620,7 +8620,7 @@ geometrical selection criterion.
 %==================================
 
 The subroutine \texttt{usctcl}, called at each time step, allows to define 
-the boundary conditions of the variables unknown by \texttt{usclim}. Boundary
+the boundary conditions of the variables unknown by \texttt{cs\_user\_boundary\_conditions}. Boundary
  conditions are applied to mesh faces selected using the subroutine \texttt{getfbr}
  for instance. For each type of boundary condition, these faces are grouped as 
 physical zones characterised by an arbitrary number \texttt{izone} chosen by the

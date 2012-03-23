@@ -46,13 +46,13 @@ subroutine ctphyv &
 
 !  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
-!    dans usini1 si on souhaite imposer une chaleur specifique
+!    si on souhaite imposer une chaleur specifique
 !    CP variable (sinon: ecrasement memoire).
 
 
 !  Il FAUT AVOIR PRECISE IVISLS(Numero de scalaire) = 1
 !     ==================
-!     dans usini1 si on souhaite une diffusivite VISCLS variable
+!     si on souhaite une diffusivite VISCLS variable
 !     pour le scalaire considere (sinon: ecrasement memoire).
 
 
@@ -65,7 +65,7 @@ subroutine ctphyv &
 
 !    Ainsi, AU PREMIER PAS DE TEMPS (calcul non suite), les seules
 !    grandeurs initialisees avant appel sont celles donnees
-!      - dans usini1 :
+!      - dans usipsu :
 !             . la masse volumique (initialisee a RO0)
 !             . la viscosite       (initialisee a VISCL0)
 !      - dans usiniv :
@@ -334,7 +334,7 @@ endif
 ! FORMATS
 !--------
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -342,13 +342,13 @@ endif
 '@    =========                                               ',/,&
 '@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
 '@                                                            ',/,&
-'@      usini1 indique que la chaleur specifique est uniforme ',/,&
+'@      la chaleur specifique est uniforme '                  ,/,&
 '@        ICP = ',I10   ,' alors que                          ',/,&
 '@      usphyv impose une chaleur specifique variable.        ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
-'@    Modifier usini1 ou usphyv.                              ',/,&
+'@    Modifier les parametres ou usphyv.                       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

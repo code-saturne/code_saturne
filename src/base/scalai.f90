@@ -515,7 +515,7 @@ deallocate(smbrs, rovsdt)
 '@    il s agit de la variance des fluctuations du scalaire J ',/,&
 '@    dont le numero est ISCAVR(I)                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@  Contacter l''assistance.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -541,7 +541,7 @@ deallocate(smbrs, rovsdt)
 '@    it is the variance of the fluctuations of the scalar J  ',/,&
 '@    whose number is ISCAVR(I)                               ',/,&
 '@                                                            ',/,&
-'@  Verify usini1.                                            ',/,&
+'@  Check parameters.                                         ',/,&
 '@  Contact support.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

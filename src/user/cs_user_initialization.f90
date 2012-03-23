@@ -145,7 +145,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) then
+if (1.eq.1) then
 !       Tag to know if a call to this subroutine has already been done
   iusini = 0
   return
@@ -197,12 +197,12 @@ endif
 
 iutile = 0
 
-if(iutile.eq.0) return
+if (iutile.eq.0) return
 
 ! ----------------------------------------------
 
 
-if(isuite.eq.1.and.(idtvar.eq.1.or.idtvar.eq.2)) then
+if (isuite.eq.1.and.(idtvar.eq.1.or.idtvar.eq.2)) then
   do iel = 1, ncel
     dt (iel) = 10.d0*dt(iel)
   enddo

@@ -45,13 +45,13 @@ subroutine atphyv &
 
 !  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
-!    dans usini1 si on souhaite imposer une chaleur specifique
+!    dans usipph si on souhaite imposer une chaleur specifique
 !    CP variable (sinon: ecrasement memoire).
 
 
 !  Il FAUT AVOIR PRECISE IVISLS(Numero de scalaire) = 1
 !     ==================
-!     dans usini1 si on souhaite une diffusivite VISCLS variable
+!     dans usipsc si on souhaite une diffusivite VISCLS variable
 !     pour le scalaire considere (sinon: ecrasement memoire).
 
 
@@ -64,7 +64,7 @@ subroutine atphyv &
 
 !    Ainsi, AU PREMIER PAS DE TEMPS (calcul non suite), les seules
 !    grandeurs initialisees avant appel sont celles donnees
-!      - dans usini1 :
+!      - dans usipsu :
 !             . la masse volumique (initialisee a RO0)
 !             . la viscosite       (initialisee a VISCL0)
 !      - dans usiniv :
@@ -262,7 +262,7 @@ enddo
 '@    Verifier le codage de usphyv (et le test lors de la     ',/,&
 '@      definition de IVART).                                 ',/,&
 '@    Verifier la definition des variables de calcul dans     ',/,&
-'@      usini1. Si un scalaire doit jouer le role de la       ',/,&
+'@      usipsu. Si un scalaire doit jouer le role de la       ',/,&
 '@      temperature, verifier que ISCALT a ete renseigne.     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

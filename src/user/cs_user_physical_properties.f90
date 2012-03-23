@@ -49,13 +49,13 @@ subroutine usphyv &
 
 ! icp = 1 must have been specified
 !                ========================
-!    in usini1 if we wish to define a variable specific heat
+!    in usipph if we wish to define a variable specific heat
 !    cp (otherwise: memory overwrite).
 
 
 ! ivisls = 1 must have been specified
 !                   ========================
-!    in usini1 if we wish to define a variable viscosity
+!    in usipsc if we wish to define a variable viscosity
 !    viscls (otherwise: memory overwrite).
 
 
@@ -66,10 +66,10 @@ subroutine usphyv &
 
 !    Thus, AT THE FIRST TIME STEP (non-restart case), the only
 !    values initialized before this call are those defined
-!      - in usini1 :
+!      - in the GUI or usipsu (cs_user_parameters.f90)
 !             . density    (initialized at ro0)
 !             . viscosity  (initialized at viscl0)
-!      - in usiniv :
+!      - in the GUI or cs_user_initialization
 !             . calculation variables (initialized at 0 by defaut
 !             or to the value given in the GUI or in usiniv)
 
@@ -167,7 +167,7 @@ double precision xrtp
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -214,7 +214,7 @@ if(1.eq.1) return
 !       only as a starting example)
 
 iutile = 0
-if(iutile.eq.1) then
+if (iutile.eq.1) then
 
   ! Position of variables, coefficients
   ! -----------------------------------
@@ -313,7 +313,7 @@ endif ! --- Test on 'iutile'
 !       only as a starting example)
 
 iutile = 0
-if(iutile.eq.1) then
+if (iutile.eq.1) then
 
   ! Position of variables, coefficients
   ! -----------------------------------
@@ -366,7 +366,7 @@ endif ! --- Test on 'iutile'
 !       only as a starting example)
 
 iutile = 0
-if(iutile.eq.1) then
+if (iutile.eq.1) then
 
   ! Position of variables, coefficients
   ! -----------------------------------
@@ -384,7 +384,7 @@ if(iutile.eq.1) then
   ! --- Rank of the specific heat
   !     in 'propce', physical properties at element centers: 'ipccp'
 
-  if(icp.gt.0) then
+  if (icp.gt.0) then
     ipccp  = ipproc(icp   )
   else
     ipccp  = 0
@@ -392,7 +392,7 @@ if(iutile.eq.1) then
 
   ! --- Stop if Cp is not variable
 
-  if(ipccp.le.0) then
+  if (ipccp.le.0) then
     write(nfecra,1000) icp
     call csexit (1)
   endif
@@ -427,7 +427,7 @@ endif ! --- Test on 'iutile'
 !       only as a starting example)
 
 iutile = 0
-if(iutile.eq.1) then
+if (iutile.eq.1) then
 
   ! Position of variables, coefficients
   ! -----------------------------------
@@ -445,7 +445,7 @@ if(iutile.eq.1) then
   ! --- Rank of Lambda/Cp of the thermal
   !     in 'propce', physical properties at element centers: 'ipcvsl'
 
-  if(ivisls(iscalt).gt.0) then
+  if (ivisls(iscalt).gt.0) then
     ipcvsl = ipproc(ivisls(iscalt))
   else
     ipcvsl = 0
@@ -453,7 +453,7 @@ if(iutile.eq.1) then
 
   ! --- Stop if Lambda/CP is not variable
 
-  if(ipcvsl.le.0) then
+  if (ipcvsl.le.0) then
     write(nfecra,1010)                                          &
          iscalt, iscalt, ivisls(iscalt)
     call csexit (1)
@@ -462,7 +462,7 @@ if(iutile.eq.1) then
   ! --- Rank of the specific heat
   !     in 'propce', physical properties at element centers: 'ipccp'
 
-  if(icp.gt.0) then
+  if (icp.gt.0) then
     ipccp  = ipproc(icp   )
   else
     ipccp  = 0
@@ -484,7 +484,7 @@ if(iutile.eq.1) then
 
   ! We assume Cp has been defined previously.
 
-  if(ipccp.le.0) then
+  if (ipccp.le.0) then
 
     ! --- If Cp is uniform, we use cp0
     do iel = 1, ncel
@@ -525,7 +525,7 @@ endif ! --- Test on 'iutile'
 !       only as a starting example)
 
 iutile = 0
-if(iutile.eq.1) then
+if (iutile.eq.1) then
 
   do ii = 1, nscaus ! Loop on scalars
 
@@ -560,7 +560,7 @@ if(iutile.eq.1) then
       ! --- Rank of scalar's Lambda
       !     in 'propce', physical properties at element centers: 'ipcvsl'
 
-      if(ivisls(iscal).gt.0) then
+      if (ivisls(iscal).gt.0) then
         ipcvsl = ipproc(ivisls(iscal))
       else
         ipcvsl = 0
@@ -568,7 +568,7 @@ if(iutile.eq.1) then
 
       ! --- Stop if Lambda is not variable
 
-      if(ipcvsl.le.0) then
+      if (ipcvsl.le.0) then
         write(nfecra,1010) iscal, iscal, ivisls(iscal)
         call csexit (1)
       endif
@@ -607,7 +607,7 @@ endif ! --- Test on 'iutile'
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -615,17 +615,17 @@ endif ! --- Test on 'iutile'
 '@    =========                                               ',/,&
 '@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
 '@                                                            ',/,&
-'@      usini1 indique que la chaleur specifique est uniforme ',/,&
+'@      usipph indique que la chaleur specifique est uniforme ',/,&
 '@        ICP = ',I10   ,' alors que                          ',/,&
 '@      usphyv impose une chaleur specifique variable.        ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
-'@    Modifier usini1 ou usphyv.                              ',/,&
+'@    Modifier usipph ou usphyv.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1010 format(                                                           &
+ 1010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -634,17 +634,17 @@ endif ! --- Test on 'iutile'
 '@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
 '@                                                            ',/,&
 '@    Pour le scalaire ',I10                                   ,/,&
-'@      usini1 indique que la diffusivite est uniforme        ',/,&
+'@      usipsc indique que la diffusivite est uniforme        ',/,&
 '@        IVISLS(',I10   ,') = ',I10   ,' alors que           ',/,&
 '@      usphyv impose une diffusivite variable.               ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
-'@    Modifier usini1 ou usphyv.                              ',/,&
+'@    Modifier usipsc ou usphyv.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9010 format(                                                           &
+ 9010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -655,13 +655,13 @@ endif ! --- Test on 'iutile'
 '@    La variable dont dependent les proprietes physiques ne  ',/,&
 '@      semble pas etre une variable de calcul.               ',/,&
 '@    En effet, on cherche a utiliser la temperature alors que',/,&
-'@      ISCALT = ',I10                                  ,/,&
+'@      ISCALT = ',I10                                         ,/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
 '@    Verifier le codage de usphyv (et le test lors de la     ',/,&
 '@      definition de IVART).                                 ',/,&
 '@    Verifier la definition des variables de calcul dans     ',/,&
-'@      usini1. Si un scalaire doit jouer le role de la       ',/,&
+'@      usipsu. Si un scalaire doit jouer le role de la       ',/,&
 '@      temperature, verifier que ISCALT a ete renseigne.     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -677,13 +677,13 @@ endif ! --- Test on 'iutile'
 '@    =======',/,                                                 &
 '@    Inconsistent calculation data',/,                           &
 '@',/,                                                            &
-'@      usini1 specifies that the specific heat is uniform',/,    &
+'@      usipph specifies that the specific heat is uniform',/,    &
 '@        icp = ',i10   ,' while',/,                              &
 '@      usphyv prescribes a variable specific heat.',/,           &
 '@',/,                                                            &
 '@    The calculation will not be run.',/,                        &
 '@',/,                                                            &
-'@    Modify usini1 or usphyv.',/,                                &
+'@    Modify usipph or usphyv.',/,                                &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -696,13 +696,13 @@ endif ! --- Test on 'iutile'
 '@    Inconsistent calculation data',/,                           &
 '@',/,                                                            &
 '@    For scalar', i10,/,                                         &
-'@      usini1 specifies that the diffusivity is uniform',/,      &
+'@      usipsu specifies that the diffusivity is uniform',/,      &
 '@        ivislc(',i10   ,') = ',i10   ,' while',/,               &
 '@      usphyv prescribes a variable diffusivity.',/,             &
 '@',/,                                                            &
 '@    The calculation will not be run.',/,                        &
 '@',/,                                                            &
-'@    Modify usini1 or usphyv.',/,                                &
+'@    Modify usipsu or usphyv.',/,                                &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -723,7 +723,7 @@ endif ! --- Test on 'iutile'
 '@    Check the programming in usphyv (and the test when',/,      &
 '@      defining ivart).',/,                                      &
 '@    Check the definition of calculation variables in',/,        &
-'@      usini1. If a scalar should represent the,',/,             &
+'@      usipsu. If a scalar should represent the,',/,             &
 '@      temperature, check that iscalt has been defined',/,       &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -768,7 +768,7 @@ subroutine uscfpv &
 
 ! At the very first time step (not at restart), the only variables that
 ! have been initialized are those provided:
-!   - in the GUI and in the user subroutines 'usini1' and 'uscfx2'; ex.:
+!   - in the GUI and in the user subroutines 'usipsu' and 'uscfx2'; ex.:
 !     . the density             (set to ro0)
 !     . the molecular viscosity (set to viscl0)
 !     . the volumetric molecular viscosity (set to viscv0)
@@ -800,7 +800,7 @@ subroutine uscfpv &
 
 ! To set a variable diffusivity for a given user-defined scalar, the
 ! variable ivisls(scalar_number) must have been set to 1 in the user
-! subroutine 'usini1' or in the GUI (otherwise, a memory problem is
+! subroutine 'usipsc' or in the GUI (otherwise, a memory problem is
 ! expected).
 
 ! Examples are provided in the present subroutine (but they do not have
@@ -894,7 +894,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if(1.eq.1) then
+if (1.eq.1) then
   iuscfp = 0
   return
 endif
@@ -977,7 +977,7 @@ enddo
 
 
 ! --- Discard the following test so that the code do not stop
-if(1.eq.1) then
+if (1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
@@ -999,7 +999,7 @@ ivart = isca(itempk)
 ! --- Rank 'ipcvsv' of the molecular dynamic viscosity
 !     in the array 'propce' (physical properties at the cell centers)
 
-if(iviscv.gt.0) then
+if (iviscv.gt.0) then
   ipcvsv = ipproc(iviscv)
 else
   ipcvsv = 0
@@ -1007,7 +1007,7 @@ endif
 
 ! --- Stop if the viscosity has not been defined as variable
 
-if(ipcvsv.le.0) then
+if (ipcvsv.le.0) then
   write(nfecra,2000) iviscv
   call csexit (1)
 endif
@@ -1034,7 +1034,7 @@ do iel = 1, ncel
 enddo
 
 ! --- Discard the following test so that the code do not stop
-if(1.eq.1) then
+if (1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
@@ -1064,7 +1064,7 @@ ivart = isca(itempk)
 !     in the array 'propce' (physical properties at the cell
 !     centers)
 
-if(icp.gt.0) then
+if (icp.gt.0) then
   ipccp  = ipproc(icp   )
 else
   ipccp  = 0
@@ -1073,11 +1073,11 @@ endif
 ! --- Stop if the iobaric or iochoric specific heat (cp or cv) has not
 !     been defined as variable
 
-if(ipccp.le.0) then
+if (ipccp.le.0) then
   write(nfecra,1000) icp
   call csexit (1)
 endif
-if(icv.le.0) then
+if (icv.le.0) then
   write(nfecra,1001) icv
   call csexit (1)
 endif
@@ -1115,7 +1115,7 @@ call uscfth                                                     &
    propce(1, ipproc(icv) )  , w1     , w2     , w3     )
 
 ! --- Discard the following test so that the code do not stop
-if(1.eq.1) then
+if (1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
@@ -1138,7 +1138,7 @@ ivart = isca(itempk)
 !     in the array 'propce' (physical properties at the cell
 !     centers)
 
-if(ivisls(itempk).gt.0) then
+if (ivisls(itempk).gt.0) then
   ipcvsl = ipproc(ivisls(itempk))
 else
   ipcvsl = 0
@@ -1147,7 +1147,7 @@ endif
 ! --- Stop if the molecular thermal conductivity has not
 !     been defined as variable
 
-if(ipcvsl.le.0) then
+if (ipcvsl.le.0) then
   write(nfecra,1010)                                            &
        itempk, itempk, ivisls(itempk)
   call csexit (1)
@@ -1175,7 +1175,7 @@ do iel = 1, ncel
 enddo
 
 ! --- Discard the following test so that the code do not stop
-if(1.eq.1) then
+if (1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
@@ -1226,7 +1226,7 @@ do ii = 1, nscaus
 ! --- Rank 'ipcvsl' of the molecular diffusivity of the current scalar iscal
 !     in the array 'propce' (physical properties at the cell centers)
 
-    if(ivisls(iscal).gt.0) then
+    if (ivisls(iscal).gt.0) then
       ipcvsl = ipproc(ivisls(iscal))
     else
       ipcvsl = 0
@@ -1234,7 +1234,7 @@ do ii = 1, nscaus
 
 ! --- Stop if the molecular diffusivity has not been defined as variable
 
-    if(ipcvsl.le.0) then
+    if (ipcvsl.le.0) then
       write(nfecra,1010) iscal, iscal, ivisls(iscal)
       call csexit (1)
     endif
@@ -1271,7 +1271,7 @@ enddo
 deallocate(w1, w2, w3)
 
 ! --- Discard the following test so that the code do not stop
-if(1.eq.1) then
+if (1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
@@ -1289,7 +1289,7 @@ endif
 '@    =======',/,                                                 &
 '@     The data is inconsistent',/,                               &
 '@',/,                                                            &
-'@       in the GUI or in the user subroutine ''usini1'', the',/, &
+'@       in the GUI or in the user subroutine ''usipph'', the',/, &
 '@         isobaric specific heat is declared as a property',/,   &
 '@         uniform in space: icp = ',i10   ,/,                    &
 '@       in the user subroutine ''uscfpv'', however, it is',/,    &
@@ -1298,7 +1298,7 @@ endif
 '@  The calculation will not be run.',/,                          &
 '@',/,                                                            &
 '@  Ensure consistency by modifying the GUI input data or the',/, &
-'@    user subroutines ''usini1'' or ''uscfpv''.',/,              &
+'@    user subroutines ''usipph'' or ''uscfpv''.',/,              &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1310,7 +1310,7 @@ endif
 '@    =======',/,                                                 &
 '@     The data is inconsistent',/,                               &
 '@',/,                                                            &
-'@       in the GUI or in the user subroutine ''usini1'', the',/, &
+'@       in the GUI or in the user subroutine ''usipsu'', the',/, &
 '@         isochoric specific heat is declared as a property',/,  &
 '@         uniform in space: icv = ',i10   ,/,                    &
 '@       in the user subroutine ''uscfpv'', however, it is',/,    &
@@ -1319,7 +1319,7 @@ endif
 '@  The calculation will not be run.',/,                          &
 '@',/,                                                            &
 '@  Ensure consistency by modifying the GUI input data or the',/, &
-'@    user subroutines ''usini1'' or ''uscfpv''.',/,              &
+'@    user subroutines ''usipsu'' or ''uscfpv''.',/,              &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1332,7 +1332,7 @@ endif
 '@     The data is inconsistent',/,                               &
 '@',/,                                                            &
 '@     For the scalar ',i10,/,                                    &
-'@       in the GUI or in the user subroutine ''usini1'', the',/, &
+'@       in the GUI or in the user subroutine ''usipsc'', the',/, &
 '@         molecular diffusivity is declared as a property',/,    &
 '@         uniform in space: ivisls(',i10   ,') = ',i10   ,/,     &
 '@       in the user subroutine ''uscfpv'', however, it is',/,    &
@@ -1341,7 +1341,7 @@ endif
 '@  The calculation will not be run.',/,                          &
 '@',/,                                                            &
 '@  Ensure consistency by modifying the GUI input data or the',/, &
-'@    user subroutines ''usini1'' or ''uscfpv''.',/,              &
+'@    user subroutines ''usipsc'' or ''uscfpv''.',/,              &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1447,7 +1447,7 @@ subroutine uselph &
 
 !    Ainsi, AU PREMIER PAS DE TEMPS (calcul non suite), les seules
 !    grandeurs initialisees avant appel sont celles donnees
-!      - dans usini1 :
+!      - dans usipsu :
 !             . la masse volumique (initialisee a RO0)
 !             . la viscosite       (initialisee a VISCL0)
 !      - dans usiniv/useliv :
@@ -1581,9 +1581,9 @@ if ( ippmod(ieljou).ge.1 ) then
 
 !     En Arc on continue car on a un fichier de donnees
 !       Un message indique que l'utilisateur n'a rien fourni
-elseif(ippmod(ielarc).ge.1) then
+elseif (ippmod(ielarc).ge.1) then
 
-  if(ipass.eq.1) then
+  if (ipass.eq.1) then
     write(nfecra,9011)
   endif
 
@@ -1616,7 +1616,7 @@ endif
 
 !     Message au premier passage pour indiquer que l'utilisateur a
 !       rapatrie le sous-programme.
-if(ipass.eq.1) then
+if (ipass.eq.1) then
   write(nfecra,1000)
 endif
 
@@ -1686,7 +1686,7 @@ if ( ippmod(ieljou).ge.1 ) then
   temp0  = 300.d0
   rom0   = 2500.d0
   dilar  = 7.5d-5
-  if(ntcabs.gt.1) then
+  if (ntcabs.gt.1) then
     srrom1 = srrom
   else
     srrom1 = 0.d0
@@ -1816,7 +1816,7 @@ if ( ippmod(ieljou).ge.1 ) then
 !       Ce choix est fait en dur dans varpos.
 !       Les pointeurs pour les deux existent quand meme.
 !     Sinon, on pourrait faire ceci :
-  if(1.eq.0) then
+  if (1.eq.0) then
     if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
       do iel = 1, ncel
         propce(iel,ipproc(ivisls(ipoti))) =                       &
@@ -1977,7 +1977,7 @@ double precision, allocatable, dimension(:,:) :: grad
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -2182,7 +2182,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -2211,7 +2211,7 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 !     On calcule le rapport
 do iel = 1, ncel
-  if(abs(mijmij(iel)).le.epzero) then
+  if (abs(mijmij(iel)).le.epzero) then
     w1(iel) = smagmx**2
   else
     w1(iel) = mijlij(iel)/mijmij(iel)
@@ -2337,7 +2337,7 @@ double precision rad, xr2, xcen, ycen, zcen
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END

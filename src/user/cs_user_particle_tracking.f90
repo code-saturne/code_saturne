@@ -1492,7 +1492,7 @@ subroutine uslafe &
 !    It must be prescribed in every cell and be homogeneous to gravity (m/s^2)
 !
 !    By default gravity and drag force are the only forces acting on the particles
-!    (the gravity components gx gy gz are assigned in usini1)
+!    (the gravity components gx gy gz are assigned in the GUI or in usipsu)
 !
 
 !-------------------------------------------------------------------------------

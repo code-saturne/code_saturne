@@ -764,16 +764,15 @@ mlttyp = 0
 
 rlxp1 = 0.95d0
 
-! --- Suite de calcul
-!       Calcul non suite par defaut
-!       Ecriture du fichier suite auxiliaire par defaut
-!       Lecture du fichier suite auxiliaire par defaut (si suite de calcul)
-!       La correspondance nouveaux scalaires -> anciens scalaires
-!         sera etablie plus tard (usini1 et lecamo)
-!       L'indicateur de suite du module thermique 1D de paroi est initialise
-!         par defaut a -1, pour obliger l'utilisateur a le remplir dans
-!         uspt1d.
-!       Idem pour l'indicateur de suite de la methode des vortex.
+! --- Restarted calculation
+!       By default, non-restarted calculation
+!       Write auxiliary restart file by default
+!       Read auxiliary restart file by default (in case of restarted calculation)
+!       The match between new scalars and old scalars will be established later
+!         (GUI, cs_user_parameters.f90, and lecamo)
+!       The restart indicator of the 1D wall thermal model is initialized by default
+!         to -1, to force the user to set it in uspt1d.
+!       The same goes for the vortex method restart indicator.
 
 isuite = 0
 iecaux = 1
@@ -1100,7 +1099,7 @@ t0     = 0.d0
 cp0    = -grand*10.d0
 
 ! --- Turbulence
-!     YPLULI est mis a -GRAND*10. Si l'utilisateur ne l'a pas specifie dans usini1, on
+!     YPLULI est mis a -GRAND*10. Si l'utilisateur ne l'a pas specifie dans usipsu, on
 !     modifie sa valeur dans modini (10.88 avec les lois de paroi invariantes,
 !     1/kappa sinon)
 ypluli = -grand*10.d0

@@ -257,8 +257,8 @@ endif
 '@    This value is not reached for ', e10.4,'%               ',/,&
 '@      of the meshe''s cells.                                ',/,&
 '@    The percentage of mesh cells for which we allow this    ',/,&
-'@      condition not to be rspected is set by default in     ',/,&
-'@      usini1 to xnp1mx = ', e10.4,'%                        ',/,&
+'@      condition not to be respected is set by default in    ',/,&
+'@      cs_user_parameters.f90 to xnp1mx = ', e10.4,'%        ',/,&
 '@                                                            ',/,&
 '@    The calculation is interrupted.                         ',/,&
 '@                                                            ',/,&

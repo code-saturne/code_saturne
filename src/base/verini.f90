@@ -99,13 +99,6 @@ jj = 0
 ! 1. ENTREES SORTIES entsor : formats 1000
 !===============================================================================
 
-! --- Dimension
-
-if (ndim.ne.3) then
-  write(nfecra,1100)ndim
-  iok = iok + 1
-endif
-
 ! --- Suite, Chrono, Historiques, Listing
 
 do ipp = 2, nvppmx
@@ -424,22 +417,22 @@ endif
 !       - iphydr et icalhy
 !       - dt variable en espace ou en temps et stationnaire
 !     Ici on s'arrete si on n'est pas dans le cas du schema std
-if( (abs(thetav(iu)-1.0d0).gt.1.d-3).or.                     &
-     (abs(thetav(iv)-1.0d0).gt.1.d-3).or.                     &
-     (abs(thetav(iw)-1.0d0).gt.1.d-3).or.                     &
+if ( (abs(thetav(iu)-1.0d0).gt.1.d-3).or.                 &
+     (abs(thetav(iv)-1.0d0).gt.1.d-3).or.                 &
+     (abs(thetav(iw)-1.0d0).gt.1.d-3).or.                 &
      (    thetsn       .gt.0.d0 ).or.                     &
      (    isno2t       .gt.0    ).or.                     &
      (    thetro       .gt.0.d0 ).or.                     &
      (    iroext       .gt.0    ).or.                     &
      (    thetvi       .gt.0.d0 ).or.                     &
      (    iviext       .gt.0    )    ) then
-  if(indest.eq.1.or.ipucou.eq.1.or.                            &
-       iphydr.eq.1.or.icalhy.eq.1.or.                            &
+  if(indest.eq.1.or.ipucou.eq.1.or.                       &
+       iphydr.eq.1.or.icalhy.eq.1.or.                     &
        idtvar.eq.1.or.idtvar.eq.2.or.idtvar.lt.0) then
-    write(nfecra,2140)                                         &
-         thetav(iu),thetav(iv),thetav(iw),            &
-         isno2t,thetsn,                          &
-         iroext,thetro,                          &
+    write(nfecra,2140)                                    &
+         thetav(iu),thetav(iv),thetav(iw),                &
+         isno2t,thetsn,                                   &
+         iroext,thetro,                                   &
          iviext,thetvi
     iok = iok + 1
   endif
@@ -470,7 +463,7 @@ endif
 !     A priori, pour le moment, l'ordre 2 en temps
 !       n'est pas pris en compte en k-eps, v2f ou k-omega couple : on s'arrete
 if (itytur.eq.2 .and.ikecou.eq.1) then
-  if((    thetst       .gt.0.d0 ).or.                    &
+  if ((     thetst       .gt.0.d0 ).or.                    &
        (    isto2t       .gt.0    ).or.                    &
        (abs(thetav(ik )-1.0d0).gt.epzero).or.              &
        (abs(thetav(iep)-1.0d0).gt.epzero) ) then
@@ -481,7 +474,7 @@ if (itytur.eq.2 .and.ikecou.eq.1) then
   endif
 endif
 if (iturb.eq.50.and.ikecou.eq.1) then
-  if((    thetst       .gt.0.d0 ).or.                    &
+  if ((     thetst       .gt.0.d0 ).or.                    &
        (    isto2t       .gt.0    ).or.                    &
        (abs(thetav(ik  )-1.0d0).gt.epzero).or.             &
        (abs(thetav(iep )-1.0d0).gt.epzero).or.             &
@@ -1712,25 +1705,7 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1100 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    NDIM   DOIT ETRE UN ENTIER EGAL A 3                     ',/,&
-'@    IL VAUT ICI ',I10                                        ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute                            ',/,&
-'@                                                            ',/,&
-'@  La dimension de l espace est 3, meme pour les calculs     ',/,&
-'@    physiquement bidimensionnels.                           ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
-'@  Verifier le fichier maillage.                             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1200 format(                                                           &
+ 1200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1742,11 +1717,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1210 format(                                                           &
+ 1210 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1758,11 +1734,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1220 format(                                                           &
+ 1220 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1776,11 +1753,12 @@ endif
 '@                                                            ',/,&
 '@  ICHRVR indique si la variable doit etre incluse dans les  ',/,&
 '@    fichiers de post-traitement                             ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1230 format(                                                           &
+ 1230 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1793,11 +1771,12 @@ endif
 '@                                                            ',/,&
 '@  NCAPT  est le nombre de sondes utilisees pour les         ',/,&
 '@    historiques.                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1240 format(                                                           &
+ 1240 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1812,11 +1791,12 @@ endif
 '@                                                            ',/,&
 '@  IHISVR(I,1) indique les sondes a utiliser pour la variable',/,&
 '@    I (-1 signifiant que toutes sont utilisees)             ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1250 format(                                                           &
+ 1250 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1832,11 +1812,12 @@ endif
 '@                                                            ',/,&
 '@  IHISVR(I,j+1) indique le numero de la jieme sonde a       ',/,&
 '@    utiliser pour la variable a post-traiter numero I       ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1260 format(                                                           &
+ 1260 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1850,11 +1831,12 @@ endif
 '@                                                            ',/,&
 '@  ILISVR(I) indique si la variable I sera suivie lors des   ',/,&
 '@    impressions dans le listing                             ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1270 format(                                                           &
+ 1270 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1867,11 +1849,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1300 format(                                                           &
+ 1300 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1890,12 +1873,13 @@ endif
 '@  Ce parametre precise les variables supplementaires        ',/,&
 '@    a post-traiter.                                         ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 2000 format(                                                           &
+ 2000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1907,11 +1891,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2005 format(                                                           &
+ 2005 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1924,11 +1909,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2100 format(                                                           &
+ 2100 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1950,11 +1936,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2111 format(                                                           &
+ 2111 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1970,11 +1957,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2112 format(                                                           &
+ 2112 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1988,11 +1976,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2121 format(                                                           &
+ 2121 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2008,11 +1997,11 @@ endif
 '@  Le calcul sera execute                                    ',/,&
 '@                                                            ',/,&
 '@  Il est conseille de verifier les parametres donnes via    ',/,&
-'@  l''interface ou usini1.                                   ',/,&
+'@  l''interface ou cs_user_parameters.f90.                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2122 format(                                                           &
+ 2122 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2028,11 +2017,11 @@ endif
 '@  Le calcul sera execute                                    ',/,&
 '@                                                            ',/,&
 '@  Il est conseille de verifier les parametres donnes via    ',/,&
-'@  l''interface ou usini1.                                   ',/,&
+'@  l''interface ou cs_user_parameters.f90.                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2123 format(                                                           &
+ 2123 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2048,11 +2037,11 @@ endif
 '@  Le calcul sera execute                                    ',/,&
 '@                                                            ',/,&
 '@  Il est conseille de verifier les parametres donnes via    ',/,&
-'@  l''interface ou usini1.                                   ',/,&
+'@  l''interface ou cs_user_parameters.f90.                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2124 format(                                                           &
+ 2124 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2068,11 +2057,11 @@ endif
 '@  Le calcul sera execute                                    ',/,&
 '@                                                            ',/,&
 '@  Il est conseille de verifier les parametres donnes via    ',/,&
-'@  l''interface ou usini1.                                   ',/,&
+'@  l''interface ou cs_user_parameters.f90.                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2125 format(                                                           &
+ 2125 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2088,11 +2077,11 @@ endif
 '@  Le calcul sera execute                                    ',/,&
 '@                                                            ',/,&
 '@  Il est conseille de verifier les parametres donnes via    ',/,&
-'@  l''interface ou usini1.                                   ',/,&
+'@  l''interface ou cs_user_parameters.f90.                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2127 format(                                                           &
+ 2127 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2107,11 +2096,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute                             ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2131 format(                                                           &
+ 2131 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2130,11 +2120,11 @@ endif
 '@  Le calcul sera execute.                                   ',/,&
 '@                                                            ',/,&
 '@  Il est conseille de verifier les parametres donnes via    ',/,&
-'@  l''interface ou usini1.                                   ',/,&
+'@  l''interface ou cs_user_parameters.f90.                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2132 format(                                                           &
+ 2132 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2153,11 +2143,11 @@ endif
 '@  Le calcul sera execute.                                   ',/,&
 '@                                                            ',/,&
 '@  Il est conseille de verifier les parametres donnes via    ',/,&
-'@  l''interface ou usini1.                                   ',/,&
+'@  l''interface ou cs_user_parameters.f90.                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2133 format(                                                           &
+ 2133 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2172,11 +2162,11 @@ endif
 '@  Le calcul sera execute                                    ',/,&
 '@                                                            ',/,&
 '@  Il est conseille de verifier les parametres donnes via    ',/,&
-'@  l''interface ou usini1.                                   ',/,&
+'@  l''interface ou cs_user_parameters.f90.                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2134 format(                                                           &
+ 2134 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2191,11 +2181,11 @@ endif
 '@  Le calcul sera execute                                    ',/,&
 '@                                                            ',/,&
 '@  Il est conseille de verifier les parametres donnes via    ',/,&
-'@  l''interface ou usini1.                                   ',/,&
+'@  l''interface ou cs_user_parameters.f90.                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2135 format(                                                           &
+ 2135 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2204,13 +2194,14 @@ endif
 '@   CHOIX INCOMPATIBLE POUR LE SCHEMA EN TEMPS               ',/,&
 '@                                                            ',/,&
 '@     La  chaleur massique est extrapolee en temps avec      ',/,&
-'@       ICPEXT = ',I10                                 ,/,&
+'@       ICPEXT = ',I10                                        ,/,&
 '@     Pour cela, elle doit etre variable, or                 ',/,&
-'@       ICP    = ',I10                                 ,/,&
+'@       ICP    = ',I10                                        ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute                             ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1 ',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@    - desactiver le choix d''extrapolation de Cp en temps   ',/,&
 '@      ou                                                    ',/,&
 '@    - imposer Cp variable                                   ',/,&
@@ -2218,7 +2209,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2136 format(                                                           &
+ 2136 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2234,7 +2225,8 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute                             ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1 ',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@    - desactiver le choix d''extrapolation en temps         ',/,&
 '@                                     de la diffusivite      ',/,&
 '@      ou                                                    ',/,&
@@ -2243,7 +2235,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2137 format(                                                           &
+ 2137 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2257,14 +2249,14 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute                             ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou        ',/,&
-'@    usini1 :                                                ',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@      desactiver les estimateurs d erreur ou                ',/,&
 '@               le calcul a champ de vitesse fige (ICCVFG)   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2140 format(                                                           &
+ 2140 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2291,11 +2283,12 @@ endif
 '@    - pas de temps variable en temps ou en espace  ou       ',/,&
 '@      algorithme stationnaire (IDTVAR)                      ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2141 format(                                                           &
+ 2141 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2317,11 +2310,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2142 format(                                                           &
+ 2142 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2342,11 +2336,12 @@ endif
 '@       THETST    ISTO2T     THETA K   THETA EPS             ',/,&
 '@ ',     E12.4,      I10,      E12.4,      E12.4              ,/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2143 format(                                                           &
+ 2143 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2369,11 +2364,12 @@ endif
 '@     THETA PHI    THETA FB                                  ',/,&
 '@ ',      E12.4,      E12.4                                   ,/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2144 format(                                                           &
+ 2144 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2394,11 +2390,12 @@ endif
 '@       THETST    ISTO2T     THETA K   THETA OMEGA           ',/,&
 '@ ',     E12.4,      I10,      E12.4,      E12.4              ,/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2145 format(                                                           &
+ 2145 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2419,11 +2416,12 @@ endif
 '@       THETST    ISTO2T     THETA K   THETA OMEGA           ',/,&
 '@ ',     E12.4,      I10,      E12.4,      E12.4              ,/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2146 format(                                                           &
+ 2146 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2437,12 +2435,12 @@ endif
 '@    temps lorsqu''une physique particuliere est activee     ',/,&
 '@    (combustion, charbon, electrique).                      ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface, usini1   ',/,&
-'@    et usppmo.                                              ',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2147 format(                                                           &
+ 2147 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2464,12 +2462,12 @@ endif
 '@  (Les autres termes sources pourraient etre traites a      ',/,&
 '@   l''ordre 2)                                              ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface, usini1   ',/,&
-'@  et uslag1.                                                ',/,&
+'@  Verifier les parametres donnes via l''interface,          ',/,&
+'@    cs_user_parameters.f90, et uslag1.                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2148 format(                                                           &
+ 2148 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2491,12 +2489,12 @@ endif
 '@  (Les autres termes sources pourraient etre traites a      ',/,&
 '@   l''ordre 2)                                              ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface, usini1   ',/,&
-'@  et ',A6                                                    ,/,&
+'@  Verifier les parametres donnes via l''interface,          ',/,&
+'@    cs_user_parameters.f90, et ',A6                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2149 format(                                                           &
+ 2149 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2510,11 +2508,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2150  format(                                                          &
+ 2150  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2530,11 +2529,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2151  format(                                                          &
+ 2151  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2550,7 +2550,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2152  format(                                                          &
+ 2152  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2563,12 +2563,12 @@ endif
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
 '@  L''indicateur ITURB a ete positionne a ',I10               ,/,&
-'@    dans usini1.                                            ',/,&
+'@    dans l''interface ou usipph.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 2200 format(                                                           &
+ 2200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2579,11 +2579,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2201 format(                                                           &
+ 2201 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2594,30 +2595,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-! 2203 format(
-!     &'@                                                            ',/,
-!     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-!     &'@                                                            ',/,
-!     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
-!     &'@    =========                                               ',/,
-!     &'@  ON DEMANDE LA PRISE EN COMPTE EXPLICITE DE LA PRESSION    ',/,
-!     &'@    HYDROSTATIQUE POUR LES CONDITIONS DE SORTIE EN PRESSION ',/,
-!     &'@    AVEC ACCELERATION DE LA PESANTEUR NULLE                 ',/,
-!     &'@                                                            ',/,
-!     &'@  ICALHY VAUT ICI ',I10                                      ,/,
-!     &'@  G      VAUT ICI ',3E14.5                                   ,/,
-!     &'@                                                            ',/,
-!     &'@  Le calcul ne sera pas execute.                            ',/,
-!     &'@                                                            ',/,
-!     &'@  Verifier les parametres donnes via l''interface ou usini1.',/,
-!     &'@                                                            ',/,
-!     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-!     &'@                                                            ',/)
- 2204 format(                                                           &
+ 2204 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2635,11 +2618,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2205 format(                                                           &
+ 2205 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2650,11 +2634,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2206 format(                                                           &
+ 2206 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2672,11 +2657,12 @@ endif
 '@    des faces ANOMAX qui doit etre fourni en radians et     ',/,&
 '@    compris dans les bornes indiquees ci-dessus.            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2207 format(                                                           &
+ 2207 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2692,11 +2678,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2208 format(                                                           &
+ 2208 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2709,11 +2696,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2209 format(                                                           &
+ 2209 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2727,11 +2715,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2210 format(                                                           &
+ 2210 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2744,11 +2733,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2211 format(                                                           &
+ 2211 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2759,11 +2749,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2300 format(                                                           &
+ 2300 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2778,11 +2769,12 @@ endif
 '@                                                            ',/,&
 '@  IMLIGR(I) indique le mode de limitation des gradients     ',/,&
 '@    pour la variable I                                      ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2310 format(                                                           &
+ 2310 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2796,11 +2788,12 @@ endif
 '@                                                            ',/,&
 '@  IRCFLU(I) indique si les flux sont reconstruits           ',/,&
 '@    pour la variable I                                      ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2311 format(                                                           &
+ 2311 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2816,11 +2809,12 @@ endif
 '@    reconstruits pour la variable I.                        ',/,&
 '@  ISCHCV(I) = 0 (schema SOLU) demande une reconstruction    ',/,&
 '@    pour les flux convectifs.                               ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2320 format(                                                           &
+ 2320 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2835,11 +2829,12 @@ endif
 '@                                                            ',/,&
 '@  CLIMGR(I) est le coefficient de limitation des gradients  ',/,&
 '@    pour la variable I                                      ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2330 format(                                                           &
+ 2330 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2851,11 +2846,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2331 format(                                                           &
+ 2331 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2869,11 +2865,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2400 format(                                                           &
+ 2400 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2893,11 +2890,12 @@ endif
 '@                                                            ',/,&
 '@  IRESOL(I) indique le solveur lineaire a utiliser          ',/,&
 '@    pour la variable I                                      ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2401 format(                                                           &
+ 2401 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2911,11 +2909,12 @@ endif
 '@                                                            ',/,&
 '@  IDIRCL(I) indique si le code doit decaler la diagonale de ',/,&
 '@    la matrice de la variable I en l''absence de Dirichlet  ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2410 format(                                                           &
+ 2410 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2930,11 +2929,12 @@ endif
 '@                                                            ',/,&
 '@  Le solveur iteratif choisi peut ne pas converger sur le   ',/,&
 '@    systeme lineaire resultant du type de probleme considere',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2420 format(                                                           &
+ 2420 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2953,11 +2953,12 @@ endif
 '@    qui permettent d''eviter les perturbations numeriques   ',/,&
 '@    au moment des suites.                                   ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2500 format(                                                           &
+ 2500 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2968,11 +2969,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2510 format(                                                           &
+ 2510 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2983,11 +2985,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2511 format(                                                           &
+ 2511 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2998,11 +3001,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2520 format(                                                           &
+ 2520 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3016,11 +3020,12 @@ endif
 '@                                                            ',/,&
 '@  Quand le pas de temps n est pas uniforme et constant,     ',/,&
 '@    les reels DTMIN et DTMAX bornent ses variations.        ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2530 format(                                                           &
+ 2530 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3034,11 +3039,12 @@ endif
 '@                                                            ',/,&
 '@  CDTVAR(I) est le coefficient multiplicatif applique au pas',/,&
 '@    de temps pour la resolution de la variable I.           ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2540 format(                                                           &
+ 2540 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3054,7 +3060,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2541 format(                                                           &
+ 2541 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3068,7 +3074,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2600 format(                                                           &
+ 2600 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3080,11 +3086,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2601 format(                                                           &
+ 2601 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3095,11 +3102,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2606 format(                                                           &
+ 2606 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3114,11 +3122,11 @@ endif
 '@    (il est repositione a 0)                                ',/,&
 '@                                                            ',/,&
 '@  Il est conseille de verifier les parametres donnes via    ',/,&
-'@  l''interface ou usini1.                                   ',/,&
+'@  l''interface ou cs_user_parameters.f90.                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2607 format(                                                           &
+ 2607 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3145,7 +3153,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2610 format(                                                           &
+ 2610 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3157,14 +3165,15 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 ! 2620 FORMAT
 !     & (' ATTENTION : ON DEMANDE ',A6,' = ',I10,/,
 !     &  '                  AVEC GRAVITE = ',3E14.5)
- 2621 format(                                                           &
+ 2621 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3184,11 +3193,11 @@ endif
 '@    present calcul est caracteristique d''un oubli.         ',/,&
 '@                                                            ',/,&
 '@  Il est conseille de verifier les parametres donnes via    ',/,&
-'@  l''interface ou usini1.                                   ',/,&
+'@  l''interface ou cs_user_parameters.f90.                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2622 format(                                                           &
+ 2622 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3201,16 +3210,16 @@ endif
 '@  Le calcul sera engage.                                    ',/,&
 '@                                                            ',/,&
 '@  Si des effets de gravite sont recherches, il convient de  ',/,&
-'@    s assurer que la masse volumique est variable.          ',/,&
+'@    s''assurer que la masse volumique est variable.         ',/,&
 '@  Le nombre de Prandtl turbulent sera pris egal a 1.        ',/,&
-'@  Elle peut varier en fonction d autres grandeurs que       ',/,&
-'@    la temperature ou l enthalpie ; si c est le cas, ce     ',/,&
-'@    message pourra etre ignore ; sinon, verifier usini1     ',/,&
+'@  Elle peut varier en fonction d''autres grandeurs que      ',/,&
+'@    la temperature ou l''enthalpie ; si c''est le cas, ce   ',/,&
+'@    message pourra etre ignore ; sinon, verifier usipsu     ',/,&
 '@    ou imposer une variation de masse volumique dans usphyv.',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2623 format(                                                           &
+ 2623 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3227,7 +3236,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2624 format(                                                           &
+ 2624 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3241,11 +3250,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2625 format(                                                           &
+ 2625 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3257,11 +3267,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2630 format(                                                           &
+ 2630 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3275,11 +3286,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas realise.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2640 format(                                                           &
+ 2640 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3290,11 +3302,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2650 format(                                                           &
+ 2650 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3308,11 +3321,12 @@ endif
 '@                                                            ',/,&
 '@  ICPSYR(I) est l indicateur de couplage du scalaire I avec ',/,&
 '@    SYRTHES.                                                ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2660 format(                                                           &
+ 2660 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3326,11 +3340,12 @@ endif
 '@  Le nombre de scalaires couples est cependant ',I10         ,/,&
 '@    (Le nombre de scalaires total est ici ',I10   ,')       ',/,&
 '@  Verifier le couplage SYRTHES-Noyau.                       ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2661 format(                                                           &
+ 2661 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3346,11 +3361,12 @@ endif
 '@  Le nombre de scalaires total   est ici ',I10               ,/,&
 '@  Le nombre de scalaires couples est ici ',I10               ,/,&
 '@  Verifier le couplage SYRTHES-Noyau.                       ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2662 format(                                                           &
+ 2662 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3366,14 +3382,15 @@ endif
 '@  Le scalaire couple est ici le scalaire ',I10               ,/,&
 '@    Ce n''est pas une temperature car                       ',/,&
 '@                    ISCSTH(',I10   ,') = ',I10               ,/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@  Pour coupler un scalaire qui n''est pas la temperature,   ',/,&
 '@    contacter l''equipe de developpement.                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2663 format(                                                           &
+ 2663 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3394,7 +3411,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2664 format(                                                           &
+ 2664 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3415,11 +3432,12 @@ endif
 '@        IESCOR = ',I10                                       ,/,&
 '@        IESTOT = ',I10                                       ,/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2700 format(                                                           &
+ 2700 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3432,11 +3450,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2710 format(                                                           &
+ 2710 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3447,11 +3466,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2720 format(                                                           &
+ 2720 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3462,11 +3482,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2730 format(                                                           &
+ 2730 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3477,11 +3498,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2740 format(                                                           &
+ 2740 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3492,11 +3514,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2741 format(                                                           &
+ 2741 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3510,7 +3533,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2742 format(                                                           &
+ 2742 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3523,7 +3546,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2743 format(                                                           &
+ 2743 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3537,7 +3560,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2750 format(                                                           &
+ 2750 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3548,12 +3571,13 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 3000 format(                                                           &
+ 3000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3565,11 +3589,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3001 format(                                                           &
+ 3001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3580,11 +3605,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3010 format(                                                           &
+ 3010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3597,11 +3623,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3100 format(                                                           &
+ 3100 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3612,12 +3639,13 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 4100 format(                                                           &
+ 4100 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3629,12 +3657,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul pourra etre execute si la turbulence est        ',/,&
 '@  initialisee a partir d''un fichier suite de calcul ou par ',/,&
-'@  la routine usiniv.                                        ',/,&
+'@  l''interface ou par la routine cs_user_initialization     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 4300 format(                                                           &
+ 4300 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3646,11 +3674,12 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4320 format(                                                           &
+ 4320 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3668,11 +3697,12 @@ endif
 '@  Si ISCAVR(I) est positif, le scalaire I est une variance :',/,&
 '@    il s agit de la variance des fluctuations du scalaire J ',/,&
 '@    dont le numero est ISCAVR(I)                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4321 format(                                                           &
+ 4321 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3690,11 +3720,12 @@ endif
 '@    il s agit de la variance des fluctuations du scalaire J ',/,&
 '@    dont le numero est ISCAVR(I) et on a donc forcement     ',/,&
 '@    ISCAVR(J) = 0                                           ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4330 format(                                                           &
+ 4330 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3708,11 +3739,12 @@ endif
 '@                                                            ',/,&
 '@  ICLVFL(I) indique le mode de clipping du scalaire I       ',/,&
 '@    lorsqu il s agit d une variance de fluctuations.        ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4331 format(                                                           &
+ 4331 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3730,11 +3762,12 @@ endif
 '@    Il n est pas utilise pour les autres scalaires.         ',/,&
 '@  L utilisateur est invite a ne pas modifier ICLVFL pour    ',/,&
 '@    les scalaires qui ne sont pas des variances.            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4340 format(                                                           &
+ 4340 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3751,11 +3784,12 @@ endif
 '@    scalaire et doit etre positif quand ivisls est different',/,&
 '@    de 1 (dans ce cas, un coefficient variable est donne    ',/,&
 '@    dans usphyv).                                           ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4350 format(                                                           &
+ 4350 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3769,11 +3803,12 @@ endif
 '@                                                            ',/,&
 '@  SIFMAS(I) est le nombre de Prandtl turbulent associe      ',/,&
 '@    au scalaire I.                                          ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4360 format(                                                           &
+ 4360 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3791,14 +3826,15 @@ endif
 '@    compte que si ICLVFL(I) = 2                             ',/,&
 '@  Si l utilisateur souhaite effectivement que le            ',/,&
 '@    scalaire I (en fait, une variance) soit limite a SCAMIN ',/,&
-'@    (positif) il faut imposer ICLVFL = 2 dans usini1.       ',/,&
+'@    (positif) il faut imposer ICLVFL = 2 dans usipsu.       ',/,&
 '@  Si l utilisateur souhaite utiliser l option ICLVFL = 1    ',/,&
-'@    il est invite a ne pas modifier SCAMIN dans usini1.     ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@    il est invite a ne pas modifier SCAMIN dans usipsu.     ',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4361 format(                                                           &
+ 4361 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3816,14 +3852,15 @@ endif
 '@    compte que si ICLVFL(I) = 2                             ',/,&
 '@  Si l utilisateur souhaite effectivement que le            ',/,&
 '@    scalaire I (en fait, une variance) soit limite a SCAMAX ',/,&
-'@    (positif) il faut imposer ICLVFL = 2 dans usini1.       ',/,&
+'@    (positif) il faut imposer ICLVFL = 2 dans usipsu.       ',/,&
 '@  Si l utilisateur souhaite utiliser l option ICLVFL = 1    ',/,&
-'@    il est invite a ne pas modifier SCAMAX dans usini1.     ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@    il est invite a ne pas modifier SCAMAX dans usipsu.     ',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4370 format(                                                           &
+ 4370 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3839,11 +3876,12 @@ endif
 '@    scalaire I, ici une variance                            ',/,&
 '@  Avec ICLVFL(I) = 2, la valeur de SCAMAX doit donc etre    ',/,&
 '@   strictment positive.                                     ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4380 format(                                                           &
+ 4380 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3858,11 +3896,12 @@ endif
 '@  RVARFL(I) est le coefficient R pour le scalaire I (qui est',/,&
 '@    une variance) intervenant dans le terme de dissipation :',/,&
 '@    - (1/R) rho scalaire epsilon/k                          ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 5003 format(                                                           &
+ 5003 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3879,14 +3918,14 @@ endif
 '@    par IPERIO = ',I10,   ')                                ',/,&
 '@    et certaines periodicites sont de rotation.             ',/,&
 '@  L''indicateur IPUCOU a ete positionne a ',I10              ,/,&
-'@    dans l''interface ou usini1 (couplage renforce pour     ',/,&
+'@    dans l''interface ou usipgl (couplage renforce pour     ',/,&
 '@    IPUCOU=1).                                              ',/,&
 '@  L''indicateur IALE a ete positionne a ',I10                ,/,&
-'@    dans l''interface ou usini1 (methode activee si IALE=1) ',/,&
+'@    dans l''interface ou usipgl (methode activee si IALE=1) ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 5005 format(                                                           &
+ 5005 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3911,26 +3950,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-! 5007 format(
-!     &'@                                                            ',/,
-!     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-!     &'@                                                            ',/,
-!     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
-!     &'@    =========                                               ',/,
-!     &'@    LA PERIODICITE             N''EST PAS COMPATIBLE AVEC LE',/,
-!     &'@      RAYONNEMENT SEMI-TRANSPARENT  (ORDONNEES DISCRETES)   ',/,
-!     &'@      DANS LA VERSION COURANTE                              ',/,
-!     &'@                                                            ',/,
-!     &'@  Le calcul ne peut etre execute.                           ',/,
-!     &'@                                                            ',/,
-!     &'@  L''indicateur IPERIO a ete positionne a ',I10              ,/,
-!     &'@    dans usini1 (periodicite activee pour IPERIO=1).        ',/,
-!     &'@  L''indicateur IIRAYO(',I10,') a ete positionne a ',I10     ,/,
-!     &'@    dans usray1.                                            ',/,
-!     &'@                                                            ',/,
-!     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-!     &'@                                                            ',/)
- 5008 format(                                                           &
+ 5008 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3951,7 +3971,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 5009 format(                                                           &
+ 5009 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3975,7 +3995,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 5010 format(                                                           &
+ 5010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3991,7 +4011,7 @@ endif
 '@    et certaines periodicites sont de rotation.             ',/,&
 '@  Les indicateurs THETAV des trois composantes Ux, Uy, Uz   ',/,&
 '@    de la vitesse                                           ',/,&
-'@    ont ete positionnes (dans usini1 ou par defaut suite aux',/,&
+'@    ont ete positionnes (dans usipsu ou par defaut suite aux',/,&
 '@    options de calcul selectionnees) aux valeurs suivantes :',/,&
 '@    THETAV(IU)  THETAV(IV)  THETAV(IW) ',/,&
 '@        ',E14.5     ,'     ',E14.5     ,'     ',E14.5        ,/,&
@@ -4005,7 +4025,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 6002 format(                                                           &
+ 6002 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4022,7 +4042,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 6005 format(                                                           &
+ 6005 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4045,7 +4065,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7000 format(                                                           &
+ 7000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4062,7 +4082,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7010 format(                                                           &
+ 7010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4079,7 +4099,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7020 format(                                                           &
+ 7020 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4097,12 +4117,11 @@ endif
 '@       ALPNMK      BETNMK      GAMNMK                       ',/,&
 '@ ',     E12.4,      E12.4,      E12.4                        ,/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface, usini1   ',/,&
-'@    ou usalin.                                              ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7030 format(                                                           &
+ 7030 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4115,11 +4134,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usalin.',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7040 format(                                                           &
+ 7040 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4136,7 +4155,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7050 format(                                                           &
+ 7050 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4153,7 +4172,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8000 format(                                                           &
+ 8000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4167,48 +4186,32 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
 #else
 
- 1100 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
-'@    =========                                               ',/,&
-'@    NDIM   must have value equal to 3                       ',/,&
-'@   IT HAS VALUE ',I10                                        ,/,&
-'@                                                            ',/,&
-'@  The calculation could NOT run.                            ',/,&
-'@                                                            ',/,&
-'@  space dimension can only be 3 even for 2D simulations     ',/,&
-'@                                                            ',/,&
-'@  Check the input data given via User Interface or in usini1',/,&
-'@  Check the mesh file                                       ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1200 format(                                                           &
+ 1200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
 '@    ',A33,                          ' MUST BE AN INTEGER   ',/, &
-'@    SUPERIEUR or EGAL A -1                                  ',/,&
+'@    GREATER THAN OR EQUAL TO -1                             ',/,&
 '@   IT HAS VALUE ',I10                                        ,/,&
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1210 format(                                                           &
+ 1210 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4220,11 +4223,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1220 format(                                                           &
+ 1220 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4238,11 +4242,12 @@ endif
 '@                                                            ',/,&
 '@  ICHRVR defines whether the variable should be included in ',/,&
 '@    post-processing files                                   ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1230 format(                                                           &
+ 1230 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4255,11 +4260,12 @@ endif
 '@                                                            ',/,&
 '@  NCAPT  is the number of probes for history/ time series   ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1240 format(                                                           &
+ 1240 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4274,11 +4280,12 @@ endif
 '@                                                            ',/,&
 '@  IHISVR(I,1) is the number of probes for variable  I       ',/,&
 '@      (-1 means all probes are used)                        ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1250 format(                                                           &
+ 1250 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4294,11 +4301,12 @@ endif
 '@                                                            ',/,&
 '@  IHISVR(I,j+1) gives the number of the j-ieth probe        ',/,&
 '@    to be used with variable number I to post-process       ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1260 format(                                                           &
+ 1260 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4312,11 +4320,12 @@ endif
 '@                                                            ',/,&
 '@  ILISVR(I) tells if variable (I)should be included         ',/,&
 '@    in the printed listing                                  ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1270 format(                                                           &
+ 1270 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4329,11 +4338,12 @@ endif
 '@                                                            ',/,&
 '@  The calculation could NOT run.                            ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1300 format(                                                           &
+ 1300 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4352,12 +4362,13 @@ endif
 '@  This parameter tells which extra variables should be      ',/,&
 '@    included for post-processing                            ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 2000 format(                                                           &
+ 2000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4369,11 +4380,12 @@ endif
 '@                                                            ',/,&
 '@  The calculation could NOT run.                            ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2005 format(                                                           &
+ 2005 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4386,11 +4398,12 @@ endif
 '@                                                            ',/,&
 '@  The calculation could NOT run.                            ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2100 format(                                                           &
+ 2100 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4412,11 +4425,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2111 format(                                                           &
+ 2111 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4432,11 +4446,12 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2112 format(                                                           &
+ 2112 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4450,11 +4465,12 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2121 format(                                                           &
+ 2121 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4469,12 +4485,12 @@ endif
 '@                                                            ',/,&
 '@  computation will go on                                    ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
-'@  user interface or usini1.                                 ',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2122 format(                                                           &
+ 2122 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4489,12 +4505,13 @@ endif
 '@                                                            ',/,&
 '@  computation will go on                                    ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2123 format(                                                           &
+ 2123 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4509,12 +4526,13 @@ endif
 '@                                                            ',/,&
 '@  Computation will go on                                    ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2124 format(                                                           &
+ 2124 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4529,12 +4547,13 @@ endif
 '@                                                            ',/,&
 '@  Computation will go on                                    ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2125 format(                                                           &
+ 2125 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4549,12 +4568,13 @@ endif
 '@                                                            ',/,&
 '@  computation will go on                                    ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2127 format(                                                           &
+ 2127 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4569,11 +4589,12 @@ endif
 '@                                                            ',/,&
 '@  Computation will NOT proceed                              ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2131 format(                                                           &
+ 2131 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4591,12 +4612,13 @@ endif
 '@                                                            ',/,&
 '@  computation will go on.                                   ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2132 format(                                                           &
+ 2132 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4614,12 +4636,13 @@ endif
 '@                                                            ',/,&
 '@  computation will go on.                                   ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2133 format(                                                           &
+ 2133 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4633,12 +4656,13 @@ endif
 '@                                                            ',/,&
 '@  computation will go on                                    ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2134 format(                                                           &
+ 2134 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4652,12 +4676,13 @@ endif
 '@                                                            ',/,&
 '@  computation will go on                                    ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2135 format(                                                           &
+ 2135 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4672,7 +4697,7 @@ endif
 '@                                                            ',/,&
 '@  Computation will NOT go on                                ',/,&
 '@                                                            ',/,&
-'@  Verify   the parameters given  via l''interface or usini1 ',/,&
+'@  Verify   the parameters                                   ',/,&
 '@    - deactivate xtrapolation of Cp in time                 ',/,&
 '@      or                                                    ',/,&
 '@    - define Cp as variable                                 ',/,&
@@ -4680,7 +4705,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2136 format(                                                           &
+ 2136 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4696,7 +4721,7 @@ endif
 '@                                                            ',/,&
 '@ Computation will  NOT  proceed                             ',/,&
 '@                                                            ',/,&
-'@  Verify the parameters given via user interface or usini1  ',/,&
+'@  Verify the parameters                                     ',/,&
 '@    - deactivate intepolation in time                       ',/,&
 '@                                     for diffusivity        ',/,&
 '@      or                                                    ',/,&
@@ -4705,7 +4730,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2137 format(                                                           &
+ 2137 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4719,14 +4744,13 @@ endif
 '@                                                            ',/,&
 '@ Computation will  NOT  proceed                             ',/,&
 '@                                                            ',/,&
-'@  Verify   the parameters given  via l''interface or        ',/,&
-'@    usini1 :                                                ',/,&
+'@  Verify   the parameters :                                 ',/,&
 '@      desactivate  ERROR ESTIMATES  (ICCVFG)                ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2140 format(                                                           &
+ 2140 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4753,11 +4777,12 @@ endif
 '@    - time-step variable with space or iteration or         ',/,&
 '@      steady-state   algorithm(IDTVAR)                      ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2141 format(                                                           &
+ 2141 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4779,11 +4804,12 @@ endif
 '@    - frozen velocity field (ICCVFG=1)                      ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2142 format(                                                           &
+ 2142 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4804,11 +4830,12 @@ endif
 '@       THETST    ISTO2T     THETA K   THETA EPS             ',/,&
 '@ ',     E12.4,      I10,      E12.4,      E12.4              ,/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2143 format(                                                           &
+ 2143 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4831,11 +4858,12 @@ endif
 '@     THETA PHI    THETA FB                                  ',/,&
 '@ ',      E12.4,      E12.4                                   ,/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2144 format(                                                           &
+ 2144 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4856,11 +4884,12 @@ endif
 '@       THETST    ISTO2T     THETA K   THETA OMEGA           ',/,&
 '@ ',     E12.4,      I10,      E12.4,      E12.4              ,/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2145 format(                                                           &
+ 2145 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4880,11 +4909,12 @@ endif
 '@       THETST    ISTO2T     THETA K   THETA OMEGA           ',/,&
 '@ ',     E12.4,      I10,      E12.4,      E12.4              ,/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2146 format(                                                           &
+ 2146 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4898,12 +4928,11 @@ endif
 '@  discretisation scheme when a specific physics is active   ',/,&
 '@    (combustion, coal, electrical, ...).                    ',/,&
 '@                                                            ',/,&
-'@  Verify   the parameters given  via interface, usini1      ',/,&
-'@  and  usppmo.                                              ',/,&
+'@  Verify   the parameters.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2147 format(                                                           &
+ 2147 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4925,12 +4954,12 @@ endif
 '@  (other termes sources could be second order in time       ',/,&
 '@             )                                              ',/,&
 '@                                                            ',/,&
-'@  Verify   the parameters given  via interface, usini1      ',/,&
+'@  Verify   the parameters.                                  ',/,&
 '@  and uslag1.                                               ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2148 format(                                                           &
+ 2148 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4944,20 +4973,20 @@ endif
 '@    will not be computed as second order                    ',/,&
 '@    in this version, despite user settings chosen below     ',/,&
 '@                                                            ',/,&
-'@       Pour le scalaire ',I10                                ,/,&
+'@       For scalar       ',I10                                ,/,&
 '@       THETSS    ISSO2T                                     ',/,&
 '@ ',     E12.4,      I10                                      ,/,&
 '@                                                            ',/,&
 '@  (Les autres termes sources pourraient etre traites a      ',/,&
 '@   l''ordre 2)                                              ',/,&
 '@                                                            ',/,&
-'@  Verify   the parameters given  via l''interface, usini1   ',/,&
-'@  et ',A6                                                    ,/,&
+'@  Verify   the parameters given by the interface,           ',/,&
+'@  cs_user_parameters.f90, and ',A6                           ,/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2149 format(                                                           &
+ 2149 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4971,11 +5000,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2150  format(                                                          &
+ 2150  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4991,11 +5021,12 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2151  format(                                                          &
+ 2151  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5011,7 +5042,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2152  format(                                                          &
+ 2152  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5024,12 +5055,11 @@ endif
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
 '@  Integer parameter ITURB was set to ',I10                   ,/,&
-'@      in usini1.                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 2200 format(                                                           &
+ 2200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5040,11 +5070,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2201 format(                                                           &
+ 2201 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5055,30 +5086,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-! 2203 format(
-!     &'@                                                            ',/,
-!     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-!     &'@                                                            ',/,
-!     &'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,
-!     &'@    =========                                               ',/,
-!     &'@  GRAVITY IS SET TO ZERO    ',/,
-!     &'@  THIS IS NOT COMPATIBLE WITH HYDROSTATIQUE PRESSURE OPTION ',/,
-!     &'@                                                            ',/,
-!     &'@                                                            ',/,
-!     &'@  ICALHY IS EQUAL ',I10                                      ,/,
-!     &'@         IS EQUAL ',3E14.5                                   ,/,
-!     &'@                                                            ',/,
-!     &'@  Computation CAN NOT run                                   ',/,
-!     &'@                                                            ',/,
-!     &'@ Check the input data given via User Interface or in usini1.',/,
-!     &'@                                                            ',/,
-!     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-!     &'@                                                            ',/)
- 2204 format(                                                           &
+ 2204 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5096,11 +5109,12 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2205 format(                                                           &
+ 2205 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5111,11 +5125,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2206 format(                                                           &
+ 2206 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5133,11 +5148,12 @@ endif
 '@    des faces ANOMAX qui doit etre fourni en radians et     ',/,&
 '@    compris dans the bornes indiquees ci-dessus.            ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2207 format(                                                           &
+ 2207 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5153,11 +5169,12 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2208 format(                                                           &
+ 2208 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5170,11 +5187,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2209 format(                                                           &
+ 2209 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5188,11 +5206,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2210 format(                                                           &
+ 2210 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5205,11 +5224,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2211 format(                                                           &
+ 2211 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5220,11 +5240,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2300 format(                                                           &
+ 2300 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5239,11 +5260,12 @@ endif
 '@                                                            ',/,&
 '@  IMLIGR(I) indique le mode de limitation des gradients     ',/,&
 '@    pour la variable I                                      ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2310 format(                                                           &
+ 2310 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5257,11 +5279,12 @@ endif
 '@                                                            ',/,&
 '@  IRCFLU(I) flags if fluxes are reconstructed for            ',/&
 '@             variable I                                      ',/&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2311 format(                                                           &
+ 2311 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5277,11 +5300,12 @@ endif
 '@                            ',/,                          &
 '@  ISCHCV(I) = 0 (schema SOLU) requests a  reconstruction    ',/,&
 '@   for convective fluxes                                    ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2320 format(                                                           &
+ 2320 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5296,11 +5320,12 @@ endif
 '@                                                            ',/,&
 '@  CLIMGR(I) is the coefficient limiting the gradients       ',/,&
 '@    for variable I                                          ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2330 format(                                                           &
+ 2330 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5312,11 +5337,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2331 format(                                                           &
+ 2331 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5330,11 +5356,12 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2400 format(                                                           &
+ 2400 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5354,11 +5381,12 @@ endif
 '@                                                            ',/,&
 '@  IRESOL(I) is the linear system reso methode to use        ',/,&
 '@    for  variable I                                         ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2401 format(                                                           &
+ 2401 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5372,11 +5400,12 @@ endif
 '@                                                            ',/,&
 '@  IDIRCL(I) tells if the diagonal of the matrix for variable',/,&
 '@  I should be shifted in the absence of Dirichlet condition ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2410 format(                                                           &
+ 2410 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5391,11 +5420,12 @@ endif
 '@                                                            ',/,&
 '@  The chosen linear solver could fail to converge           ',/,&
 '@    because of the nature of the problem                    ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2420 format(                                                           &
+ 2420 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5414,11 +5444,12 @@ endif
 '@   numerical perturbations when restarting a computation    ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2500 format(                                                           &
+ 2500 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5429,11 +5460,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2510 format(                                                           &
+ 2510 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5444,11 +5476,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2511 format(                                                           &
+ 2511 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5459,11 +5492,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2520 format(                                                           &
+ 2520 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5477,11 +5511,12 @@ endif
 '@                                                            ',/,&
 '@  When the time-step is non uniforme and constant           ',/,&
 '@              DTMIN <= timestep <= DTMAX                    ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2530 format(                                                           &
+ 2530 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5495,11 +5530,12 @@ endif
 '@                                                            ',/,&
 '@  CDTVAR(I) multiplyer coefficient applied to the           ',/,&
 '@  timestep for the  resolution of variable I.               ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2540 format(                                                           &
+ 2540 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5515,7 +5551,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2541 format(                                                           &
+ 2541 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5529,7 +5565,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2600 format(                                                           &
+ 2600 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5541,11 +5577,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2601 format(                                                           &
+ 2601 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5556,11 +5593,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2606 format(                                                           &
+ 2606 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5574,12 +5612,13 @@ endif
 '@  computation will go on while ignoring keyword  IVRTEX.    ',/,&
 '@    (it is reset to       0)                                ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2607 format(                                                           &
+ 2607 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5606,7 +5645,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2610 format(                                                           &
+ 2610 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5618,14 +5657,15 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 ! 2620 FORMAT
 !     & (' ATTENTION : ON DEMANDE ',A6,' = ',I10,/,
 !     &  '                  AVEC GRAVITE = ',3E14.5)
- 2621 format(                                                           &
+ 2621 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5644,12 +5684,13 @@ endif
 '@   this could be an error                                   ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2622 format(                                                           &
+ 2622 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5671,7 +5712,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2623 format(                                                           &
+ 2623 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5688,7 +5729,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2624 format(                                                           &
+ 2624 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5702,11 +5743,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2625 format(                                                           &
+ 2625 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5718,11 +5760,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2630 format(                                                           &
+ 2630 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5736,11 +5779,12 @@ endif
 '@                                                            ',/,&
 '@  The calculation could NOT run.                            ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2640 format(                                                           &
+ 2640 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5751,11 +5795,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2650 format(                                                           &
+ 2650 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5769,11 +5814,12 @@ endif
 '@                                                            ',/,&
 '@  ICPSYR(I) is a flag for coupling scalar I with            ',/,&
 '@    SYRTHES  (solid walls modeller)                         ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2660 format(                                                           &
+ 2660 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5787,11 +5833,12 @@ endif
 '@  The number of coupled scalars is however     ',I10         ,/,&
 '@    (the total number of scalars is',I10   ,')              ',/,&
 '@  Verify  the couplage SYRTHES-Noyau.                       ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2661 format(                                                           &
+ 2661 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5806,11 +5853,12 @@ endif
 '@  The total number of scalars   is ',I10                     ,/,&
 '@  The number of coupled scalars is ',I10                     ,/,&
 '@  Verify   le couplage SYRTHES-Noyau.                       ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2662 format(                                                           &
+ 2662 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5826,14 +5874,15 @@ endif
 '@  Here it is scalar number : ',I10                           ,/,&
 '@    which is not temperature because                        ',/,&
 '@                    ISCSTH(',I10   ,') = ',I10               ,/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2663 format(                                                           &
+ 2663 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5854,7 +5903,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2664 format(                                                           &
+ 2664 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5875,11 +5924,12 @@ endif
 '@        IESCOR = ',I10                                       ,/,&
 '@        IESTOT = ',I10                                       ,/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2700 format(                                                           &
+ 2700 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5892,11 +5942,12 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2710 format(                                                           &
+ 2710 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5907,11 +5958,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2720 format(                                                           &
+ 2720 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5922,11 +5974,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2730 format(                                                           &
+ 2730 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5937,11 +5990,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2740 format(                                                           &
+ 2740 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5952,11 +6006,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2741 format(                                                           &
+ 2741 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5970,7 +6025,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2742 format(                                                           &
+ 2742 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5983,7 +6038,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2743 format(                                                           &
+ 2743 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5997,7 +6052,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2750 format(                                                           &
+ 2750 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6008,12 +6063,13 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 3000 format(                                                           &
+ 3000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6025,11 +6081,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3001 format(                                                           &
+ 3001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6040,11 +6097,12 @@ endif
 '@                                                            ',/,&
 '@  The calculation could NOT run.                            ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3010 format(                                                           &
+ 3010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6057,11 +6115,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3100 format(                                                           &
+ 3100 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6072,12 +6131,13 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 4100 format(                                                           &
+ 4100 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6088,13 +6148,13 @@ endif
 '@   It IS EQUAL ',E14.5                                       ,/,&
 '@                                                            ',/,&
 '@  calculation can only run if turbulence is defined         ',/,&
-'@  via a restart file or                                     ',/,&
-'@  suroutine usiniv.                                         ',/,&
+'@  via a restart file or the interface or the                ',/,&
+'@  cs_user_initialization subroutine.                        ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 4300 format(                                                           &
+ 4300 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6106,11 +6166,12 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4320 format(                                                           &
+ 4320 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6128,11 +6189,12 @@ endif
 '@  If ISCAVR(I) is POSITIVE, scalare I is a variance :       ',/,&
 '@    it is the variance of fluctuations of scalaire J        ',/,&
 '@    who''s number is   ISCAVR(I)                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4321 format(                                                           &
+ 4321 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6150,11 +6212,12 @@ endif
 '@    variance of fluctuations of scalar J                    ',/,&
 '@    who''s number is ISCAVR(I) , so we must have            ',/,&
 '@    ISCAVR(J) = 0                                           ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4330 format(                                                           &
+ 4330 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6168,11 +6231,12 @@ endif
 '@                                                            ',/,&
 '@  ICLVFL(I) defines the type of clipping of scalar I        ',/,&
 '@    when it is a variance of  fluctuations.                 ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4331 format(                                                           &
+ 4331 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6190,11 +6254,12 @@ endif
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4340 format(                                                           &
+ 4340 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6211,11 +6276,12 @@ endif
 '@    scalar and  MUST BE POSITIVE when ivisls is  different  ',/,&
 '@    from 1 (it must then be defined in USPHYV )             ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4350 format(                                                           &
+ 4350 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6229,11 +6295,12 @@ endif
 '@                                                            ',/,&
 '@  SIFMAS(I) is the turbulent Prandtl turbulent              ',/,&
 '@    associated to scalar I.                                 ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4360 format(                                                           &
+ 4360 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6254,11 +6321,12 @@ endif
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4361 format(                                                           &
+ 4361 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6279,11 +6347,12 @@ endif
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4370 format(                                                           &
+ 4370 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6299,11 +6368,12 @@ endif
 '@    scalar   I, which is a variance                         ',/,&
 '@  with ICLVFL(I) = 2, value SCAMAX must be                  ',/,&
 '@   strictly  positive.                                      ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4380 format(                                                           &
+ 4380 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6318,11 +6388,12 @@ endif
 '@  RVARFL(I) is the coefficient R for the scalar I (which is ',/,&
 '@ a variance) related to the dissipation equation sourceterme',/,&
 '@    - (1/R) rho scalaire epsilon/k                          ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 5003 format(                                                           &
+ 5003 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6339,14 +6410,13 @@ endif
 '@        IPERIO = ',I10,   ')                                ',/,&
 '@    and some peridic boundaries involve rotation.           ',/,&
 '@  The flag IPUCOU is defined as  ',I10                       ,/,&
-'@   in the interface or usini1 (enhanced coupling for        ',/,&
-'@    IPUCOU=1).                                              ',/,&
+'@    (enhanced coupling for IPUCOU=1).                       ',/,&
 '@  The ALE fag  IALE is defined as  ',I10                     ,/,&
-'@    in the interface or usini1 (method activated if IALE=1) ',/,&
+'@    (method activated if IALE=1)                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 5004 format(                                                           &
+ 5004 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6360,12 +6430,11 @@ endif
 '@  variable COMMANDE_PERIO was defined in the run-case script',/,&
 '@    (periodicity was activated which results in :           ',/,&
 '@        IPERIO = ',I10,   ')                                ',/,&
-'@  Flag IMGR is defined as 1  for one variable at least      ',/,&
-'@    in the interface or usini1.                             ',/,&
+'@  Flag IMGR is defined as 1  for one variable at least.     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 5005 format(                                                           &
+ 5005 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6403,13 +6472,13 @@ endif
 !     &'@   The calculation could NOT run.                           ',/,
 !     &'@                                                            ',/,
 !     &'@  Flag  IPERIO is equl to ',I10                              ,/,
-!     &'@    in usini1 (periodicity actived if IPERIO=1).            ',/,
+!     &'@    (periodicity actived if IPERIO=1).                      ',/,
 !     &'@  Flag IIRAYO(',I10,') is equal to ',I10                     ,/,
 !     &'@    in usray1.                                              ',/,
 !     &'@                                                            ',/,
 !     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
 !     &'@                                                            ',/)
- 5008 format(                                                           &
+ 5008 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6430,7 +6499,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 5009 format(                                                           &
+ 5009 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6454,7 +6523,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 5010 format(                                                           &
+ 5010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6470,7 +6539,7 @@ endif
 '@    and IPERIO = ',I10,   ')                                ',/,&
 '@  Flags  THETAV for 3 velocity components      Ux, Uy, Uz   ',/,&
 '@    of velocity                                             ',/,&
-'@    are selected  (in usini1 or by default                  ',/,&
+'@    are selected                                            ',/,&
 '@    with the following values :'                             ,/,&
 '@    THETAV(IU)  THETAV(IV)  THETAV(IW) ',/,&
 '@        ',E14.5     ,'     ',E14.5     ,'     ',E14.5        ,/,&
@@ -6484,7 +6553,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 6002 format(                                                           &
+ 6002 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6501,7 +6570,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 6004 format(                                                           &
+ 6004 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6514,11 +6583,11 @@ endif
 '@                                                            ',/,&
 '@   The present CPU has rank ',I10                            ,/,&
 '@  Flag IMGR  is set to       1                              ',/,&
-'@    for at least one variable in interface or usini1.       ',/,&
+'@    for at least one variable                               ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 6005 format(                                                           &
+ 6005 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6541,7 +6610,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7000 format(                                                           &
+ 7000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6558,7 +6627,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7010 format(                                                           &
+ 7010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6571,11 +6640,11 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@  Verify   the parameters given  in     interface or usalin.',/,&
+'@  Verify the parameters.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7020 format(                                                           &
+ 7020 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6593,12 +6662,11 @@ endif
 '@       ALPNMK      BETNMK      GAMNMK                       ',/,&
 '@ ',     E12.4,      E12.4,      E12.4                        ,/,&
 '@                                                            ',/,&
-'@  Verify   the parameters given  in interface, usini1       ',/,&
-'@    or usalin.                                              ',/,&
+'@  Verify the parameters.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7030 format(                                                           &
+ 7030 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6611,11 +6679,11 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@  Verify   the parameters given  in interface or usalin.    ',/,&
+'@  Verify the parameters given in the interface or usalin.   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7040 format(                                                           &
+ 7040 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6628,11 +6696,11 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@  Verify   the parameters given  in interface or usalin.'   ,/, &
+'@  Verify the parameters given in the interface or usalin.   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7050 format(                                                           &
+ 7050 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6649,7 +6717,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8000 format(                                                           &
+ 8000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -6663,7 +6731,8 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
+'@ Check the input data given through the User Interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

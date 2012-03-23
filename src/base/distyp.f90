@@ -669,7 +669,7 @@ deallocate(w2)
 '@          Residu     Reference            Residu relatif    ',/,&
 '@  ',2E14.5,12X,E14.5                                         ,/,&
 '@                                                            ',/,&
-'@     Augmenter la valeur de NTCMXY dans usini1 peut resoudre',/,&
+'@     Augmenter la valeur de NTCMXY dans usipsu peut resoudre',/,&
 '@       le probleme.                                         ',/,&
 '@     La valeur actuelle de cet entier est ',I10              ,/,&
 '@                                                            ',/,&
@@ -719,7 +719,7 @@ deallocate(w2)
 '@          Residual   Reference            Relative residual ',/,&
 '@  ',2E14.5,12X,E14.5                                         ,/,&
 '@                                                            ',/,&
-'@     Increase the value of NTCMXY in usini1 may solve       ',/,&
+'@     Increase the value of NTCMXY in usipsu may solve       ',/,&
 '@       the problem.                                         ',/,&
 '@     The current value of this integer is ',I10              ,/,&
 '@                                                            ',/,&
