@@ -3676,10 +3676,9 @@ cs_grid_coarsen(const cs_grid_t   *f,
                 int                aggregation_limit,
                 double             relaxation_parameter)
 {
-  cs_lnum_t call_id, iusmgr;
+  cs_lnum_t call_id;
   cs_lnum_t igr;
   cs_lnum_t isym = 2;
-  cs_lnum_t niw = 0, nrw = 0;
 
   cs_lnum_t iwarnp = verbosity;
   cs_lnum_t f_n_cells = f->n_cells;
@@ -3705,56 +3704,12 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
   igr = c->level;
 
-  /* Determine if user or automatic method is chosen */
+  /* Determine fine->coarse cell connectivity (aggregation) */
 
-  iusmgr = 0;
-
-  CS_PROCF (ustmgr, USTMGR) (&call_id, &igr, &isym,
-                             &f_n_cells, &f_n_cells_ext, &f_n_faces, &iwarnp,
-                             &iusmgr, &niw, &nrw,
-                             f->face_cell,
-                             f->da, f->xa,
-                             f->face_normal, f->cell_vol, f->cell_cen,
-                             NULL, NULL, NULL);
-
-  /* Automatic coarsening */
-
-  if (iusmgr == 0) {
-
-    /* Determine fine->coarse cell connectivity (aggregation) */
-
-    _automatic_aggregation(f,
-                           aggregation_limit,
-                           verbosity,
-                           c->coarse_cell);
-
-  }
-
-  /* User coarsening */
-
-  else { /* if iusmgr == 1 */
-
-    cs_int_t *iw = NULL;
-    cs_real_t *rw = NULL;
-
-    BFT_MALLOC(iw, niw, cs_int_t);
-    BFT_MALLOC(rw, nrw, cs_real_t);
-
-    call_id = 2;
-
-    CS_PROCF (ustmgr, USTMGR) (&call_id, &igr, &isym,
-                               &f_n_cells, &f_n_cells_ext, &f_n_faces, &iwarnp,
-                               &iusmgr, &niw, &nrw,
-                               f->face_cell,
-                               f->da, f->xa,
-                               f->face_normal, f->cell_vol, f->cell_cen,
-                               c->coarse_cell,
-                               iw, rw);
-
-    BFT_FREE(iw);
-    BFT_FREE(rw);
-
-  }
+  _automatic_aggregation(f,
+                         aggregation_limit,
+                         verbosity,
+                         c->coarse_cell);
 
   /* Build coarse grid connectivity */
 

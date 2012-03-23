@@ -511,35 +511,6 @@ void CS_PROCF (usvpst, USVPST)
  cs_real_t        trafbr[]   /* --- work array for output boundary faces */
 );
 
-/*----------------------------------------------------------------------------
- * User function to compute coarsening array for algebraic multigrid
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (ustmgr, USTMGR)
-(
- const cs_int_t   *iappel,      /* <-- 1: initialization call
-                                       2: computional call */
- const cs_int_t   *igr,         /* <-- new grid level (0 = base) */
- const cs_int_t   *isym,        /* <-- 1: symmetric; 2 nonsymmteric */
- const cs_int_t   *ncelf,       /* <-- number of cells in fine grid */
- const cs_int_t   *ncelfe,      /* <-- number of cells with halo in fine grid */
- const cs_int_t   *nfacf,       /* <-- number of faces in fine grid */
- const cs_int_t   *iwarnp,      /* <-- verbosity level */
- cs_int_t         *iusmgr,      /* --> 0: automatic method
-                                       1: use this sub-routine */
- cs_int_t         *niw,         /* --> size of iw for call 2 */
- cs_int_t         *nrw,         /* --> size of rw for call 2 */
- const cs_int_t    ifacef[],    /* <-- fine grid face->cell connectivity */
- const cs_real_t   daf[],       /* <-- diagonal terms of fine grid */
- const cs_real_t   xaf[],       /* <-- extradiagonal terms of fine grid */
- const cs_real_t   surfaf[],    /* <-- fine grid face surface vectors */
- const cs_real_t   volumf[],    /* <-- fine grid cell volumes */
- const cs_real_t   xyzfin[],    /* <-- fine grid cell centers */
- cs_int_t          irscel[],    /* --> Fine -> coarse cell connectivity */
- cs_int_t          iw[],        /* --> work array of size niw (call 2) */
- cs_real_t         rw[]         /* --> work array of size nrw (call 2) */
-);
-
 /*============================================================================
  *  User function prototypes
  *============================================================================*/

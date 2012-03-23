@@ -99,7 +99,6 @@ uspt1d.f90 \
 usray1.f90 \
 usray2.f90 \
 usthht.f90 \
-ustmgr.f90 \
 ustsma.f90 \
 usvort.f90 \
 usvosy.f90 \
