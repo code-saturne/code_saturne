@@ -48,82 +48,12 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute coarsening array for algebraic multigrid
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (autmgr, AUTMGR)
-(
- const cs_int_t   *igr,         /* <-- new grid level (0 = base) */
- const cs_int_t   *isym,        /* <-- 1: symmetric; 2 nonsymmteric */
- const cs_int_t   *nagmax,      /* <-- fine cells per coarse cell limit */
- const cs_int_t   *ncelf,       /* <-- number of cells in fine grid */
- const cs_int_t   *ncelfe,      /* <-- number of cells with halo in fine grid */
- const cs_int_t   *nfacf,       /* <-- number of faces in fine grid */
- const cs_int_t   *iwarnp,      /* <-- verbosity level */
- const cs_int_t    ifacef[],    /* <-- fine grid face->cell connectivity */
- const cs_real_t   daf[],       /* <-- diagonal terms of fine grid */
- const cs_real_t   xaf[],       /* <-- extradiagonal terms of fine grid */
- const cs_real_t   surfaf[],    /* <-- fine grid face surface vectors */
- const cs_real_t   volumf[],    /* <-- fine grid cell volumes */
- const cs_real_t   xyzfin[],    /* <-- fine grid cell centers */
-       cs_int_t    iordf[],     /* <-> Face traversal ordering */
-       cs_int_t    irscel[],    /* --> Fine -> coarse cell connectivity */
-       cs_int_t    indic[],     /* --- work array of size ncelfe */
-       cs_int_t    inombr[],    /* --- work array of size ncelfe */
-       cs_int_t    irsfac[],    /* --- work array of size nfacf */
-       cs_int_t    indicf[],    /* --- work array of size nfacf */
-       cs_real_t   w1[],        /* --- work array of size ncelfe */
-       cs_real_t   w2[]         /* --- work array of size ncelfe */
-);
-
-/*----------------------------------------------------------------------------
  * Main Fortran subroutine
  *----------------------------------------------------------------------------*/
 
 extern void CS_PROCF (caltri, CALTRI)
 (
  const cs_int_t   *iverif   /* <-- activate elementary tests */
-);
-
-/*----------------------------------------------------------------------------
- * Compute coarsening grid values for algebraic multigrid
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (crstgr, CRSTGR)
-(
- const cs_int_t   *iappel,      /* <-- call number (0 or 1) */
- const cs_int_t   *isym,        /* <-- 1: symmetric; 2 nonsymmteric */
- const cs_int_t   *igr,         /* <-- new grid level (0 = base) */
- const cs_int_t   *ncelf,       /* <-- number of cells in fine grid */
- const cs_int_t   *ncelg,       /* <-- number of cells in coarse grid */
- const cs_int_t   *ncelfe,      /* <-- number of cells with halo in fine grid */
- const cs_int_t   *ncelge,      /* <-- number of cells with halo coarse grid */
- const cs_int_t   *nfacf,       /* <-- number of faces in fine grid */
- const cs_int_t   *nfacg,       /* <-- number of faces in coarse grid */
- const cs_int_t   *iwarnp,      /* <-- verbosity level */
- const cs_int_t    ifacef[],    /* <-- fine grid face->cell connectivity */
- const cs_int_t    ifaceg[],    /* <-- coarse grid face->cell connectivity */
- const cs_int_t    irscel[],    /* <-- Fine -> coarse cell connectivity */
- const cs_int_t    irsfac[],    /* <-- Fine -> coarse face connectivity */
- const cs_real_t  *rlxp1,       /* <-- P0/P1 relaxation parameter */
- const cs_real_t   volumf[],    /* <-- fine grid cell volumes */
- const cs_real_t   xyzfin[],    /* <-- fine grid cell centers */
- const cs_real_t   surfaf[],    /* <-- fine grid face surface vectors */
- const cs_real_t   xaf0[],      /* <-- symmetrized extradiagonal, fine */
- const cs_real_t   xaf0ij[],    /* <-- matrix coarsening term, fine */
- const cs_real_t   daf[],       /* <-- diagonal terms of fine grid */
- const cs_real_t   xaf[],       /* <-- extradiagonal terms of fine grid */
- const cs_real_t   volumg[],    /* <-- coarse grid cell volumes */
- const cs_real_t   xyzgro[],    /* <-- coarse grid cell centers */
- const cs_real_t   surfag[],    /* <-- coarse grid face surface vectors */
- cs_real_t         xag0[],      /* --> symmetrized extradiagonal, coarse */
- cs_real_t         xag0ij[],    /* --> matrix coarsening term, coarse */
- cs_real_t         dag[],       /* --> diagonal terms of coarse grid */
- cs_real_t         xag[],       /* --> extradiagonal terms, coarse grid */
- cs_real_t         rwc1[],      /* --- work array of size ncelfe */
- cs_real_t         rwc2[],      /* --- work array of size ncelfe */
- cs_real_t         rwc3[],      /* --- work array of size ncelfe */
- cs_real_t         rwc4[]       /* --- work array of size ncelfe */
 );
 
 /*----------------------------------------------------------------------------
@@ -230,61 +160,6 @@ extern void CS_PROCF (findpt, FINDPT)
  const cs_real_t  *zz,       /* <-- node coordinate Z */
        cs_int_t   *node,     /* --> node we are looking for, zero if error */
        cs_int_t   *ndrang    /* --> rank of associated process */
-);
-
-/*----------------------------------------------------------------------------
- * Compute gradients using least squares method (standard or extended
- * neighborhood)
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (gradmc, GRADMC)
-(
- const cs_int_t   *ncelet,   /* <-- number of extended (real + ghost) cells */
- const cs_int_t   *ncel,     /* <-- number of cells */
- const cs_int_t   *nfac,     /* <-- number of interior faces */
- const cs_int_t   *nfabor,   /* <-- number of boundary faces */
- const cs_int_t   *ncelbr,   /* <-- number of cells on boundary */
- const cs_int_t   *inc,      /* <-- 0 or 1: increment or not */
- const cs_int_t   *iccocg,   /* <-- 1 or 0: recompute COCG or not */
- const cs_int_t   *nswrgp,   /* <-- >1: with reconstruction */
- const cs_int_t   *idimtr,   /* <-- 0, 1, 2: scalar, vector, tensor
-                                    for rotational periodicity */
- const cs_int_t   *iphydp,   /* <-- use hydrosatatic pressure */
- const cs_int_t   *imrgra,   /* <-- gradient computation mode */
- const cs_int_t   *iwarnp,   /* <-- verbosity level */
- const cs_int_t   *nfecra,   /* <-- standard output unit */
- const cs_real_t  *epsrgp,   /* <-- precision for iterative gradient calc. */
- const cs_real_t  *extrap,   /* <-- extrapolate gradient at boundary */
- const cs_int_t    ifacel[], /* <-- interior face->cell connectivity */
- const cs_int_t    ifabor[], /* <-- boundary face->cell connectivity */
- const cs_int_t    icelbr[], /* <-- list of cells on boundary */
- const cs_int_t    ipcvse[], /* <-- cells -> ext. neighborhood cells index */
- const cs_int_t    ielvse[], /* <-- cells -> ext. neighborhood cells list */
- const cs_int_t    isympa[], /* <-- indicator for symmetry faces */
- const cs_real_t   volume[], /* <-- cell volumes */
- const cs_real_t   surfac[], /* <-- surfaces of interior faces */
- const cs_real_t   surfbo[], /* <-- surfaces of boundary faces */
- const cs_real_t   surfbn[], /* <-- norm of surfbo */
- const cs_real_t   pond[],   /* <-- interior faces geometric weight */
- const cs_real_t   dist[],   /* <-- interior faces I' to J' distance */
- const cs_real_t   distbr[], /* <-- boundary faces I' to J' distance */
- const cs_real_t   dijpf[],  /* <-- interior faces I'J' vector */
- const cs_real_t   diipb[],  /* <-- boundary faces II' vector */
- const cs_real_t   fextx[],  /* <-- components of the exterior force */
- const cs_real_t   fexty[],  /*     generating the hydrostatic pressure */
- const cs_real_t   fextz[],
- const cs_real_t   xyzcen[], /* <-- cell centers */
- const cs_real_t   cdgfac[], /* <-- interior face centers of gravity */
- const cs_real_t   cdgfbo[], /* <-- boundary face centers of gravity */
- const cs_real_t   coefap[], /* <-- boundary condition term */
- const cs_real_t   coefbp[], /* <-- boundary condition term */
- const cs_real_t   pvar[],   /* <-- gradient's base variable */
-       cs_real_t   cocgb[],  /* <-> contribution to COCG of cells on
-                                    on boundary's interior faces */
-       cs_real_t   cocg[],   /* <-> contribution to COCG of cells on
-                                    on boundary's boundary faces */
-       cs_real_t   dpdxyz[], /* --> gradient (interleaved) */
-       cs_real_t   bzyz[]    /* --- local work array */
 );
 
 /*----------------------------------------------------------------------------
@@ -415,39 +290,6 @@ void CS_PROCF (pstusn, PSTUSN)
  const cs_int_t  *ntmabs,
  const cs_int_t  *ntcabs,
  const cs_real_t *ttcabs
-);
-
-/*----------------------------------------------------------------------------
- * User function for modification of a post-processing mesh
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (usmpst, USMPST)
-(
- const cs_int_t  *nummai,    /* <-- number or post-processing mesh */
- const cs_int_t  *nvar,      /* <-- number of variables */
- const cs_int_t  *nscal,     /* <-- number of scalars */
- const cs_int_t  *nvlsta,    /* <-- number of statistical variables (lagr) */
- cs_int_t        *ncelps,    /* <-> number of post-processed cells */
- cs_int_t        *nfacps,    /* <-> number of post processed interior faces */
- cs_int_t        *nfbrps,    /* <-> number of post processed boundary faces */
- cs_int_t        *imodif,    /* <-> 1 if mesh is modified, 0 otherwise */
- const cs_int_t   itypps[3], /* <-- flag (0 or 1) for presence of cells, */
-                             /*     interior faces, and boundary faces */
- cs_int_t         lstcel[],  /* <-> list of post-processed cells */
- cs_int_t         lstfac[],  /* <-> list of post-processed interior faces */
- cs_int_t         lstfbr[],  /* <-> list of post-processed boundary faces */
- const cs_real_t  dt[],      /* <-- local time step */
- const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
- const cs_real_t  rtp[],     /* <-- cell variables */
- const cs_real_t  propce[],  /* <-- cell physical properties */
- const cs_real_t  propfa[],  /* <-- interior face physical properties */
- const cs_real_t  propfb[],  /* <-- boundary face physical properties */
- const cs_real_t  coefa[],   /* <-- boundary conditions array */
- const cs_real_t  coefb[],   /* <-- boundary conditions array */
- const cs_real_t  statce[],  /* <-- cell statistics (Lagrangian) */
- cs_real_t        tracel[],  /* --- work array for output cells */
- cs_real_t        trafac[],  /* --- work array for output interior faces */
- cs_real_t        trafbr[]   /* --- work array for output boundary faces */
 );
 
 /*----------------------------------------------------------------------------
