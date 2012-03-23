@@ -30,7 +30,7 @@ subroutine cfini1
 
 !         INIT DES OPTIONS DES VARIABLES POUR
 !              LE COMPRESSIBLE SANS CHOC
-!   EN COMPLEMENT DE CE QUI A DEJA ETE FAIT DANS USINI1
+!   EN COMPLEMENT DE CE QUI A DEJA ETE FAIT DANS cs_user_parameters.f90
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -158,19 +158,19 @@ enddo
 ! ======================================================================
 
 ipp = ipprtp(isca(irho  ))
-NOMVAR(IPP)  = 'Rho'
+nomvar(ipp)  = 'Rho'
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
 ipp = ipprtp(isca(ienerg))
-NOMVAR(IPP)  = 'EnergieT'
+nomvar(ipp)  = 'EnergieT'
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
 ipp = ipprtp(isca(itempk))
-NOMVAR(IPP)  = 'Temp K'
+nomvar(ipp)  = 'Temp K'
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
@@ -262,7 +262,7 @@ ippred = 0
 
 iok = 0
 if(icfgrp.ne.0.and.icfgrp.ne.1) then
-  WRITE(NFECRA,5000)'ICFGRP',ICFGRP
+  write(nfecra,5000)'ICFGRP',icfgrp
   iok = 1
 endif
 
@@ -274,7 +274,7 @@ endif
 ! FORMATS
 !--------
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -284,17 +284,17 @@ endif
 '@                                                            ',/,&
 '@  La valeur de ISCALT est renseignee automatiquement.       ',/,&
 '@                                                            ',/,&
-'@  L''utilisateur ne doit pas la renseigner dans usini1, or  ',/,&
+'@  L''utilisateur ne doit pas la renseigner, or              ',/,&
 '@    elle a ete affectee comme suit :                        ',/,&
 '@    ISCALT = ',I10                                           ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1001 format(                                                           &
+ 1001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -304,19 +304,19 @@ endif
 '@                                                            ',/,&
 '@  Les valeurs de ISCSTH sont renseignees automatiquement.   ',/,&
 '@                                                            ',/,&
-'@  L''utilisateur ne doit pas les renseigner dans usini1, or ',/,&
+'@  L''utilisateur ne doit pas les renseigner, or             ',/,&
 '@    pour le scalaire ',I10   ,' correspondant au scalaire   ',/,&
 '@    physique particuliere ',I10   ,' on a                   ',/,&
 '@    ISCSTH(',I10   ,') = ',I10                               ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 2000 format(                                                           &
+ 2000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -325,28 +325,28 @@ endif
 '@    PHYSIQUE PARTICULIERE (COMPRESSIBLE) DEMANDEE           ',/,&
 '@                                                            ',/,&
 '@  Les bornes des variables rho, energie ou temperature      ',/,&
-'@    ont ete modifiees dans usini1 :                         ',/,&
+'@    ont ete modifiees :                                     ',/,&
 '@                                                            ',/,&
 '@                      SCAMIN        SCAMAX                  ',/,&
 '@  rho         ',2E14.5                                       ,/,&
 '@  energie     ',2E14.5                                       ,/,&
 '@  temperature ',2E14.5                                       ,/,&
 '@                                                            ',/,&
-'@  Les bornes de ces variables ne doivent pas etre modifiees ',/,&
-'@  dans usini1. On peut modifier les bornes des variables    ',/,&
-'@  rho et energie dans uscfx1, mais ce n''est pas conseille. ',/,&
+'@  Les bornes de ces variables ne doivent pas etre modifiees.',/,&
+'@  On peut modifier les bornes des variables rho et energie  ',/,&
+'@  dans uscfx1, mais ce n''est pas conseille.                ',/,&
 '@  Il est preferable de gerer les depassements éventuels     ',/,&
 '@  au moyen du sous programme uscfth (arret du calcul en fin ',/,&
 '@  de pas de temps en cas de depassement).                   ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 3000 format(                                                           &
+ 3000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -359,11 +359,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Imposer IPUCOU = 0 dans usini1.                           ',/,&
+'@  Imposer IPUCOU = 0.                                       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4000 format(                                                           &
+ 4000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -376,11 +376,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Imposer IESCAL(.) = 0 dans usini1.                        ',/,&
+'@  Imposer IESCAL(.) = 0.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 5000 format(                                                           &
+ 5000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&

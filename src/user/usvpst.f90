@@ -50,7 +50,7 @@ subroutine usvpst &
 !
 ! Additional meshes (cells or faces) may also be defined through the GUI or
 ! using the cs_user_postprocess_meshes() function from the
-! cs_user_postprocess.c file, (and possibly modified using 'usmpst').
+! cs_user_postprocess.c file.
 
 ! This subroutine is called once for each post-processing mesh
 ! (with a different value of 'ipart') for each time step at which output
@@ -226,7 +226,7 @@ if(1.eq.1) return
 ! post-processed, using a more compact coding.
 
 ! Examples given here correspond to the meshes defined in
-! cs_user_postprocess_meshesc and modified in usmpst.f90.
+! cs_user_postprocess_meshes.c
 
 
 !===============================================================================

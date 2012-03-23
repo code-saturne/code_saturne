@@ -536,13 +536,13 @@ endif
 '@                                                            ',/,&
 '@  La valeur de ISCALT est renseignee automatiquement.       ',/,&
 '@                                                            ',/,&
-'@  L''utilisateur ne doit pas la renseigner dans usini1, or  ',/,&
+'@  L''utilisateur ne doit pas la renseigner, or              ',/,&
 '@    elle a ete affectee comme suit :                        ',/,&
 '@    ISCALT = ',I10                                           ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -556,14 +556,14 @@ endif
 '@                                                            ',/,&
 '@  Les valeurs de ISCSTH sont renseignees automatiquement.   ',/,&
 '@                                                            ',/,&
-'@  L''utilisateur ne doit pas les renseigner dans usini1, or ',/,&
+'@  L''utilisateur ne doit pas les renseigner, or             ',/,&
 '@    pour le scalaire ',I10   ,' correspondant au scalaire   ',/,&
 '@    physique particuliere ',I10   ,' on a                   ',/,&
 '@    ISCSTH(',I10   ,') = ',I10                               ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

@@ -130,10 +130,10 @@ nfmtru = 36
 nfmtsc = 9999
 
 !     Indefini a 2 caracteres
-CINDFP='YY'
+cindfp='YY'
 
 !     Codage en chaine de caracteres du numero de la phase
-WRITE(CPHASE,'(I2.2)') 1
+write(cphase,'(i2.2)') 1
 
 !     Avertissement
 if(nscamx.gt.nfmtsc) then
@@ -168,7 +168,7 @@ write(nfecra,1100)
 itysup = 0
 nbval  = 1
 irtyp  = 1
-RUBRIQ = 'version_fichier_suite_principal'
+rubriq = 'version_fichier_suite_principal'
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,ivers,   &
             ierror)
 
@@ -189,8 +189,6 @@ endif
 
 !     Inutile de tester les supports "faces internes" et "faces de bord"
 !     ils ne sont pas utilises ici
-!      IF (NFAIOK.EQ.0) WRITE(NFECRA,8200)
-!      IF (NFABOK.EQ.0) WRITE(NFECRA,8205)
 
 
 !  --->  Tests sur les nombres de variables
@@ -201,27 +199,27 @@ itysup = 0
 nbval  = 1
 irtyp  = 1
 
-RUBRIQ = 'nombre_variables'
+rubriq = 'nombre_variables'
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jvar,    &
             ierror)
 nberro=nberro+ierror
 
-RUBRIQ = 'nombre_scalaires'
+rubriq = 'nombre_scalaires'
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jscal,   &
             ierror)
 nberro=nberro+ierror
 
-RUBRIQ = 'nombre_scalaires_us'
+rubriq = 'nombre_scalaires_us'
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jscaus,  &
             ierror)
 nberro=nberro+ierror
 
-RUBRIQ = 'nombre_scalaires_pp'
+rubriq = 'nombre_scalaires_pp'
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jscapp,  &
             ierror)
 nberro=nberro+ierror
 
-RUBRIQ = 'nombre_phases'
+rubriq = 'nombre_phases'
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jphas,   &
             ierror)
 nberro=nberro+ierror
@@ -344,7 +342,7 @@ nberro = 0
 
 !     Nombre de pas de temps, instant precedent
 
-RUBRIQ = 'nbre_pas_de_temps'
+rubriq = 'nbre_pas_de_temps'
 itysup = 0
 nbval  = 1
 irtyp  = 1
@@ -352,7 +350,7 @@ call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,ntpabs,  &
             ierror)
 nberro=nberro+ierror
 
-RUBRIQ = 'instant_precedent'
+rubriq = 'instant_precedent'
 itysup = 0
 nbval  = 1
 irtyp  = 2
@@ -363,7 +361,7 @@ nberro=nberro+ierror
 
 !     Modeles de turbulence
 
-RUBRIQ = 'modele_turbulence_phase'//CPHASE
+rubriq = 'modele_turbulence_phase'//cphase
 itysup = 0
 nbval  = 1
 irtyp  = 1
@@ -382,7 +380,7 @@ endif
 
 nberro = 0
 
-RUBRIQ = 'methode_ALE'
+rubriq = 'methode_ALE'
 itysup = 0
 nbval  = 1
 irtyp  = 1
@@ -432,7 +430,7 @@ nberro = 0
 ! --->  Pression
 !     (a priori une seule (non fonction du nombre de phases))
 
-RUBRIQ = 'pression_ce_phase'//CPHASE
+rubriq = 'pression_ce_phase'//cphase
 itysup = 1
 nbval  = 1
 irtyp  = 2
@@ -457,17 +455,17 @@ itysup = 1
 nbval  = 1
 irtyp  = 2
 
-RUBRIQ = 'vitesse_u_ce_phase'//CPHASE
+rubriq = 'vitesse_u_ce_phase'//cphase
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
      rtp(1,iu),ierror)
 nberro=nberro+ierror
 
-RUBRIQ = 'vitesse_v_ce_phase'//CPHASE
+rubriq = 'vitesse_v_ce_phase'//cphase
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
      rtp(1,iv),ierror)
 nberro=nberro+ierror
 
-RUBRIQ = 'vitesse_w_ce_phase'//CPHASE
+rubriq = 'vitesse_w_ce_phase'//cphase
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
      rtp(1,iw),ierror)
 nberro=nberro+ierror
@@ -494,12 +492,12 @@ if (itytph.eq.2) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'k_ce_phase'//CPHASE
+    rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,ik),ierror)
     nberro=nberro+ierror
 
-    RUBRIQ = 'eps_ce_phase'//CPHASE
+    rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
@@ -512,13 +510,13 @@ if (itytph.eq.2) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'R11_ce_phase'//CPHASE
+    rubriq = 'R11_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,ik),ierror)
     nberro=nberro+ierror
 
     !            La variable epsilon sert de tableau de travail
-    RUBRIQ = 'R22_ce_phase'//CPHASE
+    rubriq = 'R22_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
@@ -527,7 +525,7 @@ if (itytph.eq.2) then
       rtp(iel,ik) = rtp(iel,ik) + rtp(iel,iep)
     enddo
 
-    RUBRIQ = 'R33_ce_phase'//CPHASE
+    rubriq = 'R33_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
@@ -536,7 +534,7 @@ if (itytph.eq.2) then
       rtp(iel,ik) = 0.5d0*(rtp(iel,ik)+rtp(iel,iep))
     enddo
 
-    RUBRIQ = 'eps_ce_phase'//CPHASE
+    rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
@@ -549,12 +547,12 @@ if (itytph.eq.2) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'k_ce_phase'//CPHASE
+    rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,ik),ierror)
     nberro=nberro+ierror
 
-    RUBRIQ = 'omega_ce_phase'//CPHASE
+    rubriq = 'omega_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
@@ -579,7 +577,7 @@ elseif(itytph.eq.3) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'k_ce_phase'//CPHASE
+    rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,ir11),ierror)
     nberro=nberro+ierror
@@ -595,7 +593,7 @@ elseif(itytph.eq.3) then
       rtp(iel,ir23) = 0.d0
     enddo
 
-    RUBRIQ = 'eps_ce_phase'//CPHASE
+    rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
@@ -606,25 +604,25 @@ elseif(itytph.eq.3) then
 
     do ii   = 1, 7
       if (ii  .eq.1) then
-        RUBRIQ = 'R11_ce_phase'//CPHASE
+        rubriq = 'R11_ce_phase'//cphase
         ivar = ir11
       elseif (ii  .eq.2) then
-        RUBRIQ = 'R22_ce_phase'//CPHASE
+        rubriq = 'R22_ce_phase'//cphase
         ivar = ir22
       elseif (ii  .eq.3) then
-        RUBRIQ = 'R33_ce_phase'//CPHASE
+        rubriq = 'R33_ce_phase'//cphase
         ivar = ir33
       elseif (ii  .eq.4) then
-        RUBRIQ = 'R12_ce_phase'//CPHASE
+        rubriq = 'R12_ce_phase'//cphase
         ivar = ir12
       elseif (ii  .eq.5) then
-        RUBRIQ = 'R13_ce_phase'//CPHASE
+        rubriq = 'R13_ce_phase'//cphase
         ivar = ir13
       elseif (ii  .eq.6) then
-        RUBRIQ = 'R23_ce_phase'//CPHASE
+        rubriq = 'R23_ce_phase'//cphase
         ivar = ir23
       elseif (ii  .eq.7) then
-        RUBRIQ = 'eps_ce_phase'//CPHASE
+        rubriq = 'eps_ce_phase'//cphase
         ivar = iep
       endif
       itysup = 1
@@ -643,12 +641,12 @@ elseif(itytph.eq.3) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'k_ce_phase'//CPHASE
+    rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,ir11),ierror)
     nberro=nberro+ierror
 
-    RUBRIQ = 'omega_ce_phase'//CPHASE
+    rubriq = 'omega_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
@@ -684,12 +682,12 @@ elseif(itytph.eq.5) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'k_ce_phase'//CPHASE
+    rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,ik),ierror)
     nberro=nberro+ierror
 
-    RUBRIQ = 'eps_ce_phase'//CPHASE
+    rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
@@ -703,13 +701,13 @@ elseif(itytph.eq.5) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'R11_ce_phase'//CPHASE
+    rubriq = 'R11_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,ik),ierror)
     nberro=nberro+ierror
 
     !            La variable epsilon sert de tableau de travail
-    RUBRIQ = 'R22_ce_phase'//CPHASE
+    rubriq = 'R22_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
@@ -718,7 +716,7 @@ elseif(itytph.eq.5) then
       rtp(iel,ik) = rtp(iel,ik) + rtp(iel,iep)
     enddo
 
-    RUBRIQ = 'R33_ce_phase'//CPHASE
+    rubriq = 'R33_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
@@ -727,7 +725,7 @@ elseif(itytph.eq.5) then
       rtp(iel,ik) = 0.5d0*(rtp(iel,ik)+rtp(iel,iep))
     enddo
 
-    RUBRIQ = 'eps_ce_phase'//CPHASE
+    rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
@@ -743,28 +741,28 @@ elseif(itytph.eq.5) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'k_ce_phase'//CPHASE
+    rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,ik),ierror)
     nberro=nberro+ierror
 
-    RUBRIQ = 'eps_ce_phase'//CPHASE
+    rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
 
-    RUBRIQ = 'phi_ce_phase'//CPHASE
+    rubriq = 'phi_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,iphi),ierror)
     nberro=nberro+ierror
 
     if(iturph.eq.50.and.jturph.eq.50) then
-      RUBRIQ = 'fb_ce_phase'//CPHASE
+      rubriq = 'fb_ce_phase'//cphase
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
            rtp(1,ifb),ierror)
       nberro=nberro+ierror
     elseif(iturph.eq.51.and.jturph.eq.51) then
-      RUBRIQ = 'al_ce_phase'//CPHASE
+      rubriq = 'al_ce_phase'//cphase
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
            rtp(1,ial),ierror)
       nberro=nberro+ierror
@@ -780,12 +778,12 @@ elseif(itytph.eq.5) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'k_ce_phase'//CPHASE
+    rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,ik),ierror)
     nberro=nberro+ierror
 
-    RUBRIQ = 'omega_ce_phase'//CPHASE
+    rubriq = 'omega_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,iep),ierror)
     nberro=nberro+ierror
@@ -812,12 +810,12 @@ else if (iturph.eq.60) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'k_ce_phase'//CPHASE
+    rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,ik),ierror)
     nberro=nberro+ierror
 
-    RUBRIQ = 'eps_ce_phase'//CPHASE
+    rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,iomg),ierror)
     nberro=nberro+ierror
@@ -834,13 +832,13 @@ else if (iturph.eq.60) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'R11_ce_phase'//CPHASE
+    rubriq = 'R11_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,ik),ierror)
     nberro=nberro+ierror
 
     !            La variable omega sert de tableau de travail
-    RUBRIQ = 'R22_ce_phase'//CPHASE
+    rubriq = 'R22_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,iomg),ierror)
     nberro=nberro+ierror
@@ -849,7 +847,7 @@ else if (iturph.eq.60) then
       rtp(iel,ik) = rtp(iel,ik) + rtp(iel,iomg)
     enddo
 
-    RUBRIQ = 'R33_ce_phase'//CPHASE
+    rubriq = 'R33_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,iomg),ierror)
     nberro=nberro+ierror
@@ -858,7 +856,7 @@ else if (iturph.eq.60) then
       rtp(iel,ik) = 0.5d0*(rtp(iel,ik)+rtp(iel,iomg))
     enddo
 
-    RUBRIQ = 'eps_ce_phase'//CPHASE
+    rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
          rtp(1,iomg),ierror)
     nberro=nberro+ierror
@@ -875,12 +873,12 @@ else if (iturph.eq.60) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'k_ce_phase'//CPHASE
+    rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,ik),ierror)
     nberro=nberro+ierror
 
-    RUBRIQ = 'omega_ce_phase'//CPHASE
+    rubriq = 'omega_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,iomg),ierror)
     nberro=nberro+ierror
@@ -900,7 +898,7 @@ else if (iturph.eq.70) then
     nbval  = 1
     irtyp  = 2
 
-    RUBRIQ = 'nusa_ce_phase'//CPHASE
+    rubriq = 'nusa_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          rtp(1,inusa),ierror)
     nberro=nberro+ierror
@@ -937,7 +935,7 @@ if(nscal.gt.0) then
     if (iscold(iscal).gt.0) then
       if(iscold(iscal).le.nfmtsc) then
         WRITE(CAR4,'(I4.4)')ISCOLD(ISCAL)
-        RUBRIQ = 'scalaire_ce_'//CAR4
+        rubriq = 'scalaire_ce_'//CAR4
         itysup = 1
         nbval  = 1
         irtyp  = 2
@@ -980,17 +978,17 @@ if (iale.eq.1 .and. jale.eq.1) then
   nbval  = 1
   irtyp  = 2
 
-  RUBRIQ = 'vit_maillage_u_ce'
+  rubriq = 'vit_maillage_u_ce'
   call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,       &
               rtp(1,iuma),ierror)
   nberro=nberro+ierror
 
-  RUBRIQ = 'vit_maillage_v_ce'
+  rubriq = 'vit_maillage_v_ce'
   call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,       &
               rtp(1,ivma),ierror)
   nberro=nberro+ierror
 
-  RUBRIQ = 'vit_maillage_w_ce'
+  rubriq = 'vit_maillage_w_ce'
   call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,       &
               rtp(1,iwma),ierror)
   nberro=nberro+ierror
@@ -1095,7 +1093,7 @@ return
 
 #if defined(_CS_LANG_FR)
 
- 8001 format(                                                           &
+ 8001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1116,7 +1114,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8205 format(                                                           &
+ 8205 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1130,7 +1128,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8210 format(                                                           &
+ 8210 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1142,7 +1140,7 @@ return
 '@    Le calcul peut etre execute.                            ',/,&
 '@                                                            ',/,&
 '@    Il est cependant conseille de verifier                  ',/,&
-'@      les dimensions suivantes dans usini1 :                ',/,&
+'@      les dimensions suivantes :                            ',/,&
 '@                                                            ',/,&
 '@                NVAR     NSCAL    NSCAUS    NSCAPP          ',/,&
 '@  AMONT : ',5I10                                             ,/,&
@@ -1150,7 +1148,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8410 format(                                                           &
+ 8410 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1164,11 +1162,11 @@ return
 '@    Le calcul peut etre execute.                            ',/,&
 '@                                                            ',/,&
 '@    Il est conseille cependant de                           ',/,&
-'@      verifier la valeur de ITURB(',I2,') dans usini1       ',/,&
+'@      verifier la valeur de ITURB(',I2,')                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8711 format(                                                           &
+ 8711 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1184,7 +1182,7 @@ return
 
 #else
 
- 8001 format(                                                           &
+ 8001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1204,7 +1202,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8205 format(                                                           &
+ 8205 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1218,7 +1216,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8210 format(                                                           &
+ 8210 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1230,7 +1228,7 @@ return
 '@    The calculation will be run.                            ',/,&
 '@                                                            ',/,&
 '@    However, it is strongly advised to check                ',/,&
-'@      the following dimensions in usini1 :                  ',/,&
+'@      the following dimensions:                             ',/,&
 '@                                                            ',/,&
 '@                NVAR     NSCAL    NSCAUS    NSCAPP          ',/,&
 '@ PREVIOUS:',5I10                                             ,/,&
@@ -1238,7 +1236,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8410 format(                                                           &
+ 8410 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1252,11 +1250,11 @@ return
 '@    The computation can be executed.                        ',/,&
 '@                                                            ',/,&
 '@    However, it is strongly advised to check                ',/,&
-'@      the value of the variable ITURB(',I2,') in usini1     ',/,&
+'@      the value of the variable ITURB(',I2,')               ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8711 format(                                                           &
+ 8711 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1276,7 +1274,7 @@ return
 
 #if defined(_CS_LANG_FR)
 
- 9100 format(                                                           &
+ 9100 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1291,7 +1289,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9200 format(                                                           &
+ 9200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1309,7 +1307,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9201 format(                                                           &
+ 9201 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1326,7 +1324,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9210 format(                                                           &
+ 9210 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1341,7 +1339,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9320 format(                                                           &
+ 9320 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1355,13 +1353,13 @@ return
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
 '@                                                            ',/,&
-'@    Verifier les valeurs de ISCOLD dans usini1.             ',/,&
+'@    Verifier les valeurs de ISCOLD.                         ',/,&
 '@    Verifier que le fichier suite utilise correspond bien   ',/,&
 '@        au cas traite.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9321 format(                                                           &
+ 9321 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1376,7 +1374,7 @@ return
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
 '@                                                            ',/,&
-'@    Verifier les valeurs de ISCOLD dans usini1.             ',/,&
+'@    Verifier les valeurs de ISCOLD.                         ',/,&
 '@    Verifier que le fichier suite utilise correspond bien   ',/,&
 '@        au cas traite.                                      ',/,&
 '@                                                            ',/,&
@@ -1398,25 +1396,25 @@ return
 '@                                                            ',/,&
 '@      Les lignes precedentes identifient les scalaires      ',/,&
 '@        definis dans le present calcul pour lesquels la     ',/,&
-'@        la correspondance fournie dans usini1 par ISCOLD    ',/,&
+'@        la correspondance fournie par ISCOLD                ',/,&
 '@        est incorrecte.                                     ',/,&
 '@                                                            ',/,&
 '@      Le calcul ne peut etre execute.                       ',/,&
 '@                                                            ',/,&
 '@      Verifier que le fichier suite UTILISE correspond bien ',/,&
 '@        au cas traite.                                      ',/,&
-'@      Verifier ISCOLD dans usini1.                          ',/,&
+'@      Verifier ISCOLD.                                      ',/,&
 '@        ISCOLD(ISCAL) = 0 indique que le scalaire ISCAL     ',/,&
 '@          du present calcul ne correspond a aucun scalaire  ',/,&
 '@          du calcul precedent                               ',/,&
 '@        ISCOLD(ISCAL) > 0 indique le numero du scalaire     ',/,&
 '@          du calcul precedent auquel correspond ISCAL       ',/,&
 '@      Si les correspondances avec les anciens scalaires     ',/,&
-'@        ne sont pas necessaires, eliminer ISCOLD de usini1. ',/,&
+'@        ne sont pas necessaires, ne pas definir ISCOLD.     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9400 format(                                                           &
+ 9400 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1433,7 +1431,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9401 format(                                                           &
+ 9401 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1452,7 +1450,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9402 format(                                                           &
+ 9402 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1470,12 +1468,11 @@ return
 '@    Le calcul ne peut pas etre execute.                     ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
-'@    Verifier ILEAUX dans usini1 ou dans l''Interface        ',/,&
-'@                                                  Graphique.',/,&
+'@    Verifier ILEAUX.                                        ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9410 format(                                                           &
+ 9410 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1490,13 +1487,13 @@ return
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
 '@                                                            ',/,&
-'@    Verifier (augmenter) NTMABS dans usini1.                ',/,&
+'@    Verifier (augmenter) NTMABS.                            ',/,&
 '@    Verifier que le fichier suite utilise correspond bien   ',/,&
 '@        au cas traite.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9510 format(                                                           &
+ 9510 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1514,9 +1511,9 @@ return
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 ! NFMTRU = 36 pour A36
- 9511 format(                                                           &
+ 9511 format(                                                     &
 '@ Erreur a la lecture de ',A36                                  )
- 9512 format(                                                           &
+ 9512 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1533,7 +1530,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9513 format(                                                           &
+ 9513 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1554,7 +1551,7 @@ return
 
 #else
 
- 9100 format(                                                           &
+ 9100 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1569,7 +1566,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9200 format(                                                           &
+ 9200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1587,7 +1584,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9201 format(                                                           &
+ 9201 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1604,7 +1601,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9210 format(                                                           &
+ 9210 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1619,7 +1616,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9320 format(                                                           &
+ 9320 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1633,13 +1630,13 @@ return
 '@                                                            ',/,&
 '@    The calculation cannot be excuted.                      ',/,&
 '@                                                            ',/,&
-'@    Please check the value of ISCOLD in usini1.             ',/,&
+'@    Please check the value of ISCOLD.                       ',/,&
 '@    Please make sure the file used as restart file does     ',/,&
 '@        correspond to your case                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9321 format(                                                           &
+ 9321 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1654,7 +1651,7 @@ return
 '@                                                            ',/,&
 '@    The calculation cannot be executed.                     ',/,&
 '@                                                            ',/,&
-'@    Please check the value of ISCOLD in usini1.             ',/,&
+'@    Please check the value of ISCOLD.                       ',/,&
 '@    Please make sure the file used as restart file does     ',/,&
 '@        correspond to your case                             ',/,&
 '@                                                            ',/,&
@@ -1676,24 +1673,24 @@ return
 '@                                                            ',/,&
 '@      The previous lines identify the scalars defined      ',/, &
 '@        in the current computation for which the matching   ',/,&
-'@        defined in usini1 by ISCOLD is not correct          ',/,&
+'@        defined by ISCOLD is not correct                    ',/,&
 '@                                                            ',/,&
 '@      The computation cannot be executed.                   ',/,&
 '@                                                            ',/,&
 '@      Please make sure the file used as restart file does   ',/,&
 '@          correspond to your case                           ',/,&
-'@      Please check the value of ISCOLD in usini1.           ',/,&
+'@      Please check the value of ISCOLD.                     ',/,&
 '@        ISCOLD(ISCAL) = 0 means that the scalar ISCAL       ',/,&
 '@          of the current calculation does not correspond to ',/,&
 '@          any of the scalars of the previous calculation    ',/,&
 '@        ISCOLD(ISCAL) > 0 defines the scalar number in the  ',/,&
 '@          previous calculation ISCAL corresponds to         ',/,&
 '@      If matching with the previous scalar is unnecessary   ',/,&
-'@        please delete ISCOLD from usini1.                   ',/,&
+'@        please do not define ISCOLD.                        ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9400 format(                                                           &
+ 9400 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1710,7 +1707,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9401 format(                                                           &
+ 9401 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1729,7 +1726,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9402 format(                                                           &
+ 9402 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1746,12 +1743,11 @@ return
 '@    The calculation cannot be executed.                     ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
-'@    Please check the value of ILEAUX in usini1 or in the    ',/,&
-'@                                   Graphical User Interface ',/,&
+'@    Please check the value of ILEAUX.                       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9410 format(                                                           &
+ 9410 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1766,13 +1762,13 @@ return
 '@                                                            ',/,&
 '@    The calculation cannot be executed.                     ',/,&
 '@                                                            ',/,&
-'@    Please check (increase) NTMABS in usini1.               ',/,&
+'@    Please check (increase) NTMABS.                         ',/,&
 '@    Please make sure the file used as restart file does     ',/,&
 '@          correspond to your case                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9510 format(                                                           &
+ 9510 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1789,9 +1785,9 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9511 format(                                                           &
+ 9511 format(                                                     &
 '@ Error at the reading of ',A36                                 )
- 9512 format(                                                           &
+ 9512 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1807,7 +1803,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9513 format(                                                           &
+ 9513 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&

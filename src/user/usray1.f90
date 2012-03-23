@@ -205,8 +205,7 @@ if (ipass.eq.3) then
   !    ichrvr( ) = sortie chono (oui 1/non 0)
   !    ilisvr( ) = suivi listing (oui 1/non 0)
   !    ihisvr( ) = sortie historique (nombre de sondes et numeros)
-  !    si ihisvr(    .,1)  = -1 sortie sur toutes les sondes definies
-  !                            dans usini1
+  !    si ihisvr(    .,1)  = -1 sortie sur toutes les sondes
 
   !--> LUMINENCE
 

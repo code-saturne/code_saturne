@@ -694,8 +694,7 @@ if(ipass.eq.2) then
 !  On positionne en meme temps les pointeurs IPPPRO pour
 !     le post traitement des proprietes physiques definies
 !     aux cellules afin de ne pas en oublier.
-!     Les pointeurs ont ete initialises a 1 (poubelle).
-!       dans iniini (avant usini1).
+!     Les pointeurs ont ete initialises a 1 (poubelle) dans iniini.
 !     IPPPST commence a 2 car 1 est une poubelle.
 !  Attention, IPPPST ressert plus bas.
 
@@ -1854,8 +1853,7 @@ if(ipass.eq.3) then
 ! ---> 3.5 POINTEURS POST-PROCESSING / LISTING / HISTORIQUES / CHRONOS
 !      ---------------------------------------------------------------------
 
-! --- Les pointeurs ont ete initialises a 1 (poubelle).
-!       dans iniini (avant usini1).
+! --- Les pointeurs ont ete initialises a 1 (poubelle) dans iniini.
 
 !     On posttraitera les variables localisees au centre des cellules.
 
@@ -2096,7 +2094,7 @@ endif
 !===============================================================================
 
 #if defined(_CS_LANG_FR)
- 6000 format(                                                           &
+ 6000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2113,7 +2111,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 6001 format(                                                           &
+ 6001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2130,7 +2128,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 6010 format(                                                           &
+ 6010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2143,11 +2141,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 6011 format(                                                           &
+ 6011 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2156,22 +2154,22 @@ endif
 '@     NOMBRE DE SCALAIRES TROP GRAND                         ',/,&
 '@                                                            ',/,&
 '@  Le nombre de scalaires utilisateurs                       ',/,&
-'@    demande    dans usini1           est  NSCAUS = ',I10     ,/,&
+'@    demande                          est  NSCAUS = ',I10     ,/,&
 '@  Le nombre de scalaires total                              ',/,&
-'@    autorise   dans paramx.h         est  NSCAMX = ',I10     ,/,&
+'@    autorise   dans paramx           est  NSCAMX = ',I10     ,/,&
 '@                                                            ',/,&
 '@  La valeur maximale autorisee de NSCAUS                    ',/,&
 '@                          est donc  NSCAMX        = ',I10    ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier NSCAUS dans usini1.                              ',/,&
+'@  Verifier NSCAUS.                                          ',/,&
 '@                                                            ',/,&
 '@  NSCAMX doit valoir au moins ',I10                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 6012 format(                                                           &
+ 6012 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2180,24 +2178,24 @@ endif
 '@     NOMBRE DE SCALAIRES TROP GRAND                         ',/,&
 '@                                                            ',/,&
 '@  Le nombre de scalaires utilisateurs                       ',/,&
-'@    demande    dans usini1           est  NSCAUS = ',I10     ,/,&
+'@    demande                          est  NSCAUS = ',I10     ,/,&
 '@  Le nombre de scalaires pour les physiques particulieres   ',/,&
 '@    necessaire avec le modele choisi est  NSCAPP = ',I10     ,/,&
 '@  Le nombre de scalaires total                              ',/,&
-'@    autorise   dans paramx.h         est  NSCAMX = ',I10     ,/,&
+'@    autorise   dans paramx           est  NSCAMX = ',I10     ,/,&
 '@                                                            ',/,&
 '@  La valeur maximale autorisee de NSCAUS                    ',/,&
 '@    avec le modele choisi est donc NSCAMX-NSCAPP = ',I10     ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier NSCAUS dans usini1.                              ',/,&
+'@  Verifier NSCAUS.                                          ',/,&
 '@                                                            ',/,&
 '@  NSCAMX doit valoir au moins ',I10                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7010 format(                                                           &
+ 7010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2212,11 +2210,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7011 format(                                                           &
+ 7011 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2233,13 +2231,13 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@  NSCAMX doit valoir au moins ',I10                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7030 format(                                                           &
+ 7030 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2257,11 +2255,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier ISCAVR dans usini1.                              ',/,&
+'@  Verifier ISCAVR.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7031 format(                                                           &
+ 7031 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2279,11 +2277,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier ISCAVR dans usini1.                              ',/,&
+'@  Verifier ISCAVR.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7040 format(                                                           &
+ 7040 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2304,11 +2302,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier IVISLS dans usini1.                              ',/,&
+'@  Verifier IVISLS.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7041 format(                                                           &
+ 7041 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2329,11 +2327,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier IVISLS dans usini1.                              ',/,&
+'@  Verifier IVISLS.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7042 format(                                                           &
+ 7042 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2358,7 +2356,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7043 format(                                                           &
+ 7043 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2383,7 +2381,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7050 format(                                                           &
+ 7050 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2399,11 +2397,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier IVISLS dans usini1.                              ',/,&
+'@  Verifier IVISLS.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7051 format(                                                           &
+ 7051 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2423,7 +2421,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7070 format(                                                           &
+ 7070 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2439,7 +2437,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7100 format(                                                           &
+ 7100 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2447,20 +2445,20 @@ endif
 '@    =========                                               ',/,&
 '@     NOMBRE DE VARIABLES TROP GRAND                         ',/,&
 '@                                                            ',/,&
-'@  Le type de calcul defini dans usini1                      ',/,&
+'@  Le type de calcul defini                                  ',/,&
 '@    correspond a un nombre de variables NVAR   = ',I10       ,/,&
 '@  Le nombre de variables maximal prevu                      ',/,&
-'@                      dans paramx.h est NVARMX = ',I10       ,/,&
+'@                      dans paramx   est NVARMX = ',I10       ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres                                   ',/,&
 '@                                                            ',/,&
 '@  NVARMX doit valoir au moins ',I10                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7200 format(                                                           &
+ 7200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2468,7 +2466,7 @@ endif
 '@    =========                                               ',/,&
 '@     NOMBRE DE PROPRIETES TROP GRAND                        ',/,&
 '@                                                            ',/,&
-'@  Le type de calcul defini dans usini1                      ',/,&
+'@  Le type de calcul defini                                  ',/,&
 '@    correspond aux nombres de proprietes suivants           ',/,&
 '@      au centre des cellules       : NPROCE = ',I10          ,/,&
 '@      au centre des faces internes : NPROFA = ',I10          ,/,&
@@ -2478,13 +2476,13 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@  NPROMX doit valoir au moins ',I10                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8021 format(                                                           &
+ 8021 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2495,11 +2493,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8022 format(                                                           &
+ 8022 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2510,11 +2508,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8101 format(                                                           &
+ 8101 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2525,11 +2523,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8111 format(                                                           &
+ 8111 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2541,11 +2539,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8112 format(                                                           &
+ 8112 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2559,11 +2557,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Modifier usini1.                                          ',/,&
+'@  Modifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8113 format(                                                           &
+ 8113 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2574,11 +2572,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul sera execute.                                   ',/,&
 '@                                                            ',/,&
-'@  Il est conseille de verifier usini1.                      ',/,&
+'@  Il est conseille de verifier les parametres.              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8114 format(                                                           &
+ 8114 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2592,11 +2590,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Modifier usini1.                                          ',/,&
+'@  Modifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8117 format(                                                           &
+ 8117 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2610,11 +2608,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Modifier usini1.                                          ',/,&
+'@  Modifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8115 format(                                                           &
+ 8115 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2628,11 +2626,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Modifier usini1.                                          ',/,&
+'@  Modifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8116 format(                                                           &
+ 8116 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2646,11 +2644,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Modifier usini1.                                          ',/,&
+'@  Modifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8121 format(                                                           &
+ 8121 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2661,11 +2659,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8131 format(                                                           &
+ 8131 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2676,11 +2674,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8132 format(                                                           &
+ 8132 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2694,11 +2692,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8141 format(                                                           &
+ 8141 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2709,11 +2707,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8200 format(                                                           &
+ 8200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2731,18 +2729,18 @@ endif
 '@                                                            ',/,&
 '@        IMOM    IDFMOM(1,IMOM)                              ',/,&
 '@  ----------------------------                              '  )
- 8201 format(                                                           &
+ 8201 format(                                                     &
 '@  ',I10   ,'        ',     I10                                 )
- 8202 format(                                                           &
+ 8202 format(                                                     &
 '@  ----------------------------                              ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas  execute.                         ',/,&
 '@                                                            ',/,&
-'@    Verifier usini1.                                        ',/,&
+'@    Verifier les parametres.                                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8210 format(                                                           &
+ 8210 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2757,11 +2755,11 @@ endif
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
 '@                                                            ',/,&
-'@    Verifier usini1.                                        ',/,&
+'@    Verifier les parametres.                                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8211 format(                                                           &
+ 8211 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2776,11 +2774,11 @@ endif
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
 '@                                                            ',/,&
-'@    Verifier usini1.                                        ',/,&
+'@    Verifier les parametres.                                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8212 format(                                                           &
+ 8212 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2796,11 +2794,11 @@ endif
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
 '@                                                            ',/,&
-'@    Verifier usini1.                                        ',/,&
+'@    Verifier les parametres.                                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8213 format(                                                           &
+ 8213 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2817,11 +2815,11 @@ endif
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
 '@                                                            ',/,&
-'@    Verifier usini1.                                        ',/,&
+'@    Verifier les parametres.                                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8214 format(                                                           &
+ 8214 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2830,18 +2828,18 @@ endif
 '@  SUR L''INSTANT DE DEBUT DE CALCUL DES MOYENNES TEMPORELLES',/,&
 '@                                                            ',/,&
 '@    La variable NTDMOM(IMOM)   pour IMOM = ',I10             ,/,&
-'@      doit etre renseignee dans usini1 pour indiquer        ',/,&
+'@      doit etre renseignee pour indiquer                    ',/,&
 '@      a partir de quel pas de temps (absolu) doit etre      ',/,&
 '@      calculee la moyenne temporelle IMOM correspondante.   ',/,&
 '@      NTDMOM(IMOM) vaur ici ',I10                            ,/,&
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
 '@                                                            ',/,&
-'@    Verifier usini1.                                        ',/,&
+'@    Verifier les parametres.                                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8300 format(                                                           &
+ 8300 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2861,11 +2859,11 @@ endif
 '@    Il est possible de s''affranchir du fichier suite       ',/,&
 '@      auxiliaire en reinitialisant les moyennes (IMOOLD)    ',/,&
 '@      ou en ne calculant pas de moyennes.                   ',/,&
-'@      Voir alors usini1.                                    ',/,&
+'@      Voir alors usipsu.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8301 format(                                                           &
+ 8301 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2888,11 +2886,11 @@ endif
 '@    Il est possible de s''affranchir du fichier suite       ',/,&
 '@      auxiliaire en reinitialisant les moyennes (IMOOLD)    ',/,&
 '@      ou en ne calculant pas de moyennes.                   ',/,&
-'@      Voir alors usini1.                                    ',/,&
+'@      Voir alors usipsu.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8311 format(                                                           &
+ 8311 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2910,11 +2908,11 @@ endif
 '@    Il est possible de s''affranchir du fichier suite       ',/,&
 '@      auxiliaire en reinitialisant les moyennes (IMOOLD)    ',/,&
 '@      ou en ne calculant pas de moyennes.                   ',/,&
-'@      Voir alors usini1.                                    ',/,&
+'@      Voir alors usipsu.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8312 format(                                                           &
+ 8312 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2932,11 +2930,11 @@ endif
 '@    Il est possible de s''affranchir du fichier suite       ',/,&
 '@      auxiliaire en reinitialisant les moyennes (IMOOLD)    ',/,&
 '@      ou en ne calculant pas de moyennes.                   ',/,&
-'@      Voir alors usini1.                                    ',/,&
+'@      Voir alors usipsu.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8313 format(                                                           &
+ 8313 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2956,11 +2954,11 @@ endif
 '@    Il est possible de s''affranchir du fichier suite       ',/,&
 '@      auxiliaire en reinitialisant les moyennes (IMOOLD)    ',/,&
 '@      ou en ne calculant pas de moyennes.                   ',/,&
-'@      Voir alors usini1.                                    ',/,&
+'@      Voir alors usipsu.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8390 format(                                                           &
+ 8390 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2973,7 +2971,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8400 format(                                                           &
+ 8400 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2989,12 +2987,12 @@ endif
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
 '@                                                            ',/,&
-'@    Verifier les valeurs de IMOOLD dans usini1.             ',/,&
+'@    Verifier les valeurs de IMOOLD.                         ',/,&
 '@    Verifier que le fichier suite est le bon.               ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8401 format(                                                           &
+ 8401 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3012,12 +3010,12 @@ endif
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
-'@    Modifier la valeur de  NTDMOM dans usini1               ',/,&
+'@    Modifier la valeur de  NTDMOM                           ',/,&
 '@      verifier que le fichier suite est le bon.             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8402 format(                                                           &
+ 8402 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3030,11 +3028,11 @@ endif
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
-'@    Verifier IMOOLD dans usini1      .                      ',/,&
+'@    Verifier IMOOLD dans usipsu.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8403 format(                                                           &
+ 8403 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3050,12 +3048,12 @@ endif
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
-'@    Ne pas modifier IMOOLD dans usini1.                     ',/,&
+'@    Ne pas modifier IMOOLD.                                 ',/,&
 '@      ou realiser un calcul suite.                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8410 format(                                                           &
+ 8410 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3069,7 +3067,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8900 format(                                                           &
+ 8900 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3077,7 +3075,7 @@ endif
 '@    =========                                               ',/,&
 '@     NOMBRE DE VARIABLES A SUIVRE TROP GRAND                ',/,&
 '@                                                            ',/,&
-'@  Le type de calcul defini dans usini1                      ',/,&
+'@  Le type de calcul defini                                  ',/,&
 '@    correspond a un nombre de variables a suivre dans       ',/,&
 '@    le listing et le post-processing egal a      ',I10       ,/,&
 '@  Le nombre de variables a suivre maximal prevu             ',/,&
@@ -3085,7 +3083,7 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@  Contacter l assistance.                                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3093,7 +3091,7 @@ endif
 
 #else
 
- 6000 format(                                                           &
+ 6000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3110,7 +3108,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 6001 format(                                                           &
+ 6001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3127,7 +3125,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 6010 format(                                                           &
+ 6010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3140,11 +3138,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
+'@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 6011 format(                                                           &
+ 6011 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3153,22 +3151,22 @@ endif
 '@     NUMBER OF SCALARS TOO LARGE                            ',/,&
 '@                                                            ',/,&
 '@  The number of users scalars                               ',/,&
-'@  requested in      usini1           is   NSCAUS = ',I10     ,/,&
+'@  requested                          is   NSCAUS = ',I10     ,/,&
 '@  The total number of scalars                               ',/,&
-'@    allowed    in   paramx.h         is   NSCAMX = ',I10     ,/,&
+'@    allowed    in   paramx           is   NSCAMX = ',I10     ,/,&
 '@                                                            ',/,&
 '@  The maximmum value allowed of   NSCAUS                    ',/,&
 '@                          is in   NSCAMX        = ',I10      ,/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify   NSCAUS in   usini1.                              ',/,&
+'@  Verify   NSCAUS.                                          ',/,&
 '@                                                            ',/,&
 '@  NSCAMX must be at least     ',I10                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 6012 format(                                                           &
+ 6012 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3177,7 +3175,7 @@ endif
 '@     NUMBER OF SCALARS TOO LARGE                            ',/,&
 '@                                                            ',/,&
 '@  The number of users scalars                               ',/,&
-'@     requested in   usini1           is   NSCAUS = ',I10     ,/,&
+'@     requested                       is   NSCAUS = ',I10     ,/,&
 '@  The number of scalars necessary for the specific physics'  ,/,&
 '@    with the chosen model is              NSCAPP = ',I10     ,/,&
 '@  The total number of scalars                               ',/,&
@@ -3188,13 +3186,13 @@ endif
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify   NSCAUS in   usini1.                              ',/,&
+'@  Verify   NSCAUS.                                          ',/,&
 '@                                                            ',/,&
 '@  NSCAMX must be at least     ',I10                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7010 format(                                                           &
+ 7010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3209,11 +3207,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
+'@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7011 format(                                                           &
+ 7011 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3230,13 +3228,13 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
+'@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@  NSCAMX must be at least     ',I10                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7030 format(                                                           &
+ 7030 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3254,11 +3252,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   ISCAVR in   usini1.                              ',/,&
+'@  Verify   ISCAVR.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7031 format(                                                           &
+ 7031 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3276,11 +3274,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   ISCAVR in   usini1.                              ',/,&
+'@  Verify   ISCAVR.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7040 format(                                                           &
+ 7040 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3301,11 +3299,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   IVISLS in   usini1.                              ',/,&
+'@  Verify   IVISLS.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7041 format(                                                           &
+ 7041 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3326,11 +3324,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   IVISLS in   usini1.                              ',/,&
+'@  Verify   IVISLS.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7042 format(                                                           &
+ 7042 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3355,7 +3353,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7043 format(                                                           &
+ 7043 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3380,7 +3378,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7050 format(                                                           &
+ 7050 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3396,11 +3394,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   IVISLS in   usini1.                              ',/,&
+'@  Verify   IVISLS.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7051 format(                                                           &
+ 7051 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3420,7 +3418,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7070 format(                                                           &
+ 7070 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3436,7 +3434,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7100 format(                                                           &
+ 7100 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3444,20 +3442,20 @@ endif
 '@    =========                                               ',/,&
 '@     NUMBER OF VARIABLES TOO LARGE                          ',/,&
 '@                                                            ',/,&
-'@  The type of calculation defined in usini1                 ',/,&
+'@  The type of calculation defined                           ',/,&
 '@    corresponds to a number of variables NVAR  = ',I10       ,/,&
 '@  The maximum number of variables allowed                   ',/,&
-'@                      in   paramx.h is  NVARMX = ',I10       ,/,&
+'@                      in   paramx   is  NVARMX = ',I10       ,/,&
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
+'@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@  NVARMX must be at least     ',I10                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7200 format(                                                           &
+ 7200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3465,23 +3463,23 @@ endif
 '@    =========                                               ',/,&
 '@     NUMBER OF VARIABLES TOO LARGE                          ',/,&
 '@                                                            ',/,&
-'@  The type of calculation defined in usini1                 ',/,&
+'@  The type of calculation defined                           ',/,&
 '@    corresponds  to the following number of properties      ',/,&
 '@      at the cell centres          : NPROCE = ',I10          ,/,&
 '@      at the internal face centres : NPROFA = ',I10          ,/,&
 '@      at the boundary face centres : NPROFB = ',I10          ,/,&
 '@  The maxumum number of properties allowed                  ',/,&
-'@                      in   paramx.h is  NPROMX = ',I10       ,/,&
+'@                      in   paramx   is  NPROMX = ',I10       ,/,&
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
+'@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@  NPROMX must be at least     ',I10                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8021 format(                                                           &
+ 8021 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3492,11 +3490,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
+'@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8022 format(                                                           &
+ 8022 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3507,11 +3505,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
+'@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8101 format(                                                           &
+ 8101 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3522,11 +3520,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8111 format(                                                           &
+ 8111 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3538,11 +3536,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8112 format(                                                           &
+ 8112 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3556,11 +3554,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Modify   usini1.                                          ',/,&
+'@  Modify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8113 format(                                                           &
+ 8113 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3571,11 +3569,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation will   be executed                        ',/,&
 '@                                                            ',/,&
-'@  It is recommended to verify  usini1.                      ',/,&
+'@  It is recommended to verify  parameters.                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8114 format(                                                           &
+ 8114 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3589,11 +3587,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Modify   usini1.                                          ',/,&
+'@  Modify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8117 format(                                                           &
+ 8117 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3607,11 +3605,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Modify   usini1.                                          ',/,&
+'@  Modify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8115 format(                                                           &
+ 8115 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3625,11 +3623,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Modify   usini1.                                          ',/,&
+'@  Modify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8116 format(                                                           &
+ 8116 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3643,11 +3641,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Modify   usini1.                                          ',/,&
+'@  Modify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8121 format(                                                           &
+ 8121 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3658,11 +3656,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
+'@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8131 format(                                                           &
+ 8131 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3673,11 +3671,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
+'@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8132 format(                                                           &
+ 8132 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3691,11 +3689,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
+'@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8141 format(                                                           &
+ 8141 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3706,11 +3704,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
+'@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8200 format(                                                           &
+ 8200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3728,18 +3726,18 @@ endif
 '@                                                            ',/,&
 '@        IMOM    IDFMOM(1,IMOM)                              ',/,&
 '@  ----------------------------                              '  )
- 8201 format(                                                           &
+ 8201 format(                                                     &
 '@  ',I10   ,'        ',     I10                                 )
- 8202 format(                                                           &
+ 8202 format(                                                     &
 '@  ----------------------------                              ',/,&
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@    Verify   usini1.                                        ',/,&
+'@    Verify   parameters.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8210 format(                                                           &
+ 8210 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3754,11 +3752,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@    Verify   usini1.                                        ',/,&
+'@    Verify   parameters.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8211 format(                                                           &
+ 8211 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3773,11 +3771,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@    Verify   usini1.                                        ',/,&
+'@    Verify   parameters.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8212 format(                                                           &
+ 8212 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3793,11 +3791,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@    Verify   usini1.                                        ',/,&
+'@    Verify   parameters.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8213 format(                                                           &
+ 8213 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3806,7 +3804,7 @@ endif
 '@    ON THE VARIABLES THAT CONSTITUTE THE TEMPORAL AVERAGES  ',/,&
 '@                                                            ',/,&
 '@    The array  IDFMOM(JJ,IMOM) for  IMOM = ',I10             ,/,&
-'@      must be assigned continuously.   . Yet here,          ',/,&
+'@      must be assigned continuously.     Yet here,          ',/,&
 '@      IDFMOM(',I10,',IMOM) is not zero (=',I10   ,')        ',/,&
 '@      while it exists    II < JJ for which                  ',/,&
 '@      IDFMOM(II,IMOM) is zero.                              ',/,&
@@ -3814,11 +3812,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@    Verify   usini1.                                        ',/,&
+'@    Verify   parameters.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8214 format(                                                           &
+ 8214 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3828,18 +3826,18 @@ endif
 '@  TEMPORAL AVERAGES                                         ',/,&
 '@                                                            ',/,&
 '@    The variable NTDMOM(IMOM)   for IMOM = ',I10             ,/,&
-'@      must be assigned in usini1 to indicate from which     ',/,&
+'@      must be set to indicate from which                    ',/,&
 '@      time step (absolute) the calculation ot the           ',/,&
 '@      corresponding average IMOM must start.                ',/,&
 '@      NTDMOM(IMOM) here is  ',I10                            ,/,&
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@    Verify   usini1.                                        ',/,&
+'@    Verify   parameters.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8300 format(                                                           &
+ 8300 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3859,11 +3857,11 @@ endif
 '@    It is possible to liberate the auxiliary restarting     ',/,&
 '@      file and reinitialise the averages        (IMOOLD)    ',/,&
 '@      or not to compute the averages.                       ',/,&
-'@      Look at    usini1.                                    ',/,&
+'@      Check parameters.                                     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8301 format(                                                           &
+ 8301 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3886,11 +3884,11 @@ endif
 '@    It is possible to liberate the auxiliary restarting     ',/,&
 '@      file and reinitialise teh averages        (IMOOLD)    ',/,&
 '@      or not to compute the averages.                       ',/,&
-'@      Look at    usini1.                                    ',/,&
+'@      Check parameters.                                     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8311 format(                                                           &
+ 8311 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3908,11 +3906,11 @@ endif
 '@    It is possible to liberate the auxiliary restarting     ',/,&
 '@      file and reinitialise teh averages        (IMOOLD)    ',/,&
 '@      or not to compute the averages.                       ',/,&
-'@      Look at    usini1.                                    ',/,&
+'@      Check parameters.                                     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8312 format(                                                           &
+ 8312 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3930,11 +3928,11 @@ endif
 '@    It is possible to liberate the auxiliary restarting     ',/,&
 '@      file and reinitialise teh averages        (IMOOLD)    ',/,&
 '@      or not to compute the averages.                       ',/,&
-'@      Look at    usini1.                                    ',/,&
+'@      Check parameters.                                     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8313 format(                                                           &
+ 8313 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3958,7 +3956,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8390 format(                                                           &
+ 8390 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3971,7 +3969,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8400 format(                                                           &
+ 8400 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3987,12 +3985,12 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@    Verify the values of    IMOOLD in   usini1.             ',/,&
+'@    Verify the values of    IMOOLD.                         ',/,&
 '@    Verify  that the restarting file is correct.            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8401 format(                                                           &
+ 8401 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4010,12 +4008,12 @@ endif
 '@                                                            ',/,&
 '@    The calculation cannot be executed                      ',/,&
 '@                                                            ',/,&
-'@    Modify the value of    NTDMOM in   usini1               ',/,&
+'@    Modify the value of    NTDMOM.                          ',/,&
 '@      Verify  that the restarting file is correct.          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8402 format(                                                           &
+ 8402 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4028,11 +4026,11 @@ endif
 '@                                                            ',/,&
 '@    The calculation cannot be executed                      ',/,&
 '@                                                            ',/,&
-'@    Verify   IMOOLD in   usini1      .                      ',/,&
+'@    Verify   IMOOLD.                                        ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8403 format(                                                           &
+ 8403 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4048,12 +4046,12 @@ endif
 '@                                                            ',/,&
 '@    The calculation cannot be executed                      ',/,&
 '@                                                            ',/,&
-'@    Do not modify   IMOOLD in   usini1.                     ',/,&
+'@    Do not modify   IMOOLD.                                 ',/,&
 '@      or run a restart calculation.                         ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8410 format(                                                           &
+ 8410 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4067,7 +4065,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8900 format(                                                           &
+ 8900 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -4075,7 +4073,7 @@ endif
 '@    =========                                               ',/,&
 '@     NAME OF THE VARIABLE TO BE CONTINUED TOO LARGE         ',/,&
 '@                                                            ',/,&
-'@  The type of calcultion defined in usini1                  ',/,&
+'@  The type of calcultion defined                            ',/,&
 '@    corresponds to a number of variables to continue in     ',/,&
 '@    the listing and  post-processing equal to    ',I10       ,/,&
 '@  The maximum number of variables to continue in            ',/,&
@@ -4083,7 +4081,7 @@ endif
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
+'@  Verify   parameters.                                      ',/,&
 '@  Contact help.                                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

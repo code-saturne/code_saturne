@@ -81,7 +81,7 @@ double precision ux, uy, uz
 iok = 0
 
 !===============================================================================
-! 1. ENTREES SORTIES entsor.h
+! 1. ENTREES SORTIES entsor
 !===============================================================================
 
 ! ---> Niveau d'impression listing
@@ -470,7 +470,7 @@ enddo
 
 
 !===============================================================================
-! 2. POSITION DES VARIABLES DE numvar.h
+! 2. POSITION DES VARIABLES DE numvar
 !===============================================================================
 
 ! ---> Reperage des variables qui disposeront de deux types de CL
@@ -479,7 +479,7 @@ enddo
 !     Si l'utilisateur y a touche ensuite, on risque l'incident.
 
 !===============================================================================
-! 3. OPTIONS DU CALCUL : TABLEAUX DE optcal.h
+! 3. OPTIONS DU CALCUL : TABLEAUX DE optcal
 !===============================================================================
 
 ! ---> restart
@@ -1182,7 +1182,7 @@ endif
 if (iale.eq.1) ineedf = 1
 
 !===============================================================================
-! 4. TABLEAUX DE cstphy.h
+! 4. TABLEAUX DE cstphy
 !===============================================================================
 
 ! ---> Constantes
@@ -1321,7 +1321,7 @@ endif
 
 
 !===============================================================================
-! 5. ELEMENTS DE albase.h
+! 5. ELEMENTS DE albase
 !===============================================================================
 
 if (iale.eq.1) then
@@ -1331,19 +1331,17 @@ else
 endif
 
 !===============================================================================
-! 6. COEFFICIENTS DE alstru.h
+! 6. COEFFICIENTS DE alstru
 !===============================================================================
 
-if (betnmk.lt.-0.5d0*grand)                                       &
-     betnmk = (1.d0-alpnmk)**2/4.d0
-if (gamnmk.lt.-0.5d0*grand)                                       &
-     gamnmk = (1.d0-2.d0*alpnmk)/2.d0
+if (betnmk.lt.-0.5d0*grand) betnmk = (1.d0-alpnmk)**2/4.d0
+if (gamnmk.lt.-0.5d0*grand) gamnmk = (1.d0-2.d0*alpnmk)/2.d0
 if (aexxst.lt.-0.5d0*grand) aexxst = 0.5d0
 if (bexxst.lt.-0.5d0*grand) bexxst = 0.0d0
 if (cfopre.lt.-0.5d0*grand) cfopre = 2.0d0
 
 !===============================================================================
-! 7. PARAMETRES DE cplsat.h
+! 7. PARAMETRES DE cplsat
 !===============================================================================
 
 ! Get coupling number
@@ -1376,7 +1374,7 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1001 format(                                                           &
+ 1001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1384,15 +1382,15 @@ endif
 '@    =========                                               ',/,&
 '@    ISTMPF = ',   I10                                        ,/,&
 '@    THETFL SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
-'@    NE PAS LE MODIFIER DANS usini1.                         ',/,&
+'@    NE PAS LE MODIFIER.                                     ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier cs_user_parameters.f90                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1011 format(                                                           &
+ 1011 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1400,15 +1398,15 @@ endif
 '@    =========                                               ',/,&
 '@    ',A6,' = ',   I10                                        ,/,&
 '@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
-'@    NE PAS LE MODIFIER DANS usini1.                         ',/,&
+'@    NE PAS LE MODIFIER.                                     ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier cs_user_parameters.f90                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1021 format(                                                           &
+ 1021 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1416,15 +1414,15 @@ endif
 '@    =========                                               ',/,&
 '@    SCALAIRE ',   I10,' ',A6,' = ',   I10                    ,/,&
 '@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
-'@    NE PAS LE MODIFIER DANS usini1.                         ',/,&
+'@    NE PAS LE MODIFIER.                                     ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier cs_user_parameters.f90                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1031 format(                                                           &
+ 1031 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1432,15 +1430,15 @@ endif
 '@    =========                                               ',/,&
 '@    ',A17                                                    ,/,&
 '@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
-'@    NE PAS LE MODIFIER DANS usini1.                         ',/,&
+'@    NE PAS LE MODIFIER.                                     ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier cs_user_parameters.f90                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1032 format(                                                           &
+ 1032 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1448,15 +1446,15 @@ endif
 '@    =========                                               ',/,&
 '@    VITESSE DE MAILLAGE EN ALE                              ',/,&
 '@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
-'@    NE PAS LE MODIFIER DANS usini1.                         ',/,&
+'@    NE PAS LE MODIFIER.                                     ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier cs_user_parameters.f90                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1041 format(                                                           &
+ 1041 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1464,15 +1462,15 @@ endif
 '@    =========                                               ',/,&
 '@    ',A8,' ',I10                                             ,/,&
 '@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
-'@    NE PAS LE MODIFIER DANS usini1.                         ',/,&
+'@    NE PAS LE MODIFIER.                                     ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier cs_user_parameters.f90                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1061 format(                                                           &
+ 1061 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1484,11 +1482,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier cs_user_parameters.f90                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1071 format(                                                           &
+ 1071 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1506,11 +1504,11 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier cs_user_parameters.f90                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2000 format(                                                           &
+ 2000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1523,15 +1521,15 @@ endif
 '@    fichier suite).                                         ',/,&
 '@  Si cette initialisation pose probleme (modification du    ',/,&
 '@    nombre et de la position des faces de paroi depuis le   ',/,&
-'@    calcul precedent), forcer ICDPAR=-1 dans usini1 (il peut',/,&
-'@    alors y avoir un leger decalage dans la viscosite       ',/,&
+'@    calcul precedent), forcer ICDPAR=-1 (il peut alors      ',/,&
+'@    y avoir un leger decalage dans la viscosite             ',/,&
 '@    turbulente au premier pas de temps).                    ',/,&
 '@                                                            ',/,&
 '@  Le calcul sera execute.                                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2001 format(                                                           &
+ 2001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1550,7 +1548,7 @@ endif
 
 #else
 
- 1001 format(                                                           &
+ 1001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1558,15 +1556,15 @@ endif
 '@    ========                                                ',/,&
 '@    ISTMPF = ',   I10                                        ,/,&
 '@    THETFL WILL BE AUTOMATICALLY INITIALIZED.               ',/,&
-'@    DO NOT MODIFY IT IN usini1.                             ',/,&
+'@    DO NOT MODIFY IT.                                       ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify usini1.                                            ',/,&
+'@  Check cs_user_parameters.f90                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1011 format(                                                           &
+ 1011 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1574,15 +1572,15 @@ endif
 '@    ========                                                ',/,&
 '@    ',A6,' = ',   I10                                        ,/,&
 '@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
-'@    DO NOT MODIFY IT IN usini1.                             ',/,&
+'@    DO NOT MODIFY IT.                                       ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify usini1.                                            ',/,&
+'@  Check cs_user_parameters.f90                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1021 format(                                                           &
+ 1021 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1590,15 +1588,15 @@ endif
 '@    ========                                                ',/,&
 '@    SCALAR ',   I10,' ',A6,' = ',   I10                      ,/,&
 '@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
-'@    DO NOT MODIFY IT IN usini1.                             ',/,&
+'@    DO NOT MODIFY IT.                                       ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify usini1.                                            ',/,&
+'@  Check cs_user_parameters.f90                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1031 format(                                                           &
+ 1031 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1606,15 +1604,15 @@ endif
 '@    ========                                                ',/,&
 '@    ',A17                                                    ,/,&
 '@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
-'@    DO NOT MODIFY IT IN usini1.                             ',/,&
+'@    DO NOT MODIFY IT.                                       ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify usini1.                                            ',/,&
+'@  Check cs_user_parameters.f90                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1032 format(                                                           &
+ 1032 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1622,15 +1620,15 @@ endif
 '@    ========                                                ',/,&
 '@    MESH VELOCITY IN ALE                                    ',/,&
 '@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
-'@    DO NOT MODIFY IT IN usini1.                             ',/,&
+'@    DO NOT MODIFY IT.                                       ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify usini1.                                            ',/,&
+'@  Check cs_user_parameters.f90                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1041 format(                                                           &
+ 1041 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1638,15 +1636,15 @@ endif
 '@    ========                                                ',/,&
 '@    ',A8,' ',I10                                             ,/,&
 '@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
-'@    DO NOT MODIFY IT IN usini1.                             ',/,&
+'@    DO NOT MODIFY IT.                                       ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify usini1.                                            ',/,&
+'@  Check cs_user_parameters.f90                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1061 format(                                                           &
+ 1061 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1658,11 +1656,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify usini1.                                            ',/,&
+'@  Check cs_user_parameters.f90                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1071 format(                                                           &
+ 1071 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1680,11 +1678,11 @@ endif
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify usini1.                                            ',/,&
+'@  Check cs_user_parameters.f90                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2000 format(                                                           &
+ 2000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1697,15 +1695,15 @@ endif
 '@    file).                                                  ',/,&
 '@  If this initialization raises any issue (modification of  ',/,&
 '@    the number and position of the wall faces since the     ',/,&
-'@    previous calcuation), force ICDPAR=1 in usini1 (there   ',/,&
-'@    maight be a small shift in the turbulent viscosity at   ',/,&
-'@    the first time-step).                                   ',/,&
+'@    previous calcuation), force ICDPAR=1 (there might be    ',/,&
+'@    a small shift in the turbulent viscosity at the         ',/,&
+'@    first time-step).                                       ',/,&
 '@                                                            ',/,&
 '@  The calculation will be run.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2001 format(                                                           &
+ 2001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&

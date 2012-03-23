@@ -1786,7 +1786,7 @@ if (allocated(rijipb)) deallocate(rijipb)
 '@                                                            ',/,&
 '@    Verifier les conditions aux limites dans                ',/,&
 '@      cs_user_boundary si le domaine comporte des parois.   ',/,&
-'@    Eliminer l''option IRIJEC de usini1 si le domaine ne    ',/,&
+'@    Eliminer l''option IRIJEC de usipsu si le domaine ne    ',/,&
 '@      comporte pas de paroi (ou conditions ICODCL = 5 en    ',/,&
 '@      vitesse).                                             ',/,&
 '@                                                            ',/,&
@@ -1834,7 +1834,7 @@ if (allocated(rijipb)) deallocate(rijipb)
 '@                                                            ',/,&
 '@    Verify the boundary conditions in cs_user_boundary in   ',/,&
 '@      if the domain has any walls.                          ',/,&
-'@    Remove the option IRIJEC from usini1 if the domain does ',/,&
+'@    Remove the option IRIJEC from usipsu if the domain does ',/,&
 '@      not have any wall (or conditions ICODCL = 5 for the   ',/,&
 '@      velocity).                                            ',/,&
 '@                                                            ',/,&

@@ -262,7 +262,7 @@ if(iok.ne.0) then
   !==========
 endif
 
- 1010 format(                                                           &
+ 1010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -278,7 +278,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1020 format(                                                           &
+ 1020 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -294,7 +294,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3000 format(                                                           &
+ 3000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -305,7 +305,7 @@ endif
 '@  Avec rayonnement, il faut                                 ',/,&
 '@    preciser la variable energetique representee par le     ',/,&
 '@    scalaire ',I10   ,' en renseignant ISCSTH(',I10   ,')   ',/,&
-'@    dans usini1 : soit                                      ',/,&
+'@    soit :                                                  ',/,&
 '@               -1 temperature en C                          ',/,&
 '@                1 temperature en K                          ',/,&
 '@                2 enthalpie                                 ',/,&
@@ -318,7 +318,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3001 format(                                                           &
+ 3001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -329,7 +329,7 @@ endif
 '@  Lorsque le rayonnement est utilise, il                    ',/,&
 '@    faut indiquer qu''un scalaire represente la variable    ',/,&
 '@    energetique (enthalpie) en renseignant                  ',/,&
-'@    ISCALT(',I10   ,') dans usini1 (numero du scalaire).    ',/,&
+'@    ISCALT(',I10   ,') (numero du scalaire).                ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -338,29 +338,29 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3010 format(                                                           &
+ 3010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@ ATTENTION : RAYONNEMENT : ARRET A L''ENTREE DES DONNEES ',/,&
 '@    =========                                               ',/,&
-'@    ISCSTH DOIT ETRE RENSEIGNE OBLIGATOIREMENT DANS USINI1  ',/,&
+'@    ISCSTH DOIT ETRE RENSEIGNE OBLIGATOIREMENT              ',/,&
 '@                                                            ',/,&
 '@  Avec rayonnement, il faut                                 ',/,&
 '@    preciser la variable energetique representee par le     ',/,&
 '@    scalaire ',I10   ,' en renseignant ISCSTH(',I10   ,')   ',/,&
-'@    dans usini1 : soit                                      ',/,&
+'@    soit :                                                  ',/,&
 '@               -1 temperature en C                          ',/,&
 '@                1 temperature en K                          ',/,&
 '@                2 enthalpie                                 ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3011 format(                                                           &
+ 3011 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -371,11 +371,11 @@ endif
 '@  Lorsque le rayonnement, il                                ',/,&
 '@    faut indiquer qu''un scalaire represente la variable    ',/,&
 '@    energetique (temperature ou enthalpie) en renseignant   ',/,&
-'@    ISCALT(',I10   ,') dans usini1 (numero du scalaire).    ',/,&
+'@    ISCALT(',I10   ,') (numero du scalaire).               ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -624,7 +624,7 @@ if (iihmpr.eq.1) then
   call nvamem
   !==========
 
-  ! take into acount users modifications by subroutine usini1
+  ! take into acount user modifications
   iverif = 0
   call usipes(nmodpp, iverif)
   !==========
@@ -652,7 +652,7 @@ if(iok.ne.0) then
   !==========
 endif
 
- 4000 format(                                                           &
+ 4000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -669,7 +669,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4010 format(                                                           &
+ 4010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -687,7 +687,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4020 format(                                                           &
+ 4020 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -704,7 +704,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4030 format(                                                           &
+ 4030 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -722,7 +722,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4040 format(                                                           &
+ 4040 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -740,7 +740,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4050 format(                                                           &
+ 4050 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -758,7 +758,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4070 format(                                                           &
+ 4070 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&

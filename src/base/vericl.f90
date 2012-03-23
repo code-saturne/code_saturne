@@ -1054,19 +1054,19 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
 '@                                                            ',/,&
 '@ COND. LIM. NON INITIALISEES                                ',/,&
 '@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A8    ,/,&
 '@     ICODCL VARIABLE ', I10                                  ,/,&
 '@                                                            '  )
- 1010 format(                                                           &
+ 1010 format(                                                     &
 '@                                                            ',/,&
 '@ COND. LIM. NON PREVUES                                     ',/,&
 '@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A8    ,/,&
 '@     ICODCL VARIABLE ', I10                                  ,/,&
 '@                                                            '  )
- 1015 format(                                                           &
+ 1015 format(                                                     &
 '@                                                            ',/,&
 '@ CONDITIONS AUX LIMITES DE PAROI RUGUEUSE INCOMPATIBLES     ',/,&
 '@ AVEC LE MODULE COMPRESSIBLE                                ',/,&
@@ -1074,34 +1074,34 @@ endif
 '@     ICODCL VARIABLE =',I10                                  ,/,&
 '@     IPPMOD(ICOMPF)  =',I10                                  ,/,&
 '@                                                            '  )
- 1020 format(                                                           &
+ 1020 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCE COND. LIM. COMPOSANTES DE LA VITESSE           ',/,&
 '@   FACE ',I10   ,'; PROPRIETE 1:',I10                        ,/,&
 '@     ICODCL VITESSE  ',3I10                                  ,/,&
 '@                                                            '  )
- 1030 format(                                                           &
+ 1030 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCE COND. LIM. VITESSE-VARIABLE                    ',/,&
 '@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A8    ,/,&
 '@     ICODCL VARIABLE ', I10                                  ,/,&
 '@     ICODCL VITESSE  ',3I10                                  ,/,&
 '@                                                            '  )
- 1040 format(                                                           &
+ 1040 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCE COND. LIM. VITESSE-RIJ-EPSILON                 ',/,&
 '@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; RIJ-EPSILON     ',/,&
 '@     ICODCL RIJ-EPS ',7I5                                    ,/,&
 '@     ICODCL VITESSE ',3I5                                    ,/,&
 '@                                                            '  )
- 1050 format(                                                           &
+ 1050 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCE COND. LIM. VITESSE-SCALAIRE                    ',/,&
 '@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A8    ,/,&
 '@     SCALAIRE NUMERO ',I10                                   ,/,&
 '@     ICODCL SCALAIRE ',I10   ,'; ICODCL VITESSE ',I10        ,/,&
 '@                                                            '  )
- 1901 format(                                                           &
+ 1901 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1123,7 +1123,7 @@ endif
 '@         Verifier les parametres donnes via l''interface    ',/,&
 '@           ou cs_user_boundary_conditions.                  ',/,&
 '@                                                            ',/)
- 1902 format(                                                           &
+ 1902 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1157,19 +1157,19 @@ endif
 
 #else
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
 '@                                                            ',/,&
 '@ UNINITIALIZED BOUNDARY CONDITIONS                          ',/,&
 '@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,&
 '@     ICODCL VARIABLE ', I10                                  ,/,&
 '@                                                            '  )
- 1010 format(                                                           &
+ 1010 format(                                                     &
 '@                                                            ',/,&
 '@ UNEXPECTED BOUNDARY CONDITIONS                             ',/,&
 '@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,&
 '@     ICODCL VARIABLE ', I10                                  ,/,&
 '@                                                            '  )
- 1015 format(                                                           &
+ 1015 format(                                                     &
 '@                                                            ',/,&
 '@ ROUGH WALL BOUNDARY CONDITIONS INCOMPATIBLE WITH THE       ',/,&
 '@ COMPRESSIBLE MODULE                                        ',/,&
@@ -1177,34 +1177,34 @@ endif
 '@     ICODCL VARIABLE =',I10                                  ,/,&
 '@     IPPMOD(ICOMPF)  =',I10                                  ,/,&
 '@                                                            '  )
- 1020 format(                                                           &
+ 1020 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY COMPONENT         ',/,&
 '@   FACE ',I10   ,'; PROPERTY 1:',I10                         ,/,&
 '@     ICODCL VELOCITY ',3I10                                  ,/,&
 '@                                                            '  )
- 1030 format(                                                           &
+ 1030 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY-VARIABLE          ',/,&
 '@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,&
 '@     ICODCL VARIABLE ', I10                                  ,/,&
 '@     ICODCL VELOCITY ',3I10                                  ,/,&
 '@                                                            '  )
- 1040 format(                                                           &
+ 1040 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY-RIJ-EPSILON       ',/,&
 '@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; RIJ-EPSILON      ',/,&
 '@     ICODCL RIJ-EPS  ',7I5                                   ,/,&
 '@     ICODCL VELOCITY ',3I5                                   ,/,&
 '@                                                            '  )
- 1050 format(                                                           &
+ 1050 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY-SCALAR            ',/,&
 '@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,&
 '@     SCALAR NUMBER ',I10                                     ,/,&
 '@     ICODCL SCALAR ',I10   ,'; ICODCL VELOCITY ',I10         ,/,&
 '@                                                            '  )
- 1901 format(                                                           &
+ 1901 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1226,7 +1226,7 @@ endif
 '@         Verify the parameters given via the interface or   ',/,&
 '@           cs_user_boundary_conditions.                     ',/,&
 '@                                                            ',/)
- 1902 format(                                                           &
+ 1902 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&

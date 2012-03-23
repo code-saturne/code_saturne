@@ -44,7 +44,7 @@ subroutine cs_user_boundary_conditions &
 
 ! Here one defines boundary conditions on a per-face basis.
 
-! Boundary faces may be identified using the 'getfbr' subroutine.
+! Boundary faces may be selected using the 'getfbr' subroutine.
 
 !  getfbr(string, nelts, eltlst):
 !  - string is a user-supplied character string containing selection criteria;
@@ -70,8 +70,7 @@ subroutine cs_user_boundary_conditions &
 ! and 'getcel' subroutines (respectively). Their syntax are identical to
 ! 'getfbr' syntax.
 
-! For a more thorough description of the criteria syntax, it can be referred
-! to the user guide.
+! For a more thorough description of the criteria syntax, see the user guide.
 
 
 ! Boundary condition types
@@ -284,33 +283,31 @@ subroutine cs_user_boundary_conditions &
 ! Boundary condition types for compressible flows
 ! ===============================================
 
-! En compressible, on ne peut affecter que les conditions aux
-!  limites predefinies
+! For compressible flows, only predefined boundary conditions may
+! be assigned
 
-!    IPAROI, ISYMET, IESICF, ISSPCF, ISOPCF, IERUCF, IEQHCF
+!    iparoi, isymet, iesicf, isspcf, isopcf, ierucf, ieqhcf
 
-!    IPAROI : paroi standard
-!    ISYMET : symetrie standard
+!    iparoi : standard wall
+!    isymet : standard symmetry
 
-!    IESICF, ISSPCF, ISOPCF, IERUCF, IEQHCF : entree/sortie
+!    iesicf, isspcf, isopcf, ierucf, ieqhcf : inlet/outlet
 
-! Pour les entrees/sorties, on peut
-!  imposer une valeur pour la turbulence et les scalaires
-!  passifs dans RCODCL(.,.,1) pour le cas ou le flux de masse
-!  serait entrant. Si on ne le fait pas, une condition de
-!  nul est appliquee.
+! For inlets/outlets, we can prescribe
+!  a value for turbulence and passive scalars in rcodcl(.,.,1)
+!  for the case in which the mass flux is incoming. If this is not
+!  done, a zero flux condition is applied.
 
-! IESICF : entree sortie imposee (par exemple entree supersonique)
-!         l'utilisateur impose la vitesse et toutes les
-!           variables thermodynamiques
-! ISSPCF : sortie supersonique
-!         l'utilisateur n'impose rien
-! ISOPCF : sortie subsonique a pression imposee
-!         l'utilisateur impose la pression
-! IERUCF : entree subsonique a vitesse et rho imposes
-!         l'utilisateur impose la vitesse et la masse volumique
-! IEQHCF : entree subsonique a debit et debit enthalpique imposes
-!         a implementer
+! iesicf : prescribed inlet/outlet (for example supersonic inlet)
+!         the user prescribes the velocity and all thermodynamic variables
+! isspcf : supersonic outlet
+!         the user does not prescribe anything
+! isopcf : subsonic outlet with prescribed pressure
+!         the user presribes the pressure
+! ierucf : subsonic inlet with prescribed velocity and density
+!         the user prescribes the velocity and density
+! ieqhcf : subsonic inlet with prescribed mass and enthalpy flow
+!         to be implemented
 
 
 ! Consistency rules
@@ -474,7 +471,7 @@ integer, allocatable, dimension(:) :: lstelt
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if(iihmpr.eq.1) then
+if (iihmpr.eq.1) then
   return
 else
   write(nfecra,9000)
@@ -485,7 +482,7 @@ endif
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/,                                                            &
-'@ @@ WARNING:    stop in definition of boundary conditions',/,   &
+'@ @@ WARNING:    stop in definition of boundary conditions',   /,&
 '@    =======',/,                                                 &
 '@  The user subroutine ''cs_user_boundary_conditions         ',/,&
 '@  must be completed.                                        ',/,&
@@ -495,25 +492,22 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
 
-
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-!===============================================================================
-! 1.  Initialization
-!===============================================================================
+!---
+! Initialization
+!---
 
-! Allocate a temporary array for boundary faces selection
-allocate(lstelt(nfabor))
-
+allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
 d2s3 = 2.d0/3.d0
 
 !===============================================================================
-! 2.  Assign boundary conditions to boundary faces here
+! Assign boundary conditions to boundary faces here
 
-!     One may use selection criteria to filter boundary case subsets
-!       Loop on faces from a subset
-!         Set the boundary condition for each face
+! One may use selection criteria to filter boundary case subsets
+! Loop on faces from a subset
+!   Set the boundary condition for each face
 !===============================================================================
 
 ! --- For boundary faces of color 2 and x <= 0.01,
@@ -547,7 +541,7 @@ do ilelt = 1, nlelt
   !     formula for the dynamic viscosity use in the calculation of
   !     the Reynolds number (especially if it is variable, it may be
   !     useful to take the law from 'usphyv'. Here, we use by default
-  !     the 'viscl0" value given in 'usini1'.
+  !     the 'viscl0" value given in 'usipsu'.
   !   Regarding the density, we have access to its value at boundary
   !     faces (romb) so this value is the one used here (specifically,
   !     it is consistent with the processing in 'usphyv', in case of
@@ -576,7 +570,7 @@ do ilelt = 1, nlelt
     rcodcl(ifac,ik,1)  = xkent
     rcodcl(ifac,iep,1) = xeent
 
-  elseif(itytur.eq.3) then
+  elseif (itytur.eq.3) then
 
     rcodcl(ifac,ir11,1) = d2s3*xkent
     rcodcl(ifac,ir22,1) = d2s3*xkent
@@ -586,26 +580,26 @@ do ilelt = 1, nlelt
     rcodcl(ifac,ir23,1) = 0.d0
     rcodcl(ifac,iep,1)  = xeent
 
-  elseif(iturb.eq.50) then
+  elseif (iturb.eq.50) then
 
     rcodcl(ifac,ik,1)   = xkent
     rcodcl(ifac,iep,1)  = xeent
     rcodcl(ifac,iphi,1) = d2s3
     rcodcl(ifac,ifb,1)  = 0.d0
 
-  elseif(iturb.eq.60) then
+  elseif (iturb.eq.60) then
 
     rcodcl(ifac,ik,1)   = xkent
     rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
-  elseif(iturb.eq.70) then
+  elseif (iturb.eq.70) then
 
     rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
   endif
 
   ! --- Handle scalars
-  if(nscal.gt.0) then
+  if (nscal.gt.0) then
     do ii = 1, nscal
       rcodcl(ifac,isca(ii),1) = 1.d0
     enddo
@@ -659,7 +653,7 @@ do ilelt = 1, nlelt
     rcodcl(ifac,ik,1)  = xkent
     rcodcl(ifac,iep,1) = xeent
 
-  elseif(itytur.eq.3) then
+  elseif (itytur.eq.3) then
 
     rcodcl(ifac,ir11,1) = d2s3*xkent
     rcodcl(ifac,ir22,1) = d2s3*xkent
@@ -669,26 +663,26 @@ do ilelt = 1, nlelt
     rcodcl(ifac,ir23,1) = 0.d0
     rcodcl(ifac,iep,1)  = xeent
 
-  elseif(iturb.eq.50) then
+  elseif (iturb.eq.50) then
 
     rcodcl(ifac,ik,1)   = xkent
     rcodcl(ifac,iep,1)  = xeent
     rcodcl(ifac,iphi,1) = d2s3
     rcodcl(ifac,ifb,1)  = 0.d0
 
-  elseif(iturb.eq.60) then
+  elseif (iturb.eq.60) then
 
     rcodcl(ifac,ik,1)   = xkent
     rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
-  elseif(iturb.eq.70) then
+  elseif (iturb.eq.70) then
 
     rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
   endif
 
   ! --- Handle scalars
-  if(nscal.gt.0) then
+  if (nscal.gt.0) then
     do ii = 1, nscal
       rcodcl(ifac,isca(ii),1) = 1.d0
     enddo
@@ -729,7 +723,7 @@ do ilelt = 1, nlelt
 
   ! If sliding wall with velocity u = 0: nothing to do
 
-  if(nscal.gt.0) then
+  if (nscal.gt.0) then
 
     ! If temperature prescribed to 20 with wall law (scalar ii=1):
     ! ii = 1
@@ -774,7 +768,7 @@ do ilelt = 1, nlelt
   ! rcodcl(ifac, iu, 1) = 1.d0
 
   ! If sliding wall with velocity u = 0: nothing to do
-  if(nscal.gt.0) then
+  if (nscal.gt.0) then
 
     ! If temperature prescribed to 20 (scalar ii=1)
     ! (with thermal roughness specified in rcodcl(ifac,iv,3)) :
@@ -912,8 +906,7 @@ enddo
 ! End
 !----
 
-! Deallocate the temporary array
-deallocate(lstelt)
+deallocate(lstelt)  ! temporary array for boundary faces selection
 
 return
 end subroutine

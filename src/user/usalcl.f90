@@ -65,25 +65,28 @@ subroutine usalcl &
 !    For "standard" boundary conditions:
 !    -----------------------------------
 
-!     (fixed boundary, sliding mesh boundary, fixed velocity), one defines a code in the 'ialtyb'
-!     array (of dimensions number of boundary faces, number of phases).
+!     (fixed boundary, sliding mesh boundary, fixed velocity), one defines a
+!     code in the 'ialtyb' array (of dimensions number of boundary faces).
 
-! * ialtyb(ifac) = ibfixe : the face IFAC is considered to be motionless. A zero Dirichlet
-!         boundary condition is automatically imposed on mesh velocity. Moreover the displacement
-!         of corresponding nodes will automatically be set to 0 (for further information please
-!         read the paragraph dedicated to the description of IMPALE array in 'usalcl' subroutine),
-!         unless the USER has modified the condition of at least one  component of mesh velocity
-!         (modification of ICOCL array, please read the following paragraph 'For "non-standard"
-!         conditions')
+! * ialtyb(ifac) = ibfixe : the face IFAC is considered to be motionless.
+!          A zero Dirichlet boundary condition is automatically imposed on mesh
+!          velocity. Moreover the displacement of corresponding nodes will
+!          automatically be set to 0 (for further information please
+!          read the paragraph dedicated to the description of IMPALE array in the
+!          'usalcl' subroutine), unless the USER has modified the condition of
+!          at least one  component of mesh velocity (modification of ICOCL array,
+!          please read the following paragraph 'For "non-standard" conditions')
 
-! * ialtyb(ifac) = igliss : The mesh slides on corresponding face IFAC. The normal component of mesh
-!          velocity is automatically set to 0. A homogeneous Neumann condition is automatically
-!          prescribed for the other components, as it's the case for 'Symmetry' fluid condition (Please
-!          note that homogeneous Neumann condition is only partially implicit in case of boudary face
-!          that is not aligned with axis).
+! * ialtyb(ifac) = igliss : The mesh slides on corresponding face IFAC.
+!          The normal component of mesh velocity is automatically set to 0.
+!          A homogeneous Neumann condition is automatically prescribed for the
+!          other components, as it's the case for 'Symmetry' fluid condition
+!          (Please note that homogeneous Neumann condition is only partially
+!          implicit in case of boudary face that is not aligned with axis).
 
-! * ialtyb(ifac) = ivimpo : the mesh velocity is imposed on face IFAC. Thus, the users needs to
-!          specify the mesh velocity values filling RCODCL arrays as follows :
+! * ialtyb(ifac) = ivimpo : the mesh velocity is imposed on face IFAC. Thus,
+!          the users needs to specify the mesh velocity values filling RCODCL
+!          arrays as follows :
 !          rcodcl(ifac,iuma,1) = mesh velocity in 'x' direction
 !          rcodcl(ifac,ivma,1) = mesh velocity in 'y' direction
 !          rcodcl(ifac,iwma,1) = mesh velocity in 'z' direction
@@ -94,8 +97,8 @@ subroutine usalcl &
 !    For "non-standard" conditions:
 !    ------------------------------
 
-!     Other than (fixed boundary, sliding mesh boundary, fixed velocity), one defines
-!     for each face and each component IVAR = IUMA, IVMA, IWMA :
+!     Other than (fixed boundary, sliding mesh boundary, fixed velocity), one
+!     defines for each face and each component IVAR = IUMA, IVMA, IWMA:
 !        -> a code             icodcl(ifac, ivar)
 !        -> three real values  rcodcl(ifac, ivar, 1)
 !                              rcodcl(ifac, ivar, 2)
@@ -178,19 +181,20 @@ subroutine usalcl &
 !    is not modified, corresponding value in DEPALE array will not be
 !    taken into account)
 
-!  During mesh's geometry re-calculation at each time step, the position of the nodes, which
-!    displacement is fixed ( i.e. IMPALE=1), is not calculated using the value of mesh velocity
-!    at the center of corresponding cell, but directly filled using the values of DEPALE.
-!  If the displacement is fixed for all nodes of a boundary face it's not necessary to
-!    prescribe boundary conditions at this face on mesh velocity. ICODCL and RCODCL values will
-!    be overwritten :
+!  During mesh's geometry re-calculation at each time step, the position of the
+!    nodes, which displacement is fixed ( i.e. IMPALE=1), is not calculated
+!    using the value of mesh velocity at the center of corresponding cell, but
+!    directly filled using the values of DEPALE.
+!  If the displacement is fixed for all nodes of a boundary face it's not
+!    necessary to prescribe boundary conditions at this face on mesh velocity.
+!    ICODCL and RCODCL values will be overwritten:
 !    -> ICODCL is automatically set to 1 (Dirichlet)
-!    -> RCODCL value will be automatically set to face's mean mesh velocity value, that is
-!       calculated using DEPALE array.
+!    -> RCODCL value will be automatically set to face's mean mesh velocity
+!       value, that is calculated using DEPALE array.
 
-!  If a fixed boundary condition (ialtyb(ifac)=ibfixe) is imposed to the face ifac,
-!    the displacement of each node inod belonging to ifac is considered to be fixed,
-!    meaning that impale(inod) = 1 and depale(inod,.) = 0.d0.
+!  If a fixed boundary condition (ialtyb(ifac)=ibfixe) is imposed to the face
+!    ifac, the displacement of each node inod belonging to ifac is considered
+!    to be fixed, meaning that impale(inod) = 1 and depale(inod,.) = 0.d0.
 
 
 ! Description of nodes
@@ -425,7 +429,7 @@ delta  = sin(3.141596d0*ntcabs/50.d0)
 
 ! --- For boundary faces of color 4 assign a fixed velocity
 
-CALL GETFBR('4',NLELT,LSTELT)
+call getfbr('4', nlelt, lstelt)
 !==========
 
 do ilelt = 1, nlelt
@@ -444,7 +448,7 @@ enddo
 
 ! --- For boundary faces of color 5 assign a fixed displacement on nodes
 
-CALL GETFBR('5',NLELT,LSTELT)
+call getfbr('5', nlelt, lstelt)
 !==========
 
 do ilelt = 1, nlelt
@@ -465,7 +469,7 @@ enddo
 
 ! --- For boundary faces of color 6 assign a sliding boundary
 
-CALL GETFBR('6',NLELT,LSTELT)
+call getfbr('6', nlelt, lstelt)
 !==========
 
 do ilelt = 1, nlelt
@@ -478,7 +482,7 @@ enddo
 
 ! --- prescribe elsewhere a fixed boundary
 
-CALL GETFBR( 'not (4 or 5 or 6)',NLELT,LSTELT)
+call getfbr('not (4 or 5 or 6)', nlelt, lstelt)
 !==========
 
 do ilelt = 1, nlelt

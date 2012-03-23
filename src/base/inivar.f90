@@ -742,7 +742,7 @@ write(nfecra,3000)
 
 #if defined(_CS_LANG_FR)
 
- 2000 format(                                                           &
+ 2000 format(                                                     &
 '                                                             ',/,&
 ' ----------------------------------------------------------- ',/,&
 '                                                             ',/,&
@@ -753,23 +753,23 @@ write(nfecra,3000)
 ' ---------------------------------                           ',/,&
 '  Variable  Valeur min  Valeur max                           ',/,&
 ' ---------------------------------                           '  )
- 2010 format(                                                           &
+ 2010 format(                                                     &
  2x,     a8,      e12.4,      e12.4                              )
- 2020 format(                                                           &
+ 2020 format(                                                     &
 ' ---------------------------------                           ',/)
- 2030 format(                                                           &
+ 2030 format(                                                     &
 ' Duree cumulee :                                             ',/,&
 ' ------------------------------------------------------------',/,&
 '   Moyenne  Valeur min  Valeur max Uniforme/Variable en espac',/,&
 ' ------------------------------------------------------------'  )
- 2040 format(                                                           &
+ 2040 format(                                                     &
         i10,      e12.4,      e12.4,1x,   a8                     )
- 2050 format(                                                           &
+ 2050 format(                                                     &
 ' ------------------------------------------------------------',/)
 
  3000 format(/,/,                                                 &
 '-------------------------------------------------------------',/)
- 3010 format(                                                           &
+ 3010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -780,13 +780,15 @@ write(nfecra,3000)
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  La valeur minimale du pas de temps DT est ',E14.5          ,/,&
-'@  Verifier l''initialisation dans usiniv ou le fichier suite',/,&
-'@    dans le cas ou les valeurs lues dans le fichier suite   ',/,&
-'@    sont incorrectes, on peut les modifier par usiniv       ',/,&
+'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
+'@                                                            ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
+'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
+'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3011 format(                                                           &
+ 3011 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -799,15 +801,16 @@ write(nfecra,3000)
 '@  La valeur minimale de la duree cumulee pour la moyenne    ',/,&
 '@    IMOM = ',I10   ,' est ',E14.5                            ,/,&
 '@                                                            ',/,&
-'@  Verifier l''initialisation dans usiniv ou le fichier suite',/,&
-'@    dans le cas ou les valeurs lues dans le fichier suite   ',/,&
-'@    sont incorrectes, on peut reinitialiser la moyenne et le',/,&
-'@    cumul temporel associe en imposant IMOOLD(IMOM) = -1    ',/,&
-'@    dans usini1.                                            ',/,&
+'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
+'@                                                            ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
+'@    de reprise sont incorrectes, on peut reinitialiser      ',/,&
+'@    la moyenne et le cumul temporel associe en imposant     ',/,&
+'@    IMOOLD(IMOM) = -1.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3020 format(                                                           &
+ 3020 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -820,16 +823,15 @@ write(nfecra,3000)
 '@   Valeur minimale de k       = ',E14.5                      ,/,&
 '@   Valeur minimale de epsilon = ',E14.5                      ,/,&
 '@                                                            ',/,&
-'@  Verifier l''initialisation (usiniv et/ou interface),      ',/,&
-'@    le fichier suite ou bien la valeur de UREF (usini1      ',/,&
-'@    et/ou interface).                                       ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier suite     ',/,&
-'@    sont incorrectes, on peut les modifier par usiniv ou    ',/,&
-'@    par l''interface).                                      ',/,&
+'@  Verifier l''initialisation, le fichier de reprise,        ',/,&
+'@    ou bien la valeur de UREF.                              ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
+'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
+'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3021 format(                                                           &
+ 3021 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -843,15 +845,14 @@ write(nfecra,3000)
 '@   Valeur minimale de phi     = ',E14.5                      ,/,&
 '@   Valeur maximale de phi     = ',E14.5                      ,/,&
 '@                                                            ',/,&
-'@  Verifier l''initialisation (usiniv et/ou interface),      ',/,&
-'@    ou le fichier suite.                                    ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier suite     ',/,&
-'@    sont incorrectes, on peut les modifier par usiniv ou    ',/,&
-'@    par l''interface.                                       ',/,&
+'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
+'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
+'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3022 format(                                                           &
+ 3022 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -865,15 +866,14 @@ write(nfecra,3000)
 '@   Valeur minimale de alpha   = ',E14.5                      ,/,&
 '@   Valeur maximale de alpha   = ',E14.5                      ,/,&
 '@                                                            ',/,&
-'@  Verifier l''initialisation (usiniv et/ou interface),      ',/,&
-'@    ou le fichier suite.                                    ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier suite     ',/,&
-'@    sont incorrectes, on peut les modifier par usiniv ou    ',/,&
-'@    par l''interface.                                       ',/,&
+'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
+'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
+'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3030 format(                                                           &
+ 3030 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -888,16 +888,15 @@ write(nfecra,3000)
 '@   Valeur minimale de R33     = ',E14.5                      ,/,&
 '@   Valeur minimale de epsilon = ',E14.5                      ,/,&
 '@                                                            ',/,&
-'@  Verifier l''initialisation (usiniv et/ou interface),      ',/,&
-'@    le fichier suite ou bien la valeur de UREF (usini1      ',/,&
-'@    et/ou interface).                                       ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier suite     ',/,&
-'@    sont incorrectes, on peut les modifier par usiniv ou    ',/,&
-'@    par l''interface).                                      ',/,&
+'@  Verifier l''initialisation, le fichier de reprise,        ',/,&
+'@    ou bien la valeur de UREF.                              ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
+'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
+'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3031 format(                                                           &
+ 3031 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -910,16 +909,15 @@ write(nfecra,3000)
 '@   Valeur minimale de k       = ',E14.5                      ,/,&
 '@   Valeur minimale de omega   = ',E14.5                      ,/,&
 '@                                                            ',/,&
-'@  Verifier l''initialisation (usiniv et/ou interface),      ',/,&
-'@    le fichier suite ou bien la valeur de UREF (usini1      ',/,&
-'@    et/ou interface).                                       ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier suite     ',/,&
-'@    sont incorrectes, on peut les modifier par usiniv ou    ',/,&
-'@    par l''interface.                                       ',/,&
+'@  Verifier l''initialisation, le fichier de reprise,        ',/,&
+'@    ou bien la valeur de UREF.                              ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
+'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
+'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3032 format(                                                           &
+ 3032 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -931,16 +929,15 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@   Valeur minimale de nu      = ',E14.5                      ,/,&
 '@                                                            ',/,&
-'@  Verifier l''initialisation (usiniv et/ou interface),      ',/,&
-'@    le fichier suite ou bien la valeur de UREF (usini1      ',/,&
-'@    et/ou interface).                                       ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier suite     ',/,&
-'@    sont incorrectes, on peut les modifier par usiniv ou    ',/,&
-'@    par l''interface.                                       ',/,&
+'@  Verifier l''initialisation, le fichier de reprise,        ',/,&
+'@    ou bien la valeur de UREF.                              ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
+'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
+'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3039 format(                                                           &
+ 3039 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -951,13 +948,12 @@ write(nfecra,3000)
 '@    ELLE VAUT ICI ',E14.5                                    ,/,&
 '@                                                            ',/,&
 '@  La turbulence n''a pas pu etre initialisee                ',/,&
-'@  Corriger la valeur de UREF (usini1 ou interface)ou bien   ',/,&
-'@    initialiser directement la turbulence dans la routine   ',/,&
-'@    (usiniv ou interface).                                  ',/,&
+'@  Corriger la valeur de UREF ou bien initialiser            ',/,&
+'@    directement la turbulence.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3040 format(                                                           &
+ 3040 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -973,16 +969,16 @@ write(nfecra,3000)
 '@  Valeur maximale             = ',E14.5                      ,/,&
 '@    Clipping demande a SCAMAX = ',E14.5                      ,/,&
 '@  Les valeurs extremes ne sont pas coherentes avec les      ',/,&
-'@    limites SCAMIN et SCAMAX imposees dans usini1.          ',/,&
+'@    limites SCAMIN et SCAMAX imposees.                      ',/,&
 '@                                                            ',/,&
-'@  Verifier l''initialisation dans usiniv ou le fichier suite',/,&
-'@    dans le cas ou les valeurs lues dans le fichier suite   ',/,&
-'@    sont incorrectes, on peut les modifier par usiniv       ',/,&
-'@  Verifier les valeurs de clipping dans usini1.             ',/,&
+'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
+'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
+'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3050 format(                                                           &
+ 3050 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -995,17 +991,18 @@ write(nfecra,3000)
 '@  Scalaire numero ',I10,' : ',A8                             ,/,&
 '@  Valeur minimale             = ',E14.5                      ,/,&
 '@  Le scalaire indique ci-dessus est une variance (ISCAVR est',/,&
-'@    postif dans usini1) mais l initialisation imposee       ',/,&
-'@    dans usiniv comporte des valeurs negatives.             ',/,&
+'@    positif) mais l''initialisation imposee comporte        ',/,&
+'@    des valeurs negatives.                                  ',/,&
 '@                                                            ',/,&
-'@  Verifier l''initialisation dans usiniv ou le fichier suite',/,&
-'@    dans le cas ou les valeurs lues dans le fichier suite   ',/,&
-'@    sont incorrectes, on peut les modifier par usiniv       ',/,&
-'@  Verifier la definition des variances dans usini1.         ',/,&
+'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
+'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
+'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
+'@  Verifier la definition des variances.                     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3051 format(                                                           &
+ 3051 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1021,20 +1018,21 @@ write(nfecra,3000)
 '@  Valeur maximale             = ',E14.5                      ,/,&
 '@    Clipping demande a SCAMAX = ',E14.5                      ,/,&
 '@  Le scalaire indique ci-dessus est une variance (ISCAVR est',/,&
-'@    postif dans usini1) mais l initialisation imposee       ',/,&
-'@    dans usiniv comporte des valeurs situees hors des bornes',/,&
+'@    postif) mais l initialisation imposee comporte          ',/,&
+'@    des valeurs situees hors des bornes                     ',/,&
 '@    SCAMIN, SCAMAX ou inferieures a 0 et le mode de clipping',/,&
 '@    demande est ICLVFL(',I10,') = ',I10                      ,/,&
 '@                                                            ',/,&
-'@  Verifier l''initialisation dans usiniv ou le fichier suite',/,&
-'@    dans le cas ou les valeurs lues dans le fichier suite   ',/,&
-'@    sont incorrectes, on peut les modifier par usiniv       ',/,&
+'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
+'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
+'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
 '@  Verifier la definition des variances et le mode de        ',/,&
-'@    clipping demande dans usini1.                           ',/,&
+'@    clipping demande.                                       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3090 format(                                                           &
+ 3090 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1055,17 +1053,18 @@ write(nfecra,3000)
 '@                                des scalaires et variances  ',/,&
 '@                                des moyennes temporelles    ',/,&
 '@                                                            ',/,&
-'@  Verifier usiniv ou le fichier suite.                      ',/,&
-'@    dans le cas ou les valeurs lues dans le fichier suite   ',/,&
-'@    sont incorrectes, on peut les modifier par usiniv       ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
+'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
+'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
+'@  Verifier les parametres de calcul.                        ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
 #else
 
- 2000 format(                                                           &
+ 2000 format(                                                     &
 '                                                             ',/,&
 ' ----------------------------------------------------------- ',/,&
 '                                                             ',/,&
@@ -1076,23 +1075,23 @@ write(nfecra,3000)
 ' ---------------------------------                           ',/,&
 '  Variable  Min. value  Max. value                           ',/,&
 ' ---------------------------------                           '  )
- 2010 format(                                                           &
+ 2010 format(                                                     &
  2x,     a8,      e12.4,      e12.4                              )
- 2020 format(                                                           &
+ 2020 format(                                                     &
 ' ---------------------------------                           ',/)
- 2030 format(                                                           &
+ 2030 format(                                                     &
 ' Time averages (sum over the time-steps)                     ',/,&
 ' ------------------------------------------------------------',/,&
 '   Average  Min. value  Max. value Uniform/Variable in space ',/,&
 ' ------------------------------------------------------------'  )
- 2040 format(                                                           &
+ 2040 format(                                                     &
         i10,      e12.4,      e12.4,1x,   a8                     )
- 2050 format(                                                           &
+ 2050 format(                                                     &
 ' ------------------------------------------------------------',/)
 
  3000 format(/,/,                                                 &
 '-------------------------------------------------------------',/)
- 3010 format(                                                           &
+ 3010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1103,13 +1102,14 @@ write(nfecra,3000)
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
 '@  The minimum value of the time-step dt is ',E14.5           ,/,&
-'@  Verify the initialization in usiniv or the restart file   ',/,&
-'@    In the case where the values read in the restart file   ',/,&
-'@    are incorrect, they may be modified with usiniv         ',/,&
+'@  Verify the initialization or the restart file.            ',/,&
+'@  In the case where the values read in the restart file     ',/,&
+'@    are incorrect, they may be modified with                ',/,&
+'@    cs_user_initialization.f90 or with the interface.       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3011 format(                                                           &
+ 3011 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1122,15 +1122,14 @@ write(nfecra,3000)
 '@  The minimum value of the cumulative time for the moment   ',/,&
 '@    IMOM = ',I10   ,' est ',E14.5                            ,/,&
 '@                                                            ',/,&
-'@  Verify the initialization in usiniv or the restart file   ',/,&
-'@    In the case where the values read in the restart file   ',/,&
+'@  Verify the initialization or the restart file.            ',/,&
+'@  In the case where the values read in the restart file     ',/,&
 '@    are incorrect, the moment and the associated cumulative ',/,&
-'@    time may be re-initialized by setting IMOOLD(IMOM) = -1 ',/,&
-'@    in usini1.                                              ',/,&
+'@    time may be re-initialized by setting IMOOLD(IMOM) = -1.',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3020 format(                                                           &
+ 3020 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1143,16 +1142,15 @@ write(nfecra,3000)
 '@   Minimum value of k       = ',E14.5                        ,/,&
 '@   Minimum value of epsilon = ',E14.5                        ,/,&
 '@                                                            ',/,&
-'@  Verify the initialization (usiniv and/or interface),      ',/,&
-'@    the restart file or the value of UREF (usini1 and/or    ',/,&
-'@    interface).                                             ',/,&
+'@  Verify the initialization, the restart file,              ',/,&
+'@    and the value of UREF.                                  ',/,&
 '@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with usiniv or      ',/,&
-'@    with the interface.                                     ',/,&
+'@    are incorrect, they may be modified with                ',/,&
+'@    cs_user_initialization.f90 or with the interface.       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3021 format(                                                           &
+ 3021 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1166,15 +1164,14 @@ write(nfecra,3000)
 '@   Minimum value of phi = ',E14.5                            ,/,&
 '@   Maximum value of phi = ',E14.5                            ,/,&
 '@                                                            ',/,&
-'@  Verify the initialization (usiniv and/or interface),      ',/,&
-'@    the restart file.                                       ',/,&
+'@  Verify the initialization or the restart file.            ',/,&
 '@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with usiniv or      ',/,&
-'@    with the interface.                                     ',/,&
+'@    are incorrect, they may be modified with                ',/,&
+'@    cs_user_initialization.f90 or with the interface.       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3022 format(                                                           &
+ 3022 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1188,15 +1185,14 @@ write(nfecra,3000)
 '@   Minimum value of alpha = ',E14.5                          ,/,&
 '@   Maximum value of alpha = ',E14.5                          ,/,&
 '@                                                            ',/,&
-'@  Verify the initialization (usiniv and/or interface),      ',/,&
-'@    the restart file.                                       ',/,&
+'@  Verify the initialization or the restart file.            ',/,&
 '@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with usiniv or      ',/,&
-'@    with the interface.                                     ',/,&
+'@    are incorrect, they may be modified with                ',/,&
+'@    cs_user_initialization.f90 or with the interface.       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3030 format(                                                           &
+ 3030 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1211,16 +1207,15 @@ write(nfecra,3000)
 '@   Minimum value of R33     = ',E14.5                        ,/,&
 '@   Minimum value of epsilon = ',E14.5                        ,/,&
 '@                                                            ',/,&
-'@  Verify the initialization (usiniv and/or interface),      ',/,&
-'@    the restart file or the value of UREF (usini1 and/or    ',/,&
-'@    interface).                                             ',/,&
+'@  Verify the initialization, the restart file,              ',/,&
+'@    and the value of UREF.                                  ',/,&
 '@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with usiniv or      ',/,&
-'@    with the interface.                                     ',/,&
+'@    are incorrect, they may be modified with                ',/,&
+'@    cs_user_initialization.f90 or with the interface.       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3031 format(                                                           &
+ 3031 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1233,16 +1228,15 @@ write(nfecra,3000)
 '@   Minimum value of k       = ',E14.5                        ,/,&
 '@   Minimum value of omega   = ',E14.5                        ,/,&
 '@                                                            ',/,&
-'@  Verify the initialization (usiniv and/or interface),      ',/,&
-'@    the restart file or the value of UREF (usini1 and/or    ',/,&
-'@    interface).                                             ',/,&
+'@  Verify the initialization, the restart file,              ',/,&
+'@    and the value of UREF.                                  ',/,&
 '@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with usiniv or      ',/,&
-'@    with the interface.                                     ',/,&
+'@    are incorrect, they may be modified with                ',/,&
+'@    cs_user_initialization.f90 or with the interface.       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3032 format(                                                           &
+ 3032 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1254,16 +1248,15 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@   Minimum value of nu      = ',E14.5                        ,/,&
 '@                                                            ',/,&
-'@  Verify the initialization (usiniv and/or interface),      ',/,&
-'@    the restart file or the value of UREF (usini1 and/or    ',/,&
-'@    interface).                                             ',/,&
+'@  Verify the initialization, the restart file,              ',/,&
+'@    and the value of UREF.                                  ',/,&
 '@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with usiniv or      ',/,&
-'@    with the interface.                                     ',/,&
+'@    are incorrect, they may be modified with                ',/,&
+'@    cs_user_initialization.f90 or with the interface.       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3039 format(                                                           &
+ 3039 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1274,13 +1267,13 @@ write(nfecra,3000)
 '@    ITS VALUE IS ',E14.5                                     ,/,&
 '@                                                            ',/,&
 '@  The turbulence cannot be initialized                      ',/,&
-'@  Correct the value of UREF (usini1 or interface) or        ',/,&
-'@    initialize directly the turbulence with usiniv or       ',/,&
-'@    with the interface.                                     ',/,&
+'@  Correct the value of UREF or initialize the turbulence    ',/,&
+'@    directly with cs_user_initialization.f90                ',/,&
+'@    or with the interface.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3040 format(                                                           &
+ 3040 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1296,16 +1289,17 @@ write(nfecra,3000)
 '@  Maximum value                = ',E14.5                     ,/,&
 '@    Desired clipping at SCAMAX = ',E14.5                     ,/,&
 '@  The bounds are not coherent with the limits SCAMIN and    ',/,&
-'@    SCAMAX set in usini1.                                   ',/,&
+'@    SCAMAX.                                                 ',/,&
 '@                                                            ',/,&
-'@  Verify the initialization in usiniv or the restart file   ',/,&
-'@    In the case where the values read in the restart file   ',/,&
-'@    are incorrect, they may be modified with usiniv         ',/,&
-'@  Verify the clipping values in usini1.                     ',/,&
+'@  Verify the initialization and the restart file.           ',/,&
+'@  In the case where the values read in the restart file     ',/,&
+'@    are incorrect, they may be modified with                ',/,&
+'@    cs_user_initialization.f90 or with the interface.       ',/,&
+'@  Verify the clipping values.                               ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3050 format(                                                           &
+ 3050 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1317,18 +1311,18 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@  Scalar number ',I10,': ',A8                                ,/,&
 '@  Minimum value               = ',E14.5                      ,/,&
-'@  This scalar is a variance (ISCAVR is positive in usini1)  ',/,&
-'@    but the initialization in usiniv has some negative      ',/,&
-'@    values.                                                 ',/,&
+'@  This scalar is a variance (ISCAVR is positive)            ',/,&
+'@    but the initialization has some negative values.        ',/,&
 '@                                                            ',/,&
-'@  Verify the initialization in usiniv or the restart file   ',/,&
-'@    In the case where the values read in the restart file   ',/,&
-'@    are incorrect, they may be modified with usiniv         ',/,&
-'@  Verify the variance definition in usini1.                 ',/,&
+'@  Verify the initialization and the restart file.           ',/,&
+'@  In the case where the values read in the restart file     ',/,&
+'@    are incorrect, they may be modified with                ',/,&
+'@    cs_user_initialization.f90 or with the interface.       ',/,&
+'@  Verify the variance definition.                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3051 format(                                                           &
+ 3051 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1343,20 +1337,20 @@ write(nfecra,3000)
 '@    Desired clipping at SCAMIN = ',E14.5                     ,/,&
 '@  Maximum value                = ',E14.5                     ,/,&
 '@    Desired clipping at SCAMAX = ',E14.5                     ,/,&
-'@  This scalar is a variance (ISCAVR is positive in usini1)  ',/,&
-'@    but the initialization in usiniv has some values out    ',/,&
+'@  This scalar is a variance (ISCAVR is positive)             ',/,&
+'@    but the initialization has some values out               ',/,&
 '@    of the bounds SCAMIN, SCAMAX or lower than 0 and the    ',/,&
 '@    desired clipping mode is ICLVFL(',I10,') = ',I10         ,/,&
 '@                                                            ',/,&
-'@  Verify the initialization in usiniv or the restart file   ',/,&
-'@    In the case where the values read in the restart file   ',/,&
-'@    are incorrect, they may be modified with usiniv         ',/,&
-'@  Verify the variance definition and the clipping mode in   ',/,&
-'@    usini1.                                                 ',/,&
+'@  Verify the initialization and the restart file.           ',/,&
+'@  In the case where the values read in the restart file     ',/,&
+'@    are incorrect, they may be modified with                ',/,&
+'@    cs_user_initialization.f90 or with the interface.       ',/,&
+'@  Verify the variance definition and the clipping mode.     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3090 format(                                                           &
+ 3090 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1377,10 +1371,10 @@ write(nfecra,3000)
 '@                                the scalars and variances   ',/,&
 '@                                the time averages           ',/,&
 '@                                                            ',/,&
-'@  Verify usiniv or the restart file.                        ',/,&
-'@    In the case where the values read in the restart file   ',/,&
-'@    are incorrect, they may be modified with usiniv         ',/,&
-'@  Verify usini1.                                            ',/,&
+'@  Verify the initialization and the restart file.           ',/,&
+'@  In the case where the values read in the restart file     ',/,&
+'@    are incorrect, they may be modified with                ',/,&
+'@    cs_user_initialization.f90 or with the interface.       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1388,7 +1382,7 @@ write(nfecra,3000)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

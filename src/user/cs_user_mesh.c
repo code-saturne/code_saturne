@@ -103,12 +103,13 @@ cs_user_mesh_input(void)
   /*--------------------------------*/
 
   /* Read input mesh with no modification */
-  {
+
+  if (false) {
     cs_preprocessor_data_add_file("mesh_input/mesh_01", 0, NULL, NULL);
   }
 
   /* Add same mesh with transformations */
-  {
+  if (false) {
     const char *renames[] = {"Inlet", "Injection_2",
                              "Group_to_remove", NULL};
     const double transf_matrix[3][4] = {{1., 0., 0., 5.},
@@ -148,23 +149,22 @@ void
 cs_user_join(void)
 {
   int    join_num;
-  int    verbosity = 1, visualization;
-  float  fraction = 0.10, plane = 0.25;
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
-  fraction = 0.10;
-  plane = 25.0;
-  verbosity = 1; /* debug level if >= 3 */
-  visualization = 1; /* debug level if >= 3 */
 
   /* Add a joining operation */
   /* ----------------------- */
 
-  join_num = cs_join_add("98 or 99",
-                         fraction,
-                         plane,
-                         verbosity,
-                         visualization);
+  if (false) {
+    int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
+    int    visualization = 1; /* debug level if >= 3 */
+    float  fraction = 0.10, plane = 0.25;
+
+    join_num = cs_join_add("98 or 99",
+                           fraction,
+                           plane,
+                           verbosity,
+                           visualization);
+  }
 
   /*--------------------------------------------------------------------------*/
 
@@ -172,7 +172,8 @@ cs_user_join(void)
      Advanced parameters may be modified to solve errors during the
      joining step or to get a better mesh quality. */
 
-  {
+  if (false) {
+
     /* Merge tolerance factor:
      * used to locally modify the tolerance associated to each
      * vertex BEFORE the merge step.
@@ -288,19 +289,16 @@ void
 cs_user_periodicity(void)
 {
   int    join_num;
-  int    verbosity = 1, visualization = 1;
-  float  fraction = 0.10, plane = 0.25;
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
-  fraction = 0.10;
-  plane = 25.0;
-  verbosity = 1; /* processor-local files if > 1, debug level if >= 3 */
-  visualization = 1; /* debug level if >= 3 */
 
   /* Example 1: define a periodicity of translation */
   /* ---------------------------------------------- */
 
-  {
+  if (false) {
+    int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
+    int    visualization = 1; /* debug level if >= 3 */
+    float  fraction = 0.10, plane = 0.25;
+
     const double translation[3] = {1.0, 0.0, 0.0}; /* Translation vector */
 
     join_num = cs_join_perio_add_translation("98 or 99",
@@ -314,7 +312,12 @@ cs_user_periodicity(void)
   /* Example 2: define a periodicity of rotation */
   /* ------------------------------------------- */
 
-  {
+  
+  if (false) {
+    int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
+    int    visualization = 1; /* debug level if >= 3 */
+    float  fraction = 0.10, plane = 0.25;
+
     double  theta = 20;                /* angle in degrees */
     double  axis[3] = {1.0, 0, 0};     /* axis of rotation */
     double  invariant[3] = {0, 0, 0};  /* invariant point */
@@ -352,7 +355,11 @@ cs_user_periodicity(void)
    * Transformations may be combined using matrix multiplication,
    * so this be used for helecoidal transformations for instance. */
 
-  {
+  if (false) {
+    int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
+    int    visualization = 1; /* debug level if >= 3 */
+    float  fraction = 0.10, plane = 0.25;
+
     double matrix[3][4] = {{1., 0., 0., 0.5},
                            {0., 1., 0., 0.},
                            {0., 0., 1., 0.}};
@@ -371,7 +378,8 @@ cs_user_periodicity(void)
      Advanced parameters may be modified to solve errors during the
      joining step or to get a better mesh quality. */
 
-  {
+  if (false) {
+
     /* Merge tolerance factor:
      * used to locally modify the tolerance associated to each
      * vertex BEFORE the merge step.
@@ -468,42 +476,44 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
   /* Example: modify vertex coordinates */
   /*------------------------------------*/
 
-  cs_lnum_t   n_selected_faces = 0;
-  cs_lnum_t  *selected_faces = NULL;
+  if (false) {
+    cs_lnum_t   n_selected_faces = 0;
+    cs_lnum_t  *selected_faces = NULL;
 
-  cs_real_t  *i_face_cog = NULL, *i_face_normal = NULL;
+    cs_real_t  *i_face_cog = NULL, *i_face_normal = NULL;
 
-  /* example of multi-line character string */
+    /* example of multi-line character string */
 
-  const char criteria[] = "plane[0, -1, 0, 0.5, epsilon = 0.0001]"
-                          " or plane[-1, 0, 0, 0.5, epsilon = 0.0001]";
+    const char criteria[] = "plane[0, -1, 0, 0.5, epsilon = 0.0001]"
+                            " or plane[-1, 0, 0, 0.5, epsilon = 0.0001]";
 
-  cs_mesh_init_group_classes(mesh);
+    cs_mesh_init_group_classes(mesh);
 
-  cs_mesh_quantities_i_faces(mesh, &i_face_cog, &i_face_normal);
+    cs_mesh_quantities_i_faces(mesh, &i_face_cog, &i_face_normal);
 
-  cs_glob_mesh->select_i_faces = fvm_selector_create(mesh->dim,
-                                                     mesh->n_i_faces,
-                                                     mesh->class_defs,
-                                                     mesh->i_face_family,
-                                                     1,
-                                                     i_face_cog,
-                                                     i_face_normal);
+    cs_glob_mesh->select_i_faces = fvm_selector_create(mesh->dim,
+                                                       mesh->n_i_faces,
+                                                       mesh->class_defs,
+                                                       mesh->i_face_family,
+                                                       1,
+                                                       i_face_cog,
+                                                       i_face_normal);
 
-  BFT_MALLOC(selected_faces, mesh->n_i_faces, cs_int_t);
+    BFT_MALLOC(selected_faces, mesh->n_i_faces, cs_lnum_t);
 
-  cs_selector_get_i_face_list(criteria,
-                              &n_selected_faces,
-                              selected_faces);
-  cs_create_thinwall(mesh,
-                     selected_faces,
-                     n_selected_faces);
+    cs_selector_get_i_face_list(criteria,
+                                &n_selected_faces,
+                                selected_faces);
+    cs_create_thinwall(mesh,
+                       selected_faces,
+                       n_selected_faces);
 
-  BFT_FREE(i_face_cog);
-  BFT_FREE(i_face_normal);
+    BFT_FREE(i_face_cog);
+    BFT_FREE(i_face_normal);
 
-  mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
-  fvm_selector_destroy(mesh->select_i_faces);
+    mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
+    fvm_selector_destroy(mesh->select_i_faces);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -530,7 +540,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
    *   With periodicity, using a coordinate transformation matrix
    *   in cs_user_mesh_input is preferred. */
 
-  {
+  if (false) {
     cs_lnum_t  vtx_id;
     const double  coo_mult = 1. / 1000.;
 
@@ -558,24 +568,26 @@ cs_user_mesh_smoothe(cs_mesh_t  *mesh)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-  double feature_angle = 25; /* bounded between 0 and 90 degrees */
-  int *vtx_is_fixed = NULL;
+  if (false) {
+    double feature_angle = 25; /* bounded between 0 and 90 degrees */
+    int *vtx_is_fixed = NULL;
 
-  BFT_MALLOC(vtx_is_fixed, mesh->n_vertices, int);
+    BFT_MALLOC(vtx_is_fixed, mesh->n_vertices, int);
 
-  /* Get fixed boundary vertices flag */
+    /* Get fixed boundary vertices flag */
 
-  cs_mesh_smoother_fix_by_feature(mesh,
-                                  feature_angle,
-                                  vtx_is_fixed);
+    cs_mesh_smoother_fix_by_feature(mesh,
+                                    feature_angle,
+                                    vtx_is_fixed);
 
-  /* Call unwarping smoother */
+    /* Call unwarping smoother */
 
-  cs_mesh_smoother_unwarp(mesh, vtx_is_fixed);
+    cs_mesh_smoother_unwarp(mesh, vtx_is_fixed);
 
-  /* Free memory */
+    /* Free memory */
 
-  BFT_FREE(vtx_is_fixed);
+    BFT_FREE(vtx_is_fixed);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

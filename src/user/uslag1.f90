@@ -355,7 +355,7 @@ if (istala.eq.1) then
 
 !    NOMLAG: name of the mean
 !    NOMLAV: name of the variance
-!    ihslag: Output to the probes defined in usini1
+!    ihslag: Output to the probes
 !
 
 !    * CAUTION: respect the apparition order of the statistics

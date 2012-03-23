@@ -28,8 +28,7 @@ subroutine ctini1
 ! Purpose:
 ! --------
 
-! Initialize global settings for cooling towers module
-! in addition to what has been done in usini1.
+! Initialize global settings for cooling towers module.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -141,7 +140,7 @@ call uscti1
 ! Formats
 !--------
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -151,17 +150,17 @@ call uscti1
 '@                                                            ',/,&
 '@  La valeur de ISCALT est renseignee automatiquement.       ',/,&
 '@                                                            ',/,&
-'@  L''utilisateur ne doit pas la renseigner dans usini1, or  ',/,&
+'@  L''utilisateur ne doit pas la renseigner, or              ',/,&
 '@    elle a ete affectee comme suit :                        ',/,&
 '@    ISCALT = ',I10                                           ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1001 format(                                                           &
+ 1001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -171,14 +170,14 @@ call uscti1
 '@                                                            ',/,&
 '@  Les valeurs de ISCSTH sont renseignees automatiquement.   ',/,&
 '@                                                            ',/,&
-'@  L''utilisateur ne doit pas les renseigner dans usini1, or ',/,&
+'@  L''utilisateur ne doit pas les renseigner, or             ',/,&
 '@    pour le scalaire ',I10   ,' correspondant au scalaire   ',/,&
 '@    physique particuliere ',I10   ,' on a                   ',/,&
 '@    ISCSTH(',I10   ,') = ',I10                               ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
+'@  Verifier les parametres.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

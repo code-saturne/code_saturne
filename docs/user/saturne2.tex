@@ -85,8 +85,8 @@ the following data are given:
 \end{list}
 
 The L1 key words can be modifed through the Graphical Use Interface or
-in the \texttt{usini1} subroutine. L2 and L3 key words can only be modified through
-the \texttt{usini1} subroutine, even if they do not appear in the version proposed
+in the \texttt{cs\_user\_parameters.f90} file. L2 and L3 key words can only be modified through
+the \texttt{cs\_user\_parameters.f90} file, even if they do not appear in the version proposed
 as example it the \texttt{SRC/REFERENCE/base} directory.\\
 It is however recommended not to modify the key words which do not belong to the L1
 level.
@@ -354,7 +354,7 @@ always useful if {\tt ichrbo=1}}
 \subsubsection{Chronological records of the variables on specific points}
 %==================================
 
-\minititre{Standard use through Interface or \texttt{usini1}}
+\minititre{Standard use through Interface or \texttt{cs\_user\_parameters.f90}}
 For each quantity (problem unknown, preselected numerical variable or
 preselected physical parameter), the user indicates whether chronological records
 should be generated, the output period and the position of the
@@ -3473,7 +3473,7 @@ generate very large files}}
 {number of particles selected for post-processing display in trajectory or
 movement mode\\
 \texttt{nbvis} must be lower than \texttt{nbpmax} and \texttt{nliste}
-(set to 500 in \texttt{lagpar.h} and
+(set to 500 in \texttt{lagpar} and
 not to be modified)\\
 useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1}
 

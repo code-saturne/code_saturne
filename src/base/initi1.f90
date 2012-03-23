@@ -158,37 +158,35 @@ call fldini
 
 #if defined(_CS_LANG_FR)
 
- 9998 format(                                                           &
-'                                                             ',/,&
-' Pas d erreur detectee lors de la verification des donnees   ',/,&
-'                               (interface, usini1 et autres).',/)
- 9999 format(                                                           &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
+ 9998 format(                                                   /,&
+' Pas d erreur detectee lors de la verification des donnees'   ,/,&
+'               (interface, cs_user_parameters.f90 et autres).',/)
+ 9999 format(                                                     &
+'@'                                                            ,/,&
+'@'                                                            ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    LES PARAMETRES DE CALCUL SONT INCOHERENTS OU INCOMPLETS ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute (',I10,' erreurs).          ',/,&
-'@                                                            ',/,&
-'@  Se reporter aux impressions precedentes pour plus de      ',/,&
-'@    renseignements.                                         ',/,&
-'@  Verifier les donnees entrees dans l''interface, usini1 ou ',/,&
-'@    les autres sous-programmes d''initialisation.           ',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
+'@    ========='                                               ,/,&
+'@    LES PARAMETRES DE CALCUL SONT INCOHERENTS OU INCOMPLETS' ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne sera pas execute (',i10,' erreurs).'          ,/,&
+'@'                                                            ,/,&
+'@  Se reporter aux impressions precedentes pour plus de'      ,/,&
+'@    renseignements.'                                         ,/,&
+'@  Verifier les donnees entrees dans l''interface'            ,/,&
+'@    et dans les sous-programmes utilisateur.'                ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
 
 #else
 
- 9998 format(                                                           &
-''                                                             ,/,&
+ 9998 format(                                                   /,&
 ' No error detected during the data verification'              ,/,&
-'                              (interface, usini1 and others).',/)
- 9999 format(                                                           &
+'                          cs_user_parameters.f90 and others).',/)
+ 9999 format(                                                     &
 '@'                                                            ,/,&
 '@'                                                            ,/,&
 '@'                                                            ,/,&
@@ -198,11 +196,11 @@ call fldini
 '@    ========'                                                ,/,&
 '@    THE CALCULATION PARAMETERS ARE INCOHERENT OR INCOMPLET'  ,/,&
 '@'                                                            ,/,&
-'@  The calculation will not be run (',I10,' errors).'         ,/,&
+'@  The calculation will not be run (',i10,' errors).'         ,/,&
 '@'                                                            ,/,&
 '@  See previous impressions for more informations.'           ,/,&
-'@  Verify the provided data in the interface, usini1 or'      ,/,&
-'@    the other initialization subroutines.'                   ,/,&
+'@  Verify the provided data in the interface'                 ,/,&
+'@    and in user subroutines.'                                ,/,&
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/)

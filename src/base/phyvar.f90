@@ -756,74 +756,74 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
 ' Nb de clippings de la viscosite totale (mu+mu_t>0) :',I10,/)
- 3010 format(                                                           &
+ 3010 format(                                                     &
 ' ---------------------------------                           ',/,&
 ' Propriete  Valeur min  Valeur max                           ',/,&
 ' ---------------------------------                           '  )
- 3011 format(                                                           &
+ 3011 format(                                                     &
  2x,    a8,      e12.4,      e12.4                               )
- 3012 format(                                                           &
+ 3012 format(                                                     &
 ' ---------------------------------                           ',/)
- 3110 format(                                                           &
+ 3110 format(                                                     &
 ' --- Diffusivite :                                           ',/,&
 ' ---------------------------------------                     ',/,&
 ' Scalaire Numero  Valeur min  Valeur max                     ',/,&
 ' ---------------------------------------                     '  )
- 3111 format(                                                           &
+ 3111 format(                                                     &
  1x,    a8,   i7,      e12.4,      e12.4                         )
- 3112 format(                                                           &
+ 3112 format(                                                     &
 ' ---------------------------------------                     ',/)
- 3210 format(                                                           &
+ 3210 format(                                                     &
 ' --- Viscosite de maillage (methode ALE)                     ',/,&
 ' ---------------------------------                           ',/,&
 ' Propriete  Valeur min  Valeur max                           ',/,&
 ' ---------------------------------                           '  )
- 3211 format(                                                           &
+ 3211 format(                                                     &
  2x,    a8,      e12.4,      e12.4                               )
- 3212 format(                                                           &
+ 3212 format(                                                     &
 ' ---------------------------------                           ',/)
 
- 9001  format(                                                          &
+ 9001  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
 '@    =========                                               ',/,&
-'@    INCOHERENCE ENTRE USPHYV ET USINI1 POUR                 ',/,&
+'@    INCOHERENCE ENTRE USPHYV ET LES PARAMETRES              ',/,&
 '@                                          LA MASSE VOLUMIQUE',/,&
 '@                                                            ',/,&
-'@  On a indique dans usini1 que la masse volumique etait     ',/,&
-'@     constante (IROVAR=0) mais on a modifie ses      ',/,&
+'@  On a indique que la masse volumique etait                 ',/,&
+'@     constante (IROVAR=0) mais on a modifie ses             ',/,&
 '@     valeurs aux cellules ou aux faces de bord dans usphyv. ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1 et usphyv.                                ',/,&
+'@  Verifier l''interface, cs_user_parameters.f90, et usphyv. ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9002  format(                                                          &
+ 9002  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
 '@    =========                                               ',/,&
-'@    INCOHERENCE ENTRE USPHYV ET USINI1 POUR                 ',/,&
+'@    INCOHERENCE ENTRE USPHYV ET LES PARAMETRES POUR         ',/,&
 '@                                    LA VISCOSITE MOLECULAIRE',/,&
 '@                                                            ',/,&
-'@  On a indique dans usini1 que la viscosite moleculaire     ',/,&
+'@  On a indique que la viscosite moleculaire                 ',/,&
 '@     etait constante (IVIVAR=0) mais on a modifie ses',/,&
 '@     valeurs aux cellules dans usphyv.                      ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usini1 et usphyv.                                ',/,&
+'@  Verifier l''interface, cs_user_parameters.f90, et usphyv. ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9003  format(                                                          &
+ 9003  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -844,7 +844,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9011  format(                                                          &
+ 9011  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -862,7 +862,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9012  format(                                                          &
+ 9012  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -881,7 +881,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 9111  format(                                                          &
+ 9111  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -900,7 +900,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9211  format(                                                          &
+ 9211  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -917,7 +917,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9999 format(                                                           &
+ 9999 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -938,73 +938,73 @@ endif
 
 #else
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
 ' Nb of clippings for the effective viscosity (mu+mu_t>0):',I10,/)
- 3010 format(                                                           &
+ 3010 format(                                                     &
 ' ---------------------------------                           ',/,&
 ' Property   Min. value  Max. value                           ',/,&
 ' ---------------------------------                           '  )
- 3011 format(                                                           &
+ 3011 format(                                                     &
  2x,    a8,      e12.4,      e12.4                               )
- 3012 format(                                                           &
+ 3012 format(                                                     &
 ' ---------------------------------                           ',/)
- 3110 format(                                                           &
+ 3110 format(                                                     &
 ' --- Diffusivity:                                            ',/,&
 ' ---------------------------------------                     ',/,&
 ' Scalar   Number  Min. value  Max. value                     ',/,&
 ' ---------------------------------------                     '  )
- 3111 format(                                                           &
+ 3111 format(                                                     &
  1x,    a8,   i7,      e12.4,      e12.4                         )
- 3112 format(                                                           &
+ 3112 format(                                                     &
 ' ---------------------------------------                     ',/)
- 3210 format(                                                           &
+ 3210 format(                                                     &
 ' --- Mesh viscosity (ALE method)                             ',/,&
 ' ---------------------------------                           ',/,&
 ' Property   Min. value  Max. value                           ',/,&
 ' ---------------------------------                           '  )
- 3211 format(                                                           &
+ 3211 format(                                                     &
  2x,    a8,      e12.4,      e12.4                               )
- 3212 format(                                                           &
+ 3212 format(                                                     &
 ' ---------------------------------                           ',/)
 
- 9001  format(                                                          &
+ 9001  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
 '@    ========                                                ',/,&
-'@    INCOHERENCY BETWEEN USPHYV AND USINI1 FOR THE DENSITY   ',/,&
+'@    INCOHERENCY BETWEEN PARAMETERS FOR THE DENSITY.         ',/,&
 '@                                                            ',/,&
-'@  The density has been declared constant in usini1          ',/,&
-'@     (IROVAR=0) but its value has been modified      ',/,&
+'@  The density has been declared constant                    ',/,&
+'@     (IROVAR=0) but its value has been modified             ',/,&
 '@     in cells of at boundary faces in usphyv.               ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify usini1 and usphyv.                                 ',/,&
+'@  Check the interface, cs_user_parameters.f90, and usphyv   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9002  format(                                                          &
+ 9002  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
 '@    ========                                                ',/,&
-'@    INCOHERENCY BETWEEN USPHYV AND USINI1 FOR               ',/,&
+'@    INCOHERENCY BETWEEN USPHYV AND PARAMETERS FOR           ',/,&
 '@                                     THE MOLECULAR VISCOSITY',/,&
 '@                                                            ',/,&
-'@  The molecular viscosity has been declared constant in     ',/,&
-'@     usini1 (IVIVAR=0) but its value has been        ',/,&
-'@     modified in cells or at boundary faces in usphyv.      ',/,&
+'@  The molecular viscosity has been declared constant        ',/,&
+'@     (IVIVAR=0) but its value has been  modified in cells   ',/,&
+'@     or at boundary faces in usphyv.                        ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify usini1 and usphyv.                                 ',/,&
+'@  Check the interface, cs_user_parameters.f90, and usphyv   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9003  format(                                                          &
+ 9003  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1024,7 +1024,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9011  format(                                                          &
+ 9011  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1042,7 +1042,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9012  format(                                                          &
+ 9012  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1060,7 +1060,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 9111  format(                                                          &
+ 9111  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1079,7 +1079,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9211  format(                                                          &
+ 9211  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1095,7 +1095,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9999 format(                                                           &
+ 9999 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
