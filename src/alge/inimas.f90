@@ -26,7 +26,7 @@
 
 !> \file inimas.f90
 !>
-!> \brief This function add \f$ \rho \vect{u} \cdot \vect{S}_\ij\f$ to the mass
+!> \brief This function adds \f$ \rho \vect{u} \cdot \vect{S}_\ij\f$ to the mass
 !> flux \f$ \dot{m}_\fij \f$ for the segregated algorithm on the velocity
 !> components.
 !>

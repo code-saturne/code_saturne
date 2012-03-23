@@ -20,6 +20,62 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file matrxv.f90
+!>
+!> \brief This function builds the matrix of advection/diffusion.
+!>
+!> The advection is upwind, the diffusion is not reconstructed.
+!> The matrix is splitted into a diagonal block (3x3 times number of cells)
+!> and an extra diagonal part (of dimension 2 time the number of internal
+!> faces).
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     nfac          number of interior faces
+!> \param[in]     nfabor        number of boundary faces
+!> \param[in]     iconvp        indicator
+!>                               - 1 advection
+!>                               - 0 otherwise
+!> \param[in]     idiffp        indicator
+!>                               - 1 diffusion
+!>                               - 0 otherwise
+!> \param[in]     ndircp        indicator
+!>                               - 0 if the diagonal stepped aside
+!> \param[in]     isym          indicator
+!>                               - 1 symmetric matrix
+!>                               - 2 non symmmetric matrix
+!> \param[in]     thetap        weightening coefficient for the theta-schema,
+!>                               - thetap = 0: explicit scheme
+!>                               - thetap = 0.5: time-centred
+!>                               scheme (mix between Crank-Nicolson and
+!>                               Adams-Bashforth)
+!>                               - thetap = 1: implicit scheme
+!> \param[in]     ifacel        cell indexes of interior faces
+!> \param[in]     ifabor        no de l'elt voisin d'une face de bord
+!> \param[in]     coefbu        boundary condition array for the variable
+!>                               (Impplicit part - 3x3 tensor array)
+!> \param[in]     cofbfu        boundary condition array for the variable flux
+!>                               (Impplicit part - 3x3 tensor array)
+!> \param[in]     flumas        mass flux at interior faces
+!> \param[in]     flumab        mass flux at border faces
+!> \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+!>                               at interior faces for the matrix
+!> \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+!>                               at border faces for the matrix
+!> \param[out]    da            diagonal part of the matrix
+!> \param[out]    xa            extra interleaved diagonal part of the matrix
+!_______________________________________________________________________________
+
 subroutine matrxv &
 !================
 
@@ -29,54 +85,6 @@ subroutine matrxv &
    ifacel , ifabor ,                                              &
    coefbu , cofbfu , fimp   , flumas , flumab , viscf  , viscb  , &
    da     , xa     )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! CONSTRUCTION DE LA MATRICE DE CONVECTION UPWIND/DIFFUSION/TS DE LA VITESSE
-
-!     IL EST INTERDIT DE MODIFIER FIMP   ICI
-
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! iconvp           ! e  ! <-- ! indicateur = 1 convection, 0 sinon             !
-! idiffp           ! e  ! <-- ! indicateur = 1 diffusion , 0 sinon             !
-! ndircp           ! e  ! <-- ! indicateur = 0 si decalage diagonale           !
-! isym             ! e  ! <-- ! indicateur = 1 matrice symetrique              !
-!                  !    !     !              2 matrice non symetrique          !
-! thetap           ! r  ! <-- ! coefficient de ponderation pour le             !
-!                  !    !     ! theta-schema (on ne l'utilise pour le          !
-!                  !    !     ! moment que pour u,v,w et les scalaire          !
-!                  !    !     ! - thetap = 0.5 correspond a un schema          !
-!                  !    !     !   totalement centre en temps (mixage           !
-!                  !    !     !   entre crank-nicolson et adams-               !
-!                  !    !     !   bashforth)                                   !
-! ifacel(2,nfac)   ! te ! <-- ! no des elts voisins d'une face intern          !
-! ifabor(nfabor)   ! te ! <-- ! no de l'elt voisin d'une face de bord          !
-! coefbu(3,3,nfabor! tr ! <-- ! tab b des cl pour la vitesse                   !
-! cofbfu(3,3,nfabor! tr ! <-- ! tab b des cl de flux pour la vitesse           !
-! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
-! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
-! viscf(nfac)      ! tr ! <-- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! <-- ! visc*surface/dist aux faces de bord            !
-! da (3,3,ncelet)  ! tr ! --> ! partie diagonale de la matrice                 !
-! xa (*,nfac)      ! tr ! --> ! extra interleaved diagonale de la matrice      !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -109,7 +117,7 @@ double precision flui,fluj,epsi
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 if(isym.ne.1.and.isym.ne.2) then
@@ -148,7 +156,7 @@ else
 endif
 
 !===============================================================================
-! 2.    CALCUL DES TERMES EXTRADIAGONAUX
+! 2. Computation of extradiagonal terms
 !===============================================================================
 
 if(isym.eq.2) then
@@ -170,7 +178,7 @@ else
 endif
 
 !===============================================================================
-! 3.     CONTRIBUTION DES TERMES X-TRADIAGONAUX A LA DIAGONALE
+! 3. Contribution of the extra-diagonal terms to the diagonal
 !===============================================================================
 
 if(isym.eq.2) then
@@ -199,7 +207,7 @@ else
 endif
 
 !===============================================================================
-! 4.     CONTRIBUTION DES FACETTES DE BORDS A LA DIAGONALE
+! 4. Contribution of border faces to the diagonal
 !===============================================================================
 
 do ifac = 1,nfabor
@@ -225,8 +233,8 @@ enddo
 
 
 !===============================================================================
-! 5.  NON PRESENCE DE PTS DIRICHLET --> LEGER RENFORCEMENT DE LA
-!     DIAGONALE POUR DECALER LE SPECTRE DES VALEURS PROPRES
+! 5. If no Dirichlet condition, the diagonal is slightly increased so that
+!    the eigenvalues are stepped aside
 !===============================================================================
 !     (si IDIRCL=0, on a force NDIRCP a valoir au moins 1 pour ne pas
 !      decaler la diagonale)
@@ -240,7 +248,7 @@ if ( ndircp.le.0 ) then
 endif
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -280,7 +288,7 @@ endif
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return
