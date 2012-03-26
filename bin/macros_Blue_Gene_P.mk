@@ -168,7 +168,8 @@ ESSL     = -L/opt/ibmmath/essl/4.4/lib -lesslbg -lesslsmpbg
 
 # Base libraries (always used)
 
-LIBBASIC = $(ZLIB) -Wl,--allow-multiple-definition $(MASS) $(ESSL) $(TRACE)
+LIBBASIC = $(ZLIB) -Wl,--allow-multiple-definition $(MASS) $(ESSL) $(TRACE) \
+           /bgsys/drivers/V1R4M2_200_2010-100508P/ppc/gnu-linux/powerpc-bgp-linux/lib/libstdc++.a
 
 # Libraries in production mode
 
