@@ -48,6 +48,8 @@ rootNode = None
 import os, sys, string, unittest, logging
 from types import StringType, UnicodeType, FloatType, IntType
 from xml.dom.minidom import Document, parse, parseString, Node
+from xml.sax.handler import ContentHandler
+from xml.sax import make_parser
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -63,6 +65,30 @@ logging.basicConfig()
 log = logging.getLogger("XMLengine")
 #log.setLevel(logging.NOTSET)
 log.setLevel(GuiParam.DEBUG)
+
+#-------------------------------------------------------------------------------
+# Checker of XML file syntax
+#-------------------------------------------------------------------------------
+
+def xmlChecker(filename):
+    """Try to open the xml file, and return a message if an error occurs.
+
+    @param filename name of the file of parameters ith its absolute path
+    @return m error message
+    """
+    m = ""
+
+    try:
+        p = make_parser()
+        p.setContentHandler(ContentHandler())
+        p.parse(filename)
+    except Exception, e:
+        f = os.path.basename(filename)
+        m = "%s file reading error. \n\n"\
+            "This file is not in accordance with XML specifications.\n\n"\
+            "The parsing syntax error is:\n\n%s" % (f, e)
+
+    return m
 
 #-------------------------------------------------------------------------------
 # Simple class wich emulate a basic dictionary, but allows to make
@@ -1554,305 +1580,6 @@ def runTest():
     print("XMLengineTestCase to be completed...")
     runner = unittest.TextTestRunner()
     runner.run(suite())
-
-
-#-------------------------------------------------------------------------------
-# Check XML file
-#-------------------------------------------------------------------------------
-
-
-# A "Well Formed" XML document is a document that conforms to the XML
-# syntax rules that we described in the previous chapter.
-#
-# A "Valid" XML document is a "Well Formed" XML document which conforms to the
-# rules of a Document Type Definition (DTD).
-#
-# This small script will check whether one or more XML documents are well-formed.
-#
-# This uses the SAX API with a "dummy" ContentHandler that does nothing.
-# It parses the whole document and throws an exception if there is an error.
-# The exception will be caught and printed like this:
-#
-# $ python wellformed.py test.xml
-# test.xml is NOT well-formed! test.xml:1002:2: mismatched tag
-#
-# This means that character 2 on line 1002 has a mismatched tag.
-#
-# The script will not check adherence to a DTD or schema.
-#(Code from: aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52256)
-
-from xml.sax.handler import ContentHandler
-from xml.sax import make_parser
-
-class XMLchek:
-    def __call__(self, filename):
-        try:
-            self.parsefile(filename)
-            print("%s is well-formed" % filename)
-        except Exception, e:
-            print("%s is NOT well-formed! %s" % (filename, e))
-            sys.exit(0)
-
-    def parsefile(self, file):
-        parser = make_parser()
-        parser.setContentHandler(ContentHandler())
-        parser.parse(file)
-
-
-
-#-------------------------------------------------------------------------------
-# Archives :
-#-------------------------------------------------------------------------------
-#
-##This module defines a Lightweight XML constructor and reader.
-##Here is a very easy solution, that doesn't offer all capabilities of XML
-##but sufficient stuff for creating valid XML outputs and read them later.
-##The central class is XMLElement, even the XMLDocument derives from that.
-##This module also handles the encoding in quite an easy way, that's usefull
-##if you don't like to use unicode data.
-##(Code stolen from: aspn.activestate.com/ASPN/Cookbook/Python/Recipe/157358)
-##
-##from xml.dom.minidom import Document, parse, parseString
-##from types import StringType, UnicodeType
-##import string
-##
-##enc = "iso-8859-1"
-##
-##def _encode(v):
-##    if isinstance(v, UnicodeType):
-##        v = v.encode(enc)
-##    return v
-##
-##class XMLElement:
-##
-##    def __init__(self, doc, el):
-##        self.doc = doc
-##        self.el = el
-##
-##    def __getitem__(self, name):
-##        a = self.el.getAttributeNode(name)
-##        if a:
-##            return _encode(a.value)
-##        return None
-##
-##    def __setitem__(self, name, value):
-##        self.el.setAttribute(name, _encode(value))
-##
-##    def __delitem__(self, name):
-##        self.el.removeAttribute(name)
-##
-##    def __str__(self):
-##        return _encode(self.doc.toprettyxml())
-##
-##    def toString(self):
-##        return _encode(self.doc.toxml())
-##
-##    def _inst(self, el):
-##        return XMLElement(self.doc, el)
-##
-##    def get(self, name, default=None):
-##        a = self.el.getAttributeNode(name)
-##        if a:
-##            return _encode(a.value)
-##        return _encode(default)
-##
-##    def add(self, tag, **kwargs):
-##        el = self.doc.createElement(tag)
-##        for k, v in kwargs.items():
-##            el.setAttribute(k, _encode(str(v)))
-##        return self._inst(self.el.appendChild(el))
-##
-##    def addText(self, data):
-##        return self._inst(
-##            self.el.appendChild(
-##                self.doc.createTextNode(_encode(data))))
-##
-##    def addComment(self, data):
-##        return self._inst(
-##            self.el.appendChild(
-##                self.doc.createComment(data)))
-##
-##    def getText(self, sep=" "):
-##        rc = []
-##        for node in self.el.childNodes:
-##            if node.nodeType == node.TEXT_NODE:
-##                rc.append(node.data)
-##        return _encode(string.join(rc, sep))
-##
-##    def getAll(self, tag):
-##        return map(self._inst, self.el.getElementsByTagName(tag))
-##
-##class _Document(Document):
-##
-##    def writexml(self, writer, indent="", addindent="", newl=""):
-##        writer.write('<?xml version="2.0" encoding="%s" ?>\n' % enc)
-##        for node in self.childNodes:
-##            node.writexml(writer, indent, addindent, newl)
-##
-##class XMLDocument(XMLElement):
-##
-##    def __init__(self, tag=None, **kwargs):
-##        self.doc  = _Document()
-##        XMLElement.__init__(self, self.doc, self.doc)
-##        if tag:
-##            self.el = self.add(tag, **kwargs).el
-##
-##    def parse(self, d):
-##        self.doc = self.el = parse(d)
-##        return self
-##
-##    def parseString(self, d):
-##        self.doc = self.el = parseString(_encode(d))
-##        return self
-##
-##if __name__=="__main__":
-##
-##    # Example of dumping a database structure
-##    doc = XMLDocument("database", name="testdb")
-##    table = doc.add("table", name="test")
-##    table.add("field", name="counter", type="int")
-##    table.add("field", name="name", type="varchar")
-##    table.add("field", name="info", type="text")
-##    print(doc)
-##
-##    # Simulate reading a XML file
-##    ndoc = XMLDocument()
-##    ndoc.parseString(str(doc))
-##    root = ndoc.getAll("database")
-##    if root:
-##        db = root[0]
-##        print("Database:", db["name"])
-##        for table in db.getAll("table"):
-##            print("  Table:", table["name"])
-##            for field in db.getAll("field"):
-##                print("    Field:", field["name"], "- Type:", field["type"])
-##
-##    # It's object oriented
-##    print(XMLDocument("notice").add("text",format="plain").addText("Some text"))
-#
-#-------------------------------------------------------------------------------
-# Testing part
-#-------------------------------------------------------------------------------
-
-
-if __name__ == "__main__":
-    runTest()
-    sys.exit(0)
-
-
-    print("------------------------------------------------------")
-    print("    Lightweight XML constructor and reader testing")
-    print("------------------------------------------------------\n")
-
-    # Example of dumping a database structure
-    #
-    xmldoc = XMLDocument("", "", "database", name="testdb")
-    print("XMLDocument:\n", xmldoc)
-
-    table = xmldoc.xmlAddChild("table", name="test")
-    table.xmlAddChild("field", name="counter", type="int")
-    table.xmlAddChild("field", name="name", type="varchar")
-    table.xmlAddChild("field", name="info", type="text")
-    print("table:\n", table)
-
-    print("name:", table.xmlGetAttribute("name"))
-    table.xmlDelAttribute("name")
-    table.xmlCreateAttribute(truc="super", toto="méga")
-    table.xmlCreateAttribute(name="atchoum")
-    for field in table.xmlGetNodeList("field", "name", "type", type="text"):
-        print("field:", field.toString())
-    print("truc:", table.xmlGetAttribute("truc"))
-    #table.xmlGetAttribute("tru") # Uncomment this line for testing
-    l = table.xmlGetNodeList("camion", "jacky", moquette="moche")
-    if not l:
-        l = table.xmlAddChild("camion", jacky="", moquette="moche")
-        print("child:", l.toString())
-    l = table.xmlInitNodeList("camion", "jacky", moquette="bêlle")[0]
-    print("child:", l.toString())
-
-    l.xmlSetData("camion", "rétro")
-    l.xmlSetData("camion", "chèvre")
-    for i in table.xmlGetNodeList("camion"):
-        print("List camion :", i.toString(), "\n")
-    for i in table.xmlGetChildNodeList("camion"):
-        print("Child camion:", i.toString(), "\n")
-
-    table.xmlAddComment("Ceci est un commentaire")
-    table.xmlInitNodeList('scalar', 'roue', 'box', auto='yes', type='model')
-    table.xmlInitNodeList('scalar', 'roue', 'box', 'auto', type='model')
-
-    chaise = xmldoc.xmlAddChild("chaise", name="test")
-    chaise.xmlChildsCopy(table)
-    l = chaise.xmlGetNodeList("camion", "jacky", "moquette")
-    for camion in l:
-        camion.xmlDelAttribute("moquette")
-        camion.xmlSetAttribute(jacky="riton")
-    chaise.xmlGetNodeList("camion")[1].xmlRemoveChild("moumoutte")
-    chaise.xmlRemoveNode()
-
-    chaise = xmldoc.xmlAddChild("chaise", name="test")
-    p = chaise.xmlSetData("pieds", 4)
-    print(p[0].toString())
-    print(chaise.xmlGetStringList("pieds"))
-    print(chaise.xmlGetIntList("pieds"))
-    print(chaise.xmlGetString("pieds"))
-    print(chaise.xmlGetInt("pieds"))
-    print(chaise.xmlGetDouble("pieds"))
-    print(p[0].xmlGetTextNode())
-
-    print(xmldoc)
-
-    # Direct acces to node's methods
-    #print(dir(xmldoc.doc.documentElement))
-    #print(_encode(xmldoc.doc.documentElement.toxml()))
-    #print(_encode(xmldoc.doc.documentElement.childNodes[0].childNodes[2].attributes.get("name").value))
-    #print(_encode(xmldoc.doc.firstChild.firstChild.childNodes[1].attributes.items()))
-    #print(dir(xmldoc.doc.firstChild.firstChild.childNodes[1].attributes))
-
-    # Simulate reading a XML file
-    ndoc = XMLDocument("", "")
-    print("XML DOC:", ndoc.toString())
-    ndoc.parseString(str(xmldoc))
-    print("XML DOC:", ndoc.toString())
-    root = ndoc.xmlGetNodeList("database")
-    if root:
-        db = root[0]
-        print("Database:", db.xmlGetAttribute("name"))
-        for table in db.xmlGetNodeList("table"):
-            print("  Table:", table.xmlGetAttribute("name"))
-            for field in table.xmlGetNodeList("field"):
-                print("    Field:", field.xmlGetAttribute("name"), \
-                      "- Type:", field.xmlGetAttribute("type"))
-
-
-    ndoc.parseString('<?xml version="2.0" encoding="utf-8" ?><foo><baré/></foo>')
-    print("1 XML DOC:\n", ndoc)
-
-    ndoc.parse("../misc/foo.txt")
-    print("2 XML DOC:\n", ndoc)
-
-
-    print("------------------------------------------------------")
-    print("        Case class testing")
-    print("------------------------------------------------------\n")
-
-    case = Case()
-    case['new'] = 'toto'
-    print("case:", case['new'])
-    models = case.xmlGetNodeList('thermophysical_models')[0]
-    models = case.xmlInitNodeList('thermophysical_models')[0]
-    #print("models :", dir(models))
-    variables = models.xmlGetNodeList('variable')
-    for var in variables:
-        name = var['name']
-        print(var.toString(), name)
-        var['label'] = name
-        #var.xmlSetAttribute(label='truc')
-
-    #print(case)
-    #case.xmlRemoveChild('variable')
-    #print(case)
-
 
 #-------------------------------------------------------------------------------
 # End of XMLengine

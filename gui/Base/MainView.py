@@ -471,20 +471,39 @@ class MainView(object):
         fn = os.path.basename(file_name)
         log.debug("loadFile -> %s" % file_name)
 
+        # XML syntax checker
+
+        msg =  XMLengine.xmlChecker(file_name)
+        if msg:
+            title = self.tr("File of parameters reading error")
+            QMessageBox.critical(self, title, msg)
+            return
+
         # Instantiate a new case
 
         try:
             self.case = XMLengine.Case(package=self.package, file_name=file_name)
         except:
-            err = QErrorMessage(self)
-            msg = self.tr("XML file reading error. "\
-                          "This file is not in accordance with XML "\
-                          "specifications. Please correct it and verify "\
-                          "it with XMLcheck tool.")
-            err.showMessage(msg)
+            title = self.tr("File of parameters reading error")
+            msg = self.tr("This file is not in accordance with XML specifications.")
+            QMessageBox.critical(self, title, msg)
             if hasattr(self, 'case'):
                 delattr(self, 'case')
             return
+
+        # Check if the root node is the good one
+
+        if self.case.xmlRootNode().tagName != self.package.code_name + "_GUI":
+            title = self.tr("File of parameters reading error")
+            msg = self.tr("This file seems not to be a %s file of parameters.\n\n"  \
+                          "XML root node found: %s" % \
+                          (self.package.code_name, self.case.xmlRootNode().tagName))
+            QMessageBox.critical(self, title, msg)
+            if hasattr(self, 'case'):
+                delattr(self, 'case')
+            return
+
+        # All checks are fine, wan can continue...
 
         self.addRecentFile(fn)
 
