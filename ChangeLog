@@ -1,5 +1,8 @@
-* 20/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+* 26/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Release of Code_Saturne 2.0.5.
+
+ 26/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix array index bug for radiative transfer using GUI.
 
 * 05/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Update external library versions and comments in the installer.
