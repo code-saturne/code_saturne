@@ -394,7 +394,7 @@ class MainView(object):
         """
         if not hasattr(self, 'case'):
             self.case = XMLengine.Case(package=self.package)
-            self.case.root()['version'] = XML_DOC_VERSION
+            self.case.root()['version'] = self.XML_DOC_VERSION
             self.initCase()
             title = self.tr("New parameters set") + \
                      " - " + self.tr(self.package.code_name) + self.tr(" GUI")
@@ -457,6 +457,22 @@ class MainView(object):
             self.loadFile(file_name)
 
 
+    def loadingAborted(self, msg, fn):
+        """Show a message window dialog.
+        Delete the case if it is already loaded, but non conformal.
+
+        @param msg text to display in the popup window
+        @param fn name of the file pf parameters
+        """
+        msg += self.tr("\n\nThe loading of %s is aborted." % fn)
+        title = self.tr("File of parameters reading error")
+
+        QMessageBox.critical(self, title, msg)
+
+        if hasattr(self, 'case'):
+            delattr(self, 'case')
+
+
     def loadFile(self, file_name=None):
         """
         Private method
@@ -475,8 +491,7 @@ class MainView(object):
 
         msg =  XMLengine.xmlChecker(file_name)
         if msg:
-            title = self.tr("File of parameters reading error")
-            QMessageBox.critical(self, title, msg)
+            self.loadingAborted(msg, fn)
             return
 
         # Instantiate a new case
@@ -484,33 +499,37 @@ class MainView(object):
         try:
             self.case = XMLengine.Case(package=self.package, file_name=file_name)
         except:
-            title = self.tr("File of parameters reading error")
             msg = self.tr("This file is not in accordance with XML specifications.")
-            QMessageBox.critical(self, title, msg)
-            if hasattr(self, 'case'):
-                delattr(self, 'case')
+            self.loadingAborted(msg, fn)
             return
 
         # Check if the root node is the good one
 
         if self.case.xmlRootNode().tagName != self.package.code_name + "_GUI":
-            title = self.tr("File of parameters reading error")
             msg = self.tr("This file seems not to be a %s file of parameters.\n\n"  \
                           "XML root node found: %s" % \
                           (self.package.code_name, self.case.xmlRootNode().tagName))
-            QMessageBox.critical(self, title, msg)
-            if hasattr(self, 'case'):
-                delattr(self, 'case')
+            self.loadingAborted(msg, fn)
+            return
+
+        if self.case.root()['version'] != self.XML_DOC_VERSION:
+            msg = self.tr("The syntax version %s of this file of parameters does\n" \
+                          "not match with the version required y the GUI: %s." %    \
+                          (self.case.root()['version'], self.XML_DOC_VERSION) )
+            self.loadingAborted(msg, fn)
+            return
+
+        # Cleaning the '\n' and '\t' from file_name (except in formula)
+        self.case.xmlCleanAllBlank(self.case.xmlRootNode())
+
+        msg = self.initCase()
+        if msg:
+            self.loadingAborted(msg, fn)
             return
 
         # All checks are fine, wan can continue...
 
         self.addRecentFile(fn)
-
-        # Cleaning the '\n' and '\t' from file_name (except in formula)
-        self.case.xmlCleanAllBlank(self.case.xmlRootNode())
-
-        self.initCase()
         self.Browser.configureTree(self.case)
         self.dockWidgetBrowserDisplay(True)
 
@@ -868,12 +887,12 @@ class MainView(object):
          - version
          - contact
         """
-        msg = self.package.code_name + "\n"                      +\
+        msg = self.package.code_name + "\n"                 +\
               "version " + self.package.version + "\n\n"    +\
-              "For information about this application "  +\
-              "please contact:\n\n"                      +\
+              "For information about this application "     +\
+              "please contact:\n\n"                         +\
               self.package.bugreport + "\n\n"               +\
-              "Please visit our site:\n"                 +\
+              "Please visit our site:\n"                    +\
               self.package.url
         QMessageBox.about(self, self.package.name + ' Interface', msg)
 
@@ -980,12 +999,14 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.batch_lines = []
         self.package     = cmd_package
 
+        self.XML_DOC_VERSION = XML_DOC_VERSION
+
         self.Browser = BrowserView()
         self.ui_initialize()
 
-        self.connect(self.displayCSManualAction,  SIGNAL("activated()"), self.displayCSManual)
+        self.connect(self.displayCSManualAction,   SIGNAL("activated()"), self.displayCSManual)
         self.connect(self.displayCSTutorialAction, SIGNAL("activated()"), self.displayCSTutorial)
-        self.connect(self.displayCSKernelAction,  SIGNAL("activated()"), self.displayCSKernel)
+        self.connect(self.displayCSKernelAction,   SIGNAL("activated()"), self.displayCSKernel)
         self.connect(self.displayCSRefcardAction,  SIGNAL("activated()"), self.displayCSRefcard)
 
 
@@ -994,16 +1015,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         Initializes the new case with default xml nodes.
         If previous case, just check if all mandatory nodes exist.
         """
-        try:
-            XMLinit(self.case)
-        except:
-            err = QErrorMessage(self)
-            msg = self.tr("XML file reading error. "\
-                          "Perhaps the version of the file is to old.")
-            err.showMessage(msg)
-            if hasattr(self, 'case'):
-                delattr(self, 'case')
-            return
+        return XMLinit(self.case).initialize()
 
 
     def displayWelcomePage(self):

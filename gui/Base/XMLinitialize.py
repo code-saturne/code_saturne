@@ -35,16 +35,12 @@ This module contains the following classe:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-
 import sys, unittest
-
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
-
-from Base.Common import XML_DOC_VERSION
 from Base.XMLvariables import Variables
 from Base import Toolbox
 
@@ -62,11 +58,9 @@ from Pages.ElectricalModelsModel import ElectricalModel
 from Pages.GasCombustionModel import GasCombustionModel
 from Pages.ThermalRadiationModel import ThermalRadiationModel
 
-
 #-------------------------------------------------------------------------------
 # class XMLinit
 #-------------------------------------------------------------------------------
-
 
 class XMLinit(Variables):
     """
@@ -76,19 +70,18 @@ class XMLinit(Variables):
         """
         """
         self.case = case
-        self.root = self.case.root()
 
-        if self.root['version'] != XML_DOC_VERSION:
-            msg = "The version of the loaded case is to old: %s.\n"\
-                  "The minimum version required is: %s." % \
-                  (self.root['version'], XML_DOC_VERSION)
-            raise ValueError(msg)
 
-        # Verify that all Heading exist only once in the XMLDocument.
-        # Create the missing heading.
+    def initialize(self):
+        """
+        Verify that all Heading exist only once in the XMLDocument and
+        create the missing heading.
+        """
+        msg = self.__initHeading()
+        if msg:
+            return msg
 
-        self.initHeading()
-        self.backwardCompatibility()
+        self.__backwardCompatibility()
 
         # Initialization (order is important, see turbulenceModelsList method)
 
@@ -150,18 +143,14 @@ class XMLinit(Variables):
         ElectricalModel(self.case).getElectricalModel()
         ThermalRadiationModel(self.case).getRadiativeModel()
 
-
-    def _errorExit(self, msg):
-        """
-        """
-        print('XML ERROR')
-        raise ValueError(msg)
+        return msg
 
 
-    def initHeading(self):
+    def __initHeading(self):
         """
         Create if necessary headings from the root element of the case.
         """
+        msg = ""
         tagList = ('solution_domain',
                    'thermophysical_models',
                    'numerical_parameters',
@@ -172,25 +161,25 @@ class XMLinit(Variables):
                    'calculation_management')
 
         for tag in tagList:
-            nodeList = self.root.xmlInitChildNodeList(tag)
+            nodeList = self.case.root().xmlInitChildNodeList(tag)
 
             if len(nodeList) > 1:
-                msg = "There is an error with the use of the initHeading method. "\
-                      "There is more than one occurence of the tag: \n\n" + tag + \
+                msg = "There is an error with the use of the initHeading method. " \
+                      "There is more than one occurence of the tag: \n\n" + tag +  \
                       "\n\nThe application will finish. Sorry."
-                self._errorExit(msg)
 
         for tag in tagList:
             nodeList = self.case.xmlInitNodeList(tag)
 
             if len(nodeList) > 1:
-                msg = "There is an error with the use of the initHeading method. "\
-                      "There is more than one occurence of the tag: \n\n" + tag + \
+                msg = "There is an error with the use of the initHeading method. " \
+                      "There is more than one occurence of the tag: \n\n" + tag +  \
                       "\n\nThe application will finish. Sorry."
-                self._errorExit(msg)
+
+        return msg
 
 
-    def backwardCompatibility(self):
+    def __backwardCompatibility(self):
         """
         Change XML in order to ensure backward compatibility.
         """
@@ -319,8 +308,7 @@ class XMLinitTestCase(unittest.TestCase):
         '<calculation_management/>'\
         '</Code_Saturne_GUI>'
 
-        XMLinit(self.case)
-##        print(self.case.root())
+        XMLinit(self.case).initialize()
 
         assert self.case.root() == self.xmlNodeFromString(doc), \
                'Could not use the constructor of the XMLinit class'
