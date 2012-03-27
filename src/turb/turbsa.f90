@@ -456,7 +456,7 @@ if (isto2t.gt.0) then
     rhssa(iel) = tsimp(iel)*rtpa(iel,inusa) + rhssa(iel)
 
     ! --- Implicit user source terms
-    ! Her it is assumed that -tsimp > 0. That is why it is implicited
+    ! Here it is assumed that -tsimp > 0. That is why it is implicited
     tinssa(iel) = tinssa(iel) - tsimp(iel)*thetv
 
   enddo

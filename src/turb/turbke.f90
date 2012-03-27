@@ -20,6 +20,46 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file turbke.f90
+!>
+!> \brief Solving the \f$ k - \epsilon \f$ for incompressible flows or slightly
+!> compressible flows for one time step.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     icepdc        index of the ncepdp cells with head loss
+!> \param[in]     icetsm        index of cells with mass source term
+!> \param[in]     itypsm        mass source type for the variables (cf. ustsma)
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rtp           calculated variables at cell centers
+!>                               (at the current time step)
+!> \param[in]     rtpa          calculated variables at cell centers
+!>                               (at the previous time step)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     tslagr        coupling term of the lagangian module
+!> \param[in]     coefa, coefb  boundary conditions
+!>
+!> \param[in]     ckupdc        work array for the head loss
+!> \param[in]     smacel        values of the variables associated to the
+!>                               mass source
+!>                               (for ivar=ipr, smacel is the mass flux)
+!> \param[in]     prdv2f        production term stored for the v2f
+!_______________________________________________________________________________
+
 subroutine turbke &
 !================
 
@@ -29,49 +69,6 @@ subroutine turbke &
    tslagr , coefa  , coefb  , ckupdc , smacel ,                   &
    prdv2f )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! RESOLUTION DES EQUATIONS K-EPS 1 PHASE INCOMPRESSIBLE OU
-! RHO VARIABLE SUR UN PAS DE TEMPS
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,*)        !    !     !     lagrangien                                 !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! prdv2f(ncelet    ! tr ! <-- ! tableau de stockage du terme de                !
-!                  !    !     ! prod de turbulence pour le v2f                 !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -144,12 +141,12 @@ logical          ilved
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: viscf, viscb
-double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:) :: usimpk
 double precision, allocatable, dimension(:) :: smbrk, smbre, rovsdt
 double precision, allocatable, dimension(:) :: tinstk, tinste, divu
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5
-double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w7, w8, usimpe
 double precision, allocatable, dimension(:) :: w10, w11, w12
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:,:,:), allocatable :: gradv
@@ -157,19 +154,19 @@ double precision, dimension(:,:,:), allocatable :: gradv
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet))
 allocate(smbrk(ncelet), smbre(ncelet), rovsdt(ncelet))
 allocate(tinstk(ncelet), tinste(ncelet), divu(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(usimpk(ncelet))
+allocate(w7(ncelet), w8(ncelet), usimpe(ncelet))
 
 if (iturb.eq.51) then
   allocate(w10(ncelet),w11(ncelet))
@@ -219,16 +216,16 @@ if(iwarni(ik).ge.1) then
   endif
 endif
 
-!     Pour la prod lineaire on a besoin de SQRT(Cmu)
+! For the model with linear production, sqrt(Cmu) is required
 sqrcmu = sqrt(cmu)
 
 !===============================================================================
-! 2. CALCUL DE SIJ SIJ ET DE DIVU
+! 2. Compute the scalar strain rate SijSij and the trace of the velocity
+!    gradient
 
-!      Tableaux de travail              SMBRK,TINSTE,W1,W2,W3,W4,W5,W6
-!      SijSij est stocke dans           TINSTK
-!      DivU est stocke dans             DIVU
-!      En sortie de l'etape on conserve TINSTK, DIVU
+!      SijSij est stocke dans           tinstk
+!      DivU est stocke dans             divu
+!      En sortie de l'etape on conserve tinstk, divu
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
@@ -268,17 +265,17 @@ else
 
 endif
 
-! TINSTK = PRODUCTION = ( 2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
+! tinstk = Stain rate = ( 2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
 !                       + (2 S12)**2 + (2 S13)**2 + (2 S23)**2 )
 !        = 2 Sij.Sij
-! DIVU = DUDX + DVDY + DWDZ
+! divu = dudx + dvdy + dwdz
 
 do iel = 1, ncel
 
   tinstk(iel) = 2.d0*( gradv(iel,1,1)**2 + gradv(iel,2,2) **2 &
-                     + gradv(iel,3,3)**2 )                      &
-              + (gradv(iel,2,1) + gradv(iel,1,2))**2 &
-              + (gradv(iel,3,1) + gradv(iel,1,3))**2 &
+                     + gradv(iel,3,3)**2 )                    &
+              + (gradv(iel,2,1) + gradv(iel,1,2))**2          &
+              + (gradv(iel,3,1) + gradv(iel,1,3))**2          &
               + (gradv(iel,3,2) + gradv(iel,2,3))**2
 
   divu(iel) = gradv(iel,1,1) + gradv(iel,2,2) + gradv(iel,3,3)
@@ -289,22 +286,22 @@ enddo
 deallocate(gradv)
 
 !===============================================================================
-! 3. PRISE EN COMPTE DES TERMES SOURCES UTILISATEURS
+! 3. Take user source terms into account
 
-!      On passe 2 Sij.Sij = TINSTK et la divergence DIVU
-!      Tableaux de travail                        W1, W2, W3, W4, W5, W6
-!                                VISCF VISCB SMBRK SMBRE TINSTE
-!      La partie a expliciter est stockee dans    W7, W8
-!      La partie a impliciter est stockee dans    DAM, W9
-!      En sortie de l'etape on conserve           TINSTK, DIVU,
-!                                                 W7 , W8, DAM, W9
+!    The scalar strain rate (tinstk) and the trace of the velocity gradient
+!     (divu) are available.
+!
+!    La partie a expliciter est stockee dans    w7, w8
+!    La partie a impliciter est stockee dans    usimpk, usimpe
+!    En sortie de l'etape on conserve           tinstk, divu,
+!                                               w7 , w8, usimpk, usimpe
 !===============================================================================
-! viscf viscb smbrk smbre tinste
+
 do iel = 1, ncel
-  dam(iel) = 0.d0
-  w9 (iel) = 0.d0
-  w7 (iel) = 0.d0
-  w8 (iel) = 0.d0
+  usimpk(iel) = 0.d0
+  usimpe(iel) = 0.d0
+  w7(iel) = 0.d0
+  w8(iel) = 0.d0
 enddo
 
 call ustske                                                       &
@@ -313,21 +310,19 @@ call ustske                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel , tinstk , divu   ,          &
-   w7     , w8     , dam    , w9     )
+   w7     , w8     , usimpk , usimpe )
 
-! On libere W1, W2, W3, W4, W5, W6
-!           VISCF, VISCB, SMBRK, SMBRE, TINSTE
 !===============================================================================
-! 4. AJOUT DE - 2/3 DIV(U) * DIV(U)
+! 4. Add - 2/3 div(u) * div(u)
 
-!      En sortie de l'etape on conserve TINSTK, DIVU,
-!                                       W7 , W8, DAM, W9
+!      En sortie de l'etape on conserve tinstk, divu,
+!                                       w7 , w8, usimpk, usimpe
 !===============================================================================
 
 ! Dans le cas de la production lineaire, seul le terme en divu est
-! multiplie par VISCT. Pour les autres modeles, la multiplication par
-! VISCT sera faite ulterieurement.
-! A ce stade, TINSTK contient S**2
+! multiplie par visct. Pour les autres modeles, la multiplication par
+! visct sera faite ulterieurement.
+! A ce stade, tinstk contient S**2
 d2s3 = 2.d0/3.d0
 if (iturb.eq.21) then
   do iel = 1, ncel
@@ -346,21 +341,21 @@ else
 endif
 
 !===============================================================================
-! 5. CALCUL DU TERME DE GRAVITE
+! 5. Compute the buoyant term
 
 !      Les s.m. recoivent production et termes de gravite
-!      Tableaux de travail              W1,W2,W3,W4,W5,W6,VISCB
-!      Les s.m. sont stockes dans       TINSTK TINSTE
-!      En sortie de l'etape on conserve TINSTK, TINSTE,
-!                                       DIVU,
-!                                       W7 , W8, DAM, W9
+!      Tableaux de travail              viscb
+!      Les s.m. sont stockes dans       tinstk, tinste
+!      En sortie de l'etape on conserve tinstk, tinste,
+!                                       divu,
+!                                       w7 , w8, usimpk, usimpe
 !===============================================================================
 
 if (igrake.eq.1 .and. ippmod(iatmos).ge.1) then
 
     !  Calcul du terme de gravite pour la version atmospherique
 
-    call atprke                                                   &
+    call atprke &
     !==========
  ( nscal  ,                                                       &
    ipcvto,                                                        &
@@ -441,7 +436,7 @@ else
 
 
 ! --- Production sans termes de gravite
-!       TINSTK=TINSTE=P
+!       tinstk=tinste=P
 
   do iel = 1, ncel
     tinste(iel) = tinstk(iel)
@@ -449,22 +444,22 @@ else
 
 endif
 
-!     En V2F, on stocke TINSTK dans PRDV2F qui sera complete plus loin pour
-!     contenir le terme de production complet
+! En v2f, on stocke tinstk dans prdv2f qui sera complete plus loin pour
+! contenir le terme de production complet
 if (itytur.eq.5) then
   do iel = 1, ncel
     prdv2f(iel) = tinstk(iel)
   enddo
 endif
 
-! On libere W1,W2,W3,W4,W5,W6,VISCB
+! On libere viscb
 
 !===============================================================================
-! 6. TERME D'ACCUMULATION DE MASSE -(dRO/dt)*Volume
+! 6. Mass aggregation term -(dRHO/dt)*Volume
 
-!      Le terme est stocke dans         W1
-!      En sortie de l'etape on conserve W1, TINSTK, TINSTE, DIVU,
-!                                       W7 , W8, DAM, W9
+!      Le terme est stocke dans         w1
+!      En sortie de l'etape on conserve w1, tinstk, tinste, divu,
+!                                       w7 , w8, usimpk, usimpe
 !===============================================================================
 
 init = 1
@@ -472,17 +467,17 @@ call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
                ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
 
 !===============================================================================
-! 7.pre SEULEMENT POUR LE MODELE BL-V2/K, CALCUL DE E ET CEPS2*
+! 7. pre Seulement pour le modele bl-v2/k, calcul de e et ceps2*
 
-!      Les termes sont stockes dans     W10, W11
-!      Tableaux de travail              W2, W3, W4, W5, W6, DRTP,SMBRK,SMBRE
-!                                       VISCF, VISCB
-!      En sortie de l'etape on conserve W10, W11
+!      Les termes sont stockes dans     w10, w11
+!      Tableaux de travail              w2, w3, w4, w5, drtp,smbrk,smbre
+!                                       viscf, viscb
+!      En sortie de l'etape on conserve w10, w11
 !===============================================================================
 
 if (iturb.eq.51) then
 
-!  Calcul du terme CEPS2*: Il est stocke dans W10
+  ! Calcul du terme CEPS2*: Il est stocke dans w10
 
   do iel=1,ncel
     visct = propce(iel,ipcvto)
@@ -565,19 +560,19 @@ if (iturb.eq.51) then
 endif
 
 !===============================================================================
-! 7. ON FINALISE LE CALCUL DES TERMES SOURCES
+! 7. On finalise le calcul des termes sources
 
-!      Les termes sont stockes dans     SMBRK, SMBRE
-!      En sortie de l'etape on conserve W1, TINSTK, TINSTE, DIVU,
-!                                       SMBRK, SMBRE
-!                                       W7 , W8, DAM, W9
+!      Les termes sont stockes dans     smbrk, smbre
+!      En sortie de l'etape on conserve w1, tinstk, tinste, divu,
+!                                       smbrk, smbre
+!                                       w7 , w8, usimpk, usimpe
 !===============================================================================
 
-! SMBRE = CEPS1 EPSILON/K (PROD + G ) - RO0 VOLUME EPSILON EPSILON/K
-! SMBRK = PROD + G                  - RO0 VOLUME EPSILON
+! smbre = ceps1 epsilon/k (prod + g ) - rho0 volume epsilon epsilon/k
+! smbrk =                  prod + g   - rho0 volume epsilon
 
-!     Si on extrapole les termes sources et rho  , il faut ici rho^n
-!                                        et visct, il faut ici visct^n
+! Si on extrapole les termes sources et rho  , il faut ici rho^n
+!                                    et visct, il faut ici visct^n
 
 if (iturb.eq.20) then
 
@@ -683,72 +678,70 @@ endif
 
 
 !===============================================================================
-! 8. PRISE EN COMPTE DES TERMES SOURCES UTILISATEURS
-!                        ET ACCUMULATION DE MASSE    : PARTIE EXPLICITE
-!      On utilise                       W1,  W7, W8, DAM, W9
-!      Les termes sont stockes dans     SMBRK, SMBRE
-!      En sortie de l'etape on conserve W1, TINSTK, TINSTE, DIVU,
-!                                       SMBRK, SMBRE
-!                                       DAM, W9
+! 8. Prise en compte des termes sources utilisateurs
+!                        et accumulation de masse    : partie explicite
+!      On utilise                       w1,  w7, w8, usimpk, usimpe
+!      Les termes sont stockes dans     smbrk, smbre
+!      En sortie de l'etape on conserve w1, tinstk, tinste, divu,
+!                                       smbrk, smbre
+!                                       usimpk, usimpe
 
 !    Remarque : l'extrapolation telle qu'elle est ecrite n'a pas grand
 !               sens si IKECOU=1
 !===============================================================================
 
-!     Si on extrapole les T.S.
+! Si on extrapole les T.S.
 if(isto2t.gt.0) then
 
   do iel = 1, ncel
 
-!       Sauvegarde pour echange
+    ! Sauvegarde pour echange
     tuexpk = propce(iel,iptsta)
-!       Pour la suite et le pas de temps suivant
+    ! Pour la suite et le pas de temps suivant
     propce(iel,iptsta) = smbrk(iel) + w7(iel)
-!       Termes dependant de la variable resolue et theta PROPCE
+    ! Termes dependant de la variable resolue et theta PROPCE
     smbrk(iel) = iconv(ik)*w1(iel)*rtpa(iel,ik) - thets*tuexpk
-!       On suppose -DAM > 0 : on implicite
-!         le terme utilisateur dependant de la variable resolue
-    smbrk(iel) = dam(iel)*rtpa(iel,ik) + smbrk(iel)
+    ! On suppose -usimpk > 0 : on implicite
+    !  le terme utilisateur dependant de la variable resolue
+    smbrk(iel) = usimpk(iel)*rtpa(iel,ik) + smbrk(iel)
 
-!       Sauvegarde pour echange
+    ! Sauvegarde pour echange
     tuexpe = propce(iel,iptsta+1)
-!       Pour la suite et le pas de temps suivant
+    ! Pour la suite et le pas de temps suivant
     propce(iel,iptsta+1) = smbre(iel) + w8(iel)
-!       Termes dependant de la variable resolue et theta PROPCE
+    ! Termes dependant de la variable resolue et theta PROPCE
     smbre(iel) = iconv(iep)*w1(iel)*rtpa(iel,iep) - thets*tuexpe
-!       On suppose -W9 > 0 : on implicite
-!         le terme utilisateur dependant de la variable resolue
-    smbre(iel) =  w9(iel)*rtpa(iel,iep) + smbre(iel)
+    ! On suppose -usimpe > 0 : on implicite
+    !  le terme utilisateur dependant de la variable resolue
+    smbre(iel) =  usimpe(iel)*rtpa(iel,iep) + smbre(iel)
 
   enddo
 
-!     Si on n'extrapole pas les T.S.
+! Si on n'extrapole pas les T.S.
 else
   do iel = 1, ncel
-    smbrk(iel) = smbrk(iel) + dam(iel)*rtpa(iel,ik) + w7(iel)  &
+    smbrk(iel) = smbrk(iel) + usimpk(iel)*rtpa(iel,ik) + w7(iel)  &
          +iconv(ik)*w1(iel)*rtpa(iel,ik)
-    smbre(iel) = smbre(iel) + w9 (iel)*rtpa(iel,iep) + w8(iel)  &
+    smbre(iel) = smbre(iel) + usimpe (iel)*rtpa(iel,iep) + w8(iel)  &
          +iconv(iep)*w1(iel)*rtpa(iel,iep)
   enddo
 endif
 
 !===============================================================================
-! 8.1 PRISE EN COMPTE DES TERMES SOURCES LAGRANGIEN : PARTIE EXPLICITE
-!     COUPLAGE RETOUR
+! 8.1 Prise en compte des termes sources lagrangien : partie explicite
+!     couplage retour
 !===============================================================================
 
-!     Ordre 2 non pris en compte
+! Ordre 2 non pris en compte
 if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
   do iel = 1,ncel
 
-! Termes sources explicte et implicte sur k
-
+    ! Termes sources explicte et implicte sur k
     smbrk(iel)  = smbrk(iel) + tslagr(iel,itske)
 
-! Termes sources explicte sur Eps
-
-    smbre(iel)  = smbre(iel)                                      &
+    ! Termes sources explicte sur Eps
+    smbre(iel)  = smbre(iel)                                    &
                 + ce4 *tslagr(iel,itske) *rtpa(iel,iep)         &
                                          /rtpa(iel,ik)
 
@@ -756,19 +749,17 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
 endif
 
-! ON LIBERE W7, W8
-
 !===============================================================================
-! 9. PRISE EN COMPTE DES TERMES DE CONV/DIFF DANS LE SECOND MEMBRE
+! 9. Prise en compte des termes de conv/diff dans le second membre
 
-!      Tableaux de travail              W2, W3, W4, W5, W6
-!      Les termes sont stockes dans     W7 et W8, puis ajoutes a SMBRK, SMBRE
-!      En sortie de l'etape on conserve W1, TINSTK, TINSTE, DIVU,
-!                                       SMBRK, SMBRE
-!                                       DAM, W7, W8, W9
+!      Tableaux de travail              w4, w5
+!      Les termes sont stockes dans     w7 et w8, puis ajoutes a smbrk, smbre
+!      En sortie de l'etape on conserve w1, tinstk, tinste, divu,
+!                                       smbrk, smbre
+!                                       usimpk, w7, w8, usimpe
 !===============================================================================
 
-!     Ceci ne sert a rien si IKECOU n'est pas egal a 1
+! Ceci ne sert a rien si ikecou n'est pas egal a 1
 
 if (ikecou.eq.1) then
 
@@ -872,8 +863,8 @@ if (ikecou.eq.1) then
              + idifft(ivar)*propce(iel,ipcvst)/sigmae
       endif
     enddo
-    call viscfa                                                   &
-    !==========
+
+    call viscfa &
  ( imvisf ,                                                       &
    w4     ,                                                       &
    viscf  , viscb  )
@@ -933,15 +924,15 @@ if (ikecou.eq.1) then
 endif
 
 !===============================================================================
-! 10. AJOUT DES TERMES SOURCES DE MASSE EXPLICITES
+! 10. Ajout des termes sources de masse explicites
 
-!       Les parties implicites eventuelles sont conservees dans W2 et W3
+!       Les parties implicites eventuelles sont conservees dans w2 et w3
 !         et utilisees dans la phase d'implicitation cv/diff
 
-!       Les termes sont stockes dans     SMBRK, SMBRE, W2, W3
-!       En sortie de l'etape on conserve W1, TINSTK, TINSTE, DIVU,
-!                                        SMBRK, SMBRE
-!                                        DAM, W9, W2, W3
+!       Les termes sont stockes dans     smbrk, smbre, w2, w3
+!       En sortie de l'etape on conserve w1, tinstk, tinste, divu,
+!                                        smbrk, smbre
+!                                        usimpk, usimpe, w2, w3
 !===============================================================================
 
 if (ncesmp.gt.0) then
@@ -951,34 +942,37 @@ if (ncesmp.gt.0) then
     w3(iel) = 0.d0
   enddo
 
-!       Entier egal a 1 (pour navsto : nb de sur-iter)
+  ! Entier egal a 1 (pour navsto : nb de sur-iter)
   iiun = 1
 
-!       On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma (*theta)
+  ! On incremente smbrs par -Gamma rtpa et rovsdt par Gamma (*theta)
   ivar = ik
+
   call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-                                 isto2t , thetav(ivar) ,   &
-   icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
+   isto2t , thetav(ivar)    ,                                     &
+   icetsm , itypsm(1,ivar)  ,                                     &
+   volume , rtpa(1,ivar)    , smacel(1,ivar) , smacel(1,ipr) ,    &
    smbrk  , w2     , w4 )
+
   ivar = iep
+
   call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-                                 isto2t , thetav(ivar) ,   &
-   icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
+   isto2t , thetav(ivar)    ,                                     &
+   icetsm , itypsm(1,ivar)  ,                                     &
+   volume , rtpa(1,ivar)    , smacel(1,ivar) , smacel(1,ipr) ,    &
    smbre  , w3     , w5 )
 
-!       Si on extrapole les TS on met Gamma Pinj dans PROPCE
+  ! Si on extrapole les TS on met Gamma Pinj dans propce
   if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta  ) = propce(iel,iptsta  ) + w4(iel)
       propce(iel,iptsta+1) = propce(iel,iptsta+1) + w5(iel)
     enddo
-!       Sinon on le met directement dans SMBR
+  ! Sinon on le met directement dans smbr
   else
     do iel = 1, ncel
       smbrk(iel) = smbrk(iel) + w4(iel)
@@ -988,9 +982,9 @@ if (ncesmp.gt.0) then
 
 endif
 
-!     ON LIBERE                       W4, W5, W6, TINSTE
+! On libere                       w4, w5
 
-!     Finalisation des termes sources
+! Finalisation des termes sources
 if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
@@ -1000,15 +994,15 @@ if(isto2t.gt.0) then
 endif
 
 !===============================================================================
-! 11. INCREMENTS DES TERMES SOURCES DANS LE SECOND MEMBRE
+! 11. Increments des termes sources dans le second membre
 
-!       On utilise                       TINSTK, TINSTE, DIVU
-!       Les termes sont stockes dans     SMBRK, SMBRE
-!       En sortie de l'etape on conserve W1, SMBRK, SMBRE,
-!                                        DAM, W9, W2, W3, W7, W8
+!       On utilise                       tinstk, tinste, divu
+!       Les termes sont stockes dans     smbrk, smbre
+!       En sortie de l'etape on conserve w1, smbrk, smbre,
+!                                        usimpk, usimpe, w2, w3, w7, w8
 !===============================================================================
 
-!     Ordre 2 non pris en compte
+! Ordre 2 non pris en compte
 if(ikecou.eq.1) then
 
   if (iturb.eq.20) then
@@ -1017,8 +1011,7 @@ if(ikecou.eq.1) then
 
       rom = propce(iel,ipcrom)
 
-!   RESOLUTION COUPLEE
-
+      ! Coupled solving
       romvsd=1.d0/(rom*volume(iel))
       smbrk(iel)=smbrk(iel)*romvsd
       smbre(iel)=smbre(iel)*romvsd
@@ -1039,8 +1032,7 @@ if(ikecou.eq.1) then
       deltk = ( a22*smbrk(iel) -a12*smbre(iel) )*unsdet
       delte = (-a21*smbrk(iel) +a11*smbre(iel) )*unsdet
 
-!     NOUVEAU TERME SOURCE POUR CODITS
-
+      ! New source term for the iterative process
       romvsd = rom*volume(iel)/dt(iel)
 
       smbrk(iel) = romvsd*deltk
@@ -1048,23 +1040,22 @@ if(ikecou.eq.1) then
 
     enddo
 
-!     Dans verini on bloque la combinaison ITURB=21/IKECOU=1
+  ! Dans verini on bloque la combinaison iturb=21/ikecou=1
   else if (iturb.eq.21) then
 
-    WRITE(NFECRA,*)'IKECOU=1 NON VALIDE EN K-EPS PROD LIN'
+    write(nfecra,*)'ikecou=1 non valide en k-eps prod lin'
     call csexit (1)
-!  Section non totalement validee (a priori ca marche, mais pas trop stable) :
-!  en fait le v2f est meilleur avec IKECOU=0, on bloque donc la combinaison
-!  ITURB=50/IKECOU=1 au niveau de verini. Ces lignes sont donc inaccessibles.
-!  On les laisse au cas ou .....
+  !  Section non totalement validee (a priori ca marche, mais pas trop stable) :
+  !  en fait le v2f est meilleur avec ikecou=0, on bloque donc la combinaison
+  !  iturb=50/ikecou=1 au niveau de verini. Ces lignes sont donc inaccessibles.
+  !  On les laisse au cas ou .....
   else if (iturb.eq.50) then
 
     do iel = 1, ncel
 
       rom = propce(iel,ipcrom)
 
-!   RESOLUTION COUPLEE
-
+      ! Coupled solving
       romvsd=1.d0/(rom*volume(iel))
       smbrk(iel)=smbrk(iel)*romvsd
       smbre(iel)=smbre(iel)*romvsd
@@ -1085,8 +1076,8 @@ if(ikecou.eq.1) then
         a11 = 1.d0/dt(iel)                                        &
              -2.d0*xk/xeps*xphi                                   &
              *cv2fmu*min(tinstk(iel),zero)+divp23
-!     Pour A12 on fait comme en k-eps standard pour l'instant,
-!     on ne prend pas le terme en P+G ... est-ce judicieux ?
+        ! Pour a12 on fait comme en k-eps standard pour l'instant,
+        ! on ne prend pas le terme en P+G ... est-ce judicieux ?
         a12 = 1.d0
         a21 = -ceps1*cv2fmu*xphi*tinste(iel)-cv2fe2*epssuk*epssuk
         a22 = 1.d0/dt(iel)+ceps1*divp23                           &
@@ -1095,11 +1086,11 @@ if(ikecou.eq.1) then
         a11 = 1.d0/dt(iel)                                        &
              -cv2fmu*xphi*ctsqnu*min(tinstk(iel),zero)/sqrt(xeps) &
              +divp23
-!     Pour A12 on fait comme en k-eps standard pour l'instant,
-!     on ne prend pas le terme en P+G ... est-ce judicieux ?
+        ! Pour a12 on fait comme en k-eps standard pour l'instant,
+        ! on ne prend pas le terme en P+G ... est-ce judicieux ?
         a12 = 1.d0
-!     Le terme en DIVP23 dans A21 n'est pas forcement judicieux
-!     (a-t-on besoin du MAX ?)
+        ! Le terme en divp23 dans a21 n'est pas forcement judicieux
+        ! (a-t-on besoin du MAX ?)
         a21 = -ceps1*cv2fmu*xphi*tinste(iel)                      &
              +ceps1*sqrt(xeps)/ctsqnu*divp23
         a22 = 1.d0/dt(iel)+1.d0/2.d0*ceps1*divp23*xk              &
@@ -1112,8 +1103,7 @@ if(ikecou.eq.1) then
       deltk = ( a22*smbrk(iel) -a12*smbre(iel) )*unsdet
       delte = (-a21*smbrk(iel) +a11*smbre(iel) )*unsdet
 
-!     NOUVEAU TERME SOURCE POUR CODITS
-
+      ! New source term for the iterative process
       romvsd = rom*volume(iel)/dt(iel)
 
       smbrk(iel) = romvsd*deltk
@@ -1121,30 +1111,30 @@ if(ikecou.eq.1) then
 
     enddo
 
-!     Dans verini on bloque la combinaison ITURB=51/IKECOU=1
+  ! Dans verini on bloque la combinaison iturb=51/ikecou=1
   else if (iturb.eq.51) then
 
-    WRITE(NFECRA,*)'IKECOU=1 NON VALIDE EN BL-V2/K'
+    write(nfecra,*)'ikecou=1 non valide en bl-v2/k'
     call csexit (1)
 
   endif
 
 endif
 
-!     ON LIBERE                       TINSTK, TINSTE, DIVU
+! On libere                       tinstk, tinste, divu
 
 !===============================================================================
-! 12. TERMES INSTATIONNAIRES
+! 12. Termes instationnaires
 
-!     On utilise                       W1, W2, W3, W7, W8
-!                                      DAM, W9
-!     Les termes sont stockes dans     TINSTK, TINSTE
-!     En sortie de l'etape on conserve SMBRK, SMBRE,  TINSTK, TINSTE
+!     On utilise                       w1, w2, w3, w7, w8
+!                                      usimpk, usimpe
+!     Les termes sont stockes dans     tinstk, tinste
+!     En sortie de l'etape on conserve smbrk, smbre,  tinstk, tinste
 !===============================================================================
 
-! --- PARTIE EXPLICITE
+! --- Explicit part
 
-!     on enleve la convection/diffusion au temps n a SMBRK et SMBRE
+!     on enleve la convection/diffusion au temps n a smbrk et smbre
 !     si on les avait calcules
 if (ikecou.eq.1) then
   do iel = 1, ncel
@@ -1161,7 +1151,7 @@ do iel = 1, ncel
   romvsd = rom*volume(iel)/dt(iel)
   tinstk(iel) = istat(ik)*romvsd                               &
                -iconv(ik)*w1(iel)*thetav(ik)
-  tinste(iel) = istat(iep)*romvsd                               &
+  tinste(iel) = istat(iep)*romvsd                              &
                -iconv(iep)*w1(iel)*thetav(iep)
 enddo
 
@@ -1178,19 +1168,19 @@ if(isto2t.gt.0) then
   thetak = thetav(ik)
   thetae = thetav(iep)
   do iel = 1, ncel
-    tinstk(iel) = tinstk(iel) -dam(iel)*thetak
-    tinste(iel) = tinste(iel) -w9 (iel)*thetae
+    tinstk(iel) = tinstk(iel) -usimpk(iel)*thetak
+    tinste(iel) = tinste(iel) -usimpe (iel)*thetae
   enddo
 else
   do iel = 1, ncel
-    tinstk(iel) = tinstk(iel) + max(-dam(iel),zero)
-    tinste(iel) = tinste(iel) + max(-w9 (iel),zero)
+    tinstk(iel) = tinstk(iel) + max(-usimpk(iel),zero)
+    tinste(iel) = tinste(iel) + max(-usimpe (iel),zero)
   enddo
 endif
 
-! --- PRISE EN COMPTE DES TERMES LAGRANGIEN : COUPLAGE RETOUR
+! --- prise en compte des termes lagrangien : couplage retour
 
-!     Ordre 2 non pris en compte
+! Ordre 2 non pris en compte
 if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
   do iel = 1,ncel
@@ -1208,7 +1198,7 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
 endif
 
-! Si IKECOU=0, on implicite plus fortement k et eps
+! Si ikecou=0, on implicite plus fortement k et eps
 
 if(ikecou.eq.0)then
   if(itytur.eq.2)then
@@ -1262,16 +1252,16 @@ if(ikecou.eq.0)then
   endif
 endif
 
-! ON LIBERE W1, W2, W3, DAM, W9
+! On libere w1, w2, w3, usimpk, usimpe
 
 !===============================================================================
-! 13. RESOLUTION
+! 13. Solving
 
-!       On utilise                      SMBRK, SMBRE,  TINSTK, TINSTE
-!       Tableaux de travail             W1, W2, W3, W4, W5, W6
+!       On utilise                      smbrk, smbre,  tinstk, tinste
+!       Tableaux de travail             w1
 !===============================================================================
 
-! ---> Traitement de k
+! ---> turbulent kinetic (k) energy treatment
 
 ivar = ik
 iclvar = iclrtp(ivar,icoef )
@@ -1279,7 +1269,7 @@ iclvaf = iclrtp(ivar,icoeff)
 
 ipp    = ipprtp(ivar)
 
-!     "VITESSE" DE DIFFUSION FACETTE
+! "vitesse" de diffusion facette
 
 if( idiff(ivar).ge. 1 ) then
 
@@ -1309,7 +1299,7 @@ else
 
 endif
 
-!     RESOLUTION POUR K
+! Solving k
 
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
@@ -1326,7 +1316,6 @@ iescap = 0
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
-!MO      IPP    =
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -1355,7 +1344,7 @@ call codits                                                       &
    rvoid  )
 
 
-! ---> Traitement de epsilon
+! ---> Turbulent dissipation (epsilon) treatment
 
 ivar = iep
 iclvar = iclrtp(ivar,icoef )
@@ -1364,7 +1353,7 @@ iclvaf = iclrtp(ivar,icoeff)
 ipp    = ipprtp(ivar)
 
 
-!     "VITESSE" DE DIFFUSION FACETTE
+! "vitesse" de diffusion facette
 
 if( idiff(ivar).ge. 1 ) then
   do iel = 1, ncel
@@ -1376,8 +1365,8 @@ if( idiff(ivar).ge. 1 ) then
                           + idifft(ivar)*propce(iel,ipcvst)/sigmae
     endif
   enddo
-  call viscfa                                                     &
-  !==========
+
+  call viscfa &
  ( imvisf ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  )
@@ -1393,7 +1382,7 @@ else
 
 endif
 
-! RESOLUTION POUR EPSILON
+! Solving epsilon
 
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
@@ -1410,7 +1399,6 @@ iescap = 0
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
-!MO      IPP    =
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -1440,7 +1428,7 @@ call codits                                                       &
 
 
 !===============================================================================
-! 14. CLIPPING
+! 14. Clipping
 !===============================================================================
 
 iclip = 1
@@ -1451,51 +1439,50 @@ call clipke                                                       &
    iclip  , iwarnp ,                                              &
    propce , rtp    )
 
-
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dam)
+deallocate(usimpk)
 deallocate(smbrk, smbre, rovsdt)
 deallocate(tinstk, tinste, divu)
 deallocate(w1, w2, w3)
 deallocate(w4, w5)
-deallocate(w7, w8, w9)
+deallocate(w7, w8, usimpe)
 
 if (allocated(w10)) deallocate(w10, w11)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(/,                                                   &
-'   ** RESOLUTION DU K-EPSILON                   ',/,&
+ 1000 format(/,                                      &
+'   ** Resolution du k-epsilon                   ',/,&
 '      -----------------------                   ',/)
- 1001 format(/,                                                   &
-'   ** RESOLUTION DU K-EPSILON A PROD LINEAIRE   ',/,&
+ 1001 format(/,                                      &
+'   ** Resolution du k-epsilon a prod lineaire   ',/,&
 '      ---------------------------------------   ',/)
- 1002 format(/,                                                   &
-'   ** RESOLUTION DU V2F (K ET EPSILON)          ',/,&
+ 1002 format(/,                                      &
+'   ** Resolution du v2f (k et epsilon)          ',/,&
 '      --------------------------------          ',/)
- 1100 format(1X,A8,' : BILAN EXPLICITE = ',E14.5)
+ 1100 format(1X,A8,' : Bilan explicite = ',E14.5)
 
 #else
 
- 1000 format(/,                                                   &
-'   ** SOLVING K-EPSILON'                         ,/,&
+ 1000 format(/,                                      &
+'   ** Solving k-epsilon'                         ,/,&
 '      -----------------'                         ,/)
- 1001 format(/,                                                   &
-'   ** SOLVING K-EPSILON WITH LINEAR PROD'        ,/,&
+ 1001 format(/,                                      &
+'   ** solving k-epsilon with linear prod'        ,/,&
 '      ----------------------------------'        ,/)
- 1002 format(/,                                                   &
-'   ** SOLVING V2F (K AND EPSILON)'               ,/,&
+ 1002 format(/,                                      &
+'   ** Solving v2f (k and epsilon)'               ,/,&
 '      ---------------------------'               ,/)
- 1100 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
+ 1100 format(1X,A8,' : Explicit balance = ',E14.5)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

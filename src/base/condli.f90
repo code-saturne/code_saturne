@@ -103,7 +103,7 @@
 !>                               de bord apres amortisst de v driest
 !> \param[out]    hbord         coefficients d'echange aux bords
 !>
-!> \param[out]    thbord        boundary temperature in \f$ centip \f$
+!> \param[out]    thbord        boundary temperature in \f$ \centip \f$
 !>                               (more exaclty the energetic variable)
 !> \param[in]     frcxt         external force responsible for the hydrostatic
 !>                               pressure
