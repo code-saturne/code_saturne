@@ -3411,6 +3411,66 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_sections,
 }
 
 /*----------------------------------------------------------------------------
+ * Write "trivial" point elements
+ *
+ * parameters:
+ *   writer          <-- pointer to associated writer.
+ *   mesh            <-- pointer to FVM mesh structure.
+ *   med_mesh        <-- pointer to MED mesh structure.
+ *----------------------------------------------------------------------------*/
+
+static void
+_export_point_elements(fvm_to_med_writer_t   *writer,
+                       const fvm_nodal_t     *mesh,
+                       fvm_to_med_mesh_t     *med_mesh)
+{
+  cs_gnum_t  i_elt;
+
+  cs_gnum_t  n_g_vertices = fvm_nodal_get_n_g_vertices(mesh);
+
+  med_int   *export_connect = NULL;
+
+  med_err  retval = 0;
+
+  if (writer->rank == 0) {
+
+    /* Prepare buffer */
+
+    BFT_MALLOC(export_connect, n_g_vertices, med_int);
+
+    for (i_elt = 0; i_elt < n_g_vertices; i_elt++)
+      export_connect[i_elt] = i_elt + 1;
+
+    /* Write into MED file */
+    /*---------------------*/
+
+    retval = MEDmeshElementConnectivityWr(writer->fid,
+                                          med_mesh->name,
+                                          MED_NO_DT,
+                                          MED_NO_IT,
+                                          0.0,
+                                          MED_CELL,
+                                          MED_POINT1,
+                                          MED_NODAL,
+                                          MED_FULL_INTERLACE,
+                                          (med_int)n_g_vertices,
+                                          export_connect);
+
+    if (retval < 0)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("MEDmeshElementConnectivityWr() failed to write connectivity:\n"
+           "Associated writer: \"%s\"\n"
+           "Associated med_mesh_name: \"%s\"\n"
+           "Associated MED geometrical element: \"%i\"\n"),
+         writer->name, med_mesh->name, (int)MED_POINT1);
+
+    BFT_FREE(export_connect);
+
+  } /* If rank == 0 */
+}
+
+/*----------------------------------------------------------------------------
  * Write per element field values into MED writer.
  *
  * Output fields ar either scalar or 3d vectors or scalars, and are
@@ -4212,18 +4272,15 @@ fvm_to_med_export_nodal(void               *this_writer,
                                        writer->divide_polyhedra);
 
   if (export_list == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("MED must have a connectivity.\n"
-                "Mesh: \"%s\"\n"
-                "Writer: \"%s\"\n"),
-              med_mesh->name, writer->name);
+    _export_point_elements(writer, mesh,med_mesh);
 
   /* Compute connectivity buffer size */
 
   export_sections = export_list;
 
-  global_connect_slice_size = _get_connect_buffer_size(writer,
-                                                       export_sections);
+  if (export_sections != NULL)
+    global_connect_slice_size = _get_connect_buffer_size(writer,
+                                                         export_sections);
 
   /* Allocate connectivity buffer */
 

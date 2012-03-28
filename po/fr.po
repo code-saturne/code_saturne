@@ -7634,6 +7634,7 @@ msgid ""
 "%s"
 msgstr ""
 
+#, c-format
 msgid ""
 "No CGNS base with index %d defined:\n"
 "Associated writer: \"%s\"\n"
@@ -7978,16 +7979,6 @@ msgstr ""
 
 msgid "Mesh name required to continue.\n"
 msgstr "Un nom de maillage est nécessaire pour continuer.\n"
-
-#, c-format
-msgid ""
-"MED must have a connectivity.\n"
-"Mesh: \"%s\"\n"
-"Writer: \"%s\"\n"
-msgstr ""
-"MED doit avoir une connectivité.\n"
-"Maillage : \"%s\"\n"
-"Gestionnaire : \"%s\"\n"
 
 #, c-format
 msgid ""
