@@ -194,9 +194,11 @@ fvm_writer_version_string(int format_index,
  *
  * Allowed options depend on what is applicable to a given format. Those
  * not relevant to a given writer are ignored. Possible options include:
- *   text                output text files
- *   binary              output binary files (default)
- *   big_endian          force binary files to big-endian
+ *   text                output text files (EnSight)
+ *   binary              output binary files (EnSight, default)
+ *   big_endian          force binary files to big-endian (EnSight)
+ *   adf                 use ADF file type (CGNS)
+ *   hdf5                use HDF5 file type (CGNS, default if available)
  *   discard_polygons    do not output polygons or related values
  *   discard_polyhedra   do not output polyhedra or related values
  *   divide_polygons     tesselate polygons with triangles

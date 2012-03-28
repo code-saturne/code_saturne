@@ -109,6 +109,8 @@ cs_user_postprocess_writers(void)
    * or commas) from the following list:
    *   'text'              (text format, for EnSight)
    *   'big_endian'        (forces binary EnSight output to 'big-endian' mode)
+   *   'adf'               (use ADF file type, for CGNS)
+   *   'hdf5'              (force HDF5 file type, usual the default for CGNS)
    *   'discard_polygons'  (ignore polygon-type faces)
    *   'discard_polyhedra' (ignore polyhedron-type cells)
    *   'divide_polygons'   (subdivides polygon-type faces)

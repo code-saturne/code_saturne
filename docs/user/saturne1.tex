@@ -5450,8 +5450,13 @@ The options are not case-sensitive, so {\em ensight} or {\em cgns} are valid, to
              options related to the format, separated by commas; for the
              {\em EnSight Gold} format, these options are:
         \begin{list}{$\rightarrow$}{}
-               \item {\em binary} for a binary format version (by default)
-               \item {\em text} for a text format version
+               \item {\em binary} for a binary format version (for {\em EnSight}, default)
+               \item {\em big\_endian} to force outputs to be in {\em big-endian}
+                 mode (for {\em EnSight}).
+               \item {\em text} for a text format version (for {\em EnSight}).
+               \item {\em adf} for ADF file type (for {\em CGNS}).
+               \item {\em hdf5} for HDF5 file type (for {\em CGNS}, normally the
+                 default if HDF5 support is available).
                \item {\em discard\_polygons} to prevent from exporting faces with more
  than four edges (which may not be recognized by some post-processing tools); such
  faces will therefore not appear in the post-processing mesh.
