@@ -7633,6 +7633,11 @@ msgid ""
 "%s"
 msgstr ""
 
+msgid ""
+"No CGNS base with index %d defined:\n"
+"Associated writer: \"%s\"\n"
+msgstr ""
+
 #, c-format
 msgid ""
 "cg_sol_write() failed to create a new solution node:\n"
@@ -9901,9 +9906,3 @@ msgstr ""
 "   %12llu faces après découpage\n"
 "\n"
 
-#~ msgid ""
-#~ "\n"
-#~ "  Multigrid coarsening type: %s\n"
-#~ msgstr ""
-#~ "\n"
-#~ "  Type d'agglomération multigrille : %s\n"
