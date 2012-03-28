@@ -312,7 +312,7 @@ cs_user_periodicity(void)
   /* Example 2: define a periodicity of rotation */
   /* ------------------------------------------- */
 
-  
+
   if (false) {
     int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
     int    visualization = 1; /* debug level if >= 3 */
