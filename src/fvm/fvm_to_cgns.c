@@ -280,11 +280,14 @@ _add_base(fvm_to_cgns_writer_t  *writer,
   int  base_index = 0;
   int  rank = writer->rank;
 
-  const int entity_dim = fvm_nodal_get_max_entity_dim(mesh);
+  int entity_dim = fvm_nodal_get_max_entity_dim(mesh);
 
   int  retval = CG_OK;
 
   assert(writer != NULL);
+
+  if (entity_dim == 0) /* CGNS requires entity_dim > 0 */
+    entity_dim = mesh->dim;
 
   /* Add a new CGNS base structure */
 
@@ -327,10 +330,44 @@ _add_base(fvm_to_cgns_writer_t  *writer,
 }
 
 /*----------------------------------------------------------------------------
+ * Get base id associated with given index.
+ *
+ * parameters:
+ *   writer      <-- pointer associated with writer
+ *   base_index  <-- index of associated base
+ *
+ * returns:
+ *   local base id for the given CGNS index
+ *----------------------------------------------------------------------------*/
+
+inline static int
+_base_id(const fvm_to_cgns_writer_t   *writer,
+         int                           base_index)
+{
+  int  base_id;
+
+  assert(writer != NULL);
+  assert(writer->bases != NULL);
+
+  for (base_id = 0; base_id < writer->n_bases; base_id++) {
+    fvm_to_cgns_base_t *base = writer->bases[base_id];
+    if (base->index == base_index)
+      return base_id;
+  }
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("No CGNS base with index %d defined:\n"
+              "Associated writer: \"%s\"\n"),
+            base_index, writer->name);
+  return -1;
+}
+
+/*----------------------------------------------------------------------------
  * Associate new time step with a CGNS writer.
  *
  * parameters:
  *   writer      <-- pointer associated with writer
+ *   base_index  <-- index of associated base
  *   time_step   <-- time step number
  *   time_value  <-- time_value number
  *   location    <-- CGNS grid location
@@ -341,11 +378,12 @@ _add_base(fvm_to_cgns_writer_t  *writer,
 
 static int
 _add_solution(fvm_to_cgns_writer_t        *writer,
+              int                          base_index,
               int                          time_step,
               double                       time_value,
               CGNS_ENUMT(GridLocation_t)   location)
 {
-  int  base_id, sol_id, sol_length;
+  int  sol_id, sol_length;
   char sol_name[FVM_CGNS_NAME_SIZE + 1];
 
   int  zone_index = 1; /* We always write to the first zone */
@@ -354,66 +392,66 @@ _add_solution(fvm_to_cgns_writer_t        *writer,
 
   int  retval = CG_OK;
 
-  /* Create a new pointer to fvm_to_cgns_solution_t in each base */
+  /* Find matching base */
 
-  for (base_id = 0; base_id < writer->n_bases; base_id++) {
+  int base_id = _base_id(writer, base_index);
 
-    fvm_to_cgns_base_t *base = writer->bases[base_id];
+  /* Create a new pointer to fvm_to_cgns_solution_t */
 
-    base->n_sols += 1;
-    sol_id = base->n_sols - 1;
+  fvm_to_cgns_base_t *base = writer->bases[base_id];
 
-    BFT_REALLOC(base->solutions, sol_id + 1, fvm_to_cgns_solution_t *);
-    BFT_MALLOC(base->solutions[sol_id], 1, fvm_to_cgns_solution_t);
+  base->n_sols += 1;
+  sol_id = base->n_sols - 1;
 
-    /* Initialization of the new solution structure */
+  BFT_REALLOC(base->solutions, sol_id + 1, fvm_to_cgns_solution_t *);
+  BFT_MALLOC(base->solutions[sol_id], 1, fvm_to_cgns_solution_t);
 
-    base->solutions[sol_id]->index = -1;
-    base->solutions[sol_id]->time_step = time_step;
-    base->solutions[sol_id]->time_value = time_value;
-    base->solutions[sol_id]->location = location;
-    base->solutions[sol_id]->name = NULL;
+  /* Initialization of the new solution structure */
 
-    if (time_step == 0)
-      sprintf(sol_name, "Stationnary (%s)",
-              GridLocationName[location]);
-    else
-      sprintf(sol_name, "Solution %3d (%s)",
-              (int)time_step, GridLocationName[location]);
+  base->solutions[sol_id]->index = -1;
+  base->solutions[sol_id]->time_step = time_step;
+  base->solutions[sol_id]->time_value = time_value;
+  base->solutions[sol_id]->location = location;
+  base->solutions[sol_id]->name = NULL;
 
-    sol_length = strlen(sol_name);
-    BFT_MALLOC(base->solutions[sol_id]->name, sol_length + 1, char);
-    strncpy(base->solutions[sol_id]->name, sol_name, sol_length);
-    base->solutions[sol_id]->name[sol_length] = '\0';
+  if (time_step < 0)
+    sprintf(sol_name, "Stationary (%s)",
+            GridLocationName[location]);
+  else
+    sprintf(sol_name, "Solution %3d (%s)",
+            (int)time_step, GridLocationName[location]);
 
-    if (rank == 0) {
-      retval = cg_sol_write(writer->index,
-                            base->index,
-                            zone_index,
-                            base->solutions[sol_id]->name,
-                            location,
-                            &sol_index);
+  sol_length = strlen(sol_name);
+  BFT_MALLOC(base->solutions[sol_id]->name, sol_length + 1, char);
+  strncpy(base->solutions[sol_id]->name, sol_name, sol_length);
+  base->solutions[sol_id]->name[sol_length] = '\0';
 
-      if (retval != CG_OK)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("cg_sol_write() failed to create a "
-                    "new solution node:\n"
-                    "Associated writer: \"%s\"\n"
-                    "Associated mesh: \"%s\"\n"
-                    "Solution name: \"%s\"\n"
-                    "Associated time value: %f \n%s"),
-                  writer->name, base->name,
-                  base->solutions[sol_id]->name, time_value, cg_get_error());
-    }
+  if (rank == 0) {
+    retval = cg_sol_write(writer->index,
+                          base->index,
+                          zone_index,
+                          base->solutions[sol_id]->name,
+                          location,
+                          &sol_index);
+
+    if (retval != CG_OK)
+      bft_error(__FILE__, __LINE__, 0,
+                _("cg_sol_write() failed to create a "
+                  "new solution node:\n"
+                  "Associated writer: \"%s\"\n"
+                  "Associated mesh: \"%s\"\n"
+                  "Solution name: \"%s\"\n"
+                  "Associated time value: %f \n%s"),
+                writer->name, base->name,
+                base->solutions[sol_id]->name, time_value, cg_get_error());
+  }
 
 #if defined(HAVE_MPI)
-    if (writer->n_ranks > 1)
-      MPI_Bcast(&sol_index, 1, MPI_INT, 0, writer->comm);
+  if (writer->n_ranks > 1)
+    MPI_Bcast(&sol_index, 1, MPI_INT, 0, writer->comm);
 #endif
 
-    base->solutions[sol_id]->index = sol_index;
-
-  } /* End of loop on bases */
+  base->solutions[sol_id]->index = sol_index;
 
   return (sol_index);
 }
@@ -423,6 +461,7 @@ _add_solution(fvm_to_cgns_writer_t        *writer,
  *
  * parameters:
  *   writer      <-- pointer to associated writer
+ *   base_index  <-- index of associated base
  *   time_step   <-- time step number
  *   time_value  <-- time_value number
  *   location    <-- location of results (CellCenter, Vertex, ...)
@@ -433,6 +472,7 @@ _add_solution(fvm_to_cgns_writer_t        *writer,
 
 static int
 _get_solution_index(const fvm_to_cgns_writer_t  *writer,
+                    int                          base_index,
                     int                          time_step,
                     double                       time_value,
                     CGNS_ENUMT(GridLocation_t)   location)
@@ -447,11 +487,9 @@ _get_solution_index(const fvm_to_cgns_writer_t  *writer,
     N_("The time value associated with time step <%d> equals <%g>,\n"
        "but time value <%g> has already been associated with this time step.\n");
 
-  /* All bases will have a similar n_sols and solutions, so we do all checks
-     on the first base */
+  /* Find matching base */
 
-  assert(writer != NULL);
-  assert(writer->bases != NULL);
+  int base_id = _base_id(writer, base_index);
 
   /* Any negative time step value indicates time independant values */
 
@@ -460,14 +498,14 @@ _get_solution_index(const fvm_to_cgns_writer_t  *writer,
     time_value = 0.0;
   }
 
-  if (bases[0]->solutions != NULL) {
-    n_sols = bases[0]->n_sols;
+  if (bases[base_id]->solutions != NULL) {
+    n_sols = bases[base_id]->n_sols;
 
     /* Search for index associated with time step */
 
     for (sol_id = 0; sol_id < n_sols; sol_id++) {
 
-      sol_ref = bases[0]->solutions[sol_id];
+      sol_ref = bases[base_id]->solutions[sol_id];
 
       /* Check on grid location */
       if (location == sol_ref->location) {
@@ -1199,10 +1237,10 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
                   cs_gnum_t                    global_s_size,
                   cs_gnum_t                    global_connect_s_call[])
 {
-  int  section_index;
   char  section_name[FVM_CGNS_NAME_SIZE + 1];
   CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
 
+  int  section_index = -1;
   cs_gnum_t   global_num_start = 0, global_num_end = 0;
   cs_gnum_t   elt_start = 0, elt_end = 0;
   cs_gnum_t   *global_connect_s = global_connect_s_call;
@@ -1250,15 +1288,26 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
           for (i = 0; i < n; i++)
             _global_connect_s[i] = global_connect_s[i];
         }
-        retval = cg_section_partial_write(writer->index,
-                                          base->index,
-                                          zone_index,
-                                          section_name,
-                                          cgns_elt_type,
-                                          elt_start,
-                                          elt_end,
-                                          0, /* unsorted boundary elements */
-                                          &section_index);
+
+        if (global_num_start == 1) { /* First pass */
+          retval = cg_section_partial_write(writer->index,
+                                            base->index,
+                                            zone_index,
+                                            section_name,
+                                            cgns_elt_type,
+                                            elt_start,
+                                            elt_end,
+                                            0, /* unsorted boundary elements */
+                                            &section_index);
+          if (retval != CG_OK)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("cg_section_partial_write() failed to write elements:\n"
+                        "Associated writer: \"%s\"\n"
+                        "Associated base: \"%s\"\n"
+                        "Associated section name: \"%s\"\n%s"),
+                      writer->name, base->name, section_name, cg_get_error());
+        }
+
         if (retval == CG_OK)
           retval = cg_elements_partial_write(writer->index,
                                              base->index,
@@ -1267,17 +1316,22 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
                                              elt_start,
                                              elt_end,
                                              _global_connect_s);
+        if (retval != CG_OK)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("cg_elements_partial_write() failed to write elements:\n"
+                      "Associated writer: \"%s\"\n"
+                      "Associated base: \"%s\"\n"
+                      "Associated section name: \"%s\"\n"
+                      "Associated range: [%llu, %llu]\n%s\n"),
+                    writer->name, base->name, section_name,
+                    (unsigned long long) elt_start,
+                    (unsigned long long) elt_end,
+                    cg_get_error());
+
         if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
           BFT_FREE(_global_connect_s);
       }
 
-      if (retval != CG_OK)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("cg_section_partial_write() failed to write elements:\n"
-                    "Associated writer: \"%s\"\n"
-                    "Associated base: \"%s\"\n"
-                    "Associated section name: \"%s\"\n%s"),
-                  writer->name, base->name, section_name, cg_get_error());
 
     } /* End if rank = 0 */
 
@@ -1401,10 +1455,10 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
                            cs_gnum_t   global_connect_s_size_call,
                            cs_gnum_t   global_connect_s_call[])
 {
-  int  section_index;
   char section_name[FVM_CGNS_NAME_SIZE + 1];
   CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
 
+  int  section_index = -1;
   cs_lnum_t   n_sub_elements_max = 0;
   cs_lnum_t   start_id = 0, end_id = 0;
   cs_gnum_t   elt_start = 0, elt_end = 0;
@@ -1551,15 +1605,26 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
           for (i = 0; i < n; i++)
             _global_connect_s[i] = global_connect_s[i];
         }
-        retval = cg_section_partial_write(writer->index,
-                                          base->index,
-                                          zone_index,
-                                          section_name,
-                                          cgns_elt_type,
-                                          elt_start,
-                                          elt_end,
-                                          0, /* unsorted boundary elements */
-                                          &section_index);
+
+        if (start_id == 0) { /* First pass */
+          retval = cg_section_partial_write(writer->index,
+                                            base->index,
+                                            zone_index,
+                                            section_name,
+                                            cgns_elt_type,
+                                            elt_start,
+                                            elt_end,
+                                            0, /* unsorted boundary elements */
+                                            &section_index);
+          if (retval != CG_OK)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("cg_section_partial_write() failed to write elements:\n"
+                        "Associated writer: \"%s\"\n"
+                        "Associated base: \"%s\"\n"
+                        "Associated section name: \"%s\"\n%s"),
+                      writer->name, base->name, section_name, cg_get_error());
+        }
+
         if (retval == CG_OK)
           retval = cg_elements_partial_write(writer->index,
                                              base->index,
@@ -1568,18 +1633,21 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
                                              elt_start,
                                              elt_end,
                                              _global_connect_s);
+        if (retval != CG_OK)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("cg_elements_partial_write() failed to write elements:\n"
+                      "Associated writer: \"%s\"\n"
+                      "Associated base: \"%s\"\n"
+                      "Associated section name: \"%s\"\n"
+                      "Associated range: [%llu, %llu]\n%s\n"),
+                    writer->name, base->name, section_name,
+                    (unsigned long long) elt_start,
+                    (unsigned long long) elt_end,
+                    cg_get_error());
+
         if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
           BFT_FREE(_global_connect_s);
       }
-
-      if (retval != CG_OK)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("cg_section_partial_write() failed to write "
-                    "tesselated elements:\n"
-                    "Associated writer: \"%s\"\n"
-                    "Associated base: \"%s\"\n"
-                    "Associated section name: \"%s\"\n%s"),
-                  writer->name, base->name, section_name, cg_get_error());
 
     } /* End if rank == 0 */
 
@@ -1623,7 +1691,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
                            int  section_id,
                            cs_gnum_t   *global_counter)
 {
-  int  section_index;
+  int  section_index = -1;
   char  section_name[FVM_CGNS_NAME_SIZE + 1];
   cs_lnum_t   n_sub_elements_max;
   cs_lnum_t   n_buffer_elements_max;
@@ -1688,15 +1756,27 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
         for (i = 0; i < n; i++)
           _vertex_num[i] = vertex_num[i];
       }
-      retval = cg_section_partial_write(writer->index,
-                                        base->index,
-                                        zone_index,
-                                        section_name,
-                                        cgns_elt_type,
-                                        elt_start,
-                                        elt_end,
-                                        0, /* unsorted boundary elements */
-                                        &section_index);
+
+      if (start_id == 0) { /* First pass */
+        retval = cg_section_partial_write(writer->index,
+                                          base->index,
+                                          zone_index,
+                                          section_name,
+                                          cgns_elt_type,
+                                          elt_start,
+                                          elt_end,
+                                          0, /* unsorted boundary elements */
+                                          &section_index);
+        if (retval != CG_OK)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("cg_section_partial_write() failed to write "
+                      "tesselated elements:\n"
+                      "Associated writer: \"%s\"\n"
+                      "Associated base: \"%s\"\n"
+                      "Associated section name: \"%s\"\n%s"),
+                    writer->name, base->name, section_name, cg_get_error());
+      }
+
       if (retval == CG_OK)
         retval = cg_elements_partial_write(writer->index,
                                            base->index,
@@ -1705,18 +1785,21 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
                                            elt_start,
                                            elt_end,
                                            _vertex_num);
+      if (retval != CG_OK)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("cg_elements_partial_write() failed to write elements:\n"
+                    "Associated writer: \"%s\"\n"
+                    "Associated base: \"%s\"\n"
+                    "Associated section name: \"%s\"\n"
+                    "Associated range: [%llu, %llu]\n%s\n"),
+                  writer->name, base->name, section_name,
+                  (unsigned long long) elt_start,
+                  (unsigned long long) elt_end,
+                  cg_get_error());
+
       if (sizeof(cgsize_t) > sizeof(cs_lnum_t))
         BFT_FREE(_vertex_num);
     }
-
-    if (retval != CG_OK)
-      bft_error(__FILE__, __LINE__, 0,
-                _("cg_section_partial_write() failed to write "
-                  "tesselated elements:\n"
-                  "Associated writer: \"%s\"\n"
-                  "Associated base: \"%s\"\n"
-                  "Associated section name: \"%s\"\n%s"),
-                writer->name, base->name, section_name, cg_get_error());
 
   } /* End of loop on parent elements */
 
@@ -1862,15 +1945,27 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
           for (i = 0; i < j; i++)
             _global_connect_s[i] = global_connect_s[i];
         }
-        retval = cg_section_partial_write(writer->index,
-                                          base->index,
-                                          zone_index,
-                                          section_name,
-                                          cgns_elt_type,
-                                          elt_start,
-                                          elt_end,
-                                          0, /* unsorted boundary elements */
-                                          &section_index);
+
+        if (global_num_start == 1) { /* First pass */
+          retval = cg_section_partial_write(writer->index,
+                                            base->index,
+                                            zone_index,
+                                            section_name,
+                                            cgns_elt_type,
+                                            elt_start,
+                                            elt_end,
+                                            0, /* unsorted boundary elements */
+                                            &section_index);
+          if (retval != CG_OK)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("cg_section_partial_write() failed to write"
+                        " polygonal elements:\n"
+                        "Associated writer: \"%s\"\n"
+                        "Associated base: \"%s\"\n"
+                        "Associated section name: \"%s\"\n%s"),
+                      writer->name, base->name, section_name, cg_get_error());
+        }
+
         if (retval == CG_OK)
           retval = cg_elements_partial_write(writer->index,
                                              base->index,
@@ -1879,18 +1974,21 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
                                              elt_start,
                                              elt_end,
                                              _global_connect_s);
+        if (retval != CG_OK)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("cg_elements_partial_write() failed to write elements:\n"
+                      "Associated writer: \"%s\"\n"
+                      "Associated base: \"%s\"\n"
+                      "Associated section name: \"%s\"\n"
+                      "Associated range: [%llu, %llu]\n%s\n"),
+                    writer->name, base->name, section_name,
+                    (unsigned long long) elt_start,
+                    (unsigned long long) elt_end,
+                    cg_get_error());
+
         if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
           BFT_FREE(_global_connect_s);
       }
-
-      if (retval != CG_OK)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("cg_section_partial_write() failed to write"
-                    " polygonal elements:\n"
-                    "Associated writer: \"%s\"\n"
-                    "Associated base: \"%s\"\n"
-                    "Associated section name: \"%s\"\n%s"),
-                  writer->name, base->name, section_name, cg_get_error());
 
     } /* End if rank = 0 */
 
@@ -2244,10 +2342,13 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
   for (base_id = 0; base_id < writer->n_bases; base_id++) {
     fvm_to_cgns_base_t *base = writer->bases[base_id];
 
+    if (base->n_sols == 0)
+      continue;
+
     retval = cg_biter_write(writer->index,
-                         base->index,
-                         "BaseIterativeData_t",
-                         base->n_sols);
+                            base->index,
+                            "BaseIterativeData_t",
+                            base->n_sols);
 
     if (retval != CG_OK)
       bft_error(__FILE__, __LINE__, 0,
@@ -2257,10 +2358,10 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
                 writer->filename, base->name,cg_get_error());
 
     retval = cg_goto(writer->index,
-                  base->index,
-                  "BaseIterativeData_t",
-                  1,
-                  "end");
+                     base->index,
+                     "BaseIterativeData_t",
+                     1,
+                     "end");
 
     if (retval == CG_OK) {
 
@@ -2584,6 +2685,10 @@ fvm_to_cgns_init_writer(const char             *name,
 
   if (writer->rank == 0) {
 
+    /* TODO:
+       allow selection of output CGNS file type, using
+       cg_set_file_type(CG_FILE_ADF) / cg_set_file_type(CG_FILE_HDF5) */
+
     if (cg_open(writer->filename, CG_MODE_WRITE, &writer_index) != CG_OK)
       bft_error(__FILE__, __LINE__, 0,
                 _("cg_open() failed to open file \"%s\" : \n%s"),
@@ -2624,13 +2729,13 @@ fvm_to_cgns_finalize_writer(void  *this_writer_p)
   assert(writer != NULL);
 
   if (writer->rank == 0) {
+
     if (writer->bases != NULL) {
 
       /* Create index for time-dependent data */
       /*--------------------------------------*/
 
-      if (writer->bases[0]->n_sols > 0)
-        _create_timedependent_data(writer);
+      _create_timedependent_data(writer);
 
     }
 
@@ -3151,8 +3256,7 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
   strncpy(base_name, mesh->name, FVM_CGNS_NAME_SIZE);
   base_name[FVM_CGNS_NAME_SIZE] = '\0';
 
-  base_index = _get_base_index(writer,
-                               base_name);
+  base_index = _get_base_index(writer, base_name);
 
   if (base_index == 0 )
     base_index = _add_base(writer,
@@ -3163,12 +3267,14 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
   /*-------------------------*/
 
   sol_index = _get_solution_index(writer,
+                                  base_index,
                                   time_step,
                                   time_value,
                                   cgns_location);
 
   if (sol_index == 0)
     sol_index = _add_solution(writer,
+                              base_index,
                               time_step,
                               time_value,
                               cgns_location);
