@@ -102,6 +102,8 @@ fvm_to_cgns_version_string(int string_index,
  *   discard_polygons    do not output polygons or related values
  *   discard_polyhedra   do not output polyhedra or related values
  *   divide_polygons     tesselate polygons with triangles
+ *   adf                 use ADF file type
+ *   hdf5                use HDF5 file type (default if available)
  *
  * As CGNS does not handle polyhedral elements, polyhedra are automatically
  * tesselated with tetrahedra and pyramids (adding a vertex near each

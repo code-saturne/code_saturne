@@ -2539,6 +2539,8 @@ fvm_to_cgns_version_string(int string_index,
  *   discard_polygons    do not output polygons or related values
  *   discard_polyhedra   do not output polyhedra or related values
  *   divide_polygons     tesselate polygons with triangles
+ *   adf                 use ADF file type
+ *   hdf5                use HDF5 file type (default if available)
  *
  * As CGNS does not handle polyhedral elements, polyhedra are automatically
  * tesselated with tetrahedra and pyramids (adding a vertex near each
@@ -2571,6 +2573,7 @@ fvm_to_cgns_init_writer(const char             *name,
 {
   int  i, writer_index;
   int  filename_length, name_length, path_length;
+  bool force_adf = false, force_hdf5 = false;
 
   fvm_to_cgns_writer_t  *writer = NULL;
 
@@ -2675,6 +2678,14 @@ fvm_to_cgns_init_writer(const char             *name,
                && (strncmp(options + i1, "divide_polygons", l_opt) == 0))
         writer->divide_polygons = true;
 
+      else if (   (l_opt == 3)
+               && (strncmp(options + i1, "adf", l_opt) == 0))
+        force_adf = false;
+
+      else if (   (l_opt == 4)
+               && (strncmp(options + i1, "hdf5", l_opt) == 0))
+        force_hdf5 = false;
+
       for (i1 = i2 + 1; i1 < l_tot && options[i1] == ' '; i1++);
     }
   }
@@ -2685,9 +2696,11 @@ fvm_to_cgns_init_writer(const char             *name,
 
   if (writer->rank == 0) {
 
-    /* TODO:
-       allow selection of output CGNS file type, using
-       cg_set_file_type(CG_FILE_ADF) / cg_set_file_type(CG_FILE_HDF5) */
+    if (force_adf == true)
+      cg_set_file_type(CG_FILE_ADF);
+
+    if (force_hdf5 == true)
+      cg_set_file_type(CG_FILE_HDF5);
 
     if (cg_open(writer->filename, CG_MODE_WRITE, &writer_index) != CG_OK)
       bft_error(__FILE__, __LINE__, 0,
