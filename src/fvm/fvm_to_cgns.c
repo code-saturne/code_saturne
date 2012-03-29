@@ -2681,11 +2681,15 @@ fvm_to_cgns_init_writer(const char             *name,
 
   if (writer->rank == 0) {
 
+#if (CGNS_VERSION >= 3000)
+
     if (force_adf == true)
       cg_set_file_type(CG_FILE_ADF);
 
     if (force_hdf5 == true)
       cg_set_file_type(CG_FILE_HDF5);
+
+#endif
 
     if (cg_open(writer->filename, CG_MODE_WRITE, &writer_index) != CG_OK)
       bft_error(__FILE__, __LINE__, 0,
