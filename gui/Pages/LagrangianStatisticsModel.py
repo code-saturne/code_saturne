@@ -409,7 +409,7 @@ class LagrangianStatisticsTestCase(unittest.TestCase):
         from Base.XMLengine import Case
         from Base.XMLinitialize import XMLinit
         self.case = Case()
-        XMLinit(self.case)
+        XMLinit(self.case).initialize()
 
 
     def tearDown(self):

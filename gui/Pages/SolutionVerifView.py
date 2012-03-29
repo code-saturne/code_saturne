@@ -24,8 +24,7 @@
 
 """
 This module contains the following class:
-- MeshQualityCriteriaLogDialogView
-- MeshQualityCriteriaView
+- SolutionVerifView
 """
 
 #-------------------------------------------------------------------------------
@@ -41,8 +40,6 @@ import string, shutil, cStringIO
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
-
-import cs_config
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -105,7 +102,9 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         os.mkdir(self.exec_dir)
         os.chdir(self.exec_dir)
 
-        self.fmt = self.out2.getWriterFormat("-1").lower()
+        self.fmt = OutputControlModel(self.case).getWriterFormat("-1").lower()
+        self.out2.setWriterLabel("-1", "quality")
+        self.out2.setWriterFormat("-1", self.fmt)
 
         # Prepare preprocessing
 
@@ -134,9 +133,13 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
                 cmd = self.case['package'].get_preprocessor()
 
-                name   = meshNode['name']
+                mesh   = meshNode['name']
                 format = meshNode['format']
-                mesh = self.case['mesh_path'] + '/' + name
+                path   = meshNode['path']
+                if path != None:
+                    mesh = os.path.join(path, mesh)
+                if not os.path.isabs(mesh) and self.case['mesh_path'] != None:
+                    mesh = os.path.join(self.case['mesh_path'], mesh)
                 if meshNode['num']:
                     cmd += ' --num ' + meshNode['num']
                 if meshNode['reorient'] == 'on':
@@ -219,43 +222,6 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
 
     def __csPostTreatment(self):
-        if self.proc.exitStatus() == QProcess.NormalExit and not self.procErrorFlag:
-
-            try:
-
-                if self.fmt == "ensight":
-
-                    os.rename(os.path.join(self.exec_dir, 'chr.ensight'),
-                              os.path.join(self.exec_dir, 'quality.ensight'))
-
-                    os.chdir(os.path.join(self.exec_dir, 'quality.ensight'))
-
-                    for src in os.listdir(os.getcwd()):
-                        if src[:4] == "chr.":
-                            dst = src.replace("chr.", "quality.")
-                            os.rename(src, dst)
-
-                    os.rename('CHR.case', 'QUALITY.case')
-
-                    out = cStringIO.StringIO()
-                    f = open('QUALITY.case')
-                    for line in f:
-                        out.write(line.replace('chr', 'quality'))
-                    f.close()
-                    out2 = open('QUALITY.case', 'w')
-                    out2.write(out.getvalue())
-                    out2.close()
-
-                    os.chdir(self.exec_dir)
-
-                elif self.fmt == "med":
-                    os.rename('chr.med', 'QUALITY.med')
-
-                elif self.fmt == "cgns":
-                    os.rename('chr.cgns', 'QUALITY.cgns')
-
-            except OSError: # file to rename might not exist
-                pass
 
         # Cleanup
         mesh_input = os.path.join(self.exec_dir, 'mesh_input')
@@ -343,7 +309,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         self.out = OutputControlModel(self.case)
 
         self.case2 = Case(package = self.case['package'], file_name = None)
-        XMLinit(self.case2)
+        XMLinit(self.case2).initialize()
         self.case2['xmlfile'] = 'cs_cmd'
         self.case2['salome'] = self.case['salome']
 
@@ -359,7 +325,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         if joining != None:
             sd_node.xmlInitNode('joining').xmlChildsCopy(joining)
         if periodicity != None:
-            sd_node.xmlInitNode('solution_domain').xmlChildsCopy(periodicity)
+            sd_node.xmlInitNode('periodicity').xmlChildsCopy(periodicity)
 
         self.out2 = OutputControlModel(self.case2)
 

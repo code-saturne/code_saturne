@@ -245,7 +245,7 @@ class ScriptRunningModelTestCase(unittest.TestCase):
         from Base.Toolbox import GuiParam
         GuiParam.lang = 'en'
         self.case = Case(None)
-        XMLinit(self.case)
+        XMLinit(self.case).initialize()
 
         domain = SolutionDomainModel(self.case)
         domain.addMesh('mail1.des', 'des')

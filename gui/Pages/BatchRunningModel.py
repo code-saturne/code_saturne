@@ -645,7 +645,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         from Base.Toolbox import GuiParam
         GuiParam.lang = 'en'
         self.case = Case(None)
-        XMLinit(self.case)
+        XMLinit(self.case).initialize()
 
         self.case['batch_type'] = None
         self.case['scripts_path'] = os.getcwd()
