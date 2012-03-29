@@ -451,43 +451,17 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          ifac, iel, ii, ivar
+integer          izone
+integer          ilelt, nlelt
+double precision uref2, d2s3
+double precision rhomoy, xdh, xustar2
+double precision xitur
+double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-!===============================================================================
-! 0.  This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     If a file from the GUI is used, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-
-if (iihmpr.eq.1) then
-  return
-else
-  write(nfecra,9000)
-  call csexit (1)
-endif
-
- 9000 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in definition of boundary conditions',   /,&
-'@    =======',/,                                                 &
-'@  The user subroutine ''cs_user_boundary_conditions         ',/,&
-'@  must be completed.                                        ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! Initialization
@@ -495,7 +469,7 @@ endif
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
-! INSERT_ADDITIONAL_INITIALIZATION_CODE_HERE
+d2s3 = 2.d0/3.d0
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
@@ -506,7 +480,100 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 !   - set the boundary condition for each face
 !===============================================================================
 
-! INSERT_MAIN_CODE_HERE
+! Example of specific boundary conditions fully defined by the user,
+! on the basis of wall conditions.
+! selection (mass flow computation, specific logging, ...)
+! We prescribe for group '1234' a wall, with in addition:
+!   - a Dirichlet condition on velocity (sliding wall with no-slip condition)
+!   - a Dirichlet condition on the first scalar.
+
+call getfbr('1234', nlelt, lstelt)
+!==========
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  itypfb(ifac) = iparoi
+
+  icodcl(ifac,iu )  = 1
+  rcodcl(ifac,iu,1) = 1.d0
+  rcodcl(ifac,iu,2) = rinfin
+  rcodcl(ifac,iu,3) = 0.d0
+  icodcl(ifac,iv )  = 1
+  rcodcl(ifac,iv,1) = 0.d0
+  rcodcl(ifac,iv,2) = rinfin
+  rcodcl(ifac,iv,3) = 0.d0
+  icodcl(ifac,iw )  = 1
+  rcodcl(ifac,iw,1) = 0.d0
+  rcodcl(ifac,iw,2) = rinfin
+  rcodcl(ifac,iw,3) = 0.d0
+
+  ivar = isca(1)
+  icodcl(ifac,ivar )  = 1
+  rcodcl(ifac,ivar,1) = 10.d0
+  rcodcl(ifac,ivar,2) = rinfin
+  rcodcl(ifac,ivar,3) = 0.d0
+
+enddo
+
+! Example of specific boundary conditions fully defined by the user,
+! with no definition of a specific type.
+! We prescribe at group '5678' a homogeneous Neumann condition for
+! all variables.
+
+call getfbr('5678', nlelt, lstelt)
+!==========
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+! CAUTION: the value of itypfb must be assigned to iindef
+
+  itypfb(ifac) = iindef
+
+  do ii = 1, nvar
+    icodcl(ifac,ii )  = 3
+    rcodcl(ifac,ii,1) = 0.d0
+    rcodcl(ifac,ii,2) = rinfin
+    rcodcl(ifac,ii,3) = 0.d0
+  enddo
+
+enddo
+
+! Example of specific boundary conditions fully defined by the user,
+! with the definition of a specific type, for example for future
+! selection (mass flow computation, specific logging, ...)
+! We prescribe for group '6789' a homogeneous Neumann condition for
+! all variables, except for the first
+! scalar, for which we select a homogeneous Dirichlet.
+
+call getfbr('6789', nlelt, lstelt)
+!==========
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+! CAUTION: the value of itypfb must be different from
+!          iparoi, ientre, isymet, isolib, iindef,
+!          greater than or equal to 1, and
+!          less than or equal to ntypmx;
+!          these integers are defined in paramx.h
+
+  itypfb(ifac) = 89
+
+  do ii = 1, nvar
+    icodcl(ifac,ii )  = 3
+    rcodcl(ifac,ii,1) = 0.d0
+    rcodcl(ifac,ii,2) = rinfin
+    rcodcl(ifac,ii,3) = 0.d0
+  enddo
+
+  icodcl(ifac,isca(1) )  = 1
+  rcodcl(ifac,isca(1),1) = 0.d0
+  rcodcl(ifac,isca(1),2) = rinfin
+  rcodcl(ifac,isca(1),3) = 0.d0
+
+enddo
 
 !--------
 ! Formats

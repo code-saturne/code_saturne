@@ -451,43 +451,16 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          ifac  , iel   , ii
+integer          izone , iutile
+integer          ilelt, nlelt
+
+double precision uref2 , dhyd  , rhomoy
+double precision ustar2, xkent , xeent , d2s3
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-!===============================================================================
-! 0.  This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     If a file from the GUI is used, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-
-if (iihmpr.eq.1) then
-  return
-else
-  write(nfecra,9000)
-  call csexit (1)
-endif
-
- 9000 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in definition of boundary conditions',   /,&
-'@    =======',/,                                                 &
-'@  The user subroutine ''cs_user_boundary_conditions         ',/,&
-'@  must be completed.                                        ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! Initialization
@@ -495,7 +468,7 @@ endif
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
-! INSERT_ADDITIONAL_INITIALIZATION_CODE_HERE
+d2s3 = 2.d0/3.d0
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
@@ -506,7 +479,423 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 !   - set the boundary condition for each face
 !===============================================================================
 
-! INSERT_MAIN_CODE_HERE
+! --- Exemple d'entree/sortie pour laquelle tout est connu
+
+!       sans presumer du caractere subsonique ou supersonique,
+!         l'utilisateur souhaite imposer toutes les caracteristiques
+!         de l'ecoulement
+!       une entree supersonique est un cas particulier
+
+!       La turbulence et les scalaires utilisateur prennent un flux nul
+!         si la vitesse est sortante.
+
+call getfbr('1 and X <= 1.0 ', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  ! Cell adjacent to boundary face
+
+  iel = ifabor(ifac)
+
+  ! Number of zones from 1 to n...
+  izone = 1
+  izfppp(ifac) = izone
+
+  itypfb(ifac) = iesicf
+
+  ! Velocity
+  rcodcl(ifac,iu,1) = 5.0d0
+  rcodcl(ifac,iv,1) = 0.0d0
+  rcodcl(ifac,iw,1) = 0.0d0
+
+  ! Pressure, Density, Temperature, Total Specific Energy
+
+  !     Seules 2 variables sur les 4 sont independantes
+  !     On peut donc fixer le couple de variables que l'on veut
+  !     (sauf Temperature-Energie) et les 2 autres variables seront
+  !     calculees automatiquement
+
+  !  ** Choisir les 2 variables a imposer et effacer les autres
+  !     (elles sont calculees par les lois thermodynamiques dans uscfth)
+
+  ! Pressure (in Pa)
+  rcodcl(ifac,ipr,1) = 5.d5
+
+  ! Density (in kg/m3)
+  ! rcodcl(ifac,isca(irho  ),1) = 1.d0
+
+  ! Temperature (in K)
+  rcodcl(ifac,isca(itempk),1) = 300.d0
+
+  ! Specific Total Energy (in J/kg)
+  ! rcodcl(ifac,isca(ienerg),1) = 355.d3
+
+  ! Turbulence
+
+  uref2 = rcodcl(ifac,iu,1)**2 + rcodcl(ifac,iv,1)**2 + rcodcl(ifac,iw,1)**2
+  uref2 = max(uref2,1.d-12)
+
+  !   Turbulence example computed using equations valid for a pipe.
+
+  !   We will be careful to specify a hydraulic diameter adapted
+  !     to the current inlet.
+
+  !   We will also be careful if necessary to use a more precise
+  !     formula for the dynamic viscosity use in the calculation of
+  !     the Reynolds number (especially if it is variable, it may be
+  !     useful to take the law from 'usphyv'. Here, we use by default
+  !     the 'viscl0" value.
+  !   Regarding the density, we have access to its value at boundary
+  !     faces (romb) so this value is the one used here (specifically,
+  !     it is consistent with the processing in 'usphyv', in case of
+  !     variable density)
+
+  !     Hydraulic diameter
+  dhyd   = 0.075d0
+
+  !   Calculation of friction velocity squared (ustar2)
+  !     and of k and epsilon at the inlet (xkent and xeent) using
+  !     standard laws for a circular pipe
+  !     (their initialization is not needed here but is good practice).
+  rhomoy = rtp(iel,isca(irho))
+  ustar2 = 0.d0
+  xkent  = epzero
+  xeent  = epzero
+
+  call keendb                                              &
+  !==========
+    ( uref2, dhyd, rhomoy, viscl0, cmu, xkappa,            &
+      ustar2, xkent, xeent )
+
+  if    (itytur.eq.2) then
+
+    rcodcl(ifac,ik,1)  = xkent
+    rcodcl(ifac,iep,1) = xeent
+
+  elseif(itytur.eq.3) then
+
+    rcodcl(ifac,ir11,1) = 2.d0/3.d0*xkent
+    rcodcl(ifac,ir22,1) = 2.d0/3.d0*xkent
+    rcodcl(ifac,ir33,1) = 2.d0/3.d0*xkent
+    rcodcl(ifac,ir12,1) = 0.d0
+    rcodcl(ifac,ir13,1) = 0.d0
+    rcodcl(ifac,ir23,1) = 0.d0
+    rcodcl(ifac,iep,1)  = xeent
+
+  elseif(iturb.eq.50) then
+
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iep,1)  = xeent
+    rcodcl(ifac,iphi,1) = d2s3
+    rcodcl(ifac,ifb,1)  = 0.d0
+
+  elseif(iturb.eq.60) then
+
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iomg,1) = xeent/cmu/xkent
+
+  elseif(iturb.eq.70) then
+
+    rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
+
+  endif
+
+  ! Handle scalars
+  ! (do not loop on nscal to avoid modifying rho and energy)
+  if(nscaus.gt.0) then
+    do ii = 1, nscaus
+      rcodcl(ifac,isca(ii),1) = 1.d0
+    enddo
+  endif
+
+enddo
+
+! --- Exemple de sortie supersonique
+
+!     toutes les caracteristiques sortent
+!     on ne doit rien imposer (ce sont les valeurs internes qui sont
+!       utilisees pour le calcul des flux de bord)
+
+!     pour la turbulence et les scalaires, si on fournit ici des
+!       valeurs de RCODCL, on les impose en Dirichlet si le flux
+!       de masse est entrant ; sinon, on impose un flux nul (flux de
+!       masse sortant ou RCODCL renseigne ici).
+!       Noter que pour la turbulence, il faut renseigner RCODCL pour
+!       toutes les variables turbulentes (sinon, on applique un flux
+!       nul).
+
+
+call getfbr('2', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  ! Number zones from 1 to n...
+  izone = 2
+  izfppp(ifac) = izone
+
+  itypfb(ifac) = isspcf
+
+enddo
+
+! --- Exemple d'entree subsonique (debit, debit enthalpique)
+
+!     2 caracteristiques sur 3 entrent : il faut donner 2 informations
+!       la troisieme est deduite par un scenario de 2-contact et
+!       3-detente dans le domaine
+!     ici on choisit de donner (rho*(U.n), rho*(U.n)*H)
+!       avec H = 1/2 U*U + P/rho + e
+!            n la normale unitaire entrante
+
+!     ATTENTION, on donne des DENSITES de debit (par unite de surface)
+
+call getfbr('3', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  !     On numerote les zones de 1 a n...
+  izone = 3
+  izfppp(ifac) = izone
+
+  itypfb(ifac) = ieqhcf
+
+  ! - Densite de debit massique (en kg/(m2 s))
+  rcodcl(ifac,irun,1) = 5.d5
+
+  ! - Densite de debit enthalpique (en J/(m2 s))
+  rcodcl(ifac,irunh,1) = 5.d5
+
+  !   Condition non disponible dans la version presente
+  call csexit (1)
+  !==========
+
+enddo
+
+! --- Exemple d'entree subsonique (masse volumique, vitesse)
+
+!     2 caracteristiques sur 3 entrent : il faut donner 2 informations
+!       la troisieme est deduite par un scenario de 2-contact et
+!       3-detente dans le domaine
+!     ici on choisit de donner (rho, U)
+
+call getfbr('4', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  ! Number zones from 1 to n...
+  izone = 4
+  izfppp(ifac) = izone
+
+  itypfb(ifac) = ierucf
+
+  ! - Vitesse d'entree
+  rcodcl(ifac,iu,1) = 5.0d0
+  rcodcl(ifac,iv,1) = 0.0d0
+  rcodcl(ifac,iw,1) = 0.0d0
+
+  ! - Masse Volumique (en kg/m3)
+  rcodcl(ifac,isca(irho  ),1) = 1.d0
+
+
+  ! - Turbulence
+
+  uref2 = rcodcl(ifac,iu,1)**2                             &
+         +rcodcl(ifac,iv,1)**2                             &
+         +rcodcl(ifac,iw,1)**2
+  uref2 = max(uref2,1.d-12)
+
+
+  !     Exemple de turbulence calculee a partir
+  !       de formules valables pour une conduite
+
+  !     On veillera a specifier le diametre hydraulique
+  !       adapte a l'entree courante.
+
+  !     On s'attachera egalement a utiliser si besoin une formule
+  !       plus precise pour la viscosite dynamique utilisee dans le
+  !       calcul du nombre de Reynolds (en particulier, lorsqu'elle
+  !       est variable, il peut etre utile de reprendre ici la loi
+  !       imposee dans USCFPV. On utilise ici par defaut la valeur
+  !       VISCL0
+  !     En ce qui concerne la masse volumique, on peut utiliser directement
+  !       sa valeur aux faces de bord si elle est connue (et imposee
+  !       ci-dessus). Dans le cas general, on propose d'utiliser la valeur
+  !       de la cellule adjacente.
+
+  !       Diametre hydraulique
+  dhyd   = 0.075d0
+
+  !       Calcul de la vitesse de frottement au carre (USTAR2)
+  !         et de k et epsilon en entree (XKENT et XEENT) a partir
+  !         de lois standards en conduite circulaire
+  !         (leur initialisation est inutile mais plus propre)
+  rhomoy = propfb(ifac,ipprob(irom))
+  ustar2 = 0.d0
+  xkent  = epzero
+  xeent  = epzero
+
+  call keendb                                              &
+  !==========
+    ( uref2, dhyd, rhomoy, viscl0, cmu, xkappa,            &
+      ustar2, xkent, xeent )
+
+  if    (itytur.eq.2) then
+
+    rcodcl(ifac,ik,1)  = xkent
+    rcodcl(ifac,iep,1) = xeent
+
+  elseif(itytur.eq.3) then
+
+    rcodcl(ifac,ir11,1) = 2.d0/3.d0*xkent
+    rcodcl(ifac,ir22,1) = 2.d0/3.d0*xkent
+    rcodcl(ifac,ir33,1) = 2.d0/3.d0*xkent
+    rcodcl(ifac,ir12,1) = 0.d0
+    rcodcl(ifac,ir13,1) = 0.d0
+    rcodcl(ifac,ir23,1) = 0.d0
+    rcodcl(ifac,iep,1)  = xeent
+
+  elseif(iturb.eq.50) then
+
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iep,1)  = xeent
+    rcodcl(ifac,iphi,1) = d2s3
+    rcodcl(ifac,ifb,1)  = 0.d0
+
+  elseif(iturb.eq.60) then
+
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iomg,1) = xeent/cmu/xkent
+
+  elseif(iturb.eq.70) then
+
+    rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
+
+  endif
+
+  ! - Handle scalars
+    ! (do not loop on nscal, to avoid risking modifying rho and energy)
+  if(nscaus.gt.0) then
+    do ii = 1, nscaus
+      rcodcl(ifac,isca(ii),1) = 1.d0
+    enddo
+  endif
+
+enddo
+
+! --- Subsonic outlet example
+
+! 1 characteristic out of 3 exits: 1 information must be given
+! the 2 others are deduced by a 2-contact and 3-relaxation in the domain.
+! Here we choose to definer P.
+
+! Turbulence and user scalars take a zero flux.
+
+call getfbr('5', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  ! Number zones from 1 to n...
+  izone = 5
+  izfppp(ifac) = izone
+
+  itypfb(ifac) = isopcf
+
+  ! Pressure (in Pa)
+  rcodcl(ifac,ipr,1) = 5.d5
+
+enddo
+
+! --- Wall example
+
+call getfbr('7', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  ! Number zones from 1 to n...
+  izone = 7
+  izfppp(ifac) = izone
+
+  itypfb(ifac) = iparoi
+
+  ! --- Sliding wall
+
+  ! By default, the wall does not slide.
+  ! If the wall slides, define the nonzero components of its velocity.
+  ! The velocity will be projected in a plane tangent to the wall.
+  ! In the following example, we prescribe Ux = 1.
+  ! (example activated if iutile=1)
+
+  iutile = 0
+  if(iutile.eq.1) then
+    rcodcl(ifac,iu,1) = 1.d0
+  endif
+
+  ! --- Prescribed temperature
+
+  ! By default, the wall is adiabatic.
+  ! If the wall has a prescribed temperature, indicate it by setting
+  ! icodcl = 5 and define a value in Kelvin in rcodcl(., ., 1)
+  ! In the following example, we prescribe T = 293.15 K
+  ! (example activated if iutile=1)
+
+  iutile = 0
+  if(iutile.eq.1) then
+    icodcl(ifac,isca(itempk))   = 5
+    rcodcl(ifac,isca(itempk),1) = 20.d0 + 273.15d0
+  endif
+
+  ! --- Prescribed flux
+
+  ! By default, the wall is adiabatic.
+  ! If the wall has a prescribed flux, indicate it by setting
+  ! icodcl = 3 and define the value in Watt/m2 in rcodcl(., ., 3)
+  ! In the following example, we prescribe a flux of 1000 W/m2
+  ! - a midday in the summer - (example is activated if iutile=1)
+
+  iutile = 0
+  if(iutile.eq.1) then
+    icodcl(ifac,isca(itempk))   = 3
+    rcodcl(ifac,isca(itempk),3) = 1000.d0
+  endif
+
+enddo
+
+! --- Symmetry example
+
+call getfbr('8', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  ! Number zones from 1 to n...
+  izone = 8
+  izfppp(ifac) = izone
+
+  itypfb(ifac) = isymet
+
+enddo
+
+! It is not recommended to use other boundary condition types than
+! the ones provided above.
 
 !--------
 ! Formats

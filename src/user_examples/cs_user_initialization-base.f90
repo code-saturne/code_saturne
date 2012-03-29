@@ -136,21 +136,11 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          iel, iutile
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-if (1.eq.1) then
-!       Tag to know if a call to this subroutine has already been done
-  iusini = 0
-  return
-endif
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! Initialization
@@ -158,7 +148,22 @@ endif
 
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
-! INSERT_MAIN_CODE_HERE
+!===============================================================================
+! Variables initialization:
+!
+!   isca(1) is the number related to the first user-defined scalar variable.
+!   rtp(iel,isca(1)) is the value of this variable in cell number iel.
+!
+!   ONLY done if there is no restart computation
+!===============================================================================
+
+if (isuite.eq.0) then
+
+  do iel = 1, ncel
+    rtp(iel,isca(1)) = 25.d0
+  enddo
+
+endif
 
 !--------
 ! Formats
@@ -168,7 +173,7 @@ allocate(lstelt(ncel)) ! temporary array for cells selection
 ! End
 !----
 
-deallocate(lstelt) ! temporary array for cells selection
+deallocate(lstelt)  ! temporary array for cells selection
 
 return
 end subroutine

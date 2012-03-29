@@ -451,51 +451,28 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          ifac  , ii     , iel
+integer          i     , ntf    , nb    , id , itrouv
+integer          izone
+integer          nborne(nbtrmx)
+integer          ilelt , nlelt
+
+double precision rnbs2,capaeq
+double precision sir(nelemx)   ,sii(nelemx)
+double precision sirb(nbtrmx,6),siib(nbtrmx,6)
+double precision ur(nbtrmx,6)  ,ui(nbtrmx,6)
+double precision sirt(nbtrmx)  ,siit(nbtrmx)
+character*200    chain
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-!===============================================================================
-! 0.  This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     If a file from the GUI is used, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-
-if (iihmpr.eq.1) then
-  return
-else
-  write(nfecra,9000)
-  call csexit (1)
-endif
-
- 9000 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in definition of boundary conditions',   /,&
-'@    =======',/,                                                 &
-'@  The user subroutine ''cs_user_boundary_conditions         ',/,&
-'@  must be completed.                                        ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! Initialization
 !===============================================================================
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
-
-! INSERT_ADDITIONAL_INITIALIZATION_CODE_HERE
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
@@ -506,11 +483,284 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 !   - set the boundary condition for each face
 !===============================================================================
 
-! INSERT_MAIN_CODE_HERE
+! 2.1 - Computation of intensity (A/m2) for each electrode
+!       -----------------------------------------------------
+
+!   Pre - initialisation
+
+do i= 1,nbelec
+  sir(i) = 0.d0
+  sii(i) = 0.d0
+enddo
+
+do ntf= 1,nbtrf
+  sirt(ntf) = 0.d0
+  siit(ntf) = 0.d0
+enddo
+
+if (ntcabs.lt.(ntpabs+2)) then
+  do ntf = 1,nbtrf
+    uroff(ntf) = 0.d0
+    uioff(ntf) = 0.d0
+  enddo
+endif
+
+!     Loop on selected boundary faces
+
+do i=1,nbelec
+
+  chain = ' '
+  write(chain,3000) ielecc(i)
+
+  if ( ielect(i).ne. 0 ) then
+    call getfbr(chain,nlelt,lstelt)
+    !==========
+
+    do ilelt = 1, nlelt
+
+      ifac = lstelt(ilelt)
+
+      iel = ifabor(ifac)
+
+      do id=1,ndimve
+        sir(i) = sir(i)                                           &
+             +propce(iel,ipproc(idjr(id)))*surfbo(id,ifac)
+      enddo
+
+      if ( ippmod(ieljou) .eq. 4 ) then
+        do id=1,ndimve
+          sii(i) = sii(i)                                         &
+               +propce(iel,ipproc(idji(id)))*surfbo(id,ifac)
+        enddo
+      endif
+
+    enddo
+
+  endif
+
+enddo
+
+
+! 2.2 - Definition of Voltage on each termin of transformers
+!       ----------------------------------------------------------------
+
+!  2.2.1 Computation of Intensity on each termin of transformers
+
+do i=1,nbelec
+  sirb(ielect(i),ielecb(i)) = 0.d0
+  if ( ippmod(ieljou) .eq. 4 ) then
+    siib(ielect(i),ielecb(i)) = 0.d0
+  endif
+enddo
+
+do i=1,nbelec
+  if ( ielect(i).ne. 0 ) then
+    sirb(ielect(i),ielecb(i)) = sirb(ielect(i),ielecb(i))         &
+                               +sir(i)
+    if ( ippmod(ieljou) .eq. 4 ) then
+       siib(ielect(i),ielecb(i)) = siib(ielect(i),ielecb(i))      &
+                                  +sii(i)
+    endif
+  endif
+enddo
+
+!  2.2.2 RVoltage on each termin
+
+do ntf=1,nbtrf
+
+!      Primary and Secondary in Triangle
+
+  if (ibrpr(ntf) .eq. 0 .and. ibrsec(ntf) .eq. 0 ) then
+
+    nborne(ntf) = 3
+
+    rnbs2 = 3.d0*rnbs(ntf)*rnbs(ntf)
+    ur(ntf,1)=  1.154675d0*tenspr(ntf)/rnbs(ntf)                  &
+      + (zr(ntf)*sirb(ntf,1)-zi(ntf)*siib(ntf,1))/rnbs2
+
+    ur(ntf,2)= -0.5773d0*tenspr(ntf)/rnbs(ntf)                    &
+      + (zr(ntf)*sirb(ntf,2)-zi(ntf)*siib(ntf,2))/rnbs2
+    ur(ntf,3)= -0.5773d0*tenspr(ntf)/rnbs(ntf)                    &
+      + (zr(ntf)*sirb(ntf,3)-zi(ntf)*siib(ntf,3))/rnbs2
+
+    ui(ntf,1)=  0.d0                                              &
+      + (zi(ntf)*sirb(ntf,1)+zr(ntf)*siib(ntf,1))/rnbs2
+    ui(ntf,2)= -1.d0*tenspr(ntf)/rnbs(ntf)                        &
+      + (zi(ntf)*sirb(ntf,2)+zr(ntf)*siib(ntf,2))/rnbs2
+    ui(ntf,3)=  1.d0*tenspr(ntf)/rnbs(ntf)                        &
+      + (zi(ntf)*sirb(ntf,3)+zr(ntf)*siib(ntf,3))/rnbs2
+
+  else
+
+    write(nfecra, *) 'Matrice sur le Transfo a ecrire'
+    call csexit(1)
+
+  endif
+enddo
+
+!  2.2.3 Total intensity for a transformer
+!         (zero valued WHEN Offset established)
+
+do ntf=1,nbtrf
+  sirt(ntf) = 0.d0
+  if ( ippmod(ieljou) .eq. 4 ) then
+    siit(ntf) = 0.d0
+  endif
+enddo
+
+do i=1,nbelec
+  if ( ielect(i).ne. 0 ) then
+    sirt(ielect(i)) = sirt(ielect(i)) + sir(i)
+    if ( ippmod(ieljou) .eq. 4 ) then
+      siit(ielect(i)) = siit(ielect(i)) + sii(i)
+    endif
+  endif
+enddo
+
+!  2.2.4 Take in account of Offset
+
+capaeq = 3.d0
+
+do ntf=1,nbtrf
+  uroff(ntf) = uroff(ntf) + sirt(ntf)/capaeq
+  if ( ippmod(ieljou) .eq. 4 ) then
+    uioff(ntf) = uioff(ntf) + siit(ntf)/capaeq
+  endif
+enddo
+
+! A reference transformer is assumed to have an Offset zero valued
+
+if ( ntfref .gt. 0 ) then
+  uroff(ntfref) = 0.d0
+  uioff(ntfref) = 0.d0
+endif
+
+do ntf=1,nbtrf
+  do nb=1,nborne(ntf)
+    ur(ntf,nb) = ur(ntf,nb) + uroff(ntf)
+    if ( ippmod(ieljou) .eq. 4 ) then
+      ui(ntf,nb) = ui(ntf,nb) + uioff(ntf)
+    endif
+  enddo
+enddo
+
+! Print of UROFF (real part of offset potential)
+
+write(nfecra,1500)
+do ntf=1,nbtrf
+  write(nfecra,2000) ntf,uroff(ntf)
+enddo
+write(nfecra,1501)
+
+!  2.2.5 Take in account of Boundary Conditions
+
+
+!     Loop on selected Boundary Faces
+
+do i=1,nbelec
+
+  CHAIN = ' '
+  write(chain,3000) ielecc(i)
+
+  call getfbr(chain,nlelt,lstelt)
+  !==========
+
+  do ilelt = 1, nlelt
+
+    ifac = lstelt(ilelt)
+
+    iel = ifabor(ifac)
+
+    itypfb(ifac) = iparoi
+
+!     - Zone number
+    izone = i
+
+!      - Allocation of zone number
+    izfppp(ifac) = izone
+
+    if ( ielect(i) .ne. 0 ) then
+      icodcl(ifac,isca(ipotr))   = 1
+      rcodcl(ifac,isca(ipotr),1) = ur(ielect(i),ielecb(i))
+
+      if ( ippmod(ieljou).eq.4  ) then
+        icodcl(ifac,isca(ipoti))   = 1
+        rcodcl(ifac,isca(ipoti),1) = ui(ielect(i),ielecb(i))
+      endif
+
+    else
+
+      ii = ipotr
+      icodcl(ifac,isca(ii))   = 3
+      rcodcl(ifac,isca(ii),3) = 0.d0
+
+      if ( ippmod(ieljou).eq. 4   ) then
+        ii = ipoti
+        icodcl(ifac,isca(ii))   = 3
+        rcodcl(ifac,isca(ii),3) = 0.d0
+      endif
+    endif
+
+  enddo
+
+enddo
+
+! 3 - Test, if not any reference transformer
+!      a piece of wall may be at ground.
+
+if ( ntfref .eq. 0 ) then
+
+  itrouv = 0
+  do ifac = 1, nfabor
+
+    if ( itypfb(ifac) .eq. iparoi ) then
+
+      if (icodcl(ifac,isca(ipotr)) .eq. 1 ) then
+
+        if ( ippmod(ieljou).eq.3 ) then
+
+          if ( abs(rcodcl(ifac,isca(ipotr),1)).lt.1.e-20 ) then
+            itrouv = 1
+          endif
+
+        else if ( ippmod(ieljou).eq.4 ) then
+
+          if (icodcl(ifac,isca(ipoti)) .eq. 1 ) then
+
+            if (abs(rcodcl(ifac,isca(ipotr),1)).lt.1.e-20         &
+           .and.abs(rcodcl(ifac,isca(ipoti),1)).lt.1.e-20 ) then
+              itrouv = 1
+            endif
+          endif
+        endif
+      endif
+    endif
+  enddo
+
+  if ( itrouv .eq. 0 ) then
+    write(nfecra,1000)
+    call csexit (1)
+  endif
+
+endif
 
 !--------
 ! Formats
 !--------
+
+ 1000 format(1X,' ERROR in JOULE : '                          ,/, &
+       1X,' ====================   '                          ,/, &
+      10X,' Lack of reference : choose a transformer for wich',/, &
+      10X,' offset is assumed zero or a face at ground on the',/, &
+          ' boundary')
+ 1500 format(/,2X,' ** INFORMATIONS ON TRANSFOMERS           ',/, &
+         2X,'    ---------------------------------------'/    ,/, &
+         1X,'      ---------------------------------'         ,/, &
+         1X,'      Number of Transfo        UROFF    '        ,/, &
+         1X,'      ---------------------------------')
+ 1501 format(1X,'      ---------------------------------')
+ 2000 format(10x,i6,12x,e12.5)
+ 3000 format(i7)
 
 !----
 ! End

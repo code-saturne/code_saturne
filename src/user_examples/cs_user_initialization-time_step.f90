@@ -136,21 +136,11 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          iel
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-if (1.eq.1) then
-!       Tag to know if a call to this subroutine has already been done
-  iusini = 0
-  return
-endif
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! Initialization
@@ -158,7 +148,20 @@ endif
 
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
-! INSERT_MAIN_CODE_HERE
+!===============================================================================
+! Time step modification
+!
+! We do a computation restart with a variable in time and constant in space
+!  time step or with a variable in time and space time step.
+!  We want to modify the time step given by the reading of the restart file
+!  (in order to overcome a too slow evolution for instance).
+!===============================================================================
+
+if (isuite .eq. 1 .and. (idtvar.eq.1 .or. idtvar.eq.2)) then
+  do iel = 1, ncel
+    dt (iel) = 10.d0*dt(iel)
+  enddo
+endif
 
 !--------
 ! Formats
@@ -168,7 +171,7 @@ allocate(lstelt(ncel)) ! temporary array for cells selection
 ! End
 !----
 
-deallocate(lstelt) ! temporary array for cells selection
+deallocate(lstelt)  ! temporary array for cells selection
 
 return
 end subroutine

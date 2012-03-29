@@ -542,6 +542,7 @@ class Study:
         datadir = self.package.pkgdatadir
         data_distpath  = os.path.join(datadir, 'data')
         user_distpath = os.path.join(datadir, 'user')
+        user_examples_distpath = os.path.join(datadir, 'user_examples')
 
         try:
             os.mkdir(casename)
@@ -586,7 +587,9 @@ class Study:
         if self.use_ref:
 
             user = os.path.join(src, 'REFERENCE')
+            user_examples = os.path.join(src, 'EXAMPLES')
             shutil.copytree(user_distpath, user)
+            shutil.copytree(user_examples_distpath, user_examples)
 
             f = os.path.join(user, 'cs_user_parameters.f90')
             if os.path.isfile(f):

@@ -9871,4 +9871,3 @@ msgstr ""
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
 "\n"
-

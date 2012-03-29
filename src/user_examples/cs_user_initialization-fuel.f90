@@ -136,39 +136,160 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          iel, ige, mode, icla
+integer          ioxy
 
-integer, allocatable, dimension(:) :: lstelt
+double precision t1init, h1init, coefe(ngazem)
+double precision t2init, h2init
+double precision xkent, xeent, d2s3
+double precision dmas , wmco2 , wmh2o , wmn2 , wmo2
 
 !===============================================================================
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!---------------
+! Initialization
+!---------------
 
-if (1.eq.1) then
-!       Tag to know if a call to this subroutine has already been done
-  iusini = 0
-  return
+write(nfecra,9001)
+
+
+d2s3 = 2.d0/3.d0
+
+!===============================================================================
+! Variables initialization:
+!
+!   ONLY done if there is no restart computation
+!===============================================================================
+
+if ( isuite.eq.0 ) then
+
+! --> Initialisation of k and epsilon (exemple)
+
+  xkent = 1.d-10
+  xeent = 1.d-10
+
+! ---- TURBULENCE
+
+  if (itytur.eq.2) then
+
+    do iel = 1, ncel
+      rtp(iel,ik)  = xkent
+      rtp(iel,iep) = xeent
+    enddo
+
+  elseif (itytur.eq.3) then
+
+    do iel = 1, ncel
+      rtp(iel,ir11) = d2s3*xkent
+      rtp(iel,ir22) = d2s3*xkent
+      rtp(iel,ir33) = d2s3*xkent
+      rtp(iel,ir12) = 0.d0
+      rtp(iel,ir13) = 0.d0
+      rtp(iel,ir23) = 0.d0
+      rtp(iel,iep)  = xeent
+    enddo
+
+  elseif (iturb.eq.50) then
+
+    do iel = 1, ncel
+      rtp(iel,ik)   = xkent
+      rtp(iel,iep)  = xeent
+      rtp(iel,iphi) = d2s3
+      rtp(iel,ifb)  = 0.d0
+    enddo
+
+  elseif (iturb.eq.60) then
+
+    do iel = 1, ncel
+      rtp(iel,ik)   = xkent
+      rtp(iel,iomg) = xeent/cmu/xkent
+    enddo
+
+  endif
+
+! --> All the computation domain is initialised with air at TINITK
+!                   ================================================
+
+! ---- Computation of H1INIT and  H2INIT
+
+  t1init = 1000.d0
+  t2init = 1000.d0
+
+! ------ Transported variables for droplets
+
+  h2init = h02fol +  cp2fol*(t2init-trefth)
+
+  do icla = 1, nclafu
+    do iel = 1, ncel
+      rtp(iel,isca(iyfol(icla))) = zero
+      rtp(iel,isca(ing(icla  )))  = zero
+      rtp(iel,isca(ih2(icla  )))  = zero
+    enddo
+  enddo
+
+! ------ Transported variables for the mix (droplets and carrying gases)
+
+  do ige = 1, ngazem
+    coefe(ige) = zero
+  enddo
+!  On considere l'oxydant 1
+  coefe(io2) = wmole(io2)*oxyo2(1)                                &
+              /( wmole(io2) *oxyo2(1) +wmole(in2) *oxyn2(1)       &
+                +wmole(ih2o)*oxyh2o(1)+wmole(ico2)*oxyco2(1))
+  coefe(ih2o) = wmole(ih2o)*oxyh2o(1)                             &
+              /( wmole(io2) *oxyo2(1) +wmole(in2) *oxyn2(1)       &
+                +wmole(ih2o)*oxyh2o(1)+wmole(ico2)*oxyco2(1))
+  coefe(ico2) = wmole(ico2)*oxyco2(1)                             &
+              /( wmole(io2) *oxyo2(1) +wmole(in2) *oxyn2(1)       &
+                +wmole(ih2o)*oxyh2o(1)+wmole(ico2)*oxyco2(1))
+  coefe(in2) = 1.d0-coefe(io2)-coefe(ih2o)-coefe(ico2)
+
+  mode = -1
+  call cs_fuel_htconvers1(mode,h1init,coefe,t1init)
+ !============================
+
+  do iel = 1, ncel
+    rtp(iel,isca(ihm)) = h1init
+  enddo
+
+! ------ Transported variables for gaseous mixture
+!        (passive scalars, variance, reactive species)
+
+  do iel = 1, ncel
+    rtp(iel,isca(ifvap )) = 0.d0
+    rtp(iel,isca(if7m  )) = zero
+    rtp(iel,isca(ifvp2m)) = zero
+    if ( ieqco2 .ge. 1 ) then
+      ioxy   =  1
+      wmo2   = wmole(io2)
+      wmco2  = wmole(ico2)
+      wmh2o  = wmole(ih2o)
+      wmn2   = wmole(in2)
+      dmas = ( oxyo2 (ioxy)*wmo2 +oxyn2 (ioxy)*wmn2               &
+              +oxyh2o(ioxy)*wmh2o+oxyco2(ioxy)*wmco2 )
+      rtp(iel,isca(iyco2)) = oxyco2(ioxy)*wmco2/dmas
+    endif
+    if ( ieqnox .eq. 1 ) then
+      rtp(iel,isca(iyhcn)) = zero
+      rtp(iel,isca(iyno )) = zero
+      rtp(iel,isca(ihox)) = h1init
+    endif
+  enddo
+
 endif
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-!===============================================================================
-! Initialization
-!===============================================================================
-
-allocate(lstelt(ncel)) ! temporary array for cells selection
-
-! INSERT_MAIN_CODE_HERE
 
 !--------
 ! Formats
 !--------
 
+ 9001 format(                                                   /,&
+'  Variables Initialisation for Fuel by the User'              ,/,&
+                                                                /)
+
 !----
 ! End
 !----
-
-deallocate(lstelt) ! temporary array for cells selection
 
 return
 end subroutine

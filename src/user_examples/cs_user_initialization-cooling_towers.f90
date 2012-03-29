@@ -136,29 +136,62 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          iel, iutile
+integer          ilelt, nlelt
+
+double precision d2s3
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-if (1.eq.1) then
-!       Tag to know if a call to this subroutine has already been done
-  iusini = 0
-  return
-endif
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-!===============================================================================
+!---------------
 ! Initialization
-!===============================================================================
+!---------------
 
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
-! INSERT_MAIN_CODE_HERE
+d2s3 = 2.d0/3.d0
+
+!===============================================================================
+! Variables initialization:
+!
+!   ONLY done if there is no restart computation
+!===============================================================================
+
+if (isuite.eq.0) then
+
+!   --- Initialisation de la temperature de l'air a 11 deg Celsius
+!                      de l'humidite de l'air a 0.0063
+!       pour toutes les cellules
+
+  do iel = 1, ncel
+
+    rtp(iel,isca(itemp4)) = 11.d0
+    rtp(iel,isca(ihumid)) = 0.0063d0
+
+  enddo
+
+!   --- Initialisation de la temperature de l'air a 20 deg Celsius
+!                      de l'humidite de l'air a 0.012
+!                      de la vitesse
+!       uniquement pour les cellules de couleur 6
+
+  call getcel('6', nlelt, lstelt)
+  !==========
+
+  do ilelt = 1, nlelt
+
+    iel = lstelt(ilelt)
+
+    rtp(iel,iu) = -0.5d0
+
+    rtp(iel,isca(itemp4)) = 20.d0
+    rtp(iel,isca(ihumid)) = 0.012d0
+
+  enddo
+
+endif
 
 !--------
 ! Formats
@@ -168,7 +201,8 @@ allocate(lstelt(ncel)) ! temporary array for cells selection
 ! End
 !----
 
-deallocate(lstelt) ! temporary array for cells selection
+! Deallocate the temporary array
+deallocate(lstelt)
 
 return
 end subroutine

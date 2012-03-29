@@ -26,7 +26,7 @@ SUBDIRS = \
 . bft fvm mei gui \
 base pprt alge mesh turb \
 atmo cfbl cogz comb cplv ctwr elec lagr rayt \
-user apps
+user user_examples apps
 
 # General flags
 

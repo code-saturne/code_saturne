@@ -126,8 +126,6 @@ use mesh
 
 implicit none
 
-! Arguments
-
 integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
@@ -136,33 +134,165 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          iel, mode
+integer          iesp , idimve
+
+double precision tinit, hinit, coefe(ngazem)
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 
-if (1.eq.1) then
-!       Tag to know if a call to this subroutine has already been done
-  iusini = 0
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
+!===============================================================================
+!
+! For Joule heating by direct conduction, it stops
+!   you have tot be sure that the enthalpy function H(T) is the right one
+!
+if ( ippmod(ieljou).ge.1 ) then
+
+  write(nfecra,9010)
+  call csexit (1)
+
+! For electric arc, we continue because the value are given by defauft
+!       (H(T) is given from the data file dp_ELE)
+elseif (ippmod(ielarc).ge.1) then
+
+  if (ntcabs.eq.1) then
+    write(nfecra,9011)
+  endif
+
   return
+
 endif
+
+ 9010 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ CAUTION : Stop in the definition of Thermal properties  ',/,&
+'@    =========                                               ',/,&
+'@                      for Electric module                   ',/,&
+'@                                                            ',/,&
+'@     The user routine uselph has to be completed            ',/,&
+'@                                                            ',/,&
+'@     This user routine is used to define thermal properties ',/,&
+'@     It is unavoidable.                                     ',/,&
+'@                                                            ',/,&
+'@  The calculation will not be run.                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 9011 format(/,                                                   &
+' ELECTRIC ARC MODULE : THERMAL PROPERTIES ARE READ IN A FILE',/)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-!===============================================================================
+!---------------
 ! Initialization
-!===============================================================================
+!---------------
 
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
-! INSERT_MAIN_CODE_HERE
+! Control output
+
+write(nfecra,9001)
+
+!===============================================================================
+! Initialization
+!    (only at the beginning of the calculation)
+!===============================================================================
+
+if ( isuite.eq.0 ) then
+
+! --> Enthalpy = H(T0) ou 0
+
+!     For electric arc,
+!     for the whole compution domain enthalpy is set to H(T0) of the 1st
+!     constituant of the gas
+!
+!     For Joule jeating by direct conduction,
+!     enthalpy is set to zero, and the user will enter his H(T) function
+!     tabulation.
+!
+!   --  HINIT calculations
+
+  if ( ippmod(ielarc).ge.1 ) then
+    mode = -1
+    tinit = t0
+    coefe(1) = 1.d0
+    if ( ngazg .gt. 1 ) then
+      do iesp = 2, ngazg
+        coefe(iesp) = 0.d0
+      enddo
+    endif
+    call elthht(mode,ngazg,coefe,hinit,tinit)
+  else
+    mode = -1
+    tinit = t0
+    call usthht(mode,hinit,tinit)
+  endif
+
+!    -- Entahlpy value
+
+  do iel = 1, ncel
+    rtp(iel,isca(ihm)) = hinit
+  enddo
+
+
+! --> Mass fraction  = 1 ou 0
+
+  if ( ngazg .gt. 1 ) then
+    do iel = 1, ncel
+      rtp(iel,isca(iycoel(1))) = 1.d0
+    enddo
+    do iesp = 2, ngazg-1
+      do iel = 1, ncel
+        rtp(iel,isca(iycoel(iesp))) = 0.d0
+      enddo
+    enddo
+  endif
+
+
+! --> Electric potentials = 0
+
+!     -- Real Component
+  do iel = 1, ncel
+    rtp(iel,isca(ipotr)) = 0.d0
+  enddo
+
+!     -- Imaginary (for Joule heating by direct conduction)
+  if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
+    do iel = 1, ncel
+      rtp(iel,isca(ipoti)) = 0.d0
+    enddo
+  endif
+
+!     -- Vector potential (3D electric arc 3D)
+  if ( ippmod(ielarc).ge.2 ) then
+    do idimve = 1, ndimve
+      do iel = 1, ncel
+        rtp(iel,isca(ipotva(idimve))) = 0.d0
+      enddo
+    enddo
+  endif
+
+endif
 
 !--------
 ! Formats
 !--------
+
+ 9001 format(                                                   /,&
+'                       ELECTRIC MODULE'                       ,/,&
+'  variables initialization by user'                           ,/,&
+                                                                /)
 
 !----
 ! End

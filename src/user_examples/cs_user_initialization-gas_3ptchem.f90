@@ -136,33 +136,61 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          iel, igg
+double precision coefg(ngazgm)
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-if (1.eq.1) then
-!       Tag to know if a call to this subroutine has already been done
-  iusini = 0
-  return
-endif
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-!===============================================================================
+!---------------
 ! Initialization
-!===============================================================================
+!---------------
 
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
-! INSERT_MAIN_CODE_HERE
+! Control output
+
+write(nfecra,9001)
+
+do igg = 1, ngazgm
+  coefg(igg) = zero
+enddo
+
+!===============================================================================
+! Variables initialization:
+!
+!   ONLY done if there is no restart computation
+!===============================================================================
+
+if ( isuite.eq.0 ) then
+
+  do iel = 1, ncel
+
+! ----- Mean Mixture Fraction
+    rtp(iel,isca(ifm))   = fs(1)
+
+! ----- Variance of Mixture Fraction
+    rtp(iel,isca(ifp2m)) = zero
+
+! ----- Enthalpy
+    if ( ippmod(icod3p).eq.1 ) then
+      rtp(iel,isca(ihm)) = hinfue*fs(1)+hinoxy*(1.d0-fs(1))
+    endif
+
+  enddo
+
+endif
+
 
 !--------
 ! Formats
 !--------
+
+ 9001 format(                                       /,&
+'  user defined initialization of variables'       ,/,&
+                                                    /)
+
 
 !----
 ! End

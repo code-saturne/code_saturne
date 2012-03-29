@@ -753,7 +753,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/elec/Makefile src/comb/Makefile src/pprt/Makefile
                  src/lagr/Makefile src/rayt/Makefile src/turb/Makefile
                  src/alge/Makefile src/mesh/Makefile src/user/Makefile
-                 libsyrcs/Makefile
+                 src/user_examples/Makefile libsyrcs/Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  salome/fsi_coupling/Makefile
                  salome/fsi_coupling/idl/Makefile
