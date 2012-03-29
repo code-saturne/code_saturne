@@ -136,29 +136,104 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          iel, iutile
+double precision d2s3
+double precision zent,xuent,xvent,xkent,xeent,tpent
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-if (1.eq.1) then
-!       Tag to know if a call to this subroutine has already been done
-  iusini = 0
-  return
-endif
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-!===============================================================================
+!---------------
 ! Initialization
-!===============================================================================
+!---------------
 
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
-! INSERT_MAIN_CODE_HERE
+d2s3 = 2.d0/3.d0
+
+!===============================================================================
+! Initialize variables using an input meteo profile
+!   (only if we are not doing a restart)
+!===============================================================================
+
+if (isuite.eq.0) then
+
+  do iel = 1, ncel
+
+    zent=xyzcen(3,iel)
+
+    call intprf                                                   &
+    !==========
+   (nbmetd, nbmetm,                                               &
+    zdmet, tmmet, umet , zent  , ttcabs, xuent )
+
+    call intprf                                                   &
+    !==========
+   (nbmetd, nbmetm,                                               &
+    zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+
+    call intprf                                                   &
+    !==========
+   (nbmetd, nbmetm,                                               &
+    zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
+
+    call intprf                                                   &
+    !==========
+   (nbmetd, nbmetm,                                               &
+    zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+
+    rtp(iel,iu)=xuent
+    rtp(iel,iv)=xvent
+    rtp(iel,iw)=0.d0
+
+!     ITYTUR est un indicateur qui vaut ITURB/10
+    if    (itytur.eq.2) then
+
+      rtp(iel,ik)  = xkent
+      rtp(iel,iep) = xeent
+
+    elseif (itytur.eq.3) then
+
+      rtp(iel,ir11) = d2s3*xkent
+      rtp(iel,ir22) = d2s3*xkent
+      rtp(iel,ir33) = d2s3*xkent
+      rtp(iel,ir12) = 0.d0
+      rtp(iel,ir13) = 0.d0
+      rtp(iel,ir23) = 0.d0
+      rtp(iel,iep)  = xeent
+
+    elseif (iturb.eq.50) then
+
+      rtp(iel,ik)   = xkent
+      rtp(iel,iep)  = xeent
+      rtp(iel,iphi) = d2s3
+      rtp(iel,ifb)  = 0.d0
+
+    elseif (iturb.eq.60) then
+
+      rtp(iel,ik)   = xkent
+      rtp(iel,iomg) = xeent/cmu/xkent
+
+    elseif (iturb.eq.70) then
+
+      rtp(iel,inusa) = cmu*xkent**2/xeent
+
+    endif
+
+    if (iscalt.ge.0) then
+! On suppose que le scalaire est la temperature potentielle :
+      call intprf                                                 &
+      !==========
+   (nbmett, nbmetm,                                               &
+    ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+
+      rtp(iel,isca(iscalt)) = tpent
+
+    endif
+  enddo
+
+endif
 
 !--------
 ! Formats
@@ -168,7 +243,8 @@ allocate(lstelt(ncel)) ! temporary array for cells selection
 ! End
 !----
 
-deallocate(lstelt) ! temporary array for cells selection
+! Deallocate the temporary array
+deallocate(lstelt)
 
 return
 end subroutine

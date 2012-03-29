@@ -451,43 +451,14 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          ifac, izone, ii
+integer          ilelt, nlelt
+
+double precision uref2, xkent, xeent, d2s3
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-!===============================================================================
-! 0.  This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     If a file from the GUI is used, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-
-if (iihmpr.eq.1) then
-  return
-else
-  write(nfecra,9000)
-  call csexit (1)
-endif
-
- 9000 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in definition of boundary conditions',   /,&
-'@    =======',/,                                                 &
-'@  The user subroutine ''cs_user_boundary_conditions         ',/,&
-'@  must be completed.                                        ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! Initialization
@@ -495,7 +466,7 @@ endif
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
-! INSERT_ADDITIONAL_INITIALIZATION_CODE_HERE
+d2s3 = 2.d0/3.d0
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
@@ -506,7 +477,225 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 !   - set the boundary condition for each face
 !===============================================================================
 
-! INSERT_MAIN_CODE_HERE
+! Definition of a burned gas inlet (pilot flame) for each face of colour 11
+
+call getfbr('11', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  !  Type of pre-defined boundary condidition (see above)
+  itypfb(ifac) = ientre
+
+  !  Zone number (arbitrary number between 1 and n)
+  izone = 1
+
+  !  Allocation of the actual face to the zone
+  izfppp(ifac) = izone
+
+  !  Indicating the inlet as a burned gas inlet
+  ientgb(izone) = 1
+  !  The incoming burned gas flow refers to:
+  !  a) a massflow rate   -> iqimp()  = 1
+  iqimp(izone) = 0
+  qimp (izone) = zero
+
+  !  b) an inlet velocity -> iqimp()  = 0
+  rcodcl(ifac,iu,1) = 0.d0
+  rcodcl(ifac,iv,1) = 0.d0
+  rcodcl(ifac,iw,1) = 21.47d0
+  ! ATTENTION: If iqimp()  = 1 the direction vector of the massfow has
+  !           to be given here.
+
+  !  Mean Mixture Fraction at Inlet
+  fment(izone) = 1.d0*fs(1)
+  !  Inlet Temperature in K
+  tkent(izone) = 2000.d0
+
+  !  Boundary Conditions of Turbulence
+  icalke(izone) = 1
+
+  !   - If ICALKE = 0 the boundary conditions of turbulence at
+  !     the inlet are calculated as follows:
+
+  if(icalke(izone).eq.0) then
+
+    uref2 = rcodcl(ifac,iu,1)**2                           &
+           +rcodcl(ifac,iv,1)**2                           &
+           +rcodcl(ifac,iw,1)**2
+    uref2 = max(uref2,1.d-12)
+    xkent  = epzero
+    xeent  = epzero
+
+    call keenin                                                   &
+    !==========
+      ( uref2, xintur(izone), dh(izone), cmu, xkappa,             &
+        xkent, xeent )
+
+    if    (itytur.eq.2) then
+
+      rcodcl(ifac,ik,1)  = xkent
+      rcodcl(ifac,iep,1) = xeent
+
+    elseif(itytur.eq.3) then
+
+      rcodcl(ifac,ir11,1) = d2s3*xkent
+      rcodcl(ifac,ir22,1) = d2s3*xkent
+      rcodcl(ifac,ir33,1) = d2s3*xkent
+      rcodcl(ifac,ir12,1) = 0.d0
+      rcodcl(ifac,ir13,1) = 0.d0
+      rcodcl(ifac,ir23,1) = 0.d0
+      rcodcl(ifac,iep,1)  = xeent
+
+    elseif (iturb.eq.50) then
+
+      rcodcl(ifac,ik,1)   = xkent
+      rcodcl(ifac,iep,1)  = xeent
+      rcodcl(ifac,iphi,1) = d2s3
+      rcodcl(ifac,ifb,1)  = 0.d0
+
+    elseif (iturb.eq.60) then
+
+      rcodcl(ifac,ik,1)   = xkent
+      rcodcl(ifac,iomg,1) = xeent/cmu/xkent
+
+    elseif (iturb.eq.70) then
+
+      rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
+
+    endif
+
+  endif
+
+  !   - If ICALKE = 1 the boundary conditions of turbulence at
+  !     the inlet refer to both, a hydraulic diameter and a
+  !     reference velocity.
+  !
+  dh(izone)     = 0.032d0
+
+  !   - If ICALKE = 2 the boundary conditions of turbulence at
+  !     the inlet refer to a turbulence intensity.
+
+  xintur(izone) = 0.d0
+
+enddo
+
+! Definition of an unburned gas inlet for each face of colour 12
+
+call getfbr('12', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  !  Type of pre-defined boundary condidition (see above)
+  itypfb(ifac) = ientre
+
+  !  Zone number (arbitrary number between 1 and n)
+  izone = 2
+
+  !  Allocation of the actual face to the zone
+  izfppp(ifac) = izone
+
+  !  Indicating the inlet as an unburned gas inlet
+  ientgf(izone) = 1
+  !  The incoming unburned gas flow refers to:
+  !  a) a massflow rate   -> iqimp()  = 1
+  iqimp(izone) = 0
+  qimp(izone)  = zero
+
+  !  b) an inlet velocity -> iqimp()  = 0
+  rcodcl(ifac,iu,1) = 60.d0
+  rcodcl(ifac,iv,1) = 0.d0
+  rcodcl(ifac,iw,1) = 0.d0
+  ! ATTENTION: If iqimp()  = 1 the direction vector of the massfow has
+  !           to be given here.
+
+  !  Mean Mixture Fraction at Inlet
+  fment(izone) = 8.d-1*fs(1)
+
+  !  Inlet Temperature in K
+  tkent(izone) = 600.d0
+
+  !  Boundary Conditions of Turbulence
+  icalke(izone) = 1
+
+  !   - If ICALKE = 1 the boundary conditions of turbulence at
+  !    the inlet refer to both, a hydraulic diameter and a
+  !    reference velocity.
+
+  dh(izone)     = 0.08d0
+
+  !  - If ICALKE = 2 the boundary conditions of turbulence at
+  !    the inlet refer to a turbulence intensity.
+
+  xintur(izone) = 0.1d0
+
+enddo
+
+! Definition of a wall for each face of colour 51 and 5
+
+call getfbr('51 or 5', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  ! Type de condition aux limites pour les variables standard
+  itypfb(ifac)   = iparoi
+
+  ! Zone number (arbitrary number between 1 and n)
+  izone = 4
+
+  ! Allocation of the actual face to the zone
+  izfppp(ifac) = izone
+
+enddo
+
+! Definition of an exit for each face of colour 91 and 9
+
+call getfbr('91 or 9', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  ! Type de condition aux limites pour les variables standard
+  itypfb(ifac)   = isolib
+
+  ! Zone number (arbitrary number between 1 and n)
+  izone = 5
+
+  ! Allocation of the actual face to the zone 9
+  izfppp(ifac) = izone
+
+enddo
+
+! Definition of symmetric boundary conditions for each
+! face of colour 41 and 4.
+
+call getfbr('41 or 4', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  ! Type de condition aux limites pour les variables standard
+  itypfb(ifac)   = isymet
+
+  ! Zone number (arbitrary number between 1 and n)
+  izone = 6
+
+  ! Allocation of the actual face to the zonec
+  izfppp(ifac) = izone
+
+enddo
 
 !--------
 ! Formats

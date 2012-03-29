@@ -451,43 +451,20 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          ifac, iel, ii, ivar
+integer          izone
+integer          ilelt, nlelt
+double precision uref2, d2s3
+double precision rhomoy, ustar2
+double precision zref,xuref
+double precision ustar,rugd, rugt
+double precision zent,xuent,xvent
+double precision xkent, xeent
+double precision tpent
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-!===============================================================================
-! 0.  This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     If a file from the GUI is used, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-
-if (iihmpr.eq.1) then
-  return
-else
-  write(nfecra,9000)
-  call csexit (1)
-endif
-
- 9000 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in definition of boundary conditions',   /,&
-'@    =======',/,                                                 &
-'@  The user subroutine ''cs_user_boundary_conditions         ',/,&
-'@  must be completed.                                        ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! Initialization
@@ -495,7 +472,13 @@ endif
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
-! INSERT_ADDITIONAL_INITIALIZATION_CODE_HERE
+d2s3 = 2.d0/3.d0
+
+! Paremeters for the analytical rough wall law (neutral)
+zref=10.d0
+xuref=10.d0
+rugd=0.1d0
+rugt=0.1d0
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
@@ -506,7 +489,205 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 !   - set the boundary condition for each face
 !===============================================================================
 
-! INSERT_MAIN_CODE_HERE
+! --- For boundary faces of color 11,
+!       assign an inlet boundary condition for all phases prescribed from the meteo profile
+!       with automatic choice between inlet/ outlet according to the meteo profile
+
+call getfbr('11',nlelt,lstelt)
+!==========
+!   - Zone number (from 1 to n)
+izone = 1
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+!     - Zone to which the face belongs
+  izfppp(ifac) = izone
+
+!     - Boundary conditions are prescribed from the meteo profile
+  iprofm(izone) = 1
+
+enddo
+
+
+! ---For boundary faces of color 21,
+!     assign an inlet boundary condition for all phases prescribed from the meteo profile
+
+call getfbr('21',nlelt,lstelt)
+!==========
+!   -  Zone number (from 1 to n)
+izone = 2
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+!     - Zone to which the face belongs
+  izfppp(ifac) = izone
+
+!     - Boundary conditions are prescribed from the meteo profile
+  iprofm(izone) = 1
+
+!     - Assign inlet boundary conditions
+  itypfb(ifac) = ientre
+
+enddo
+
+! --- For boundary faces of color 31,
+!       assign an inlet boundary condition for all phases prescribed from the
+!       meteo profile except for dynamical variables which are prescribed with
+!       a rough log law.
+
+call getfbr('31',nlelt,lstelt)
+!==========
+
+!   - Zone number (from 1 to n)
+izone = 3
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+!     - Zone to which the face belongs
+  izfppp(ifac) = izone
+
+!     - Boundary conditions are prescribed from the meteo profile
+  iprofm(izone) = 1
+
+!     - Dynamical variables are prescribed with a rough log law
+  zent=cdgfbo(3,ifac)
+
+  ustar=xkappa*xuref/log((zref+rugd)/rugd)
+  xuent=ustar/xkappa*log((zent+rugd)/rugd)
+  xvent = 0.d0
+  xkent=ustar**2/sqrt(cmu)
+  xeent=ustar**3/xkappa/(zent+rugd)
+
+  itypfb(ifac) = ientre
+
+  rcodcl(ifac,iu,1) = xuent
+  rcodcl(ifac,iv,1) = xvent
+  rcodcl(ifac,iw,1) = 0.d0
+
+  ! itytur is a flag equal to iturb/10
+  if    (itytur.eq.2) then
+
+    rcodcl(ifac,ik,1)  = xkent
+    rcodcl(ifac,iep,1) = xeent
+
+  elseif(itytur.eq.3) then
+
+    rcodcl(ifac,ir11,1) = d2s3*xkent
+    rcodcl(ifac,ir22,1) = d2s3*xkent
+    rcodcl(ifac,ir33,1) = d2s3*xkent
+    rcodcl(ifac,ir12,1) = 0.d0
+    rcodcl(ifac,ir13,1) = 0.d0
+    rcodcl(ifac,ir23,1) = 0.d0
+    rcodcl(ifac,iep,1)  = xeent
+
+  elseif(iturb.eq.50) then
+
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iep,1)  = xeent
+    rcodcl(ifac,iphi,1) = d2s3
+    rcodcl(ifac,ifb,1)  = 0.d0
+
+  elseif(iturb.eq.60) then
+
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iomg,1) = xeent/cmu/xkent
+
+  elseif(iturb.eq.70) then
+
+    rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
+
+  endif
+
+enddo
+
+! --- Prescribe at boundary faces of color '12' an outlet for all phases
+call getfbr('12', nlelt, lstelt)
+!==========
+
+!   - Zone number (from 1 to n)
+izone = 4
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+!     - Zone to which the zone belongs
+  izfppp(ifac) = izone
+
+  ! Outlet: zero flux for velocity and temperature, prescribed pressure
+  !         Note that the pressure will be set to P0 at the first
+  !         free outlet face (isolib)
+
+  itypfb(ifac)   = isolib
+
+enddo
+
+! --- Prescribe at boundary faces of color 15 a rough wall for all phases
+call getfbr('15', nlelt, lstelt)
+!==========
+
+!   - Zone number (from 1 to n)
+izone = 5
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  ! Wall: zero flow (zero flux for pressure)
+  !       rough friction for velocities (+ turbulent variables)
+  !       zero flux for scalars
+
+!     - Zone to which the zone belongs
+  izfppp(ifac) = izone
+
+  itypfb(ifac)   = iparug
+
+  !     Roughness for velocity: rugd
+  rcodcl(ifac,iu,3) = rugd
+
+  !     Roughness for scalars (if required):
+  !   rcodcl(ifac,iv,3) = rugd
+
+
+  if(iscalt.ne.-1) then
+
+    ! If temperature prescribed to 20 with a rough wall law (scalar ii=1)
+    ! (with thermal roughness specified in rcodcl(ifac,iv,3)) :
+    ! ii = 1
+    ! icodcl(ifac, isca(ii))    = 6
+    ! rcodcl(ifac, isca(ii),1)  = 293.15d0
+
+    ! If flux prescribed to 4.d0 (scalar ii=2):
+    ! ii = 2
+    ! icodcl(ifac, isca(ii))    = 3
+    ! rcodcl(ifac, isca(ii), 3) = 4.D0
+
+  endif
+enddo
+
+! --- Prescribe at boundary faces of color 4 a symmetry for all phases
+call getfbr('4', nlelt, lstelt)
+!==========
+
+!   - Zone number (from 1 to n)
+izone = 6
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+!     - Zone to which the zone belongs
+  izfppp(ifac) = izone
+
+  itypfb(ifac)   = isymet
+
+enddo
 
 !--------
 ! Formats

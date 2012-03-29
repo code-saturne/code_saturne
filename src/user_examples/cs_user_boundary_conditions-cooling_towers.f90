@@ -451,51 +451,18 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          ifac, iel, ii, ivar
+integer          ilelt, nlelt, izone
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-!===============================================================================
-! 0.  This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     If a file from the GUI is used, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-
-if (iihmpr.eq.1) then
-  return
-else
-  write(nfecra,9000)
-  call csexit (1)
-endif
-
- 9000 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in definition of boundary conditions',   /,&
-'@    =======',/,                                                 &
-'@  The user subroutine ''cs_user_boundary_conditions         ',/,&
-'@  must be completed.                                        ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! Initialization
 !===============================================================================
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
-
-! INSERT_ADDITIONAL_INITIALIZATION_CODE_HERE
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
@@ -506,7 +473,65 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 !   - set the boundary condition for each face
 !===============================================================================
 
-! INSERT_MAIN_CODE_HERE
+! Assign a free outlet for faces of color/group 2
+
+call getfbr('2', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  izone = 1
+  izfppp(ifac) = izone
+
+  ! outlet: zero flux for velocity and temperature, prescribed pressure
+  !         note that pressure will be set to P0 on the free outlet face
+  !         (isolib) closest to xyz0.
+
+
+  itypfb(ifac) = isolib
+
+  ! Precribe a pressure profile for all faces
+  icodcl(ifac,ipr) = 1
+  rcodcl(ifac,ipr,1) =                                      &
+    ro0*(  gx*(cdgfbo(1,ifac)-xyzp0(1))                     &
+                + gy*(cdgfbo(2,ifac)-xyzp0(2))              &
+                + gz*(cdgfbo(3,ifac)-xyzp0(3)))
+
+enddo
+
+! Assign a wall condition for faces of color/group 4
+
+call getfbr('4', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  izone = 2
+  izfppp(ifac) = izone
+
+  itypfb(ifac)   = iparoi
+
+enddo
+
+! Assign a symetry for faces of color/group 5
+
+call getfbr('5', nlelt, lstelt)
+!==========
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  izone = 3
+  izfppp(ifac) = izone
+
+  itypfb(ifac) = isymet
+
+enddo
 
 !--------
 ! Formats

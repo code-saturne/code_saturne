@@ -136,33 +136,158 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
+integer          iel, mode, igg, izone
+double precision hinit, coefg(ngazgm)
+double precision sommqf, sommqt, sommq, tentm, fmelm
+
+
+character*80     chaine
+integer          iscal, ivar, ii
+double precision valmax, valmin
 
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-if (1.eq.1) then
-!       Tag to know if a call to this subroutine has already been done
-  iusini = 0
-  return
-endif
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-!===============================================================================
+!---------------
 ! Initialization
-!===============================================================================
+!---------------
 
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
-! INSERT_MAIN_CODE_HERE
+! Control output
+
+write(nfecra,9001)
+
+do igg = 1, ngazgm
+  coefg(igg) = zero
+enddo
+
+!===============================================================================
+! Variables initialization:
+!
+!   ONLY done if there is no restart computation
+!===============================================================================
+
+if ( isuite.eq.0 ) then
+
+  ! a. Preliminary calculations
+
+  sommqf = zero
+  sommq  = zero
+  sommqt = zero
+
+  !  Deals with multiple inlets
+  do izone = 1, nozapm
+    sommqf = sommqf + qimp(izone)*fment(izone)
+    sommqt = sommqt + qimp(izone)*tkent(izone)
+    sommq  = sommq  + qimp(izone)
+  enddo
+
+  if (abs(sommq).gt.epzero) then
+    fmelm = sommqf / sommq
+    tentm = sommqt / sommq
+  else
+    fmelm = zero
+    tentm = t0
+  endif
+
+  ! ----- Calculation of the Enthalpy of the gas mixture
+  !       (unburned mean gas)
+
+  if ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3               &
+                           .or. ippmod(icolwc).eq.5 ) then
+    coefg(1) = fmelm
+    coefg(2) = (1.d0-fmelm)
+    coefg(3) = zero
+    mode     = -1
+
+    !   Converting the mean temperatur boundary conditions into
+    !   enthalpy values
+    call cothht                                                   &
+    !==========
+      ( mode   , ngazg , ngazgm  , coefg  ,                       &
+        npo    , npot   , th     , ehgazg ,                       &
+        hinit  , tentm )
+  endif
+
+  do iel = 1, ncel
+
+    ! b. Initialisation
+
+    ! Mass fraction of Unburned (fresh) Gas
+    rtp(iel,isca(iyfm))  = 0.0d0*fmelm
+    ! Mean Mixture Fraction
+    rtp(iel,isca(ifm))   = 0.d0*fmelm
+    ! Variance of fuel Mass fraction
+    rtp(iel,isca(iyfp2m)) = zero
+    ! Variance of Mixture Fraction
+    rtp(iel,isca(ifp2m))  = zero
+
+    ! Covariance for NDIRAC >= 3
+
+    if ( ippmod(icolwc).ge. 2 ) then
+      rtp(iel,isca(icoyfp))   = zero
+    endif
+
+    ! Enthalpy
+
+    if ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3             &
+                             .or. ippmod(icolwc).eq.5 ) then
+      rtp(iel,isca(ihm)) = hinit
+    endif
+
+  enddo
+
+  ! ---> Control Output of the user defined initialisation values
+
+  write(nfecra,2000)
+
+  do ii  = 1, nscapp
+    iscal = iscapp(ii)
+    ivar  = isca(iscal)
+    valmax = -grand
+    valmin =  grand
+    do iel = 1, ncel
+      valmax = max(valmax,rtp(iel,ivar))
+      valmin = min(valmin,rtp(iel,ivar))
+    enddo
+    if ( irangp.ge.0 ) then
+      call parmax(valmax)
+      call parmin(valmin)
+    endif
+
+    chaine = nomvar(ipprtp(ivar))
+    write(nfecra,2010)chaine(1:8),valmin,valmax
+  enddo
+  write(nfecra,2020)
+
+endif
 
 !--------
 ! Formats
 !--------
+
+ 9001 format(                                                   /,&
+'  cs_user_initialization: variables initialisation by user'   ,/,&
+                                                                /)
+
+ 2000 format(                                                   /,&
+                                                                /,&
+' -----------------------------------------------------------' ,/,&
+                                                                /,&
+' ** INITIALISATION OF VARIABLES FOR Libby-Williams model'     ,/,&
+'    --------------------------------------------------------' ,/,&
+'           ONLY ONE PASS'                                     ,/,&
+' ---------------------------------'                           ,/,&
+'  Variable  Valeur min  Valeur max'                           ,/,&
+' ---------------------------------'                             )
+
+ 2010 format(                                                     &
+ 2x,     a8,      e12.4,      e12.4                              )
+
+ 2020 format(                                                     &
+' ---------------------------------'                           ,/)
 
 !----
 ! End
