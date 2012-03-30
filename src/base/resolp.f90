@@ -466,7 +466,7 @@ call matrix                                                       &
 
 ! Strengthen the diagonal
 if (idilat.eq.3) then
-  do iel = 1, ncelet
+  do iel = 1, ncel
     dam(iel) = dam(iel) + epsdp*volume(iel)/dt(iel)
   enddo
 endif
