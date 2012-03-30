@@ -100,12 +100,13 @@ integer          ii    , jj    , iok   , iok1  , iok2  , iisct
 integer          nn
 integer          ibrom , ipcrom, ipbrom, ipcvst
 integer          ipccp , ipcvis, ipcvma
+integer          ivarh
 integer          iclipc
 integer          nswrgp, imligp, iwarnp, iphydp, iclvar
 integer          ir12ip, ir13ip, ir23ip, ialpip,iccocg,inc
 Double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision nusa, xi3, fv1, cv13
-double precision varmn(4), varmx(4), tt, ttmin, ttke, vistot
+double precision varmn(4), varmx(4), tt, ttmin, ttke, vistot, xrtp
 double precision alp3, xrij(3,3) , xnal(3)   , xnoral
 double precision xttke, xttkmg, xttdrb,epsrgp, climgp, extrap
 
@@ -143,7 +144,7 @@ if(iperot.gt.0) then
 
   if(itytur.eq.3) then
 
-    call perinr                                                 &
+    call perinr                                                   &
     !==========
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -176,7 +177,7 @@ endif
 !   ======================
 
 if (iihmpr.eq.1) then
-  call uiphyv                                                    &
+  call uiphyv                                                   &
   !===========
 ( ncel, ncelet, nscaus,                                         &
   irom, iviscl, icp,    ivisls, irovar, ivivar,                 &
@@ -192,6 +193,30 @@ call usphyv &
   dt     , rtp    , rtpa   ,                                     &
   propce , propfa , propfb ,                                     &
   coefa  , coefb  )
+
+
+!  Density defined by a perfect gas equation of state
+!  for the low-Mach algorithm
+
+if (idilat.eq.3) then
+
+  ivarh  = isca(iscalt) ! Works only with enthalpy
+  ipcrom = ipproc(irom)
+
+  !compute the density with the perfect state law:
+  do iel = 1, ncel
+    if (icp.gt.0) then
+      ipccp = ipproc(icp)
+      xrtp = rtp(iel,ivarh)/propce(iel,ipccp)
+    else
+      xrtp = rtp(iel,ivarh)/cp0
+    endif
+    propce(iel,ipcrom) = pther /(rair*xrtp)
+  enddo
+
+endif
+
+
 
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
 

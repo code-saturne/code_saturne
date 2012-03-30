@@ -1163,7 +1163,7 @@ if(ipass.eq.3) then
 ! --- Numeros de propriete
 
   !     On a besoin de la masse volumique si on l'extrapole ou si ICALHY
-  if(iroext.gt.0.or.icalhy.eq.1) then
+  if(iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
     iprop         = iprop + 1
     iroma  = iprop
   endif
@@ -1279,7 +1279,7 @@ if(ipass.eq.3) then
 ! --- Positionnement des PROPCE
 
   !     Variables schema en temps
-  if(iroext.gt.0.or.icalhy.eq.1) then
+  if(iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
     iprop                 = iprop  + 1
     ipproc(iroma ) = iprop
   endif
@@ -1356,7 +1356,7 @@ if(ipass.eq.3) then
 ! --- Positionnement des PROPFB
 
   !     Variables schema en temps : rhoa (pas pour icalhy)
-  if(iroext.gt.0) then
+  if(iroext.gt.0.or.idilat.gt.1) then
     iprop                 = iprop  + 1
     ipprob(iroma ) = iprop
   endif

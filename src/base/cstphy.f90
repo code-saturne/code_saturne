@@ -77,8 +77,15 @@ module cstphy
   integer, save ::          ixyzp0
   double precision, save :: ro0    , viscl0,     &
                             p0     , pred0 ,     &
-                            xyzp0(3), t0    ,     &
+                            xyzp0(3), t0    ,    &
                             cp0
+
+  ! Uniform thermodynamic pressure for the low-Mach algorithm
+
+  !   pther  : Thermodynamic pressure for the current time step
+  !   pthera : Thermodynamic pressure for the previous time step
+
+  double precision, save :: pther, pthera
 
   ! Turbulence
   !   ivisls = 0 : viscosite laminaire constante = visls0

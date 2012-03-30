@@ -482,7 +482,7 @@ car54 =' End writing the main variables                       '
 write(nfecra,1110)car54
 
 
-! 3.4 INFORMATIONS COMPLEMENTAIRES LEGERES (IE UN ENTIER, UN REEL...)
+! 3.5 INFORMATIONS COMPLEMENTAIRES LEGERES (IE UN ENTIER, UN REEL...)
 !==================================================
 
 nberro = 0
@@ -652,6 +652,29 @@ if (iecaux.eq.1) then
     irtyp  = 2
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
          xyzp0(1),ierror)
+    nberro=nberro+ierror
+  endif
+
+  ! The physical variables herebelow are required for the low-Mach algorithm
+
+  if (idilat.eq.3) then
+
+    !the reference density updated with the low-Mach algorithm
+    rubriq = 'ro0'//cphase
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         ro0,ierror)
+    nberro=nberro+ierror
+
+    ! the thermodynamic pressure for the previous time step
+    rubriq = 'pther'//cphase
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         pther,ierror)
     nberro=nberro+ierror
   endif
 

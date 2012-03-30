@@ -252,6 +252,7 @@ precli.f90 \
 preduv.f90 \
 predvv.f90 \
 prmoy0.f90 \
+pthrbm.f90 \
 recvmc.f90 \
 resolp.f90 \
 resopv.f90 \

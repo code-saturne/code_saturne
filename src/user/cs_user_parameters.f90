@@ -934,7 +934,7 @@ subroutine usipgl &
  ( nesmax,                                                        &
    iespre, iesder, iescor, iestot,                                &
    iihmpu, nfecra,                                                &
-   idtvar, ipucou, iphydr, ialgce , iescal , iverif ,             &
+   idtvar, ipucou, idilat, iphydr, ialgce , iescal , iverif ,     &
    icwfps, cwfthr )
 
 
@@ -959,6 +959,7 @@ subroutine usipgl &
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! idtvar           ! i  ! --> ! variable time step flag                        !
 ! ipucou           ! i  ! --> ! reinforced u-p coupling flag                   !
+! idilat           ! i  ! --> ! algorithm with density variation in time       !
 ! iphydr           ! i  ! --> ! flag for handling of the equilibrium between   !
 !                  !    !     ! the pressure gradient and the gravity and      !
 !                  !    !     ! head-loss terms                                !
@@ -993,7 +994,7 @@ implicit none
 integer nesmax
 integer iespre, iesder, iescor, iestot
 integer iihmpu, nfecra
-integer idtvar, ipucou, iphydr, ialgce
+integer idtvar, ipucou, idilat, iphydr, ialgce
 integer iescal(nesmax)
 integer iverif, icwfps
 
@@ -1080,6 +1081,21 @@ idtvar = 0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ipucou = 0
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! Algorithm to take into account the density variation in time
+!
+!     idilat = 0 : boussinesq algorithm with constant density (not available)
+!              1 : dilatable steady algorithm (default)
+!              2 : dilatable unsteady algorithm
+!              3 : low-Mach algorithm
+!
+!     Only in single-phase
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+idilat = 1
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 

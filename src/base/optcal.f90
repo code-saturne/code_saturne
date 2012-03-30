@@ -52,6 +52,19 @@ module optcal
   !     la valeur fournie par la valeur de l'ancien calcul.
   integer, save :: irovar, ivivar
 
+  ! Algorithm to take into account the density variation in time
+
+  !     idilat = 0 : boussinesq algorithm with constant density
+  !              1 : dilatable steady algorithm (default)
+  !              2 : dilatable unsteady algorithm
+  !              3 : low-Mach algorithm
+  !
+  !           epsdp: parameter of diagonal pressure strengthening
+
+  integer, save :: idilat
+
+  double precision, save :: epsdp
+
   ! Schema en temps
 
   !  ischtp : indicateur de schema en temps

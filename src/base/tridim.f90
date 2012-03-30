@@ -212,6 +212,13 @@ if(ipass.eq.1.and.ineedy.eq.1.and.abs(icdpar).eq.1.and.           &
   enddo
 endif
 
+!    Initialisation de pthera (pther est deja initialise ou lu dans
+!    un fichier suite pour l'algorithme a masse volumique variable
+
+if (idilat.eq.3) then
+  pthera = pther
+endif
+
 !===============================================================================
 ! 2.  AU DEBUT DU CALCUL ON REINITIALISE LA PRESSION
 !===============================================================================
@@ -225,7 +232,8 @@ endif
 !   hydrostatique, ni dans le cas du compressible
 
 if( ntcabs.le.2 .and. isuite.eq.0 .and. iphydr.eq.0               &
-                .and. ippmod(icompf).lt.0           ) then
+                .and. ippmod(icompf).lt.0                         &
+                .and. idilat .le.0                 ) then
 
   if(iwarni(ipr).ge.2) then
     write(nfecra,2000) ntcabs
@@ -341,7 +349,7 @@ if (ipass.eq.1) then
   endif
 
 ! --- Communication de RHO
-  if (icalhy.eq.1) then
+  if (icalhy.eq.1 .or. idilat.eq.3) then
 
     ipcrom = ipproc(irom  )
     if (irangp.ge.0 .or. iperio.eq.1) then
@@ -367,7 +375,8 @@ do ivar = 1, nvar
   enddo
 enddo
 
-if (icalhy.eq.1) then
+if (icalhy.eq.1 .or. idilat.eq.3) then
+
   ipcrom = ipproc(irom  )
   ipcroa = ipproc(iroma )
   do iel = 1, ncelet
@@ -562,6 +571,20 @@ if (nbaste.gt.0.and.itrale.gt.nalinf) then
   call astpdt(dt, ncelet, ntrela)
   !==========
 endif
+
+!===============================================================================
+!   RECALAGE DE LA PRESSION Pth ET MASSE VOLUMIQUE rho
+!     POUR L'AGORITHME A MASSE VOLUMIQUE VARIABLE.
+!===============================================================================
+
+if (idilat.eq.3) then
+  call pthrbm &
+  !==========
+ ( nvar   , nscal  , ncetsm ,        &
+   dt     , rtp    , rtpa   ,        &
+   propce , propfa , propfb , smacel )
+endif
+
 !===============================================================================
 ! 9.  CHARGEMENT ET TRADUCTION DES CONDITIONS AUX LIMITES
 !===============================================================================

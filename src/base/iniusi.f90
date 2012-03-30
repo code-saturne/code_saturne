@@ -309,7 +309,7 @@ call usipgl                                                       &
  ( nesmax ,                                                       &
    ieepre , ieeder , ieecor , ieetot ,                            &
    iihmpu , nfecra ,                                              &
-   idtvar , ipucou , iphydr , ialgce , iescal , iverif,           &
+   idtvar , ipucou , idilat , iphydr , ialgce , iescal , iverif,  &
    icwfps,  cwfthr )
 
 if (ialgce.ne.-999) call algcen(ialgce)

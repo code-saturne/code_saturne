@@ -875,6 +875,18 @@ swpdyn = 0
 
 ipucou = 0
 
+! --- Algorithm to take into account the density variation in time
+
+!     by default:
+!     ----------
+!      - the dilatable steady algorithm is used (idilat= 1)
+!      - the thermodynamic pressure (pther) is initialized with p0 = p_atmos
+!      - the parameter (epsdp) for diagonal pressure strengthening is equal to 1e-12
+
+idilat = 1
+pther  = 1.013d5
+epsdp  = 1.0d-12
+
 ! --- Prise en compte de l'equilibre gradient de pression
 !       termes sources de gravite et de pertes de charge
 !       Non active par defaut

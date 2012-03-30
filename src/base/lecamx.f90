@@ -368,6 +368,29 @@ if (ixyzp0.eq.-1) then
   endif
 endif
 
+! Here the physcial variables below are required for the low-Mach algorithm
+if (idilat.eq.3) then
+
+  !the reference density updated with the low-Mach algorithm
+  rubriq = 'ro0'//cphase
+  itysup = 0
+  nbval  = 1
+  irtyp  = 2
+  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+       ro0,ierror)
+  nberro=nberro+ierror
+
+  ! the thermodynamic pressure for the previous time step
+  rubriq = 'pther'//cphase
+  itysup = 0
+  nbval  = 1
+  irtyp  = 2
+  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+       pther,ierror)
+  nberro=nberro+ierror
+endif
+
+
 ! ---> Masse volumique
 !     On la lit, qu'elle soit extrapolee ou pas,
 !       pour permettre les sous-relaxations
@@ -537,7 +560,7 @@ endif
 !       c'est discutable pour rho
 
 if (nberro.ne.0) then
-  CAR54 = 'LECTURE DES PROPRIETES PHYSIQUES                      '
+  CAR54 = 'LECTURE DES PROPRIETES PHYSIQUES                    '
   write(nfecra,8300)car54
 endif
 

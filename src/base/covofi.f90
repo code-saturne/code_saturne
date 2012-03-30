@@ -261,6 +261,13 @@ if(isso2t(iscal).gt.0) then
 !        Diagonale
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
+
+else if (idilat.eq.3 .and. ivar.eq.isca(iscalt)) then
+  ! unsteady thermodynamic source term added
+  do iel = 1, ncel
+    smbrs(iel) = (pther - pthera)/dt(iel)*volume(iel)
+  enddo
+
 !     Si on n'extrapole pas les TS :
 else
   do iel = 1, ncel

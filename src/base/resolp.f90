@@ -464,6 +464,13 @@ call matrix                                                       &
    propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
    dam    , xam    )
 
+! Strengthen the diagonal
+if (idilat.eq.3) then
+  do iel = 1, ncelet
+    dam(iel) = dam(iel) + epsdp*volume(iel)/dt(iel)
+  enddo
+endif
+
 !===============================================================================
 ! 5.  INITIALISATION DU FLUX DE MASSE
 !===============================================================================
@@ -846,6 +853,14 @@ if (ncesmp.gt.0) then
   enddo
 endif
 
+! --- Source term associated to the diagonal strengthening
+if (idilat.eq.3) then
+  do iel = 1, ncel
+    drom = propce(iel,ipproc(irom)) - propce(iel,ipproc(iroma))
+    w7(iel) = w7(iel) + drom*volume(iel)/dt(iel)
+  enddo
+endif
+
 ! ---> Termes sources Lagrangien
 if (iilagr.eq.2 .and. ltsmas.eq.1) then
   do iel = 1, ncel
@@ -861,6 +876,16 @@ do 100 isweep = 1, nswmpr
   do iel = 1, ncel
     smbr(iel) = - w7(iel) - smbr(iel)
   enddo
+
+! --- Rajout de eps*pressure*volume/dt dans le second membre
+!     pour le renforcement de la diagonale de l'algorithme
+!     bas Mach.
+
+  if (idilat.eq.3) then
+    do iel = 1, ncel
+      smbr(iel) = smbr(iel) - epsdp*volume(iel)/dt(iel)*rtp(iel,ipr)
+    enddo
+  endif
 
 ! --- Test de convergence du calcul
 
