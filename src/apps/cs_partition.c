@@ -1266,10 +1266,7 @@ _part_parmetis(cs_gnum_t   n_g_cells,
   size_t i;
   double  start_time, end_time;
 
-  int     wgtflag    = 0; /* No weighting for faces or cells */
-  int     numflag    = 0; /* 0 to n-1 numbering (C type) */
-  int     options[3] = {0, 1, 15}; /* By default if options[0] = 0 */
-  int     edgecut    = 0; /* <-- Number of faces on partition */
+  unsigned long long  edgecut    = 0; /* <-- Number of faces on partition */
 
   int       n_ranks;
   size_t    n_cells = cell_range[1] - cell_range[0];
@@ -1319,8 +1316,13 @@ _part_parmetis(cs_gnum_t   n_g_cells,
 #if (PARMETIS_MAJOR_VERSION == 4)
 
   {
-    int     j;
-    int     ncon    = 1; /* number of weights for each vertex */
+    int      j;
+    idxtype  _edgecut = 0;
+    idxtype  _n_parts = n_parts;
+    idxtype  ncon     = 1; /* number of weights for each vertex */
+    idxtype  options[3] = {0, 1, 15}; /* By default if options[0] = 0 */
+    idxtype  numflag  = 0; /* 0 to n-1 numbering (C type) */
+    idxtype  wgtflag  = 0; /* No weighting for faces or cells */
 
     real_t wgt = 1.0/n_parts;
     real_t ubvec[]  = {1.5};
@@ -1340,15 +1342,17 @@ _part_parmetis(cs_gnum_t   n_g_cells,
                     &wgtflag,
                     &numflag,
                     &ncon,
-                    &n_parts,
+                    &_n_parts,
                     tpwgts,
                     ubvec,
                     options,
-                    &edgecut,
+                    &_edgecut,
                     _cell_part,
                     &comm);
 
     BFT_FREE(tpwgts);
+
+    edgecut = _edgecut;
 
     if (retval != METIS_OK)
       bft_error(__FILE__, __LINE__, 0,
@@ -1359,7 +1363,11 @@ _part_parmetis(cs_gnum_t   n_g_cells,
 #else
 
   {
-    int     ncon       = 0; /* number of weights for each vertex */
+    int  _edgecut = 0;
+    int  ncon       = 0; /* number of weights for each vertex */
+    int  options[3] = {0, 1, 15}; /* By default if options[0] = 0 */
+    int  numflag    = 0; /* 0 to n-1 numbering (C type) */
+    int  wgtflag    = 0; /* No weighting for faces or cells */
 
     ParMETIS_V3_PartKway
       (vtxdist,
@@ -1374,9 +1382,11 @@ _part_parmetis(cs_gnum_t   n_g_cells,
        NULL,       /* tpwgts: size ncon, vtx weight fraction */
        NULL,       /* ubvec: size ncon, vtx imbalance */
        options,
-       &edgecut,
+       &_edgecut,
        _cell_part,
        &comm);
+
+    edgecut = _edgecut;
   }
 
 #endif
