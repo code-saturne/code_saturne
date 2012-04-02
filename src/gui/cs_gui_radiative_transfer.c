@@ -1022,7 +1022,8 @@ void CS_PROCF (uiray2, UIRAY2)
         }
         else if (isothp[ifbr] == *ifgrno)
         {
-          rcodcl[2 * (*nfabor) * (*nvar) + (*ivart) * (*nfabor) + ifbr] = boundary->conduction_flux[izone];
+          rcodcl[2 * (*nfabor) * (*nvar) + (*ivart - 1) * (*nfabor) + ifbr]
+            = boundary->conduction_flux[izone];
           tintp[ifbr] = boundary->internal_temp[izone];
           epsp[ifbr] = boundary->emissivity[izone];
           if (boundary->emissivity[izone] != 0.)

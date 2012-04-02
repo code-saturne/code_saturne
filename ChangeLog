@@ -1,8 +1,15 @@
-* 26/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
-  Release Code_Saturne 2.1.6.
+* 02/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fixes for compilation with IBM XL compiler.
+  modified files:
+    src/alge/cs_matrix.c
+
+* 02/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix array index bug for radiative transfer using GUI.
+  modified files:
+    src/gui/cs_gui_radiative_transfer.c
 
 * 26/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
-  Fix array index bug for radiative transfer using GUI.
+  Release Code_Saturne 2.1.6.
 
 * 21/03/2012 - Dorothée Senechal <dorothee.senechal@edf.fr>
   Fixes for coal and fuel combustion models.
