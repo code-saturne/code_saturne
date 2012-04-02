@@ -441,7 +441,7 @@ _dense_b_ax(fvm_lnum_t        b_id,
   fvm_lnum_t  ii, jj;
 
   #if defined(__xlc__) /* Tell IBM compiler not to alias */
-  #pragma disjoint(*x, *y, * da)
+  #pragma disjoint(*x, *y, * a)
   #endif
 
   for (ii = 0; ii < b_size[0]; ii++) {
@@ -523,7 +523,7 @@ _dense_b_aax_p_by(int               b_id,
   fvm_lnum_t  ii, jj;
 
   #if defined(__xlc__) /* Tell IBM compiler not to alias */
-  #pragma disjoint(*x, *y, * da)
+  #pragma disjoint(*x, *y, *a)
   #endif
 
   for (ii = 0; ii < b_size[0]; ii++) {
@@ -570,7 +570,7 @@ _diag_b_aax_p_by(fvm_lnum_t        b_id,
   fvm_lnum_t  ii;
 
   #if defined(__xlc__) /* Tell IBM compiler not to alias */
-  #pragma disjoint(*x, *y, * da)
+  #pragma disjoint(*x, *y, *a)
   #endif
 
   for (ii = 0; ii < b_size[0]; ii++)
