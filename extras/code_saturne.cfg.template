@@ -30,7 +30,7 @@
 
 [run]
 ### Set the temporary directory.
-# scratchdir =
+# scratchdir = /scratch/%(user)s
 ###
 ### Set the mesh database directory.
 # meshpath =
