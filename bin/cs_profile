@@ -54,7 +54,7 @@ fi
 # Code_Saturne version
 
 if [ "$NOM_ARCH" = "titane" ] ; then 
-  CS_ROOT=/home/cont002/saturne/Code_Saturne/1.3
+  CS_ROOT=/ccc/cont002/home/edf/saturne/Code_Saturne/1.3
 elif [ "$NOM_ARCH" = "Blue_Gene_P" ] ; then 
   CS_ROOT=/gpfs/home/saturne/Code_Saturne/1.3
 elif [ "$NOM_ARCH" = "calibre7" ] ; then
