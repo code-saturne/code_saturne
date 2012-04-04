@@ -115,14 +115,14 @@ install-data-hook:
 	version1="\!                      Code_Saturne version $(VERSION)\n"; \
 	version2="\!                      --------------------------"; \
 	for file in $${f90_user_examples}; do \
-	  $(SED) -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" && \
+	  $(SED) -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" > "$${file}.tmp" && \
 	  mv "$${file}.tmp" "$${file}"; \
 	done ;\
 	c_user_examples=`ls *.c 2>/dev/null`; \
 	stubvers="\/\* VERS \*\/"; \
 	version="\/\* Code_Saturne version $(VERSION) \*\/"; \
 	for file in $${c_user_examples}; do \
-	  $(SED) -e "N;s/$${stubvers}/$${version}/" < "$${file}" && \
+	  $(SED) -e "N;s/$${stubvers}/$${version}/" < "$${file}" > "$${file}.tmp" && \
 	  mv "$${file}.tmp" "$${file}"; \
 	done
 
