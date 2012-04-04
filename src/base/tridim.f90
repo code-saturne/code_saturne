@@ -924,7 +924,7 @@ do while (iterns.le.nterup)
 
   call condli &
   !==========
-( nvar   , nscal  ,                                              &
+( nvar   , nscal  , iterns ,                                     &
   isvhb  , isvtb  ,                                              &
   icodcl , isostd ,                                              &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

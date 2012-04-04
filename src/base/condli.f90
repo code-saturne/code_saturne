@@ -61,6 +61,7 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     isvhb         indicator to save exchange coeffient
 !>                               at the walls
+!> \param[in]     iterns        iteration number on Navier-Stokes equations
 !> \param[in]     isvtb         indicator to save the temperature at
 !>                               the walls
 !> \param[in,out] icodcl        face boundary condition code:
@@ -112,7 +113,7 @@
 subroutine condli &
 !================
 
- ( nvar   , nscal  ,                                              &
+ ( nvar   , nscal  , iterns ,                                     &
    isvhb  , isvtb  ,                                              &
    icodcl , isostd ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
@@ -145,7 +146,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar   , nscal , iterns
 integer          isvhb  , isvtb
 
 integer          icodcl(nfabor,nvar)
@@ -1744,7 +1745,7 @@ endif
 ! 14.  CALCUL DES EFFORTS AUX BORDS (partie 1/5)
 !===============================================================================
 
-if (ineedf.eq.1) then
+if (ineedf.eq.1 .and. iterns.eq.1) then
 
   if (ivelco.eq.0) then
     do ifac = 1, nfabor
