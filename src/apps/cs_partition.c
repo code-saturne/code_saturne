@@ -787,8 +787,8 @@ _add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
 
   size_t n_send = 0, n_recv = 0;
 
-  const int rank_step = bi.rank_step;
-  const cs_lnum_t block_size = bi.block_size;
+  const cs_gnum_t rank_step = bi.rank_step;
+  const cs_gnum_t block_size = bi.block_size;
 
   /* Initialization */
 
@@ -805,8 +805,10 @@ _add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
   /* Count number of values to send to each rank */
 
   for (j = 0; j < n_periodic_couples; j++) {
-    int rank_0 = ((periodic_couples[j*2] -1)/block_size) * rank_step;
-    int rank_1 = ((periodic_couples[j*2+1] -1)/block_size) * rank_step;
+    cs_gnum_t f_id_0 = periodic_couples[j*2] - 1;
+    cs_gnum_t f_id_1 = periodic_couples[j*2 + 1] - 1;
+    int rank_0 = (f_id_0/block_size) * rank_step;
+    int rank_1 = (f_id_1/block_size) * rank_step;
     send_count[rank_0] += 1;
     send_count[rank_1] += 1;
   }
@@ -836,8 +838,8 @@ _add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
     int rank_0 = (f_id_0/block_size) * rank_step;
     int rank_1 = (f_id_1/block_size) * rank_step;
     send_buf[send_displ[rank_0] + send_count[rank_0]] = f_id_0 + 1;
-    send_buf[send_displ[rank_1] + send_count[rank_1]] = f_id_1 + 1;
     send_count[rank_0] += 1;
+    send_buf[send_displ[rank_1] + send_count[rank_1]] = f_id_1 + 1;
     send_count[rank_1] += 1;
   }
 
@@ -888,17 +890,16 @@ _add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
 
     send_adj[(send_displ[rank_0] + send_count[rank_0])*2] = f_id_0 + 1;
     send_adj[(send_displ[rank_0] + send_count[rank_0])*2+1] = c_num_1;
+    send_count[rank_0] += 1;
 
     send_adj[(send_displ[rank_1] + send_count[rank_1])*2] = f_id_1 + 1;
     send_adj[(send_displ[rank_1] + send_count[rank_1])*2+1] = c_num_0;
-
-    send_count[rank_0] += 1;
     send_count[rank_1] += 1;
   }
 
   /* Adjust counts and disps */
 
-  for (i = 1; i < n_ranks; i++) {
+  for (i = 0; i < n_ranks; i++) {
     send_count[i] *= 2;
     recv_count[i] *= 2;
     send_displ[i] *= 2;
