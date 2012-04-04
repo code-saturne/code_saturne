@@ -604,8 +604,8 @@ class case:
         if n_procs != None:
             if n_procs < d.partition_n_procs:
                 err_str = ' Error:\n' \
-                    '   The current partitioning scheme requires at least ' \
-                    + str(n_procs_min) + 'processes,\n' \
+                    '   The current partitioning scheme requires ' \
+                    + str(d.partition_n_procs) + 'processes,\n' \
                     + '   while the execution environment provides only ' \
                     + str(n_procs) + '.\n' \
                     + '   You may either allocate more processes or try to\n' \
@@ -614,6 +614,8 @@ class case:
                 raise RunCaseError(err_str)
 
         # Initialize simple command script
+
+        p_args = d.partitioner_command()
 
         s_path = os.path.join(d.exec_dir, 'partition.sh')
 
@@ -667,8 +669,6 @@ class case:
                 mpi_cmd += mpi_env.mpiexec_exe + ' '
             if mpi_env.mpiexec_args != None:
                 mpi_cmd_args = mpi_env.mpiexec_args + ' '
-
-        p_args = d.partitioner_command()
 
         s.write('cd ' + p_args[0] + '\n\n')
         s.write('# Run partitioner.\n')
