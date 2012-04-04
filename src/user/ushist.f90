@@ -259,8 +259,6 @@ if (ipass.eq.1) then
       ! In case of parallelism, the processor on which the cell was found
       ! sends its global number and coordinates to the others.
       if (irangp.ge.0) then
-        call parcel(icapt(kk), ircapt(kk), numcel)
-        !==========
         lng = 3
         call parbcr(ircapt(kk), lng, xyztmp)
         !==========
@@ -270,7 +268,7 @@ if (ipass.eq.1) then
       !   (only rank 0 works in a parallel run: only one file is needed)
       if (irangp.le.0) then
         write(impush(ii),1000) &
-          '#', ' Cell ', numcel, ' Coord ', xyztmp(1), xyztmp(2), xyztmp(3)
+          '#', ' Coord ', xyztmp(1), xyztmp(2), xyztmp(3)
       endif
 
     enddo
@@ -279,7 +277,7 @@ if (ipass.eq.1) then
 
 endif
 
-1000 format(a,a9,i10,a7,3e14.5)
+1000 format(a,a9,3e14.5)
 
 !===============================================================================
 ! 4.  Write values: example for a variable per file

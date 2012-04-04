@@ -1519,52 +1519,6 @@ write(nfecra,5150) irangv, xyz(1), xyz(2), xyz(3)
              '         Velocity V in first cell = ', e14.5, /,   &
              '         Velocity W in first cell = ', e14.5)
 
-! All ranks obtain the global cell number from a given cell on a given rank;
-! in this example, cell 'iel' prom rank 'irangv'.
-iel = 1
-irangv = 0
-if (irangp.ge.0) then
-  call parcel(iel, irangv, ielg)
-else
-  ielg = -1
-endif
-! print global cell number for cell 'iel' from rank 'irangv'
-write(nfecra,5160) iel, irangv, ielg
- 5160 format(' usproj: local cell iel =         ', i10, /,   &
-             '         on rank irangv =         ', i10, /,   &
-             '         has global number ielg = ', i10)
-
-! Get the global number of a local cel 'iel';
-! in this exemple, we use iel = 1, as all ranks should have at least one cell
-iel = 1
-call parclg(iel, irangp, ielg)
-! each rank prints the global cell number of its cell number iel;
-! (or 0 if it has less than iel cells)
-write(nfecra,5170) iel, irangp, ielg
- 5170 format(' usproj: Local cell number iel =  ', i10, /,    &
-             '         on rank irangp =         ', i10, /,    &
-             '         has global number ielg = ', i10)
-
-! Get the global number of a local interior face 'ifac';
-ifac = 1
-call parfig(ifac, irangp, ifacg)
-! each rank prints the global face number of its face number ifac;
-! (or 0 if it has less than ifac faces)
-write(nfecra,5180) ifac, irangp, ifacg
- 5180 format(' usproj: Local face number ifac =  ', i10, /,  &
-             '         on rank irangp =          ', i10, /,  &
-             '         has global number ifacg = ', i10)
-
-! Get the global number of a local boundary face 'ifac';
-ifac = 1
-call parfbg(ifac, irangp, ifacg)
-! each rank prints the global face number of its boundary face number ifac;
-! (or 0 if it has less than ifac boundary faces, which may occur)
-write(nfecra,5190) ifac, irangp, ifacg
- 5190 format(' usproj: Local boundary face number ifac =  ', i10, /,  &
-             '         on rank irangp =                   ', i10, /,  &
-             '         has global number ifacg =          ', i10)
-
 ! Deallocate the temporary array
 deallocate(lstelt)
 

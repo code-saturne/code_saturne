@@ -47,13 +47,11 @@ BEGIN_C_DECLS
  *
  * Fortran Interface
  *
- * SUBROUTINE PARCMX (IND)
+ * subroutine parcmx (counter)
  * *****************
  *
- * INTEGER          COUNTER       <-> : input = local counter
+ * integer          counter       <-> : input = local counter
  *                                      output = global max counter
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -65,10 +63,10 @@ CS_PROCF (parcmx, PARCMX)(cs_int_t  *counter);
  *
  * Fortran Interface
  *
- * SUBROUTINE PARCMN (IND)
+ * subroutine parcmn (counter)
  * *****************
  *
- * INTEGER          COUNTER       <-> : input = local counter
+ * integer          counter       <-> : input = local counter
  *                                      output = global min counter
  *----------------------------------------------------------------------------*/
 
@@ -81,13 +79,11 @@ CS_PROCF (parcmn, PARCMN)(cs_int_t  *counter);
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARCPT (CPT)
+ * subroutine parcpt (counter)
  * *****************
  *
- * INTEGER          COUNTER     : <-> : input = counter to sum
+ * integer          counter     : <-> : input = counter to sum
  *                                      output = global sum
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -98,13 +94,11 @@ CS_PROCF (parcpt, PARCPT)(cs_int_t  *counter);
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARSOM (VAR)
+ * subroutine parsom (var)
  * *****************
  *
- * DOUBLE PRECISION VAR         : <-> : input = value to sum
+ * double precision var         : <-> : input = value to sum
  *                                      output = global sum
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -116,13 +110,11 @@ CS_PROCF (parsom, PARSOM)(cs_real_t  *var);
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARMAX (VAR)
+ * subroutine parmax (var)
  * *****************
  *
- * DOUBLE PRECISION VAR         : <-> : input = local maximum value
+ * double precision var         : <-> : input = local maximum value
  *                                      output = global maximum value
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -134,13 +126,11 @@ CS_PROCF (parmax, PARMAX)(cs_real_t  *var);
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARMIN (VAR)
+ * subroutine parmin (var)
  * *****************
  *
- * DOUBLE PRECISION VAR         : <-> : input = local minimum value
+ * double precision var         : <-> : input = local minimum value
  *                                      output = global minimum value
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -152,16 +142,14 @@ CS_PROCF (parmin, PARMIN)(cs_real_t  *var);
  *
  * Fortran Interface
  *
- * SUBROUTINE PARMXL (NBR, VAR, XYZVAR)
+ * subroutine parmxl (nbr, var, xyzvar)
  * *****************
  *
- * INTEGER          NBR         :  -> : nombre de valeurs associees
- * DOUBLE PRECISION VAR         : <-> : input: local max. value
+ * integer          nbr         : <-- : size of the related variable
+ * double precision var         : <-> : input: local max. value
  *                                      output: global max. value
- * DOUBLE PRECISION XYZVAR(NBR) : <-> : input: value related to local max.
+ * double precision xyzvar(nbr) : <-> : input: value related to local max.
  *                                      output: value related to global max.
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -177,16 +165,14 @@ CS_PROCF (parmxl, PARMXL)(cs_int_t   *nbr,
  *
  * Interface Fortran :
  *
- * SUBROUTINE PARMNL (NBR, VAR, XYZVAR)
+ * subroutine parmnl (nbr, var, xyzvar)
  * *****************
  *
- * INTEGER          NBR         : --> : size of the related variable
- * DOUBLE PRECISION VAR         : <-> : input: local max. value
+ * integer          nbr         : <-- : size of the related variable
+ * double precision var         : <-> : input: local max. value
  *                                      output: global max. value
- * DOUBLE PRECISION XYZVAR(NBR) : <-> : input: value related to local max.
+ * double precision xyzvar(nbr) : <-> : input: value related to local max.
  *                                      output: value related to global max.
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -200,14 +186,12 @@ CS_PROCF (parmnl, PARMNL)(cs_int_t   *nbr,
  *
  * Fortran Interface
  *
- * SUBROUTINE PARISM (N_ELTS, ARRAY)
+ * subroutine parism (n_elts, array)
  * *****************
  *
- * INTEGER          N_ELTS       : --> : size of the array.
- * INTEGER          ARRAY(*)     : <-> : input = local array
+ * integer          n_elts       : <-- : size of the array.
+ * integer          array(*)     : <-> : input = local array
  *                                       output = array of global sum values.
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -220,14 +204,12 @@ CS_PROCF (parism, PARISM)(cs_int_t  *n_elts,
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARIMX (N_ELTS, ARRAY)
+ * subroutine parimx (n_elts, array)
  * *****************
  *
- * INTEGER          N_ELTS       : --> : size of the array.
- * INTEGER          ARRAY(*)     : <-> : input = local array
+ * integer          n_elts       : <-- : size of the array.
+ * integer          array(*)     : <-> : input = local array
  *                                       output = array of global max. values.
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -240,14 +222,12 @@ CS_PROCF (parimx, PARIMX)(cs_int_t  *n_elts,
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARIMN (N_ELTS, ARRAY)
+ * subroutine parimn (n_elts, array)
  * *****************
  *
- * INTEGER          N_ELTS       : --> : size of the array.
- * INTEGER          ARRAY(*)     : <-> : input = local array
+ * integer          n_elts       : <-- : size of the array.
+ * integer          array(*)     : <-> : input = local array
  *                                       output = array of global min. values.
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -260,14 +240,12 @@ CS_PROCF (parimn, PARIMN)(cs_int_t  *n_elts,
  *
  * Fortran Interface
  *
- * SUBROUTINE PARRSM (N_ELTS, ARRAY)
+ * subroutine parrsm (n_elts, array)
  * *****************
  *
- * INTEGER          N_ELTS       : --> : size of the array.
- * DOUBLE PRECISION ARRAY(*)     : <-> : input = local array
+ * integer          n_elts       : <-- : size of the array.
+ * double precision array(*)     : <-> : input = local array
  *                                       output = array of global sum values.
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -280,14 +258,12 @@ CS_PROCF (parrsm, PARRSM)(cs_int_t   *n_elts,
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARRMX (N_ELTS, ARRAY)
+ * subroutine parrmx (n_elts, array)
  * *****************
  *
- * INTEGER          N_ELTS        : --> : size of the array
- * DOUBLE PRECISION ARRAY(*)      : <-> : input = local array
+ * integer          n_elts        : <-- : size of the array
+ * double precision array(*)      : <-> : input = local array
  *                                        output = array of global max. values.
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -300,14 +276,12 @@ CS_PROCF (parrmx, PARRMX)(cs_int_t   *n_elts,
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARRMN (N_ELTS, ARRAY)
+ * subroutine parrmn (n_elts, array)
  * *****************
  *
- * INTEGER          N_ELTS        : --> : size of the array
- * DOUBLE PRECISION ARRAY(*)      : <-> : input = local array
+ * integer          n_elts        : <-- : size of the array
+ * double precision array(*)      : <-> : input = local array
  *                                        output = array of global min. values.
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -320,14 +294,12 @@ CS_PROCF (parrmn, PARRMN)(cs_int_t   *n_elts,
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARBCI (IRANK, N_ELTS, ARRAY)
+ * subroutine parbci (irank, n_elts, array)
  * *****************
  *
- * INTEGER          IRANK       : --> : rank related to the sending process
- * INTEGER          N_ELTS      : --> : size of the array
- * INTEGER          ARRAY(*)    : <-> : array of int
- *
- * Returns:
+ * integer          irank       : <-- : rank related to the sending process
+ * integer          n_elts      : <-- : size of the array
+ * integer          array(*)    : <-> : array to broadcast
  *----------------------------------------------------------------------------*/
 
 void
@@ -341,14 +313,12 @@ CS_PROCF (parbci, PARBCI)(cs_int_t   *irank,
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARBCR (IRANK, N_ELTS, ARRAY)
+ * subroutine parbcr (irank, n_elts, array)
  * *****************
  *
- * INTEGER            IRANK     : --> : rank related to the sending process
- * INTEGER            N_ELTS    : --> : size of the array
- * DOUBLE PRECISION   ARRAY(*)  : <-> : array of real
- *
- * Returns:
+ * integer            irank     : <-- : rank related to the sending process
+ * integer            n_elts    : <-- : size of the array
+ * double precision   array(*)  : <-> : array to broadcast
  *----------------------------------------------------------------------------*/
 
 void
@@ -362,15 +332,13 @@ CS_PROCF (parbcr, PARBCR)(cs_int_t   *irank,
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARAGV (NVAR, NVARGB, VAR, VARGB)
+ * subroutine paragv (nvar, nvargb, var, vargb)
  * *****************
  *
- * INTEGER           N_ELTS      : --> : size of the local array
- * INTEGER           N_G_ELTS    : --> : size of the global array
- * DOUBLE PRECISION  ARRAY(*)    : --> : local array
- * DOUBLE PRECISION  G_ARRAY(*)  : <-- : global array
- *
- * Returns:
+ * integer           n_elts      : <-- : size of the local array
+ * integer           n_g_elts    : <-- : size of the global array
+ * double precision  array(*)    : <-- : local array
+ * double precision  g_array(*)  : --> : global array
  *----------------------------------------------------------------------------*/
 
 void
@@ -385,16 +353,14 @@ CS_PROCF (paragv, PARAGV)(cs_int_t   *n_elts,
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARFPT (NODE, NDRANG, DIS2MN)
+ * subroutine parfpt (node, ndrang, dis2mn)
  * *****************
  *
- * INTEGER          NODE        : <-> : local number of the closest node
- * INTEGER          NDRANG      : <-- : rank id for which the distance is the
+ * integer          node        : <-> : local number of the closest node
+ * integer          ndrang      : --> : rank id for which the distance is the
  *                                      smallest
- * DOUBLE PRECISION DIS2MN      : --> : square distance between the closest node
+ * double precision dis2mn      : <-- : square distance between the closest node
  *                                      and the wanted node.
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -407,18 +373,16 @@ CS_PROCF (parfpt, PARFPT)(cs_int_t   *node,
  *
  * Fortran Interface :
  *
- * SUBROUTINE PARHIS (NODE, NDRANG, VAR, VARCAP)
+ * subroutine parhis (node, ndrang, var, varcap)
  * *****************
  *
- * INTEGER          NODE        : --> : local number of the element related to
+ * integer          node        : <-- : local number of the element related to
  *                                      a measure node
- * INTEGER          NDRANG      : --> : rank of the process owning the closest
+ * integer          ndrang      : <-- : rank of the process owning the closest
  *                                      node from the measure node
- * DOUBLE PRECISION VAR(*)      : --> : values of the variable on local elements
- * DOUBLE PRECISION VARCAP      : <-- : value of the variable for the element
+ * double precision var(*)      : <-- : values of the variable on local elements
+ * double precision varcap      : --> : value of the variable for the element
  *                                      related to the measure node
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
@@ -428,99 +392,6 @@ CS_PROCF (parhis, PARHIS)(cs_int_t   *node,
                           cs_real_t  *varcap);
 
 /*----------------------------------------------------------------------------
- * Return the global cell number of a local cell.
- * (send to all the processes)
- *
- * Fortran Interface :
- *
- * SUBROUTINE PARCEL (LNUM, RANKID, GNUM)
- * *****************
- *
- * INTEGER          LNUM        : --> : local cell number
- * INTEGER          RANKID      : --> : rank of the domain (0 to N-1)
- * INTEGER          GNUM        : <-- : global cell number
- *
- * Returns:
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parcel, PARCEL)(cs_int_t   *lnum,
-                          cs_int_t   *rankid,
-                          cs_int_t   *gnum);
-
-/*----------------------------------------------------------------------------
- * Return the global cell number knowing its related local cell number. No
- * communication is useful.
- * Return the local cell number in serial mode.
- * Return 0 if the local cell number > mesh->n_cells
- * Return 0 if the current rank domain != RANKID
- *
- * Fortran interface :
- *
- * SUBROUTINE PARCLG (LNUM, RANKID, GNUM)
- * *****************
- *
- * INTEGER          LNUM      : --> : local cell number
- * INTEGER          RANKID    : --> : rank of the current domain (0 to N-1)
- * INTEGER          GNUM      : <-- : global cell number
- *
- * Returns:
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parclg, PARCLG)(cs_int_t   *lnum,
-                          cs_int_t   *rankid,
-                          cs_int_t   *gnum);
-
-/*----------------------------------------------------------------------------
- * Return the global internal face number knowing its related local internal
- * face number. No communication is useful.
- * Return the local internal face number in serial mode.
- * Return 0 if the local internal face number > mesh->n_i_faces
- * Return 0 if the current rank domain != RANKID
- *
- * Fortran Interface :
- *
- * SUBROUTINE PARFIG (LNUM, RANKID, GNUM)
- * *****************
- *
- * INTEGER          LNUM      : --> : local internal face number
- * INTEGER          RANKID    : --> : rank of the current domain (0 to N-1)
- * INTEGER          GNUM      : <-- : global internal face number
- *
- * Returns:
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parfig, PARFIG)(cs_int_t   *lnum,
-                          cs_int_t   *rankid,
-                          cs_int_t   *gnum);
-
-/*----------------------------------------------------------------------------
- * Return the global border face number knowing its related local border face
- * number. No communication is useful.
- * Return the local border face number in serial mode.
- * Return 0 if the local border face number > mesh->n_b_faces
- * Return 0 if the current rank domain != RANKID
- *
- * Fortran Interface :
- *
- * SUBROUTINE PARFBG (LNUM, RANKID, GNUM)
- * *****************
- *
- * INTEGER          LNUM      : --> : local border face number
- * INTEGER          RANKID    : --> : rank of the current domain (0 to N-1)
- * INTEGER          GNUM      : <-- : global border face number
- *
- * Returns:
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parfbg, PARFBG)(cs_int_t   *lnum,
-                          cs_int_t   *rankid,
-                          cs_int_t   *gnum);
-
-/*----------------------------------------------------------------------------
  * Call a barrier in case of parallelism
  *
  * This function should not be necessary in production code,
@@ -528,7 +399,7 @@ CS_PROCF (parfbg, PARFBG)(cs_int_t   *lnum,
  *
  * Fortran interface :
  *
- * SUBROUTINE PARBAR
+ * subroutine parbar
  * *****************
  *----------------------------------------------------------------------------*/
 
