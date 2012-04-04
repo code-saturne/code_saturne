@@ -2618,8 +2618,7 @@ It is in particular the case when the following operations are made on a
       the neighboring cells (use of \texttt{ifacel}).
 \end{list}
 The variable $A$ needs to be exchanged before these operations can be
-      made: to allow it, the subroutines \texttt{parcom} and
-      \texttt{percom} need to be called {\underline {\bf in this order}}.
+      made: to allow it, the subroutines \texttt{synsca} may be called.
 
 \item {\bf Global operations in parallel mode}.\\
 In parallel mode, the user must pay attention during the realisation of
