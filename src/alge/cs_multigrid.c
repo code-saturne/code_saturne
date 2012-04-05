@@ -1545,7 +1545,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
     if (verbosity > 2)
       bft_printf(_("  Resolution on coarsest level\n"));
 
-    assert(level = coarsest_level);
+    assert(level == coarsest_level);
     assert(c == mg->grid_hierarchy[coarsest_level]);
 
     /* coarsest level == 0 should never happen, but we play it safe */
@@ -1832,10 +1832,7 @@ void CS_PROCF(clmlga, CLMLGA)
 
     /* Recursion test */
 
-    if (n_g_cells <= (cs_gnum_t)(*ncegrm))
-      break;
-
-    else if (grid_lv >= *ngrmax) {
+    if (grid_lv >= *ngrmax) {
       cs_base_warn(__FILE__, __LINE__);
       bft_printf(_(" clmlga: maximum number of coarse grids (%d)\n"
                    "         reached for \"%s\".\n"),
@@ -1912,7 +1909,9 @@ void CS_PROCF(clmlga, CLMLGA)
 
     /* If too few cells were grouped, we stop at this level */
 
-    if (   n_g_cells > (0.8 * n_g_cells_prev)
+    if (n_g_cells <= (cs_gnum_t)(*ncegrm))
+      break;
+    else if (n_g_cells > (0.8 * n_g_cells_prev)
         && n_coarse_ranks == n_coarse_ranks_prev)
       break;
   }
