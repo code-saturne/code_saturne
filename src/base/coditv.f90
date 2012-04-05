@@ -58,7 +58,7 @@
 !> \f[
 !> \tens{f_s}^{imp} \delta \vect{a}^k
 !> + \divv \left( \delta \vect{a}^k \otimes \rho \vect{u}
-!>              - \mu \gradt \delta a^k \right)
+!>              - \mu \gradt \delta \vect{a}^k \right)
 !> = \vect{Rhs}^k
 !> \f]
 !>
@@ -77,7 +77,7 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     idtvar        indicateur du schema temporel
+!> \param[in]     idtvar        indicator of the temporal scheme
 !> \param[in]     ivar          index of the current variable
 !> \param[in]     iconvp        indicator
 !>                               - 1 convection,
@@ -325,7 +325,7 @@ call matrxv                                                       &
    flumas , flumab , viscfm , viscbm ,                            &
    dam    , xam    )
 
-!     En stationnaire, on relaxe la diagonale
+! En stationnaire, on relaxe la diagonale
 if (idtvar.lt.0) then
   do iel = 1, ncel
     do isou=1,3
@@ -409,7 +409,7 @@ do 100 isweep = 1, nswmod
 !     on doit donc corriger SMBR (c'est le cas lorsqu'on itere sur navsto)
     do iel = 1, ncel
       do isou=1,3
-        smbini(isou,iel) = smbini(isou,iel)                      &
+        smbini(isou,iel) = smbini(isou,iel)                        &
                    -fimp(isou,1,iel)*(pvar(1,iel) - pvara(1,iel))  &
                    -fimp(isou,2,iel)*(pvar(2,iel) - pvara(2,iel))  &
                    -fimp(isou,3,iel)*(pvar(3,iel) - pvara(3,iel))
@@ -422,7 +422,7 @@ do 100 isweep = 1, nswmod
 !     SMBINI CONTIENT LES TERMES INSTAT, EN DIV(RHO U) ET SOURCE DE MASSE
 !     DU SECOND MEMBRE  MIS A JOUR A CHAQUE SWEEP
       do isou=1,3
-        smbini(isou,iel) = smbini(isou,iel)                &
+        smbini(isou,iel) = smbini(isou,iel)                 &
                   - fimp(isou,1,iel)*dpvar(1,iel)           &
                   - fimp(isou,2,iel)*dpvar(2,iel)           &
                   - fimp(isou,3,iel)*dpvar(3,iel)

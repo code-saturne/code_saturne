@@ -20,6 +20,115 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file bilsc4.f90
+!>
+!> \brief This function adds the explicit part of the convection/diffusion
+!> terms of a transport equation of a vector field \f$ \vect{\varia} \f$.
+!>
+!> More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
+!> follows:
+!> \f[
+!> \vect{Rhs} = \vect{Rhs} + \sum_{\fij \in \Facei{\celli}}      \left(
+!>        \dot{m}_\ij \vect{\varia}_\fij
+!>      - \mu_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
+!> \f]
+!>
+!> Remark:
+!> if ivisep = 1, then we also take \f$ \mu \transpose{\gradt\vect{\varia}}
+!> + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
+!> the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
+!>
+!> Warning:
+!> \f$ \vect{Rhs} \f$ has already been initialized before calling bilsc!
+!>
+!> Options:
+!> - blencp = 0: upwind scheme for the advection
+!> - blencp = 1: no upwind scheme except in the slope test
+!> - ischcp = 0: second order
+!> - ischcp = 1: centred
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     idtvar        indicator of the temporal scheme
+!> \param[in]     ivar          index of the current variable
+!> \param[in]     iconvp        indicator
+!>                               - 1 convection,
+!>                               - 0 sinon
+!> \param[in]     idiffp        indicator
+!>                               - 1 diffusion,
+!>                               - 0 sinon
+!> \param[in]     nswrgp        number of reconstruction sweeps for the
+!>                               gradients
+!> \param[in]     imligp        clipping gradient method
+!>                               - < 0 no clipping
+!>                               - = 0 thank to neighbooring gradients
+!>                               - = 1 thank to the mean gradient
+!> \param[in]     ircflp        indicator
+!>                               - 1 flux reconstruction,
+!>                               - 0 otherwise
+!> \param[in]     ischcp        indicator
+!>                               - 1 centred
+!>                               - 0 2nd order
+!> \param[in]     isstpp        indicator
+!>                               - 1 without slope test
+!>                               - 0 with slope test
+!> \param[in]     inc           indicator
+!>                               - 0 when solving an increment
+!>                               - 1 otherwise
+!> \param[in]     imrgra        indicateur
+!>                               - 0 iterative gradient
+!>                               - 1 least square gradient
+!> \param[in]     ivisep        indicator to take \f$ \divv
+!>                               \left(\mu \gradt \transpose{\vect{a}} \right)
+!>                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
+!>                               - 1 take into account,
+!>                               - 0 otherwise
+!> \param[in]     ipp*          index of the variable for post-processing
+!> \param[in]     iwarnp        verbosity
+!> \param[in]     blencp        fraction of upwinding
+!> \param[in]     epsrgp        relative precision for the gradient
+!>                               reconstruction
+!> \param[in]     climgp        clipping coeffecient for the computation of
+!>                               the gradient
+!> \param[in]     extrap        coefficient for extrapolation of the gradient
+!> \param[in]     relaxp        coefficient of relaxation
+!> \param[in]     thetap        weightening coefficient for the theta-schema,
+!>                               - thetap = 0: explicit scheme
+!>                               - thetap = 0.5: time-centred
+!>                               scheme (mix between Crank-Nicolson and
+!>                               Adams-Bashforth)
+!>                               - thetap = 1: implicit scheme
+!> \param[in]     pvar          vitesse resolue (instant courant)
+!> \param[in]     pvara         vitesse resolue (instant precedent)
+!> \param[in]     coefav        boundary condition array for the variable
+!>                               (Explicit part)
+!> \param[in]     coefbv        boundary condition array for the variable
+!>                               (Impplicit part)
+!> \param[in]     cofafv        boundary condition array for the diffusion
+!>                               of the variable (Explicit part)
+!> \param[in]     cofbfv        boundary condition array for the diffusion
+!>                               of the variable (Implicit part)
+!> \param[in]     flumas        mass flux at interior faces
+!> \param[in]     flumab        mass flux at boundary faces
+!> \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+!>                               at interior faces for the r.h.s.
+!> \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+!>                               at border faces for the r.h.s.
+!> \param[in]     secvif        secondary viscosity at interior faces
+!> \param[in]     secvib        secondary viscosity at boundary faces
+!> \param[in,out] smbr          right hand side \f$ \vect{Rhs} \f$
+!_______________________________________________________________________________
+
 subroutine bilsc4 &
 !================
 
@@ -28,105 +137,11 @@ subroutine bilsc4 &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   vel    , vela   ,                                              &
+   pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
    smbr   )
 
-!===============================================================================
-! FONCTION :
-! ---------
-
-! CALCUL DU BILAN EXPLICITE DE LA VARIABLE VARx VARy VARz (VITESSE)
-!                                              --->
-! --->   --->      ___ .   --->                --->     -->
-! SMBR = SMBR -    \   m   VAR  +Visc   ( grad VAR )  . n
-!                  /__  ij    ij     ij             ij    ij
-!                   j
-
-! REMARK:
-! if ivisep = 1 then we also take MU*TRANSPOSE_GRAD(VAR)
-!                               + LAMBDA*TRACE(GRAD(VAR))
-!
-! where lambda is the secondary viscosity, i.e. usually -2/3*MU
-
-! ATTENTION : SMBRP DEJA INITIALISE AVANT L'APPEL A BILSCA
-!            IL CONTIENT LES TERMES SOURCES EXPLICITES, ETC....
-
-! BLENCP = 1 : PAS D'UPWIND EN DEHORS DU TEST DE PENTE
-! BLENCP = 0 : UPWIND
-! ISCHCP = 1 : CENTRE
-! ISCHCP = 0 : SECOND ORDER
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! idtvar           ! e  ! <-- ! indicateur du schema temporel                  !
-! ivar             ! e  ! <-- ! numero de la variable                          !
-! iconvp           ! e  ! <-- ! indicateur = 1 convection, 0 sinon             !
-! idiffp           ! e  ! <-- ! indicateur = 1 diffusion , 0 sinon             !
-! nswrgp           ! e  ! <-- ! nombre de sweep pour reconstruction            !
-!                  !    !     !             des gradients                      !
-! imligp           ! e  ! <-- ! methode de limitation du gradient              !
-!                  !    !     !  < 0 pas de limitation                         !
-!                  !    !     !  = 0 a partir des gradients voisins            !
-!                  !    !     !  = 1 a partir du gradient moyen                !
-! ircflp           ! e  ! <-- ! indicateur = 1 rec flux, 0 sinon               !
-! ischcp           ! e  ! <-- ! indicateur = 1 centre , 0 2nd order            !
-! isstpp           ! e  ! <-- ! indicateur = 1 sans test de pente              !
-!                  !    !     !            = 0 avec test de pente              !
-! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
-!                  !    !     !              1 sinon                           !
-! imrgra           ! e  ! <-- ! indicateur = 0 gradrc 97                       !
-!                  ! e  ! <-- !            = 1 gradmc 99                       !
-! ivisep           ! e  ! <-- ! indicateur = 1 pour la prise en compte         !
-!                  !    !     !                div(T Grad(vel))                !
-!                  !    !     !                -2/3 Grad(div(vel))             !
-!                  !    !     !              0 sinon                           !
-! ipp*             ! e  ! <-- ! numero de variable pour post                   !
-! iwarnp           ! i  ! <-- ! verbosity                                      !
-! blencp           ! r  ! <-- ! 1 - proportion d'upwind                        !
-! epsrgp           ! r  ! <-- ! precision relative pour la                     !
-!                  !    !     !  reconstruction des gradients 97               !
-! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
-! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! relaxp           ! r  ! <-- ! coefficient de relaxation                      !
-! thetap           ! r  ! <-- ! coefficient de ponderation pour le             !
-!                  !    !     ! theta-schema (on ne l'utilise pour le          !
-!                  !    !     ! moment que pour u,v,w et les scalaire          !
-!                  !    !     ! - thetap = 0.5 correspond a un schema          !
-!                  !    !     !   totalement centre en temps (mixage           !
-!                  !    !     !   entre crank-nicolson et adams-               !
-!                  !    !     !   bashforth)                                   !
-! vel (3,ncelet)   ! tr ! <-- ! vitesse resolue (instant courant)              !
-! vela(3,ncelet)   ! tr ! <-- ! vitesse resolue (instant precedent)            !
-! coefav           ! tr ! <-- ! tableaux des cond lim pour u, v, w             !
-!   (3,nfabor)     !    !     !  sur la normale a la face de bord              !
-! coefbv           ! tr ! <-- ! tableaux des cond lim pour u, v, w             !
-!   (3,3,nfabor)   !    !     !  sur la normale a la face de bord              !
-! cofafv           ! tr ! <-- ! tableaux des cond lim pour le flux de          !
-!   (3,nfabor)     !    !     !  diffusion de u, v, w                          !
-! cofbfv           ! tr ! <-- ! tableaux des cond lim pour le flux de          !
-!   (3,3,nfabor)   !    !     !  diffusion de u, v, w                          !
-! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
-! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
-! viscf (nfac)     ! tr ! <-- ! visc*surface/dist aux faces internes           !
-!                  !    !     !  pour second membre                            !
-! viscb (nfabor    ! tr ! <-- ! visc*surface/dist aux faces de bord            !
-!                  !    !     !  pour second membre                            !
-! secvif(nfac)     ! tr ! --- ! secondary viscosity at interior faces          !
-! secvib(nfabor)   ! tr ! --- ! secondary viscosity at boundary faces          !
-! smbr(3,ncelet)   ! tr ! <-- ! bilan au second membre                         !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -156,8 +171,8 @@ integer          inc    , imrgra , ivisep
 integer          iwarnp , ippu   , ippv   , ippw
 
 double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
-double precision vel   (3  ,ncelet)
-double precision vela  (3  ,ncelet)
+double precision pvar  (3  ,ncelet)
+double precision pvara (3  ,ncelet)
 double precision coefav(3  ,nfabor)
 double precision cofafv(3  ,nfabor)
 double precision coefbv(3,3,nfabor)
@@ -269,7 +284,7 @@ if( (idiffp.ne.0 .and. ircflp.eq.1) .or. ivisep.eq.1 .or.         &
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
   ilved  ,                                                       &
-  vel    , coefav , coefbv ,                                     &
+  pvar   , coefav , coefbv ,                                     &
   gradv )
 
 else
@@ -282,9 +297,8 @@ else
   enddo
 endif
 
-
 ! ======================================================================
-! ---> CALCUL DU GRADIENT DECENTRE DPDXA, DPDYA, DPDZA POUR TST DE PENTE
+! ---> Compute uncentred gradient gradva for the slope test
 ! ======================================================================
 
 do iel = 1, ncelet
@@ -295,7 +309,7 @@ do iel = 1, ncelet
   enddo
 enddo
 
-if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
+if (iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0) then
 
   do ifac = 1, nfac
 
@@ -309,8 +323,8 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
     !-----------------
     ! X-Y-Z component, p=u, v, w
     do isou = 1, 3
-      pif = vel(isou,ii)
-      pjf = vel(isou,jj)
+      pif = pvar(isou,ii)
+      pjf = pvar(isou,jj)
       do jsou = 1, 3
         pif = pif + gradv(isou,jsou,ii)*difv(jsou)
         pjf = pjf + gradv(isou,jsou,jj)*djfv(jsou)
@@ -323,8 +337,8 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
       do jsou = 1, 3
         vfac(jsou) = pfac*surfac(jsou,ifac)
 
-        gradva(isou,jsou,ii) = gradva(isou,jsou,ii) +vfac(jsou)
-        gradva(isou,jsou,jj) = gradva(isou,jsou,jj) -vfac(jsou)
+        gradva(isou,jsou,ii) = gradva(isou,jsou,ii) + vfac(jsou)
+        gradva(isou,jsou,jj) = gradva(isou,jsou,jj) - vfac(jsou)
       enddo
     enddo
 
@@ -342,7 +356,7 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
       pfac = inc*coefav(isou,ifac)
       !coefu is a matrix
       do jsou =  1, 3
-        pfac = pfac + coefbv(isou,jsou,ifac)*(   vel(jsou,ii)    &
+        pfac = pfac + coefbv(isou,jsou,ifac)*(pvar(jsou,ii)    &
                     + gradv(jsou,1,ii)*diipbv(1)               &
                     + gradv(jsou,2,ii)*diipbv(2)               &
                     + gradv(jsou,3,ii)*diipbv(3)     )
@@ -375,9 +389,8 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
 
 endif
 
-
 ! ======================================================================
-! ---> ASSEMBLAGE A PARTIR DES FACETTES FLUIDES
+! ---> Assemblage a partir des facettes fluides
 ! ======================================================================
 
 infac = 0
@@ -390,20 +403,19 @@ if(ncelet.gt.ncel) then
   enddo
 endif
 
+! --> Flux upwind pur
+! =====================
 
-!  --> FLUX UPWIND PUR
-!  =====================
+if (iupwin.eq.1) then
 
-if(iupwin.eq.1) then
-
-!     Stationnaire
+  ! Stationnaire
   if (idtvar.lt.0) then
 
     do ifac = 1, nfac
 
       ii = ifacel(1,ifac)
       jj = ifacel(2,ifac)
-!     en parallele, la face sera comptee d'un cote OU (exclusif) de l'autre
+      ! En parallele, la face sera comptee d'un cote OU (exclusif) de l'autre
       if (ii.le.ncel) then
         infac = infac+1
       endif
@@ -433,11 +445,11 @@ if(iupwin.eq.1) then
         enddo
 
 !     reconstruction uniquement si IRCFLP = 1
-        pi  = vel (isou,ii)
-        pj  = vel (isou,jj)
+        pi  = pvar (isou,ii)
+        pj  = pvar (isou,jj)
 
-        pia = vela(isou,ii)
-        pja = vela(isou,jj)
+        pia = pvara(isou,ii)
+        pja = pvara(isou,jj)
 
         pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
                           +dpvf(2)*diipfv(2)        &
@@ -507,8 +519,8 @@ if(iupwin.eq.1) then
           dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
         enddo
 
-        pi = vel(isou,ii)
-        pj = vel(isou,jj)
+        pi = pvar(isou,ii)
+        pj = pvar(isou,jj)
 
         pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
                           +dpvf(2)*diipfv(2)        &
@@ -578,11 +590,11 @@ elseif(isstpp.eq.1) then
           dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
         enddo
 
-        pi = vel (isou,ii)
-        pj = vel (isou,jj)
+        pi = pvar (isou,ii)
+        pj = pvar (isou,jj)
 
-        pia = vela(isou,ii)
-        pja = vela(isou,jj)
+        pia = pvara(isou,ii)
+        pja = pvara(isou,jj)
 
         pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
                           +dpvf(2)*diipfv(2)        &
@@ -718,8 +730,8 @@ elseif(isstpp.eq.1) then
           dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
         enddo
 
-        pi = vel(isou,ii)
-        pj = vel(isou,jj)
+        pi = pvar(isou,ii)
+        pj = pvar(isou,jj)
 
         pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
                           +dpvf(2)*diipfv(2)        &
@@ -843,11 +855,11 @@ else
           dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
         enddo
 
-        pi  = vel (isou,ii)
-        pj  = vel (isou,jj)
+        pi  = pvar (isou,ii)
+        pj  = pvar (isou,jj)
 
-        pia = vela(isou,ii)
-        pja = vela(isou,jj)
+        pia = pvara(isou,ii)
+        pja = pvara(isou,jj)
 
         pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
                           +dpvf(2)*diipfv(2)        &
@@ -1034,8 +1046,8 @@ else
           dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
         enddo
 
-        pi = vel(isou,ii)
-        pj = vel(isou,jj)
+        pi = pvar(isou,ii)
+        pj = pvar(isou,jj)
 
         pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
                           +dpvf(2)*diipfv(2)        &
@@ -1193,7 +1205,7 @@ if (idtvar.lt.0) then
 
       !coefu and cofuf are a matrices
       do jsou = 1, 3
-        pir  = vel(jsou,ii)/relaxp - (1.d0-relaxp)/relaxp*vela(jsou,ii)
+        pir  = pvar(jsou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(jsou,ii)
 
         pipr = pir +ircflp*( gradv(jsou,1,ii)*diipbv(1)           &
                            + gradv(jsou,2,ii)*diipbv(2)           &
@@ -1203,7 +1215,7 @@ if (idtvar.lt.0) then
 
       enddo
 
-      pir  = vel(isou,ii)/relaxp - (1.d0-relaxp)/relaxp*vela(isou,ii)
+      pir  = pvar(isou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(isou,ii)
       pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)             &
                          + gradv(isou,2,ii)*diipbv(2)             &
                          + gradv(isou,3,ii)*diipbv(3)    )
@@ -1244,18 +1256,18 @@ else
 
       !coefu and cofuf are a matrices
       do jsou = 1, 3
-        pip = vel(jsou,ii) +ircflp*( gradv(jsou,1,ii)*diipbv(1)           &
-                                   + gradv(jsou,2,ii)*diipbv(2)           &
-                                   + gradv(jsou,3,ii)*diipbv(3)    )
+        pip = pvar(jsou,ii) + ircflp*( gradv(jsou,1,ii)*diipbv(1)           &
+                                     + gradv(jsou,2,ii)*diipbv(2)           &
+                                     + gradv(jsou,3,ii)*diipbv(3)    )
         pfac  = pfac  + coefbv(isou,jsou,ifac)*pip
         pfacd = pfacd + cofbfv(isou,jsou,ifac)*pip
       enddo
 
-      pip = vel(isou,ii) +ircflp*( gradv(isou,1,ii)*diipbv(1)             &
-                                 + gradv(isou,2,ii)*diipbv(2)             &
-                                 + gradv(isou,3,ii)*diipbv(3)    )
+      pip = pvar(isou,ii) + ircflp*( gradv(isou,1,ii)*diipbv(1)             &
+                                   + gradv(isou,2,ii)*diipbv(2)             &
+                                   + gradv(isou,3,ii)*diipbv(3)    )
 
-      flux = iconvp*( flui*vel(isou,ii) +fluj*pfac )                      &
+      flux = iconvp*( flui*pvar(isou,ii) +fluj*pfac )                      &
            + idiffp*viscb(ifac)*( pip -pfacd )
       smbr(isou,ii) = smbr(isou,ii) - thetap * flux
     enddo
@@ -1282,7 +1294,7 @@ if (ivisep.eq.1) then
   enddo
   do ifac = 1, nfabor
     ityp = itypfb(ifac)
-    if (ityp.eq.isolib .or. ityp.eq.ientre) bndcel(ifabor(ifac)) = 0.d0
+    if (ityp.eq.isolib.or.ityp.eq.ientre) bndcel(ifabor(ifac)) = 0.d0
   enddo
 
   ! ---> INTERNAL FACES
@@ -1336,7 +1348,7 @@ deallocate(gradva)
 deallocate(gradv)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -1384,7 +1396,7 @@ deallocate(gradv)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

@@ -37,7 +37,7 @@
 !> For the mass flux at the boundary we have:
 !> \f[
 !> \dot{m}_\fib = \left[ \rho_\fib \vect{A}_u  + \rho_\fib \tens{B}_u \vect{u}
-!> + \tens{B}_u \left(\gradv \vect{u} \cdot \vect{\centi \centip}\right)\right]
+!> + \tens{B}_u \left(\gradt \vect{u} \cdot \vect{\centi \centip}\right)\right]
 !> \cdot \vect{S}_\ij
 !> \f]
 !> The last equation uses some approximations detailed in the theory guide.
