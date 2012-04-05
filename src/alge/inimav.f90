@@ -29,7 +29,7 @@
 !> \brief This function adds \f$ \rho \vect{u} \cdot \vect{S}_\ij\f$ to the mass
 !> flux \f$ \dot{m}_\fij \f$.
 !>
-!> For the reconstruction, \f$ \grad \left(\rho \vect{u} \right) \f$ is
+!> For the reconstruction, \f$ \gradt \left(\rho \vect{u} \right) \f$ is
 !> computed with the following approximated boundary conditions:
 !>  - \f$ \vect{A}_{\rho u} = \rho_\fib \vect{A}_u \f$
 !>  - \f$ \tens{B}_{\rho u} = \tens{B}_u \f$
