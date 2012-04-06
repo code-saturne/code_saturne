@@ -110,15 +110,6 @@ typedef enum {
  * Global variable definitions
  *============================================================================*/
 
-extern int  cs_glob_n_threads;      /* Number of threads */
-
-extern int  cs_glob_rank_id;        /* Rank of process in group */
-extern int  cs_glob_n_ranks;        /* Number of processes in group */
-
-#if defined(HAVE_MPI)
-extern MPI_Comm  cs_glob_mpi_comm;    /* Intra-communicator */
-#endif
-
 /*============================================================================
  * Public function prototypes for Fortran API
  *============================================================================*/

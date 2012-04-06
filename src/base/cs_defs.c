@@ -71,6 +71,20 @@ MPI_Datatype  cs_datatype_to_mpi[] = {MPI_DATATYPE_NULL,
                                       MPI_UNSIGNED,       /* CS_UINT32 */
                                       MPI_UNSIGNED_LONG}; /* CS_UINT64 */
 
+
+#endif
+
+/* Global variables indicationg task state */
+
+int  cs_glob_n_threads = 1;    /* Number of threads */
+
+int  cs_glob_rank_id = -1;     /* Rank of process in communicator */
+int  cs_glob_n_ranks =  1;     /* Number of processes in communicator */
+
+#if defined(HAVE_MPI)
+
+MPI_Comm  cs_glob_mpi_comm = MPI_COMM_NULL;   /* Main MPI intra-communicator */
+
 #endif
 
 /*----------------------------------------------------------------------------*/
