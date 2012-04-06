@@ -1085,7 +1085,7 @@ cs_paramedmem_field_export(cs_paramedmem_coupling_t  *coupling,
       val_ptr[i] = field_values[i];
   }
   else {
-    for (cs_lnum_t i = 0; i < dim*mesh->n_elts; i++) {
+    for (cs_lnum_t i = 0; i < mesh->n_elts; i++) {
       for (int j = 0; j < dim; j++)
         val_ptr[i*dim + j] = field_values[mesh->elt_list[i]*dim + j];
     }
@@ -1134,7 +1134,7 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *coupling,
       field_values[i] = val_ptr[i];
   }
   else {
-    for (cs_lnum_t i = 0; i < dim*mesh->n_elts; i++) {
+    for (cs_lnum_t i = 0; i < mesh->n_elts; i++) {
       for (int j = 0; j < dim; j++)
         field_values[mesh->elt_list[i]*dim + j] = val_ptr[i*dim + j];
     }
