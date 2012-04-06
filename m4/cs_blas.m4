@@ -255,7 +255,7 @@ if test "x$with_blas" != "xno" ; then
       AC_MSG_CHECKING([for threaded ATLAS BLAS])
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <cblas.h>]],
                      [[ cblas_ddot(0, 0, 0, 0, 0); ]])],
-                     [ AC_DEFINE([HAVE_CBLAS], 1, [ATLAS BLAS support])
+                     [ AC_DEFINE([HAVE_ATLAS], 1, [ATLAS BLAS support])
                        cs_have_blas=yes; with_blas_type=ATLAS ],
                      [cs_have_blas=no])
       AC_MSG_RESULT($cs_have_blas)
@@ -276,7 +276,7 @@ if test "x$with_blas" != "xno" ; then
       AC_MSG_CHECKING([for ATLAS BLAS])
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <cblas.h>]],
                      [[ cblas_ddot(0, 0, 0, 0, 0); ]])],
-                     [ AC_DEFINE([HAVE_CBLAS], 1, [ATLAS BLAS support])
+                     [ AC_DEFINE([HAVE_ATLAS], 1, [ATLAS BLAS support])
                        cs_have_blas=yes; with_blas_type=ATLAS ],
                      [cs_have_blas=no])
       AC_MSG_RESULT($cs_have_blas)

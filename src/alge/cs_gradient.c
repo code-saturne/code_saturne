@@ -283,6 +283,8 @@ _l2_norm_1(cs_lnum_t            n_elts,
  * The input array is assumed to be interleaved with block of 4 values,
  * of which the first 3 are used.
  *
+ * A superblock algorithm is used for better precision.
+ *
  * parameters:
  *   n_elts <-- Local number of elements
  *   x      <-- array of 3-vectors
@@ -292,20 +294,64 @@ static double
 _l2_norm_3(cs_lnum_t              n_elts,
            cs_real_4_t  *restrict x)
 {
-  cs_lnum_t ii;
+  const cs_lnum_t block_size = 60;
+
+  cs_lnum_t sid, bid, ii;
+  cs_lnum_t start_id, end_id;
+  double sdot1, sdot2, sdot3, cdot1, cdot2, cdot3;
+
+  cs_lnum_t n_blocks = n_elts / 60;
+  cs_lnum_t n_sblocks = sqrt(n_blocks);
+  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
+
   double s[3];
   double s1 = 0.0, s2 = 0.0, s3 = 0.0;
 
-# pragma omp parallel for reduction(+: s1, s2, s3)
-  for (ii = 0; ii < n_elts; ii++) {
-    s1 += x[ii][0] * x[ii][0];
-    s2 += x[ii][1] * x[ii][1];
-    s3 += x[ii][2] * x[ii][2];
+# pragma omp parallel for reduction(+:s1, s2, s3) private(bid, start_id, end_id, ii, \
+                                                          cdot1, cdot2, cdot3, \
+                                                          sdot1, sdot2, sdot3)
+  for (sid = 0; sid < n_sblocks; sid++) {
+
+    sdot1 = 0.0;
+    sdot2 = 0.0;
+    sdot3 = 0.0;
+
+    for (bid = 0; bid < blocks_in_sblocks; bid++) {
+      start_id = block_size * bid*sid;
+      end_id = block_size * (bid*sid + 1);
+      cdot1 = 0.0;
+      cdot2 = 0.0;
+      cdot3 = 0.0;
+      for (ii = start_id; ii < end_id; ii++) {
+        cdot1 += x[ii][0] * x[ii][0];
+        cdot2 += x[ii][1] * x[ii][1];
+        cdot3 += x[ii][2] * x[ii][2];
+      }
+      sdot1 += cdot1;
+      sdot2 += cdot2;
+      sdot3 += cdot3;
+    }
+
+    s1 += sdot1;
+    s2 += sdot2;
+    s3 += sdot3;
+
   }
 
-  s[0] = s1;
-  s[1] = s2;
-  s[2] = s3;
+  cdot1 = 0.0;
+  cdot2 = 0.0;
+  cdot3 = 0.0;
+  start_id = block_size * n_sblocks*blocks_in_sblocks;
+  end_id = n_elts;
+  for (ii = start_id; ii < end_id; ii++) {
+    cdot1 += x[ii][0] * x[ii][0];
+    cdot2 += x[ii][1] * x[ii][1];
+    cdot3 += x[ii][2] * x[ii][2];
+  }
+
+  s[0] = s1 + cdot1;
+  s[1] = s2 + cdot2;
+  s[2] = s3 + cdot3;
 
 #if defined(HAVE_MPI)
 

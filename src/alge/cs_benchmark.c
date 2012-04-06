@@ -105,6 +105,11 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
+#if    defined(HAVE_CBLAS) || defined(HAVE_ESSL) \
+    || defined (HAVE_MKL)  || defined (HAVE_ACML)
+#define HAVE_BLAS 1
+#endif
+
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/

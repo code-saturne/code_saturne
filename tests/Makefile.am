@@ -99,6 +99,7 @@ mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
 # Code_Saturne tests
 
 check_PROGRAMS += \
+cs_blas_test \
 cs_core_test \
 cs_file_test \
 cs_interface_test \
@@ -112,6 +113,18 @@ LDADD_CS_TESTS = \
         $(top_builddir)/src/base/libcscore.la \
         $(top_builddir)/src/bft/libbft.la \
         $(LIBPLE_LA) $(PLE_LIBS) $(MPI_LIBS) -lm
+
+cs_blas_test_SOURCES  = \
+cs_blas_test.c \
+$(top_srcdir)/src/alge/cs_blas.c
+cs_blas_test_CPPFLAGS  = \
+-I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+ $(BLAS_CPPFLAGS) $(MPI_CPPFLAGS)
+cs_blas_test_CFLAGS  = $(AM_CFLAGS) $(CFLAGS_HOT)
+cs_blas_test_LDFLAGS  = $(BLAS_LDFLAGS) $(LDFLAGS_CS_TESTS)
+cs_blas_test_LDADD    = $(BLASRUNPATH) $(BLAS_LIBS) $(LDADD_CS_TESTS)
 
 cs_core_test_SOURCES  = cs_core_test.c
 cs_core_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)

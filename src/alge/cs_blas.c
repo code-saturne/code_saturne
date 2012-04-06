@@ -60,6 +60,9 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
+/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
+#define THR_MIN 128
+
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -85,12 +88,21 @@ double CS_PROCF(csdot, CSDOT)(const cs_int_t  *n,
   return cs_dot(*n, x, y);
 }
 
-#if !defined(HAVE_BLAS)
+/*============================================================================
+ *  Public function definitions
+ *============================================================================*/
 
-/* If we have no external BLAS, use local implementation */
-/*-------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Constant times a vector plus a vector: y <-- ax + y
+ *
+ * parameters:
+ *   n <-- size of arrays x and y
+ *   a <-- multiplier for x
+ *   x <-- array of floating-point values
+ *   y <-- array of floating-point values
+ *----------------------------------------------------------------------------*/
 
-/* Constant times a vector plus a vector: y <-- ax + y */
+#if !defined(HAVE_CBLAS) && !defined(HAVE_ESSL)  && !defined (HAVE_ACML)
 
 void cs_axpy(cs_lnum_t      n,
              double         a,
@@ -107,27 +119,80 @@ void cs_axpy(cs_lnum_t      n,
     y[i] += (a * x[i]);
 }
 
-/* Return the dot product of 2 vectors: x.y */
+#endif /*    !defined(HAVE_CBLAS)
+          && !defined(HAVE_ESSL)  && !defined (HAVE_ACML) */
 
-double cs_dot(cs_lnum_t      n,
-              const double  *x,
-              const double  *y)
+/*----------------------------------------------------------------------------
+ * Return the dot product of 2 vectors: x.y
+ *
+ * parameters:
+ *   n <-- size of arrays x and y
+ *   x <-- array of floating-point values
+ *   y<-- array of floating-point values
+ *
+ * returns:
+ *   dot product
+ *----------------------------------------------------------------------------*/
+
+#if    !defined(HAVE_ESSL) && !defined (HAVE_ACML) \
+    && !defined(HAVE_ATLAS) && !defined(HAVE_MKL)
+
+ /*
+  * The fallback algorithm used is l3superblock60, based on the article:
+  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156–1174
+  * 2008 Society for Industrial and Applied Mathematics
+  */
+
+double
+cs_dot(cs_lnum_t      n,
+       const double  *x,
+       const double  *y)
 {
-  cs_lnum_t  i;
-  double     s = 0;
+  const cs_lnum_t block_size = 60;
 
-  if (n < 1)
-    return s;
+  cs_lnum_t sid, bid, i;
+  cs_lnum_t start_id, end_id;
+  double sdot, cdot;
 
-# pragma omp parallel for reduction(+: s)
-  for (i = 0; i < n; i++) {
-    s += (x[i] * y[i]);
+  cs_lnum_t n_blocks = n / 60;
+  cs_lnum_t n_sblocks = sqrt(n_blocks);
+  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
+
+  double dot = 0.0;
+
+# pragma omp parallel for reduction(+:dot) private(bid, start_id, end_id, i, \
+                                                   cdot, sdot) if (n > THR_MIN)
+  for (sid = 0; sid < n_sblocks; sid++) {
+
+    sdot = 0.0;
+
+    for (bid = 0; bid < blocks_in_sblocks; bid++) {
+      start_id = block_size * bid*sid;
+      end_id = block_size * (bid*sid + 1);
+      cdot = 0.0;
+      for (i = start_id; i < end_id; i++)
+        cdot += x[i]*y[i];
+      sdot += cdot;
+    }
+
+    dot += sdot;
+
   }
 
-  return s;
+  cdot = 0.0;
+  start_id = block_size * n_sblocks*blocks_in_sblocks;
+  end_id = n;
+  for (i = start_id; i < end_id; i++)
+    cdot += x[i] * y[i];
+  dot += cdot;
+
+  return dot;
 }
 
-#endif /* !defined(HAVE_BLAS) */
+#endif /*    !defined(HAVE_ESSL) && !defined (HAVE_ACML) \
+          && !defined(HAVE_ATLAS) && !defined(HAVE_MKL) */
 
 /*----------------------------------------------------------------------------*/
 
