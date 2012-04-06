@@ -92,6 +92,14 @@ check_PROGRAMS += \
 mei_test
 
 mei_test_SOURCES = mei_test_main.c mei_test_graph.c
+mei_test_CPPFLAGS  = \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mei \
+-I$(top_builddir)/src/mei \
+$(CPPFLAGS_PLE) \
+$(MPI_CPPFLAGS)
 mei_test_LDFLAGS =
 mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
         $(top_builddir)/src/bft/libbft.la -lm
