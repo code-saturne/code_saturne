@@ -393,15 +393,6 @@ If for example you unpacked the directory in a directory
 named \texttt{/home/user/Code\_Saturne}, you will now
 have a directory named \texttt{/home/user/Code\_Saturne/saturne}.
 
-For developers obtaining the code was obtained through a version control
-system such as Subversion, an additional step is required:
-
-\fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ cd saturne\\
-\$ autoreconf -vi\\
-\$ cd ..
-}\end{minipage}}
-
 It is recommended to build the code in a separate directory from the source.
 This also allows multiple builds, for example, building both an
 optimized and a debugging version. In this case, choose a consistent
@@ -419,6 +410,31 @@ Some older system's {\tt make} command may not support compilation
 in a directory different from the source directory ({\tt VPATH}
 support). In this case, installing and using the GNU {\tt gmake}
 tool instead of the native {\tt make} is recommended. 
+
+\subsection{Source trees obtained through a source code repository\label{sec:preparerepo}}
+
+For developers obtaining the code was obtained through a version control
+system such as Subversion, an additional step is required:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ cd saturne\\
+\$ autoreconf -vi\\
+\$ cd ..
+}\end{minipage}}
+
+In this case, additional tools need to be available:
+
+\begin{itemize}
+\item GNU Autotools: Autoconf, Automake, Libtool (2.2 or 2.4), and Gettext.
+\item Bison (or Yacc) and Flex (or Lex)
+\item PdfLaTeX and TransFig
+\end{itemize}
+
+These tools are not necessary for builds from tarballs; they
+are called when building the tarball (using {\tt make dist}), so
+as to reduce the number of prerequisites for regular users, while
+developpers building code from a repository can be expected to
+need a more complete developpement environment.
 
 \section{Configuration\label{sec:config}}
 
