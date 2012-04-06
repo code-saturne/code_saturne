@@ -934,7 +934,7 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
                                         *(coupling->send_dec->getSourceGrp()),
                                         "source mesh");
     }
-    ComponentTopology comp_topo;
+    ComponentTopology comp_topo(dim);
     coupling->fields[f_id]->pf = new ParaFIELD(type,
                                                td,
                                                mesh->para_mesh[0],
@@ -948,7 +948,7 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
                                         *(coupling->recv_dec->getTargetGrp()),
                                         "target mesh");
     }
-    ComponentTopology comp_topo;
+    ComponentTopology comp_topo(dim);
     coupling->fields[f_id]->pf = new ParaFIELD(type,
                                                td,
                                                mesh->para_mesh[1],
