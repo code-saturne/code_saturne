@@ -171,7 +171,7 @@ _ddot_l3superblock60(cs_lnum_t      n,
   cs_lnum_t start_id, end_id;
   double sdot, cdot;
 
-  cs_lnum_t n_blocks = n / 60;
+  cs_lnum_t n_blocks = n / block_size;
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 

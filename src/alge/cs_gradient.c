@@ -300,7 +300,7 @@ _l2_norm_3(cs_lnum_t              n_elts,
   cs_lnum_t start_id, end_id;
   double sdot1, sdot2, sdot3, cdot1, cdot2, cdot3;
 
-  cs_lnum_t n_blocks = n_elts / 60;
+  cs_lnum_t n_blocks = n_elts / block_size;
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
