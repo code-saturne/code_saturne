@@ -372,7 +372,7 @@ class Study(object):
                 for m in l:
                     if m in meshes:
                         os.symlink(os.path.join(ref, m), os.path.join(des, m))
-                    else:
+                    elif m != ".svn":
                         shutil.copy2(os.path.join(ref, m), des)
 
             # Copy external scripts for post-processing
@@ -805,7 +805,7 @@ class Studies(object):
                 doc2.appendLine("\\section{%s}" % l)
 
                 if s.matplotlib_figures:
-                    doc2.appendLine("\\subsection{Results for case %s}" % case.label)
+                    doc2.appendLine("\\subsection{Graphical results}")
                     for png in s.matplotlib_figures:
                         doc2.addFigure(png)
 
