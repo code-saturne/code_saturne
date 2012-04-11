@@ -832,6 +832,54 @@ drawn together, repeat the markup \texttt{plot} like this:
 \end{verbatim}
 \normalsize
 
+\subsubsection{Monitoring points or probes}
+
+A particular markup is provided for curves of probes data:
+\texttt{<probes>}; the attributes are:
+
+\begin{list}{$\bullet$}{}
+\item \texttt{file}: name of the file to be read on the disk;
+\item \texttt{fig}: id of the subset of curves (i.e. markup \texttt{<subplot>})
+where the current curve should be plotted;
+\item \texttt{dest}: id of the results directory in the \textbf{destination}:
+\begin{list}{$\rightarrow$}{}
+\item if the id is not known already because the case has not yet run, just let
+the attribute empty \texttt{dest=""}, the value will be updated after the run
+step in the \textbf{destination} directory (see section \ref{sec:restart});
+\item if \textsc{Autovnv} is restarted without the run step (with the command
+line \texttt{code\_saturne autovnv -f sample.xml -c} for example), the id of
+the results directory in the \textbf{destination} must be given (for example
+\texttt{dest="20110706-1523"}), but if there is a single results directory in
+the \texttt{RESU} directory of the case, the id can be ommitted:
+\texttt{dest=""}, the id will be completed automatically;
+\end{list}
+\end{list}
+
+The attributes \texttt{file}, \texttt{fig} and \texttt{dest} are mandatory.
+
+In order to draw curves of probes data, the markup \texttt{<probes>}
+should be used as a child of a markup \texttt{<case>} as illustrated below:
+
+\small
+\begin{verbatim}
+<study label='MyStudy' status='on'>
+    <measurement file='exp1.dat' path=''>
+        <plot fig='1' xcol='1' ycol='2' legend='U Experimental data'/>
+    </measurement>
+    <case label='Grid1' status='on' compute="off" post="on">
+        <probes file="probes_U.dat" fig ="2" dest="">
+        <data file="profile.dat" dest="">
+            <plot fig="1" xcol="1" ycol="2" legend="U computed" fmt='r-s'/>
+        </data>
+    </case>
+</study>
+<subplot id="1" legstatus='on'  ylabel="U ($m/s$)" xlabel= "$r$ ($m$)" legpos ='0.05 0.1'/>
+<subplot id="2" legstatus='on'  ylabel="U ($m/s$)" xlabel= "$time$ ($s$)" legpos ='0.05 0.1'/>
+<figure title="Results" name="MyFigure" idlist="1"/>
+<figure title="Grid1: probes for velocity"  name="MyProbes" idlist="2"/>
+\end{verbatim}
+\normalsize
+
 \subsubsection{Matplotlib raw commands}\label{sec:raw}
 
 The file of parameters allows to execute additional matplotlib commands (i.e

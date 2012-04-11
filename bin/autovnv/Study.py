@@ -615,7 +615,8 @@ class Studies(object):
                             n1 = self.__parser.getChilds(case.node, "compare")
                             n2 = self.__parser.getChilds(case.node, "script")
                             n3 = self.__parser.getChilds(case.node, "data")
-                            for n in n1 + n2 + n3:
+                            n4 = self.__parser.getChilds(case.node, "probe")
+                            for n in n1 + n2 + n3 + n4:
                                 if self.__parser.getAttribute(n, "dest", False) == "":
                                     self.__parser.setAttribute(n, "dest", run_id)
                         else:
@@ -649,7 +650,7 @@ class Studies(object):
         # 3. Update the file of parameters with the name of the result directory
             self.__parser.setAttribute(node, attr, os.listdir(result)[0])
         else:
-            self.reporting('Error: check compare/script/plot failed.')
+            self.reporting('Error: check compare/script/plot/probes failed.')
             sys.exit(1)
 
 
@@ -749,6 +750,13 @@ class Studies(object):
                         plots, file, dest, repo = self.__parser.getResult(node)
                         if destination == False:
                             dest = None
+                        self.__check_dirs(l, case.label, node, repo, dest)
+
+                    for node in self.__parser.getChilds(case.node, "probes"):
+                        file, dest, fig = self.__parser.getProbes(node)
+                        if destination == False:
+                            dest = None
+                        repo = None
                         self.__check_dirs(l, case.label, node, repo, dest)
 
 

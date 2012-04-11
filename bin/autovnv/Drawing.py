@@ -171,7 +171,7 @@ class Plot(object):
 
     def uploadData(self, xcol, ycol, xplus, xfois, yplus, yfois):
         """
-        Upload and parse listing
+        Upload and parse data
         """
         j = 0
 
@@ -188,7 +188,7 @@ class Plot(object):
 
     def uploadErrorBar(self, errorbar):
         """
-        load and parse listing for Measurement incertitude
+        load and parse data for Measurement incertitude
         """
         if errorbar == None:
             return None
@@ -207,6 +207,40 @@ class Plot(object):
                 if line[0] != '#' and line != "\n":
                     error.append(float(split(line)[errorbar[0]-1]))
             return error
+
+#-------------------------------------------------------------------------------
+# Curve or plot for monitorig point (probe)
+#-------------------------------------------------------------------------------
+
+class Probes(object):
+    """
+    Curve from a probe.
+    """
+    def __init__ (self, file_name, fig, ycol):
+        """
+        Constructor of a curve.
+        """
+        self.subplot  = int(fig)
+        self.xspan    = []
+        self.yspan    = []
+        self.cmd      = []
+        self.legend   = "Probe " + str(ycol - 1)
+        self.fmt      = ""
+        self.ismesure = False
+
+        xcol = 1
+
+        f = open(file_name, 'r')
+
+        for line in f.readlines():
+            if line[0] != '#' and line != "\n":
+                self.xspan.append(float(split(line)[xcol - 1]))
+                self.yspan.append(float(split(line)[ycol - 1]))
+
+        f.close()
+
+    def measurement(self):
+        return self.ismesure
 
 #-------------------------------------------------------------------------------
 # SubPlot
@@ -297,7 +331,7 @@ class Figure(object):
         Additional figure options.
         """
         if self.title:
-            plt.suptitle(self.title, fontsize=10)
+            plt.suptitle(self.title, fontsize=12)
 
 
     def layout(self):
@@ -405,6 +439,20 @@ class Plotter(object):
         self.parser = parser
 
 
+    def __number_of_col(self, file_name):
+        """
+        Upload and parse listing
+        """
+        nbr = 0
+        f = open(file_name, 'r')
+        for line in f.readlines():
+            if line[0] != '#' and line != "\n":
+                nbr = len(split(line))
+                break
+        f.close()
+        return nbr
+
+
     def plot_study(self, study_label, study_object):
         """
         Method used to plot all plots from a I{study_label} (all cases).
@@ -427,11 +475,29 @@ class Plotter(object):
                 self.curves.append(curve)
                 self.n_plots = max(self.n_plots, curve.subplot)
 
+        # Read the files for probes
+        for case in study_object.Cases:
+            if case.plot == "on" and case.is_run != "KO":
+                for node in self.parser.getChilds(case.node, "probes"):
+                    file_name, dest, fig = self.parser.getProbes(node)
+
+                    f = os.path.join(self.parser.getDestination(),
+                                     study_label,
+                                     case.label, "RESU",
+                                     dest, "monitoring", file_name)
+                    if not os.path.isfile(f):
+                        raise ValueError, "This file does not exist: %s" % f
+
+                    for ycol in range(2, self.__number_of_col(f) + 1):
+                        curve = Probes(f, fig, ycol)
+                        self.curves.append(curve)
+                        self.n_plots = max(self.n_plots, curve.subplot)
+
         # Read the files of results
         for case in study_object.Cases:
             if case.plot == "on" and case.is_run != "KO":
                 for node in self.parser.getChilds(case.node, "data"):
-                    plots, file, dest, repo = self.parser.getResult(node)
+                    plots, file_name, dest, repo = self.parser.getResult(node)
 
                     if dest:
                         d = dest
@@ -441,13 +507,13 @@ class Plotter(object):
                     f = os.path.join(self.parser.getDestination(),
                                      study_label,
                                      case.label, "RESU",
-                                     d, file)
+                                     d, file_name)
 
                     if not os.path.isfile(f):
                         f = os.path.join(self.parser.getDestination(),
                                          study_label,
                                          case.label, "RESU",
-                                         d, "monitoring", file)
+                                         d, "monitoring", file_name)
                         if not os.path.isfile(f):
                             raise ValueError, "This file does not exist: %s" % f
 
@@ -468,7 +534,6 @@ class Plotter(object):
             self.figures.append(Figure(node, self.parser, self.curves, self.n_plots, subplots))
 
         for figure in self.figures:
-            figure.options()
 
             # additional matplotlib raw commands for figure
             for cmd in figure.cmd:
@@ -634,6 +699,9 @@ class Plotter(object):
             ax = plt.subplot(nbrow, nbcol, i + 1)
             self.__draw_axis(ax, p)
             self.__draw_legend(ax, p, bool, hs, ws, ri, le)
+
+        # suptitle
+        figure.options()
 
         # additional matplotlib raw commands for subplot
         for i in range(len(figure.l_subplots)):

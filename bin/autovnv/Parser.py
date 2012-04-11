@@ -393,7 +393,7 @@ class Parser(object):
                 script.append(True)
             else:
                 script.append(False)
-                
+
             label.append(str(node.attributes["label"].value))
             nodes.append(node)
             try:
@@ -425,7 +425,7 @@ class Parser(object):
         @rtype: C{List}, C{List}
         @return: C{List} of nodes <plot>, and C{List} of file names
         """
-        file  = str(node.attributes["file"].value)
+        f  = str(node.attributes["file"].value)
         plots = node.getElementsByTagName("plot")
         try:
             dest  = str(node.attributes["dest"].value)
@@ -436,7 +436,28 @@ class Parser(object):
         except:
             repo = None
 
-        return plots, file, dest, repo
+        return plots, f, dest, repo
+
+
+    def getProbes(self, node):
+        """
+        Read:
+            <probes file='monitoring_pressure.dat' dest="" fig="3"/>
+
+        @type node: C{DOM Element}
+        @param node: node of the current case
+        """
+        f  = str(node.attributes["file"].value)
+        try:
+            dest  = str(node.attributes["dest"].value)
+        except:
+            dest = None
+        try:
+            fig  = str(node.attributes["fig"].value)
+        except:
+            fig = None
+
+        return f, dest, fig
 
 
     def getMeasurement(self, l):
