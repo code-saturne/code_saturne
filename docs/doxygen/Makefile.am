@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 EXTRA_DIST = Doxyfile-pre Doxyfile-src Doxyfile-ui \
-mainpage.h images/icon.png examples/bft_error_example.c
+mainpage.h images/icon.png examples/bft_error_example.c doxypy.py
 
 # Environment variables for LaTeX
 
