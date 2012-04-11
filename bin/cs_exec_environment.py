@@ -355,7 +355,7 @@ class resource_info(batch_info):
             if s != None:
                 s += '/machines'
                 if os.path.isfile(s):
-                    s.manager = 'SGE'
+                    self.manager = 'SGE'
                     self.hosts_file = '$TMPDIR/machines'
             else:
                 s = os.getenv('PE_HOSTFILE')
@@ -364,8 +364,14 @@ class resource_info(batch_info):
 
         # Check hosts file presence
 
-        if self.hosts_file != None:
-            if not os.path.isfile(os.getenv(self.hosts_file[1:])):
+        if self.hosts_file == '$TMPDIR/machines':
+            if not os.path.isfile(os.getenv('TMPDIR') + '/machines'):
+                self.hosts_file = None
+        elif self.hosts_file != None:
+            if self.host_file[0] == '$':
+                if not os.path.isfile(os.getenv(self.hosts_file[1:])):
+                    self.hosts_file = None
+            elif not os.path.isfile(self.hosts_file):
                 self.hosts_file = None
 
         # Determine number of processors from hosts file or list
@@ -400,7 +406,9 @@ class resource_info(batch_info):
         """
 
         self.n_procs = 0
-        if hosts_file[0] == '$':
+        if hosts_file == '$TMPDIR/machines':
+           path = os.getenv('TMPDIR') + '/machines'
+        elif hosts_file[0] == '$':
            path = os.getenv(hosts_file[1:])
         else:
            path = hosts_file
