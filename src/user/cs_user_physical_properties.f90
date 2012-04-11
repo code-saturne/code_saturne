@@ -873,7 +873,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-integer          ivart, iel
+integer          ivart, iel, iutile
 integer          ipcvis, ipcvsv, ipccp
 integer          ipcvsl, ith, iscal, ii, iccfth, imodif
 double precision varam, varbm, varcm, vardm
@@ -943,40 +943,46 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 !    the temperature. All variables are evaluated at the cell centres.
 !===============================================================================
 
-! --- Rank of the temperature in the array 'rtp'
-!     To refer to the user-defined scalar number 2 instead, for example, use
-!     ivart = isca(2)
+!    The test on 'iutile' allows deactivating instructions (which are defined
+!       only as a starting example)
 
-ivart = isca(itempk)
+iutile = 0
+if (iutile.eq.1) then
 
-! --- Rank 'ipcvis' of the molecular dynamic viscosity
-!     in the array 'propce' (physical properties at the cell centers)
+  ! --- Rank of the temperature in the array 'rtp'
+  !     To refer to the user-defined scalar number 2 instead, for example, use
+  !     ivart = isca(2)
 
-ipcvis = ipproc(iviscl)
+  ivart = isca(itempk)
 
-! --- User-defined coefficients for the selected law.
-!     The values hereafter are provided as a mere example. They
-!     are physically meaningless.
+  ! --- Rank 'ipcvis' of the molecular dynamic viscosity
+  !     in the array 'propce' (physical properties at the cell centers)
 
-varam = -3.4016d-9
-varbm =  6.2332d-7
-varcm = -4.5577d-5
-vardm =  1.6935d-3
+  ipcvis = ipproc(iviscl)
 
-! --- Molecular dynamic viscosity mu at the cell centres, kg/(m s)
-!     In this example, mu is provided as a function of the temperature T:
-!       mu(T)              =    T  *( T  *( am  * T +  bm  )+ cm  )+ dm
-!     that is:
-!       propce(iel,ipcvis) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+  ! --- User-defined coefficients for the selected law.
+  !     The values hereafter are provided as a mere example. They
+  !     are physically meaningless.
 
-do iel = 1, ncel
-  xrtp = rtp(iel,ivart)
-  propce(iel,ipcvis) =                                          &
-       xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
-enddo
+  varam = -3.4016d-9
+  varbm =  6.2332d-7
+  varcm = -4.5577d-5
+  vardm =  1.6935d-3
 
+  ! --- Molecular dynamic viscosity mu at the cell centres, kg/(m s)
+  !     In this example, mu is provided as a function of the temperature T:
+  !       mu(T)              =    T  *( T  *( am  * T +  bm  )+ cm  )+ dm
+  !     that is:
+  !       propce(iel,ipcvis) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
 
-! --- Discard the following test so that the code do not stop
+  do iel = 1, ncel
+    xrtp = rtp(iel,ivart)
+    propce(iel,ipcvis) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+  enddo
+
+endif ! --- Test on 'iutile'
+
+! --- Discard the following test so that the code does not stop
 if (1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
@@ -990,48 +996,55 @@ endif
 !    of the temperature. All variables are evaluated at the cell centres.
 !===============================================================================
 
-! --- Rank of the temperature in the array 'rtp'
-!     To refer to the user-defined scalar number 2 instead, for example, use
-!     ivart = isca(2)
+!    The test on 'iutile' allows deactivating instructions (which are defined
+!       only as a starting example)
 
-ivart = isca(itempk)
+iutile = 0
+if (iutile.eq.1) then
 
-! --- Rank 'ipcvsv' of the molecular dynamic viscosity
-!     in the array 'propce' (physical properties at the cell centers)
+  ! --- Rank of the temperature in the array 'rtp'
+  !     To refer to the user-defined scalar number 2 instead, for example, use
+  !     ivart = isca(2)
 
-if (iviscv.gt.0) then
-  ipcvsv = ipproc(iviscv)
-else
-  ipcvsv = 0
-endif
+  ivart = isca(itempk)
 
-! --- Stop if the viscosity has not been defined as variable
+  ! --- Rank 'ipcvsv' of the molecular dynamic viscosity
+  !     in the array 'propce' (physical properties at the cell centers)
 
-if (ipcvsv.le.0) then
-  write(nfecra,2000) iviscv
-  call csexit (1)
-endif
+  if (iviscv.gt.0) then
+    ipcvsv = ipproc(iviscv)
+  else
+    ipcvsv = 0
+  endif
 
-! --- User-defined coefficients for the selected law.
-!     The values provided hereafter are provided as a mere example. They
-!     are physically meaningless.
+  ! --- Stop if the viscosity has not been defined as variable
 
-varam = -3.4016d-9
-varbm =  6.2332d-7
-varcm = -4.5577d-5
-vardm =  1.6935d-3
+  if (ipcvsv.le.0) then
+    write(nfecra,2000) iviscv
+    call csexit (1)
+  endif
 
-! --- Molecular dynamic volumetric viscosity kappa at the cell centres, kg/(m s)
-!     In this example, kappa is provided as a function of the temperature T:
-!       kappa(T)           =    T  *( T  *( am  * T +  bm  )+ cm  )+ dm
-!     that is:
-!       propce(iel,ipcvsv) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+  ! --- User-defined coefficients for the selected law.
+  !     The values provided hereafter are provided as a mere example. They
+  !     are physically meaningless.
 
-do iel = 1, ncel
-  xrtp = rtp(iel,ivart)
-  propce(iel,ipcvsv) =                                          &
-       xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
-enddo
+  varam = -3.4016d-9
+  varbm =  6.2332d-7
+  varcm = -4.5577d-5
+  vardm =  1.6935d-3
+
+  ! --- Molecular dynamic volumetric viscosity kappa at the cell centres, kg/(m s)
+  !     In this example, kappa is provided as a function of the temperature T:
+  !       kappa(T)           =    T  *( T  *( am  * T +  bm  )+ cm  )+ dm
+  !     that is:
+  !       propce(iel,ipcvsv) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+
+  do iel = 1, ncel
+    xrtp = rtp(iel,ivart)
+    propce(iel,ipcvsv) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+  enddo
+
+endif ! --- Test on 'iutile'
 
 ! --- Discard the following test so that the code do not stop
 if (1.eq.1) then
@@ -1047,72 +1060,80 @@ endif
 !    of the temperature. All variables are evaluated at the cell centres.
 !===============================================================================
 
-! Warning:
-! =======
-! do not discard the call to the subroutine 'usthht' at the end of this
-! example: its purpose is to calculate the isochoric specific heat.
-! Indeed, this variable needs to be computed from the isobaric specific heat
-! using the thermodynamics laws.
+!    The test on 'iutile' allows deactivating instructions (which are defined
+!       only as a starting example)
 
-! --- Rank of the temperature in the array 'rtp'
-!     To refer to the user-defined scalar number 2 instead, for example, use
-!     ivart = isca(2)
+iutile = 0
+if (iutile.eq.1) then
 
-ivart = isca(itempk)
+  ! Warning:
+  ! =======
+  ! do not discard the call to the subroutine 'usthht' at the end of this
+  ! example: its purpose is to calculate the isochoric specific heat.
+  ! Indeed, this variable needs to be computed from the isobaric specific heat
+  ! using the thermodynamics laws.
 
-! --- Rank 'ipcpp' of the isobaric specific heat
-!     in the array 'propce' (physical properties at the cell
-!     centers)
+  ! --- Rank of the temperature in the array 'rtp'
+  !     To refer to the user-defined scalar number 2 instead, for example, use
+  !     ivart = isca(2)
 
-if (icp.gt.0) then
-  ipccp  = ipproc(icp   )
-else
-  ipccp  = 0
-endif
+  ivart = isca(itempk)
 
-! --- Stop if the iobaric or iochoric specific heat (cp or cv) has not
-!     been defined as variable
+  ! --- Rank 'ipcpp' of the isobaric specific heat
+  !     in the array 'propce' (physical properties at the cell
+  !     centers)
 
-if (ipccp.le.0) then
-  write(nfecra,1000) icp
-  call csexit (1)
-endif
-if (icv.le.0) then
-  write(nfecra,1001) icv
-  call csexit (1)
-endif
+  if (icp.gt.0) then
+    ipccp  = ipproc(icp   )
+  else
+    ipccp  = 0
+  endif
 
-! --- User-defined coefficients for the selected law.
-!     The values provided hereafter are provided as a mere example. They
-!     are physically meaningless.
+  ! --- Stop if the iobaric or iochoric specific heat (cp or cv) has not
+  !     been defined as variable
 
-varac = 0.00001d0
-varbc = 1000.0d0
+  if (ipccp.le.0) then
+    write(nfecra,1000) icp
+    call csexit (1)
+  endif
+  if (icv.le.0) then
+    write(nfecra,1001) icv
+    call csexit (1)
+  endif
 
-! --- Isobaric specific heat cp at the cell centres, J/(kg degree)
-!     In this example, cp is provided as a function of the temperature T:
-!       cp(T)              =      ac * T  + ab
-!     that is:
-!       propce(iel,ipccp ) =    varac*xrtp+varbc
+  ! --- User-defined coefficients for the selected law.
+  !     The values provided hereafter are provided as a mere example. They
+  !     are physically meaningless.
 
-do iel = 1, ncel
-  xrtp = rtp(iel,ivart)
-  propce(iel,ipccp ) = varac*xrtp + varbc
-enddo
+  varac = 0.00001d0
+  varbc = 1000.0d0
 
-! --- The isochoric specific heat is deduced from the isobaric specific
-!     heat using the subroutine 'uscfth'.
+  ! --- Isobaric specific heat cp at the cell centres, J/(kg degree)
+  !     In this example, cp is provided as a function of the temperature T:
+  !       cp(T)              =      ac * T  + ab
+  !     that is:
+  !       propce(iel,ipccp ) =    varac*xrtp+varbc
 
-iccfth = 432
-imodif = 0
+  do iel = 1, ncel
+    xrtp = rtp(iel,ivart)
+    propce(iel,ipccp ) = varac*xrtp + varbc
+  enddo
 
-call uscfth                                                     &
-!==========
- ( nvar   , nscal  ,                                              &
-   iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   propce(1, ipproc(icv) )  , w1     , w2     , w3     )
+  ! --- The isochoric specific heat is deduced from the isobaric specific
+  !     heat using the subroutine 'uscfth'.
+
+  iccfth = 432
+  imodif = 0
+
+  call uscfth                                                       &
+  !==========
+   ( nvar   , nscal  ,                                              &
+     iccfth , imodif ,                                              &
+     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+     coefa  , coefb  ,                                              &
+     propce(1, ipproc(icv) )  , w1     , w2     , w3     )
+
+endif ! --- Test on 'iutile'
 
 ! --- Discard the following test so that the code do not stop
 if (1.eq.1) then
@@ -1128,51 +1149,57 @@ endif
 !    of the temperature. All variables are evaluated at the cell centres.
 !===============================================================================
 
-! --- Rank of the temperature in the array 'rtp'
-!     To refer to the user-defined scalar number 2 instead, for example, use
-!     ivart = isca(2)
+!    The test on 'iutile' allows deactivating instructions (which are defined
+!       only as a starting example)
 
-ivart = isca(itempk)
+iutile = 0
+if (iutile.eq.1) then
 
-! --- Rank 'ipcvsl' of the olecular thermal conductivity
-!     in the array 'propce' (physical properties at the cell
-!     centers)
+  ! --- Rank of the temperature in the array 'rtp'
+  !     To refer to the user-defined scalar number 2 instead, for example, use
+  !     ivart = isca(2)
 
-if (ivisls(itempk).gt.0) then
-  ipcvsl = ipproc(ivisls(itempk))
-else
-  ipcvsl = 0
-endif
+  ivart = isca(itempk)
 
-! --- Stop if the molecular thermal conductivity has not
-!     been defined as variable
+  ! --- Rank 'ipcvsl' of the olecular thermal conductivity
+  !     in the array 'propce' (physical properties at the cell
+  !     centers)
 
-if (ipcvsl.le.0) then
-  write(nfecra,1010)                                            &
-       itempk, itempk, ivisls(itempk)
-  call csexit (1)
-endif
+  if (ivisls(itempk).gt.0) then
+    ipcvsl = ipproc(ivisls(itempk))
+  else
+    ipcvsl = 0
+  endif
 
-! --- User-defined coefficients for the selected law.
-!     The values provided hereafter are provided as a mere example. They
-!     are physically meaningless.
+  ! --- Stop if the molecular thermal conductivity has not
+  !     been defined as variable
 
-varal = -3.3283d-7
-varbl =  3.6021d-5
-varcl =  1.2527d-4
-vardl =  0.58923d0
+  if (ipcvsl.le.0) then
+    write(nfecra,1010) itempk, itempk, ivisls(itempk)
+    call csexit (1)
+  endif
 
-! --- Molecular thermal conductivity lambda at the cell centres, W/(m degree)
-!     In this example, lambda is provided as a function of the temperature T:
-!       lambda(T)          =    T  *( T  *( al  * T +  bl  )+ cl  )+ dl
-!     that is:
-!       propce(iel,ipcvsl) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
+  ! --- User-defined coefficients for the selected law.
+  !     The values provided hereafter are provided as a mere example. They
+  !     are physically meaningless.
 
-do iel = 1, ncel
-  xrtp = rtp(iel,ivart)
-  propce(iel,ipcvsl) =                                          &
-       (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
-enddo
+  varal = -3.3283d-7
+  varbl =  3.6021d-5
+  varcl =  1.2527d-4
+  vardl =  0.58923d0
+
+  ! --- Molecular thermal conductivity lambda at the cell centres, W/(m degree)
+  !     In this example, lambda is provided as a function of the temperature T:
+  !       lambda(T)          =    T  *( T  *( al  * T +  bl  )+ cl  )+ dl
+  !     that is:
+  !       propce(iel,ipcvsl) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
+
+  do iel = 1, ncel
+    xrtp = rtp(iel,ivart)
+    propce(iel,ipcvsl) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
+  enddo
+
+endif ! --- Test on 'iutile'
 
 ! --- Discard the following test so that the code do not stop
 if (1.eq.1) then
@@ -1195,77 +1222,84 @@ endif
 !    of the temperature. All variables are evaluated at the cell centres.
 !===============================================================================
 
-! --- Loop on the scalars
-do ii = 1, nscaus
+!    The test on 'iutile' allows deactivating instructions (which are defined
+!       only as a starting example)
 
-! --- Rank of the ii-th scalar in the list of all scalars
-  iscal = ii
+iutile = 0
+if (iutile.eq.1) then
+
+  ! --- Loop on the scalars
+  do ii = 1, nscaus
+
+    ! --- Rank of the ii-th scalar in the list of all scalars
+    iscal = ii
 
 
-! --- If the scalar is the temperature, it is marked by ith = 1
-!     so that it will be skipped.
+    ! --- If the scalar is the temperature, it is marked by ith = 1
+    !     so that it will be skipped.
 
-  ith = 0
-  if (iscal.eq.itempk) ith = 1
+    ith = 0
+    if (iscal.eq.itempk) ith = 1
 
-! --- If the variable represents the variance of the fluctuations of
-!     another scalar variable (iscavr <= 0), it is simply skipped.
+    ! --- If the variable represents the variance of the fluctuations of
+    !     another scalar variable (iscavr <= 0), it is simply skipped.
 
-  if (ith.eq.0.and.iscavr(iscal).le.0) then
+    if (ith.eq.0.and.iscavr(iscal).le.0) then
 
-! --- Here, iscal points to any scalar variable except the temperature,
-!     the enthalpy and the variance of the fluctuations of another
-!     scalar variable.
+      ! --- Here, iscal points to any scalar variable except the temperature,
+      !     the enthalpy and the variance of the fluctuations of another
+      !     scalar variable.
 
-! --- Rank of the temperature in the array 'rtp'
-!     To refer to the user-defined scalar number 2 instead, for example, use
-!     ivart = isca(2)
+      ! --- Rank of the temperature in the array 'rtp'
+      !     To refer to the user-defined scalar number 2 instead, for example, use
+      !     ivart = isca(2)
 
-  ivart = isca(itempk)
+      ivart = isca(itempk)
 
-! --- Rank 'ipcvsl' of the molecular diffusivity of the current scalar iscal
-!     in the array 'propce' (physical properties at the cell centers)
+      ! --- Rank 'ipcvsl' of the molecular diffusivity of the current scalar iscal
+      !     in the array 'propce' (physical properties at the cell centers)
 
-    if (ivisls(iscal).gt.0) then
-      ipcvsl = ipproc(ivisls(iscal))
-    else
-      ipcvsl = 0
+      if (ivisls(iscal).gt.0) then
+        ipcvsl = ipproc(ivisls(iscal))
+      else
+        ipcvsl = 0
+      endif
+
+      ! --- Stop if the molecular diffusivity has not been defined as variable
+
+      if (ipcvsl.le.0) then
+        write(nfecra,1010) iscal, iscal, ivisls(iscal)
+        call csexit (1)
+      endif
+
+      ! --- User-defined coefficients for the selected law.
+      !     The values provided hereafter are provided as a mere example. They
+      !     are physically meaningless.
+
+      varal = -3.3283d-7
+      varbl =  3.6021d-5
+      varcl =  1.2527d-4
+      vardl =  0.58923d0
+
+      ! --- Molecular diffusivity lambda at the cell centres, kg/(m s)
+      !     In this example, lambda is provided as a function of the temperature T:
+      !       lambda(T)          =    T  *( T  *( al  * T +  bl  )+ cl  )+ dl
+      !     that is:
+      !       propce(iel,ipcvsl) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
+
+      do iel = 1, ncel
+        xrtp = rtp(iel,ivart)
+        propce(iel,ipcvsl) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
+      enddo
+
+
     endif
+    ! --- End of the tests on ith and iscavr
 
-! --- Stop if the molecular diffusivity has not been defined as variable
+  enddo
+  ! --- End of the loop on the scalars
 
-    if (ipcvsl.le.0) then
-      write(nfecra,1010) iscal, iscal, ivisls(iscal)
-      call csexit (1)
-    endif
-
-! --- User-defined coefficients for the selected law.
-!     The values provided hereafter are provided as a mere example. They
-!     are physically meaningless.
-
-    varal = -3.3283d-7
-    varbl =  3.6021d-5
-    varcl =  1.2527d-4
-    vardl =  0.58923d0
-
-! --- Molecular diffusivity lambda at the cell centres, kg/(m s)
-!     In this example, lambda is provided as a function of the temperature T:
-!       lambda(T)          =    T  *( T  *( al  * T +  bl  )+ cl  )+ dl
-!     that is:
-!       propce(iel,ipcvsl) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
-
-    do iel = 1, ncel
-      xrtp = rtp(iel,ivart)
-      propce(iel,ipcvsl) =                                        &
-           (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
-    enddo
-
-
-  endif
-! --- End of the tests on ith and iscavr
-
-enddo
-! --- End of the loop on the scalars
+endif ! --- Test on 'iutile'
 
 ! Free memory
 deallocate(w1, w2, w3)
@@ -1624,7 +1658,7 @@ endif
 ! 1 - EFFET JOULE
 !===============================================================================
 
-if ( ippmod(ieljou).ge.1 ) then
+if (ippmod(ieljou).ge.1) then
 
 
 !     Attention, dans les modules electriques, la chaleur massique, la
@@ -1965,7 +1999,7 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
 
-integer          iel, iccocg, inc
+integer          iel, iccocg, inc, iutile
 integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvst
 double precision dudx, dudy, dudz, sqdu, visct, rom
@@ -1973,15 +2007,6 @@ double precision dudx, dudy, dudz, sqdu, visct, rom
 double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
 
 !===============================================================================
 ! 1.  Example :
@@ -1996,9 +2021,16 @@ if (1.eq.1) return
 
 !===============================================================================
 
-!===============================================================================
+!  The test on 'iutile' allows deactivating instructions (which are defined
+!     only as a starting example)
+!  Set iutile to 1 or remove this test to activate the example.
+
+iutile = 0
+if (iutile.eq.0) return
+
+!=============================================================================
 ! 1.2 Initialization
-!===============================================================================
+!=============================================================================
 
 ! --- Memory
 
@@ -2173,20 +2205,18 @@ double precision smagor(ncelet), mijlij(ncelet), mijmij(ncelet)
 
 ! Local variables
 
-integer          iel
+integer          iel, iutile
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 
 !===============================================================================
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
+!  The test on 'iutile' allows deactivating instructions (which are defined
+!     only as a starting example)
+!  Set iutile to 1 or remove this test to activate the example.
 
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
+iutile = 0
+if (iutile.eq.0) return
 
 !===============================================================================
 ! 1.  INITIALISATION
@@ -2262,7 +2292,8 @@ subroutine usvima &
 !    IF variable IORTVM = 1, mesh viscosity modeling is orthotropic therefore
 !    all arrays VISCMX, VISCMY and VISCMZ need to be filled.
 
-!    Note that VISCMX, VISCMY and VISCMZ arrays are initialized at the first time step to the value of 1.
+!    Note that VISCMX, VISCMY and VISCMZ arrays are initialized at the first time step
+!    to the value of 1.
 
 ! Cells identification
 ! ====================
@@ -2329,7 +2360,7 @@ double precision viscmx(ncelet), viscmy(ncelet), viscmz(ncelet)
 
 ! Local variables
 
-integer          iel
+integer          iel, iutile
 double precision rad, xr2, xcen, ycen, zcen
 
 !===============================================================================
@@ -2351,28 +2382,37 @@ if (1.eq.1) return
 !     In general it appears quite much easier to fill mesh viscosity arrays at
 !     the beginning of the calculations basing on the initial geometry.
 
-if (ntcabs.eq.0) then
-  rad = (1.d-3)**2
-  xcen  = 1.d0
-  ycen  = 0.d0
-  zcen  = 0.d0
+!  The test on 'iutile' allows deactivating instructions (which are defined
+!     only as a starting example)
 
-  do iel = 1, ncel
-    xr2 = (xyzcen(1,iel)-xcen)**2 + (xyzcen(2,iel)-ycen)**2       &
-         + (xyzcen(3,iel)-zcen)**2
-    if (xr2.lt.rad) viscmx(iel) = 1.d10
-  enddo
+iutile = 0
+if (iutile.eq.1) then
 
-! 2. In case of orthotropic mesh viscosity modeling one can choose
-!    to submit nodes to a lower stress in Z direction
-  if (iortvm.eq.1) then
+  if (ntcabs.eq.0) then
+    rad = (1.d-3)**2
+    xcen  = 1.d0
+    ycen  = 0.d0
+    zcen  = 0.d0
+
     do iel = 1, ncel
-      viscmy(iel) = viscmx(iel)
-      viscmz(iel) = 1.d0
+      xr2 = (xyzcen(1,iel)-xcen)**2 + (xyzcen(2,iel)-ycen)**2       &
+           + (xyzcen(3,iel)-zcen)**2
+      if (xr2.lt.rad) viscmx(iel) = 1.d10
     enddo
+
+    ! 2. In case of orthotropic mesh viscosity modeling one can choose
+    !    to submit nodes to a lower stress in Z direction
+
+    if (iortvm.eq.1) then
+      do iel = 1, ncel
+        viscmy(iel) = viscmx(iel)
+        viscmz(iel) = 1.d0
+      enddo
+    endif
+
   endif
 
-endif
+endif ! --- Test on 'iutile'
 
 !----
 ! Formats
