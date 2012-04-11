@@ -3138,10 +3138,12 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
         rmin = CS_MIN(rmin, c_xa[c_face*isym] / c_xa0[c_face]);
         rmax = CS_MAX(rmax, c_xa[c_face*isym] / c_xa0[c_face]);
       }
+#if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
       if (fine_grid->n_ranks > 1) {
         MPI_Allreduce(MPI_IN_PLACE, &rmin, 1, MPI_DOUBLE, MPI_MIN, comm);
         MPI_Allreduce(MPI_IN_PLACE, &rmax, 1, MPI_DOUBLE, MPI_MAX, comm);
       }
+#endif
       bft_printf(_("       minimum xag_p1 / xag_p0          = %12.5e\n"
                    "       maximum xag_p1 / xag_p0          = %12.5e\n"),
                  rmin, rmax);
