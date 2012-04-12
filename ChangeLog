@@ -1,3 +1,13 @@
+* 12/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix GUI bug preventing setting negative internal structure displacement values.
+  modified files:
+    gui/Pages/FluidStructureInteractionView.py
+
+* 10/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix for Sun Grid Engine Environment.
+  modified files:
+    bin/cs_exec_environment.py
+
 * 02/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Fixes for compilation with IBM XL compiler.
   modified files:
