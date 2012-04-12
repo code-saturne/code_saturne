@@ -361,7 +361,7 @@ class LineEditCoupling(Coupling):
         Coupling.__init__(self, lineEdit, getter, setter)
 
         # Add validator.
-        validator = QtPage.DoubleValidator(lineEdit, min=0.0)
+        validator = QtPage.DoubleValidator(lineEdit)
         lineEdit.setValidator(validator)
         lineEdit.connect(lineEdit, SIGNAL("textChanged(const QString &)"),
                          self.__slotTextChanged)
