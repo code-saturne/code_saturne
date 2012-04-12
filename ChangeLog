@@ -1,3 +1,13 @@
+* 12/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix GUI bug preventing setting negative internal structure displacement values.
+  modified files:
+    gui/Pages/FluidStructureInteractionView.py
+
+* 10/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix for Sun Grid Engine Environment.
+  modified files:
+    bin/cs_exec_environment.py
+
 * 26/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Release of Code_Saturne 2.0.5.
 
