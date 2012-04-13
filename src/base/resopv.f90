@@ -899,8 +899,8 @@ do 100 isweep = 1, nswmpr
   if (swpdyn.eq.1) then
     if (isweep.gt.1) then
 
-      if ((residu + 0.001*residu).gt.resold) then
-        relaxv(ipr) = max(0.8*relaxp, 0.1)
+      if ((residu + 0.001d0*residu).gt.resold) then
+        relaxv(ipr) = max(0.8d0*relaxp, 0.1d0)
       endif
 
     endif
