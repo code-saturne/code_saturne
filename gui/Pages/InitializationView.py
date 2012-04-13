@@ -669,7 +669,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                     self.lineEditKeps_k.setText(QString(str(k)))
                     self.lineEditKeps_eps.setText(QString(str(eps)))
 
-                elif turb_model in ('Rij-epsilon', 'Rij-epsilon-SSG'):
+                elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
 
                     R11 = self.init.getTurbulenceInitialValue(self.zone, 'component_R11')
                     R22 = self.init.getTurbulenceInitialValue(self.zone, 'component_R22')
