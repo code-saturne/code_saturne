@@ -58,16 +58,17 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
-/*============================================================================
- * Type definitions
+/*=============================================================================
+ * Local Macro and Type definitions
  *============================================================================*/
+
+#if defined(HAVE_MPI)
+
+#define _GROUP_TAG      (int)('G'+'R'+'O'+'U'+'P') /* MPI tag */
+
+#endif
 
 /*----------------------------------------------------------------------------
  * Opaque structure describing a group class
@@ -171,12 +172,12 @@ _group_class_set_send(const fvm_group_class_set_t  *class_set,
   assert(n_ints == send_count[1]);
   assert(n_chars == send_count[2]);
 
-  MPI_Send(send_count, 3, MPI_INT, dest_rank, FVM_MPI_TAG, comm);
+  MPI_Send(send_count, 3, MPI_INT, dest_rank, _GROUP_TAG, comm);
 
   if (n_ints > 0)
-    MPI_Send(send_ints, n_ints, MPI_INT, dest_rank, FVM_MPI_TAG, comm);
+    MPI_Send(send_ints, n_ints, MPI_INT, dest_rank, _GROUP_TAG, comm);
   if (n_chars > 0)
-    MPI_Send(send_chars, n_chars, MPI_CHAR, dest_rank, FVM_MPI_TAG, comm);
+    MPI_Send(send_chars, n_chars, MPI_CHAR, dest_rank, _GROUP_TAG, comm);
 
   BFT_FREE(send_ints);
   BFT_FREE(send_chars);
@@ -210,20 +211,20 @@ _group_class_set_recv(fvm_group_class_set_t  *class_set,
   assert(class_set != NULL);
   assert(class_set->size == 0);
 
-  MPI_Recv(recv_count, 3, MPI_INT, src_rank, FVM_MPI_TAG, comm, &status);
+  MPI_Recv(recv_count, 3, MPI_INT, src_rank, _GROUP_TAG, comm, &status);
 
   /* Allocate and receive buffers */
 
   if (recv_count[1] > 0) {
     BFT_MALLOC(recv_ints, recv_count[1], int);
     MPI_Recv(recv_ints, recv_count[1], MPI_INT,
-             src_rank, FVM_MPI_TAG, comm, &status);
+             src_rank, _GROUP_TAG, comm, &status);
   }
 
   if (recv_count[2] > 0) {
     BFT_MALLOC(recv_chars, recv_count[2], char);
     MPI_Recv(recv_chars, recv_count[2], MPI_CHAR,
-             src_rank, FVM_MPI_TAG, comm, &status);
+             src_rank, _GROUP_TAG, comm, &status);
   }
 
   /* Decode buffers */
@@ -587,6 +588,4 @@ fvm_group_class_set_dump(const fvm_group_class_set_t  *this_group_class_set)
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
