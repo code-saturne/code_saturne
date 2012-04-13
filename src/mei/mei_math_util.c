@@ -62,6 +62,7 @@ extern "C" {
 
 #include "mei_math_util.h"
 
+#undef SIZE_MAX
 #define SIZE_MAX 1000
 
 /*-----------------------------------------------------------------------------
