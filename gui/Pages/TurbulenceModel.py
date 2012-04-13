@@ -74,6 +74,7 @@ class TurbulenceModel(Variables, Model):
                             'k-epsilon-PL',
                             'Rij-epsilon',
                             'Rij-SSG',
+                            'Rij-EBRSM',
                             'v2f-phi',
                             'k-omega-SST',
                             'Spalart-Allmaras',
@@ -201,7 +202,7 @@ class TurbulenceModel(Variables, Model):
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(list, 'smagorinsky_constant')
 
-        elif model_turb in ('Rij-epsilon', 'Rij-SSG'):
+        elif model_turb in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
             list = ('component_R11', 'component_R22', 'component_R33',
                     'component_R12', 'component_R13', 'component_R23',
                     'turb_eps')
@@ -348,7 +349,7 @@ class TurbulenceModel(Variables, Model):
         if model in ('k-epsilon','k-epsilon-PL'):
             nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_k'))
             nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_eps'))
-        elif model in ('Rij-epsilon', 'Rij-SSG'):
+        elif model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
             for var in ('component_R11', 'component_R22', 'component_R33',
                         'component_R12', 'component_R13', 'component_R23', 'turb_eps'):
                 nodeList.append(self.node_turb.xmlGetNode('variable', name=var))
@@ -483,6 +484,28 @@ class TurbulenceModelTestCase(ModelTest):
               </turbulence>'''
         assert mdl.node_turb == self.xmlNodeFromString(doc),\
            'Could not set the Rij-epsilon SSG turbulence model'
+
+    def checkSetRijepsilonEBRSM(self):
+        """Check whether the Rij-epsilon EBRSM turbulence model could be set"""
+        mdl = TurbulenceModel(self.case)
+        mdl.node_turb.xmlRemoveChild('variable')
+        mdl.setTurbulenceModel('Rij-EBRSM')
+        truc = mdl.node_turb
+        doc ='''<turbulence model="Rij-EBRSM">
+                <property label="TurbVisc" name="turb_viscosity"/>
+                <initialization choice="reference_velocity">
+                  <reference_velocity>1</reference_velocity>
+                </initialization>
+                <variable label="R11" name="component_R11"/>
+                <variable label="R22" name="component_R22"/>
+                <variable label="R33" name="component_R33"/>
+                <variable label="R12" name="component_R12"/>
+                <variable label="R13" name="component_R13"/>
+                <variable label="R23" name="component_R23"/>
+                <variable label="Dissip" name="turb_eps"/>
+              </turbulence>'''
+        assert mdl.node_turb == self.xmlNodeFromString(doc),\
+           'Could not set the Rij-epsilon EBRSM turbulence model'
 
     def checkSetLESSmagorinsky(self):
         """Check whether the classical LES turbulence model could be set"""

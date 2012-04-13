@@ -86,7 +86,7 @@ class XMLmodel(Variables):
             nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_k'))
             nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_eps'))
 
-        elif model in ('Rij-epsilon', 'Rij-SSG'):
+        elif model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
             for var in ('component_R11', 'component_R22', 'component_R33',
                         'component_R12', 'component_R13', 'component_R23',
                         'turb_eps'):
@@ -119,6 +119,7 @@ class XMLmodel(Variables):
                      'v2f-phi',
                      'Rij-epsilon',
                      'Rij-SSG',
+                     'Rij-EBRSM',
                      'Spalart-Allmaras'):
             nodeList.append(nodeTurb.xmlGetNode('property', name='turb_viscosity'))
 

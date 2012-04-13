@@ -203,8 +203,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         if self.turb.getTurbulenceModel() not in \
                 ('off', 'k-epsilon', 'k-epsilon-PL',
-                 'Rij-epsilon', 'Rij-SSG', 'v2f-phi', 'k-omega-SST',
-                 'Spalart-Allmaras'):
+                 'Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM', 'v2f-phi',
+                 'k-omega-SST', 'Spalart-Allmaras'):
             self.modelLagrangian.setItem(str_model='single_phase')
             self.comboBoxLagrangian.setEnabled(False)
 
@@ -214,6 +214,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                                                   'k-epsilon-PL',
                                                   'Rij-epsilon',
                                                   'Rij-SSG',
+                                                  'Rij-EBRSM',
                                                   'v2f-phi',
                                                   'k-omega-SST',
                                                   'Spalart-Allmaras'):

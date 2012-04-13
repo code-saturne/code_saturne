@@ -80,7 +80,7 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
 
         if default['model'] in ('k-epsilon', 'k-epsilon-PL'):
             title = self.tr("Options for k-epsilon model")
-        elif default['model'] in ('Rij-epsilon', 'Rij-SSG'):
+        elif default['model'] in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
             title = self.tr("Options for Rij-epsilon model")
         elif default['model'] == 'k-omega-SST':
             title = self.tr("Options for k-omega_SST model")
@@ -173,6 +173,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.modelTurbModel.addItem(self.tr("k-epsilon Linear Production"), "k-epsilon-PL")
         self.modelTurbModel.addItem(self.tr("Rij-epsilon LLR"), "Rij-epsilon")
         self.modelTurbModel.addItem(self.tr("Rij-epsilon SSG"), "Rij-SSG")
+        self.modelTurbModel.addItem(self.tr("Rij-epsilon EBRSM"), "Rij-EBRSM")
         self.modelTurbModel.addItem(self.tr("v2f (phi model)"), "v2f-phi")
         self.modelTurbModel.addItem(self.tr("k-omega SST"), "k-omega-SST")
         self.modelTurbModel.addItem(self.tr("Spalart-Allmaras"), "Spalart-Allmaras")

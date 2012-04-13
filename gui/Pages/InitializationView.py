@@ -313,7 +313,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                 self.lineEditKeps_k.setText(QString(str(k)))
                 self.lineEditKeps_eps.setText(QString(str(eps)))
 
-            elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
+            elif turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
 
                 self.frameRij.show()
 
@@ -637,6 +637,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                               'k-epsilon-PL',
                               'Rij-epsilon',
                               'Rij-SSG',
+                              'Rij-EBRSM',
                               'v2f-phi',
                               'k-omega-SST',
                               'Spalart-Allmaras'):
@@ -669,7 +670,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                     self.lineEditKeps_k.setText(QString(str(k)))
                     self.lineEditKeps_eps.setText(QString(str(eps)))
 
-                elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
+                elif turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
 
                     R11 = self.init.getTurbulenceInitialValue(self.zone, 'component_R11')
                     R22 = self.init.getTurbulenceInitialValue(self.zone, 'component_R22')
