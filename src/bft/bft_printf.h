@@ -83,7 +83,7 @@ bft_printf(const char  *const format,
 
 int
 bft_printf(const char  *const format,
-           ...)
+           ...);
 
 #endif
 
