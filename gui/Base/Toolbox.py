@@ -295,6 +295,7 @@ def dicoLabel(name):
                             ('turb_phi',             "phi",  "phi"),
                             ('turb_fb',              "f_barre",   "f_bar"),
                             ('turb_omega',           "omega",    "omega"),
+                            ('turb_nusa',            "nusa",    "nusa"),
                             ('smagorinsky_constant', "Csdyn2",   "Csdyn2"),
                             ('temperature_celsius',  "TempC",   "TempC"),
                             ('temperature_kelvin',   "TempK",   "TempK"),

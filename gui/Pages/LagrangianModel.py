@@ -121,7 +121,8 @@ class LagrangianModel(Model):
                          'Rij-epsilon',
                          'Rij-SSG',
                          'v2f-phi',
-                         'k-omega-SST'):
+                         'k-omega-SST',
+                         'Spalart-Allmaras'):
             return ('off',)
         else:
             return self.__lagrangianStatus

@@ -139,6 +139,10 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.labelKomega_k.setText(QString(str(labelKomega_k)))
         self.labelKomega_omega.setText(QString(str(labelKomega_omega)))
 
+        # Spalart-Allmaras
+        labelSA_nusa = self.init.getTurbulenceVariableLabel('turb_nusa')
+        self.labelSA_nusa.setText(QString(str(labelSA_nusa)))
+
         # 1/ Combo box models
 
         self.modelZone = ComboModel(self.comboBoxZone, 1, 1)
@@ -187,6 +191,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.connect(self.lineEditv2f_fb,       SIGNAL("textChanged(const QString&)"), self.slotv2f_fb)
         self.connect(self.lineEditKomega_k,     SIGNAL("textChanged(const QString&)"), self.slotKomega_k)
         self.connect(self.lineEditKomega_omega, SIGNAL("textChanged(const QString&)"), self.slotKomega_omega)
+        self.connect(self.lineEditSA_nusa,      SIGNAL("textChanged(const QString&)"), self.slotSA_nusa)
         self.connect(self.lineEditRefVelocity,  SIGNAL("textChanged(const QString&)"), self.slotReferenceVelocity)
         self.connect(self.lineEditRefLength,    SIGNAL("textChanged(const QString&)"), self.slotReferenceVelocityAndLength)
 
@@ -211,6 +216,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         validatorv2f_fb       = DoubleValidator(self.lineEditv2f_fb, min=0.)
         validatorKomega_k     = DoubleValidator(self.lineEditKomega_k, min=0.)
         validatorKomega_omega = DoubleValidator(self.lineEditKomega_omega, min=0.)
+        validatorSA_nusa      = DoubleValidator(self.lineEditSA_nusa, min=0.)
         validatorRefVelocity  = DoubleValidator(self.lineEditRefVelocity, min=0.)
         validatorRefLength    = DoubleValidator(self.lineEditRefLength, min=0.)
         validatorRefLength.setExclusiveMin()
@@ -234,6 +240,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.lineEditv2f_fb.setValidator(validatorv2f_fb)
         self.lineEditKomega_k.setValidator(validatorKomega_k)
         self.lineEditKomega_omega.setValidator(validatorKomega_omega)
+        self.lineEditSA_nusa.setValidator(validatorSA_nusa)
         self.lineEditRefVelocity.setValidator(validatorRefVelocity)
         self.lineEditRefLength.setValidator(validatorRefLength)
 
@@ -289,6 +296,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.framev2f.hide()
         self.frameKomega.hide()
         self.frameReference.hide()
+        self.frameSA.hide()
 
         choice = self.modelTurbulence.dicoV2M[str(text)]
         log.debug("slotChoice choice =  %s "%str(choice))
@@ -348,6 +356,14 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
                 self.lineEditKomega_k.setText(QString(k))
                 self.lineEditKomega_omega.setText(QString(omega))
+
+            elif turb_model == 'Spalart-Allmaras':
+
+                self.frameSA.show()
+
+                nusa = self.init.getTurbulenceInitialValue(self.zone, 'turb_nusa')
+
+                self.lineEditSA_nusa.setText(QString(nusa))
 
         elif choice == 'reference_velocity':
 
@@ -522,6 +538,16 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
 
     @pyqtSignature("const QString&")
+    def slotSA_nusa(self, var):
+        """
+        INPUT values for Spalart-Allmaras' initialization by values
+        """
+        val, ok = var.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.init.setTurbulenceInitialValue(self.zone, 'turb_nusa', val)
+
+
+    @pyqtSignature("const QString&")
     def slotReferenceVelocity(self, var):
         """
         INPUT values for initialization by reference velocity or
@@ -612,7 +638,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
                               'Rij-epsilon',
                               'Rij-SSG',
                               'v2f-phi',
-                              'k-omega-SST'):
+                              'k-omega-SST',
+                              'Spalart-Allmaras'):
             self.groupBoxTurbulence.hide()
         else:
             self.groupBoxTurbulence.show()
@@ -679,6 +706,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
                     self.lineEditKomega_k.setText(QString(str(k)))
                     self.lineEditKomega_omega.setText(QString(str(omega)))
+
+                elif turb_model == 'Spalart-Allmaras':
+
+                    nusa = self.init.getTurbulenceInitialValue(self.zone, 'turb_nusa')
+
+                    self.lineEditSA_nusa.setText(QString(str(nusa)))
 
 
         # Initialisation of Model Variables if thermal model is selectionned

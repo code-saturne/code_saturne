@@ -76,7 +76,7 @@ class InitializationModel(Model):
         self.Turb_var_List = ('turb_k', 'turb_eps',
                               'component_R11', 'component_R22', 'component_R33',
                               'component_R12', 'component_R13', 'component_R23',
-                              'turb_phi', 'turb_fb', 'turb_omega')
+                              'turb_phi', 'turb_fb', 'turb_omega', 'turb_nusa')
 
         self.turb = TurbulenceModel(self.case)
         self.turbulenceModes = ('values',
@@ -107,6 +107,7 @@ class InitializationModel(Model):
         default['turb_phi']      = float(2./3.)
         default['turb_fb']       = 0
         default['turb_omega']    = default['turb_eps'] / default['turb_k'] / Cmu
+        default['turb_nusa']     = Cmu * pow(default['turb_k'], 2) / default['turb_eps']
         default['component_R11'] = pow((0.02*Uref), 2)
         default['component_R22'] = pow((0.02*Uref), 2)
         default['component_R33'] = pow((0.02*Uref), 2)
@@ -159,6 +160,10 @@ class InitializationModel(Model):
         elif turb_model == 'k-omega-SST':
             for txt in ('turb_k', 'turb_omega'):
                 self.getTurbulenceInitialValue(zone, txt)
+
+        elif turb_model == 'Spalart-Allmaras':
+            txt = 'turb_nusa'
+            self.getTurbulenceInitialValue(zone, txt)
 
 
     def __setDefaultTurbulenceInitialValues(self, zone, choice):

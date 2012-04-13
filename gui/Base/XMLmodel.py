@@ -100,6 +100,9 @@ class XMLmodel(Variables):
             nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_k'))
             nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_omega'))
 
+        elif model in ('Spalart-Allmaras'):
+            nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_nusa'))
+
         return nodeList
 
 
@@ -115,7 +118,8 @@ class XMLmodel(Variables):
                      'k-omega-SST',
                      'v2f-phi',
                      'Rij-epsilon',
-                     'Rij-SSG'):
+                     'Rij-SSG',
+                     'Spalart-Allmaras'):
             nodeList.append(nodeTurb.xmlGetNode('property', name='turb_viscosity'))
 
         elif model in ('LES_Smagorinsky', 'LES_dynamique'):

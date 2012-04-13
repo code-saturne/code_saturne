@@ -86,6 +86,8 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
             title = self.tr("Options for k-omega_SST model")
         elif default['model'] == 'v2f-phi':
             title = self.tr("Options for v2f-phi model")
+        elif default['model'] == 'Spalart-Allmaras':
+            title = self.tr("Options for Spalart-Allmaras model")
         self.setWindowTitle(title)
         self.default = default
         self.result  = self.default.copy()
@@ -173,6 +175,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.modelTurbModel.addItem(self.tr("Rij-epsilon SSG"), "Rij-SSG")
         self.modelTurbModel.addItem(self.tr("v2f (phi model)"), "v2f-phi")
         self.modelTurbModel.addItem(self.tr("k-omega SST"), "k-omega-SST")
+        self.modelTurbModel.addItem(self.tr("Spalart-Allmaras"), "Spalart-Allmaras")
         self.modelTurbModel.addItem(self.tr("LES (Smagorinsky)"), "LES_Smagorinsky")
         self.modelTurbModel.addItem(self.tr("LES (classical dynamic model)"), "LES_dynamique")
         self.modelTurbModel.addItem(self.tr("LES (WALE)"), "LES_WALE")

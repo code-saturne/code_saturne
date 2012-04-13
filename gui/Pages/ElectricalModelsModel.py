@@ -102,7 +102,8 @@ class ElectricalModel(Variables, Model):
                                            'Rij-epsilon',
                                            'Rij-SSG',
                                            'v2f-phi',
-                                           'k-omega-SST'):
+                                           'k-omega-SST',
+                                           'Spalart-Allmaras'):
             electricalList = ('off',)
 
         return electricalList

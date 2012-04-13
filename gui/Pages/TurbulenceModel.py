@@ -76,6 +76,7 @@ class TurbulenceModel(Variables, Model):
                             'Rij-SSG',
                             'v2f-phi',
                             'k-omega-SST',
+                            'Spalart-Allmaras',
                             'LES_Smagorinsky',
                             'LES_dynamique',
                             'LES_WALE')
@@ -94,7 +95,8 @@ class TurbulenceModel(Variables, Model):
                                'turb_eps',
                                'turb_phi',
                                'turb_fb',
-                               'turb_omega']
+                               'turb_omega',
+                               'turb_nusa']
 
 
     def turbulenceModels(self):
@@ -239,6 +241,13 @@ class TurbulenceModel(Variables, Model):
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(list, 'smagorinsky_constant')
 
+        elif model_turb == 'Spalart-Allmaras':
+            list = ('turb_nusa')
+            self.setNewTurbulenceVariable(self.node_turb, 'turb_nusa')
+            self.setNewProperty(self.node_turb, 'turb_viscosity')
+            self.__updateInletsForTurbulence()
+            self.__removeVariablesAndProperties(list, 'smagorinsky_constant')
+
         else:
             model_turb = 'off'
             self.node_turb.xmlRemoveChild('variable')
@@ -351,6 +360,8 @@ class TurbulenceModel(Variables, Model):
         elif model == 'k-omega-SST':
             nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_k'))
             nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_omega'))
+        elif model == 'Spalart-Allmaras':
+            nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_nusa'))
         return nodeList
 
 #-------------------------------------------------------------------------------
@@ -533,6 +544,20 @@ class TurbulenceModelTestCase(ModelTest):
             </turbulence>'''
         assert mdl.node_turb == self.xmlNodeFromString(doc),\
            'Could not set the k_Omega SST turbulence model'
+
+    def checkSpalartAllmaras(self):
+        """Check whether the Spalart-Allmaras turbulence model could be set"""
+        mdl = TurbulenceModel(self.case)
+        mdl.setTurbulenceModel('Spalart-Allmaras')
+        doc = '''<turbulence model="Spalart-Allmaras">
+                <variable label="NuTilda" name="turb_nusa"/>
+                <property label="TurbVisc" name="turb_viscosity"/>
+                <initialization choice="reference_velocity">
+                  <reference_velocity>1.0</reference_velocity>
+                </initialization>
+            </turbulence>'''
+        assert mdl.node_turb == self.xmlNodeFromString(doc),\
+           'Could not set the Spalart-Allmaras turbulence model'
 
     def checkGetTurbulenceModel(self):
         """Check whether the turbulence model could be get"""
