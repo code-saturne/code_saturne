@@ -798,7 +798,7 @@ _get_rank_from_index(cs_int_t         n_elts,
 
     for (;rank_index[rank+1] < glob_list[i]; rank++);
 
-    assert(rank < fvm_parall_get_size());
+    assert(rank < cs_glob_n_ranks);
     rank_list[i] = rank;
 
   } /* End of loop on elements */

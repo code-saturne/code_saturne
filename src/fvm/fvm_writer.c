@@ -930,7 +930,7 @@ fvm_writer_init(const char             *name,
                                            tmp_path,
                                            this_writer->options,
                                            this_writer->time_dep,
-                                           fvm_parall_get_mpi_comm());
+                                           cs_glob_mpi_comm);
 #else
     this_writer->format_writer = init_func(name,
                                            tmp_path,

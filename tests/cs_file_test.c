@@ -136,7 +136,7 @@ main (int argc, char *argv[])
 
   MPI_Init(&argc, &argv);
 
-  fvm_parall_set_mpi_comm(MPI_COMM_WORLD);
+  cs_glob_mpi_comm = MPI_COMM_WORLD;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);

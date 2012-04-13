@@ -70,12 +70,6 @@ extern "C" {
 
 #if defined(HAVE_MPI)
 
-/* Basic communicator info */
-
-static MPI_Comm  _fvm_mpi_parall_comm = MPI_COMM_NULL;  /* Intra-communicator */
-static int       _fvm_mpi_parall_size = 1;
-static int       _fvm_mpi_parall_rank = 0;
-
 /* Minimum recommended scatter/gather buffer size */
 
 static size_t _fvm_parall_min_coll_buf_size = 1024*1024*8;
@@ -93,85 +87,6 @@ static size_t _fvm_parall_min_coll_buf_size = 1024*1024*8;
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Return default MPI communicator for FVM library functions.
- *
- * returns:
- *   handle to MPI communicator
- *----------------------------------------------------------------------------*/
-
-MPI_Comm
-fvm_parall_get_mpi_comm(void)
-{
-  return _fvm_mpi_parall_comm;
-}
-
-/*----------------------------------------------------------------------------
- * Set default MPI communicator for FVM library functions.
- *
- * parameters:
- *   comm <-- handle to MPI communicator
- *----------------------------------------------------------------------------*/
-
-void
-fvm_parall_set_mpi_comm(const MPI_Comm  comm)
-{
-  int mpi_flag;
-
-  MPI_Initialized(&mpi_flag);
-
-  /* Set communicator */
-
-  _fvm_mpi_parall_comm = comm;
-
-  if (mpi_flag != 0 && _fvm_mpi_parall_comm != MPI_COMM_NULL) {
-    MPI_Comm_size(_fvm_mpi_parall_comm, &_fvm_mpi_parall_size);
-    MPI_Comm_rank(_fvm_mpi_parall_comm, &_fvm_mpi_parall_rank);
-  }
-  else {
-    _fvm_mpi_parall_size = 1;
-    _fvm_mpi_parall_rank = 0;
-  }
-}
-
-#endif
-
-/*----------------------------------------------------------------------------
- * Return rank of current process among associated program processes.
- *
- * returns:
- *   rank of current process in current communicator, or 0 in scalar mode
- *----------------------------------------------------------------------------*/
-
-int
-fvm_parall_get_rank(void)
-{
-#if defined(HAVE_MPI)
-  return _fvm_mpi_parall_rank;
-#else
-  return 0;
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Return number of processes associated with the current program.
- *
- * returns:
- *   number of processes in current communicator, or 1 in scalar mode
- *----------------------------------------------------------------------------*/
-
-int
-fvm_parall_get_size(void)
-{
-#if defined(HAVE_MPI)
-  return _fvm_mpi_parall_size;
-#else
-  return 1;
-#endif
-}
-
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
  * Sum counters on all FVM default communicator processes.
  *
  * parameters:
@@ -184,7 +99,7 @@ fvm_parall_counter(cs_gnum_t   cpt[],
                    const int   n)
 {
 
-  if (_fvm_mpi_parall_size > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     int        i;
     cs_gnum_t *sum;
@@ -196,7 +111,7 @@ fvm_parall_counter(cs_gnum_t   cpt[],
       sum = _sum;
 
     MPI_Allreduce(cpt, sum, n, CS_MPI_GNUM, MPI_SUM,
-                  _fvm_mpi_parall_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0; i < n ; i++)
       cpt[i] = sum[i];
@@ -221,7 +136,7 @@ fvm_parall_counter_max(cs_lnum_t   cpt[],
                        const int   n)
 {
 
-  if (_fvm_mpi_parall_size > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     int        i;
     cs_lnum_t *maxval;
@@ -233,7 +148,7 @@ fvm_parall_counter_max(cs_lnum_t   cpt[],
       maxval = _maxval;
 
     MPI_Allreduce(cpt, maxval, n, CS_MPI_LNUM, MPI_MAX,
-                  _fvm_mpi_parall_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0; i < n ; i++)
       cpt[i] = maxval[i];

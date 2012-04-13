@@ -1036,8 +1036,8 @@ fvm_nodal_create(const char  *name,
     this_nodal->name = NULL;
 
   this_nodal->dim     = dim;
-  this_nodal->num_dom = fvm_parall_get_rank() + 1;
-  this_nodal->n_doms  = fvm_parall_get_size();
+  this_nodal->num_dom = (cs_glob_rank_id >= 0) ? cs_glob_rank_id + 1 : 1;
+  this_nodal->n_doms  = cs_glob_n_ranks;
   this_nodal->n_sections = 0;
 
   /* Local dimensions */

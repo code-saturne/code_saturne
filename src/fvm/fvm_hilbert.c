@@ -765,7 +765,7 @@ _evaluate_distribution(int          n_ranges,
   fit = (d_up + d_low) / optim;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (fvm_parall_get_rank() == 0)
+  if (cs_glob_rank_id <= 0)
     bft_printf("<DISTRIBUTION EVALUATION> optim: %g, fit: %g\n",
                optim, fit);
 #endif
@@ -863,7 +863,7 @@ _define_rank_distrib(int                       dim,
 
 #if 0 && defined(DEBUG) && !defined(DEBUG) /* For debugging purpose only */
 
-  if (fvm_parall_get_rank() == 0) {
+  if (cs_glob_rank_id <= 0) {
 
     FILE  *dbg_file = NULL;
     char  *rfilename = NULL;
@@ -993,7 +993,7 @@ _update_sampling(int                  dim,
     bft_printf(" <_update_distrib> (rank: %d) delta: %g, target: %g,"
                " next_id: %d, f_low: %g, f_high: %g, s_low: %g, s_high: %g\n"
                "\t => new_sampling: %g\n",
-               fvm_parall_get_rank(), delta, target_freq, next_id,
+               cs_glob_rank_id, delta, target_freq, next_id,
                f_low, f_high, s_low, s_high, new_sampling[i+1]);
 #endif
 
@@ -1131,7 +1131,7 @@ _bucket_sampling(int                       dim,
   } /* End of while */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (fvm_parall_get_rank() == 0)
+  if (cs_glob_rank_id <= 0) {
     bft_printf("\n  <_bucket_sampling> n_iter: %d, opt: %g, best_fit: %g\n",
                n_iters, optim, best_fit);
 #endif

@@ -528,10 +528,6 @@ _cs_base_sig_fatal(int  signum)
 static void
 _cs_base_mpi_fin(void)
 {
-#if defined(HAVE_MPI)
-  fvm_parall_set_mpi_comm(MPI_COMM_NULL);
-#endif
-
   bft_error_handler_set(cs_glob_base_err_handler_save);
   ple_error_handler_set(cs_glob_base_err_handler_save);
 
@@ -701,14 +697,7 @@ _cs_base_mpi_setup(const char *app_name)
 
   _cs_datatype_to_mpi_init();
 
-  /* Initialize associated libraries */
-
-#if defined(HAVE_MPI)
-  if (cs_glob_rank_id > -1)
-    fvm_parall_set_mpi_comm(cs_glob_mpi_comm);
-  else
-    fvm_parall_set_mpi_comm(MPI_COMM_NULL);
-#endif
+  /* Initialize error handlers */
 
 #if defined(DEBUG) || !defined(NDEBUG)
   if (nbr > 1 || cs_glob_mpi_comm != MPI_COMM_NULL) {

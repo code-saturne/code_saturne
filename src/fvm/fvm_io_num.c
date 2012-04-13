@@ -1343,11 +1343,11 @@ _create_from_coords_morton(const cs_coord_t  coords[],
   fvm_morton_code_t *m_code = NULL;
 
 #if defined(HAVE_MPI)
-  MPI_Comm comm = fvm_parall_get_mpi_comm();
+  MPI_Comm comm = cs_glob_mpi_comm;
 #endif
 
   const int level = sizeof(fvm_morton_int_t)*8 - 1;
-  const int n_ranks = fvm_parall_get_size();
+  const int n_ranks = cs_glob_n_ranks;
 
   fvm_io_num_t  *this_io_num = NULL;
 
@@ -1620,10 +1620,10 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
   cs_lnum_t *order = NULL;
 
 #if defined(HAVE_MPI)
-  MPI_Comm comm = fvm_parall_get_mpi_comm();
+  MPI_Comm comm = cs_glob_mpi_comm;
 #endif
 
-  const int n_ranks = fvm_parall_get_size();
+  const int n_ranks = cs_glob_n_ranks;
 
   fvm_io_num_t  *this_io_num = NULL;
 
@@ -1893,7 +1893,7 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
 
   /* Initial checks */
 
-  if (fvm_parall_get_size() < 2)
+  if (cs_glob_n_ranks < 2)
     return NULL;
 
 #if defined(HAVE_MPI)
@@ -1943,7 +1943,7 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
   _fvm_io_num_copy_on_write(this_io_num);
   _fvm_io_num_global_order(this_io_num,
                            NULL,
-                           fvm_parall_get_mpi_comm());
+                           cs_glob_mpi_comm);
 
   if (order != NULL) {
     cs_gnum_t *tmp_num;
@@ -2026,7 +2026,7 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
   if (base_io_num == NULL)
     return NULL;
 
-  assert(fvm_parall_get_size() > 1); /* Otherwise, base_io_num should be NULL */
+  assert(cs_glob_n_ranks > 1); /* Otherwise, base_io_num should be NULL */
 
 #if defined(HAVE_MPI)
   {
@@ -2055,7 +2055,7 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
     _fvm_io_num_copy_on_write(this_io_num);
     _fvm_io_num_global_order(this_io_num,
                              n_sub_entities,
-                             fvm_parall_get_mpi_comm());
+                             cs_glob_mpi_comm);
   }
 #endif
 
@@ -2089,7 +2089,7 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_number[],
 
   /* Initial checks */
 
-  if (fvm_parall_get_size() < 2)
+  if (cs_glob_n_ranks < 2)
     return NULL;
 
   assert(cs_order_gnum_test_s(parent_entity_number,
@@ -2137,7 +2137,7 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_number[],
     _fvm_io_num_global_order_s(this_io_num,
                                stride,
                                _adjacency,
-                               fvm_parall_get_mpi_comm());
+                               cs_glob_mpi_comm);
 
     BFT_FREE(_adjacency);
   }
@@ -2173,7 +2173,7 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_number[],
 
   /* Initial checks */
 
-  if (fvm_parall_get_size() < 2)
+  if (cs_glob_n_ranks < 2)
     return NULL;
 
 #if defined(HAVE_MPI)
@@ -2268,7 +2268,7 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_number[],
     _fvm_io_num_global_order_index(this_io_num,
                                    _index,
                                    _adjacency,
-                                   fvm_parall_get_mpi_comm());
+                                   cs_glob_mpi_comm);
 
     if (_adjacency != NULL)
       BFT_FREE(_adjacency);
@@ -2343,7 +2343,7 @@ fvm_io_num_create_from_scan(size_t  n_entities)
 
   /* Initial checks */
 
-  if (fvm_parall_get_size() < 2)
+  if (cs_glob_n_ranks < 2)
     return NULL;
 
 #if defined(HAVE_MPI)
@@ -2353,7 +2353,7 @@ fvm_io_num_create_from_scan(size_t  n_entities)
     cs_gnum_t gnum_sum = n_entities;
     cs_gnum_t gnum_shift = 0;
 
-    MPI_Comm comm = fvm_parall_get_mpi_comm();
+    MPI_Comm comm = cs_glob_mpi_comm;
 
     /* Create structure */
 
@@ -2485,7 +2485,7 @@ fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
   if (this_io_num == NULL)
     return retval;
 
-  assert(fvm_parall_get_size() > 1); /* Otherwise, base_io_num should be NULL */
+  assert(cs_glob_n_ranks > 1); /* Otherwise, base_io_num should be NULL */
 
 #if defined(HAVE_MPI)
  {
@@ -2497,12 +2497,12 @@ fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
      have_sub_loc = 1;
 
    MPI_Allreduce(&have_sub_loc, &have_sub_glob, 1, MPI_INT, MPI_MAX,
-                 fvm_parall_get_mpi_comm());
+                 cs_glob_mpi_comm);
 
    if (have_sub_glob > 0)
      retval = _fvm_io_num_global_sub_size(this_io_num,
                                           n_sub_entities,
-                                          fvm_parall_get_mpi_comm());
+                                          cs_glob_mpi_comm);
  }
 #endif
 

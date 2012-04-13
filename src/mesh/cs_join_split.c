@@ -2263,7 +2263,7 @@ cs_join_split_update_struct(const cs_join_param_t   param,
     cs_int_t  n_init_faces = _local_mesh->n_faces;
     cs_gnum_t  n_g_init_faces = _local_mesh->n_g_faces;
 
-    MPI_Comm  mpi_comm = fvm_parall_get_mpi_comm();
+    MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
     if (param.perio_type != FVM_PERIODICITY_NULL) {
 

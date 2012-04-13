@@ -104,9 +104,9 @@ fvm_trace_mem_status(const char  *descr)
   double valreal[4];
 
 #if defined(HAVE_MPI)
-  MPI_Comm comm = fvm_parall_get_mpi_comm();
-  int rank_id = fvm_parall_get_rank();
-  int n_ranks = fvm_parall_get_size();
+  MPI_Comm comm = cs_glob_mpi_comm;
+  int rank_id = cs_glob_rank_id;
+  int n_ranks = cs_glob_n_ranks;
   int  imax = 0, imin = 0;
   int  id_min[4];
   _fvm_trace_mpi_double_int_t  val_in[4], val_min[4], val_max[4];

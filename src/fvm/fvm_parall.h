@@ -68,50 +68,6 @@ extern "C" {
  * Public function prototypes
  *============================================================================*/
 
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Return default MPI communicator for FVM library functions.
- *
- * returns:
- *   handle to MPI communicator
- *----------------------------------------------------------------------------*/
-
-MPI_Comm
-fvm_parall_get_mpi_comm(void);
-
-/*----------------------------------------------------------------------------
- * Set default MPI communicator for FVM library functions.
- *
- * parameters:
- *   comm <-- handle to MPI communicator
- *----------------------------------------------------------------------------*/
-
-void
-fvm_parall_set_mpi_comm(const MPI_Comm  comm);
-
-#endif /* defined(HAVE_MPI) */
-
-/*----------------------------------------------------------------------------
- * Return rank of current process among associated program processes.
- *
- * returns:
- *   rank of current process in current communicator, or 0 in scalar mode
- *----------------------------------------------------------------------------*/
-
-int
-fvm_parall_get_rank(void);
-
-/*----------------------------------------------------------------------------
- * Return number of processes associated with the current program.
- *
- * returns:
- *   number of processes in current communicator, or 1 in scalar mode
- *----------------------------------------------------------------------------*/
-
-int
-fvm_parall_get_size(void);
-
 /*----------------------------------------------------------------------------
  * Sum counters on all FVM default communicator processes.
  *
