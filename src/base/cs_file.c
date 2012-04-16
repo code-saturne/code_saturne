@@ -52,6 +52,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -70,6 +71,10 @@
 
 #if defined(WIN32) || defined(_WIN32)
 #include <io.h>
+#endif
+
+#if defined(HAVE_MPI_IO)
+#include <limits.h>
 #endif
 
 /*----------------------------------------------------------------------------
@@ -1051,24 +1056,40 @@ _mpi_file_read_block_eo(cs_file_t  *f,
                         cs_gnum_t   global_num_start,
                         cs_gnum_t   global_num_end)
 {
-  cs_gnum_t global_num_end_last = global_num_end;
-  size_t retval = 0;
-
   MPI_Offset disp;
   MPI_Status status;
   int errcode, count;
+  cs_gnum_t gcount;
+
+  cs_gnum_t global_num_end_last = global_num_end;
+  size_t retval = 0;
+  MPI_Datatype ent_type = MPI_BYTE;
 
   disp = f->offset + ((global_num_start - 1) * size);
-  count = (global_num_end - global_num_start)*size;
+  gcount = (global_num_end - global_num_start)*size;
 
-  errcode = MPI_File_read_at_all(f->fh, disp, buf, count, MPI_BYTE, &status);
+  if (gcount > INT_MAX) {
+    MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
+    MPI_Type_commit(&ent_type);
+    count = global_num_end - global_num_start;
+  }
+  else
+    count = gcount;
+
+  errcode = MPI_File_read_at_all(f->fh, disp, buf, count, ent_type, &status);
 
   if (errcode != MPI_SUCCESS)
     _mpi_io_error_message(f->name, errcode);
 
   if (count > 0)
-    MPI_Get_count(&status, MPI_BYTE, &count);
-  retval = count / size;
+    MPI_Get_count(&status, ent_type, &count);
+
+  if (ent_type != MPI_BYTE) {
+    MPI_Type_free(&ent_type);
+    retval = count;
+  }
+  else
+    retval = count / size;
 
   MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
   f->offset += ((global_num_end_last - 1) * size);
@@ -1085,6 +1106,7 @@ _mpi_file_read_block_ip(cs_file_t  *f,
 {
   int errcode;
   int lengths[1];
+  cs_gnum_t gcount, gdisp;
   MPI_Aint disps[1];
   MPI_Status status;
   MPI_Datatype file_type;
@@ -1092,17 +1114,30 @@ _mpi_file_read_block_ip(cs_file_t  *f,
   int count = 0;
   char datarep[] = "native";
   cs_gnum_t global_num_end_last = global_num_end;
+  MPI_Datatype ent_type = MPI_BYTE;
+
   size_t retval = 0;
 
-  lengths[0] = (global_num_end - global_num_start) * size;
-  disps[0] = (global_num_start - 1) * size;
+  gcount = (global_num_end - global_num_start) * size;
+  gdisp = (global_num_start - 1) * size;
 
-  MPI_Type_hindexed(1, lengths, disps, MPI_BYTE, &file_type);
+  if (gcount > INT_MAX || gdisp > INT_MAX) {
+    MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
+    MPI_Type_commit(&ent_type);
+    lengths[0] = global_num_end - global_num_start;
+    disps[0] = global_num_start - 1;
+  }
+  else {
+    lengths[0] = gcount;
+    disps[0] = gdisp;
+  }
+
+  MPI_Type_hindexed(1, lengths, disps, ent_type, &file_type);
   MPI_Type_commit(&file_type);
 
-  MPI_File_set_view(f->fh, f->offset, MPI_BYTE, file_type, datarep, f->info);
+  MPI_File_set_view(f->fh, f->offset, ent_type, file_type, datarep, f->info);
 
-  errcode = MPI_File_read_all(f->fh, buf, (int)(lengths[0]), MPI_BYTE,
+  errcode = MPI_File_read_all(f->fh, buf, (int)(lengths[0]), ent_type,
                               &status);
 
   if (errcode != MPI_SUCCESS)
@@ -1111,8 +1146,14 @@ _mpi_file_read_block_ip(cs_file_t  *f,
   MPI_Type_free(&file_type);
 
   if (lengths[0] > 0)
-    MPI_Get_count(&status, MPI_BYTE, &count);
-  retval = count / size;
+    MPI_Get_count(&status, ent_type, &count);
+
+  if (ent_type != MPI_BYTE) {
+    MPI_Type_free(&ent_type);
+    retval = count;
+  }
+  else
+    retval = count / size;
 
   MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
   f->offset += ((global_num_end_last - 1) * size);
@@ -1153,24 +1194,40 @@ _mpi_file_write_block_eo(cs_file_t  *f,
                          cs_gnum_t   global_num_start,
                          cs_gnum_t   global_num_end)
 {
-  cs_gnum_t global_num_end_last = global_num_end;
-  size_t retval = 0;
-
   MPI_Offset disp;
   MPI_Status status;
   int errcode, count;
+  cs_gnum_t gcount;
+
+  cs_gnum_t global_num_end_last = global_num_end;
+  size_t retval = 0;
+  MPI_Datatype ent_type = MPI_BYTE;
 
   disp = f->offset + ((global_num_start - 1) * size);
-  count = (global_num_end - global_num_start)*size;
+  gcount = (global_num_end - global_num_start)*size;
 
-  errcode = MPI_File_write_at_all(f->fh, disp, buf, count, MPI_BYTE, &status);
+  if (gcount > INT_MAX) {
+    MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
+    MPI_Type_commit(&ent_type);
+    count = global_num_end - global_num_start;
+  }
+  else
+    count = gcount;
+
+  errcode = MPI_File_write_at_all(f->fh, disp, buf, count, ent_type, &status);
 
   if (errcode != MPI_SUCCESS)
     _mpi_io_error_message(f->name, errcode);
 
   if (count > 0)
     MPI_Get_count(&status, MPI_BYTE, &count);
-  retval = count / size;
+
+  if (ent_type != MPI_BYTE) {
+    MPI_Type_free(&ent_type);
+    retval = count;
+  }
+  else
+    retval = count / size;
 
   MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
   f->offset += ((global_num_end_last - 1) * size);
@@ -1186,6 +1243,7 @@ _mpi_file_write_block_ip(cs_file_t  *f,
                          cs_gnum_t   global_num_end)
 {
   int lengths[1];
+  cs_gnum_t gcount, gdisp;
   MPI_Aint disps[1];
   MPI_Status status;
   MPI_Datatype file_type;
@@ -1193,17 +1251,30 @@ _mpi_file_write_block_ip(cs_file_t  *f,
   int errcode = MPI_SUCCESS, count = 0;
   char datarep[] = "native";
   cs_gnum_t global_num_end_last = global_num_end;
+  MPI_Datatype ent_type = MPI_BYTE;
+
   size_t retval = 0;
 
-  lengths[0] = (global_num_end - global_num_start) * size;
-  disps[0] = (global_num_start - 1) * size;
+  gcount = (global_num_end - global_num_start) * size;
+  gdisp = (global_num_start - 1) * size;
 
-  MPI_Type_hindexed(1, lengths, disps, MPI_BYTE, &file_type);
+  if (gcount > INT_MAX || gdisp > INT_MAX) {
+    MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
+    MPI_Type_commit(&ent_type);
+    lengths[0] = global_num_end - global_num_start;
+    disps[0] = global_num_start - 1;
+  }
+  else {
+    lengths[0] = gcount;
+    disps[0] = gdisp;
+  }
+
+  MPI_Type_hindexed(1, lengths, disps, ent_type, &file_type);
   MPI_Type_commit(&file_type);
 
-  MPI_File_set_view(f->fh, f->offset, MPI_BYTE, file_type, datarep, f->info);
+  MPI_File_set_view(f->fh, f->offset, ent_type, file_type, datarep, f->info);
 
-  errcode = MPI_File_write_all(f->fh, buf, (int)(lengths[0]), MPI_BYTE,
+  errcode = MPI_File_write_all(f->fh, buf, (int)(lengths[0]), ent_type,
                                &status);
 
   if (errcode != MPI_SUCCESS)
@@ -1213,7 +1284,13 @@ _mpi_file_write_block_ip(cs_file_t  *f,
 
   if (lengths[0] > 0)
     MPI_Get_count(&status, MPI_BYTE, &count);
-  retval = count / size;
+
+  if (ent_type != MPI_BYTE) {
+    MPI_Type_free(&ent_type);
+    retval = count;
+  }
+  else
+    retval = count / size;
 
   MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
   f->offset += ((global_num_end_last - 1) * size);
