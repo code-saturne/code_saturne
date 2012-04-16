@@ -2069,7 +2069,7 @@ _gmres(const char             *var_name,
         for (jj = 0; jj < n_rows; jj++) {
           fk[jj] = 0.0;
           for (kk = 0; kk <= l_iter; kk++)
-            fk[jj] += _krylov_vectors[kk*n_rows] * gk[kk];
+            fk[jj] += _krylov_vectors[kk*n_rows + jj] * gk[kk];
         }
 #endif
 
