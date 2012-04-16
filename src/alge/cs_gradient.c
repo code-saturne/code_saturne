@@ -317,8 +317,8 @@ _l2_norm_3(cs_lnum_t              n_elts,
     sdot3 = 0.0;
 
     for (bid = 0; bid < blocks_in_sblocks; bid++) {
-      start_id = block_size * bid*sid;
-      end_id = block_size * (bid*sid + 1);
+      start_id = block_size * (blocks_in_sblocks*sid + bid);
+      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
       cdot1 = 0.0;
       cdot2 = 0.0;
       cdot3 = 0.0;

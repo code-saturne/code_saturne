@@ -169,8 +169,8 @@ cs_dot(cs_lnum_t      n,
     sdot = 0.0;
 
     for (bid = 0; bid < blocks_in_sblocks; bid++) {
-      start_id = block_size * bid*sid;
-      end_id = block_size * (bid*sid + 1);
+      start_id = block_size * (blocks_in_sblocks*sid + bid);
+      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
       cdot = 0.0;
       for (i = start_id; i < end_id; i++)
         cdot += x[i]*y[i];
