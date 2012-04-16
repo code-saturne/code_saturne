@@ -130,6 +130,84 @@ cs_dot(cs_lnum_t      n,
        const double  *x,
        const double  *y);
 
+/*----------------------------------------------------------------------------
+ * Return the double dot product of 2 vectors: x.x, and x.y
+ *
+ * The products could be computed separately, but computing them
+ * simultaneously adds more optimization opportunities and possibly better
+ * cache behavior.
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * parameters:
+ *   n  <-- size of arrays x and y
+ *   x  <-- array of floating-point values
+ *   y  <-- array of floating-point values
+ *   xx --> x.x dot product
+ *   xy --> x.y dot product
+ *----------------------------------------------------------------------------*/
+
+void
+cs_dot_xx_xy(cs_lnum_t               n,
+             const double  *restrict x,
+             const double  *restrict y,
+             double                 *xx,
+             double                 *xy);
+
+/*----------------------------------------------------------------------------
+ * Return the double dot product of 3 vectors: x.y, and y.z
+ *
+ * The products could be computed separately, but computing them
+ * simultaneously adds more optimization opportunities and possibly better
+ * cache behavior.
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * parameters:
+ *   n  <-- size of arrays x and y
+ *   x  <-- array of floating-point values
+ *   y  <-- array of floating-point values
+ *   z  <-- array of floating-point values
+ *   xy --> x.y dot product
+ *   yz --> x.z dot product
+ *----------------------------------------------------------------------------*/
+
+void
+cs_dot_xy_yz(cs_lnum_t               n,
+             const double  *restrict x,
+             const double  *restrict y,
+             const double  *restrict z,
+             double                 *xx,
+             double                 *xy);
+
+/*----------------------------------------------------------------------------
+ * Return 3 dot products of 3 vectors: x.y, x.y, and y.z
+ *
+ * The products could be computed separately, but computing them
+ * simultaneously adds more optimization opportunities and possibly better
+ * cache behavior.
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * parameters:
+ *   n  <-- size of arrays x and y
+ *   x  <-- array of floating-point values
+ *   y  <-- array of floating-point values
+ *   z  <-- array of floating-point values
+ *   xx --> x.y dot product
+ *   xy --> x.y dot product
+ *   yz --> y.z dot product
+ *----------------------------------------------------------------------------*/
+
+void
+cs_dot_xx_xy_yz(cs_lnum_t               n,
+                const double  *restrict x,
+                const double  *restrict y,
+                const double  *restrict z,
+                double                 *xx,
+                double                 *xy,
+                double                 *yz);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -643,10 +643,10 @@ _dot_product_2(double  t_measure)
       n_runs = 1;
     run_id = 0;
     while (run_id < n_runs) {
+      double s1, s2;
       double test_sum_mult = 1.0/n_runs;
       while (run_id < n_runs) {
-        double s1 = cs_dot(n, x, x);
-        double s2 = cs_dot(n, x, y);
+        cs_dot_xx_xy(n, x, y, &s1, &s2);
         test_sum += test_sum_mult*s1;
         run_id++;
       }

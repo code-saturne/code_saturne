@@ -484,20 +484,7 @@ _dot_product(cs_int_t          n_elts,
              const cs_real_t  *x,
              const cs_real_t  *y)
 {
-#if defined(HAVE_OPENMP)
-
-  cs_lnum_t ii;
-  double s = 0.;
-
-# pragma omp parallel for reduction(+: s) if(n_elts > THR_MIN)
-  for (ii = 0; ii < n_elts; ii++)
-    s += x[ii]*y[ii];
-
-#else
-
   double s = cs_dot(n_elts, x, y);
-
-#endif
 
 #if defined(HAVE_MPI)
 
@@ -514,53 +501,66 @@ _dot_product(cs_int_t          n_elts,
 }
 
 /*----------------------------------------------------------------------------
- * Compute 2 dot products, summing result over all ranks.
+ * Compute 2 dot products x.x and x.y, summing result over all ranks.
  *
  * parameters:
  *   n_elts <-- Local number of elements
- *   x1     <-- first vector in s1 = x1.y1
- *   y1     <-- second vector in s1 = x1.y1
- *   x2     <-- first vector in s2 = x2.y2
- *   y2     <-- second vector in s2 = x2.y2
- *   s1     --> result of s1 = x1.y1
- *   s2     --> result of s2 = x2.y2
+ *   x      <-- vector in s1 = x.x and s2 = x.y
+ *   y      <-- vector in s2 = x.y
+ *   s1     --> result of s1 = x.x
+ *   s2     --> result of s2 = x.y
  *----------------------------------------------------------------------------*/
 
 inline static void
-_dot_products_2(cs_int_t          n_elts,
-                const cs_real_t  *x1,
-                const cs_real_t  *y1,
-                const cs_real_t  *x2,
-                const cs_real_t  *y2,
-                double           *s1,
-                double           *s2)
+_dot_products_xx_xy(cs_int_t          n_elts,
+                    const cs_real_t  *x,
+                    const cs_real_t  *y,
+                    double           *s1,
+                    double           *s2)
 {
-  cs_int_t ii;
   double s[2];
 
-  /* If a term appears in both dot products, we do not use the BLAS,
-     as grouping both dot products in a same loop allows for better
-     cache use and often better performance than separate dot products
-     with even optimized BLAS */
+  cs_dot_xx_xy(n_elts, x, y, s, s+1);
 
-  if (x1 == x2 || x1 == y2 || y1 == x2 || y1 == y2) {
+#if defined(HAVE_MPI)
 
-    /* Use temporary variables to help some compilers optimize */
-    double _s0 = 0.0, _s1 = 0.0;
-#   pragma omp parallel for reduction(+: _s0, _s1) if(n_elts > THR_MIN)
-    for (ii = 0; ii < n_elts; ii++) {
-      _s0 += x1[ii] * y1[ii];
-      _s1 += x2[ii] * y2[ii];
-    }
-    s[0] = _s0; s[1] = _s1;
-
+  if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
+    double _sum[2];
+    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM,
+                  _cs_sles_mpi_reduce_comm);
+    s[0] = _sum[0];
+    s[1] = _sum[1];
   }
-  else {
 
-    s[0] = cs_dot(n_elts, x1, y1);
-    s[1] = cs_dot(n_elts, x2, y2);
+#endif /* defined(HAVE_MPI) */
 
-  }
+  *s1 = s[0];
+  *s2 = s[1];
+}
+
+/*----------------------------------------------------------------------------
+ * Compute 2 dot products x.x and x.y, summing result over all ranks.
+ *
+ * parameters:
+ *   n_elts <-- Local number of elements
+ *   x      <-- vector in s1 = x.y
+ *   y      <-- vector in s1 = x.y and s2 = y.z
+ *   z      <-- vector in s2 = y.z
+ *   s1     --> result of s1 = x.y
+ *   s2     --> result of s2 = y.z
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_dot_products_xy_yz(cs_int_t          n_elts,
+                    const cs_real_t  *x,
+                    const cs_real_t  *y,
+                    const cs_real_t  *z,
+                    double           *s1,
+                    double           *s2)
+{
+  double s[2];
+
+  cs_dot_xy_yz(n_elts, x, y, z, s, s+1);
 
 #if defined(HAVE_MPI)
 
@@ -583,46 +583,26 @@ _dot_products_2(cs_int_t          n_elts,
  *
  * parameters:
  *   n_elts <-- Local number of elements
- *   x1     <-- first vector in s1 = x1.y1
- *   y1     <-- second vector in s1 = x1.y1
- *   x2     <-- first vector in s2 = x2.y2
- *   y2     <-- second vector in s2 = x2.y2
- *   x3     <-- first vector in s3 = x3.y3
- *   y3     <-- second vector in s3 = x3.y3
- *   s1     --> result of s1 = x1.y1
- *   s2     --> result of s2 = x2.y2
- *   s3     --> result of s3 = x3.y3
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *   z      <-- third vector
+ *   s1     --> result of s1 = x.x
+ *   s2     --> result of s2 = x.y
+ *   s3     --> result of s3 = y.z
  *----------------------------------------------------------------------------*/
 
 inline static void
-_dot_products_3(cs_int_t          n_elts,
-                const cs_real_t  *x1,
-                const cs_real_t  *y1,
-                const cs_real_t  *x2,
-                const cs_real_t  *y2,
-                const cs_real_t  *x3,
-                const cs_real_t  *y3,
-                double           *s1,
-                double           *s2,
-                double           *s3)
+_dot_products_xx_xy_yz(cs_lnum_t         n_elts,
+                       const cs_real_t  *x,
+                       const cs_real_t  *y,
+                       const cs_real_t  *z,
+                       double           *s1,
+                       double           *s2,
+                       double           *s3)
 {
-  cs_int_t ii;
   double s[3];
 
-  /* If a term appears in the three dot products, we do not use the BLAS,
-     as grouping the three dot products in a same loop allows for better
-     cache use and often better performance than separate dot products
-     with even optimized BLAS */
-
-    /* Use temporary variables to help some compilers optimize */
-    double _s0 = 0.0, _s1 = 0.0, _s2 = 0.0;
-#   pragma omp parallel for reduction(+: _s0, _s1, _s2) if(n_elts > THR_MIN)
-    for (ii = 0; ii < n_elts; ii++) {
-      _s0 += x1[ii] * y1[ii];
-      _s1 += x2[ii] * y2[ii];
-      _s2 += x3[ii] * y3[ii];
-    }
-    s[0] = _s0; s[1] = _s1, s[2] = _s2;
+  cs_dot_xx_xy_yz(n_elts, x, y, z, s, s+1, s+2);
 
 #if defined(HAVE_MPI)
 
@@ -846,7 +826,7 @@ _conjugate_gradient(const char             *var_name,
 
   /* Descent parameter */
 
-  _dot_products_2(n_rows, rk, dk, dk, zk, &ro_0, &ro_1);
+  _dot_products_xy_yz(n_rows, rk, dk, zk, &ro_0, &ro_1);
 
   alpha =  - ro_0 / ro_1;
 
@@ -884,7 +864,7 @@ _conjugate_gradient(const char             *var_name,
 
     /* compute residue and prepare descent parameter */
 
-    _dot_products_2(n_rows, rk, rk, rk, gk, &residue, &rk_gk);
+    _dot_products_xx_xy(n_rows, rk, gk, &residue, &rk_gk);
 
     residue = sqrt(residue);
 
@@ -910,7 +890,7 @@ _conjugate_gradient(const char             *var_name,
 
     cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
 
-    _dot_products_2(n_rows, rk, dk, dk, zk, &ro_0, &ro_1);
+    _dot_products_xy_yz(n_rows, rk, dk, zk, &ro_0, &ro_1);
 
     alpha =  - ro_0 / ro_1;
 
@@ -1081,7 +1061,7 @@ _conjugate_gradient_sr(const char             *var_name,
 
   /* Descent parameter */
 
-  _dot_products_2(n_rows, rk, dk, dk, zk, &ro_0, &ro_1);
+  _dot_products_xy_yz(n_rows, rk, dk, zk, &ro_0, &ro_1);
 
   alpha =  - ro_0 / ro_1;
 
@@ -1123,7 +1103,7 @@ _conjugate_gradient_sr(const char             *var_name,
 
     /* compute residue and prepare descent parameter */
 
-    _dot_products_3(n_rows, rk, rk, rk, gk, gk, sk, &residue, &rk_gk, &gk_sk);
+    _dot_products_xx_xy_yz(n_rows, rk, gk, sk, &residue, &rk_gk, &gk_sk);
 
     residue = sqrt(residue);
 
@@ -1643,7 +1623,7 @@ _bi_cgstab(const char             *var_name,
     }
     else {
 
-      _dot_products_2(n_rows, res0, rk, rk, rk, &beta, &residue);
+      _dot_products_xx_xy(n_rows, rk, res0, &residue, &beta);
       residue = sqrt(residue);
 
       /* Convergence test */
@@ -1750,7 +1730,7 @@ _bi_cgstab(const char             *var_name,
 
     cs_matrix_vector_multiply(rotation_mode, a, zk, vk);
 
-    _dot_products_2(n_rows, vk, rk, vk, vk, &ro_0, &ro_1);
+    _dot_products_xx_xy(n_rows, vk, rk, &ro_1, &ro_0);
 
     if (ro_1 < _epzero) {
       bft_printf
