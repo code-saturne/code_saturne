@@ -20,6 +20,8 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -28,6 +30,20 @@
 
 #include <sys/time.h>
 #include <unistd.h>
+
+#if defined(HAVE_ESSL)
+#include <essl.h>
+
+#elif defined(HAVE_MKL)
+#include <mkl_cblas.h>
+
+#elif defined(HAVE_ACML)
+#include <acml.h>
+
+#elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS)
+#include <cblas.h>
+
+#endif
 
 #include "bft_error.h"
 #include "bft_mem.h"
@@ -44,6 +60,11 @@
 
 /* Minimum size for OpenMP loops (needs benchmarking to adjust) */
 #define THR_MIN 128
+
+#if   defined(HAVE_ACML) || defined(HAVE_ATLAS) \
+   || defined(HAVE_ESSL) || defined(HAVE_MKL)
+#  define HAVE_CBLAS 1
+#endif
 
 #if defined(HAVE_ACML)
 const char ext_blas_type[] = "ACML";
@@ -129,6 +150,7 @@ _mpi_init(void)
 #endif
     }
 
+    cs_glob_mpi_comm = MPI_COMM_WORLD;
     MPI_Comm_size(cs_glob_mpi_comm, &cs_glob_n_ranks);
     MPI_Comm_rank(cs_glob_mpi_comm, &cs_glob_rank_id);
 
@@ -205,8 +227,8 @@ _ddot_l3superblock60(cs_lnum_t      n,
     sdot = 0.0;
 
     for (bid = 0; bid < blocks_in_sblocks; bid++) {
-      start_id = block_size * bid*sid;
-      end_id = block_size * (bid*sid + 1);
+      start_id = block_size * (blocks_in_sblocks*sid + bid);
+      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
       cdot = 0.0;
       for (i = start_id; i < end_id; i++)
         cdot += x[i]*y[i];
@@ -416,7 +438,7 @@ _dot_product_1(double   t_measure,
 
     /* First simple local x.x version */
 
-#if defined(HAVE_BLAS)
+#if defined(HAVE_CBLAS)
 
     for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -493,7 +515,7 @@ _dot_product_1(double   t_measure,
 
   }
 
-#endif /* defined(HAVE_BLAS) */
+#endif /* defined(HAVE_CBLAS) */
 
     /* Local dot product */
 
@@ -601,7 +623,7 @@ _dot_product_2(double  t_measure)
 
   /* First simple local x.x version */
 
-#if defined(HAVE_BLAS)
+#if defined(HAVE_CBLAS)
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -661,7 +683,7 @@ _dot_product_2(double  t_measure)
     BFT_FREE(y);
   }
 
-#endif /* defined(HAVE_BLAS) */
+#endif /* defined(HAVE_CBLAS) */
 
   /* Local dot product */
 
@@ -748,7 +770,7 @@ _axpy_test(double  t_measure)
 
   /* First simple local x.x version */
 
-#if defined(HAVE_BLAS)
+#if defined(HAVE_CBLAS)
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -790,7 +812,7 @@ _axpy_test(double  t_measure)
     bft_printf("\n"
                "Y <- aX + Y with %s BLAS (%d elts.)\n"
                "-----------------------------\n",
-               type_name, ext_blas_type, (int)n);
+               ext_blas_type, (int)n);
 
     bft_printf("  (calls: %d)\n", n_runs);
 
@@ -800,7 +822,7 @@ _axpy_test(double  t_measure)
     BFT_FREE(y);
   }
 
-#endif /* defined(HAVE_BLAS) */
+#endif /* defined(HAVE_CBLAS) */
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -1982,9 +2004,6 @@ int
 main (int argc, char *argv[])
 {
   int sub_id;
-  cs_lnum_t n;
-  double walltime, cputime;
-
   double t_measure = 1.0;
   double test_sum = 0.0;
 
@@ -1993,8 +2012,8 @@ main (int argc, char *argv[])
 #ifdef HAVE_SETLOCALE
   if (!setlocale (LC_ALL,"")) {
 #if defined (DEBUG)
-     printf("locale not supported by C library"
-            " or bad LANG environment variable");
+     bft_printf("locale not supported by C library"
+                " or bad LANG environment variable");
 #endif
   }
 #endif /* HAVE_SETLOCALE */
@@ -2013,10 +2032,7 @@ main (int argc, char *argv[])
   cs_system_info();
 #endif
 
-  printf("\n");
-
-  walltime = cs_timer_wtime();
-  cputime  = cs_timer_cpu_time();
+  bft_printf("\n");
 
   /* Precision tests */
   /*-----------------*/
@@ -2025,10 +2041,10 @@ main (int argc, char *argv[])
 
     cs_lnum_t ii;
     double s;
+
+    cs_lnum_t n = _n_elts[sub_id];
     double ref_s = 385 * (n/10) * _pi;
     double *x = NULL, *y = NULL;
-
-    n = _n_elts[sub_id];
 
     /* Initialize arrays */
 
@@ -2042,40 +2058,40 @@ main (int argc, char *argv[])
     }
 
     s = _ddot_canonical(n, x, y);
-    printf("  Simple     dot product error for n = %7d: %12.5e\n",
-           (int)n, ref_s - s);
+    bft_printf("  Simple     dot product error for n = %7d: %12.5e\n",
+               (int)n, ref_s - s);
 
     s = _ddot_l3superblock60(n, x, y);
-    printf("  Superblock dot product error for n = %7d: %12.5e\n",
-           (int)n, ref_s - s);
+    bft_printf("  Superblock dot product error for n = %7d: %12.5e\n",
+               (int)n, ref_s - s);
 
 #if defined(HAVE_ESSL)
     s = ddot(n, (double *)x, 1, (double *)y, 1);
-    printf("  ESSL       dot product error for n = %7d: %12.5e\n",
-           (int)n, ref_s - s);
+    bft_printf("  ESSL       dot product error for n = %7d: %12.5e\n",
+               (int)n, ref_s - s);
 #elif defined(HAVE_ACML)
     s = ddot(n, (double *)x, 1, (double *)y, 1);
-    printf("  ACML       dot product error for n = %7d: %12.5e\n",
-           (int)n, ref_s - s);
+    bft_printf("  ACML       dot product error for n = %7d: %12.5e\n",
+               (int)n, ref_s - s);
 #elif defined(HAVE_MKL)
     s = cblas_ddot(n, x, 1, y, 1);
-    printf("  MKL        dot product error for n = %7d: %12.5e\n",
-           (int)n, ref_s - s);
+    bft_printf("  MKL        dot product error for n = %7d: %12.5e\n",
+               (int)n, ref_s - s);
 #elif defined(HAVE_ATLAS)
     s = cblas_ddot(n, x, 1, y, 1);
-    printf("  ATLAS      dot product error for n = %7d: %12.5e\n",
-           (int)n, ref_s - s);
+    bft_printf("  ATLAS      dot product error for n = %7d: %12.5e\n",
+               (int)n, ref_s - s);
 #elif defined(HAVE_CBLAS)
     s = cblas_ddot(n, x, 1, y, 1);
-    printf("  BLAS       dot product error for n = %7d: %12.5e\n",
-           (int)n, ref_s - s);
+    bft_printf("  BLAS       dot product error for n = %7d: %12.5e\n",
+               (int)n, ref_s - s);
 #endif
 
     s = cs_dot(n, x, y);
-    printf("  Default    dot product error for n = %7d: %12.5e\n",
-           (int)n, ref_s - s);
+    bft_printf("  Default    dot product error for n = %7d: %12.5e\n",
+               (int)n, ref_s - s);
 
-    printf("\n");
+    bft_printf("\n");
 
     BFT_FREE(y);
     BFT_FREE(x);
