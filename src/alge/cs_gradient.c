@@ -656,7 +656,7 @@ _scalar_gradient_clipping(int                    imrgra,
     for (g_id = 0; g_id < n_i_groups; g_id++) {
 
 #     pragma omp parallel for private(face_id, ii, jj, ll, \
-                                      dpdxf, dpdyf, dpdzf, dist1, dvar)
+                                      dpdxf, dpdyf, dpdzf, dist, dist1, dvar)
       for (t_id = 0; t_id < n_i_threads; t_id++) {
 
         for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
