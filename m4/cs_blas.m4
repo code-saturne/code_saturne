@@ -377,6 +377,8 @@ if test "x$with_blas" != "xno" ; then
 
 fi
 
+AM_CONDITIONAL(HAVE_ESSL, test x$with_blas_type = xESSL)
+
 AC_SUBST(cs_have_blas)
 AC_SUBST(BLAS_CPPFLAGS)
 AC_SUBST(BLAS_LDFLAGS)

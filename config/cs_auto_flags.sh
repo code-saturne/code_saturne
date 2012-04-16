@@ -339,8 +339,8 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
       elif test "x$cs_ibm_bg_type" = "xP" ; then
-        cppflags_default="-I/bgsys/drivers/ppcfloor/comm/include"
-        cflags_default="-qlanglvl=stdc99"
+        cppflags_default="-I/bgsys/drivers/ppcfloor/arch/include"
+        cflags_default="-qlanglvl=extc99"
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"

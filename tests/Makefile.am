@@ -133,6 +133,9 @@ cs_blas_test_CPPFLAGS  = \
 cs_blas_test_CFLAGS  = $(AM_CFLAGS) $(CFLAGS_HOT)
 cs_blas_test_LDFLAGS  = $(BLAS_LDFLAGS) $(LDFLAGS_CS_TESTS)
 cs_blas_test_LDADD    = $(BLASRUNPATH) $(BLAS_LIBS) $(LDADD_CS_TESTS)
+if HAVE_ESSL
+cs_blas_test_LDADD    += $(FCLIBS)
+endif
 
 cs_core_test_SOURCES  = cs_core_test.c
 cs_core_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)

@@ -61,11 +61,6 @@
 /* Minimum size for OpenMP loops (needs benchmarking to adjust) */
 #define THR_MIN 128
 
-#if   defined(HAVE_ACML) || defined(HAVE_ATLAS) \
-   || defined(HAVE_ESSL) || defined(HAVE_MKL)
-#  define HAVE_CBLAS 1
-#endif
-
 #if defined(HAVE_ACML)
 const char ext_blas_type[] = "ACML";
 #elif defined(HAVE_ATLAS)
@@ -183,70 +178,6 @@ _ddot_canonical(cs_lnum_t      n,
     s += (x[i] * y[i]);
 
   return s;
-}
-
-/*----------------------------------------------------------------------------
- * Return the dot product of 2 vectors: x.y
- *
- * The algorithm used is l3superblock60, based on the article:
- * "Reducing Floating Point Error in Dot Product Using the Superblock Family
- * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
- * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156–1174
- * 2008 Society for Industrial and Applied Mathematics
- *
- * parameters:
- *   n <-- size of arrays x and y
- *   x <-- array of floating-point values
- *   y<-- array of floating-point values
- *
- * returns:
- *   dot product
- *----------------------------------------------------------------------------*/
-
-static double
-_ddot_l3superblock60(cs_lnum_t      n,
-                     const double  *x,
-                     const double  *y)
-{
-  const cs_lnum_t block_size = 60;
-
-  cs_lnum_t sid, bid, i;
-  cs_lnum_t start_id, end_id;
-  double sdot, cdot;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
-  double dot = 0.0;
-
-# pragma omp parallel for reduction(+:dot) private(bid, start_id, end_id, i, \
-                                                   cdot, sdot) if (n > THR_MIN)
-  for (sid = 0; sid < n_sblocks; sid++) {
-
-    sdot = 0.0;
-
-    for (bid = 0; bid < blocks_in_sblocks; bid++) {
-      start_id = block_size * (blocks_in_sblocks*sid + bid);
-      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-      cdot = 0.0;
-      for (i = start_id; i < end_id; i++)
-        cdot += x[i]*y[i];
-      sdot += cdot;
-    }
-
-    dot += sdot;
-
-  }
-
-  cdot = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  for (i = start_id; i < end_id; i++)
-    cdot += x[i] * y[i];
-  dot += cdot;
-
-  return dot;
 }
 
 /*----------------------------------------------------------------------------
@@ -438,7 +369,8 @@ _dot_product_1(double   t_measure,
 
     /* First simple local x.x version */
 
-#if defined(HAVE_CBLAS)
+#if   defined(HAVE_ESSL) || defined(HAVE_ACML) \
+   || defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
 
     for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -473,10 +405,8 @@ _dot_product_1(double   t_measure,
         while (run_id < n_runs) {
 #if defined(HAVE_ESSL) || defined(HAVE_ACML)
           double s1 = ddot(n, (double *)x, 1, (double *)y, 1);
-#elif defined(HAVE_ATLAS) || defined(HAVE_MKL)
+#elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
           double s1 = cblas_ddot(n, x, 1, y, 1);
-#else
-#  error "Unhandled BLAS"
 #endif
 #if defined(HAVE_MPI)
           if (_global) {
@@ -515,7 +445,7 @@ _dot_product_1(double   t_measure,
 
   }
 
-#endif /* defined(HAVE_CBLAS) */
+#endif /* external BLAS */
 
     /* Local dot product */
 
@@ -623,7 +553,8 @@ _dot_product_2(double  t_measure)
 
   /* First simple local x.x version */
 
-#if defined(HAVE_CBLAS)
+#if   defined(HAVE_ESSL) || defined(HAVE_ACML) \
+   || defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -656,11 +587,9 @@ _dot_product_2(double  t_measure)
 #if defined(HAVE_ESSL) || defined(HAVE_ACML)
         double s1 = ddot(n, (double *)x, 1, (double *)x, 1);
         double s2 = ddot(n, (double *)x, 1, (double *)y, 1);
-#elif defined(HAVE_ATLAS) || defined(HAVE_MKL)
+#elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS) || defined(HAVE_MKL)
         double s1 = cblas_ddot(n, x, 1, x, 1);
         double s2 = cblas_ddot(n, x, 1, y, 1);
-#else
-#  error "Unhandled BLAS"
 #endif
         test_sum += test_sum_mult*(s1+s2);
         run_id++;
@@ -683,14 +612,14 @@ _dot_product_2(double  t_measure)
     BFT_FREE(y);
   }
 
-#endif /* defined(HAVE_CBLAS) */
+#endif /* external BLAS */
 
   /* Local dot product */
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
     n = _n_elts[sub_id];
-    n_ops = CS_MAX(n*2 - 1, 0);
+    n_ops = 2 * (n*2 - 1);
 
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
@@ -716,7 +645,8 @@ _dot_product_2(double  t_measure)
     while (run_id < n_runs) {
       double test_sum_mult = 1.0/n_runs;
       while (run_id < n_runs) {
-        double s1 = cs_dot(n, x, y);
+        double s1 = cs_dot(n, x, x);
+        double s2 = cs_dot(n, x, y);
         test_sum += test_sum_mult*s1;
         run_id++;
       }
@@ -770,7 +700,8 @@ _axpy_test(double  t_measure)
 
   /* First simple local x.x version */
 
-#if defined(HAVE_CBLAS)
+#if   defined(HAVE_ESSL) || defined(HAVE_ACML) \
+   || defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -826,7 +757,7 @@ _axpy_test(double  t_measure)
     BFT_FREE(y);
   }
 
-#endif /* defined(HAVE_CBLAS) */
+#endif /* external BLAS */
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -2062,10 +1993,10 @@ main (int argc, char *argv[])
     }
 
     s = _ddot_canonical(n, x, y);
-    bft_printf("  Simple     dot product error for n = %7d: %12.5e\n",
+    bft_printf("  Canonical  dot product error for n = %7d: %12.5e\n",
                (int)n, ref_s - s);
 
-    s = _ddot_l3superblock60(n, x, y);
+    s = cs_dot(n, x, y);
     bft_printf("  Superblock dot product error for n = %7d: %12.5e\n",
                (int)n, ref_s - s);
 
@@ -2090,10 +2021,6 @@ main (int argc, char *argv[])
     bft_printf("  BLAS       dot product error for n = %7d: %12.5e\n",
                (int)n, ref_s - s);
 #endif
-
-    s = cs_dot(n, x, y);
-    bft_printf("  Default    dot product error for n = %7d: %12.5e\n",
-               (int)n, ref_s - s);
 
     bft_printf("\n");
 
