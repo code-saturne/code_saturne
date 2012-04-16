@@ -800,7 +800,11 @@ _axpy_test(double  t_measure)
     while (run_id < n_runs) {
       double test_sum_mult = 1.0/n_runs;
       while (run_id < n_runs) {
-        cs_axpy(n, test_sum_mult, x, y);
+#if defined(HAVE_ACML) || defined(HAVE_ESSL)
+        daxpy(n, test_sum_mult, (double *)x, 1, (double *)y, 1);
+#elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS) || defined(HAVE_MKL)
+        cblas_daxpy(n, test_sum_mult, x, 1, y, 1);
+#endif
         test_sum += test_sum_mult*y[run_id%n];
         run_id++;
       }

@@ -850,8 +850,16 @@ _conjugate_gradient(const char             *var_name,
 
   alpha =  - ro_0 / ro_1;
 
-  cs_axpy(n_rows, alpha, dk, vx);
-  cs_axpy(n_rows, alpha, zk, rk);
+# pragma omp parallel if(n_rows > THR_MIN)
+  {
+#   pragma omp for nowait
+    for (ii = 0; ii < n_rows; ii++)
+      vx[ii] += (alpha * dk[ii]);
+
+#   pragma omp for nowait
+    for (ii = 0; ii < n_rows; ii++)
+      rk[ii] += (alpha * zk[ii]);
+  }
 
   /* Convergence test */
 
@@ -906,8 +914,25 @@ _conjugate_gradient(const char             *var_name,
 
     alpha =  - ro_0 / ro_1;
 
+#if defined(HAVE_OPENMP)
+
+#   pragma omp parallel if(n_rows > THR_MIN)
+    {
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++)
+        vx[ii] += (alpha * dk[ii]);
+
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++)
+        rk[ii] += (alpha * zk[ii]);
+    }
+
+#else
+
     cs_axpy(n_rows, alpha, dk, vx);
     cs_axpy(n_rows, alpha, zk, rk);
+
+#endif
 
   }
 
@@ -1062,8 +1087,16 @@ _conjugate_gradient_sr(const char             *var_name,
 
   rk_gkm1 = ro_0;
 
-  cs_axpy(n_rows, alpha, dk, vx);
-  cs_axpy(n_rows, alpha, zk, rk);
+# pragma omp parallel if(n_rows > THR_MIN)
+  {
+#   pragma omp for nowait
+    for (ii = 0; ii < n_rows; ii++)
+      vx[ii] += (alpha * dk[ii]);
+
+#   pragma omp for nowait
+    for (ii = 0; ii < n_rows; ii++)
+      rk[ii] += (alpha * zk[ii]);
+  }
 
   /* Convergence test */
 
@@ -1115,12 +1148,18 @@ _conjugate_gradient_sr(const char             *var_name,
 
     alpha =  - ro_0 / ro_1;
 
-#   pragma omp parallel for firstprivate(alpha, beta) if(n_rows > THR_MIN)
-    for (ii = 0; ii < n_rows; ii++) {
-      dk[ii] = gk[ii] + (beta * dk[ii]);
-      vx[ii] = vx[ii] + (alpha * dk[ii]);
-      zk[ii] = sk[ii] + (beta * zk[ii]);
-      rk[ii] = rk[ii] + (alpha * zk[ii]);
+#   pragma omp parallel if(n_rows > THR_MIN)
+    {
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++) {
+        dk[ii] = gk[ii] + (beta * dk[ii]);
+        vx[ii] = vx[ii] + (alpha * dk[ii]);
+      }
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++) {
+        zk[ii] = sk[ii] + (beta * zk[ii]);
+        rk[ii] = rk[ii] + (alpha * zk[ii]);
+      }
     }
 
   }
@@ -1676,8 +1715,25 @@ _bi_cgstab(const char             *var_name,
 
     /* First update of vx and rk */
 
+#if defined(HAVE_OPENMP)
+
+#   pragma omp parallel if(n_rows > THR_MIN)
+    {
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++)
+        vx[ii] += (gamma * zk[ii]);
+
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++)
+        rk[ii] -= (gamma * uk[ii]);
+    }
+
+#else
+
     cs_axpy(n_rows,  gamma, zk, vx);
     cs_axpy(n_rows, -gamma, uk, rk);
+
+#endif
 
     /* Compute zk = C.rk (zk is overwritten, vk is a working array */
 
@@ -1715,8 +1771,25 @@ _bi_cgstab(const char             *var_name,
 
     /* Final update of vx and rk */
 
+#if defined(HAVE_OPENMP)
+
+#   pragma omp parallel if(n_rows > THR_MIN)
+    {
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++)
+        vx[ii] += (alpha * zk[ii]);
+
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++)
+        rk[ii] -= (alpha * vk[ii]);
+    }
+
+#else
+
     cs_axpy(n_rows,  alpha, zk, vx);
     cs_axpy(n_rows, -alpha, vk, rk);
+
+#endif
 
     /* Convergence test at beginning of next iteration so
        as to group dot products for better parallel performance */
@@ -2011,17 +2084,26 @@ _gmres(const char             *var_name,
 
       cs_matrix_vector_multiply(rotation_mode, a, gk, dk);
 
-      for (kk = 0; kk < ii + 1; kk++) {
+      for (jj = 0; jj < ii + 1; jj++) {
 
         /* compute h(k,i) = <w,vi> = <dk,vi> */
-        _h_matrix[ii*krylov_size + kk]
-          = _dot_product(n_rows, dk, (_krylov_vectors + kk*n_rows));
+        _h_matrix[ii*krylov_size + jj]
+          = _dot_product(n_rows, dk, (_krylov_vectors + jj*n_rows));
 
         /* compute w = dk <- w - h(i,k)*vi */
+
+#if defined(HAVE_OPENMP)
+#       pragma omp parallel for if(n_rows > THR_MIN)
+        for (kk = 0; kk < n_rows; kk++)
+          dk[kk] -= (  _h_matrix[ii*krylov_size+jj]
+                     * _krylov_vectors[jj*n_rows + kk]);
+#else
         cs_axpy(n_rows,
-                -_h_matrix[ii*krylov_size+kk],
-                (_krylov_vectors + kk*n_rows),
+                -_h_matrix[ii*krylov_size+jj],
+                (_krylov_vectors + jj*n_rows),
                 dk);
+#endif
+
       }
 
       /* compute h(i+1,i) = sqrt<w,w> */
@@ -2048,7 +2130,7 @@ _gmres(const char             *var_name,
         /* solve diag sup system */
         _solve_diag_sup_halo(_h_matrix, l_iter + 1, krylov_size, _beta, gk);
 
-#if defined(HAVE_CBLAS) || defined(HAVE_MKL)
+#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) || defined(HAVE_MKL)
 
         cblas_dgemv(CblasColMajor,
                     CblasNoTrans,
