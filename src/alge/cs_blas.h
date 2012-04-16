@@ -59,10 +59,6 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#if defined(HAVE_ATLAS) || defined (HAVE_MKL)
-#define HAVE_CBLAS 1
-#endif
-
 /*============================================================================
  *  Public function prototypes for Fortran API
  *============================================================================*/
@@ -95,12 +91,12 @@ double CS_PROCF(csdot, CSDOT)(const cs_int_t  *n,
  *   y <-- array of floating-point values
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_ESSL) || defined(HAVE_ACML)
+#if defined(HAVE_ACML) || defined(HAVE_ESSL)
 
 #define cs_axpy(_n, _a, _x, _y) \
   daxpy(_n, _a, (double *)_x, 1, (double *)_y, 1)
 
-#elif defined(HAVE_MKL) || defined(HAVE_CBLAS)
+#elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS) || defined(HAVE_MKL)
 
 #define cs_axpy(_n, _a, _x, _y) \
   cblas_daxpy(_n, _a, _x, 1, _y, 1)
@@ -113,10 +109,12 @@ cs_axpy(cs_lnum_t      n,
         const double  *x,
         double        *restrict y);
 
-#endif /* BLAS type */
+#endif /* BLAS defined */
 
 /*----------------------------------------------------------------------------
  * Return the dot product of 2 vectors: x.y
+ *
+ * For better precision, a superblock algorithm is used.
  *
  * parameters:
  *   n <-- size of arrays x and y
@@ -127,32 +125,10 @@ cs_axpy(cs_lnum_t      n,
  *   dot product
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_ESSL) || defined(HAVE_ACML)
-
-#define cs_dot(_n, _x, _y) \
-  ddot(_n, (double *)_x, 1, (double *)_y, 1)
-
-#elif defined(HAVE_ATLAS) || defined(HAVE_MKL)
-
-#define cs_dot(_n, _x, _y) \
-  cblas_ddot(_n, _x, 1, _y, 1)
-
-#else
-
- /*
-  * The fallback algorithm used is l3superblock60, based on the article:
-  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
-  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
-  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156–1174
-  * 2008 Society for Industrial and Applied Mathematics
-  */
-
 double
 cs_dot(cs_lnum_t      n,
        const double  *x,
        const double  *y);
-
-#endif /* BLAS type */
 
 /*----------------------------------------------------------------------------*/
 

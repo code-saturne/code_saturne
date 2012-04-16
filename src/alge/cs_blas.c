@@ -102,7 +102,8 @@ double CS_PROCF(csdot, CSDOT)(const cs_int_t  *n,
  *   y <-- array of floating-point values
  *----------------------------------------------------------------------------*/
 
-#if !defined(HAVE_CBLAS) && !defined(HAVE_ESSL)  && !defined (HAVE_ACML)
+#if    !defined(HAVE_ACML) && !defined(HAVE_ESSL) \
+    && !defined(HAVE_ATLAS) && !defined(HAVE_CBLAS) && !defined(HAVE_MKL)
 
 void cs_axpy(cs_lnum_t      n,
              double         a,
@@ -119,11 +120,12 @@ void cs_axpy(cs_lnum_t      n,
     y[i] += (a * x[i]);
 }
 
-#endif /*    !defined(HAVE_CBLAS)
-          && !defined(HAVE_ESSL)  && !defined (HAVE_ACML) */
+#endif /* BLAS defined */
 
 /*----------------------------------------------------------------------------
  * Return the dot product of 2 vectors: x.y
+ *
+ * For better precision, a superblock algorithm is used.
  *
  * parameters:
  *   n <-- size of arrays x and y
@@ -133,17 +135,6 @@ void cs_axpy(cs_lnum_t      n,
  * returns:
  *   dot product
  *----------------------------------------------------------------------------*/
-
-#if    !defined(HAVE_ESSL) && !defined (HAVE_ACML) \
-    && !defined(HAVE_ATLAS) && !defined(HAVE_MKL)
-
- /*
-  * The fallback algorithm used is l3superblock60, based on the article:
-  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
-  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
-  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156–1174
-  * 2008 Society for Industrial and Applied Mathematics
-  */
 
 double
 cs_dot(cs_lnum_t      n,
@@ -161,6 +152,14 @@ cs_dot(cs_lnum_t      n,
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
   double dot = 0.0;
+
+ /*
+  * The algorithm used is l3superblock60, based on the article:
+  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156–1174
+  * 2008 Society for Industrial and Applied Mathematics
+  */
 
 # pragma omp parallel for reduction(+:dot) private(bid, start_id, end_id, i, \
                                                    cdot, sdot) if (n > THR_MIN)
@@ -190,9 +189,6 @@ cs_dot(cs_lnum_t      n,
 
   return dot;
 }
-
-#endif /*    !defined(HAVE_ESSL) && !defined (HAVE_ACML) \
-          && !defined(HAVE_ATLAS) && !defined(HAVE_MKL) */
 
 /*----------------------------------------------------------------------------*/
 
