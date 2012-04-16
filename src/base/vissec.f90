@@ -134,7 +134,7 @@ double precision viscf(nfac), viscb(nfabor)
 ! Local variables
 
 integer          iccocg, inc, iel, ifac, ivar, isou, ii, jj, init
-integer          idim
+integer          idim, ig, it
 integer          iclvar
 integer          nswrgp, imligp, iwarnp
 integer          ipcrom, ipbrom, ipcvis, ipcvst, iflmas, iflmab
@@ -163,8 +163,8 @@ ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
 
 
-if(ippmod(icompf).ge.0) then
-  if(iviscv.gt.0) then
+if (ippmod(icompf).ge.0) then
+  if (iviscv.gt.0) then
     ipcvsv = ipproc(iviscv)
   else
     ipcvsv = 0
@@ -181,12 +181,12 @@ iflmab = ipprob(ifluma(iu))
 
 
 !     Si on extrapole les termes sources, on prend les prop a l'instant n
-if(isno2t.gt.0) then
-  if(iroext.gt.0) then
+if (isno2t.gt.0) then
+  if (iroext.gt.0) then
     ipcrom = ipproc(iroma )
     ipbrom = ipprob(iroma )
   endif
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     ipcvis = ipproc(ivisla)
     ipcvst = ipproc(ivista)
   endif
@@ -196,10 +196,12 @@ endif
 ! --- Calcul de la viscosite totale
 
 if (itytur.eq.3) then
+  !$omp parallel do firstprivate(ipcvis)
   do iel = 1, ncel
     vistot(iel) = propce(iel,ipcvis)
   enddo
 else
+  !$omp parallel do firstprivate(ipcvis, ipcvst)
   do iel = 1, ncel
     vistot(iel) = propce(iel,ipcvis) + propce(iel,ipcvst)
   enddo
@@ -259,12 +261,18 @@ do isou = 1, 3
    rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
    grad   )
 
-
+  !$omp parallel do
   do iel = 1, ncelet
     w6(iel) = 1.d0
   enddo
-  do ifac = 1, nfabor
-    w6(ifabor(ifac)) = 0.d0
+
+  do ig = 1, ngrpb
+    !$omp parallel do private(ifac) if(nfabor > 128)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+        w6(ifabor(ifac)) = 0.d0
+      enddo
+    enddo
   enddo
 
 ! --- Assemblage sur les faces internes
@@ -273,15 +281,18 @@ do isou = 1, 3
 
 ! On a echange le gradient dans grdcel et vistot plus haut
 
-    if(idim.eq.1) then
+    if (idim.eq.1) then
+      !$omp parallel do
       do iel = 1, ncelet
         w4(iel) = vistot(iel)*grad(iel,1)
       enddo
-    elseif(idim.eq.2) then
+    elseif (idim.eq.2) then
+      !$omp parallel do
       do iel = 1, ncelet
         w4(iel) = vistot(iel)*grad(iel,2)
       enddo
-    elseif(idim.eq.3) then
+    elseif (idim.eq.3) then
+      !$omp parallel do
       do iel = 1, ncelet
         w4(iel) = vistot(iel)*grad(iel,3)
       enddo
@@ -289,6 +300,7 @@ do isou = 1, 3
 
     ! With porosity
     if (iporos.eq.1) then
+      !$omp parallel do
       do iel = 1, ncelet
         w4(iel) = w4(iel)*porosi(iel)
       enddo
@@ -297,31 +309,25 @@ do isou = 1, 3
 ! On initialise TRAV(NCEL+1, NCELET)
 !     (valeur bidon, mais pas NaN : les calculs sur le halo sont
 !      par principe denue de sens, sauf exception)
-    if(ncelet.gt.ncel) then
+    if (ncelet.gt.ncel) then
+      !$omp parallel do if (ncelet - ncel > 128)
       do iel = ncel+1, ncelet
         trav(iel,idim) = 0.d0
       enddo
     endif
 
-
-
-    do ifac = 1, nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-!MO             VECFAC = SURFAC(ISOU,IFAC)
-!MO     &                  *(POND(IFAC)*W4(II)+(1.D0-POND(IFAC))*W4(JJ))
-      vecfac = surfac(isou,ifac)*(w4(ii)+w4(jj))*0.5d0
-      trav(ii,idim) = trav(ii,idim) + vecfac*w6(ii)
-      trav(jj,idim) = trav(jj,idim) - vecfac*w6(jj)
+    do ig = 1, ngrpi
+      !$omp parallel do firstprivate(isou) private(ifac, ii, jj, vecfac)
+      do it = 1, nthrdi
+        do ifac = iompli(1,ig,it), iompli(2,ig,it)
+          ii = ifacel(1,ifac)
+          jj = ifacel(2,ifac)
+          vecfac = surfac(isou,ifac)*(w4(ii)+w4(jj))*0.5d0
+          trav(ii,idim) = trav(ii,idim) + vecfac*w6(ii)
+          trav(jj,idim) = trav(jj,idim) - vecfac*w6(jj)
+        enddo
+      enddo
     enddo
-
-
-! --- Assemblage sur les faces de bord
-
-!MO            DO IFAC = 1, NFABOR
-!MO             II = IFABOR(IFAC)
-!MO             TRAV(II,IDIM) = TRAV(II,IDIM) + SURFBO(ISOU,IFAC)*W4(II)
-!MO            ENDDO
 
   enddo
 
@@ -342,42 +348,47 @@ deallocate(w6)
 ! Allocate a temporary array
 allocate(w1(ncelet))
 
+!$omp parallel do firstprivate(ipcrom, iflmas) private(ii, jj, romf)
 do ifac = 1, nfac
   ii = ifacel(1,ifac)
   jj = ifacel(2,ifac)
-!MO        ROMF = POND(IFAC)*PROPCE(II,IPCROM)
-!MO     &      + (1.D0-POND(IFAC))*PROPCE(JJ,IPCROM)
   romf = (propce(ii,ipcrom)+propce(jj,ipcrom))*0.5d0
   viscf(ifac) = propfa(ifac,iflmas)/romf
 enddo
+
+!$omp parallel do firstprivate(ipbrom, iflmab) if(nfabor > 128)
 do ifac = 1, nfabor
   viscb(ifac) = propfb(ifac,iflmab)/propfb(ifac,ipbrom)
 enddo
 
 init = 1
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-                                   ifacel,ifabor,viscf ,viscb ,w1)
+call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,            &
+!==========
+            ifacel,ifabor,viscf ,viscb ,w1)
 
 d2s3m = -2.d0/3.d0
 
 
-if(ipcvsv.gt.0) then
+if (ipcvsv.gt.0) then
+  !$omp parallel do
   do iel = 1, ncel
-    w4(iel) = ( propce(iel,ipcvsv) + d2s3m*vistot(iel) )          &
-            * w1(iel)/volume(iel)
+    w4(iel) = ( propce(iel,ipcvsv) + d2s3m*vistot(iel) )   &
+              * w1(iel)/volume(iel)
   enddo
-elseif(ipcvsv.eq.0) then
+else if (ipcvsv.eq.0) then
+  !$omp parallel do
   do iel = 1, ncel
     w4(iel) = ( viscv0      + d2s3m*vistot(iel) )          &
-            * w1(iel)/volume(iel)
+              * w1(iel)/volume(iel)
   enddo
 else
-
-  if( itytur.eq.4) then
+  if (itytur.eq.4) then
+    !$omp parallel do firstprivate(d2s3m, ipcvis)
     do iel = 1, ncel
       w4(iel) = d2s3m*propce(iel,ipcvis)*w1(iel)/volume(iel)
     enddo
   else
+    !$omp parallel do firstprivate(d2s3m)
     do iel = 1, ncel
       w4(iel) = d2s3m*vistot(iel)*w1(iel)/volume(iel)
     enddo
@@ -396,10 +407,10 @@ if (irangp.ge.0.or.iperio.eq.1) then
 endif
 
 
+!$omp parallel do private(ii, jj)
 do ifac = 1, nfac
   ii = ifacel(1,ifac)
   jj = ifacel(2,ifac)
-!MO        VISCF (IFAC) = (POND(IFAC)*W4(II)+(1.D0-POND(IFAC))*W4(JJ))
   viscf (ifac) = (w4(ii)+w4(jj))*0.5d0
 enddo
 
@@ -407,32 +418,49 @@ do isou = 1, 3
 
   idim = isou
 
+  ! --- Assemblage sur les faces internes
 
-! --- Assemblage sur les faces internes
+  do ig = 1, ngrpi
+    !$omp parallel do firstprivate(isou) private(ifac, ii, jj, vecfac) &
+    !$omp          if(nfabor > 128)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
+        vecfac = surfac(isou,ifac)*viscf(ifac)
+        trav(ii,idim) = trav(ii,idim) + vecfac
+        trav(jj,idim) = trav(jj,idim) - vecfac
+      enddo
+    enddo
+  enddo
 
-  do ifac = 1, nfac
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-    vecfac = surfac(isou,ifac)*viscf(ifac)
-    trav(ii,idim) = trav(ii,idim) + vecfac
-    trav(jj,idim) = trav(jj,idim) - vecfac
+  ! --- Assemblage sur les faces de bord
+
+  do ig = 1, ngrpb
+    !$omp parallel do firstprivate(idim, isou) private(ifac, ii) if(nfabor > 128)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+        ii = ifabor(ifac)
+        trav(ii,idim) = trav(ii,idim) + surfbo(isou,ifac)*w4(ii)
+      enddo
+    enddo
   enddo
 
 
-! --- Assemblage sur les faces de bord
-
-  do ifac = 1, nfabor
-    ii = ifabor(ifac)
-    trav(ii,idim) = trav(ii,idim) + surfbo(isou,ifac)*w4(ii)
-  enddo
-
-! --- Calcul des efforts aux bords (partie 4/5)
+  ! --- Calcul des efforts aux bords (partie 4/5)
 
   if (ineedf.eq.1) then
-    do ifac = 1, nfabor
-      ii = ifabor(ifac)
-      forbr(isou,ifac) = forbr(isou,ifac) + surfbo(isou,ifac)*w4(ii)
+
+    do ig = 1, ngrpb
+      !$omp parallel do firstprivate(isou) private(ifac, ii) if(nfabor > 128)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+          ii = ifabor(ifac)
+          forbr(isou,ifac) = forbr(isou,ifac) + surfbo(isou,ifac)*w4(ii)
+        enddo
+      enddo
     enddo
+
   endif
 
 enddo

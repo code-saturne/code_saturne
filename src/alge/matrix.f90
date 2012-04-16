@@ -71,10 +71,9 @@ subroutine matrix &
 ! xa (nfac,*)      ! tr ! --> ! extra  diagonale de la matrice                 !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -98,12 +97,12 @@ integer          ifacel(2,nfac), ifabor(nfabor)
 double precision coefbp(nfabor), rovsdt(ncelet)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscf(nfac), viscb(nfabor)
-double precision da(ncelet ),xa(nfac ,isym)
+double precision da(ncelet ), xa(nfac ,isym)
 
 ! Local variables
 
-integer          ifac,ii,jj,iel
-double precision flui,fluj,epsi
+integer          ifac, ii, jj, iel, ig, it
+double precision flui, fluj, epsi
 
 !===============================================================================
 
@@ -111,28 +110,32 @@ double precision flui,fluj,epsi
 ! 1. INITIALISATION
 !===============================================================================
 
-if(isym.ne.1.and.isym.ne.2) then
+if (isym.ne.1.and.isym.ne.2) then
   write(nfecra,1000) isym
   call csexit (1)
 endif
 
 epsi = 1.d-7
 
+!omp parallel do
 do iel = 1, ncel
   da(iel) = rovsdt(iel)
 enddo
-if(ncelet.gt.ncel) then
+if (ncelet.gt.ncel) then
+  !omp parallel do if (ncelet - ncel > 128)
   do iel = ncel+1, ncelet
     da(iel) = 0.d0
   enddo
 endif
 
-if(isym.eq.2) then
+if (isym.eq.2) then
+  !omp parallel do
   do ifac = 1, nfac
     xa(ifac,1) = 0.d0
     xa(ifac,2) = 0.d0
   enddo
 else
+  !omp parallel do
   do ifac = 1, nfac
     xa(ifac,1) = 0.d0
   enddo
@@ -142,18 +145,20 @@ endif
 ! 2.    CALCUL DES TERMES EXTRADIAGONAUX
 !===============================================================================
 
-if(isym.eq.2) then
+if (isym.eq.2) then
 
-  do ifac = 1,nfac
-    flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-    fluj =-0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
+  !$omp parallel do firstprivate(thetap, iconvp, idiffp) private(flui, fluj)
+  do ifac = 1, nfac
+    flui = 0.5d0*(flumas(ifac) -abs(flumas(ifac)))
+    fluj =-0.5d0*(flumas(ifac) +abs(flumas(ifac)))
     xa(ifac,1) = thetap*(iconvp*flui -idiffp*viscf(ifac))
     xa(ifac,2) = thetap*(iconvp*fluj -idiffp*viscf(ifac))
   enddo
 
 else
 
-  do ifac = 1,nfac
+  !$omp parallel do firstprivate(thetap, iconvp, idiffp) private(flui)
+  do ifac = 1, nfac
     flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
     xa(ifac,1) = thetap*(iconvp*flui -idiffp*viscf(ifac))
   enddo
@@ -164,22 +169,32 @@ endif
 ! 3.     CONTRIBUTION DES TERMES X-TRADIAGONAUX A LA DIAGONALE
 !===============================================================================
 
-if(isym.eq.2) then
+if (isym.eq.2) then
 
-  do ifac = 1,nfac
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-    da(ii) = da(ii) -xa(ifac,2)
-    da(jj) = da(jj) -xa(ifac,1)
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
+        da(ii) = da(ii) - xa(ifac,2)
+        da(jj) = da(jj) - xa(ifac,1)
+      enddo
+    enddo
   enddo
 
 else
 
-  do ifac = 1,nfac
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-    da(ii) = da(ii) -xa(ifac,1)
-    da(jj) = da(jj) -xa(ifac,1)
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
+        da(ii) = da(ii) - xa(ifac,1)
+        da(jj) = da(jj) - xa(ifac,1)
+      enddo
+    enddo
   enddo
 
 endif
@@ -188,14 +203,19 @@ endif
 ! 4.     CONTRIBUTION DES FACETTES DE BORDS A LA DIAGONALE
 !===============================================================================
 
-do ifac=1,nfabor
-  ii = ifabor(ifac)
-  flui = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
-  fluj =-0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-  da(ii) = da(ii) + thetap*(                                    &
-                    iconvp*(-fluj + flui*coefbp(ifac) )          &
-                   +idiffp*viscb(ifac)*(1.d0-coefbp(ifac))       &
-                           )
+do ig = 1, ngrpb
+  !$omp parallel do firstprivate(thetap, iconvp, idiffp) &
+  !$omp          private(ifac, ii, flui, fluj) if(nfabor > 128)
+  do it = 1, nthrdb
+    do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+      ii = ifabor(ifac)
+      flui = 0.5d0*(flumab(ifac) - abs(flumab(ifac)))
+      fluj =-0.5d0*(flumab(ifac) + abs(flumab(ifac)))
+      da(ii) = da(ii) + thetap*(                                          &
+                                  iconvp*(-fluj + flui*coefbp(ifac))      &
+                                + idiffp*viscb(ifac)*(1.d0-coefbp(ifac)))
+    enddo
+  enddo
 enddo
 
 !===============================================================================
@@ -205,7 +225,8 @@ enddo
 !     (si IDIRCL=0, on a force NDIRCP a valoir au moins 1 pour ne pas
 !      decaler la diagonale)
 
-if ( ndircp.le.0 ) then
+if (ndircp.le.0) then
+  !omp parallel do firstprivate(epsi)
   do iel=1,ncel
     da(iel) = (1.d0+epsi)*da(iel)
   enddo
