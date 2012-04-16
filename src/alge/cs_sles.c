@@ -2110,30 +2110,12 @@ _gmres(const char             *var_name,
         /* solve diag sup system */
         _solve_diag_sup_halo(_h_matrix, l_iter + 1, krylov_size, _beta, gk);
 
-#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) || defined(HAVE_MKL)
-
-        cblas_dgemv(CblasColMajor,
-                    CblasNoTrans,
-                    n_rows,
-                    l_iter + 1,
-                    1.0,
-                    _krylov_vectors,
-                    n_rows,
-                    gk,
-                    1,
-                    0.,
-                    fk,
-                    1);
-
-#else
-
 #       pragma omp parallel for private(kk) if(n_rows > THR_MIN)
         for (jj = 0; jj < n_rows; jj++) {
           fk[jj] = 0.0;
           for (kk = 0; kk <= l_iter; kk++)
             fk[jj] += _krylov_vectors[kk*n_rows + jj] * gk[kk];
         }
-#endif
 
         _polynomial_preconditionning(n_rows,
                                      poly_degree,
