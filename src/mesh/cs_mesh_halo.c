@@ -292,28 +292,28 @@ _vtx_lookup_create(cs_lnum_t                  n_vertices,
     if (n_interfaces > 2) {
 
       cs_lnum_t  *order = NULL;
-      cs_gnum_t  *buffer = NULL;
+      cs_lnum_t  *buffer = NULL;
       cs_lnum_t *_rank_ids = NULL;
 
       assert(sizeof(cs_lnum_t) == sizeof(cs_lnum_t));
 
       BFT_MALLOC(order, n_interfaces - 1, cs_lnum_t);
-      BFT_MALLOC(buffer, n_interfaces - 1, cs_gnum_t);
+      BFT_MALLOC(buffer, n_interfaces - 1, cs_lnum_t);
       BFT_MALLOC(_rank_ids, n_interfaces , cs_lnum_t);
 
       _rank_ids[0] = vtx_lookup->rank_ids[0];
       for (i = 1; i < n_interfaces; i++) {
-        buffer[i-1] = (cs_gnum_t)vtx_lookup->if_ranks[i];
+        buffer[i-1] = vtx_lookup->if_ranks[i];
         _rank_ids[i] = vtx_lookup->rank_ids[i];
       }
 
-      cs_order_gnum_allocated(NULL,
+      cs_order_lnum_allocated(NULL,
                               buffer,
                               order,
                               n_interfaces-1);
 
       for (i = 0; i < n_interfaces - 1; i++) {
-        vtx_lookup->if_ranks[i+1] = (cs_lnum_t)buffer[order[i]];
+        vtx_lookup->if_ranks[i+1] = buffer[order[i]];
         vtx_lookup->rank_ids[i+1] = _rank_ids[order[i] + 1];
       }
 
