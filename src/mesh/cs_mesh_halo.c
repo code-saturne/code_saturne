@@ -1701,10 +1701,12 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
               if (n_added_vertices > 1) {
 
                 if (cs_glob_n_ranks > 1)
-                  bft_printf("fac_num: %d (%u)\n"
-                             "vtx_num: %d (%u) - n_added: %d\n",
-                             fac_id+1, mesh->global_i_face_num[fac_id],
-                             vtx_id+1, mesh->global_vtx_num[vtx_id],
+                  bft_printf("fac_num: %d (%llu)\n"
+                             "vtx_num: %d (%llu) - n_added: %d\n",
+                             fac_id+1,
+                             (unsigned long long)(mesh->global_i_face_num[fac_id]),
+                             vtx_id+1,
+                             (unsigned long long)(mesh->global_vtx_num[vtx_id]),
                              n_added_vertices);
                 else
                   bft_printf("fac_num: %d\n"
@@ -2155,12 +2157,12 @@ _check_i_face_cells(cs_mesh_t  *mesh)
       if (n_c_domains > 1)
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
-                  " Face %d (%u) has an incomplete connectivity.\n"
-                  " Cell1: %d - Cell2: %d (%u)",
-                  i+1, mesh->global_i_face_num[i],
+                  " Face %d (%llu) has an incomplete connectivity.\n"
+                  " Cell1: %d - Cell2: %d (%llu)",
+                  i+1, (unsigned long long)(mesh->global_i_face_num[i]),
                   mesh->i_face_cells[2*i],
                   mesh->i_face_cells[2*i+1],
-                  mesh->global_cell_num[mesh->i_face_cells[2*i+1]-1]);
+                  (unsigned long long)(mesh->global_cell_num[mesh->i_face_cells[2*i+1]-1]));
       else /* Serial run */
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
@@ -2173,11 +2175,11 @@ _check_i_face_cells(cs_mesh_t  *mesh)
       if (n_c_domains > 1)
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
-                  " Face %d (%u) has an incomplete connectivity.\n"
-                  " Cell1: %d (%u) - Cell2: %d",
-                  i+1, mesh->global_i_face_num[i],
+                  " Face %d (%llu) has an incomplete connectivity.\n"
+                  " Cell1: %d (%llu) - Cell2: %d",
+                  i+1, (unsigned long long)(mesh->global_i_face_num[i]),
                   mesh->i_face_cells[2*i],
-                  mesh->global_cell_num[mesh->i_face_cells[2*i]-1],
+                  (unsigned long long)(mesh->global_cell_num[mesh->i_face_cells[2*i]-1]),
                   mesh->i_face_cells[2*i+1]);
       else
         bft_error(__FILE__, __LINE__, 0,

@@ -198,14 +198,15 @@ _display_histograms(int           n_steps,
     /* Number of elements in each subdivision */
 
     for (i = 0, j = 1; i < n_steps - 1; i++, j++)
-      bft_printf("    %3d : [ %10.5e ; %10.5e [ = %10d\n",
-                 i+1, var_min + i*var_step, var_min + j*var_step, count[i]);
+      bft_printf("    %3d : [ %10.5e ; %10.5e [ = %10llu\n",
+                 i+1, var_min + i*var_step, var_min + j*var_step,
+                 (unsigned long long)(count[i]));
 
-    bft_printf("    %3d : [ %10.5e ; %10.5e ] = %10d\n",
+    bft_printf("    %3d : [ %10.5e ; %10.5e ] = %10llu\n",
                n_steps,
                var_min + (n_steps - 1)*var_step,
                var_max,
-               count[n_steps - 1]);
+               (unsigned long long)(count[n_steps - 1]));
 
   }
 }

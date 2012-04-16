@@ -1286,7 +1286,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
   cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
   int        g_id, t_id;
-  cs_real_t  rnorm, residue;
+  cs_real_t  rnorm;
   cs_real_t  a11, a12, a13, a21, a22, a23, a31, a32, a33;
   cs_real_t  cocg11, cocg12, cocg13, cocg21, cocg22, cocg23;
   cs_real_t  cocg31, cocg32, cocg33;
@@ -1297,6 +1297,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
   bool compute_cocg = false;
   int nswmax = nswrgp;
   int n_sweeps = 0;
+  cs_real_t residue = 0.;
 
   const double epzero = 1.e-12;
 

@@ -137,7 +137,6 @@ ecs_loc_table_post__cpt_elt_typ(const ecs_table_t  *table_def,
 
   size_t       nbr_elt;
   ecs_size_t * elt_def_pos;
-  ecs_int_t  * elt_typ_geo;
 
   ecs_tab_int_t  nbr_elt_typ_geo;
 
@@ -159,7 +158,6 @@ ecs_loc_table_post__cpt_elt_typ(const ecs_table_t  *table_def,
   elt_typ_ref_prec = -1;
 
   elt_def_pos = NULL;
-  elt_typ_geo = NULL;
 
   /* Détermination de base du type d'élément "classique" */
 

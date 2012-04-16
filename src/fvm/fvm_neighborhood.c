@@ -1230,11 +1230,11 @@ fvm_neighborhood_dump(const fvm_neighborhood_t  *n)
 
     int n_neighbors = (n->neighbor_index[i+1] - n->neighbor_index[i]);
 
-    bft_printf("global num.: %10u | n_neighbors : %3d |",
-               n->elt_num[i], n_neighbors);
+    bft_printf("global num.: %10llu | n_neighbors : %3d |",
+               (unsigned long long)(n->elt_num[i]), n_neighbors);
 
     for (j = n->neighbor_index[i]; j < n->neighbor_index[i+1]; j++)
-      bft_printf("  %10u ", n->neighbor_num[j]);
+      bft_printf("  %10llu ", (unsigned long long)(n->neighbor_num[j]));
     bft_printf("\n");
 
   }

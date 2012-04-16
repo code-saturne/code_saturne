@@ -546,7 +546,6 @@ _maillage_elt_fam_fusionne(int                  **elt_fam,
                            size_t                 nbr_elt_new,
                            const ecs_tab_int_t    vect_transf)
 {
-  size_t       nbr_elt_ref;
   ecs_int_t    ind_elt_transf;
   int          val_ref;
 
@@ -562,8 +561,6 @@ _maillage_elt_fam_fusionne(int                  **elt_fam,
 
   if (*elt_fam == NULL)
     return;
-
-  nbr_elt_ref = vect_transf.nbr;
 
   ECS_MALLOC(elt_fam_new, nbr_elt_new, int);
   for (ielt = 0; ielt < nbr_elt_new; ielt++)
@@ -1265,7 +1262,6 @@ ecs_maillage__connect_descend(ecs_maillage_t * maillage)
   ecs_tab_int_t  signe_elt;
 
   ecs_size_t nbr_fac_old = 0;
-  ecs_size_t nbr_fac_new = 0;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -1285,8 +1281,6 @@ ecs_maillage__connect_descend(ecs_maillage_t * maillage)
 
   ecs_table_def__decompose_cel(&maillage->table_def[ECS_ENTMAIL_FAC],
                                maillage->table_def[ECS_ENTMAIL_CEL]);
-
-  nbr_fac_new = ecs_table__ret_elt_nbr(maillage->table_def[ECS_ENTMAIL_FAC]);
 
   assert(maillage->table_att[ECS_ENTMAIL_FAC] == NULL);
 
@@ -1783,7 +1777,7 @@ bool
 ecs_maillage__verif(ecs_maillage_t  *maillage,
                     ecs_post_t      *cas_post)
 {
-  size_t  nbr_cel, nbr_fac, nbr_som;
+  size_t  nbr_cel, nbr_som;
   size_t  nbr_fac_erreur, nbr_fac_interne, nbr_fac_de_bord, nbr_fac_isolee;
 
   ecs_tab_int_t  typ_fac_cel;
@@ -1810,7 +1804,6 @@ ecs_maillage__verif(ecs_maillage_t  *maillage,
   /* Détermination du nombre de cellules et de faces */
 
   nbr_cel = ecs_table__ret_elt_nbr(maillage->table_def[ECS_ENTMAIL_CEL]);
-  nbr_fac = ecs_table__ret_elt_nbr(maillage->table_def[ECS_ENTMAIL_FAC]);
   nbr_som = maillage->n_vertices;
 
   /* Determination du type de connectivité associé à chaque face */

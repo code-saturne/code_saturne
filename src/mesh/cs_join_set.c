@@ -1089,7 +1089,8 @@ cs_join_gset_invert(const cs_join_gset_t  *set)
       if (elt_id == -1)
         bft_error(__FILE__, __LINE__, 0,
                   _("  Fail to build an inverted cs_join_gset_t structure.\n"
-                    "  Cannot find %u in element list.\n"), set->g_list[j]);
+                    "  Cannot find %llu in element list.\n"),
+                  (unsigned long long)(set->g_list[j]));
 
       invert_set->index[elt_id+1] += 1;
 

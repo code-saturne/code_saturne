@@ -1474,8 +1474,8 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 
   if (n_orient_pbs > 0)
     bft_printf("Warning: Possible nodal connectivity orientation\n"
-               "         problems for at least %d cells\n",
-               n_orient_pbs);
+               "         problems for at least %llu cells\n",
+               (unsigned long long)n_orient_pbs);
 
   /* Extraction of remaining polyhedra */
   /*-----------------------------------*/

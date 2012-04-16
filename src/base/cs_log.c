@@ -390,7 +390,7 @@ cs_log_printf_flush(cs_log_t log)
 
   else {
     for (i = 0; i < CS_LOG_N_TYPES; i++) {
-      retval = fflush(_cs_log[log]);
+      retval = fflush(_cs_log[i]);
       if (retval != 0)
         break;
     }

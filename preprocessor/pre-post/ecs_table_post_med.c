@@ -422,9 +422,6 @@ ecs_table_post_med__ecr_som(const char         *nom_maillage,
   /* Declarations des variables pour MED */
   /*-------------------------------------*/
 
-  char       nom_coo_med[3*MED_SNAME_SIZE + 1];
-  char       uni_coo_med[3*MED_SNAME_SIZE + 1];
-
   med_err    ret_med = 0;
 
   med_int    nbr_noe_med;
@@ -446,18 +443,6 @@ ecs_table_post_med__ecr_som(const char         *nom_maillage,
 
   nbr_som     = n_vertices;
   nbr_noe_med = (med_int)nbr_som;
-
-  /* Noms et unites des coordonnees */
-  /*--------------------------------*/
-
-  for (ind = 0; ind < (ecs_int_t)(3 * MED_SNAME_SIZE); ind++)
-    nom_coo_med[ind] = ' ', uni_coo_med[ind] = ' ';
-  nom_coo_med[MED_SNAME_SIZE * 3] = '\0';
-  uni_coo_med[MED_SNAME_SIZE * 3] = '\0';
-
-  nom_coo_med[0] = 'x';
-  nom_coo_med[MED_SNAME_SIZE    ] = 'y';
-  nom_coo_med[MED_SNAME_SIZE * 2] = 'z';
 
   /* Familles MED */
   /*--------------*/

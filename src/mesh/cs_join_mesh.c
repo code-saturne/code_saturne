@@ -976,13 +976,15 @@ _remove_empty_edges(cs_join_mesh_t  *mesh,
 
       n_simplified_faces++;
       if (verbosity > 3)
-        bft_printf("  Simplified face %d (%u)\n", i+1, mesh->face_gnum[i]);
+        bft_printf("  Simplified face %d (%llu)\n", i+1,
+                   (unsigned long long)(mesh->face_gnum[i]));
 
       if (n_face_vertices < 3)
         bft_error(__FILE__, __LINE__, 0,
                   _("  The simplified face has less than 3 vertices.\n"
                     "  Check your joining parameters.\n"
-                    "  Face %d (%u)\n"), i+1, mesh->face_gnum[i]);
+                    "  Face %d (%llu)\n"), i+1,
+                  (unsigned long long)(mesh->face_gnum[i]));
     }
 
   } /* End of loop on faces */
@@ -1129,17 +1131,19 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
 
       if (verbosity > 5) {
 
-        bft_printf("\n  Remove edge for face: %d [%u]:",
-                   i+1, mesh->face_gnum[i]);
+        bft_printf("\n  Remove edge for face: %d [%llu]:",
+                   i+1, (unsigned long long)(mesh->face_gnum[i]));
         bft_printf("\n    Initial def: ");
         for (j = start_id; j < end_id; j++) {
           cs_int_t  v_id = mesh->face_vtx_lst[j] - 1;
-          bft_printf(" %d (%u) ", v_id+1, mesh->vertices[v_id].gnum);
+          bft_printf(" %d (%llu) ", v_id+1,
+                     (unsigned long long)(mesh->vertices[v_id].gnum));
         }
         bft_printf("\n    Final def:   ");
         for (j = 0; j < n_face_vertices; j++) {
           cs_int_t  v_id = tmp->array[j] - 1;
-          bft_printf(" %d (%u) ", v_id+1, mesh->vertices[v_id].gnum);
+          bft_printf(" %d (%llu) ", v_id+1,
+                     (unsigned long long)(mesh->vertices[v_id].gnum));
         }
         bft_printf("\n");
         bft_printf_flush();
@@ -1150,7 +1154,8 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _("  The simplified face has less than 3 vertices.\n"
                     "  Check your joining parameters.\n"
-                    "  Face %d (%u)\n"), i+1, mesh->face_gnum[i]);
+                    "  Face %d (%llu)\n"), i+1,
+                  (unsigned long long)(mesh->face_gnum[i]));
 
     } /* End if n_face_vertices != n_init_vertices */
 
@@ -1224,8 +1229,9 @@ _count_new_added_vtx_to_edge(cs_int_t                v1_num,
     bft_error(__FILE__, __LINE__, 0,
               _("\n Problem in mesh connectivity.\n"
                 " Detected when updating connectivity.\n"
-                " Edge number: %d (%u) - (%d, %d) in old numbering.\n"),
-              edge_num, edges->gnum[edge_id], v1_num, v2_num);
+                " Edge number: %d (%llu) - (%d, %d) in old numbering.\n"),
+              edge_num, (unsigned long long)(edges->gnum[edge_id]),
+              v1_num, v2_num);
 
   /* Add the first vertex (new_v1_num) */
 

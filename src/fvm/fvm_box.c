@@ -781,10 +781,10 @@ fvm_box_set_dump(const fvm_box_set_t  *boxes,
       if (bmin[j] > bmax[j])
         bft_error(__FILE__, __LINE__, 0,
                   _("Inconsistent box found (min > max):\n"
-                    "  global number:  %u\n"
+                    "  global number:  %llu\n"
                     "  min       :  %10.4g\n"
                     "  max       :  %10.4g\n"),
-                  boxes->g_num[i], bmin[j], bmax[j]);
+                  (unsigned long long)(boxes->g_num[i]), bmin[j], bmax[j]);
     }
   }
 

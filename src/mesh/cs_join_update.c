@@ -1524,7 +1524,8 @@ _get_local_faces_connect(cs_int_t                 select_id,
     bft_error(__FILE__, __LINE__, 0,
               _("  Cannot find the first corresponding vertex between the face"
                 " connectivity before/after the merge step.\n"
-                "  Current global face number: %u\n"), fgnum);
+                "  Current global face number: %llu\n"),
+              (unsigned long long)fgnum);
 
   /* Store the face connectivity before the merge step */
 
@@ -1690,12 +1691,14 @@ _complete_edge_builder(const cs_join_select_t  *join_select,
 
             if (degenerate_edge == false && n_subs == 1)
               bft_error(__FILE__, __LINE__, 0,
-                        _("  Face %d (%u): Edge with two different"
-                          " descriptions: (%d, %d) [%u, %u]\n"
+                        _("  Face %d (%llu): Edge with two different"
+                          " descriptions: (%d, %d) [%llu, %llu]\n"
                           "  n_subs: %d - previous n_subs: %d\n"
                           "  Impossible to continue the mesh update after the"
                           " merge operation.\n"),
-                        fid+1, fgnum, v1_id+1, v2_id+1, v1_gnum, v2_gnum,
+                        fid+1, (unsigned long long)fgnum, v1_id+1, v2_id+1,
+                        (unsigned long long)v1_gnum,
+                        (unsigned long long)v2_gnum,
                         n_subs, edge_builder->v2v_sub_idx[edge_id+1]);
             else
               edge_builder->v2v_sub_idx[edge_id+1] =
@@ -2738,12 +2741,12 @@ _get_topo_orient(cs_int_t                omfnum,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n JoinFace num: %d - connect: [", jmfnum);
   for (k = 0; k < jsize; k++)
-    bft_printf(" %u", jconnect[k]);
+    bft_printf(" %llu", (unsigned long long)(jconnect[k]));
   bft_printf(" %u]\n", jconnect[jsize]);
   bft_printf(" OldMeshFace num: %d - connect: [", omfnum);
   for (k = 0; k < size; k++)
-    bft_printf(" %u", connect[k]);
-  bft_printf(" %u]\n", connect[size]);
+    bft_printf(" %llu", (unsigned long long)(connect[k]));
+  bft_printf(" %llu]\n", (unsigned long long)(connect[size]));
   bft_printf("ret: %d\n", ret);
   bft_printf_flush();
 #endif
@@ -3170,7 +3173,8 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 
           for (j = jms; j < jme; j++) {
             vid = jmesh->face_vtx_lst[j] - 1;
-            bft_printf(" %d (%u)", vid+1, jmesh->vertices[vid].gnum);
+            bft_printf(" %d (%llu)", vid+1,
+                       (unsigned long long)(jmesh->vertices[vid].gnum));
           }
           bft_printf("\n");
           bft_printf_flush();
@@ -4041,8 +4045,9 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
           bft_error(__FILE__, __LINE__, 0,
                     _(" Incoherency found before interior face orientation"
                       " checking.\n"
-                      " Join face %d (%u) and related faces [%d, %d]\n"),
-                    i+1, jmesh->face_gnum[i], fnum[0], fnum[1]);
+                      " Join face %d (%llu) and related faces [%d, %d]\n"),
+                    i+1, (unsigned long long)(jmesh->face_gnum[i]),
+                    fnum[0], fnum[1]);
 
       _new_face_family[n_fi_faces] = new_face_family[i];
 
@@ -4685,8 +4690,9 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 
     if (_glob[1] > 0)
       bft_error(__FILE__, __LINE__, 0,
-                _(" There are %u undefined faces with no ancestor.\n"
-                  " Cannot continue the joining algorithm.\n"), _glob[1]);
+                _(" There are %llu undefined faces with no ancestor.\n"
+                  " Cannot continue the joining algorithm.\n"),
+                (unsigned long long)(_glob[1]));
 
   }
 #endif
@@ -4818,9 +4824,9 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
            mesh->i_face_vtx_lst[j] > mesh->n_vertices)
          bft_error(__FILE__, __LINE__, 0,
                    "  Incoherency found in face -> vertex connect.\n"
-                   "  for interior face %d (%u)\n"
+                   "  for interior face %d (%llu)\n"
                    "  vtx: %d and n_vertices = %d\n",
-                   i+1, mesh->global_i_face_num[i],
+                   i+1, (unsigned long long)(mesh->global_i_face_num[i]),
                    mesh->i_face_vtx_lst[j], mesh->n_vertices);
 
     }
@@ -4836,9 +4842,9 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
            mesh->b_face_vtx_lst[j] > mesh->n_vertices)
          bft_error(__FILE__, __LINE__, 0,
                    "  Incoherency found in face -> vertex connect.\n"
-                   "  for border face %d (%u)\n"
+                   "  for border face %d (%llu)\n"
                    "  vtx: %d and n_vertices = %d\n",
-                   i+1, mesh->global_b_face_num[i],
+                   i+1, (unsigned long long)(mesh->global_b_face_num[i]),
                    mesh->b_face_vtx_lst[j], mesh->n_vertices);
 
     }
@@ -5044,9 +5050,10 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
 
   if (param.verbosity > 0) {
     bft_printf(_("\n  Mesh cleaning done for degenerate faces.\n"
-                 "    Global number of cleaned interior faces: %8u\n"
-                 "    Global number of cleaned border faces:   %8u\n"),
-               n_g_clean_faces[0], n_g_clean_faces[1]);
+                 "    Global number of cleaned interior faces: %8llu\n"
+                 "    Global number of cleaned border faces:   %8llu\n"),
+               (unsigned long long)n_g_clean_faces[0],
+               (unsigned long long) n_g_clean_faces[1]);
     bft_printf_flush();
   }
 

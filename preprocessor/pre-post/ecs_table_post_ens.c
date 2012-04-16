@@ -148,7 +148,6 @@ ecs_table_post_ens__ecr_part(const char            *nom_maillage,
 
   size_t     cpt_elt;
   size_t     cpt_elt_fin;
-  size_t     cpt_elt_tot;
   size_t     cpt_buf;
   size_t     nbr_elt;
   size_t     nbr_som;
@@ -234,8 +233,6 @@ ecs_table_post_ens__ecr_part(const char            *nom_maillage,
 
   cpt_elt = 0;
   nbr_elt = table_def->nbr;
-
-  cpt_elt_tot = 0;
 
   elt_typ_ref = -1;
 

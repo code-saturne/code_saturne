@@ -299,7 +299,7 @@ enddo
 
 ! Verification : si Hrec <= 0 on passe sans les PDF
 
-nbspdf = 0.d0
+nbspdf = 0
 do iel=1,ncel
   if ( hrec(iel) .le. 0.d0 .and. indpdf(iel).eq.1 ) then
 
