@@ -323,6 +323,7 @@ call matrix                                                       &
 
 !     En stationnaire, on relaxe la diagonale
 if (idtvar.lt.0) then
+  !$omp parallel do
   do iel = 1, ncel
     dam(iel) = dam(iel)/relaxp
   enddo
@@ -363,7 +364,7 @@ thetex = 1.d0 - thetap
 
 
 ! Si THETEX=0, ce n'est pas la peine d'en rajouter
-if(abs(thetex).gt.epzero) then
+if (abs(thetex).gt.epzero) then
   inc    = 1
 ! ON POURRAIT METTRE ICCOCG A 0 DANS LES APPELS SUIVANT
   iccocg = 1
@@ -382,13 +383,15 @@ endif
 !     AVANT DE BOUCLER SUR LES SWEEP, ON STOCKE LE SECOND MEMBRE SANS
 !     RECONSTRUCTION DANS LE TABLEAU AUXILIAIRE SMBINI
 
+!$omp parallel do
 do iel = 1, ncel
-   smbini(iel) = smbrp(iel)
+  smbini(iel) = smbrp(iel)
 enddo
 
 !     On initialise sur NCELET pour eviter une communication
+!$omp parallel do
 do iel = 1, ncelet
-   pvar(iel)   = pvark(iel)
+  pvar(iel)   = pvark(iel)
 enddo
 
 !     On passe toujours dans bilsc2 avec INC=1
@@ -414,6 +417,7 @@ do 100 isweep = 1, nswmod
 !  On est entre avec un smb explicite base sur PVARA.
 !     si on initialise avec PVAR avec autre chose que PVARA
 !     on doit donc corriger SMBR (c'est le cas lorsqu'on itere sur navsto)
+    !$omp parallel do
     do iel = 1, ncel
       smbini(iel) = smbini(iel) -                                 &
                     rovsdt(iel)*(pvar(iel) - pvara(iel))
@@ -422,6 +426,7 @@ do 100 isweep = 1, nswmod
 
   else
     iccocg = 0
+    !$omp parallel do
     do iel = 1, ncel
 !     SMBINI CONTIENT LES TERMES INSTAT, EN DIV(RHO U) ET SOURCE DE MASSE
 !     DU SECOND MEMBRE  MIS A JOUR A CHAQUE SWEEP
@@ -464,6 +469,7 @@ do 100 isweep = 1, nswmod
       iinvpp = iinvpe
     endif
     call promav(isym,1,iinvpp,dam,xam,pvar,w1)
+    !$omp parallel do
     do iel = 1, ncel
       w1(iel) = w1(iel) + smbrp(iel)
     enddo
@@ -475,6 +481,7 @@ do 100 isweep = 1, nswmod
 
 ! ---> RESOLUTION IMPLICITE SUR L'INCREMENT DPVAR
 
+  !$omp parallel do
   do iel = 1, ncel
     dpvar(iel) = 0.d0
   enddo
@@ -499,6 +506,7 @@ do 100 isweep = 1, nswmod
 
 ! ---> INCREMENTATION SOLUTION
 
+  !$omp parallel do
   do iel = 1, ncel
     pvar(iel) = pvar(iel)+dpvar(iel)
   enddo
@@ -520,14 +528,14 @@ do 100 isweep = 1, nswmod
 
 call prodsc(ncelet,ncel,isqrt,smbrp,smbrp,residu)
 
-if( residu.le.epsrsp*rnorm ) then
+if (residu.le.epsrsp*rnorm) then
    if(iwarnp.ge.1) then
       write(nfecra,1000) cnom,isweep,residu,rnorm
    endif
    goto 200
 endif
 
-if(iwarnp.ge.3) then
+if (iwarnp.ge.3) then
    write(nfecra,1000) cnom,isweep,residu,rnorm
 endif
 
@@ -554,6 +562,7 @@ if (iescap.gt.0) then
 !     SMBINI CONTIENT LES TERMES INSTAT ET EN DIV(U) DU SECOND MEMBRE
 !     MIS A JOUR A CHAQUE SWEEP,DONC AU DERNIER, POUR KMAX +1, ON A:
 
+  !$omp parallel do
   do iel = 1,ncel
     smbrp(iel) = smbini(iel) - rovsdt(iel)*dpvar(iel)
   enddo
@@ -577,8 +586,9 @@ if (iescap.gt.0) then
 !     CONTRIBUTION DES NORMES L2 DES DIFFERENTES COMPOSANTES
 !       DANS LE TABLEAU ESWORK
 
+  !$omp parallel do
   do iel = 1,ncel
-    eswork(iel) = (smbrp(iel)/ volume(iel))**2
+    eswork(iel) = (smbrp(iel) / volume(iel))**2
   enddo
 
 endif
@@ -597,7 +607,7 @@ deallocate(dam, xam)
 deallocate(dpvar, smbini)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -624,8 +634,6 @@ deallocate(dpvar, smbini)
 
 #endif
 
-!12345678 : CV-DIF-TS 2000 IT - RES= 1234567890234 NORME= 12345678901234
-!ATTENTION 12345678 : NON CONVERGENCE DU SYSTEME CONV-DIFF-TS
 !----
 ! End
 !----

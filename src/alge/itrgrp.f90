@@ -124,7 +124,7 @@ double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 
 ! Local variables
 
-integer          ifac, ii, jj, iij, iii, ivar
+integer          ifac, ii, jj, iij, iii, ivar, ig, it
 double precision pfac,pip
 double precision dpxf  , dpyf  , dpzf  , flumas, flumab
 double precision dijpfx, dijpfy, dijpfz
@@ -142,11 +142,13 @@ double precision, allocatable, dimension(:,:) :: grad
 !===============================================================================
 
 
-if( init.ge.1 ) then
+if (init.ge.1) then
+  !$omp parallel do
   do ii = 1, ncelet
     diverg(ii) = 0.d0
   enddo
-elseif(init.eq.0.and.ncelet.gt.ncel) then
+elseif (init.eq.0.and.ncelet.gt.ncel) then
+  !$omp parallel do if(ncelet - ncel > thr_n_min)
   do ii = ncel+1, ncelet
     diverg(ii) = 0.d0
   enddo
@@ -155,7 +157,7 @@ elseif(init.ne.0) then
   call csexit (1)
 endif
 
-! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+! Handle parallelism and periodicity
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(pvar)
@@ -167,31 +169,41 @@ endif
 ! 2.  INCREMENT DU FLUX DE MASSE SS TECHNIQUE DE RECONSTRUCTION
 !===============================================================================
 
-if( nswrgp.le.1 ) then
+if (nswrgp.le.1) then
 
-!     FLUX DE MASSE SUR LES FACETTES FLUIDES
+  ! Mass flow through interior faces
 
-  do ifac = 1, nfac
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, flumas)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
 
-    flumas = viscf(ifac)*(pvar(ii) -pvar(jj))
-    diverg(ii) = diverg(ii) + flumas
-    diverg(jj) = diverg(jj) - flumas
+        flumas = viscf(ifac)*(pvar(ii) -pvar(jj))
+        diverg(ii) = diverg(ii) + flumas
+        diverg(jj) = diverg(jj) - flumas
 
+      enddo
+    enddo
   enddo
 
-!     FLUX DE MASSE SUR LES FACETTES DE BORD
+  ! Mass flow though boundary faces
 
-  do ifac = 1, nfabor
+  do ig = 1, ngrpb
+    !$omp parallel do private(ifac, ii, pfac, flumab) if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-    ii = ifabor(ifac)
-    pfac = inc*coefap(ifac) +coefbp(ifac)*pvar(ii)
+        ii = ifabor(ifac)
+        pfac = inc*coefap(ifac) +coefbp(ifac)*pvar(ii)
 
-    flumab = viscb(ifac)*( pvar(ii) -pfac )
-    diverg(ii) = diverg(ii) + flumab
+        flumab = viscb(ifac)*( pvar(ii) -pfac )
+        diverg(ii) = diverg(ii) + flumab
 
+      enddo
+    enddo
   enddo
 
 endif
@@ -202,16 +214,16 @@ endif
 !         RECONSTRUCTION SI LE MAILLAGE EST NON ORTHOGONAL
 !===============================================================================
 
-if( nswrgp.gt.1 ) then
+if (nswrgp.gt.1) then
 
   ! Allocate a work array for the gradient calculation
   allocate(grad(ncelet,3))
 
-!     CALCUL DU GRADIENT
+  ! Compute gradient
 
-!     IVAR ne sert a GRDCEL que si la variable est une composante de la vitesse
-!     ou de Rij pour la periodicite. Ici la variable est soit la pression
-!     soit phi, donc on peut mettre IVAR=0
+  !   IVAR ne sert a GRDCEL que si la variable est une composante de la vitesse
+  !   ou de Rij pour la periodicite. Ici la variable est soit la pression
+  !   soit phi, donc on peut mettre IVAR=0
   ivar = 0
 
   call grdpot                                                     &
@@ -224,58 +236,68 @@ if( nswrgp.gt.1 ) then
    pvar   , coefap , coefbp ,                                     &
    grad   )
 
-! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+  ! Handle parallelism and periodicity
 
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synvec(viselx, visely, viselz)
-  !==========
-endif
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(viselx, visely, viselz)
+    !==========
+  endif
 
-!     FLUX DE MASSE SUR LES FACETTES FLUIDES
+  ! Mass flow through interior faces
 
-  do ifac = 1, nfac
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, dpxf, dpyf, dpzf, &
+    !$omp          dijpfx, dijpfy, dijpfz, dijx, dijy, dijz, flumas)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
 
-    dijpfx = dijpf(1,ifac)
-    dijpfy = dijpf(2,ifac)
-    dijpfz = dijpf(3,ifac)
+        dijpfx = dijpf(1,ifac)
+        dijpfy = dijpf(2,ifac)
+        dijpfz = dijpf(3,ifac)
 
-!---> DIJ = IJ - (IJ.N) N
-    dijx = (xyzcen(1,jj)-xyzcen(1,ii))-dijpfx
-    dijy = (xyzcen(2,jj)-xyzcen(2,ii))-dijpfy
-    dijz = (xyzcen(3,jj)-xyzcen(3,ii))-dijpfz
+        !---> Dij = IJ - (IJ.N) N
+        dijx = (xyzcen(1,jj)-xyzcen(1,ii))-dijpfx
+        dijy = (xyzcen(2,jj)-xyzcen(2,ii))-dijpfy
+        dijz = (xyzcen(3,jj)-xyzcen(3,ii))-dijpfz
 
-    dpxf = 0.5d0*(viselx(ii)*grad(ii,1) + viselx(jj)*grad(jj,1))
-    dpyf = 0.5d0*(visely(ii)*grad(ii,2) + visely(jj)*grad(jj,2))
-    dpzf = 0.5d0*(viselz(ii)*grad(ii,3) + viselz(jj)*grad(jj,3))
+        dpxf = 0.5d0*(viselx(ii)*grad(ii,1) + viselx(jj)*grad(jj,1))
+        dpyf = 0.5d0*(visely(ii)*grad(ii,2) + visely(jj)*grad(jj,2))
+        dpzf = 0.5d0*(viselz(ii)*grad(ii,3) + viselz(jj)*grad(jj,3))
 
-    flumas = viscf(ifac)*( pvar(ii) -pvar(jj) )                   &
-     + ( dpxf * dijx                                              &
-     +   dpyf * dijy                                              &
-     +   dpzf * dijz )*surfan(ifac)/dist(ifac)
-    diverg(ii) = diverg(ii) + flumas
-    diverg(jj) = diverg(jj) - flumas
+        flumas =   viscf(ifac)*(pvar(ii) -pvar(jj))                            &
+                 + (dpxf*dijx + dpyf*dijy + dpzf*dijz)*surfan(ifac)/dist(ifac)
+        diverg(ii) = diverg(ii) + flumas
+        diverg(jj) = diverg(jj) - flumas
 
+      enddo
+    enddo
   enddo
 
-!     FLUX DE MASSE SUR LES FACETTES DE BORD
+  ! Mass flow though boundary faces
 
-  do ifac = 1, nfabor
+  do ig = 1, ngrpb
+    !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac, &
+    !$omp                     flumab) if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-    ii = ifabor(ifac)
+        ii = ifabor(ifac)
 
-    diipbx = diipb(1,ifac)
-    diipby = diipb(2,ifac)
-    diipbz = diipb(3,ifac)
+        diipbx = diipb(1,ifac)
+        diipby = diipb(2,ifac)
+        diipbz = diipb(3,ifac)
 
-    pip = pvar(ii) + grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz
-    pfac = inc*coefap(ifac) +coefbp(ifac)*pip
+        pip = pvar(ii) + grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz
+        pfac = inc*coefap(ifac) +coefbp(ifac)*pip
 
-    flumab = viscb(ifac)*( pip -pfac )
-    diverg(ii) = diverg(ii) + flumab
+        flumab = viscb(ifac)*( pip -pfac )
+        diverg(ii) = diverg(ii) + flumab
 
+      enddo
+    enddo
   enddo
 
   ! Free memory
@@ -284,7 +306,7 @@ endif
 endif
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -298,7 +320,7 @@ endif
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

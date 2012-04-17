@@ -150,7 +150,7 @@ double precision flumas(nfac), flumab(nfabor)
 
 ! Local variables
 
-integer          ifac, ii, jj, iel, iii
+integer          ifac, ii, jj, iel, iii, ig, it
 integer          iappel
 
 double precision pfac,pip,uxfac,uyfac,uzfac
@@ -172,24 +172,26 @@ allocate(qdmx(ncelet), qdmy(ncelet), qdmz(ncelet))
 allocate(coefqa(ndimfb,3))
 
 
-! ---> CALCUL DE LA QTE DE MOUVEMENT
+! Compute momentum
 
-
-if( init.eq.1 ) then
+if (init.eq.1) then
+  !$omp parallel do
   do ifac = 1, nfac
     flumas(ifac) = 0.d0
   enddo
+  !$omp parallel do if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     flumab(ifac) = 0.d0
   enddo
 
-elseif(init.ne.0) then
+elseif (init.ne.0) then
   write(nfecra,1000) init
   call csexit (1)
 endif
 
 ! Without porosity
 if (iporos.eq.0) then
+  !$omp parallel do
   do iel = 1, ncel
     qdmx(iel) = rom(iel)*ux(iel)
     qdmy(iel) = rom(iel)*uy(iel)
@@ -202,7 +204,8 @@ if (iporos.eq.0) then
     call synvec(qdmx, qdmy, qdmz)
   endif
 
-  do ifac =1, nfabor
+  !$omp parallel do if(nfabor > thr_n_min)
+  do ifac = 1, nfabor
     coefqa(ifac,1) = romb(ifac)*coefax(ifac)
     coefqa(ifac,2) = romb(ifac)*coefay(ifac)
     coefqa(ifac,3) = romb(ifac)*coefaz(ifac)
@@ -210,6 +213,8 @@ if (iporos.eq.0) then
 
 ! With porosity
 else
+
+  !$omp parallel do
   do iel = 1, ncel
     qdmx(iel) = rom(iel)*ux(iel)*porosi(iel)
     qdmy(iel) = rom(iel)*uy(iel)*porosi(iel)
@@ -222,50 +227,62 @@ else
     call synvec(qdmx, qdmy, qdmz)
   endif
 
+  !$omp parallel do private(iel) if(nfabor > thr_n_min)
   do ifac =1, nfabor
     iel = ifabor(ifac)
     coefqa(ifac,1) = romb(ifac)*coefax(ifac)*porosi(iel)
     coefqa(ifac,2) = romb(ifac)*coefay(ifac)*porosi(iel)
     coefqa(ifac,3) = romb(ifac)*coefaz(ifac)*porosi(iel)
   enddo
+
 endif
 
 !===============================================================================
 ! 2.  CALCUL DU FLUX DE MASSE SANS TECHNIQUE DE RECONSTRUCTION
 !===============================================================================
 
-if( nswrgu.le.1 ) then
+if (nswrgu.le.1) then
 
-!     FLUX DE MASSE SUR LES FACETTES FLUIDES
+  ! Mass flow through interior faces
 
-  do ifac = 1, nfac
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, pnd)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
 
-    pnd = pond(ifac)
+        pnd = pond(ifac)
 
-    flumas(ifac) =  flumas(ifac)                                  &
-     +(pnd*qdmx(ii)+(1.d0-pnd)*qdmx(jj) )*surfac(1,ifac)        &
-     +(pnd*qdmy(ii)+(1.d0-pnd)*qdmy(jj) )*surfac(2,ifac)        &
-     +(pnd*qdmz(ii)+(1.d0-pnd)*qdmz(jj) )*surfac(3,ifac)
+        flumas(ifac) =   flumas(ifac)                                         &
+                       + (pnd*qdmx(ii)+(1.d0-pnd)*qdmx(jj))*surfac(1,ifac)    &
+                       + (pnd*qdmy(ii)+(1.d0-pnd)*qdmy(jj))*surfac(2,ifac)    &
+                       + (pnd*qdmz(ii)+(1.d0-pnd)*qdmz(jj))*surfac(3,ifac)
 
+      enddo
+    enddo
   enddo
 
+  ! Mass flow though boundary faces
 
-!     FLUX DE MASSE SUR LES FACETTES DE BORD
+  do ig = 1, ngrpb
+    !$omp parallel do private(ifac, ii, uxfac, uyfac, uzfac) &
+    !$omp          if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-  do ifac = 1, nfabor
+        ii = ifabor(ifac)
+        uxfac = inc*coefqa(ifac,1) +coefbx(ifac)*romb(ifac)*ux(ii)
+        uyfac = inc*coefqa(ifac,2) +coefby(ifac)*romb(ifac)*uy(ii)
+        uzfac = inc*coefqa(ifac,3) +coefbz(ifac)*romb(ifac)*uz(ii)
 
-    ii = ifabor(ifac)
-    uxfac = inc*coefqa(ifac,1) +coefbx(ifac)*romb(ifac)*ux(ii)
-    uyfac = inc*coefqa(ifac,2) +coefby(ifac)*romb(ifac)*uy(ii)
-    uzfac = inc*coefqa(ifac,3) +coefbz(ifac)*romb(ifac)*uz(ii)
+        flumab(ifac) = flumab(ifac)                                          &
+                       + (  uxfac*surfbo(1,ifac)                             &
+                          + uyfac*surfbo(2,ifac) + uzfac*surfbo(3,ifac))
 
-    flumab(ifac) = flumab(ifac)                                   &
-     +( uxfac*surfbo(1,ifac)                                      &
-                    +uyfac*surfbo(2,ifac) +uzfac*surfbo(3,ifac) )
-
+        enddo
+      enddo
   enddo
 
 endif
@@ -276,7 +293,7 @@ endif
 !        SI LE MAILLAGE EST NON ORTHOGONAL
 !===============================================================================
 
-if( nswrgu.gt.1 ) then
+if (nswrgu.gt.1) then
 
 
   ! Allocate a temporary array for the gradient calculation
@@ -286,7 +303,7 @@ if( nswrgu.gt.1 ) then
 !     TRAITEMENT DE LA PERIODICITE SPEFICIQUE A INIMAS AU DEBUT
 !     =========================================================
 
-  if(iperot.gt.0) then
+  if (iperot.gt.0) then
     iappel = 1
 
     call permas &
@@ -297,10 +314,10 @@ if( nswrgu.gt.1 ) then
 
   endif
 
-!     FLUX DE MASSE SUIVANT X
-!     =======================
+  ! Mass flow along X
+  ! =================
 
-! ---> CALCUL DU GRADIENT
+  ! Compute gradient
 
   call grdcel                                                     &
   !==========
@@ -309,52 +326,60 @@ if( nswrgu.gt.1 ) then
    qdmx   , coefqa(1,1) , coefbx ,                                &
    grad   )
 
+  ! Mass flow through interior faces
 
-! ---> FLUX DE MASSE SUR LES FACETTES FLUIDES
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, pnd, dofx, dofy, dofz)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
-  do ifac = 1, nfac
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
+        pnd = pond(ifac)
 
-    pnd = pond(ifac)
+        dofx = dofij(1,ifac)
+        dofy = dofij(2,ifac)
+        dofz = dofij(3,ifac)
 
-    dofx = dofij(1,ifac)
-    dofy = dofij(2,ifac)
-    dofz = dofij(3,ifac)
+        flumas(ifac) =   flumas(ifac) + (pnd*qdmx(ii) +(1.d0-pnd)*qdmx(jj)     &
+                       + 0.5d0*(grad(ii,1) + grad(jj,1))*dofx                  &
+                       + 0.5d0*(grad(ii,2) + grad(jj,2))*dofy                  &
+                       + 0.5d0*(grad(ii,3) + grad(jj,3))*dofz)*surfac(1,ifac)
 
-    flumas(ifac) = flumas(ifac)                                   &
-         +( pnd*qdmx(ii) +(1.d0-pnd)*qdmx(jj)                     &
-           +0.5d0*( grad(ii,1) +grad(jj,1) )*dofx                     &
-           +0.5d0*( grad(ii,2) +grad(jj,2) )*dofy                     &
-           +0.5d0*( grad(ii,3) +grad(jj,3) )*dofz    )*surfac(1,ifac)
-
+      enddo
+    enddo
   enddo
 
-! ---> FLUX DE MASSE SUR LES FACETTES DE BORD
+  ! Mass flow though boundary faces
 
-  do ifac = 1, nfabor
+  do ig = 1, ngrpb
+    !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac) &
+    !$omp          if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-    ii = ifabor(ifac)
+        ii = ifabor(ifac)
 
-    diipbx = diipb(1,ifac)
-    diipby = diipb(2,ifac)
-    diipbz = diipb(3,ifac)
+        diipbx = diipb(1,ifac)
+        diipby = diipb(2,ifac)
+        diipbz = diipb(3,ifac)
 
-    pip = romb(ifac) * ux(ii)                                     &
-          +grad(ii,1)*diipbx                                      &
-          +grad(ii,2)*diipby +grad(ii,3)*diipbz
-    pfac = inc*coefqa(ifac,1) +coefbx(ifac)*pip
+        pip =   romb(ifac) * ux(ii)                                            &
+              + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
+        pfac = inc*coefqa(ifac,1) + coefbx(ifac)*pip
 
-    flumab(ifac) = flumab(ifac) +pfac*surfbo(1,ifac)
+        flumab(ifac) = flumab(ifac) + pfac*surfbo(1,ifac)
 
+      enddo
+    enddo
   enddo
 
 
-!     FLUX DE MASSE SUIVANT Y
-!     =======================
+  ! Mass flow along Y
+  ! =================
 
-! ---> CALCUL DU GRADIENT
+  ! Compute gradient
 
   call grdcel                                                     &
   !==========
@@ -364,50 +389,60 @@ if( nswrgu.gt.1 ) then
    grad   )
 
 
-! ---> FLUX DE MASSE SUR LES FACETTES FLUIDES
+  ! Mass flow through interior faces
 
-  do ifac = 1, nfac
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, pnd, dofx, dofy, dofz)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
 
-    pnd = pond(ifac)
+        pnd = pond(ifac)
 
-    dofx = dofij(1,ifac)
-    dofy = dofij(2,ifac)
-    dofz = dofij(3,ifac)
+        dofx = dofij(1,ifac)
+        dofy = dofij(2,ifac)
+        dofz = dofij(3,ifac)
 
-    flumas(ifac) = flumas(ifac)                                   &
-         +( pnd*qdmy(ii) +(1.d0-pnd)*qdmy(jj)                     &
-           +0.5d0*( grad(ii,1) +grad(jj,1) )*dofx                     &
-           +0.5d0*( grad(ii,2) +grad(jj,2) )*dofy                     &
-           +0.5d0*( grad(ii,3) +grad(jj,3) )*dofz    )*surfac(2,ifac)
+        flumas(ifac) =   flumas(ifac) + (pnd*qdmy(ii) +(1.d0-pnd)*qdmy(jj)     &
+                       + 0.5d0*(grad(ii,1) + grad(jj,1))*dofx                  &
+                       + 0.5d0*(grad(ii,2) + grad(jj,2))*dofy                  &
+                       + 0.5d0*(grad(ii,3) + grad(jj,3))*dofz)*surfac(2,ifac)
 
+      enddo
+    enddo
   enddo
 
-! ---> FLUX DE MASSE SUR LES FACETTES DE BORD
 
-  do ifac = 1, nfabor
+  ! Mass flow though boundary faces
 
-    ii = ifabor(ifac)
+  do ig = 1, ngrpb
+    !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac) &
+    !$omp          if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-    diipbx = diipb(1,ifac)
-    diipby = diipb(2,ifac)
-    diipbz = diipb(3,ifac)
+        ii = ifabor(ifac)
 
-    pip = romb(ifac) * uy(ii)                                     &
-        +grad(ii,1)*diipbx                                        &
-        +grad(ii,2)*diipby +grad(ii,3)*diipbz
-    pfac = inc*coefqa(ifac,2) +coefby(ifac)*pip
+        diipbx = diipb(1,ifac)
+        diipby = diipb(2,ifac)
+        diipbz = diipb(3,ifac)
 
-    flumab(ifac) = flumab(ifac) +pfac*surfbo(2,ifac)
+        pip =   romb(ifac) * uy(ii)                                            &
+              + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
+        pfac = inc*coefqa(ifac,2) + coefby(ifac)*pip
 
+        flumab(ifac) = flumab(ifac) + pfac*surfbo(2,ifac)
+
+      enddo
+    enddo
   enddo
 
-!     FLUX DE MASSE SUIVANT Z
-!     =======================
+  ! Mass flow along Z
+  ! =================
 
-! ---> CALCUL DU GRADIENT
+  ! Compute gradient
 
   call grdcel                                                     &
   !==========
@@ -416,44 +451,53 @@ if( nswrgu.gt.1 ) then
    qdmz   , coefqa(1,3) , coefbz ,                                &
    grad   )
 
-!     FLUX DE MASSE SUR LES FACETTES FLUIDES
+  ! Mass flow through interior faces
 
-  do ifac = 1, nfac
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, pnd, dofx, dofy, dofz)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
 
-    pnd = pond(ifac)
+        pnd = pond(ifac)
 
-    dofx = dofij(1,ifac)
-    dofy = dofij(2,ifac)
-    dofz = dofij(3,ifac)
+        dofx = dofij(1,ifac)
+        dofy = dofij(2,ifac)
+        dofz = dofij(3,ifac)
 
-    flumas(ifac) = flumas(ifac)                                   &
-         +( pnd*qdmz(ii) +(1.d0-pnd)*qdmz(jj)                     &
-           +0.5d0*( grad(ii,1) +grad(jj,1) )*dofx                     &
-           +0.5d0*( grad(ii,2) +grad(jj,2) )*dofy                     &
-           +0.5d0*( grad(ii,3) +grad(jj,3) )*dofz    )*surfac(3,ifac)
+        flumas(ifac) =   flumas(ifac) + (pnd*qdmz(ii) +(1.d0-pnd)*qdmz(jj)     &
+                       + 0.5d0*(grad(ii,1) + grad(jj,1))*dofx                  &
+                       + 0.5d0*(grad(ii,2) + grad(jj,2))*dofy                  &
+                       + 0.5d0*(grad(ii,3) + grad(jj,3))*dofz)*surfac(3,ifac)
 
+      enddo
+    enddo
   enddo
 
-! ---> FLUX DE MASSE SUR LES FACETTES DE BORD
+  ! Mass flow though boundary faces
 
-  do ifac = 1, nfabor
+  do ig = 1, ngrpb
+    !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac) &
+    !$omp          if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-    ii = ifabor(ifac)
+        ii = ifabor(ifac)
 
-    diipbx = diipb(1,ifac)
-    diipby = diipb(2,ifac)
-    diipbz = diipb(3,ifac)
+        diipbx = diipb(1,ifac)
+        diipby = diipb(2,ifac)
+        diipbz = diipb(3,ifac)
 
-    pip = romb(ifac) * uz(ii)                                     &
-        +grad(ii,1)*diipbx                                        &
-        +grad(ii,2)*diipby +grad(ii,3)*diipbz
-    pfac = inc*coefqa(ifac,3) +coefbz(ifac)*pip
+        pip =   romb(ifac) * uz(ii)                                            &
+              + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
+        pfac = inc*coefqa(ifac,3) + coefbz(ifac)*pip
 
-    flumab(ifac) = flumab(ifac) +pfac*surfbo(3,ifac)
+        flumab(ifac) = flumab(ifac) + pfac*surfbo(3,ifac)
 
+      enddo
+    enddo
   enddo
 
   ! Free memory
@@ -462,7 +506,7 @@ if( nswrgu.gt.1 ) then
 !     TRAITEMENT DE LA PERIODICITE SPEFICIQUE A INIMAS A LA FIN
 !     =========================================================
 
-  if(iperot.gt.0) then
+  if (iperot.gt.0) then
     iappel = 2
 
     call permas &
@@ -474,8 +518,6 @@ if( nswrgu.gt.1 ) then
   endif
 
 
-
-
 endif
 
 
@@ -484,10 +526,11 @@ endif
 !       SYMETRIES PAROIS COUPLEES
 !===============================================================================
 
-if(iflmb0.eq.1) then
-! FORCAGE DE FLUMAB a 0 pour la vitesse'
+if (iflmb0.eq.1) then
+  ! Force flumab to 0 for velocity
+  !$omp parallel do if(nfabor > thr_n_min)
   do ifac = 1, nfabor
-    if(isympa(ifac).eq.0) then
+    if (isympa(ifac).eq.0) then
       flumab(ifac) = 0.d0
     endif
   enddo
@@ -498,7 +541,7 @@ deallocate(qdmx, qdmy, qdmz)
 deallocate(coefqa)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -512,7 +555,7 @@ deallocate(coefqa)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

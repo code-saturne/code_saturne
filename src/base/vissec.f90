@@ -267,7 +267,7 @@ do isou = 1, 3
   enddo
 
   do ig = 1, ngrpb
-    !$omp parallel do private(ifac) if(nfabor > 128)
+    !$omp parallel do private(ifac) if(nfabor > thr_n_min)
     do it = 1, nthrdb
       do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
         w6(ifabor(ifac)) = 0.d0
@@ -310,7 +310,7 @@ do isou = 1, 3
 !     (valeur bidon, mais pas NaN : les calculs sur le halo sont
 !      par principe denue de sens, sauf exception)
     if (ncelet.gt.ncel) then
-      !$omp parallel do if (ncelet - ncel > 128)
+      !$omp parallel do if (ncelet - ncel > thr_n_min)
       do iel = ncel+1, ncelet
         trav(iel,idim) = 0.d0
       enddo
@@ -356,7 +356,7 @@ do ifac = 1, nfac
   viscf(ifac) = propfa(ifac,iflmas)/romf
 enddo
 
-!$omp parallel do firstprivate(ipbrom, iflmab) if(nfabor > 128)
+!$omp parallel do firstprivate(ipbrom, iflmab) if(nfabor > thr_n_min)
 do ifac = 1, nfabor
   viscb(ifac) = propfb(ifac,iflmab)/propfb(ifac,ipbrom)
 enddo
@@ -422,7 +422,7 @@ do isou = 1, 3
 
   do ig = 1, ngrpi
     !$omp parallel do firstprivate(isou) private(ifac, ii, jj, vecfac) &
-    !$omp          if(nfabor > 128)
+    !$omp          if(nfabor > thr_n_min)
     do it = 1, nthrdi
       do ifac = iompli(1,ig,it), iompli(2,ig,it)
         ii = ifacel(1,ifac)
@@ -437,7 +437,8 @@ do isou = 1, 3
   ! --- Assemblage sur les faces de bord
 
   do ig = 1, ngrpb
-    !$omp parallel do firstprivate(idim, isou) private(ifac, ii) if(nfabor > 128)
+    !$omp parallel do firstprivate(idim, isou) private(ifac, ii) &
+    !$omp          if(nfabor > thr_n_min)
     do it = 1, nthrdb
       do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
         ii = ifabor(ifac)
@@ -452,7 +453,8 @@ do isou = 1, 3
   if (ineedf.eq.1) then
 
     do ig = 1, ngrpb
-      !$omp parallel do firstprivate(isou) private(ifac, ii) if(nfabor > 128)
+      !$omp parallel do firstprivate(isou) private(ifac, ii) &
+      !$omp          if(nfabor > thr_n_min)
       do it = 1, nthrdb
         do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
           ii = ifabor(ifac)

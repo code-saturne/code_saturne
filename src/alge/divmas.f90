@@ -82,7 +82,7 @@ double precision diverg(ncelet)
 
 ! Local variables
 
-integer          iel, ifac, ii, jj
+integer          iel, ifac, ii, jj, ig, it
 
 !===============================================================================
 
@@ -90,15 +90,17 @@ integer          iel, ifac, ii, jj
 ! 1.  INITIALISATION
 !===============================================================================
 
-if( init.ge.1 ) then
+if (init.ge.1) then
+  !$omp parallel do
   do iel = 1, ncelet
     diverg(iel) = 0.d0
   enddo
-elseif( init.eq.0.and.ncelet.gt.ncel ) then
+elseif (init.eq.0.and.ncelet.gt.ncel) then
+  !$omp parallel do if(ncelet - ncel > thr_n_min)
   do iel = ncel+1, ncelet
     diverg(iel) = 0.d0
   enddo
-elseif(init.ne.0) then
+elseif (init.ne.0) then
   write(nfecra,1000) init
   call csexit (1)
 endif
@@ -108,11 +110,18 @@ endif
 ! 2.  INTEGRATION SUR LES FACETTES INTERNES
 !===============================================================================
 
-do ifac = 1, nfac
-  ii = ifacel(1,ifac)
-  jj = ifacel(2,ifac)
-  diverg(ii) = diverg(ii) +flumas(ifac)
-  diverg(jj) = diverg(jj) -flumas(ifac)
+do ig = 1, ngrpi
+  !$omp parallel do private(ifac, ii, jj)
+  do it = 1, nthrdi
+    do ifac = iompli(1,ig,it), iompli(2,ig,it)
+
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
+      diverg(ii) = diverg(ii) + flumas(ifac)
+      diverg(jj) = diverg(jj) - flumas(ifac)
+
+    enddo
+  enddo
 enddo
 
 
@@ -120,9 +129,16 @@ enddo
 ! 3.  INTEGRATION SUR LES FACETTES DE BORD
 !===============================================================================
 
-do ifac = 1, nfabor
-  ii = ifabor(ifac)
-  diverg(ii) = diverg(ii) +flumab(ifac)
+do ig = 1, ngrpb
+  !$omp parallel do private(ifac, ii) if(nfabor > thr_n_min)
+  do it = 1, nthrdb
+    do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+      ii = ifabor(ifac)
+      diverg(ii) = diverg(ii) + flumab(ifac)
+
+    enddo
+  enddo
 enddo
 
 #if defined(_CS_LANG_FR)
@@ -136,7 +152,7 @@ enddo
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

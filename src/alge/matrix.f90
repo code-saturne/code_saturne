@@ -122,7 +122,7 @@ do iel = 1, ncel
   da(iel) = rovsdt(iel)
 enddo
 if (ncelet.gt.ncel) then
-  !omp parallel do if (ncelet - ncel > 128)
+  !omp parallel do if (ncelet - ncel > thr_n_min)
   do iel = ncel+1, ncelet
     da(iel) = 0.d0
   enddo
@@ -205,7 +205,7 @@ endif
 
 do ig = 1, ngrpb
   !$omp parallel do firstprivate(thetap, iconvp, idiffp) &
-  !$omp          private(ifac, ii, flui, fluj) if(nfabor > 128)
+  !$omp          private(ifac, ii, flui, fluj) if(nfabor > thr_n_min)
   do it = 1, nthrdb
     do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
       ii = ifabor(ifac)

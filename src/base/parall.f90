@@ -26,6 +26,11 @@ module parall
 
   !=============================================================================
 
+  ! thr_n_min : minimum number of elements for loops on threads
+
+  integer   thr_n_min
+  parameter(thr_n_min = 128)
+
   ! irangp : process rank
   !   = -1 in sequential mode
   !   =  r (0 < r < n_processes) in distributed parallel run

@@ -135,7 +135,7 @@ double precision flumas(nfac), flumab(nfabor)
 
 ! Local variables
 
-integer          ifac, ii, jj, iel
+integer          ifac, ii, jj, iel, ig, it
 integer          iappel, isou, jsou
 double precision pfac, pip
 double precision dofx,dofy,dofz,pnd
@@ -156,21 +156,24 @@ allocate(coefaq(3,ndimfb))
 
 ! ---> Momentum computation
 
-if( init.eq.1 ) then
+if (init.eq.1) then
+  !$omp parallel do
   do ifac = 1, nfac
     flumas(ifac) = 0.d0
   enddo
+  !$omp parallel do if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     flumab(ifac) = 0.d0
   enddo
 
-elseif(init.ne.0) then
+elseif (init.ne.0) then
   write(nfecra,1000) init
   call csexit (1)
 endif
 
 ! Without porosity
 if (iporos.eq.0) then
+  !$omp parallel do
   do iel = 1, ncel
     do isou = 1, 3
       qdm(isou,iel) = rom(iel)*vel(isou,iel)
@@ -183,14 +186,17 @@ if (iporos.eq.0) then
     call synvin(qdm)
   endif
 
-  do ifac =1, nfabor
+  !$omp parallel do private(isou) if(nfabor > thr_n_min)
+  do ifac = 1, nfabor
     do isou = 1, 3
       coefaq(isou,ifac) = romb(ifac)*coefav(isou,ifac)
     enddo
   enddo
 
-! With porosity
+  ! With porosity
 else
+
+  !$omp parallel do private(isou)
   do iel = 1, ncel
     do isou = 1, 3
       qdm(isou,iel) = rom(iel)*vel(isou,iel)*porosi(iel)
@@ -203,60 +209,75 @@ else
     call synvin(qdm)
   endif
 
-  do ifac =1, nfabor
+  !$omp parallel do private(iel, isou) if(nfabor > thr_n_min)
+  do ifac = 1, nfabor
     iel = ifabor(ifac)
     do isou = 1, 3
       coefaq(isou,ifac) = romb(ifac)*coefav(isou,ifac)*porosi(iel)
     enddo
   enddo
+
 endif
 
 !===============================================================================
 ! 2. Compute mass flux without recontructions
 !===============================================================================
 
-if( nswrgu.le.1 ) then
+if (nswrgu.le.1) then
 
-  ! --> Interior faces
+  ! Interior faces
 
-  do ifac = 1, nfac
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-    pnd = pond(ifac)
-    ! u, v, w Components
-    do isou = 1, 3
-      flumas(ifac) = flumas(ifac) +                                        &
-         (pnd*qdm(isou,ii)+(1.d0-pnd)*qdm(isou,jj)) *surfac(isou,ifac)
-    enddo
-  enddo
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, pnd, isou)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
+        pnd = pond(ifac)
+        ! u, v, w Components
+        do isou = 1, 3
+          flumas(ifac) = flumas(ifac) +                                       &
+               (pnd*qdm(isou,ii)+(1.d0-pnd)*qdm(isou,jj)) * surfac(isou,ifac)
+        enddo
 
-  ! --> Border faces
-
-  do ifac = 1, nfabor
-    ii = ifabor(ifac)
-    ! u, v, w Components
-    do isou = 1, 3
-      pfac = inc*coefaq(isou,ifac)
-
-      ! coefbv is a matrix
-      do jsou = 1, 3
-        pfac = pfac + romb(ifac)*coefbv(isou,jsou,ifac)*vel(jsou,ii)
       enddo
-
-      flumab(ifac) = flumab(ifac) + pfac*surfbo(isou,ifac)
-
     enddo
   enddo
-endif
 
+  ! Boundary faces
+
+  do ig = 1, ngrpb
+    !$omp parallel do private(ifac, ii, isou, jsou, pfac) &
+    !$omp          if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+        ii = ifabor(ifac)
+        ! u, v, w Components
+        do isou = 1, 3
+          pfac = inc*coefaq(isou,ifac)
+
+          ! coefbv is a matrix
+          do jsou = 1, 3
+            pfac = pfac + romb(ifac)*coefbv(isou,jsou,ifac)*vel(jsou,ii)
+          enddo
+
+          flumab(ifac) = flumab(ifac) + pfac*surfbo(isou,ifac)
+        enddo
+
+      enddo
+    enddo
+  enddo
+
+endif
 
 !===============================================================================
 ! 4.  CALCUL DU FLUX DE MASSE AVEC TECHNIQUE DE RECONSTRUCTION
 !        SI LE MAILLAGE EST NON ORTHOGONAL
 !===============================================================================
 
-if( nswrgu.gt.1 ) then
+if (nswrgu.gt.1) then
 
   allocate(grdqdm(3,3,ncelet))
 
@@ -275,65 +296,82 @@ if( nswrgu.gt.1 ) then
   grdqdm )
 
 
-! ---> FLUX DE MASSE SUR LES FACETTES FLUIDES
+  ! Mass flow through interior faces
 
-  do ifac = 1, nfac
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, isou, pnd, dofx, dofy, dofz)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
 
-    pnd = pond(ifac)
+        pnd = pond(ifac)
 
-    dofx = dofij(1,ifac)
-    dofy = dofij(2,ifac)
-    dofz = dofij(3,ifac)
+        dofx = dofij(1,ifac)
+        dofy = dofij(2,ifac)
+        dofz = dofij(3,ifac)
 
-! Termes suivant U, V, W
-    do isou = 1, 3
-      flumas(ifac) = flumas(ifac)                                   &
-! Terme non reconstruit
-         +( pnd*qdm(isou,ii) +(1.d0-pnd)*qdm(isou,jj)             &
-!  --->
-!  --->     ->    -->      ->
-! (Grad(rho U ) . OFij ) . Sij
-           +0.5d0*( grdqdm(isou,1,ii) +grdqdm(isou,1,jj) )*dofx   &
-           +0.5d0*( grdqdm(isou,2,ii) +grdqdm(isou,2,jj) )*dofy   &
-           +0.5d0*( grdqdm(isou,3,ii) +grdqdm(isou,3,jj) )*dofz   &
-           )*surfac(isou,ifac)
-    enddo
+        ! Terms along U, V, W
+        do isou = 1, 3
 
-  enddo
+          flumas(ifac) = flumas(ifac)                                &
+               ! Non-reconstructed term
+               + (pnd*qdm(isou,ii) + (1.d0-pnd)*qdm(isou,jj)         &
 
-! ---> FLUX DE MASSE SUR LES FACETTES DE BORD
-  do ifac = 1, nfabor
+               !  --->     ->    -->      ->
+               ! (Grad(rho U ) . OFij ) . Sij
+               + 0.5d0*(grdqdm(isou,1,ii) +grdqdm(isou,1,jj))*dofx   &
+               + 0.5d0*(grdqdm(isou,2,ii) +grdqdm(isou,2,jj))*dofy   &
+               + 0.5d0*(grdqdm(isou,3,ii) +grdqdm(isou,3,jj))*dofz   &
+               )*surfac(isou,ifac)
+        enddo
 
-    ii = ifabor(ifac)
-    diipbx = diipb(1,ifac)
-    diipby = diipb(2,ifac)
-    diipbz = diipb(3,ifac)
-
-! SUIVANT U, V, W
-    do isou = 1, 3
-
-      pfac = inc*coefaq(isou,ifac)
-
-      ! coefu is a matrix
-      do jsou = 1, 3
-
-        pip =  romb(ifac)*vel(jsou,ii)                &
-              +grdqdm(jsou,1,ii)*diipbx              &
-              +grdqdm(jsou,2,ii)*diipby              &
-              +grdqdm(jsou,3,ii)*diipbz
-
-        pfac = pfac +coefbv(isou,jsou,ifac)*pip
       enddo
-
-     flumab(ifac) = flumab(ifac) +pfac*surfbo(isou,ifac)
     enddo
 
   enddo
 
-! DESALOCATION
+  ! Mass flow though boundary faces
+
+  do ig = 1, ngrpb
+    !$omp parallel do private(ifac, ii, isou, jsou, diipbx, diipby, diipbz, &
+    !$omp                     pfac, pip) if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+        ii = ifabor(ifac)
+        diipbx = diipb(1,ifac)
+        diipby = diipb(2,ifac)
+        diipbz = diipb(3,ifac)
+
+        ! Terms along U, V, W
+        do isou = 1, 3
+
+          pfac = inc*coefaq(isou,ifac)
+
+          ! coefu is a matrix
+          do jsou = 1, 3
+
+            pip =  romb(ifac)*vel(jsou,ii)                &
+                 + grdqdm(jsou,1,ii)*diipbx               &
+                 + grdqdm(jsou,2,ii)*diipby               &
+                 + grdqdm(jsou,3,ii)*diipbz
+
+            pfac = pfac + coefbv(isou,jsou,ifac)*pip
+
+          enddo
+
+          flumab(ifac) = flumab(ifac) + pfac*surfbo(isou,ifac)
+
+        enddo
+
+      enddo
+    enddo
+
+  enddo
+
+! Deallocation
 deallocate(grdqdm)
 deallocate(qdm, coefaq)
 
@@ -344,17 +382,18 @@ endif
 !       SYMETRIES PAROIS COUPLEES
 !===============================================================================
 
-if(iflmb0.eq.1) then
-! FORCAGE DE FLUMAB a 0 pour la vitesse'
+if (iflmb0.eq.1) then
+  ! Force flumab to 0 for velocity
+  !$omp parallel do if(nfabor > thr_n_min)
   do ifac = 1, nfabor
-    if(isympa(ifac).eq.0) then
+    if (isympa(ifac).eq.0) then
       flumab(ifac) = 0.d0
     endif
   enddo
 endif
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -368,7 +407,7 @@ endif
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

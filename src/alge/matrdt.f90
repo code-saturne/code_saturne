@@ -84,8 +84,8 @@ double precision da(ncelet )
 
 ! Local variables
 
-integer          ifac,ii,jj,iel
-double precision flui,fluj,xaifa1,xaifa2
+integer          ifac, ii, jj, iel, ig, it
+double precision flui, fluj, xaifa1, xaifa2
 
 !===============================================================================
 
@@ -93,15 +93,17 @@ double precision flui,fluj,xaifa1,xaifa2
 ! 1. INITIALISATION
 !===============================================================================
 
-if(isym.ne.1.and.isym.ne.2) then
-   write(nfecra,1000) isym
-   call csexit (1)
+if (isym.ne.1.and.isym.ne.2) then
+  write(nfecra,1000) isym
+  call csexit (1)
 endif
 
+!$omp parallel do
 do iel = 1, ncel
   da(iel) = 0.d0
 enddo
-if(ncelet.gt.ncel) then
+if (ncelet.gt.ncel) then
+  !$omp parallel do if(ncelet - ncel > thr_n_min)
   do iel = ncel+1, ncelet
     da(iel) = 0.d0
   enddo
@@ -115,28 +117,38 @@ endif
 ! 3.     CONTRIBUTION DES TERMES X-TRADIAGONAUX A LA DIAGONALE
 !===============================================================================
 
-if(isym.eq.2) then
+if (isym.eq.2) then
 
-  do ifac = 1,nfac
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-    fluj =-0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-    flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-    xaifa2 = iconvp*fluj -idiffp*viscf(ifac)
-    xaifa1 = iconvp*flui -idiffp*viscf(ifac)
-    da(ii) = da(ii) -xaifa2
-    da(jj) = da(jj) -xaifa1
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, fluj, flui, xaifa2, xaifa1)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
+        fluj =-0.5d0*(flumas(ifac) + abs(flumas(ifac)))
+        flui = 0.5d0*(flumas(ifac) - abs(flumas(ifac)))
+        xaifa2 = iconvp*fluj -idiffp*viscf(ifac)
+        xaifa1 = iconvp*flui -idiffp*viscf(ifac)
+        da(ii) = da(ii) -xaifa2
+        da(jj) = da(jj) -xaifa1
+      enddo
+    enddo
   enddo
 
 else
 
-  do ifac = 1,nfac
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-    flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-    xaifa1 = iconvp*flui -idiffp*viscf(ifac)
-    da(ii) = da(ii) -xaifa1
-    da(jj) = da(jj) -xaifa1
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, flui, xaifa1)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
+        flui = 0.5d0*(flumas(ifac) - abs(flumas(ifac)))
+        xaifa1 = iconvp*flui -idiffp*viscf(ifac)
+        da(ii) = da(ii) -xaifa1
+        da(jj) = da(jj) -xaifa1
+      enddo
+    enddo
   enddo
 
 endif
@@ -145,21 +157,26 @@ endif
 ! 4.     CONTRIBUTION DES FACETTES DE BORDS A LA DIAGONALE
 !===============================================================================
 
-do ifac = 1, nfabor
-  ii = ifabor(ifac)
-  flui = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
-  fluj =-0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-  da(ii) = da(ii) +iconvp*(-fluj + flui*coefbp(ifac) )          &
-                  +idiffp*viscb(ifac)*(1.d0-coefbp(ifac))
+do ig = 1, ngrpb
+  !$omp parallel do private(ifac, ii, flui, fluj) if(nfabor > thr_n_min)
+  do it = 1, nthrdb
+    do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+      ii = ifabor(ifac)
+      flui = 0.5d0*(flumab(ifac) - abs(flumab(ifac)))
+      fluj =-0.5d0*(flumab(ifac) + abs(flumab(ifac)))
+      da(ii) = da(ii) +iconvp*(-fluj + flui*coefbp(ifac))       &
+                      +idiffp*viscb(ifac)*(1.d0-coefbp(ifac))
+    enddo
+  enddo
 enddo
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -176,7 +193,7 @@ enddo
 
 #else
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/,&
@@ -194,7 +211,7 @@ enddo
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

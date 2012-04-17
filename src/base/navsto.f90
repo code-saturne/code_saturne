@@ -116,7 +116,7 @@ double precision uvwk(ncelet,ndim)
 
 ! Local variables
 
-integer          iccocg, inc, iel, iel1, iel2, ifac, imax
+integer          iccocg, inc, iel, iel1, iel2, ifac, imax, imaxt
 integer          ii    , inod
 integer          isou, ivar, iitsm
 integer          iclipr, iclipf
@@ -128,7 +128,7 @@ integer          nswrgp, imligp, iwarnp, imaspe
 integer          nbrval, iappel, iescop, idtsca
 integer          ndircp, icpt  , iecrw
 integer          numcpl
-double precision rnorm , rnorma, rnormi, vitnor
+double precision rnorm , rnormt, rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, surf  , rhom
 double precision epsrgp, climgp, extrap, xyzmax(3)
 double precision thetap, xdu, xdv, xdw
@@ -185,7 +185,7 @@ allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 if (irnpnw.eq.1) allocate(w10(ncelet))
 
-if(iwarni(iu).ge.1) then
+if (iwarni(iu).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -199,29 +199,29 @@ imax = 0
 ! Memoire
 
 
-if(nterup.gt.1) then
+if (nterup.gt.1) then
 
   do isou = 1, 3
-    if(isou.eq.1) ivar = iu
-    if(isou.eq.2) ivar = iv
-    if(isou.eq.3) ivar = iw
+    if (isou.eq.1) ivar = iu
+    if (isou.eq.2) ivar = iv
+    if (isou.eq.3) ivar = iw
     !     La boucle sur NCELET est une securite au cas
     !       ou on utiliserait UVWK par erreur a ITERNS = 1
+    !$omp parallel do
     do iel = 1,ncelet
       uvwk(iel,isou) = rtp(iel,ivar)
     enddo
   enddo
 
   ! Calcul de la norme L2 de la vitesse
-  if(iterns.eq.1) then
+  if (iterns.eq.1) then
     xnrmu0 = 0.d0
+    !$omp parallel do reduction(+:xnrmu0)
     do iel = 1, ncel
-      xnrmu0 = xnrmu0 +(rtpa(iel,iu)**2        &
-           + rtpa(iel,iv)**2        &
-           + rtpa(iel,iw)**2)       &
-           * volume(iel)
+      xnrmu0 =   xnrmu0 +(rtpa(iel,iu)**2 + rtpa(iel,iv)**2 + rtpa(iel,iw)**2) &
+               * volume(iel)
     enddo
-    if(irangp.ge.0) then
+    if (irangp.ge.0) then
       call parsom (xnrmu0)
       !==========
     endif
@@ -239,7 +239,7 @@ if(nterup.gt.1) then
 
   ! On assure la periodicite ou le parallelisme de UVWK et la pression
   ! (cette derniere vaut la pression a l'iteration precedente)
-  if(iterns.gt.1) then
+  if (iterns.gt.1) then
     if (irangp.ge.0.or.iperio.eq.1) then
       call synvec(uvwk(1,1), uvwk(1,2), uvwk(1,3))
       !==========
@@ -277,7 +277,7 @@ call preduv &
 ! --- Sortie si pas de pression continuite
 !       on met a jour les flux de masse, et on sort
 
-if( iprco.le.0 ) then
+if ( iprco.le.0 ) then
 
   icliup = iclrtp(iu ,icoef)
   iclivp = iclrtp(iv ,icoef)
@@ -324,11 +324,13 @@ if( iprco.le.0 ) then
 
 !     On change de signe car on veut l'oppose de la vitesse de maillage
 !       aux faces
+    !$omp parallel do
     do iel = 1, ncelet
       rtp(iel,iuma) = -rtp(iel,iuma)
       rtp(iel,ivma) = -rtp(iel,ivma)
       rtp(iel,iwma) = -rtp(iel,iwma)
     enddo
+    !$omp parallel do if(nfabor > thr_n_min)
     do ifac = 1, nfabor
       coefa(ifac,icluma) = -coefa(ifac,icluma)
       coefa(ifac,iclvma) = -coefa(ifac,iclvma)
@@ -357,6 +359,7 @@ if( iprco.le.0 ) then
 
     imaspe = 1
 
+    !$omp parallel do
     do ifac = 1, nfac
       flint(ifac) = 0.d0
     enddo
@@ -374,17 +377,21 @@ if( iprco.le.0 ) then
    coefb(1,icluma), coefb(1,iclvma), coefb(1,iclwma),             &
    flint  , propfb(1,iflmab) )
 
+    !$omp parallel do
     do iel = 1, ncelet
       rtp(iel,iuma) = -rtp(iel,iuma)
       rtp(iel,ivma) = -rtp(iel,ivma)
       rtp(iel,iwma) = -rtp(iel,iwma)
     enddo
+    !$omp parallel do if(nfabor > thr_n_min)
     do ifac = 1, nfabor
       coefa(ifac,icluma) = -coefa(ifac,icluma)
       coefa(ifac,iclvma) = -coefa(ifac,iclvma)
       coefa(ifac,iclwma) = -coefa(ifac,iclwma)
     enddo
 
+    !$omp parallel do private(ii, inod, iel1, iel2, dtfac, rhofac, iecrw,  &
+    !$omp                     icpt, ddepx, ddepy, ddepz)
     do ifac = 1, nfac
       iecrw = 0
       ddepx = 0.d0
@@ -399,17 +406,16 @@ if( iprco.le.0 ) then
         ddepy = ddepy + depale(inod,2) + xyzno0(2,inod)-xyznod(2,inod)
         ddepz = ddepz + depale(inod,3) + xyzno0(3,inod)-xyznod(3,inod)
       enddo
-      !     If all the face vertices have imposed displacement, w is evaluated from
-      !       this displacement
+      ! If all the face vertices have prescribed displacement, w is evaluated
+      ! from this displacement
       if (iecrw.eq.0) then
         iel1 = ifacel(1,ifac)
         iel2 = ifacel(2,ifac)
         dtfac = 0.5d0*(dt(iel1) + dt(iel2))
         rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
-        propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(      &
-             ddepx*surfac(1,ifac)                                 &
-             +ddepy*surfac(2,ifac)                                &
-             +ddepz*surfac(3,ifac) )/dtfac/icpt
+        propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(                   &
+             ddepx*surfac(1,ifac) +ddepy*surfac(2,ifac) +ddepz*surfac(3,ifac)) &
+             /dtfac/icpt
         !     Else w is calculated from the cell-centre mesh velocity
       else
         propfa(ifac,iflmas) = propfa(ifac,iflmas) + flint(ifac)
@@ -431,6 +437,8 @@ if( iprco.le.0 ) then
     ipcrom = ipproc(irom  )
     ipbrom = ipprob(irom  )
 
+    !$omp parallel do private(iel1, iel2, dtfac, rhofac, &
+    !$omp                     vitbox, vitboy, vitboz)
     do ifac = 1, nfac
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
@@ -442,6 +450,8 @@ if( iprco.le.0 ) then
       propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(        &
            vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboz*surfac(3,ifac) )
     enddo
+    !$omp parallel do private(iel, dtfac, rhofac, &
+    !$omp                     vitbox, vitboy, vitboz) if(nfabor > thr_n_min)
     do ifac = 1, nfabor
       iel = ifabor(ifac)
       dtfac  = dt(iel)
@@ -463,7 +473,7 @@ endif
 ! 3.  ETAPE DE PRESSION/CONTINUITE ( VITESSE/PRESSION )
 !===============================================================================
 
-if(iwarni(iu).ge.1) then
+if (iwarni(iu).ge.1) then
   write(nfecra,1200)
 endif
 
@@ -528,7 +538,7 @@ ipbrom = ipprob(irom  )
 !         se rapproche beaucoup de IREVMC=0.
 
 
-if( irevmc.eq.1 ) then
+if (irevmc.eq.1) then
 
   ! Allocate temporary arrays
   allocate(flint(nfac), flbrd(nfabor))
@@ -540,12 +550,12 @@ if( irevmc.eq.1 ) then
   iccocg = 1
   iflmb0 = 1
   if (iale.eq.1) iflmb0 = 0
-  nswrgp = nswrgr(iu )
-  imligp = imligr(iu )
-  iwarnp = iwarni(iu )
-  epsrgp = epsrgr(iu )
-  climgp = climgr(iu )
-  extrap = extrag(iu )
+  nswrgp = nswrgr(iu)
+  imligp = imligr(iu)
+  iwarnp = iwarni(iu)
+  epsrgp = epsrgr(iu)
+  climgp = climgr(iu)
+  extrap = extrag(iu)
 
   imaspe = 1
 
@@ -562,9 +572,11 @@ if( irevmc.eq.1 ) then
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
    flint  , flbrd  )
 
+  !$omp parallel do
   do ifac = 1, nfac
     flint(ifac) = propfa(ifac,iflmas) - flint(ifac)
   enddo
+  !$omp parallel do if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     flbrd(ifac) = propfb(ifac,iflmab) - flbrd(ifac)
   enddo
@@ -575,6 +587,7 @@ if( irevmc.eq.1 ) then
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     )
 
+  !$omp parallel do
   do iel = 1, ncel
     rtp(iel,iu) = rtp(iel,iu) + w1(iel)
     rtp(iel,iv) = rtp(iel,iv) + w2(iel)
@@ -584,7 +597,7 @@ if( irevmc.eq.1 ) then
   ! Free memory
   deallocate(flint, flbrd)
 
-else if(irevmc.eq.2) then
+else if (irevmc.eq.2) then
 
   call recvmc &
   !==========
@@ -604,10 +617,12 @@ else
   !     GRADIENT DE L'INCREMENT TOTAL DE PRESSION
 
   if (idtvar.lt.0) then
+    !$omp parallel do
     do iel = 1, ncel
       drtp(iel) = (rtp(iel,ipr) -rtpa(iel,ipr)) / relaxv(ipr)
     enddo
   else
+    !$omp parallel do
     do iel = 1, ncel
       drtp(iel) = rtp(iel,ipr) -rtpa(iel,ipr)
     enddo
@@ -645,6 +660,7 @@ else
   thetap = thetav(ipr)
   if (iphydr.eq.0) then
     if (idtsca.eq.0) then
+      !$omp parallel do private(dtsrom)
       do iel = 1, ncel
         dtsrom = -thetap*dt(iel)/propce(iel,ipcrom)
         rtp(iel,iu) = rtp(iel,iu)+dtsrom*grad(iel,1)
@@ -652,6 +668,7 @@ else
         rtp(iel,iw) = rtp(iel,iw)+dtsrom*grad(iel,3)
       enddo
     else
+      !$omp parallel do private(unsrom)
       do iel = 1, ncel
         unsrom = -thetap/propce(iel,ipcrom)
         rtp(iel,iu) = rtp(iel,iu) + unsrom*tpucou(iel,1)*grad(iel,1)
@@ -661,6 +678,7 @@ else
     endif
   else
     if (idtsca.eq.0) then
+      !$omp parallel do private(dtsrom)
       do iel = 1, ncel
         dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
         rtp(iel,iu) = rtp(iel,iu) + dtsrom*(dfrcxt(iel,1)-grad(iel,1) )
@@ -668,6 +686,7 @@ else
         rtp(iel,iw) = rtp(iel,iw) + dtsrom*(dfrcxt(iel,3)-grad(iel,3) )
       enddo
     else
+      !$omp parallel do private(unsrom)
       do iel = 1, ncel
         unsrom = thetap/propce(iel,ipcrom)
         rtp(iel,iu) = rtp(iel,iu) &
@@ -679,6 +698,7 @@ else
       enddo
     endif
     !     mise a jour des forces exterieures pour le calcul des gradients
+    !$omp parallel do
     do iel=1,ncel
       frcxt(iel,1) = frcxt(iel,1) + dfrcxt(iel,1)
       frcxt(iel,2) = frcxt(iel,2) + dfrcxt(iel,2)
@@ -693,8 +713,7 @@ else
     iclipf = iclrtp(ipr,icoeff)
     do ifac = 1,nfabor
       if (isostd(ifac).eq.1)                              &
-           coefa(ifac,iclipr) = coefa(ifac,iclipr)              &
-           + coefa(ifac,iclipf)
+           coefa(ifac,iclipr) = coefa(ifac,iclipr) + coefa(ifac,iclipf)
     enddo
   endif
 
@@ -712,11 +731,13 @@ if (iale.eq.1) then
 
 !     On change de signe car on veut l'oppose de la vitesse de maillage
 !       aux faces
+  !$omp parallel do
   do iel = 1, ncelet
     rtp(iel,iuma) = -rtp(iel,iuma)
     rtp(iel,ivma) = -rtp(iel,ivma)
     rtp(iel,iwma) = -rtp(iel,iwma)
   enddo
+  !$omp parallel do if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     coefa(ifac,icluma) = -coefa(ifac,icluma)
     coefa(ifac,iclvma) = -coefa(ifac,iclvma)
@@ -745,6 +766,7 @@ if (iale.eq.1) then
 
   imaspe = 1
 
+  !$omp parallel do
   do ifac = 1, nfac
     flint(ifac) = 0.d0
   enddo
@@ -762,17 +784,21 @@ if (iale.eq.1) then
    coefb(1,icluma), coefb(1,iclvma), coefb(1,iclwma),             &
    flint  , propfb(1,iflmab) )
 
+  !$omp parallel do
   do iel = 1, ncelet
     rtp(iel,iuma) = -rtp(iel,iuma)
     rtp(iel,ivma) = -rtp(iel,ivma)
     rtp(iel,iwma) = -rtp(iel,iwma)
   enddo
+  !$omp parallel do if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     coefa(ifac,icluma) = -coefa(ifac,icluma)
     coefa(ifac,iclvma) = -coefa(ifac,iclvma)
     coefa(ifac,iclwma) = -coefa(ifac,iclwma)
   enddo
 
+  !$omp parallel do private(iecrw, ddepx, ddepy, ddepz, icpt, ii, inod, &
+  !$omp                     iel1, iel2, dtfac, rhofac)
   do ifac = 1, nfac
     iecrw = 0
     ddepx = 0.d0
@@ -819,6 +845,7 @@ if (imobil.eq.1) then
   ipcrom = ipproc(irom  )
   ipbrom = ipprob(irom  )
 
+  !$omp parallel do private(iel1, iel2, dtfac, rhofac, vitbox, vitboy, vitboz)
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
@@ -830,6 +857,8 @@ if (imobil.eq.1) then
     propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(        &
          vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboz*surfac(3,ifac) )
   enddo
+  !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
+  !$omp          if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     dtfac  = dt(iel)
@@ -849,7 +878,7 @@ endif
 !===============================================================================
 
 
-if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
+if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   ! ---> REPERAGE DES VARIABLES
 
@@ -881,7 +910,7 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   !  -- Pression
 
-  if(iescal(iestot).gt.0) then
+  if (iescal(iestot).gt.0) then
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(rtp(1,ipr))
@@ -924,27 +953,30 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   ! ---> CALCUL DE L'ESTIMATEUR CORRECTION : DIVERGENCE DE ROM * U (N + 1)
   !                                          - GAMMA
 
-  if(iescal(iescor).gt.0) then
+  if (iescal(iescor).gt.0) then
     init = 1
     call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,            &
-         ifacel,ifabor,esflum,esflub,w1)
+                ifacel,ifabor,esflum,esflub,w1)
 
     if (ncetsm.gt.0) then
+      !$omp parallel do private(iel) if(ncetsm > thr_n_min)
       do iitsm = 1, ncetsm
         iel = icetsm(iitsm)
         w1(iel) = w1(iel)-volume(iel)*smacel(iitsm,ipr)
       enddo
     endif
 
-    if(iescal(iescor).eq.2) then
+    if (iescal(iescor).eq.2) then
       iescop = ipproc(iestim(iescor))
+      !$omp parallel do
       do iel = 1, ncel
-        propce(iel,iescop) =  abs(w1(iel))
+        propce(iel,iescop) = abs(w1(iel))
       enddo
-    elseif(iescal(iescor).eq.1) then
+    elseif (iescal(iescor).eq.1) then
       iescop = ipproc(iestim(iescor))
+      !$omp parallel do
       do iel = 1, ncel
-        propce(iel,iescop) =  abs(w1(iel)) / volume(iel)
+        propce(iel,iescop) = abs(w1(iel)) / volume(iel)
       enddo
     endif
   endif
@@ -952,17 +984,18 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   ! ---> CALCUL DE L'ESTIMATEUR TOTAL
 
-  if(iescal(iestot).gt.0) then
+  if (iescal(iestot).gt.0) then
 
     !   INITIALISATION DE TRAV AVEC LE TERME INSTATIONNAIRE
 
+    !$omp parallel do
     do iel = 1, ncel
       trav(iel,1) = propce(iel,ipcrom) * volume(iel) *          &
-           ( rtpa(iel,iu)- rtp(iel,iu) )/dt(iel)
+           (rtpa(iel,iu)- rtp(iel,iu))/dt(iel)
       trav(iel,2) = propce(iel,ipcrom) * volume(iel) *          &
-           ( rtpa(iel,iv)- rtp(iel,iv) )/dt(iel)
+           (rtpa(iel,iv)- rtp(iel,iv))/dt(iel)
       trav(iel,3) = propce(iel,ipcrom) * volume(iel) *          &
-           ( rtpa(iel,iw)- rtp(iel,iw) )/dt(iel)
+           (rtpa(iel,iw)- rtp(iel,iw))/dt(iel)
     enddo
 
     !   APPEL A PREDUV AVEC RTP ET RTP AU LIEU DE RTP ET RTPA
@@ -991,7 +1024,7 @@ endif
 ! 6.  TRAITEMENT DU POINT FIXE SUR LE SYSTEME VITESSE/PRESSION
 !===============================================================================
 
-if(nterup.gt.1) then
+if (nterup.gt.1) then
 ! TEST DE CONVERGENCE DE L'ALGORITHME ITERATIF
 ! On initialise ICVRGE a 1 et on le met a 0 si une des phases n'est
 ! pas convergee
@@ -999,16 +1032,16 @@ if(nterup.gt.1) then
   icvrge = 1
 
   xnrmu = 0.d0
-  do iel = 1,ncel
+  !$omp parallel do private(xdu, xdv, xdw) reduction(+:xnrmu)
+  do iel = 1, ncel
     xdu = rtp(iel,iu) - uvwk(iel,1)
     xdv = rtp(iel,iv) - uvwk(iel,2)
     xdw = rtp(iel,iw) - uvwk(iel,3)
-    xnrmu = xnrmu +(xdu**2 + xdv**2 + xdw**2)     &
-         * volume(iel)
+    xnrmu = xnrmu +(xdu**2 + xdv**2 + xdw**2) * volume(iel)
   enddo
   ! --->    TRAITEMENT DU PARALLELISME
 
-  if(irangp.ge.0) call parsom (xnrmu)
+  if (irangp.ge.0) call parsom (xnrmu)
   !==========
   ! -- >    TRAITEMENT DU COUPLAGE ENTRE DEUX INSTANCES DE CODE_SATURNE
   do numcpl = 1, nbrcpl
@@ -1019,7 +1052,7 @@ if(nterup.gt.1) then
   xnrmu = sqrt(xnrmu)
 
   ! Indicateur de convergence du point fixe
-  if(xnrmu.ge.epsup*xnrmu0) icvrge = 0
+  if (xnrmu.ge.epsup*xnrmu0) icvrge = 0
 
 endif
 
@@ -1033,7 +1066,7 @@ if (idircl(ipr).eq.1) then
 else
   ndircp = ndircl(ipr)-1
 endif
-if(ndircp.le.0) then
+if (ndircp.le.0) then
   call prmoy0 &
   !==========
 ( ncelet , ncel   , nfac   , nfabor ,                         &
@@ -1047,8 +1080,9 @@ if (ippmod(icompf).lt.0) then
   xxp0   = xyzp0(1)
   xyp0   = xyzp0(2)
   xzp0   = xyzp0(3)
-  do iel=1,ncel
-    propce(iel,ipproc(iprtot))= rtp(iel,ipr)           &
+  !$omp parallel do
+  do iel = 1, ncel
+    propce(iel,ipproc(iprtot)) = rtp(iel,ipr)           &
          + ro0*( gx*(xyzcen(1,iel)-xxp0)               &
          + gy*(xyzcen(2,iel)-xyp0)                     &
          + gz*(xyzcen(3,iel)-xzp0) )                   &
@@ -1070,6 +1104,7 @@ if (iwarni(iu).ge.1) then
   write(nfecra,2000)
 
   rnorm = -1.d0
+  !$omp parallel do reduction(max:rnorm)
   do iel = 1, ncel
     rnorm  = max(rnorm,abs(rtp(iel,ipr)))
   enddo
@@ -1078,13 +1113,25 @@ if (iwarni(iu).ge.1) then
   write(nfecra,2100)rnorm
 
   rnorm = -1.d0
+  imax = 1
+  !$omp parallel private(imaxt, rnormt, vitnor)
+  rnormt = -1.d0
+  imaxt = 1
+  !$omp do
   do iel = 1, ncel
     vitnor = sqrt(rtp(iel,iu)**2+rtp(iel,iv)**2+rtp(iel,iw)**2)
-    if(vitnor.ge.rnorm) then
-      rnorm = vitnor
-      imax  = iel
+    if (vitnor.ge.rnormt) then
+      rnormt = vitnor
+      imaxt  = iel
     endif
   enddo
+  !$omp critical
+  if (rnormt.ge.rnorm) then
+    rnorm = rnormt
+    imax  = imaxt
+  endif
+  !$omp end critical
+  !$omp end parallel
 
   xyzmax(1) = xyzcen(1,imax)
   xyzmax(2) = xyzcen(2,imax)
@@ -1101,9 +1148,10 @@ if (iwarni(iu).ge.1) then
 
   ! Pour la periodicite et le parallelisme, rom est echange dans phyvar
 
-
   rnorma = -grand
   rnormi =  grand
+  !$omp parallel do reduction(max:rnorma) reduction(min:rnormi) &
+  !$omp          private(iel1, iel2, surf, rhom, rnorm)
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
@@ -1123,6 +1171,8 @@ if (iwarni(iu).ge.1) then
 
   rnorma = -grand
   rnormi =  grand
+  !$omp parallel do reduction(max:rnorma) reduction(min:rnormi) &
+  !$omp          private(rnorm) if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     rnorm = propfb(ifac,iflmab)/(surfbn(ifac)*propfb(ifac,ipbrom))
     rnorma = max(rnorma,rnorm)
@@ -1137,6 +1187,7 @@ if (iwarni(iu).ge.1) then
   write(nfecra,2400)rnorma, rnormi
 
   rnorm = 0.d0
+  !$omp parallel do reduction(+:rnorm) if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     rnorm = rnorm + propfb(ifac,iflmab)
   enddo
@@ -1148,12 +1199,12 @@ if (iwarni(iu).ge.1) then
 
   write(nfecra,2001)
 
-  if(nterup.gt.1) then
-    if(icvrge.eq.0) then
+  if (nterup.gt.1) then
+    if (icvrge.eq.0) then
       write(nfecra,2600) iterns
       write(nfecra,2601) xnrmu, xnrmu0, epsup
       write(nfecra,2001)
-      if(iterns.eq.nterup) then
+      if (iterns.eq.nterup) then
         write(nfecra,2603)
         write(nfecra,2001)
       endif
@@ -1245,7 +1296,7 @@ if (allocated(w10)) deallocate(w10)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return
