@@ -187,7 +187,7 @@ double precision smbr(3,ncelet)
 
 character*80     chaine
 character*8      cnom
-integer          ifac,ii,jj,infac,iel,iupwin, iok
+integer          ifac,ii,jj,infac,iel,iupwin, ig, it
 integer          iiu,iiv,iiw
 integer          iitytu
 integer          iir11,iir22,iir33
@@ -243,18 +243,16 @@ pja = 0.d0
 chaine = nomvar(ippu)
 cnom   = chaine(1:8)
 
-if(iwarnp.ge.2) then
+if (iwarnp.ge.2) then
   if (ischcp.eq.1) then
-    WRITE(NFECRA,1000)CNOM,'    CENTRE ',                         &
-                                              (1.d0-blencp)*100.d0
+    write(nfecra,1000) cnom, '  CENTERED ', (1.d0-blencp)*100.d0
   else
-    WRITE(NFECRA,1000)CNOM,' 2ND ORDER ',                         &
-                                              (1.d0-blencp)*100.d0
+    write(nfecra,1000) cnom, ' 2ND ORDER ', (1.d0-blencp)*100.d0
   endif
 endif
 
 iupwin = 0
-if(blencp.eq.0.d0) iupwin = 1
+if (blencp.eq.0.d0) iupwin = 1
 
 !===============================================================================
 ! 2.  CALCUL DU BILAN AVEC TECHNIQUE DE RECONSTRUCTION
@@ -272,9 +270,9 @@ if(blencp.eq.0.d0) iupwin = 1
 !        - quand on a de la convection, qu'on n'est pas en upwind pur
 !          et qu'on n'a pas shunte le test de pente
 
-if( (idiffp.ne.0 .and. ircflp.eq.1) .or. ivisep.eq.1 .or.         &
+if ((idiffp.ne.0 .and. ircflp.eq.1) .or. ivisep.eq.1 .or.         &
     (iconvp.ne.0 .and. iupwin.eq.0 .and.                          &
-    (ischcp.eq.0 .or.  ircflp.eq.1 .or. isstpp.eq.0)) ) then
+    (ischcp.eq.0 .or.  ircflp.eq.1 .or. isstpp.eq.0))) then
 
 
   ilved = .true.
@@ -288,6 +286,7 @@ if( (idiffp.ne.0 .and. ircflp.eq.1) .or. ivisep.eq.1 .or.         &
   gradv )
 
 else
+  !$omp parallel do private(isou, jsou)
   do iel = 1, ncelet
     do isou =1, 3
       do jsou = 1, 3
@@ -301,6 +300,7 @@ endif
 ! ---> Compute uncentred gradient gradva for the slope test
 ! ======================================================================
 
+!$omp parallel do private(isou, jsou)
 do iel = 1, ncelet
   do jsou = 1, 3
     do isou =1, 3
@@ -311,65 +311,78 @@ enddo
 
 if (iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0) then
 
-  do ifac = 1, nfac
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, isou, jsou, difv, djfv, pif, pjf, &
+    !$omp                     pfac, vfac)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
 
-    do jsou = 1, 3
-      difv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,ii)
-      djfv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,jj)
-    enddo
-    !-----------------
-    ! X-Y-Z component, p=u, v, w
-    do isou = 1, 3
-      pif = pvar(isou,ii)
-      pjf = pvar(isou,jj)
-      do jsou = 1, 3
-        pif = pif + gradv(isou,jsou,ii)*difv(jsou)
-        pjf = pjf + gradv(isou,jsou,jj)*djfv(jsou)
+        do jsou = 1, 3
+          difv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,ii)
+          djfv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,jj)
+        enddo
+        !-----------------
+        ! X-Y-Z component, p=u, v, w
+        do isou = 1, 3
+          pif = pvar(isou,ii)
+          pjf = pvar(isou,jj)
+          do jsou = 1, 3
+            pif = pif + gradv(isou,jsou,ii)*difv(jsou)
+            pjf = pjf + gradv(isou,jsou,jj)*djfv(jsou)
+          enddo
+
+          pfac = pjf
+          if (flumas(ifac).gt.0.d0) pfac = pif
+
+          ! U gradient
+          do jsou = 1, 3
+            vfac(jsou) = pfac*surfac(jsou,ifac)
+
+            gradva(isou,jsou,ii) = gradva(isou,jsou,ii) + vfac(jsou)
+            gradva(isou,jsou,jj) = gradva(isou,jsou,jj) - vfac(jsou)
+          enddo
+        enddo
+
       enddo
-
-      pfac = pjf
-      if( flumas(ifac ).gt.0.d0 ) pfac = pif
-
-      ! U gradient
-      do jsou = 1, 3
-        vfac(jsou) = pfac*surfac(jsou,ifac)
-
-        gradva(isou,jsou,ii) = gradva(isou,jsou,ii) + vfac(jsou)
-        gradva(isou,jsou,jj) = gradva(isou,jsou,jj) - vfac(jsou)
-      enddo
     enddo
-
   enddo
 
-  do ifac = 1, nfabor
-    ii = ifabor(ifac )
+  do ig = 1, ngrpb
+    !$omp parallel do private(ifac, ii, isou, jsou, diipbv, pfac)   &
+    !$omp          if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-    do jsou = 1, 3
-      diipbv(jsou) = diipb(jsou,ifac)
-    enddo
-    !-----------------
-    ! X-Y-Z components, p=u, v, w
-    do isou = 1,3
-      pfac = inc*coefav(isou,ifac)
-      !coefu is a matrix
-      do jsou =  1, 3
-        pfac = pfac + coefbv(isou,jsou,ifac)*(pvar(jsou,ii)    &
-                    + gradv(jsou,1,ii)*diipbv(1)               &
-                    + gradv(jsou,2,ii)*diipbv(2)               &
-                    + gradv(jsou,3,ii)*diipbv(3)     )
+        ii = ifabor(ifac)
+
+        do jsou = 1, 3
+          diipbv(jsou) = diipb(jsou,ifac)
+        enddo
+        !-----------------
+        ! X-Y-Z components, p=u, v, w
+        do isou = 1,3
+          pfac = inc*coefav(isou,ifac)
+          !coefu is a matrix
+          do jsou =  1, 3
+            pfac = pfac + coefbv(isou,jsou,ifac)*(pvar(jsou,ii)    &
+                        + gradv(jsou,1,ii)*diipbv(1)               &
+                        + gradv(jsou,2,ii)*diipbv(2)               &
+                        + gradv(jsou,3,ii)*diipbv(3))
+          enddo
+
+          do jsou = 1, 3
+            gradva(isou,jsou,ii) = gradva(isou,jsou,ii) +pfac*surfbo(jsou,ifac)
+          enddo
+        enddo
+
       enddo
-
-      do jsou = 1, 3
-        gradva(isou,jsou,ii) = gradva(isou,jsou,ii) +pfac*surfbo(jsou,ifac )
-      enddo
     enddo
-
   enddo
 
-
+  !$omp parallel do private(isou, jsou, unsvol)
   do iel = 1, ncel
     unsvol = 1.d0/volume(iel)
     do isou = 1, 3
@@ -379,23 +392,23 @@ if (iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0) then
     enddo
   enddo
 
-  !     TRAITEMENT DU PARALLELISME, ET DE LA PERIODICITE
+  ! Handle parallelism and periodicity
 
-  if(irangp.ge.0.or.iperio.eq.1) then
+  if (irangp.ge.0.or.iperio.eq.1) then
     call syntin (gradva)
     !==========
-
   endif
 
 endif
 
 ! ======================================================================
-! ---> Assemblage a partir des facettes fluides
+! ---> Contribution from interior faces
 ! ======================================================================
 
 infac = 0
 
-if(ncelet.gt.ncel) then
+if (ncelet.gt.ncel) then
+  !$omp parallel do private(isou) if(ncelet -ncel > thr_n_min)
   do iel = ncel+1, ncelet
     do isou = 1, 3
       smbr(isou,iel) = 0.d0
@@ -403,882 +416,899 @@ if(ncelet.gt.ncel) then
   enddo
 endif
 
-! --> Flux upwind pur
+! --> Pure upwind flux
 ! =====================
 
 if (iupwin.eq.1) then
 
-  ! Stationnaire
+  ! Steady
   if (idtvar.lt.0) then
 
-    do ifac = 1, nfac
-
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      ! En parallele, la face sera comptee d'un cote OU (exclusif) de l'autre
-      if (ii.le.ncel) then
-        infac = infac+1
-      endif
-
-      do jsou = 1, 3
-        dijpfv(jsou) = dijpf(jsou,ifac)
-      enddo
-
-      pnd   = pond(ifac)
-
-! ON RECALCULE A CE NIVEAU II' ET JJ'
-      do jsou = 1, 3
-        diipfv(jsou) = cdgfac(jsou,ifac) - (xyzcen(jsou,ii)+                  &
-               (1.d0-pnd) * dijpfv(jsou))
-        djjpfv(jsou) = cdgfac(jsou,ifac) -  xyzcen(jsou,jj)+                  &
-                   pnd  * dijpfv(jsou)
-      enddo
-
-      flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-
-!-----------------
-! X-Y-Z components, p=u, v, w
-      do isou = 1, 3
-        do jsou = 1, 3
-          dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
-        enddo
-
-!     reconstruction uniquement si IRCFLP = 1
-        pi  = pvar (isou,ii)
-        pj  = pvar (isou,jj)
-
-        pia = pvara(isou,ii)
-        pja = pvara(isou,jj)
-
-        pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
-                          +dpvf(2)*diipfv(2)        &
-                          +dpvf(3)*diipfv(3))
-        pjp = pj + ircflp*(dpvf(1)*djjpfv(1)        &
-                          +dpvf(2)*djjpfv(2)        &
-                          +dpvf(3)*djjpfv(3))
-
-        pipr = pi /relaxp - (1.d0-relaxp)/relaxp * pia   &
-             + ircflp*(dpvf(1)*diipfv(1)                 &
-                      +dpvf(2)*diipfv(2)                 &
-                      +dpvf(3)*diipfv(3) )
-        pjpr = pj /relaxp - (1.d0-relaxp)/relaxp * pja   &
-             + ircflp*(dpvf(1)*djjpfv(1)                 &
-                      +dpvf(2)*djjpfv(2)                 &
-                      +dpvf(3)*djjpfv(3))
-
-        pifr = pi /relaxp - (1.d0-relaxp)/relaxp * pia
-        pjfr = pj /relaxp - (1.d0-relaxp)/relaxp * pja
-
-        fluxi = iconvp*( flui*pifr +fluj*pj )                      &
-              + idiffp*viscf(ifac)*( pipr -pjp )
-        fluxj = iconvp*( flui*pi +fluj*pjfr )                      &
-              + idiffp*viscf(ifac)*( pip -pjpr )
-
-        smbr(isou,ii) = smbr(isou,ii) - fluxi
-        smbr(isou,jj) = smbr(isou,jj) + fluxj
-
-      enddo
-
-    enddo
-
-!     Instationnaire
-  else
-
-    do ifac = 1, nfac
-
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-!     en parallele, la face sera comptee d'un cote OU (exclusif) de l'autre
-      if (ii.le.ncel) then
-        infac = infac+1
-      endif
-
-      do jsou = 1, 3
-        dijpfv(jsou) = dijpf(jsou,ifac)
-      enddo
-
-      pnd   = pond(ifac)
-
-! ON RECALCULE A CE NIVEAU II' ET JJ'
-      do jsou = 1, 3
-        diipfv(jsou) = cdgfac(jsou,ifac) - (xyzcen(jsou,ii)+                  &
-               (1.d0-pnd) * dijpfv(jsou))
-        djjpfv(jsou) = cdgfac(jsou,ifac) -  xyzcen(jsou,jj)+                  &
-                   pnd  * dijpfv(jsou)
-      enddo
-
-      flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-
-!-----------------
-! X-Y-Z components, p=u, v, w
-      do isou = 1, 3
-
-        do jsou = 1, 3
-          dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
-        enddo
-
-        pi = pvar(isou,ii)
-        pj = pvar(isou,jj)
-
-        pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
-                          +dpvf(2)*diipfv(2)        &
-                          +dpvf(3)*diipfv(3))
-        pjp = pj + ircflp*(dpvf(1)*djjpfv(1)        &
-                          +dpvf(2)*djjpfv(2)        &
-                          +dpvf(3)*djjpfv(3))
-
-        flux = iconvp*( flui*pi +fluj*pj )                        &
-             + idiffp*viscf(ifac)*( pip -pjp )
-
-        smbr(isou,ii) = smbr(isou,ii) - thetap * flux
-        smbr(isou,jj) = smbr(isou,jj) + thetap * flux
-
-      enddo
-
-    enddo
-
-  endif
-
-
-!  --> FLUX SANS TEST DE PENTE
-!  ============================
-
-elseif(isstpp.eq.1) then
-
-!     Stationnaire
-  if (idtvar.lt.0) then
-
-    iok = 0
-    do ifac = 1, nfac
-
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-
-      do jsou = 1, 3
-        dijpfv(jsou) = dijpf(jsou,ifac)
-      enddo
-
-      pnd   = pond(ifac)
-
-! ON RECALCULE A CE NIVEAU II' ET JJ'
-      do jsou = 1, 3
-        diipfv(jsou) = cdgfac(jsou,ifac) - (xyzcen(jsou,ii)+                  &
-               (1.d0-pnd) * dijpfv(jsou))
-        djjpfv(jsou) = cdgfac(jsou,ifac) -  xyzcen(jsou,jj)+                  &
-                   pnd  * dijpfv(jsou)
-      enddo
-
-      flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-
-!  Pour le second ordre on definit IF
-      if(ischcp.eq.0) then
-        do jsou = 1, 3
-          difv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,ii)
-          djfv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,jj)
-        enddo
-      endif
-
-
-!-----------------
-! X-Y-Z components, p=u, v, w
-      do isou = 1, 3
-
-        do jsou = 1, 3
-          dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
-        enddo
-
-        pi = pvar (isou,ii)
-        pj = pvar (isou,jj)
-
-        pia = pvara(isou,ii)
-        pja = pvara(isou,jj)
-
-        pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
-                          +dpvf(2)*diipfv(2)        &
-                          +dpvf(3)*diipfv(3))
-        pjp = pj + ircflp*(dpvf(1)*djjpfv(1)        &
-                          +dpvf(2)*djjpfv(2)        &
-                          +dpvf(3)*djjpfv(3))
-
-        pipr = pi /relaxp - (1.d0-relaxp)/relaxp * pia   &
-             + ircflp*(dpvf(1)*diipfv(1)                 &
-                      +dpvf(2)*diipfv(2)                 &
-                      +dpvf(3)*diipfv(3) )
-        pjpr = pj /relaxp - (1.d0-relaxp)/relaxp * pja   &
-             + ircflp*(dpvf(1)*djjpfv(1)                 &
-                      +dpvf(2)*djjpfv(2)                 &
-                      +dpvf(3)*djjpfv(3))
-
-        pir = pi /relaxp - (1.d0 - relaxp)/relaxp* pia
-        pjr = pj /relaxp - (1.d0 - relaxp)/relaxp* pja
-
-!         CENTRE
-!        --------
-
-        if (ischcp.eq.1) then
-
-          pifri = pnd*pipr +(1.d0-pnd)*pjp
-          pjfri = pifri
-          pifrj = pnd*pip  +(1.d0-pnd)*pjpr
-          pjfrj = pifrj
-
-
-!         SECOND ORDER
-!        --------------
-
-        elseif(ischcp.eq.0) then
-! dif* is already defined
-
-!     on laisse la reconstruction de PIF et PJF meme si IRCFLP=0
-!     sinon cela revient a faire de l'upwind
-          pifri = pir + difv(1)*gradv(isou,1,ii)      &
-                      + difv(2)*gradv(isou,2,ii)      &
-                      + difv(3)*gradv(isou,3,ii)
-          pifrj = pi  + difv(1)*gradv(isou,1,ii)      &
-                      + difv(2)*gradv(isou,2,ii)      &
-                      + difv(3)*gradv(isou,3,ii)
-
-          pjfrj = pjr + djfv(1)*gradv(isou,1,jj)      &
-                      + djfv(2)*gradv(isou,2,jj)      &
-                      + djfv(3)*gradv(isou,3,jj)
-          pjfri = pj  + djfv(1)*gradv(isou,1,jj)      &
-                      + djfv(2)*gradv(isou,2,jj)      &
-                      + djfv(3)*gradv(isou,3,jj)
-        else
-          write(nfecra,9000)ischcp
-          iok = 1
-        endif
-
-
-!        BLENDING
-!       ----------
-
-        pifri = blencp*pifri+(1.d0-blencp)*pir
-        pifrj = blencp*pifrj+(1.d0-blencp)*pif
-        pjfri = blencp*pjfri+(1.d0-blencp)*pjf
-        pjfrj = blencp*pjfrj+(1.d0-blencp)*pjr
-
-
-!        FLUX
-!       ------
-
-        fluxi = iconvp*( flui*pifri + fluj*pjfri )                  &
-               +idiffp*viscf(ifac)*( pipr -pjp )
-        fluxj = iconvp*( flui*pifrj +fluj*pjfrj )                   &
-               +idiffp*viscf(ifac)*( pip -pjpr )
-
-
-!        ASSEMBLAGE
-!       ------------
-
-        smbr(isou,ii) = smbr(isou,ii) - fluxi
-        smbr(isou,jj) = smbr(isou,jj) + fluxj
-      enddo
-      !end isou
-
-    enddo
-!        Position "hors boucle" du CALL CSEXIT pour raisons
-!        historiques,pour eviter de devectoriser la boucle
-!        -> a conserver si on recherche a optimiser la boucle en
-!        vectorisation
-    if(iok.ne.0) then
-      call csexit (1)
-    endif
-
-!     Instationnaire
-  else
-
-    iok = 0
-    do ifac = 1, nfac
-
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-
-      do jsou = 1, 3
-        dijpfv(jsou) = dijpf(jsou,ifac)
-      enddo
-
-      pnd   = pond(ifac)
-
-! ON RECALCULE A CE NIVEAU II' ET JJ'
-      do jsou = 1, 3
-        diipfv(jsou) = cdgfac(jsou,ifac) - (xyzcen(jsou,ii)+                  &
-               (1.d0-pnd) * dijpfv(jsou))
-        djjpfv(jsou) = cdgfac(jsou,ifac) -  xyzcen(jsou,jj)+                  &
-                   pnd  * dijpfv(jsou)
-      enddo
-
-      flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-
-!  Pour le second ordre on definit IF
-      if(ischcp.eq.0) then
-        do jsou = 1, 3
-          difv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,ii)
-          djfv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,jj)
-        enddo
-      endif
-
-!-----------------
-! X-Y-Z components, p=u, v, w
-      do isou = 1, 3
-
-        do jsou = 1, 3
-          dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
-        enddo
-
-        pi = pvar(isou,ii)
-        pj = pvar(isou,jj)
-
-        pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
-                          +dpvf(2)*diipfv(2)        &
-                          +dpvf(3)*diipfv(3))
-        pjp = pj + ircflp*(dpvf(1)*djjpfv(1)        &
-                          +dpvf(2)*djjpfv(2)        &
-                          +dpvf(3)*djjpfv(3))
-
-!         CENTRE
-!        --------
-
-        if (ischcp.eq.1) then
-
-          pif = pnd*pip +(1.d0-pnd)*pjp
-          pjf = pif
-
-
-!         SECOND ORDER
-!        --------------
-
-        elseif(ischcp.eq.0) then
-! dif* is already defined
-
-!     on laisse la reconstruction de PIF et PJF meme si IRCFLP=0
-!     sinon cela revient a faire de l'upwind
-        pif = pi
-        pjf = pj
-        do jsou = 1, 3
-          pif = pif + gradv(isou,jsou,ii)*difv(jsou)
-          pjf = pjf + gradv(isou,jsou,jj)*djfv(jsou)
-        enddo
-
-        else
-          write(nfecra,9000)ischcp
-          iok = 1
-        endif
-
-
-!        BLENDING
-!       ----------
-
-        pif = blencp*pif+(1.d0-blencp)*pi
-        pjf = blencp*pjf+(1.d0-blencp)*pj
-
-
-!        FLUX
-!       ------
-
-        flux = iconvp*( flui*pif +fluj*pjf )                        &
-             + idiffp*viscf(ifac)*( pip -pjp )
-
-
-!        ASSEMBLAGE
-!       ------------
-
-        smbr(isou,ii) = smbr(isou,ii) - thetap * flux
-        smbr(isou,jj) = smbr(isou,jj) + thetap * flux
-      enddo
-      !end isou
-
-    enddo
-!        Position "hors boucle" du CALL CSEXIT pour raisons
-!        historiques,pour eviter de devectoriser la boucle
-!        -> a conserver si on recherche a optimiser la boucle en
-!        vectorisation
-    if(iok.ne.0) then
-      call csexit (1)
-    endif
-
-  endif
-
-
-
-
-!  --> FLUX AVEC TEST DE PENTE (separe pour vectorisation eventuelle)
-!  =============================
-
-else
-
-!     Stationnaire
-  if (idtvar.lt.0) then
-
-    iok = 0
-    do ifac = 1, nfac
-
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-
-      do jsou = 1, 3
-        dijpfv(jsou) = dijpf(jsou,ifac)
-      enddo
-
-      pnd   = pond(ifac)
-      distf = dist(ifac)
-      srfan = surfan(ifac)
-! ON RECALCULE A CE NIVEAU II' ET JJ'
-      do jsou = 1, 3
-        diipfv(jsou) = cdgfac(jsou,ifac) - (xyzcen(jsou,ii)+                  &
-               (1.d0-pnd) * dijpfv(jsou))
-        djjpfv(jsou) = cdgfac(jsou,ifac) -  xyzcen(jsou,jj)+                  &
-                   pnd  * dijpfv(jsou)
-      enddo
-
-
-      flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-
-!  Pour le second ordre on definit IF
-      if(ischcp.eq.0) then
-        do jsou = 1, 3
-          difv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,ii)
-          djfv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,jj)
-        enddo
-      endif
-
-!-----------------
-! X-Y-Z components, p=u, v, w
-      do isou = 1, 3
-
-        do jsou = 1, 3
-          dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
-        enddo
-
-        pi  = pvar (isou,ii)
-        pj  = pvar (isou,jj)
-
-        pia = pvara(isou,ii)
-        pja = pvara(isou,jj)
-
-        pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
-                          +dpvf(2)*diipfv(2)        &
-                          +dpvf(3)*diipfv(3))
-        pjp = pj + ircflp*(dpvf(1)*djjpfv(1)        &
-                          +dpvf(2)*djjpfv(2)        &
-                          +dpvf(3)*djjpfv(3))
-
-        pipr = pi /relaxp - (1.d0-relaxp)/relaxp * pia   &
-             + ircflp*(dpvf(1)*diipfv(1)                 &
-                      +dpvf(2)*diipfv(2)                 &
-                      +dpvf(3)*diipfv(3) )
-        pjpr = pj /relaxp - (1.d0-relaxp)/relaxp * pja   &
-             + ircflp*(dpvf(1)*djjpfv(1)                 &
-                      +dpvf(2)*djjpfv(2)                 &
-                      +dpvf(3)*djjpfv(3))
-
-
-        pir = pi /relaxp - (1.d0 - relaxp)/relaxp*pia
-        pjr = pj /relaxp - (1.d0 - relaxp)/relaxp*pja
-
-!         TEST DE PENTE
-!        ---------------
-
-        testi = gradva(isou,1,ii)*surfac(1,ifac)                  &
-              + gradva(isou,2,ii)*surfac(2,ifac)                  &
-              + gradva(isou,3,ii)*surfac(3,ifac)
-        testj = gradva(isou,1,jj)*surfac(1,ifac)                  &
-              + gradva(isou,2,jj)*surfac(2,ifac)                  &
-              + gradva(isou,3,jj)*surfac(3,ifac)
-        testij= gradva(isou,1,ii)*gradva(isou,1,jj)             &
-              + gradva(isou,2,ii)*gradva(isou,2,jj)             &
-              + gradva(isou,3,ii)*gradva(isou,3,jj)
-
-        if( flumas(ifac).gt.0.d0) then
-          dcc = gradv(isou,1,ii)*surfac(1,ifac)    &
-              + gradv(isou,2,ii)*surfac(2,ifac)    &
-              + gradv(isou,3,ii)*surfac(3,ifac)
-          ddi = testi
-          ddj = ( pj - pi )/distf *srfan
-        else
-          dcc = gradv(isou,1,jj)*surfac(1,ifac)    &
-              + gradv(isou,2,jj)*surfac(2,ifac)    &
-              + gradv(isou,3,jj)*surfac(3,ifac)
-          ddi = ( pj - pi )/distf *srfan
-          ddj = testj
-        endif
-        tesqck = dcc**2 -(ddi-ddj)**2
-
-
-!         UPWIND
-!        --------
-
-        if( tesqck.le.0.d0 .or. testij.le.0.d0 ) then
-          pifri = pir
-          pifrj = pi
-          pjfri = pj
-          pjfrj = pjr
-!     en parallele, la face sera comptee d'un cote OU (exclusif) de l'autre
+    do ig = 1, ngrpi
+      !$omp parallel do private(ifac, ii, jj, isou, jsou, pnd, dijpfv,     &
+      !$omp                     diipfv, djjpfv, flui, fluj, dpvf, pi, pj,  &
+      !$omp                     pia, pja, pip, pjp, pipr, pjpr,            &
+      !$omp                     pifr, pjfr, fluxi, fluxj)                  &
+      !$omp             reduction(+:infac)
+      do it = 1, nthrdi
+        do ifac = iompli(1,ig,it), iompli(2,ig,it)
+
+          ii = ifacel(1,ifac)
+          jj = ifacel(2,ifac)
+
+          ! in parallel, face will be counted by one and only one rank
           if (ii.le.ncel) then
             infac = infac+1
           endif
 
-        else
-
-
-!         CENTRE
-!        --------
-
-          if (ischcp.eq.1) then
-
-            pifri = pnd*pipr +(1.d0-pnd)*pjp
-            pjfri = pifri
-            pifrj = pnd*pip  +(1.d0-pnd)*pjpr
-            pjfrj = pifrj
-
-
-!         SECOND ORDER
-!        --------------
-
-          elseif(ischcp.eq.0) then
-! difv already defined
-
-!     on laisse la reconstruction de PIF et PJF meme si IRCFLP=0
-!     sinon cela revient a faire de l'upwind
-            pifri = pir + difv(1)*gradv(isou,1,ii)      &
-                        + difv(2)*gradv(isou,2,ii)      &
-                        + difv(3)*gradv(isou,3,ii)
-            pifrj = pi  + difv(1)*gradv(isou,1,ii)      &
-                        + difv(2)*gradv(isou,2,ii)      &
-                        + difv(3)*gradv(isou,3,ii)
-
-            pjfrj = pjr + djfv(1)*gradv(isou,1,jj)      &
-                        + djfv(2)*gradv(isou,2,jj)      &
-                        + djfv(3)*gradv(isou,3,jj)
-            pjfri = pj  + djfv(1)*gradv(isou,1,jj)      &
-                        + djfv(2)*gradv(isou,2,jj)      &
-                        + djfv(3)*gradv(isou,3,jj)
-          else
-            write(nfecra,9000)ischcp
-            iok = 1
-          endif
-
-        endif
-
-
-!        BLENDING
-!       ----------
-
-        pifri = blencp*pifri+(1.d0-blencp)*pir
-        pifrj = blencp*pifrj+(1.d0-blencp)*pi
-        pjfri = blencp*pjfri+(1.d0-blencp)*pj
-        pjfrj = blencp*pjfrj+(1.d0-blencp)*pjr
-
-
-!        FLUX
-!       ------
-
-        fluxi = iconvp*( flui*pifri + fluj*pjfri )                  &
-               +idiffp*viscf(ifac)*( pipr -pjp )
-        fluxj = iconvp*( flui*pifrj +fluj*pjfrj )                   &
-               +idiffp*viscf(ifac)*( pip -pjpr )
-
-
-!        ASSEMBLAGE
-!       ------------
-
-        smbr(isou,ii) = smbr(isou,ii) - fluxi
-        smbr(isou,jj) = smbr(isou,jj) + fluxj
-      enddo
-      !end isou
-
-    enddo
-!        Position "hors boucle" du CALL CSEXIT pour raisons
-!        historiques,pour eviter de devectoriser la boucle
-!        -> a conserver si on recherche a optimiser la boucle en
-!        vectorisation
-    if(iok.ne.0) then
-      call csexit (1)
-    endif
-
-!     Instationnaire
-  else
-
-    iok = 0
-    do ifac = 1, nfac
-
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-
-      do jsou = 1, 3
-        dijpfv(jsou) = dijpf(jsou,ifac)
-      enddo
-
-      pnd   = pond(ifac)
-      distf = dist(ifac)
-      srfan = surfan(ifac)
-
-! ON RECALCULE II' ET JJ'
-! ON RECALCULE A CE NIVEAU II' ET JJ'
-      do jsou = 1, 3
-        diipfv(jsou) = cdgfac(jsou,ifac) - (xyzcen(jsou,ii)+                  &
-               (1.d0-pnd) * dijpfv(jsou))
-        djjpfv(jsou) = cdgfac(jsou,ifac) -  xyzcen(jsou,jj)+                  &
-                   pnd  * dijpfv(jsou)
-      enddo
-
-      flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-
-!  Pour le second ordre on definit IF
-      if(ischcp.eq.0) then
-        do jsou = 1, 3
-          difv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,ii)
-          djfv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,jj)
-        enddo
-      endif
-
-!-----------------
-! X-Y-Z components, p=u, v, w
-      do isou = 1, 3
-
-        do jsou = 1, 3
-          dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
-        enddo
-
-        pi = pvar(isou,ii)
-        pj = pvar(isou,jj)
-
-        pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
-                          +dpvf(2)*diipfv(2)        &
-                          +dpvf(3)*diipfv(3))
-        pjp = pj + ircflp*(dpvf(1)*djjpfv(1)        &
-                          +dpvf(2)*djjpfv(2)        &
-                          +dpvf(3)*djjpfv(3))
-
-!         TEST DE PENTE
-!        ---------------
-
-        testi = gradva(isou,1,ii)*surfac(1,ifac)                  &
-              + gradva(isou,2,ii)*surfac(2,ifac)                  &
-              + gradva(isou,3,ii)*surfac(3,ifac)
-        testj = gradva(isou,1,jj)*surfac(1,ifac)                  &
-              + gradva(isou,2,jj)*surfac(2,ifac)                  &
-              + gradva(isou,3,jj)*surfac(3,ifac)
-        testij= gradva(isou,1,ii)*gradva(isou,1,jj)               &
-              + gradva(isou,2,ii)*gradva(isou,2,jj)               &
-              + gradva(isou,3,ii)*gradva(isou,3,jj)
-
-        if( flumas(ifac).gt.0.d0) then
-          dcc = gradv(isou,1,ii)*surfac(1,ifac)    &
-              + gradv(isou,2,ii)*surfac(2,ifac)    &
-              + gradv(isou,3,ii)*surfac(3,ifac)
-          ddi = testi
-          ddj = ( pj - pi )/distf *srfan
-        else
-          dcc = gradv(isou,1,jj)*surfac(1,ifac)    &
-              + gradv(isou,2,jj)*surfac(2,ifac)    &
-              + gradv(isou,3,jj)*surfac(3,ifac)
-          ddi = ( pj - pi )/distf *srfan
-          ddj = testj
-        endif
-        tesqck = dcc**2 -(ddi-ddj)**2
-
-
-!         UPWIND
-!        --------
-
-      if( tesqck.le.0.d0 .or. testij.le.0.d0 ) then
-        pif = pi
-        pjf = pj
-!     en parallele, la face sera comptee d'un cote OU (exclusif) de l'autre
-        if (ii.le.ncel) then
-          infac = infac+1
-        endif
-
-      else
-
-
-!         CENTRE
-!        --------
-
-        if (ischcp.eq.1) then
-
-          pif = pnd*pip +(1.d0-pnd)*pjp
-          pjf = pif
-
-
-!         SECOND ORDER
-!        --------------
-
-        elseif(ischcp.eq.0) then
-! dif* is already defined
-          pif = pi
-          pjf = pj
           do jsou = 1, 3
-            pif = pif + gradv(isou,jsou,ii)*difv(jsou)
-            pjf = pjf + gradv(isou,jsou,jj)*djfv(jsou)
+            dijpfv(jsou) = dijpf(jsou,ifac)
           enddo
 
-!     on laisse la reconstruction de PIF et PJF meme si IRCFLP=0
-!     sinon cela revient a faire de l'upwind
+          pnd = pond(ifac)
 
-        else
-          write(nfecra,9000)ischcp
-          iok = 1
-        endif
+          ! Recompute II' and JJ' at this level
+          do jsou = 1, 3
+            diipfv(jsou) =   cdgfac(jsou,ifac) - (xyzcen(jsou,ii)           &
+                           + (1.d0-pnd) * dijpfv(jsou))
+            djjpfv(jsou) =   cdgfac(jsou,ifac) -  xyzcen(jsou,jj)           &
+                           + pnd  * dijpfv(jsou)
+          enddo
 
-      endif
+          flui = 0.5d0*(flumas(ifac) +abs(flumas(ifac)))
+          fluj = 0.5d0*(flumas(ifac) -abs(flumas(ifac)))
 
+          !-----------------
+          ! X-Y-Z components, p=u, v, w
+          do isou = 1, 3
 
-!        BLENDING
-!       ----------
+            do jsou = 1, 3
+              dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+            enddo
 
-        pif = blencp*pif+(1.d0-blencp)*pi
-        pjf = blencp*pjf+(1.d0-blencp)*pj
+            ! reconstruction only if IRCFLP = 1
+            pi  = pvar (isou,ii)
+            pj  = pvar (isou,jj)
 
+            pia = pvara(isou,ii)
+            pja = pvara(isou,jj)
 
-!        FLUX
-!       ------
+            pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
+                              +dpvf(2)*diipfv(2)        &
+                              +dpvf(3)*diipfv(3))
+            pjp = pj + ircflp*(dpvf(1)*djjpfv(1)        &
+                              +dpvf(2)*djjpfv(2)        &
+                              +dpvf(3)*djjpfv(3))
 
-        flux = iconvp*( flui*pif +fluj*pjf )                        &
-             + idiffp*viscf(ifac)*( pip -pjp )
+            pipr = pi /relaxp - (1.d0-relaxp)/relaxp * pia   &
+                 + ircflp*(dpvf(1)*diipfv(1)                 &
+                          +dpvf(2)*diipfv(2)                 &
+                          +dpvf(3)*diipfv(3))
+            pjpr = pj /relaxp - (1.d0-relaxp)/relaxp * pja   &
+                 + ircflp*(dpvf(1)*djjpfv(1)                 &
+                          +dpvf(2)*djjpfv(2)                 &
+                          +dpvf(3)*djjpfv(3))
 
+            pifr = pi /relaxp - (1.d0-relaxp)/relaxp * pia
+            pjfr = pj /relaxp - (1.d0-relaxp)/relaxp * pja
 
-!        ASSEMBLAGE
-!       ------------
+            fluxi = iconvp*(flui*pifr +fluj*pj)              &
+                  + idiffp*viscf(ifac)*(pipr -pjp)
+            fluxj = iconvp*(flui*pi +fluj*pjfr)              &
+                  + idiffp*viscf(ifac)*(pip -pjpr)
 
-        smbr(isou,ii) = smbr(isou,ii) - thetap * flux
-        smbr(isou,jj) = smbr(isou,jj) + thetap * flux
+            smbr(isou,ii) = smbr(isou,ii) - fluxi
+            smbr(isou,jj) = smbr(isou,jj) + fluxj
+
+          enddo
+
+        enddo
       enddo
-      !end isou
-
     enddo
-!        Position "hors boucle" du CALL CSEXIT pour raisons
-!        historiques,pour eviter de devectoriser la boucle
-!        -> a conserver si on recherche a optimiser la boucle en
-!        vectorisation
-    if(iok.ne.0) then
-      call csexit (1)
-    endif
+
+  ! Unsteady
+  else
+
+    do ig = 1, ngrpi
+      !$omp parallel do private(ifac, ii, jj, isou, jsou, pnd, dijpfv,     &
+      !$omp                     diipfv, djjpfv, flui, fluj, dpvf, pi, pj,  &
+      !$omp                     pip, pjp, flux)                            &
+      !$omp             reduction(+:infac)
+      do it = 1, nthrdi
+        do ifac = iompli(1,ig,it), iompli(2,ig,it)
+
+          ii = ifacel(1,ifac)
+          jj = ifacel(2,ifac)
+
+          ! in parallel, face will be counted by one and only one rank
+          if (ii.le.ncel) then
+            infac = infac+1
+          endif
+
+          do jsou = 1, 3
+            dijpfv(jsou) = dijpf(jsou,ifac)
+          enddo
+
+          pnd = pond(ifac)
+
+          ! Recompute II' and JJ' at this level
+          do jsou = 1, 3
+            diipfv(jsou) =   cdgfac(jsou,ifac) - (xyzcen(jsou,ii)             &
+                           + (1.d0-pnd) * dijpfv(jsou))
+            djjpfv(jsou) =   cdgfac(jsou,ifac) -  xyzcen(jsou,jj)             &
+                           +  pnd * dijpfv(jsou)
+          enddo
+
+          flui = 0.5d0*(flumas(ifac) + abs(flumas(ifac)))
+          fluj = 0.5d0*(flumas(ifac) - abs(flumas(ifac)))
+
+          !-----------------
+          ! X-Y-Z components, p=u, v, w
+          do isou = 1, 3
+
+            do jsou = 1, 3
+              dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+            enddo
+
+            pi = pvar(isou,ii)
+            pj = pvar(isou,jj)
+
+            pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
+                              +dpvf(2)*diipfv(2)        &
+                              +dpvf(3)*diipfv(3))
+            pjp = pj + ircflp*(dpvf(1)*djjpfv(1)        &
+                              +dpvf(2)*djjpfv(2)        &
+                              +dpvf(3)*djjpfv(3))
+
+            flux =   iconvp*(flui*pi +fluj*pj)          &
+                   + idiffp*viscf(ifac)*(pip -pjp)
+
+            smbr(isou,ii) = smbr(isou,ii) - thetap * flux
+            smbr(isou,jj) = smbr(isou,jj) + thetap * flux
+
+          enddo
+
+        enddo
+      enddo
+    enddo
 
   endif
 
-endif
 
+! --> Flux with no slope test
+! ============================
 
+elseif (isstpp.eq.1) then
 
-if(iwarnp.ge.2) then
-  if (irangp.ge.0) call parcpt(infac)
-  write(nfecra,1100)cnom,infac,nfacgb
-endif
+  if (ischcp.lt.0 .or. ischcp.gt.1) then
+    write(nfecra,9000) ischcp
+    call csexit(1)
+  endif
 
+  ! Steady
+  if (idtvar.lt.0) then
 
-! ======================================================================
-! ---> ASSEMBLAGE A PARTIR DES FACETTES DE BORD
-! ======================================================================
+    do ig = 1, ngrpi
+      !$omp parallel do private(ifac, ii, jj, isou, jsou, dijpfv, pnd,          &
+      !$omp                     diipfv, djjpfv, flui, fluj, difv, djfv, dpvf,   &
+      !$omp                     pi, pj, pia, pja, pip, pjp, pipr, pjpr,         &
+      !$omp                     pir, pjr, pifri, pjfri, pifrj, pjfrj,           &
+      !$omp                     fluxi, fluxj)
+      do it = 1, nthrdi
+        do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
-!     Stationnaire
-if (idtvar.lt.0) then
+          ii = ifacel(1,ifac)
+          jj = ifacel(2,ifac)
 
-  do ifac = 1, nfabor
+          do jsou = 1, 3
+            dijpfv(jsou) = dijpf(jsou,ifac)
+          enddo
 
-    ii = ifabor(ifac)
+          pnd = pond(ifac)
 
-    do jsou = 1, 3
-      diipbv(jsou) = diipb(jsou,ifac)
-    enddo
+          ! Recompute II' and JJ' at this level
+          do jsou = 1, 3
+            diipfv(jsou) =   cdgfac(jsou,ifac) - (xyzcen(jsou,ii)               &
+                           + (1.d0-pnd) * dijpfv(jsou))
+            djjpfv(jsou) =   cdgfac(jsou,ifac) -  xyzcen(jsou,jj)               &
+                           + pnd  * dijpfv(jsou)
+          enddo
 
-    ! On enleve le decentrement pour les faces couplees
-    if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
-      flui = 0.0d0
-      fluj = flumab(ifac)
-    else
-      flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-      fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
-    endif
-!-----------------
-! X-Y-Z components, p=u, v, w
-    do isou = 1, 3
-      pfac  = inc*coefav(isou,ifac)
-      pfacd = inc*cofafv(isou,ifac)
+          flui = 0.5d0*(flumas(ifac) + abs(flumas(ifac)))
+          fluj = 0.5d0*(flumas(ifac) - abs(flumas(ifac)))
 
-      !coefu and cofuf are a matrices
-      do jsou = 1, 3
-        pir  = pvar(jsou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(jsou,ii)
+          ! For second order, define IF
+          if (ischcp.eq.0) then
+            do jsou = 1, 3
+              difv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,ii)
+              djfv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,jj)
+            enddo
+          endif
 
-        pipr = pir +ircflp*( gradv(jsou,1,ii)*diipbv(1)           &
-                           + gradv(jsou,2,ii)*diipbv(2)           &
-                           + gradv(jsou,3,ii)*diipbv(3)    )
-        pfac  = pfac  + coefbv(isou,jsou,ifac)*pipr
-        pfacd = pfacd + cofbfv(isou,jsou,ifac)*pipr
+          !-----------------
+          ! X-Y-Z components, p=u, v, w
+          do isou = 1, 3
 
+            do jsou = 1, 3
+              dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+            enddo
+
+            pi = pvar (isou,ii)
+            pj = pvar (isou,jj)
+
+            pia = pvara(isou,ii)
+            pja = pvara(isou,jj)
+
+            pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
+                              +dpvf(2)*diipfv(2)        &
+                              +dpvf(3)*diipfv(3))
+            pjp = pj + ircflp*(dpvf(1)*djjpfv(1)        &
+                              +dpvf(2)*djjpfv(2)        &
+                              +dpvf(3)*djjpfv(3))
+
+            pipr = pi /relaxp - (1.d0-relaxp)/relaxp * pia   &
+                 + ircflp*(dpvf(1)*diipfv(1)                 &
+                          +dpvf(2)*diipfv(2)                 &
+                          +dpvf(3)*diipfv(3))
+            pjpr = pj /relaxp - (1.d0-relaxp)/relaxp * pja   &
+                 + ircflp*(dpvf(1)*djjpfv(1)                 &
+                          +dpvf(2)*djjpfv(2)                 &
+                          +dpvf(3)*djjpfv(3))
+
+            pir = pi /relaxp - (1.d0 - relaxp)/relaxp* pia
+            pjr = pj /relaxp - (1.d0 - relaxp)/relaxp* pja
+
+            ! Centered
+            ! --------
+
+            if (ischcp.eq.1) then
+
+              pifri = pnd*pipr + (1.d0-pnd)*pjp
+              pjfri = pifri
+              pifrj = pnd*pip  + (1.d0-pnd)*pjpr
+              pjfrj = pifrj
+
+            ! Second order
+            ! ------------
+
+            else ! if (ischcp.eq.0) then
+              ! dif* is already defined
+
+              ! leave reconstruction of PIF and PJF even if IRCFLP=0
+              ! otherwise, it is the same as using upwind
+              pifri = pir + difv(1)*gradv(isou,1,ii)      &
+                          + difv(2)*gradv(isou,2,ii)      &
+                          + difv(3)*gradv(isou,3,ii)
+              pifrj = pi  + difv(1)*gradv(isou,1,ii)      &
+                          + difv(2)*gradv(isou,2,ii)      &
+                          + difv(3)*gradv(isou,3,ii)
+
+              pjfrj = pjr + djfv(1)*gradv(isou,1,jj)      &
+                          + djfv(2)*gradv(isou,2,jj)      &
+                          + djfv(3)*gradv(isou,3,jj)
+              pjfri = pj  + djfv(1)*gradv(isou,1,jj)      &
+                          + djfv(2)*gradv(isou,2,jj)      &
+                          + djfv(3)*gradv(isou,3,jj)
+
+            endif
+
+            ! Blending
+            ! --------
+
+            pifri = blencp*pifri+(1.d0-blencp)*pir
+            pifrj = blencp*pifrj+(1.d0-blencp)*pif
+            pjfri = blencp*pjfri+(1.d0-blencp)*pjf
+            pjfrj = blencp*pjfrj+(1.d0-blencp)*pjr
+
+            ! Flux
+            ! ----
+
+            fluxi =   iconvp*(flui*pifri + fluj*pjfri)    &
+                    + idiffp*viscf(ifac)*(pipr -pjp)
+            fluxj =   iconvp*(flui*pifrj +fluj*pjfrj)     &
+                    + idiffp*viscf(ifac)*(pip -pjpr)
+
+            ! Assembly
+            ! --------
+
+            smbr(isou,ii) = smbr(isou,ii) - fluxi
+            smbr(isou,jj) = smbr(isou,jj) + fluxj
+
+          enddo ! isou
+
+        enddo
       enddo
-
-      pir  = pvar(isou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(isou,ii)
-      pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)             &
-                         + gradv(isou,2,ii)*diipbv(2)             &
-                         + gradv(isou,3,ii)*diipbv(3)    )
-
-      flux = iconvp*( flui*pir +fluj*pfac )                       &
-           + idiffp*viscb(ifac)*( pipr -pfacd )
-      smbr(isou,ii) = smbr(isou,ii) - flux
     enddo
-    !end isou
 
-  enddo
+  ! Unsteady
+  else
 
-!     Instationnaire
+    do ig = 1, ngrpi
+      !$omp parallel do private(ifac, ii, jj, isou, jsou, dijpfv, pnd,          &
+      !$omp                     diipfv, djjpfv, flui, fluj, difv, djfv, dpvf,   &
+      !$omp                     pi, pj, pip, pjp, pif, pjf, flux)
+      do it = 1, nthrdi
+        do ifac = iompli(1,ig,it), iompli(2,ig,it)
+
+          ii = ifacel(1,ifac)
+          jj = ifacel(2,ifac)
+
+          do jsou = 1, 3
+            dijpfv(jsou) = dijpf(jsou,ifac)
+          enddo
+
+          pnd = pond(ifac)
+
+          ! Recompute II' and JJ' at this level
+          do jsou = 1, 3
+            diipfv(jsou) =   cdgfac(jsou,ifac) - (xyzcen(jsou,ii)               &
+                           + (1.d0-pnd) * dijpfv(jsou))
+            djjpfv(jsou) =   cdgfac(jsou,ifac) -  xyzcen(jsou,jj)               &
+                           + pnd  * dijpfv(jsou)
+          enddo
+
+          flui = 0.5d0*(flumas(ifac) + abs(flumas(ifac)))
+          fluj = 0.5d0*(flumas(ifac) - abs(flumas(ifac)))
+
+          ! For second order, define IF
+          if (ischcp.eq.0) then
+            do jsou = 1, 3
+              difv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,ii)
+              djfv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,jj)
+            enddo
+          endif
+
+          !-----------------
+          ! X-Y-Z components, p=u, v, w
+          do isou = 1, 3
+
+            do jsou = 1, 3
+              dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+            enddo
+
+            pi = pvar(isou,ii)
+            pj = pvar(isou,jj)
+
+            pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
+                              +dpvf(2)*diipfv(2)        &
+                              +dpvf(3)*diipfv(3))
+            pjp = pj + ircflp*(dpvf(1)*djjpfv(1)        &
+                              +dpvf(2)*djjpfv(2)        &
+                              +dpvf(3)*djjpfv(3))
+
+            ! Centered
+            ! --------
+
+            if (ischcp.eq.1) then
+
+              pif = pnd*pip +(1.d0-pnd)*pjp
+              pjf = pif
+
+
+            ! Second order
+            ! ------------
+
+            else ! if (ischcp.eq.0) then
+              ! dif* is already defined
+
+              ! leave reconstruction of PIF and PJF even if IRCFLP=0
+              ! otherwise, it is the same as using upwind
+              pif = pi
+              pjf = pj
+              do jsou = 1, 3
+                pif = pif + gradv(isou,jsou,ii)*difv(jsou)
+                pjf = pjf + gradv(isou,jsou,jj)*djfv(jsou)
+              enddo
+
+            endif
+
+            ! Blending
+            ! --------
+
+            pif = blencp*pif+(1.d0-blencp)*pi
+            pjf = blencp*pjf+(1.d0-blencp)*pj
+
+            ! Flux
+            ! ----
+
+            flux =   iconvp*(flui*pif +fluj*pjf)          &
+                   + idiffp*viscf(ifac)*(pip -pjp)
+
+            ! Assembly
+            ! --------
+
+            smbr(isou,ii) = smbr(isou,ii) - thetap * flux
+            smbr(isou,jj) = smbr(isou,jj) + thetap * flux
+
+          enddo ! isou
+
+        enddo
+      enddo
+    enddo
+
+  endif
+
+! --> Flux with slope test
+! =========================
+
 else
 
-  do ifac = 1, nfabor
+  if (ischcp.lt.0 .or. ischcp.gt.1) then
+    write(nfecra,9000) ischcp
+    call csexit(1)
+  endif
 
-    ii = ifabor(ifac)
+  ! Steady
+  if (idtvar.lt.0) then
 
-    do jsou = 1, 3
-      diipbv(jsou) = diipb(jsou,ifac)
-    enddo
+    do ig = 1, ngrpi
+      !$omp parallel do private(ifac, ii, jj, isou, jsou, dijpfv, pnd,     &
+      !$omp                     distf, srfan, diipfv, djjpfv, flui, fluj,  &
+      !$omp                     difv, djfv, dpvf, pi, pj, pia, pja,        &
+      !$omp                     pip, pjp, pipr, pjpr, pir, pjr, testij,    &
+      !$omp                     testi, testj, dcc, ddi, ddj, tesqck,       &
+      !$omp                     pifri, pifrj, pjfri, pjfrj, fluxi, fluxj)  &
+      !$omp             reduction(+:infac)
+      do it = 1, nthrdi
+        do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
-    ! On enleve le decentrement pour les faces couplees
-    if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
-      flui = 0.0d0
-      fluj = flumab(ifac)
-    else
-      flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-      fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
-    endif
+          ii = ifacel(1,ifac)
+          jj = ifacel(2,ifac)
 
-!-----------------
-! X-Y-Z components, p=u, v, w
-    do isou = 1, 3
-      pfac  = inc*coefav(isou,ifac)
-      pfacd = inc*cofafv(isou,ifac)
+          do jsou = 1, 3
+            dijpfv(jsou) = dijpf(jsou,ifac)
+          enddo
 
-      !coefu and cofuf are a matrices
-      do jsou = 1, 3
-        pip = pvar(jsou,ii) + ircflp*( gradv(jsou,1,ii)*diipbv(1)           &
-                                     + gradv(jsou,2,ii)*diipbv(2)           &
-                                     + gradv(jsou,3,ii)*diipbv(3)    )
-        pfac  = pfac  + coefbv(isou,jsou,ifac)*pip
-        pfacd = pfacd + cofbfv(isou,jsou,ifac)*pip
+          pnd   = pond(ifac)
+          distf = dist(ifac)
+          srfan = surfan(ifac)
+
+          ! Recompute II' and JJ' at this level
+          do jsou = 1, 3
+            diipfv(jsou) =    cdgfac(jsou,ifac) - (xyzcen(jsou,ii)         &
+                           + (1.d0-pnd) * dijpfv(jsou))
+            djjpfv(jsou) =    cdgfac(jsou,ifac) -  xyzcen(jsou,jj)         &
+                           + pnd * dijpfv(jsou)
+          enddo
+
+          flui = 0.5d0*(flumas(ifac) +abs(flumas(ifac)))
+          fluj = 0.5d0*(flumas(ifac) -abs(flumas(ifac)))
+
+          ! For second order, define IF
+          if (ischcp.eq.0) then
+            do jsou = 1, 3
+              difv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,ii)
+              djfv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,jj)
+            enddo
+          endif
+
+          !-----------------
+          ! X-Y-Z components, p=u, v, w
+          do isou = 1, 3
+
+            do jsou = 1, 3
+              dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+            enddo
+
+            pi  = pvar (isou,ii)
+            pj  = pvar (isou,jj)
+
+            pia = pvara(isou,ii)
+            pja = pvara(isou,jj)
+
+            pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
+                              +dpvf(2)*diipfv(2)        &
+                              +dpvf(3)*diipfv(3))
+            pjp = pj + ircflp*(dpvf(1)*djjpfv(1)        &
+                              +dpvf(2)*djjpfv(2)        &
+                              +dpvf(3)*djjpfv(3))
+
+            pipr = pi /relaxp - (1.d0-relaxp)/relaxp * pia   &
+                 + ircflp*(dpvf(1)*diipfv(1)                 &
+                          +dpvf(2)*diipfv(2)                 &
+                          +dpvf(3)*diipfv(3))
+            pjpr = pj /relaxp - (1.d0-relaxp)/relaxp * pja   &
+                 + ircflp*(dpvf(1)*djjpfv(1)                 &
+                          +dpvf(2)*djjpfv(2)                 &
+                          +dpvf(3)*djjpfv(3))
+
+            pir = pi /relaxp - (1.d0 - relaxp)/relaxp*pia
+            pjr = pj /relaxp - (1.d0 - relaxp)/relaxp*pja
+
+            ! Slope test
+            ! ----------
+
+            testi = gradva(isou,1,ii)*surfac(1,ifac)         &
+                  + gradva(isou,2,ii)*surfac(2,ifac)         &
+                  + gradva(isou,3,ii)*surfac(3,ifac)
+            testj = gradva(isou,1,jj)*surfac(1,ifac)         &
+                  + gradva(isou,2,jj)*surfac(2,ifac)         &
+                  + gradva(isou,3,jj)*surfac(3,ifac)
+            testij= gradva(isou,1,ii)*gradva(isou,1,jj)      &
+                  + gradva(isou,2,ii)*gradva(isou,2,jj)      &
+                  + gradva(isou,3,ii)*gradva(isou,3,jj)
+
+            if (flumas(ifac).gt.0.d0) then
+              dcc = gradv(isou,1,ii)*surfac(1,ifac)    &
+                  + gradv(isou,2,ii)*surfac(2,ifac)    &
+                  + gradv(isou,3,ii)*surfac(3,ifac)
+              ddi = testi
+              ddj = (pj - pi)/distf *srfan
+            else
+              dcc = gradv(isou,1,jj)*surfac(1,ifac)    &
+                  + gradv(isou,2,jj)*surfac(2,ifac)    &
+                  + gradv(isou,3,jj)*surfac(3,ifac)
+              ddi = (pj - pi)/distf *srfan
+              ddj = testj
+            endif
+            tesqck = dcc**2 -(ddi-ddj)**2
+
+            ! Upwind
+            ! ------
+
+            if (tesqck.le.0.d0 .or. testij.le.0.d0) then
+
+              pifri = pir
+              pifrj = pi
+              pjfri = pj
+              pjfrj = pjr
+              ! in parallel, face will be counted by one and only one rank
+              if (ii.le.ncel) then
+                infac = infac+1
+              endif
+
+            else
+
+              ! Centered
+              ! --------
+
+              if (ischcp.eq.1) then
+
+                pifri = pnd*pipr +(1.d0-pnd)*pjp
+                pjfri = pifri
+                pifrj = pnd*pip  +(1.d0-pnd)*pjpr
+                pjfrj = pifrj
+
+              ! Second order
+              ! ------------
+
+              else ! if (ischcp.eq.0) then
+                ! difv already defined
+
+                ! leave reconstruction of PIF and PJF even if IRCFLP=0
+                ! otherwise, it is the same as using upwind
+                pifri = pir + difv(1)*gradv(isou,1,ii)      &
+                            + difv(2)*gradv(isou,2,ii)      &
+                            + difv(3)*gradv(isou,3,ii)
+                pifrj = pi  + difv(1)*gradv(isou,1,ii)      &
+                            + difv(2)*gradv(isou,2,ii)      &
+                            + difv(3)*gradv(isou,3,ii)
+
+                pjfrj = pjr + djfv(1)*gradv(isou,1,jj)      &
+                            + djfv(2)*gradv(isou,2,jj)      &
+                            + djfv(3)*gradv(isou,3,jj)
+                pjfri = pj  + djfv(1)*gradv(isou,1,jj)      &
+                            + djfv(2)*gradv(isou,2,jj)      &
+                            + djfv(3)*gradv(isou,3,jj)
+
+              endif
+
+            endif
+
+            ! Blending
+            ! --------
+
+            pifri = blencp*pifri+(1.d0-blencp)*pir
+            pifrj = blencp*pifrj+(1.d0-blencp)*pi
+            pjfri = blencp*pjfri+(1.d0-blencp)*pj
+            pjfrj = blencp*pjfrj+(1.d0-blencp)*pjr
+
+            ! Flux
+            ! ----
+
+            fluxi =    iconvp*(flui*pifri + fluj*pjfri)     &
+                    + idiffp*viscf(ifac)*(pipr -pjp)
+            fluxj =    iconvp*(flui*pifrj +fluj*pjfrj)      &
+                    + idiffp*viscf(ifac)*(pip -pjpr)
+
+            ! Assembly
+            ! --------
+
+            smbr(isou,ii) = smbr(isou,ii) - fluxi
+            smbr(isou,jj) = smbr(isou,jj) + fluxj
+
+          enddo ! isou
+
+        enddo
       enddo
-
-      pip = pvar(isou,ii) + ircflp*( gradv(isou,1,ii)*diipbv(1)             &
-                                   + gradv(isou,2,ii)*diipbv(2)             &
-                                   + gradv(isou,3,ii)*diipbv(3)    )
-
-      flux = iconvp*( flui*pvar(isou,ii) +fluj*pfac )                      &
-           + idiffp*viscb(ifac)*( pip -pfacd )
-      smbr(isou,ii) = smbr(isou,ii) - thetap * flux
     enddo
-    !end isou
 
-  enddo
+  ! Unsteady
+  else
 
+    do ig = 1, ngrpi
+      !$omp parallel do private(ifac, ii, jj, isou, jsou, dijpfv, pnd,     &
+      !$omp                     distf, srfan, diipfv, djjpfv, flui, fluj,  &
+      !$omp                     difv, djfv, dpvf, pi, pj, pip, pjp,        &
+      !$omp                     testi, testj, testij, dcc, ddi, ddj,       &
+      !$omp                     tesqck, pif, pjf, flux)                    &
+      !$omp             reduction(+:infac)
+      do it = 1, nthrdi
+        do ifac = iompli(1,ig,it), iompli(2,ig,it)
+
+          ii = ifacel(1,ifac)
+          jj = ifacel(2,ifac)
+
+          do jsou = 1, 3
+            dijpfv(jsou) = dijpf(jsou,ifac)
+          enddo
+
+          pnd   = pond(ifac)
+          distf = dist(ifac)
+          srfan = surfan(ifac)
+
+          ! Recompute II' and JJ' at this level
+          do jsou = 1, 3
+            diipfv(jsou) =    cdgfac(jsou,ifac) - (xyzcen(jsou,ii)         &
+                           + (1.d0-pnd) * dijpfv(jsou))
+            djjpfv(jsou) =    cdgfac(jsou,ifac) -  xyzcen(jsou,jj)         &
+                           + pnd * dijpfv(jsou)
+          enddo
+
+          flui = 0.5d0*(flumas(ifac) +abs(flumas(ifac)))
+          fluj = 0.5d0*(flumas(ifac) -abs(flumas(ifac)))
+
+          ! For second order, define IF
+          if (ischcp.eq.0) then
+            do jsou = 1, 3
+              difv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,ii)
+              djfv(jsou) = cdgfac(jsou,ifac) - xyzcen(jsou,jj)
+            enddo
+          endif
+
+          !-----------------
+          ! X-Y-Z components, p=u, v, w
+          do isou = 1, 3
+
+            do jsou = 1, 3
+              dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+            enddo
+
+            pi = pvar(isou,ii)
+            pj = pvar(isou,jj)
+
+            pip = pi + ircflp*(dpvf(1)*diipfv(1)        &
+                              +dpvf(2)*diipfv(2)        &
+                              +dpvf(3)*diipfv(3))
+            pjp = pj + ircflp*(dpvf(1)*djjpfv(1)        &
+                              +dpvf(2)*djjpfv(2)        &
+                              +dpvf(3)*djjpfv(3))
+
+            ! Slope test
+            ! ----------
+
+            testi = gradva(isou,1,ii)*surfac(1,ifac)    &
+                  + gradva(isou,2,ii)*surfac(2,ifac)    &
+                  + gradva(isou,3,ii)*surfac(3,ifac)
+            testj = gradva(isou,1,jj)*surfac(1,ifac)    &
+                  + gradva(isou,2,jj)*surfac(2,ifac)    &
+                  + gradva(isou,3,jj)*surfac(3,ifac)
+            testij = gradva(isou,1,ii)*gradva(isou,1,jj) &
+                   + gradva(isou,2,ii)*gradva(isou,2,jj) &
+                   + gradva(isou,3,ii)*gradva(isou,3,jj)
+
+            if (flumas(ifac).gt.0.d0) then
+              dcc = gradv(isou,1,ii)*surfac(1,ifac)     &
+                  + gradv(isou,2,ii)*surfac(2,ifac)     &
+                  + gradv(isou,3,ii)*surfac(3,ifac)
+              ddi = testi
+              ddj = (pj - pi)/distf *srfan
+            else
+              dcc = gradv(isou,1,jj)*surfac(1,ifac)    &
+                  + gradv(isou,2,jj)*surfac(2,ifac)    &
+                  + gradv(isou,3,jj)*surfac(3,ifac)
+              ddi = (pj - pi)/distf *srfan
+              ddj = testj
+            endif
+            tesqck = dcc**2 -(ddi-ddj)**2
+
+            ! Upwind
+            ! ------
+
+            if (tesqck.le.0.d0 .or. testij.le.0.d0) then
+
+              pif = pi
+              pjf = pj
+              ! in parallel, face will be counted by one and only one rank
+              if (ii.le.ncel) then
+                infac = infac+1
+              endif
+
+            else
+
+              ! Centered
+              ! --------
+
+              if (ischcp.eq.1) then
+
+                pif = pnd*pip +(1.d0-pnd)*pjp
+                pjf = pif
+
+              ! Second order
+              ! ------------
+
+              else ! if (ischcp.eq.0) then
+                ! dif* is already defined
+
+                pif = pi
+                pjf = pj
+                do jsou = 1, 3
+                  pif = pif + gradv(isou,jsou,ii)*difv(jsou)
+                  pjf = pjf + gradv(isou,jsou,jj)*djfv(jsou)
+                enddo
+
+                ! leave reconstruction of PIF and PJF even if IRCFLP=0
+                ! otherwise, it is the same as using upwind
+
+              endif
+
+            endif
+
+            ! Blending
+            ! --------
+
+            pif = blencp*pif+(1.d0-blencp)*pi
+            pjf = blencp*pjf+(1.d0-blencp)*pj
+
+            ! Flux
+            ! ----
+
+            flux =   iconvp*(flui*pif +fluj*pjf)       &
+                   + idiffp*viscf(ifac)*(pip -pjp)
+
+            ! Assembly
+            ! --------
+
+            smbr(isou,ii) = smbr(isou,ii) - thetap * flux
+            smbr(isou,jj) = smbr(isou,jj) + thetap * flux
+
+          enddo ! isou
+
+        enddo
+      enddo
+    enddo
+
+  endif ! idtvar
+
+endif ! iupwin
+
+
+if (iwarnp.ge.2) then
+  if (irangp.ge.0) call parcpt(infac)
+  write(nfecra,1100) cnom, infac, nfacgb
 endif
 
+! ======================================================================
+! ---> Contribution from boundary faces
+! ======================================================================
+
+! Steady
+if (idtvar.lt.0) then
+
+  do ig = 1, ngrpb
+    !$omp parallel do private(ifac, ii, isou, jsou, diipbv, flui, fluj,         &
+    !$omp                     pfac, pfacd, pir, pipr, flux)                     &
+    !$omp          if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+        ii = ifabor(ifac)
+
+        do jsou = 1, 3
+          diipbv(jsou) = diipb(jsou,ifac)
+        enddo
+
+        ! Remove decentering for coupled faces
+        if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+          flui = 0.0d0
+          fluj = flumab(ifac)
+        else
+          flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
+          fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
+        endif
+
+        !-----------------
+        ! X-Y-Z components, p=u, v, w
+        do isou = 1, 3
+
+          pfac  = inc*coefav(isou,ifac)
+          pfacd = inc*cofafv(isou,ifac)
+
+          !coefu and cofuf are matrices
+          do jsou = 1, 3
+            pir  = pvar(jsou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(jsou,ii)
+
+            pipr = pir +ircflp*( gradv(jsou,1,ii)*diipbv(1)         &
+                               + gradv(jsou,2,ii)*diipbv(2)         &
+                               + gradv(jsou,3,ii)*diipbv(3))
+            pfac  = pfac  + coefbv(isou,jsou,ifac)*pipr
+            pfacd = pfacd + cofbfv(isou,jsou,ifac)*pipr
+          enddo
+
+          pir  = pvar(isou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(isou,ii)
+          pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)           &
+                             + gradv(isou,2,ii)*diipbv(2)           &
+                             + gradv(isou,3,ii)*diipbv(3))
+
+          flux = iconvp*(flui*pir +fluj*pfac)                       &
+               + idiffp*viscb(ifac)*(pipr -pfacd)
+          smbr(isou,ii) = smbr(isou,ii) - flux
+
+        enddo ! isou
+
+      enddo
+    enddo
+  enddo
+
+! Unsteady
+else
+
+  do ig = 1, ngrpb
+    !$omp parallel do private(ifac, ii, isou, jsou, diipbv, flui, fluj,         &
+    !$omp                     pfac, pfacd, pip, flux)                           &
+    !$omp          if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+        ii = ifabor(ifac)
+
+        do jsou = 1, 3
+          diipbv(jsou) = diipb(jsou,ifac)
+        enddo
+
+        ! Remove decentering for coupled faces
+        if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+          flui = 0.0d0
+          fluj = flumab(ifac)
+        else
+          flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
+          fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
+        endif
+
+        !-----------------
+        ! X-Y-Z components, p=u, v, w
+        do isou = 1, 3
+
+          pfac  = inc*coefav(isou,ifac)
+          pfacd = inc*cofafv(isou,ifac)
+
+          !coefu and cofuf are matrices
+          do jsou = 1, 3
+            pip = pvar(jsou,ii) + ircflp*( gradv(jsou,1,ii)*diipbv(1)        &
+                                         + gradv(jsou,2,ii)*diipbv(2)        &
+                                         + gradv(jsou,3,ii)*diipbv(3))
+            pfac  = pfac  + coefbv(isou,jsou,ifac)*pip
+            pfacd = pfacd + cofbfv(isou,jsou,ifac)*pip
+          enddo
+
+          pip = pvar(isou,ii) + ircflp*( gradv(isou,1,ii)*diipbv(1)          &
+                                       + gradv(isou,2,ii)*diipbv(2)          &
+                                       + gradv(isou,3,ii)*diipbv(3))
+
+          flux = iconvp*(flui*pvar(isou,ii) +fluj*pfac)                      &
+               + idiffp*viscb(ifac)*(pip -pfacd)
+          smbr(isou,ii) = smbr(isou,ii) - thetap * flux
+
+        enddo ! isou
+
+      enddo
+    enddo
+  enddo
+
+endif ! idtvar
+
 !===============================================================================
-! 3.  COMPUTATION OF THE TRANSPOSE GRAD(VEL) TERM AND GRAD(-2/3 DIV(VEL))
+! 3.  Computation of the transpose grad(vel) term and grad(-2/3 div(vel))
 !===============================================================================
 
 if (ivisep.eq.1) then
@@ -1289,50 +1319,58 @@ if (ivisep.eq.1) then
   ! Allocate a temporary array
   allocate(bndcel(ncelet))
 
+  !$omp parallel do
   do iel = 1, ncelet
     bndcel(iel) = 1.d0
   enddo
+
+  !$omp parallel do private(ityp) if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     ityp = itypfb(ifac)
     if (ityp.eq.isolib.or.ityp.eq.ientre) bndcel(ifabor(ifac)) = 0.d0
   enddo
 
-  ! ---> INTERNAL FACES
+  ! ---> Interior faces
 
-  do ifac = 1, nfac
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, isou, jsou, pnd, secvis,     &
+    !$omp                     visco, grdtrv, tgrdfl, flux)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
 
-    pnd = pond(ifac)
-    secvis = secvif(ifac)
-    visco = viscf(ifac)
+        pnd = pond(ifac)
+        secvis = secvif(ifac)
+        visco = viscf(ifac)
 
-    grdtrv =        pnd*(gradv(1,1,ii)+gradv(2,2,ii)+gradv(3,3,ii))   &
-           + (1.d0-pnd)*(gradv(1,1,jj)+gradv(2,2,jj)+gradv(3,3,jj))
+        grdtrv =        pnd*(gradv(1,1,ii)+gradv(2,2,ii)+gradv(3,3,ii))   &
+               + (1.d0-pnd)*(gradv(1,1,jj)+gradv(2,2,jj)+gradv(3,3,jj))
 
-    ! We need to compute trans_grad(u).IJ which is equal to IJ.grad(u)
+        ! We need to compute trans_grad(u).IJ which is equal to IJ.grad(u)
 
-    do isou = 1, 3
+        do isou = 1, 3
 
-      tgrdfl = dijpf(1,ifac) * (        pnd*gradv(1,isou,ii)         &
-                               + (1.d0-pnd)*gradv(1,isou,jj) )       &
-             + dijpf(2,ifac) * (        pnd*gradv(2,isou,ii)         &
-                               + (1.d0-pnd)*gradv(2,isou,jj) )       &
-             + dijpf(3,ifac) * (        pnd*gradv(3,isou,ii)         &
-                               + (1.d0-pnd)*gradv(3,isou,jj) )
+          tgrdfl = dijpf(1,ifac) * (        pnd*gradv(1,isou,ii)         &
+                                   + (1.d0-pnd)*gradv(1,isou,jj))        &
+                 + dijpf(2,ifac) * (        pnd*gradv(2,isou,ii)         &
+                                   + (1.d0-pnd)*gradv(2,isou,jj))        &
+                 + dijpf(3,ifac) * (        pnd*gradv(3,isou,ii)         &
+                                   + (1.d0-pnd)*gradv(3,isou,jj))
 
+          flux = visco*tgrdfl + secvis*grdtrv*surfac(isou,ifac)
 
-      flux = visco*tgrdfl + secvis*grdtrv*surfac(isou,ifac)
+          smbr(isou,ii) = smbr(isou,ii) + idiffp*flux*bndcel(ii)
+          smbr(isou,jj) = smbr(isou,jj) - idiffp*flux*bndcel(jj)
 
-      smbr(isou,ii) = smbr(isou,ii) + idiffp*flux*bndcel(ii)
-      smbr(isou,jj) = smbr(isou,jj) - idiffp*flux*bndcel(jj)
+        enddo
 
+      enddo
     enddo
-
   enddo
 
-  ! ---> BOUNDARY FACES
+  ! ---> Boundary FACES
   !      the whole flux term of the stress tensor is already taken into account
   !TODO add the corresponding term in forbr
   !TODO in theory we should take the normal component into account (the
@@ -1353,11 +1391,11 @@ deallocate(gradv)
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(1X,A8,' : CONVECTION EN ',A11,                             &
+ 1000 format(1X,A8,' : CONVECTION EN ',A11,                       &
                                ' BLENDING A ',F4.0,' % D''UPWIND')
- 1100 format(1X,A8,' : ',I10,' FACES UPWIND SUR ',                      &
+ 1100 format(1X,A8,' : ',I10,' FACES UPWIND SUR ',                &
                                I10,' FACES INTERNES ')
- 9000 format(                                                           &
+ 9000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1374,11 +1412,11 @@ deallocate(gradv)
 
 #else
 
- 1000 format(1X,A8,' : CONVECTION IN ',A11,                             &
+ 1000 format(1X,A8,' : CONVECTION IN ',A11,                       &
                             ' BLENDING WITH ',F4.0,' % OF UPWIND')
- 1100 format(1X,A8,' : ',I10,' FACES WITH UPWIND ON ',                  &
+ 1100 format(1X,A8,' : ',I10,' FACES WITH UPWIND ON ',            &
                                I10,' INTERIOR FACES ')
- 9000 format(                                                           &
+ 9000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
