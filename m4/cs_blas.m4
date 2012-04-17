@@ -377,7 +377,10 @@ if test "x$with_blas" != "xno" ; then
 
 fi
 
+# ESSL requires Fortran to link, and MKL provides sparse matrix-vector
+# operations (so it may be used by the Code_Saturne solver)
 AM_CONDITIONAL(HAVE_ESSL, test x$with_blas_type = xESSL)
+AM_CONDITIONAL(HAVE_MKL, test x$with_blas_type = xMKL)
 
 AC_SUBST(cs_have_blas)
 AC_SUBST(BLAS_CPPFLAGS)

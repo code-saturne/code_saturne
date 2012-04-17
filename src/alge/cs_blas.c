@@ -32,10 +32,6 @@
 
 #include <math.h>
 
-#if defined(HAVE_CBLAS)
-#include <cblas.h>
-#endif
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -102,9 +98,6 @@ double CS_PROCF(csdot, CSDOT)(const cs_int_t  *n,
  *   y <-- array of floating-point values
  *----------------------------------------------------------------------------*/
 
-#if    !defined(HAVE_ACML) && !defined(HAVE_ESSL) \
-    && !defined(HAVE_ATLAS) && !defined(HAVE_CBLAS) && !defined(HAVE_MKL)
-
 void cs_axpy(cs_lnum_t      n,
              double         a,
              const double  *x,
@@ -119,8 +112,6 @@ void cs_axpy(cs_lnum_t      n,
   for (i = 0; i < n; i++)
     y[i] += (a * x[i]);
 }
-
-#endif /* BLAS defined */
 
 /*----------------------------------------------------------------------------
  * Return the dot product of 2 vectors: x.y

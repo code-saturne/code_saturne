@@ -894,8 +894,6 @@ _conjugate_gradient(const char             *var_name,
 
     alpha =  - ro_0 / ro_1;
 
-#if defined(HAVE_OPENMP)
-
 #   pragma omp parallel if(n_rows > THR_MIN)
     {
 #     pragma omp for nowait
@@ -906,13 +904,6 @@ _conjugate_gradient(const char             *var_name,
       for (ii = 0; ii < n_rows; ii++)
         rk[ii] += (alpha * zk[ii]);
     }
-
-#else
-
-    cs_axpy(n_rows, alpha, dk, vx);
-    cs_axpy(n_rows, alpha, zk, rk);
-
-#endif
 
   }
 
@@ -1695,8 +1686,6 @@ _bi_cgstab(const char             *var_name,
 
     /* First update of vx and rk */
 
-#if defined(HAVE_OPENMP)
-
 #   pragma omp parallel if(n_rows > THR_MIN)
     {
 #     pragma omp for nowait
@@ -1707,13 +1696,6 @@ _bi_cgstab(const char             *var_name,
       for (ii = 0; ii < n_rows; ii++)
         rk[ii] -= (gamma * uk[ii]);
     }
-
-#else
-
-    cs_axpy(n_rows,  gamma, zk, vx);
-    cs_axpy(n_rows, -gamma, uk, rk);
-
-#endif
 
     /* Compute zk = C.rk (zk is overwritten, vk is a working array */
 
@@ -1751,8 +1733,6 @@ _bi_cgstab(const char             *var_name,
 
     /* Final update of vx and rk */
 
-#if defined(HAVE_OPENMP)
-
 #   pragma omp parallel if(n_rows > THR_MIN)
     {
 #     pragma omp for nowait
@@ -1763,13 +1743,6 @@ _bi_cgstab(const char             *var_name,
       for (ii = 0; ii < n_rows; ii++)
         rk[ii] -= (alpha * vk[ii]);
     }
-
-#else
-
-    cs_axpy(n_rows,  alpha, zk, vx);
-    cs_axpy(n_rows, -alpha, vk, rk);
-
-#endif
 
     /* Convergence test at beginning of next iteration so
        as to group dot products for better parallel performance */
@@ -2072,17 +2045,10 @@ _gmres(const char             *var_name,
 
         /* compute w = dk <- w - h(i,k)*vi */
 
-#if defined(HAVE_OPENMP)
-#       pragma omp parallel for if(n_rows > THR_MIN)
-        for (kk = 0; kk < n_rows; kk++)
-          dk[kk] -= (  _h_matrix[ii*krylov_size+jj]
-                     * _krylov_vectors[jj*n_rows + kk]);
-#else
         cs_axpy(n_rows,
                 -_h_matrix[ii*krylov_size+jj],
                 (_krylov_vectors + jj*n_rows),
                 dk);
-#endif
 
       }
 

@@ -31,6 +31,14 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+/* For the IBM ESSL library, function prototypes are defined in essl.h,
+   with legacy blas names <name> mapped to esv<name>;
+   for the AMD ACML library, prototypes are defined in acml.h.
+   In both cases, purely input array arguments are not defined as const,
+   so a cast must be used.
+   For the Intel MKL library, function prototypes are defined in mkl_cblas.h,
+   with standard legacy C BLAS names */
+
 #if defined(HAVE_ESSL)
 #include <essl.h>
 

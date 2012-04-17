@@ -27,23 +27,11 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
 /*----------------------------------------------------------------------------
  * External library headers
  *----------------------------------------------------------------------------*/
-
-#if defined(HAVE_ESSL)
-#include <essl.h>
-
-#elif defined(HAVE_MKL)
-#include <mkl_cblas.h>
-
-#elif defined(HAVE_ACML)
-#include <acml.h>
-
-#elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS)
-#include <cblas.h>
-
-#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -73,14 +61,6 @@ double CS_PROCF(csdot, CSDOT)(const cs_int_t  *n,
  *  Public function prototypes or wrapper macros
  *============================================================================*/
 
-/* For the IBM ESSL library, function prototypes are defined in essl.h,
-   with legacy blas names <name> mapped to esv<name>;
-   for the AMD ACML library, prototypes are defined in acml.h.
-   In both cases, purely input array arguments are not defined as const,
-   so a cast must be used.
-   For the Intel MKL library, function prototypes are defined in mkl_cblas.h,
-   with standard legacy C BLAS names */
-
 /*----------------------------------------------------------------------------
  * Constant times a vector plus a vector: y <-- ax + y
  *
@@ -91,25 +71,11 @@ double CS_PROCF(csdot, CSDOT)(const cs_int_t  *n,
  *   y <-- array of floating-point values
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_ACML) || defined(HAVE_ESSL)
-
-#define cs_axpy(_n, _a, _x, _y) \
-  daxpy(_n, _a, (double *)_x, 1, (double *)_y, 1)
-
-#elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS) || defined(HAVE_MKL)
-
-#define cs_axpy(_n, _a, _x, _y) \
-  cblas_daxpy(_n, _a, _x, 1, _y, 1)
-
-#else
-
 void
 cs_axpy(cs_lnum_t      n,
         double         a,
         const double  *x,
         double        *restrict y);
-
-#endif /* BLAS defined */
 
 /*----------------------------------------------------------------------------
  * Return the dot product of 2 vectors: x.y
