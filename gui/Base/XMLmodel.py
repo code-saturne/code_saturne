@@ -91,6 +91,8 @@ class XMLmodel(Variables):
                         'component_R12', 'component_R13', 'component_R23',
                         'turb_eps'):
                 nodeList.append(nodeTurb.xmlGetNode('variable', name=var))
+            if model in ('Rij-EBRSM'):
+                nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_alpha'))
 
         elif model in ('v2f-phi'):
             for var in ('turb_k', 'turb_eps', 'turb_phi', 'turb_fb'):

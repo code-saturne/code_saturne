@@ -123,6 +123,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         tt = self.init.getTurbulenceVariableLabel('turb_eps')
         self.labelRijEps.setText(QString(str(tt)))
 
+        label_alpha = self.init.getTurbulenceVariableLabel('turb_alpha')
+        self.labelRijalpha.setText(QString(str(label_alpha)))
+
         # v2f
         labelv2f_k   = self.init.getTurbulenceVariableLabel('turb_k')
         labelv2f_eps = self.init.getTurbulenceVariableLabel('turb_eps')
@@ -185,6 +188,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.connect(self.lineEditR13,          SIGNAL("textChanged(const QString&)"), self.slotR13)
         self.connect(self.lineEditR23,          SIGNAL("textChanged(const QString&)"), self.slotR23)
         self.connect(self.lineEditRijEps,       SIGNAL("textChanged(const QString&)"), self.slotRijEps)
+        self.connect(self.lineEditRijalpha,     SIGNAL("textChanged(const QString&)"), self.slotRijalpha)
         self.connect(self.lineEditv2f_k,        SIGNAL("textChanged(const QString&)"), self.slotv2f_k)
         self.connect(self.lineEditv2f_eps,      SIGNAL("textChanged(const QString&)"), self.slotv2f_eps)
         self.connect(self.lineEditv2f_phi,      SIGNAL("textChanged(const QString&)"), self.slotv2f_phi)
@@ -210,6 +214,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         validatorR13          = DoubleValidator(self.lineEditR13, min=0.)
         validatorR23          = DoubleValidator(self.lineEditR23, min=0.)
         validatorRijEps       = DoubleValidator(self.lineEditRijEps, min=0.)
+        validatorRijalpha     = DoubleValidator(self.lineEditRijalpha, min=0.)
         validatorv2f_k        = DoubleValidator(self.lineEditv2f_k, min=0.)
         validatorv2f_eps      = DoubleValidator(self.lineEditv2f_eps, min=0.)
         validatorv2f_phi      = DoubleValidator(self.lineEditv2f_phi, min=0.)
@@ -234,6 +239,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.lineEditR13.setValidator(validatorR13)
         self.lineEditR23.setValidator(validatorR23)
         self.lineEditRijEps.setValidator(validatorRijEps)
+        self.lineEditRijalpha.setValidator(validatorRijalpha)
         self.lineEditv2f_k.setValidator(validatorv2f_k)
         self.lineEditv2f_eps.setValidator(validatorv2f_eps)
         self.lineEditv2f_phi.setValidator(validatorv2f_phi)
@@ -325,13 +331,24 @@ class InitializationView(QWidget, Ui_InitializationForm):
                 R23 = self.init.getTurbulenceInitialValue(self.zone, 'component_R23')
                 eps = self.init.getTurbulenceInitialValue(self.zone, 'turb_eps')
 
-                self.lineEditR11.setText(QString(R11))
-                self.lineEditR22.setText(QString(R22))
-                self.lineEditR33.setText(QString(R33))
-                self.lineEditR12.setText(QString(R12))
-                self.lineEditR13.setText(QString(R13))
-                self.lineEditR23.setText(QString(R23))
-                self.lineEditRijEps.setText(QString(eps))
+                self.lineEditR11.setText(QString(str(R11)))
+                self.lineEditR22.setText(QString(str(R22)))
+                self.lineEditR33.setText(QString(str(R33)))
+                self.lineEditR12.setText(QString(str(R12)))
+                self.lineEditR13.setText(QString(str(R13)))
+                self.lineEditR23.setText(QString(str(R23)))
+                self.lineEditRijEps.setText(QString(str(eps)))
+
+                if turb_model == 'Rij-EBRSM':
+                    self.lineEditRijalpha.show()
+                    self.labelRijalpha.show()
+                    self.labelUnitRijalpha.show()
+                    alpha = self.init.getTurbulenceInitialValue(self.zone, 'turb_alpha')
+                    self.lineEditRijalpha.setText(QString(str(alpha)))
+                else:
+                    self.lineEditRijalpha.hide()
+                    self.labelRijalpha.hide()
+                    self.labelUnitRijalpha.hide()
 
             elif turb_model == 'v2f-phi':
 
@@ -342,10 +359,10 @@ class InitializationView(QWidget, Ui_InitializationForm):
                 phi = self.init.getTurbulenceInitialValue(self.zone, 'turb_phi')
                 fb  = self.init.getTurbulenceInitialValue(self.zone, 'turb_fb')
 
-                self.lineEditv2f_k.setText(QString(k))
-                self.lineEditv2f_eps.setText(QString(eps))
-                self.lineEditv2f_phi.setText(QString(phi))
-                self.lineEditv2f_fb.setText(QString(fb))
+                self.lineEditv2f_k.setText(QString(str(k)))
+                self.lineEditv2f_eps.setText(QString(str(eps)))
+                self.lineEditv2f_phi.setText(QString(str(phi)))
+                self.lineEditv2f_fb.setText(QString(str(fb)))
 
             elif turb_model == 'k-omega-SST':
 
@@ -355,7 +372,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                 omega = self.init.getTurbulenceInitialValue(self.zone, 'turb_omega')
 
                 self.lineEditKomega_k.setText(QString(k))
-                self.lineEditKomega_omega.setText(QString(omega))
+                self.lineEditKomega_omega.setText(QString(str(omega)))
 
             elif turb_model == 'Spalart-Allmaras':
 
@@ -363,7 +380,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
                 nusa = self.init.getTurbulenceInitialValue(self.zone, 'turb_nusa')
 
-                self.lineEditSA_nusa.setText(QString(nusa))
+                self.lineEditSA_nusa.setText(QString(str(nusa)))
 
         elif choice == 'reference_velocity':
 
@@ -475,6 +492,16 @@ class InitializationView(QWidget, Ui_InitializationForm):
         val, ok = var.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
             self.init.setTurbulenceInitialValue(self.zone, 'turb_eps', val)
+
+
+    @pyqtSignature("const QString&")
+    def slotRijalpha(self, var):
+        """
+        INPUT values for Rij-epsilon's alpha initialization by values
+        """
+        val, ok = var.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.init.setTurbulenceInitialValue(self.zone, 'turb_alpha', val)
 
 
     @pyqtSignature("const QString&")
@@ -687,6 +714,10 @@ class InitializationView(QWidget, Ui_InitializationForm):
                     self.lineEditR13.setText(QString(str(R13)))
                     self.lineEditR23.setText(QString(str(R23)))
                     self.lineEditRijEps.setText(QString(str(eps)))
+
+                    if turb_model == 'Rij-EBRSM':
+                        alpha = self.init.getTurbulenceInitialValue(self.zone, 'turb_alpha')
+                        self.lineEditRijalpha.setText(QString(str(alpha)))
 
                 elif turb_model == 'v2f-phi':
 

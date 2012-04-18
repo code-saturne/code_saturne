@@ -76,7 +76,8 @@ class InitializationModel(Model):
         self.Turb_var_List = ('turb_k', 'turb_eps',
                               'component_R11', 'component_R22', 'component_R33',
                               'component_R12', 'component_R13', 'component_R23',
-                              'turb_phi', 'turb_fb', 'turb_omega', 'turb_nusa')
+                              'turb_phi', 'turb_fb', 'turb_omega', 'turb_nusa',
+                              'turb_alpha')
 
         self.turb = TurbulenceModel(self.case)
         self.turbulenceModes = ('values',
@@ -108,6 +109,7 @@ class InitializationModel(Model):
         default['turb_fb']       = 0
         default['turb_omega']    = default['turb_eps'] / default['turb_k'] / Cmu
         default['turb_nusa']     = Cmu * pow(default['turb_k'], 2) / default['turb_eps']
+        default['turb_alpha']    = 1.0
         default['component_R11'] = pow((0.02*Uref), 2)
         default['component_R22'] = pow((0.02*Uref), 2)
         default['component_R33'] = pow((0.02*Uref), 2)
@@ -140,7 +142,7 @@ class InitializationModel(Model):
             for txt in ('turb_k', 'turb_eps'):
                 self.getTurbulenceInitialValue(zone, txt)
 
-        elif turb_model in ('Rij-epsilon', 'Rij-epsilon-SSG'):
+        elif turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
             for txt in ('component_R11',
                         'component_R22',
                         'component_R33',
@@ -148,6 +150,9 @@ class InitializationModel(Model):
                         'component_R13',
                         'component_R23',
                         'turb_eps'):
+                self.getTurbulenceInitialValue(zone, txt)
+            if turb_model == 'Rij-EBRSM':
+                txt = 'turb_alpha'
                 self.getTurbulenceInitialValue(zone, txt)
 
         elif turb_model == 'v2f-phi':

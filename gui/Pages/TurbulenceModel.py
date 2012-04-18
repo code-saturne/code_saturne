@@ -97,6 +97,7 @@ class TurbulenceModel(Variables, Model):
                                'turb_phi',
                                'turb_fb',
                                'turb_omega',
+                               'turb_alpha',
                                'turb_nusa']
 
 
@@ -202,10 +203,20 @@ class TurbulenceModel(Variables, Model):
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(list, 'smagorinsky_constant')
 
-        elif model_turb in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
+        elif model_turb in ('Rij-epsilon', 'Rij-SSG'):
             list = ('component_R11', 'component_R22', 'component_R33',
                     'component_R12', 'component_R13', 'component_R23',
                     'turb_eps')
+            for v in list:
+                self.setNewTurbulenceVariable(self.node_turb, v)
+            self.setNewProperty(self.node_turb, 'turb_viscosity')
+            self.__updateInletsForTurbulence()
+            self.__removeVariablesAndProperties(list, 'smagorinsky_constant')
+
+        elif model_turb == 'Rij-EBRSM':
+            list = ('component_R11', 'component_R22', 'component_R33',
+                    'component_R12', 'component_R13', 'component_R23',
+                    'turb_eps', 'turb_alpha')
             for v in list:
                 self.setNewTurbulenceVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
@@ -353,6 +364,8 @@ class TurbulenceModel(Variables, Model):
             for var in ('component_R11', 'component_R22', 'component_R33',
                         'component_R12', 'component_R13', 'component_R23', 'turb_eps'):
                 nodeList.append(self.node_turb.xmlGetNode('variable', name=var))
+            if model == 'Rij-EBRSM':
+                nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_alpha'))
         elif model == 'v2f-phi':
             nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_k'))
             nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_eps'))
@@ -503,6 +516,7 @@ class TurbulenceModelTestCase(ModelTest):
                 <variable label="R13" name="component_R13"/>
                 <variable label="R23" name="component_R23"/>
                 <variable label="Dissip" name="turb_eps"/>
+                <variable label="alpha" name="turb_alpha"/>
               </turbulence>'''
         assert mdl.node_turb == self.xmlNodeFromString(doc),\
            'Could not set the Rij-epsilon EBRSM turbulence model'

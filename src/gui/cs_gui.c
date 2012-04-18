@@ -1605,6 +1605,11 @@ void CS_PROCF (csturb, CSTURB) (int    *const iturb,
      cs_gui_advanced_options_turbulence("scale_model", ideuch);
      cs_gui_advanced_options_turbulence("gravity_terms", igrari);
    }
+  else if (cs_gui_strcmp(model, "Rij-EBRSM")){
+     *iturb = 32;
+     cs_gui_advanced_options_turbulence("scale_model", ideuch);
+     cs_gui_advanced_options_turbulence("gravity_terms", igrari);
+   }
   else if (cs_gui_strcmp(model, "LES_Smagorinsky")){
      *iturb = 40;
    }
@@ -1981,7 +1986,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     BFT_MALLOC(cs_glob_var->name[n], strlen("turb_eps")+1, char);
     strcpy(cs_glob_var->name[n++], "turb_eps");
 
-  } else if (*iturb == 30 || *iturb == 31) {
+  } else if (*iturb == 30 || *iturb == 31 || *iturb == 32) {
 
     cs_glob_var->rtp[n] = *ir11 -1;
     BFT_MALLOC(cs_glob_var->name[n], strlen("component_R11")+1, char);
@@ -2010,6 +2015,12 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     cs_glob_var->rtp[n] = *iep  -1;
     BFT_MALLOC(cs_glob_var->name[n], strlen("turb_eps")+1, char);
     strcpy(cs_glob_var->name[n++], "turb_eps");
+
+    if (*iturb == 32) {
+      cs_glob_var->rtp[n] = *ial  -1;
+      BFT_MALLOC(cs_glob_var->name[n], strlen("turb_alpha")+1, char);
+      strcpy(cs_glob_var->name[n++], "turb_alpha");
+    }
 
   } else if (*iturb == 50) {
 
