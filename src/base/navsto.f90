@@ -157,7 +157,7 @@ double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 0. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays for the velocity-pressure resolution
@@ -250,6 +250,21 @@ if (nterup.gt.1) then
 
 endif
 
+!===============================================================================
+! 1. Prediction of the mass flux in case of Low Mach compressible algorithm
+!===============================================================================
+
+if (idilat.eq.2.or.idilat.eq.3) then
+
+  call predfl &
+  !==========
+  ( nvar   , nscal  , ncetsm ,                            &
+    icetsm ,                                              &
+    dt     , rtp    , rtpa   ,                            &
+    propce , propfa , propfb ,                            &
+    smacel )
+
+endif
 
 !===============================================================================
 ! 2.  ETAPE DE PREDICTION DES VITESSES

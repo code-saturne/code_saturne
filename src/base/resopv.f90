@@ -210,7 +210,7 @@ icliwp = iclrtp(iw ,icoef)
 
 ! --- Physical quantities
 ipcrom = ipproc(irom)
-if(icalhy.eq.1) then
+if (icalhy.eq.1.or.idilat.gt.1) then
   ipcroa = ipproc(iroma)
 else
   ipcroa = 0
@@ -856,10 +856,10 @@ if (ncesmp.gt.0) then
   enddo
 endif
 
-! --- Source term associated to the diagonal strengthening
-if (idilat.eq.3) then
+! --- Source term associated to the mass aggregation
+if (idilat.eq.2.or.idilat.eq.3) then
   do iel = 1, ncel
-    drom = propce(iel,ipproc(irom)) - propce(iel,ipproc(iroma))
+    drom = propce(iel,ipcrom) - propce(iel,ipcroa)
     divu(iel) = divu(iel) + drom*volume(iel)/dt(iel)
   enddo
 endif

@@ -136,7 +136,7 @@ integer          init  , inc   , iccocg, isqrt, iii, iiun, ibcl
 integer          ivarsc, iscala
 integer          iiscav, iicp
 integer          iclvar, iclvaf
-integer          ipcrom, ipcvst, ipcvsl, iflmas, iflmab
+integer          ipcrom, ipcroa, ipcrho, ipcvst, ipcvsl, iflmas, iflmab
 integer          ippvar, ipp   , iptsca, ipcvso
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
@@ -189,7 +189,8 @@ iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
 
 ! --- Numero des grandeurs physiques
-ipcrom = ipproc(irom  )
+ipcrom = ipproc(irom)
+ipcroa = ipproc(iroma)
 ipcvst = ipproc(ivisct)
 iflmas = ipprof(ifluma(ivar ))
 iflmab = ipprob(ifluma(ivar ))
@@ -587,6 +588,15 @@ init = 1
 call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
                ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
 
+! Low Mach compressible algos (conservative in time)
+if (idilat.gt.1) then
+  ipcrho = ipcroa
+
+! Standard algo
+else
+  ipcrho = ipcrom
+endif
+
 ! Without porosity
 if (iporos.eq.0) then
 
@@ -602,7 +612,7 @@ if (iporos.eq.0) then
   !  is always the same by coherence with bilsc2
   do iel = 1, ncel
     rovsdt(iel) = rovsdt(iel)                                        &
-                + istat(ivar)*propce(iel,ipcrom)*volume(iel)/dt(iel) &
+                + istat(ivar)*propce(iel,ipcrho)*volume(iel)/dt(iel) &
                 - iconv(ivar)*w1(iel)*thetv
   enddo
 
@@ -621,7 +631,7 @@ else
   !  is always the same by coherence with bilsc2
   do iel = 1, ncel
     rovsdt(iel) = ( rovsdt(iel)                                        &
-                  + istat(ivar)*propce(iel,ipcrom)*volume(iel)/dt(iel) &
+                  + istat(ivar)*propce(iel,ipcrho)*volume(iel)/dt(iel) &
                   ) * porosi(iel)                                      &
                 - iconv(ivar)*w1(iel)*thetv
   enddo

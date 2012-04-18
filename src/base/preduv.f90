@@ -180,7 +180,7 @@ integer          iccocg, inc   , init  , ii    , isqrt
 integer          ireslp, nswrgp, imligp, iwarnp, ippt  , ipp
 integer                  iclipr, icliup, iclivp, icliwp
 integer                          iclik , iclvar, iclvaf
-integer          ipcrom, ipcroa, ipcroo , ipcvis, ipcvst
+integer          ipcrom, ipcroa, ipcroo, ipcrho, ipcvis, ipcvst
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
@@ -232,7 +232,7 @@ ipbrom = ipprob(irom  )
 !     Reperage de rho courant (ie en cas d'extrapolation rho^n+1/2)
 ipcrom = ipproc(irom  )
 !     Reperage de rho^n en cas d'extrapolation
-if(iroext.gt.0) then
+if(iroext.gt.0.or.idilat.gt.1) then
   ipcroa = ipproc(iroma)
 else
   ipcroa = 0
@@ -1225,22 +1225,19 @@ do isou = 1, 3
   if(iappel.eq.1) then
 !     Extrapolation ou non, meme forme par coherence avec bilsc2
 
-    ! Without porosity
-    if (iporos.eq.0) then
+    ! Low Mach compressible Algos
+    if (idilat.gt.1) then
+      ipcrho = ipcroa
 
-      do iel = 1, ncel
-        rovsdt(iel) = istat(ivar)*propce(iel,ipcrom)/dt(iel)*volume(iel) &
-                    - iconv(ivar)*w1(iel)*thetav(ivar)
-      enddo
-
-    ! With porosity
+    ! Standard algo
     else
-
-      do iel = 1, ncel
-        rovsdt(iel) = istat(ivar)*propce(iel,ipcrom)/dt(iel)*volume(iel)
-      enddo
-
+      ipcrho = ipcrom
     endif
+
+    do iel = 1, ncel
+      rovsdt(iel) = istat(ivar)*propce(iel,ipcrho)/dt(iel)*volume(iel) &
+                  - iconv(ivar)*w1(iel)*thetav(ivar) ! FIXME for the porosity
+    enddo
 
 !     Le remplissage de ROVSDT est toujours indispensable,
 !       meme si on peut se contenter de n'importe quoi pour IAPPEL=2.
@@ -1416,8 +1413,7 @@ do isou = 1, 3
   ! With porosity
   if (iporos.eq.1) then
     do iel = 1, ncel
-      rovsdt(iel) = rovsdt(iel)*porosi(iel)           &
-                  - iconv(ivar)*w1(iel)*thetav(ivar)
+      rovsdt(iel) = rovsdt(iel)*porosi(iel)
     enddo
   endif
 
@@ -1485,7 +1481,7 @@ do isou = 1, 3
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   rtpa(1,ivar)    , uvwk(1,isou) ,                         &
+   rtpa(1,ivar)    , uvwk(1,isou) ,                               &
                      coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      flumas , flumab ,                            &

@@ -166,7 +166,7 @@ double precision, dimension(:,:), allocatable :: tpucov
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 0. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays for the velocity-pressure resolution
@@ -277,6 +277,21 @@ if(nterup.gt.1) then
 
 endif
 
+!===============================================================================
+! 1. Prediction of the mass flux in case of Low Mach compressible algorithm
+!===============================================================================
+
+if (idilat.eq.2.or.idilat.eq.3) then
+
+  call predfl &
+  !==========
+  ( nvar   , nscal  , ncetsm ,                            &
+    icetsm ,                                              &
+    dt     , rtp    , rtpa   ,                            &
+    propce , propfa , propfb ,                            &
+    smacel )
+
+endif
 
 !===============================================================================
 ! 2.  ETAPE DE PREDICTION DES VITESSES
@@ -522,7 +537,6 @@ ipbrom = ipprob(irom  )
 !       IREVMC = 0 : Only the standard method is available for the coupled
 !                    version of navstv.
 
-
 if( irevmc.eq.0 ) then
 
   !     The predicted velocity is corrected by the cell gradient of the
@@ -569,8 +583,6 @@ if( irevmc.eq.0 ) then
    drtp   , coefa(1,iclipf) , coefb(1,iclipr)  ,                  &
    gradp  )
 
-  !     REACTUALISATION DU CHAMP DE VITESSES
-
   thetap = thetav(ipr)
   do iel = 1, ncelet
     do isou = 1, 3
@@ -580,7 +592,6 @@ if( irevmc.eq.0 ) then
 
   !Free memory
   deallocate(gradp)
-
 
   !     REACTUALISATION DU CHAMP DE VITESSES
 

@@ -157,7 +157,7 @@ iiromb = ipprob(irom  )
 do iel = 1, ncel
   propce(iel,iirom)  = ro0
 enddo
-if(iroext.gt.0.or.icalhy.eq.1) then
+if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
   iiroma = ipproc(iroma )
   do iel = 1, ncel
     propce(iel,iiroma) = propce(iel,iirom)

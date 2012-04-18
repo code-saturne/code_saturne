@@ -1356,7 +1356,7 @@ if(ipass.eq.3) then
 ! --- Positionnement des PROPFB
 
   !     Variables schema en temps : rhoa (pas pour icalhy)
-  if(iroext.gt.0.or.idilat.gt.1) then
+  if (iroext.gt.0.or.idilat.gt.1) then
     iprop                 = iprop  + 1
     ipprob(iroma ) = iprop
   endif

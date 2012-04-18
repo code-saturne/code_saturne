@@ -189,7 +189,7 @@ integer          iccocg, inc   , init  , ii    , isqrt
 integer          ireslp, nswrgp, imligp, iwarnp, ippt  , ipp
 integer                  iclipr, icliup, iclivp, icliwp
 integer                          iclik
-integer          ipcrom, ipcroa, ipcroo , ipcvis, ipcvst
+integer          ipcrom, ipcroa, ipcroo, ipcrho, ipcvis, ipcvst
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
@@ -253,7 +253,7 @@ ipbrom = ipprob(irom  )
 ! Reperage de rho courant (ie en cas d'extrapolation rho^n+1/2)
 ipcrom = ipproc(irom  )
 ! Reperage de rho^n en cas d'extrapolation
-if(iroext.gt.0) then
+if (iroext.gt.0.or.idilat.gt.1) then
   ipcroa = ipproc(iroma)
 else
   ipcroa = 0
@@ -1106,32 +1106,25 @@ endif
 if(iappel.eq.1) then
 !     Extrapolation ou non, meme forme par coherence avec bilsc2
 
-  ! Without porosity
-  if (iporos.eq.0) then
-    do iel = 1, ncel
-      do isou = 1, 3
-        fimp(isou,isou,iel) = &
-           istat(iu)*propce(iel,ipcrom)/dt(iel)*volume(iel)     &
-          -iconv(iu)*w1(iel)*thetav(iu)
-        do jsou = 1, 3
-          if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
-        enddo
-      enddo
-    enddo
+  ! Low Mach compressible Algos
+  if (idilat.gt.1) then
+    ipcrho = ipcroa
 
-  ! With porosity: the term div(rho u) is added afterwards
+  ! Standard algo
   else
-    do iel = 1, ncel
-      do isou = 1, 3
-        fimp(isou,isou,iel) = &
-           istat(iu)*propce(iel,ipcrom)/dt(iel)*volume(iel)
-        do jsou = 1, 3
-          if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
-        enddo
+    ipcrho = ipcrom
+  endif
+
+  do iel = 1, ncel
+    do isou = 1, 3
+      fimp(isou,isou,iel) = &
+         istat(iu)*propce(iel,ipcrho)/dt(iel)*volume(iel)     &
+        -iconv(iu)*w1(iel)*thetav(iu) ! FIXME for the porosity
+      do jsou = 1, 3
+        if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
       enddo
     enddo
-
-  endif
+  enddo
 
 !     Le remplissage de FIMP est toujours indispensable,
 !       meme si on peut se contenter de n'importe quoi pour IAPPEL=2.
@@ -1391,12 +1384,7 @@ if (iporos.eq.1) then
   do iel = 1, ncel
     do isou = 1, 3
       do jsou = 1, 3
-        if (isou.eq.jsou) then
-          fimp(isou,jsou,iel) = fimp(isou,jsou,iel)*porosi(iel) &
-                              - iconv(iu)*w1(iel)*thetav(iu)
-        else
-          fimp(isou,jsou,iel) = fimp(isou,jsou,iel)*porosi(iel)
-        endif
+        fimp(isou,jsou,iel) = fimp(isou,jsou,iel)*porosi(iel)
       enddo
     enddo
   enddo

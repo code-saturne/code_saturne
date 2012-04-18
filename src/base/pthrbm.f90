@@ -133,7 +133,7 @@ debtot = 0.d0
 !--------------
 
 ! Computation of mass flux imposed on the boundary faces
-do ifac=1, nfabor
+do ifac = 1, nfabor
   if (itypfb(ifac).eq.ientre) then
     ! the inlet mass flux integrated in space
     debin = debin + propfb(ifac,iflmab)

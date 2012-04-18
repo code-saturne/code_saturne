@@ -69,8 +69,8 @@ module numvar
   ! ipprof : pointeurs dans propfa
   ! ipprob : pointeurs dans propfb
 
-  ! irom   : Masse volumique des phases
-  ! iroma  : Masse volumique des phases au pas de temps precedent
+  ! irom   : Density at the current time step
+  ! iroma  : Density at the previous time step
   ! iviscl : Viscosite moleculaire dynamique en kg/(ms) des phases
   ! ivisct : Viscosite turbulente des phases
   ! ivisla : Viscosite moleculaire dynamique en kg/(ms) des phases au pas

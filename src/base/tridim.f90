@@ -131,7 +131,7 @@ integer          ntrela
 
 integer          isvhb , isvtb
 integer          ii    , jj    , ippcp , ientha, ippcv
-integer          ipcrom, ipcroa
+integer          ipcrom, ipcroa, ipbrom, ipbroa
 integer          iflua , iflub
 integer          iterns, inslst, icvrge, ivsvdr
 integer          iflmas, iflmab
@@ -375,8 +375,8 @@ do ivar = 1, nvar
   enddo
 enddo
 
-if (icalhy.eq.1 .or. idilat.eq.3) then
-
+! If required, the density at time step n-1 is updated
+if (icalhy.eq.1.or.idilat.gt.1) then
   ipcrom = ipproc(irom  )
   ipcroa = ipproc(iroma )
   do iel = 1, ncelet

@@ -194,7 +194,6 @@ call usphyv &
   propce , propfa , propfb ,                                     &
   coefa  , coefb  )
 
-
 !  Density defined by a perfect gas equation of state
 !  for the low-Mach algorithm
 
@@ -215,8 +214,6 @@ if (idilat.eq.3) then
   enddo
 
 endif
-
-
 
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
 
