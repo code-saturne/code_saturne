@@ -163,15 +163,13 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
         # Corresponding dict for the nature of the boundary. used in combo delegate.
         self.dicoM2V = {
-            "wall" : { "inlet" : self.tr("Particles injection zone"),
-                       "bounce" : self.tr("Particles rebound zone"),
-                       "deposit1" : self.tr("Particles deposit"),
-                       "deposit2" : self.tr("Particles deposit + memory"),
-                       "deposit3" : self.tr("Particles deposit + suspension"),
-                       "depositfa" : self.tr("Particles deposit + attachment force") },
-            "inlet" : { "inlet" : self.tr("Particles injection zone") },
-            "outlet" : { "outlet" : self.tr("Particles outlet zone") },
-            "symmetry" : { "bounce" : self.tr("Particles rebound zone") }
+            "wall" : { "inlet" : self.tr("Particles inlet"),
+                       "bounce" : self.tr("Particles rebound"),
+                       "deposit1" : self.tr("Deposition and elimination"),
+                       "deposit2" : self.tr("Deposition") },
+            "inlet" : { "inlet" : self.tr("Particles inlet") },
+            "outlet" : { "outlet" : self.tr("Particles outlet") },
+            "symmetry" : { "bounce" : self.tr("Particles rebound") }
             }
 
         self.dicoV2M = {}

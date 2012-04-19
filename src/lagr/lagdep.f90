@@ -287,7 +287,6 @@ endif
 
             if ( iusclb(izone) .eq. idepo1 .or.                   &
                  iusclb(izone) .eq. idepo2 .or.                   &
-                 iusclb(izone) .eq. idepo3 .or.                   &
                  iusclb(izone) .eq. idepfa .or.                   &
                  iusclb(izone) .eq. irebol     ) then
 

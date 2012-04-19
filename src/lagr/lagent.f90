@@ -262,7 +262,7 @@ if (iihmpr.eq.1) then
   call uilag2                                                     &
   !==========
  ( nfabor, nozppm, nclagm, nflagm, nbclst,                        &
-   ientrl, isortl, idepo1, idepo2, idepo3,                        &
+   ientrl, isortl, idepo1, idepo2,                                &
    idepfa, iencrl, irebol, iphyla,                                &
    ijnbp,  ijfre,  iclst,  ijuvw,  iuno,   iupt,   ivpt,   iwpt,  &
    ijprpd, ipoit,  idebt,  ijprdp, idpt,   ivdpt,                 &
@@ -380,7 +380,7 @@ do ii = 1,nfrlag
   nb = ilflag(ii)
   if ( iusclb(nb).ne.ientrl .and. iusclb(nb).ne.isortl .and.      &
        iusclb(nb).ne.irebol .and. iusclb(nb).ne.idepo1 .and.      &
-       iusclb(nb).ne.idepo2 .and. iusclb(nb).ne.idepo3 .and.      &
+       iusclb(nb).ne.idepo2 .and.                                 &
        iusclb(nb).ne.iencrl .and. iusclb(nb).ne.jbord1 .and.      &
        iusclb(nb).ne.jbord2 .and. iusclb(nb).ne.jbord3 .and.      &
        iusclb(nb).ne.jbord4 .and. iusclb(nb).ne.jbord5 .and.      &
@@ -1441,8 +1441,6 @@ nbptot = nbptot + nbpnew
 '@   = IDEPO1  deposition definitive                          ',/,&
 '@   = IDEPO2  deposition definitive mais la particule reste  ',/,&
 '@             en memoire                                     ',/,&
-'@   = IDEPO3  deposition et remise en suspension possible    ',/,&
-'@             suivant les condition de l''ecoulement         ',/,&
 '@   = IENCRL  encrassement (Charbon uniquement IPHYLA = 2)   ',/,&
 '@   = JBORD1  interaction particule/frontiere utilisateur    ',/,&
 '@   = JBORD2  interaction particule/frontiere utilisateur    ',/,&

@@ -194,8 +194,7 @@ do ii = 1,nfrlag
   else if ( iusclb(nb) .eq. isortl) then
      CHCOND = 'SORTIE'
   else if ( iusclb(nb) .eq. idepo1 .or.                           &
-       iusclb(nb) .eq. idepo2 .or.                                &
-       iusclb(nb) .eq. idepo3     ) then
+       iusclb(nb) .eq. idepo2    ) then
     CHCOND = 'DEPOSITION'
   else if ( iusclb(nb) .eq. iencrl) then
     CHCOND = 'ENCRASSEMENT'

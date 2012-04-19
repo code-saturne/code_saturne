@@ -604,7 +604,6 @@ do ip = 1,nbpart
                    izone = ifrlag(ifacp)
                    if (iusclb(izone).eq.idepo1 .or.           &
                        iusclb(izone).eq.idepo2 .or.           &
-                       iusclb(izone).eq.idepo3 .or.           &
                        iusclb(izone).eq.idepfa .or.           &
                        iusclb(izone).eq.irebol     ) then
                      ltest = ltest+1
@@ -714,7 +713,6 @@ do ip = 1,nbpart
                      izone = ifrlag(ifacp)
                      if (iusclb(izone).eq.idepo1 .or.           &
                          iusclb(izone).eq.idepo2 .or.           &
-                         iusclb(izone).eq.idepo3 .or.           &
                          iusclb(izone).eq.idepfa .or.           &
                          iusclb(izone).eq.irebol) then
                        ifacb = ifacp
@@ -827,7 +825,6 @@ do ip = 1,nbpart
                      izone = ifrlag(ifacp)
                      if (iusclb(izone).eq.idepo1 .or.            &
                          iusclb(izone).eq.idepo2 .or.            &
-                         iusclb(izone).eq.idepo3 .or.            &
                          iusclb(izone).eq.idepfa .or.            &
                          iusclb(izone).eq.irebol) then
                        ifacb = ifacp

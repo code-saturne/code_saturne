@@ -62,8 +62,6 @@ subroutine uslabo &
 ! * irebol: condition of elastic rebound.
 ! * idepo1: definitive deposition of the particles; the particle is removed from the calculation
 ! * idepo2: definitive deposition of the particles; the particle is kept in the calculation
-!           (useful only if iensi2 = 1)
-! * idepo3: deposition and resuspension possible depending on the flow conditions.
 ! * iencrl: fouling only for coal particles (iphyla = 2)
 !
 ! Besides, if one wishes to add another kind of non-standard interaction for a zone of
@@ -89,7 +87,7 @@ subroutine uslabo &
 !    interaction with a boundary face (ex: ientrl, isortl, idepo1, idepo2)
 
 ! 2) Set isuivi to 1 if the particle must be followed in the mesh after its
-!    interaction with a boundary face (ex: idepo3)
+!    interaction with a boundary face (ex: irebol)
 
 ! Remark: During an interaction, the computations of the velocities of the particle
 ! ------  and of the flow seen are first-order (even if the calculation is second-order
@@ -215,6 +213,7 @@ double precision vnorl(1)  , enc3 , viscp , masse
 double precision dpinit , dp03 , mp0 , trap , vnorm , ang
 double precision energ , energt
 double precision uxn   , vyn    , wzn
+double precision upp, vpp, wpp
 
 !===============================================================================
 
@@ -236,6 +235,23 @@ ip = nbpt
 !--> indicator of mass flux calculation
 
 depch = 1
+
+!--> If boundary statistics are
+!    we save the particle velocity
+!    since it can be modified if
+!    idepo2 for instance
+
+upp = 0.d0
+vpp = 0.d0
+wpp = 0.d0
+
+if (iensi3.eq.1) then
+   if ((iangbd.eq.1).or.(ivitbd.eq.1)) then
+      upp = vitpar(ip,1)
+      vpp = vitpar(ip,2)
+      wpp = vitpar(ip,3)
+   endif
+endif
 
 !--> Zone of the boundary face to be treated
 
@@ -318,8 +334,7 @@ zk = zp + zpq * aa
 !===============================================================================
 
 if (iusclb(kzone).eq.idepo1 .or.                                 &
-    iusclb(kzone).eq.idepo2 .or.                                 &
-    iusclb(kzone).eq.idepo3      ) then
+    iusclb(kzone).eq.idepo2) then
 
   nbpdep = nbpdep + 1
   dnbdep = dnbdep + tepa(ip,jrpoi)
@@ -371,25 +386,6 @@ else if (iusclb(kzone).eq.idepo2) then
      vitflu(ip,n1) = 0.d0
   enddo
 
-!===============================================================================
-! 5. Deposition of the particle, the resuspension is possible
-!===============================================================================
-
-else if (iusclb(kzone).eq.idepo3) then
-
-  isuivi = 0
-  itepa(ip,jisor) = ifabor(kface)
-  ettp(ip,jxp) = xk
-  ettp(ip,jyp) = yk
-  ettp(ip,jzp) = zk
-
-  do n1 = 1,3
-    vitpar(ip,n1) = 0.d0
-    vitflu(ip,n1) = 0.d0
-  enddo
-  do n1 = jup,jwf
-    ettpa(ip,n1) = 0.d0
-  enddo
 
 !===============================================================================
 ! 6. Deposition of the particle with DLVO deposition conditions
@@ -846,7 +842,6 @@ if ( iensi3.eq.1 ) then
   if ( iusclb(kzone).eq.irebol .or.                               &
        iusclb(kzone).eq.idepo1 .or.                               &
        iusclb(kzone).eq.idepo2 .or.                               &
-       iusclb(kzone).eq.idepo3 .or.                               &
        iusclb(kzone).eq.idepfa ) then
 
     if (inbrbd.eq.1) then
@@ -859,25 +854,24 @@ if ( iensi3.eq.1 ) then
     endif
 
     if (iangbd.eq.1) then
-      vnorm = ettp(ip,jup) * ettp(ip,jup)                         &
-            + ettp(ip,jvp) * ettp(ip,jvp)                         &
-            + ettp(ip,jwp) * ettp(ip,jwp)
-      vnorm = sqrt( vnorm )
-      ang =  ettp(ip,jup) * surfbo(1,kface)                       &
-           + ettp(ip,jvp) * surfbo(2,kface)                       &
-           + ettp(ip,jwp) * surfbo(3,kface)                       &
+
+      vnorm = sqrt(upp**2 + vpp**2 + wpp**2)
+      ang =  upp * surfbo(1,kface)                       &
+           + vpp * surfbo(2,kface)                       &
+           + wpp * surfbo(3,kface)                       &
            / surfbn(kface)                                        &
            / vnorm
       ang = acos(ang)
+
       parbor(kface,iang) = parbor(kface,iang) + ang*tepa(ip,jrpoi)
-    endif
+
+   endif
 
     if (ivitbd.eq.1) then
-      vnorm = ettp(ip,jup) * ettp(ip,jup)                         &
-            + ettp(ip,jvp) * ettp(ip,jvp)                         &
-            + ettp(ip,jwp) * ettp(ip,jwp)
-      vnorm = sqrt( vnorm )
+
+      vnorm = sqrt(upp**2 + vpp**2 + wpp**2)
       parbor(kface,ivit) =parbor(kface,ivit) +vnorm*tepa(ip,jrpoi)
+
     endif
 
     if (nusbor.gt.0) then

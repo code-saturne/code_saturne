@@ -222,7 +222,6 @@ module lagran
   !          = IREBOL -> rebond elastique
   !          = IDEPO1 -> deposition definitive (particule eliminee de la memoire)
   !          = IDEPO2 -> deposition definitive (part. non eliminee de la memoire)
-  !          = IDEPO3 -> deposition temporaire (remise en suspension possible)
   !          = IENCRL -> encrassement (Charbon uniquement IPHYLA = 2)
   !          = JBORD1 -> interactions utilisateur
   !          = JBORD2 -> interactions utilisateur
@@ -423,7 +422,7 @@ module lagran
   ! 12. Physico-chemical (DLVO) parameters
 
   !      cstham : Hamaker constant for the particle/fluid/substrate system
-  !      epseau : Dielectric constant of the fluid 
+  !      epseau : Dielectric constant of the fluid
   !      phi1   : Electrokinetic potential of the first solid
   !      phi2   : Electrokinetic potential of the second solid
   !      fion   : Ionic force
@@ -433,13 +432,13 @@ module lagran
 
 !    Faraday constant (C/mol)
 
-  double precision cstfar 
+  double precision cstfar
   parameter(cstfar = 9.648d4)
 
 
 !    Vacuum permittivity (F/m):
 
-  double precision epsvid 
+  double precision epsvid
   parameter(epsvid = 8.854d-12)
 
 !    Boltzmann constant (J/K):

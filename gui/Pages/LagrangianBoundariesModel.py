@@ -121,7 +121,7 @@ class LagrangianBoundariesModel(Model):
         elif nature == "symmetry":
             self.isInList(value, ["bounce"])
         elif nature == "wall":
-            l = [ "inlet", "bounce", "deposit1", "deposit2", "deposit3", "depositfa"]
+            l = [ "inlet", "bounce", "deposit1", "deposit2"]
             #if iscoal: l.append("encra")
             self.isInList(value, l)
         self.node_boundary = self.node_boundaries.xmlInitChildNode(nature, label=labelbc)

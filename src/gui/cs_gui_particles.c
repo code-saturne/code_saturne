@@ -1163,34 +1163,34 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
     if (*inbrbd) {
       i++;
       if (label) _copy_boundary_varname(label, i);
-      imoybr[i] = record_ind;
+      imoybr[i] = 0;
     }
 
     label = _get_char_post("boundary", "mass_flux", iflmbd, &record_ind);
     if (*iflmbd) {
       i++;
       if (label) _copy_boundary_varname(label, i);
-      imoybr[i] = record_ind;
+      imoybr[i] = 1;
     }
 
     label = _get_char_post("boundary", "angle", iangbd, &record_ind);
     if (*iangbd) {
       i++;
       if (label) _copy_boundary_varname(label, i);
-      imoybr[i] = record_ind;
+      imoybr[i] = 2;
     }
 
     label = _get_char_post("boundary", "velocity", ivitbd, &record_ind);
     if (*ivitbd) {
       i++;
       if (label) _copy_boundary_varname(label, i);
-      imoybr[i] = record_ind;
+      imoybr[i] = 2;
     }
     label = _get_char_post("boundary", "coal_fouling", iencbd, &record_ind);
     if (*iencbd) {
       i++;
       if (label) _copy_boundary_varname(label, i);
-      imoybr[i] = record_ind;
+      imoybr[i] = 0;
     }
   }
   BFT_FREE(label);
@@ -1337,7 +1337,6 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 const int *const isortl,
                                 const int *const idepo1,
                                 const int *const idepo2,
-                                const int *const idepo3,
                                 const int *const idepfa,
                                 const int *const iencrl,
                                 const int *const irebol,
@@ -1560,9 +1559,6 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
 
       else if(cs_gui_strcmp(interaction, "deposit2"))
         iusclb[izone] = *idepo2;
-
-      else if(cs_gui_strcmp(interaction, "deposit3"))
-        iusclb[izone] = *idepo3;
 
       else if(cs_gui_strcmp(interaction, "fouling") && *iphyla == 2)
         iusclb[izone] = *iencrl;

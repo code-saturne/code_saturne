@@ -322,8 +322,6 @@ iusncl(izone) = nbclas
 !     = idepo1 -> definitive deposition
 !     = idepo2 -> definitive deposition, but the particle remains in memory
 !                 (useful only if iensi2 = 1)
-!     = idepo3 -> deposition and resuspension possible
-!                 following the conditions of the flow
 !     = idepfa -> deposition of the particle with DLVO forces
 !     = iencrl -> fouling (coal only iphyla = 2)
 !     = jbord1 -> user-defined particle/boundary interaction (cf. uslabo)

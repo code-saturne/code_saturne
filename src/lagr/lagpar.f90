@@ -129,13 +129,13 @@ module lagpar
   !     NLISTE : Nombre maximum de particules visualisable
 
   integer         ientrl     , isortl     , irebol
-  integer         idepo1     , idepo2     , idepo3
+  integer         idepo1     , idepo2
   integer         iencrl     , jbord1     , jbord2
   integer         jbord3     , jbord4     , jbord5
   integer         idepfa
 
   parameter      (ientrl =  1, isortl =  2, irebol =  3)
-  parameter      (idepo1 =  4, idepo2 =  5, idepo3 =  6)
+  parameter      (idepo1 =  4, idepo2 =  5)
   parameter      (iencrl =  7, jbord1 =  8, jbord2 =  9)
   parameter      (jbord3 = 10, jbord4 = 11, jbord5 = 12)
   parameter      (idepfa = 13)
