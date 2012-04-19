@@ -76,7 +76,6 @@ lages1.f90 \
 lages2.f90 \
 lagesd.f90 \
 lagesp.f90 \
-lagfch.f90 \
 laggeo.f90 \
 laggra.f90 \
 laghis.f90 \

@@ -324,9 +324,7 @@ iusncl(izone) = nbclas
 !                 (useful only if iensi2 = 1)
 !     = idepo3 -> deposition and resuspension possible
 !                 following the conditions of the flow
-!     = idepfa -> deposition of the particle with attachment force,
-!                 the velocity is conserved, and resuspension is possible
-!                 (Possible if ladlvo = 1 )
+!     = idepfa -> deposition of the particle with DLVO forces
 !     = iencrl -> fouling (coal only iphyla = 2)
 !     = jbord1 -> user-defined particle/boundary interaction (cf. uslabo)
 !     = jbord2 -> user-defined particle/boundary interaction (cf. uslabo)

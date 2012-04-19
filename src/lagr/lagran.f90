@@ -420,26 +420,32 @@ module lagran
                              tprenc(ncharm2) , visref(ncharm2) , dnpenc
 
   !=============================================================================
-  ! 12. Forces chimiques
+  ! 12. Physico-chemical (DLVO) parameters
 
-  !       1) FORCES DE VAN DER WAALS
-  !       2) FORCES ELECTROSTATIQUES
+  !      cstham : Hamaker constant for the particle/fluid/substrate system
+  !      epseau : Dielectric constant of the fluid 
+  !      phi1   : Electrokinetic potential of the first solid
+  !      phi2   : Electrokinetic potential of the second solid
+  !      fion   : Ionic force
 
-  integer, save ::           ladlvo
+  double precision, save ::  cstham , epseau,  phi1 , phi2, fion
 
-  !      CSTHAM : constante d'Hamaker
-  !      CSTFAR : constant de FARADET
-  !      EPSEAU : Constante dielectrique de l'eau
-  !      EPSEAU : Constante dielectrique du vide
-  !      PHI1   : potentiel solide 1
-  !      PHI1   : potentiel solide 2
-  !      FION   : force ionique
-  !      GAMASV : energie de surface
-  !      DPARMN : distance entre particule/paroi minimum
 
-  double precision, save ::  cstham , epseau  , epsvid , phi1 , phi2
-  double precision, save ::  fion   , gamasv  , dcoup  , sigch
-  double precision, save ::  cstfar , dparmn
+!    Faraday constant (C/mol)
+
+  double precision cstfar 
+  parameter(cstfar = 9.648d4)
+
+
+!    Vacuum permittivity (F/m):
+
+  double precision epsvid 
+  parameter(epsvid = 8.854d-12)
+
+!    Boltzmann constant (J/K):
+
+  double precision kboltz
+  parameter(kboltz = 1.38d-23)
 
   !=============================================================================
   ! 13. Mouvement brownien
@@ -448,8 +454,6 @@ module lagran
 
   integer, save :: lamvbr
 
-  double precision kboltz
-  parameter          (kboltz = 1.38d-23)
 
   !=============================================================================
   ! 14. Schema en temps, dispersion turbulente et equation de poisson

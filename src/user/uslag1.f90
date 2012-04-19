@@ -594,18 +594,6 @@ if (modcpl.gt.0) idirla = 1
 ! 10. Options concerning the treatment of specific forces
 !===============================================================================
 
-!--> Activation of the following forces:
-
-!      - van der Waals forces
-!      - electrostatic forces
-
-!     (default off: 0 ; on: 1)
-
-!     CAUTION: OPTION FOR DEVELOPERS ONLY
-!     =========
-
-ladlvo = 0
-
 !-->  Constants for the van der Waals forces
 !     --------------------------------------
 !    Hamaker constant for the particle/fluid/substrate system:
@@ -614,14 +602,6 @@ cstham = 6.d-20
 
 !-->  Constants for the elecstrostatic forces
 !    ----------------------------------------
-
-!    Faraday constant (C/mol)
-
-cstfar = 9.648d4
-
-!    Vacuum permittivity:
-
-epsvid = 8.854d-12
 
 !    Dielectric constant of the fluid (example: water at 293 K)
 
@@ -638,19 +618,6 @@ phi2 = -50.d-3
 !    Ionic force (mol/l)
 
 fion = 1.d-2
-
-!    Cut-off distance (in the literature, it is equal to: 1.58D-10
-!                      or 1.65D-10)
-
-dcoup = 1.58d-10
-
-!    Charge density
-
-sigch = 0.d0
-
-!    Minimal distance between particle and wall
-
-dparmn = 1.d-10
 
 
 !===============================================================================

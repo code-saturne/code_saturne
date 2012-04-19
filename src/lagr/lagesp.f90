@@ -225,28 +225,6 @@ call uslafe                                                       &
    vagaus , gradpr , gradvf ,                                     &
    romp   , fextla )
 
-!===============================================================================
-! 3.  Management of physici-chemical forces (DLVO theory)
-!       - Van der Waals forces
-!       - Electrostatic forces
-!===============================================================================
-
-if ( ladlvo .eq. 1 ) then
-
-  call lagfch                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
-   itepa  , ibord  ,                                              &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   ettp   , ettpa  , tepa   , statis , stativ ,                   &
-   taup   , tlag   , piil   ,                                     &
-   tsuf   , tsup   , bx     , tsfext ,                            &
-   vagaus , gradpr , gradvf ,                                     &
-   romp   , fextla )
-
- endif
 
 !===============================================================================
 ! 4.  First order
