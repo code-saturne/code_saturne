@@ -374,7 +374,7 @@ if (iupwin.eq.1) then
       !$omp                     diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, &
       !$omp                     dpxf, dpyf, dpzf, pip, pjp, pipr, pjpr,         &
       !$omp                     flui, fluj, pif, pjf, fluxi, fluxj,             &
-      !$omp                     pi, pj, pia, pja)                               &
+      !$omp                     pi, pj, pir, pjr, pia, pja)                     &
       !$omp             reduction(+:infac)
       do it = 1, nthrdi
         do ifac = iompli(1,ig,it), iompli(2,ig,it)
@@ -631,7 +631,7 @@ else if (isstpp.eq.1) then
       !$omp parallel do private(ifac, ii, jj, dijpfx, dijpfy, dijpfz, pnd,      &
       !$omp                     diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, &
       !$omp                     dpxf, dpyf, dpzf, pip, pjp, flui, fluj, pif,    &
-      !$omp                     pjf, difx, dify, difz, djfx, djfy, djfz, flux   &
+      !$omp                     pjf, difx, dify, difz, djfx, djfy, djfz, flux,  &
       !$omp                     pi, pj)
       do it = 1, nthrdi
         do ifac = iompli(1,ig,it), iompli(2,ig,it)
