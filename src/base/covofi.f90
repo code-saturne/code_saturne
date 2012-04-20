@@ -190,7 +190,11 @@ iclvaf = iclrtp(ivar,icoeff)
 
 ! --- Numero des grandeurs physiques
 ipcrom = ipproc(irom)
-ipcroa = ipproc(iroma)
+if (iroma .gt. 0) then
+  ipcroa = ipproc(iroma)
+else
+  ipcroa = 0
+endif
 ipcvst = ipproc(ivisct)
 iflmas = ipprof(ifluma(ivar ))
 iflmab = ipprob(ifluma(ivar ))
