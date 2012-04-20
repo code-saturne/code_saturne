@@ -177,8 +177,8 @@ if (isym.eq.2) then
       do ifac = iompli(1,ig,it), iompli(2,ig,it)
         ii = ifacel(1,ifac)
         jj = ifacel(2,ifac)
-        da(ii) = da(ii) - xa(ifac,2)
-        da(jj) = da(jj) - xa(ifac,1)
+        da(ii) = da(ii) - xa(ifac,1)
+        da(jj) = da(jj) - xa(ifac,2)
       enddo
     enddo
   enddo
@@ -205,14 +205,13 @@ endif
 
 do ig = 1, ngrpb
   !$omp parallel do firstprivate(thetap, iconvp, idiffp) &
-  !$omp          private(ifac, ii, flui, fluj) if(nfabor > thr_n_min)
+  !$omp          private(ifac, ii, flui) if(nfabor > thr_n_min)
   do it = 1, nthrdb
     do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
       ii = ifabor(ifac)
       flui = 0.5d0*(flumab(ifac) - abs(flumab(ifac)))
-      fluj =-0.5d0*(flumab(ifac) + abs(flumab(ifac)))
       da(ii) = da(ii) + thetap*(                                          &
-                                  iconvp*(-fluj + flui*coefbp(ifac))      &
+                                  iconvp*flui*(coefbp(ifac)-1.d0)         &
                                 + idiffp*viscb(ifac)*(1.d0-coefbp(ifac)))
     enddo
   enddo

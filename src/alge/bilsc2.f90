@@ -157,8 +157,9 @@ integer          ifac,ii,jj,infac,iel,iupwin, iij, iii, ig, it
 integer          idimtr, irpvar
 double precision pfac,pfacd,flui,fluj,flux,fluxi,fluxj
 double precision difx,dify,difz,djfx,djfy,djfz
+double precision pi, pj, pia, pja
 double precision pif,pjf,pip,pjp,pir,pjr,pipr,pjpr
-double precision pifr,pjfr,pifri,pifrj,pjfri,pjfrj
+double precision pifri,pifrj,pjfri,pjfrj
 double precision testi,testj,testij
 double precision dpxf,dpyf,dpzf
 double precision dcc, ddi, ddj, tesqck
@@ -372,7 +373,8 @@ if (iupwin.eq.1) then
       !$omp parallel do private(ifac, ii, jj, dijpfx, dijpfy, dijpfz, pnd,      &
       !$omp                     diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, &
       !$omp                     dpxf, dpyf, dpzf, pip, pjp, pipr, pjpr,         &
-      !$omp                     flui, fluj, pif, pjf, pifr, pjfr, fluxi, fluxj) &
+      !$omp                     flui, fluj, pif, pjf, fluxi, fluxj,             &
+      !$omp                     pi, pj, pia, pja)                               &
       !$omp             reduction(+:infac)
       do it = 1, nthrdi
         do ifac = iompli(1,ig,it), iompli(2,ig,it)
@@ -383,6 +385,11 @@ if (iupwin.eq.1) then
           if (ii.le.ncel) then
             infac = infac+1
           endif
+
+          pi = pvar(ii)
+          pj = pvar(jj)
+          pia = pvara(ii)
+          pja = pvara(jj)
 
           dijpfx = dijpf(1,ifac)
           dijpfy = dijpf(2,ifac)
@@ -404,23 +411,27 @@ if (iupwin.eq.1) then
           dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
           ! reconstruction only if IRCFLP = 1
-          pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-          pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
-          pipr =   pvar(ii)/relaxp - (1.d0-relaxp)/relaxp * pvara(ii)   &
-                 + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-          pjpr =   pvar(jj)/relaxp - (1.d0-relaxp)/relaxp * pvara(jj)   &
-                 + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+          pip = pi + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+          pjp = pj + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+
+          pir = pi/relaxp - (1.d0-relaxp)/relaxp * pia
+          pjr = pj/relaxp - (1.d0-relaxp)/relaxp * pja
+
+          pipr = pir                                                   &
+               + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+          pjpr = pjr                                                   &
+               + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
           flui = 0.5d0*(flumas(ifac) +abs(flumas(ifac)))
           fluj = 0.5d0*(flumas(ifac) -abs(flumas(ifac)))
 
-          pif  = pvar(ii)
-          pjf  = pvar(jj)
-          pifr = pvar(ii)/relaxp - (1.d0-relaxp)/relaxp * pvara(ii)
-          pjfr = pvar(jj)/relaxp - (1.d0-relaxp)/relaxp * pvara(jj)
+          pif  = pi
+          pjf  = pj
 
-          fluxi = iconvp*(flui*pifr + fluj*pjf) + idiffp*viscf(ifac)*(pipr - pjp)
-          fluxj = iconvp*(flui*pif + fluj*pjfr) + idiffp*viscf(ifac)*(pip - pjpr)
+          fluxi = iconvp*(flui*pir + fluj*pjf - flumas(ifac)*pi)       &
+                + idiffp*viscf(ifac)*(pipr - pjp)
+          fluxj = iconvp*(flui*pif + fluj*pjr - flumas(ifac)*pj)       &
+                + idiffp*viscf(ifac)*(pip - pjpr)
 
           smbrp(ii) = smbrp(ii) - fluxi
           smbrp(jj) = smbrp(jj) + fluxj
@@ -436,7 +447,7 @@ if (iupwin.eq.1) then
       !$omp parallel do private(ifac, ii, jj, dijpfx, dijpfy, dijpfz, pnd,      &
       !$omp                     diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, &
       !$omp                     dpxf, dpyf, dpzf, pip, pjp, flui, fluj,         &
-      !$omp                     pif, pjf, flux)                                 &
+      !$omp                     pif, pjf, flux, pi, pj)                         &
       !$omp             reduction(+:infac)
       do it = 1, nthrdi
         do ifac = iompli(1,ig,it), iompli(2,ig,it)
@@ -447,6 +458,9 @@ if (iupwin.eq.1) then
           if (ii.le.ncel) then
             infac = infac+1
           endif
+
+          pi = pvar(ii)
+          pj = pvar(jj)
 
           dijpfx = dijpf(1,ifac)
           dijpfy = dijpf(2,ifac)
@@ -467,19 +481,19 @@ if (iupwin.eq.1) then
           dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
           dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
-          pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-          pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+          pip = pi + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+          pjp = pj + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
           flui = 0.5d0*(flumas(ifac) + abs(flumas(ifac)))
           fluj = 0.5d0*(flumas(ifac) - abs(flumas(ifac)))
 
-          pif = pvar(ii)
-          pjf = pvar(jj)
+          pif = pi
+          pjf = pj
 
           flux = iconvp*(flui*pif +fluj*pjf) + idiffp*viscf(ifac)*(pip -pjp)
 
-          smbrp(ii) = smbrp(ii) - thetap * flux
-          smbrp(jj) = smbrp(jj) + thetap * flux
+          smbrp(ii) = smbrp(ii) - thetap *(flux - iconvp*flumas(ifac)*pi)
+          smbrp(jj) = smbrp(jj) + thetap *(flux - iconvp*flumas(ifac)*pj)
 
         enddo
       enddo
@@ -507,7 +521,7 @@ else if (isstpp.eq.1) then
       !$omp                     dpxf, dpyf, dpzf, pip, pjp, pipr, pjpr, flui,   &
       !$omp                     fluj, pir, pjr, pifri, pjfri, pifrj, pjfrj,     &
       !$omp                     difx, dify, difz, djfx, djfy, djfz,             &
-      !$omp                     fluxi, fluxj)
+      !$omp                     fluxi, fluxj, pi, pj, pia, pja)
       do it = 1, nthrdi
         do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
@@ -519,6 +533,11 @@ else if (isstpp.eq.1) then
           dijpfz = dijpf(3,ifac)
 
           pnd = pond(ifac)
+
+          pi = pvar(ii)
+          pj = pvar(jj)
+          pia = pvara(ii)
+          pja = pvara(jj)
 
           ! Recompute II' and JJ' at this level
 
@@ -533,18 +552,20 @@ else if (isstpp.eq.1) then
           dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
           dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
-          pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-          pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
-          pipr =   pvar(ii)/relaxp - (1.d0 - relaxp)/relaxp*pvara(ii)   &
-                 + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-          pjpr =   pvar(jj)/relaxp - (1.d0 - relaxp)/relaxp*pvara(jj)   &
-                 + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+          pip = pi + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+          pjp = pj + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+
+          pir = pi/relaxp - (1.d0 - relaxp)/relaxp*pia
+          pjr = pj/relaxp - (1.d0 - relaxp)/relaxp*pja
+
+          pipr = pir                                                    &
+               + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+          pjpr = pjr                                                    &
+               + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
           flui = 0.5d0*(flumas(ifac) + abs(flumas(ifac)))
           fluj = 0.5d0*(flumas(ifac) - abs(flumas(ifac)))
 
-          pir = pvar(ii)/relaxp - (1.d0 - relaxp)/relaxp*pvara(ii)
-          pjr = pvar(jj)/relaxp - (1.d0 - relaxp)/relaxp*pvara(jj)
 
           ! Centered
           ! --------
@@ -571,9 +592,9 @@ else if (isstpp.eq.1) then
             ! leave reconstruction of PIF and PJF even if IRCFLP=0
             ! otherwise, it is the same as using upwind
             pifri = pir + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
-            pifrj = pvar(ii) + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
+            pifrj = pi + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
             pjfrj = pjr + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
-            pjfri = pvar(jj) + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
+            pjfri = pj + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
 
           endif
 
@@ -581,16 +602,16 @@ else if (isstpp.eq.1) then
           ! --------
 
           pifri = blencp*pifri+(1.d0-blencp)*pir
-          pifrj = blencp*pifrj+(1.d0-blencp)*pvar(ii)
-          pjfri = blencp*pjfri+(1.d0-blencp)*pvar(jj)
+          pifrj = blencp*pifrj+(1.d0-blencp)*pi
+          pjfri = blencp*pjfri+(1.d0-blencp)*pj
           pjfrj = blencp*pjfrj+(1.d0-blencp)*pjr
 
           ! Flux
           ! ----
 
-          fluxi =   iconvp*(flui*pifri + fluj*pjfri)                  &
+          fluxi =   iconvp*(flui*pifri + fluj*pjfri - flumas(ifac)*pi) &
                   + idiffp*viscf(ifac)*(pipr -pjp)
-          fluxj =   iconvp*(flui*pifrj +fluj*pjfrj)                   &
+          fluxj =   iconvp*(flui*pifrj + fluj*pjfrj - flumas(ifac)*pj) &
                   + idiffp*viscf(ifac)*(pip -pjpr)
 
           ! Assembly
@@ -610,7 +631,8 @@ else if (isstpp.eq.1) then
       !$omp parallel do private(ifac, ii, jj, dijpfx, dijpfy, dijpfz, pnd,      &
       !$omp                     diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, &
       !$omp                     dpxf, dpyf, dpzf, pip, pjp, flui, fluj, pif,    &
-      !$omp                     pjf, difx, dify, difz, djfx, djfy, djfz, flux)
+      !$omp                     pjf, difx, dify, difz, djfx, djfy, djfz, flux   &
+      !$omp                     pi, pj)
       do it = 1, nthrdi
         do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
@@ -622,6 +644,9 @@ else if (isstpp.eq.1) then
           dijpfz = dijpf(3,ifac)
 
           pnd = pond(ifac)
+
+          pi = pvar(ii)
+          pj = pvar(jj)
 
           ! Recompute II' and JJ' at this level
 
@@ -636,8 +661,8 @@ else if (isstpp.eq.1) then
           dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
           dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
-          pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-          pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+          pip = pi + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+          pjp = pj + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
           flui = 0.5d0*(flumas(ifac) + abs(flumas(ifac)))
           fluj = 0.5d0*(flumas(ifac) - abs(flumas(ifac)))
@@ -664,16 +689,16 @@ else if (isstpp.eq.1) then
 
             ! leave reconstruction of PIF and PJF even if IRCFLP=0
             ! otherwise, it is the same as using upwind
-            pif = pvar(ii) + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
-            pjf = pvar(jj) + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
+            pif = pi + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
+            pjf = pj + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
 
           endif
 
           ! Blending
           ! --------
 
-          pif = blencp*pif+(1.d0-blencp)*pvar(ii)
-          pjf = blencp*pjf+(1.d0-blencp)*pvar(jj)
+          pif = blencp*pif+(1.d0-blencp)*pi
+          pjf = blencp*pjf+(1.d0-blencp)*pj
 
           ! Flux
           ! ----
@@ -683,8 +708,8 @@ else if (isstpp.eq.1) then
           ! Assembly
           ! --------
 
-          smbrp(ii) = smbrp(ii) - thetap * flux
-          smbrp(jj) = smbrp(jj) + thetap * flux
+          smbrp(ii) = smbrp(ii) - thetap *(flux - iconvp*flumas(ifac)*pi)
+          smbrp(jj) = smbrp(jj) + thetap *(flux - iconvp*flumas(ifac)*pj)
 
         enddo
       enddo
@@ -712,7 +737,7 @@ else
       !$omp                     pipr, pjpr, flui, fluj, pir, pjr, testi, testj, &
       !$omp                     testij, dcc, ddi, ddj, tesqck, pifri, pjfri,    &
       !$omp                     pifrj, pjfrj, difx, dify, difz, djfx, djfy,     &
-      !$omp                     djfz, fluxi, fluxj)                             &
+      !$omp                     djfz, fluxi, fluxj, pi, pj, pia, pja)           &
       !$omp             reduction(+:infac)
       do it = 1, nthrdi
         do ifac = iompli(1,ig,it), iompli(2,ig,it)
@@ -728,6 +753,11 @@ else
           distf  = dist(ifac)
           srfan  = surfan(ifac)
 
+          pi = pvar(ii)
+          pj = pvar(jj)
+          pia = pvara(ii)
+          pja = pvara(jj)
+
           ! Recompute II' and JJ' at this level
           diipfx = cdgfac(1,ifac) - (xyzcen(1,ii) + (1.d0-pnd) * dijpfx)
           diipfy = cdgfac(2,ifac) - (xyzcen(2,ii) + (1.d0-pnd) * dijpfy)
@@ -740,18 +770,20 @@ else
           dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
           dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
-          pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-          pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
-          pipr =   pvar(ii)/relaxp - (1.d0 - relaxp)/relaxp*pvara(ii)   &
-                 + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-          pjpr =   pvar(jj)/relaxp - (1.d0 - relaxp)/relaxp*pvara(jj)   &
-                 + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+          pip = pi + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+          pjp = pj + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+
+          pir = pi/relaxp - (1.d0 - relaxp)/relaxp*pia
+          pjr = pj/relaxp - (1.d0 - relaxp)/relaxp*pja
+
+          pipr = pir                                                  &
+               + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+          pjpr = pjr                                                  &
+               + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
           flui = 0.5d0*(flumas(ifac) +abs(flumas(ifac)))
           fluj = 0.5d0*(flumas(ifac) -abs(flumas(ifac)))
 
-          pir = pvar(ii)/relaxp - (1.d0 - relaxp)/relaxp*pvara(ii)
-          pjr = pvar(jj)/relaxp - (1.d0 - relaxp)/relaxp*pvara(jj)
 
           ! Slope test
           ! ----------
@@ -767,11 +799,11 @@ else
             dcc =   grad(ii,1)*surfac(1,ifac) +grad(ii,2)*surfac(2,ifac)    &
                   + grad(ii,3)*surfac(3,ifac)
             ddi = testi
-            ddj = (pvar(jj)-pvar(ii))/distf *srfan
+            ddj = (pj-pi)/distf *srfan
           else
             dcc =   grad(jj,1)*surfac(1,ifac) +grad(jj,2)*surfac(2,ifac)    &
                   + grad(jj,3)*surfac(3,ifac)
-            ddi = (pvar(jj)-pvar(ii))/distf *srfan
+            ddi = (pj-pi)/distf *srfan
             ddj = testj
           endif
           tesqck = dcc**2 -(ddi-ddj)**2
@@ -782,8 +814,8 @@ else
           if (tesqck.le.0.d0 .or. testij.le.0.d0) then
 
             pifri = pir
-            pifrj = pvar(ii)
-            pjfri = pvar(jj)
+            pifrj = pi
+            pjfri = pj
             pjfrj = pjr
             ! in parallel, face will be counted by one and only one rank
             if (ii.le.ncel) then
@@ -817,9 +849,9 @@ else
               ! leave reconstruction of PIF and PJF even if IRCFLP=0
               ! otherwise, it is the same as using upwind
               pifri = pir + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
-              pifrj = pvar(ii) + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
+              pifrj = pi + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
               pjfrj = pjr + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
-              pjfri = pvar(jj) + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
+              pjfri = pj + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
 
             endif
 
@@ -829,16 +861,16 @@ else
           ! --------
 
           pifri = blencp*pifri+(1.d0-blencp)*pir
-          pifrj = blencp*pifrj+(1.d0-blencp)*pvar(ii)
-          pjfri = blencp*pjfri+(1.d0-blencp)*pvar(jj)
+          pifrj = blencp*pifrj+(1.d0-blencp)*pi
+          pjfri = blencp*pjfri+(1.d0-blencp)*pj
           pjfrj = blencp*pjfrj+(1.d0-blencp)*pjr
 
           ! Flux
           ! ----
 
-          fluxi =   iconvp*(flui*pifri + fluj*pjfri)                  &
+          fluxi =   iconvp*(flui*pifri + fluj*pjfri - flumas(ifac)*pi) &
                   + idiffp*viscf(ifac)*(pipr -pjp)
-          fluxj =   iconvp*(flui*pifrj +fluj*pjfrj)                   &
+          fluxj =   iconvp*(flui*pifrj + fluj*pjfrj - flumas(ifac)*pj) &
                   + idiffp*viscf(ifac)*(pip -pjpr)
 
           ! Assembly
@@ -860,7 +892,7 @@ else
       !$omp                     djjpfy, djjpfz, dpxf, dpyf, dpzf, pip, pjp,     &
       !$omp                     flui, fluj, testi, testj, testij, dcc, ddi,     &
       !$omp                     ddj, tesqck, pif, pjf, difx, dify, difz,        &
-      !$omp                     djfx, djfy, djfz, flux)                         &
+      !$omp                     djfx, djfy, djfz, flux, pi, pj)                 &
       !$omp             reduction(+:infac)
        do it = 1, nthrdi
         do ifac = iompli(1,ig,it), iompli(2,ig,it)
@@ -876,6 +908,9 @@ else
           distf  = dist(ifac)
           srfan  = surfan(ifac)
 
+          pi = pvar(ii)
+          pj = pvar(jj)
+
           ! Recompute II' and JJ' at this level
 
           diipfx = cdgfac(1,ifac) - (xyzcen(1,ii) + (1.d0-pnd) * dijpfx)
@@ -889,8 +924,8 @@ else
           dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
           dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
-          pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-          pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+          pip = pi + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+          pjp = pj + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
           flui = 0.5d0*(flumas(ifac) +abs(flumas(ifac)))
           fluj = 0.5d0*(flumas(ifac) -abs(flumas(ifac)))
@@ -909,11 +944,11 @@ else
             dcc =   grad(ii,1)*surfac(1,ifac) + grad(ii,2)*surfac(2,ifac)    &
                   + grad(ii,3)*surfac(3,ifac)
             ddi = testi
-            ddj = (pvar(jj)-pvar(ii))/distf *srfan
+            ddj = (pj-pi)/distf *srfan
           else
             dcc =   grad(jj,1)*surfac(1,ifac) + grad(jj,2)*surfac(2,ifac)    &
                   + grad(jj,3)*surfac(3,ifac)
-            ddi = (pvar(jj)-pvar(ii))/distf *srfan
+            ddi = (pj-pi)/distf *srfan
             ddj = testj
           endif
           tesqck = dcc**2 -(ddi-ddj)**2
@@ -923,8 +958,8 @@ else
 
           if (tesqck.le.0.d0 .or. testij.le.0.d0) then
 
-            pif = pvar(ii)
-            pjf = pvar(jj)
+            pif = pi
+            pjf = pj
             ! in parallel, face will be counted by one and only one rank
             if (ii.le.ncel) then
               infac = infac+1
@@ -954,8 +989,8 @@ else
 
               ! leave reconstruction of PIF and PJF even if IRCFLP=0
               ! otherwise, it is the same as using upwind
-              pif = pvar(ii) + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
-              pjf = pvar(jj) + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
+              pif = pi + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
+              pjf = pj + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
 
             endif
 
@@ -964,8 +999,8 @@ else
           ! Blending
           ! --------
 
-          pif = blencp*pif+(1.d0-blencp)*pvar(ii)
-          pjf = blencp*pjf+(1.d0-blencp)*pvar(jj)
+          pif = blencp*pif+(1.d0-blencp)*pi
+          pjf = blencp*pjf+(1.d0-blencp)*pj
 
           ! Flux
           ! ----
@@ -976,8 +1011,8 @@ else
           ! Assembly
           ! --------
 
-          smbrp(ii) = smbrp(ii) - thetap * flux
-          smbrp(jj) = smbrp(jj) + thetap * flux
+          smbrp(ii) = smbrp(ii) - thetap *(flux - iconvp*flumas(ifac)*pi)
+          smbrp(jj) = smbrp(jj) + thetap *(flux - iconvp*flumas(ifac)*pj)
 
         enddo
       enddo
@@ -1002,12 +1037,15 @@ if (idtvar.lt.0) then
 
   do ig = 1, ngrpb
     !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, flui, fluj,     &
-    !$omp                     pir, pipr, pfac, pfacd, flux)                     &
+    !$omp                     pir, pipr, pfac, pfacd, flux, pi, pia)            &
     !$omp          if(nfabor > thr_n_min)
     do it = 1, nthrdb
       do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
         ii = ifabor(ifac)
+
+        pi = pvar(ii)
+        pia = pvara(ii)
 
         diipbx = diipb(1,ifac)
         diipby = diipb(2,ifac)
@@ -1022,14 +1060,14 @@ if (idtvar.lt.0) then
           fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
         endif
 
-        pir  = pvar(ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(ii)
+        pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
         pipr =   pir                                                            &
                + ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
 
         pfac  = inc*coefap(ifac) +coefbp(ifac)*pipr
         pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pipr
 
-        flux =   iconvp*(flui*pir +fluj*pfac)                                   &
+        flux =   iconvp*(flui*pir + fluj*pfac - flumab(ifac)*pi )               &
                + idiffp*viscb(ifac)*(pipr -pfacd)
         smbrp(ii) = smbrp(ii) - flux
 
@@ -1042,12 +1080,14 @@ else
 
   do ig = 1, ngrpb
     !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, flui, fluj,     &
-    !$omp                     pip, pfac, pfacd, flux)                           &
+    !$omp                     pip, pfac, pfacd, flux, pi)                       &
     !$omp          if(nfabor > thr_n_min)
     do it = 1, nthrdb
       do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
         ii = ifabor(ifac)
+
+        pi = pvar(ii)
 
         diipbx = diipb(1,ifac)
         diipby = diipb(2,ifac)
@@ -1062,13 +1102,13 @@ else
           fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
         endif
 
-        pip =   pvar(ii)                                                       &
-              + ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
+        pip = pi                                                       &
+            + ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
 
         pfac  = inc*coefap(ifac) + coefbp(ifac)*pip
         pfacd = inc*cofafp(ifac) + cofbfp(ifac)*pip
 
-        flux =   iconvp*(flui*pvar(ii) +fluj*pfac)                             &
+        flux =   iconvp*((flui - flumab(ifac))*pi + fluj*pfac)         &
                + idiffp*viscb(ifac)*(pip -pfacd)
         smbrp(ii) = smbrp(ii) - thetap * flux
 

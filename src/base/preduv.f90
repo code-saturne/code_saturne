@@ -1205,25 +1205,7 @@ do isou = 1, 3
 
 ! ---> TERME D'ACCUMULATION DE MASSE -(dRO/dt)*Volume
 
-  init = 1
-  call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
-                           ifacel,ifabor,flumas,flumab,w1)
-
-!     On ajoute a TRAV ou TRAVA la partie issue des termes implicites
-  if(iterns.eq.1) then
-    if(nterup.gt.1) then
-      do iel = 1, ncel
-        trava(iel,isou) = trava(iel,isou) + iconv(ivar)*w1(iel)*rtpa(iel,ivar)
-      enddo
-    else
-      do iel = 1, ncel
-        trav(iel,isou) = trav(iel,isou) + iconv(ivar)*w1(iel)*rtpa(iel,ivar)
-      enddo
-    endif
-  endif
-
   if(iappel.eq.1) then
-!     Extrapolation ou non, meme forme par coherence avec bilsc2
 
     ! Low Mach compressible Algos
     if (idilat.gt.1) then
@@ -1235,8 +1217,7 @@ do isou = 1, 3
     endif
 
     do iel = 1, ncel
-      rovsdt(iel) = istat(ivar)*propce(iel,ipcrho)/dt(iel)*volume(iel) &
-                  - iconv(ivar)*w1(iel)*thetav(ivar) ! FIXME for the porosity
+      rovsdt(iel) = istat(ivar)*propce(iel,ipcrho)/dt(iel)*volume(iel)
     enddo
 
 !     Le remplissage de ROVSDT est toujours indispensable,

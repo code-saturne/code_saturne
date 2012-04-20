@@ -586,11 +586,6 @@ else
 
 endif
 
-! --> Mass aggregation term: -(dRHO/dt)*volume
-
-init = 1
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-               ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
 
 ! Low Mach compressible algos (conservative in time)
 if (idilat.gt.1) then
@@ -604,40 +599,25 @@ endif
 ! Without porosity
 if (iporos.eq.0) then
 
-  ! With or without extrapolation, the mass aggregation term goes to th r.h.s.
-  do iel = 1, ncel
-    smbrs(iel) = smbrs(iel)                                         &
-               + iconv(ivar)*w1(iel)*rtpa(iel,ivar)
-  enddo
 
   ! --> Non stationnary term and mass aggregation term
-  ! Remark:
-  !  with or without extrapolation in time, the mass aggregation term
-  !  is always the same by coherence with bilsc2
   do iel = 1, ncel
     rovsdt(iel) = rovsdt(iel)                                        &
-                + istat(ivar)*propce(iel,ipcrho)*volume(iel)/dt(iel) &
-                - iconv(ivar)*w1(iel)*thetv
+                + istat(ivar)*propce(iel,ipcrho)*volume(iel)/dt(iel)
   enddo
 
 ! With porosity
 else
 
-  ! With or without extrapolation, the mass aggregation term goes to th r.h.s.
   do iel = 1, ncel
-    smbrs(iel) = smbrs(iel)*porosi(iel)                             &
-               + iconv(ivar)*w1(iel)*rtpa(iel,ivar)
+    smbrs(iel) = smbrs(iel)*porosi(iel)
   enddo
 
   ! --> Non stationnary term and mass aggregation term
-  ! Remark:
-  !  with or without extrapolation in time, the mass aggregation term
-  !  is always the same by coherence with bilsc2
   do iel = 1, ncel
     rovsdt(iel) = ( rovsdt(iel)                                        &
                   + istat(ivar)*propce(iel,ipcrho)*volume(iel)/dt(iel) &
-                  ) * porosi(iel)                                      &
-                - iconv(ivar)*w1(iel)*thetv
+                  ) * porosi(iel)
   enddo
 
 endif

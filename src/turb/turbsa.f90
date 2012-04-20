@@ -417,21 +417,7 @@ call ustssa                                                       &
    tsexp  , tsimp )
 
 !===============================================================================
-! 6. Compute -d/dt(rho)*Volume
-
-!      stored in w1
-!===============================================================================
-
-init = 1
-
-call divmas &
-!==========
- ( ncelet , ncel   , nfac   , nfabor , init   , nfecra ,          &
-   ifacel ,ifabor  , propfa(1,iflmas), propfb(1,iflmab), w1 )
-
-
-!===============================================================================
-! 7. User source terms and d/dt(rho) and div(rho u) are taken into account
+! 6. User source terms and d/dt(rho) and div(rho u) are taken into account
 
 !      stored in rhssa
 !===============================================================================
@@ -450,8 +436,7 @@ if (isto2t.gt.0) then
 
 
     ! --- Extrapolated explicit source terms
-    rhssa(iel) = iconv(inusa)*w1(iel)  *rtpa(iel,inusa)            &
-         - thetst*tuexpn
+    rhssa(iel) = - thetst*tuexpn
 
     rhssa(iel) = tsimp(iel)*rtpa(iel,inusa) + rhssa(iel)
 
@@ -464,8 +449,7 @@ if (isto2t.gt.0) then
 ! If source terms are not extrapolated, then they are directly added to the RHS
 else
   do iel = 1, ncel
-    rhssa(iel) = rhssa(iel) + tsimp(iel)*rtpa(iel,inusa) + tsexp(iel)  &
-         +iconv(inusa)*w1(iel)*rtpa(iel,inusa)
+    rhssa(iel) = rhssa(iel) + tsimp(iel)*rtpa(iel,inusa) + tsexp(iel)
 
     ! --- Implicit user source terms
     tinssa(iel) = tinssa(iel) + max(-tsimp(iel),zero)
@@ -480,19 +464,18 @@ do iel = 1, ncel
 
   ! tinssa already contains the negativ implicited source term
   tinssa(iel) = tinssa(iel)                                        &
-               +istat(inusa)*romvsd                                &
-               -iconv(inusa)*w1(iel)*thetv
+               +istat(inusa)*romvsd
 enddo
 
 
 !===============================================================================
-! 8.Lagrangian source terms (Explicit part)
+! 7. Lagrangian source terms (Explicit part)
 !===============================================================================
 
 ! Not accounted for at the moment.
 
 !===============================================================================
-! 9. Explicit mass source terms
+! 8. Explicit mass source terms
 
 !    Gamma*RTPAi is stored in w1
 !===============================================================================
@@ -537,7 +520,7 @@ if(isto2t.gt.0) then
 endif
 
 !===============================================================================
-! 10. Solving of the transport equation on nusa
+! 9. Solving of the transport equation on nusa
 !===============================================================================
 
 ivar = inusa
@@ -655,7 +638,7 @@ call codits &
 
 
 !===============================================================================
-! 12. CLIPPING
+! 10. Clipping
 !===============================================================================
 
 iclip = 0

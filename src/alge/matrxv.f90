@@ -187,8 +187,8 @@ if(isym.eq.2) then
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
     do isou = 1, 3
-      da(isou,isou,ii) = da(isou,isou,ii) -xa(2,ifac)
-      da(isou,isou,jj) = da(isou,isou,jj) -xa(1,ifac)
+      da(isou,isou,ii) = da(isou,isou,ii) - xa(1,ifac)
+      da(isou,isou,jj) = da(isou,isou,jj) - xa(2,ifac)
     enddo
   enddo
 
@@ -213,12 +213,11 @@ endif
 do ifac = 1,nfabor
   ii = ifabor(ifac)
   flui = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
-  fluj =-0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
   do isou = 1, 3
     do jsou = 1, 3
       if(isou.eq.jsou) then
         da(isou,jsou,ii) = da(isou,jsou,ii) + thetap*(                    &
-                       iconvp*(-fluj + flui*coefbu(isou,jsou,ifac) )      &
+                       iconvp*flui*(coefbu(isou,jsou,ifac)-1.d0)          &
                       +idiffp*viscb(ifac)*(1.d0-cofbfu(isou,jsou,ifac))   &
                              )
       else

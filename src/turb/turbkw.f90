@@ -142,7 +142,7 @@ double precision, allocatable, dimension(:) :: smbrk, smbrw, rovsdt
 double precision, allocatable, dimension(:) :: tinstk, tinstw, xf1
 double precision, allocatable, dimension(:,:) :: gradk, grado, grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w5, w6
 double precision, allocatable, dimension(:) :: w7, w8
 
 !===============================================================================
@@ -159,7 +159,7 @@ allocate(tinstk(ncelet), tinstw(ncelet), xf1(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet))
 
 
@@ -397,17 +397,6 @@ call ustskw                                                       &
 !        ------   ------   ------   ------
 
 !===============================================================================
-! 6. TERME D'ACCUMULATION DE MASSE -(dRO/dt)*Volume
-
-!      Le terme est stocke dans         W4
-!      En sortie de l'etape on conserve W1-4,XF1,TINSTK,TINSTW,SMBRK,SMBRW,DAM
-!===============================================================================
-
-init = 1
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-               ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w4)
-
-!===============================================================================
 ! 7. ON FINALISE LE CALCUL DES TERMES SOURCES
 
 !      Les termes sont stockes dans     SMBRK, SMBRW
@@ -456,7 +445,7 @@ if(isto2t.gt.0) then
 !       Pour la suite et le pas de temps suivant
     propce(iel,iptsta) = smbrk(iel)
 !       Termes dependant de la variable resolue et theta PROPCE
-    smbrk(iel) = iconv(ik)*w4(iel)*rtpa(iel,ik) - thets*tuexpk
+    smbrk(iel) = - thets*tuexpk
 !       On suppose -DAM > 0 : on implicite
 !         le terme utilisateur dependant de la variable resolue
     smbrk(iel) = dam(iel)*rtpa(iel,ik) + smbrk(iel)
@@ -466,7 +455,7 @@ if(isto2t.gt.0) then
 !       Pour la suite et le pas de temps suivant
     propce(iel,iptsta+1) = smbrw(iel)
 !       Termes dependant de la variable resolue et theta PROPCE
-    smbrw(iel) = iconv(iomg)*w4(iel)*rtpa(iel,iomg) - thets*tuexpw
+    smbrw(iel) = - thets*tuexpw
 !       On suppose -W3 > 0 : on implicite
 !         le terme utilisateur dependant de la variable resolue
     smbrw(iel) =  w3(iel)*rtpa(iel,iomg) + smbrw(iel)
@@ -476,10 +465,8 @@ if(isto2t.gt.0) then
 !     Si on n'extrapole pas les T.S.
 else
   do iel = 1, ncel
-    smbrk(iel) = smbrk(iel) + dam(iel)*rtpa(iel,ik)            &
-         +iconv(ik)*w4(iel)*rtpa(iel,ik)
-    smbrw(iel) = smbrw(iel) + w3 (iel)*rtpa(iel,iomg)           &
-         +iconv(iomg)*w4(iel)*rtpa(iel,iomg)
+    smbrk(iel) = smbrk(iel) + dam(iel)*rtpa(iel,ik)
+    smbrw(iel) = smbrw(iel) + w3 (iel)*rtpa(iel,iomg)
   enddo
 endif
 
@@ -807,13 +794,12 @@ if (ikecou.eq.1) then
 endif
 
 ! --- RHO/DT et DIV
-!     Extrapolation ou non, meme forme par coherence avec bilsc2
 
 do iel = 1, ncel
   rom = propce(iel,ipcrom)
   romvsd = rom*volume(iel)/dt(iel)
-  tinstk(iel) = istat(ik)*romvsd   -iconv(ik)*w4(iel)*thetav(ik)
-  tinstw(iel) = istat(iomg)*romvsd -iconv(iomg)*w4(iel)*thetav(iomg)
+  tinstk(iel) = istat(ik)*romvsd
+  tinstw(iel) = istat(iomg)*romvsd
 enddo
 
 ! --- Source de masse (le theta est deja inclus par catsma)
@@ -1115,7 +1101,7 @@ deallocate(dam)
 deallocate(smbrk, smbrw, rovsdt)
 deallocate(tinstk, tinstw, xf1)
 deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
+deallocate(w5, w6)
 deallocate(w7, w8)
 
 !--------

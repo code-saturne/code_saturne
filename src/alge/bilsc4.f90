@@ -492,9 +492,9 @@ if (iupwin.eq.1) then
             pifr = pi /relaxp - (1.d0-relaxp)/relaxp * pia
             pjfr = pj /relaxp - (1.d0-relaxp)/relaxp * pja
 
-            fluxi = iconvp*(flui*pifr +fluj*pj)              &
+            fluxi = iconvp*(flui*pifr + fluj*pj - flumas(ifac)*pi)    &
                   + idiffp*viscf(ifac)*(pipr -pjp)
-            fluxj = iconvp*(flui*pi +fluj*pjfr)              &
+            fluxj = iconvp*(flui*pi + fluj*pjfr - flumas(ifac)*pj)    &
                   + idiffp*viscf(ifac)*(pip -pjpr)
 
             smbr(isou,ii) = smbr(isou,ii) - fluxi
@@ -563,8 +563,8 @@ if (iupwin.eq.1) then
             flux =   iconvp*(flui*pi +fluj*pj)          &
                    + idiffp*viscf(ifac)*(pip -pjp)
 
-            smbr(isou,ii) = smbr(isou,ii) - thetap * flux
-            smbr(isou,jj) = smbr(isou,jj) + thetap * flux
+            smbr(isou,ii) = smbr(isou,ii) - thetap*(flux - iconvp*flumas(ifac)*pi)
+            smbr(isou,jj) = smbr(isou,jj) + thetap*(flux - iconvp*flumas(ifac)*pj)
 
           enddo
 
@@ -703,9 +703,9 @@ elseif (isstpp.eq.1) then
             ! Flux
             ! ----
 
-            fluxi =   iconvp*(flui*pifri + fluj*pjfri)    &
+            fluxi =   iconvp*(flui*pifri + fluj*pjfri - flumas(ifac)*pi)    &
                     + idiffp*viscf(ifac)*(pipr -pjp)
-            fluxj =   iconvp*(flui*pifrj +fluj*pjfrj)     &
+            fluxj =   iconvp*(flui*pifrj + fluj*pjfrj - flumas(ifac)*pj)    &
                     + idiffp*viscf(ifac)*(pip -pjpr)
 
             ! Assembly
@@ -817,8 +817,8 @@ elseif (isstpp.eq.1) then
             ! Assembly
             ! --------
 
-            smbr(isou,ii) = smbr(isou,ii) - thetap * flux
-            smbr(isou,jj) = smbr(isou,jj) + thetap * flux
+            smbr(isou,ii) = smbr(isou,ii) - thetap*(flux - iconvp*flumas(ifac)*pi)
+            smbr(isou,jj) = smbr(isou,jj) + thetap*(flux - iconvp*flumas(ifac)*pj)
 
           enddo ! isou
 
@@ -1006,9 +1006,9 @@ else
             ! Flux
             ! ----
 
-            fluxi =    iconvp*(flui*pifri + fluj*pjfri)     &
+            fluxi =    iconvp*(flui*pifri + fluj*pjfri - flumas(ifac)*pi)    &
                     + idiffp*viscf(ifac)*(pipr -pjp)
-            fluxj =    iconvp*(flui*pifrj +fluj*pjfrj)      &
+            fluxj =    iconvp*(flui*pifrj + fluj*pjfrj - flumas(ifac)*pj)    &
                     + idiffp*viscf(ifac)*(pip -pjpr)
 
             ! Assembly
@@ -1169,8 +1169,8 @@ else
             ! Assembly
             ! --------
 
-            smbr(isou,ii) = smbr(isou,ii) - thetap * flux
-            smbr(isou,jj) = smbr(isou,jj) + thetap * flux
+            smbr(isou,ii) = smbr(isou,ii) - thetap*(flux - iconvp*flumas(ifac)*pi)
+            smbr(isou,jj) = smbr(isou,jj) + thetap*(flux - iconvp*flumas(ifac)*pj)
 
           enddo ! isou
 
@@ -1197,7 +1197,7 @@ if (idtvar.lt.0) then
 
   do ig = 1, ngrpb
     !$omp parallel do private(ifac, ii, isou, jsou, diipbv, flui, fluj,         &
-    !$omp                     pfac, pfacd, pir, pipr, flux)                     &
+    !$omp                     pfac, pfacd, pir, pipr, flux, pi, pia)            &
     !$omp          if(nfabor > thr_n_min)
     do it = 1, nthrdb
       do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
@@ -1235,12 +1235,15 @@ if (idtvar.lt.0) then
             pfacd = pfacd + cofbfv(isou,jsou,ifac)*pipr
           enddo
 
-          pir  = pvar(isou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(isou,ii)
+          pi  = pvar(isou,ii)
+          pia = pvara(isou,ii)
+
+          pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
           pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)           &
                              + gradv(isou,2,ii)*diipbv(2)           &
                              + gradv(isou,3,ii)*diipbv(3))
 
-          flux = iconvp*(flui*pir +fluj*pfac)                       &
+          flux = iconvp*(flui*pir + fluj*pfac - flumab(ifac)*pi)     &
                + idiffp*viscb(ifac)*(pipr -pfacd)
           smbr(isou,ii) = smbr(isou,ii) - flux
 
@@ -1255,7 +1258,7 @@ else
 
   do ig = 1, ngrpb
     !$omp parallel do private(ifac, ii, isou, jsou, diipbv, flui, fluj,         &
-    !$omp                     pfac, pfacd, pip, flux)                           &
+    !$omp                     pfac, pfacd, pip, flux, pi)                       &
     !$omp          if(nfabor > thr_n_min)
     do it = 1, nthrdb
       do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
@@ -1291,11 +1294,13 @@ else
             pfacd = pfacd + cofbfv(isou,jsou,ifac)*pip
           enddo
 
-          pip = pvar(isou,ii) + ircflp*( gradv(isou,1,ii)*diipbv(1)          &
-                                       + gradv(isou,2,ii)*diipbv(2)          &
-                                       + gradv(isou,3,ii)*diipbv(3))
+          pi = pvar(isou,ii)
 
-          flux = iconvp*(flui*pvar(isou,ii) +fluj*pfac)                      &
+          pip = pi + ircflp*( gradv(isou,1,ii)*diipbv(1)          &
+                            + gradv(isou,2,ii)*diipbv(2)          &
+                            + gradv(isou,3,ii)*diipbv(3))
+
+          flux = iconvp*((flui-flumab(ifac))*pi + fluj*pfac)                 &
                + idiffp*viscb(ifac)*(pip -pfacd)
           smbr(isou,ii) = smbr(isou,ii) - thetap * flux
 
@@ -1333,7 +1338,7 @@ if (ivisep.eq.1) then
   ! ---> Interior faces
 
   do ig = 1, ngrpi
-    !$omp parallel do private(ifac, ii, jj, isou, pnd, secvis,           &
+    !$omp parallel do private(ifac, ii, jj, isou, jsou, pnd, secvis,     &
     !$omp                     visco, grdtrv, tgrdfl, flux)
     do it = 1, nthrdi
       do ifac = iompli(1,ig,it), iompli(2,ig,it)
@@ -1372,7 +1377,7 @@ if (ivisep.eq.1) then
 
   ! ---> Boundary FACES
   !      the whole flux term of the stress tensor is already taken into account
-  !TODO add the corresponding term in forbr
+  !      (so, no corresponding term in forbr)
   !TODO in theory we should take the normal component into account (the
   !tangential one is modeled by the wall law)
 

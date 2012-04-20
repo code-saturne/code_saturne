@@ -455,18 +455,6 @@ endif
 ! On libere viscb
 
 !===============================================================================
-! 6. Mass aggregation term -(dRHO/dt)*Volume
-
-!      Le terme est stocke dans         w1
-!      En sortie de l'etape on conserve w1, tinstk, tinste, divu,
-!                                       w7 , w8, usimpk, usimpe
-!===============================================================================
-
-init = 1
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-               ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
-
-!===============================================================================
 ! 7. pre Seulement pour le modele bl-v2/k, calcul de e et ceps2*
 
 !      Les termes sont stockes dans     w10, w11
@@ -563,7 +551,7 @@ endif
 ! 7. On finalise le calcul des termes sources
 
 !      Les termes sont stockes dans     smbrk, smbre
-!      En sortie de l'etape on conserve w1, tinstk, tinste, divu,
+!      En sortie de l'etape on conserve tinstk, tinste, divu,
 !                                       smbrk, smbre
 !                                       w7 , w8, usimpk, usimpe
 !===============================================================================
@@ -680,9 +668,9 @@ endif
 !===============================================================================
 ! 8. Prise en compte des termes sources utilisateurs
 !                        et accumulation de masse    : partie explicite
-!      On utilise                       w1,  w7, w8, usimpk, usimpe
+!      On utilise                       w7, w8, usimpk, usimpe
 !      Les termes sont stockes dans     smbrk, smbre
-!      En sortie de l'etape on conserve w1, tinstk, tinste, divu,
+!      En sortie de l'etape on conserve tinstk, tinste, divu,
 !                                       smbrk, smbre
 !                                       usimpk, usimpe
 
@@ -700,7 +688,7 @@ if(isto2t.gt.0) then
     ! Pour la suite et le pas de temps suivant
     propce(iel,iptsta) = smbrk(iel) + w7(iel)
     ! Termes dependant de la variable resolue et theta PROPCE
-    smbrk(iel) = iconv(ik)*w1(iel)*rtpa(iel,ik) - thets*tuexpk
+    smbrk(iel) = - thets*tuexpk
     ! On suppose -usimpk > 0 : on implicite
     !  le terme utilisateur dependant de la variable resolue
     smbrk(iel) = usimpk(iel)*rtpa(iel,ik) + smbrk(iel)
@@ -710,7 +698,7 @@ if(isto2t.gt.0) then
     ! Pour la suite et le pas de temps suivant
     propce(iel,iptsta+1) = smbre(iel) + w8(iel)
     ! Termes dependant de la variable resolue et theta PROPCE
-    smbre(iel) = iconv(iep)*w1(iel)*rtpa(iel,iep) - thets*tuexpe
+    smbre(iel) = - thets*tuexpe
     ! On suppose -usimpe > 0 : on implicite
     !  le terme utilisateur dependant de la variable resolue
     smbre(iel) =  usimpe(iel)*rtpa(iel,iep) + smbre(iel)
@@ -720,10 +708,8 @@ if(isto2t.gt.0) then
 ! Si on n'extrapole pas les T.S.
 else
   do iel = 1, ncel
-    smbrk(iel) = smbrk(iel) + usimpk(iel)*rtpa(iel,ik) + w7(iel)  &
-         +iconv(ik)*w1(iel)*rtpa(iel,ik)
-    smbre(iel) = smbre(iel) + usimpe (iel)*rtpa(iel,iep) + w8(iel)  &
-         +iconv(iep)*w1(iel)*rtpa(iel,iep)
+    smbrk(iel) = smbrk(iel) + usimpk(iel)*rtpa(iel,ik) + w7(iel)
+    smbre(iel) = smbre(iel) + usimpe (iel)*rtpa(iel,iep) + w8(iel)
   enddo
 endif
 
@@ -754,7 +740,7 @@ endif
 
 !      Tableaux de travail              w4, w5
 !      Les termes sont stockes dans     w7 et w8, puis ajoutes a smbrk, smbre
-!      En sortie de l'etape on conserve w1, tinstk, tinste, divu,
+!      En sortie de l'etape on conserve tinstk, tinste, divu,
 !                                       smbrk, smbre
 !                                       usimpk, w7, w8, usimpe
 !===============================================================================
@@ -930,7 +916,7 @@ endif
 !         et utilisees dans la phase d'implicitation cv/diff
 
 !       Les termes sont stockes dans     smbrk, smbre, w2, w3
-!       En sortie de l'etape on conserve w1, tinstk, tinste, divu,
+!       En sortie de l'etape on conserve tinstk, tinste, divu,
 !                                        smbrk, smbre
 !                                        usimpk, usimpe, w2, w3
 !===============================================================================
@@ -998,7 +984,7 @@ endif
 
 !       On utilise                       tinstk, tinste, divu
 !       Les termes sont stockes dans     smbrk, smbre
-!       En sortie de l'etape on conserve w1, smbrk, smbre,
+!       En sortie de l'etape on conserve smbrk, smbre,
 !                                        usimpk, usimpe, w2, w3, w7, w8
 !===============================================================================
 
@@ -1126,7 +1112,7 @@ endif
 !===============================================================================
 ! 12. Termes instationnaires
 
-!     On utilise                       w1, w2, w3, w7, w8
+!     On utilise                       w2, w3, w7, w8
 !                                      usimpk, usimpe
 !     Les termes sont stockes dans     tinstk, tinste
 !     En sortie de l'etape on conserve smbrk, smbre,  tinstk, tinste
@@ -1143,16 +1129,13 @@ if (ikecou.eq.1) then
   enddo
 endif
 
-! --- RHO/DT et DIV
-!     Extrapolation ou non, meme forme par coherence avec bilsc2
+! --- RHO/DT
 
 do iel = 1, ncel
   rom = propce(iel,ipcrom)
   romvsd = rom*volume(iel)/dt(iel)
-  tinstk(iel) = istat(ik)*romvsd                               &
-               -iconv(ik)*w1(iel)*thetav(ik)
-  tinste(iel) = istat(iep)*romvsd                              &
-               -iconv(iep)*w1(iel)*thetav(iep)
+  tinstk(iel) = istat(ik)*romvsd
+  tinste(iel) = istat(iep)*romvsd
 enddo
 
 ! --- Source de masse (le theta est deja inclus par catsma)
@@ -1252,7 +1235,7 @@ if(ikecou.eq.0)then
   endif
 endif
 
-! On libere w1, w2, w3, usimpk, usimpe
+! On libere w2, w3, usimpk, usimpe
 
 !===============================================================================
 ! 13. Solving

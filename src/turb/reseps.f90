@@ -310,26 +310,11 @@ endif
 !    ET TERME INSTATIONNAIRE
 !===============================================================================
 
-! ---> Calcul de mij
-
-init = 1
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-               ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
-
-! ---> Ajout au second membre
-
-do iel = 1, ncel
-  smbr(iel) = smbr(iel)                                           &
-              + iconv(ivar)*w1(iel)*rtpa(iel,ivar)
-enddo
-
 ! ---> Ajout dans la diagonale de la matrice
-!     Extrapolation ou non, meme forme par coherence avec bilsc2
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel)                                       &
-           + istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel) &
-           - iconv(ivar)*w1(iel)*thetv
+           + istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)
 enddo
 
 
