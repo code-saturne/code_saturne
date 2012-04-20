@@ -416,7 +416,7 @@ _convergence_test(const char             *solver_name,
   /* Print convergence values if high verbosity */
 
   if (verbosity > 2)
-    bft_printf("   %5d %11.4e %11.4e\n",
+    bft_printf("   %5u %11.4e %11.4e\n",
                n_iter, residue, residue/convergence->r_norm);
 
   /* If not converged */
@@ -1630,10 +1630,10 @@ _bi_cgstab(const char             *var_name,
     if (CS_ABS(beta) < _epzero) {
 
       if (convergence->verbosity == 2)
-        bft_printf(_("  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"),
+        bft_printf(_("  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"),
                    n_iter, residue, residue/convergence->r_norm);
       else if (convergence->verbosity > 2)
-        bft_printf("   %5d %11.4e %11.4e\n",
+        bft_printf("   %5u %11.4e %11.4e\n",
                    n_iter, residue, residue/convergence->r_norm);
 
       cvg = 0;

@@ -2385,7 +2385,7 @@ void
 cs_field_log_key_vals(int   key_id,
                       bool  log_defaults)
 {
-  int i, cat_id, n_cat_fields;
+  int i, cat_id;
   cs_field_key_def_t *kd;
 
   int mask_id_start = 2; /* _type_flag_*[CS_FIELD_VARIABLE] */
@@ -2412,8 +2412,6 @@ cs_field_log_key_vals(int   key_id,
      so as not to output data twice */
 
   for (cat_id = mask_id_start; cat_id < mask_id_end + 1; cat_id++) {
-
-    n_cat_fields = 0;
 
     for (i = 0; i < _n_fields; i++) {
 

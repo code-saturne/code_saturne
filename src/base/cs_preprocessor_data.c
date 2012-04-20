@@ -381,7 +381,7 @@ _add_periodicity(cs_mesh_t *mesh,
   cs_int_t  i, j;
   double  _matrix[3][4];
 
-  fvm_periodicity_type_t _perio_type = perio_type;
+  fvm_periodicity_type_t _perio_type = (fvm_periodicity_type_t)perio_type;
 
   for (i = 0; i < 3; i++) {
     for (j = 0; j < 4; j++)

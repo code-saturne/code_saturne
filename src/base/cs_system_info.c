@@ -366,7 +366,7 @@ cs_system_info(void)
       bft_printf("  %s%d\n", _("OpenMP threads:      "),
                  omp_get_max_threads());
       if (omp_get_dynamic())
-        bft_printf("  %s%d\n", _("Dynamic scheduling allowed"));
+        bft_printf("  %s\n", _("Dynamic scheduling allowed"));
       bft_printf("  %s%d\n", _("Processors/node:     "),
                  omp_get_num_procs());
     }

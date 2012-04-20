@@ -1386,7 +1386,6 @@ _create_from_coords_morton(const cs_coord_t  coords[],
 
     size_t n_block_ents = 0;
     cs_gnum_t current_global_num = 0, global_num_shift = 0;
-    double fit = 0.;
 
     int *c_rank = NULL;
     int *send_count = NULL, *send_shift = NULL;
@@ -1402,14 +1401,14 @@ _create_from_coords_morton(const cs_coord_t  coords[],
     for (i = 0; i < n_entities; i++)
       weight[i] = 1;
 
-    fit = fvm_morton_build_rank_index(dim,
-                                      level,
-                                      n_entities,
-                                      m_code,
-                                      weight,
-                                      order,
-                                      morton_index,
-                                      comm);
+    fvm_morton_build_rank_index(dim,
+                                level,
+                                n_entities,
+                                m_code,
+                                weight,
+                                order,
+                                morton_index,
+                                comm);
 
     BFT_FREE(order);
     BFT_FREE(weight);
@@ -1657,7 +1656,6 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
 
     size_t n_block_ents = 0;
     cs_gnum_t current_global_num = 0, global_num_shift = 0;
-    double fit = 0.;
 
     int *c_rank = NULL;
     int *send_count = NULL, *send_shift = NULL;
@@ -1680,13 +1678,13 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
     for (i = 0; i < n_entities; i++)
       weight[i] = 1;
 
-    fit = fvm_hilbert_build_rank_index(dim,
-                                       n_entities,
-                                       h_code,
-                                       weight,
-                                       order,
-                                       hilbert_index,
-                                       comm);
+    fvm_hilbert_build_rank_index(dim,
+                                 n_entities,
+                                 h_code,
+                                 weight,
+                                 order,
+                                 hilbert_index,
+                                 comm);
 
     BFT_FREE(order);
     BFT_FREE(weight);

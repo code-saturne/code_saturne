@@ -3948,9 +3948,7 @@ void CS_PROCF (cgdvec, CGDVEC)
 void
 cs_gradient_initialize(void)
 {
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  assert(mesh != NULL);
+  assert(cs_glob_mesh != NULL);
 }
 
 /*----------------------------------------------------------------------------

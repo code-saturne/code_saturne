@@ -880,7 +880,6 @@ cs_halo_sync_num(const cs_halo_t  *halo,
     int rank_id;
     int request_count = 0;
     cs_int_t *build_buffer = (cs_int_t *)_cs_glob_halo_send_buffer;
-    cs_int_t *buffer = NULL;
     const int local_rank = cs_glob_rank_id;
 
     /* Receive data from distant ranks */
@@ -1011,7 +1010,6 @@ cs_halo_sync_var(const cs_halo_t  *halo,
     int rank_id;
     int request_count = 0;
     cs_real_t *build_buffer = (cs_real_t *)_cs_glob_halo_send_buffer;
-    cs_real_t *buffer = NULL;
     const int local_rank = cs_glob_rank_id;
 
     /* Receive data from distant ranks */

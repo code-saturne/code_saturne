@@ -412,7 +412,7 @@ _read_ent_values(cs_restart_t        *r,
 
   cs_lnum_t  block_buf_size = 0;
 
-  size_t  nbr_byte_ent, nbr_byte_val;
+  size_t  nbr_byte_ent;
 
   fvm_block_to_part_info_t bi;
 
@@ -423,12 +423,10 @@ _read_ent_values(cs_restart_t        *r,
   switch (val_type) {
   case CS_TYPE_cs_int_t:
     nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
-    nbr_byte_val = sizeof(cs_int_t);
     cs_io_set_cs_lnum(header, r->fh);
     break;
   case CS_TYPE_cs_real_t:
     nbr_byte_ent = n_location_vals * sizeof(cs_real_t);
-    nbr_byte_val = sizeof(cs_real_t);
     break;
   default:
     assert(val_type == CS_TYPE_cs_int_t || val_type == CS_TYPE_cs_real_t);

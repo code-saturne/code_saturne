@@ -1869,7 +1869,6 @@ _find_and_extract_section(_cs_io_t    *inp,
 {
   size_t id;
   int extract_id = -1;
-  long long extract_offset = -1;
   _cs_io_sec_index_t *index = inp->index;
 
   /* Find matching sections */
@@ -1887,10 +1886,8 @@ _find_and_extract_section(_cs_io_t    *inp,
       match = 0;
 
     if (match == 1) {
-      if (extract_id < 0) {
+      if (extract_id < 0)
         extract_id = id;
-        extract_offset = index->offset[id];
-      }
       else
         _error(__FILE__, __LINE__, 0,
                _("File \"%s\" contains multiple sections\n"

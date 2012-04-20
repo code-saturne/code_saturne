@@ -2445,7 +2445,7 @@ cs_io_get_indexed_sec_header(const cs_io_t  *inp,
       h.location_id     = inp->index->h_vals[8*id + 1];
       h.index_id        = inp->index->h_vals[8*id + 2];
       h.n_location_vals = inp->index->h_vals[8*id + 3];
-      h.type_read       = inp->index->h_vals[8*id + 6];
+      h.type_read       = (cs_datatype_t)(inp->index->h_vals[8*id + 6]);
       h.elt_type        = _type_read_to_elt_type(h.type_read);
     }
   }
@@ -2499,7 +2499,6 @@ cs_io_read_header(cs_io_t             *inp,
 
   double t_start = 0.;
   int type_name_error = 0;
-  cs_file_off_t body_size = 0;
   cs_io_log_t  *log = NULL;
   size_t n_read = 0, n_add = 0;
 
@@ -2614,10 +2613,8 @@ cs_io_read_header(cs_io_t             *inp,
                   "Known types: \"c \", \"i4\", \"i8\", \"u4\", \"u8\", "
                   "\"r4\", \"r8\"."), inp->type_name);
 
-    else if (inp->data == NULL)
-      body_size = inp->type_size*inp->n_vals;
-
-    else if (cs_file_get_swap_endian(inp->f) == 1 && inp->type_size > 1)
+    else if (   inp->data != NULL
+             && cs_file_get_swap_endian(inp->f) == 1 && inp->type_size > 1)
       _swap_endian(inp->data, inp->type_size, inp->n_vals);
   }
 
@@ -2725,7 +2722,7 @@ cs_io_set_indexed_position(cs_io_t             *inp,
   header->location_id     = inp->index->h_vals[8*id + 1];
   header->index_id        = inp->index->h_vals[8*id + 2];
   header->n_location_vals = inp->index->h_vals[8*id + 3];
-  header->type_read       = inp->index->h_vals[8*id + 6];
+  header->type_read       = (cs_datatype_t)(inp->index->h_vals[8*id + 6]);
   header->elt_type        = _type_read_to_elt_type(header->type_read);
 
   inp->n_vals      = header->n_vals;

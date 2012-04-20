@@ -117,7 +117,7 @@ struct _fvm_box_tree_t {
 
   int               n_children;      /* 8, 4, or 2 (2^dim) */
 
-  fvm_morton_int_t  max_level;       /* Max. possible level */
+  int               max_level;       /* Max. possible level */
   cs_lnum_t         threshold;       /* Max number of boxes linked to a
                                         node if max_level is not reached */
   float             max_box_ratio;   /* Max n_linked_boxes / n_boxes value */

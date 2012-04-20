@@ -1682,7 +1682,7 @@ _export_families_g(const fvm_writer_section_t  *export_section,
   _Bool       have_tesselation = false;
   cs_lnum_t   start_id = 0;
   cs_lnum_t   part_size = 0, block_size = 0;
-  cs_gnum_t   block_sub_size = 0, block_start = 0, block_end = 0;
+  cs_gnum_t   block_sub_size = 0, block_end = 0;
   cs_gnum_t   n_g_elements = 0;
 
   int  *part_n_sub = NULL, *block_n_sub = NULL;
@@ -1852,11 +1852,9 @@ _export_families_g(const fvm_writer_section_t  *export_section,
     MPI_Scan(&block_sub_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM,
              writer->comm);
     block_end += 1;
-    block_start = block_end - block_sub_size;
     _block_values = part_values;
   }
   else {
-    block_start = bi.gnum_range[0];
     block_end = bi.gnum_range[1];
     _block_values = block_values;
   }
@@ -2604,7 +2602,6 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
                          char                        *export_connect)
 {
   cs_gnum_t   i;
-  med_geometry_type  med_section_type;
 
   int   n_passes = 0;
   cs_gnum_t   _n_connect_size = 0, n_g_connect_size = 0;
@@ -2630,9 +2627,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
 
   /* Get MED element type */
 
-  med_section_type = _get_med_elt_type(current_section->type);
-
-  assert(med_section_type == MED_POLYGON);
+  assert(_get_med_elt_type(current_section->type) == MED_POLYGON);
   assert(writer->discard_polygons == false);
 
   /* Gather connectivity from sections sharing the same element type */
@@ -2796,7 +2791,6 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_sections,
 {
   int i_count;
   cs_gnum_t   i;
-  med_geometry_type  med_section_type;
 
   int   n_passes = 0;
   cs_gnum_t   n_export_connect = 0;
@@ -2812,9 +2806,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_sections,
 
   /* Get MED element type */
 
-  med_section_type = _get_med_elt_type(current_section->type);
-
-  assert(med_section_type == MED_POLYGON);
+  assert(_get_med_elt_type(current_section->type) == MED_POLYGON);
   assert(writer->discard_polygons == false);
 
   /* Gather connectivity from sections sharing the same element type */
@@ -2931,7 +2923,6 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
   cs_lnum_t   i_elt, vtx_id, face_id;
   cs_lnum_t   i_face_idx, cell_vtx_length;
   cs_gnum_t   i;
-  med_geometry_type  med_section_type;
 
   cs_lnum_t   i_face = 0, i_connect = 0;
   cs_gnum_t   global_num_start = 0, global_num_end = 0;
@@ -2961,9 +2952,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
 
   /* Get MED element type */
 
-  med_section_type = _get_med_elt_type(current_section->type);
-
-  assert(med_section_type == MED_POLYHEDRON);
+  assert(_get_med_elt_type(current_section->type) == MED_POLYHEDRON);
   assert(writer->discard_polyhedra == false);
 
   /* Gather connectivity from sections sharing the same element type */
@@ -3267,7 +3256,6 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_sections,
 {
   cs_lnum_t   i_face_idx, face_id, vtx_id, i_elt;
   cs_gnum_t   i;
-  med_geometry_type  med_section_type;
 
   cs_gnum_t   i_cell = 1, i_face = 1, i_connect = 0;
   cs_gnum_t   n_export_elements = 0;
@@ -3284,9 +3272,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_sections,
 
   /* Get MED element type */
 
-  med_section_type = _get_med_elt_type(current_section->type);
-
-  assert(med_section_type == MED_POLYHEDRON);
+  assert(_get_med_elt_type(current_section->type) == MED_POLYHEDRON);
   assert(writer->discard_polyhedra == false);
 
   /* Gather connectivity from sections sharing the same element type */

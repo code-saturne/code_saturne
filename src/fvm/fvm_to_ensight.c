@@ -1446,7 +1446,7 @@ _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
   BFT_MALLOC(block_vtx_num, block_size, int32_t);
 
   fvm_part_to_block_copy_indexed(d,
-                                 sizeof(int32_t),
+                                 CS_INT32,
                                  vertex_index,
                                  vertex_num,
                                  block_index,
@@ -1583,7 +1583,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
     BFT_MALLOC(block_face_len, block_size, int32_t);
 
     fvm_part_to_block_copy_indexed(d,
-                                   sizeof(int32_t),
+                                   CS_INT32,
                                    section->face_index,
                                    part_face_len,
                                    block_index,
@@ -2278,7 +2278,7 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
   BFT_MALLOC(block_vtx_num, block_size, int32_t);
 
   fvm_part_to_block_copy_indexed(d,
-                                 sizeof(int32_t),
+                                 CS_INT32,
                                  part_index,
                                  part_vtx_num,
                                  block_index,

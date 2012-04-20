@@ -3679,13 +3679,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
                 double             relaxation_parameter)
 {
   cs_lnum_t call_id;
-  cs_lnum_t igr;
   cs_lnum_t isym = 2;
-
-  cs_lnum_t iwarnp = verbosity;
-  cs_lnum_t f_n_cells = f->n_cells;
-  cs_lnum_t f_n_cells_ext = f->n_cells_ext;
-  cs_lnum_t f_n_faces = f->n_faces;
 
   /* In mutithreaded case, use a matrix structure alowing threading
      without a specific renumbering, as structures are rebuilt often */
@@ -3703,8 +3697,6 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
   if (f->symmetric == true)
     isym = 1;
-
-  igr = c->level;
 
   /* Determine fine->coarse cell connectivity (aggregation) */
 

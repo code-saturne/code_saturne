@@ -732,7 +732,7 @@ _unwarping_mvt(cs_mesh_t            *mesh,
     }
   }
 
-  if (mesh->vtx_interfaces != NULL) {/* Parallel or periodic treatment */
+  if (mesh->vtx_interfaces != NULL) { /* Parallel or periodic treatment */
     cs_interface_set_sum(mesh->vtx_interfaces,
                          mesh->n_vertices,
                          3,

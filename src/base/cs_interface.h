@@ -419,7 +419,7 @@ void
 cs_interface_set_sum(cs_interface_set_t  *ifs,
                      cs_lnum_t            n_elts,
                      cs_lnum_t            stride,
-                     cs_interlace_t       interlace,
+                     bool                 interlace,
                      cs_datatype_t        datatype,
                      void                *var);
 
