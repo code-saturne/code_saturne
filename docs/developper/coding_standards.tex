@@ -144,16 +144,13 @@ The following coding rules are strongly recommended:
 
 \subsubsection{Language\label{sec:regle.lang}}
 
-ANSI C 1989 is assumed, so C99-specific constructs should be
-avoided (especially C++-style comments and variable declarations
-mixed with source code). An exception is the use of \texttt{long long},
-which is available in all C89 compilers tested, and which is needed
-in some places.
-
-Also, the build mechanism ensure that when some usual C99 types
-or keywords are not available, macros are available to simulate
-their use, so \texttt{restrict}, \texttt{\_Bool}, \texttt{int32\_t},
-and \texttt{int64\_t} can and should be used.
+ANSI C 1999 or above is required, so C99-specific constructs are allowed,
+though C++ style comments should be avoided, so as to maintain a consistent
+style. C99 variable-length arrays should be avoided, as it is not
+always clear whether they are allocated on the stack or heap, and are
+an optional feature only in the C newer 2011 standard (though we could
+expect that support for those constructs will remain available on
+general-purpose architectures, and removed only in the embedded space).
 
 \subsubsection{Assertions}
 
@@ -191,7 +188,9 @@ The following rules should be followed:
 
 \begin{itemize}
 
-\item identifier lengths should not exceed 31~characters (ANSI C89);
+\item identifier lengths should not exceed 31~characters if avoidable;
+  this was a portability requirement using C89, and is now more a
+  readability recommendation;
 
 \item identifier names are in lowercase, except for macro or enumeration
   definitions, which are in uppercase; words in an identifier are
@@ -240,12 +239,12 @@ Files containing these functions are named \texttt{\_\textit{class}.c}.
 Several integer types are found in \CS:
 
 \begin{itemize}
-\item \texttt{fvm\_lnum\_t} should be used for local entity (i.e. vertex, face,
+\item \texttt{cs\_lnum\_t} should be used for local entity (i.e. vertex, face,
       cell) numbers or connectivity. It is a signed integer, normally identical
       to \texttt{int}, but a larger size could be used in the future for very
       large meshes on shared memory machines.
 
-\item \texttt{fvm\_gnum\_t} should be used for global entity numbers, usually
+\item \texttt{cs\_gnum\_t} should be used for global entity numbers, usually
       necessary only for I/O aspects. It is an unsigned 32 or 64-bit integer,
       depending on whether the code was configured with the
       \texttt{--enable-long-gnum} option. Global numbers should always use
@@ -259,7 +258,7 @@ Several integer types are found in \CS:
 \item \texttt{cs\_int\_t} should be used for integer variables or arrays passed
       between C and Fortran, though using \texttt{integer(kind)} statements
       in Fortran should be a better future solution. In practice,
-      \texttt{cs\_int\_t} and \texttt{fvm\_lnum\_t} are identical. The former
+      \texttt{cs\_int\_t} and \texttt{cs\_lnum\_t} are identical. The former
       is more commonly found in older code, but the latter should be used where
       applicable for better clarity.
 
@@ -360,8 +359,8 @@ file.
 
 \item one routine per file (except if all routines except the first
       are ``private''). This rule has a few exceptions, such as the
-      \texttt{usini1.f90} user file which contains several subroutines
-      (it initially followed the rule, but subroutines were split,
+      \texttt{cs\_user\_parameters.f90} user file which contains several
+      subroutines (it initially followed the rule, but subroutines were split,
       while the file was not), and Fortran wrappers for several C
       functions defined in a single C file are also usually defined
       in a single source, as they are a consistent whole.
@@ -376,7 +375,8 @@ file.
 
 \item at least 2 characters per variable names 
       (banish variables \texttt{i}, \texttt{j}, or \texttt{k},
-       preferring \texttt{ii}, \texttt{jj}, or \texttt{kk}).
+       preferring \texttt{ii}, \texttt{jj}, or \texttt{kk}, as this makes
+       searching under a text editor easier).
 
 \item avoid commented example lines in user subroutines; otherwise,
       the code is never compiled and thus probably incorrect.
@@ -391,12 +391,6 @@ file.
 \item avoid \texttt{goto} constructs for where \texttt{select}~/~\texttt{case}
       would be more appropriate.
 
-\item avoid using ``pointer'' of ``pointer'' of ``pointer'' indices
-      in loops. Compute the pointer integer first (for example,
-      \texttt{ivar = ipr(iphas)}. This makes things more readable and
-      may help the compiler optimize the loop, leading to faster
-      code.
-
 \item avoid print statements using \texttt{write(format, *)},
       or \texttt{print} constructs, or use \texttt{\#ifdef debug}
       around debugging code using them, to ensure that output is redirected
@@ -408,9 +402,6 @@ file.
       in single precision (the limit is \texttt{e38}), and may thus not
       be accepted by ``strict'' compilers, or worst, lead to run-time
       exceptions.
-
-\item avoid \texttt{a = 3.d0*b}, preferring \texttt{three = 3.d0} followed
-      by \texttt{a = three * b}.  
 
 \end{itemize}
 
