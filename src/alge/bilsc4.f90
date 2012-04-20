@@ -1333,7 +1333,7 @@ if (ivisep.eq.1) then
   ! ---> Interior faces
 
   do ig = 1, ngrpi
-    !$omp parallel do private(ifac, ii, jj, isou, jsou, pnd, secvis,     &
+    !$omp parallel do private(ifac, ii, jj, isou, pnd, secvis,           &
     !$omp                     visco, grdtrv, tgrdfl, flux)
     do it = 1, nthrdi
       do ifac = iompli(1,ig,it), iompli(2,ig,it)
