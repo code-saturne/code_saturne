@@ -273,7 +273,7 @@ call projts                                                       &
 init = 1
 call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
             ifacel,ifabor,flumas,flumab,w7)
-call prodsc(ncelet,ncel,isqrt,w7,w7,rnorm)
+call prodsc(ncel,isqrt,w7,w7,rnorm)
 
 
 !===============================================================================
@@ -330,7 +330,7 @@ do isweep = 1, nswmpr
 
 ! --- Test de convergence du calcul
 
-  call prodsc(ncelet,ncel,isqrt,smbr,smbr,residu)
+  call prodsc(ncel,isqrt,smbr,smbr,residu)
   if (iwarni(ipr).ge.2) then
      chaine = 'PresHydr'
      write(nfecra,1400)chaine(1:16),isweep,residu

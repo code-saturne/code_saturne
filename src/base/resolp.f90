@@ -333,7 +333,7 @@ if(irnpnw.ne.1) then
 
   endif
 
-  call prodsc(ncelet,ncel,isqrt,w1,w1,rnormp)
+  call prodsc(ncel,isqrt,w1,w1,rnormp)
 
   if(iwarni(ipr).ge.2) then
     chaine = nomvar(ipp)
@@ -888,7 +888,7 @@ do 100 isweep = 1, nswmpr
 
 ! --- Test de convergence du calcul
 
-  call prodsc(ncelet,ncel,isqrt,smbr,smbr,residu)
+  call prodsc(ncel,isqrt,smbr,smbr,residu)
   if (iwarni(ipr).ge.2) then
      chaine = nomvar(ipp)
      write(nfecra,1400)chaine(1:16),isweep,residu

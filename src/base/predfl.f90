@@ -224,7 +224,7 @@ enddo
 
 isqrt = 1
 
-call prodsc(ncelet,ncel,isqrt,rhs,rhs,rnorm)
+call prodsc(ncel,isqrt,rhs,rhs,rnorm)
 
 !===============================================================================
 ! 4. Building of the linear system to solve
@@ -399,7 +399,7 @@ do while (isweep.le.nswmpr.and.residu.le.tcrite)
   enddo
 
   ! --- Convergence test
-  call prodsc(ncelet, ncel  , isqrt , rhs   , rhs   , residu )
+  call prodsc(ncel, isqrt, rhs, rhs, residu)
 
   ! Dynamic relaxation criterion
   if (swpdyn.eq.1) then

@@ -838,7 +838,7 @@ if (ikecou.eq.1) then
 
   if (iwarni(ivar).ge.2) then
     isqrt = 1
-    call prodsc(ncelet,ncel,isqrt,smbrk,smbrk,rnorm)
+    call prodsc(ncel,isqrt,smbrk,smbrk,rnorm)
     write(nfecra,1100) chaine(1:8) ,rnorm
   endif
 
@@ -912,7 +912,7 @@ if (ikecou.eq.1) then
 
   if (iwarni(ivar).ge.2) then
     isqrt = 1
-    call prodsc(ncelet,ncel,isqrt,smbre,smbre,rnorm)
+    call prodsc(ncel,isqrt,smbre,smbre,rnorm)
     write(nfecra,1100) chaine(1:8) ,rnorm
   endif
 

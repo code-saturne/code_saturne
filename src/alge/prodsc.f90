@@ -23,7 +23,7 @@
 subroutine prodsc &
 !================
 
- ( ncelet , ncel   , isqrt  , va     , vb     , vavb   )
+ ( ncel   , isqrt  , va     , vb     , vavb   )
 
 !===============================================================================
 ! Purpose:
@@ -36,10 +36,9 @@ subroutine prodsc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! isqrt            ! i  ! <-- ! flag: 1 to return the square root              !
-! va, vb(ncelet)   ! ra ! <-- ! vectors to multiply                            !
+! va, vb(ncel)     ! ra ! <-- ! vectors to multiply                            !
 ! vavb             ! r  ! --> ! dot product                                    !
 !__________________!____!_____!________________________________________________!
 
@@ -61,9 +60,9 @@ implicit none
 
 ! Arguments
 
-integer          ncelet,ncel,isqrt
+integer          ncel,isqrt
 double precision vavb
-double precision va(ncelet),vb(ncelet)
+double precision va(*), vb(*)
 
 ! Local variables
 

@@ -720,7 +720,7 @@ if (iwarni(ivar).ge.2) then
                 *(rtp(iel,ivar)-rtpa(iel,ivar))*ibcl
   enddo
   isqrt = 1
-  call prodsc(ncelet,ncel,isqrt,smbrs,smbrs,sclnor)
+  call prodsc(ncel,isqrt,smbrs,smbrs,sclnor)
   write(nfecra,1200)chaine(1:8) ,sclnor
 endif
 

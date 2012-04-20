@@ -472,7 +472,7 @@ do 100 isweep = 1, nswmod
           w1(isou,iel) = w1(isou,iel) + smbr(isou,iel)
        enddo
     enddo
-    call prodsc(3*ncelet,3*ncel,isqrt,w1(1,1),w1(1,1),rnorm)
+    call prodsc(3*ncel,isqrt,w1(1,1),w1(1,1),rnorm)
     !==========
     rnsmbr(ippu) = rnorm
     rnsmbr(ippv) = rnorm
@@ -538,7 +538,7 @@ endif
 
 ! ---> TEST DE CONVERGENCE
 
-call prodsc(3*ncelet,3*ncel,isqrt,smbr(1,1),smbr(1,1),residu)
+call prodsc(3*ncel,isqrt,smbr(1,1),smbr(1,1),residu)
 
 if( residu.le.epsrsp*rnorm         ) then
    if(iwarnp.ge.1) then

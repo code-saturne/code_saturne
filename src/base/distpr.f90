@@ -232,7 +232,7 @@ enddo
 
 do isweep = 0, nswrsl
 
-  call prodsc(ncelet,ncel,isqrt,smbdp,smbdp,rnorm)
+  call prodsc(ncel,isqrt,smbdp,smbdp,rnorm)
   if (iwarny.ge.2) then
      write(nfecra,5000) nomvar(ipp),isweep,rnorm
   endif

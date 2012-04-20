@@ -330,7 +330,7 @@ do 100 isweep = 1, nswmod
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  )
 
-  call prodsc(ncelet,ncel,isqrt,smbrp,smbrp,residu)
+  call prodsc(ncel,isqrt,smbrp,smbrp,residu)
 
 ! ---> RESIDU DE NORMALISATION CALCULE AU PREMIER SWEEP
 !    (NORME C.L +TERMES SOURCES+ TERMES DE NON ORTHOGONALITE)
@@ -356,7 +356,7 @@ do 100 isweep = 1, nswmod
     do iel = 1, ncel
       w1(iel) = w1(iel) + smbrp(iel)
     enddo
-    call prodsc(ncelet,ncel,isqrt,w1,w1,rnorm)
+    call prodsc(ncel,isqrt,w1,w1,rnorm)
     rnsmbr(ipp) = rnorm
     ! Free memory
     deallocate(w1)
@@ -407,7 +407,7 @@ do 100 isweep = 1, nswmod
 
 ! ---> TEST DE CONVERGENCE
 
-call prodsc(ncelet,ncel,isqrt,smbrp,smbrp,residu)
+call prodsc(ncel,isqrt,smbrp,smbrp,residu)
 
 if( residu.le.epsrsp*rnorm ) then
    if(iwarnp.ge.1) then

@@ -1635,7 +1635,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
 !     Calcul de la norme
 !       RNORMP qui servira dans resolp
   isqrt = 1
-  call prodsc(ncelet,ncel,isqrt,xnormp,xnormp,rnormp)
+  call prodsc(ncel,isqrt,xnormp,xnormp,rnormp)
 
 endif
 
