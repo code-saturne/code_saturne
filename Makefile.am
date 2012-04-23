@@ -312,8 +312,7 @@ dist_pkgdata_DATA = \
 bin/cs_user_scripts.py
 
 dist_pkgdata_SCRIPTS = \
-bin/runcase_mpi_rank \
-bin/runcase_syrthes
+bin/runcase_mpi_rank
 
 # Install thermochemistry and other data files
 
