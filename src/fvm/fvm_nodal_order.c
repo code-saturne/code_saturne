@@ -49,7 +49,6 @@
 #include "fvm_defs.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
-#include "fvm_parall.h"
 
 #include "cs_order.h"
 

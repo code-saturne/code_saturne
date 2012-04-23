@@ -51,7 +51,6 @@
 #include "cs_base.h"
 #include "cs_order.h"
 
-#include "fvm_parall.h"
 #include "fvm_periodicity.h"
 
 /*----------------------------------------------------------------------------

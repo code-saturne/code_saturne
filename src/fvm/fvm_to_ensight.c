@@ -51,12 +51,12 @@
 #include "fvm_io_num.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
-#include "fvm_parall.h"
 #include "fvm_to_ensight_case.h"
 #include "fvm_writer_helper.h"
 #include "fvm_writer_priv.h"
 
 #include "cs_file.h"
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -568,7 +568,7 @@ _vertex_part_to_block_create(const fvm_nodal_t          *mesh,
   fvm_part_to_block_t       *_d;
 
   size_t min_block_size
-    = fvm_parall_get_min_coll_buf_size() / sizeof(float);
+    = cs_parall_get_min_coll_buf_size() / sizeof(float);
 
   const cs_lnum_t   n_vertices
     = fvm_io_num_get_local_count(mesh->global_vertex_num);
@@ -1135,7 +1135,7 @@ _export_point_elements_g(const fvm_nodal_t  *mesh,
     fvm_part_to_block_info_t  bi;
 
     size_t min_block_size
-      = fvm_parall_get_min_coll_buf_size() / sizeof(float);
+      = cs_parall_get_min_coll_buf_size() / sizeof(float);
     int32_t  *connect = NULL;
 
     /* Get info on the current MPI communicator */
@@ -1243,7 +1243,7 @@ _write_lengths_g(const fvm_io_num_t  *global_element_num,
   fvm_part_to_block_t  *d = NULL;
 
   const size_t min_block_size
-    = fvm_parall_get_min_coll_buf_size() / sizeof(int32_t);
+    = cs_parall_get_min_coll_buf_size() / sizeof(int32_t);
   const cs_lnum_t   n_elements
     = fvm_io_num_get_local_count(global_element_num);
   const cs_lnum_t   n_g_elements
@@ -1404,7 +1404,7 @@ _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
   cs_lnum_t   *block_index = NULL;
   int32_t  *block_vtx_num = NULL;
   size_t  min_block_size
-    = fvm_parall_get_min_coll_buf_size() / sizeof(int32_t);
+    = cs_parall_get_min_coll_buf_size() / sizeof(int32_t);
 
   const cs_gnum_t   n_g_elements
     = fvm_io_num_get_global_count(global_element_num);
@@ -1531,7 +1531,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
     cs_lnum_t *block_index = NULL;
 
     size_t  min_block_size
-      = fvm_parall_get_min_coll_buf_size() / sizeof(int32_t);
+      = cs_parall_get_min_coll_buf_size() / sizeof(int32_t);
     int32_t  *part_face_len = NULL, *block_face_len = NULL;
 
     const fvm_nodal_section_t  *section = current_section->section;
@@ -2186,7 +2186,7 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
   cs_gnum_t   *part_vtx_gnum = NULL;
 
   size_t  min_block_size
-    = fvm_parall_get_min_coll_buf_size() / sizeof(int32_t);
+    = cs_parall_get_min_coll_buf_size() / sizeof(int32_t);
 
   const int  stride = fvm_nodal_n_vertices_element[type];
   const cs_lnum_t   n_elements = fvm_tesselation_n_elements(tesselation);
@@ -2482,7 +2482,7 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
     const int  stride = fvm_nodal_n_vertices_element[section->type];
 
     const size_t  min_block_size
-      = fvm_parall_get_min_coll_buf_size() / (sizeof(int32_t) * stride);
+      = cs_parall_get_min_coll_buf_size() / (sizeof(int32_t) * stride);
 
     const cs_lnum_t   n_elements
       = fvm_io_num_get_local_count(section->global_element_num);
@@ -2838,7 +2838,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
   const fvm_writer_section_t  *current_section = NULL;
 
   size_t  min_block_size
-    = fvm_parall_get_min_coll_buf_size() / sizeof(int32_t);
+    = cs_parall_get_min_coll_buf_size() / sizeof(int32_t);
 
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &n_ranks);

@@ -50,7 +50,6 @@
 #include "fvm_io_num.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
-#include "fvm_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

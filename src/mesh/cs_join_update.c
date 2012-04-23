@@ -45,7 +45,6 @@
 #include "bft_printf.h"
 
 #include "fvm_io_num.h"
-#include "fvm_parall.h"
 #include "fvm_periodicity.h"
 
 #include "cs_order.h"

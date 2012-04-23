@@ -59,8 +59,6 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "fvm_parall.h"
-
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 

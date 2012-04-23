@@ -38,19 +38,12 @@
 #include <float.h>
 
 /*----------------------------------------------------------------------------
- * BFT and FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-#include <fvm_defs.h>
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
 
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"

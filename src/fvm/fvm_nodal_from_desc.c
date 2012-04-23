@@ -51,7 +51,8 @@
 #include "fvm_defs.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
-#include "fvm_parall.h"
+
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Local headers associated with the current file
@@ -1365,7 +1366,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
   for (type_id = 0 ; type_id < FVM_N_ELEMENT_TYPES ; type_id++)
     n_g_elements_type[type_id] = n_elements_type[type_id];
 
-  fvm_parall_counter(n_g_elements_type, FVM_N_ELEMENT_TYPES);
+  cs_parall_counter(n_g_elements_type, FVM_N_ELEMENT_TYPES);
 
   for (cell_type = FVM_CELL_TETRA ;
        cell_type <= FVM_CELL_POLY ;
@@ -1470,7 +1471,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 
   }
 
-  fvm_parall_counter(&n_orient_pbs, 1);
+  cs_parall_counter(&n_orient_pbs, 1);
 
   if (n_orient_pbs > 0)
     bft_printf("Warning: Possible nodal connectivity orientation\n"
@@ -1635,7 +1636,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
   for (type_id = 0 ; type_id < FVM_N_ELEMENT_TYPES ; type_id++)
     n_g_elements_type[type_id] = n_elements_type[type_id];
 
-  fvm_parall_counter(n_g_elements_type, FVM_N_ELEMENT_TYPES);
+  cs_parall_counter(n_g_elements_type, FVM_N_ELEMENT_TYPES);
 
   for (face_type = FVM_FACE_TRIA ;
        face_type <= FVM_FACE_POLY ;

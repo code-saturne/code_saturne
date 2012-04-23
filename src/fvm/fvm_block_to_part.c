@@ -47,10 +47,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_defs.h"
-
 #include "fvm_block_dist.h"
-#include "fvm_parall.h"
 
 #include "cs_order.h"
 

@@ -41,7 +41,6 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "fvm_parall.h"
 #include "fvm_periodicity.h"
 
 #include "cs_interface.h"

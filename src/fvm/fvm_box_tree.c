@@ -46,8 +46,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_parall.h"
-
 #include "fvm_box_priv.h"
 
 /*----------------------------------------------------------------------------
@@ -729,7 +727,7 @@ _recurse_tree_build(fvm_box_tree_t       *bt,
 
   /* A sufficient accuracy has been reached */
 
-  if (bt->stats.max_level_reached == bt->max_level)
+  if ((int)(bt->stats.max_level_reached) == bt->max_level)
     state = 1;
 
   /* Algorithm is converged. No need to go further */
@@ -854,7 +852,7 @@ _new_node(fvm_box_tree_t     *bt,
 
   node = bt->nodes + node_id;
 
-  if (morton_code.L > bt->max_level)
+  if ((int)(morton_code.L) > bt->max_level)
     bft_error(__FILE__, __LINE__, 0,
               _("Error adding a new node in box tree (%p).\n"
                 "Max level reached. Current level: %u and Max level: %d\n"),

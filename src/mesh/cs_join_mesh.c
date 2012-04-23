@@ -46,13 +46,13 @@
 #include "fvm_nodal.h"
 #include "fvm_nodal_from_desc.h"
 #include "fvm_nodal_order.h"
-#include "fvm_parall.h"
 
 #include "cs_order.h"
 #include "cs_search.h"
 #include "cs_join_post.h"
 #include "cs_join_set.h"
 #include "cs_join_util.h"
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -997,7 +997,7 @@ _remove_empty_edges(cs_join_mesh_t  *mesh,
 
   if (verbosity > 1) {
     cs_gnum_t n_g_simplified_faces = n_simplified_faces;
-    fvm_parall_counter(&n_g_simplified_faces, 1);
+    cs_parall_counter(&n_g_simplified_faces, 1);
     bft_printf(_("\n  Number of simplified faces: %llu\n"),
                (unsigned long long)n_simplified_faces);
   }
@@ -1166,7 +1166,7 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
   } /* End of loop on faces */
 
   n_g_modified_faces = n_modified_faces;
-  fvm_parall_counter(&n_g_modified_faces, 1);
+  cs_parall_counter(&n_g_modified_faces, 1);
 
   if (verbosity > 0)
     bft_printf("\n  Edge removed for %llu faces (global).\n"

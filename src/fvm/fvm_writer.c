@@ -48,10 +48,8 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "fvm_defs.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
-#include "fvm_parall.h"
 
 #include "cs_file.h"
 #include "cs_timer.h"

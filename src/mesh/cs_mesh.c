@@ -46,14 +46,13 @@
 #include "bft_printf.h"
 
 #include "fvm_io_num.h"
-#include "fvm_parall.h"
-#include "cs_interface.h"
 #include "fvm_periodicity.h"
 #include "fvm_selector.h"
 
 #include "cs_base.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
+#include "cs_interface.h"
 #include "cs_log.h"
 #include "cs_mesh_halo.h"
 #include "cs_numbering.h"

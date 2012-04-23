@@ -59,7 +59,6 @@
 #include "fvm_nodal.h"
 #include "fvm_nodal_extract.h"
 #include "fvm_nodal_project.h"
-#include "fvm_parall.h"
 #include "fvm_selector.h"
 
 #include "cs_coupling.h"
@@ -67,8 +66,9 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_connect.h"
-#include "cs_selector.h"
+#include "cs_parall.h"
 #include "cs_post.h"
+#include "cs_selector.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -610,7 +610,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   if (syr_coupling->verbosity > 0) {
     cs_gnum_t n_g_elts = coupling_ent->n_elts;
-    fvm_parall_counter(&n_g_elts, 1);
+    cs_parall_counter(&n_g_elts, 1);
     bft_printf(_("\nExtracted mesh built of %llu elements.\n"),
                (unsigned long long)n_g_elts);
     bft_printf_flush();
@@ -778,7 +778,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   n_exterior = ple_locator_get_n_exterior(coupling_ent->locator);
 
-  fvm_parall_counter(&n_exterior, 1);
+  cs_parall_counter(&n_exterior, 1);
 
   if (n_exterior)
     bft_error(__FILE__, __LINE__, 0,

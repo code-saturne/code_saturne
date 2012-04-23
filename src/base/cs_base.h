@@ -53,30 +53,6 @@
 
 #endif
 
-/*
- * Macro for handling of different symbol names (underscored or not,
- * lowercase or uppercase) between C and Fortran, for link resolution.
- */
-
-#if !defined (__hpux)
-#define CS_PROCF(x, y) x##_
-#else
-#define CS_PROCF(x, y) x
-#endif
-
-/*
- * Macro used to handle automatic "Fortran string length" arguments
- * (not used by Code_Saturne calls, but set by many compilers).
- * Some compilers, like the Fujitsu VPP 5000 compiler, may not
- * support the variable length lists in mixed C/Fortran calls.
- */
-
-#if defined (__uxpv__)  /* Fujitsu VPP 5000 case */
-#define CS_ARGF_SUPP_CHAINE
-#else
-#define CS_ARGF_SUPP_CHAINE , ...
-#endif
-
 /* On certain architectures such as IBM Blue Gene, some operations may
  * be better optimized on memory-aligned data (if 0 here, no alignment
  * is leveraged). This alignment is not exploited yet in Code_Saturne. */

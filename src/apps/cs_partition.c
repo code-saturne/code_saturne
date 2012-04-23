@@ -115,7 +115,6 @@ void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
 #include "bft_printf.h"
 
 #include "fvm_block_to_part.h"
-#include "fvm_parall.h"
 
 #include "cs_base.h"
 #include "cs_file.h"

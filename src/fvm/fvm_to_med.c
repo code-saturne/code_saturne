@@ -67,10 +67,11 @@
 #include "fvm_io_num.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
-#include "fvm_parall.h"
 #include "fvm_part_to_block.h"
 #include "fvm_writer_helper.h"
 #include "fvm_writer_priv.h"
+
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

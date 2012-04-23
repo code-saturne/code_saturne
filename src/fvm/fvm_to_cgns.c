@@ -63,9 +63,10 @@
 #include "fvm_io_num.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
-#include "fvm_parall.h"
 #include "fvm_writer_helper.h"
 #include "fvm_writer_priv.h"
+
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -2985,7 +2986,7 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
   /* Avoid too many small communications with large processor counts */
 
   if (n_ranks > 1 && global_connect_s_size > 0) {
-    size_t min_buffer_size =   fvm_parall_get_min_coll_buf_size()
+    size_t min_buffer_size =   cs_parall_get_min_coll_buf_size()
                              / sizeof(cs_gnum_t);
     if (min_buffer_size > global_connect_s_size) {
       cs_gnum_t global_s_size_min = global_s_size * (  min_buffer_size

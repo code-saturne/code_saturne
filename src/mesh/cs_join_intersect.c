@@ -50,13 +50,13 @@
 
 #include "fvm_neighborhood.h"
 #include "fvm_io_num.h"
-#include "fvm_parall.h"
 
 #include "cs_join_mesh.h"
 #include "cs_join_set.h"
 #include "cs_join_util.h"
 #include "cs_log.h"
 #include "cs_order.h"
+#include "cs_parall.h"
 #include "cs_search.h"
 #include "cs_timer.h"
 
@@ -2841,14 +2841,14 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
   if (param.verbosity > 0) {
 
     cs_gnum_t n_g_break_counter = n_break_counter;
-    fvm_parall_counter(&n_g_break_counter, 1);
+    cs_parall_counter(&n_g_break_counter, 1);
 
     bft_printf(_("\n  Equivalences broken for %llu edges.\n"),
                (unsigned long long)n_g_break_counter);
 
     if (param.verbosity > 1) {
       cs_lnum_t g_n_max_breaks = n_max_breaks;
-      fvm_parall_counter_max(&g_n_max_breaks, 1);
+      cs_parall_counter_max(&g_n_max_breaks, 1);
       bft_printf(_("\n  Max. number of equiv. breaks: %llu\n"),
                  (unsigned long long)g_n_max_breaks);
     }

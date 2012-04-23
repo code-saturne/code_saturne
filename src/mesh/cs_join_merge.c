@@ -47,12 +47,12 @@
 #include "bft_printf.h"
 
 #include "fvm_io_num.h"
-#include "fvm_parall.h"
 
 #include "cs_log.h"
 #include "cs_order.h"
 #include "cs_search.h"
 #include "cs_join_post.h"
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1434,7 +1434,7 @@ _pre_merge(cs_join_param_t     param,
   if (param.verbosity > 0) {
 
     cs_gnum_t n_g_counter = n_local_pre_merge;
-    fvm_parall_counter(&n_g_counter, 1);
+    cs_parall_counter(&n_g_counter, 1);
 
     bft_printf(_("\n  Pre-merge for %llu global element couples.\n"),
                (unsigned long long)n_g_counter);
@@ -2057,7 +2057,7 @@ _merge_vertices(cs_join_param_t    param,
   if (verbosity > 0) {   /* Display information */
 
     cs_lnum_t g_max_list_size = max_list_size;
-    fvm_parall_counter_max(&g_max_list_size, 1);
+    cs_parall_counter_max(&g_max_list_size, 1);
 
     if (g_max_list_size < 2) {
       cs_join_gset_destroy(&equiv_gnum);
@@ -2199,14 +2199,14 @@ _merge_vertices(cs_join_param_t    param,
   if (verbosity > 0) {
 
     cs_gnum_t n_g_counter = n_transitivity;
-    fvm_parall_counter(&n_g_counter, 1);
+    cs_parall_counter(&n_g_counter, 1);
 
     bft_printf(_("\n  Excessive transitivity for %llu set(s) of vertices.\n"),
                (unsigned long long)n_g_counter);
 
     if (verbosity > 1) {
       cs_lnum_t g_n_max_loops = n_max_loops;
-      fvm_parall_counter_max(&g_n_max_loops, 1);
+      cs_parall_counter_max(&g_n_max_loops, 1);
       bft_printf(_("\n  Max. number of iterations to solve transitivity"
                    " excess: %llu\n"), (unsigned long long)g_n_max_loops);
     }
@@ -3247,7 +3247,7 @@ cs_join_merge_vertices(cs_join_param_t        param,
 
   if (param.verbosity > 2) {
     cs_gnum_t g_n_equiv = vtx_eset->n_equiv;
-    fvm_parall_counter(&g_n_equiv, 1);
+    cs_parall_counter(&g_n_equiv, 1);
     fprintf(cs_glob_join_log,
             "\n"
             "  Final number of equiv. between vertices; local: %9d\n"

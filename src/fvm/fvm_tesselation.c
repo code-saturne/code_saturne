@@ -101,8 +101,9 @@
 
 #include "fvm_defs.h"
 #include "fvm_io_num.h"
-#include "fvm_parall.h"
 #include "fvm_triangulate.h"
+
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1048,8 +1049,8 @@ _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
     n_g_elements_max[type_id] = n_elements_max[type_id];
   }
 
-  fvm_parall_counter(n_g_elements_tot, 2);
-  fvm_parall_counter_max(n_g_elements_max, 2);
+  cs_parall_counter(n_g_elements_tot, 2);
+  cs_parall_counter_max(n_g_elements_max, 2);
 
   for (type_id = 0; type_id < 2; type_id++) {
     if (n_g_elements_tot[type_id] > 0) {
@@ -1334,8 +1335,8 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
     n_g_elements_max[type_id] = n_elements_max[type_id];
   }
 
-  fvm_parall_counter(n_g_elements_tot, 2);
-  fvm_parall_counter_max(n_g_elements_max, 2);
+  cs_parall_counter(n_g_elements_tot, 2);
+  cs_parall_counter_max(n_g_elements_max, 2);
 
   ts->n_sub_types = 0;
 

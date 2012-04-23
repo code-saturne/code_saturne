@@ -48,8 +48,9 @@
 
 #include "fvm_defs.h"
 #include "fvm_io_num.h"
-#include "fvm_parall.h"
 #include "fvm_tesselation.h"
+
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1632,7 +1633,7 @@ fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
     }
   }
 
-  fvm_parall_counter_max(gc_renum, n_gc);
+  cs_parall_counter_max(gc_renum, n_gc);
 
   /* Renumber group classes if necessary */
 

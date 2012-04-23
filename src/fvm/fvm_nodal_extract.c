@@ -49,7 +49,6 @@
 
 #include "fvm_defs.h"
 #include "fvm_io_num.h"
-#include "fvm_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

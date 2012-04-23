@@ -39,11 +39,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
-#include "bft_printf.h"
-
-#include "cs_mesh.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -67,10 +62,17 @@ typedef struct
   int     rank;
 } _mpi_double_int_t;
 
-
 /*============================================================================
  * Global static variables
  *============================================================================*/
+
+#if defined(HAVE_MPI)
+
+/* Minimum recommended scatter/gather buffer size */
+
+static size_t _cs_parall_min_coll_buf_size = 1024*1024*8;
+
+#endif
 
 /*=============================================================================
  * Private function definitions
@@ -732,11 +734,11 @@ CS_PROCF (paragv, PARAGV)(cs_int_t   *n_elts,
 {
 #if defined(HAVE_MPI)
 
-  cs_int_t  i;
-  cs_int_t  *count = NULL;
-  cs_int_t  *shift = NULL;
+  int  i;
+  int  *count = NULL;
+  int  *shift = NULL;
 
-  const cs_int_t  n_domains = cs_glob_mesh->n_domains;
+  const int  n_domains = cs_glob_n_ranks;
 
   assert(sizeof(double) == sizeof(cs_real_t));
 
@@ -871,6 +873,115 @@ CS_PROCF (parbar, PARBAR)(void)
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+#if !defined(HAVE_MPI_IN_PLACE) && defined(HAVE_MPI)
+
+void
+cs_parall_counter(cs_gnum_t   cpt[],
+                  const int   n)
+{
+  if (cs_glob_n_ranks > 1) {
+
+    int        i;
+    cs_gnum_t *sum;
+    cs_gnum_t _sum[64];
+
+    if (n > 64)
+      BFT_MALLOC(sum, n, cs_gnum_t);
+    else
+      sum = _sum;
+
+    MPI_Allreduce(cpt, sum, n, CS_MPI_GNUM, MPI_SUM,
+                  cs_glob_mpi_comm);
+
+    for (i = 0; i < n ; i++)
+      cpt[i] = sum[i];
+
+    if (sum != _sum)
+      BFT_FREE(sum);
+
+  }
+}
+#endif
+
+/*----------------------------------------------------------------------------
+ * Maximum values of a counter on all default communicator processes.
+ *
+ * parameters:
+ *   cpt <-> local counter value  input, global counter value output (array)
+ *   n   <-- number of counter array values
+ *----------------------------------------------------------------------------*/
+
+#if !defined(HAVE_MPI_IN_PLACE) && defined(HAVE_MPI)
+
+void
+cs_parall_counter_max(cs_lnum_t   cpt[],
+                      const int   n)
+{
+
+  if (cs_glob_n_ranks > 1) {
+
+    int        i;
+    cs_lnum_t *maxval;
+    cs_lnum_t _maxval[64];
+
+    if (n > 64)
+      BFT_MALLOC(maxval, n, cs_lnum_t);
+    else
+      maxval = _maxval;
+
+    MPI_Allreduce(cpt, maxval, n, CS_MPI_LNUM, MPI_MAX,
+                  cs_glob_mpi_comm);
+
+    for (i = 0; i < n ; i++)
+      cpt[i] = maxval[i];
+
+    if (maxval != _maxval)
+      BFT_FREE(maxval);
+
+  }
+
+}
+
+#endif
+
+/*----------------------------------------------------------------------------
+ * Return minimum recommended scatter or gather buffer size.
+ *
+ * This is used by some internal part to block or scatter/gather algorithms,
+ * so as to allow I/O buffer size tuning.
+ *
+ * returns:
+ *   minimum recommended part to block or gather buffer size (in bytes)
+ *----------------------------------------------------------------------------*/
+
+size_t
+cs_parall_get_min_coll_buf_size(void)
+{
+#if defined(HAVE_MPI)
+  return _cs_parall_min_coll_buf_size;
+#else
+  return 0;
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Define minimum recommended gather buffer size.
+ *
+ * This is used by some internal part to block or scatter/gather algorithms,
+ * so as to allow I/O buffer size tuning.
+ *
+ * parameters:
+ *   minimum recommended part to block or gather buffer size (in bytes)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_parall_set_min_coll_buf_size(size_t buffer_size)
+{
+#if defined(HAVE_MPI)
+  _cs_parall_min_coll_buf_size = buffer_size;
+#endif
+}
 
 /*----------------------------------------------------------------------------*/
 

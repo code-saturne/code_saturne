@@ -42,29 +42,19 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_defs.h>
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
 
 #include "cs_base.h"
 #include "cs_halo.h"
 #include "cs_matrix.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_post.h"
 
@@ -354,7 +344,7 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
       }
     }
 
-    fvm_parall_counter(&n_errors, 1);
+    cs_parall_counter(&n_errors, 1);
 
     /* Obtain the lowest global face number with an error,
        and print associated info */
@@ -412,7 +402,7 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
         n_valid_faces += 1;
     }
 
-    fvm_parall_counter(&n_valid_faces, 1);
+    cs_parall_counter(&n_valid_faces, 1);
 
     if (n_valid_faces > 0) {
 

@@ -44,18 +44,12 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_error.h>
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_error.h"
+#include "bft_mem.h"
+#include "bft_printf.h"
 
 #include "cs_halo.h"
 #include "cs_halo_perio.h"

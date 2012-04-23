@@ -58,7 +58,6 @@ fvm_nodal_order.h \
 fvm_nodal_project.h \
 fvm_nodal_triangulate.h \
 fvm_nodal_extract.h \
-fvm_parall.h \
 fvm_part_to_block.h \
 fvm_periodicity.h \
 fvm_point_location.h \
@@ -116,7 +115,6 @@ fvm_nodal_order.c \
 fvm_nodal_project.c \
 fvm_nodal_triangulate.c \
 fvm_nodal_extract.c \
-fvm_parall.c \
 fvm_part_to_block.c \
 fvm_periodicity.c \
 fvm_point_location.c \

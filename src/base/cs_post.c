@@ -44,7 +44,6 @@
 #include "bft_printf.h"
 
 #include "fvm_nodal.h"
-#include "fvm_parall.h"
 #include "fvm_writer.h"
 
 #include "cs_base.h"
@@ -53,6 +52,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_mesh_location.h"
+#include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_selector.h"
 
@@ -1673,7 +1673,7 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
   }
 
   i = n_cells;
-  fvm_parall_counter_max(&i, 1);
+  cs_parall_counter_max(&i, 1);
 
   if (i > 0) {
     exp_mesh = cs_mesh_connect_cells_to_nodal(mesh,
@@ -1800,7 +1800,7 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
   else
     n_no_group = mesh->n_b_faces;
 
-  fvm_parall_counter(&n_no_group, 1);
+  cs_parall_counter(&n_no_group, 1);
 
   if (n_no_group == mesh->n_g_b_faces)
     return;
@@ -4592,7 +4592,7 @@ cs_post_add_free_faces(void)
     else
       n_no_group = n_f_faces;
 
-    fvm_parall_counter(&n_no_group, 1);
+    cs_parall_counter(&n_no_group, 1);
 
     if (n_no_group == mesh->n_g_free_faces)
       generate_submeshes = false;

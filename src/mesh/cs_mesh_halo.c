@@ -43,10 +43,9 @@
 #include "bft_printf.h"
 
 #include "fvm_periodicity.h"
-#include "cs_interface.h"
-#include "fvm_parall.h"
 
 #include "cs_base.h"
+#include "cs_interface.h"
 #include "cs_mesh.h"
 #include "cs_order.h"
 #include "cs_halo.h"

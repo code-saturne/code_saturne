@@ -44,7 +44,6 @@
 #include "bft_printf.h"
 
 #include "fvm_defs.h"
-#include "fvm_parall.h"
 #include "fvm_io_num.h"
 
 #include "cs_join_util.h"

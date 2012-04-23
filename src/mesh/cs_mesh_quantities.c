@@ -38,27 +38,18 @@
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_parall.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
 
 #include "cs_base.h"
 #include "cs_halo_perio.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1296,7 +1287,7 @@ _compute_face_distances(const cs_lnum_t  dim,
 
   }
 
-  fvm_parall_counter(&w_count, 1);
+  cs_parall_counter(&w_count, 1);
 
   if (w_count > 0)
     bft_printf(_("\n"

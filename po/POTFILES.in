@@ -119,7 +119,6 @@ src/fvm/fvm_nodal_from_desc.c
 src/fvm/fvm_nodal_order.c
 src/fvm/fvm_nodal_project.c
 src/fvm/fvm_nodal_triangulate.c
-src/fvm/fvm_parall.c
 src/fvm/fvm_part_to_block.c
 src/fvm/fvm_periodicity.c
 src/fvm/fvm_point_location.c

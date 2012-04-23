@@ -37,23 +37,14 @@
 #include <float.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *---------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *---------------------------------------------------------------------------*/
-
-#include <fvm_parall.h>
-#include <fvm_periodicity.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *---------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
+
+#include "fvm_periodicity.h"
 
 #include "cs_join_intersect.h"
 #include "cs_join_merge.h"
@@ -106,7 +97,7 @@ _dump_mesh(const  int          join_num,
   len = strlen("log/JoinDBG__.dat")+1+4+2+base_len;
   BFT_MALLOC(filename, len, char);
   sprintf(filename, "log%cJoin%02dDBG_%s_%04d.dat", CS_DIR_SEPARATOR,
-          join_num, basename, fvm_parall_get_rank());
+          join_num, basename, cs_glob_rank_id);
   dbg_file = fopen(filename, "w");
 
   cs_mesh_dump_file(dbg_file, mesh);
@@ -138,7 +129,7 @@ _dump_gset(const  int               join_num,
   len = strlen("log/JoinDBG__.dat")+1+4+2+base_len;
   BFT_MALLOC(filename, len, char);
   sprintf(filename, "log%cJoin%02dDBG_%s_%04d.dat", CS_DIR_SEPARATOR,
-          join_num, basename, fvm_parall_get_rank());
+          join_num, basename, cs_glob_rank_id);
   dbg_file = fopen(filename, "w");
 
   cs_join_gset_dump(dbg_file, set);
