@@ -1247,8 +1247,6 @@ fi
         # (possible now that the exact number of processors is known)
 
         for d in self.syr_domains:
-            if 'compile_and_link' in dir(d):  # For SYRTHES 3
-                d.compile_and_link()
             d.prepare_data()
 
         # Compile user subroutines if necessary.

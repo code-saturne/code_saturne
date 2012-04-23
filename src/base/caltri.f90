@@ -734,9 +734,6 @@ if (itrale.gt.0) then
 
   ntcam1 = ntcabs - 1
 
-  call tstsy3 (ntmabs, ntcam1)
-  !==========
-
   if (ntmabs .eq. ntcam1) then
     call csexit (0)
     !==========
@@ -770,12 +767,6 @@ call modpar(ntcabs,ntmabs)
 
 call dmtmps(titer1)
 !==========
-
-!     Synchronisation Syrthes 3, si ITRALE>0
-if (itrale.gt.0) then
-  call itdsy3(ntcabs,ntmabs)
-  !==========
-endif
 
 call tridim                                                       &
 !==========
@@ -919,9 +910,6 @@ else
   call cplsyn (ntmabs, ntcabs, dtref)
   !==========
 endif
-
-call tstsy3(ntmabs, ntcabs)
-!==========
 
 !===============================================================================
 ! 19. SORTIE EVENTUELLE DU FICHIER SUITE

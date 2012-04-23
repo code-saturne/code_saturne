@@ -136,23 +136,6 @@ def coupling(package,
             use_saturne = True
             sat_domains.append(dom)
 
-        elif (d.get('solver') == 'SYRTHES 3' or d.get('solver') == 'SYRTHES3'):
-
-            try:
-                dom = syrthes3_domain(package,
-                                      name = d.get('domain'),
-                                      echo_comm = d.get('echo_comm'),
-                                      coupled_apps = d.get('coupled_apps'),
-                                      pset_size = pset_size)
-
-            except Exception:
-                err_str = 'Cannot create SYRTHES 3 domain.\n'
-                err_str += ' case = ' + d.get('domain')
-                raise RunCaseError(err_str)
-
-            use_syrthes = True
-            syr_domains.append(dom)
-
         elif (d.get('solver') == 'SYRTHES'):
 
             try:

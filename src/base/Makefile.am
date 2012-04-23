@@ -97,9 +97,6 @@ cs_sat_coupling.h \
 cs_search.h \
 cs_selector.h \
 cs_sort.h \
-cs_syr3_comm.h \
-cs_syr3_coupling.h \
-cs_syr3_messages.h \
 cs_syr4_coupling.h \
 cs_syr_coupling.h \
 cs_system_info.h \
@@ -199,9 +196,6 @@ cs_search.c \
 cs_selector.c \
 cs_selector_f2c.f90 \
 cs_sort.c \
-cs_syr3_comm.c \
-cs_syr3_coupling.c \
-cs_syr3_messages.c \
 cs_syr4_coupling.c \
 cs_syr_coupling.c \
 cs_time_plot.c \

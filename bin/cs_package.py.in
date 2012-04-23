@@ -95,7 +95,6 @@ class package:
         self.docdir = "@docdir@"
         self.pdfdir = "@pdfdir@"
         self.sysconfdir = "@sysconfdir@"
-        self.syrthes_prefix = "@syrthes_prefix@"
 
         self.mpi_type = "@mpi_type@"
         self.mpi_bindir = "@mpi_bindir@"

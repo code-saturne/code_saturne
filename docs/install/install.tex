@@ -705,7 +705,6 @@ build on a cluster named \texttt{ivanoe}, using the Intel compilers
 \textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.19/arch/ivanoe \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-3.2/arch/ivanoe\_ompi \textbackslash \\
-\textcolor{Violet}{--with-syrthes}=/home/projects/syrthes3.4.3 \textbackslash \\
 \textcolor{red}{CC}=mpicc \textcolor{red}{FC}=ifort
 \textcolor{red}{CXX}=icpc
 }\end{minipage}}
@@ -915,12 +914,8 @@ the associated compute build.
 
 \section{Installing for \syrthes coupling\label{sec:syrthes}}
 
-Coupling with \syrthes 3 requires defining \texttt{--with-syrthes}
-at the \texttt{configure} stage, while coupling with \syrthes 4
-requires defining the path to \syrthes 4 at the post-install
-stage. If \CS is configured and built with \syrthes 3 support,
-defining the paths to \syrthes 4 will cause it to switch to
-that version, which has priority.
+Coupling with \syrthes 4 requires defining the path to \syrthes 4
+at the post-install stage.
 
 When coupling with \syrthes 4, both \CS and \syrthes must
 use the same MPI library, and must use the same version of the

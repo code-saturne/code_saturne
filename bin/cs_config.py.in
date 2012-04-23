@@ -34,19 +34,6 @@ from optparse import OptionParser
 
 #-------------------------------------------------------------------------------
 
-# Build tools, option, and libraries
-#-----------------------------------
-
-class build_syrthes:
-    cc="@SYRTHES_CC@"
-    fc="@SYRTHES_FC@"
-    cppflags="@SYRTHES_CPPFLAGS@"
-    cflags="@SYRTHES_CFLAGS@"
-    fcflags="@SYRTHES_FCFLAGS@"
-    ldflags="@SYRTHES_LDFLAGS@"
-    libs="@SYRTHES_LIBS@ @SYRTHES_FCLIBS@"
-
-
 # Prerequisites libraries
 #------------------------
 
@@ -365,29 +352,6 @@ MPI library information:
 
 #-------------------------------------------------------------------------------
 # Main
-#-------------------------------------------------------------------------------
-
-def get_config_syrthes():
-    """
-    Get the configuration information.
-    """
-    msg = """\
-Compilers and associated options for SYRTHES pkg:
-  cc = %(cc)s
-  fc = %(fc)s
-  cppflags = %(cppflags)s
-  cflags = %(cflags)s
-  fcflags = %(fcflags)s
-  ldflags = %(ldflags)s
-  libs = %(libs)s\
-"""
-
-    return msg \
-        % { 'cc':pkg_syrthes.cc, 'fc':build_syrthes.fc,
-            'cppflags':pkg_syrthes.cppflags, 'cflags':build_syrthes.cflags,
-            'fcflags':pkg_syrthes.fcflags, 'ldflags':build_syrthes.ldflags,
-            'libs':pkg_syrthes.libs }
-
 #-------------------------------------------------------------------------------
 
 def main(argv, pkg):

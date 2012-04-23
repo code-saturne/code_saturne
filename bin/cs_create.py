@@ -253,8 +253,6 @@ class Study:
                      os.path.expanduser('~/.' + self.package.configfile)])
         if config.has_option('install', 'syrthes'):
             syrthes_version = 4
-        elif (len(self.package.syrthes_prefix) > 0):
-            syrthes_version = 3
 
         return syrthes_version
 
@@ -285,8 +283,6 @@ class Study:
             syrthes_version = self.get_syrthes_version()
             if syrthes_version == 4:
                 self.create_syrthes_cases(repbase)
-            elif syrthes_version == 3:
-                self.create_syrthes3_cases(repbase)
             else:
                 sys.stderr.write("Cannot locate SYRTHES installation.")
                 sys.exit(1)
@@ -306,27 +302,6 @@ class Study:
         # Creating coupling structure
         if len(self.cases) + len(self.syr_case_names) > 1:
             self.create_coupling(repbase)
-
-
-    def create_syrthes3_cases(self, repbase):
-        """
-        Create and initialize SYRTHES 3 case directories.
-        """
-
-        syr_home = self.package.syrthes_prefix
-
-        for s in self.syr_case_names:
-            c = os.path.join(repbase, s)
-            data_syr = os.path.join(c, 'DATA')
-            src_syr = os.path.join(c, 'SRC')
-            src_ref_syr = os.path.join(syr_home, 'data')
-            os.mkdir(c)
-            os.mkdir(data_syr)
-            os.mkdir(src_syr)
-            data_ref_syr = os.path.join(data_syr, 'REFERENCE')
-            shutil.copytree(src_ref_syr, data_ref_syr)
-            user_ref_syr = os.path.join(src_syr, 'REFERENCE')
-            shutil.copytree(os.path.join(syr_home, 'usr'), user_ref_syr)
 
 
     def create_syrthes_cases(self, repbase):
@@ -460,18 +435,7 @@ class Study:
 
         for c in self.syr_case_names:
 
-            if self.get_syrthes_version() == 3:
-                template = \
-"""
-    ,
-    {'solver': 'SYRTHES 3',
-     'domain': 'DOMAIN',
-     'script': 'syrthes.data',
-     'echo_comm': None,        # verbosity if integer (> -1)
-     'coupled_apps': None}     # list of domain names more than 1
-"""
-            else:
-                template = \
+            template = \
 """
     ,
     {'solver': 'SYRTHES',

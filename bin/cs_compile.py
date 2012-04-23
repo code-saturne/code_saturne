@@ -30,8 +30,6 @@ import tempfile
 
 from optparse import OptionParser
 
-from cs_config import build_syrthes
-
 from cs_exec_environment import run_command, set_modules
 
 #-------------------------------------------------------------------------------
@@ -77,10 +75,6 @@ def process_cmd_line(argv, pkg):
                       metavar="<libs>",
                       help="optional libraries")
 
-    parser.add_option("--syrthes", dest="link_syrthes",
-                      action="store_true",
-                      help="SYRTHES link")
-
     parser.set_defaults(test_mode=False)
     parser.set_defaults(force_link=False)
     parser.set_defaults(keep_going=False)
@@ -89,7 +83,6 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(version="")
     parser.set_defaults(opt_libs="")
     parser.set_defaults(log_name=None)
-    parser.set_defaults(link_syrthes=False)
 
     (options, args) = parser.parse_args(argv)
 
@@ -112,8 +105,7 @@ def process_cmd_line(argv, pkg):
         sys.exit(1)
 
     return options.test_mode, options.force_link, options.keep_going, \
-           src_dir, dest_dir, options.version, options.opt_libs, \
-           options.link_syrthes
+           src_dir, dest_dir, options.version, options.opt_libs
 
 #-------------------------------------------------------------------------------
 
@@ -248,83 +240,6 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
     return retval
 
 #-------------------------------------------------------------------------------
-
-def compile_and_link_syrthes(pkg, srcdir, destdir,
-                             stdout = sys.stdout, stderr = sys.stderr):
-    """
-    Compilation and link function.
-    """
-    retval = 0
-
-    exec_name = "syrthes"
-    if destdir != None:
-        exec_name = os.path.join(destdir, exec_name)
-
-    # Change to temporary directory
-
-    call_dir = os.getcwd()
-    temp_dir = tempfile.mkdtemp(suffix=".cs_compile_syrthes")
-    os.chdir(temp_dir)
-
-    # Find files to compile in source path
-
-    if srcdir != None:
-        dir_files = os.listdir(srcdir)
-    else:
-        dir_files = []
-
-    c_files = fnmatch.filter(dir_files, '*.c')
-    h_files = fnmatch.filter(dir_files, '*.h')
-    f_files = fnmatch.filter(dir_files, '*.[fF]')
-
-    for f in c_files:
-        cmd = build_syrthes.cc
-        if len(h_files) > 0:
-            cmd = cmd + " -I" + srcdir
-        cmd = cmd + " " + build_syrthes.cppflags
-        cmd = cmd + " " + build_syrthes.cflags
-        cmd = cmd + " " + pkg.ple_cppflags
-        cmd = cmd + " -c " + os.path.join(srcdir, f)
-        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
-            retval = 1
-
-    for f in f_files:
-        cmd = build_syrthes.fc
-        if len(h_files) > 0:
-            cmd = cmd + " -I" + srcdir
-        cmd = cmd + " " + build_syrthes.cppflags
-        cmd = cmd + " " + build_syrthes.fcflags
-        cmd = cmd + " -c " + os.path.join(srcdir, f)
-        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
-            retval = 1
-
-    if retval == 0:
-        # Link with Code_Saturne C compiler
-        cmd = pkg.cc
-        cmd = cmd + " -o " + exec_name
-        if (len(f_files)) > 0:
-          cmd = cmd + " *.o"
-        cmd = cmd + " -L" + pkg.libdir + " " + pkg.ldflags
-        cmd = cmd + " -lsyrcs"
-        cmd = cmd + " " + build_syrthes.ldflags + " " + build_syrthes.libs
-        if pkg.rpath != "":
-            cmd = cmd + " " + so_dirs_path(cmd, pkg)
-        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
-            retval = 1
-
-    # Cleanup
-
-    for f in os.listdir(temp_dir):
-        os.remove(os.path.join(temp_dir, f))
-
-    # Return to original directory
-
-    os.chdir(call_dir)
-    os.rmdir(temp_dir)
-
-    return retval
-
-#-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
 
@@ -334,7 +249,7 @@ def main(argv, pkg):
     """
 
     test_mode, force_link, keep_going, src_dir, dest_dir, \
-        version, opt_libs, link_syrthes = process_cmd_line(argv, pkg)
+        version, opt_libs = process_cmd_line(argv, pkg)
 
     if (version):
         pkg = pkg.get_alternate_version(version)
@@ -344,11 +259,8 @@ def main(argv, pkg):
     if test_mode == True:
         dest_dir = None
 
-    if link_syrthes == True:
-        retcode = compile_and_link_syrthes(pkg, src_dir, dest_dir)
-    else:
-        retcode = compile_and_link(pkg, src_dir, dest_dir, opt_libs,
-                                   force_link, keep_going)
+    retcode = compile_and_link(pkg, src_dir, dest_dir, opt_libs,
+                               force_link, keep_going)
 
     sys.exit(retcode)
 

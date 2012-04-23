@@ -103,10 +103,6 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_FC
 
-# Search for Fortran 77 compilers just in case we have SYRTHES coupling
-# To be removed as soon SYRTHES 4 becomes the official version
-AC_PROG_F77
-
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AM_PROG_CC_C_O
@@ -432,7 +428,6 @@ CS_AC_TEST_MED
 CS_AC_TEST_ADF
 CS_AC_TEST_CCM
 CS_AC_TEST_ZLIB
-CS_AC_TEST_SYRTHES
 CS_AC_TEST_SALOME
 CS_AC_TEST_MEDCOUPLING
 
@@ -449,15 +444,6 @@ fi
 AM_CONDITIONAL(HAVE_PARTITIONER, test x$cs_have_partitioner = xyes)
 
 unset cs_have_partitioner
-
-cs_have_libsyrcs=no
-if test x$cs_have_syrthes = xyes -a x$cs_have_mpi = xyes ; then
-  cs_have_libsyrcs=yes
-fi
-
-AM_CONDITIONAL(HAVE_LIBSYRCS, test x$cs_have_libsyrcs = xyes)
-
-unset cs_have_libsyrcs
 
 # Check if we need to force link with C++
 cs_have_link_cxx=no
@@ -753,7 +739,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/elec/Makefile src/comb/Makefile src/pprt/Makefile
                  src/lagr/Makefile src/rayt/Makefile src/turb/Makefile
                  src/alge/Makefile src/mesh/Makefile src/user/Makefile
-                 src/user_examples/Makefile libsyrcs/Makefile
+                 src/user_examples/Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  salome/fsi_coupling/Makefile
                  salome/fsi_coupling/idl/Makefile
@@ -847,7 +833,6 @@ fi
 echo " SALOME GUI support: "$cs_have_salome_gui""
 echo " SALOME Kernel support: "$cs_have_salome_kernel""
 echo " Dynamic loader support (for YACS): "$cs_have_dlloader""
-echo " SYRTHES 3 coupling support: "$cs_have_syrthes""
 echo
 echo "The package has been configured. Type:"
 echo " make"

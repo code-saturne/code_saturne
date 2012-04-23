@@ -137,52 +137,6 @@ void CS_PROCF(geosyr, GEOSYR)
 );
 
 /*----------------------------------------------------------------------------
- * Check if SYRTHES 3 couplings continue or if we must stop.
- *
- * For each SYRTHES 3 coupling, A message (stop or new iteration) is
- * received. No iteration start message is sent, as this is done
- * by ITDSYR.
- *
- * Fortran Interface:
- *
- * SUBROUTINE TSTSY3 (IMSFIN)
- * *****************
- *
- * INTEGER          NTMABS      : <-> : Maximum iteration number
- * INTEGER          NTCABS      : --> : Current iteration numbern
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(tstsy3, TSTSY3)
-(
- cs_int_t *ntmabs,
- cs_int_t *ntcabs
-);
-
-/*----------------------------------------------------------------------------
- * Synchronize new time step message for SYRTHES 3 couplings.
- *
- * For SYRTHES 3, it is necessary to distinguish the last iteration from
- * other iterations (to allow for SYRTHES 3 to determine in advance that it
- * will need to output postprocessing/restart data), so using this separate
- * function allows it to be placed after MODPAR in the main time loop,
- * in case NTMABS is changed by that function.
- *
- * Fortran Interface:
- *
- * SUBROUTINE ITDSY3 (NTCABS, NTMABS)
- * *****************
- *
- * INTEGER          NTMABS      : --> : Maximum iteration number
- * INTEGER          NTCABS      : --> : Current iteration number
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(itdsy3, ITDSY3)
-(
- cs_int_t   *ntcabs,
- cs_int_t   *ntmabs
-);
-
-/*----------------------------------------------------------------------------
  * Get number of coupled elements with SYRTHES.
  *
  * Fortran Interface:
