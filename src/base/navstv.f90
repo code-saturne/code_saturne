@@ -142,10 +142,9 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:), target :: viscf, viscb
 double precision, allocatable, dimension(:), target :: wvisfi, wvisbi
-double precision, allocatable, dimension(:) :: drtp, smbr, rovsdt
+double precision, allocatable, dimension(:) :: drtp, smbr
 double precision, allocatable, dimension(:,:) :: trav
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:,:) :: dfrcxt
@@ -170,7 +169,7 @@ double precision, dimension(:,:), allocatable :: tpucov
 
 ! Allocate temporary arrays for the velocity-pressure resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(drtp(ncelet), smbr(ncelet), rovsdt(ncelet))
+allocate(drtp(ncelet))
 allocate(trav(3,ncelet))
 allocate(vela(3,ncelet))
 allocate(vel(3,ncelet))
@@ -200,8 +199,7 @@ endif
 if (iale.eq.1) allocate(mshvel(3,ncelet))
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w1(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 if (irnpnw.eq.1) allocate(w10(ncelet))
 
@@ -505,7 +503,7 @@ call resopv &
    ckupdc , smacel ,                                              &
    frcxt  , dfrcxt , tpucov , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
-   drtp   , smbr   , rovsdt , tslagr ,                            &
+   drtp   , tslagr ,                                              &
    frchy  , dfrchy , trava  )
 
 !===============================================================================
@@ -1118,14 +1116,13 @@ endif
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(drtp, smbr, rovsdt)
+deallocate(drtp)
 deallocate(trav)
 if (allocated(dfrcxt)) deallocate(dfrcxt)
 if (allocated(frchy))  deallocate(frchy, dfrchy)
 if (allocated(esflum)) deallocate(esflum, esflub)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
+deallocate(w1)
 deallocate(w7, w8, w9)
 if (allocated(w10)) deallocate(w10)
 if (allocated(mshvel)) deallocate(mshvel)

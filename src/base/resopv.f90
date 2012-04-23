@@ -20,6 +20,96 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file resopv.f90
+!>
+!> \brief This subroutine perform the pressure correction step of the Navier
+!> Stokes equations for incompressible or slightly compressible flows for
+!> the coupled velocity components solver.
+!>
+!> This function solves the following Poisson equation on the pressure:
+!> \f[
+!>     D \left( \Delta t, \delta p \right) =
+!> \divs \left( \rho \vect{\widetilde{u}}\right)
+!>     - \Gamma^n
+!>     + \dfrac{\rho^n - \rho^{n-1}}{\Delta t}
+!> \f]
+!> The mass flux is then updated as follows:
+!> \f[
+!>  \dot{m}^{n+1}_\ij = \dot{m}^{n}_\ij
+!>                    - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
+!> \f]
+!>
+!> Remarks:
+!> - an iterative process is used to solve the Poisson equation.
+!> - if the coefficient arak is set to 1, the the Rhie & Chow filter is
+!>   activated.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     icetsm        index of cells with mass source terms
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in,out] propfa        physical properties at interior face centers
+!> \param[in,out] propfb        physical properties at boundary face centers
+!> \param[in]     smacel        variable value associated to the mass source
+!>                               term (for ivar=ipr, smacel is the mass flux
+!>                               \f$ \Gamma^n \f$)
+
+
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     icepdc        index of cells with head loss
+!> \param[in]     icetsm        index of cells with mass source term
+!> \param[in]     itypsm        type of mass source term for the variables
+!> \param[in]     isostd        indicator of standard outlet and index
+!>                               of the reference outlet face
+!> \param[in]     idtsca        indicator of non scalar time step
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in,out] propfa        physical properties at interior face centers
+!> \param[in,out] propfb        physical properties at boundary face centers
+!> \param[in]     coefa, coefb  boundary conditions
+!>
+!> \param[in]     ckupdc        work array for the head loss
+!>
+!> \param[in]     smacel        values of variables associated to the mass
+!>                               source (for the pressure, smacel
+!>                               is the mass flux)
+!> \param[in]     frcxt         external forces making hydrostatic pressure
+!> \param[in]     dfrcxt        variation of the external forces
+!> \param[in]                    making the hydrostatic pressure
+!> \param[in]     tpucou        non scalar time step in case of
+!>                               velocity pressure coupling
+!> \param[in]     trav          right hand side for the normalizing
+!>                               the residual
+!> \param[in]     viscf         visc*surface/dist aux faces internes
+!> \param[in]     viscb         visc*surface/dist aux faces de bord
+!> \param[in]     viscfi        idem viscf pour increments
+!> \param[in]     viscbi        idem viscb pour increments
+!> \param[in]     drtp          tableau de travail pour increment
+!> \param[in]     tslagr        coupling term for teh Lagrangian module
+!> \param[in]     frchy         tableau de travail
+!> \param[in]     dfrchy        tableau de travail
+!> \param[in]     trava         tableau de travail pour couplage
+!_______________________________________________________________________________
+
 subroutine resopv &
 !================
 
@@ -31,73 +121,9 @@ subroutine resopv &
    ckupdc , smacel ,                                              &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
-   drtp   , smbr   , rovsdt , tslagr ,                            &
+   drtp   , tslagr ,                                              &
    frchy  , dfrchy , trava  )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! Solving of NS equations for incompressible or slightly compressible flows for
-! one time step. Both convection-diffusion and continuity steps are performed.
-! The velocity components are solved together in once.
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! isostd           ! te ! <-- ! indicateur de sortie standard                  !
-!    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! idtsca           ! e  ! <-- ! indicateur de pas de temps non scalai          !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
-!                  !    !     !  hydrostatique                                 !
-!dfrcxt(ncelet,3)  ! tr ! <-- ! variation de force exterieure                  !
-!                  !    !     !  generant lapression hydrostatique             !
-! tpucou           ! tr ! <-- ! couplage vitesse pression                      !
-! (ndim,ncelel)    !    !     !                                                !
-! trav(3,ncelet)   ! tr ! <-- ! smb pour normalisation de residu               !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! viscfi(nfac)     ! tr ! --- ! idem viscf pour increments                     !
-! viscbi(nfabor    ! tr ! --- ! idem viscb pour increments                     !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
-! smbr  (ncelet    ! tr ! --- ! tableau de travail pour sec mem                !
-! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!  (ncelet,*)      !    !     !   lagrangien                                   !
-! frchy(ncelet     ! tr ! --- ! tableau de travail                             !
-!  ndim  )         !    !     !                                                !
-! dfrchy(ncelet    ! tr ! --- ! tableau de travail                             !
-!  ndim  )         !    !     !                                                !
-! trava            ! tr ! <-- ! tableau de travail pour couplage               !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -144,7 +170,6 @@ double precision tpucou(ndim,ncelet), trav(3,ncelet)
 double precision viscf(nfac), viscb(nfabor)
 double precision viscfi(nfac), viscbi(nfabor)
 double precision drtp(ncelet)
-double precision smbr(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
 double precision frchy(ncelet,ndim), dfrchy(ncelet,ndim)
 double precision trava(ndim,ncelet)
@@ -184,8 +209,9 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:) :: res, divu
+double precision, allocatable, dimension(:) :: res, divu, presa
 double precision, dimension(:,:), allocatable :: gradp
+double precision, allocatable, dimension(:) :: rhs, rovsdt
 
 !===============================================================================
 
@@ -195,7 +221,8 @@ double precision, dimension(:,:), allocatable :: gradp
 
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac,2))
-allocate(res(ncelet), divu(ncelet))
+allocate(res(ncelet), presa(ncelet), divu(ncelet))
+allocate(rhs(ncelet), rovsdt(ncelet))
 
 ! --- Writting
 ipp    = ipprtp(ipr)
@@ -379,10 +406,10 @@ if (iphydr.eq.1) then
 
 
 !     Il serait necessaire de communiquer pour periodicite et parallelisme
-!      sur le vecteur DFRCHY(IEL,1) DFRCHY(IEL,2) DFRCHY(IEL,3)
-!     On peut economiser la communication tant que DFRCHY ne depend que de
+!      sur le vecteur dfrchy(IEL,1) dfrchy(IEL,2) dfrchy(IEL,3)
+!     On peut economiser la communication tant que dfrchy ne depend que de
 !      RHO et RHO n-1 qui ont ete communiques auparavant.
-!     Exceptionnellement, on fait donc le calcul sur NCELET.
+!     Exceptionnellement, on fait donc le calcul sur ncelet.
       do iel = 1, ncelet
         dronm1 = (propce(iel,ipcroa)-ro0)
         drom   = (propce(iel,ipcrom)-ro0)
@@ -404,7 +431,7 @@ if (iphydr.eq.1) then
    coefa(1,iclipf) , coefb(1,iclipf) ,                            &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
-   drtp   , smbr   )
+   drtp   , rhs    )
     else
       indhyd = 0
     endif
@@ -414,7 +441,7 @@ endif
 
 
 !===============================================================================
-! 4.  PREPARATION DE LA MATRICE DU SYSTEME A RESOUDRE
+! 4. Building of the linear system to solve
 !===============================================================================
 
 ! ---> TERME INSTATIONNAIRE
@@ -454,7 +481,8 @@ idiffp = idiff (ipr)
 ndircp = ndircl(ipr)
 
 thetap = 1.d0
-call matrix                                                       &
+
+call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp ,                                     &
@@ -473,7 +501,7 @@ if (idilat.eq.3) then
 endif
 
 !===============================================================================
-! 5.  INITIALISATION DU FLUX DE MASSE
+! 5. Mass flux initialization
 !===============================================================================
 
 ! --- Flux de masse predit et premiere composante Rhie et Chow
@@ -543,11 +571,10 @@ else
   enddo
 endif
 
-! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+! ---> Traitement du parallelisme et de la periodicite
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synvin(trav)
-  !==========
 endif
 
 init   = 1
@@ -801,12 +828,12 @@ endif
 
 
 !===============================================================================
-! 6.  PREPARATION DU MULTIGRILLE ALGEBRIQUE
+! 6. Preparation of the Algebraic Multigrid
 !===============================================================================
 
 if (imgr(ipr).gt.0) then
 
-! --- Creation de la hierarchie de maillages
+  ! --- Building of the mesh hierarchy
 
   chaine = nomvar(ipp)
   iwarnp = iwarni(ipr)
@@ -826,21 +853,23 @@ if (imgr(ipr).gt.0) then
 endif
 
 !===============================================================================
-! 7.  BOUCLES SUR LES NON ORTHOGONALITES (RESOLUTION)
+! 7. Solving (Loop over the non-orthogonalities)
 !===============================================================================
 
-! --- Nombre de sweeps
+! --- Numbre of sweeps
 nswmpr = nswrsm(ipr)
 
-! --- Mise a zero des variables
-!       RTP(.,IPR) sera l'increment de pression cumule
-!       DRTP       sera l'increment d'increment a chaque sweep
-!       W7         sera la divergence du flux de masse predit
+! --- Variables are set to 0
+!       rtp(.,IPR) is the increment of the pressure
+!       drtp       is the increment of the increment between sweeps
+!       divu       is the initial divergence of the predicted mass flux
 do iel = 1,ncel
   rtp(iel,ipr) = 0.d0
   drtp(iel) = 0.d0
-  smbr(iel) = 0.d0
+  presa(iel) = 0.d0
 enddo
+
+relaxp = relaxv(ipr)
 
 ! --- Divergence initiale
 init = 1
@@ -871,125 +900,51 @@ if (iilagr.eq.2 .and. ltsmas.eq.1) then
   enddo
 endif
 
-! --- Boucle de reconstruction : debut
-isweep = 1
-relaxp = relaxv(ipr)
+! --- Initial right hand side
+do iel = 1, ncel
+  rhs(iel) = - divu(iel)
+enddo
 
-do 100 isweep = 1, nswmpr
-
-! --- Mise a jour du second membre
-!     (signe "-" a cause de celui qui est implicitement dans la matrice)
+! --- Add eps*pressure*volume/dt in the right hand side
+!     to strengthen the diagonal for the low-Mach algo.
+if (idilat.eq.3) then
   do iel = 1, ncel
-    smbr(iel) = - divu(iel) - smbr(iel)
+    rhs(iel) = rhs(iel) - epsdp*volume(iel)/dt(iel)*rtp(iel,ipr)
   enddo
+endif
 
-  ! --- Add eps*pressure*volume/dt in the right hand side
-  !     to strengthen the diagonal for the low-Mach algo.
-  if (idilat.eq.3) then
-    do iel = 1, ncel
-      smbr(iel) = smbr(iel) - epsdp*volume(iel)/dt(iel)*rtp(iel,ipr)
-    enddo
-  endif
+! --- Right hand side residual
+call prodsc(ncel,isqrt,rhs,rhs,residu)
 
-! --- Test de convergence du calcul
+rnsmbr(ipp) = residu
 
-  call prodsc(ncel,isqrt,smbr,smbr,residu)
-  if (isweep.eq.1) rnsmbr(ipp) = residu
+isweep = 1
 
-  if (swpdyn.eq.1) then
-    if (isweep.gt.1) then
-
-      if ((residu + 0.001d0*residu).gt.resold) then
-        relaxv(ipr) = max(0.8d0*relaxp, 0.1d0)
-      endif
-
-    endif
-    resold = residu
-  endif
-
- if (iwarni(ipr).ge.2) then
-   chaine = nomvar(ipp)
-   write(nfecra,1440)chaine(1:16),isweep,residu/rnormp, relaxp
- endif
-!  Test a modifier eventuellement
-! (il faut qu'il soit plus strict que celui de gradco)
-  if (swpdyn.eq.1) then
-    tcrite = 100.d0*epsilo(ipr)*rnormp
+! Writing
+if (iwarni(ipr).ge.2) then
+  chaine = nomvar(ipp)
+  if (rnormp.gt.0.d0) then
+    write(nfecra,1440)chaine(1:16),isweep,residu/rnormp, relaxp
   else
-    tcrite = 10.d0*epsrsm(ipr)*rnormp
+    write(nfecra,1440)chaine(1:16),isweep,residu, relaxp
   endif
+endif
 
-  if(residu.le.tcrite) then
-! --- Si convergence, calcul de l'indicateur
-!                     mise a jour du flux de masse et sortie
+! Dynamic relaxation criterion
+! (Test to modify if needed: must be scticter than
+! the test in the conjugate gradient)
+if (swpdyn.eq.1) then
+  tcrite = 100.d0*epsilo(ipr)*rnormp
+else
+  tcrite = 10.d0*epsrsm(ipr)*rnormp
+endif
 
+! Reconstruction loop (beginning)
+!--------------------------------
 
-! --- Calcul d'indicateur, avec prise en compte
-!       du volume (norme L2) ou non
+do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
-    if(iescal(iesder).gt.0) then
-      iesdep = ipproc(iestim(iesder))
-      do iel = 1, ncel
-        propce(iel,iesdep) = abs(smbr(iel))/volume(iel)
-      enddo
-      if(iescal(iesder).eq.2) then
-        do iel = 1, ncel
-          propce(iel,iesdep) =                                    &
-            propce(iel,iesdep)*sqrt(volume(iel))
-        enddo
-      endif
-    endif
-
-
-
-    iccocg = 1
-    init = 0
-    inc  = 0
-    if (iphydr.eq.1) inc = 1
-! --- en cas de prise en compte de Phydro, on met INC=1 pour prendre en
-!     compte les CL de COEFA(.,ICLIPF)
-    nswrgp = nswrgr(ipr)
-    imligp = imligr(ipr)
-    iwarnp = iwarni(ipr)
-    epsrgp = epsrgr(ipr)
-    climgp = climgr(ipr)
-    extrap = extrag(ipr)
-
-    if (idtsca.eq.0) then
-
-      call itrmas &
-      !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-   rtp(1,ipr)   , coefa(1,iclipf) , coefb(1,iclipr) ,             &
-   viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
-   propfa(1,iflmas), propfb(1,iflmab))
-
-    else
-
-      call itrmav                                                 &
-      !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-   rtp(1,ipr)   , coefa(1,iclipf) , coefb(1,iclipr) ,             &
-   viscf  , viscb  ,                                              &
-   tpucou ,                                                       &
-   propfa(1,iflmas), propfb(1,iflmab))
-
-    endif
-
-    goto 101
-
-  endif
-
-! --- Resolution implicite sur l'increment d'increment DRTP
+  ! --- Solving on the increment drtp
   do iel = 1, ncel
     drtp(iel) = 0.d0
   enddo
@@ -1002,156 +957,48 @@ do 100 isweep = 1, nswmpr
   iwarnp = iwarni(ipr)
   epsilp = epsilo(ipr)
 
-! ---> TRAITEMENT PERIODICITE
-!     (La pression est un scalaire,
-!                 pas de pb pour la rotation: IINVPE=1)
+  ! The pressure is a scalar => no problem for the periodicity of rotation
+  ! (iinvpe=1)
   iinvpe = 1
   ibsize = 1
 
-  call invers                                                     &
+  call invers &
   !==========
  ( chaine(1:16)    , isym   , ibsize ,                            &
    ipol   , ireslp , nitmap , imgrp  ,                            &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnormp , residu ,                                     &
-   dam    , xam    , smbr   , drtp   )
+   dam    , xam    , rhs    , drtp   )
 
+  ! Writing
   nbivar(ipp) = nbivar(ipp) + niterf
-  if(abs(rnormp).gt.0.d0) then
+  if (abs(rnormp).gt.0.d0) then
     resvar(ipp) = residu/rnormp
   else
     resvar(ipp) = 0.d0
   endif
 
-  if( isweep.eq.nswmpr ) then
-
-! --- Si dernier sweep :
-!       Calcul d'estimateur
-!       Incrementation du flux de masse
-!         avec reconstruction a partir de (dP)^(NSWMPR-1)
-!       Puis on rajoute la correction en (d(dP))^(NSWMPR)
-!         sans reconstruction pour assurer la divergence nulle
-
-
-! --- Calcul d'indicateur, avec prise en compte
-!       du volume (norme L2) ou non
-
-    if(iescal(iesder).gt.0) then
-      iesdep = ipproc(iestim(iesder))
-      do iel = 1, ncel
-        propce(iel,iesdep) = abs(smbr(iel))/volume(iel)
-      enddo
-      if(iescal(iesder).eq.2) then
-        do iel = 1, ncel
-          propce(iel,iesdep) =                                    &
-            propce(iel,iesdep)*sqrt(volume(iel))
-        enddo
-      endif
-    endif
-
-! --- Incrementation du flux de masse et correction
-
-    iccocg = 1
-    init = 0
-    inc  = 0
-    if (iphydr.eq.1) inc = 1
-    nswrgp = nswrgr(ipr)
-    imligp = imligr(ipr)
-    iwarnp = iwarni(ipr)
-    epsrgp = epsrgr(ipr)
-    climgp = climgr(ipr)
-    extrap = extrag(ipr)
-
-    if (idtsca.eq.0) then
-      call itrmas &
-      !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-   rtp(1,ipr)   , coefa(1,iclipf) , coefb(1,iclipr) ,             &
-   viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
-   propfa(1,iflmas), propfb(1,iflmab))
-
-!     pour le dernier increment, on ne reconstruit pas, on n'appelle donc
-!     pas GRDCEL. La valeur des DFRCXT (qui doit normalement etre nul)
-!     est donc sans importance
-    iccocg = 0
-    nswrgp = 0
-    inc = 0
-
-      call itrmas                                                 &
-      !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-   drtp            , coefa(1,iclipr) , coefb(1,iclipr) ,          &
-   viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
-   propfa(1,iflmas), propfb(1,iflmab))
-
-    else
-      ! tpucou array is interleaved
-      call itrmav                                                 &
-      !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-   rtp(1,ipr)   , coefa(1,iclipf) , coefb(1,iclipr) ,             &
-   viscf  , viscb  ,                                              &
-   tpucou ,                                                       &
-   propfa(1,iflmas), propfb(1,iflmab))
-
-!     pour le dernier increment, on ne reconstruit pas, on n'appelle donc
-!     pas GRDCEL. La valeur des DFRCXT (qui doit normalement etre nul)
-!     est donc sans importance
-    iccocg = 0
-    nswrgp = 0
-    inc = 0
-
-      call itrmav                                                 &
-      !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-   drtp            , coefa(1,iclipr) , coefb(1,iclipr) ,          &
-   viscf  , viscb  ,                                              &
-   tpucou ,                                                       &
-   propfa(1,iflmas), propfb(1,iflmab))
-
-    endif
-
-!     Mise a jour de l'increment de pression
+  ! Update the increment of pressure
+  if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.tcrite) then
     do iel = 1, ncel
-      rtp(iel,ipr) = rtp(iel,ipr) + drtp(iel)
+      presa(iel) = rtp(iel,ipr)
+      rtp(iel,ipr) = presa(iel) + relaxv(ipr)*drtp(iel)
     enddo
-
+  ! If it is the last sweep, update with the total increment
   else
+    do iel = 1, ncel
+      presa(iel) = rtp(iel,ipr)
+      rtp(iel,ipr) = presa(iel) + drtp(iel)
+    enddo
+  endif
 
-! --- Si ce n'est pas le dernier sweep
-!       Mise a jour de l'increment de pression et calcul direct de la
-!       partie en gradient d'increment de pression du second membre
-!       (avec reconstruction)
+  isweep = isweep + 1
 
-    if (idtvar.ge.0) then
-      do iel = 1, ncel
-        rtp(iel,ipr) = rtp(iel,ipr) + relaxv(ipr)*drtp(iel)
-      enddo
-    else
-      do iel = 1, ncel
-        rtp(iel,ipr) = rtp(iel,ipr) + drtp(iel)
-      enddo
-    endif
+  ! --- Update the right hand side if needed:
+  !      rhs^{k+1} = - div(rho u^n) - D(dt, delta delta p^{k+1})
 
+  if (isweep.le.nswmpr) then
     iccocg = 1
     init = 1
     inc  = 0
@@ -1167,46 +1014,179 @@ do 100 isweep = 1, nswmpr
 
       call itrgrp &
       !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-   rtp(1,ipr)   , coefa(1,iclipf) , coefb(1,iclipr) ,             &
-   viscf  , viscb  ,                                              &
-   dt          , dt          , dt          ,                      &
-   smbr   )
+   ( nvar   , nscal  ,                                              &
+     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+     iwarnp , nfecra ,                                              &
+     epsrgp , climgp , extrap ,                                     &
+     dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+     rtp(1,ipr)   , coefa(1,iclipf) , coefb(1,iclipr) ,             &
+     viscf  , viscb  ,                                              &
+     dt     , dt     , dt     ,                                     &
+     rhs    )
 
     else
       !interleaved tpucou array
-      call itrgrv                                                 &
+      call itrgrv &
       !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-   rtp(1,ipr)   , coefa(1,iclipf) , coefb(1,iclipr) ,             &
-   viscf  , viscb  ,                                              &
-   tpucou ,                                                       &
-   smbr   )
+   ( nvar   , nscal  ,                                              &
+     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+     iwarnp , nfecra ,                                              &
+     epsrgp , climgp , extrap ,                                     &
+     dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+     rtp(1,ipr)   , coefa(1,iclipf) , coefb(1,iclipr) ,             &
+     viscf  , viscb  ,                                              &
+     tpucou ,                                                       &
+     rhs    )
 
+    endif
+
+    do iel = 1, ncel
+      rhs(iel) = - divu(iel) - rhs(iel)
+    enddo
+
+    ! --- Add eps*pressure*volume/dt in the right hand side
+    !     to strengthen the diagonal for the low-Mach algo.
+    if (idilat.eq.3) then
+      do iel = 1, ncel
+        rhs(iel) = rhs(iel) - epsdp*volume(iel)/dt(iel)*rtp(iel,ipr)
+      enddo
+    endif
+
+    ! --- Convergence test
+    call prodsc(ncel,isqrt,rhs,rhs,residu)
+
+    ! Dynamic relaxation criterion
+    if (swpdyn.eq.1) then
+      if (isweep.gt.2) then
+
+        if ((residu + 0.001d0*residu).gt.resold) then
+          relaxv(ipr) = max(0.8d0*relaxp, 0.1d0)
+        endif
+
+      endif
+      resold = residu
+    endif
+
+
+    ! Writing
+    if (iwarni(ipr).ge.2) then
+      chaine = nomvar(ipp)
+      if (rnormp.gt.0.d0) then
+        write(nfecra,1440)chaine(1:16),isweep,residu/rnormp, relaxp
+      else
+        write(nfecra,1440)chaine(1:16),isweep,residu, relaxp
+      endif
     endif
 
   endif
 
-100 continue
-! --- Boucle de reconstruction : fin
+enddo
+! --- Reconstruction loop (end)
 
+! Writing
 if(iwarni(ipr).ge.2) then
-   chaine = nomvar(ipp)
-   write( nfecra,1600)chaine(1:16),nswmpr
+  if(isweep.gt.nswmpr) then
+     chaine = nomvar(ipp)
+     write(nfecra,1600) chaine(1:16),nswmpr
+  endif
 endif
 
- 101  continue
+! --- Compute the indicator, taken the volume into account (L2 norm)
+!     or not
+if(iescal(iesder).gt.0) then
+  iesdep = ipproc(iestim(iesder))
+  do iel = 1, ncel
+    propce(iel,iesdep) = abs(rhs(iel))/volume(iel)
+  enddo
+  if(iescal(iesder).eq.2) then
+    do iel = 1, ncel
+      propce(iel,iesdep) = propce(iel,iesdep)*sqrt(volume(iel))
+    enddo
+  endif
+endif
 
-!     REACTUALISATION DE LA PRESSION
+! Update the mass flux
+!---------------------
 
+iccocg = 1
+init = 0
+inc  = 0
+! In case of hydrostatic pressure, inc is set to 1 to take explicit
+! boundary conditions on the pressure (coefa)
+if (iphydr.eq.1) inc = 1
+nswrgp = nswrgr(ipr)
+imligp = imligr(ipr)
+iwarnp = iwarni(ipr)
+epsrgp = epsrgr(ipr)
+climgp = climgr(ipr)
+extrap = extrag(ipr)
+
+if (idtsca.eq.0) then
+  call itrmas &
+  !==========
+ ( nvar   , nscal  ,                                              &
+   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   presa  , coefa(1,iclipf) , coefb(1,iclipr) ,                   &
+   viscf  , viscb  ,                                              &
+   dt     , dt     , dt     ,                                     &
+   propfa(1,iflmas), propfb(1,iflmab))
+
+  ! The last increment is not reconstructed to fullfill exactly the continuity
+  ! equation (see theory guide). The value of dfrcxt has no importance.
+  iccocg = 0
+  nswrgp = 0
+  inc = 0
+
+  call itrmas &
+  !==========
+ ( nvar   , nscal  ,                                              &
+   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   drtp   , coefa(1,iclipr) , coefb(1,iclipr) ,                   &
+   viscf  , viscb  ,                                              &
+   dt     , dt     , dt     ,                                     &
+   propfa(1,iflmas), propfb(1,iflmab))
+
+else
+  ! tpucou array is interleaved
+  call itrmav &
+  !==========
+ ( nvar   , nscal  ,                                              &
+   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   presa  , coefa(1,iclipf) , coefb(1,iclipr) ,                   &
+   viscf  , viscb  ,                                              &
+   tpucou ,                                                       &
+   propfa(1,iflmas), propfb(1,iflmab))
+
+  ! The last increment is not reconstructed to fullfill exactly the continuity
+  ! equation (see theory guide). The value of dfrcxt has no importance.
+  iccocg = 0
+  nswrgp = 0
+  inc = 0
+
+  call itrmav &
+  !==========
+ ( nvar   , nscal  ,                                              &
+   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   drtp   , coefa(1,iclipr) , coefb(1,iclipr) ,                   &
+   viscf  , viscb  ,                                              &
+   tpucou ,                                                       &
+   propfa(1,iflmas), propfb(1,iflmab))
+
+endif
+
+! Update the pressure
 if (idtvar.lt.0) then
   do iel = 1, ncel
     rtp(iel,ipr) = rtpa(iel,ipr) + relaxv(ipr)*rtp(iel,ipr)
@@ -1218,7 +1198,7 @@ else
 endif
 
 !===============================================================================
-! 7.  SUPPRESSION DE LA HIERARCHIE DE MAILLAGES
+! 8. Suppression of the mesh hierarchy
 !===============================================================================
 
 if (imgr(ipr).gt.0) then
@@ -1230,10 +1210,11 @@ endif
 
 ! Free memory
 deallocate(dam, xam)
-deallocate(res, divu)
+deallocate(res, divu, presa)
+deallocate(rhs, rovsdt)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -1263,7 +1244,7 @@ deallocate(res, divu)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return
