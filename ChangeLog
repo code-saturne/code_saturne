@@ -1,3 +1,6 @@
+* 23/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Release Code_Saturne 2.1.7.
+
 * 12/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix GUI bug preventing setting negative internal structure displacement values.
   modified files:
