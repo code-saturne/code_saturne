@@ -330,7 +330,7 @@ endif
 isweep = 1
 residu = rnorm
 
-do while (isweep.le.nswmpr.and.residu.le.tcrite)
+do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
   ! --- Solving on the increment dpot
   do iel = 1, ncel
@@ -358,11 +358,13 @@ do while (isweep.le.nswmpr.and.residu.le.tcrite)
    epsilp , rnorm  , residu ,                                     &
    dam    , xam    , rhs   , dpot   )
 
-  if (idtvar.ge.0) then
+  ! Update the increment of potential
+  if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.tcrite) then
     do iel = 1, ncel
       pota(iel) = pot(iel)
       pot(iel)  = pota(iel) + relaxv(ipr)*dpot(iel)
     enddo
+  ! If it is the last sweep, update with the total increment
   else
     do iel = 1, ncel
       pota(iel) = pot(iel)
@@ -370,58 +372,62 @@ do while (isweep.le.nswmpr.and.residu.le.tcrite)
     enddo
   endif
 
-  ! --- Update the right hand side:
-  !      rhs^{k+1} = - div(rho u^n) - D(dt, pot^{k+1})
-  iccocg = 1
-  init = 1
-  inc  = 0
-  nswrgp = nswrgr(ipr)
-  imligp = imligr(ipr)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(ipr)
-  climgp = climgr(ipr)
-  extrap = extrag(ipr)
-
-  call itrgrp &
-  !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   rvoid  , rvoid  , rvoid  ,                                     &
-   pot    , cfapot , cfbpot ,                                     &
-   viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
-   rhs   )
-
-  do iel = 1, ncel
-    rhs(iel) = - divu(iel) - rhs(iel)
-  enddo
-
-  ! --- Convergence test
-  call prodsc(ncel, isqrt, rhs, rhs, residu)
-
-  ! Dynamic relaxation criterion
-  if (swpdyn.eq.1) then
-    if (isweep.gt.1) then
-
-      if ((residu + 0.001d0*residu).gt.resold) then
-        relaxv(ipr) = max(0.8d0*relaxp, 0.1d0)
-      endif
-
-    endif
-    resold = residu
-  endif
-
-  if (iwarni(ipr).ge.2) then
-    if (rnorm.ge.epzero) then
-      write(nfecra,1440) chaine(1:16),isweep,residu/rnorm, relaxp
-    else
-      write(nfecra,1440) chaine(1:16),isweep,residu, relaxp
-    endif
-  endif
-
   isweep = isweep + 1
+
+  ! --- Update the right hand side if needed:
+  !      rhs^{k+1} = - div(rho u^n) - D(dt, pot^{k+1})
+
+  if (isweep.le.nswmpr) then
+    iccocg = 1
+    init = 1
+    inc  = 0
+    nswrgp = nswrgr(ipr)
+    imligp = imligr(ipr)
+    iwarnp = iwarni(ipr)
+    epsrgp = epsrgr(ipr)
+    climgp = climgr(ipr)
+    extrap = extrag(ipr)
+
+    call itrgrp &
+    !==========
+   ( nvar   , nscal  ,                                              &
+     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+     iwarnp , nfecra ,                                              &
+     epsrgp , climgp , extrap ,                                     &
+     rvoid  , rvoid  , rvoid  ,                                     &
+     pot    , cfapot , cfbpot ,                                     &
+     viscf  , viscb  ,                                              &
+     dt     , dt     , dt     ,                                     &
+     rhs   )
+
+    do iel = 1, ncel
+      rhs(iel) = - divu(iel) - rhs(iel)
+    enddo
+
+    ! --- Convergence test
+    call prodsc(ncel, isqrt, rhs, rhs, residu)
+
+    ! Dynamic relaxation criterion
+    if (swpdyn.eq.1) then
+      if (isweep.gt.2) then
+
+        if ((residu + 0.001d0*residu).gt.resold) then
+          relaxv(ipr) = max(0.8d0*relaxp, 0.1d0)
+        endif
+
+      endif
+      resold = residu
+    endif
+
+    if (iwarni(ipr).ge.2) then
+      if (rnorm.ge.epzero) then
+        write(nfecra,1440) chaine(1:16),isweep,residu/rnorm, relaxp
+      else
+        write(nfecra,1440) chaine(1:16),isweep,residu, relaxp
+      endif
+    endif
+
+  endif
 
 enddo
 ! --- Reconstruction loop (end)
