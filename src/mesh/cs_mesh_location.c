@@ -400,8 +400,9 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
 
     if (ml->type == CS_MESH_LOCATION_CELLS && ml->n_elts[0] == mesh->n_cells) {
       if (mesh->halo != NULL) {
-        ml->n_elts[1] = mesh->halo->n_elts[0];
-        ml->n_elts[2] = mesh->halo->n_elts[1];
+        assert(mesh->halo->n_local_elts == ml->n_elts[0]);
+        ml->n_elts[1] += mesh->halo->n_elts[0];
+        ml->n_elts[2] += mesh->halo->n_elts[1];
       }
     }
 
