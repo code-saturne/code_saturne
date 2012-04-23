@@ -11,7 +11,7 @@ cd $PREFIX
 
 for file in src/*/*.[ch] src/*/*.f90 \
             gui/*/*.py bin/*.py bin/*.in bin/runcase* \
-            libple/*/*.[ch] libsyrcs/*.[ch] preprocessor/*/*.[ch] \
+            libple/*/*.[ch] preprocessor/*/*.[ch] \
             salome/fsi_coupling/libmilieu/*.[ch] \
             salome/fsi_coupling/src/*/*.[ch]xx \
             salome/fsi_coupling/src/*/*.py.in \
