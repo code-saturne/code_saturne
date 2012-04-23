@@ -35,9 +35,9 @@
 !>                                   - \Gamma^n
 !>                                   + \dfrac{\rho^n - \rho^{n-1}}{\Delta t}
 !> \f]
-!> This potential is then used to update the mass flux as following:
+!> This potential is then used to update the mass flux as follows:
 !> \f[
-!>  \dot{m}_\ij^{n+\frac{1}{2}}_\ij = \dot{m}_\ij^{n}_\ij
+!>  \dot{m}^{n+\frac{1}{2}}_\ij = \dot{m}^{n}_\ij
 !>                               - \Delta t \grad_\fij \varia \cdot \vect{S}_\ij
 !> \f]
 !>
@@ -51,7 +51,7 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     icetsm        index of cells with mass source terms
+!> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)

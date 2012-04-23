@@ -27,18 +27,18 @@
 !> \file inimas.f90
 !>
 !> \brief This function adds \f$ \rho \vect{u} \cdot \vect{S}_\ij\f$ to the mass
-!> flux \f$ \dot{m}_\fij \f$ for the segregated algorithm on the velocity
+!> flux \f$ \dot{m}_\ij \f$ for the segregated algorithm on the velocity
 !> components.
 !>
 !> For the reconstruction, \f$ \grad \left(\rho \vect{u} \right) \f$ is
 !> computed with the following approximated boundary conditions:
 !>  - \f$ \vect{A}_{\rho u} = \rho_\fib \vect{A}_u \f$
-!>  - \f$ \tens{B}_{\rho u} = \vect{B}_u \f$
+!>  - \f$ \tens{B}_{\rho u} = \tens{B}_u \f$
 !> Be carefull: here \f$ \tens{B}_{u} \f$ is a diagonal tensor.
 !>
 !> For the mass flux at the boundary we have:
 !> \f[
-!> \dot{m}_\fib = \left[ \rho_\fib \vect{A}_u  + \rho_\fib \tens{B}_u \vect{u}
+!> \dot{m}_\ib = \left[ \rho_\fib \vect{A}_u  + \rho_\fib \tens{B}_u \vect{u}
 !> + \tens{B}_u \left(\gradv \vect{u} \cdot \vect{\centi \centip}\right)\right]
 !> \cdot \vect{S}_\ij
 !> \f]
@@ -86,8 +86,6 @@
 !> \param[in]     climgu        clipping coeffecient for the computation of
 !>                               the gradient
 !> \param[in]     extrau        coefficient for extrapolation of the gradient
-!> \param[in]     isympa        face indicator to set the mass flux to 0
-!>                              (symmetries and walls with coupled BCs)
 !> \param[in]     rom           cell density
 !> \param[in]     romb          border face density
 !> \param[in]     ux            variable in the x direction

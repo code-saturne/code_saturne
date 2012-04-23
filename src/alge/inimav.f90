@@ -27,7 +27,7 @@
 !> \file inimav.f90
 !>
 !> \brief This function adds \f$ \rho \vect{u} \cdot \vect{S}_\ij\f$ to the mass
-!> flux \f$ \dot{m}_\fij \f$.
+!> flux \f$ \dot{m}_\ij \f$.
 !>
 !> For the reconstruction, \f$ \gradt \left(\rho \vect{u} \right) \f$ is
 !> computed with the following approximated boundary conditions:
@@ -36,7 +36,7 @@
 !>
 !> For the mass flux at the boundary we have:
 !> \f[
-!> \dot{m}_\fib = \left[ \rho_\fib \vect{A}_u  + \rho_\fib \tens{B}_u \vect{u}
+!> \dot{m}_\ib = \left[ \rho_\fib \vect{A}_u  + \rho_\fib \tens{B}_u \vect{u}
 !> + \tens{B}_u \left(\gradt \vect{u} \cdot \vect{\centi \centip}\right)\right]
 !> \cdot \vect{S}_\ij
 !> \f]
@@ -73,8 +73,6 @@
 !> \param[in]     climgu        clipping coeffecient for the computation of
 !>                               the gradient
 !> \param[in]     extrau        coefficient for extrapolation of the gradient
-!> \param[in]     isympa        face indicator to set the mass flux to 0
-!>                              (symmetries and walls with coupled BCs)
 !> \param[in]     rom           cell density
 !> \param[in]     romb          border face density
 !> \param[in]     vel           vector variable
