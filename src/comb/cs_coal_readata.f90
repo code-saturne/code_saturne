@@ -91,6 +91,31 @@ double precision wmco,wmo2,wmco2,wmh2o,wmn2,wmc
 double precision dmf3,dmf4,dmf5,som1,som2
 double precision sm(8),solu(8),mat(8,8)
 
+!
+! Loi Rosin-Rammler
+!
+integer          nbrfmax
+parameter       (nbrfmax = 10)
+!
+integer          itypdp , nbrf
+!
+double precision dprefus(nbrfmax),refus(nbrfmax)
+double precision pourc(nclcpm),rf(nclcpm)
+double precision xashsec(ncharm)
+!
+integer          iclag
+double precision kk1,kk2,kk3,kk4,xx,qq,var
+!
+! PCI-PCS
+!
+double precision pcibrut,pcssec,pcsbrut,pcspur,xwatpc
+!
+! Oxydant
+!
+integer          itypoxy
+double precision coef
+!
+
 !===============================================================================
 
 !===============================================================================
@@ -213,65 +238,177 @@ if ( ncharb.gt.ncharm ) then
   call csexit (1)
 endif
 
-! ---- Nb de classes par charbon
+!-- loop on the coals
+!--------------------
 
-read (impfpp,*,err=999,end=999 )                                  &
-                 ( nclpch(icha),icha=1,ncharb )
+iclag  = 0
+nclacp = 0
+idecal = 0
+
 do icha = 1, ncharb
-  if ( nclpch(icha).gt.nclcpm ) then
+
+  !-- Nb de classes par charbon
+
+  read (impfpp,*,err=999,end=999 ) nclpch(icha)
+  if ( nclpch(icha).gt.ncpcmx ) then
     write(nfecra,9996) nclcpm,nclpch(icha),icha
     call csexit (1)
   endif
-enddo
 
-! ---- Calcul du nb de classes et remplissage de ICHCOR
+  !-- Calcul du nb de classes et remplissage de ICHCOR
 
-nclacp = 0
-do icha = 1, ncharb
   nclacp = nclacp + nclpch(icha)
-enddo
-idecal = 0
-do icha = 1, ncharb
+
   do iclapc = 1, nclpch(icha)
     icla = iclapc+idecal
     ichcor(icla) = icha
   enddo
   idecal = nclpch(icha)
-enddo
 
-! ---- Diametre initial par classe (m)
+  !-- type de diametres = 1 ---> diametre donnes
+  !                     = 2 ---> loi de Rosin-Rammler
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( diam20(icla),icla=1,nclacp )
+  read (impfpp,*,err=999,end=999 ) itypdp
 
+  ! diametres
+
+  if (itypdp.eq.1) then
+    read (impfpp,*,err=999,end=999 )                   &
+     ( diam20(icla),icla=iclag+1,iclag+nclpch(icha) )
+
+    ! Transformation du diametre en (micron) en (metre)
+    do icla=iclag+1,iclag+nclpch(icha)
+      diam20(icla) = diam20(icla)*1.0d-6
+    enddo
+
+  else if (itypdp.eq.2) then
+    read (impfpp,*,err=999,end=999 )      &
+      nbrf,(dprefus(ii),ii=1,nbrf),       &
+           (refus(ii)  ,ii=1,nbrf),       &
+           (pourc(ii)  ,ii=1,nclpch(icha))
+
+    !  decoupage des classes
+
+    rf(1) = pourc(1)/2.d0
+    do icla=2,nclpch(icha)
+      rf(icla) = rf(icla-1) + (pourc(icla)+pourc(icla-1))/2.d0
+    enddo
+
+    kk1 = 0.d0
+    kk2 = 0.d0
+    kk3 = 0.d0
+    kk4 = 0.d0
+
+    do ii=1,nbrf
+      kk1 = kk1 + log(dprefus(ii))
+      kk2 = kk2 + log(-log(refus(ii)))
+      kk3 = kk3 + log(dprefus(ii))*log(dprefus(ii))
+      kk4 = kk4 + log(dprefus(ii))*log(-log(refus(ii)))
+    enddo
+
+    qq  = (dble(nbrf)*kk4-kk1*kk2)/(dble(nbrf)*kk3-kk1*kk1)
+    var  = (kk2*kk3-kk1*kk4)/(dble(nbrf)*kk3-kk1*kk1)
+    xx = exp(-var/qq)
+
+    do icla=iclag+1,iclag+nclpch(icha)
+      diam20(icla)=  xx*(-log(1.d0-rf(icla-iclag)))**(1.d0/qq)
+    enddo
+
+    ! Transformation du diametre en (micron) en (metre)
+    do icla=iclag+1,iclag+nclpch(icha)
+      diam20(icla) = diam20(icla)*1.0d-6
+    enddo
+
+    write(nfecra,8200) icha
+    write(nfecra,8201)
+    do icla=1,nbrf
+      write(nfecra,'(3e12.4)') dprefus(icla),refus(icla),      &
+                      exp(-(dprefus(icla)/xx)**(qq))
+    enddo
+    write(nfecra,8202)
+    do icla=1,nbrf
+      write(nfecra,'(3e12.4)') refus(icla),dprefus(icla),     &
+                      xx*(-log(refus(icla)))**(1.d0/qq)
+    enddo
+    write(nfecra,8203)
+    do icla=iclag+1,iclag+nclpch(icha)
+      write(nfecra,'(i6,1e12.4)') icla-iclag,diam20(icla)
+    enddo
+
+!================================================================
+8200 format                                                      &
+  (/,                                                            &
+   3X,'** Rosin-Rammeler results for the coal', i6,' **' , /,    &
+   3X,'--------------------------------------','-------' , /,    &
+   3X,'      [ Checking of the Rosin-Rammeler law ]    ')
+!================================================================
+
+!================================================================
+8201 format                                                      &
+  (/,                                                            &
+   '---', '--------',                                            &
+   '-----------------------------------', /,                     &
+   3X,'Diameter',                                                &
+   '   refus given   refus computed '   , /,                     &
+   '---', '--------',                                            &
+   '-----------------------------------', /,                     &
+   3X, 2e12.4, 3X, 1e12.4, /,                                    &
+   '---','---------',                                            &
+   '-----------------------------------')
+!================================================================
+
+!================================================================
+8202 format                                                      &
+  (/,                                                            &
+   '---', '-----',                                               &
+   '-----------------------------------', /,                     &
+   3X,'  Refus',                                                 &
+   '   diam. given   diam. computed ', /,                        &
+   '---', '-----',                                               &
+   '-----------------------------------', /,                     &
+   3X, 3e12.4, /,                                                &
+   '---','---------',                                            &
+   '-----------------------------------')
+!================================================================
+
+!================================================================
+8203 format                                                      &
+  (/,                                                            &
+   '-----', '-------------------------------------------', /,    &
+   3X,' Diameters computed by the Rosin-Rammeler law:   ', /,    &
+   '-----', '-------------------------------------------', /,    &
+   3X, i6, 1e12.4, /,                                            &
+   '---','--------------------------')
+!================================================================
+
+!
+  else
+    write(nfecra,9900)
+    call csexit(1)
+  endif
+  iclag = iclag+nclpch(icha)
+
+!==============================================================DS
 ! ---- Composition elementaire en C, H , O , N , S
 !                 sur sec (% en masse)
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( cch(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( hch(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( och(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( nch(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( sch(icha),icha=1,ncharb )
+read (impfpp,*,err=999,end=999 ) cch(icha)
+read (impfpp,*,err=999,end=999 ) hch(icha)
+read (impfpp,*,err=999,end=999 ) och(icha)
+read (impfpp,*,err=999,end=999 ) nch(icha)
+read (impfpp,*,err=999,end=999 ) sch(icha)
 
 ! ---- PCI sur charbon sec ou pur suivant la valeur de IPCI
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( ipci(icha),pcich(icha),icha=1,ncharb )
+read (impfpp,*,err=999,end=999 ) ipci(icha), pcich(icha)
 
 ! ---- CP moyen du charbon sec (J/kg/K)
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( cp2ch(icha),icha=1,ncharb )
+read (impfpp,*,err=999,end=999 ) cp2ch(icha)
 
 ! ---- Masse volumique initiale (kg/m3)
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( rho0ch(icha),icha=1,ncharb )
+read (impfpp,*,err=999,end=999 ) rho0ch(icha)
 
 ! ---- Caracteristiques coke
 
@@ -279,21 +416,15 @@ read (impfpp,*,err=999,end=999 )
 
 ! ------- Composition elementaire en C , H , O , N , S sur sec (%)
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( cck(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( hck(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( ock(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( nck(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( sck(icha),icha=1,ncharb )
+read (impfpp,*,err=999,end=999 ) cck(icha)
+read (impfpp,*,err=999,end=999 ) hck(icha)
+read (impfpp,*,err=999,end=999 ) ock(icha)
+read (impfpp,*,err=999,end=999 ) nck(icha)
+read (impfpp,*,err=999,end=999 ) sck(icha)
 
 ! ------ PCI sur charbon sec
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( pcick(icha),icha=1,ncharb )
+read (impfpp,*,err=999,end=999 ) pcick(icha)
 
 ! ---- Caracteristiques cendres
 
@@ -301,98 +432,82 @@ read (impfpp,*,err=999,end=999 )
 
 ! ------ Taux de cendre (kg/kg) en %
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( xashch(icha),icha=1,ncharb )
+read (impfpp,*,err=999,end=999 ) xashsec(icha)
 !        Transformation en kg/kg
-do icha = 1, ncharb
-  xashch(icha) = xashch(icha)/100.d0
-enddo
+  xashch(icha) = xashsec(icha)/100.d0
 
 ! ------ Enthalpie de formation des cendres (J/kg)
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( h0ashc(icha),icha=1,ncharb )
+read (impfpp,*,err=999,end=999 ) h0ashc(icha)
 
 ! ------ CP des cendres (J/kg/K)
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( cpashc(icha),icha=1,ncharb )
+read (impfpp,*,err=999,end=999 ) cpashc(icha)
 
 ! ------ Taux d'humidite (kg/kg) en %
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( xwatch(icha),icha=1,ncharb )
+read (impfpp,*,err=999,end=999 ) xwatch(icha)
 
 !        Transformation en kg/kg
-do icha = 1, ncharb
   xwatch(icha) = xwatch(icha)/100.d0
-enddo
 
 !      Transformation du taux de cendre de sec
 !      sur humide en kg/kg
 
-do icha = 1, ncharb
   xashch(icha) = xashch(icha)*(1.d0-xwatch(icha))
-enddo
 
 ! ---- Parametres de devolatilisation (modele de Kobayashi)
 
 read (impfpp,*,err=999,end=999 )
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( iy1ch(icha),y1ch(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( iy2ch(icha),y2ch(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( a1ch(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( a2ch(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( e1ch(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( e2ch(icha),icha=1,ncharb )
+read (impfpp,*,err=999,end=999 )  iy1ch(icha), y1ch(icha)
+read (impfpp,*,err=999,end=999 )  iy2ch(icha), y2ch(icha)
+read (impfpp,*,err=999,end=999 )  a1ch(icha)
+read (impfpp,*,err=999,end=999 )  a2ch(icha)
+read (impfpp,*,err=999,end=999 )  e1ch(icha)
+read (impfpp,*,err=999,end=999 )  e2ch(icha)
 ! ---- Repartition de l'azote entre HCN et NH3
-read (impfpp,*,err=999,end=999 )                                  &
-     ( crepn1(1,icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( crepn1(2,icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( crepn2(1,icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( crepn2(2,icha),icha=1,ncharb )
+read (impfpp,*,err=999,end=999 )  crepn1(1,icha)
+read (impfpp,*,err=999,end=999 )  crepn1(2,icha)
+read (impfpp,*,err=999,end=999 )  crepn2(1,icha)
+read (impfpp,*,err=999,end=999 )  crepn2(2,icha)
 ! ---- Parametres combustion heterogene pour O2
 !      (modele a sphere retrecissante)
 read (impfpp,*,err=999,end=999 )
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( ahetch(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( ehetch(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( iochet(icha),icha=1,ncharb)
+read (impfpp,*,err=999,end=999 )  ahetch(icha)
+read (impfpp,*,err=999,end=999 )  ehetch(icha)
+read (impfpp,*,err=999,end=999 )  iochet(icha)
 ! ---- Parametres combustion heterogene pour CO2
 !      (modele a sphere retrecissante)
 read (impfpp,*,err=999,end=999 )
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( ahetc2(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( ehetc2(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( ioetc2(icha),icha=1,ncharb)
+read (impfpp,*,err=999,end=999 )  ahetc2(icha)
+read (impfpp,*,err=999,end=999 )  ehetc2(icha)
+read (impfpp,*,err=999,end=999 )  ioetc2(icha)
 
 ! ---- Parametres combustion heterogene pour H2O
 !      (modele a sphere retrecissante)
 
 read (impfpp,*,err=999,end=999 )
 
-read (impfpp,*,err=999,end=999 )                                  &
-     ( ahetwt(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( ehetwt(icha),icha=1,ncharb )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( ioetwt(icha),icha=1,ncharb)
+read (impfpp,*,err=999,end=999 )  ahetwt(icha)
+read (impfpp,*,err=999,end=999 )  ehetwt(icha)
+read (impfpp,*,err=999,end=999 )  ioetwt(icha)
 
+!
+! ---- Parametres modele de NOX
+!      qpr = % d'azote libere pendant la devol./%de MV libere
+!              pendant la devol
+
+  read (impfpp,*,err=999,end=999 )
+
+  read (impfpp,*,err=999,end=999 ) qpr(icha)
+!
+enddo
+!
+! Fin de bcle de lceture sur les charbons
+!
 ! --> Lecture caracteristiques Oxydants
 
 read (impfpp,*,err=999,end=999 )
@@ -404,6 +519,10 @@ if ( noxyd.lt.1 .or. noxyd .gt. 3 ) then
   write(nfecra,9895) noxyd
   call csexit (1)
 endif
+
+! ---- type d'oxydant
+
+read ( impfpp,*,err=999,end=999 ) itypoxy
 
 ! ---- Composition en O2,N2,H2O,N2
 
@@ -423,6 +542,35 @@ read (impfpp,*,err=999,end=999 )                                  &
 read (impfpp,*,err=999,end=999 )                                  &
      ( oxyco2(ioxy),ioxy=1,noxyd )
 
+if ( itypoxy .eq. 1 ) then
+
+!
+! transformation pourcentage volumique en nombre de mole
+!
+  do ioxy=1,noxyd
+!
+     coef = 100.d0
+     if ( oxyo2(ioxy) .gt. 0.d0 ) then
+        coef =min(coef,oxyo2(ioxy))
+     endif
+     if ( oxyn2(ioxy) .gt. 0.d0 ) then
+        coef =min(coef,oxyn2(ioxy))
+     endif
+     if ( oxyh2o(ioxy) .gt. 0.d0 ) then
+        coef =min(coef,oxyh2o(ioxy))
+     endif
+     if ( oxyco2(ioxy) .gt. 0.d0 ) then
+        coef =min(coef,oxyco2(ioxy))
+     endif
+!
+     oxyo2 (ioxy) = oxyo2 (ioxy)/coef
+     oxyn2 (ioxy) = oxyn2 (ioxy)/coef
+     oxyh2o(ioxy) = oxyh2o(ioxy)/coef
+     oxyco2(ioxy) = oxyco2(ioxy)/coef
+!
+  enddo
+!
+endif
 ! --> Fermeture du fichier (ne pas oublier, car l'unite sert pour janaf)
 
 close(impfpp)
@@ -595,20 +743,105 @@ enddo
 
 ! ------ Transformation par la formule de Schaff du
 !        PCI sur sec en PCI sur pur LORSQUE IPCI = 1
+!
+! ------ Calcul du PCI(pur)
+
+!    si IPCI = 1 : PCI(sec )---> PCI(pur)
+!    si IPCI = 2 : PCI(brut)---> PCI(pur)
+!    si IPCI = 3 : PCS(pur )---> PCI(pur)
+!    si IPCI = 4 : PCS(sec )---> PCI(pur)
+!    si IPCI = 5 : PCS(brut)---> PCI(pur)
+!    si IPCI = 6 : correlation IGT
 
 fcor = 1.2
 do icha = 1, ncharb
 
+xwatpc = xwatch(icha)*100.d0
+
   if (ipci(icha).eq.1) then
-!    On donne directement le PCI sur sec J/kg ---> kcal/kg
+    !On transforme le PCI sur sec J/kg ---> kcal/kg
     pcisec = pcich(icha)/1000.d0/xcal2j
+    !Calcul du PCI sur pur
+    ! DS pas de passage de xashsec au lieu de xashpc
     xashpc = xashch(icha)*100.d0
-    pcipur = ( pcisec+5.95d0*(zero+(1.d0-fcor)*xashpc) )*100.d0   &
-           / ( 100.d0-zero-fcor*xashpc )
-!    Conversion de PCI sur pur de kcal/kg ----> J/kg
+    pcipur = ( pcisec+5.95d0*(zero+(1.d0-fcor)*xashsec(icha)) )*100.d0   &
+           / ( 100.d0-zero-fcor*xashsec(icha) )
+    !Conversion de PCI sur pur de kcal/kg ----> J/kg
     pcipur = pcipur*1000.d0*xcal2j
-!    On ecrase PCICH sur sec par PCIPUR
+    !On ecrase PCICH sur sec par PCIPUR
     pcich(icha) = pcipur
+
+  else if ( ipci(icha).eq.2 ) then
+
+    !On transforme le PCI sur brut J/kg ---> kcal/kg
+    pcibrut = pcich(icha)/1000.d0/xcal2j
+    !Calcul du PCI sur pur
+    pcipur = ( pcibrut + 5.95d0*(xwatpc+(1.d0-fcor)       &
+                               *xashsec(icha)) )*100.d0   &
+             / ( 100.d0-xwatpc-fcor*xashsec(icha) )
+    !Conversion de PCI sur pur de kcal/kg ----> J/kg
+    pcipur = pcipur*1000.d0*xcal2j
+    !On ecrase PCICH sur sec par PCIPUR
+    pcich(icha) = pcipur
+
+  else if ( ipci(icha).ge.3 ) then
+
+    if ( ipci(icha).eq.3 ) then
+
+    !On transforme le PCS(pur) de J/kg ---> KJ/kg
+
+      pcspur = pcich(icha)/1000.d0
+
+    !Calcul du PCS(sec)
+
+      pcssec= pcspur*(100.D0-xashsec(icha))/100.D0
+
+    else if ( ipci(icha).eq.4 ) then
+
+    !On transforme le PCS(psec) de J/kg ---> KJ/kg
+
+      pcisec = pcich(icha)/1000.d0
+
+    else if ( ipci(icha).eq.5 ) then
+
+      !On transforme le PCS(brut) de J/kg ---> KJ/kg
+
+      pcsbrut = pcich(icha)/1000.d0
+
+     !Calcul du PCS(sec) en KJ/kg
+
+      pcssec= pcsbrut*100.D0/(100.D0-xwatpc)
+
+    else if ( ipci(icha).eq.6 ) then
+
+      !Calcul du PCS(sec) en KJ/kg
+
+      pcssec = 340.94d0*cch(icha) + 1322.98d0*hch(icha)            &
+              + 68.3844d0*sch(icha)-119.86d0*(och(icha)+nch(icha)) &
+              - 15.305d0 *xashsec(icha)
+    endif
+!
+!   Calcul du PCI(sec) a partir du PCS(sec)
+!
+    pcisec = pcssec -226.d0*hch(icha)
+!
+!   On transforme le PCI sur sec KJ/kg ---> kcal/kg
+!
+    pcisec = pcisec/xcal2j
+!
+!   Calcul du PCI sur pur
+!
+    pcipur = ( pcisec+5.95d0*(zero+(1.d0-fcor)*xashsec(icha)) )*100.d0   &
+            /( 100.d0-zero-fcor*xashsec(icha) )
+!
+!   Conversion de PCI sur pur de kcal/kg ----> J/kg
+!
+    pcipur = pcipur*1000.d0*xcal2j
+!
+!   on ecrase PCICH par PCIPUR
+!
+    pcich(icha) = pcipur
+!
   endif
 
 enddo
@@ -1407,38 +1640,114 @@ call csexit (1)
 ! FORMATS
 !--------
 
+!================================================================
+8000 format                             &
+  (/,                                   &
+   3X,'** coals data summary **', /,    &
+   3X,'------------------------')
+!================================================================
+8001 format                                                  &
+  (/,                                                        &
+   '---', '-----------', /,                                  &
+      3x, 'Delta Hdev ', /,                                  &
+   '---', '-----------', /,                                  &
+   '   coal numb. ', 4x,' light', 10x,' heavy',12x, 'PCI' , /, &
+   '---------',                                              &
+   '----------------------------------------------------' )
+!================================================================
+8002 format                                                  &
+  (/,                                                        &
+   3x, i6, 5x, 1e12.4, 5x, 1e12.4, 5x, 1e12.4       )
+!================================================================
+8010 format                                       &
+  (/,                                             &
+   3X,'** volatile materials composition **', /,  &
+   3X,'------------------------------------')
+!================================================================
+8011 format                                       &
+  (/,                                             &
+   '---', '-------------------', /,               &
+   3X,'Coal number:', 1X, i3   , /,               &
+   '---', '-------------------', / )
+!================================================================
+8012 format                                                  &
+  (/,                                                        &
+   '---',                                                    &
+   '--------------------------------------',                 &
+   '--------------------------------------',              /, &
+   12X, 'CHx', 8X,' CO', 8X,' H2O',10X, 'H2S' ,9X,           &
+   'HCN', 9X, 'NH3 ', /,                                     &
+   '---',                                                    &
+   '--------------------------------------',                 &
+   '--------------------------------------' )
+!================================================================
+8013 format                                                  &
+  (/,                                                        &
+   3X, 'MV1', 6e12.4)
+!================================================================
+8014 format                                                  &
+  (/,                                                        &
+   3X, 'MV2', 6e12.4)
+!================================================================
+8020 format                                  &
+  (/,                                        &
+   3X,'-------------------------------', /,  &
+   3X,'** Enthalpy/Temperature law  **', /,  &
+   3X,'-------------------------------')
+!================================================================
+8021 format                                                  &
+  (/,                                                        &
+   '---',                                                    &
+   '--------------------------------------',                 &
+   '--------------------------------------',              /, &
+   10X, 'Temp', 8X,' h_ch', 8X,' h_coke',10X,                &
+   'h_ash' ,9X, 'h_wat' , /, &
+   '---',                                                    &
+   '--------------------------------------',                 &
+   '--------------------------------------' )
+!================================================================
+8022 format                                                  &
+  (/,                                                        &
+   3X, 1e12.4, 3X, 1e12.4, 3X, 1e12.4, 3X, 1e12.4, 3X, 1e12.4)
+!================================================================
+ 8050 format(/,3X,'Coal composition ')
+ 8051 format(/,5X,'Coal number',7X,'CHX1',12X,'CHX2')
+ 8052 format( 10x, i3, 8x,1e12.4,1x,1e12.4)
+!================================================================
+ 8100 format(/,3X,'---------------------------------' , /, &
+               3X,'  Devolatization model constant  ' , /, &
+               3X,'---------------------------------')
+!================================================================
+ 8101 format(/,8X,'--------------', /,&
+               8X,'coal(',i2,'):' , /,&
+               8X,'--------------'  )
+!================================================================
+ 8102 format(/,12X,'Option 0: Y1 and Y2 computed  ')
+ 8103 format(/,12X,'Option 1: Y1 and Y2 fixed     ')
+ 8104 format(/,12X,'Option 2: CHX1 and CHX2 fixed ')
+ 8105 format(  12X,'Y1_ch = ', 1e12.4,3X,'Y2_ch = ', 1e12.4)
+!================================================================
 
-!===============================================================================
- 8000 format(1X,' RECAPITULATIF SUR LES CHARBONS :'/,             &
-       1X,' ==============================  '  )
- 8001 format(/,3X,'Delta Hdev  ',/,                               &
-       5X,' Numero Charbon',6X,'Legeres',7X,'Lourdes',9X,'PCI')
- 8002 format(10x,i3,8x,g15.7,1x,g15.7,g15.7)
+ 9900 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
+'@    =========                                               ',/,&
+'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
+'@                                                            ',/,&
+'@  LA VALEUR DU TYPE DE DIAMETRE DOIT ETRE EGALE A 1 ou 2:   ',/,&
+'@      = 1 : diametres donnees                               ',/,&
+'@      = 2 : calcul des diametres avec la loi Rosin-Rammler  ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier le fichier parametrique.                         ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
 
- 8010 format(/,3X,'COMPOSITION MATIERES VOLATILES ')
- 8011 format(/,5X,' Numero Charbon',I6)
- 8012 format(18X,'CHX  ',12X,'CO',12X,'H2O',12X,'H2S',12X,'HCN',12X,'NH3')
- 8013 format( 8X,' MV1 ',G15.7,G15.7,G15.7,G15.7,G15.7,G15.7)
- 8014 format( 8X,' MV2 ',G15.7,G15.7,G15.7,G15.7,G15.7,G15.7)
- 8020 format(/,3X,'LOI ENTHALPIE/TEMERATURE ')
- 8021 format( 10X,'TEMPERATURE',9X,'Hch ',10X,'Hcoke',10X,        &
-                             'Hash',10X,'Hwat')
- 8022 format( 8x,5(g15.7))
-
- 8050 format(/,3X,'COMPOSITION DU CHARBON ')
- 8051 format(/,5X,'Numero Charbon',7X,'CHX1',12X,'CHX2')
- 8052 format(10x,i3,8x,g15.7,1x,g15.7)
-
- 8100 format(/,3X,'CONSTANTE DU MODELE DE DEVOLATILISATION')
- 8101 format(/,8X,'CHARBON ',I2)
- 8102 format(/,12X,'OPTION 0 : Y1 et Y2 CALCULES     ')
- 8103 format(/,12X,'OPTION 1 : Y1 et Y2 FIXES        ')
- 8104 format(/,12X,'OPTION 2 : CHX1 et CHX2 FIXES    ')
-
- 8105 format(12X,'Y1CH = ',G15.7,3X,'Y2CH = ',G15.7)
-!===============================================================================
-
- 9970 format(                                                      &
+ 9970 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&

@@ -182,12 +182,12 @@ double precision anmr,xcot,xo2t,xco2e,xo2e,xcoe,tauchi,tautur
 double precision sqh2o , x2
 double precision err1mx,err2mx
 double precision errch,ter1,ddelta,xden
-double precision fn0,fn1,fn2,anmr0,anmr1,anmr2
+double precision fn,fn0,fn1,fn2,anmr0,anmr1,anmr2
 double precision lnk0p,l10k0e,lnk0m,t0e,xco2eq,xcoeq,xo2eq
 double precision xcom,xo2m,xkcequ,xkpequ
 
 double precision  xw1,xw2,xw3,xw4
-double precision  xo2,wmel,wmhcn,wmno,wmo2,fn,qpr,ymoy
+double precision  xo2,wmel,wmhcn,wmno,wmo2
 double precision gmdev1(ncharm),gmdev2(ncharm),gmhet(ncharm)
 double precision aux1 , aux2 , aux3
 double precision xch,xck,xash,xmx2
@@ -1664,19 +1664,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
     iexp1  = ipproc(ighcn1)
     iexp2  = ipproc(ighcn2)
     iexp3  = ipproc(ignoth)
-!
-! QPR= %N libéré pendant l'evaporation/taux de matieres volatiles
-!          moyen
-!
-    qpr = 1.1d0
-!
-! YMOY = % vapeur en sorties
-!
-    ymoy = 0.582d0
-!
-! Azote dans le fuel
-!
-    fn = 0.0192
+
 !
 ! Masse molaire
 !
@@ -1731,12 +1719,16 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         enddo
 
         do icha=1,ncharb
+!        % d'azote sur pur dans le charbon
+          fn = nch(icha)*(1.d0-xwatch(icha))/(100.d0)
+!
           aux = -volume(iel)*fn*wmhcn/(wmole(in2)/2.d0)              &
-                            *(qpr*(gmdev1(icha)+gmdev2(icha)))
+                            *(qpr(icha)*(gmdev1(icha)+gmdev2(icha)))
           if(xo2.gt.0.03d0) then
             aux=aux-volume(iel)*fn*wmhcn/(wmole(in2)/2.d0)           &
-                               *(1.d0-qpr*ymoy)/(1-ymoy)*gmhet(icha) &
-                               *(1.d0-xashch(icha))
+                               * (1.d0-qpr(icha)*y2ch(icha))         &
+                                / (1-y2ch(icha))*gmhet(icha)         &
+                                * (1.d0-xashch(icha))
           endif
           smbrs(iel)  = smbrs(iel) + aux
         enddo

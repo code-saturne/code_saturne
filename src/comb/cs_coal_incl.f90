@@ -32,6 +32,11 @@ module cs_coal_incl
 
   integer, save :: ihth2o , ighh2o(nclcpm)
 
+  ! Modele de NOx
+  ! qpr : % d'azote libere pendant la devol.% de MV libere pendant la devol.
+
+  double precision, save :: qpr(ncharm)
+
   !=============================================================================
 
 end module cs_coal_incl
