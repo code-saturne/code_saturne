@@ -83,9 +83,6 @@ src/base/cs_sat_coupling.c
 src/base/cs_search.c
 src/base/cs_selector.c
 src/base/cs_sort.c
-src/base/cs_syr3_comm.c
-src/base/cs_syr3_coupling.c
-src/base/cs_syr3_messages.c
 src/base/cs_syr4_coupling.c
 src/base/cs_syr_coupling.c
 src/base/cs_system_info.c
