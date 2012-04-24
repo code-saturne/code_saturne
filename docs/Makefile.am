@@ -33,6 +33,10 @@ endif
 SUBDIRS = $(LATEX_SUBDIRS) $(DOXYGEN_SUBDIRS)
 
 EXTRA_DIST = \
+style/csbiblio.bib \
+style/csdoc.cls \
+style/csshortdoc.cls \
+style/nomencl.cfg \
 style/csdoc.sty \
 style/csindex.sty \
 style/csmacros.sty \

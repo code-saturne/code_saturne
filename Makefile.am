@@ -136,7 +136,6 @@ m4/cs_omniorb.m4 \
 m4/cs_ple.m4 \
 m4/cs_salome.m4 \
 m4/cs_scotch.m4 \
-m4/cs_syrthes.m4 \
 m4/cs_zlib.m4
 
 # One adds several sub-directories and get rid of the .svn
