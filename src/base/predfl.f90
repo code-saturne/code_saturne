@@ -258,7 +258,8 @@ endif
 
 iconvp = iconv(ipr)
 idiffp = idiff(ipr)
-ndircp = ndircl(ipr)
+! Strengthen the diagonal
+ndircp = 0
 
 thetap = 1.d0
 
@@ -433,7 +434,7 @@ enddo
 ! --- Reconstruction loop (end)
 
 if (iwarni(ipr).ge.2) then
-   write(nfecra,1600) chaine(1:16), nswmpr
+  if (isweep.gt.nswmpr) write(nfecra,1600) chaine(1:16), nswmpr
 endif
 
 ! Update the mass flux
