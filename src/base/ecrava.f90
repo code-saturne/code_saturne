@@ -2002,8 +2002,10 @@ if (iecaux.eq.1) then
 
 ! ---> Grandeurs complementaires pour la combustion CP
 
-  if ( ippmod(icp3pl).ge.0 .or. ippmod(icpl3c).ge.0 ) then
-    nberro=0
+  if (ippmod(icp3pl).ge.0 .or.                                    &
+      ippmod(icpl3c).ge.0 .or.                                    &
+      ippmod(iccoal).ge.0) then
+    nberro = 0
 
 
 !     Charbon PuLVerise : masse vol des charbons
@@ -2020,7 +2022,7 @@ if (iecaux.eq.1) then
       rubriq = 'masse_volumique_charbon'//car2
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   rhock(icha), ierror)
-      nberro=nberro+ierror
+      nberro = nberro + ierror
     enddo
 
 
@@ -2034,7 +2036,7 @@ if (iecaux.eq.1) then
     rubriq = 'num_zone_fb_charbon_pulverise'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 izfppp, ierror)
-    nberro=nberro+ierror
+    nberro = nberro + ierror
 
 
 !       Type entree air ou cp (si ce n'est pas NOZPPM, erreur)
@@ -2044,10 +2046,10 @@ if (iecaux.eq.1) then
     rubriq = 'ientat_zone_bord_charbon_pulverise'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientat, ierror)
-    nberro=nberro+ierror
+    nberro = nberro + ierror
 
 !       ientat, inmoxy et x20 ne servent pas pour le CP couple Lagrangien (cplphy)
-    if ( ippmod(icp3pl).ge.0 ) then
+    if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
 
       itysup = 0
       nbval  = nozppm
@@ -2055,7 +2057,7 @@ if (iecaux.eq.1) then
       rubriq = 'ientcp_zone_bord_charbon_pulverise'
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   ientcp, ierror)
-      nberro=nberro+ierror
+      nberro = nberro + ierror
 
       itysup = 0
       nbval  = nozppm
@@ -2063,7 +2065,7 @@ if (iecaux.eq.1) then
       rubriq = 'inmoxy_zone_bord_charbon_pulverise'
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   inmoxy, ierror)
-      nberro=nberro+ierror
+      nberro = nberro + ierror
 
       itysup = 0
       nbval  = nozppm
@@ -2083,7 +2085,7 @@ if (iecaux.eq.1) then
           rubriq = 'x20_zone_bord_charbon'//car2//'_classe'//car4
           call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,     &
                irtyp,x20(1,icla), ierror)
-          nberro=nberro+ierror
+          nberro = nberro + ierror
 
         enddo
       enddo
@@ -2097,7 +2099,7 @@ if (iecaux.eq.1) then
     rubriq = 'timpat_zone_bord_charbon_pulverise'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 timpat, ierror)
-    nberro=nberro+ierror
+    nberro = nberro + ierror
 
 
     if (nberro.ne.0) then
@@ -2121,7 +2123,7 @@ if (iecaux.eq.1) then
 ! ---> Grandeurs complementaires pour la FUEL
 
   if ( ippmod(icfuel).ge.0 ) then
-    nberro=0
+    nberro = 0
 
 
 !     Fioul : type de zones de bord, ientat, ientfl, timpat
@@ -2134,7 +2136,7 @@ if (iecaux.eq.1) then
     rubriq = 'num_zone_fb_fuel'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 izfppp, ierror)
-    nberro=nberro+ierror
+    nberro = nberro + ierror
 
 
 !       Type entree air ou fuel (si ce n'est pas NOZPPM, erreur)
@@ -2144,7 +2146,7 @@ if (iecaux.eq.1) then
     rubriq = 'ientat_zone_bord_fuel'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientat, ierror)
-    nberro=nberro+ierror
+    nberro = nberro + ierror
 
     itysup = 0
     nbval  = nozppm
@@ -2152,7 +2154,7 @@ if (iecaux.eq.1) then
     rubriq = 'ientfl_zone_bord_fuel'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientfl, ierror)
-    nberro=nberro+ierror
+    nberro = nberro + ierror
 
 !
     itysup = 0
@@ -2161,7 +2163,7 @@ if (iecaux.eq.1) then
     RUBRIQ = 'inmoxy_zone_bord_fuel'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                 inmoxy, ierror)
-    nberro=nberro+ierror
+    nberro = nberro + ierror
 
 !       Timpat
     itysup = 0
@@ -2170,7 +2172,7 @@ if (iecaux.eq.1) then
     rubriq = 'timpat_zone_bord_fuel'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 timpat, ierror)
-    nberro=nberro+ierror
+    nberro = nberro + ierror
 
 !       Qimpat
     itysup = 0
@@ -2179,7 +2181,7 @@ if (iecaux.eq.1) then
     rubriq = 'qimpat_zone_bord_fuel'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 qimpat, ierror)
-    nberro=nberro+ierror
+    nberro = nberro + ierror
 
 !       Qimpfl
     itysup = 0
@@ -2188,7 +2190,7 @@ if (iecaux.eq.1) then
     rubriq = 'qimpfl_zone_bord_fuel'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 qimpfl, ierror)
-    nberro=nberro+ierror
+    nberro = nberro + ierror
 
     if (nberro.ne.0) then
 #if defined(_CS_LANG_FR)
@@ -2212,7 +2214,7 @@ if (iecaux.eq.1) then
 
 ! ---> Grandeurs complementaires pour les versions electriques
 
-  nberro=0
+  nberro = 0
   iecr = 0
 
 !     Recalage des CL pot des versions electriques

@@ -41,14 +41,6 @@ subroutine lecamx &
 !          OU SI ON NE PEUT PAS LIRE JPHAS, JTURB, JDTVAR
 !          OU SI ON NE PEUT PAS LIRE UNE MOYENNE QU'ON VEUT POURSUIVRE
 
-
-
-
-
-
-
-
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -2311,7 +2303,9 @@ if ( ippmod(icolwc).ge.0 ) then
 endif
 
 !     Charbon PuLVerise : masse vol des charbons
-if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
+if (ippmod(icp3pl).ge.0 .or.                                      &
+    ippmod(icpl3c).ge.0 .or.                                      &
+    ippmod(iccoal).ge.0) then
   itysup = 0
   nbval  = 1
   irtyp  = 2
@@ -2325,8 +2319,8 @@ if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
     RUBRIQ = 'masse_volumique_charbon'//CAR2
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 rhock(icha), ierror)
-    ierrch=ierrch+ierror
-    nberro=nberro+ierror
+    ierrch = ierrch + ierror
+    nberro = nberro + ierror
     ilu = ilu + 1
   enddo
   if (ierrch.ne.0) then
@@ -2336,13 +2330,10 @@ if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
     enddo
     write(nfecra,8613)
   endif
-endif
 
 
 !     Charbon PuLVerise : type de zones de bord, ientat, ientcp, timpat
 !       et x20 pour le calcul de rho au bord en entree
-if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
-
 !       Il faut le meme nbr de faces de bord, sinon on ne lit pas
   if(nfabok.eq.1) then
 
@@ -2357,7 +2348,7 @@ if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
     RUBRIQ = 'num_zone_fb_charbon_pulverise'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 izfppp, ierror)
-    nberro=nberro+ierror
+    nberro = nberro + ierror
 
 !       Type entree air ou cp (si ce n'est pas NOZPPM, erreur)
     itysup = 0
@@ -2366,11 +2357,11 @@ if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
     RUBRIQ = 'ientat_zone_bord_charbon_pulverise'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientat, ierror)
-    ierrch=ierrch+ierror
-    nberro=nberro+ierror
+    ierrch = ierrch + ierror
+    nberro = nberro + ierror
 
 !         ientcp et x20 ne servent pas pour le CP couple Lagrangien (cplphy)
-    if ( ippmod(icp3pl).ge.0 ) then
+    if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
 
       itysup = 0
       nbval  = nozppm
@@ -2378,8 +2369,8 @@ if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
       RUBRIQ = 'ientcp_zone_bord_charbon_pulverise'
       call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   ientcp, ierror)
-      ierrch=ierrch+ierror
-      nberro=nberro+ierror
+      ierrch = ierrch + ierror
+      nberro = nberro + ierror
 
       itysup = 0
       nbval  = nozppm
@@ -2387,8 +2378,8 @@ if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
       RUBRIQ = 'inmoxy_zone_bord_charbon_pulverise'
       call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   inmoxy, ierror)
-      ierrch=ierrch+ierror
-      nberro=nberro+ierror
+      ierrch = ierrch + ierror
+      nberro = nberro + ierror
 
       itysup = 0
       nbval  = nozppm
@@ -2408,8 +2399,8 @@ if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
           RUBRIQ = 'x20_zone_bord_charbon'//CAR2//'_classe'//CAR4
           call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,     &
                irtyp,x20(1,icla), ierror)
-          ierrch=ierrch+ierror
-          nberro=nberro+ierror
+          ierrch = ierrch + ierror
+          nberro = nberro + ierror
 
         enddo
       enddo
@@ -2423,8 +2414,8 @@ if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
     RUBRIQ = 'timpat_zone_bord_charbon_pulverise'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 timpat, ierror)
-    ierrch=ierrch+ierror
-    nberro=nberro+ierror
+    ierrch = ierrch + ierror
+    nberro = nberro + ierror
 
 !     Par securite, si on ne parvient pas a lire la temperature TIMPAT,
 !       IENTCP ou IENTAT, on remet a zero le numero des zones IZFPPP

@@ -30,8 +30,8 @@ Coke
 0.                                Composition C (%) sur sec
 0.                                Composition H (%) sur sec
 0.                                Composition O (%) sur sec
-0.                                Composition S (%) sur sec
 0.                                Composition N (%) sur sec
+0.                                Composition S (%) sur sec
 0.                                PCI sur sec (J/kg)
 Cendres
 2.11                              Taux de cendres en masse (%)
@@ -69,8 +69,8 @@ Model de NOx
 70.90                             Composition C (%) sur sec
 4.6                               Composition H (%) sur sec
 10.8                              Composition O (%) sur sec
-0.0                               Composition S (%) sur sec
-0.0                               Composition N (%) sur sec
+0.                                Composition N (%) sur sec
+0.                                Composition S (%) sur sec
 0    31938610.                    PCI (J/kg) sur pur (0) sur sec 1 
 1800.                             CP moyen du charbon (J/kg/K)
 1200.                             Masse volumique (kg/m3)
@@ -78,8 +78,8 @@ Coke
 0.                                Composition C (%) sur sec
 0.                                Composition H (%) sur sec
 0.                                Composition O (%) sur sec
-0.                                Composition S (%) sur sec
 0.                                Composition N (%) sur sec
+0.                                Composition S (%) sur sec
 0.                                PCI sur sec (J/kg)
 Cendres
 11.5                              Taux de cendres en masse (%)
