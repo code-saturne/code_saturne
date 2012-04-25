@@ -766,10 +766,10 @@ cs_gui_numerical_int_parameters(const char *const param,
 
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "numerical_parameters");
-  cs_xpath_add_element(&path, param);
 
   if (cs_gui_strcmp(param, "gradient_reconstruction")) {
 
+    cs_xpath_add_element(&path, param);
     cs_xpath_add_attribute(&path, "choice");
     choice = cs_gui_get_attribute_value(path);
     if (choice) *keyword = atoi(choice);
@@ -785,6 +785,7 @@ cs_gui_numerical_int_parameters(const char *const param,
 
   } else {
 
+    cs_xpath_add_element(&path, param);
     cs_xpath_add_attribute(&path, "status");
     if (cs_gui_get_status(path, &result)) *keyword = result;
 

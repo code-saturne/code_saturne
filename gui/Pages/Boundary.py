@@ -183,7 +183,7 @@ class InletBoundary(Boundary):
                                   'norm_formula', 'flow1_formula', 'flow2_formula']
         self.__directionChoices = ['normal', 'coordinates', 'formula']
         self.__directionTags = ['direction_x', 'direction_y', 'direction_z', 'direction_formula']
-        self.__turbulenceChoices = ['hydraulic_diameter', 'turbulent_intensity']
+        self.__turbulenceChoices = ['hydraulic_diameter', 'turbulent_intensity', 'formula']
 
         self.th_model = ThermalScalarModel(self._case)
 
@@ -413,6 +413,9 @@ class InletBoundary(Boundary):
             self.getHydraulicDiameter()
             self.getTurbulentIntensity()
 
+        elif value == 'formula' :
+            self.getTurbFormula()
+
 
     def getHydraulicDiameter(self):
         """
@@ -436,6 +439,71 @@ class InletBoundary(Boundary):
         XMLTurbulenceNode = self.boundNode.xmlInitNode('turbulence')
         Model().isInList(XMLTurbulenceNode['choice'], self.__turbulenceChoices)
         XMLTurbulenceNode.xmlSetData('hydraulic_diameter', value)
+
+
+    def setTurbFormula(self, formula):
+        """
+        Public method.
+        Set the formula for a turbulent variable.
+        """
+        XMLTurbulenceNode = self.boundNode.xmlInitNode('turbulence')
+        if not XMLTurbulenceNode:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = XMLTurbulenceNode.xmlInitChildNode('formula')
+        n.xmlSetTextNode(formula)
+
+
+    def getTurbFormula(self):
+        """
+        Public method.
+        Return the formula for a turbulent variable.
+        """
+        XMLTurbulenceNode = self.boundNode.xmlInitNode('turbulence')
+
+        formula = XMLTurbulenceNode.xmlGetString('formula')
+        return formula
+
+
+    def getDefaultTurbFormula(self, turb_model):
+
+        if turb_model in ('k-epsilon', 'k-epsilon-PL'):
+            formula = """k = 0.;
+eps = 0.;"""
+
+        elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
+            formula = """R11 = 0.;
+R22 = 0.;
+R33 = 0.;
+R12 = 0.;
+R13 = 0.;
+R23 = 0.;
+eps = 0.;"""
+
+        elif turb_model == 'Rij-EBRSM':
+            formula = """R11 = 0.;
+R22 = 0.;
+R33 = 0.;
+R12 = 0.;
+R13 = 0.;
+R23 = 0.;
+eps = 0.;
+alpha = 0.;"""
+
+        elif turb_model == 'v2f-phi':
+            formula = """k = 0.;
+eps = 0.;
+phi = 0.;
+fb = 0.;"""
+
+        elif turb_model == 'k-omega-SST':
+            formula = """k = 0.;
+omega = 0.;"""
+
+        elif turb_model == 'Spalart-Allmaras':
+            formula = """nusa = 0.;"""
+
+        return formula
 
 
     def getTurbulentIntensity(self):

@@ -5,41 +5,91 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>359</width>
-    <height>213</height>
+    <width>229</width>
+    <height>239</height>
    </rect>
   </property>
   <property name="windowTitle" >
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" >
+  <layout class="QGridLayout" >
+   <property name="margin" >
+    <number>9</number>
+   </property>
+   <property name="spacing" >
+    <number>6</number>
+   </property>
    <item row="0" column="0" >
     <widget class="QGroupBox" name="groupBoxTurbulence" >
      <property name="title" >
       <string>Turbulence</string>
      </property>
      <layout class="QGridLayout" >
+      <property name="margin" >
+       <number>9</number>
+      </property>
+      <property name="spacing" >
+       <number>6</number>
+      </property>
       <item row="0" column="0" >
-       <layout class="QGridLayout" name="_2" >
-        <item row="0" column="0" >
+       <layout class="QHBoxLayout" >
+        <property name="margin" >
+         <number>0</number>
+        </property>
+        <property name="spacing" >
+         <number>6</number>
+        </property>
+        <item>
          <spacer>
           <property name="orientation" >
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" stdset="0" >
+          <property name="sizeHint" >
            <size>
-            <width>40</width>
-            <height>20</height>
+            <width>16</width>
+            <height>159</height>
            </size>
           </property>
          </spacer>
         </item>
-        <item row="0" column="1" >
-         <layout class="QGridLayout" name="_3" >
-          <item row="0" column="0" >
-           <widget class="QComboBox" name="comboBoxTurbulence" />
+        <item>
+         <layout class="QVBoxLayout" >
+          <property name="margin" >
+           <number>0</number>
+          </property>
+          <property name="spacing" >
+           <number>6</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout" >
+            <property name="margin" >
+             <number>0</number>
+            </property>
+            <property name="spacing" >
+             <number>6</number>
+            </property>
+            <item>
+             <widget class="QComboBox" name="comboBoxTurbulence" />
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButtonTurb" >
+              <property name="text" >
+               <string/>
+              </property>
+              <property name="icon" >
+               <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+              </property>
+              <property name="iconSize" >
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
-          <item row="1" column="0" >
+          <item>
            <widget class="QFrame" name="frameTurbDiameter" >
             <property name="minimumSize" >
              <size>
@@ -53,9 +103,21 @@
             <property name="frameShadow" >
              <enum>QFrame::Raised</enum>
             </property>
-            <layout class="QGridLayout" name="_4" >
+            <layout class="QGridLayout" >
+             <property name="margin" >
+              <number>9</number>
+             </property>
+             <property name="spacing" >
+              <number>6</number>
+             </property>
              <item row="0" column="0" >
-              <layout class="QGridLayout" name="_5" >
+              <layout class="QGridLayout" >
+               <property name="margin" >
+                <number>0</number>
+               </property>
+               <property name="spacing" >
+                <number>6</number>
+               </property>
                <item row="0" column="0" >
                 <widget class="QLabel" name="labelDiameter" >
                  <property name="text" >
@@ -95,7 +157,7 @@
             </layout>
            </widget>
           </item>
-          <item row="2" column="0" >
+          <item>
            <widget class="QFrame" name="frameTurbIntensity" >
             <property name="minimumSize" >
              <size>
@@ -109,9 +171,21 @@
             <property name="frameShadow" >
              <enum>QFrame::Raised</enum>
             </property>
-            <layout class="QGridLayout" name="_6" >
+            <layout class="QGridLayout" >
+             <property name="margin" >
+              <number>9</number>
+             </property>
+             <property name="spacing" >
+              <number>0</number>
+             </property>
              <item row="0" column="0" >
-              <layout class="QGridLayout" name="_7" >
+              <layout class="QGridLayout" >
+               <property name="margin" >
+                <number>0</number>
+               </property>
+               <property name="spacing" >
+                <number>6</number>
+               </property>
                <item row="0" column="0" >
                 <widget class="QLabel" name="labelIntensity" >
                  <property name="text" >
@@ -186,15 +260,15 @@
           </item>
          </layout>
         </item>
-        <item row="0" column="2" >
+        <item>
          <spacer>
           <property name="orientation" >
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" stdset="0" >
+          <property name="sizeHint" >
            <size>
-            <width>40</width>
-            <height>20</height>
+            <width>20</width>
+            <height>159</height>
            </size>
           </property>
          </spacer>

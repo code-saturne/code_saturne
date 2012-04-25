@@ -292,12 +292,13 @@ _inlet_turbulence(const char *const choice,
     double result;
 
     if (cs_gui_strcmp(choice, "hydraulic_diameter"))
-    {
         boundaries->icalke[izone] = 1  ;
-    }
     else if(cs_gui_strcmp(choice, "turbulent_intensity"))
-    {
         boundaries->icalke[izone] = 2  ;
+    else if(cs_gui_strcmp(choice, "formula"))
+    {
+        boundaries->icalke[izone] = 0  ;
+        return;
     }
     else
         return;
@@ -1175,6 +1176,10 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
     int *faces_list = NULL;
     char *choice_v = NULL;
     char *choice_d = NULL;
+    char *path1 = NULL;
+    char *formula = NULL;
+    char *model = NULL;
+    mei_tree_t *ev_formula  = NULL;
 
     cs_var_t  *vars = cs_glob_var;
 
@@ -1507,6 +1512,161 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
             }
             BFT_FREE(choice_v);
             BFT_FREE(choice_d);
+
+            // turbulent inlet, with formula
+            if (icalke[zone_nbr-1] == 0)
+            {
+                t0 = cs_timer_wtime();
+                path1 = cs_xpath_init_path();
+                cs_xpath_add_elements(&path1, 2, "boundary_conditions", "inlet");
+                cs_xpath_add_test_attribute(&path1, "label", boundaries->label[izone]);
+                cs_xpath_add_element(&path1, "turbulence");
+                cs_xpath_add_element(&path1, "formula");
+                cs_xpath_add_function_text(&path1);
+                formula = cs_gui_get_text_value(path1);
+                if (formula != NULL)
+                {
+                    ev_formula = mei_tree_new(formula);
+                    mei_tree_insert(ev_formula,"x",0.0);
+                    mei_tree_insert(ev_formula,"y",0.0);
+                    mei_tree_insert(ev_formula,"z",0.0);
+                    mei_tree_insert(ev_formula, "t", *ttcabs);
+                    mei_tree_insert(ev_formula, "dt", *dtref);
+                    mei_tree_insert(ev_formula, "iter", *ntcabs);
+                    /* try to build the interpreter */
+
+                    if (mei_tree_builder(ev_formula))
+                        bft_error(__FILE__, __LINE__, 0, _("Error: can not interpret expression: %s\n %i"), ev_formula->string, mei_tree_builder(ev_formula));
+
+                    model = cs_gui_get_thermophysical_model("turbulence");
+                    if (model == NULL)
+                        return;
+
+                    if (cs_gui_strcmp(model, "k-epsilon") || cs_gui_strcmp(model, "k-epsilon-PL"))
+                    {
+                        const char *symbols[] = {"k","eps"};
+                        if (mei_tree_find_symbols(ev_formula, 2, symbols))
+                            bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "k or eps");
+
+                        for (ifac = 0; ifac < faces; ifac++)
+                        {
+                            ifbr = faces_list[ifac] - 1;
+                            mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
+                            mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
+                            mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+                            mei_evaluate(ev_formula);
+                            rcodcl[vars->rtp[4] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "k");
+                            rcodcl[vars->rtp[5] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "eps");
+                        }
+                    }
+                    else if (cs_gui_strcmp(model, "Rij-epsilon")||cs_gui_strcmp(model, "Rij-SSG"))
+                    {
+                        const char *symbols[] = {"R11", "R22", "R133", "R12", "R13", "R23", "eps"};
+                        if (mei_tree_find_symbols(ev_formula, 7, symbols))
+                            bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "R11, R22, R33, R12, R13, R23 or eps");
+                        for (ifac = 0; ifac < faces; ifac++)
+                        {
+                            ifbr = faces_list[ifac]- 1;
+                            mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
+                            mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
+                            mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+                            mei_evaluate(ev_formula);
+                            rcodcl[vars->rtp[4] * (*nfabor) + ifbr]  = mei_tree_lookup(ev_formula, "R11");
+                            rcodcl[vars->rtp[5] * (*nfabor) + ifbr]  = mei_tree_lookup(ev_formula, "R22");
+                            rcodcl[vars->rtp[6] * (*nfabor) + ifbr]  = mei_tree_lookup(ev_formula, "R33");
+                            rcodcl[vars->rtp[7] * (*nfabor) + ifbr]  = mei_tree_lookup(ev_formula, "R12");
+                            rcodcl[vars->rtp[8] * (*nfabor) + ifbr]  = mei_tree_lookup(ev_formula, "R13");
+                            rcodcl[vars->rtp[9] * (*nfabor) + ifbr]  = mei_tree_lookup(ev_formula, "R23");
+                            rcodcl[vars->rtp[10] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "eps");
+                        }
+                    }
+                    else if (cs_gui_strcmp(model, "Rij-EBRSM"))
+                    {
+                        const char *symbols[] = {"R11","R22","R133","R12","R13","R23","eps", "alpha"};
+                        if (mei_tree_find_symbols(ev_formula, 8, symbols))
+                            bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "R11, R22, R33, R12, R13, R23, eps or alpha");
+                        for (ifac = 0; ifac < faces; ifac++)
+                        {
+                            ifbr = faces_list[ifac]- 1;
+                            mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
+                            mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
+                            mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+                            mei_evaluate(ev_formula);
+                            rcodcl[vars->rtp[4] * (*nfabor) + ifbr]  = mei_tree_lookup(ev_formula,"R11");
+                            rcodcl[vars->rtp[5] * (*nfabor) + ifbr]  = mei_tree_lookup(ev_formula,"R22");
+                            rcodcl[vars->rtp[6] * (*nfabor) + ifbr]  = mei_tree_lookup(ev_formula,"R33");
+                            rcodcl[vars->rtp[7] * (*nfabor) + ifbr]  = mei_tree_lookup(ev_formula,"R12");
+                            rcodcl[vars->rtp[8] * (*nfabor) + ifbr]  = mei_tree_lookup(ev_formula,"R13");
+                            rcodcl[vars->rtp[9] * (*nfabor) + ifbr]  = mei_tree_lookup(ev_formula,"R23");
+                            rcodcl[vars->rtp[10] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula,"eps");
+                            rcodcl[vars->rtp[11] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula,"alpha");
+                        }
+                    }
+                    else if (cs_gui_strcmp(model, "v2f-phi"))
+                    {
+                        const char *symbols[] = {"k", "eps", "phi", "fb"};
+
+                        if (mei_tree_find_symbols(ev_formula, 4, symbols))
+                            bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "k, eps, phi of fb");
+
+                        for (ifac = 0; ifac < faces; ifac++)
+                        {
+                            ifbr = faces_list[ifac]- 1;
+                            mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
+                            mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
+                            mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+                            mei_evaluate(ev_formula);
+                            rcodcl[vars->rtp[4] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "k");
+                            rcodcl[vars->rtp[5] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "eps");
+                            rcodcl[vars->rtp[6] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "phi");
+                            rcodcl[vars->rtp[7] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "fb");
+                        }
+                    }
+                    else if (cs_gui_strcmp(model, "k-omega-SST"))
+                    {
+                        const char *symbols[] = {"k", "omega"};
+
+                        if (mei_tree_find_symbols(ev_formula, 2, symbols))
+                            bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "k or omega");
+
+                        for (ifac = 0; ifac < faces; ifac++)
+                        {
+                            ifbr = faces_list[ifac]- 1;
+                            mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
+                            mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
+                            mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+                            mei_evaluate(ev_formula);
+                            rcodcl[vars->rtp[4] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "k");
+                            rcodcl[vars->rtp[5] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "omega");
+                        }
+                    }
+                    else if (cs_gui_strcmp(model, "Spalart-Allmaras"))
+                    {
+                        const char *symbols[] = {"nusa"};
+
+                        if (mei_tree_find_symbols(ev_formula, 1, symbols))
+                            bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "nusa");
+
+                        for (ifac = 0; ifac < faces; ifac++)
+                        {
+                            ifbr = faces_list[ifac]- 1;
+                            mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
+                            mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
+                            mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+                            mei_evaluate(ev_formula);
+                            rcodcl[vars->rtp[4] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "nusa");
+                        }
+                    }
+                    else
+                        bft_error(__FILE__, __LINE__, 0,
+                                _("Invalid turbulence model: %s.\n"), model);
+                    mei_tree_destroy(ev_formula);
+                    BFT_FREE(formula);
+                    BFT_FREE(model);
+                }
+                BFT_FREE(path1);
+                cs_gui_add_mei_time(cs_timer_wtime() - t0);
+            }
         }
         else if (cs_gui_strcmp(boundaries->nature[izone], "wall"))
         {
