@@ -38,7 +38,6 @@
 
 #include "cs_base.h"
 #include "cs_interface.h"
-#include "fvm_parall.h"
 #include "fvm_periodicity.h"
 
 /*---------------------------------------------------------------------------*/

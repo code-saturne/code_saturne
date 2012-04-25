@@ -113,7 +113,7 @@ cs_file_test \
 cs_interface_test \
 fvm_selector_test \
 fvm_selector_postfix_test \
-fvm_sizes_test
+cs_sizes_test
 
 LDFLAGS_CS_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
         $(PLE_LDFLAGS) $(MPI_LDFLAGS)
@@ -157,9 +157,9 @@ fvm_selector_postfix_test_SOURCES  = fvm_selector_postfix_test.c
 fvm_selector_postfix_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 fvm_selector_postfix_test_LDADD    = $(LDADD_CS_TESTS)
 
-fvm_sizes_test_SOURCES  = fvm_sizes_test.c
-fvm_sizes_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
-fvm_sizes_test_LDADD    = $(LDADD_CS_TESTS)
+cs_sizes_test_SOURCES  = cs_sizes_test.c
+cs_sizes_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+cs_sizes_test_LDADD    = $(LDADD_CS_TESTS)
 
 # Graphical User Interface unit tests
 

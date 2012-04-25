@@ -34,8 +34,6 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
-#include "fvm_parall.h"
-
 #include "cs_file.h"
 
 /*---------------------------------------------------------------------------*/
