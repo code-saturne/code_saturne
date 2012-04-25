@@ -171,7 +171,7 @@ endif
 
 ! Without porosity
 if (iporos.eq.0) then
-  !$omp parallel do
+  !$omp parallel do private(isou)
   do iel = 1, ncel
     do isou = 1, 3
       qdm(isou,iel) = rom(iel)*vel(isou,iel)
