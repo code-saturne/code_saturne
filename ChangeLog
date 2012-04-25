@@ -1,3 +1,8 @@
+* 25/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix typo leading to script crash in some batch system configurations.
+  modified files:
+    bin/cs_exec_environment.py
+
 * 23/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Release Code_Saturne 2.1.7.
 

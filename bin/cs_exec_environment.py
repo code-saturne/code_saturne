@@ -368,7 +368,7 @@ class resource_info(batch_info):
             if not os.path.isfile(os.getenv('TMPDIR') + '/machines'):
                 self.hosts_file = None
         elif self.hosts_file != None:
-            if self.host_file[0] == '$':
+            if self.hosts_file[0] == '$':
                 if not os.path.isfile(os.getenv(self.hosts_file[1:])):
                     self.hosts_file = None
             elif not os.path.isfile(self.hosts_file):
