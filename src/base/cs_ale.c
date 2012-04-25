@@ -435,7 +435,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
                                   + cfbale[9*face_id+1]*vel_cen_y
                                   + cfbale[9*face_id+2]*vel_cen_z);
 
-        disp_proj[2 + dim*vtx_id] += dsurf*
+        disp_proj[1 + dim*vtx_id] += dsurf*
           dt[cell_id]*(vel_node_y + cfbale[9*face_id+3]*vel_cen_x
                                   + cfbale[9*face_id+4]*vel_cen_y
                                   + cfbale[9*face_id+5]*vel_cen_z);
