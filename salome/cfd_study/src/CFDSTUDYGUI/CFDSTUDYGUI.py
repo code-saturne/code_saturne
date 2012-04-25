@@ -121,7 +121,6 @@ def windows():
     winMap[ WT_ObjectBrowser ] = Qt.LeftDockWidgetArea
     winMap[ WT_PyConsole ]     = Qt.BottomDockWidgetArea
     #winMap[ WT_LogWindow ]     = Qt.BottomDockWidgetArea
-
     return winMap
 
 
@@ -160,6 +159,7 @@ def setWorkSpace(ws):
 
     dsk = sgPyQt.getDesktop()
     _DesktopMgr.setWorkspace(dsk, ws)
+    ActionHandler = _DesktopMgr.getActionHandler(dsk)
 
 
 def createPreferences():
@@ -253,7 +253,6 @@ def activate():
 
     return True
 
-
 def setSettings():
     """
     Stores the selected CFD code and updates action according with current
@@ -265,7 +264,6 @@ def setSettings():
     ActionHandler = _DesktopMgr.getActionHandler(dsk)
     ActionHandler.onCFDCode()
     ActionHandler.updateActions()
-
 
 def deactivate():
     """
@@ -288,13 +286,13 @@ def createPopupMenu(popup, context):
     @type context: C{String}
     @param context: equal to 'ObjectBrowser' or 'VTKViewer' for example.
     """
-    log.debug("createPopupMenu -> context = %s" % context)
+    #log.debug("createPopupMenu -> context = %s" % context)
 
     study = CFDSTUDYGUI_DataModel._getStudy()
     dsk = sgPyQt.getDesktop()
     ActionHandler = _DesktopMgr.getActionHandler(dsk)
 
-    log.debug("createPopupMenu -> SelectedCount = %s" % sg.SelectedCount())
+    #log.debug("createPopupMenu -> SelectedCount = %s" % sg.SelectedCount())
 
     if sg.SelectedCount() > 0:
         # Custom Popup menu added or removed regards to the type of the object

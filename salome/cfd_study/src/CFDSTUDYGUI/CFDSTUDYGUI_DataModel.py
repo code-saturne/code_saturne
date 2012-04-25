@@ -724,7 +724,7 @@ def _CreateObject(theFather, theBuilder, theName):
 
 def _CreateItem(theFather,theNewName) :
     """
-    Creates a child with name theNewName under theFather root into Object Brother
+    Creates a child with name theNewName under theFather root into Object Browser
     @type theFather: C{SObject}
     @type theNewName : C{String}
     """
@@ -754,7 +754,7 @@ def _FillObject(theObject, theParent, theBuilder):
 
     # Parent is study
     if parentId == dict_object["Study"]:
-        if Trace(): print "parent is Study ", theParent.GetName()
+        if Trace(): print "_FillObject : parent is Study ", theParent.GetName()
         #check for case
         if os.path.isdir(path):
             dirList = os.listdir(path)

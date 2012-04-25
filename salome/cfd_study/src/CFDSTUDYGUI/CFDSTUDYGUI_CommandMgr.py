@@ -31,7 +31,7 @@ Command Manager
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import os,  logging
+import os, logging
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -52,7 +52,8 @@ from PyQt4.QtCore import Qt, QObject, QVariant, SIGNAL, QEvent, QProcess, QStrin
 
 import CFDSTUDYGUI_Commons, CFDSTUDYGUI_SolverGUI
 from CFDSTUDYGUI_Commons import sgPyQt, LoggingMgr
-from CFDSTUDYGUI_SolverGUI import _d_DockWindowsRuncase
+#from CFDSTUDYGUI_SolverGUI import _d_DockWindowsRuncase
+from CFDSTUDYGUI_Management import _d_DockWindowsRuncase
 from ui_CFDSTUDYGUI_QProcessDialog import Ui_CFDSTUDYGUI_QProcessDialog
 
 #-------------------------------------------------------------------------------
@@ -116,7 +117,6 @@ class CFDSTUDYGUI_CommandMgr(QObject):
 
         QApplication.postEvent(dlg, QEvent(9999))
 
-
     def runCommandDlg(self, sObjRep, Message, cmd, start_directory = "", prefix = ""):
         """
         Executing of custom shell command in background mode.
@@ -124,9 +124,8 @@ class CFDSTUDYGUI_CommandMgr(QObject):
         """
         #self._dlg = CFDSTUDYGUI_CommandDlg(Message)
         self.sObjR = sObjRep
-
         if "str" in str(type(cmd)):
-            # on est dans le cas d'un runcase
+            # run runcase (we are in a runcase case)
             self.runTextEdit("", cmd)
         import thread
         #thread.start_new_thread( self._runCommand, ( self._dlg, cmd, start_directory, prefix) )
@@ -176,7 +175,6 @@ class CFDSTUDYGUI_CommandMgr(QObject):
             #QApplication.postEvent(dlg, QEvent(9998))
             import CFDSTUDYGUI_DataModel
             CFDSTUDYGUI_DataModel.UpdateSubTree(self.sObjR)
-
 
 
     def runTextEdit(self,texte,aTitleCase):

@@ -42,7 +42,8 @@ CFDSTUDYGUI_DataModel.py \
 CFDSTUDYGUI_DesktopMgr.py \
 CFDSTUDYGUI_DialogCollector.py \
 CFDSTUDYGUI_ProcessMgr.py \
-CFDSTUDYGUI_SolverGUI.py
+CFDSTUDYGUI_SolverGUI.py \
+CFDSTUDYGUI_Management.py
 
 #resources
 salomeres_DATA = $(QMFILES) ${ICONS}

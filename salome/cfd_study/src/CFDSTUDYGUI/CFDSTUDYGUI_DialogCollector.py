@@ -467,7 +467,7 @@ class RunCaseDialogHandler(RunCaseDialog):
             return
         aTHCHObj =  aChildList[0]
 
-        #check for SaturneGUI or NeptubeGUI file in case:
+        #check for SaturneGUI or NeptuneGUI file in case:
         aRunBtn = self.findChild(QtGui.QRadioButton,"RunModeBtn")
 
         flag = CFDSTUDYGUI_DataModel.checkCaseLaunchGUI(aCaseObj)
