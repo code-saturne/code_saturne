@@ -415,9 +415,8 @@ if (iprco.le.0) then
         ddepy = ddepy + disala(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
         ddepz = ddepz + disala(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
       enddo
-      ! If all the face vertices have imposed displacement, w is evaluated from
-      !  this displacement
-!FIXME for me we should always do that:      if (iecrw.eq.0) then
+      ! For inner vertices, the mass flux due to the mesh displacement is
+      !  recomputed from the nodes displacement
         iel1 = ifacel(1,ifac)
         iel2 = ifacel(2,ifac)
         dtfac = 0.5d0*(dt(iel1) + dt(iel2))
@@ -426,11 +425,6 @@ if (iprco.le.0) then
               ddepx*surfac(1,ifac)                                &
              +ddepy*surfac(2,ifac)                                &
              +ddepz*surfac(3,ifac) )/dtfac/icpt
-        ! Else w is calculated from the cell-centre mesh velocity
-!!      else
-!!        ! Here we need of the opposite of the mesh velocity.
-!!        propfa(ifac,iflmas) = propfa(ifac,iflmas) - intflx(ifac)
-!!      endif
     enddo
 
     ! Free memory
@@ -441,7 +435,7 @@ if (iprco.le.0) then
   ! Ajout de la vitesse du solide dans le flux convectif,
   ! si le maillage est mobile (solide rigide)
   ! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
-  if (imobil.eq.1) then
+  if (imobil.eq.1.and.iterns.eq.1) then
 
     iflmas = ipprof(ifluma(iu))
     iflmab = ipprob(ifluma(iu))
@@ -510,9 +504,8 @@ call resopv &
 ! 4.  RESOLUTION DE LA VITESSE DE MAILLAGE EN ALE
 !===============================================================================
 
-if (iale.eq.1) then
+if (iale.eq.1.and.iterns.eq.nterup) then
 
-  ! TODO Check the behaviour of ALE iterations
   if (itrale.gt.nalinf) then
 
     call alelav &
@@ -540,15 +533,15 @@ iflmab = ipprob(ifluma(iu))
 ipcrom = ipproc(irom  )
 ipbrom = ipprob(irom  )
 
-!       IREVMC = 0 : Only the standard method is available for the coupled
-!                    version of navstv.
+! irevmc = 0: Only the standard method is available for the coupled
+!              version of navstv.
 
 if (irevmc.eq.0) then
 
-  !     The predicted velocity is corrected by the cell gradient of the
-  !     pressure increment.
+  ! The predicted velocity is corrected by the cell gradient of the
+  ! pressure increment.
 
-  !     GRADIENT DE L'INCREMENT TOTAL DE PRESSION
+  ! GRADIENT DE L'INCREMENT TOTAL DE PRESSION
 
   if (idtvar.lt.0) then
     !$omp parallel do
@@ -669,7 +662,7 @@ if (irevmc.eq.0) then
 endif
 
 ! In the ALE framework, we add the mesh velocity
-if (iale.eq.1) then
+if (iale.eq.1.and.iterns.eq.nterup) then
 
   !$omp parallel do
   do iel = 1, ncelet
@@ -731,9 +724,8 @@ if (iale.eq.1) then
       ddepy = ddepy + disala(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
       ddepz = ddepz + disala(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
     enddo
-    ! If all the face vertices have imposed displacement, w is evaluated from
-    !  this displacement
-!FIXME for me we should always do that:      if (iecrw.eq.0) then
+    ! For inner vertices, the mass flux due to the mesh displacement is
+    !  recomputed from the nodes displacement
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
       dtfac = 0.5d0*(dt(iel1) + dt(iel2))
@@ -742,11 +734,6 @@ if (iale.eq.1) then
             ddepx*surfac(1,ifac)                                &
            +ddepy*surfac(2,ifac)                                &
            +ddepz*surfac(3,ifac) )/dtfac/icpt
-      ! Else w is calculated from the cell-centre mesh velocity
-!!      else
-!!        ! Here we need of the opposite of the mesh velocity.
-!!        propfa(ifac,iflmas) = propfa(ifac,iflmas) - intflx(ifac)
-!!      endif
   enddo
 
   ! Free memory
@@ -759,7 +746,7 @@ endif
 ! si le maillage est mobile (solide rigide)
 ! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
 
-if (imobil.eq.1) then
+if (imobil.eq.1.and.iterns.eq.1) then
 
   iflmas = ipprof(ifluma(iu))
   iflmab = ipprob(ifluma(iu))
