@@ -424,7 +424,7 @@ if( iprco.le.0 ) then
   ! Ajout de la vitesse du solide dans le flux convectif,
   ! si le maillage est mobile (solide rigide)
   ! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
-  if (imobil.eq.1) then
+  if (imobil.eq.1.and.iterns.eq.1) then
 
     iflmas = ipprof(ifluma(iu))
     iflmab = ipprob(ifluma(iu))
@@ -705,8 +705,8 @@ else
 
 endif
 
-!     Ajout de la vitesse de maillage dans le flux convectif en ALE
-if (iale.eq.1) then
+! In the ALE framework, we add the mesh velocity
+if (iale.eq.1.and.iterns.eq.nterup) then
 
   icluma = iclrtp(iuma ,icoef)
   iclvma = iclrtp(ivma ,icoef)
@@ -814,7 +814,7 @@ endif
 ! Ajout de la vitesse du solide dans le flux convectif,
 ! si le maillage est mobile (solide rigide)
 ! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
-if (imobil.eq.1) then
+if (imobil.eq.1.and.iterns.eq.1) then
 
   iflmas = ipprof(ifluma(iu))
   iflmab = ipprob(ifluma(iu))

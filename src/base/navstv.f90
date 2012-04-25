@@ -399,22 +399,16 @@ if( iprco.le.0 ) then
         ddepy = ddepy + disala(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
         ddepz = ddepz + disala(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
       enddo
-      ! If all the face vertices have imposed displacement, w is evaluated from
-      !  this displacement
-!FIXME for me we should always do that:      if (iecrw.eq.0) then
-        iel1 = ifacel(1,ifac)
-        iel2 = ifacel(2,ifac)
-        dtfac = 0.5d0*(dt(iel1) + dt(iel2))
-        rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
-        propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(      &
-              ddepx*surfac(1,ifac)                                &
-             +ddepy*surfac(2,ifac)                                &
-             +ddepz*surfac(3,ifac) )/dtfac/icpt
-        ! Else w is calculated from the cell-centre mesh velocity
-!!      else
-!!        ! Here we need of the opposite of the mesh velocity.
-!!        propfa(ifac,iflmas) = propfa(ifac,iflmas) - intflx(ifac)
-!!      endif
+      ! For inner vertices, the mass flux due to the mesh displacement is
+      !  recomputed from the nodes displacement
+      iel1 = ifacel(1,ifac)
+      iel2 = ifacel(2,ifac)
+      dtfac = 0.5d0*(dt(iel1) + dt(iel2))
+      rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
+      propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(      &
+            ddepx*surfac(1,ifac)                                &
+           +ddepy*surfac(2,ifac)                                &
+           +ddepz*surfac(3,ifac) )/dtfac/icpt
     enddo
 
     ! Free memory
@@ -425,7 +419,7 @@ if( iprco.le.0 ) then
   ! Ajout de la vitesse du solide dans le flux convectif,
   ! si le maillage est mobile (solide rigide)
   ! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
-  if (imobil.eq.1) then
+  if (imobil.eq.1.and.iterns.eq.1) then
 
     iflmas = ipprof(ifluma(iu))
     iflmab = ipprob(ifluma(iu))
@@ -491,9 +485,8 @@ call resopv &
 ! 4.  RESOLUTION DE LA VITESSE DE MAILLAGE EN ALE
 !===============================================================================
 
-if (iale.eq.1) then
+if (iale.eq.1.and.iterns.eq.nterup) then
 
-  ! TODO Check the behaviour of ALE iterations
   if (itrale.gt.nalinf) then
 
     call alelav &
@@ -646,7 +639,7 @@ if( irevmc.eq.0 ) then
 endif
 
   ! In the ALE framework, we add the mesh velocity
-  if (iale.eq.1) then
+  if (iale.eq.1.and.iterns.eq.nterup) then
 
     do iel = 1, ncelet
       mshvel(1,iel) = rtp(iel,iuma)
@@ -705,22 +698,16 @@ endif
         ddepy = ddepy + disala(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
         ddepz = ddepz + disala(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
       enddo
-      ! If all the face vertices have imposed displacement, w is evaluated from
-      !  this displacement
-!FIXME for me we should always do that:      if (iecrw.eq.0) then
-        iel1 = ifacel(1,ifac)
-        iel2 = ifacel(2,ifac)
-        dtfac = 0.5d0*(dt(iel1) + dt(iel2))
-        rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
-        propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(      &
-              ddepx*surfac(1,ifac)                                &
-             +ddepy*surfac(2,ifac)                                &
-             +ddepz*surfac(3,ifac) )/dtfac/icpt
-        ! Else w is calculated from the cell-centre mesh velocity
-!!      else
-!!        ! Here we need of the opposite of the mesh velocity.
-!!        propfa(ifac,iflmas) = propfa(ifac,iflmas) - intflx(ifac)
-!!      endif
+      ! For inner vertices, the mass flux due to the mesh displacement is
+      !  recomputed from the nodes displacement
+      iel1 = ifacel(1,ifac)
+      iel2 = ifacel(2,ifac)
+      dtfac = 0.5d0*(dt(iel1) + dt(iel2))
+      rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
+      propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(      &
+            ddepx*surfac(1,ifac)                                &
+           +ddepy*surfac(2,ifac)                                &
+           +ddepz*surfac(3,ifac) )/dtfac/icpt
     enddo
 
     ! Free memory
@@ -728,12 +715,11 @@ endif
 
   endif
 
-!FIXME for me we should do that before predvv
 ! Ajout de la vitesse du solide dans le flux convectif,
 ! si le maillage est mobile (solide rigide)
 ! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
 
-if (imobil.eq.1) then
+if (imobil.eq.1.and.iterns.eq.1) then
 
   iflmas = ipprof(ifluma(iu))
   iflmab = ipprob(ifluma(iu))
