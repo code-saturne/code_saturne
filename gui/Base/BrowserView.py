@@ -446,10 +446,11 @@ Boundary conditions
     Particles boundary conditions
     Fluid structure interaction
 Numerical parameters
-    Time step
-    Steady flow management
-    Equation parameters
     Global parameters
+    Equation parameters
+    Time step
+    Pseudo-Time step
+    Steady flow management
 Calculation control
     Time averages
     Output control
@@ -662,6 +663,7 @@ Calculation management
         self.setRowClose(self.tr('Steady flow management'))
         # self.setRowClose(self.tr('Surface solution control'))
         self.setRowClose(self.tr('Time step'))
+        self.setRowClose(self.tr('Pseudo-Time step'))
         self.setRowClose(self.tr('Storage system description'))
         self.setRowClose(self.tr('Thermohydraulic parameters'))
         self.setRowClose(self.tr('Mobil mesh boundary'))
@@ -671,14 +673,29 @@ Calculation management
 
         nodeanal = case.xmlGetNode('analysis_control')
         nodeSteady = nodeanal.xmlGetNode('steady_management')
+        node_np = case.xmlGetNode('numerical_parameters')
+        nodeCouplingAlgo = node_np.xmlGetNode('velocity_pressure_algo')
 
         if nodeSteady['status'] == 'on':
-            self.setRowClose(self.tr('Time step'))
-            self.setRowOpen(self.tr('Steady flow management'))
+            if nodeCouplingAlgo:
+                value = nodeCouplingAlgo['choice']
+                if value == 'simple':
+                    self.setRowClose(self.tr('Time step'))
+                    self.setRowClose(self.tr('Pseudo-Time step'))
+                    self.setRowOpen(self.tr('Steady flow management'))
+                else:
+                    self.setRowClose(self.tr('Time step'))
+                    self.setRowOpen(self.tr('Pseudo-Time step'))
+                    self.setRowClose(self.tr('Steady flow management'))
+            else:
+                self.setRowClose(self.tr('Time step'))
+                self.setRowOpen(self.tr('Pseudo-Time step'))
+                self.setRowClose(self.tr('Steady flow management'))
         else:
             nodeSteady['status'] = 'off'
             self.setRowClose(self.tr('Steady flow management'))
             self.setRowOpen(self.tr('Time step'))
+            self.setRowClose(self.tr('Pseudo-Time step'))
 
         # Multi-phase flow
 

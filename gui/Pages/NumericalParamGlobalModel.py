@@ -78,6 +78,8 @@ class NumericalParamGlobalModel(Model):
         self.default['wall_pressure_extrapolation'] = 'neumann'
         self.default['gradient_reconstruction'] = 0
         self.default['time_scheme_order'] = 1
+        self.default['velocity_pressure_algo'] ='simplec'
+        self.default['piso_sweep_number'] = 2
         return self.default
 
 
@@ -179,6 +181,30 @@ class NumericalParamGlobalModel(Model):
             choice = self._defaultValues()['gradient_reconstruction']
             self.setGradientReconstruction(choice)
         return choice
+
+
+    def getVelocityPressureAlgorithm(self):
+        """
+        Return velocity pressure algoritm value
+        """
+        node = self.node_np.xmlInitNode('velocity_pressure_algo','choice')
+        value = node['choice']
+        if not value:
+            value = self._defaultValues()['velocity_pressure_algo']
+            self.setVelocityPressureAlgorithm(value)
+        return value
+
+
+    def getPisoSweepNumber(self):
+        """
+        Return piso_sweep_number value
+        """
+        self.node_algo = self.node_np.xmlGetNode('velocity_pressure_algo')
+        value = self.node_algo.xmlGetInt('piso_sweep_number')
+        if not value:
+            value = self._defaultValues()['piso_sweep_number']
+            self.setPisoSweepNumber(value)
+        return value
 
 
     def setMultigrid(self, status):
@@ -293,6 +319,30 @@ class NumericalParamGlobalModel(Model):
             self.node_np.xmlSetData('time_scheme_order', 2)
         else:
             self.node_np.xmlRemoveChild('time_scheme_order')
+
+
+    def setVelocityPressureAlgorithm(self, value):
+        """
+        Put value of velocity pressure algorithm
+        """
+        self.isInList(value, ('simple', 'simplec', 'piso'))
+        node = self.node_np.xmlInitNode('velocity_pressure_algo', 'choice')
+        node['choice'] = value
+        if value == 'simple' or value =='simplec':
+            self.setPisoSweepNumber(1)
+        elif self.getPisoSweepNumber() < self._defaultValues()['piso_sweep_number']:
+            value = self._defaultValues()['piso_sweep_number']
+            self.setPisoSweepNumber(value)
+
+
+    def setPisoSweepNumber(self, value):
+        """
+        Put value of NTRUP
+        """
+        self.isInt(value)
+        self.node_algo = self.node_np.xmlGetNode('velocity_pressure_algo')
+        self.node_algo.xmlSetData('piso_sweep_number',value)
+
 
 #-------------------------------------------------------------------------------
 # NumericalParamEquat test case
@@ -448,6 +498,39 @@ class NumericalParamGlobalTestCase(ModelTest):
                 'Could not set time scheme order in NumericalParamGlobalModel'
         assert model.getTimeSchemeOrder() == 2,\
                 'Could not get time scheme order in NumericalParamGlobalModel'
+
+    def checkGetandSetVelocityPressureAlgorithm(self):
+        """
+        Check whether velocity pressure algorithm could be set and get
+        """
+        model = NumericalParamGlobalModel(self.case)
+        model.setVelocityPressureAlgorithm('piso')
+        doc = '''<numerical_parameters>
+                         <velocity_pressure_algo choice="piso"/>
+                 </numerical_parameters>'''
+        assert model.node_np== self.xmlNodeFromString(doc), \
+                    'Could not set velocity pressure algorithm'
+        assert model.getVelocityPressureAlgorithm() == 'piso',\
+                    'Could not get velocity pressure algorithm'
+
+    def checkGetandSetNterup(self):
+        """
+        Check whether velocity pressure algorithm could be set and get
+        """
+        model = NumericalParamGlobalModel(self.case)
+        model.setVelocityPressureAlgorithm('piso')
+        model.setNterup(3)
+        doc = '''<numerical_parameters>
+                         <velocity_pressure_algo choice="piso">
+                                 <piso_sweep_number>
+                                         3
+                                 </piso_sweep_number>
+                         </velocity_pressure_algo>
+                 </numerical_parameters>'''
+        assert model.node_np == self.xmlNodeFromString(doc), \
+                    'Could not set nterup'
+        assert model.getNterup() == 3,\
+                    'Could not get nterup'
 
 
 def suite():

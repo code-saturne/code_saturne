@@ -48,6 +48,7 @@ from Base.Toolbox import GuiParam
 from Pages.TimeStepForm import Ui_TimeStepForm
 import Base.QtPage as QtPage
 from Pages.TimeStepModel import TimeStepModel
+from Pages.SteadyManagementModel import SteadyManagementModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -78,11 +79,9 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
        # Combo model
 
-        self.modelTimeOptions = QtPage.ComboModel(self.comboBoxOptions,3,1)
-
-        self.modelTimeOptions.addItem(self.tr("Uniform and constant"), '0')
-        self.modelTimeOptions.addItem(self.tr("Variable in time and uniform in space"), '1')
-        self.modelTimeOptions.addItem(self.tr("Variable in time and in space"), '2')
+        self.modelTimeOptions = QtPage.ComboModel(self.comboBoxOptions,2,1)
+        self.modelTimeOptions.addItem(self.tr("Constant"), '0')
+        self.modelTimeOptions.addItem(self.tr("Variable"), '1')
 
         # Connections
         self.connect(self.comboBoxOptions, SIGNAL("activated(const QString&)"), self.slotTimePassing)
@@ -121,22 +120,44 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         # Initialization
 
-        idtvar = self.mdl.getTimePassing()
-        self.modelTimeOptions.setItem(str_model=str(idtvar))
+        status = SteadyManagementModel(self.case).getSteadyFlowManagement()
+        if status == 'on':
+            self.comboBoxOptions.hide()
 
-        from Pages.TurbulenceModel import TurbulenceModel
-        model = TurbulenceModel(self.case).getTurbulenceModel()
-        del TurbulenceModel
+            self.mdl.setTimePassing(2)
 
-        if model in ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
-            idtvar = 0
+            courant_max   = self.mdl.getOptions('max_courant_num')
+            fourier_max   = self.mdl.getOptions('max_fourier_num')
+            time_step_min_factor = self.mdl.getOptions('time_step_min_factor')
+            time_step_max_factor = self.mdl.getOptions('time_step_max_factor')
+            time_step_var = self.mdl.getOptions('time_step_var')
+
+            self.lineEditCOUMAX.setText(QString(str(courant_max)))
+            self.lineEditFOUMAX.setText(QString(str(fourier_max)))
+            self.lineEditCDTMIN.setText(QString(str(time_step_min_factor)))
+            self.lineEditCDTMAX.setText(QString(str(time_step_max_factor)))
+            self.lineEditVARRDT.setText(QString(str(time_step_var)))
+
+            self.groupBoxLabels.show()
+
+        else:
+            self.comboBoxOptions.show()
+
+            idtvar = self.mdl.getTimePassing()
             self.modelTimeOptions.setItem(str_model=str(idtvar))
-            self.modelTimeOptions.disableItem(str_model='0')
-            self.modelTimeOptions.disableItem(str_model='1')
-            self.modelTimeOptions.disableItem(str_model='2')
 
-        text = self.comboBoxOptions.currentText()
-        self.slotTimePassing(text)
+            from Pages.TurbulenceModel import TurbulenceModel
+            model = TurbulenceModel(self.case).getTurbulenceModel()
+            del TurbulenceModel
+
+            if model in ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
+                idtvar = 0
+                self.modelTimeOptions.setItem(str_model=str(idtvar))
+                self.modelTimeOptions.disableItem(str_model='0')
+                self.modelTimeOptions.disableItem(str_model='1')
+
+            text = self.comboBoxOptions.currentText()
+            self.slotTimePassing(text)
 
         dtref = self.mdl.getTimeStep()
         self.lineEditDTREF.setText(QString(str(dtref)))

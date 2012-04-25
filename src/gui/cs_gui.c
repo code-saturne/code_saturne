@@ -388,6 +388,28 @@ cs_gui_get_steady_status(int *const keyword)
   BFT_FREE(path);
 }
 
+/*----------------------------------------------------------------------------
+ * Return the initialization choice of the turbulence variables.
+ *----------------------------------------------------------------------------*/
+
+static char *cs_gui_velocity_pressure_algo_choice(void)
+{
+  char *path = NULL;
+  char *algo_choice;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2,
+                        "numerical_parameters",
+                        "velocity_pressure_algo");
+  cs_xpath_add_attribute(&path, "choice");
+
+  algo_choice = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return algo_choice;
+}
+
 /*-----------------------------------------------------------------------------
  * Return  parameters for steady management.
  *
@@ -746,12 +768,20 @@ cs_gui_numerical_int_parameters(const char *const param,
   cs_xpath_add_element(&path, "numerical_parameters");
   cs_xpath_add_element(&path, param);
 
-  if (cs_gui_strcmp(param, "gradient_reconstruction")){
+  if (cs_gui_strcmp(param, "gradient_reconstruction")) {
 
     cs_xpath_add_attribute(&path, "choice");
     choice = cs_gui_get_attribute_value(path);
     if (choice) *keyword = atoi(choice);
     BFT_FREE(choice);
+
+  } else if (cs_gui_strcmp(param,"piso_sweep_number")) {
+
+    cs_xpath_add_element(&path, "velocity_pressure_algo");
+    cs_xpath_add_element(&path, param);
+    cs_xpath_add_function_text(&path);
+    if (cs_gui_get_int(path, &result))
+       *keyword = result;
 
   } else {
 
@@ -1838,10 +1868,15 @@ void CS_PROCF (csidtv, CSIDTV) (int *const idtvar)
 {
   double param;
   int steady = 0;
+  char* algo_choice = NULL;
 
   cs_gui_get_steady_status(&steady);
   if (steady){
-    *idtvar = -1;
+    algo_choice = cs_gui_velocity_pressure_algo_choice();
+    if (cs_gui_strcmp(algo_choice, "simple"))
+      *idtvar = -1;
+    else
+      *idtvar = 2;
   }
   else{
     param = (double) *idtvar;
@@ -2438,6 +2473,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
  * DOUBLE PRECISION EXTRAG  <--   wall pressure extrapolation
  * INTEGER          IMRGRA  <--   gradient reconstruction
  * INTEGER          IMGRPR  <--   multigrid algorithm for pressure
+ * INTEGER          NTERUP  <--   piso sweep number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
@@ -2445,11 +2481,13 @@ void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
                                   int *const ipucou,
                                double *const extrag,
                                   int *const imrgra,
-                                  int *const imgrpr)
+                                  int *const imgrpr,
+                                  int *const nterup)
 {
   cs_gui_numerical_int_parameters("gradient_transposed", ivisse);
   cs_gui_numerical_int_parameters("velocity_pressure_coupling", ipucou);
   cs_gui_numerical_int_parameters("gradient_reconstruction", imrgra);
+  cs_gui_numerical_int_parameters("piso_sweep_number", nterup);
   cs_gui_numerical_int_parameters("multigrid", imgrpr);
   cs_gui_numerical_double_parameters("wall_pressure_extrapolation", extrag);
   cs_gui_numerical_double_parameters("pressure_relaxation", relaxp);
@@ -2459,6 +2497,7 @@ void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
   bft_printf("--ivisse = %i\n", *ivisse);
   bft_printf("--ipucou = %i\n", *ipucou);
   bft_printf("--imrgra = %i\n", *imrgra);
+  bft_printf("--nterup = %i\n", *nterup);
   bft_printf("--extrag = %f\n", *extrag);
   bft_printf("--relaxp = %f\n", *relaxp);
   bft_printf("--imgrpr = %i\n", *imgrpr);

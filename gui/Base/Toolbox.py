@@ -205,6 +205,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.TimeStepView as Page
         thisPage = Page.TimeStepView(root, case)
 
+    elif page_name == tr("Pseudo-Time step"):
+        import Pages.TimeStepView as Page
+        thisPage = Page.TimeStepView(root, case)
+
     elif page_name == tr("Steady flow management"):
         import Pages.SteadyManagementView as Page
         thisPage = Page.SteadyManagementView(root, case)
@@ -231,7 +235,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
 
     elif page_name == tr("Global parameters"):
         import Pages.NumericalParamGlobalView as Page
-        thisPage = Page.NumericalParamGlobalView(root, case)
+        thisPage = Page.NumericalParamGlobalView(root, case, tree)
 
     elif page_name == tr("Start/Restart"):
         import Pages.StartRestartView as Page

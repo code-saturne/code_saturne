@@ -398,7 +398,7 @@ if(iihmpr.eq.1) then
   relaxp = -999.d0
   extrap = 0.d0
   imgrpr = 1
-  call csnum2 (ivisse, relaxp, ipucou, extrap, imrgra, imgrpr)
+  call csnum2 (ivisse, relaxp, ipucou, extrap, imrgra, imgrpr, nterup)
   !==========
   extrag(ipr) = extrap
   if (idtvar.ge.0) relaxv(ipr) = relaxp
