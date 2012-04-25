@@ -60,10 +60,10 @@
 #include "fvm_io_num.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
-#include "fvm_parall.h"
 #include "fvm_writer_priv.h"
 
 #include "cs_file.h"
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -900,7 +900,7 @@ _write_indexed_connect_g(INTERP_KERNEL::NormalizedCellType   med_type,
   cs_lnum_t   *block_index = NULL;
   cs_lnum_t  *block_vtx_num = NULL;
   size_t  min_block_size
-    = fvm_parall_get_min_coll_buf_size() / sizeof(cs_lnum_t);
+    = cs_parall_get_min_coll_buf_size() / sizeof(cs_lnum_t);
 
   const cs_gnum_t   n_g_elements
     = fvm_io_num_get_global_count(global_element_num);
@@ -1280,7 +1280,7 @@ _export_nodal_strided_g(const fvm_nodal_section_t  *section,
   const int  stride = fvm_nodal_n_vertices_element[section->type];
 
   const size_t  min_block_size
-    = fvm_parall_get_min_coll_buf_size() / (sizeof(cs_lnum_t) * stride);
+    = cs_parall_get_min_coll_buf_size() / (sizeof(cs_lnum_t) * stride);
 
   const cs_lnum_t   n_elements
     = fvm_io_num_get_local_count(section->global_element_num);
