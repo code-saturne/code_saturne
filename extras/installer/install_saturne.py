@@ -378,8 +378,8 @@ class Setup:
             Package(name="NCS",
                     description="Code_Saturne Kernel",
                     package="ncs",
-                    version="2.0.5",
-                    archive="ncs-2.0.5.tar.gz",
+                    version="2.0.6",
+                    archive="ncs-2.0.6.tar.gz",
                     url=url_cs)
 
         p = self.packages['ncs']
