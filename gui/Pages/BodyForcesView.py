@@ -83,8 +83,6 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         self.connect(self.lineEditX, SIGNAL("textChanged(const QString &)"), self.slotGravityX)
         self.connect(self.lineEditY, SIGNAL("textChanged(const QString &)"), self.slotGravityY)
         self.connect(self.lineEditZ, SIGNAL("textChanged(const QString &)"), self.slotGravityZ)
-        self.connect(self.radioButtonYes, SIGNAL("clicked()"), self.slotHydrostaticPressure)
-        self.connect(self.radioButtonNo, SIGNAL("clicked()"), self.slotHydrostaticPressure)
 
         # Validators
         validatorX = QtPage.DoubleValidator(self.lineEditX)
@@ -96,13 +94,6 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         self.lineEditZ.setValidator(validatorZ)
 
         # Initialization
-
-        if self.mdl.getHydrostaticPressure() == "on":
-            self.radioButtonYes.setChecked(True)
-            self.radioButtonNo.setChecked(False)
-        else:
-            self.radioButtonYes.setChecked(False)
-            self.radioButtonNo.setChecked(True)
 
         gravity_x = self.mdl.getGravity(self.mdl.nodes[0])
         gravity_y = self.mdl.getGravity(self.mdl.nodes[1])
@@ -141,18 +132,6 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         gravity_z, ok = text.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setGravity('gravity_z', gravity_z)
-
-
-    @pyqtSignature("")
-    def slotHydrostaticPressure(self):
-        """
-        Input IHYDPR.
-        """
-        if self.radioButtonYes.isChecked():
-            hpr = 'on'
-        else:
-            hpr = 'off'
-        self.mdl.setHydrostaticPressure(hpr)
 
 
     def tr(self, text):

@@ -74,6 +74,7 @@ class NumericalParamGlobalModel(Model):
         self.default['pressure_relaxation'] = 1.
         self.default['density_relaxation'] = 0.95
         self.default['velocity_pressure_coupling'] ='off'
+        self.default['hydrostatic_pressure'] ='off'
         self.default['wall_pressure_extrapolation'] = 'neumann'
         self.default['gradient_reconstruction'] = 0
         self.default['time_scheme_order'] = 1
@@ -113,6 +114,19 @@ class NumericalParamGlobalModel(Model):
         if not status:
             status = self._defaultValues()['velocity_pressure_coupling']
             self.setVelocityPressureCoupling(status)
+        return status
+
+
+    def getHydrostaticPressure(self):
+        """
+        Return status of hydrostatic pressure :
+        'off' if standard, 'on' if improved
+        """
+        node = self.node_np.xmlInitNode('hydrostatic_pressure', 'status')
+        status = node['status']
+        if not status:
+            status = self._defaultValues()['hydrostatic_pressure']
+            self.setHydrostaticPressure(status)
         return status
 
 
@@ -206,6 +220,15 @@ class NumericalParamGlobalModel(Model):
         else:
             for node in node_ipucou.xmlGetNodeList('property'):
                 node.xmlRemoveNode()
+
+
+    def setHydrostaticPressure(self, var):
+        """
+        Put status of hydrostatic pressure
+        """
+        self.isOnOff(var)
+        node = self.node_np.xmlInitNode('hydrostatic_pressure', 'status')
+        node['status'] = var
 
 
     def setPressureRelaxation(self, value):
@@ -347,6 +370,20 @@ class NumericalParamGlobalTestCase(ModelTest):
                 'Could not set wall pressure extrapolation in NumericalParamGlobalModel'
         assert model.getWallPressureExtrapolation() == 'extrapolation',\
                 'Could not get wall pressure extrapolation in NumericalParamGlobalModel'
+
+    def checkGetandSetHydrostaticPressure(self):
+        """
+        Check whether the hydrostatic pressure could be set and get
+        """
+        model = NumericalParamGlobalModel(self.case)
+        model.setHydrostaticPressure('on')
+        doc = '''<numerical_parameters>
+                    <hydrostatic_pressure status="on"/>
+                 </numerical_parameters>'''
+        assert model.node_np == self.xmlNodeFromString(doc), \
+                    'Could not set hydrostatic pressure'
+        assert model.getHydrostaticPressure() == 'on',\
+                                'Could not get hydrostatic pressure'
 
     def checkSetandGetPressureRelaxation(self):
         """

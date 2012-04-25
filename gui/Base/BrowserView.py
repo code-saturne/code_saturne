@@ -430,7 +430,7 @@ Additional scalars
 Physical properties
     Reference values
     Fluid properties
-    Gravity, hydrostatic pressure
+    Gravity
 Volume conditions
     Volume regions definition
     Initialization

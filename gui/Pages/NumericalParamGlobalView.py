@@ -100,6 +100,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.connect(self.checkBoxIVISSE, SIGNAL("clicked()"), self.slotIVISSE)
         self.connect(self.checkBoxIMGR,   SIGNAL("clicked()"), self.slotIMGR)
         self.connect(self.checkBoxIPUCOU, SIGNAL("clicked()"), self.slotIPUCOU)
+        self.connect(self.checkBoxImprovedPressure, SIGNAL("clicked()"), self.slotImprovedPressure)
         self.connect(self.comboBoxEXTRAG, SIGNAL("activated(const QString&)"), self.slotEXTRAG)
         self.connect(self.lineEditRELAXP, SIGNAL("textChanged(const QString &)"), self.slotRELAXP)
         self.connect(self.comboBoxIMRGRA, SIGNAL("activated(const QString&)"), self.slotIMRGRA)
@@ -127,6 +128,11 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.checkBoxIPUCOU.setChecked(True)
         else:
             self.checkBoxIPUCOU.setChecked(False)
+
+        if self.model.getHydrostaticPressure() == 'on':
+            self.checkBoxImprovedPressure.setChecked(True)
+        else:
+            self.checkBoxImprovedPressure.setChecked(False)
 
         self.lineEditRELAXP.setText(str(self.model.getPressureRelaxation()))
         self.modelEXTRAG.setItem(str_model=self.model.getWallPressureExtrapolation())
@@ -173,6 +179,17 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.model.setVelocityPressureCoupling("on")
         else:
             self.model.setVelocityPressureCoupling("off")
+
+
+    @pyqtSignature("")
+    def slotImprovedPressure(self):
+        """
+        Input IHYDPR.
+        """
+        if self.checkBoxImprovedPressure.isChecked():
+            self.model.setHydrostaticPressure("on")
+        else:
+            self.model.setHydrostaticPressure("off")
 
 
     @pyqtSignature("const QString &")

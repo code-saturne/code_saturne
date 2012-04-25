@@ -153,7 +153,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.FluidCharacteristicsView as Page
         thisPage = Page.FluidCharacteristicsView(root, case)
 
-    elif page_name == tr("Gravity, hydrostatic pressure"):
+    elif page_name == tr("Gravity"):
         import Pages.BodyForcesView as Page
         thisPage = Page.BodyForcesView(root, case)
 

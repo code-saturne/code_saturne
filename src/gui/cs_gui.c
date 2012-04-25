@@ -1872,6 +1872,7 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
   int   result;
 
   path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "numerical_parameters");
   cs_xpath_add_element(&path, "hydrostatic_pressure");
   cs_xpath_add_attribute(&path, "status");
 

@@ -71,7 +71,6 @@ class BodyForcesModel(Model):
         """
         default = {}
         default['gravity'] = 0.0
-        default['status']  = "off"
 
         return default
 
@@ -103,27 +102,6 @@ class BodyForcesModel(Model):
             from Pages.TimeStepModel import TimeStepModel
             TimeStepModel(self.case).RemoveThermalTimeStepNode()
             del TimeStepModel
-
-    def getHydrostaticPressure(self):
-        """
-        Return status of hydrostatic pressure :
-        'off' if standard, 'on' if improved
-        """
-        node = self.node_pp.xmlInitNode('hydrostatic_pressure', 'status')
-        status = node['status']
-        if not status:
-            status = self.defaultBodyForcesValues()['status']
-            self.setHydrostaticPressure(status)
-        return status
-
-
-    def setHydrostaticPressure(self, var):
-        """
-        Put status of hydrostatic pressure
-        """
-        self.isOnOff(var)
-        node = self.node_pp.xmlInitNode('hydrostatic_pressure', 'status')
-        node['status'] = var
 
 
 #-------------------------------------------------------------------------------
@@ -158,19 +136,6 @@ class BodyForcesTestCase(ModelTest):
         assert mdl.node_gravity == self.xmlNodeFromString(doc), \
                                         'Could not set gravity'
         assert mdl.getGravity('gravity_y') == 2.2, 'Could not get gravity'
-
-    def checkGetandSetHydrostaticPressure(self):
-        """
-        Check whether the hydrostatic pressure could be set and get
-        """
-        mdl = BodyForcesModel(self.case)
-        mdl.setHydrostaticPressure('on')
-        n = mdl.node_pp.xmlGetNode('hydrostatic_pressure')
-        doc = '''<hydrostatic_pressure status="on"/>'''
-        assert n == self.xmlNodeFromString(doc), \
-                    'Could not set hydrostatic pressure'
-        assert mdl.getHydrostaticPressure() == 'on',\
-                                'Could not get hydrostatic pressure'
 
 
 def suite():
