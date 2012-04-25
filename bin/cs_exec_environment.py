@@ -375,7 +375,7 @@ class resource_info(batch_info):
             if s != None:
                 s += '/machines'
                 if os.path.isfile(s):
-                    s.manager = 'SGE'
+                    self.manager = 'SGE'
                     self.hosts_file = '$TMPDIR/machines'
             else:
                 s = os.getenv('PE_HOSTFILE')
