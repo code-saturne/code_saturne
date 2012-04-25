@@ -99,7 +99,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.AnalysisFeaturesView as Page
         thisPage = Page.AnalysisFeaturesView(root, case, tree)
 
-    elif page_name == tr("Mobile mesh"):
+    elif page_name == tr("Deformable mesh"):
         import Pages.MobileMeshView as Page
         thisPage = Page.MobileMeshView(root, case, tree)
 

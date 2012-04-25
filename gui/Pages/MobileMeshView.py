@@ -132,17 +132,10 @@ if (xray2 < xr2) {
         self.modelVISCOSITY.addItem(self.tr("isotropic"), 'isotrop')
         self.modelVISCOSITY.addItem(self.tr("orthotropic"), 'orthotrop')
 
-        # Combo model MEI
-        self.modelMEI = ComboModel(self.comboBoxMEI, 2, 1)
-
-        self.modelMEI.addItem(self.tr("user subroutine (usvima)"), 'user_subroutine')
-        self.modelMEI.addItem(self.tr("user formula"), 'user_function')
-
         # Connections
         self.connect(self.groupBoxALE, SIGNAL("clicked(bool)"), self.slotMethod)
         self.connect(self.lineEditNALINF, SIGNAL("textChanged(const QString &)"), self.slotNalinf)
         self.connect(self.comboBoxVISCOSITY, SIGNAL("activated(const QString&)"), self.slotViscosityType)
-        self.connect(self.comboBoxMEI, SIGNAL("activated(const QString&)"), self.slotMEI)
         self.connect(self.pushButtonFormula, SIGNAL("clicked(bool)"), self.slotFormula)
 
         # Validators
@@ -159,7 +152,6 @@ if (xray2 < xr2) {
         self.slotMethod(checked)
 
         # Enable / disable formula state
-        self.slotMEI(self.comboBoxMEI.currentText())
         setGreenColor(self.pushButtonFormula, False)
 
 
@@ -181,12 +173,10 @@ if (xray2 < xr2) {
             self.lineEditNALINF.setText(QString(str(nalinf)))
             value = self.mdl.getViscosity()
             self.modelVISCOSITY.setItem(str_model=value)
-            value = self.mdl.getMEI()
-            self.modelMEI.setItem(str_model=value)
         else:
             self.frame.hide()
             self.mdl.setMethod("off")
-        self.browser.configureTree(self.case)
+        setGreenColor(self.pushButtonFormula, True)
 
 
     @pyqtSignature("const QString&")
@@ -207,24 +197,8 @@ if (xray2 < xr2) {
         self.viscosity_type = self.modelVISCOSITY.dicoV2M[str(text)]
         visco = self.viscosity_type
         self.mdl.setViscosity(visco)
+        setGreenColor(self.pushButtonFormula, True)
         return visco
-
-
-    @pyqtSignature("const QString&")
-    def slotMEI(self, text):
-        """
-        MEI
-        """
-        MEI = self.modelMEI.dicoV2M[str(text)]
-        self.MEI = MEI
-        self.mdl.setMEI(MEI)
-        # enable disable formula button
-
-        isFormulaButtonEnabled = MEI == 'user_function'
-        self.pushButtonFormula.setEnabled(isFormulaButtonEnabled)
-        setGreenColor(self.pushButtonFormula, isFormulaButtonEnabled)
-
-        return MEI
 
 
     @pyqtSignature("const QString&")

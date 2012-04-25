@@ -1,54 +1,55 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>MobileMeshForm</class>
- <widget class="QWidget" name="MobileMeshForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="MobileMeshForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>500</width>
-    <height>229</height>
+    <width>382</width>
+    <height>197</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_3" >
-   <item row="0" column="0" >
-    <widget class="QGroupBox" name="groupBoxALE" >
-     <property name="enabled" >
+  <layout class="QGridLayout" name="gridLayout_3">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBoxALE">
+     <property name="enabled">
       <bool>true</bool>
      </property>
-     <property name="acceptDrops" >
+     <property name="acceptDrops">
       <bool>false</bool>
      </property>
-     <property name="autoFillBackground" >
+     <property name="autoFillBackground">
       <bool>false</bool>
      </property>
-     <property name="title" >
+     <property name="title">
       <string>Mobile mesh (ALE method)</string>
      </property>
-     <property name="flat" >
+     <property name="flat">
       <bool>false</bool>
      </property>
-     <property name="checkable" >
+     <property name="checkable">
       <bool>true</bool>
      </property>
-     <layout class="QGridLayout" name="gridLayout_2" >
-      <item row="0" column="0" >
-       <widget class="QFrame" name="frame" >
-        <property name="frameShape" >
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QFrame" name="frame">
+        <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
-        <property name="frameShadow" >
+        <property name="frameShadow">
          <enum>QFrame::Raised</enum>
         </property>
-        <layout class="QHBoxLayout" name="horizontalLayout" >
+        <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
           <spacer>
-           <property name="orientation" >
+           <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" stdset="0" >
+           <property name="sizeHint" stdset="0">
             <size>
              <width>10</width>
              <height>140</height>
@@ -57,23 +58,23 @@
           </spacer>
          </item>
          <item>
-          <layout class="QGridLayout" name="gridLayout" >
-           <item row="0" column="0" >
-            <widget class="QLabel" name="labelNALINF" >
-             <property name="toolTip" >
+          <layout class="QGridLayout" name="gridLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelNALINF">
+             <property name="toolTip">
               <string>Code_Saturne key word: NALINF</string>
              </property>
-             <property name="text" >
+             <property name="text">
               <string>Number of iterations for fluid initialization</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="1" >
+           <item row="0" column="1">
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" stdset="0" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>13</width>
                <height>22</height>
@@ -81,35 +82,35 @@
              </property>
             </spacer>
            </item>
-           <item row="0" column="2" colspan="2" >
-            <widget class="QLineEdit" name="lineEditNALINF" >
-             <property name="maximumSize" >
+           <item row="0" column="2" colspan="2">
+            <widget class="QLineEdit" name="lineEditNALINF">
+             <property name="maximumSize">
               <size>
                <width>100</width>
                <height>16777215</height>
               </size>
              </property>
-             <property name="toolTip" >
+             <property name="toolTip">
               <string>Code_Saturne key word: NALINF</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="0" >
-            <widget class="QLabel" name="labelVISCOSITY" >
-             <property name="toolTip" >
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelVISCOSITY">
+             <property name="toolTip">
               <string>Code_Saturne key word: IORTVM</string>
              </property>
-             <property name="text" >
+             <property name="text">
               <string>Type of the viscosity of mesh</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="1" >
+           <item row="1" column="1">
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" stdset="0" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>13</width>
                <height>21</height>
@@ -117,65 +118,39 @@
              </property>
             </spacer>
            </item>
-           <item row="1" column="2" colspan="2" >
-            <widget class="QComboBox" name="comboBoxVISCOSITY" >
-             <property name="minimumSize" >
+           <item row="1" column="2" colspan="2">
+            <widget class="QComboBox" name="comboBoxVISCOSITY">
+             <property name="minimumSize">
               <size>
                <width>100</width>
                <height>0</height>
               </size>
              </property>
-             <property name="maximumSize" >
+             <property name="maximumSize">
               <size>
                <width>100</width>
                <height>16777215</height>
               </size>
              </property>
-             <property name="toolTip" >
+             <property name="toolTip">
               <string>Code_Saturne key word: IORTVM</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="0" >
-            <widget class="QLabel" name="labelUSVISMA" >
-             <property name="toolTip" >
-              <string>Code_Saturne key word: EPALIM</string>
-             </property>
-             <property name="text" >
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelUSVISMA">
+             <property name="text">
               <string>Spatial distribution of
 the viscosity of the mesh</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="1" >
-            <spacer>
-             <property name="orientation" >
+           <item row="2" column="1">
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" stdset="0" >
-              <size>
-               <width>13</width>
-               <height>34</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item row="2" column="2" colspan="2" >
-            <widget class="QComboBox" name="comboBoxMEI" />
-           </item>
-           <item row="3" column="0" >
-            <widget class="QLabel" name="label" >
-             <property name="text" >
-              <string>Formula for the viscosity of mesh</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1" >
-            <spacer name="horizontalSpacer" >
-             <property name="orientation" >
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>18</width>
                <height>29</height>
@@ -183,16 +158,16 @@ the viscosity of the mesh</string>
              </property>
             </spacer>
            </item>
-           <item row="3" column="2" >
-            <widget class="QPushButton" name="pushButtonFormula" >
-             <property name="text" >
+           <item row="2" column="2">
+            <widget class="QPushButton" name="pushButtonFormula">
+             <property name="text">
               <string/>
              </property>
-             <property name="icon" >
-              <iconset resource="resources_pages.qrc" >
+             <property name="icon">
+              <iconset resource="resources_pages.qrc">
                <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
              </property>
-             <property name="iconSize" >
+             <property name="iconSize">
               <size>
                <width>22</width>
                <height>22</height>
@@ -200,12 +175,12 @@ the viscosity of the mesh</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="3" >
-            <spacer name="horizontalSpacer_2" >
-             <property name="orientation" >
+           <item row="2" column="3">
+            <spacer name="horizontalSpacer_2">
+             <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" stdset="0" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>13</width>
                <height>20</height>
@@ -217,10 +192,10 @@ the viscosity of the mesh</string>
          </item>
          <item>
           <spacer>
-           <property name="orientation" >
+           <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" stdset="0" >
+           <property name="sizeHint" stdset="0">
             <size>
              <width>10</width>
              <height>140</height>
@@ -234,12 +209,12 @@ the viscosity of the mesh</string>
      </layout>
     </widget>
    </item>
-   <item row="1" column="0" >
+   <item row="1" column="0">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" stdset="0" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>16</width>
        <height>16</height>
@@ -250,7 +225,7 @@ the viscosity of the mesh</string>
   </layout>
  </widget>
  <resources>
-  <include location="resources_pages.qrc" />
+  <include location="resources_pages.qrc"/>
  </resources>
  <connections/>
 </ui>

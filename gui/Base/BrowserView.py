@@ -414,7 +414,7 @@ Thermohydraulic parameters
     Thermal load
 Thermophysical models
     Calculation features
-    Mobile mesh
+    Deformable mesh
     Turbulence models
     Thermal model
     Gas combustion
@@ -687,9 +687,11 @@ Calculation management
         if nodeLagr and nodeLagr['model'] == "on":
             self.setRowOpen(self.tr('Particles and droplets tracking'))
             self.setRowOpen(self.tr('Particles boundary conditions'))
+            self.setRowClose(self.tr('Deformable mesh'))
         else:
             self.setRowClose(self.tr('Particles and droplets tracking'))
             self.setRowClose(self.tr('Particles boundary conditions'))
+            self.setRowOpen(self.tr('Deformable mesh'))
 
         # OutputSurfacicView
 

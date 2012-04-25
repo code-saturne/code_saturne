@@ -73,7 +73,6 @@ class MobileMeshModel(Model):
         default = {}
         default['nalinf' ]  = 0
         default['iortvm' ]  = 'isotrop'
-        default['mei'    ]  = 'user_subroutine'
         default['formula_isotrop']  = 'mesh_vi1 = 1;'
         default['formula_orthotrop'] = 'mesh_vi1 = 1;\nmesh_vi2 = 1;\nmesh_vi3 = 1;'
         default['ale_method']  = 'off'
@@ -92,8 +91,6 @@ class MobileMeshModel(Model):
 
         # find node for property / choice and set to default value if require
         node = self.node_ale.xmlGetChildNode('property', name='mesh_viscosity_1')
-        if not node['choice']:
-            node['choice'] = self.__defaultInitialValues()['mei']
 
         self.__updateNodeViscosity()
 
@@ -108,14 +105,10 @@ class MobileMeshModel(Model):
 
             # find choice for mesh_viscosity_1, create default value if require
             node = self.node_ale.xmlGetChildNode('property', name='mesh_viscosity_1')
-            if not node['choice']:
-                node['choice'] = self.__defaultInitialValues()['mei']
-            mei = node['choice']
 
             # Syncrhonize other properties
             for n in ('mesh_viscosity_2', 'mesh_viscosity_3'):
                 node = self.node_ale.xmlGetChildNode('property', name=n)
-                node['choice'] = mei
 
         else:
             node1 = self.node_ale.xmlGetChildNode('property', name='mesh_viscosity_2')
@@ -222,10 +215,6 @@ class MobileMeshModel(Model):
         node['type'] = value
         self.__updateNodeViscosity()
 
-        # update formula
-        if self.getMEI() == 'user_function':
-            self.setFormula(self.getDefaultFormula())
-
 
     def getViscosity(self):
         """
@@ -239,49 +228,6 @@ class MobileMeshModel(Model):
             self.setViscosity(iortvm)
 
         return iortvm
-
-
-    def setMEI(self, value):
-        """
-        Set value of spatial distribution of the viscosity of the mesh.
-        """
-        self.isInList(value, ['user_subroutine', 'user_function'] )
-
-        # do something only if mei has changed
-        if self.getMEIWithoutDefaultValue() != value:
-            for node in self.node_ale.xmlGetNodeList('property'):
-                node['choice'] = value
-            if value == 'user_subroutine':
-                self.node_ale.xmlRemoveChild('formula')
-            else:
-                self.setFormula(self.getDefaultFormula())
-
-
-    def getMEI(self):
-        """
-        Get value of spatial distribution of the viscosity of the mesh.
-        """
-        # Get the first node
-        mei  = self.getMEIWithoutDefaultValue()
-
-        if not mei:
-            mei = self.__defaultInitialValues()['mei']
-            self.setMEI(mei)
-        return mei
-
-
-    def getMEIWithoutDefaultValue(self):
-        """
-        Get value of spatial distribution of the viscosity of the mesh.
-        Return null if no value is set
-        """
-        # Get the first node
-        node = self.node_ale.xmlGetNode('property', label='mesh_vi1')
-        mei  = None
-
-        if node:
-            mei = node['choice']
-        return mei
 
 
     def setFormula(self, value):
@@ -332,7 +278,7 @@ class MobileMeshTestCase(ModelTest):
                     <variable label="mesh_u" name="mesh_velocity_U"/>
                     <variable label="mesh_v" name="mesh_velocity_V"/>
                     <variable label="mesh_w" name="mesh_velocity_W"/>
-                    <property choice="user_subroutine" label="mesh_vi1" name="mesh_viscosity_1"/>
+                    <property label="mesh_vi1" name="mesh_viscosity_1"/>
                     <mesh_viscosity type="isotrop"/>
                  </ale_method>"""
         assert mdl.node_ale == self.xmlNodeFromString(doc),\
@@ -350,7 +296,7 @@ class MobileMeshTestCase(ModelTest):
                     <variable label="mesh_u" name="mesh_velocity_U"/>
                     <variable label="mesh_v" name="mesh_velocity_V"/>
                     <variable label="mesh_w" name="mesh_velocity_W"/>
-                    <property choice="user_subroutine" label="mesh_vi1" name="mesh_viscosity_1"/>
+                    <property label="mesh_vi1" name="mesh_viscosity_1"/>
                     <mesh_viscosity type="isotrop"/>
                     <fluid_initialization_sub_iterations>12</fluid_initialization_sub_iterations>
                 </ale_method>"""
@@ -371,33 +317,16 @@ class MobileMeshTestCase(ModelTest):
                     <variable label="mesh_u" name="mesh_velocity_U"/>
                     <variable label="mesh_v" name="mesh_velocity_V"/>
                     <variable label="mesh_w" name="mesh_velocity_W"/>
-                    <property choice="user_subroutine" label="mesh_vi1" name="mesh_viscosity_1"/>
+                    <property label="mesh_vi1" name="mesh_viscosity_1"/>
                     <mesh_viscosity type="orthotrop"/>
-                    <property choice="user_subroutine" label="mesh_vi2" name="mesh_viscosity_2"/>
-                    <property choice="user_subroutine" label="mesh_vi3" name="mesh_viscosity_3"/>
+                    <property label="mesh_vi2" name="mesh_viscosity_2"/>
+                    <property label="mesh_vi3" name="mesh_viscosity_3"/>
                 </ale_method>"""
         assert mdl.node_ale == self.xmlNodeFromString(doc),\
             'Could not set mobil mesh model visocity type'
         assert mdl.getViscosity() == 'orthotrop',\
             'Could not get mobil mesh model viscosity type'
 
-    def checkGetAndSetMEI(self):
-        """Check whether the MobileMeshModel class could be set and get mei"""
-        mdl = MobileMeshModel(self.case)
-        mdl.setMethod('on')
-        mdl.setMEI('user_subroutine')
-
-        doc = """<ale_method status="on">
-                    <variable label="mesh_u" name="mesh_velocity_U"/>
-                    <variable label="mesh_v" name="mesh_velocity_V"/>
-                    <variable label="mesh_w" name="mesh_velocity_W"/>
-                    <property choice="user_subroutine" label="mesh_vi1" name="mesh_viscosity_1"/>
-                    <mesh_viscosity type="isotrop"/>
-                    </ale_method> """
-        assert mdl.node_ale == self.xmlNodeFromString(doc),\
-            'Could not set mei'
-        assert mdl.getMEI() == 'user_subroutine',\
-            'Could not get mei'
 
     def checkGetAndSetFormula(self):
         """Check whether the MobileMeshModel class could be set and get formula"""
@@ -409,7 +338,7 @@ class MobileMeshTestCase(ModelTest):
                     <variable label="mesh_u" name="mesh_velocity_U"/>
                     <variable label="mesh_v" name="mesh_velocity_V"/>
                     <variable label="mesh_w" name="mesh_velocity_W"/>
-                    <property choice="user_subroutine" label="mesh_vi1" name="mesh_viscosity_1"/>
+                    <property label="mesh_vi1" name="mesh_viscosity_1"/>
                     <mesh_viscosity type="isotrop"/>
                     <formula>mesh_vi1 = 1000;</formula>
                     </ale_method> """

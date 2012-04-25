@@ -91,16 +91,6 @@ BEGIN_C_DECLS
  * Static variables
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- *  ALE property choice possible value
- *----------------------------------------------------------------------------*/
-
-enum ale_property_choice
-{
-  ale_property_choice_user_function,
-  ale_property_choice_user_subroutine
-};
-
 /*-----------------------------------------------------------------------------
  * Possible values for boundary nature
  *----------------------------------------------------------------------------*/
@@ -284,36 +274,6 @@ cs_gui_init_mei_tree(char         *formula,
     }
 
     return tree;
-}
-
-/*----------------------------------------------------------------------------
- *  Get the ale property choice
- *----------------------------------------------------------------------------*/
-
-static enum ale_property_choice
-get_ale_property_choice(void)
-{
-    char *choice_str;
-
-    enum ale_property_choice choice = ale_property_choice_user_function;
-    char *path = cs_xpath_init_path();
-
-    cs_xpath_add_elements(&path, 3, "thermophysical_models", "ale_method", "property");
-    cs_xpath_add_test_attribute(&path, "label", "mesh_vi1");
-    cs_xpath_add_attribute(&path, "choice");
-
-    choice_str = cs_gui_get_attribute_value(path);
-
-    if (cs_gui_strcmp(choice_str , "user_function"))
-        choice = ale_property_choice_user_function;
-    else if (cs_gui_strcmp(choice_str , "user_subroutine"))
-        choice = ale_property_choice_user_subroutine;
-    else
-        bft_error(__FILE__, __LINE__, 0,
-            _("Unknow ale property choice %d.\n"), choice);
-    BFT_FREE(choice_str);
-    BFT_FREE(path);
-    return choice;
 }
 
 /*-----------------------------------------------------------------------------
@@ -917,50 +877,46 @@ void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
     const char*  variables[3]   = { "mesh_vi1", "mesh_vi2", "mesh_vi3" };
     unsigned int variable_nbr   = 1;
 
-    /* Check if user function is selection */
-    if (get_ale_property_choice() == ale_property_choice_user_function)
+    /* Get formula */
+    mei_tree_t *ev;
+    char *aleFormula    = get_ale_formula();
+    char *viscosityType = get_ale_mesh_viscosity();
+    unsigned int isOrthotrop = cs_gui_strcmp(viscosityType, "orthotrop");
+
+    if (isOrthotrop)
+        variable_nbr = 3;
+
+    if (!aleFormula)
+        bft_error(__FILE__, __LINE__, 0,
+                _("Formula is null for ale.\n"));
+
+    /* Init mei */
+    ev = cs_gui_init_mei_tree(aleFormula, variables,
+                              variable_nbr, symbols, 0, 3,
+                              *dtref, *ttcabs, *ntcabs);
+
+    /* for each cell, update the value of the table of symbols for each scalar
+       (including the thermal scalar), and evaluate the interpreter */
+    for (iel = 0; iel < *ncel; iel++)
     {
-        /* Get formula */
-        mei_tree_t *ev;
-        char *aleFormula    = get_ale_formula();
-        char *viscosityType = get_ale_mesh_viscosity();
-        unsigned int isOrthotrop = cs_gui_strcmp(viscosityType, "orthotrop");
+        /* insert symbols */
+        mei_tree_insert(ev, "x", xyzcen[3 * iel + 0]);
+        mei_tree_insert(ev, "y", xyzcen[3 * iel + 1]);
+        mei_tree_insert(ev, "z", xyzcen[3 * iel + 2]);
 
+        mei_evaluate(ev);
+
+        /* Set viscmx, viscmy and viscmz */
+        viscmx[iel] = mei_tree_lookup(ev, "mesh_vi1");
         if (isOrthotrop)
-            variable_nbr = 3;
-
-        if (!aleFormula)
-            bft_error(__FILE__, __LINE__, 0,
-                    _("Formula is null for ale.\n"));
-
-        /* Init mei */
-        ev = cs_gui_init_mei_tree(aleFormula, variables,
-                                  variable_nbr, symbols, 0, 3,
-                                  *dtref, *ttcabs, *ntcabs);
-
-        /* for each cell, update the value of the table of symbols for each scalar
-            (including the thermal scalar), and evaluate the interpreter */
-        for (iel = 0; iel < *ncel; iel++)
         {
-            /* insert symbols */
-            mei_tree_insert(ev, "x", xyzcen[3 * iel + 0]);
-            mei_tree_insert(ev, "y", xyzcen[3 * iel + 1]);
-            mei_tree_insert(ev, "z", xyzcen[3 * iel + 2]);
-
-            mei_evaluate(ev);
-
-            /* Set viscmx, viscmy and viscmz */
-            viscmx[iel] = mei_tree_lookup(ev, "mesh_vi1");
-            if (isOrthotrop)
-            {
-                viscmy[iel] = mei_tree_lookup(ev, "mesh_vi2");
-                viscmz[iel] = mei_tree_lookup(ev, "mesh_vi3");
-            }
+            viscmy[iel] = mei_tree_lookup(ev, "mesh_vi2");
+            viscmz[iel] = mei_tree_lookup(ev, "mesh_vi3");
         }
-        mei_tree_destroy(ev);
-        BFT_FREE(aleFormula);
-        BFT_FREE(viscosityType);
     }
+    mei_tree_destroy(ev);
+    BFT_FREE(aleFormula);
+    BFT_FREE(viscosityType);
 }
 
 /*----------------------------------------------------------------------------
