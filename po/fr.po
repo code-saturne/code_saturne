@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-04-20 16:44+0200\n"
+"POT-Creation-Date: 2012-04-25 14:48+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6046,199 +6046,14 @@ msgstr ""
 " n'est pas présent dans le maillage.\n"
 
 #, c-format
-msgid ""
-"MPI error for communication:  %s\n"
-"Error type: %s"
-msgstr ""
-"Erreur MPI pour la communication :  %s\n"
-"Type d'erreur : %s"
-
-#, c-format
-msgid " Initializing MPI communication: %s ... "
-msgstr " Initialisation de la communication MPI : %s ..."
-
-#, c-format
-msgid ""
-"Error for communication: \"%s\".\n"
-"The interface version is not correct.\n"
-"The magic string indicates an incorrect interface format version.\n"
-"magic string read:     \"%s\"\n"
-"magic string expected: \"%s\"\n"
-msgstr ""
-"Erreur pour la communication : \"%s\".\n"
-"Le format de l'interface n'est pas à la bonne version.\n"
-"La chaîne magique indique une mauvaise version du format de l'interface.\n"
-"chaîne magique lue      : \"%s\"\n"
-"chaîne magique attendue : \"%s\"\n"
-
-#, c-format
-msgid ""
-"\n"
-"Message received on \"%s\":\n"
-msgstr ""
-"\n"
-"Message reçu sur \"%s\" :\n"
-
-#, c-format
-msgid ""
-"\n"
-"Message sent on \"%s\":\n"
-msgstr ""
-"\n"
-"Message envoyé sur \"%s\" :\n"
-
-#, c-format
-msgid ""
-"    section name:          \"%s\"\n"
-"    number of elements:    %d\n"
-msgstr ""
-"    nom de la rubrique :    \"%s\"\n"
-"    nombre d'éléments :     %d\n"
-
-#, c-format
-msgid ""
-"\n"
-"  Closing communication:  %s\n"
-msgstr ""
-"\n"
-"  Fermeture de la communication :  %s\n"
-
-#, c-format
-msgid ""
-"\n"
-"Extracting \"%s\" mesh\n"
-msgstr ""
-"\n"
-"Extraction du maillage \"%s\"\n"
-
-msgid ""
-"\n"
-" *** Renumbering of the boundary faces list    ..."
-msgstr ""
-"\n"
-" *** Renumerotation de la liste des faces de bord    ..."
+msgid " SYRTHES coupling %d: initializing MPI communication ... "
+msgstr " Couplage SYRTHES %d : initialisation de la communication MPI ..."
 
 msgid "Wall T"
 msgstr "T Paroi"
 
 msgid "Flux"
 msgstr "Flux"
-
-msgid ""
-"Coupling with SYRTHES impossible.\n"
-"No selection criteria for faces to couple."
-msgstr ""
-"Couplage avec SYRTHES impossible.\n"
-"Aucun critère de sélection pour les faces à coupler."
-
-msgid ""
-"\n"
-"Structures associated with SYRTHES 3 coupling freed.\n"
-msgstr ""
-"\n"
-"Libération des structures associées au couplage avec SYRTHES 3.\n"
-
-#, c-format
-msgid ""
-"\n"
-" ** Processing the mesh for SYRTHES coupling \"%s\"\n"
-"\n"
-msgstr ""
-"\n"
-" ** Traitement du maillage pour le couplage SYRTHES \"%s\"\n"
-"\n"
-
-msgid ""
-"Coupling with SYRTHES impossible.\n"
-"No face to couple.\n"
-msgstr ""
-"Couplage avec SYRTHES impossible.\n"
-"Aucune face à coupler.\n"
-
-#, c-format
-msgid "Triangulation of the extracted mesh (%d faces)  ..."
-msgstr "Triangulation du maillage extrait (%d faces)  ..."
-
-#, c-format
-msgid "Splitting the extracted mesh in edges (%d faces)  ..."
-msgstr "Décomposition en arêtes du maillage extrait (%d faces)  ..."
-
-msgid "Error triangulating the extracted mesh before sending to SYRTHES.\n"
-msgstr "Erreur lors du découpage du maillage extrait avant envoi à Syrthes.\n"
-
-#, c-format
-msgid ""
-"\n"
-"Extracted mesh built of %d triangles"
-msgstr ""
-"\n"
-"Maillage extrait composé de %d triangles"
-
-#, c-format
-msgid ""
-"\n"
-"Extracted mesh built of %d edges"
-msgstr ""
-"\n"
-"Maillage extrait composé de %d arêtes"
-
-#, c-format
-msgid " and %d vertices (locally)\n"
-msgstr " et %d sommets (localement)\n"
-
-msgid "\tInterpolation from vertices to elements            ..."
-msgstr "\tInterpolation des sommets vers les éléments           ..."
-
-msgid "\tInterpolation from elements to vertices            ..."
-msgstr "\tInterpolation des éléments sur les sommets            ..."
-
-#, c-format
-msgid ""
-"========================================================\n"
-"   ** Stop on SYRTHES request\n"
-"      -----------------------\n"
-"      received message: \"%s\"\n"
-"========================================================\n"
-msgstr ""
-"========================================================\n"
-"   ** Arret par demande de SYRTHES\n"
-"      ----------------------------\n"
-"      message recu : \"%s\"\n"
-"========================================================\n"
-
-#, c-format
-msgid ""
-"========================================================\n"
-"   ** Unexpected message in cs_syr3_messages_test_iter\n"
-"      ------------------------------------------------\n"
-"      received message: \"%s\"\n"
-"      expected message: cmd:iter:start \n"
-"========================================================\n"
-msgstr ""
-"========================================================\n"
-"   ** Message inattendu dans cs_syr3_messages_test_iter\n"
-"      -------------------------------------------------\n"
-"      message reçu :    \"%s\"\n"
-"      message attendu : cmd:iter:start\n"
-"========================================================\n"
-
-#, c-format
-msgid "SYRTHES coupling number %d impossible; there are %d couplings"
-msgstr "Numéro de couplage SYRTHES %d impossible ;  on a %d couplages"
-
-#, c-format
-msgid ""
-"Unexpected message in the SYRTHES coupling %d:\n"
-" expected \"%s\" (%d elements, type %d)\n"
-" received \"%s\" (%d elements, type %d)\n"
-msgstr ""
-"Message inatendu dans le couplage SYRTHES %d :\n"
-" on attendait \"%s\" (%d éléments, type %d)\n"
-" on a reçu    \"%s\"(%d éléments, type %d)\n"
-
-#, c-format
-msgid " SYRTHES coupling %d: initializing MPI communication ... "
-msgstr " Couplage SYRTHES %d : initialisation de la communication MPI ..."
 
 msgid ""
 "\n"
@@ -6379,6 +6194,16 @@ msgstr ""
 
 #, c-format
 msgid ""
+"\n"
+" ** Processing the mesh for SYRTHES coupling \"%s\"\n"
+"\n"
+msgstr ""
+"\n"
+" ** Traitement du maillage pour le couplage SYRTHES \"%s\"\n"
+"\n"
+
+#, c-format
+msgid ""
 " Message received from SYRTHES: \"%s\"\n"
 " indicates an error or is unexpected."
 msgstr ""
@@ -6429,10 +6254,9 @@ msgstr ""
 "   nombre de rangs MPI :        %d\n"
 "\n"
 
-msgid ""
-"SYRTHES volume coupling is only possible with SYRTHES4;\n"
-" Switch to a newer version of SYRTHES.\n"
-msgstr ""
+#, c-format
+msgid "SYRTHES coupling number %d impossible; there are %d couplings"
+msgstr "Numéro de couplage SYRTHES %d impossible ;  on a %d couplages"
 
 msgid ""
 "At least 1 SYRTHES coupling was defined for which\n"
@@ -8001,10 +7825,6 @@ msgstr ""
 #, c-format
 msgid "Periodicity mode \"%s\" unknown."
 msgstr "Mode de périodicité \"%s\" inconnu."
-
-#, c-format
-msgid "Unknow ale property choice %d.\n"
-msgstr ""
 
 #, c-format
 msgid "Boundary nature formula is null for %s.\n"
