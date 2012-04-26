@@ -865,7 +865,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                                 self.commonAction(CloseXMLCFDGUIAction).setEnabled(False)
                                             else :
                                                 self.commonAction(CloseXMLCFDGUIAction).setEnabled(True)
-                                            boo = False                                  
+                                            boo = False
                 if boo :
                     self.commonAction(OpenXMLCFDGUIAction).setEnabled(True)
         else :
@@ -1648,7 +1648,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 #MP modif du 22/03/2012 CFDSTUDYGUI_SolverGUI.removeDockWindow(aStudyName, aCaseName, aXmlFileName)
                 self._SolverGUI.removeDockWindow(aStudyName, aCaseName, aXmlFileName)
                 #MP fin Modif du 22/03/2012
-                #MP modif du 17/04/2012 : plus besoin de update_selectedMainViewCase_list car tout est detruit en meme temps avec removeDockWindow par appel 
+                #MP modif du 17/04/2012 : plus besoin de update_selectedMainViewCase_list car tout est detruit en meme temps avec removeDockWindow par appel
                 #MP modif du 17/04/2012 : de la classe management
                 #MP CFDSTUDYGUI_SolverGUI.update_selectedMainViewCase_list(aStudyName, aCaseName, aXmlFileName)
 
@@ -1663,7 +1663,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             mess = ObjectTR.tr("CLOSE_CFD_GUI_ACTION_CONFIRM_MESS").arg(name)
             if QMessageBox.warning(None, "Warning", mess, QMessageBox.Yes, QMessageBox.No) == QMessageBox.No: return
             if (aStudyName, aCaseName, aXmlFileName) != (None,None,None) :
-                self._SolverGUI.removeDockWindow(aStudyName, aCaseName, aXmlFileName)               
+                self._SolverGUI.removeDockWindow(aStudyName, aCaseName, aXmlFileName)
 
 
     def slotCloseCFD_GUI(self):
@@ -1985,12 +1985,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         # aDirPath : path directory where the xml file is copied
         aDirPath = self.DialogCollector.CopyDialog.destCaseName()
         aDirObject = CFDSTUDYGUI_DataModel.findMaxDeepObject(aDirPath)
-        
+
         if aDirObject != None :
             # The CFD STUDY is in the Salome Object Browser
             self.updateObjBrowser(CFDSTUDYGUI_DataModel.GetCase(aDirObject))
 
-        # BUG si je fais directement : self.updateObjBrowser(aDirObject)     
+        # BUG si je fais directement : self.updateObjBrowser(aDirObject)
 
 
     def slotCheckCompilation(self):
@@ -2073,7 +2073,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         oldStudy = CFDSTUDYGUI_DataModel.GetStudyByObj(oldCase)
         old_xml_file,xml_file = self._SolverGUI.SaveAsXmlFile()
         if old_xml_file == None and xml_file != None :
-            #MP 25/04/2012 - A faire : tester si le fichier xml_file est deja ouvert dans une etude SALOME avec CFDSTUDYGUI_Management.py 
+            #MP 25/04/2012 - A faire : tester si le fichier xml_file est deja ouvert dans une etude SALOME avec CFDSTUDYGUI_Management.py
             # classe CFDGUI_Management, methode findElem(xmlName, caseName, studyCFDName)
             # emettre un warning car on vient de sauvegarder dans un fichier xml existant et de plus ouvert dans une etude salome
             theNewStudyPath = os.path.dirname(os.path.dirname(os.path.dirname(xml_file)))
@@ -2104,7 +2104,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                         else :
                             CFDSTUDYGUI_DataModel._CreateItem(obj,os.path.basename(xml_file))
                             NewSObj = CFDSTUDYGUI_DataModel.getSObject(obj,os.path.basename(xml_file))
-                            if  NewSObj != None :                                
+                            if  NewSObj != None :
                                 self._SolverGUI.removeDockWindow(study.GetName(),theCaseName , "unnamed")
                                 self.OpenCFD_GUI(NewSObj)
                     else :

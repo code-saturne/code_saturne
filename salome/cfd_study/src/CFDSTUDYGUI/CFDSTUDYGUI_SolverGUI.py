@@ -79,7 +79,7 @@ def getObjectBrowserDock() :
   for dock in dsk.findChildren(QDockWidget):
     dockTitle = str(dock.windowTitle())
     if (dockTitle == 'Object Browser') :
-      return dock  
+      return dock
 #-------------------------------------------------------------------------------
 # Function definitions
 #-------------------------------------------------------------------------------
@@ -143,7 +143,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         log.debug("CFDSTUDY_SolverGUI.ExecGUI: ")
         mw = None
         if sobjXML != None :
-            #searching 
+            #searching
             aTitle = sobjXML.GetName()
             if aCase != None :
                 if findDockWindow(aTitle,aCase.GetName(),aCase.GetFather().GetName()):
@@ -404,8 +404,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         self.connect(mw.dockWidgetBrowser, SIGNAL("visibilityChanged(bool)"),self.setdockWindowActivated)
 
         self.connect(dock.toggleViewAction(), SIGNAL("toggled(bool)"), self.setdockWB)
-        self.connect(mw.dockWidgetBrowser.toggleViewAction(), SIGNAL("toggled(bool)"), self.setdock)      
- 
+        self.connect(mw.dockWidgetBrowser.toggleViewAction(), SIGNAL("toggled(bool)"), self.setdock)
+
         _c_CFDGUI.tabifyDockWindows(dsk,studyId)
         self.showDockWindows( studyId,xmlFileName, aCaseCFD.GetName(), aStudyCFD.GetName())
         updateObjectBrowser()
@@ -449,8 +449,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
     def setdockWindowBrowserActivated(self,visible):
         """
-        mv is the Main CFD window allocated by MainView code 
-        When we click on a cfd study window tab, the cfd study window appears and the associated CFD window browser raises too 
+        mv is the Main CFD window allocated by MainView code
+        When we click on a cfd study window tab, the cfd study window appears and the associated CFD window browser raises too
         """
         studyId = sgPyQt.getStudyId()
         dock = self.sender()
@@ -472,13 +472,13 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
     def setdockWindowActivated(self,visible):
         """
-        mv is the Main CFD window allocated by MainView code 
+        mv is the Main CFD window allocated by MainView code
         When we click on a  CFD window browser tab, the CFD window browser appears and the associated cfd study window raises too
         """
         dsk = sgPyQt.getDesktop()
         studyId = sgPyQt.getStudyId()
         dockWB = self.sender()
-        
+
         if not visible: return
         if dockWB.isActiveWindow() == False: return
         if _c_CFDGUI != None :
@@ -502,7 +502,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         Salome
         """
         studyId = sgPyQt.getStudyId()
-        if _c_CFDGUI != None : 
+        if _c_CFDGUI != None :
           _c_CFDGUI.hideDocks(studyId)
 #MP runcase dock window is managed independently of the Management class CFDGUI_Management because it is not attached to an xml case in the CFD GUI
 #MP to analyze : impact : CFDSTUDYGUI_CommandMgr.py (runTextEdit) and CFDSTUDYGUI_Management.py
@@ -517,7 +517,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         Show all the dock windows of CFDSTUDY GUI, when activating Salome CFDSTUDY module
         """
         studyId = sgPyQt.getStudyId()
-        if _c_CFDGUI != None : 
+        if _c_CFDGUI != None :
           _c_CFDGUI.showDocks(studyId)
         updateObjectBrowser()
 #MP runcase dock window is managed independently of the Management class CFDGUI_Management because it is not attached to an xml case in the CFD GUI
@@ -560,7 +560,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         log.debug("removeDockWindow -> caseName = %s" % caseName)
         dsk = sgPyQt.getDesktop()
         studyId = sgPyQt.getStudyId()
-        if _c_CFDGUI != None : 
+        if _c_CFDGUI != None :
             _c_CFDGUI.delDock(dsk,studyId,studyCFDName, caseName, xmlName)
             updateObjectBrowser()
 

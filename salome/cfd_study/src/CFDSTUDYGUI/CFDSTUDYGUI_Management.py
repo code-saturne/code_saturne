@@ -220,7 +220,7 @@ Run text edit window         : %(adockWRuncaseName)s
             self.aDockWRuncaseName  = l_winValue[self.dockWRuncasePosInListe].windowTitle()
           print self.format(studySalome)
           print "  "
-          
+
 
 #################################################################################
 
@@ -239,7 +239,7 @@ Run text edit window         : %(adockWRuncaseName)s
 
     def getDocks(self,studyId) :
       """
-      return a dictionary d 
+      return a dictionary d
       """
       d = self.getElem(studyId,self.dockPosInListe)
       return d
@@ -278,7 +278,7 @@ Run text edit window         : %(adockWRuncaseName)s
 
     def getListSobj(self,studyId) :
       """
-      return a list of Sobj corresponding to the opened dock window for xml CFD file  
+      return a list of Sobj corresponding to the opened dock window for xml CFD file
       """
       liste = self.getListElem(studyId,self.sobjXmlPosInListe)
       return liste
@@ -320,15 +320,15 @@ Run text edit window         : %(adockWRuncaseName)s
       for liste in self.d_CfdCases[studyId] :
         for pos in [self.dockPosInListe,self.dockWBPosInListe,self.dockWRuncasePosInListe] :
           if liste[pos] != None :
-            
+
             liste[pos].show()
             liste[pos].setVisible(True)
             liste[pos].toggleViewAction().setVisible(True)
-           
+
 #################################################################################
 
     def findElem(self,xmlName, caseName, studyCFDName):
-        
+
       boo = False
       if self.d_CfdCases.keys() != [] :
         for studyId in self.d_CfdCases.keys() :
@@ -348,7 +348,7 @@ Run text edit window         : %(adockWRuncaseName)s
 
     def showDockWindows(self,studyId,xmlName, caseName, studyCFDName) :
 
-      for l in self.d_CfdCases[studyId] : 
+      for l in self.d_CfdCases[studyId] :
         if l[self.xmlCFDFileNamePosInListe] == xmlName :
           if l[self.caseCFDPosInListe].GetName() == caseName :
             if l[self.studyCFDPosInListe].GetName() == studyCFDName :
@@ -433,7 +433,7 @@ Run text edit window         : %(adockWRuncaseName)s
       tabify all opened CFD windows and window CFD Browser
       force le regroupement en onglets des fenetres d'etudes CFD
       """
-      
+
       docListe,docListeWB = self.getDockListes(studyId)
 
       if _d_DockWindowsRuncase.has_key(studyId) :
