@@ -867,6 +867,10 @@ irnpnw = 1
 
 ivelco = 0
 
+! --- Take porosity into account
+
+iporos = 0
+
 ! relaxv(ipr) dynamique
 swpdyn = 0
 
