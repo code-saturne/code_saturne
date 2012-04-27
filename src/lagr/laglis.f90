@@ -247,6 +247,7 @@ if (istala.eq.1) then
             if (statis(iel,ivf).gt.seuil) then
               gmax = max (gmax, tabvr(iel))
               gmin = min (gmin, tabvr(iel))
+              nbrcel = nbrcel + 1
              endif
 
           enddo
