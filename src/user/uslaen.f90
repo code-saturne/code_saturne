@@ -57,7 +57,7 @@ subroutine uslaen &
 ! ivarlm           !  i ! <-- ! number of the stat mean + group                !
 ! iflu             !  i ! <-- ! 0: mean of the stat ivarl/ivarl1               !
 !                  !    !     ! 1: variance of the stat ivarl/ivarl1           !
-! ilpd1            !  i ! <-- ! "pointer" to global statistical wqeight        !
+! ilpd1            !  i ! <-- ! "pointer" to global statistical weight         !
 !                  !    !     !                                                !
 ! icla             !  i ! <-- ! 0: global statistic                            !
                    !    ! <-- ! !=0: stat for the icla group                   !
@@ -199,12 +199,9 @@ else if (ivarl.eq.ilfv) then
   if (iflu.eq.0) then
 
     do iel = 1, ncel
-      if (statis(iel,ilpd1).gt.seuil .and. npst.gt.0) then
+      if (statis(iel,ilpd1).gt.seuil) then
         tracel(iel) = statis(iel,ilfv)                            &
                       / (dble(npst) * volume(iel))
-      else if (statis(iel,ilpd1).gt.seuil .and.                   &
-                iplas.ge.idstnt                  ) then
-        tracel(iel) = statis(iel,ilfv) / volume(iel)
       else
         tracel(iel) = zero
       endif
@@ -216,19 +213,12 @@ else if (ivarl.eq.ilfv) then
 
     do iel = 1, ncel
 
-      if (statis(iel,ilpd1).gt.seuil .and. npst.gt.0) then
+      if (statis(iel,ilpd1).gt.seuil .and. npst.gt.1) then
 
         aa = statis(iel,ivarlm) / (dble(npst) * volume(iel))
         tracel(iel) = stativ(iel,ivarl1)                          &
-                 / ( dble(npst) * volume(iel) * volume(iel))      &
-                 - aa*aa
-
-      else if ( statis(iel,ilpd1).gt.seuil .and.                  &
-                iplas.ge.idstnt                  ) then
-
-        aa =  statis(iel,ivarlm) / volume(iel)
-        tracel(iel) = stativ(iel,ivarl1) / volume(iel)            &
-                         - aa*aa
+                 / ( dble(npst) * volume(iel))**2      &
+                - aa*aa
       else
         tracel(iel) = zero
       endif

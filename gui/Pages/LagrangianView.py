@@ -362,8 +362,8 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
 
         # Combo model
         self.modelIILAGR = ComboModel(self.comboBoxIILAGR,3,1)
-        self.modelIILAGR.addItem(self.tr("One way coupling"), "one_way")
-        self.modelIILAGR.addItem(self.tr("Two way coupling"), "two_way")
+        self.modelIILAGR.addItem(self.tr("One-way coupling"), "one_way")
+        self.modelIILAGR.addItem(self.tr("Two-way coupling"), "two_way")
         self.modelIILAGR.addItem(self.tr("Frozen carrier flow"), "frozen")
 
         self.modelIPHYLA = ComboModel(self.comboBoxIPHYLA,3,1)
@@ -458,6 +458,9 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         part_model = self.model.getParticlesModel()
         self.modelIPHYLA.setItem(str_model=part_model)
         self.slotIPHYLA(self.modelIPHYLA.dicoM2V[part_model])
+
+        # Disabling the coal model model waiting for validation
+        self.modelIPHYLA.disableItem(str_model="coal")
 
 
     @pyqtSignature("const QString&")

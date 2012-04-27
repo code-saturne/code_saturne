@@ -372,7 +372,8 @@ if (iihmpr.eq.1) then
    ivismp, ivishp, ivisdk, ivisch, ivisck,                         &
    istala, nbclst, seuil, idstnt,  nstist,                         &
    ihslag, iensi3, seuilf, nstbor,                                 &
-   inbrbd, iflmbd, iangbd, ivitbd, iencbd, imoybr )
+   inbrbd, iflmbd, iangbd, ivitbd, iencbd, imoybr,                 &
+   iactfv, iactvx, iactvy, iactvz, iactts)
 
   do ii = 1, nvplmx
     call cfname(1, nomlag(ii), len(nomlag(ii)), ii)
@@ -1469,45 +1470,17 @@ if (irf.gt.ndlaim) then
 endif
 
 ! -----------------------------------------------
-! 3.5 DIEMSIONS DU TABLEAU LIEES AUX STATISTIQUES
+! 3.5 DIMENSIONS DU TABLEAU LIEES AUX STATISTIQUES
 ! -----------------------------------------------
 
 !     NVLSTA   : NOMBRE DE VARIABLES LIEES AUX STATISTIQUES
 !                DIMENSION DU TABLEAU STATIS
 !     NVLSTS   : VARIABLES LIEES AUX STATISTIQUES SUPPLEMENTAIRES
 
-if (istala.eq.0) then
 
-  nvlsta = 0
 
-else if(istala.eq.1) then
 
-  nvlsta = 6 + nvlsts
 
-  if (iphyla .eq. 1) then
-
-    if (idpvar.eq.1) nvlsta = nvlsta + 1
-
-    if (impvar.eq.1) nvlsta = nvlsta + 1
-
-    if (itpvar.eq.1) nvlsta = nvlsta + 1
-
-  else if (iphyla .eq. 2) then
-
-    nvlsta = nvlsta + 4
-
-    if (iencra.eq.1) then
-      nvlsta = nvlsta + 1
-    endif
-
-  endif
-
-endif
-
-if(nvlsta.gt.nvplmx) then
-  write(nfecra,3003) nvlsta, nvplmx
-  call csexit(1)
-endif
 
 ! --------------------------------------------------
 ! 3.6 DEFINITION DES POINTEURS LIES AUX STATISTIQUES
@@ -1528,61 +1501,108 @@ endif
 
 !     ILVU(NUSSTA)      : Statistiques utilisateur
 
-ip  = 0
-ilvx  = ip    + 1
-ilvy  = ilvx  + 1
-ilvz  = ilvy  + 1
-ilfv  = ilvz  + 1
-ilts  = ilfv  + 1
-irf   = ilts
+ilfv = 0
+ilvx = 0
+ilvy = 0
+ilvz = 0
+ilts = 0
 
-iltp  = 0
-ildp  = 0
-ilmp  = 0
-ilhp  = 0
-ilmch = 0
-ilmck = 0
-ildck = 0
+if (istala.eq.1) then
 
-do ii = 1,nussta
-  ilvu(ii) = 0
-enddo
+  irf = 0
 
-if (iphyla.eq.1) then
-
-  if (itpvar.eq.1) then
-    iltp = irf + 1
-    irf  = iltp
+  if (iactfv.eq.1) then
+     irf = irf + 1
+     ilfv  = irf
+     nomlag(ilfv) = 'Part_vol_frac'
+     nomlav(ilfv) = 'var_Part_vol_frac'
   endif
 
-  if (idpvar.eq.1) then
-    ildp = irf + 1
-    irf  = ildp
+  if (iactvx.eq.1) then
+     irf = irf + 1
+     ilvx = irf
+     nomlag(ilvx) = 'Part_velocity_X'
+     nomlav(ilvx) = 'var_Part_velocity_X'
   endif
 
-  if (impvar.eq.1) then
-    ilmp = irf + 1
-    irf  = ilmp
+  if (iactvy.eq.1) then
+     irf = irf + 1
+     ilvy = irf
+     nomlag(ilvy) = 'Part_velocity_Y'
+     nomlav(ilvy) = 'var_Part_velocity_Y'
   endif
 
-else if (iphyla.eq.2) then
+  if (iactvz.eq.1) then
+     irf = irf + 1
+     ilvz = irf
+     nomlag(ilvz) = 'Part_velocity_Z'
+     nomlav(ilvz) = 'var_Part_velocity_Z'
+  endif
 
-  ilhp  = irf   + 1
-  ilmch = ilhp  + 1
-  ilmck = ilmch + 1
-  ildck = ilmck + 1
-  irf   = ildck
+  if (iactts.eq.1) then
+     irf = irf + 1
+     ilts = irf
+     nomlag(ilts) = 'Part_resid_time'
+     nomlav(ilts) = 'var_Part_resid_time'
+  endif
 
-endif
+  iltp  = 0
+  ildp  = 0
+  ilmp  = 0
+  ilhp  = 0
+  ilmch = 0
+  ilmck = 0
+  ildck = 0
 
-if (nvlsts.gt.0) then
-  do ii = 1,nvlsts
-    ilvu(ii) = irf + ii
+  do ii = 1,nussta
+     ilvu(ii) = 0
   enddo
-  irf = irf + nvlsts
+
+  if (iphyla.eq.1) then
+
+     if (itpvar.eq.1) then
+        iltp = irf + 1
+        irf  = iltp
+     endif
+
+     if (idpvar.eq.1) then
+        ildp = irf + 1
+        irf  = ildp
+     endif
+
+     if (impvar.eq.1) then
+        ilmp = irf + 1
+        irf  = ilmp
+     endif
+
+  else if (iphyla.eq.2) then
+
+     ilhp  = irf   + 1
+     ilmch = ilhp  + 1
+     ilmck = ilmch + 1
+     ildck = ilmck + 1
+     irf   = ildck
+
+  endif
+
+  if (nvlsts.gt.0) then
+     do ii = 1,nvlsts
+        ilvu(ii) = irf + ii
+     enddo
+     irf = irf + nvlsts
+  endif
+
+  ilpd  = irf  + 1
+  nomlag(ilpd) = 'Part_statis_weight'
+
+  nvlsta = ilpd
+
 endif
 
-ilpd  = irf  + 1
+if(nvlsta.gt.nvplmx) then
+  write(nfecra,3003) nvlsta, nvplmx
+  call csexit(1)
+endif
 
 
 ! 3.7 DEFINITION DES POINTEURS LIES AUX STATISTIQUES AUX FRONTIERES
@@ -1603,32 +1623,44 @@ if (iensi3.eq.1) then
   if (inbrbd.eq.1) then
     irf = irf + 1
     inbr = irf
+    nombrd(inbr) = 'Part_impact_number'
+    imoybr(inbr) = 0
   endif
 
   if (iflmbd.eq.1) then
     irf = irf + 1
     iflm = irf
+    nombrd(iflm) = 'Part_bndy_mass_flux'
+    imoybr(iflm) = 1
   endif
 
   if (iangbd.eq.1) then
     irf = irf + 1
     iang = irf
+    nombrd(iang) = 'Part_impact_angle'
+    imoybr(iang) = 2
   endif
 
   if (ivitbd.eq.1) then
     irf = irf + 1
     ivit = irf
+    nombrd(ivit) = 'Part_impact_velocity'
+    imoybr(ivit) = 2
   endif
 
   if (iphyla.eq.2 .and. iencra.eq.1 .and. iencbd.eq.1) then
     irf = irf + 1
     ienc = irf
+    nombrd(ienc) = 'foulingMass'
+    imoybr(ienc) = 0
   endif
 
   if (nusbor.gt.0) then
     do ii = 1,nusbor
       irf = irf + 1
       iusb(ii) = irf
+      write(nombrd(iusb(ii)),'(a8,i4.4)') 'addRec',II
+      imoybr(iusb(ii)) = 0
     enddo
   endif
 

@@ -316,6 +316,8 @@ module lagran
                              ilhp  , ilmch , ilmck , ildck ,                 &
                              ilvu(nussta)
 
+  integer, save ::           iactfv, iactvx, iactvy, iactvz, iactts
+
   !     DONNEES POUR LES STATISTIQUES VOLUMIQUES
   !     ----------------------------------------
 
@@ -376,7 +378,7 @@ module lagran
   !    ITSTE, ITSTI        : Termes sources pour la thermique
   !    ITSMAS              : Terme source pour la masse
   !    ITSMV1              : Terme source sur F1 (MV legeres)
-  !    ITSMV2              : Terme source sur F2 (MV loudres)
+  !    ITSMV2              : Terme source sur F2 (MV lourdes)
   !    ITSCO               : Terme source sur F3 (C sous forme de CO)
   !    ITSFP4              : Variance du traceur relatif a l air
 

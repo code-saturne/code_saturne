@@ -349,56 +349,40 @@ if (istala.eq.1) then
   nstist = idstnt
 
 
-!   5.4.2 Number of volume statistical variables,
-!         Name of the variables for display
+!   5.4.2 Volume statistical variables
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!    NOMLAG: name of the mean
-!    NOMLAV: name of the variance
-!    ihslag: Output to the probes
-!
+! Activation of the calculation of the particle volume fraction
+! Name of the mean : Part_vol_frac
 
-!    * CAUTION: respect the apparition order of the statistics
+  iactfv = 1
 
-!    * Be careful, these names are used to retrieve information
-!      in the calculation-restart file; therefore if a name is modified
-!      between two calculations; the associated statistics is lost.
+! Activation of the calculation of the particle velocity x-component (mean and variance)
+! Name of the mean: Part_velocity_X
+! Name of the variance: var_Part_velocity_X
+
+  iactvx = 1
+
+! Activation of the calculation of the particle velocity y-component (average and variance)
+! Name of the mean: Part_velocity_Y
+! Name of the variance: var_Part_velocity_Y
+
+  iactvy = 1
+
+! Activation of the calculation of the particle velocity z-component (average and variance)
+! Name of the mean: Part_velocity_Z
+! Name of the variance: var_Part_velocity_Z
+
+  iactvz = 1
+
+! Activation of the calculation of the particle residence time (mean and variance)
+! Name of the mean: Part_resid_time
+! Name of the variance: var_Part_resid_time
+
+  iactts = 1
 
 
-!    * A priori the user intervenes only in sections 4 and 6
-
-!   1) By default the always-computed statistics are:
-!       - Mean and variance of the velocity components
-!       - Mean and variance of the volume fraction (i. e. volume concentration)
-!       - Mean and variance of the residence time
-
-
-  ipv  =  1
-  NOMLAG(IPV)  = 'MoVitPtX'
-  NOMLAV(IPV)  = 'VaVitPtX'
-  ihslag(ipv)  = 2
-
-  ipv  = ipv  + 1
-  NOMLAG(IPV)  = 'MoVitPtY'
-  NOMLAV(IPV)  = 'VaVitPtY'
-  ihslag(ipv)  = 2
-
-  ipv  = ipv  + 1
-  NOMLAG(IPV)  = 'MoVitPtZ'
-  NOMLAV(IPV)  = 'VaVitPtZ'
-  ihslag(ipv)  = 2
-
-  ipv  = ipv  + 1
-  NOMLAG(IPV)  = 'MoTauVol'
-  NOMLAV(IPV)  = 'VaTauVol'
-  ihslag(ipv)  = 2
-
-  ipv  = ipv  + 1
-  NOMLAG(IPV)  = 'MoTpsSej'
-  NOMLAV(IPV)  = 'VaTpsSej'
-  ihslag(ipv)  = 2
-
-!   2) Specific models (iphla = 1) following the chosen options:
+!   2) Specific models (iphyla = 1) following the chosen options:
 !         Mean and variance of the temperature
 !         Mean and variance of the diameter
 !         Mean and variance of the mass
@@ -478,13 +462,6 @@ if (istala.eq.1) then
     ipv = ipv + nvlsts
   endif
 
-!   5) By default an always-calculated statistic is the
-!      sum of the statistical weights associated to the particles
-!      (i.e. the number of particles per cell)
-
-  ipv  = ipv  + 1
-  NOMLAG(IPV)  = 'SomPoids'
-  ihslag(ipv)  = 1
 
 !   6) Statistics per group:
 !     ----------------------
@@ -861,10 +838,7 @@ nusbor = 0
 !      the type of average that he wishes to apply to it for the writing
 !      of the listing and the post-processing.
 
-!    * Be careful, these names are used to retrieve information
-!      in the calculation-restart file; therefore if a name is modified
-!      between two calculations; the associated statistic is lost.
-!
+
 !    * The applied average is prescribed through the imoybr array:
 !      - if imoybr(iusb(ii)) = 0 -> no average applied
 !      - if imoybr(iusb(ii)) = 1 -> a time average is applied, i.e. the
@@ -882,55 +856,7 @@ nusbor = 0
 !      weight) of the boundary face considered is greater than seuilf;
 !      otherwise this average is set to zero.
 
-ipv = 0
 
-if (iensi3.eq.1) then
-
-  if (inbrbd.eq.1) then
-    ipv = ipv + 1
-    inbr = ipv
-    nombrd(inbr) = 'impactCount'
-    imoybr(inbr) = 0
-  endif
-
-  if (iflmbd.eq.1) then
-    ipv = ipv + 1
-    iflm = ipv
-    nombrd(iflm) = 'massFlow'
-    imoybr(iflm) = 1
-  endif
-
-  if (iangbd.eq.1) then
-    ipv = ipv + 1
-    iang = ipv
-    nombrd(iang) = 'impactAngle'
-    imoybr(iang) = 1
-  endif
-
-  if (ivitbd.eq.1) then
-    ipv = ipv + 1
-    ivit = ipv
-    nombrd(ivit) = 'impactVelNorm'
-    imoybr(ivit) = 1
-  endif
-
-  if (iencbd.eq.1) then
-    ipv = ipv + 1
-    ienc = ipv
-    nombrd(ienc) = 'foulingMass'
-    imoybr(ienc) = 0
-  endif
-
-  if (nusbor.gt.0) then
-    do ii = 1,nusbor
-      ipv = ipv + 1
-      iusb(ii) = ipv
-      write(nombrd(iusb(ii)),'(a8,i4.4)') 'addRec',II
-      imoybr(iusb(ii)) = 0
-    enddo
-  endif
-
-endif
 
 !===============================================================================
 ! 14. Lagrangian listing

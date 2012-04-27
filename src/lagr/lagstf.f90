@@ -25,7 +25,7 @@ subroutine lagstf &
 
   ( ncelet , nfabor , nvisbr ,                                    &
     ivar   ,                                                      &
-    gmin   , gmax   , gmoy   ,                                    &
+    gmin   , gmax   ,                                             &
     parbor , unsnbr )
 
 !===============================================================================
@@ -47,7 +47,7 @@ subroutine lagstf &
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! ivar             ! e  ! <-- ! numero de la variable a integrer               !
-! gmin...gmoy      ! e  ! --> ! variations min max et moyenne                  !
+! gmin gmax        ! e  ! --> ! valeurs  min max                               !
 ! parbor           ! tr ! <-- ! infos sur interaction des particules           !
 !(nfabor,nvisbr    !    !     !   aux faces de bord                            !
 ! unsnbr(nfabor    ! e  ! <-- ! inverse du nombre interaction                  !
@@ -79,7 +79,7 @@ implicit none
 
 integer          ncelet , nfabor , nvisbr
 integer          ivar
-double precision gmax   , gmin   , gmoy
+double precision gmax   , gmin
 double precision parbor(nfabor, nvisbr), unsnbr(nfabor)
 
 !  VARIABLES LOCALES
@@ -92,7 +92,6 @@ nbrfac = 0
 
 gmax = -grand
 gmin =  grand
-gmoy =  0.d0
 
 if (imoybr(ivar).eq.2) then
 
@@ -101,7 +100,6 @@ if (imoybr(ivar).eq.2) then
       nbrfac = nbrfac + 1
       gmax = max (gmax, parbor(ifac,ivar)*unsnbr(ifac))
       gmin = min (gmin, parbor(ifac,ivar)*unsnbr(ifac))
-      gmoy = gmoy + (parbor(ifac,ivar)*unsnbr(ifac))
     endif
   enddo
 
@@ -112,8 +110,7 @@ else if (imoybr(ivar).eq.1) then
       nbrfac = nbrfac + 1
       gmax = max (gmax, parbor(ifac,ivar)/tstatp)
       gmin = min (gmin, parbor(ifac,ivar)/tstatp)
-      gmoy = gmoy + (parbor(ifac,ivar)/tstatp)
-    endif
+      endif
   enddo
 
 else if (imoybr(ivar).eq.0) then
@@ -123,18 +120,14 @@ else if (imoybr(ivar).eq.0) then
       nbrfac = nbrfac + 1
       gmax = max (gmax, parbor(ifac,ivar))
       gmin = min (gmin, parbor(ifac,ivar))
-      gmoy = gmoy + parbor(ifac,ivar)
     endif
   enddo
 
 endif
 
-if (nbrfac.gt.0) then
-  gmoy = gmoy /dble(nbrfac)
-else
+if (nbrfac.eq.0) then
   gmax =  0.d0
   gmin =  0.d0
-  gmoy =  0.d0
 endif
 
 !-------

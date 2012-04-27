@@ -98,6 +98,21 @@
    </item>
    <item>
     <widget class="QTabWidget" name="tabWidget">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>1</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>16777215</height>
+      </size>
+     </property>
      <property name="currentIndex">
       <number>0</number>
      </property>
@@ -112,7 +127,7 @@
           <string>Code_Saturne key word: ISTALA</string>
          </property>
          <property name="title">
-          <string>Volume statistics</string>
+          <string>Calculation of volume statistics</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -258,7 +273,7 @@ Lagrangian iteration n° (restart(s) included)
           <string>Code_Saturne key word: IENSI3</string>
          </property>
          <property name="title">
-          <string>Boundaries statistics</string>
+          <string>Calculation of boundary statistics</string>
          </property>
          <property name="checkable">
           <bool>true</bool>

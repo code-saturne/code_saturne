@@ -80,7 +80,7 @@ BEGIN_C_DECLS
   C  : &iuslag[i][izone][iclas] = &iuslag[ i*(*nclagm)*(*nflagm) + izone*(*nclagm) + iclas]
 */
 
-/* simplfied access for fortran arrays */
+/* simplified access for fortran arrays */
 #define IUSLAG(I_,J_,K_) (*(iuslag +I_*(*nclagm)*(*nflagm) +J_*(*nclagm) +K_))
 #define RUSLAG(I_,J_,K_) (*(ruslag +I_*(*nclagm)*(*nflagm) +J_*(*nclagm) +K_))
 
@@ -406,14 +406,12 @@ _get_coal_double(double *const param, const char *const name, int icoal)
 static char*
 _get_char_post(const char *const type,
                const char *const name,
-               int  *list_value,
                int  *record_value)
 {
   char *path, *path1, *path2 = NULL;
   char *label = NULL;
   int result;
 
-  *list_value = 1;
   *record_value = 1;
 
   path = cs_xpath_init_path();
@@ -428,23 +426,18 @@ _get_char_post(const char *const type,
 
   if (cs_gui_strcmp(type, "volume")) {
 
-    cs_xpath_add_element(&path1, "monitoring_point");
+    cs_xpath_add_element(&path1, "postprocessing_recording");
     cs_xpath_add_attribute(&path1, "status");
     if (cs_gui_get_status(path1, &result))
-      *list_value = result;
+      *record_value = result;
   }
 
   else if (cs_gui_strcmp(type, "boundary")) {
 
-    cs_xpath_add_element(&path1, "listing_printing");
-    cs_xpath_add_attribute(&path1, "status");
-    if (cs_gui_get_status(path1, &result))
-      *list_value = result;
-
     cs_xpath_add_element(&path2, "postprocessing_recording");
     cs_xpath_add_attribute(&path2, "status");
     if (cs_gui_get_status(path2, &result))
-      *record_value = -1;
+      *record_value = result;
   }
 
   BFT_FREE(path);
@@ -463,7 +456,7 @@ _get_char_post(const char *const type,
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_mean_varname(char *varname, int ipp)
+_copy_mean_varname(const char *varname, int ipp)
 {
   size_t  l;
   assert(ipp > 0);
@@ -493,7 +486,7 @@ _copy_mean_varname(char *varname, int ipp)
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_variance_varname(char *varname, int ipp)
+_copy_variance_varname(const char *varname, int ipp)
 {
   size_t  l;
   assert(ipp > 0);
@@ -523,7 +516,7 @@ _copy_variance_varname(char *varname, int ipp)
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_boundary_varname(char *varname, int ipp)
+_copy_boundary_varname(const char *varname, int ipp)
 {
   size_t  l;
   assert(ipp > 0);
@@ -554,11 +547,11 @@ _copy_boundary_varname(char *varname, int ipp)
 
 void CS_PROCF(fclag1, FCLAG1)
 (
- const char          *const fstr,    /* --> Fortran string */
- int                 *const len,     /* --> String Length  */
- int                 *const var_id   /* --> Variable Id (1 to n) */
- CS_ARGF_SUPP_CHAINE
-)
+  const char          *const fstr,    /* --> Fortran string */
+  int                 *const len,     /* --> String Length  */
+  int                 *const var_id   /* --> Variable Id (1 to n) */
+  CS_ARGF_SUPP_CHAINE
+  )
 {
   int i, i1, i2, l;
   char *cstr = NULL;
@@ -619,11 +612,11 @@ void CS_PROCF(fclag1, FCLAG1)
 
 void CS_PROCF(fclag2, FCLAG2)
 (
- const char          *const fstr,    /* --> Fortran string */
- int                 *const len,     /* --> String Length  */
- int                 *const var_id   /* --> Variable Id (1 to n) */
- CS_ARGF_SUPP_CHAINE
-)
+  const char          *const fstr,    /* --> Fortran string */
+  int                 *const len,     /* --> String Length  */
+  int                 *const var_id   /* --> Variable Id (1 to n) */
+  CS_ARGF_SUPP_CHAINE
+  )
 {
   int i, i1, i2, l;
   char *cstr = NULL;
@@ -685,11 +678,11 @@ void CS_PROCF(fclag2, FCLAG2)
 
 void CS_PROCF(fclag3, FCLAG3)
 (
- const char          *const fstr,    /* --> Fortran string */
- int                 *const len,     /* --> String Length  */
- int                 *const var_id   /* --> Variable Id (1 to n) */
- CS_ARGF_SUPP_CHAINE
-)
+  const char          *const fstr,    /* --> Fortran string */
+  int                 *const len,     /* --> String Length  */
+  int                 *const var_id   /* --> Variable Id (1 to n) */
+  CS_ARGF_SUPP_CHAINE
+  )
 {
   int i, i1, i2, l;
   char *cstr = NULL;
@@ -751,12 +744,12 @@ void CS_PROCF(fclag3, FCLAG3)
 
 void CS_PROCF(cfname, CFNAME)
 (
- int           *const flag,    /* --> flag for array = 1, 2, or 3 */
- char          *const fstr,    /* --> Fortran string */
- int           *const len,     /* --> String Length  */
- int           *const var_id   /* --> Variable Id (1 to n) */
- CS_ARGF_SUPP_CHAINE
-)
+  int           *const flag,    /* --> flag for array = 1, 2, or 3 */
+  char          *const fstr,    /* --> Fortran string */
+  int           *const len,     /* --> String Length  */
+  int           *const var_id   /* --> Variable Id (1 to n) */
+  CS_ARGF_SUPP_CHAINE
+  )
 {
   int i;
   int l = 0;
@@ -789,11 +782,11 @@ void CS_PROCF(cfname, CFNAME)
 
   if (cstr != NULL) {
 
-  /* Compute string length (removing start or end blanks) */
+    /* Compute string length (removing start or end blanks) */
 
-  l = strlen(cstr);
-  if (l > *len)
-    l = *len;
+    l = strlen(cstr);
+    if (l > *len)
+      l = *len;
 
     for (i = 0; i < l; i++)
       fstr[i] = cstr[i];
@@ -924,10 +917,16 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
                                 int *const iangbd,
                                 int *const ivitbd,
                                 int *const iencbd,
-                                int imoybr[])
+                                int imoybr[],
+                                int *const iactfv,
+                                int *const iactvx,
+                                int *const iactvy,
+                                int *const iactvz,
+                                int *const iactts)
 {
   int i, icoal, ncoals = 0;
-  int list_ind, record_ind = 1;
+  int list_ind = 1;
+  int record_ind = 1;
   char *label = NULL;
   char *attr = NULL;
   char *path1 = NULL;
@@ -936,13 +935,13 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   attr = _get_attr("model", 1, "lagrangian");
   if (attr == NULL || cs_gui_strcmp(attr, "off"))
   {
-      *iilagr = 0;
+    *iilagr = 0;
 #if _XML_DEBUG_
-      bft_printf("==>UILAG1\n");
-      bft_printf("--iilagr = %i\n", *iilagr);
+    bft_printf("==>UILAG1\n");
+    bft_printf("--iilagr = %i\n", *iilagr);
 #endif
-      BFT_FREE(attr);
-      return;
+    BFT_FREE(attr);
+    return;
   }
 
   /* Global settings */
@@ -964,8 +963,8 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
     _get_status(itpvar, 3, "lagrangian", "particles_models", "thermal");
     /*
     if (*itpvar == 1) {
-        _get_double(tpart,  4, "lagrangian", "particles_models", "thermal", "particle_temperature");
-        _get_double(cppart, 4, "lagrangian", "particles_models", "thermal", "particle_specific_heat");
+      _get_double(tpart,  4, "lagrangian", "particles_models", "thermal", "particle_temperature");
+      _get_double(cppart, 4, "lagrangian", "particles_models", "thermal", "particle_specific_heat");
     }
     */
     break;
@@ -978,10 +977,10 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
 
     for (icoal=1; icoal <= ncoals; icoal++)
     {
-        _get_coal_double(&tprenc[icoal-1], "threshold_temperature", icoal);
-        _get_coal_double(&visref[icoal-1], "critical_viscosity",    icoal);
-        _get_coal_double(&enc1[icoal-1], "fouling_coefficient_1", icoal);
-        _get_coal_double(&enc2[icoal-1], "fouling_coefficient_2", icoal);
+      _get_coal_double(&tprenc[icoal-1], "threshold_temperature", icoal);
+      _get_coal_double(&visref[icoal-1], "critical_viscosity",    icoal);
+      _get_coal_double(&enc1[icoal-1], "fouling_coefficient_1", icoal);
+      _get_coal_double(&enc2[icoal-1], "fouling_coefficient_2", icoal);
     }
     break;
   }
@@ -1050,62 +1049,72 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
 
     /* labels */
 
-    label = _get_char_post("volume", "mean_velocity_U", &list_ind, &record_ind);
-    if (label) _copy_mean_varname(label, 1);
-    ihslag[1] = list_ind;
+    i  = 0;
 
-    label = _get_char_post("volume", "variance_velocity_U", &list_ind, &record_ind);
-    if (label) _copy_variance_varname(label, 1);
+    _get_char_post("volume", "Part_vol_frac", iactfv);
+    if (*iactfv)
+    {
+      i++;
+      _copy_mean_varname("Part_vol_frac", i);
+      _copy_variance_varname("var_Part_vol_frac", i);
+      ihslag[i] = 1;
+    }
 
-    label = _get_char_post("volume", "mean_velocity_V", &list_ind, &record_ind);
-    if (label) _copy_mean_varname(label, 2);
-    ihslag[2] = list_ind;
+    _get_char_post("volume", "Part_velocity_X", iactvx);
+    if (*iactvx)
+    {
+      i++;
+      _copy_mean_varname("Part_velocity_X", i);
+      _copy_variance_varname("var_Part_velocity_X", i);
+      ihslag[i] = 1;
+    }
 
-    label = _get_char_post("volume", "variance_velocity_V", &list_ind, &record_ind);
-    if (label) _copy_variance_varname(label, 2);
+    _get_char_post("volume", "Part_velocity_Y", iactvy);
+    if (*iactvy)
+    {
+      i++;
+      _copy_mean_varname("Part_velocity_Y", i);
+      _copy_variance_varname("var_Part_velocity_X", i);
+      ihslag[i] = 1;
+    }
 
-    label = _get_char_post("volume", "mean_velocity_W", &list_ind, &record_ind);
-    if (label) _copy_mean_varname(label, 3);
-    ihslag[3] = list_ind;
+    _get_char_post("volume", "Part_velocity_Z", iactvz);
+    if (*iactvz)
+    {
+      i++;
+      _copy_mean_varname("Part_velocity_Z", i);
+      _copy_variance_varname("var_Part_velocity_Z", i);
+      ihslag[i] = 1;
+    }
 
-    label = _get_char_post("volume", "variance_velocity_W", &list_ind, &record_ind);
-    if (label) _copy_variance_varname(label, 3);
-
-    label = _get_char_post("volume", "mean_volume_fraction", &list_ind, &record_ind);
-    if (label) _copy_mean_varname(label, 4);
-    ihslag[4] = list_ind;
-
-    label = _get_char_post("volume", "variance_volume_fraction", &list_ind, &record_ind);
-    if (label) _copy_variance_varname(label, 4);
-
-    label = _get_char_post("volume", "mean_resident_time", &list_ind, &record_ind);
-    if (label) _copy_mean_varname(label, 5);
-    ihslag[5] = list_ind;
-
-    label = _get_char_post("volume", "variance_resident_time", &list_ind, &record_ind);
-    if (label) _copy_variance_varname(label, 5);
-
-    i = 5;
+    _get_char_post("volume", "Part_resid_time", iactts);
+    if (*iactts)
+    {
+      i++;
+      _copy_mean_varname("Part_resid_time", i);
+      _copy_variance_varname("var_Part_resid_time", i);
+      ihslag[i] = 1;
+    }
 
     if (*iphyla == 1) {
 
       if (*itpvar == 1) {
         i++;
-        label = _get_char_post("volume",  "mean_temperature", &list_ind, &record_ind);
+        label = _get_char_post("volume",  "mean_temperature",  &record_ind);
         if (label) _copy_mean_varname(label, i);
         ihslag[i] = list_ind;
 
-        label = _get_char_post("volume", "variance_temperature", &list_ind, &record_ind);
+        label = _get_char_post("volume", "variance_temperature",  &record_ind);
         if (label) _copy_variance_varname(label, i);
       }
 
       if (*idpvar == 1) {
         i++;
-        label = _get_char_post("volume", "mean_diameter", &list_ind, &record_ind);
+        label = _get_char_post("volume", "mean_diameter",  &record_ind);
         if (label) _copy_mean_varname(label, i);
         ihslag[i] = list_ind;
 
-        label = _get_char_post("volume", "variance_diameter", &list_ind, &record_ind);
+        label = _get_char_post("volume", "variance_diameter",  &record_ind);
         if (label) _copy_variance_varname(label, i);
       }
     }
@@ -1120,34 +1129,34 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
       if (label) _copy_variance_varname(label, i);
       */
       i++;
-      label = _get_char_post("volume", "mean_shrinking_core_diameter", &list_ind, &record_ind);
+      label = _get_char_post("volume", "mean_shrinking_core_diameter",  &record_ind);
       if (label) _copy_mean_varname(label, i);
       ihslag[i] = list_ind;
 
-      label = _get_char_post("volume", "variance_shrinking_core_diameter", &list_ind, &record_ind);
+      label = _get_char_post("volume", "variance_shrinking_core_diameter", &record_ind);
       if (label) _copy_variance_varname(label, i);
 
       i++;
-      label = _get_char_post("volume", "mean_raw_coal_mass_fraction", &list_ind, &record_ind);
+      label = _get_char_post("volume", "mean_raw_coal_mass_fraction",  &record_ind);
       if (label) _copy_mean_varname(label, i);
       ihslag[i] = list_ind;
 
-      label = _get_char_post("volume", "variance_raw_coal_mass_fraction", &list_ind, &record_ind);
+      label = _get_char_post("volume", "variance_raw_coal_mass_fraction",  &record_ind);
       if (label) _copy_variance_varname(label, i);
 
       i++;
-      label = _get_char_post("volume", "mean_char_mass_fraction", &list_ind, &record_ind);
+      label = _get_char_post("volume", "mean_char_mass_fraction",  &record_ind);
       if (label) _copy_mean_varname(label, i);
       ihslag[i] = list_ind;
 
-      label = _get_char_post("volume", "variance_char_mass_fraction", &list_ind, &record_ind);
+      label = _get_char_post("volume", "variance_char_mass_fraction",  &record_ind);
       if (label) _copy_variance_varname(label, i);
     }
 
     i++;
-    label = _get_char_post("volume", "statistical_weight", &list_ind, &record_ind);
-    if (label) _copy_mean_varname(label, i);
-    ihslag[i] = list_ind;
+    _get_char_post("volume", "Part_statis_weight",  &record_ind);
+    _copy_mean_varname("Part_statis_weight", i);
+    ihslag[i] = 1;
   }
 
   _get_status(iensi3, 3, "lagrangian", "statistics", "boundary");
@@ -1159,34 +1168,34 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
 
     i = 0;
 
-    label = _get_char_post("boundary", "impacts", inbrbd, &record_ind);
+    _get_char_post("boundary", "Part_impact_number", inbrbd);
     if (*inbrbd) {
       i++;
-      if (label) _copy_boundary_varname(label, i);
+      _copy_boundary_varname("Part_impact_number", i);
       imoybr[i] = 0;
     }
 
-    label = _get_char_post("boundary", "mass_flux", iflmbd, &record_ind);
+    label = _get_char_post("boundary", "Part_bndy_mass_flux", iflmbd);
     if (*iflmbd) {
       i++;
-      if (label) _copy_boundary_varname(label, i);
+      _copy_boundary_varname("Part_bndy_mass_flux", i);
       imoybr[i] = 1;
     }
 
-    label = _get_char_post("boundary", "angle", iangbd, &record_ind);
+    label = _get_char_post("boundary", "Part_impact_angle", iangbd);
     if (*iangbd) {
       i++;
-      if (label) _copy_boundary_varname(label, i);
+      _copy_boundary_varname("Part_impact_angle", i);
       imoybr[i] = 2;
     }
 
-    label = _get_char_post("boundary", "velocity", ivitbd, &record_ind);
+    label = _get_char_post("boundary", "Part_impact_velocity", ivitbd);
     if (*ivitbd) {
       i++;
-      if (label) _copy_boundary_varname(label, i);
+      _copy_boundary_varname("Part_impact_velocity", i);
       imoybr[i] = 2;
     }
-    label = _get_char_post("boundary", "coal_fouling", iencbd, &record_ind);
+    label = _get_char_post("boundary", "coal_fouling", iencbd);
     if (*iencbd) {
       i++;
       if (label) _copy_boundary_varname(label, i);
@@ -1215,12 +1224,12 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   case 2:
     bft_printf("--iencra = %i\n", *iencra);
     for (icoal=1; icoal<=ncoals; icoal++)
-      {
-        bft_printf("--tprenc[%i] = %f\n", icoal, tprenc[icoal-1]);
-        bft_printf("--visref[%i] = %f\n", icoal, visref[icoal-1]);
-        bft_printf("--enc1[%i] = %f\n", icoal, enc1[icoal-1]);
-        bft_printf("--enc2[%i] = %f\n", icoal, enc2[icoal-1]);
-      }
+    {
+      bft_printf("--tprenc[%i] = %f\n", icoal, tprenc[icoal-1]);
+      bft_printf("--visref[%i] = %f\n", icoal, visref[icoal-1]);
+      bft_printf("--enc1[%i] = %f\n", icoal, enc1[icoal-1]);
+      bft_printf("--enc2[%i] = %f\n", icoal, enc2[icoal-1]);
+    }
     break;
   }
 

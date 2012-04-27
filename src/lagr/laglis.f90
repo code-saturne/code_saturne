@@ -32,13 +32,13 @@ subroutine laglis &
    ettp   , tepa   , statis , stativ , tslagr , parbor )
 
 !===============================================================================
-! FONCTION :
+! Purpose:
 ! --------
-
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN :
-!   -------------------------------------
-
-!     ECITURE DES INFOS DANS LE LISTING
+!   Subroutine of the Lagrangian particle-tracking module :
+!   -------------------------------------------------------
+!
+!   Writes the information about the particle-tracking calculation
+!   in the main listing file.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -123,24 +123,21 @@ double precision parbor(nfabor,nvisbr)
 
 ! Local variables
 
-integer          ifac , iel , ivf , itabvr , nbrcel
-integer          ivff , iflu , icla , ii , nb
-double precision aa , bb , gmax , gmin , gmoy
+integer          ifac , iel , ivf , itabvr
+integer          ivff , iflu , icla , ii , nb, nbrcel
+double precision aa , bb , gmax , gmin
 character        chcond*16
 
 double precision, allocatable, dimension(:) :: tabvr
 
 !===============================================================================
 !===============================================================================
-! 0.  GESTION MEMOIRE
-!===============================================================================
-
-
-!===============================================================================
-! 1. INITIALISATION
+! 1. Initializations
 !===============================================================================
 
 ! Initialize variables to avoid compiler warnings
+
+nbrcel = 0
 
 if (nbpart.ne.0) then
   aa = 100.d0 / dble(nbpart)
@@ -154,13 +151,13 @@ endif
 
 write (nfecra,1000)
 
-! NOMBRE DE PARTICULES
+! Number of particles
 
-write(nfecra,1001)
+write(nfecra,1003)
 write(nfecra,1010) iplas , iplar
-write(nfecra,1001)
+write(nfecra,1003)
 write(nfecra,1020)
-write(nfecra,1002)
+write(nfecra,1003)
 write(nfecra,1031) nbpnew, dnbpnw
 if (iroule.ge.1) then
   write(nfecra,1037) npcsup, dnpcsu
@@ -174,51 +171,47 @@ write(nfecra,1033) nbpout-nbperr, (dnbpou-dnbper)
 write(nfecra,1039) nbpdep, dnbdep
 write(nfecra,1035) nbperr, dnbper
 write(nfecra,1036) nbpart, dnbpar
-write(nfecra,1001)
 if (nbptot.gt.0) then
   write(nfecra,1050) (nbpert*100.d0)/dble(nbptot)
   write(nfecra,1001)
 endif
 
-! DEBIT SUR CHAQUE ZONE
+! Flow rate for each zone
 
 write(nfecra,7000)
-write(nfecra,1002)
-do ii = 1,nfrlag
-  nb = ilflag(ii)
 
-  if ( iusclb(nb) .eq. ientrl) then
-     CHCOND = 'ENTREE'
+do ii = 1,nfrlag
+   nb = ilflag(ii)
+    if ( iusclb(nb) .eq. ientrl) then
+     CHCOND = 'INLET'
   else if ( iusclb(nb) .eq. irebol) then
-     CHCOND = 'REBOND'
+     CHCOND = 'REBOUND'
   else if ( iusclb(nb) .eq. isortl) then
-     CHCOND = 'SORTIE'
+     CHCOND = 'OUTLET'
   else if ( iusclb(nb) .eq. idepo1 .or.                           &
        iusclb(nb) .eq. idepo2    ) then
     CHCOND = 'DEPOSITION'
   else if ( iusclb(nb) .eq. iencrl) then
-    CHCOND = 'ENCRASSEMENT'
+    CHCOND = 'FOULING'
   else if ( iusclb(nb) .eq. idepfa) then
-    CHCOND = 'FORCES_CHIMIQUES'
+    CHCOND = 'DLVO CONDITIONS'
   else
-    CHCOND = 'UTILISATEUR'
+    CHCOND = 'USER'
   endif
 
   write(nfecra,7001) nb,deblag(nb)/dtp,chcond
 enddo
 write(nfecra,1001)
 
-! STATISTIQUES VOLUMIQUES
+! Volumic statistics
 
 if (istala.eq.1) then
   write(nfecra,2000)
-  write(nfecra,1002)
+  write(nfecra,1003)
   write(nfecra,2005) idstnt
-
   if (iplas.ge.idstnt) then
-
     if (isttio.eq.0) then
-      write(nfecra,2010) npstt
+       write(nfecra,2010) npstt
     endif
     if (isttio.eq.1 .and. iplas.lt.nstist) then
       write(nfecra,2020) npstt
@@ -227,87 +220,80 @@ if (istala.eq.1) then
       write(nfecra,2020) npstt
       write(nfecra,2040) npst
     endif
-    write(nfecra,1001)
-
+    write(nfecra,1003)
     if (nvlsta.gt.0) then
       write(nfecra,3010)
-      write(nfecra,1002)
 
-      ! Allocate a work array
+         ! Allocate a work array
       allocate(tabvr(ncelet))
-
-!     MOYENNE
-
+       !    Calculation of the averages
       do ivf = 1, nvlsta
-
         ivff = ivf
         icla = 0
         iflu = 0
+        gmin = grand
+        gmax = -grand
 
         call uslaen                                               &
         !==========
- ( nvar   , nscal  , nvlsta ,                                     &
-   ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,          &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statis , stativ , tabvr  )
+        ( nvar   , nscal  , nvlsta ,                              &
+          ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,   &
+          dt     , rtpa   , rtp    , propce , propfa , propfb ,   &
+          coefa  , coefb  , statis , stativ , tabvr  )
 
-        nbrcel = 0
+        if ((ivf.ne.ilfv).and.(ivf.ne.ilpd)) then
 
-        gmax = -grand
-        gmin =  grand
-        gmoy =  0.d0
+          do iel = 1,ncel
+            if (statis(iel,ivf).gt.seuil) then
+              gmax = max (gmax, tabvr(iel))
+              gmin = min (gmin, tabvr(iel))
+             endif
 
-        do iel = 1,ncel
-          bb = tabvr(iel)
-          if (statis(iel,ilpd).gt.seuil) then
-            nbrcel = nbrcel + 1
-            gmax = max (gmax, bb)
-            gmin = min (gmin, bb)
-            gmoy = gmoy + bb
+          enddo
+
+          if (nbrcel.eq.0) then
+            gmax =  0.d0
+            gmin =  0.d0
           endif
-        enddo
 
-        if (nbrcel.gt.0) then
-          gmoy = gmoy /dble(nbrcel)
-        else
-          gmax =  0.d0
-          gmin =  0.d0
-          gmoy =  0.d0
-        endif
-        write(nfecra,3020) nomlag(ivf),  gmin, gmax, gmoy
+          else
 
+            do iel = 1,ncel
+              gmax = max (gmax, tabvr(iel))
+              gmin = min (gmin, tabvr(iel))
+            enddo
+
+         endif
+
+         write(nfecra,3020) nomlag(ivf),  gmin, gmax
       enddo
 
-      ! Free memory
+         ! Free memory
       deallocate(tabvr)
-
     endif
   endif
-
   write(nfecra,1001)
 
 endif
 
-! STATISTIQUES PARIETALES
+! Boundary statistics
 
 if (iensi3.eq.1) then
 
   write(nfecra,5000)
-  write(nfecra,1002)
+  write(nfecra,1003)
   if (isttio.eq.1) then
     if (iplas.ge.nstbor) then
       write(nfecra,5020) npstf
     else
       write(nfecra,5010) nstbor
     endif
-  endif
-  write(nfecra,5030) npstft
-  write(nfecra,1001)
+ endif
+ write(nfecra,5030) npstft
+ write(nfecra,1003)
 
   if (nvisbr.gt.0) then
     write(nfecra,6000)
-    write(nfecra,1002)
-
     if (nvisbr.gt.1) then
 
       ! Allocate a work array
@@ -330,23 +316,19 @@ if (iensi3.eq.1) then
       !==========
        ( ncelet , nfabor , nvisbr ,                               &
          ivff   ,                                                 &
-         gmin   , gmax   , gmoy   ,                               &
+         gmin   , gmax   ,                                        &
          parbor , tabvr  )
-
-      write(nfecra,6010) nombrd(ivf),  gmin, gmax, gmoy
-
+      write(nfecra,6010) nombrd(ivf),  gmin, gmax
     enddo
-
     ! Free memory
     if (allocated(tabvr)) deallocate(tabvr)
-
     write(nfecra,1001)
-
   endif
 
 endif
 
-! INFO SUR LE COUPLAGE RETOUR
+
+ ! Information about two-way coupling
 
 if (iilagr.eq.2) then
 
@@ -380,129 +362,84 @@ endif
 ! FORMATS
 !--------
 
- 1000 format(3X,'** INFORMATIONS SUR LE CALCUL LAGRANGIEN',/3X,         &
-          '   -------------------------------------')
+1000 format(3X,'** INFORMATION ON THE LAGRANGIAN CALCULATION',/3X,         &
+          '   ------------------------------------------')
 
- 1001 format('-----------------------------------------------------',   &
-       '----------')
+1001 format('-----------------------------------------------------',   &
+          '----------')
 
- 1002 format('   ---------------------------------------------------',  &
-       '-----')
+1002 format('   ---------------------------------------------------',  &
+          '-----')
 
- 1010 format('Iters Lagrangiennes absolues/relatives : ',               &
-         I10,' /',I10)
+1003 format('  ')
 
- 1020 format('   Pour cette iteration, nombre de particules',/,   &
-       '   (sans et avec leur poids statistique) :')
- 1031 format('ln  nouvelles injectees                ',I8,3X,E14.5)
- 1032 format('ln  nouvelles par clonage              ',I8,3X,E14.5)
- 1033 format('ln  sorties, ou deposees et supprimees ',I8,3X,E14.5)
- 1034 format('ln  eliminees par roulette russe       ',I8,3X,E14.5)
- 1035 format('ln  perdues par erreur de reperage     ',I8,3X,E14.5)
- 1036 format('ln  total restantes en fin de passage  ',I8,3X,E14.5)
- 1037 format('ln  qui ont subit le clonage           ',I8,3X,E14.5)
- 1038 format('ln  de charbon encrassees              ',I8,3X,E14.5)
- 1039 format('ln  deposees                           ',I8,3X,E14.5)
+1010 format('Lagrangian iteration n° (absolute/relative) : ',               &
+          I10,' /',I10)
 
- 1050 format('% de particules perdues (suites comprises) : ',E10.4)
+1020 format('   For the current iteration, number of particles',/,   &
+          '   (with and without statistical weight) :')
+1031 format('ln  newly injected                           ',I8,3X,E14.5)
+1032 format('ln  new by cloning                           ',I8,3X,E14.5)
+1033 format('ln  out, or deposited and eliminated         ',I8,3X,E14.5)
+1034 format('ln  eliminated by russian roulette           ',I8,3X,E14.5)
+1035 format('ln  lost in the location stage               ',I8,3X,E14.5)
+1036 format('ln  total number at the end of the time step ',I8,3X,E14.5)
+1037 format('ln  which have undergone cloning             ',I8,3X,E14.5)
+1038 format('ln  coal particles fouled                    ',I8,3X,E14.5)
+1039 format('ln  deposited                                ',I8,3X,E14.5)
+1050 format('% of lost particles (restart(s) included) :  ',E10.4)
 
- 2000 format('   Statistiques volumiques :')
+2000 format('   Volume statistics :')
 
- 2005 format('Debut des statistiques a l''iteration absolue :   ',I10)
+2005 format('Start of calculation from absolute Lagrangian iteration n°:   ',I10)
 
- 2010 format('Nombre d''iterations dans les stats instationnaires : ',  &
-        i10)
+2010 format('Number of iterations in unsteady statistics: ',  &
+          i10)
 
- 2020 format('Nombre d''iterations total dans les statistiques :',I10)
+2020 format('Total number of iterations in the statistics:',I10)
 
- 2030 format('RAZ des stats (debut du calcul stationnaire : ',I10,' )')
+2030 format('Start of steady-state statistics from Lagrangian iteration n°: ',I10,' )')
 
- 2040 format('Nombre d''iterations dans les stats stationnaires :',I9)
+2040 format('Number of iterations in steady-state statistics :',I9)
 
- 3010 format('   Stats volumiques  Valeur min    Valeur max    ',       &
-       'Valeur moy')
+3010 format('                            Min value    Max value    ')
 
- 3020 format('lc  ',A13,2X,E12.5,2X,E12.5,2X,E12.5)
+3020 format('lc  ',A20,2X,E12.5,2X,E12.5,2X,E12.5)
 
- 4000 format('   Termes sources de couplage-retour instationnaires :')
+4000 format('   Unsteady two-way coupling source terms:')
 
- 4010 format('   Termes sources de couplage-retour :')
+4010 format('   Two-way coupling source terms:')
 
- 4020 format('RAZ des TS (debut du calcul stationnaire : ',I10,')')
+4020 format('Reset of the source terms (Start of steady-state at:): ',I10,')')
 
- 4030 format('Nombre d''iterations dans les TS stationnaires :',I10)
+4030 format('Number of iterations for the steady-state source terms:',I10)
 
- 4050 format('Taux volumiques max de particules : ',E14.5)
+4050 format('Maximum particle volume fraction : ',E14.5)
 
- 4060 format('Taux massiques max de particules :  ',E14.5)
+4060 format('Maximum particle mass fraction :  ',E14.5)
 
- 4070 format('Nbr de cellules qui ont un taux volumique > 0.8 :',I10)
+4070 format('Number of cells with a part. volume fraction greater than 0.8 :',I10)
 
- 5000 format('   Statistiques aux frontieres :')
+5000 format('   Boundary statistics :')
 
- 5010 format('RAZ des stats aux frontieres (debut stationnaire : ',     &
-        I8,')')
+5010 format('Start of steady-state statistics from Lagrangian iteration n°: ',     &
+          I8,')')
 
- 5020 format('Nbr d''iters des stats frontieres stationnaires : ',I10)
+5020 format('Number of iterations in steady-state statistics: ',I10)
 
- 5030 format('Nbr d''iters total dans les stats aux frontieres :',I10)
+5030 format('Total number of iterations in the statistics:',I10)
 
- 6000 format('   Stats frontieres  Valeur min    Valeur max    ',       &
-       'Valeur moy')
+6000 format('                           Min value    Max value    ')
 
- 6010 format('lp  ', A13, 2X, E12.5, 2X, E12.5, 2X, E12.5)
+6010 format('lp  ', A20, 2X, E12.5, 2X, E12.5, 2X, E12.5)
 
- 7000 format(3X,'ZONE          DEBIT(kg/s)       TYPE CL    ')
+7000 format(3X,'Zone     Mass flow rate(kg/s)      Boundary type    ')
 
- 7001 format(2x, i3, 10x, e12.5, 9x, a16)
+7001 format(2x, i3, 10x, e12.5, 9x, a16)
 
 !====
 ! FIN
 !====
 
 end subroutine
-
-!-----------------------------------------------------------------------
-!Iterations Lagrangiennes absolues/relatives : 1234567 /1234567
-!-----------------------------------------------------------------------
-!   Pour cette iteration, nombre particules :
-!   ---------------------------------------------------------
-!ln   nouvelles injectees                12345678  0.3067e+04
-!ln   qui ont ete clonees                12345678
-!ln   nouvelles par clonage              12345678
-!ln   sortantes du domaine               12345678
-!ln   eliminees par roulette russe       12345678
-!ln   perdues par erreur de reperage     12345678
-!ln   total restantes en fin de passage  12345678
-!-----------------------------------------------------------------------
-!Poucentage de particules perdues pour ce calcul : 1234567890
-!-----------------------------------------------------------------------
-!   Statistiques volumiques :
-!   ---------------------------------------------------------
-!Debut des stat a l'iteration Lagrangienne absolue : 1234567
-!Nombre de passages dans les stat instationnaires : 1234567
-!Nombre de passages total dans les stat : 1234567
-!RAZ des statistiques stationnaires (debut du cumul : 1234567)
-!Nombre de passages dans les stat stationnaires : 1234567
-!-----------------------------------------------------------------------
-!   Stat volumiques   Valeur min    Valeur max    Valeur moy
-!   ---------------------------------------------------------
-!lc   1234567890123  -0.47302e+03  -0.30677e+04  -0.30677e+04
-!-----------------------------------------------------------------------
-!   Termes sources de couplage-retour
-!   ---------------------------------------------------------
-!Taux volumiques max de particules :
-!Taux massiques max de particules :
-!Nbr de cellules qui ont un taux volumique > 0.8 :
-!-----------------------------------------------------------------------
-!   Statistiques aux frontieres :
-!   ---------------------------------------------------------
-!RAZ des stat aux frontieres (debut stationnaire :   1234567890)
-!Nbr d''iter des stat aux frontieres stationnaires : 1234567890
-!Nbr d''iter total dans les stat aux frontieres :    1234567890
-!-----------------------------------------------------------------------
-!   Stat volumiques   Valeur min    Valeur max    Valeur moy
-!   ---------------------------------------------------------
-!lp   nombreImpacts       -0.47302e+03  -0.30677e+04
-!-----------------------------------------------------------------------
 

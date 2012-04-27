@@ -153,7 +153,12 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
                                 int *const iangbd,
                                 int *const ivitbd,
                                 int *const iencbd,
-                                int imoybr[]);
+                                int imoybr[],
+                                int *const iactfv,
+                                int *const iactvx,
+                                int *const iactvy,
+                                int *const iactvz,
+                                int *const iactts);
 
 /*-----------------------------------------------------------------------------
  * Fortran Interface:

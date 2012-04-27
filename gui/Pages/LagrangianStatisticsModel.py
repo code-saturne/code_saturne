@@ -92,7 +92,6 @@ class LagrangianStatisticsModel(Model):
         for v in self.getVariablesNamesBoundary():
             default[v] = v
 
-        default['monitoring_point'] = "off"
         default['listing_printing'] = "off"
         default['postprocessing_recording'] = "off"
 
@@ -103,29 +102,27 @@ class LagrangianStatisticsModel(Model):
         names = self.getVariablesNamesVolume()
         volume_names = []
         for name in names:
-            if name == "statistical_weight":
+            if name == "Part_statis_weight":
                 volume_names.append(name)
             else:
-                volume_names.append("mean_" + name)
-                volume_names.append("variance_" + name)
+                volume_names.append(name)
+                volume_names.append("var_" + name)
         return volume_names
 
 
     # not private, used in View
     def getVariablesNamesVolume(self):
 
-        names = ["statistical_weight",
-                 "velocity_U", "velocity_V", "velocity_W",
-                 "volume_fraction", "resident_time", "temperature",
-                 "diameter", "shrinking_core_diameter",
-                 "raw_coal_mass_fraction", "char_mass_fraction" ]
+        names = ["Part_vol_frac",
+                 "Part_velocity_X", "Part_velocity_Y", "Part_velocity_Z",
+                 "Part_resid_time", "Part_statis_weight"]
         return names
 
 
     # not private, used in View
     def getVariablesNamesBoundary(self):
-        names = ["impacts", "mass_flux",
-                 "angle", "velocity", "coal_fouling"]
+        names = ["Part_bndy_mass_flux","Part_impact_number",
+                 "Part_impact_angle", "Part_impact_velocity"]
         return names
 
 
@@ -251,35 +248,21 @@ class LagrangianStatisticsModel(Model):
         return value
 
 
-    def getPropertyLabelFromNameVolume(self, name):
+    def getPostprocessingVolStatusFromName(self, name):
         node = self.node_volume.xmlInitChildNode('property', name=name)
-        label = node['label']
-        if not label:
-            label = self._defaultLagrangianStatisticsValues()[name]
-            self.setPropertyLabelFromNameVolume(label, label)
-        return label
-
-
-    def setPropertyLabelFromNameVolume(self, name, label):
-        node = self.node_volume.xmlInitChildNode('property', name=name)
-        node['label'] = label
-
-
-    def getMonitoringStatusFromName(self, name):
-        node = self.node_volume.xmlInitChildNode('property', name=name)
-        node2 = node.xmlGetChildNode('monitoring_point', 'status')
+        node2 = node.xmlGetChildNode('postprocessing_recording', 'status')
         if not node2:
             return "on"
         else:
-            return "off" # node2['status']
+            return "off"
 
 
-    def setMonitoringStatusFromName(self, name, status):
+    def setPostprocessingVolStatusFromName(self, name, status):
         self.isOnOff(status)
         node = self.node_volume.xmlInitChildNode('property', name=name)
-        node2 = node.xmlInitChildNode('monitoring_point', 'status')
+        node2 = node.xmlInitChildNode('postprocessing_recording', 'status')
         if status == "on":
-            node.xmlRemoveChild('monitoring_point')
+            node.xmlRemoveChild('postprocessing_recording')
         elif status == "off":
             node2['status'] = status
 

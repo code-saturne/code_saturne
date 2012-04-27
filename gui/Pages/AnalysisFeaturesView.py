@@ -113,7 +113,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelSteadyFlow.addItem(self.tr("steady flow"), "on")
         self.modelSteadyFlow.addItem(self.tr("unsteady flow"), "off")
 
-        self.modelLagrangian.addItem(self.tr("single Phase Flow"), "single_phase")
+        self.modelLagrangian.addItem(self.tr("off"), "single_phase")
         self.modelLagrangian.addItem(self.tr("particles and droplets tracking"), "lagrangian")
 
         self.modelAtmospheric.addItem(self.tr("off"             ), "off")

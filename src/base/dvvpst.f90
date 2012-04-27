@@ -672,8 +672,8 @@ if (nummai .eq. -1) then
 
     do icla  = 0, nbclst
 
-!     -> si IPAS = 0 : statistiques globales
-!        si 0 < IPAS =< NBCLST : statistiques par groupe
+!     -> si ICLA = 0 : statistiques globales
+!        si 0 < ICLA =< NBCLST : statistiques par groupe
 
       do ivarl = 1, nvlsta
 

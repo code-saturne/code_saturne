@@ -79,10 +79,9 @@ class StandardItemModelVolumicNames(QStandardItemModel):
         """
         QStandardItemModel.__init__(self)
 
-        self.headers = [self.tr("Name"),
-                        self.tr("Mean value name"),
-                        self.tr("Variance name"),
-                        self.tr("Recording")]
+        self.headers = [self.tr("Variable Name (Mean value)"),
+                        self.tr("Variable Name (Variance)"),
+                        self.tr("Post-processing")]
         self.setColumnCount(len(self.headers))
         self.model = model
         self.initData()
@@ -92,18 +91,15 @@ class StandardItemModelVolumicNames(QStandardItemModel):
 
         self.dataVolumicNames = []
         vnames = self.model.getVariablesNamesVolume()
-
         for vname in vnames:
-            if vname == "statistical_weight":
-                label = self.model.getPropertyLabelFromNameVolume(vname)
+            if vname == "Part_statis_weight":
                 labelv = ""
-                monitoring = self.model.getMonitoringStatusFromName(vname)
-                line = [vname, label, labelv, monitoring]
+                postprocessing = self.model.getPostprocessingVolStatusFromName(vname)
+                line = [vname, labelv, postprocessing]
             else:
-                label = self.model.getPropertyLabelFromNameVolume("mean_" + vname)
-                labelv = self.model.getPropertyLabelFromNameVolume("variance_" + vname)
-                monitoring = self.model.getMonitoringStatusFromName(label)
-                line = [vname, label, labelv, monitoring]
+                labelv = "var_" + vname
+                postprocessing = self.model.getPostprocessingVolStatusFromName(vname)
+                line = [vname, labelv, postprocessing]
 
             row = self.rowCount()
             self.setRowCount(row+1)
@@ -112,25 +108,27 @@ class StandardItemModelVolumicNames(QStandardItemModel):
 
     def data(self, index, role):
 
-        self.kwords = [ "", "NOMLAG", "NOMLAV", "IHSLAG"]
+        self.kwords = [ "IACTFV", "IACTVX", "IACTVY", "IACTVZ", "IACTTS"]
         if not index.isValid():
             return QVariant()
 
         # ToolTips
         if role == Qt.ToolTipRole:
             if index.column() == 0:
-                return QVariant()
-            else:
-                return QVariant(self.tr("Code_Saturne key word: " + self.kwords[index.column()]))
+                return QVariant(self.tr("Code_Saturne key word: NOMLAG"))
+            if index.column() == 1:
+                return QVariant(self.tr("Code_Saturne key word: NOMLAV"))
+            elif index.column() in [2,3]:
+                return QVariant(self.tr("Code_Saturne key word: " + self.kwords[index.row()]))
 
         # Display
         if role == Qt.DisplayRole:
-            if index.column() in [0,1,2]:
+            if index.column() in [0,1]:
                 return QVariant(self.dataVolumicNames[index.row()][index.column()])
 
         # CheckState
         elif role == Qt.CheckStateRole:
-            if index.column() == 3:
+            if index.column() == 2:
                 if self.dataVolumicNames[index.row()][index.column()] == 'on':
                     return QVariant(Qt.Checked)
                 else:
@@ -142,12 +140,10 @@ class StandardItemModelVolumicNames(QStandardItemModel):
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
-        elif index.column() == 0:
+        elif index.column() == [0,1]:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        elif index.column() in [1,2] :
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+            return Qt.ItemIsEnabled | Qt.ItemIsUserCheckable
 
 
     def headerData(self, section, orientation, role):
@@ -158,22 +154,16 @@ class StandardItemModelVolumicNames(QStandardItemModel):
 
     def setData(self, index, value, role):
         #
-        if index.column() == 1:
-            label = str(value.toString())
-            self.dataVolumicNames[index.row()][index.column()] = label
-
+        if index.column() == 0:
+            self.dataVolumicNames[index.row()][index.column()] =  str(value.toString())
             vname = self.dataVolumicNames[index.row()][0]
-            if index.row() != 0: vname = "mean_" + vname
-            self.model.setPropertyLabelFromNameVolume(vname, label)
 
-        elif index.column() == 2:
+        elif index.column() == 1:
             labelv = str(value.toString())
             self.dataVolumicNames[index.row()][index.column()] = labelv
             name = self.dataVolumicNames[index.row()][0]
-            vname = "variance_" + name
-            self.model.setPropertyLabelFromNameVolume(vname, labelv)
 
-        elif index.column() == 3:
+        elif index.column() == 2:
             v, ok = value.toInt()
             if v == Qt.Unchecked:
                 status = "off"
@@ -183,8 +173,7 @@ class StandardItemModelVolumicNames(QStandardItemModel):
                 self.dataVolumicNames[index.row()][index.column()] = "on"
 
             vname = self.dataVolumicNames[index.row()][0]
-            if index.row() != 0: vname = "mean_" + vname
-            self.model.setMonitoringStatusFromName(vname, status)
+            self.model.setPostprocessingVolStatusFromName(vname, status)
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
@@ -201,9 +190,7 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
         """
         QStandardItemModel.__init__(self)
 
-        self.headers = [self.tr("Name"),
-                        self.tr("Value name"),
-                        self.tr("Listing"),
+        self.headers = [self.tr("Variable Name"),
                         self.tr("Post-processing")]
         self.setColumnCount(len(self.headers))
         self.model = model
@@ -215,10 +202,8 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
         self.dataBoundariesNames = []
         vnames = self.model.getVariablesNamesBoundary()
         for vname in vnames:
-            label   = self.model.getPropertyLabelFromNameBoundary(vname)
-            listing = self.model.getListingPrintingStatusFromName(vname)
-            postproc = self.model.getPostprocessingStatusFromName(vname)
-            line = [vname, label, listing, postproc]
+            postprocessing = self.model.getPostprocessingStatusFromName(vname)
+            line = [vname, postprocessing]
 
             row = self.rowCount()
             self.setRowCount(row+1)
@@ -233,19 +218,19 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            if index.column() == 1:
+            if index.column() == 0:
                 return QVariant(self.tr("Code_Saturne key word: NOMBRD"))
-            elif index.column() in [2,3]:
+            elif index.column() == 1:
                 return QVariant(self.tr("Code_Saturne key word: " + self.kwords[index.row()]))
 
         # Display
         if role == Qt.DisplayRole:
-            if index.column() in [0, 1]:
+            if index.column() == 0:
                 return QVariant(self.dataBoundariesNames[index.row()][index.column()])
 
         # CheckState
         elif role == Qt.CheckStateRole:
-            if index.column() in [2, 3]:
+            if index.column() ==1:
                 if self.dataBoundariesNames[index.row()][index.column()] == 'on':
                     return QVariant(Qt.Checked)
                 else:
@@ -259,8 +244,6 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
             return Qt.ItemIsEnabled
         elif index.column() == 0:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        elif index.column() == 1 :
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
 
@@ -274,25 +257,6 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
     def setData(self, index, value, role):
 
         if index.column() == 1:
-            label = str(value.toString())
-            self.dataBoundariesNames[index.row()][index.column()] = label
-
-            vname = self.dataBoundariesNames[index.row()][0]
-            self.model.setPropertyLabelFromNameBoundary(vname, label)
-
-        elif index.column() == 2:
-            v, ok = value.toInt()
-            if v == Qt.Unchecked:
-                status = "off"
-                self.dataBoundariesNames[index.row()][index.column()] = "off"
-            else:
-                status = "on"
-                self.dataBoundariesNames[index.row()][index.column()] = "on"
-
-            vname = self.dataBoundariesNames[index.row()][0]
-            self.model.setListingPrintingStatusFromName(vname, status)
-
-        elif index.column() == 3:
             v, ok = value.toInt()
             if v == Qt.Unchecked:
                 status = "off"

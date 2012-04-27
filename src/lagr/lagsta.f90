@@ -225,6 +225,12 @@ tstat = tstat + dtp
 
 npstt = iplas - idstnt + 1
 
+if (npst.lt.2) then
+   do iel = 1,ncel
+      stativ(iel,ilfv) = 0
+   enddo
+endif
+
 !===============================================================================
 ! 2 - CALCUL DES STATISTIQUES PARTICULAIRES
 !===============================================================================
@@ -260,40 +266,66 @@ do npt = 1,nbpart
 
     iel = itepa(npt,jisor)
 
-    statis(iel,ilvx) = statis(iel,ilvx)                           &
-                     + tepa(npt,jrpoi) * ettp(npt,jup)
-    statis(iel,ilvy) = statis(iel,ilvy)                           &
-                     + tepa(npt,jrpoi) * ettp(npt,jvp)
-    statis(iel,ilvz) = statis(iel,ilvz)                           &
+    if (iactvx.eq.1) then
+
+       statis(iel,ilvx) = statis(iel,ilvx)                           &
+            + tepa(npt,jrpoi) * ettp(npt,jup)
+       stativ(iel,ilvx) = stativ(iel,ilvx)                           &
+            + tepa(npt,jrpoi) * ettp(npt,jup) * ettp(npt,jup)
+
+    endif
+
+    if (iactvy.eq.1) then
+
+       statis(iel,ilvy) = statis(iel,ilvy)                           &
+            + tepa(npt,jrpoi) * ettp(npt,jvp)
+       stativ(iel,ilvy) = stativ(iel,ilvy)                           &
+            + tepa(npt,jrpoi) * ettp(npt,jvp) * ettp(npt,jvp)
+
+    endif
+
+    if (iactvz.eq.1) then
+
+       statis(iel,ilvz) = statis(iel,ilvz)                           &
                      + tepa(npt,jrpoi) * ettp(npt,jwp)
+       stativ(iel,ilvz) = stativ(iel,ilvz)                           &
+            + tepa(npt,jrpoi) * ettp(npt,jwp) * ettp(npt,jwp)
 
-    stativ(iel,ilvx) = stativ(iel,ilvx)                           &
-     + tepa(npt,jrpoi) * ettp(npt,jup) * ettp(npt,jup)
-
-    stativ(iel,ilvy) = stativ(iel,ilvy)                           &
-     + tepa(npt,jrpoi) * ettp(npt,jvp) * ettp(npt,jvp)
-    stativ(iel,ilvz) = stativ(iel,ilvz)                           &
-     + tepa(npt,jrpoi) * ettp(npt,jwp) * ettp(npt,jwp)
+    endif
 
 !     * Moyenne et variance du taux de presence
 
-    concen = (ettp(npt,jdp)**3) *pis6
+    if (iactfv.eq.1) then
 
-    statis(iel,ilfv) = statis(iel,ilfv)                           &
-      + tepa(npt,jrpoi) * concen
+       concen = (ettp(npt,jdp)**3) *pis6
 
-    stativ(iel,ilfv) = stativ(iel,ilfv)                           &
-      + tepa(npt,jrpoi) * concen * concen
+       statis(iel,ilfv) = statis(iel,ilfv)                           &
+            + tepa(npt,jrpoi) * concen
+
+!    * La variance du taux de presence n'a de sens qu'en stationnaire
+
+       if (npst.gt.1) then
+
+          stativ(iel,ilfv) = stativ(iel,ilfv)                           &
+               + tepa(npt,jrpoi) * concen * concen
+
+       endif
+
+    endif
 
 !     * Moyenne et variance du temps de séjour
 
-    statis(iel,ilts) = statis(iel,ilts)                           &
-      + tepa(npt,jrpoi) *  tepa(npt,jrtsp)
+    if (iactts.eq.1) then
 
-    stativ(iel,ilts) = stativ(iel,ilts)                           &
-      + tepa(npt,jrpoi) *  tepa(npt,jrtsp) *  tepa(npt,jrtsp)
+       statis(iel,ilts) = statis(iel,ilts)                           &
+            + tepa(npt,jrpoi) *  tepa(npt,jrtsp)
 
-!     * Somme du poids statistiques associé aux particules
+       stativ(iel,ilts) = stativ(iel,ilts)                           &
+            + tepa(npt,jrpoi) *  tepa(npt,jrtsp) *  tepa(npt,jrtsp)
+
+    endif
+
+!     * Somme du poids statistiques associé aux particules (toujours calcule)
 
     statis(iel,ilpd) = statis(iel,ilpd) + tepa(npt,jrpoi)
 
