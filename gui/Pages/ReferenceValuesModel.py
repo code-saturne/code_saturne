@@ -63,12 +63,13 @@ class ReferenceValuesModel(Model):
         """
         self.case = case
 
-        self.node_models = self.case.xmlGetNode('thermophysical_models')
-        self.node_veloce = self.node_models.xmlGetNode('velocity_pressure')
-        self.node_coal = self.node_models.xmlGetNode('pulverized_coal', 'model')
-        self.node_gas   = self.node_models.xmlGetNode('gas_combustion',  'model')
-        self.node_joule = self.node_models.xmlGetNode('joule_effect',  'model')
-        self.node_atmo = self.node_models.xmlGetNode('atmospheric_flows',  'model')
+        self.node_models    = self.case.xmlGetNode('thermophysical_models')
+        self.node_reference = self.node_models.xmlInitNode('reference_values')
+        self.node_veloce    = self.node_models.xmlGetNode('velocity_pressure')
+        self.node_coal      = self.node_models.xmlGetNode('pulverized_coal', 'model')
+        self.node_gas       = self.node_models.xmlGetNode('gas_combustion',  'model')
+        self.node_joule     = self.node_models.xmlGetNode('joule_effect',  'model')
+        self.node_atmo      = self.node_models.xmlGetNode('atmospheric_flows',  'model')
 
 
     def defaultValues(self):
@@ -77,8 +78,11 @@ class ReferenceValuesModel(Model):
         """
         default = {}
         default['reference_pressure'] = 1.01325e+5
+        default['reference_velocity'] = 1.0
+        default['length_choice']      = 'automatic'
+        default['reference_length']   = 1.0
         default['reference_temperature'] = 1273.15
-        if self.getParticularPhysical()[0] == "atmo":
+        if self.getParticularPhysical() == "atmo":
             default['reference_temperature'] = 293.15
         # mass molar for dry air
         default['reference_mass_molar'] = 28.966e-3
@@ -91,19 +95,79 @@ class ReferenceValuesModel(Model):
         Set value of reference pressure into xml file.
         """
         self.isGreaterOrEqual(value, 0.0)
-        node = self.node_veloce.xmlGetNode('variable', name ='pressure')
-        node.xmlSetData('reference_pressure', value)
+        self.node_reference.xmlSetData('pressure',value)
 
 
     def getPressure(self):
         """
         Return the value of reference pressure.
         """
-        node = self.node_veloce.xmlGetNode('variable', name ='pressure')
-        value = node.xmlGetDouble('reference_pressure')
+        value = self.node_reference.xmlGetDouble('pressure')
         if value == None:
             value = self.defaultValues()['reference_pressure']
             self.setPressure(value)
+
+        return value
+
+
+    def setVelocity(self, value):
+        """
+        Set value of reference velocity into xml file.
+        """
+        self.isGreaterOrEqual(value, 0.0)
+        self.node_reference.xmlSetData('velocity',value)
+
+
+    def getVelocity(self):
+        """
+        Return the value of reference velocity.
+        """
+        value = self.node_reference.xmlGetDouble('velocity')
+        if value == None:
+            value = self.defaultValues()['reference_velocity']
+            self.setVelocity(value)
+
+        return value
+
+
+    def setLengthChoice(self, choice):
+        """
+        Set the Length choice.
+        """
+        self.isInList(choice, ['automatic','prescribed'])
+
+        node_init = self.node_reference.xmlInitNode('length')
+        node_init['choice'] = choice
+
+
+    def getLengthChoice(self):
+        """
+        Get the Length choice.
+        """
+        node_init = self.node_reference.xmlInitNode('length')
+        choice = node_init['choice']
+        if choice == None:
+            choice = self.defaultValues()['length_choice']
+            self.setLengthChoice(choice)
+        return choice
+
+
+    def setLength(self, value):
+        """
+        Set value of reference length into xml file.
+        """
+        self.isGreaterOrEqual(value, 0.0)
+        self.node_reference.xmlSetData('length',value)
+
+
+    def getLength(self):
+        """
+        Return the value of reference length.
+        """
+        value = self.node_reference.xmlGetDouble('length')
+        if value == None:
+            value = self.defaultValues()['reference_length']
+            self.setLength(value)
 
         return value
 
@@ -113,16 +177,14 @@ class ReferenceValuesModel(Model):
         Set reference temperature.
         """
         self.isGreater(value, 0.0)
-        model, node = self.getParticularPhysical()
-        node.xmlSetData('reference_temperature', value)
+        self.node_reference.xmlSetData('temperature', value)
 
 
     def getTemperature(self):
         """
         Get reference temperature.
         """
-        model, node = self.getParticularPhysical()
-        value = node.xmlGetDouble('reference_temperature')
+        value = self.node_reference.xmlGetDouble('temperature')
         if not value :
             value = self.defaultValues()['reference_temperature']
             self.setTemperature(value)
@@ -134,16 +196,14 @@ class ReferenceValuesModel(Model):
         Set reference mass molar.
         """
         self.isGreater(value, 0.0)
-        model, node = self.getParticularPhysical()
-        node.xmlSetData('reference_mass_molar', value)
+        self.node_reference.xmlSetData('mass_molar', value)
 
 
     def getMassemol(self):
         """
         Get reference mass molar.
         """
-        model, node = self.getParticularPhysical()
-        value = node.xmlGetDouble('reference_mass_molar')
+        value = self.node_reference.xmlGetDouble('mass_molar')
         if not value :
             value = self.defaultValues()['reference_mass_molar']
             self.setMassemol(value)
@@ -155,7 +215,6 @@ class ReferenceValuesModel(Model):
         Get model for set temperature for relative model
         """
         model = 'off'
-        node = None
 
         coalModel = CoalCombustionModel(self.case).getCoalCombustionModel()
         gasModel = GasCombustionModel(self.case).getGasCombustionModel()
@@ -164,18 +223,14 @@ class ReferenceValuesModel(Model):
 
         if coalModel != 'off':
             model = "coal"
-            node = self.node_coal
         elif gasModel != 'off':
             model = "gas"
-            node = self.node_gas
         elif jouleModel != 'off':
             model = "joule"
-            node = self.node_joule
         elif atmoModel != 'off':
             model = "atmo"
-            node = self.node_atmo
 
-        return model, node
+        return model
 
 
 #-------------------------------------------------------------------------------

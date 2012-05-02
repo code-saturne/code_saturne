@@ -241,7 +241,6 @@ class DefineUserScalarsModel(Variables, Model):
         if l not in self.getScalarLabelsList():
             self.scalar_node.xmlInitNode('scalar', 'name', type="user", label=l)
 
-            ini = self.defaultScalarValues()['initial_value']
             min = self.defaultScalarValues()['min_value']
             max = self.defaultScalarValues()['max_value']
 

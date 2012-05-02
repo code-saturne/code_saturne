@@ -46,7 +46,6 @@ import Base.Toolbox as Tool
 from Base.XMLmodel import XMLmodel, ModelTest
 from Base.XMLvariables import Model
 from Pages.TurbulenceModel import TurbulenceModel
-from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.GasCombustionModel import GasCombustionModel
 from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.ElectricalModelsModel import ElectricalModel
@@ -68,11 +67,12 @@ class InitializationModel(Model):
         self.case = case
 
         models = self.case.xmlGetNode('thermophysical_models')
-        self.node_veloce   = models.xmlGetNode('velocity_pressure')
-        self.node_turb     = models.xmlGetNode('turbulence', 'model')
-        self.node_therm    = models.xmlGetNode('thermal_scalar', 'model')
+        self.node_userscalar = self.case.xmlGetNode('additional_scalars')
+        self.node_veloce     = models.xmlGetNode('velocity_pressure')
+        self.node_turb       = models.xmlGetNode('turbulence', 'model')
+        self.node_therm      = models.xmlGetNode('thermal_scalar', 'model')
 
-        self.VelocityList = ('velocity_U', 'velocity_V', 'velocity_W')
+        self.VelocityList  = ('velocity_U', 'velocity_V', 'velocity_W')
         self.Turb_var_List = ('turb_k', 'turb_eps',
                               'component_R11', 'component_R22', 'component_R33',
                               'component_R12', 'component_R13', 'component_R23',
@@ -80,9 +80,8 @@ class InitializationModel(Model):
                               'turb_alpha')
 
         self.turb = TurbulenceModel(self.case)
-        self.turbulenceModes = ('values',
-                                'reference_velocity',
-                                'reference_velocity_length')
+        self.turbulenceModes = ('formula',
+                                'reference_value')
 
 
     def __defaultValues(self):
@@ -91,33 +90,8 @@ class InitializationModel(Model):
         Return in a dictionnary which contains default values.
         """
         default = {}
-        default['init_mode']     = "reference_velocity"
-        default['velocity']      = 0.0
-        default['turb_velocity'] = 1.0
-        default['length']        = 1
-
-        # Initialization of k, eps, phi, fb, omega, R11, R22, R33,
-        # with standard formulae
-
-        Uref  = float(1.)
-        Almax = float(1.)
-        Cmu   = 0.09
-
-        default['turb_k']        = 1.5 * pow((0.02*Uref), 2)
-        default['turb_eps']      = pow(default['turb_k'], 1.5) / Cmu / Almax
-        default['turb_phi']      = float(2./3.)
-        default['turb_fb']       = 0
-        default['turb_omega']    = default['turb_eps'] / default['turb_k'] / Cmu
-        default['turb_nusa']     = Cmu * pow(default['turb_k'], 2) / default['turb_eps']
-        default['turb_alpha']    = 1.0
-        default['component_R11'] = pow((0.02*Uref), 2)
-        default['component_R22'] = pow((0.02*Uref), 2)
-        default['component_R33'] = pow((0.02*Uref), 2)
-        default['component_R12'] = 0.0
-        default['component_R23'] = 0.0
-        default['component_R13'] = 0.0
-        default['temperature']   = 0.0
-        default['pressure']      = 0.0
+        default['init_mode_turb'] = "reference_value"
+        default['velocity']       = 0.0
 
         return default
 
@@ -130,104 +104,64 @@ class InitializationModel(Model):
         self.isInList(zone, LocalizationModel('VolumicZone', self.case).getCodeNumbersList())
 
 
-    def __initTurbulenceInitialValues(self, zone):
-        """
-        Private method.
-        Initialize values for turbulence variables.
-        """
-        self.__verifyZone(zone)
-        turb_model = self.turb.getTurbulenceModel()
-
+    def getDefaultTurbFormula(self, turb_model):
+        self.isInList(turb_model,self.turb.turbulenceModels())
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
-            for txt in ('turb_k', 'turb_eps'):
-                self.getTurbulenceInitialValue(zone, txt)
-
-        elif turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
-            for txt in ('component_R11',
-                        'component_R22',
-                        'component_R33',
-                        'component_R12',
-                        'component_R13',
-                        'component_R23',
-                        'turb_eps'):
-                self.getTurbulenceInitialValue(zone, txt)
-            if turb_model == 'Rij-EBRSM':
-                txt = 'turb_alpha'
-                self.getTurbulenceInitialValue(zone, txt)
-
+            formula = """cmu = 0.42;
+k = 1.5*(0.02*uref)^2;
+eps = k^1.5*cmu/almax;"""
+        elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
+            formula = """trii   = (0.02*uref)^2;
+cmu = 0.42;
+r11 = trii;
+r22 = trii;
+r33 = trii;
+r12 = 0.;
+r13 = 0.;
+r23 = 0.;
+k = 0.5*(r11+r22+r33);
+eps = k^1.5*cmu/almax;"""
+        elif turb_model == 'Rij-EBRSM':
+            formula = """trii   = (0.02*uref)^2;
+cmu = 0.42;
+r11 = trii;
+r22 = trii;
+r33 = trii;
+r12 = 0.;
+r13 = 0.;
+r23 = 0.;
+k = 0.5*(r11+r22+r33);
+eps = k^1.5*cmu/almax;
+alpha = 1.;"""
         elif turb_model == 'v2f-phi':
-            for txt in ('turb_k',
-                        'turb_eps',
-                        'turb_phi',
-                        'turb_fb'):
-                self.getTurbulenceInitialValue(zone, txt)
-
+            formula = """cmu = 0.22;
+k = 1.5*(0.02*uref)^2;
+eps = k^1.5*cmu/almax;
+phi = 2./3.;
+fb = 0.;"""
         elif turb_model == 'k-omega-SST':
-            for txt in ('turb_k', 'turb_omega'):
-                self.getTurbulenceInitialValue(zone, txt)
-
+            formula = """k = 1.5*(0.02*uref)^2;
+omega = k^0.5/almax;"""
         elif turb_model == 'Spalart-Allmaras':
-            txt = 'turb_nusa'
-            self.getTurbulenceInitialValue(zone, txt)
+            formula = """nusa = (cmu * k)/eps;"""
+        return formula
 
 
-    def __setDefaultTurbulenceInitialValues(self, zone, choice):
-        """
-        Private method.
-        Set the values of initialization by default according
-        to the choice of the initialization of turbulence
-        """
-        self.__verifyZone(zone)
-        self.isInList(choice, self.turbulenceModes)
-
-        if choice == 'reference_velocity':
-            self.getReferenceVelocity()
-        elif choice == 'reference_velocity_length':
-            self.getReferenceVelocityAndLength()
-        elif choice == 'values':
-            self.__initTurbulenceInitialValues(zone)
-
-
-    def setInitialVelocity(self, zone, var_name, var_init):
+    def getInitialTurbulenceChoice(self, zone):
         """
         Public method.
-        Set values for initialization of velocity.
+        Return the turbulence initialization choice.
         """
         self.__verifyZone(zone)
-        self.isFloat(var_init)
-        self.isInList(var_name, self.VelocityList)
+        node_init = self.node_turb.xmlGetNode('initialization', zone_id = zone)
+        choice = ''
+        if not node_init:
+            choice = self.__defaultValues()['init_mode_turb']
+            self.setInitialTurbulenceChoice(zone, choice)
+            node_init = self.node_turb.xmlGetNode('initialization', zone_id = zone)
+        choice = node_init['choice']
 
-        node = self.node_veloce.xmlGetNode('variable', name=var_name)
-        if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
-            raise ValueError(msg)
-
-        n = node.xmlInitChildNode('initial_value', zone_id=zone)
-        if var_init == 0:
-            n.xmlRemoveNode()
-        else:
-            n.xmlSetTextNode(var_init)
-
-
-    def getInitialVelocity(self, zone):
-        """
-        Public method.
-        Return values for initialization of velocity in a list.
-        """
-        self.__verifyZone(zone)
-        velocity_list = []
-
-        for var_name in self.VelocityList:
-            node = self.node_veloce.xmlGetNode('variable', name=var_name)
-            if not node:
-                msg = "There is an error: this node " + str(node) + "should be existed"
-                raise ValueError(msg)
-            v = node.xmlGetDouble('initial_value', zone_id=zone)
-            if v == None:
-                v = self.__defaultValues()['velocity']
-            velocity_list.append(v)
-
-        return velocity_list
+        return choice
 
 
     def setInitialTurbulenceChoice(self, zone, init_mode):
@@ -238,173 +172,88 @@ class InitializationModel(Model):
         self.__verifyZone(zone)
         self.isInList(init_mode, self.turbulenceModes)
 
-        node_init = self.node_turb.xmlInitNode('initialization')
+        node_init = self.node_turb.xmlInitNode('initialization', zone_id = zone)
         node_init['choice'] = init_mode
-        self.__setDefaultTurbulenceInitialValues(zone, init_mode)
 
 
-    def getInitialTurbulenceChoice(self, zone):
+    def getTurbFormula(self, zone):
         """
         Public method.
-        Return the turbulence initialization choice.
+        Return the formula for a turbulent variable.
         """
         self.__verifyZone(zone)
-        node_init = self.node_turb.xmlInitNode('initialization')
-        choice = node_init['choice']
+        node = self.node_turb.xmlInitNode('initialization', zone_id=zone)
 
-        if choice not in self.turbulenceModes:
-            choice = self.__defaultValues()['init_mode']
-            node_init['choice'] = choice
-        self.__setDefaultTurbulenceInitialValues(zone, choice)
-
-        return choice
+        formula = node.xmlGetString('formula')
+        return formula
 
 
-    def setReferenceVelocity(self, velocity):
+    def setTurbFormula(self, zone, formula):
         """
         Public method.
-        Set the reference velocity for initialization of turbulence (UREF).
-        """
-        self.isFloat(velocity)
-
-        node_init = self.node_turb.xmlGetNode('initialization')
-        if not node_init:
-            msg = "There is an error: this node " + str(node_init) + "should be existed"
-            raise ValueError(msg)
-
-        self.isInList(node_init['choice'], ('reference_velocity','reference_velocity_length'))
-
-        node_init.xmlSetData('reference_velocity', velocity)
-
-
-    def getReferenceVelocity(self):
-        """
-        Public method.
-        Return the reference velocity for initialization of turbulence(UREF).
-        """
-        node_init = self.node_turb.xmlGetNode('initialization',
-                                              choice='reference_velocity')
-        if not node_init:
-            msg = "There is an error: this node " + str(node_init) + "should be existed"
-            raise ValueError(msg)
-
-        v = node_init.xmlGetDouble('reference_velocity')
-        if v == None:
-            v = self.__defaultValues()['turb_velocity']
-            self.setReferenceVelocity(v)
-
-        return v
-
-
-    def setReferenceLength(self, length):
-        """
-        Public method.
-        Set the reference length (ALMAX).
-        """
-        self.isStrictPositiveFloat(length)
-
-        node_init = self.node_turb.xmlGetNode('initialization',
-                                               choice='reference_velocity_length')
-        if not node_init:
-            msg = "There is an error: this node " + str(node_init) + "should be existed"
-            raise ValueError(msg)
-
-        node_init.xmlSetData('reference_length', length)
-
-
-    def getReferenceVelocityAndLength(self):
-        """
-        Public method.
-        Return the reference velocity and length.
-        """
-        node_init = self.node_turb.xmlGetNode('initialization',
-                                               choice='reference_velocity_length')
-        if not node_init:
-            msg = "There is an error: this node " + str(node_init) + "should be existed"
-            raise ValueError(msg)
-
-        v = node_init.xmlGetDouble('reference_velocity')
-        if v == None:
-            v = self.__defaultValues()['turb_velocity']
-            self.setReferenceVelocity(v)
-
-        l = node_init.xmlGetDouble('reference_length')
-        if l == None:
-            l = self.__defaultValues()['length']
-            self.setReferenceLength(l)
-
-        return v, l
-
-
-    def setTurbulenceInitialValue(self, zone, var_name, var_init):
-        """
-        Public method.
-        Set values for initialization of turbulence variables.
+        Set the formula for a turbulent variable.
         """
         self.__verifyZone(zone)
-        self.isInList(var_name, self.Turb_var_List)
-        self.isFloat(var_init)
+        node = self.node_turb.xmlGetNode('initialization', zone_id=zone)
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = node.xmlInitChildNode('formula')
+        n.xmlSetTextNode(formula)
 
-        node = self.node_turb.xmlGetNode('variable', name=var_name)
+
+    def setVelocityFormula(self, zone, formula):
+        """
+        Public method.
+        Set the formula for the velocity.
+        """
+        self.__verifyZone(zone)
+        node = self.node_veloce.xmlInitNode('initialization')
+        n = node.xmlInitChildNode('formula', zone_id=zone)
+        n.xmlSetTextNode(formula)
+
+
+    def getVelocityFormula(self, zone):
+        """
+        Public method.
+        Return the formula for the velocity.
+        """
+        self.__verifyZone(zone)
+        node = self.node_veloce.xmlInitNode('initialization')
+
+        formula = node.xmlGetString('formula', zone_id=zone)
+        return formula
+
+
+    def setThermalFormula(self, zone, scalar, formula):
+        """
+        Public method.
+        Set the formula for tharmal scalars.
+        """
+        self.__verifyZone(zone)
+        self.isInList(scalar, ['TempC', 'TempK', 'Enthalpy'])
+        node = self.node_userscalar.xmlGetNode('scalar', label = str(scalar))
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = node.xmlInitChildNode('formula', zone_id=zone)
+        n.xmlSetTextNode(formula)
+
+
+    def getThermalFormula(self, zone, scalar):
+        """
+        Public method.
+        Return the formula for thermal scalars.
+        """
+        self.__verifyZone(zone)
+        self.isInList(scalar, ['TempC', 'TempK', 'Enthalpy'])
+        node = self.node_userscalar.xmlGetNode('scalar', label = str(scalar))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
 
-        node.xmlInitNode('initial_value', zone_id=zone)
-        node.xmlSetData('initial_value', var_init, zone_id=zone)
-
-
-    def getTurbulenceInitialValue(self, zone, var_name):
-        """
-        Public method.
-        Return values for initialization of turbulence variable.
-        """
-        self.__verifyZone(zone)
-        self.isInList(var_name, self.Turb_var_List)
-
-        node = self.node_turb.xmlGetNode('variable', name=var_name)
-        if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
-            raise ValueError(msg)
-
-        init = node.xmlGetDouble('initial_value', zone_id=zone)
-        if init == None:
-            init = self.__defaultValues()[var_name]
-            self.setTurbulenceInitialValue(zone, var_name, init)
-
-        return init
-
-
-    def getTurbulenceVariableLabel(self, var_name):
-        """
-        Public method.
-        Return the label of the turbulence variables. Only for the view.
-        """
-        self.isInList(var_name, self.Turb_var_List)
-
-        label = Tool.dicoLabel(var_name)
-        node = self.node_turb.xmlGetNode('variable', name=var_name)
-        if node:
-            label = node['label']
-
-        return label
-
-
-    def getVelocityLabel(self):
-        """
-        Public method.
-        Return the list of users labels for velocity. Only for the view
-        """
-        label_list = []
-
-        for var_name in self.VelocityList:
-            node = self.node_veloce.xmlGetNode('variable', name=var_name)
-            if not node:
-                msg = "There is an error: this node " + str(node) + "should be existed"
-                raise ValueError(msg)
-            label_list.append(node['label'])
-
-        return label_list
+        formula = node.xmlGetString('formula', zone_id=zone)
+        return formula
 
 
 #-------------------------------------------------------------------------------
@@ -421,143 +270,6 @@ class InitializationTestCase(ModelTest):
         model = None
         model = InitializationModel(self.case)
         assert model != None, 'Could not instantiate InitializationModel'
-
-
-    def checkSetAndGetInitialVelocity(self):
-        """Check whether the velocity initial value could be set and get"""
-        mdl = InitializationModel(self.case)
-        zone = '1'
-        mdl.setInitialVelocity(zone, 'velocity_U', 123)
-        mdl.setInitialVelocity(zone, 'velocity_V', 1.e+2)
-        mdl.setInitialVelocity(zone, 'velocity_W', 0)
-
-        doc = '''<velocity_pressure>
-                    <variable label="Pressure" name="pressure"/>
-                    <variable label="VelocitU" name="velocity_U">
-                            <initial_value zone_id="1">123</initial_value>
-                    </variable>
-                    <variable label="VelocitV" name="velocity_V">
-                            <initial_value zone_id="1">100.0</initial_value>
-                    </variable>
-                    <variable label="VelocitW" name="velocity_W"/>
-                    <property label="total_pressure" name="total_pressure"/>
-                    <property label="Yplus" name="yplus" support="boundary"/>
-                    <property label="Efforts" name="effort" support="boundary"/>
-                    <property label="all_variables" name="all_variables" support="boundary"/>
-                 </velocity_pressure>'''
-
-        assert mdl.node_veloce == self.xmlNodeFromString(doc), \
-          'Could not set the initial values of velocity'
-
-        assert mdl.getInitialVelocity(zone) == [123.0, 100.0, 0.0], \
-          'Could not get the initial velocity values'
-
-
-    def checkSetAndGetInitialTurbulenceChoice(self):
-        """Check whether the velocity initial value choice could be set."""
-        mdl = InitializationModel(self.case)
-        zone = '1'
-        mdl.turb.setTurbulenceModel('k-epsilon')
-        mdl.setInitialTurbulenceChoice('1', 'reference_velocity')
-
-        doc = '''<turbulence model="k-epsilon">
-                    <variable label="TurbEner" name="turb_k"/>
-                    <variable label="Dissip" name="turb_eps"/>
-                    <property label="TurbVisc" name="turb_viscosity"/>
-                    <initialization choice="reference_velocity">
-                            <reference_velocity>1</reference_velocity>
-                    </initialization>
-                 </turbulence>'''
-
-        assert mdl.node_turb == self.xmlNodeFromString(doc),\
-           'Could not set choice for initialization of the turbulence'
-
-        assert mdl.getInitialTurbulenceChoice('1') == 'reference_velocity',\
-           'Could not get choice of initialization of the turbulence'
-
-
-    def checkSetAndGetReferenceVelocity(self):
-        """Check whether the reference velocity value could be set and get"""
-        mdl = InitializationModel(self.case)
-        zone = '1'
-        mdl.turb.setTurbulenceModel('k-epsilon')
-        mdl.setReferenceVelocity(5)
-        doc = '''<turbulence model="k-epsilon">
-                    <variable label="TurbEner" name="turb_k"/>
-                    <variable label="Dissip" name="turb_eps"/>
-                    <property label="TurbVisc" name="turb_viscosity"/>
-                    <initialization choice="reference_velocity">
-                            <reference_velocity>5</reference_velocity>
-                    </initialization>
-                 </turbulence>'''
-
-        assert mdl.node_turb == self.xmlNodeFromString(doc),\
-           'Could not set values of reference velocity for initialization of the turbulence'
-
-        assert mdl.getReferenceVelocity() == 5,\
-           'Could not get values of reference velocity for initialization of the turbulence'
-
-
-    def checkSetAndGetReferenceLength(self):
-        """Check whether the reference lenght value could be set and get"""
-        mdl = InitializationModel(self.case)
-        zone = '1'
-        mdl.turb.setTurbulenceModel('k-epsilon')
-        mdl.setInitialTurbulenceChoice('1', 'reference_velocity_length')
-        mdl.setReferenceVelocity(5)
-        mdl.setReferenceLength(155.8)
-
-        doc = '''<turbulence model="k-epsilon">
-                    <variable label="TurbEner" name="turb_k"/>
-                    <variable label="Dissip" name="turb_eps"/>
-                    <property label="TurbVisc" name="turb_viscosity"/>
-                    <initialization choice="reference_velocity_length">
-                            <reference_velocity>5</reference_velocity>
-                            <reference_length>155.8</reference_length>
-                    </initialization>
-                 </turbulence>'''
-
-        assert mdl.node_turb == self.xmlNodeFromString(doc),\
-           'Could not set values of reference length for initialization of the turbulence'
-
-        assert mdl.getReferenceVelocityAndLength() == (5, 155.8),\
-           'Could not get values of reference length for initialization of the turbulence'
-
-
-    def checkSetAndGetTurbulenceInitialValue(self):
-        """Check whether the initial values of turbulence could be set.and get"""
-        mdl = InitializationModel(self.case)
-        zone = '1'
-        mdl.turb.setTurbulenceModel('Rij-epsilon')
-        mdl.setTurbulenceInitialValue(zone, 'component_R11', 0.0011)
-        mdl.setTurbulenceInitialValue(zone, 'component_R22', 0.0022)
-        mdl.setTurbulenceInitialValue(zone, 'component_R33', 0.0033)
-        doc = '''<turbulence model="Rij-epsilon">
-                    <variable label="TurbEner" name="turb_k"/>
-                    <variable label="Dissip" name="turb_eps"/>
-                    <property label="TurbVisc" name="turb_viscosity"/>
-                    <initialization choice="reference_velocity">
-                            <reference_velocity>1</reference_velocity>
-                    </initialization>
-                    <variable label="R11" name="component_R11">
-                            <initial_value zone_id="1">0.0011</initial_value>
-                    </variable>
-                    <variable label="R22" name="component_R22">
-                            <initial_value zone_id="1">0.0022</initial_value>
-                    </variable>
-                    <variable label="R33" name="component_R33">
-                            <initial_value zone_id="1">0.0033</initial_value>
-                    </variable>
-                    <variable label="R12" name="component_R12"/>
-                    <variable label="R13" name="component_R13"/>
-                    <variable label="R23" name="component_R23"/>
-                 </turbulence>'''
-
-        assert mdl.node_turb == self.xmlNodeFromString(doc),\
-           'Could not set initial values of the turbulence'
-
-        assert mdl.getTurbulenceInitialValue(zone, 'component_R22') == 0.0022,\
-           'Could not get initial values of the turbulence'
 
 
 def suite():

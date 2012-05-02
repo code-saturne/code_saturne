@@ -3,24 +3,24 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2012 EDF S.A.
+   Copyright (C) 1998-2012 EDF S.A.
 
-  This program is free software; you can redistribute it and/or modify it under
-  the terms of the GNU General Public License as published by the Free Software
-  Foundation; either version 2 of the License, or (at your option) any later
-  version.
+   This program is free software; you can redistribute it and/or modify it under
+   the terms of the GNU General Public License as published by the Free Software
+   Foundation; either version 2 of the License, or (at your option) any later
+   version.
 
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-  details.
+   This program is distributed in the hope that it will be useful, but WITHOUT
+   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+   FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+   details.
 
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
-  Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*/
+   You should have received a copy of the GNU General Public License along with
+   this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+   Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ */
 
 /*----------------------------------------------------------------------------*/
 
@@ -156,12 +156,10 @@ cs_gui_advanced_options_turbulence(const char *const param,
   cs_xpath_add_elements(&path, 3, "thermophysical_models", "turbulence", param);
 
   if (cs_gui_strcmp("gravity_terms", param)) {
-
     cs_xpath_add_attribute(&path, "status");
     if (cs_gui_get_status(path, &result)) *keyword = result;
 
   } else if (cs_gui_strcmp("scale_model", param)) {
-
     cs_xpath_add_function_text(&path);
     if (cs_gui_get_int(path, &result)) *keyword = result;
 
@@ -220,8 +218,8 @@ cs_gui_thermal_scalar(void)
       test = -1 ;
     else
       bft_error(__FILE__, __LINE__, 0,
-                _("Invalid thermal model: %s\n"), model_name);
-    }
+          _("Invalid thermal model: %s\n"), model_name);
+  }
 
   BFT_FREE(model_name);
 
@@ -253,9 +251,10 @@ cs_gui_thermal_scalar_number(int *const iscalt,
     name = cs_gui_get_attribute_values(path, &size);
 
     index = -1;
-    for (i=0; i < size; i++) {
-      if (cs_gui_strcmp(name[i], "thermal")) index = i;
-    }
+    for (i=0; i < size; i++)
+      if (cs_gui_strcmp(name[i], "thermal"))
+        index = i;
+
     *iscalt = index+1;
     iscsth[index] = ind_thermal;
 
@@ -275,19 +274,19 @@ cs_gui_thermal_scalar_number(int *const iscalt,
 static char *
 _scalar_diffusion_coefficient_name(const int idx)
 {
-    int ncar = 0;
-    char *name = NULL;
-    char *suf = NULL;
+  int ncar = 0;
+  char *name = NULL;
+  char *suf = NULL;
 
-    ncar = cs_gui_characters_number(idx+1);
-    BFT_MALLOC(name, strlen("diffusion_coefficient") +2 +ncar, char);
-    BFT_MALLOC(suf, 1 + ncar, char);
-    sprintf(suf, "%i", idx+1);
-    strcpy(name, "diffusion_coefficient");
-    strcat(name, "_");
-    strcat(name, suf);
-    BFT_FREE(suf);
-    return name;
+  ncar = cs_gui_characters_number(idx+1);
+  BFT_MALLOC(name, strlen("diffusion_coefficient") +2 +ncar, char);
+  BFT_MALLOC(suf, 1 + ncar, char);
+  sprintf(suf, "%i", idx+1);
+  strcpy(name, "diffusion_coefficient");
+  strcat(name, "_");
+  strcat(name, suf);
+  BFT_FREE(suf);
+  return name;
 }
 
 /*-----------------------------------------------------------------------------
@@ -429,16 +428,14 @@ cs_gui_steady_parameters(const char   *const param,
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "analysis_control", "steady_management", param);
 
-  if (cs_gui_strcmp(param,"zero_iteration")){
-
+  if (cs_gui_strcmp(param,"zero_iteration")) {
     cs_xpath_add_attribute(&path, "status");
-    if(cs_gui_get_status(path, &status)) *keyword = status;
-
+    if(cs_gui_get_status(path, &status))
+      *keyword = status;
   } else {
-
     cs_xpath_add_function_text(&path);
-    if (cs_gui_get_double(path, &result)) *keyword = result;
-
+    if (cs_gui_get_double(path, &result))
+      *keyword = result;
   }
   BFT_FREE(path);
 }
@@ -466,13 +463,13 @@ cs_gui_time_parameters(const char   *const param,
       cs_gui_strcmp(param,"thermal_time_step")) {
 
     cs_xpath_add_attribute(&path, "status");
-    if(cs_gui_get_status(path, &status)) *keyword = status;
+    if(cs_gui_get_status(path, &status))
+      *keyword = status;
 
   } else {
-
     cs_xpath_add_function_text(&path);
-    if (cs_gui_get_double(path, &result)) *keyword = result;
-
+    if (cs_gui_get_double(path, &result))
+      *keyword = result;
   }
   BFT_FREE(path);
 }
@@ -532,7 +529,8 @@ cs_gui_variable_value(const char   *const variable_type,
   cs_xpath_add_element(&path, value_type);
   cs_xpath_add_function_text(&path);
 
-  if (cs_gui_get_double(path, &result)) *value = result;
+  if (cs_gui_get_double(path, &result))
+    *value = result;
 
   BFT_FREE(path);
 }
@@ -577,8 +575,10 @@ _attribute_value(      char *      path,
       *keyword = result;
 
       if (cs_gui_strcmp(child, "slope_test")) {
-        if (result == 1) *keyword = 0;
-        if (result == 0) *keyword = 1;
+        if (result == 1)
+          *keyword = 0;
+        if (result == 0)
+          *keyword = 1;
       }
     }
   }
@@ -632,7 +632,8 @@ cs_gui_scalar_value(const char   *const label,
   cs_xpath_add_element(&path, child);
   cs_xpath_add_function_text(&path);
 
-  if (cs_gui_get_double(path, &result)) *value = result;
+  if (cs_gui_get_double(path, &result))
+    *value = result;
 
   BFT_FREE(path);
 }
@@ -675,7 +676,7 @@ static void
 cs_gui_model_scalar_value(const   char *const model,
                           const   char *const name,
                           const   char *const keyword,
-                                  double *const value)
+                                double *const value)
 {
   char   *path = NULL;
   double  result;
@@ -772,7 +773,8 @@ cs_gui_numerical_int_parameters(const char *const param,
     cs_xpath_add_element(&path, param);
     cs_xpath_add_attribute(&path, "choice");
     choice = cs_gui_get_attribute_value(path);
-    if (choice) *keyword = atoi(choice);
+    if (choice)
+      *keyword = atoi(choice);
     BFT_FREE(choice);
 
   } else if (cs_gui_strcmp(param,"piso_sweep_number")) {
@@ -781,14 +783,14 @@ cs_gui_numerical_int_parameters(const char *const param,
     cs_xpath_add_element(&path, param);
     cs_xpath_add_function_text(&path);
     if (cs_gui_get_int(path, &result))
-       *keyword = result;
+      *keyword = result;
 
   } else {
 
     cs_xpath_add_element(&path, param);
     cs_xpath_add_attribute(&path, "status");
-    if (cs_gui_get_status(path, &result)) *keyword = result;
-
+    if (cs_gui_get_status(path, &result))
+      *keyword = result;
   }
   BFT_FREE(path);
 }
@@ -812,7 +814,8 @@ cs_gui_gravity_value(const char   *const param,
   cs_xpath_add_elements(&path, 3, "physical_properties", "gravity", param);
   cs_xpath_add_function_text(&path);
 
-  if (cs_gui_get_double(path, &result)) *value = result;
+  if (cs_gui_get_double(path, &result))
+    *value = result;
 
   BFT_FREE(path);
 }
@@ -827,7 +830,7 @@ cs_gui_gravity_value(const char   *const param,
 
 static void
 cs_gui_coriolis_value(const char   *const param,
-                           double *const value)
+                            double *const value)
 {
   char   *path = NULL;
   double  result;
@@ -836,7 +839,8 @@ cs_gui_coriolis_value(const char   *const param,
   cs_xpath_add_elements(&path, 3, "physical_properties", "omega", param);
   cs_xpath_add_function_text(&path);
 
-  if (cs_gui_get_double(path, &result)) *value = result;
+  if (cs_gui_get_double(path, &result))
+    *value = result;
 
   BFT_FREE(path);
 }
@@ -862,7 +866,8 @@ cs_gui_properties_value(const char   *const property_name,
   cs_xpath_add_element(&path, "initial_value");
   cs_xpath_add_function_text(&path);
 
-  if (cs_gui_get_double(path, &result)) *value = result;
+  if (cs_gui_get_double(path, &result))
+    *value = result;
 
   BFT_FREE(path);
 }
@@ -919,67 +924,28 @@ cs_gui_properties_choice(const char *const property_name, int *choice)
 }
 
 /*-----------------------------------------------------------------------------
- * Get reference value of pressure
+ * Initialization choice of the reference variables parameters.
  *
  * parameters:
  *   p0              <--   value of pressure
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_reference_pressure(double *const p0)
+cs_gui_reference_initialization(const char   *const param,
+                                      double *const value)
 {
   char *path = NULL;
-  double value;
+  double  result;
 
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "reference_pressure");
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "reference_values",
+                        param);
   cs_xpath_add_function_text(&path);
 
-  if (cs_gui_get_double(path, &value))
-      *p0 = value;
-  BFT_FREE(path);
-}
-
-/*-----------------------------------------------------------------------------
- * Get reference value of temperature
- *
- * parameters:
- *   model           -->   name of activated model
- *   t0              <--   value of temperature
- *----------------------------------------------------------------------------*/
-
-static void
-cs_gui_reference_temperature(char *const model, double *const t0)
-{
-  char *path = NULL;
-  double value;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_elements(&path, 2, model,"reference_temperature");
-  cs_xpath_add_function_text(&path);
-
-  if (cs_gui_get_double(path, &value)) *t0 = value;
-  BFT_FREE(path);
-}
-
-/*-----------------------------------------------------------------------------
- * Get reference value of mass molar molecular
- *
- * parameters:
- *   model           -->   name of activated model
- *   m0              <--   value of mass molar molecular
- *----------------------------------------------------------------------------*/
-
-static void cs_gui_reference_mass_molar(char *const model, double *const m0)
-{
-  char *path = NULL;
-  double value;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_elements(&path, 2, model,"reference_mass_molar");
-  cs_xpath_add_function_text(&path);
-
-  if (cs_gui_get_double(path, &value)) *m0 = value;
+  if (cs_gui_get_double(path, &result))
+    *value = result;
   BFT_FREE(path);
 }
 
@@ -1001,7 +967,8 @@ static void _option_turbulence_double(const char *const param,
   cs_xpath_add_elements(&path, 3, "thermophysical_models", "turbulence", param);
 
   cs_xpath_add_function_text(&path);
-  if (cs_gui_get_double(path, &result)) *keyword = result;
+  if (cs_gui_get_double(path, &result))
+    *keyword = result;
 
   BFT_FREE(path);
 }
@@ -1028,15 +995,42 @@ static void cs_gui_turbulence_initialization(const char   *const param,
                         param);
   cs_xpath_add_function_text(&path);
 
-  if (cs_gui_get_double(path, &result)) *value = result;
+  if (cs_gui_get_double(path, &result))
+    *value = result;
   BFT_FREE(path);
 }
 
 /*----------------------------------------------------------------------------
- * Return the initialization choice of the turbulence variables.
+ * Return the length choice for initialize turbulence
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_turbulence_initialization_choice(void)
+static char *cs_gui_reference_length_initialization_choice(void)
+{
+  char *path = NULL;
+  char *initialization_choice;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "reference_values",
+                        "length");
+  cs_xpath_add_attribute(&path, "choice");
+
+  initialization_choice = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return initialization_choice;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the initialization choice of the turbulence variables.
+ *
+ * parameters:
+ *   zone_id        -->  zone number
+ *----------------------------------------------------------------------------*/
+
+static char *cs_gui_turbulence_initialization_choice(const char* zone_id)
 {
   char *path = NULL;
   char *initialization_choice;
@@ -1046,6 +1040,8 @@ static char *cs_gui_turbulence_initialization_choice(void)
                         "thermophysical_models",
                         "turbulence",
                         "initialization");
+  cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+  cs_xpath_add_function_text(&path);
   cs_xpath_add_attribute(&path, "choice");
 
   initialization_choice = cs_gui_get_attribute_value(path);
@@ -1276,8 +1272,8 @@ static char *cs_gui_volumic_zone_localization(const char *const zone_id)
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "solution_domain",
-                                  "volumic_conditions",
-                                  "zone");
+                        "volumic_conditions",
+                        "zone");
   cs_xpath_add_test_attribute(&path, "id", zone_id);
   cs_xpath_add_function_text(&path);
 
@@ -1468,7 +1464,7 @@ static char *_get_profile_label_name(const int id, const int nm)
 
   if (label == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _("Invalid markup name: %s\n label not found"), name);
+        _("Invalid markup name: %s\n label not found"), name);
 
   BFT_FREE(path);
   BFT_FREE(name);
@@ -1554,34 +1550,34 @@ static int _get_profile_format(const int id)
 
 void CS_PROCF (uiinit, UIINIT) (void)
 {
-    assert(cs_glob_var == NULL);
+  assert(cs_glob_var == NULL);
 
-    BFT_MALLOC(cs_glob_var, 1, cs_var_t);
+  BFT_MALLOC(cs_glob_var, 1, cs_var_t);
 
-    cs_glob_var->model           = NULL;
-    cs_glob_var->model_value     = NULL;
-    cs_glob_var->head            = NULL;
-    cs_glob_var->type            = NULL;
-    cs_glob_var->name            = NULL;
-    cs_glob_var->label           = NULL;
-    cs_glob_var->rtp             = NULL;
-    cs_glob_var->rphas           = NULL;
-    cs_glob_var->pphas           = NULL;
-    cs_glob_var->nvar            = 0;
-    cs_glob_var->nscaus          = 0;
-    cs_glob_var->nscapp          = 0;
-    cs_glob_var->nprop           = 0;
-    cs_glob_var->nsalpp          = 0;
-    cs_glob_var->ntimaver        = 0;
-    cs_glob_var->properties_name = NULL;
-    cs_glob_var->properties_ipp  = NULL;
-    cs_glob_var->propce          = NULL;
+  cs_glob_var->model           = NULL;
+  cs_glob_var->model_value     = NULL;
+  cs_glob_var->head            = NULL;
+  cs_glob_var->type            = NULL;
+  cs_glob_var->name            = NULL;
+  cs_glob_var->label           = NULL;
+  cs_glob_var->rtp             = NULL;
+  cs_glob_var->rphas           = NULL;
+  cs_glob_var->pphas           = NULL;
+  cs_glob_var->nvar            = 0;
+  cs_glob_var->nscaus          = 0;
+  cs_glob_var->nscapp          = 0;
+  cs_glob_var->nprop           = 0;
+  cs_glob_var->nsalpp          = 0;
+  cs_glob_var->ntimaver        = 0;
+  cs_glob_var->properties_name = NULL;
+  cs_glob_var->properties_ipp  = NULL;
+  cs_glob_var->propce          = NULL;
 
-    BFT_MALLOC(cs_glob_label, 1, cs_label_t);
+  BFT_MALLOC(cs_glob_label, 1, cs_label_t);
 
-    cs_glob_label->_cs_gui_max_vars = 0;
-    cs_glob_label->_cs_gui_last_var = 0;
-    cs_glob_label->_cs_gui_var_name = NULL;
+  cs_glob_label->_cs_gui_max_vars = 0;
+  cs_glob_label->_cs_gui_last_var = 0;
+  cs_glob_label->_cs_gui_var_name = NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -1609,69 +1605,57 @@ void CS_PROCF (csturb, CSTURB) (int    *const iturb,
   char *model = NULL;
 
   model = cs_gui_get_thermophysical_model("turbulence");
-  if (model == NULL) return;
+  if (model == NULL)
+    return;
 
   if (cs_gui_strcmp(model, "off"))
-     *iturb = 0;
-  else if (cs_gui_strcmp(model, "mixing_length")){
-     *iturb = 10;
-     _option_turbulence_double("mixing_length_scale", xlomlg);
-   }
-  else if (cs_gui_strcmp(model, "k-epsilon")){
-     *iturb = 20;
-     cs_gui_advanced_options_turbulence("scale_model", ideuch);
-     cs_gui_advanced_options_turbulence("gravity_terms", igrake);
-   }
-  else if (cs_gui_strcmp(model, "k-epsilon-PL")){
-     *iturb = 21;
-     cs_gui_advanced_options_turbulence("scale_model", ideuch);
-     cs_gui_advanced_options_turbulence("gravity_terms", igrake);
-   }
-  else if (cs_gui_strcmp(model, "Rij-epsilon")){
-     *iturb = 30;
-     cs_gui_advanced_options_turbulence("scale_model", ideuch);
-     cs_gui_advanced_options_turbulence("gravity_terms", igrari);
-   }
-  else if (cs_gui_strcmp(model, "Rij-SSG")){
-     *iturb = 31;
-     cs_gui_advanced_options_turbulence("scale_model", ideuch);
-     cs_gui_advanced_options_turbulence("gravity_terms", igrari);
-   }
-  else if (cs_gui_strcmp(model, "Rij-EBRSM")){
-     *iturb = 32;
-     cs_gui_advanced_options_turbulence("scale_model", ideuch);
-     cs_gui_advanced_options_turbulence("gravity_terms", igrari);
-   }
-  else if (cs_gui_strcmp(model, "LES_Smagorinsky")){
-     *iturb = 40;
-   }
-  else if (cs_gui_strcmp(model, "LES_dynamique")){
-     *iturb = 41;
-   }
-  else if (cs_gui_strcmp(model, "LES_WALE")){
-     *iturb = 42;
-   }
-  else if (cs_gui_strcmp(model, "v2f-phi")){
-     *iturb = 50;
-     cs_gui_advanced_options_turbulence("scale_model", ideuch);
-     cs_gui_advanced_options_turbulence("gravity_terms", igrake);
-   }
-  else if (cs_gui_strcmp(model, "BL-v2/k")){
-     *iturb = 51;
-     cs_gui_advanced_options_turbulence("scale_model", ideuch);
-     cs_gui_advanced_options_turbulence("gravity_terms", igrake);
-   }
-  else if (cs_gui_strcmp(model, "k-omega-SST")){
-     *iturb = 60;
-     cs_gui_advanced_options_turbulence("scale_model", ideuch);
-     cs_gui_advanced_options_turbulence("gravity_terms", igrake);
-   }
-  else if (cs_gui_strcmp(model, "Spalart-Allmaras")){
-     *iturb = 70;
-   }
-  else
-     bft_error(__FILE__, __LINE__, 0,
-               _("Invalid turbulence model: %s.\n"), model);
+    *iturb = 0;
+  else if (cs_gui_strcmp(model, "mixing_length")) {
+    *iturb = 10;
+    _option_turbulence_double("mixing_length_scale", xlomlg);
+  } else if (cs_gui_strcmp(model, "k-epsilon")) {
+    *iturb = 20;
+    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("gravity_terms", igrake);
+  } else if (cs_gui_strcmp(model, "k-epsilon-PL")) {
+    *iturb = 21;
+    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("gravity_terms", igrake);
+  } else if (cs_gui_strcmp(model, "Rij-epsilon")) {
+    *iturb = 30;
+    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("gravity_terms", igrari);
+  } else if (cs_gui_strcmp(model, "Rij-SSG")) {
+    *iturb = 31;
+    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("gravity_terms", igrari);
+  } else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
+    *iturb = 32;
+    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("gravity_terms", igrari);
+  } else if (cs_gui_strcmp(model, "LES_Smagorinsky")) {
+    *iturb = 40;
+  } else if (cs_gui_strcmp(model, "LES_dynamique")) {
+    *iturb = 41;
+  } else if (cs_gui_strcmp(model, "LES_WALE")) {
+    *iturb = 42;
+  } else if (cs_gui_strcmp(model, "v2f-phi")) {
+    *iturb = 50;
+    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("gravity_terms", igrake);
+  } else if (cs_gui_strcmp(model, "BL-v2/k")) {
+    *iturb = 51;
+    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("gravity_terms", igrake);
+  } else if (cs_gui_strcmp(model, "k-omega-SST")) {
+    *iturb = 60;
+    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("gravity_terms", igrake);
+  } else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
+    *iturb = 70;
+  } else
+    bft_error(__FILE__, __LINE__, 0,
+        _("Invalid turbulence model: %s.\n"), model);
 
 #if _XML_DEBUG_
   bft_printf("==>CSTURB\n");
@@ -1778,10 +1762,10 @@ void CS_PROCF (csisca, CSISCA) (int *const iscavr)
 
           if (cs_gui_strcmp(variance, vars->label[j])) {
 
-            if ( i == j )
+            if (i == j)
               bft_error(__FILE__, __LINE__, 0,
-                 _("Scalar: %i and its variance: %i are the same.\n"),
-                 i, j);
+                        _("Scalar: %i and its variance: %i are the same.\n"),
+                        i, j);
             iscavr[i] = j + 1;
           }
         }
@@ -1842,7 +1826,8 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
     for (i=0 ; i < vars->nscaus; i++) {
       if (iscavr[i] <= 0 ) {
         if (cs_gui_scalar_properties_choice(i+1, &choice1))
-        if (*iscalt != i+1) ivisls[i] = choice1;
+          if (*iscalt != i+1)
+            ivisls[i] = choice1;
       }
     }
 
@@ -1851,7 +1836,7 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
     for (i=0 ; i < vars->nscaus ; i++)
       bft_printf("--ivisls[%i] = %i\n", i, ivisls[i]);
 #endif
-    }
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1872,14 +1857,13 @@ void CS_PROCF (csidtv, CSIDTV) (int *const idtvar)
   char* algo_choice = NULL;
 
   cs_gui_get_steady_status(&steady);
-  if (steady){
+  if (steady) {
     algo_choice = cs_gui_velocity_pressure_algo_choice();
     if (cs_gui_strcmp(algo_choice, "simple"))
       *idtvar = -1;
     else
       *idtvar = 2;
-  }
-  else{
+  } else {
     param = (double) *idtvar;
     cs_gui_time_parameters("time_passing", &param);
     *idtvar = (int) param;
@@ -1912,7 +1896,8 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
   cs_xpath_add_element(&path, "hydrostatic_pressure");
   cs_xpath_add_attribute(&path, "status");
 
-  if (cs_gui_get_status(path, &result)) *iphydr = result;
+  if (cs_gui_get_status(path, &result))
+    *iphydr = result;
 
   BFT_FREE(path);
 
@@ -2111,7 +2096,6 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     cs_glob_var->rtp[n] = *inusa   -1;
     BFT_MALLOC(cs_glob_var->name[n], strlen("turb_nusa")+1, char);
     strcpy(cs_glob_var->name[n++], "turb_nusa");
-
   }
 
   for (i=k; i < n; i++) {
@@ -2189,16 +2173,14 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
   if (n != *nvar)
     bft_error(__FILE__, __LINE__, 0,
               _("The kernel variables number %i and the "
-                "calculated one by the GUI %i are not the same.\n"),
-                *nvar, n);
+              "calculated one by the GUI %i are not the same.\n"),
+              *nvar, n);
 
 #if _XML_DEBUG_
   bft_printf("==>CSVNUM\n");
   bft_printf("--variables and scalars name: %i\n", cs_glob_var->nvar);
   for (i=0; i < cs_glob_var->nvar; i++)
     bft_printf("---name: %s\n", cs_glob_var->name[i]);
-  /* for (i=0; i < vars->nscapp+vars->nscaus; i++)
-    bft_printf("--scalars: %s\n", vars->label[i]); */
 #endif
 
 }
@@ -2269,7 +2251,7 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
   /* Default values for time step factor */
   double cdtmin = 0.1, cdtmax = 1000.;
 
-  if (*idtvar == -1){
+  if (*idtvar == -1) {
     cs_gui_steady_parameters("relaxation_coefficient", relxst);
 
     value =(double) *inpdt0;
@@ -2279,8 +2261,7 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
     value =(double) *ntmabs;
     cs_gui_steady_parameters("iterations", &value);
     *ntmabs = (int) value;
-  }
-  else{
+  } else {
     cs_gui_time_parameters("time_step_ref", dtref);
     cs_gui_time_parameters("time_step_min_factor", &cdtmin);
     cs_gui_time_parameters("time_step_max_factor", &cdtmax);
@@ -2311,11 +2292,10 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
 #if _XML_DEBUG_
   bft_printf("==>CSTIME\n");
   bft_printf("--idtvar = %i\n", *idtvar);
-  if (*idtvar == -1){
+  if (*idtvar == -1) {
     bft_printf("--inpdt0 = %i\n", *inpdt0);
     bft_printf("--relxst = %i\n", *relxst);
-  }
-  else{
+  } else {
     bft_printf("--inpdt0 = %i\n", *inpdt0);
     bft_printf("--iptlro = %i\n", *iptlro);
     bft_printf("--ntmabs = %i\n", *ntmabs);
@@ -2344,17 +2324,17 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
 void CS_PROCF (cssca1, CSSCA1) (int *const iscalt,
                                 int *const iscsth)
 {
-    cs_gui_thermal_scalar_number(iscalt, iscsth);
+  cs_gui_thermal_scalar_number(iscalt, iscsth);
 
 #if _XML_DEBUG_
-    {
-        int i;
-        cs_var_t  *vars = cs_glob_var;
-        bft_printf("==>CSSCA1\n");
-        bft_printf("--iscalt[0]=%i \n", *iscalt);
-        for (i = 0 ; i < vars->nscaus ; i++)
-            bft_printf("--iscsth[%i]=%i \n", i, iscsth[i]);
-    }
+  {
+    int i;
+    cs_var_t  *vars = cs_glob_var;
+    bft_printf("==>CSSCA1\n");
+    bft_printf("--iscalt[0]=%i \n", *iscalt);
+    for (i = 0 ; i < vars->nscaus ; i++)
+      bft_printf("--iscsth[%i]=%i \n", i, iscsth[i]);
+  }
 #endif
 }
 
@@ -2382,23 +2362,23 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
 
   /* 1) variables from velocity_pressure and turbulence */
   /* 1-a) for pressure */
-     j = vars->rtp[0];
-     cs_gui_variable_value(vars->name[0], "solveur_precision", &epsilo[j]);
-     tmp = (double) nitmax[j];
-     cs_gui_variable_value(vars->name[0], "max_iter_number", &tmp);
-     nitmax[j] = (int) tmp;
+  j = vars->rtp[0];
+  cs_gui_variable_value(vars->name[0], "solveur_precision", &epsilo[j]);
+  tmp = (double) nitmax[j];
+  cs_gui_variable_value(vars->name[0], "max_iter_number", &tmp);
+  nitmax[j] = (int) tmp;
 
   /* 1-b) for the other variables */
   for (i=1; i < k; i++) {
-     j = vars->rtp[i];
-     cs_gui_variable_value(vars->name[i], "blending_factor", &blencv[j]);
-     cs_gui_variable_value(vars->name[i], "solveur_precision", &epsilo[j]);
-     tmp = (double) nitmax[j];
-     cs_gui_variable_value(vars->name[i], "max_iter_number", &tmp);
-     nitmax[j] = (int) tmp;
-     cs_gui_variable_attribute(vars->name[i], "order_scheme", &ischcv[j]);
-     cs_gui_variable_attribute(vars->name[i], "slope_test", &isstpc[j]);
-     cs_gui_variable_attribute(vars->name[i], "flux_reconstruction", &ircflu[j]);
+    j = vars->rtp[i];
+    cs_gui_variable_value(vars->name[i], "blending_factor", &blencv[j]);
+    cs_gui_variable_value(vars->name[i], "solveur_precision", &epsilo[j]);
+    tmp = (double) nitmax[j];
+    cs_gui_variable_value(vars->name[i], "max_iter_number", &tmp);
+    nitmax[j] = (int) tmp;
+    cs_gui_variable_attribute(vars->name[i], "order_scheme", &ischcv[j]);
+    cs_gui_variable_attribute(vars->name[i], "slope_test", &isstpc[j]);
+    cs_gui_variable_attribute(vars->name[i], "flux_reconstruction", &ircflu[j]);
   }
 
   /* 2) user scalars */
@@ -2511,23 +2491,23 @@ void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csphys, CSPHYS)
-(
- const    int *const nmodpp,
-          int *const irovar,
-          int *const ivivar,
-          int *const icorio,
-       double *const gx,
-       double *const gy,
-       double *const gz,
-       double *const omegax,
-       double *const omegay,
-       double *const omegaz,
-       double *const ro0,
-       double *const viscl0,
-       double *const cp0,
-       double *const t0,
-       double *const p0
-)
+  (
+    const    int *const nmodpp,
+             int *const irovar,
+             int *const ivivar,
+             int *const icorio,
+          double *const gx,
+          double *const gy,
+          double *const gz,
+          double *const omegax,
+          double *const omegay,
+          double *const omegaz,
+          double *const ro0,
+          double *const viscl0,
+          double *const cp0,
+          double *const t0,
+          double *const p0
+  )
 {
   int choice;
 
@@ -2550,7 +2530,7 @@ void CS_PROCF (csphys, CSPHYS)
   cs_gui_properties_value("molecular_viscosity", viscl0);
   cs_gui_properties_value("specific_heat", cp0);
 
-  cs_gui_reference_pressure(p0);
+  cs_gui_reference_initialization("pressure", p0);
 
   /* Variable rho and viscl */
   if (*nmodpp == 0) {
@@ -2564,7 +2544,7 @@ void CS_PROCF (csphys, CSPHYS)
   /* T0 if necessary */
 
   if (vars->model != NULL)
-    cs_gui_reference_temperature(vars->model, t0);
+    cs_gui_reference_initialization("temperature", p0);
 
 #if _XML_DEBUG_
   bft_printf("==>CSPHYS\n");
@@ -2631,9 +2611,9 @@ void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
 
 void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
                                 const    int *const iscavr,
-                                      double *const visls0,
-                                      double *const t0,
-                                      double *const p0)
+                                double *const visls0,
+                                double *const t0,
+                                double *const p0)
 {
   int i;
   double result, coeff, density;
@@ -2665,7 +2645,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
         if (cs_gui_strcmp(vars->model, "pulverized_coal")) {
           /* Air molar mass */
           result = 0.028966;
-          cs_gui_reference_mass_molar(vars->model, &result);
+          cs_gui_reference_initialization("mass_molar", &result);
           if (result <= 0)
             bft_error(__FILE__, __LINE__, 0,
                       _("mass molar value is zero or not found in the xml file.\n"));
@@ -2706,16 +2686,16 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
 void CS_PROCF (cstini, CSTINI) (double *const uref,
                                 double *const almax)
 {
-  char* turb_ini_choice = NULL;
+  char* length_choice = NULL;
 
-  cs_gui_turbulence_initialization("reference_velocity", uref);
+  cs_gui_reference_initialization("velocity", uref);
 
-  turb_ini_choice = cs_gui_turbulence_initialization_choice();
+  length_choice = cs_gui_reference_length_initialization_choice();
 
-  if (cs_gui_strcmp(turb_ini_choice, "reference_velocity_length"))
-    cs_gui_turbulence_initialization("reference_length", almax);
+  if (cs_gui_strcmp(length_choice, "prescribed"))
+    cs_gui_reference_initialization("length", almax);
 
-  BFT_FREE(turb_ini_choice);
+  BFT_FREE(length_choice);
 
 #if _XML_DEBUG_
   bft_printf("==>CSTINI\n");
@@ -2767,7 +2747,8 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
 
   if (cs_glob_var->nscaus > 0) {
     for (i=0; i < cs_glob_var->nscaus; i++)
-      if (ivisls[i] > 0 && iscavr[i] <= 0) nbp++;
+      if (ivisls[i] > 0 && iscavr[i] <= 0)
+        nbp++;
   }
 
   if (*iale) {
@@ -2885,9 +2866,9 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     /* Second step : before the fourth call of VARPOS in INIUSI */
 
     if (*idtvar == 1 || *idtvar == 2)
-        cs_glob_var->nprop += 1;
+      cs_glob_var->nprop += 1;
     if (*ipucou == 1)
-        cs_glob_var->nprop += 3;
+      cs_glob_var->nprop += 3;
     cs_glob_var->nprop += cs_glob_var->ntimaver;
 
     BFT_REALLOC(cs_glob_var->properties_ipp,  cs_glob_var->nprop, int);
@@ -2895,27 +2876,27 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     BFT_REALLOC(cs_glob_var->properties_name, cs_glob_var->nprop, char*);
 
     if (*idtvar == 1 || *idtvar == 2) {
-        cs_glob_var->properties_ipp[n] = *ippdt;
-        cs_glob_var->propce[n] = -1;
-        BFT_MALLOC(cs_glob_var->properties_name[n], strlen("local_time_step")+1, char);
-        strcpy(cs_glob_var->properties_name[n++], "local_time_step");
+      cs_glob_var->properties_ipp[n] = *ippdt;
+      cs_glob_var->propce[n] = -1;
+      BFT_MALLOC(cs_glob_var->properties_name[n], strlen("local_time_step")+1, char);
+      strcpy(cs_glob_var->properties_name[n++], "local_time_step");
     }
 
     if (*ipucou == 1) {
-        cs_glob_var->properties_ipp[n] = *ipptx;
-        cs_glob_var->propce[n] = -1;
-        BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_X")+1, char);
-        strcpy(cs_glob_var->properties_name[n++], "weight_matrix_X");
+      cs_glob_var->properties_ipp[n] = *ipptx;
+      cs_glob_var->propce[n] = -1;
+      BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_X")+1, char);
+      strcpy(cs_glob_var->properties_name[n++], "weight_matrix_X");
 
-        cs_glob_var->properties_ipp[n] = *ippty;
-        cs_glob_var->propce[n] = -1;
-        BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_Y")+1, char);
-        strcpy(cs_glob_var->properties_name[n++], "weight_matrix_Y");
+      cs_glob_var->properties_ipp[n] = *ippty;
+      cs_glob_var->propce[n] = -1;
+      BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_Y")+1, char);
+      strcpy(cs_glob_var->properties_name[n++], "weight_matrix_Y");
 
-        cs_glob_var->properties_ipp[n] = *ipptz;
-        cs_glob_var->propce[n] = -1;
-        BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_Z")+1, char);
-        strcpy(cs_glob_var->properties_name[n++], "weight_matrix_Z");
+      cs_glob_var->properties_ipp[n] = *ipptz;
+      cs_glob_var->propce[n] = -1;
+      BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_Z")+1, char);
+      strcpy(cs_glob_var->properties_name[n++], "weight_matrix_Z");
     }
 
     for (i=0; i < cs_glob_var->ntimaver; i++) {
@@ -2938,10 +2919,10 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
   bft_printf("-->nombre de proprietes = %i\n", cs_glob_var->nprop);
   for (i=0; i < cs_glob_var->nprop; i++) {
     bft_printf("-->properties_ipp[%i]: %i propce[%i]: %i "
-                 "properties_name[%i]: %s\n",
-                 i, cs_glob_var->properties_ipp[i],
-                 i, cs_glob_var->propce[i],
-                 i, cs_glob_var->properties_name[i]);
+        "properties_name[%i]: %s\n",
+        i, cs_glob_var->properties_ipp[i],
+        i, cs_glob_var->propce[i],
+        i, cs_glob_var->properties_name[i]);
   }
 #endif
 }
@@ -3009,12 +2990,12 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(fcnmva, FCNMVA)
-(
- const char          *const fstr,    /* --> Fortran string */
- int                 *const len,     /* --> String Length  */
- int                 *const var_id   /* --> Variable Id (1 to n) */
- CS_ARGF_SUPP_CHAINE
-)
+  (
+    const char          *const fstr,    /* --> Fortran string */
+    int                 *const len,     /* --> String Length  */
+    int                 *const var_id   /* --> Variable Id (1 to n) */
+    CS_ARGF_SUPP_CHAINE
+  )
 {
   int i, i1, i2, l;
   char *cstr = NULL;
@@ -3039,12 +3020,12 @@ void CS_PROCF(fcnmva, FCNMVA)
   /* Compute string length (removing start or end blanks) */
 
   for (i1 = 0;
-       i1 < *len && (fstr[i1] == ' ' || fstr[i1] == '\t');
-       i1++);
+      i1 < *len && (fstr[i1] == ' ' || fstr[i1] == '\t');
+      i1++);
 
   for (i2 = *len - 1;
-       i2 > i1 && (fstr[i2] == ' ' || fstr[i2] == '\t');
-       i2--);
+      i2 > i1 && (fstr[i2] == ' ' || fstr[i2] == '\t');
+      i2--);
 
   l = i2 - i1 + 1;
 
@@ -3056,10 +3037,10 @@ void CS_PROCF(fcnmva, FCNMVA)
     /* Allocate and copy */
     BFT_MALLOC(cstr, l + 1, char);
 
-  for (i = 0 ; i < l ; i++, i1++)
-    cstr[i] = fstr[i1];
+    for (i = 0 ; i < l ; i++, i1++)
+      cstr[i] = fstr[i1];
 
-  cstr[l] = '\0';
+    cstr[l] = '\0';
 
     cs_glob_label->_cs_gui_var_name[*var_id - 1] = cstr;
 
@@ -3075,12 +3056,12 @@ void CS_PROCF(fcnmva, FCNMVA)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(cfnmva, CFNMVA)
-(
- char          *const fstr,    /* --> Fortran string */
- int           *const len,     /* --> String Length  */
- int           *const var_id   /* --> Variable Id (1 to n) */
- CS_ARGF_SUPP_CHAINE
-)
+  (
+    char          *const fstr,    /* --> Fortran string */
+    int           *const len,     /* --> String Length  */
+    int           *const var_id   /* --> Variable Id (1 to n) */
+    CS_ARGF_SUPP_CHAINE
+  )
 {
   int i;
   int l = 0;
@@ -3098,11 +3079,11 @@ void CS_PROCF(cfnmva, CFNMVA)
 
   if (cstr != NULL) {
 
-  /* Compute string length (removing start or end blanks) */
+    /* Compute string length (removing start or end blanks) */
 
-  l = strlen(cstr);
-  if (l > *len)
-    l = *len;
+    l = strlen(cstr);
+    if (l > *len)
+      l = *len;
 
     for (i = 0; i < l; i++)
       fstr[i] = cstr[i];
@@ -3121,21 +3102,21 @@ void CS_PROCF(cfnmva, CFNMVA)
 
 void CS_PROCF(nvamem, NVAMEM) (void)
 {
-    int i;
+  int i;
 #if _XML_DEBUG_
-    bft_printf("==>NVAMEM\n");
-    for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
-        if (cs_glob_label->_cs_gui_var_name[i])
-            bft_printf("-->label[%i] = %s\n", i, cs_glob_label->_cs_gui_var_name[i]);
+  bft_printf("==>NVAMEM\n");
+  for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
+    if (cs_glob_label->_cs_gui_var_name[i])
+      bft_printf("-->label[%i] = %s\n", i, cs_glob_label->_cs_gui_var_name[i]);
 #endif
 
-    for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
-        BFT_FREE(cs_glob_label->_cs_gui_var_name[i]);
+  for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
+    BFT_FREE(cs_glob_label->_cs_gui_var_name[i]);
 
-    BFT_FREE(cs_glob_label->_cs_gui_var_name);
+  BFT_FREE(cs_glob_label->_cs_gui_var_name);
 
-    cs_glob_label->_cs_gui_max_vars = 0;
-    cs_glob_label->_cs_gui_last_var = 0;
+  cs_glob_label->_cs_gui_max_vars = 0;
+  cs_glob_label->_cs_gui_last_var = 0;
 }
 
 /*-----------------------------------------------------------------------------
@@ -3152,33 +3133,33 @@ cs_gui_get_cells_list(const char *zone_id,
                       const int   ncelet,
                             int  *cells )
 {
-    int  c_id         = 0;
-    int  *cells_list  = NULL;
-    char *description = NULL;
+  int  c_id         = 0;
+  int  *cells_list  = NULL;
+  char *description = NULL;
 
-    description = cs_gui_volumic_zone_localization(zone_id);
+  description = cs_gui_volumic_zone_localization(zone_id);
 
-    /* build list of cells */
-    BFT_MALLOC(cells_list, ncelet, int);
+  /* build list of cells */
+  BFT_MALLOC(cells_list, ncelet, int);
 
-    c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
-                                 description,
-                                 cells,
-                                 cells_list);
+  c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
+                               description,
+                               cells,
+                               cells_list);
 
-    if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0)
-    {
-        const char *missing
-            = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
-        cs_base_warn(__FILE__, __LINE__);
-        bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                     "criteria:\n"
-                     "\"%s\"\n"
-                     " does not correspond to any cell.\n"),
-                   missing, description);
-    }
-    BFT_FREE(description);
-    return cells_list;
+  if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0)
+  {
+    const char *missing
+      = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                 "criteria:\n"
+                 "\"%s\"\n"
+                 " does not correspond to any cell.\n"),
+                 missing, description);
+  }
+  BFT_FREE(description);
+  return cells_list;
 }
 
 /*----------------------------------------------------------------------------
@@ -3193,26 +3174,53 @@ cs_gui_get_cells_list(const char *zone_id,
  * integer          isuite   -->  restart indicator
  * integer          isca     -->  indirection array for scalar number
  * integer          iscold   -->  scalar number for restart
+ * DOUBLE PRECISION RO0      -->  value of density if IROVAR=0
+ * DOUBLE PRECISION CP0      -->  value of specific heat if ICP=0
+ * DOUBLE PRECISION VISCL0   -->  value of viscosity if IVIVAR=0
+ * DOUBLE PRECISION VISLS0   -->  value of reference molecular diffusivity
+ * DOUBLE PRECISION UREF     -->  value of reference velocity
+ * DOUBLE PRECISION ALMAX    -->  value of reference length
+ * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
  * double precision rtp     <--   variables and scalars array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiiniv, UIINIV)(const int    *ncelet,
-                              const int    *isuite,
-                              const int    *isca,
-                              const int    *iscold,
-                                    double  rtp[])
+void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
+                              const int          *isuite,
+                              const int          *isca,
+                              const int          *iscold,
+                              const cs_real_t    *ro0,
+                              const cs_real_t    *cp0,
+                              const cs_real_t    *viscl0,
+                              const cs_real_t    *visls0,
+                              const cs_real_t    *uref,
+                              const cs_real_t    *almax,
+                              const double *const xyzcen,
+                                    double        rtp[])
 {
   /* Coal combustion: the initialization of the model scalar are not given */
 
   int i, j, icel, iel;
-  int zones = 0;
-  int cells = 0;
-  int *cells_list = NULL;
+  int zones            = 0;
+  int cells            = 0;
+  int *cells_list      = NULL;
   double initial_value = 0;
-  char *choice = NULL;
-  char *path = NULL;
-  char *status = NULL;
-  char *zone_id = NULL;
+  char *choice         = NULL;
+  char *path           = NULL;
+  char *path_velocity  = NULL;
+  char *path_turb      = NULL;
+  char *path_sca       = NULL;
+  char *status         = NULL;
+  char *zone_id        = NULL;
+  char *formula_uvw    = NULL;
+  char *formula_turb   = NULL;
+  char *formula_sca    = NULL;
+  char *formula        = NULL;
+  char *model          = NULL;
+
+  mei_tree_t *ev_formula_uvw  = NULL;
+  mei_tree_t *ev_formula_turb = NULL;
+  mei_tree_t *ev_formula_sca  = NULL;
+  mei_tree_t *ev_formula      = NULL;
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -3234,56 +3242,283 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *ncelet,
     status = cs_gui_get_attribute_value(path);
     BFT_FREE(path);
 
-    if (cs_gui_strcmp(status, "on"))  {
+    if (cs_gui_strcmp(status, "on")) {
 
       zone_id = cs_gui_volumic_zone_id(i);
       cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
 
       if (*isuite == 0) {
+        path_velocity = cs_xpath_init_path();
+        cs_xpath_add_elements(&path_velocity, 4,
+                              "thermophysical_models",
+                              "velocity_pressure",
+                              "initialization",
+                              "formula");
+        cs_xpath_add_test_attribute(&path_velocity, "zone_id", zone_id);
+        cs_xpath_add_function_text(&path_velocity);
+        formula_uvw = cs_gui_get_text_value(path_velocity);
 
-        /* Velocity variables initialization */
-        for (j=1; j < 4; j++) {
+        if (formula_uvw != NULL) {
+          ev_formula_uvw = mei_tree_new(formula_uvw);
+          mei_tree_insert(ev_formula_uvw,"x",0.0);
+          mei_tree_insert(ev_formula_uvw,"y",0.0);
+          mei_tree_insert(ev_formula_uvw,"z",0.0);
+          /* try to build the interpreter */
+          if (mei_tree_builder(ev_formula_uvw))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not interpret expression: %s\n %i"),
+                      ev_formula_uvw->string, mei_tree_builder(ev_formula_uvw));
 
-          cs_gui_variable_initial_value(vars->name[j], zone_id, &initial_value);
+          const char *symbols_uvw[] = {"u", "v", "w"};
+          if (mei_tree_find_symbols(ev_formula_uvw, 3, symbols_uvw))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not find the required symbol: %s\n"),
+                      "u, v ou w");
 
           for (icel = 0; icel < cells; icel++) {
-            iel = cells_list[icel]-1;
-            rtp[vars->rtp[j]*(*ncelet) + iel] = initial_value;
+            iel = cells_list[icel] - 1;
+            mei_tree_insert(ev_formula_uvw, "x", xyzcen[3 * iel + 0]);
+            mei_tree_insert(ev_formula_uvw, "y", xyzcen[3 * iel + 1]);
+            mei_tree_insert(ev_formula_uvw, "z", xyzcen[3 * iel + 2]);
+            mei_evaluate(ev_formula_uvw);
+            rtp[vars->rtp[1]*(*ncelet) + iel] = mei_tree_lookup(ev_formula_uvw, "u");
+            rtp[vars->rtp[2]*(*ncelet) + iel] = mei_tree_lookup(ev_formula_uvw, "v");
+            rtp[vars->rtp[3]*(*ncelet) + iel] = mei_tree_lookup(ev_formula_uvw, "w");
           }
+          mei_tree_destroy(ev_formula_uvw);
         }
-
-        /* Turbulence variables initialization */
-        choice = cs_gui_turbulence_initialization_choice();
-
-        if (cs_gui_strcmp(choice, "values")) {
-          for (j=4; j < vars->nvar - vars->nscaus - vars->nscapp; j++) {
-
-            cs_gui_variable_initial_value(vars->name[j], zone_id, &initial_value);
-
+        else {
+          for (j=1; j < 4; j++) {
             for (icel = 0; icel < cells; icel++) {
               iel = cells_list[icel]-1;
-              rtp[vars->rtp[j]*(*ncelet) + iel] = initial_value;
+              rtp[vars->rtp[j] * (*ncelet) + iel] = 0.0;
             }
           }
         }
+        BFT_FREE(formula_uvw);
+        BFT_FREE(path_velocity);
 
-        BFT_FREE(choice);
+        /* Turbulence variables initialization */
+        choice = cs_gui_turbulence_initialization_choice(zone_id);
+
+        if (cs_gui_strcmp(choice, "formula")) {
+
+          path_turb = cs_xpath_init_path();
+          cs_xpath_add_elements(&path_turb, 3,
+                                "thermophysical_models",
+                                "turbulence",
+                                "initialization");
+          cs_xpath_add_test_attribute(&path_turb, "zone_id", zone_id);
+          cs_xpath_add_element(&path, "formula");
+          cs_xpath_add_function_text(&path_turb);
+          formula_turb = cs_gui_get_text_value(path_turb);
+          BFT_FREE(path_turb);
+
+          if (formula_turb != NULL) {
+            ev_formula_turb = mei_tree_new(formula_turb);
+            mei_tree_insert(ev_formula_turb, "rho0", *ro0);
+            mei_tree_insert(ev_formula_turb, "mu0", *viscl0);
+            mei_tree_insert(ev_formula_turb, "cp0", *cp0);
+            mei_tree_insert(ev_formula_turb, "uref", *uref);
+            mei_tree_insert(ev_formula_turb, "almax", *almax);
+            mei_tree_insert(ev_formula_turb, "x", 0.0);
+            mei_tree_insert(ev_formula_turb, "y", 0.0);
+            mei_tree_insert(ev_formula_turb, "z", 0.0);
+
+            /* try to build the interpreter */
+
+            if (mei_tree_builder(ev_formula_turb))
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Error: can not interpret expression: %s\n %i"),
+                        ev_formula_turb->string, mei_tree_builder(ev_formula_turb));
+
+            model = cs_gui_get_thermophysical_model("turbulence");
+            if (model == NULL) return;
+
+            if (cs_gui_strcmp(model, "k-epsilon") ||
+                cs_gui_strcmp(model, "k-epsilon-PL")) {
+
+              const char *symbols[] = {"k","eps"};
+              if (mei_tree_find_symbols(ev_formula_turb, 2, symbols))
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Error: can not find the required symbol: %s\n"),
+                          "k or eps");
+
+              for (icel = 0; icel < cells; icel++) {
+                iel = cells_list[icel] - 1;
+                mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
+                mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
+                mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
+                mei_evaluate(ev_formula_turb);
+                rtp[vars->rtp[4] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "k");
+                rtp[vars->rtp[5] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "eps");
+              }
+            }
+
+            else if (cs_gui_strcmp(model, "Rij-epsilon") || cs_gui_strcmp(model, "Rij-SSG")) {
+              const char *symbols[] = {"r11", "r22", "r133", "r12", "r13", "r23", "eps"};
+              if (mei_tree_find_symbols(ev_formula_turb, 7, symbols))
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Error: can not find the required symbol: %s\n"),
+                          "r11, r22, r33, r12, r13, r23 or eps");
+
+              for (icel = 0; icel < cells; icel++) {
+                iel = cells_list[icel]-1;
+                mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
+                mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
+                mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
+                mei_evaluate(ev_formula_turb);
+                rtp[vars->rtp[4]  * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "r11");
+                rtp[vars->rtp[5]  * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "r22");
+                rtp[vars->rtp[6]  * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "r33");
+                rtp[vars->rtp[7]  * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "r12");
+                rtp[vars->rtp[8]  * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "r13");
+                rtp[vars->rtp[9]  * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "r23");
+                rtp[vars->rtp[10] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "eps");
+              }
+            }
+
+            else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
+              const char *symbols[] = {"r11", "r22", "r133", "r12", "r13", "r23", "eps", "alpha"};
+              if (mei_tree_find_symbols(ev_formula_turb, 8, symbols))
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Error: can not find the required symbol: %s\n"),
+                          "r11, r22, r33, r12, r13, r23, eps or alpha");
+
+              for (icel = 0; icel < cells; icel++) {
+                iel = cells_list[icel]-1;
+                mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
+                mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
+                mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
+                mei_evaluate(ev_formula_turb);
+                rtp[vars->rtp[4]  * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "r11");
+                rtp[vars->rtp[5]  * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "r22");
+                rtp[vars->rtp[6]  * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "r33");
+                rtp[vars->rtp[7]  * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "r12");
+                rtp[vars->rtp[8]  * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "r13");
+                rtp[vars->rtp[9]  * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "r23");
+                rtp[vars->rtp[10] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "eps");
+                rtp[vars->rtp[11] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "alpha");
+              }
+            }
+
+            else if (cs_gui_strcmp(model, "v2f-phi")) {
+              const char *symbols[] = {"k", "eps", "phi", "fb"};
+              if (mei_tree_find_symbols(ev_formula_turb, 4, symbols))
+                bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"),
+                          "k, eps, phi of fb");
+
+              for (icel = 0; icel < cells; icel++) {
+                iel = cells_list[icel]-1;
+                mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
+                mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
+                mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
+                mei_evaluate(ev_formula_turb);
+                rtp[vars->rtp[4] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "k");
+                rtp[vars->rtp[5] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "eps");
+                rtp[vars->rtp[6] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "phi");
+                rtp[vars->rtp[7] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "fb");
+              }
+            }
+
+            else if (cs_gui_strcmp(model, "k-omega-SST")) {
+              const char *symbols[] = {"k", "omega"};
+              if (mei_tree_find_symbols(ev_formula_turb, 2, symbols))
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Error: can not find the required symbol: %s\n"),
+                          "k or omega");
+
+              for (icel = 0; icel < cells; icel++) {
+                iel = cells_list[icel]-1;
+                mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
+                mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
+                mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
+                mei_evaluate(ev_formula_turb);
+                rtp[vars->rtp[4] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "k");
+                rtp[vars->rtp[5] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "omega");
+              }
+            }
+
+            else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
+              const char *symbols[] = {"nusa"};
+              if (mei_tree_find_symbols(ev_formula_turb, 1, symbols))
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Error: can not find the required symbol: %s\n"),
+                          "nusa");
+
+              for (icel = 0; icel < cells; icel++) {
+                iel = cells_list[icel]-1;
+                mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
+                mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
+                mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
+                mei_evaluate(ev_formula_turb);
+                rtp[vars->rtp[4] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "nusa");
+              }
+            }
+
+            else
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Invalid turbulence model: %s.\n"), model);
+            mei_tree_destroy(ev_formula_turb);
+            BFT_FREE(model);
+          }
+
+          BFT_FREE(formula_turb);
+          BFT_FREE(choice);
+        }
       }
 
       /* User Scalars initialization */
       for (j=0; j < vars->nscaus; j++) {
+        path_sca = cs_xpath_init_path();
+        cs_xpath_add_elements(&path_sca, 2,
+                              "additional_scalars",
+                              "scalar");
+        cs_xpath_add_test_attribute(&path_sca, "label", vars->label[j]);
+        cs_xpath_add_element(&path_sca, "formula");
+        cs_xpath_add_test_attribute(&path_sca, "zone_id", zone_id);
+        cs_xpath_add_function_text(&path_sca);
+        formula_sca = cs_gui_get_text_value(path_sca);
+        BFT_FREE(path_sca);
 
-        cs_gui_scalar_initial_value("additional_scalars",
-                                    vars->label[j],
-                                    zone_id,
-                                    &initial_value);
+        if (formula_sca != NULL) {
+          ev_formula_sca = mei_tree_new(formula_sca);
+          mei_tree_insert(ev_formula_sca,"x",0.);
+          mei_tree_insert(ev_formula_sca,"y",0.);
+          mei_tree_insert(ev_formula_sca,"z",0.);
+          /* try to build the interpreter */
+          if (mei_tree_builder(ev_formula_sca))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not interpret expression: %s\n %i"),
+                      ev_formula_sca->string, mei_tree_builder(ev_formula_sca));
 
-        if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
-          for (icel = 0; icel < cells; icel++) {
-            iel = cells_list[icel]-1;
-            rtp[(isca[j]-1)*(*ncelet) + iel] = initial_value;
+          if (mei_tree_find_symbol(ev_formula_sca, vars->label[j]))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not find the required symbol: %s\n"),
+                      vars->label[j]);
+
+          if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+            for (icel = 0; icel < cells; icel++) {
+              iel = cells_list[icel]-1;
+              mei_tree_insert(ev_formula_sca, "x", xyzcen[3 * iel + 0]);
+              mei_tree_insert(ev_formula_sca, "y", xyzcen[3 * iel + 1]);
+              mei_tree_insert(ev_formula_sca, "z", xyzcen[3 * iel + 2]);
+              mei_evaluate(ev_formula_sca);
+              rtp[(isca[j]-1)*(*ncelet) + iel] =
+                mei_tree_lookup(ev_formula_sca,vars->label[j]);
+            }
+          }
+          mei_tree_destroy(ev_formula_sca);
+        }
+        else {
+          if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+            for (icel = 0; icel < cells; icel++) {
+              iel = cells_list[icel]-1;
+              rtp[(isca[j]-1)*(*ncelet) + iel] = 0.0;
+            }
           }
         }
+        BFT_FREE(formula_sca);
       }
 
       BFT_FREE(cells_list);
@@ -3296,17 +3531,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *ncelet,
         for (j=1; j < vars->nvar - vars->nscaus - vars->nscapp; j++) {
           cs_gui_variable_initial_value(vars->name[j], zone_id, &initial_value);
           bft_printf("--initial value for %s: %f\n",
-            vars->name[j], initial_value);
-        }
-      }
-
-      for (j=0; j < vars->nscaus; j++) {
-        cs_gui_scalar_initial_value("additional_scalars",
-                                    vars->label[j],
-                                    zone_id,
-                                    &initial_value);
-        if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
-          bft_printf("--initial value for %s: %f\n", vars->label[j], initial_value);
+                     vars->name[j], initial_value);
         }
       }
 #endif
@@ -3337,70 +3562,70 @@ _matrix_base_conversion(double  a11,   double  a12,   double  a13,
                         double *out21, double *out22, double *out23,
                         double *out31, double *out32, double *out33)
 {
-    int     i, j, k;
-    double  tensorP[3][3], tensorA[3][3], tensorB[3][3], tensorC[3][3], tensorD[3][3];
+  int     i, j, k;
+  double  tensorP[3][3], tensorA[3][3], tensorB[3][3], tensorC[3][3], tensorD[3][3];
 
-    tensorA[0][0] = in11;
-    tensorA[0][1] = in12;
-    tensorA[0][2] = in13;
-    tensorA[1][0] = in21;
-    tensorA[1][1] = in22;
-    tensorA[1][2] = in23;
-    tensorA[2][0] = in31;
-    tensorA[2][1] = in32;
-    tensorA[2][2] = in33;
+  tensorA[0][0] = in11;
+  tensorA[0][1] = in12;
+  tensorA[0][2] = in13;
+  tensorA[1][0] = in21;
+  tensorA[1][1] = in22;
+  tensorA[1][2] = in23;
+  tensorA[2][0] = in31;
+  tensorA[2][1] = in32;
+  tensorA[2][2] = in33;
 
-    tensorP[0][0] = a11;
-    tensorP[0][1] = a12;
-    tensorP[0][2] = a13;
-    tensorP[1][0] = a21;
-    tensorP[1][1] = a22;
-    tensorP[1][2] = a23;
-    tensorP[2][0] = a31;
-    tensorP[2][1] = a32;
-    tensorP[2][2] = a33;
+  tensorP[0][0] = a11;
+  tensorP[0][1] = a12;
+  tensorP[0][2] = a13;
+  tensorP[1][0] = a21;
+  tensorP[1][1] = a22;
+  tensorP[1][2] = a23;
+  tensorP[2][0] = a31;
+  tensorP[2][1] = a32;
+  tensorP[2][2] = a33;
 
-    for (i = 0; i < 3; i++)
+  for (i = 0; i < 3; i++)
+  {
+    for (j = 0; j < 3; j++)
     {
-        for (j = 0; j < 3; j++)
-        {
-            tensorB[i][j] = 0.;
-            for (k = 0; k < 3; k++)
-                tensorB[i][j] += tensorP[i][k] * tensorA[k][j];
-        }
+      tensorB[i][j] = 0.;
+      for (k = 0; k < 3; k++)
+        tensorB[i][j] += tensorP[i][k] * tensorA[k][j];
     }
+  }
 
-    /* Inversion of a 3x3 matrix */
+  /* Inversion of a 3x3 matrix */
 
-    tensorC[0][0] = a11;
-    tensorC[0][1] = a21;
-    tensorC[0][2] = a31;
-    tensorC[1][0] = a12;
-    tensorC[1][1] = a22;
-    tensorC[1][2] = a32;
-    tensorC[2][0] = a13;
-    tensorC[2][1] = a23;
-    tensorC[2][2] = a33;
+  tensorC[0][0] = a11;
+  tensorC[0][1] = a21;
+  tensorC[0][2] = a31;
+  tensorC[1][0] = a12;
+  tensorC[1][1] = a22;
+  tensorC[1][2] = a32;
+  tensorC[2][0] = a13;
+  tensorC[2][1] = a23;
+  tensorC[2][2] = a33;
 
-    for (i = 0; i < 3; i++)
+  for (i = 0; i < 3; i++)
+  {
+    for (j = 0; j < 3; j++)
     {
-        for (j = 0; j < 3; j++)
-        {
-            tensorD[i][j] = 0.;
-            for (k = 0; k < 3; k++)
-                tensorD[i][j] += tensorB[i][k] * tensorC[k][j];
-        }
+      tensorD[i][j] = 0.;
+      for (k = 0; k < 3; k++)
+        tensorD[i][j] += tensorB[i][k] * tensorC[k][j];
     }
+  }
 
-    *out11 = tensorD[0][0];
-    *out22 = tensorD[1][1];
-    *out33 = tensorD[2][2];
-    *out12 = tensorD[0][1];
-    *out13 = tensorD[0][2];
-    *out21 = tensorD[1][0];
-    *out23 = tensorD[1][2];
-    *out31 = tensorD[2][0];
-    *out32 = tensorD[2][1];
+  *out11 = tensorD[0][0];
+  *out22 = tensorD[1][1];
+  *out33 = tensorD[2][2];
+  *out12 = tensorD[0][1];
+  *out13 = tensorD[0][2];
+  *out21 = tensorD[1][0];
+  *out23 = tensorD[1][2];
+  *out31 = tensorD[2][0];
+  *out32 = tensorD[2][1];
 }
 
 /*-----------------------------------------------------------------------------
@@ -3414,21 +3639,21 @@ _matrix_base_conversion(double  a11,   double  a12,   double  a13,
 static double
 _c_heads_losses(const char* zone_id, const char* c)
 {
-    char* path;
-    double result = 0.0;
-    double value  = 0.0;
+  char* path;
+  double result = 0.0;
+  double value  = 0.0;
 
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 3, "thermophysical_models", "heads_losses", "head_loss");
-    cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
-    cs_xpath_add_element(&path, c);
-    cs_xpath_add_function_text(&path);
-    if (cs_gui_get_double(path, &result))
-        value = result;
-    else
-        value= 0.0;
-    BFT_FREE(path);
-    return value;
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models", "heads_losses", "head_loss");
+  cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+  cs_xpath_add_element(&path, c);
+  cs_xpath_add_function_text(&path);
+  if (cs_gui_get_double(path, &result))
+    value = result;
+  else
+    value= 0.0;
+  BFT_FREE(path);
+  return value;
 }
 
 /*----------------------------------------------------------------------------
@@ -3474,118 +3699,118 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
     = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone", 1);
 
 
-    if (*iappel == 1 || *iappel == 2)
+  if (*iappel == 1 || *iappel == 2)
+  {
+    ielpdc = 0;
+
+    for (i=1; i < zones+1; i++)
     {
-        ielpdc = 0;
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+      cs_xpath_add_element_num(&path, "zone", i);
+      cs_xpath_add_attribute(&path, "head_losses");
+      status = cs_gui_get_attribute_value(path);
+      BFT_FREE(path);
 
-        for (i=1; i < zones+1; i++)
+      if (cs_gui_strcmp(status, "on"))
+      {
+        zone_id = cs_gui_volumic_zone_id(i);
+        cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
+
+        for (j=0; j < cells; j++)
         {
-            path = cs_xpath_init_path();
-            cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
-            cs_xpath_add_element_num(&path, "zone", i);
-            cs_xpath_add_attribute(&path, "head_losses");
-            status = cs_gui_get_attribute_value(path);
-            BFT_FREE(path);
-
-            if (cs_gui_strcmp(status, "on"))
-            {
-                zone_id = cs_gui_volumic_zone_id(i);
-                cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
-
-                for (j=0; j < cells; j++)
-                {
-                    if (*iappel == 2)
-                        icepdc[ielpdc] = cells_list[j];
-                    ielpdc++;
-                }
-                BFT_FREE(cells_list);
-                BFT_FREE(zone_id);
-            }
-            BFT_FREE(status);
-        } /* zones+1 */
-        if (*iappel == 1)
-            *ncepdp = ielpdc;
-    }
-
-    if (*iappel == 3)
-    {
-        for (ikpdc = 0; ikpdc < 6; ikpdc++)
-            for (ielpdc = 0; ielpdc < *ncepdp; ielpdc++)
-                ckupdc[ikpdc * (*ncepdp) + ielpdc] = 0.0;
-
-        ielpdc = 0;
-
-        for (i=1; i < zones+1; i++)
-        {
-            path = cs_xpath_init_path();
-            cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
-            cs_xpath_add_element_num(&path, "zone", i);
-            cs_xpath_add_attribute(&path, "head_losses");
-            status = cs_gui_get_attribute_value(path);
-            BFT_FREE(path);
-
-            if (cs_gui_strcmp(status, "on"))
-            {
-                zone_id = cs_gui_volumic_zone_id(i);
-                cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
-
-                k11 = _c_heads_losses(zone_id, "kxx");
-                k22 = _c_heads_losses(zone_id, "kyy");
-                k33 = _c_heads_losses(zone_id, "kzz");
-
-                a11 = _c_heads_losses(zone_id, "a11");
-                a12 = _c_heads_losses(zone_id, "a12");
-                a13 = _c_heads_losses(zone_id, "a13");
-                a21 = _c_heads_losses(zone_id, "a21");
-                a22 = _c_heads_losses(zone_id, "a22");
-                a23 = _c_heads_losses(zone_id, "a23");
-                a31 = _c_heads_losses(zone_id, "a31");
-                a32 = _c_heads_losses(zone_id, "a32");
-                a33 = _c_heads_losses(zone_id, "a33");
-
-                if (a12 == 0.0 && a13 == 0.0 && a23 == 0.0)
-                {
-                    c11 = k11;
-                    c22 = k22;
-                    c33 = k33;
-                    c12 = 0.0;
-                    c13 = 0.0;
-                    c23 = 0.0;
-                }
-                else
-                {
-                    _matrix_base_conversion(a11, a12, a13, a21, a22, a23, a31, a32, a33,
-                                            k11, 0.0, 0.0, 0.0, k22, 0.0, 0.0, 0.0, k33,
-                                            &c11, &c12, &c13, &c21, &c22, &c23, &c31, &c32, &c33);
-                }
-
-                for (j = 0; j < cells; j++)
-                {
-                    iel = cells_list[j];
-                    vit = rtpa[vars->rtp[1]*(*ncelet) + iel-1] * rtpa[vars->rtp[1]*(*ncelet) + iel-1] \
-                        + rtpa[vars->rtp[2]*(*ncelet) + iel-1] * rtpa[vars->rtp[2]*(*ncelet) + iel-1] \
-                        + rtpa[vars->rtp[3]*(*ncelet) + iel-1] * rtpa[vars->rtp[3]*(*ncelet) + iel-1] ;
-                    vit = sqrt(vit);
-                    ckupdc[0 * (*ncepdp) + ielpdc] = 0.5 * c11 * vit;
-                    ckupdc[1 * (*ncepdp) + ielpdc] = 0.5 * c22 * vit;
-                    ckupdc[2 * (*ncepdp) + ielpdc] = 0.5 * c33 * vit;
-                    ckupdc[3 * (*ncepdp) + ielpdc] = 0.5 * c12 * vit;
-                    ckupdc[4 * (*ncepdp) + ielpdc] = 0.5 * c13 * vit;
-                    ckupdc[5 * (*ncepdp) + ielpdc] = 0.5 * c23 * vit;
-                    ielpdc++;
-                }
-                BFT_FREE(cells_list);
-                BFT_FREE(zone_id);
-            }
-            BFT_FREE(status);
-        } /* zones+1 */
-    }
-#if _XML_DEBUG_
-    bft_printf("==>uikpdc\n");
+          if (*iappel == 2)
+            icepdc[ielpdc] = cells_list[j];
+          ielpdc++;
+        }
+        BFT_FREE(cells_list);
+        BFT_FREE(zone_id);
+      }
+      BFT_FREE(status);
+    } /* zones+1 */
     if (*iappel == 1)
-        bft_printf("--%i number of head losses cells: %i\n", *iappel, *ncepdp);
-    if (*iappel == 3)
-        bft_printf("--%i number of head losses cells: %i\n", *iappel, ielpdc);
+      *ncepdp = ielpdc;
+  }
+
+  if (*iappel == 3)
+  {
+    for (ikpdc = 0; ikpdc < 6; ikpdc++)
+      for (ielpdc = 0; ielpdc < *ncepdp; ielpdc++)
+        ckupdc[ikpdc * (*ncepdp) + ielpdc] = 0.0;
+
+    ielpdc = 0;
+
+    for (i=1; i < zones+1; i++)
+    {
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+      cs_xpath_add_element_num(&path, "zone", i);
+      cs_xpath_add_attribute(&path, "head_losses");
+      status = cs_gui_get_attribute_value(path);
+      BFT_FREE(path);
+
+      if (cs_gui_strcmp(status, "on"))
+      {
+        zone_id = cs_gui_volumic_zone_id(i);
+        cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
+
+        k11 = _c_heads_losses(zone_id, "kxx");
+        k22 = _c_heads_losses(zone_id, "kyy");
+        k33 = _c_heads_losses(zone_id, "kzz");
+
+        a11 = _c_heads_losses(zone_id, "a11");
+        a12 = _c_heads_losses(zone_id, "a12");
+        a13 = _c_heads_losses(zone_id, "a13");
+        a21 = _c_heads_losses(zone_id, "a21");
+        a22 = _c_heads_losses(zone_id, "a22");
+        a23 = _c_heads_losses(zone_id, "a23");
+        a31 = _c_heads_losses(zone_id, "a31");
+        a32 = _c_heads_losses(zone_id, "a32");
+        a33 = _c_heads_losses(zone_id, "a33");
+
+        if (a12 == 0.0 && a13 == 0.0 && a23 == 0.0)
+        {
+          c11 = k11;
+          c22 = k22;
+          c33 = k33;
+          c12 = 0.0;
+          c13 = 0.0;
+          c23 = 0.0;
+        }
+        else
+        {
+          _matrix_base_conversion(a11, a12, a13, a21, a22, a23, a31, a32, a33,
+                                  k11, 0.0, 0.0, 0.0, k22, 0.0, 0.0, 0.0, k33,
+                                 &c11, &c12, &c13, &c21, &c22, &c23, &c31, &c32, &c33);
+        }
+
+        for (j = 0; j < cells; j++)
+        {
+          iel = cells_list[j];
+          vit = rtpa[vars->rtp[1]*(*ncelet) + iel-1] * rtpa[vars->rtp[1]*(*ncelet) + iel-1] \
+              + rtpa[vars->rtp[2]*(*ncelet) + iel-1] * rtpa[vars->rtp[2]*(*ncelet) + iel-1] \
+              + rtpa[vars->rtp[3]*(*ncelet) + iel-1] * rtpa[vars->rtp[3]*(*ncelet) + iel-1] ;
+          vit = sqrt(vit);
+          ckupdc[0 * (*ncepdp) + ielpdc] = 0.5 * c11 * vit;
+          ckupdc[1 * (*ncepdp) + ielpdc] = 0.5 * c22 * vit;
+          ckupdc[2 * (*ncepdp) + ielpdc] = 0.5 * c33 * vit;
+          ckupdc[3 * (*ncepdp) + ielpdc] = 0.5 * c12 * vit;
+          ckupdc[4 * (*ncepdp) + ielpdc] = 0.5 * c13 * vit;
+          ckupdc[5 * (*ncepdp) + ielpdc] = 0.5 * c23 * vit;
+          ielpdc++;
+        }
+        BFT_FREE(cells_list);
+        BFT_FREE(zone_id);
+      }
+      BFT_FREE(status);
+    } /* zones+1 */
+  }
+#if _XML_DEBUG_
+  bft_printf("==>uikpdc\n");
+  if (*iappel == 1)
+    bft_printf("--%i number of head losses cells: %i\n", *iappel, *ncepdp);
+  if (*iappel == 3)
+    bft_printf("--%i number of head losses cells: %i\n", *iappel, ielpdc);
 #endif
 }
 
@@ -3642,441 +3867,441 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_real_t        rtp[],
                                     cs_real_t        propce[])
 {
-    cs_var_t  *vars = cs_glob_var;
-    mei_tree_t *ev_rho = NULL;
-    mei_tree_t *ev_mu  = NULL;
-    mei_tree_t *ev_cp  = NULL;
-    mei_tree_t *ev_la  = NULL;
-    mei_tree_t *ev_Ds  = NULL;
-    char *law_rho = NULL;
-    char *law_mu  = NULL;
-    char *law_cp  = NULL;
-    char *law_la  = NULL;
-    char *law_Ds  = NULL;
+  cs_var_t  *vars = cs_glob_var;
+  mei_tree_t *ev_rho = NULL;
+  mei_tree_t *ev_mu  = NULL;
+  mei_tree_t *ev_cp  = NULL;
+  mei_tree_t *ev_la  = NULL;
+  mei_tree_t *ev_Ds  = NULL;
+  char *law_rho = NULL;
+  char *law_mu  = NULL;
+  char *law_cp  = NULL;
+  char *law_la  = NULL;
+  char *law_Ds  = NULL;
 
-    char *path = NULL;
-    int i, j, iel;
-    double tmp, time0;
+  char *path = NULL;
+  int i, j, iel;
+  double tmp, time0;
 
-    int user_law = 0;
-    int ipcrom = ipproc[ *irom   -1 ] -1;
-    int ipcvis = ipproc[ *iviscl -1 ] -1;
-    int ipccp  = ipproc[ *icp    -1 ] -1;
-    int ipcvsl = ipproc[ ivisls[*iscalt -1 ] -1 ] -1; /* Lambda/Cp from the current thermal scalar */
+  int user_law = 0;
+  int ipcrom = ipproc[ *irom   -1 ] -1;
+  int ipcvis = ipproc[ *iviscl -1 ] -1;
+  int ipccp  = ipproc[ *icp    -1 ] -1;
+  int ipcvsl = ipproc[ ivisls[*iscalt -1 ] -1 ] -1; /* Lambda/Cp from the current thermal scalar */
 
-    /* law for density */
+  /* law for density */
 
-    user_law = 0;
-    if (*irovar == 1)
+  user_law = 0;
+  if (*irovar == 1)
+  {
+    char *prop_choice = _properties_choice("density");
+    if (cs_gui_strcmp(prop_choice, "user_law"))
+      user_law = 1;
+    BFT_FREE(prop_choice);
+  }
+
+  if (user_law)
+  {
+    /* search the formula for the law */
+
+    path = cs_xpath_short_path();
+    cs_xpath_add_element(&path, "property");
+    cs_xpath_add_test_attribute(&path, "name", "density");
+    cs_xpath_add_element(&path, "formula");
+    cs_xpath_add_function_text(&path);
+
+    law_rho = cs_gui_get_text_value(path);
+    BFT_FREE(path);
+
+    /* return an empty interpreter */
+
+    time0 = cs_timer_wtime();
+
+    ev_rho = mei_tree_new(law_rho);
+
+    mei_tree_insert(ev_rho, "rho0", *ro0);
+    mei_tree_insert(ev_rho, "p0", *p0);
+
+    for (i = 0; i < *nscaus; i++)
+      mei_tree_insert(ev_rho, vars->label[i], 0.0);
+
+    /* try to build the interpreter */
+
+    if (mei_tree_builder(ev_rho))
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error: can not interpret expression: %s\n"), ev_rho->string);
+
+    if (mei_tree_find_symbol(ev_rho, "rho"))
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error: can not find the required symbol: %s\n"), "rho");
+
+    /* for each cell, update the value of the table of symbols for each scalar
+       (including the thermal scalar), and evaluate the interpreter */
+
+    for (iel = 0; iel < *ncel; iel++)
     {
-        char *prop_choice = _properties_choice("density");
-        if (cs_gui_strcmp(prop_choice, "user_law"))
-            user_law = 1;
-        BFT_FREE(prop_choice);
+      for (i = 0; i < *nscaus; i++)
+        mei_tree_insert(ev_rho,
+                        vars->label[i],
+                        rtp[(isca[i] -1) * (*ncelet) + iel]);
+
+      tmp = mei_evaluate(ev_rho);
+      propce[ipcrom * (*ncelet) + iel] = mei_tree_lookup(ev_rho, "rho");
     }
 
-    if (user_law)
+    mei_tree_destroy(ev_rho);
+
+    cs_gui_add_mei_time(cs_timer_wtime() - time0);
+  }
+
+  /* law for molecular viscosity */
+
+  user_law = 0;
+  if (*ivivar == 1)
+  {
+    char *prop_choice = _properties_choice("molecular_viscosity");
+    if (cs_gui_strcmp(prop_choice, "user_law"))
+      user_law = 1;
+    BFT_FREE(prop_choice);
+  }
+
+  if (user_law)
+  {
+    /* search the formula for the law */
+
+    path = cs_xpath_short_path();
+    cs_xpath_add_element(&path, "property");
+    cs_xpath_add_test_attribute(&path, "name", "molecular_viscosity");
+    cs_xpath_add_element(&path, "formula");
+    cs_xpath_add_function_text(&path);
+
+    law_mu = cs_gui_get_text_value(path);
+    BFT_FREE(path);
+
+    /* return an empty interpreter */
+
+    time0 = cs_timer_wtime();
+
+    ev_mu = mei_tree_new(law_mu);
+
+    mei_tree_insert(ev_mu, "rho0", *ro0);
+    mei_tree_insert(ev_mu, "mu0", *viscl0);
+    mei_tree_insert(ev_mu, "p0", *p0);
+    mei_tree_insert(ev_mu, "rho", 0.0);
+
+    for (i = 0; i < *nscaus; i++)
+      mei_tree_insert(ev_mu, vars->label[i], 0.0);
+
+    /* try to build the interpreter */
+
+    if (mei_tree_builder(ev_mu))
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error: can not interpret expression: %s\n"), ev_mu->string);
+
+    if (mei_tree_find_symbol(ev_mu, "mu"))
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error: can not find the required symbol: %s\n"), "mu");
+
+    /* for each cell, update the value of the table of symbols for each scalar
+       (including the thermal scalar) and for the density,
+       then evaluate the interpreter */
+
+    for (iel = 0; iel < *ncel; iel++)
     {
-        /* search the formula for the law */
+      for (i = 0; i < *nscaus; i++)
+        mei_tree_insert(ev_mu,
+                        vars->label[i],
+                        rtp[(isca[i] -1) * (*ncelet) + iel]);
 
-        path = cs_xpath_short_path();
-        cs_xpath_add_element(&path, "property");
-        cs_xpath_add_test_attribute(&path, "name", "density");
-        cs_xpath_add_element(&path, "formula");
-        cs_xpath_add_function_text(&path);
+      mei_tree_insert(ev_mu,
+                      "rho",
+                      propce[ipcrom * (*ncelet) + iel]);
 
-        law_rho = cs_gui_get_text_value(path);
-        BFT_FREE(path);
-
-        /* return an empty interpreter */
-
-        time0 = cs_timer_wtime();
-
-        ev_rho = mei_tree_new(law_rho);
-
-        mei_tree_insert(ev_rho, "rho0", *ro0);
-        mei_tree_insert(ev_rho, "p0", *p0);
-
-        for (i = 0; i < *nscaus; i++)
-            mei_tree_insert(ev_rho, vars->label[i], 0.0);
-
-       /* try to build the interpreter */
-
-        if (mei_tree_builder(ev_rho))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interpret expression: %s\n"), ev_rho->string);
-
-        if (mei_tree_find_symbol(ev_rho, "rho"))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not find the required symbol: %s\n"), "rho");
-
-        /* for each cell, update the value of the table of symbols for each scalar
-           (including the thermal scalar), and evaluate the interpreter */
-
-        for (iel = 0; iel < *ncel; iel++)
-        {
-            for (i = 0; i < *nscaus; i++)
-                mei_tree_insert(ev_rho,
-                                vars->label[i],
-                                rtp[(isca[i] -1) * (*ncelet) + iel]);
-
-            tmp = mei_evaluate(ev_rho);
-            propce[ipcrom * (*ncelet) + iel] = mei_tree_lookup(ev_rho, "rho");
-        }
-
-        mei_tree_destroy(ev_rho);
-
-        cs_gui_add_mei_time(cs_timer_wtime() - time0);
+      tmp = mei_evaluate(ev_mu);
+      propce[ipcvis * (*ncelet) + iel] = mei_tree_lookup(ev_mu, "mu");
     }
 
-    /* law for molecular viscosity */
+    mei_tree_destroy(ev_mu);
 
-    user_law = 0;
-    if (*ivivar == 1)
+    cs_gui_add_mei_time(cs_timer_wtime() - time0);
+  }
+
+  /* law for specific heat */
+
+  user_law = 0;
+  if (*icp > 0)
+  {
+    char *prop_choice = _properties_choice("specific_heat");
+    if (cs_gui_strcmp(prop_choice, "user_law"))
+      user_law = 1;
+    BFT_FREE(prop_choice);
+  }
+
+  if (user_law)
+  {
+    /* search the formula for the law */
+
+    path = cs_xpath_short_path();
+    cs_xpath_add_element(&path, "property");
+    cs_xpath_add_test_attribute(&path, "name", "specific_heat");
+    cs_xpath_add_element(&path, "formula");
+    cs_xpath_add_function_text(&path);
+
+    law_cp = cs_gui_get_text_value(path);
+    BFT_FREE(path);
+
+    /* return an empty interpreter */
+
+    time0 = cs_timer_wtime();
+
+    ev_cp = mei_tree_new(law_cp);
+
+    mei_tree_insert(ev_cp, "cp0", *cp0);
+    mei_tree_insert(ev_cp, "p0", *p0);
+
+    for (i = 0; i < *nscaus; i++)
+      mei_tree_insert(ev_cp, vars->label[i], 0.0);
+
+    /* try to build the interpreter */
+
+    if (mei_tree_builder(ev_cp))
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error: can not interpret expression: %s\n"), ev_cp->string);
+
+    if (mei_tree_find_symbol(ev_cp, "cp"))
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error: can not find the required symbol: %s\n"), "cp");
+
+    /* for each cell, update the value of the table of symbols for each scalar
+       (including the thermal scalar), and evaluate the interpreter */
+
+    for (iel = 0; iel < *ncel; iel++)
     {
-        char *prop_choice = _properties_choice("molecular_viscosity");
-        if (cs_gui_strcmp(prop_choice, "user_law"))
-            user_law = 1;
-        BFT_FREE(prop_choice);
+      for (i = 0; i < *nscaus; i++)
+        mei_tree_insert(ev_cp,
+                        vars->label[i],
+                        rtp[(isca[i] -1) * (*ncelet) + iel]);
+
+      tmp = mei_evaluate(ev_cp);
+      propce[ipccp * (*ncelet) + iel] = mei_tree_lookup(ev_cp, "cp");
     }
 
-    if (user_law)
-    {
-        /* search the formula for the law */
+    mei_tree_destroy(ev_cp);
 
-        path = cs_xpath_short_path();
-        cs_xpath_add_element(&path, "property");
-        cs_xpath_add_test_attribute(&path, "name", "molecular_viscosity");
-        cs_xpath_add_element(&path, "formula");
-        cs_xpath_add_function_text(&path);
+    cs_gui_add_mei_time(cs_timer_wtime() - time0);
+  }
 
-        law_mu = cs_gui_get_text_value(path);
-        BFT_FREE(path);
+  /* law for thermal conductivity */
 
-        /* return an empty interpreter */
+  user_law = 0;
+  if (ivisls[*iscalt -1] > 0)
+  {
+    char *prop_choice = _properties_choice("thermal_conductivity");
+    if (cs_gui_strcmp(prop_choice, "user_law"))
+      user_law = 1;
+    BFT_FREE(prop_choice);
+  }
 
-        time0 = cs_timer_wtime();
+  if (user_law)
+  {
+    /* search the formula for the law */
 
-        ev_mu = mei_tree_new(law_mu);
+    path = cs_xpath_short_path();
+    cs_xpath_add_element(&path, "property");
+    cs_xpath_add_test_attribute(&path, "name", "thermal_conductivity");
+    cs_xpath_add_element(&path, "formula");
+    cs_xpath_add_function_text(&path);
 
-        mei_tree_insert(ev_mu, "rho0", *ro0);
-        mei_tree_insert(ev_mu, "mu0", *viscl0);
-        mei_tree_insert(ev_mu, "p0", *p0);
-        mei_tree_insert(ev_mu, "rho", 0.0);
+    law_la = cs_gui_get_text_value(path);
+    BFT_FREE(path);
 
-        for (i = 0; i < *nscaus; i++)
-            mei_tree_insert(ev_mu, vars->label[i], 0.0);
+    /* return an empty interpreter */
 
-       /* try to build the interpreter */
+    time0 = cs_timer_wtime();
 
-        if (mei_tree_builder(ev_mu))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interpret expression: %s\n"), ev_mu->string);
+    ev_la = mei_tree_new(law_la);
 
-        if (mei_tree_find_symbol(ev_mu, "mu"))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not find the required symbol: %s\n"), "mu");
+    mei_tree_insert(ev_la, "lambda0", visls0[*iscalt-1]*(*cp0));
+    mei_tree_insert(ev_la, "p0", *p0);
 
-        /* for each cell, update the value of the table of symbols for each scalar
-           (including the thermal scalar) and for the density,
-            then evaluate the interpreter */
+    for (i = 0; i < *nscaus; i++)
+      mei_tree_insert(ev_la, vars->label[i], 0.0);
 
-        for (iel = 0; iel < *ncel; iel++)
-        {
-            for (i = 0; i < *nscaus; i++)
-                mei_tree_insert(ev_mu,
-                                vars->label[i],
-                                rtp[(isca[i] -1) * (*ncelet) + iel]);
+    /* try to build the interpreter */
 
-            mei_tree_insert(ev_mu,
-                            "rho",
-                            propce[ipcrom * (*ncelet) + iel]);
+    if (mei_tree_builder(ev_la))
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error: can not interpret expression: %s\n"), ev_la->string);
 
-            tmp = mei_evaluate(ev_mu);
-            propce[ipcvis * (*ncelet) + iel] = mei_tree_lookup(ev_mu, "mu");
-        }
+    if (mei_tree_find_symbol(ev_la, "lambda"))
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error: can not find the required symbol: %s\n"), "lambda");
 
-        mei_tree_destroy(ev_mu);
+    /* for each cell, update the value of the table of symbols for each scalar
+       (including the thermal scalar), and evaluate the interpreter */
 
-        cs_gui_add_mei_time(cs_timer_wtime() - time0);
-    }
-
-    /* law for specific heat */
-
-    user_law = 0;
     if (*icp > 0)
     {
-        char *prop_choice = _properties_choice("specific_heat");
-        if (cs_gui_strcmp(prop_choice, "user_law"))
-            user_law = 1;
-        BFT_FREE(prop_choice);
-    }
-
-    if (user_law)
-    {
-        /* search the formula for the law */
-
-        path = cs_xpath_short_path();
-        cs_xpath_add_element(&path, "property");
-        cs_xpath_add_test_attribute(&path, "name", "specific_heat");
-        cs_xpath_add_element(&path, "formula");
-        cs_xpath_add_function_text(&path);
-
-        law_cp = cs_gui_get_text_value(path);
-        BFT_FREE(path);
-
-        /* return an empty interpreter */
-
-        time0 = cs_timer_wtime();
-
-        ev_cp = mei_tree_new(law_cp);
-
-        mei_tree_insert(ev_cp, "cp0", *cp0);
-        mei_tree_insert(ev_cp, "p0", *p0);
-
+      for (iel = 0; iel < *ncel; iel++)
+      {
         for (i = 0; i < *nscaus; i++)
-            mei_tree_insert(ev_cp, vars->label[i], 0.0);
+          mei_tree_insert(ev_la,
+                          vars->label[i],
+                          rtp[(isca[i] -1) * (*ncelet) + iel]);
 
-       /* try to build the interpreter */
-
-        if (mei_tree_builder(ev_cp))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interpret expression: %s\n"), ev_cp->string);
-
-        if (mei_tree_find_symbol(ev_cp, "cp"))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not find the required symbol: %s\n"), "cp");
-
-        /* for each cell, update the value of the table of symbols for each scalar
-           (including the thermal scalar), and evaluate the interpreter */
-
-        for (iel = 0; iel < *ncel; iel++)
-        {
-            for (i = 0; i < *nscaus; i++)
-                mei_tree_insert(ev_cp,
-                                vars->label[i],
-                                rtp[(isca[i] -1) * (*ncelet) + iel]);
-
-            tmp = mei_evaluate(ev_cp);
-            propce[ipccp * (*ncelet) + iel] = mei_tree_lookup(ev_cp, "cp");
-        }
-
-        mei_tree_destroy(ev_cp);
-
-        cs_gui_add_mei_time(cs_timer_wtime() - time0);
+        tmp = mei_evaluate(ev_la);
+        propce[ipcvsl * (*ncelet) + iel] =
+          mei_tree_lookup(ev_la, "lambda") / propce[ipccp * (*ncelet) + iel];
+      }
     }
+    else
+    {
+      for (iel = 0; iel < *ncel; iel++)
+      {
+        for (i = 0; i < *nscaus; i++)
+          mei_tree_insert(ev_la,
+                          vars->label[i],
+                          rtp[(isca[i] -1) * (*ncelet) + iel]);
 
-    /* law for thermal conductivity */
+        tmp = mei_evaluate(ev_la);
+        propce[ipcvsl * (*ncelet) + iel] =
+          mei_tree_lookup(ev_la, "lambda") / *cp0;
+      }
+    }
+    mei_tree_destroy(ev_la);
+
+    cs_gui_add_mei_time(cs_timer_wtime() - time0);
+  }
+
+  /* law for scalar diffusivity */
+
+  for (j = 0; j < *nscaus; j++)
+  {
+    char *name = _scalar_diffusion_coefficient_name(j);
 
     user_law = 0;
-    if (ivisls[*iscalt -1] > 0)
+    if (j != *iscalt -1 && iscavr[j] <= 0 && ivisls[j] > 0)
     {
-        char *prop_choice = _properties_choice("thermal_conductivity");
-        if (cs_gui_strcmp(prop_choice, "user_law"))
-            user_law = 1;
-        BFT_FREE(prop_choice);
+      char *prop_choice = _properties_choice("name");
+      if (cs_gui_strcmp(prop_choice, "user_law"))
+        user_law = 1;
+      BFT_FREE(prop_choice);
     }
 
     if (user_law)
     {
-        /* search the formula for the law */
+      ipcvsl = ipproc[ ivisls[j] -1 ] -1;
 
-        path = cs_xpath_short_path();
-        cs_xpath_add_element(&path, "property");
-        cs_xpath_add_test_attribute(&path, "name", "thermal_conductivity");
-        cs_xpath_add_element(&path, "formula");
-        cs_xpath_add_function_text(&path);
+      /* search the formula for the law */
 
-        law_la = cs_gui_get_text_value(path);
-        BFT_FREE(path);
+      path = cs_xpath_init_path();
+      cs_xpath_add_element(&path, "additional_scalars");
+      cs_xpath_add_element_num(&path, "scalar", j+1);
+      cs_xpath_add_element(&path, "property");
+      cs_xpath_add_element(&path, "formula");
+      cs_xpath_add_function_text(&path);
 
-        /* return an empty interpreter */
+      law_Ds = cs_gui_get_text_value(path);
+      BFT_FREE(path);
 
-        time0 = cs_timer_wtime();
+      /* return an empty interpreter */
 
-        ev_la = mei_tree_new(law_la);
+      time0 = cs_timer_wtime();
 
-        mei_tree_insert(ev_la, "lambda0", visls0[*iscalt-1]*(*cp0));
-        mei_tree_insert(ev_la, "p0", *p0);
+      ev_Ds = mei_tree_new(law_Ds);
+      BFT_FREE(law_Ds);
+      for (i = 0; i < *nscaus; i++)
+        mei_tree_insert(ev_Ds, vars->label[i], 0.0);
 
-        for (i = 0; i < *nscaus; i++)
-            mei_tree_insert(ev_la, vars->label[i], 0.0);
+      /* try to build the interpreter */
 
-       /* try to build the interpreter */
+      if (mei_tree_builder(ev_Ds))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error: can not interpret expression: %s\n"), ev_Ds->string);
 
-        if (mei_tree_builder(ev_la))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interpret expression: %s\n"), ev_la->string);
+      if (mei_tree_find_symbol(ev_Ds, "diffusivity"))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error: can not find the required symbol: %s\n"), "diffusivity");
 
-        if (mei_tree_find_symbol(ev_la, "lambda"))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not find the required symbol: %s\n"), "lambda");
+      /* for each cell, update the value of the table of symbols for each scalar
+         (including the thermal scalar), and evaluate the interpreter */
 
-        /* for each cell, update the value of the table of symbols for each scalar
-           (including the thermal scalar), and evaluate the interpreter */
-
-        if (*icp > 0)
+      if (*irovar == 1)
+      {
+        for (iel = 0; iel < *ncel; iel++)
         {
-            for (iel = 0; iel < *ncel; iel++)
-            {
-                for (i = 0; i < *nscaus; i++)
-                    mei_tree_insert(ev_la,
-                                    vars->label[i],
-                                    rtp[(isca[i] -1) * (*ncelet) + iel]);
+          for (i = 0; i < *nscaus; i++)
+            mei_tree_insert(ev_Ds,
+                            vars->label[i],
+                            rtp[(isca[i] -1) * (*ncelet) + iel]);
 
-                tmp = mei_evaluate(ev_la);
-                propce[ipcvsl * (*ncelet) + iel] =
-                    mei_tree_lookup(ev_la, "lambda") / propce[ipccp * (*ncelet) + iel];
-            }
+          tmp = mei_evaluate(ev_Ds);
+          propce[ipcvsl * (*ncelet) + iel] =
+            mei_tree_lookup(ev_Ds, "diffusivity") * propce[ipcrom * (*ncelet) + iel];
         }
-        else
+      }
+      else
+      {
+        for (iel = 0; iel < *ncel; iel++)
         {
-            for (iel = 0; iel < *ncel; iel++)
-            {
-                for (i = 0; i < *nscaus; i++)
-                    mei_tree_insert(ev_la,
-                                    vars->label[i],
-                                    rtp[(isca[i] -1) * (*ncelet) + iel]);
+          for (i = 0; i < *nscaus; i++)
+            mei_tree_insert(ev_Ds,
+                            vars->label[i],
+                            rtp[(isca[i] -1) * (*ncelet) + iel]);
 
-                tmp = mei_evaluate(ev_la);
-                propce[ipcvsl * (*ncelet) + iel] =
-                    mei_tree_lookup(ev_la, "lambda") / *cp0;
-            }
+          tmp = mei_evaluate(ev_Ds);
+          propce[ipcvsl * (*ncelet) + iel] =
+            mei_tree_lookup(ev_Ds, "diffusivity") * (*ro0);
         }
-        mei_tree_destroy(ev_la);
+      }
+      mei_tree_destroy(ev_Ds);
 
-        cs_gui_add_mei_time(cs_timer_wtime() - time0);
+      cs_gui_add_mei_time(cs_timer_wtime() - time0);
+
     }
-
-    /* law for scalar diffusivity */
-
-    for (j = 0; j < *nscaus; j++)
-    {
-        char *name = _scalar_diffusion_coefficient_name(j);
-
-        user_law = 0;
-        if (j != *iscalt -1 && iscavr[j] <= 0 && ivisls[j] > 0)
-        {
-            char *prop_choice = _properties_choice("name");
-            if (cs_gui_strcmp(prop_choice, "user_law"))
-                user_law = 1;
-            BFT_FREE(prop_choice);
-        }
-
-        if (user_law)
-        {
-            ipcvsl = ipproc[ ivisls[j] -1 ] -1;
-
-            /* search the formula for the law */
-
-            path = cs_xpath_init_path();
-            cs_xpath_add_element(&path, "additional_scalars");
-            cs_xpath_add_element_num(&path, "scalar", j+1);
-            cs_xpath_add_element(&path, "property");
-            cs_xpath_add_element(&path, "formula");
-            cs_xpath_add_function_text(&path);
-
-            law_Ds = cs_gui_get_text_value(path);
-            BFT_FREE(path);
-
-            /* return an empty interpreter */
-
-            time0 = cs_timer_wtime();
-
-            ev_Ds = mei_tree_new(law_Ds);
-            BFT_FREE(law_Ds);
-            for (i = 0; i < *nscaus; i++)
-                mei_tree_insert(ev_Ds, vars->label[i], 0.0);
-
-           /* try to build the interpreter */
-
-            if (mei_tree_builder(ev_Ds))
-                bft_error(__FILE__, __LINE__, 0,
-                          _("Error: can not interpret expression: %s\n"), ev_Ds->string);
-
-            if (mei_tree_find_symbol(ev_Ds, "diffusivity"))
-                bft_error(__FILE__, __LINE__, 0,
-                          _("Error: can not find the required symbol: %s\n"), "diffusivity");
-
-            /* for each cell, update the value of the table of symbols for each scalar
-               (including the thermal scalar), and evaluate the interpreter */
-
-            if (*irovar == 1)
-            {
-                for (iel = 0; iel < *ncel; iel++)
-                {
-                    for (i = 0; i < *nscaus; i++)
-                        mei_tree_insert(ev_Ds,
-                                        vars->label[i],
-                                        rtp[(isca[i] -1) * (*ncelet) + iel]);
-
-                    tmp = mei_evaluate(ev_Ds);
-                    propce[ipcvsl * (*ncelet) + iel] =
-                        mei_tree_lookup(ev_Ds, "diffusivity") * propce[ipcrom * (*ncelet) + iel];
-                }
-            }
-            else
-            {
-                for (iel = 0; iel < *ncel; iel++)
-                {
-                    for (i = 0; i < *nscaus; i++)
-                        mei_tree_insert(ev_Ds,
-                                        vars->label[i],
-                                        rtp[(isca[i] -1) * (*ncelet) + iel]);
-
-                    tmp = mei_evaluate(ev_Ds);
-                    propce[ipcvsl * (*ncelet) + iel] =
-                        mei_tree_lookup(ev_Ds, "diffusivity") * (*ro0);
-                }
-            }
-            mei_tree_destroy(ev_Ds);
-
-            cs_gui_add_mei_time(cs_timer_wtime() - time0);
-
-        }
-        BFT_FREE(name);
-    }
+    BFT_FREE(name);
+  }
 
 #if _XML_DEBUG_
-    bft_printf("==>UIPHYV\n");
-    if (*irovar == 1)
-        bft_printf("--law for density: %s\n", law_rho);
+  bft_printf("==>UIPHYV\n");
+  if (*irovar == 1)
+    bft_printf("--law for density: %s\n", law_rho);
 
-    if (*ivivar == 1)
-        bft_printf("--law for viscosity: %s\n", law_mu);
+  if (*ivivar == 1)
+    bft_printf("--law for viscosity: %s\n", law_mu);
 
-    if (*icp > 0)
-        bft_printf("--law for specific heat: %s\n", law_cp);
+  if (*icp > 0)
+    bft_printf("--law for specific heat: %s\n", law_cp);
 
-    if (ivisls[*iscalt -1] > 0)
-        bft_printf("--law for thermal conductivity: %s\n", law_la);
+  if (ivisls[*iscalt -1] > 0)
+    bft_printf("--law for thermal conductivity: %s\n", law_la);
 
-    for (j = 0; j < *nscaus; j++)
+  for (j = 0; j < *nscaus; j++)
+  {
+    if (j != *iscalt -1 && iscavr[j] <= 0 && ivisls[j] > 0)
     {
-        if (j != *iscalt -1 && iscavr[j] <= 0 && ivisls[j] > 0)
-        {
-            ipcvsl = ipproc[ ivisls[j] -1 ] -1;
+      ipcvsl = ipproc[ ivisls[j] -1 ] -1;
 
-            path = cs_xpath_init_path();
-            cs_xpath_add_element(&path, "additional_scalars");
-            cs_xpath_add_element_num(&path, "scalar", j+1);
-            cs_xpath_add_element(&path, "property");
-            cs_xpath_add_element(&path, "formula");
-            cs_xpath_add_function_text(&path);
+      path = cs_xpath_init_path();
+      cs_xpath_add_element(&path, "additional_scalars");
+      cs_xpath_add_element_num(&path, "scalar", j+1);
+      cs_xpath_add_element(&path, "property");
+      cs_xpath_add_element(&path, "formula");
+      cs_xpath_add_function_text(&path);
 
-            law_Ds = cs_gui_get_text_value(path);
-            bft_printf("--law for the coefficient of diffusity of the scalar %s: %s\n",
-                        vars->label[j], law_Ds);
-            BFT_FREE(path);
-            BFT_FREE(law_Ds);
-        }
+      law_Ds = cs_gui_get_text_value(path);
+      bft_printf("--law for the coefficient of diffusity of the scalar %s: %s\n",
+                 vars->label[j], law_Ds);
+      BFT_FREE(path);
+      BFT_FREE(law_Ds);
     }
+  }
 #endif
 
-    BFT_FREE(law_rho);
-    BFT_FREE(law_mu);
-    BFT_FREE(law_cp);
-    BFT_FREE(law_la);
+  BFT_FREE(law_rho);
+  BFT_FREE(law_mu);
+  BFT_FREE(law_cp);
+  BFT_FREE(law_la);
 }
 
 /*----------------------------------------------------------------------------
@@ -4230,8 +4455,8 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
         xyz[2] = aa * (z2 - z1) + z1;
 
         CS_PROCF(findpt, FINDPT)(ncelet,  ncel,    xyzcen,
-                                 &xyz[0], &xyz[1], &xyz[2],
-                                 &iel,    &irangv);
+                                &xyz[0], &xyz[1], &xyz[2],
+                                &iel,    &irangv);
 
         if ((iel != iel1) || (irangv != irang1)) {
           iel1 = iel;
@@ -4263,7 +4488,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
               for (j=0; j < vars->nprop; j++) {
                 if (cs_gui_strcmp(name, vars->properties_name[j]))
                   array[iii+4]
-                  = propce[(vars->propce[j]-1) * (*ncelet) + iel];
+                    = propce[(vars->propce[j]-1) * (*ncelet) + iel];
               }
 
               BFT_FREE(name);
@@ -4324,8 +4549,8 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
 
 void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
 {
-    cs_gui_boundary_conditions_free_memory(ncharb);
-    cs_gui_clean_memory();
+  cs_gui_boundary_conditions_free_memory(ncharb);
+  cs_gui_clean_memory();
 }
 
 /*============================================================================
@@ -4339,7 +4564,7 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
  *   id of selected (or default) partitioning type (0-3)
  *----------------------------------------------------------------------------*/
 
-int
+  int
 cs_gui_get_sfc_partition_type(void)
 {
   char  *path = NULL;
@@ -4380,64 +4605,64 @@ cs_gui_get_sfc_partition_type(void)
 void
 cs_gui_clean_memory(void)
 {
-    int i;
+  int i;
 
-    /* clean memory for global private structure vars */
+  /* clean memory for global private structure vars */
 
-    if (cs_glob_var->type != NULL)
-        for (i = 0; i < cs_glob_var->nvar; i++)
-            BFT_FREE(cs_glob_var->type[i]);
-    BFT_FREE(cs_glob_var->type);
+  if (cs_glob_var->type != NULL)
+    for (i = 0; i < cs_glob_var->nvar; i++)
+      BFT_FREE(cs_glob_var->type[i]);
+  BFT_FREE(cs_glob_var->type);
 
-    if (cs_glob_var->head != NULL)
-        for (i = 0; i < cs_glob_var->nvar; i++)
-            BFT_FREE(cs_glob_var->head[i]);
-    BFT_FREE(cs_glob_var->head);
+  if (cs_glob_var->head != NULL)
+    for (i = 0; i < cs_glob_var->nvar; i++)
+      BFT_FREE(cs_glob_var->head[i]);
+  BFT_FREE(cs_glob_var->head);
 
-    if (cs_glob_var->name != NULL)
-        for (i = 0; i < cs_glob_var->nvar; i++)
-            BFT_FREE(cs_glob_var->name[i]);
-    BFT_FREE(cs_glob_var->name);
+  if (cs_glob_var->name != NULL)
+    for (i = 0; i < cs_glob_var->nvar; i++)
+      BFT_FREE(cs_glob_var->name[i]);
+  BFT_FREE(cs_glob_var->name);
 
-    if (cs_glob_var->label != NULL)
-        for (i = 0; i < cs_glob_var->nscaus + cs_glob_var->nscapp; i++)
-            BFT_FREE(cs_glob_var->label[i]);
-    BFT_FREE(cs_glob_var->label);
+  if (cs_glob_var->label != NULL)
+    for (i = 0; i < cs_glob_var->nscaus + cs_glob_var->nscapp; i++)
+      BFT_FREE(cs_glob_var->label[i]);
+  BFT_FREE(cs_glob_var->label);
 
-    if (cs_glob_var->properties_name != NULL)
-        for (i = 0; i < cs_glob_var->nprop; i++)
-            BFT_FREE(cs_glob_var->properties_name[i]);
-    BFT_FREE(cs_glob_var->properties_name);
+  if (cs_glob_var->properties_name != NULL)
+    for (i = 0; i < cs_glob_var->nprop; i++)
+      BFT_FREE(cs_glob_var->properties_name[i]);
+  BFT_FREE(cs_glob_var->properties_name);
 
-    BFT_FREE(cs_glob_var->model);
-    BFT_FREE(cs_glob_var->model_value);
-    BFT_FREE(cs_glob_var->rtp);
-    BFT_FREE(cs_glob_var->rphas);
-    BFT_FREE(cs_glob_var->pphas);
-    BFT_FREE(cs_glob_var->properties_ipp);
-    BFT_FREE(cs_glob_var->propce);
-    BFT_FREE(cs_glob_var);
+  BFT_FREE(cs_glob_var->model);
+  BFT_FREE(cs_glob_var->model_value);
+  BFT_FREE(cs_glob_var->rtp);
+  BFT_FREE(cs_glob_var->rphas);
+  BFT_FREE(cs_glob_var->pphas);
+  BFT_FREE(cs_glob_var->properties_ipp);
+  BFT_FREE(cs_glob_var->propce);
+  BFT_FREE(cs_glob_var);
 
-    for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
-        BFT_FREE(cs_glob_label->_cs_gui_var_name[i]);
+  for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
+    BFT_FREE(cs_glob_label->_cs_gui_var_name[i]);
 
-    BFT_FREE(cs_glob_label->_cs_gui_var_name);
-    BFT_FREE(cs_glob_label);
+  BFT_FREE(cs_glob_label->_cs_gui_var_name);
+  BFT_FREE(cs_glob_label);
 
-    mei_data_free();
+  mei_data_free();
 
-    /* clean memory for xml document */
+  /* clean memory for xml document */
 
 #if defined(HAVE_LIBXML2)
-    if (xpathCtx != NULL) xmlXPathFreeContext(xpathCtx);
-    if (node != NULL) xmlFreeNode(node);
+  if (xpathCtx != NULL) xmlXPathFreeContext(xpathCtx);
+  if (node != NULL) xmlFreeNode(node);
 #endif
 
-    /* Shutdown libxml */
+  /* Shutdown libxml */
 
 #if defined(HAVE_LIBXML2)
-    xmlCleanupParser();
-    xmlMemoryDump();
+  xmlCleanupParser();
+  xmlMemoryDump();
 #endif
 }
 
@@ -4455,15 +4680,14 @@ cs_gui_usage_log(void)
   if (cs_glob_n_ranks > 1) {
     double _wtime_loc = mei_wtime;
     MPI_Allreduce(&_wtime_loc, &mei_wtime, 1, MPI_DOUBLE, MPI_MAX,
-                  cs_glob_mpi_comm);
-
+                   cs_glob_mpi_comm);
   }
 
 #endif
 
   if (mei_wtime > 0.0)
     bft_printf(_("\nTime elapsed defining values using MEI: %12.5f\n"),
-               mei_wtime);
+        mei_wtime);
 }
 
 /*----------------------------------------------------------------------------*/

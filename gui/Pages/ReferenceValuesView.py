@@ -79,16 +79,31 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         self.case = case
         self.mdl = ReferenceValuesModel(self.case)
 
+        # Combo models
+        self.modelLength = QtPage.ComboModel(self.comboBoxLength,2,1)
+        self.modelLength.addItem(self.tr("Automatic"), 'automatic')
+        self.modelLength.addItem(self.tr("Prescribed"), 'prescribed')
+        self.comboBoxLength.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+
         # Connections
 
-        self.connect(self.lineEditP0, SIGNAL("textChanged(const QString &)"), self.slotPressure)
-        self.connect(self.lineEditT0, SIGNAL("textChanged(const QString &)"), self.slotTemperature)
+        self.connect(self.lineEditP0,        SIGNAL("textChanged(const QString &)"), self.slotPressure)
+        self.connect(self.lineEditV0,        SIGNAL("textChanged(const QString &)"), self.slotVelocity)
+        self.connect(self.comboBoxLength,    SIGNAL("activated(const QString&)"),    self.slotLengthChoice)
+        self.connect(self.lineEditL0,        SIGNAL("textChanged(const QString &)"), self.slotLength)
+        self.connect(self.lineEditT0,        SIGNAL("textChanged(const QString &)"), self.slotTemperature)
         self.connect(self.lineEditMassMolar, SIGNAL("textChanged(const QString &)"), self.slotMassemol)
 
         # Validators
 
         validatorP0 = QtPage.DoubleValidator(self.lineEditP0, min=0.0)
         self.lineEditP0.setValidator(validatorP0)
+
+        validatorV0 = QtPage.DoubleValidator(self.lineEditV0, min=0.0)
+        self.lineEditV0.setValidator(validatorV0)
+
+        validatorL0 = QtPage.DoubleValidator(self.lineEditL0, min=0.0)
+        self.lineEditL0.setValidator(validatorL0)
 
         validatorT0 = QtPage.DoubleValidator(self.lineEditT0,  min=0.0)
         validatorT0.setExclusiveMin(True)
@@ -100,7 +115,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
 
         # Display
 
-        model, node = self.mdl.getParticularPhysical()
+        model = self.mdl.getParticularPhysical()
 
         if model == "atmo":
             self.groupBoxTemperature.show()
@@ -118,7 +133,20 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         p = self.mdl.getPressure()
         self.lineEditP0.setText(QString(str(p)))
 
-        model, node = self.mdl.getParticularPhysical()
+        v = self.mdl.getVelocity()
+        self.lineEditV0.setText(QString(str(v)))
+
+        init_length_choice = self.mdl.getLengthChoice()
+        self.modelLength.setItem(str_model=init_length_choice)
+        if init_length_choice == 'automatic':
+            self.lineEditL0.setText(QString(str()))
+            self.lineEditL0.setDisabled(True)
+        else:
+            self.lineEditL0.setEnabled(True)
+            l = self.mdl.getLength()
+            self.lineEditL0.setText(QString(str(l)))
+
+        model = self.mdl.getParticularPhysical()
         if model == "atmo":
             t = self.mdl.getTemperature()
             self.lineEditT0.setText(QString(str(t)))
@@ -137,6 +165,43 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         p, ok = text.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setPressure(p)
+
+
+    @pyqtSignature("const QString&")
+    def slotVelocity(self,  text):
+        """
+        Input Velocity.
+        """
+        v, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setVelocity(v)
+
+
+    @pyqtSignature("const QString &")
+    def slotLengthChoice(self,text):
+        """
+        Set value for parameterNTERUP
+        """
+        choice = self.modelLength.dicoV2M[str(text)]
+        self.mdl.setLengthChoice(choice)
+        if choice == 'automatic':
+            self.lineEditL0.setText(QString(str()))
+            self.lineEditL0.setDisabled(True)
+        else:
+            self.lineEditL0.setEnabled(True)
+            value = self.mdl.getLength()
+            self.lineEditL0.setText(QString(str(value)))
+        log.debug("slotlengthchoice-> %s" % choice)
+
+
+    @pyqtSignature("const QString&")
+    def slotLength(self,  text):
+        """
+        Input reference length.
+        """
+        l, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setLength(l)
 
 
     @pyqtSignature("const QString&")

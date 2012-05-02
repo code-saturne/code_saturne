@@ -424,14 +424,28 @@ void CS_PROCF(nvamem, NVAMEM) (void);
  * integer          isuite   -->  restart indicator
  * integer          isca     -->  indirection array for scalar number
  * integer          iscold   -->  scalar number for restart
+ * DOUBLE PRECISION RO0      -->  value of density if IROVAR=0
+ * DOUBLE PRECISION CP0      -->  value of specific heat if ICP=0
+ * DOUBLE PRECISION VISCL0   -->  value of viscosity if IVIVAR=0
+ * DOUBLE PRECISION VISLS0   -->  value of reference molecular diffusivity
+ * DOUBLE PRECISION UREF     -->  value of reference velocity
+ * DOUBLE PRECISION ALMAX    -->  value of reference length
+ * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
  * double precision rtp     <--   variables and scalars array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiiniv, UIINIV) (const int    *ncelet,
-                               const int    *isuite,
-                               const int     isca[],
-                               const int     iscold[],
-                                     double  rtp[]);
+void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
+                               const int         *isuite,
+                               const int          isca[],
+                               const int          iscold[],
+                              const cs_real_t    *ro0,
+                              const cs_real_t    *cp0,
+                              const cs_real_t    *viscl0,
+                              const cs_real_t    *visls0,
+                              const cs_real_t    *uref,
+                              const cs_real_t    *almax,
+                              const double *const xyzcen,
+                                     double       rtp[]);
 
 /*----------------------------------------------------------------------------
  * User law for material Properties

@@ -137,7 +137,9 @@ iusini = 1
 
 if (iihmpr.eq.1) then
 
-  call uiiniv (ncelet, isuite, isca, iscold, rtp)
+  call uiiniv (ncelet, isuite, isca, iscold,       &
+               ro0, cp0, viscl0, visls0, uref,     &
+               almax, xyzcen, rtp)
   !==========
 
 endif
