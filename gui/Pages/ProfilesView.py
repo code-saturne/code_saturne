@@ -51,7 +51,9 @@ from Base.Common import LABEL_LENGTH_MAX
 from Base.Toolbox import GuiParam
 from Pages.ProfilesForm import Ui_ProfilesForm
 from Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
+from Base.QtPage import setGreenColor
 from Pages.ProfilesModel import ProfilesModel
+from Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config
@@ -184,6 +186,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.gridlayout2.setMargin(0)
         self.DropList = QListView(self.widgetDrop)
         self.gridlayout2.addWidget(self.DropList,0,0,1,1)
+        self.line_formula = "x = 0;\ny = 0;\nz = 0;\n"
 
         self.modelDrag = QStringListModel()
         self.modelDrop = QStringListModel()
@@ -212,25 +215,15 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.connect(self.pushButtonSuppressVar, SIGNAL("clicked()"), self.slotDeleteVarProfile)
         self.connect(self.comboBoxFreq,          SIGNAL("activated(const QString&)"), self.slotFrequencyType)
         self.connect(self.comboBoxFormat,        SIGNAL("activated(const QString&)"), self.slotFormatType)
+        self.connect(self.pushButtonFormula,     SIGNAL("clicked()"), self.slotFormula)
 
         # Validators
         validatorFreq = IntValidator(self.lineEditFreq, min=0)
         validatorFreq.setExclusiveMin(True)
         self.lineEditFreq.setValidator(validatorFreq)
 
-        validatorFloatX1 = DoubleValidator(self.lineEditX1)
-        validatorFloatY1 = DoubleValidator(self.lineEditY1)
-        validatorFloatZ1 = DoubleValidator(self.lineEditZ1)
-        validatorFloatX2 = DoubleValidator(self.lineEditX2)
-        validatorFloatY2 = DoubleValidator(self.lineEditY2)
-        validatorFloatZ2 = DoubleValidator(self.lineEditZ2)
-
-        self.lineEditX1.setValidator(validatorFloatX1)
-        self.lineEditY1.setValidator(validatorFloatY1)
-        self.lineEditZ1.setValidator(validatorFloatZ1)
-        self.lineEditX2.setValidator(validatorFloatX2)
-        self.lineEditY2.setValidator(validatorFloatY2)
-        self.lineEditZ2.setValidator(validatorFloatZ2)
+        validatorNbPoint = IntValidator(self.lineEditNbPoint, min=0)
+        self.lineEditNbPoint.setValidator(validatorNbPoint)
 
         rx = "[\- _A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
         validatorTitle =  RegExpValidator(self.lineEditTitle, QRegExp(rx))
@@ -249,7 +242,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         #update list of profiles for view from xml file
         for lab in self.mdl.getProfilesLabelsList():
             self.entriesNumber = self.entriesNumber + 1
-            label, title, format, list, freq, x1, y1, z1, x2, y2, z2 = self.mdl.getProfileData(lab)
+            label, title, format, list, freq, formula, nb_point = self.mdl.getProfileData(lab)
             self.__insertProfile(label, list)
 
         self.__eraseEntries()
@@ -312,8 +305,8 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         Return info from the argument entry.
         """
         label = self.modelProfile.getLabel(row)
-        lab, title, format, list, freq, x1, y1, z1, x2, y2, z2 = self.mdl.getProfileData(label)
-        return label, title, format, list, freq, x1, y1, z1, x2, y2, z2
+        lab, title, format, list, freq, formula, nb_point = self.mdl.getProfileData(label)
+        return label, title, format, list, freq, formula, nb_point
 
 
     def __insertProfile(self, label, list):
@@ -363,14 +356,10 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             format = self.slotFormatType(self.comboBoxFormat.currentText())
             title = str(self.lineEditTitle.text())
             if not title: title = label
-            X1, ok = self.lineEditX1.text().toDouble()
-            Y1, ok = self.lineEditY1.text().toDouble()
-            Z1, ok = self.lineEditZ1.text().toDouble()
-            X2, ok = self.lineEditX2.text().toDouble()
-            Y2, ok = self.lineEditY2.text().toDouble()
-            Z2, ok = self.lineEditZ2.text().toDouble()
+            nb_point, ok = self.lineEditNbPoint.text().toInt()
+            formula = self.line_formula
 
-            self.mdl.setProfile(label, title, format, var_prof, freq, X1, Y1, Z1, X2, Y2, Z2)
+            self.mdl.setProfile(label, title, format, var_prof, freq, formula, nb_point)
             self.__eraseEntries()
 
 
@@ -386,7 +375,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             msg   = self.tr("You must select an existing profile")
             QMessageBox.information(self, title, msg)
         else:
-            label, title, format, list, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
+            label, title, format, list, freq, formula, nb_point = self.__infoProfile(row)
             self.modelProfile.deleteRow(row)
             self.mdl.deleteProfile(label)
             self.__eraseEntries()
@@ -404,7 +393,8 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             msg   = self.tr("You must select an existing profile")
             QMessageBox.information(self, title, msg)
         else:
-            old_label, title, format, vlist, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
+            old_label, title, format, vlist, freq, formula, nb_point = self.__infoProfile(row)
+            self.line_formula = formula
 
             var_prof = [str(s) for s in self.modelDrop.stringList()]
             log.debug("slotEditProfile -> %s" % (var_prof,))
@@ -434,14 +424,10 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
                 format = self.slotFormatType(self.comboBoxFormat.currentText())
                 title = str(self.lineEditTitle.text())
                 if not title: title = new_label
-                X1, ok = self.lineEditX1.text().toDouble()
-                Y1, ok = self.lineEditY1.text().toDouble()
-                Z1, ok = self.lineEditZ1.text().toDouble()
-                X2, ok = self.lineEditX2.text().toDouble()
-                Y2, ok = self.lineEditY2.text().toDouble()
-                Z2, ok = self.lineEditZ2.text().toDouble()
+                nb_point, ok = self.lineEditNbPoint.text().toInt()
+                formula = self.line_formula
 
-                self.mdl.replaceProfile(old_label, new_label, title, format, var_prof, freq, X1, Y1, Z1, X2, Y2, Z2)
+                self.mdl.replaceProfile(old_label, new_label, title, format, var_prof, freq, formula, nb_point)
                 self.__eraseEntries()
 
 
@@ -453,7 +439,8 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         row = index.row()
         log.debug("slotSelectProfile -> %s" % (row,))
 
-        label, title, format, liste, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
+        label, title, format, liste, freq, formula, nb_point = self.__infoProfile(row)
+        self.line_formula = formula
 
         self.lineEditTitle.setText(QString(str(title)))
         self.lineEditBaseName.setText(QString(str(label)))
@@ -470,12 +457,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             self.lineEditFreq.setDisabled(True)
             self.labelBaseName.setText(QString("Filename"))
 
-        self.lineEditX1.setText(QString(str(x1)))
-        self.lineEditY1.setText(QString(str(y1)))
-        self.lineEditZ1.setText(QString(str(z1)))
-        self.lineEditX2.setText(QString(str(x2)))
-        self.lineEditY2.setText(QString(str(y2)))
-        self.lineEditZ2.setText(QString(str(z2)))
+        self.lineEditNbPoint.setText(QString(str(nb_point)))
 
         self.modelDrop.setStringList(QStringList())
         liste = [QString(s) for s in liste]
@@ -509,12 +491,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         """
         self.lineEditTitle.setText(QString(str("")))
         self.lineEditBaseName.setText(QString(str("")))
-        self.lineEditX1.setText(QString(str("")))
-        self.lineEditY1.setText(QString(str("")))
-        self.lineEditZ1.setText(QString(str("")))
-        self.lineEditX2.setText(QString(str("")))
-        self.lineEditY2.setText(QString(str("")))
-        self.lineEditZ2.setText(QString(str("")))
+        self.lineEditNbPoint.setText(QString(str("")))
 
         self.modelFreq.setItem(str_model='end')
         self.lineEditFreq.setText(QString(str("-1")))
@@ -522,6 +499,32 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.labelBaseName.setText(QString("Filename"))
         self.modelDrop.setStringList(QStringList())
         self.treeViewProfile.clearSelection()
+
+
+    @pyqtSignature("")
+    def slotFormula(self):
+        """
+        """
+        exp = self.line_formula
+        exa = """#example: a line segment
+#(t, the parameter is always between 0 and 1)
+x = 2*t + 3.2;
+y = 2;
+z = -0.5*t+5;"""
+        req = [('x', "x formula"),
+               ('y', "y formula"),
+               ('z', "z formula")]
+        sym = [('t', 'parameter')]
+
+        dialog = QMeiEditorView(self, expression = exp,
+                                      required   = req,
+                                      symbols    = sym,
+                                      examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotLineFormula -> %s" % str(result))
+            setGreenColor(self.pushButtonFormula, False)
+            self.line_formula = result
 
 
     def tr(self, text):

@@ -4334,16 +4334,20 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
   char *filename = NULL;
   char *title = NULL;
   char *name = NULL;
+  char *path = NULL;
+  char *formula = NULL;
 
   int output_format = 0;
   int fic_nbr = 0;
   int i, ii, iii, j;
   int npoint, iel1, irang1, iel, irangv;
   int nvar_prop, nvar_prop4, output_frequency;
-  double x1, x2, y1, y2, z1, z2;
+  double x1, y1, z1;
   double xx, yy, zz, xyz[3];
   double a, aa;
   double *array;
+
+  mei_tree_t *ev_formula  = NULL;
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -4363,12 +4367,26 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
     if ((output_frequency == -1 && *ntmabs == *ntcabs) ||
         (output_frequency > 0 && (*ntcabs % output_frequency) == 0)) {
 
-      x1 = _get_profile_coordinate(i, "x1");
-      y1 = _get_profile_coordinate(i, "y1");
-      z1 = _get_profile_coordinate(i, "z1");
-      x2 = _get_profile_coordinate(i, "x2");
-      y2 = _get_profile_coordinate(i, "y2");
-      z2 = _get_profile_coordinate(i, "z2");
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
+      cs_xpath_add_element_num(&path, "profile", i+1);
+      cs_xpath_add_element(&path, "formula");
+      cs_xpath_add_function_text(&path);
+      formula = cs_gui_get_text_value(path);
+
+      ev_formula = mei_tree_new(formula);
+      mei_tree_insert(ev_formula, "t", 0.0);
+      /* try to build the interpreter */
+
+      if (mei_tree_builder(ev_formula))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error: can not interpret expression: %s\n %i"),
+                  ev_formula->string, mei_tree_builder(ev_formula));
+      const char *coord[] = {"x","y","z"};
+      if (mei_tree_find_symbols(ev_formula, 3, coord))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error: can not find the required symbol: %s\n"),
+                  "x, y or z");
 
       nvar_prop = _get_profile_names_number(i);
       nvar_prop4 = nvar_prop + 4;
@@ -4414,10 +4432,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
           fprintf(file, "# Code_Saturne results 1D profile\n#\n");
           fprintf(file, "# Iteration output: %i\n", *ntcabs);
           fprintf(file, "# Time output:     %12.5e\n#\n", *ttcabs);
-          fprintf(file, "# Start point: x = %12.5e y = %12.5e z = %12.5e\n",
-                  x1, y1, z1);
-          fprintf(file, "# End point:   x = %12.5e y = %12.5e z = %12.5e\n#\n",
-                  x2, y2, z2);
+          fprintf(file, "# Formula : %s\n", formula);
           fprintf(file, "#TITLE: %s\n", title);
           fprintf(file, "#COLUMN_TITLES: Distance | X | Y | Z");
           for (ii = 0 ; ii < nvar_prop ; ii++) {
@@ -4440,7 +4455,14 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
         BFT_FREE(title);
       }
 
-      npoint = 200;
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
+      cs_xpath_add_element_num(&path, "profile", i+1);
+      cs_xpath_add_element(&path, "NbPoint");
+      cs_xpath_add_function_text(&path);
+      if (!cs_gui_get_int(path, &npoint))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
       iel1   = -999;
       irang1 = -999;
 
@@ -4449,9 +4471,18 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
       for (ii = 0; ii < npoint; ii++) {
 
         aa = ii*a;
-        xyz[0] = aa * (x2 - x1) + x1;
-        xyz[1] = aa * (y2 - y1) + y1;
-        xyz[2] = aa * (z2 - z1) + z1;
+        mei_tree_insert(ev_formula,"t",aa);
+        mei_evaluate(ev_formula);
+
+        xyz[0] = mei_tree_lookup(ev_formula,"x");
+        xyz[1] = mei_tree_lookup(ev_formula,"y");
+        xyz[2] = mei_tree_lookup(ev_formula,"z");
+
+        if (ii == 0) {
+          x1 = xyz[0];
+          y1 = xyz[1];
+          z1 = xyz[2];
+        }
 
         CS_PROCF(findpt, FINDPT)(ncelet,  ncel,    xyzcen,
                                 &xyz[0], &xyz[1], &xyz[2],
@@ -4527,6 +4558,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
           }
         }
       }
+      mei_tree_destroy(ev_formula);
 
       if (cs_glob_rank_id <= 0) fclose(file);
 

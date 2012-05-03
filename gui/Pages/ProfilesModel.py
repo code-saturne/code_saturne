@@ -77,12 +77,8 @@ class ProfilesModel(Model):
         """
         value = {}
         value['nfreq']  = -1
-        value['X1']     =  0.
-        value['Y1']     =  0.
-        value['Z1']     =  0.
-        value['X2']     =  1.
-        value['Y2']     =  1.
-        value['Z2']     =  1.
+        value['formula']=  " "
+        value['points']=  200
         value['suffix'] = ""
         value['title']  = ""
 
@@ -123,26 +119,18 @@ class ProfilesModel(Model):
         return self.dicoLabel2Name.keys()
 
 
-    def __setCoordinates(self, label, x1, y1, z1, x2, y2, z2):
+    def __setFormula(self, label, str):
         """
         Private method.
         Get coordinates for profile named I{label}
         """
         self.isInList(label, self.getProfilesLabelsList())
-        for coord in (x1, y1, z1, x2, y2, z2):
-            self.isFloat(coord)
-
         label_xml = label + self.suffix
         node = self.node_prof.xmlGetNode('profile', label=label_xml)
-        node.xmlSetData('x1', x1)
-        node.xmlSetData('y1', y1)
-        node.xmlSetData('z1', z1)
-        node.xmlSetData('x2', x2)
-        node.xmlSetData('y2', y2)
-        node.xmlSetData('z2', z2)
+        node.xmlSetData('formula', str)
 
 
-    def __getCoordinates(self, label):
+    def __getFormula(self, label):
         """
         Private method.
         Gets coordinates for profile named I{label}.
@@ -150,38 +138,30 @@ class ProfilesModel(Model):
         self.isInList(label, self.getProfilesLabelsList())
         label_xml = label + self.suffix
         node = self.node_prof.xmlGetNode('profile', label=label_xml)
+        return node.xmlGetString('formula')
 
-        x1 = node.xmlGetDouble('x1')
-        if x1 == None:
-            x1 = self.__defaultValues()['X1']
-            node.xmlSetData('x1', x1)
 
-        y1 = node.xmlGetDouble('y1')
-        if y1 == None:
-            y1 = self.__defaultValues()['Y1']
-            node.xmlSetData('y1', y1)
+    def __setNbPoint(self, label, NbPoint):
+        """
+        Private method.
+        Get coordinates for profile named I{label}
+        """
+        self.isInt(NbPoint)
+        self.isInList(label, self.getProfilesLabelsList())
+        label_xml = label + self.suffix
+        node = self.node_prof.xmlGetNode('profile', label=label_xml)
+        node.xmlSetData('points', NbPoint)
 
-        z1 = node.xmlGetDouble('z1')
-        if z1 == None:
-            z1 = self.__defaultValues()['Z1']
-            node.xmlSetData('z1', z1)
 
-        x2 = node.xmlGetDouble('x2')
-        if x2 == None:
-            x2 = self.__defaultValues()['X2']
-            node.xmlSetData('x2', x2)
-
-        y2 = node.xmlGetDouble('y2')
-        if y2 == None:
-            y2 = self.__defaultValues()['Y2']
-            node.xmlSetData('y2', y2)
-
-        z2 = node.xmlGetDouble('z2')
-        if z2 == None:
-            z2 = self.__defaultValues()['Z2']
-            node.xmlSetData('z2', z2)
-
-        return x1, y1, z1, x2, y2, z2
+    def __getNbPoint(self, label):
+        """
+        Private method.
+        Gets coordinates for profile named I{label}.
+        """
+        self.isInList(label, self.getProfilesLabelsList())
+        label_xml = label + self.suffix
+        node = self.node_prof.xmlGetNode('profile', label=label_xml)
+        return node.xmlGetInt('points')
 
 
     def getProfilesLabelsList(self):
@@ -191,21 +171,19 @@ class ProfilesModel(Model):
         """
         list = []
         for node in self.node_prof.xmlGetNodeList('profile'):
-            #label = node['label'][:-4]
             label = node['label']
             list.append(label)
         return list
 
 
-    def setProfile(self, label, title, format, list, freq, x1, y1, z1, x2, y2, z2):
+    def setProfile(self, label, title, format, list, freq, formula, NbPoint):
         """
         Public method.
         Sets data to create one profile named I{label}.
         """
         self.isNotInList(label, self.getProfilesLabelsList())
         self.isInt(freq)
-        for coord in (x1, y1, z1, x2, y2, z2):
-            self.isFloat(coord)
+        self.isInt(NbPoint)
 
         label_xml = label + self.suffix
         node = self.node_prof.xmlInitNode('profile', label=label_xml)
@@ -215,10 +193,11 @@ class ProfilesModel(Model):
             node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
         node.xmlSetData('output_frequency', freq)
         node['title'] = title
-        self.__setCoordinates(label, x1, y1, z1, x2, y2, z2)
+        self.__setFormula(label, formula)
+        self.__setNbPoint(label, NbPoint)
 
 
-    def replaceProfile(self, old_label, label, title, format, list, freq, x1, y1, z1, x2, y2, z2):
+    def replaceProfile(self, old_label, label, title, format, list, freq, formula, NbPoint):
         """
         Public method.
         Replaces data from I{old_label} profile
@@ -228,16 +207,14 @@ class ProfilesModel(Model):
         if label != old_label:
             self.isNotInList(label, self.getProfilesLabelsList())
         self.isInt(freq)
-        for coord in (x1, y1, z1, x2, y2, z2):
-            self.isFloat(coord)
+        self.isInt(NbPoint)
 
         old_label_xml = old_label + self.suffix
         label_xml = label + self.suffix
         node = self.node_prof.xmlGetNode('profile', label=old_label_xml)
         if node:
             node['title'] = ""
-            for tag in ('format', 'var_prop', 'output_frequency',
-                        'x1', 'y1', 'z1', 'x2', 'y2', 'z2'):
+            for tag in ('format', 'var_prop', 'output_frequency', 'formula','points'):
                 node.xmlRemoveChild(tag)
             node.xmlAddChild('format', name=format)
             for var in list:
@@ -246,7 +223,8 @@ class ProfilesModel(Model):
             node['label'] = label_xml
             node.xmlSetData('output_frequency', freq)
             node['title'] = title
-            self.__setCoordinates(label, x1, y1, z1, x2, y2, z2)
+            self.__setFormula(label, formula)
+            self.__setNbPoint(label, NbPoint)
 
 
     def deleteProfile(self, label):
@@ -277,16 +255,16 @@ class ProfilesModel(Model):
         f_node = node.xmlGetChildNode('format')
         if f_node:
             format = f_node['name']
-        x1, y1, z1, x2, y2, z2 = self.__getCoordinates(label)
+        formula = self.__getFormula(label)
+        NbPoint = self.__getNbPoint(label)
         for var in node.xmlGetChildNodeList('var_prop'):
             for name in self.__var_prop_list:
                 if self.dicoLabel2Name[name] == var['name']:
                     list.append(name)
         label_xml = node['label']
-        #label = label_xml[:-4]
         label = label_xml
 
-        return label, title, format, list, freq, x1, y1, z1, x2, y2, z2
+        return label, title, format, list, freq, formula, NbPoint
 
 
 #-------------------------------------------------------------------------------
