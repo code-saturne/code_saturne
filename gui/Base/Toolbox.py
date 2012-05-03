@@ -157,13 +157,9 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.BodyForcesView as Page
         thisPage = Page.BodyForcesView(root, case)
 
-    elif page_name == tr("Definition and initialization"):
+    elif page_name == tr("Species transport"):
         import Pages.DefineUserScalarsView as Page
         thisPage = Page.DefineUserScalarsView(root, case, stbar)
-
-    elif page_name == tr("Physical properties"):
-        import Pages.UserScalarPropertiesView as Page
-        thisPage = Page.UserScalarPropertiesView(root, case, stbar)
 
     elif page_name == tr("Global settings"):
         import Pages.LagrangianView as Page

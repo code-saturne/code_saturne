@@ -104,11 +104,6 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         else:
             lab_def = node['label']
 
-        self.setScalarInitialValue(self.defaultScalarValues()['zone_id'],
-                                   lab_def,
-                                   self.defaultScalarValues()[thermal_scalar])
-        self.setScalarMinValue(lab_def, self.defaultScalarValues()['min_value'])
-        self.setScalarMaxValue(lab_def, self.defaultScalarValues()['max_value'])
         self.setNewFluidProperty(self.node_prop, 'thermal_conductivity')
 
         self.setScalarBoundaries()

@@ -147,19 +147,21 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                 ('thermal_conductivity', 'Al')]
 
         self.list_scalars = []
-        m_sca = DefineUserScalarsModel(self.case)
-        s = m_sca.getThermalScalarLabel()
+        self.m_sca = DefineUserScalarsModel(self.case)
+        s = self.m_sca.getThermalScalarLabel()
         if s:
             self.list_scalars.append((s, self.tr("Thermal scalar")))
-        for s in m_sca.getUserScalarLabelsList():
+        for s in self.m_sca.getUserScalarLabelsList():
             self.list_scalars.append((s, self.tr("Additional scalar")))
 
         # Combo models
 
-        self.modelRho = ComboModel(self.comboBoxRho, 3, 1)
-        self.modelMu  = ComboModel(self.comboBoxMu, 3, 1)
-        self.modelCp  = ComboModel(self.comboBoxCp, 3, 1)
-        self.modelAl  = ComboModel(self.comboBoxAl, 3, 1)
+        self.modelRho      = ComboModel(self.comboBoxRho, 3, 1)
+        self.modelMu       = ComboModel(self.comboBoxMu, 3, 1)
+        self.modelCp       = ComboModel(self.comboBoxCp, 3, 1)
+        self.modelAl       = ComboModel(self.comboBoxAl, 3, 1)
+        self.modelDiff     = ComboModel(self.comboBoxDiff, 2, 1)
+        self.modelNameDiff = ComboModel(self.comboBoxNameDiff,1,1)
 
         self.modelRho.addItem(self.tr('constant'), 'constant')
         self.modelRho.addItem(self.tr('user law'), 'user_law')
@@ -173,38 +175,73 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.modelAl.addItem(self.tr('constant'), 'constant')
         self.modelAl.addItem(self.tr('user law'), 'user_law')
         self.modelAl.addItem(self.tr('user subroutine (usphyv)'), 'variable')
+        self.modelDiff.addItem(self.tr('constant'), 'constant')
+        self.modelDiff.addItem(self.tr('user law'), 'user_law')
+
+        self.scalar = ""
+        scalar_list = self.m_sca.getUserScalarLabelsList()
+        for s in self.m_sca.getScalarsVarianceList():
+            if s in scalar_list: scalar_list.remove(s)
+
+        if scalar_list != []:
+            self.scalar = scalar_list[0]
+            for scalar in scalar_list:
+                self.modelNameDiff.addItem(scalar)
 
         # Connections
 
-        self.connect(self.comboBoxRho, SIGNAL("activated(const QString&)"), self.slotStateRho)
-        self.connect(self.comboBoxMu, SIGNAL("activated(const QString&)"), self.slotStateMu)
-        self.connect(self.comboBoxCp, SIGNAL("activated(const QString&)"), self.slotStateCp)
-        self.connect(self.comboBoxAl, SIGNAL("activated(const QString&)"), self.slotStateAl)
-        self.connect(self.lineEditRho, SIGNAL("textChanged(const QString &)"), self.slotRho)
-        self.connect(self.lineEditMu, SIGNAL("textChanged(const QString &)"), self.slotMu)
-        self.connect(self.lineEditCp, SIGNAL("textChanged(const QString &)"), self.slotCp)
-        self.connect(self.lineEditAl, SIGNAL("textChanged(const QString &)"), self.slotAl)
-        self.connect(self.pushButtonRho, SIGNAL("clicked()"), self.slotFormulaRho)
-        self.connect(self.pushButtonMu, SIGNAL("clicked()"), self.slotFormulaMu)
-        self.connect(self.pushButtonCp, SIGNAL("clicked()"), self.slotFormulaCp)
-        self.connect(self.pushButtonAl, SIGNAL("clicked()"), self.slotFormulaAl)
+        self.connect(self.comboBoxRho,      SIGNAL("activated(const QString&)"), self.slotStateRho)
+        self.connect(self.comboBoxMu,       SIGNAL("activated(const QString&)"), self.slotStateMu)
+        self.connect(self.comboBoxCp,       SIGNAL("activated(const QString&)"), self.slotStateCp)
+        self.connect(self.comboBoxAl,       SIGNAL("activated(const QString&)"), self.slotStateAl)
+        self.connect(self.comboBoxDiff,     SIGNAL("activated(const QString&)"), self.slotStateDiff)
+        self.connect(self.comboBoxNameDiff, SIGNAL("activated(const QString&)"), self.slotNameDiff)
+        self.connect(self.lineEditRho,      SIGNAL("textChanged(const QString &)"), self.slotRho)
+        self.connect(self.lineEditMu,       SIGNAL("textChanged(const QString &)"), self.slotMu)
+        self.connect(self.lineEditCp,       SIGNAL("textChanged(const QString &)"), self.slotCp)
+        self.connect(self.lineEditAl,       SIGNAL("textChanged(const QString &)"), self.slotAl)
+        self.connect(self.lineEditDiff,     SIGNAL("textChanged(const QString &)"), self.slotDiff)
+        self.connect(self.pushButtonRho,    SIGNAL("clicked()"), self.slotFormulaRho)
+        self.connect(self.pushButtonMu,     SIGNAL("clicked()"), self.slotFormulaMu)
+        self.connect(self.pushButtonCp,     SIGNAL("clicked()"), self.slotFormulaCp)
+        self.connect(self.pushButtonAl,     SIGNAL("clicked()"), self.slotFormulaAl)
+        self.connect(self.pushButtonDiff,   SIGNAL("clicked()"), self.slotFormulaDiff)
 
         # Validators
 
-        validatorRho = DoubleValidator(self.lineEditRho, min = 0.0)
-        validatorMu = DoubleValidator(self.lineEditMu, min = 0.0)
-        validatorCp = DoubleValidator(self.lineEditCp, min = 0.0)
-        validatorAl = DoubleValidator(self.lineEditAl, min = 0.0)
+        validatorRho  = DoubleValidator(self.lineEditRho, min = 0.0)
+        validatorMu   = DoubleValidator(self.lineEditMu, min = 0.0)
+        validatorCp   = DoubleValidator(self.lineEditCp, min = 0.0)
+        validatorAl   = DoubleValidator(self.lineEditAl, min = 0.0)
+        validatorDiff = DoubleValidator(self.lineEditDiff, min = 0.0)
 
         validatorRho.setExclusiveMin(True)
         validatorMu.setExclusiveMin(True)
         validatorCp.setExclusiveMin(True)
         validatorAl.setExclusiveMin(True)
+        validatorDiff.setExclusiveMin(True)
 
         self.lineEditRho.setValidator(validatorRho)
         self.lineEditMu.setValidator(validatorMu)
         self.lineEditCp.setValidator(validatorCp)
         self.lineEditAl.setValidator(validatorAl)
+        self.lineEditDiff.setValidator(validatorDiff)
+
+        if scalar_list == []:
+            self.groupBoxDiff.hide()
+        else :
+            self.groupBoxDiff.show()
+            self.lineEditDiff.setText(QString(str(self.m_sca.getScalarDiffusivityInitialValue(self.scalar))))
+            self.pushButtonDiff.setEnabled(False)
+            diff_choice =  self.m_sca.getScalarDiffusivityChoice(self.scalar)
+            self.modelDiff.setItem(str_model=diff_choice)
+            self.modelNameDiff.setItem(str_model=str(self.scalar))
+            if diff_choice  != 'user_law':
+                self.pushButtonDiff.setEnabled(False)
+                setGreenColor(self.pushButtonDiff, False)
+            else:
+                self.pushButtonDiff.setEnabled(True)
+                setGreenColor(self.pushButtonDiff, True)
 
         # Standard Widget initialization
 
@@ -297,6 +334,36 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.__changeChoice(str(text), 'Al', 'thermal_conductivity')
 
 
+    @pyqtSignature("const QString &")
+    def slotStateDiff(self, text):
+        """
+        Method to set diffusion choice for the coefficient
+        """
+        choice = self.modelDiff.dicoV2M[str(text)]
+        log.debug("slotStateDiff -> %s" % (text))
+
+        if choice != 'user_law':
+            self.pushButtonDiff.setEnabled(False)
+            setGreenColor(self.pushButtonDiff, False)
+        else:
+            self.pushButtonDiff.setEnabled(True)
+            setGreenColor(self.pushButtonDiff, True)
+
+        self.m_sca.setScalarDiffusivityChoice(self.scalar, choice)
+
+
+    @pyqtSignature("const QString &")
+    def slotNameDiff(self, text):
+        """
+        Method to set the variance scalar choosed
+        """
+        choice = self.modelNameDiff.dicoV2M[str(text)]
+        log.debug("slotStateDiff -> %s" % (text))
+        self.scalar = str(text)
+        self.lineEditDiff.setText(QString(str(self.m_sca.getScalarDiffusivityInitialValue(self.scalar))))
+        self.modelDiff.setItem(str_model=self.m_sca.getScalarDiffusivityChoice(self.scalar))
+
+
     def __changeChoice(self, text, sym, tag):
         """
         Input variable state
@@ -358,6 +425,16 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         al, ok = text.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setInitialValueCond(al)
+
+
+    @pyqtSignature("const QString &")
+    def slotDiff(self, text):
+        """
+        Update the thermal conductivity
+        """
+        diff, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 
 
     @pyqtSignature("")
@@ -482,6 +559,34 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula('thermal_conductivity', result)
             setGreenColor(self.sender(), False)
+
+
+    @pyqtSignature("")
+    def slotFormulaDiff(self):
+        """
+        User formula for the diffusion coefficient
+        """
+        exp = self.m_sca.getDiffFormula(self.scalar)
+        name = self.m_sca.getScalarDiffusivityName(self.scalar)
+        if not exp:
+            exp = str(name)+" = 1.83e-05;"
+        req = [(str(name), str(self.scalar)+'diffusion coefficient')]
+        exa = ''
+        sym = [('x','cell center coordinate'),
+               ('y','cell center coordinate'),
+               ('z','cell center coordinate'),]
+        sym.append((str(self.scalar),str(self.scalar)))
+        diff0_value = self.m_sca.getScalarDiffusivityInitialValue(self.scalar)
+        sym.append((str(name)+'_ref', str(self.scalar)+' diffusion coefficient (reference value) = '+str(diff0_value)+' m^2/s'))
+        dialog = QMeiEditorView(self,expression = exp,
+                                     required   = req,
+                                     symbols    = sym,
+                                     examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotFormulaDiff -> %s" % str(result))
+            self.m_sca.setDiffFormula(self.scalar, result)
+            setGreenColor(self.pushButtonDiff, False)
 
 
     def tr(self, text):

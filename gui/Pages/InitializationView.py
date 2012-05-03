@@ -93,6 +93,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.turb_group = [self.labelTurbulence, self.pushButtonTurbulence,
                            self.comboBoxTurbulence]
         self.thermal_group = [self.labelThermal, self.pushButtonThermal]
+        self.species_group = [self.labelSpecies, self.comboBoxSpecies, self.pushButtonSpecies]
 
         # 1/ Combo box models
 
@@ -120,11 +121,11 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         self.connect(self.comboBoxZone,         SIGNAL("activated(const QString&)"),   self.slotZone)
         self.connect(self.comboBoxTurbulence,   SIGNAL("activated(const QString&)"),   self.slotChoice)
+        self.connect(self.comboBoxSpecies,      SIGNAL("activated(const QString&)"),   self.slotSpeciesChoice)
         self.connect(self.pushButtonVelocity,   SIGNAL("clicked()"),                   self.slotVelocityFormula)
         self.connect(self.pushButtonThermal,    SIGNAL("clicked()"),                   self.slotThermalFormula)
         self.connect(self.pushButtonTurbulence, SIGNAL("clicked()"),                   self.slotTurbulenceFormula)
-
-        # 3/ Validator definitions
+        self.connect(self.pushButtonSpecies,    SIGNAL("clicked()"),                   self.slotSpeciesFormula)
 
         # Define thermal variable if needed
         th_sca_label = ''
@@ -136,7 +137,25 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         choice = self.init.getInitialTurbulenceChoice(self.zone)
         self.modelTurbulence.setItem(str_model = choice)
-        txt = self.comboBoxTurbulence.currentText()
+
+        # species treatment
+        self.modelSpecies = ComboModel(self.comboBoxSpecies, 1, 1)
+        self.scalar = ""
+        scalar_list = self.th_sca.getUserScalarLabelsList()
+        for s in self.th_sca.getScalarsVarianceList():
+            if s in scalar_list: scalar_list.remove(s)
+
+        if scalar_list != []:
+            self.scalar = scalar_list[0]
+            for item in self.species_group:
+                item.show()
+            for scalar in scalar_list:
+                self.modelSpecies.addItem(self.tr(scalar),self.scalar)
+            self.modelSpecies.setItem(str_model = self.scalar)
+            setGreenColor(self.pushButtonSpecies, True)
+        else:
+            for item in self.species_group:
+                item.hide()
 
         # Initialize widget
         self.initializeVariables(self.zone)
@@ -162,6 +181,16 @@ class InitializationView(QWidget, Ui_InitializationForm):
         turb_model = self.turb.getTurbulenceModel()
 
         self.initializeVariables(self.zone)
+
+
+    @pyqtSignature("const QString&")
+    def slotSpeciesChoice(self, text):
+        """
+        INPUT label for choice of zone
+        """
+        self.scalar= self.modelSpecies.dicoV2M[str(text)]
+        self.initializeVariables(self.zone)
+        setGreenColor(self.pushButtonSpecies, True)
 
 
     @pyqtSignature("const QString&")
@@ -196,10 +225,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         turb_model = self.turb.getTurbulenceModel()
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
-
-            exp = self.init.getTurbFormula(self.zone)
-            if not exp:
-                exp = self.init.getDefaultTurbFormula(turb_model)
+            exp = self.init.getTurbFormula(self.zone, turb_model)
             exa = """#example
 
 cmu = 0.42;
@@ -229,10 +255,7 @@ eps = k^1.5*cmu/almax;
                 setGreenColor(self.sender(), False)
 
         elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
-
-            exp = self.init.getTurbFormula(self.zone)
-            if not exp:
-                exp = self.init.getDefaultTurbFormula(turb_model)
+            exp = self.init.getTurbFormula(self.zone, turb_model)
             exa = """#exemple :
 trii   = (0.02*uref)^2;
 
@@ -272,11 +295,51 @@ eps = k^1.5*cmu/almax;"""
                 self.init.setTurbFormula(self.zone, result)
                 setGreenColor(self.sender(), False)
 
-        elif turb_model == 'v2f-phi':
+        elif turb_model == 'Rij-EBRSM':
+            exp = self.init.getTurbFormula(self.zone, turb_model)
+            exa = """#exemple :
+trii   = (0.02*uref)^2;
 
-            exp = self.init.getTurbFormula(self.zone)
-            if not exp:
-                exp = self.init.getDefaultTurbFormula(turb_model)
+cmu = 0.42;
+
+r11 = trii;
+r22 = trii;
+r33 = trii;
+r12 = 0.;
+r13 = 0.d;
+r23 = 0.;
+k = 0.5*(r11+r22+r33);
+eps = k^1.5*cmu/almax;
+alpha = 1.;"""
+            req = [('r11', "Reunolds stress R11"),
+            ('r22', "Reynolds stress R22"),
+            ('r33', "Reynolds stress R33"),
+            ('r12', "Reynolds stress R12"),
+            ('r23', "Reynolds stress R23"),
+            ('r13', "Reynolds stress R13"),
+            ('eps', "turbulent dissipation"),
+            ('alpha', "alpha")]
+            sym = [('rho0', 'density (reference value)'),
+                   ('mu0', 'viscosity (reference value)'),
+                   ('cp0', 'specific heat (reference value)'),
+                   ('lambda0', 'thermal conductivity (reference value)'),
+                   ('x','cell center coordinate'),
+                   ('y','cell center coordinate'),
+                   ('z','cell center coordinate'),
+                   ('uref','reference velocity'),
+                   ('almax','reference length')]
+            dialog = QMeiEditorView(self,expression = exp,
+                                     required   = req,
+                                     symbols    = sym,
+                                     examples   = exa)
+            if dialog.exec_():
+                result = dialog.get_result()
+                log.debug("slotFormulaTurb -> %s" % str(result))
+                self.init.setTurbFormula(self.zone, result)
+                setGreenColor(self.sender(), False)
+
+        elif turb_model == 'v2f-phi':
+            exp = self.init.getTurbFormula(self.zone, turb_model)
             exa = """#example
 
 cmu = 0.22;
@@ -310,15 +373,36 @@ fb = 0.;
                 setGreenColor(self.sender(), False)
 
         elif turb_model == 'k-omega-SST':
-
-            exp = self.init.getTurbFormula(self.zone)
-            if not exp:
-                exp = self.init.getDefaultTurbFormula(turb_model)
+            exp = self.init.getTurbFormula(self.zone, turb_model)
             exa = """#exemple :
 k = 1.5*(0.02*uref)^2;
 omega = k^0.5/almax;"""
             req = [('k', "turbulent energy"),
             ('omega', "specific dissipation rate")]
+            sym = [('rho0', 'density (reference value)'),
+                   ('mu0', 'viscosity (reference value)'),
+                   ('cp0', 'specific heat (reference value)'),
+                   ('lambda0', 'thermal conductivity (reference value)'),
+                   ('x','cell center coordinate'),
+                   ('y','cell center coordinate'),
+                   ('z','cell center coordinate'),
+                   ('uref','reference velocity'),
+                   ('almax','reference length')]
+            dialog = QMeiEditorView(self,expression = exp,
+                                     required   = req,
+                                     symbols    = sym,
+                                     examples   = exa)
+            if dialog.exec_():
+                result = dialog.get_result()
+                log.debug("slotFormulaTurb -> %s" % str(result))
+                self.init.setTurbFormula(self.zone, result)
+                setGreenColor(self.sender(), False)
+
+        elif turb_model == 'Spalart-Allmaras':
+            exp = self.init.getTurbFormula(self.zone, turb_model)
+            exa = """#exemple :
+nusa = (cmu * k)/eps;;"""
+            req = [('nusa', "nusa")]
             sym = [('rho0', 'density (reference value)'),
                    ('mu0', 'viscosity (reference value)'),
                    ('cp0', 'specific heat (reference value)'),
@@ -363,6 +447,30 @@ omega = k^0.5/almax;"""
             setGreenColor(self.sender(), False)
 
 
+    @pyqtSignature("const QString&")
+    def slotSpeciesFormula(self):
+        """
+        Input the initial formula of species
+        """
+        exp = self.init.getSpeciesFormula(self.zone, self.scalar)
+        if not exp:
+            exp = str(self.scalar)+""" = 0;\n"""
+        exa = """#example: """
+        req = [(str(self.scalar), str(self.scalar))]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+        dialog = QMeiEditorView(self,expression = exp,
+                                 required   = req,
+                                 symbols    = sym,
+                                 examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotFormulaSpecies -> %s" % str(result))
+            self.init.setSpeciesFormula(self.zone, self.scalar, result)
+            setGreenColor(self.sender(), False)
+
+
     def initializeVariables(self, zone):
         """
         Initialize variables when a new volumic zone is choosen
@@ -390,7 +498,7 @@ omega = k^0.5/almax;"""
 
             if turb_init == 'formula':
                 self.pushButtonTurbulence.setEnabled(True)
-                turb_formula = self.init.getTurbFormula(zone)
+                turb_formula = self.init.getTurbFormula(zone, turb_model)
                 if not turb_formula:
                     turb_formula = self.init.getDefaultTurbFormula(turb_model)
                 self.init.setTurbFormula(zone, turb_formula)

@@ -424,9 +424,7 @@ Thermophysical models
     Radiative transfers
     Conjugate heat transfer
     Atmospheric flows
-Additional scalars
-    Definition and initialization
-    Physical properties
+    Species transport
 Physical properties
     Reference values
     Fluid properties

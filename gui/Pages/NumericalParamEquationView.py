@@ -473,6 +473,198 @@ class StandardItemModelSolver(QStandardItemModel):
         return True
 
 #-------------------------------------------------------------------------------
+# Line edit delegate for minimum value
+#-------------------------------------------------------------------------------
+
+class MinimumDelegate(QItemDelegate):
+    def __init__(self, parent=None):
+        super(MinimumDelegate, self).__init__(parent)
+        self.parent = parent
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        v = QtPage.DoubleValidator(editor)
+        editor.setValidator(v)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        value = index.model().data(index, Qt.DisplayRole).toString()
+        editor.setText(value)
+
+
+    def setModelData(self, editor, model, index):
+        if not editor.isModified():
+            return
+        if editor.validator().state == QValidator.Acceptable:
+            value, ok = editor.text().toDouble()
+            for idx in self.parent.selectionModel().selectedIndexes():
+                if idx.column() == index.column():
+                    maxi = model.getData(idx)['scamax']
+                    label = model.getData(idx)['label']
+                    if model.checkMinMax(label, value, maxi):
+                        model.setData(idx, QVariant(value), Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+# Line edit delegate for maximum value
+#-------------------------------------------------------------------------------
+
+class MaximumDelegate(QItemDelegate):
+    def __init__(self, parent=None):
+        super(MaximumDelegate, self).__init__(parent)
+        self.parent = parent
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        v = QtPage.DoubleValidator(editor)
+        editor.setValidator(v)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        value = index.model().data(index, Qt.DisplayRole).toString()
+        editor.setText(value)
+
+
+    def setModelData(self, editor, model, index):
+        if not editor.isModified():
+            return
+        if editor.validator().state == QValidator.Acceptable:
+            value, ok = editor.text().toDouble()
+            for idx in self.parent.selectionModel().selectedIndexes():
+                if idx.column() == index.column():
+                    mini = model.getData(idx)['scamin']
+                    label = model.getData(idx)['label']
+                    if model.checkMinMax(label, mini, value):
+                        model.setData(idx, QVariant(value), Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+# StandarItemModel class
+#-------------------------------------------------------------------------------
+
+class StandardItemModelClipping(QStandardItemModel):
+    """
+    """
+    def __init__(self, parent, NPE):
+        """
+        """
+        QStandardItemModel.__init__(self)
+
+        self.headers = [self.tr("Name"),
+                        self.tr("Minimal\nvalue"),
+                        self.tr("Maximal\nvalue")]
+
+        self.setColumnCount(len(self.headers))
+
+        self.toolTipRole = [self.tr("Code_Saturne keyword: NSCAUS"),
+                            self.tr("Code_Saturne keyword: SCAMIN"),
+                            self.tr("Code_Saturne keyword: SCAMAX")]
+
+        self._data = []
+        self._disable = []
+        self.parent = parent
+        self.NPE = NPE
+        self.populateModel()
+
+    def populateModel(self):
+        for label in self.NPE.getClippingList():
+            row = self.rowCount()
+            self.setRowCount(row + 1)
+            dico             = {}
+            dico['label']    = label
+            dico['scamin']   = self.NPE.getMinValue(label)
+            dico['scamax']   = self.NPE.getMaxValue(label)
+
+            self._data.append(dico)
+            log.debug("populateModel-> _data = %s" % dico)
+
+    def data(self, index, role):
+        if not index.isValid():
+            return QVariant()
+
+        row = index.row()
+        col = index.column()
+
+        if role == Qt.ToolTipRole:
+            return QVariant(self.toolTipRole[col])
+        if role == Qt.DisplayRole:
+            row = index.row()
+            dico = self._data[row]
+            if col == 0:
+                return QVariant(dico['label'])
+            elif col == 1:
+                return QVariant(dico['scamin'])
+            elif col == 2:
+                return QVariant(dico['scamax'])
+            else:
+                return QVariant()
+        elif role == Qt.TextAlignmentRole:
+            return QVariant(Qt.AlignCenter)
+
+        return QVariant()
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+
+        if index.column() == 0:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+
+
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return QVariant(self.headers[section])
+        return QVariant()
+
+
+    def setData(self, index, value, role=None):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+        row = index.row()
+        label = self._data[row]['label']
+
+        if index.column() == 1:
+            self._data[row]['scamin'] , ok = value.toDouble()
+            self.NPE.setMinValue(label, self._data[row]['scamin'])
+
+
+        elif index.column() == 2:
+            self._data[row]['scamax'], ok = value.toDouble()
+            self.NPE.setMaxValue(label, self._data[row]['scamax'])
+
+        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        return True
+
+
+    def getData(self, index):
+        row = index.row()
+        return self._data[row]
+
+
+    def checkMinMax(self, label, mini, maxi):
+        """
+        Verify the coherence between mini and maxi
+        """
+        log.debug("checkMinMax")
+        OK = 1
+        if mini > maxi:
+            title = self.tr("Information")
+            msg = self.tr("The minimal value is greater than the maximal "\
+                          "value. Therefore there will be no clipping for the "\
+                          "scalar named:\n\n%1").arg(label)
+            QMessageBox.information(self.parent, title, msg)
+            return OK
+
+        return OK
+
+
+#-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
 
@@ -525,6 +717,23 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
 
         delegate = SolveurDelegate(self.tableViewSolver)
         self.tableViewSolver.setItemDelegate(delegate)
+
+        # Clipping
+        self.modelClipping = StandardItemModelClipping(self,self.NPE)
+        self.tableViewClipping.setModel(self.modelClipping)
+        self.tableViewClipping.setAlternatingRowColors(True)
+        self.tableViewClipping.resizeColumnToContents(0)
+        self.tableViewClipping.resizeRowsToContents()
+        self.tableViewClipping.setSelectionBehavior(QAbstractItemView.SelectItems)
+        self.tableViewClipping.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.tableViewClipping.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.tableViewClipping.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+
+        delegateMin = MinimumDelegate(self.tableViewClipping)
+        self.tableViewClipping.setItemDelegateForColumn(1, delegateMin)
+
+        delegateMax = MaximumDelegate(self.tableViewClipping)
+        self.tableViewClipping.setItemDelegateForColumn(2, delegateMax)
 
 
     def tr(self, text):

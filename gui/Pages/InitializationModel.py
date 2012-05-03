@@ -176,7 +176,7 @@ omega = k^0.5/almax;"""
         node_init['choice'] = init_mode
 
 
-    def getTurbFormula(self, zone):
+    def getTurbFormula(self, zone, turb_model):
         """
         Public method.
         Return the formula for a turbulent variable.
@@ -185,6 +185,9 @@ omega = k^0.5/almax;"""
         node = self.node_turb.xmlInitNode('initialization', zone_id=zone)
 
         formula = node.xmlGetString('formula')
+        if not formula:
+            formula = self.init.getDefaultTurbFormula(turb_model)
+            self.setTurbFormula(zone, formula)
         return formula
 
 
@@ -253,6 +256,41 @@ omega = k^0.5/almax;"""
             raise ValueError(msg)
 
         formula = node.xmlGetString('formula', zone_id=zone)
+        return formula
+
+
+    def setSpeciesFormula(self, zone, species, formula):
+        """
+        Public method.
+        Set the formula for a turbulent variable.
+        """
+        self.__verifyZone(zone)
+        self.isInList(species, DefineUserScalarsModel( self.case).getUserScalarLabelsList())
+        node = self.node_userscalar.xmlGetNode('scalar', label = str(species))
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = node.xmlInitChildNode('formula', zone_id=zone)
+        n.xmlSetTextNode(formula)
+
+
+    def getSpeciesFormula(self, zone, species):
+        """
+        Public method.
+        Return the formula for a turbulent variable.
+        """
+        self.__verifyZone(zone)
+        self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarLabelsList())
+        node = self.node_userscalar.xmlGetNode('scalar', label = str(species))
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+
+        formula = node.xmlGetString('formula', zone_id=zone)
+        if not formula:
+            formula = str(species)+""" = 0;\n"""
+            self.setSpeciesFormula(zone, species, formula)
+
         return formula
 
 

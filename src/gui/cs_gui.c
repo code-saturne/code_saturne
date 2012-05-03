@@ -318,7 +318,7 @@ cs_gui_scalar_properties_choice(const int scalar_num, int *const choice)
   } else {
     ichoice = 1;
 
-    if (cs_gui_strcmp(buff, "variable") || cs_gui_strcmp(buff, "user_law"))
+    if (cs_gui_strcmp(buff, "user_law"))
       *choice = 1;
     else if (cs_gui_strcmp(buff, "constant"))
       *choice = 0;
@@ -3509,8 +3509,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
             }
           }
           mei_tree_destroy(ev_formula_sca);
-        }
-        else {
+        } else {
           if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
             for (icel = 0; icel < cells; icel++) {
               iel = cells_list[icel]-1;

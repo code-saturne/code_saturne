@@ -78,6 +78,10 @@ class NumericalParamEquatModel(Model):
         for node in self._getAdditionalScalarNodes():
             self.var.append(node['label'])
 
+        self.thermo = []
+        for node in self._getThermalScalarNode():
+            self.thermo.append(node['label'])
+
         self.UVW = []
         for node in self.node_varVP:
             if node['name'] in ('velocity_U', 'velocity_V', 'velocity_W'):
@@ -108,6 +112,22 @@ class NumericalParamEquatModel(Model):
             if label in self.UVW:
                 self.default['slope_test'] = 'off'
 
+        if label in self.thermo:
+            for node in self._getThermalScalarNode():
+                if node['label'] == label:
+                    if node['name'] == 'temperature_celsius':
+                        self.default['min_value'] = -273.15
+                        self.default['max_value'] = 1e+12
+                    elif node['name'] =='temperature_kelvin':
+                        self.default['min_value'] = 0
+                        self.default['max_value'] = 1e+12
+                    elif node['name'] =='enthalpy':
+                        self.default['min_value'] = 0
+                        self.default['max_value'] = 1e+12
+        else:
+            self.default['min_value'] = 0
+            self.default['max_value'] = 1
+
         return self.default
 
 
@@ -129,7 +149,7 @@ class NumericalParamEquatModel(Model):
 
 
     def _getMeteoScalarsNodes(self):
-        """ Private method: return list of pulverized coal scalar's nodes """
+        """ Private method: return list of meteo scalar's nodes """
         nodList = []
         node = self.node_models.xmlGetNode('atmospheric_flows', 'model')
         if not node: return []
@@ -152,6 +172,18 @@ class NumericalParamEquatModel(Model):
         if n['status'] == 'on':
             nodList =  n.xmlGetNodeList('variable')
         return nodList
+
+
+    def _getClippingNodesList(self):
+        """ Return list of nodes for class view Scheme"""
+        self.var_clip = []
+
+        for part in (self._getThermalScalarNode(),
+                     self._getPuCoalScalarsNodes(),
+                     self._getMeteoScalarsNodes(),
+                     self._getAdditionalScalarNodes()):
+            self.var_clip.append(part)
+        return self.var_clip
 
 
     def _getSchemeNodesList(self):
@@ -180,6 +212,15 @@ class NumericalParamEquatModel(Model):
                      self._getAleVariablesNodes()):
             self.var_solv.append(part)
         return self.var_solv
+
+
+    def _getClippingLabelNode(self, label):
+        """ Private method: return node called with label'label' for solveur scheme"""
+        for node in self._getClippingNodesList():
+            for n in node:
+                if n['label'] == label:
+                    return n
+        raise ValueError("This label does not exist: " + label)
 
 
     def _getSchemeLabelNode(self, label):
@@ -221,6 +262,15 @@ class NumericalParamEquatModel(Model):
                 self.setFluxReconstruction(label, self._defaultValues(label)['flux_reconstruction'])
             except:
                 pass
+
+
+    def getClippingList(self):
+        """ Return the variables label list for clipping parameters """
+        list = []
+        for node in self._getClippingNodesList():
+            for n in node:
+                list.append(n['label'])
+        return list
 
 
     def getSchemeList(self):
@@ -432,6 +482,51 @@ class NumericalParamEquatModel(Model):
                 node.xmlRemoveChild('time_step_factor')
         else:
             raise ValueError("This method runs only with scalar label")
+
+
+    def getMinValue(self, label):
+        """Get minimal value from an additional_scalar with label scalar_label"""
+        self.isInList(label, self.getClippingList())
+        node = self._getClippingLabelNode(label)
+        min_val = node.xmlGetChildDouble('min_value')
+        if min_val == None:
+            min_val = self._defaultValues(label)['min_value']
+            self.setMinValue(label, min_val)
+
+        return min_val
+
+
+    def setMinValue(self, label, min_value):
+        """
+        Put minimal value for an additional_scalar with label scalar_label.
+        Method also used by ThermalScalarModel
+        """
+        self.isFloat(min_value)
+        self.isInList(label, self.getClippingList())
+        node = self._getClippingLabelNode(label)
+        node.xmlSetData('min_value', min_value)
+
+
+    def getMaxValue(self, label):
+        """Get maximal value from an additional_scalar with label scalar_label"""
+        self.isInList(label, self.getClippingList())
+        node = self._getClippingLabelNode(label)
+        max_val = node.xmlGetDouble('max_value')
+        if max_val == None:
+            max_val = self._defaultValues(label)['max_value']
+            self.setMaxValue(label, max_val)
+        return max_val
+
+
+    def setMaxValue(self, label, max_value):
+        """
+        Put maximal value for an additional_scalar with label scalar_label.
+        Method also used by ThermalScalarModel
+        """
+        self.isFloat(max_value)
+        self.isInList(label, self.getClippingList())
+        node = self._getClippingLabelNode(label)
+        node.xmlSetData('max_value', max_value)
 
 
 #-------------------------------------------------------------------------------

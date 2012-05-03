@@ -45,7 +45,6 @@ import Base.Toolbox as Tool
 from Base.XMLvariables import Variables
 from Base.XMLvariables import Model
 from Base.XMLmodel import XMLmodel, ModelTest
-##from DefineBoundaryRegionsModel import DefBCModel
 
 #-------------------------------------------------------------------------------
 # Define User Scalars model class
@@ -72,16 +71,15 @@ class DefineUserScalarsModel(Variables, Model):
         """Return the default values - Method also used by ThermalScalarModel"""
         default = {}
         default['scalar_label']          = "scalar"
+        default['variance_label']        = "variance"
         default['coefficient_label']     = "Dscal"
-        default['initial_value']         = 0.0
-        default['min_value']             = -1e+12
-        default['max_value']             = 1e+12
         default['diffusion_coefficient'] = 1.83e-05
         default['diffusion_choice']      = 'constant'
-        default['temperature_celsius']   = 20.0
-        default['temperature_kelvin']    = 293.15
-        default['enthalpy']              = 297413.
         default['zone_id']               = 1
+        if self.getScalarLabelsList():
+            default['variance']          = self.getScalarLabelsList()[0]
+        else:
+            default['variance']          = "no scalar"
 
         return default
 
@@ -145,6 +143,31 @@ class DefineUserScalarsModel(Variables, Model):
         return scalar_label, __coef[scalar_label]
 
 
+    def __defaultVarianceName(self, scalar_label=None):
+        """
+        Private method.
+        Return a default name and label for a new variance.
+        """
+        __coef = {}
+        for l in self.getScalarsVarianceList():
+            __coef[l] = l
+        length = len(__coef)
+        Lscal = self.defaultScalarValues()['variance_label']
+
+        # new scalar: default value for both scalar and diffusivity
+
+        if not scalar_label:
+            if length != 0:
+                i = 1
+                while (Lscal + str(i)) in __coef.values():
+                    i = i + 1
+                num = str(i)
+            else:
+                num = str(1)
+            scalar_label = Lscal + num
+        return scalar_label
+
+
     def __updateScalarNameAndDiffusivityName(self):
         """
         Private method.
@@ -158,7 +181,13 @@ class DefineUserScalarsModel(Variables, Model):
                 node['name'] = 'scalar' + str(n)
             nprop = node.xmlGetChildNode('property')
             if nprop:
+                old_name = nprop['name']
                 nprop['name'] = 'diffusion_coefficient_' + str(n)
+                new_name = nprop['name']
+                if old_name:
+                    for no in self.case.xmlGetNodeList('formula'):
+                        f = no.xmlGetTextNode().replace(old_name, new_name)
+                        no.xmlSetTextNode(f)
 
 
     def __setScalarDiffusivity(self, scalar_label, coeff_label):
@@ -231,27 +260,32 @@ class DefineUserScalarsModel(Variables, Model):
                 model.setScalar(label, 0.0)
 
 
-    def addUserScalar(self, zone, label=None):
+    def addUserScalar(self, label=None):
         """Public method.
         Input a new user scalar I{label}"""
-        self.isInt(int(zone))
 
         l, c = self.__defaultScalarNameAndDiffusivityLabel(label)
 
         if l not in self.getScalarLabelsList():
             self.scalar_node.xmlInitNode('scalar', 'name', type="user", label=l)
 
-            min = self.defaultScalarValues()['min_value']
-            max = self.defaultScalarValues()['max_value']
-
-            self.setScalarInitialValue(zone, l, ini)
-            self.setScalarMinValue(l, min)
-            self.setScalarMaxValue(l, max)
             self.__setScalarDiffusivity(l, c)
             self.setScalarBoundaries()
 
         self.__updateScalarNameAndDiffusivityName()
 
+        return l
+
+
+    def addVariance(self, label=None):
+        """Public method.
+        Input a new user scalar I{label}"""
+
+        l= self.__defaultVarianceName(label)
+        if l not in self.getScalarsVarianceList():
+            self.scalar_node.xmlInitNode('scalar', 'name', type="user", label=l)
+            if self.getScalarLabelsList() != None:
+                self.setScalarVariance(l, self.defaultScalarValues()['variance'])
         return l
 
 
@@ -294,94 +328,6 @@ class DefineUserScalarsModel(Variables, Model):
         return label
 
 
-    def getScalarInitialValue(self, zone, scalar_label):
-        """
-        Get initial value from an additional_scalar with label scalar_label
-        and zone zone. Method also used by InitializationView
-        """
-        self.isInt(int(zone))
-        self.isInList(scalar_label, self.getScalarLabelsList())
-
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
-        val = n.xmlGetChildDouble('initial_value', zone_id=zone)
-        if val == None:
-            if n['type'] == 'thermal':
-                val = self.defaultScalarValues()[n['name']]
-            else:
-                val = self.defaultScalarValues()['initial_value']
-            self.setScalarInitialValue(zone, scalar_label, val)
-
-        return val
-
-
-    def setScalarInitialValue(self, zone, scalar_label, initial_value):
-        """
-        Put initial value for an additional_scalar with label scalar_label
-        and zone zone.
-        Method also used by InitializationView, ThermalScalarModel
-        """
-        self.isInt(int(zone))
-        self.isFloat(initial_value)
-        self.isInList(scalar_label, self.getScalarLabelsList())
-
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
-        nz = n.xmlInitChildNode('initial_value', zone_id=zone)
-        nz.xmlSetTextNode(initial_value)
-
-
-    def getScalarMinValue(self, scalar_label):
-        """Get minimal value from an additional_scalar with label scalar_label"""
-        self.isInList(scalar_label, self.getScalarLabelsList())
-
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
-        min_val = n.xmlGetChildDouble('min_value')
-        if min_val == None:
-            min_val = self.defaultScalarValues()['min_value']
-            if self.getScalarVariance(scalar_label) == "":
-                self.setScalarMinValue(scalar_label, min_val)
-
-        return min_val
-
-
-    def setScalarMinValue(self, scalar_label, min_value):
-        """
-        Put minimal value for an additional_scalar with label scalar_label.
-        Method also used by ThermalScalarModel
-        """
-        self.isFloat(min_value)
-        self.isInList(scalar_label, self.getScalarLabelsList())
-
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
-        n.xmlSetData('min_value', min_value)
-
-
-    def getScalarMaxValue(self, scalar_label):
-        """Get maximal value from an additional_scalar with label scalar_label"""
-        self.isInList(scalar_label, self.getScalarLabelsList())
-
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
-        max_val = n.xmlGetDouble('max_value')
-        if max_val == None:
-            max_val = self.defaultScalarValues()['max_value']
-            if self.getScalarVariance(scalar_label) == "":
-                self.setScalarMaxValue(scalar_label, max_val)
-
-        return max_val
-
-
-    def setScalarMaxValue(self, scalar_label, max_value):
-        """
-        Put maximal value for an additional_scalar with label scalar_label.
-        Method also used by ThermalScalarModel
-        """
-        # we verify max_value is a float value
-        self.isFloat(max_value)
-        self.isInList(scalar_label, self.getScalarLabelsList())
-
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
-        n.xmlSetData('max_value', max_value)
-
-
     def getScalarVariance(self, l):
         """
         Get variance of an additional_scalar with label I{l}.
@@ -401,8 +347,6 @@ class DefineUserScalarsModel(Variables, Model):
         n.xmlSetData('variance', variance_label)
 
         self.__removeScalarChildNode(scalar_label, 'property')
-        self.setScalarMinValue(scalar_label, 0.0)
-        self.setScalarMaxValue(scalar_label, self.defaultScalarValues()['max_value'])
 
 
     def getScalarsWithVarianceList(self):
@@ -441,6 +385,22 @@ class DefineUserScalarsModel(Variables, Model):
         return lab
 
 
+    def getScalarDiffusivityName(self, scalar_label):
+        """
+        Get label of diffusivity's property for an additional_scalar
+        with label scalar_label
+        """
+        self.isInList(scalar_label, self.getScalarLabelsList())
+
+        lab_diff = ""
+        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
+        n_diff = n.xmlGetChildNode('property')
+        if n_diff:
+            lab_diff = n_diff['name']
+
+        return lab_diff
+
+
     def setScalarDiffusivityLabel(self, scalar_label, diff_label):
         """
         Set label of diffusivity's property for an additional_scalar
@@ -476,7 +436,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar_label, self.getUserScalarLabelsList())
         self.isFloat(initial_value)
 
-        n = self.scalar_node.xmlGetNode('scalar', type='user', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
         n_diff = n.xmlInitChildNode('property')
         n_diff.xmlSetData('initial_value', initial_value)
 
@@ -489,7 +449,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isNotInList(scalar_label, self.getScalarsVarianceList())
         self.isInList(scalar_label, self.getUserScalarLabelsList())
 
-        n = self.scalar_node.xmlGetNode('scalar', type='user', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
         n_diff = n.xmlInitChildNode('property')
         diffu = n_diff.xmlGetDouble('initial_value')
         if diffu == None:
@@ -506,9 +466,9 @@ class DefineUserScalarsModel(Variables, Model):
         """
         self.isNotInList(scalar_label, self.getScalarsVarianceList())
         self.isInList(scalar_label, self.getUserScalarLabelsList())
-        self.isInList(choice, ('constant', 'variable'))
+        self.isInList(choice, ('constant', 'user_law'))
 
-        n = self.scalar_node.xmlGetNode('scalar', type='user', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
         n_diff = n.xmlInitChildNode('property')
         n_diff['choice'] = choice
 
@@ -521,7 +481,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isNotInList(scalar_label, self.getScalarsVarianceList())
         self.isInList(scalar_label, self.getUserScalarLabelsList())
 
-        n = self.scalar_node.xmlGetNode('scalar', type='user', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
         choice = n.xmlInitChildNode('property')['choice']
         if not choice:
             choice = self.defaultScalarValues()['diffusion_choice']
@@ -530,38 +490,44 @@ class DefineUserScalarsModel(Variables, Model):
         return choice
 
 
-    def setScalarValues(self, label, zone, init, mini, maxi, vari):
+    def getDiffFormula(self, scalar):
+        """
+        Return a formula for I{tag} 'density', 'molecular_viscosity',
+        'specific_heat' or 'thermal_conductivity'
+        """
+        self.isNotInList(scalar, self.getScalarsVarianceList())
+        self.isInList(scalar, self.getUserScalarLabelsList())
+        n = self.scalar_node.xmlGetNode('scalar',label = scalar)
+        node = n.xmlGetNode('property')
+        return node.xmlGetString('formula')
+
+
+    def setDiffFormula(self, scalar, str):
+        """
+        Gives a formula for 'density', 'molecular_viscosity',
+        'specific_heat'or 'thermal_conductivity'
+        """
+        self.isNotInList(scalar, self.getScalarsVarianceList())
+        self.isInList(scalar, self.getUserScalarLabelsList())
+        n = self.scalar_node.xmlGetNode('scalar',label = scalar)
+        node = n.xmlGetNode('property')
+        node.xmlSetData('formula', str)
+
+
+    def setScalarValues(self, label, vari):
         """
         Put values to scalar with labelled I{label} for creating or replacing values.
         """
-        self.isInt(int(zone))
-        self.isFloat(init)
-        self.isFloat(mini)
-        self.isFloat(maxi)
         l = self.getScalarLabelsList()
         l.append('no')
         self.isInList(vari, l)
 
-        type = 'user'
-
-        if label not in self.getUserScalarLabelsList():
-            if label not in self.getScalarLabelsList():
-                self.addUserScalar(zone, label)
-            else:
-                type = 'thermal'
-                self.setScalarMinValue(label, mini)
-                self.setScalarMaxValue(label, maxi)
-
-        self.setScalarInitialValue(zone, label, init)
-        if type == 'user':
-            if vari != "no":
-                self.setScalarVariance(label, vari)
-            else:
-                self.__removeScalarChildNode(label, 'variance')
-                self.setScalarMinValue(label, mini)
-                self.setScalarMaxValue(label, maxi)
-                l, c = self.__defaultScalarNameAndDiffusivityLabel(label)
-                self.__setScalarDiffusivity(l, c)
+        if vari != "no":
+            self.setScalarVariance(label, vari)
+        else:
+            self.__removeScalarChildNode(label, 'variance')
+            l, c = self.__defaultScalarNameAndDiffusivityLabel(label)
+            self.__setScalarDiffusivity(l, c)
 
         self.__updateScalarNameAndDiffusivityName()
 
