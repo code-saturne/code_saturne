@@ -3869,6 +3869,28 @@ _export_point_elements(fvm_to_med_writer_t   *writer,
     /* Write into MED file */
     /*---------------------*/
 
+#if FVM_MED_VERSION == 2
+
+  retval  = MEDconnEcr(writer->fid,
+                       med_mesh->name,
+                       med_mesh->entity_dim,
+                       export_connect,
+                       MED_FULL_INTERLACE,
+                       (med_int)n_g_vertices,
+                       MED_MAILLE,
+                       MED_POINT1,
+                       MED_NOD);
+
+  if (retval < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("MEDconnEcr() failed to write strided connectivity:\n"
+                "Associated writer: \"%s\"\n"
+                "Associated med_mesh_name: \"%s\"\n"
+                "Associated MED geometrical element: \"%i\"\n"),
+              writer->name, med_mesh->name, (int)MED_POINT1);
+
+#else
+
     retval = MEDmeshElementConnectivityWr(writer->fid,
                                           med_mesh->name,
                                           MED_NO_DT,
@@ -3889,6 +3911,8 @@ _export_point_elements(fvm_to_med_writer_t   *writer,
            "Associated med_mesh_name: \"%s\"\n"
            "Associated MED geometrical element: \"%i\"\n"),
          writer->name, med_mesh->name, (int)MED_POINT1);
+
+#endif
 
     BFT_FREE(export_connect);
 
