@@ -366,10 +366,10 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.modelIILAGR.addItem(self.tr("Two-way coupling"), "two_way")
         self.modelIILAGR.addItem(self.tr("Frozen carrier flow"), "frozen")
 
-        self.modelIPHYLA = ComboModel(self.comboBoxIPHYLA,3,1)
+        self.modelIPHYLA = ComboModel(self.comboBoxIPHYLA,2,1)
         self.modelIPHYLA.addItem(self.tr("No model"), 'off')
-        self.modelIPHYLA.addItem(self.tr("Heating, break-up and evaporation"), 'thermal')
-        self.modelIPHYLA.addItem(self.tr("Pulverised coal model"), 'coal')
+        self.modelIPHYLA.addItem(self.tr("Heat transfer and evaporation"), 'thermal')
+        # self.modelIPHYLA.addItem(self.tr("Pulverised coal model"), 'coal')
 
         # Connections
         self.connect(self.comboBoxIILAGR, SIGNAL("activated(const QString&)"), self.slotIILAGR)
@@ -378,7 +378,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.connect(self.lineEditNBPMAX, SIGNAL("textChanged(const QString &)"), self.slotNBPMAX)
         self.connect(self.checkBoxINJCON, SIGNAL("clicked()"), self.slotINJCON)
         self.connect(self.comboBoxIPHYLA, SIGNAL("activated(const QString&)"), self.slotIPHYLA)
-        self.connect(self.checkBoxIDPVAR, SIGNAL("clicked()"), self.slotIDPVAR)
         self.connect(self.checkBoxITPVAR, SIGNAL("clicked()"), self.slotITPVAR)
         #self.connect(self.lineEditTPPART, SIGNAL("textChanged(const QString &)"), self.slotTPPART)
         #self.connect(self.lineEditCPPART, SIGNAL("textChanged(const QString &)"), self.slotCPPART)
@@ -460,7 +459,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.slotIPHYLA(self.modelIPHYLA.dicoM2V[part_model])
 
         # Disabling the coal model model waiting for validation
-        self.modelIPHYLA.disableItem(str_model="coal")
+        #self.modelIPHYLA.disableItem(str_model="coal")
 
 
     @pyqtSignature("const QString&")
@@ -571,12 +570,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
 
             self.frameModel1.show()
 
-            status = self.model.getBreakUp()
-            if status == "on":
-                self.checkBoxIDPVAR.setChecked(True)
-            else:
-                self.checkBoxIDPVAR.setChecked(False)
-
             status = self.model.getHeating()
             if status == "on":
                 self.checkBoxITPVAR.setChecked(True)
@@ -609,17 +602,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             else:
                 self.checkBoxIENCRA.setChecked(False)
             self.slotIENCRA()
-
-
-    @pyqtSignature("")
-    def slotIDPVAR(self):
-        """
-        Input IDPVAR.
-        """
-        if self.checkBoxIDPVAR.isChecked():
-            self.model.setBreakUp("on")
-        else:
-            self.model.setBreakUp("off")
 
 
     @pyqtSignature("")

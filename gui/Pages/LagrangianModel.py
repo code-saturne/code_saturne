@@ -323,28 +323,6 @@ class LagrangianModel(Model):
         return self.__nodeParticlesModel()['model']
 
 
-    def setBreakUp(self, status):
-        """
-        Update the status for activation of evolution equation on the particle diameter.
-        """
-        self.isOnOff(status)
-        node_model = self.__nodeParticlesModel()
-        node_diameter = node_model.xmlInitChildNode('break_up', 'status')
-        node_diameter['status'] = status
-
-
-    def getBreakUp(self):
-        """
-        Return status for the activation of an evolution equation on the particle diameter.
-        """
-        node_model = self.__nodeParticlesModel()
-        node_diameter = node_model.xmlInitChildNode('break_up', 'status')
-        status = node_diameter['status']
-        if not status:
-            status = self.defaultParticlesValues()['break_up']
-            self.setBreakUp(status)
-        return status
-
 
     def setHeating(self, status):
         """
