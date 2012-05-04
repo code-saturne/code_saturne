@@ -94,8 +94,10 @@ CS_AC_TEST_ENV_MODULES
 
 user_CPPFLAGS=$CPPFLAGS
 user_CFLAGS=$CFLAGS
+user_CFLAGS_HOT=$CFLAGS_HOT
 user_CXXFLAGS=$CXXFLAGS
 user_FCFLAGS=$FCFLAGS
+user_FCFLAGS_HOT=$FCFLAGS_HOT
 user_LDFLAGS=$LDFLAGS
 user_LIBS=$LIBS
 
@@ -208,9 +210,9 @@ if test "x$auto_flags" = "xyes" ; then
     CXXFLAGS_OPT="$cxxflags_default_opt"
     FCFLAGS_OPT="$fcflags_default_opt"
     # Hot optimization flags
-    CFLAGS_HOT="$cflags_default_hot"
+    CFLAGS_HOT="$cflags_default_hot $user_CFLAGS_HOT"
     CXXFLAGS_HOT="$cxxflags_default_hot"
-    FCFLAGS_HOT="$fcflags_default_hot"
+    FCFLAGS_HOT="$fcflags_default_hot $user_FCFLAGS_HOT"
     # Add optimization flags for linker
     LDFLAGS="$LDFLAGS $ldflags_default_opt"
   fi
