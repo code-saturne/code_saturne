@@ -1,3 +1,9 @@
+* 04/05/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix memory leaks in radiative transfer and particles when using GUI.
+  modified files:
+    src/base/cs_gui_radiative_transfer.c
+    src/base/cs_gui_particles.c
+
 * 12/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix GUI bug preventing setting negative internal structure displacement values.
   modified files:

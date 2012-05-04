@@ -943,10 +943,6 @@ void CS_PROCF (uiray2, UIRAY2)
         BFT_MALLOC(boundary->nature[izone], strlen(nature)+1, char);
         strcpy(boundary->nature[izone], nature);
 
-        faces_list = cs_gui_get_faces_list(izone,
-                                           boundaries->label[izone],
-                                           *nfabor, *nozppm, &faces);
-
         /* Default initialization: these values are the same that in raycli
            but given on each face in raycli whereas here one does not
            necessarily have boundary faces (parallism) -> duplication */
@@ -1051,9 +1047,9 @@ void CS_PROCF (uiray2, UIRAY2)
       }
     } /* if nature == "wall" */
 
-  } /* for izone */
+    BFT_FREE(faces_list);
 
-  BFT_FREE(faces_list);
+  } /* for izone */
 
   iok = 0;
   for (n = 0; n < *nfabor; n++) {

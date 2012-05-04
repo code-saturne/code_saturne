@@ -1411,6 +1411,8 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
       ifrlag[ifac-1] = izone+1;
     }
 
+    BFT_FREE(faces_list);
+
     path2 = cs_xpath_init_path();
     cs_xpath_add_elements(&path2, 2, "boundary_conditions", boundaries->nature[izone]);
     cs_xpath_add_test_attribute(&path2, "label", boundaries->label[izone]);
