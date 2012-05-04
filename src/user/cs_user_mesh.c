@@ -612,9 +612,9 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
     const cs_lnum_t  n_cells         = mesh->n_cells;
     const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
     cs_gnum_t *bad_cells             = mesh_quantities->bad_cells;
-    
+
     double *volume  = mesh_quantities->cell_vol;
-    
+
     cs_lnum_t i, iel_;
     cs_gnum_t n_cells_tot, iwarning, ibad;
 
@@ -628,15 +628,15 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
 
     for (i = 0; i < n_cells_wghosts; i++)
         bad_vol_cells[i] = 0;
-    
+
     /* Get the total number of cells within the domain */
     n_cells_tot = n_cells;
     if (cs_glob_rank_id >= 0)
         cs_parall_counter(&n_cells_tot, 1);
-    
+
     for (iel_ = 0; iel_ < n_cells; iel_++)
     {
-        /* Get the cell volume and compare to the user condition */        
+        /* Get the cell volume and compare to the user condition */
         if (volume[iel_] < 0.01)
         {
             /* Local array used to post-process results --> user tagged cells are set to 1 */
@@ -655,7 +655,7 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
             ibad++;
             iwarning++;
         }
-    
+
     /* Parallel processing */
     if (cs_glob_rank_id >= 0)
     {
@@ -671,7 +671,7 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
     /* Post processing */
     cs_post_write_var(-1, "User_bad_cells", 1, false, true, CS_POST_TYPE_cs_int_t,
                       -1, 0.0, bad_vol_cells, NULL, NULL);
-                    
+
     if (iwarning > 0)
         bft_printf(_("\n*****   WARNING: MESH QUALITY ISSUE BASED ON USER CRITERIA HAS BEEN DETECTED   *****\n"));
 

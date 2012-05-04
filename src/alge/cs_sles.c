@@ -2886,6 +2886,7 @@ cs_sles_solve(const char          *var_name,
                        vx,
                        aux_size,
                        aux_vectors);
+        else
           bft_error
             (__FILE__, __LINE__, 0,
              _("GMRES not supported with block_size > 1 (velocity coupling)."));

@@ -1741,7 +1741,7 @@ cs_mesh_quantities_create(void)
   mesh_quantities->cocg_it = NULL;
   mesh_quantities->cocg_lsq = NULL;
   mesh_quantities->bad_cells = NULL;
-  
+
   return (mesh_quantities);
 }
 
@@ -1853,7 +1853,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
   if (mesh_quantities->dofij == NULL)
     BFT_MALLOC(mesh_quantities->dofij, n_i_faces*dim, cs_real_t);
-  
+
   if (mesh_quantities->bad_cells == NULL)
     BFT_MALLOC(mesh_quantities->bad_cells, n_cells_with_ghosts, cs_gnum_t);
 
