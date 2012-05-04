@@ -419,7 +419,7 @@ if( iprco.le.0 ) then
   ! Ajout de la vitesse du solide dans le flux convectif,
   ! si le maillage est mobile (solide rigide)
   ! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
-  if (imobil.eq.1.and.iterns.eq.1) then
+  if (imobil.eq.1) then
 
     iflmas = ipprof(ifluma(iu))
     iflmab = ipprob(ifluma(iu))
@@ -485,7 +485,7 @@ call resopv &
 ! 4.  RESOLUTION DE LA VITESSE DE MAILLAGE EN ALE
 !===============================================================================
 
-if (iale.eq.1.and.iterns.eq.nterup) then
+if (iale.eq.1) then
 
   if (itrale.gt.nalinf) then
 
@@ -638,8 +638,8 @@ if( irevmc.eq.0 ) then
   endif
 endif
 
-  ! In the ALE framework, we add the mesh velocity
-  if (iale.eq.1.and.iterns.eq.nterup) then
+! In the ALE framework, we add the mesh velocity
+if (iale.eq.1) then
 
     do iel = 1, ncelet
       mshvel(1,iel) = rtp(iel,iuma)
@@ -719,7 +719,7 @@ endif
 ! si le maillage est mobile (solide rigide)
 ! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
 
-if (imobil.eq.1.and.iterns.eq.1) then
+if (imobil.eq.1) then
 
   iflmas = ipprof(ifluma(iu))
   iflmab = ipprob(ifluma(iu))
