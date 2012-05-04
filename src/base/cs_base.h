@@ -42,7 +42,7 @@
 
 /* System type name */
 
-#if defined(__blrts__) || defined(__bgp__)
+#if defined(__blrts__) || defined(__bg__)
 #define _CS_ARCH_Blue_Gene
 
 #elif defined(__linux__) || defined(__linux) || defined(linux)
@@ -59,6 +59,8 @@
 
 #if defined(__blrts__) || defined(__bgp__)
 #define CS_MEM_ALIGN 16
+#elif defined(__bgq__)
+#define CS_MEM_ALIGN 32
 #else
 #define CS_MEM_ALIGN 0
 #endif

@@ -631,6 +631,7 @@ class mpi_environment:
                                'LAM_MPI':self.__init_lam__,
                                'BGL_MPI':self.__init_bgl__,
                                'BGP_MPI':self.__init_bgp__,
+                               'BGQ_MPI':self.__init_bgq__,
                                'HP_MPI':self.__init_hp_mpi__,
                                'MPIBULL2':self.__init_mpibull2__}
             if self.type in mpi_env_by_type:
@@ -721,6 +722,10 @@ class mpi_environment:
                     break
             if self.mpiexec != None:
                 break
+
+        if (self.mpiexec == None):
+            basename = 'mpiexec'
+            self.mpiexec = 'mpiexec'
 
         # Determine if MPD should be handled
         # (if we are using a root MPD, no need for setup)
@@ -1045,6 +1050,29 @@ class mpi_environment:
 
         self.mpiexec_n = None
         self.mpmd = MPI_MPMD_configfile
+
+        # Other options to add
+
+        # Info commands
+
+    #---------------------------------------------------------------------------
+
+    def __init_bgq__(self, p, resource_info=None, wdir = None):
+
+        """
+        Initialize for Blue Gene/Q environment.
+        """
+
+        # Set base executable path
+
+        self.mpiexec = 'runjob'
+
+        # Determine processor count and MPMD handling
+
+        launcher_base = os.path.basename(self.mpiexec)
+
+        self.mpiexec_n = None
+        self.mpmd = None
 
         # Other options to add
 

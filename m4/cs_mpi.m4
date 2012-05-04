@@ -176,6 +176,8 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
       mpi_type=BGL_MPI
     elif test "x$cs_ibm_bg_type" = "xP" ; then
       mpi_type=BGP_MPI
+    elif test "x$cs_ibm_bg_type" = "xQ" ; then
+      mpi_type=BGQ_MPI
     fi
   fi
   if test "x$mpi_type" = "x"; then

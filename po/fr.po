@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-04-25 14:48+0200\n"
+"POT-Creation-Date: 2012-05-04 12:27+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6316,6 +6316,12 @@ msgstr ""
 msgid "Torus dimensions:    "
 msgstr "Dimensions du tore : "
 
+msgid "Block shape:         "
+msgstr "Forme de bloc :      "
+
+msgid "Torus links enabled: "
+msgstr "Liens du tore actifs :"
+
 msgid "appnum attribute:"
 msgstr "attribut appnum :"
 
@@ -7690,6 +7696,16 @@ msgstr ""
 " ne correspond à aucune face de bord.\n"
 
 #, c-format
+msgid ""
+"Error: can not interpret expression: %s\n"
+" %i"
+msgstr ""
+
+#, c-format
+msgid "Invalid turbulence model: %s.\n"
+msgstr ""
+
+#, c-format
 msgid "boundary nature %s is unknown \n"
 msgstr ""
 
@@ -7763,10 +7779,6 @@ msgstr ""
 msgid ""
 "Invalid attribute value: %s \n"
 "Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Invalid turbulence model: %s.\n"
 msgstr ""
 
 #, c-format
@@ -9461,3 +9473,17 @@ msgstr ""
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
 "\n"
+
+msgid ""
+"\n"
+"  Criteria 6: User Specific Tag:\n"
+msgstr ""
+
+msgid "    Number of bad cells detected: %llu --> %3.0f %%\n"
+msgstr "    Nombre de mauvaises cellules détecté : %llu --> %3.0f %%\n"
+
+msgid ""
+"\n"
+"*****   WARNING: MESH QUALITY ISSUE BASED ON USER CRITERIA HAS BEEN "
+"DETECTED   *****\n"
+msgstr ""
