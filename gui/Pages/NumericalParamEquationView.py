@@ -100,6 +100,48 @@ class SchemeOrderDelegate(QItemDelegate):
                 model.setData(idx, QVariant(value))
 
 #-------------------------------------------------------------------------------
+# Combo box delegate for IRESOL
+#-------------------------------------------------------------------------------
+
+class SolveurChoiceDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent=None, xml_model=None):
+        super(SolveurChoiceDelegate, self).__init__(parent)
+        self.parent = parent
+        self.mdl = xml_model
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        editor.addItem(QString("Conjugate gradient"))
+        editor.addItem(QString("Jacobi"))
+        editor.addItem(QString("BI-CGSTAB"))
+        editor.addItem(QString("GMRES"))
+        editor.addItem(QString("Multigrid"))
+        editor.installEventFilter(self)
+        if index.row() > 0:
+            editor.removeItem(4)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        dico = {"conjugate_gradient": 0, "jacobi": 1, "bi_cgstab": 2, "gmres": 3, "multigrid":4}
+        row = index.row()
+        string = index.model().dataSolver[row]['iresol']
+        idx = dico[string]
+        comboBox.setCurrentIndex(idx)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = comboBox.currentText()
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, QVariant(value))
+
+#-------------------------------------------------------------------------------
 # Line edit delegate for BLENCV
 #-------------------------------------------------------------------------------
 
@@ -136,6 +178,37 @@ class BlendingFactorDelegate(QItemDelegate):
                     model.setData(idx, QVariant(value))
 
 #-------------------------------------------------------------------------------
+# Line edit delegate for nswrsm
+#-------------------------------------------------------------------------------
+
+class RhsReconstructionDelegate(QItemDelegate):
+    def __init__(self, parent=None, xml_model=None):
+        super(RhsReconstructionDelegate, self).__init__(parent)
+        self.parent = parent
+        self.turb = xml_model
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        validator = QtPage.IntValidator(editor, min=1)
+        editor.setValidator(validator)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        value = index.model().data(index, Qt.DisplayRole).toString()
+        editor.setText(value)
+
+
+    def setModelData(self, editor, model, index):
+        value, ok = editor.text().toDouble()
+        if editor.validator().state == QValidator.Acceptable:
+            selectionModel = self.parent.selectionModel()
+            for idx in selectionModel.selectedIndexes():
+                if idx.column() == index.column():
+                    model.setData(idx, QVariant(value))
+
+#-------------------------------------------------------------------------------
 # Delegate for Solver QTableView
 #-------------------------------------------------------------------------------
 
@@ -147,10 +220,10 @@ class SolveurDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        if index.column() == 2:
+        if index.column() == 3:
             validator = QtPage.DoubleValidator(editor, min=0., max=0.01)
             validator.setExclusiveMin(True)
-        else:
+        elif (index.column() == 2 or index.column() == 4):
             validator = QtPage.IntValidator(editor, min=1)
         editor.setValidator(validator)
         editor.installEventFilter(self)
@@ -163,9 +236,9 @@ class SolveurDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if index.column() == 2:
+        if index.column() == 3:
             value, ok = editor.text().toDouble()
-        else:
+        elif (index.column() == 2 or index.column() == 4):
             value, ok = editor.text().toInt()
         if editor.validator().state == QValidator.Acceptable:
             selectionModel = self.parent.selectionModel()
@@ -192,13 +265,14 @@ class StandardItemModelScheme(QStandardItemModel):
                         self.tr("Scheme"),
                         self.tr("Blending\nFactor"),
                         self.tr("Slope\nTest"),
-                        self.tr("Flux\nReconstruction")]
+                        self.tr("Flux\nReconstruction"),
+                        self.tr("RHS Sweep\nReconstruction")]
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
         for row in range(self.rowCount()):
             for column in range(self.columnCount()):
-                if column < 3:
+                if column == 1 or column == 2 or column == 5:
                     role = Qt.DisplayRole
                 else:
                     role = Qt.CheckStateRole
@@ -221,6 +295,7 @@ class StandardItemModelScheme(QStandardItemModel):
             dico['ischcv'] = self.NPE.getScheme(label)
             dico['isstpc'] = self.NPE.getSlopeTest(label)
             dico['ircflu'] = self.NPE.getFluxReconstruction(label)
+            dico['nswrsm'] = self.NPE.getRhsReconstruction(label)
             self.dataScheme.append(dico)
             log.debug("populateModel-> dataScheme = %s" % dico)
             row = self.rowCount()
@@ -243,6 +318,8 @@ class StandardItemModelScheme(QStandardItemModel):
                 return QVariant(self.tr("Code_Saturne keyword: ISSTPC"))
             elif index.column() == 4:
                 return QVariant(self.tr("Code_Saturne keyword: IRCFLU"))
+            elif index.column() == 5:
+                return QVariant(self.tr("Code_Saturne keyword: NSWRSM"))
 
         elif role == Qt.DisplayRole:
             if index.column() == 0:
@@ -251,6 +328,8 @@ class StandardItemModelScheme(QStandardItemModel):
                 return QVariant(self.dicoM2V[dico['ischcv']])
             elif index.column() == 2:
                 return QVariant(dico['blencv'])
+            elif index.column() == 5:
+                return QVariant(dico['nswrsm'])
             else:
                 return QVariant()
 
@@ -282,7 +361,7 @@ class StandardItemModelScheme(QStandardItemModel):
 
         if index.column() == 0:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        elif index.column() == 1 or index.column() == 2:
+        elif index.column() == 1 or index.column() == 2 or index.column() == 5:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         elif index.column() == 3 or index.column() == 4:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
@@ -347,6 +426,11 @@ class StandardItemModelScheme(QStandardItemModel):
                 self.dataScheme[row]['ircflu'] = "on"
             self.NPE.setFluxReconstruction(label, self.dataScheme[row]['ircflu'])
 
+        # set BLENCV
+        elif index.column() == 5:
+            self.dataScheme[row]['nswrsm'], ok = value.toInt()
+            self.NPE.setRhsReconstruction(label, self.dataScheme[row]['nswrsm'])
+
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
 
@@ -372,19 +456,24 @@ class StandardItemModelSolver(QStandardItemModel):
 
 
     def populateModel(self):
+        self.dicoV2M= {"Multigrid": 'multigrid',"Conjugate gradient" : 'conjugate_gradient',
+                       "Jacobi": 'jacobi', "BI-CGSTAB": 'bi_cgstab', "GMRES": 'gmres'}
+        self.dicoM2V= {"multigrid" : 'Multigrid',"conjugate_gradient" : 'Conjugate gradient',
+                       "jacobi": 'Jacobi', "bi_cgstab": 'BI-CGSTAB', 'gmres': "GMRES"}
         for label in self.NPE.getSolveurList():
             row = self.rowCount()
             self.setRowCount(row + 1)
 
             dico           = {}
             dico['label']  = label
+            dico['iresol'] = self.NPE.getSolveurChoice(label)
             dico['nitmax'] = self.NPE.getMaxIterNumber(label)
             dico['epsilo'] = self.NPE.getSolveurPrecision(label)
             if self.NPE.isScalar(label):
                 dico['cdtvar'] = self.NPE.getScalarTimeStepFactor(label)
             else:
                 dico['cdtvar'] = ""
-                self.disabledItem.append((row,3))
+                self.disabledItem.append((row,4))
 
             self.dataSolver.append(dico)
             log.debug("populateModel-> dataSolver = %s" % dico)
@@ -397,10 +486,12 @@ class StandardItemModelSolver(QStandardItemModel):
 
         if role == Qt.ToolTipRole:
             if index.column() == 1:
-                return QVariant(self.tr("Code_Saturne keyword: NITMAX"))
+                return QVariant(self.tr("Code_Saturne keyword: IRESOL"))
             elif index.column() == 2:
-                return QVariant(self.tr("Code_Saturne keyword: EPSILO"))
+                return QVariant(self.tr("Code_Saturne keyword: NITMAX"))
             elif index.column() == 3:
+                return QVariant(self.tr("Code_Saturne keyword: EPSILO"))
+            elif index.column() == 4:
                 return QVariant(self.tr("Code_Saturne keyword: CDTVAR"))
 
         elif role == Qt.DisplayRole:
@@ -410,10 +501,12 @@ class StandardItemModelSolver(QStandardItemModel):
             if index.column() == 0:
                 return QVariant(dico['label'])
             elif index.column() == 1:
-                return QVariant(dico['nitmax'])
+                return QVariant(self.dicoM2V[dico['iresol']])
             elif index.column() == 2:
-                return QVariant(dico['epsilo'])
+                return QVariant(dico['nitmax'])
             elif index.column() == 3:
+                return QVariant(dico['epsilo'])
+            elif index.column() == 4:
                 return QVariant(dico['cdtvar'])
             else:
                 return QVariant()
@@ -443,10 +536,12 @@ class StandardItemModelSolver(QStandardItemModel):
             if section == 0:
                 return QVariant(self.tr("Name"))
             elif section == 1:
-                return QVariant(self.tr("Maximum\nIteration Number"))
+                return QVariant(self.tr("Solver\nChoice"))
             elif section == 2:
-                return QVariant(self.tr("Solver\nPrecision"))
+                return QVariant(self.tr("Maximum\nIteration Number"))
             elif section == 3:
+                return QVariant(self.tr("Solver\nPrecision"))
+            elif section == 4:
                 return QVariant(self.tr("Time Step\nFactor"))
             else:
                 return QVariant()
@@ -458,14 +553,18 @@ class StandardItemModelSolver(QStandardItemModel):
         label = self.dataSolver[row]['label']
 
         if index.column() == 1:
+            self.dataSolver[row]['iresol'] = self.dicoV2M[str(value.toString())]
+            self.NPE.setSolveurChoice(label, self.dataSolver[row]['iresol'])
+
+        elif index.column() == 2:
             self.dataSolver[row]['nitmax'], ok = value.toInt()
             self.NPE.setMaxIterNumber(label, self.dataSolver[row]['nitmax'])
 
-        elif index.column() == 2:
+        elif index.column() == 3:
             self.dataSolver[row]['epsilo'], ok = value.toDouble()
             self.NPE.setSolveurPrecision(label, self.dataSolver[row]['epsilo'])
 
-        elif index.column() == 3:
+        elif index.column() == 4:
             self.dataSolver[row]['cdtvar'], ok = value.toDouble()
             self.NPE.setScalarTimeStepFactor(label, self.dataSolver[row]['cdtvar'])
 
@@ -582,6 +681,7 @@ class StandardItemModelClipping(QStandardItemModel):
             self._data.append(dico)
             log.debug("populateModel-> _data = %s" % dico)
 
+
     def data(self, index, role):
         if not index.isValid():
             return QVariant()
@@ -607,12 +707,15 @@ class StandardItemModelClipping(QStandardItemModel):
 
         return QVariant()
 
+
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
 
         if index.column() == 0:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        elif index.column() == 1:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
@@ -632,7 +735,6 @@ class StandardItemModelClipping(QStandardItemModel):
         if index.column() == 1:
             self._data[row]['scamin'] , ok = value.toDouble()
             self.NPE.setMinValue(label, self._data[row]['scamin'])
-
 
         elif index.column() == 2:
             self._data[row]['scamax'], ok = value.toDouble()
@@ -701,6 +803,9 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         delegateBLENCV = BlendingFactorDelegate(self.tableViewScheme, self.turb)
         self.tableViewScheme.setItemDelegateForColumn(2, delegateBLENCV)
 
+        delegateNSWRSM = RhsReconstructionDelegate(self.tableViewScheme, self.turb)
+        self.tableViewScheme.setItemDelegateForColumn(5, delegateNSWRSM)
+
         # Solveur
         self.modelSolver = StandardItemModelSolver(self.NPE, self.SM)
         self.tableViewSolver.setModel(self.modelSolver)
@@ -713,10 +818,13 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.tableViewSolver.horizontalHeader().setResizeMode(QHeaderView.Stretch)
 
         if self.SM.getSteadyFlowManagement() == 'on':
-            self.tableViewSolver.setColumnHidden(3, True)
+            self.tableViewSolver.setColumnHidden(4, True)
 
         delegate = SolveurDelegate(self.tableViewSolver)
         self.tableViewSolver.setItemDelegate(delegate)
+
+        delegateSolverChoice = SolveurChoiceDelegate(self.tableViewSolver)
+        self.tableViewSolver.setItemDelegateForColumn(1, delegateSolverChoice)
 
         # Clipping
         self.modelClipping = StandardItemModelClipping(self,self.NPE)

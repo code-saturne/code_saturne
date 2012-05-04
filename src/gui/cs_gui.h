@@ -276,7 +276,10 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
                                          int *const ircflu,
                                       double *const cdtvar,
                                          int *const nitmax,
-                                      double *const epsilo);
+                                      double *const epsilo,
+                                         int *const iresol,
+                                         int *const imgrpr,
+                                         int *const nswrsm);
 
 /*----------------------------------------------------------------------------
  * Global numerical parameters.
@@ -291,7 +294,6 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
  * INTEGER          IPUCOU  <--   velocity pressure coupling
  * INTEGER          EXTRAG  <--   wall pressure extrapolation
  * INTEGER          IMRGRA  <--   gradient reconstruction
- * INTEGER          IMGR    <--   multigrid algorithm for pressure
  * INTEGER          NTERUP  <--   piso sweep number
  *----------------------------------------------------------------------------*/
 
@@ -300,7 +302,6 @@ void CS_PROCF (csnum2, CSNUM2) (   int *const ivisse,
                                    int *const ipucou,
                                 double *const extrag,
                                    int *const imrgra,
-                                   int *const imgrpr,
                                    int *const nterup);
 
 void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,

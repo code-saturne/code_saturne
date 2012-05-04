@@ -89,7 +89,7 @@ integer          iverif
 integer          ii, iscal , nmodpp
 integer          nscmax, nesmax, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
-integer          ialgce, imgrpr, icwfps
+integer          ialgce, icwfps
 integer          iappel, ioptit, ioplsq
 double precision relaxp, extrap, cwfthr
 
@@ -392,17 +392,15 @@ if(iihmpr.eq.1) then
   call uinum1                                                     &
   !==========
         (isca, iscapp, blencv, ischcv, isstpc, ircflu,            &
-         cdtvar, nitmax, epsilo)
+         cdtvar, nitmax, epsilo, iresol, imgr, nswrsm)
 
 !     Options numériques globales
   relaxp = -999.d0
   extrap = 0.d0
-  imgrpr = 1
-  call csnum2 (ivisse, relaxp, ipucou, extrap, imrgra, imgrpr, nterup)
+  call csnum2 (ivisse, relaxp, ipucou, extrap, imrgra, nterup)
   !==========
   extrag(ipr) = extrap
   if (idtvar.ge.0) relaxv(ipr) = relaxp
-  imgr(ipr) = imgrpr
 
 !     Gravite, prop. phys
   call csphys                                                     &

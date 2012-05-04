@@ -69,7 +69,6 @@ class NumericalParamGlobalModel(Model):
         default values
         """
         self.default = {}
-        self.default['multigrid'] = 'on'
         self.default['gradient_transposed'] = 'on'
         self.default['pressure_relaxation'] = 1.
         self.default['density_relaxation'] = 0.95
@@ -81,18 +80,6 @@ class NumericalParamGlobalModel(Model):
         self.default['velocity_pressure_algo'] ='simplec'
         self.default['piso_sweep_number'] = 2
         return self.default
-
-
-    def getMultigrid(self):
-        """
-        Return status of multigrid algorithm for pressure
-        """
-        node = self.node_np.xmlInitNode('multigrid', 'status')
-        status = node['status']
-        if not status:
-            status = self._defaultValues()['multigrid']
-            self.setMultigrid(status)
-        return status
 
 
     def getTransposedGradient(self):
@@ -205,15 +192,6 @@ class NumericalParamGlobalModel(Model):
             value = self._defaultValues()['piso_sweep_number']
             self.setPisoSweepNumber(value)
         return value
-
-
-    def setMultigrid(self, status):
-        """
-        Put status of multigrid algorithm for pressure
-        """
-        self.isOnOff(status)
-        node = self.node_np.xmlInitNode('multigrid', 'status')
-        node['status'] = status
 
 
     def setTransposedGradient(self, status):

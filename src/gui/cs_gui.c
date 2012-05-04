@@ -610,6 +610,33 @@ cs_gui_variable_attribute(const char *const name,
 }
 
 /*----------------------------------------------------------------------------
+ * Return the attribute choice associated to a child markup from a variable.
+ *
+ * parameters:
+ *   name          -->  name of the variable markup
+ *   child         -->  child markup
+ *----------------------------------------------------------------------------*/
+
+static char *cs_gui_variable_choice(const char *const name,
+                                    const char *const child)
+{
+  char *path = NULL;
+  char *choice;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "variable");
+  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_xpath_add_element(&path, child);
+  cs_xpath_add_attribute(&path, "choice");
+
+  choice = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return choice;
+}
+
+/*----------------------------------------------------------------------------
  * Get the text value associated to a child markup from a scalar.
  *
  * parameters:
@@ -2351,10 +2378,14 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
                                          int *const ircflu,
                                       double *const cdtvar,
                                          int *const nitmax,
-                                      double *const epsilo)
+                                      double *const epsilo,
+                                         int *const iresol,
+                                         int *const imgr,
+                                         int *const nswrsm)
 {
   int i, j, jj, k;
   double tmp;
+  char* algo_choice = NULL;
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -2368,17 +2399,58 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
   cs_gui_variable_value(vars->name[0], "max_iter_number", &tmp);
   nitmax[j] = (int) tmp;
 
+  imgr[j] = 0;
+
+  algo_choice = cs_gui_variable_choice(vars->name[0], "solveur_choice");
+  if (cs_gui_strcmp(algo_choice, "multigrid"))
+  {
+    iresol[j] == 0;
+    imgr[j] = 1;
+  }
+  else if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
+    iresol[j] == 0;
+  else if (cs_gui_strcmp(algo_choice, "jacobi"))
+    iresol[j] == 1;
+  else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
+    iresol[j] == 2;
+  else if (cs_gui_strcmp(algo_choice, "gmres"))
+    iresol[j] == 3;
+  else //default value
+  {
+    iresol[j] == 0;
+    imgr[j] = 1;
+  }
+
   /* 1-b) for the other variables */
   for (i=1; i < k; i++) {
     j = vars->rtp[i];
     cs_gui_variable_value(vars->name[i], "blending_factor", &blencv[j]);
     cs_gui_variable_value(vars->name[i], "solveur_precision", &epsilo[j]);
+
+    imgr[j] = 0;
+
+    algo_choice = cs_gui_variable_choice(vars->name[i], "solveur_choice");
+
+    if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
+      iresol[j] == 0;
+    else if (cs_gui_strcmp(algo_choice, "jacobi"))
+      iresol[j] == 1;
+    else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
+      iresol[j] == 2;
+    else if (cs_gui_strcmp(algo_choice, "gmres"))
+      iresol[j] == 3;
+    else //default value
+      iresol[j] == 1;
+
     tmp = (double) nitmax[j];
     cs_gui_variable_value(vars->name[i], "max_iter_number", &tmp);
     nitmax[j] = (int) tmp;
     cs_gui_variable_attribute(vars->name[i], "order_scheme", &ischcv[j]);
     cs_gui_variable_attribute(vars->name[i], "slope_test", &isstpc[j]);
     cs_gui_variable_attribute(vars->name[i], "flux_reconstruction", &ircflu[j]);
+    tmp = (double) nswrsm[j];
+    cs_gui_variable_value(vars->name[i], "rhs_reconstruction", &tmp);
+    nswrsm[j] = (int) tmp;
   }
 
   /* 2) user scalars */
@@ -2388,6 +2460,21 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       j = isca[i]-1;
       cs_gui_scalar_value(vars->label[i], "blending_factor", &blencv[j]);
       cs_gui_scalar_value(vars->label[i], "solveur_precision", &epsilo[j]);
+
+      imgr[j] = 0;
+
+      algo_choice = cs_gui_variable_choice(vars->name[i], "solveur_choice");
+      if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
+        iresol[j] == 0;
+      else if (cs_gui_strcmp(algo_choice, "jacobi"))
+        iresol[j] == 1;
+      else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
+        iresol[j] == 2;
+      else if (cs_gui_strcmp(algo_choice, "gmres"))
+        iresol[j] == 3;
+      else //default value
+        iresol[j] == 1;
+
       cs_gui_scalar_value(vars->label[i], "time_step_factor", &cdtvar[j]);
       tmp = (double) nitmax[j];
       cs_gui_scalar_value(vars->label[i], "max_iter_number", &tmp);
@@ -2395,6 +2482,9 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       cs_gui_scalar_attribute(vars->label[i], "order_scheme", &ischcv[j]);
       cs_gui_scalar_attribute(vars->label[i], "slope_test", &isstpc[j]);
       cs_gui_scalar_attribute(vars->label[i], "flux_reconstruction", &ircflu[j]);
+      tmp = (double) nswrsm[j];
+      cs_gui_scalar_value(vars->label[i], "rhs_reconstruction", &tmp);
+      nswrsm[j] = (int) tmp;
     }
   }
 
@@ -2407,12 +2497,30 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       cs_gui_model_scalar_value(vars->model, vars->label[j], "blending_factor", &blencv[jj]);
       cs_gui_model_scalar_value(vars->model, vars->label[j], "solveur_precision", &epsilo[jj]);
       cs_gui_model_scalar_value(vars->model, vars->label[j], "time_step_factor", &cdtvar[jj]);
+
+      imgr[j] = 0;
+
+      algo_choice = cs_gui_variable_choice(vars->name[0], "solveur_choice");
+      if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
+        iresol[j] == 0;
+      else if (cs_gui_strcmp(algo_choice, "jacobi"))
+        iresol[j] == 1;
+      else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
+        iresol[j] == 2;
+      else if (cs_gui_strcmp(algo_choice, "gmres"))
+        iresol[j] == 3;
+      else //default value
+        iresol[j] == 1;
+
       tmp = (double) nitmax[jj];
       cs_gui_model_scalar_value(vars->model, vars->label[j], "max_iter_number", &tmp);
       nitmax[jj] = (int) tmp;
       cs_gui_model_scalar_output_status(vars->model, vars->label[j], "order_scheme", &ischcv[jj]);
       cs_gui_model_scalar_output_status(vars->model, vars->label[j], "slope_test", &isstpc[jj]);
       cs_gui_model_scalar_output_status(vars->model, vars->label[j], "flux_reconstruction", &ircflu[jj]);
+      tmp = (double) nswrsm[jj];
+      cs_gui_model_scalar_value(vars->model, vars->label[j], "rhs_reconstruction", &tmp);
+      nswrsm[jj] = (int) tmp;
     }
   }
 
@@ -2427,6 +2535,9 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     bft_printf("--ischcv = %i\n", ischcv[vars->rtp[i]]);
     bft_printf("--isstpc = %i\n", isstpc[vars->rtp[i]]);
     bft_printf("--ircflu = %i\n", ircflu[vars->rtp[i]]);
+    bft_printf("--nswrsm = %i\n", nswrsm[vars->rtp[i]]);
+    bft_printf("--imgr = %i\n"  , imgr[vars->rtp[i]]);
+    bft_printf("--iresol = %i\n", iresol[vars->rtp[i]]);
   }
   for (i=0 ; i < vars->nscaus + vars->nscapp ; i++) {
     bft_printf("-->scalar[%i]: %s\n", isca[i]-1, vars->label[i]);
@@ -2437,6 +2548,9 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     bft_printf("--ischcv = %i\n", ischcv[isca[i]-1]);
     bft_printf("--isstpc = %i\n", isstpc[isca[i]-1]);
     bft_printf("--ircflu = %i\n", ircflu[isca[i]-1]);
+    bft_printf("--nswrsm = %i\n", nswrsm[isca[i]-1]);
+    bft_printf("--imgr = %i\n"  , imgr[isca[i]-1]);
+    bft_printf("--iresol = %i\n", iresol[isca[i]-1]);
   }
 #endif
 }
@@ -2462,14 +2576,12 @@ void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
                                   int *const ipucou,
                                double *const extrag,
                                   int *const imrgra,
-                                  int *const imgrpr,
                                   int *const nterup)
 {
   cs_gui_numerical_int_parameters("gradient_transposed", ivisse);
   cs_gui_numerical_int_parameters("velocity_pressure_coupling", ipucou);
   cs_gui_numerical_int_parameters("gradient_reconstruction", imrgra);
   cs_gui_numerical_int_parameters("piso_sweep_number", nterup);
-  cs_gui_numerical_int_parameters("multigrid", imgrpr);
   cs_gui_numerical_double_parameters("wall_pressure_extrapolation", extrag);
   cs_gui_numerical_double_parameters("pressure_relaxation", relaxp);
 
@@ -2481,7 +2593,6 @@ void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
   bft_printf("--nterup = %i\n", *nterup);
   bft_printf("--extrag = %f\n", *extrag);
   bft_printf("--relaxp = %f\n", *relaxp);
-  bft_printf("--imgrpr = %i\n", *imgrpr);
 #endif
 }
 

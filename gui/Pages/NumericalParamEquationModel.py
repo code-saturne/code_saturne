@@ -100,6 +100,9 @@ class NumericalParamEquatModel(Model):
         self.default['slope_test'] = 'on'
         self.default['flux_reconstruction'] = 'on'
 
+        self.default['solveur_choice_pressure'] = 'multigrid'
+        self.default['solveur_choice'] = 'jacobi'
+
         if label not in self.var:
             self.default['order_scheme'] = 'upwind'
             self.default['blending_factor'] = 0.
@@ -111,6 +114,9 @@ class NumericalParamEquatModel(Model):
             ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
             if label in self.UVW:
                 self.default['slope_test'] = 'off'
+            self.default['rhs_reconstruction'] = 10
+        else:
+            self.default['rhs_reconstruction'] = 2
 
         if label in self.thermo:
             for node in self._getThermalScalarNode():
@@ -260,6 +266,7 @@ class NumericalParamEquatModel(Model):
                 self.setScheme(label, self._defaultValues(label)['order_scheme'])
                 self.setSlopeTest(label, self._defaultValues(label)['slope_test'])
                 self.setFluxReconstruction(label, self._defaultValues(label)['flux_reconstruction'])
+                self.setRhsReconstruction(label, self._defaultValues(label)['rhs_reconstruction'])
             except:
                 pass
 
@@ -345,6 +352,15 @@ class NumericalParamEquatModel(Model):
         return value
 
 
+    def getRhsReconstruction(self, label):
+        """ Return value of blending factor for variable labelled label """
+        node = self._getSchemeLabelNode(label)
+        value = node.xmlGetDouble('rhs_reconstruction')
+        if value == None:
+            value = self._defaultValues(label)['rhs_reconstruction']
+        return value
+
+
     def setBlendingFactor(self, label, value):
         """
         Put value of blending factor for variable labelled label
@@ -407,6 +423,16 @@ class NumericalParamEquatModel(Model):
             n['status']=value
 
 
+    def setRhsReconstruction(self, label, value):
+        """
+        Put value of blending factor for variable labelled label
+        only if it 's different of default value
+        """
+        self.isInt(value)
+        node = self._getSchemeLabelNode(label)
+        node.xmlSetData('rhs_reconstruction', value)
+
+
 # Following methods for dependances of solveur:
 
     def setMaxIterNumber(self, label, value):
@@ -435,6 +461,22 @@ class NumericalParamEquatModel(Model):
             node.xmlRemoveChild('solveur_precision')
 
 
+    def setSolveurChoice(self, label, value):
+        """ Put choice of solveur for variable labelled label """
+        self.isInList(value, ('multigrid', 'conjugate_gradient', 'jacobi', 'bi_cgstab', 'gmres'))
+        node = self._getSolveurLabelNode(label)
+        if self._isPressure(node):
+            default = self._defaultValues()['solveur_choice_pressure']
+        else:
+            default = self._defaultValues()['solveur_choice']
+
+        if value != default:
+            n = node.xmlInitNode('solveur_choice')
+            n['choice'] = value
+        else:
+            node.xmlRemoveChild('solveur_choice')
+
+
     def getMaxIterNumber(self, label):
         """ Return number of maximum iterations for variable labelled label """
         node = self._getSolveurLabelNode(label)
@@ -455,6 +497,22 @@ class NumericalParamEquatModel(Model):
 
         value = node.xmlGetDouble('solveur_precision')
         if value == None:
+            value = default
+        return value
+
+
+    def getSolveurChoice(self, label):
+        """ Return choice of solveur for variable labelled label """
+        node = self._getSolveurLabelNode(label)
+        n = node.xmlGetNode('solveur_choice')
+
+        if n:
+            value = n['choice']
+        else:
+            if self._isPressure(node):
+                default = self._defaultValues()['solveur_choice_pressure']
+            else:
+                default = self._defaultValues()['solveur_choice']
             value = default
         return value
 

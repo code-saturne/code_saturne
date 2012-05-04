@@ -106,7 +106,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
 
         # Connections
         self.connect(self.checkBoxIVISSE, SIGNAL("clicked()"), self.slotIVISSE)
-        self.connect(self.checkBoxIMGR,   SIGNAL("clicked()"), self.slotIMGR)
         self.connect(self.checkBoxIPUCOU, SIGNAL("clicked()"), self.slotIPUCOU)
         self.connect(self.checkBoxImprovedPressure, SIGNAL("clicked()"), self.slotImprovedPressure)
         self.connect(self.comboBoxEXTRAG, SIGNAL("activated(const QString&)"), self.slotEXTRAG)
@@ -123,11 +122,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         validatorSRROM.setExclusiveMin(True)
         self.lineEditRELAXP.setValidator(validatorRELAXP)
         self.lineEditSRROM.setValidator(validatorSRROM)
-
-        if self.model.getMultigrid() == 'on':
-            self.checkBoxIMGR.setChecked(True)
-        else:
-            self.checkBoxIMGR.setChecked(False)
 
         if self.model.getTransposedGradient() == 'on':
             self.checkBoxIVISSE.setChecked(True)
@@ -176,17 +170,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
 
         # Update the Tree files and folders
         self.browser.configureTree(self.case)
-
-
-    @pyqtSignature("")
-    def slotIMGR(self):
-        """
-        Set value for parameter IMGR
-        """
-        if self.checkBoxIMGR.isChecked():
-            self.model.setMultigrid("on")
-        else:
-            self.model.setMultigrid("off")
 
 
     @pyqtSignature("")
