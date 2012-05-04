@@ -639,7 +639,7 @@ void CS_PROCF(nbesyr, NBESYR)
 
   else {
     cs_syr4_coupling_t *syr_coupling
-      = cs_syr4_coupling_by_id(*coupl_num - - 1);
+      = cs_syr4_coupling_by_id(*coupl_num - 1);
     *n_coupl_elts = cs_syr4_coupling_get_n_elts(syr_coupling, *mode);
   }
 }
