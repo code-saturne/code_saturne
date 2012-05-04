@@ -95,40 +95,14 @@ class Plot(object):
         ycol         = int(parser.getAttribute(node, "ycol"))
 
         # Read optional attributes
-        try:
-            self.legend = parser.getAttribute(node, "legend")
-        except:
-            self.legend = ""
+        self.legend = parser.getAttribute(node, "legend", "")
 
-        try:
-            self.fmt = parser.getAttribute(node, "fmt")
-        except:
-            self.fmt = ""
-
-        try:
-            xcol = int(parser.getAttribute(node, "xcol"))
-        except:
-            xcol = None
-
-        try:
-            xplus = float(parser.getAttribute(node, "xplus"))
-        except:
-            xplus = 0
-
-        try:
-            xfois = float(parser.getAttribute(node, "xfois"))
-        except:
-            xfois = 1
-
-        try:
-            yplus = float(parser.getAttribute(node, "yplus"))
-        except:
-            yplus = 0
-
-        try:
-            yfois = float(parser.getAttribute(node, "yfois"))
-        except:
-            yfois = 1
+        self.fmt = parser.getAttribute(node, "fmt", "")
+        xcol  = int(parser.getAttribute(node,   "xcol",  0))
+        xplus = float(parser.getAttribute(node, "xplus", 0))
+        xfois = float(parser.getAttribute(node, "xfois", 1))
+        yplus = float(parser.getAttribute(node, "yplus", 0))
+        yfois = float(parser.getAttribute(node, "yfois", 1))
 
         self.uploadData(xcol, ycol, xplus, xfois, yplus, yfois)
 
@@ -258,10 +232,10 @@ class Subplot(object):
         self.id = int(parser.getAttribute(node, "id"))
 
         # Read optional attributes
-        self.xlabel    = parser.getAttribute(node, "xlabel", False)
-        self.ylabel    = parser.getAttribute(node, "ylabel", False)
-        self.title     = parser.getAttribute(node, "title", False)
-        self.legstatus = parser.getAttribute(node, "legstatus", False)
+        self.xlabel    = parser.getAttribute(node, "xlabel", "")
+        self.ylabel    = parser.getAttribute(node, "ylabel", "")
+        self.title     = parser.getAttribute(node, "title",  "")
+        self.legstatus = parser.getAttribute(node, "legstatus", "off")
 
         try:
             self.legpos = [float(s) for s in parser.getAttribute(node, "legpos").split()]
@@ -308,8 +282,7 @@ class Figure(object):
         self.file_name = node.attributes["name"].value
         self.l_subplots = [int(s) for s in node.attributes["idlist"].value.split()]
 
-        self.tags = ("title", "nbrow", "nbcol")
-        for tag in self.tags:
+        for tag in ("title", "nbrow", "nbcol"):
             self.__dict__[tag] = parser.getAttribute(node, tag, False)
 
         self.cmd = []
@@ -439,9 +412,9 @@ class Plotter(object):
         self.parser = parser
 
 
-    def __number_of_col(self, file_name):
+    def __number_of_column(self, file_name):
         """
-        Upload and parse listing
+        Compute the number of column of the data file.
         """
         nbr = 0
         f = open(file_name, 'r')
@@ -488,7 +461,7 @@ class Plotter(object):
                     if not os.path.isfile(f):
                         raise ValueError, "This file does not exist: %s" % f
 
-                    for ycol in range(2, self.__number_of_col(f) + 1):
+                    for ycol in range(2, self.__number_of_column(f) + 1):
                         curve = Probes(f, fig, ycol)
                         self.curves.append(curve)
                         self.n_plots = max(self.n_plots, curve.subplot)
@@ -517,8 +490,8 @@ class Plotter(object):
                         if not os.path.isfile(f):
                             raise ValueError, "This file does not exist: %s" % f
 
-                    for node in plots:
-                        curve = Plot(node, self.parser, f)
+                    for nn in plots:
+                        curve = Plot(nn, self.parser, f)
                         curve.setMeasurement(False)
                         self.curves.append(curve)
                         self.n_plots = max(self.n_plots, curve.subplot)

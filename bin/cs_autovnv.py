@@ -176,10 +176,19 @@ def runAutoverif(pkg, opt_f, opt_v, opt_r, opt_c, opt_p, opt_to):
 
     # Scripts
 
-    exe = os.path.join(pkg.bindir, pkg.name)
+    if pkg.name == "code_saturne":
+        cs_exe = os.path.join(pkg.bindir, pkg.name)
+        nc_exe = None
+    elif pkg.name == "neptune_cfd":
+        nc_exe = os.path.join(pkg.bindir, pkg.name)
+        from cs_package import package
+        cs_exe = os.path.join(package().bindir, package().name)
+    else:
+        sys.exit(1)
+
     dif = pkg.get_io_dump()
 
-    for p in exe, dif:
+    for p in cs_exe, dif:
         if not os.path.isfile(p):
             print "Error: executable %s not found." % p
             sys.exit(1)
@@ -188,7 +197,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_r, opt_c, opt_p, opt_to):
 
     # Read the file of parameters
 
-    studies = Studies(opt_f, opt_v, opt_r, opt_c, opt_p, exe, dif)
+    studies = Studies(opt_f, opt_v, opt_r, opt_c, opt_p, cs_exe, nc_exe, dif)
     os.chdir(studies.getDestination())
 
     # Print header
@@ -241,7 +250,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_r, opt_c, opt_p, opt_to):
         studies.check_compare()
         studies.compare()
 
-    # Postprocess results
+    # Postprocess results and probes
 
     if opt_p:
         studies.check_script()

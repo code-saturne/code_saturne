@@ -135,8 +135,7 @@ class Parser(object):
         l = father.getElementsByTagName(childname)
 
         if len(l) == 0:
-            el = self.doc.createElement(childname)
-            return father.appendChild(el)
+            return None
         elif len(l) == 1:
             return l.item(0)
         else:
@@ -426,7 +425,14 @@ class Parser(object):
         @return: C{List} of nodes <plot>, and C{List} of file names
         """
         f  = str(node.attributes["file"].value)
-        plots = node.getElementsByTagName("plot")
+
+        if node.tagName == "data":
+            plots = node.getElementsByTagName("plot")
+        elif node.tagName == "resu":
+            plots = node.getElementsByTagName("scalar")
+        else:
+            plots = []
+
         try:
             dest  = str(node.attributes["dest"].value)
         except:
@@ -516,16 +522,31 @@ class Parser(object):
         return d
 
 
-    def getAttribute(self, node, k, bool=True):
+    def getAttribute(self, node, k, default = None):
         """
         Return a value of an attribute.
         """
         if k in node.attributes.keys():
             return node.attributes[k].value
         else:
-            if bool:
+            if default == None:
                 raise ValueError, "Error: attribute %s is mandatory!" % k
             else:
-                return None
+                return default
+
+
+    def getAttributeTuple(self, node, k, default = None):
+        """
+        Return a value of an attribute.
+        """
+        if k in node.attributes.keys():
+            n = node.attributes[k].value
+            return tuple(float(s) for s in n[1:-1].split(','))
+        else:
+            if default == None:
+                raise ValueError, "Error: attribute %s is mandatory!" % k
+            else:
+                return default
+
 
 #-------------------------------------------------------------------------------

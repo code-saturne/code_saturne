@@ -42,6 +42,7 @@ import fnmatch
 from autovnv.Parser import Parser
 from autovnv.TexMaker import Report1, Report2
 from autovnv.Drawing import Plotter
+from autovnv.PlotVTK import PlotVTK
 from autovnv.Command import run_command
 
 #-------------------------------------------------------------------------------
@@ -89,13 +90,12 @@ class RunThread(threading.Thread):
 #-------------------------------------------------------------------------------
 
 class Case(object):
-    def __init__(self, rlog, exe, diff, study, data, repo, dest):
+    def __init__(self, rlog, diff, study, data, repo, dest):
         """
         @type data: C{Dictionary}
         @param data: contains all keyword and value read in the parameters file
         """
         self.__log      = rlog
-        self.__exe      = exe
         self.__diff     = diff
         self.__study    = study
         self.__data     = data
@@ -114,9 +114,7 @@ class Case(object):
         self.is_compare = "not done"
         self.threshold  = "default"
         self.diff_value = []
-
-        self.figures    = []
-        self.verbatim   = []
+        self.exe        = None
 
 
     def compile(self):
@@ -127,7 +125,7 @@ class Case(object):
         """
         home = os.getcwd()
         os.chdir(os.path.join(self.__dest, self.label, 'SRC'))
-        cmd = self.__exe + " compile -t"
+        cmd = self.exe + " compile -t"
 
         p = subprocess.Popen(cmd,
                              shell=True,
@@ -147,7 +145,7 @@ class Case(object):
 
     def __suggest_run_id(self):
 
-        cmd = self.__exe + " run --suggest-id"
+        cmd = self.exe + " run --suggest-id"
         p = subprocess.Popen(cmd,
                              shell=True,
                              stdout=subprocess.PIPE,
@@ -283,7 +281,7 @@ class Study(object):
     """
     Create, run and compare all cases fir a given study.
     """
-    def __init__(self, parser, study, exe, dif, rlog):
+    def __init__(self, parser, study, cs_exe, nc_exe, dif, rlog):
         """
         Constructor.
           1. initialize attributes,
@@ -301,7 +299,8 @@ class Study(object):
         # Initialize attributes
         self.__parser  = parser
         self.__study   = study
-        self.__exe     = exe
+        self.__cs_exe  = cs_exe
+        self.__nc_exe  = nc_exe
         self.__diff    = dif
         self.__log     = rlog
 
@@ -321,7 +320,6 @@ class Study(object):
         self.Cases = []
         for data in self.__parser.getCasesKeywords(self.__study):
             c = Case(self.__log,
-                     self.__exe,
                      self.__diff,
                      self.__study,
                      data,
@@ -329,7 +327,8 @@ class Study(object):
                      self.__dest)
             self.Cases.append(c)
 
-        self.matplotlib_figures = []
+            self.matplotlib_figures = []
+            self.vtk_figures = []
 
 
     def getCasesLabel(self):
@@ -341,6 +340,31 @@ class Study(object):
         return self.cases
 
 
+    def getExe(self, c):
+        """
+        Return the name of the exe of the cas, in order to mix
+        Code_Saturne and NEPTUNE_CFD test cases in the same study.
+        """
+        run_ref = os.path.join(self.__repo, c, "SCRIPTS", "runcase")
+
+        # Read the runcase from the Repository
+
+        try:
+            run_ref_f = file(run_ref, mode='r')
+        except IOError:
+            print "Error: can not opening %s\n" % run_ref
+            sys.exit(1)
+
+        for line in run_ref_f.readlines():
+            if re.search(r'^\\code_saturne', line):
+                 exe = self.__cs_exe
+            if re.search(r'^\\neptune_cfd', line):
+                 exe = self.__nc_exe
+        run_ref_f.close()
+
+        return exe
+
+
     def createCases(self):
         """
         Create a single study with its all cases.
@@ -349,7 +373,7 @@ class Study(object):
 
         # Create study if necessary
         if not os.path.isdir(self.__dest):
-            cmd = self.__exe + " create --quiet --study " + self.__dest
+            cmd = self.__cs_exe + " create --quiet --study " + self.__dest
             retval, t = run_command(cmd, self.__log)
             shutil.rmtree(os.path.join(self.__dest, "CASE1"))
 
@@ -385,14 +409,15 @@ class Study(object):
         # Create cases
         os.chdir(self.__dest)
 
-        for c in self.cases:
-            if not os.path.isdir(c):
-                cmd = self.__exe + " create --case " + c  \
-                      + " --quiet --noref --copy-from " \
-                      + os.path.join(self.__repo, c)
+        for c in self.Cases:
+            c.exe = self.getExe(c.label)
+            if not os.path.isdir(c.label):
+                cmd = c.exe + " create --case " + c.label  \
+                      + " --quiet --noref --copy-from "    \
+                      + os.path.join(self.__repo, c.label)
                 retval, t = run_command(cmd, self.__log)
             else:
-                print "Warning: the case %s already exists in the destination." % c
+                print "Warning: the case %s already exists in the destination." % c.label
 
         os.chdir(repbase)
 
@@ -402,7 +427,7 @@ class Studies(object):
     """
     Manage all Studies and all Cases described in the files of parameters.
     """
-    def __init__(self, f, v, r, c, p, exe, dif):
+    def __init__(self, f, v, r, c, p, cs_exe, nc_exe, dif):
         """
         Constructor.
           1. create if necessary the destination directory,
@@ -453,6 +478,7 @@ class Studies(object):
 
         self.__parser  = Parser(file)
         self.__plotter = Plotter(self.__parser)
+        self.__plotvtk = PlotVTK(self.__parser)
 
         # build the list of the studies
 
@@ -461,7 +487,8 @@ class Studies(object):
         self.labels  = self.__parser.getStudiesLabel()
         self.studies = []
         for l in self.labels:
-            self.studies.append( [l, Study(self.__parser, l, exe, dif, self.__log)] )
+            self.studies.append( [l, Study(self.__parser, l, \
+                                  cs_exe, nc_exe, dif, self.__log)] )
 
         # start the report
         self.report = os.path.join(self.getDestination(), "report.txt")
@@ -616,8 +643,9 @@ class Studies(object):
                             n2 = self.__parser.getChilds(case.node, "script")
                             n3 = self.__parser.getChilds(case.node, "data")
                             n4 = self.__parser.getChilds(case.node, "probe")
-                            for n in n1 + n2 + n3 + n4:
-                                if self.__parser.getAttribute(n, "dest", False) == "":
+                            n5 = self.__parser.getChilds(case.node, "resu")
+                            for n in n1 + n2 + n3 + n4 + n5:
+                                if self.__parser.getAttribute(n, "dest") == "":
                                     self.__parser.setAttribute(n, "dest", run_id)
                         else:
                             self.reporting('    - run %s --> FAILED' % case.label)
@@ -650,7 +678,7 @@ class Studies(object):
         # 3. Update the file of parameters with the name of the result directory
             self.__parser.setAttribute(node, attr, os.listdir(result)[0])
         else:
-            self.reporting('Error: check compare/script/plot/probes failed.')
+            self.reporting('Error: check compare/script/plot/probe/resu failed.')
             sys.exit(1)
 
 
@@ -759,14 +787,23 @@ class Studies(object):
                         repo = None
                         self.__check_dirs(l, case.label, node, repo, dest)
 
+                    for node in self.__parser.getChilds(case.node, "resu"):
+                        plots, file, dest, repo = self.__parser.getResult(node)
+                        if destination == False:
+                            dest = None
+                        self.__check_dirs(l, case.label, node, repo, dest)
+
 
     def plot(self):
         """
-        Draw plots.
+        Plot data.
         """
         for l, s in self.studies:
             self.reporting('  o Plot study: ' + l)
             self.__plotter.plot_study(l, s)
+
+        for l, s in self.studies:
+            self.__plotvtk.plot_study(l, s)
 
 
     def build_reports(self, report1, report2):
@@ -812,9 +849,11 @@ class Studies(object):
             for l, s in self.studies:
                 doc2.appendLine("\\section{%s}" % l)
 
-                if s.matplotlib_figures:
+                if s.matplotlib_figures or s.vtk_figures:
                     doc2.appendLine("\\subsection{Graphical results}")
                     for png in s.matplotlib_figures:
+                        doc2.addFigure(png)
+                    for png in s.vtk_figures:
                         doc2.addFigure(png)
 
                 for case in s.Cases:

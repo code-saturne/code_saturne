@@ -297,6 +297,7 @@ bin/autovnv/Command.py \
 bin/autovnv/Drawing.py \
 bin/autovnv/__init__.py \
 bin/autovnv/Parser.py \
+bin/autovnv/PlotVTK.py \
 bin/autovnv/Study.py \
 bin/autovnv/TexMaker.py
 
