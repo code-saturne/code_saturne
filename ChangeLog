@@ -1,3 +1,8 @@
+* 04/05/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix memory leak in radiative transfer usingGUI.
+  modified files:
+    src/gui/cs_gui_radiative_transfer.c
+
 * 25/04/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix typo leading to script crash in some batch system configurations.
   modified files:
