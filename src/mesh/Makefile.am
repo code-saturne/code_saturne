@@ -50,6 +50,7 @@ cs_join_util.h \
 cs_mesh_coherency.h \
 cs_mesh_connect.h \
 cs_mesh.h \
+cs_mesh_bad_cells_detection.h \
 cs_mesh_halo.h \
 cs_mesh_location.h \
 cs_mesh_quality.h \
@@ -75,6 +76,7 @@ cs_join_split.c \
 cs_join_update.c \
 cs_join_util.c \
 cs_mesh.c \
+cs_mesh_bad_cells_detection.c \
 cs_mesh_coherency.c \
 cs_mesh_connect.c \
 cs_mesh_halo.c \

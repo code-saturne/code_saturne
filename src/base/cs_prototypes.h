@@ -34,6 +34,7 @@
 #include "cs_base.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_mesh_bad_cells_detection.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -394,6 +395,14 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh);
 
 void
 cs_user_mesh_smoothe(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
+ * Tag bad cells within the mesh based on geometric criteria.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
+                           cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
  * Define periodic faces.
