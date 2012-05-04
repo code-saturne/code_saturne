@@ -59,16 +59,16 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute mesh quality indicators
+ * Compute and post-process mesh quality indicators.
  *
  * parameters:
  *   mesh             --> pointer to a mesh structure.
- *   mesh_quantities  --> pointer to a mesh quantities structures.
+ *   mesh_quantities  <-> pointer to a mesh quantities structures.
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_bad_cells_detection(const cs_mesh_t                *mesh,
-                            const cs_mesh_quantities_t     *mesh_quantities);
+cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
+                            cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------*/
 

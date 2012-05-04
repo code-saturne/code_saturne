@@ -609,74 +609,86 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
   /*          and post-process the taged cells         */
   /*---------------------------------------------------*/
 
-    const cs_lnum_t  n_cells         = mesh->n_cells;
-    const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
-    cs_gnum_t *bad_cells             = mesh_quantities->bad_cells;
+  const cs_lnum_t  n_cells         = mesh->n_cells;
+  const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
+  unsigned  *bad_cell_flag         = mesh_quantities->bad_cell_flag;
 
-    double *volume  = mesh_quantities->cell_vol;
+  double *volume  = mesh_quantities->cell_vol;
 
-    cs_lnum_t i, iel_;
-    cs_gnum_t n_cells_tot, iwarning, ibad;
+  cs_lnum_t cell_id;
+  cs_gnum_t n_cells_tot, iwarning, ibad;
 
-    /*--------------------------------------------*/
-    /* User condition: check for cells volume     */
-    /*--------------------------------------------*/
+  /*---------------------------------------*/
+  /* User condition: check for cell volume */
+  /*---------------------------------------*/
 
-    cs_lnum_t  *bad_vol_cells = NULL;
+  cs_lnum_t  *bad_vol_cells = NULL;
 
-    BFT_MALLOC(bad_vol_cells, n_cells_wghosts, cs_lnum_t);
+  BFT_MALLOC(bad_vol_cells, n_cells_wghosts, cs_lnum_t);
 
-    for (i = 0; i < n_cells_wghosts; i++)
-        bad_vol_cells[i] = 0;
+  for (cell_id = 0; cell_id < n_cells_wghosts; cell_id++)
+    bad_vol_cells[cell_id] = 0;
 
-    /* Get the total number of cells within the domain */
-    n_cells_tot = n_cells;
-    if (cs_glob_rank_id >= 0)
-        cs_parall_counter(&n_cells_tot, 1);
+  /* Get the total number of cells within the domain */
+  n_cells_tot = n_cells;
+  cs_parall_counter(&n_cells_tot, 1);
 
-    for (iel_ = 0; iel_ < n_cells; iel_++)
-    {
-        /* Get the cell volume and compare to the user condition */
-        if (volume[iel_] < 0.01)
-        {
-            /* Local array used to post-process results --> user tagged cells are set to 1 */
-            bad_vol_cells[iel_] = 1;
+  for (cell_id = 0; cell_id < n_cells; cell_id++) {
 
-            /* Global array used to store bad cells --> user tagged cells are flagged using the mask */
-            bad_cells[iel_] = CS_BAD_CELL_USER;
-        }
+    /* Compare the cell volume to the user condition */
+
+    if (volume[cell_id] < 0.01) {
+      /* Local array used to post-process results --> user tagged cells are set to 1 */
+      bad_vol_cells[cell_id] = 1;
+
+      /* Array used to store bad cells flag
+         --> user tagged cells are flagged using the mask */
+      bad_cell_flag[cell_id] = bad_cell_flag[cell_id] | CS_BAD_CELL_USER;
     }
+  }
 
-    ibad = 0;
-    iwarning = 0;
-    for (i = 0; i < n_cells; i++)
-        if (bad_cells[i] & CS_BAD_CELL_USER)
-        {
-            ibad++;
-            iwarning++;
-        }
-
-    /* Parallel processing */
-    if (cs_glob_rank_id >= 0)
-    {
-        cs_parall_counter(&ibad, 1);
-        cs_parall_counter(&iwarning, 1);
+  ibad = 0;
+  iwarning = 0;
+  for (cell_id = 0; cell_id < n_cells; cell_id++) {
+    if (bad_cell_flag[cell_id] & CS_BAD_CELL_USER) {
+      ibad++;
+      iwarning++;
     }
+  }
 
-    /* Display listing output */
-    bft_printf(_("\n  Criteria 6: User Specific Tag:\n"));
-    bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
-                 (unsigned long long)ibad, (double)ibad / (double)n_cells_tot * 100.0);
+  /* Parallel processing */
+  if (cs_glob_rank_id >= 0) {
+    cs_parall_counter(&ibad, 1);
+    cs_parall_counter(&iwarning, 1);
+  }
 
-    /* Post processing */
-    cs_post_write_var(-1, "User_bad_cells", 1, false, true, CS_POST_TYPE_cs_int_t,
-                      -1, 0.0, bad_vol_cells, NULL, NULL);
+  /* Display listing output */
+  bft_printf(_("\n  Criteria 6: User Specific Tag:\n"));
+  bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
+             (unsigned long long)ibad,
+             (double)ibad / (double)n_cells_tot * 100.0);
 
-    if (iwarning > 0)
-        bft_printf(_("\n*****   WARNING: MESH QUALITY ISSUE BASED ON USER CRITERIA HAS BEEN DETECTED   *****\n"));
+  /* Post processing */
+  cs_post_write_var(-1,
+                    "User_bad_cells",
+                    1,
+                    false,
+                    true,
+                    CS_POST_TYPE_cs_int_t,
+                    -1,
+                    0.0,
+                    bad_vol_cells,
+                    NULL,
+                    NULL);
 
-    BFT_FREE(bad_vol_cells);
+  if (iwarning > 0)
+    bft_printf
+      (" Warning:\n"
+       " --------\n"
+       "    Mesh quality issue based on user criteria has been detected\n\n"
+       "    The mesh should be re-considered using the listed criteria.\n\n");
 
+  BFT_FREE(bad_vol_cells);
 }
 
 /*----------------------------------------------------------------------------*/

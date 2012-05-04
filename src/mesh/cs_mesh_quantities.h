@@ -93,8 +93,7 @@ typedef struct {
                                     for iterative gradients */
   cs_real_33_t  *cocg_lsq;       /* Interleaved cocg matrix
                                     for least square gradients */
-  cs_gnum_t     *bad_cells;      /* Array of the bad cells detected
-                                    in cs_mesh_bad_cells_detection.c */
+  unsigned      *bad_cell_flag;  /* Flag (mask) for bad cells detected */
 
 } cs_mesh_quantities_t ;
 
