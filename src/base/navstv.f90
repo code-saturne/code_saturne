@@ -504,7 +504,7 @@ call resopv &
 ! 4.  RESOLUTION DE LA VITESSE DE MAILLAGE EN ALE
 !===============================================================================
 
-if (iale.eq.1.and.iterns.eq.nterup) then
+if (iale.eq.1) then
 
   if (itrale.gt.nalinf) then
 
@@ -662,7 +662,7 @@ if (irevmc.eq.0) then
 endif
 
 ! In the ALE framework, we add the mesh velocity
-if (iale.eq.1.and.iterns.eq.nterup) then
+if (iale.eq.1) then
 
   !$omp parallel do
   do iel = 1, ncelet
