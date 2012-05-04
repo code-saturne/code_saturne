@@ -565,7 +565,7 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
   }
 
   /* Display log output */
-  bft_printf(_("\n  Criteria 1: Orthogonal Normal Quality:\n"));
+  bft_printf(_("\n  Criteria 1: Orthogonality:\n"));
   bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
              (unsigned long long)ibad,
              (double)ibad / (double)n_cells_tot * 100.0);
@@ -616,7 +616,7 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
   }
 
   /* Display listing output */
-  bft_printf(_("\n  Criteria 2: Offset Quality:\n"));
+  bft_printf(_("\n  Criteria 2: Offset:\n"));
   bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
              (unsigned long long)ibad,
              (double)ibad / (double)n_cells_tot * 100.0);
@@ -720,7 +720,7 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
   }
 
   /* Display listing output */
-  bft_printf(_("\n  Criteria 4: Cells Volume Ratio Quality:\n"));
+  bft_printf(_("\n  Criteria 4: Cells Volume Ratio:\n"));
   bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
              (unsigned long long)ibad,
              (double)ibad / (double)n_cells_tot * 100.0);
@@ -803,7 +803,7 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
 
   if (iwarning > 0) {
     bft_printf
-      (_(" Warning:\n"
+      (_("\n Warning:\n"
          " --------\n"
          "    Mesh quality issue has been detected\n\n"
          "    The mesh should be re-considered using the listed criteria.\n\n"

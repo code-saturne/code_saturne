@@ -162,6 +162,7 @@ src/mesh/cs_join_split.c
 src/mesh/cs_join_update.c
 src/mesh/cs_join_util.c
 src/mesh/cs_mesh.c
+src/mesh/cs_mesh_bad_cells_detection.c
 src/mesh/cs_mesh_coherency.c
 src/mesh/cs_mesh_connect.c
 src/mesh/cs_mesh_halo.c
