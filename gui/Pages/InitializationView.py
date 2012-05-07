@@ -54,6 +54,7 @@ from Pages.GasCombustionModel import GasCombustionModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
 from Pages.InitializationModel import InitializationModel
+from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
@@ -94,6 +95,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                            self.comboBoxTurbulence]
         self.thermal_group = [self.labelThermal, self.pushButtonThermal]
         self.species_group = [self.labelSpecies, self.comboBoxSpecies, self.pushButtonSpecies]
+        self.meteo_group =   [self.labelMeteo, self.comboBoxMeteo, self.pushButtonMeteo]
 
         # 1/ Combo box models
 
@@ -122,10 +124,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.connect(self.comboBoxZone,         SIGNAL("activated(const QString&)"),   self.slotZone)
         self.connect(self.comboBoxTurbulence,   SIGNAL("activated(const QString&)"),   self.slotChoice)
         self.connect(self.comboBoxSpecies,      SIGNAL("activated(const QString&)"),   self.slotSpeciesChoice)
+        self.connect(self.comboBoxMeteo,        SIGNAL("activated(const QString&)"),   self.slotMeteoChoice)
         self.connect(self.pushButtonVelocity,   SIGNAL("clicked()"),                   self.slotVelocityFormula)
         self.connect(self.pushButtonThermal,    SIGNAL("clicked()"),                   self.slotThermalFormula)
         self.connect(self.pushButtonTurbulence, SIGNAL("clicked()"),                   self.slotTurbulenceFormula)
         self.connect(self.pushButtonSpecies,    SIGNAL("clicked()"),                   self.slotSpeciesFormula)
+        self.connect(self.pushButtonMeteo,      SIGNAL("clicked()"),                   self.slotMeteoFormula)
 
         # Define thermal variable if needed
         th_sca_label = ''
@@ -157,6 +161,22 @@ class InitializationView(QWidget, Ui_InitializationForm):
             for item in self.species_group:
                 item.hide()
 
+        # meteo
+        self.modelMeteo = ComboModel(self.comboBoxMeteo, 1, 1)
+        self.scalar_meteo = ""
+        scalar_meteo_list = DefineUserScalarsModel( self.case).getMeteoScalarsList()
+        if scalar_meteo_list != []:
+            self.scalar_meteo = scalar_meteo_list[0]
+            for item in self.meteo_group:
+                item.show()
+            for scalar in scalar_meteo_list:
+                self.modelMeteo.addItem(self.tr(scalar), scalar)
+            self.modelMeteo.setItem(str_model = self.scalar_meteo)
+            setGreenColor(self.pushButtonMeteo, True)
+        else:
+            for item in self.meteo_group:
+                item.hide()
+
         # Initialize widget
         self.initializeVariables(self.zone)
 
@@ -181,6 +201,16 @@ class InitializationView(QWidget, Ui_InitializationForm):
         turb_model = self.turb.getTurbulenceModel()
 
         self.initializeVariables(self.zone)
+
+
+    @pyqtSignature("const QString&")
+    def slotMeteoChoice(self, text):
+        """
+        INPUT label for choice of zone
+        """
+        self.scalar_meteo= self.modelMeteo.dicoV2M[str(text)]
+        self.initializeVariables(self.zone)
+        setGreenColor(self.pushButtonMeteo, True)
 
 
     @pyqtSignature("const QString&")
@@ -471,6 +501,29 @@ nusa = (cmu * k)/eps;;"""
             setGreenColor(self.sender(), False)
 
 
+    @pyqtSignature("const QString&")
+    def slotMeteoFormula(self):
+        """
+        """
+        exp = self.init.getMeteoFormula(self.zone, self.scalar_meteo)
+        if not exp:
+            exp = str(self.scalar_meteo)+""" = 0;\n"""
+        exa = """#example: """
+        req = [(str(self.scalar_meteo), str(self.scalar_meteo))]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+        dialog = QMeiEditorView(self,expression = exp,
+                                 required   = req,
+                                 symbols    = sym,
+                                 examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotFormulaMeteo -> %s" % str(result))
+            self.init.setMeteoFormula(self.zone, self.scalar_meteo, result)
+            setGreenColor(self.sender(), False)
+
+
     def initializeVariables(self, zone):
         """
         Initialize variables when a new volumic zone is choosen
@@ -515,7 +568,6 @@ nusa = (cmu * k)/eps;;"""
         setGreenColor(self.pushButtonVelocity, True)
 
         # Initialisation of Model Variables if thermal model is selectionned
-
         model = self.therm.getThermalScalarModel()
 
         if model == "off":

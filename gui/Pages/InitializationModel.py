@@ -66,11 +66,11 @@ class InitializationModel(Model):
         """
         self.case = case
 
-        models = self.case.xmlGetNode('thermophysical_models')
+        self.models = self.case.xmlGetNode('thermophysical_models')
         self.node_userscalar = self.case.xmlGetNode('additional_scalars')
-        self.node_veloce     = models.xmlGetNode('velocity_pressure')
-        self.node_turb       = models.xmlGetNode('turbulence', 'model')
-        self.node_therm      = models.xmlGetNode('thermal_scalar', 'model')
+        self.node_veloce     = self.models.xmlGetNode('velocity_pressure')
+        self.node_turb       = self.models.xmlGetNode('turbulence', 'model')
+        self.node_therm      = self.models.xmlGetNode('thermal_scalar', 'model')
 
         self.VelocityList  = ('velocity_U', 'velocity_V', 'velocity_W')
         self.Turb_var_List = ('turb_k', 'turb_eps',
@@ -265,7 +265,7 @@ omega = k^0.5/almax;"""
         Set the formula for a turbulent variable.
         """
         self.__verifyZone(zone)
-        self.isInList(species, DefineUserScalarsModel( self.case).getUserScalarLabelsList())
+        self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarLabelsList())
         node = self.node_userscalar.xmlGetNode('scalar', label = str(species))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
@@ -290,6 +290,43 @@ omega = k^0.5/almax;"""
         if not formula:
             formula = str(species)+""" = 0;\n"""
             self.setSpeciesFormula(zone, species, formula)
+
+        return formula
+
+
+    def setMeteoFormula(self, zone, scalar, formula):
+        """
+        Public method.
+        Set the formula for a meteo variable.
+        """
+        self.__verifyZone(zone)
+        self.isInList(scalar, DefineUserScalarsModel( self.case).getMeteoScalarsList())
+        node_atmo = self.models.xmlGetNode('atmospheric_flows')
+        node = node_atmo.xmlGetNode('scalar', label = str(scalar))
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = node.xmlInitChildNode('formula', zone_id=zone)
+        n.xmlSetTextNode(formula)
+
+
+    def getMeteoFormula(self, zone, scalar):
+        """
+        Public method.
+        Return the formula for a meteo variable.
+        """
+        self.__verifyZone(zone)
+        self.isInList(scalar, DefineUserScalarsModel( self.case).getMeteoScalarsList())
+        node_atmo = self.models.xmlGetNode('atmospheric_flows')
+        node = node_atmo.xmlGetNode('scalar', label = str(scalar))
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+
+        formula = node.xmlGetString('formula', zone_id=zone)
+        if not formula:
+            formula = str(scalar)+""" = 0;\n"""
+            self.setMeteoFormula(zone, scalar, formula)
 
         return formula
 
