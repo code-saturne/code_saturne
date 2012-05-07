@@ -1,3 +1,8 @@
+* 07/05/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove macro example for untested/unmaintained Darwin build.
+  removed files:
+    bin/macros_Darwin.mk
+
 * 26/03/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Adapt bin/macros_Blue_Gene_P.mk to link with C++ library required by MED.
 
