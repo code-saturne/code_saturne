@@ -444,12 +444,7 @@ cs_opts_mpi_init(int    *argc,
   if (use_mpi == true) {
     MPI_Initialized(&flag);
     if (!flag) {
-#if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
-      int mpi_threads;
-      MPI_Init_thread(argc, argv, MPI_THREAD_FUNNELED, &mpi_threads);
-#else
       MPI_Init(argc, argv);
-#endif
     }
   }
 
@@ -480,12 +475,7 @@ cs_opts_mpi_init(int    *argc,
 
     MPI_Initialized(&flag);
     if (!flag) {
-#if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
-      int mpi_threads;
-      MPI_Init_thread(argc, argv, MPI_THREAD_FUNNELED, &mpi_threads);
-#else
       MPI_Init(argc, argv);
-#endif
     }
 
     /*
