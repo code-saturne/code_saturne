@@ -51,7 +51,7 @@ AC_ARG_WITH(mpi-exec,
              fi
              mpi_bindir="$with_mpi_exec"],
             [if test "x$with_mpi" != "xno" -a "x$with_mpi" != "xyes" \
-	          -a "x$with_mpi" != "xcheck"; then
+                  -a "x$with_mpi" != "xcheck"; then
                mpi_bindir="$with_mpi/bin"
              fi])
 
@@ -63,7 +63,7 @@ AC_ARG_WITH(mpi-include,
              fi
              MPI_CPPFLAGS="-I$with_mpi_include"],
             [if test "x$with_mpi" != "xno" -a "x$with_mpi" != "xyes" \
-	          -a "x$with_mpi" != "xcheck"; then
+                  -a "x$with_mpi" != "xcheck"; then
                MPI_CPPFLAGS="-I$with_mpi/include"
              fi])
 
@@ -76,11 +76,10 @@ AC_ARG_WITH(mpi-lib,
              MPI_LDFLAGS="-L$with_mpi_lib"
              mpi_libdir="$with_mpi_lib"],
             [if test "x$with_mpi" != "xno" -a "x$with_mpi" != "xyes" \
-	          -a "x$with_mpi" != "xcheck"; then
+                  -a "x$with_mpi" != "xcheck"; then
                MPI_LDFLAGS="-L$with_mpi/lib"
                mpi_libdir="$with_mpi/lib"
              fi])
-
 
 # Just in case, remove excess whitespace from existing flag and libs variables.
 
@@ -225,6 +224,8 @@ if test "x$with_mpi" != "xno" -a "x$cs_have_mpi" = "xno" ; then
         mpi_type=BGL_MPI
       elif test "x$cs_ibm_bg_type" = "xP" ; then
         mpi_type=BGP_MPI
+      elif test "x$cs_ibm_bg_type" = "xQ" ; then
+        mpi_type=BGQ_MPI
       fi
     fi
     if test "x$mpi_type" = "x"; then

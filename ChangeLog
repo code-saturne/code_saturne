@@ -1,3 +1,14 @@
+* 07/05/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Preliminary port to Blue Gene/Q.
+  modified files:
+    bin/cs_case.py
+    bin/cs_exec_environment.py
+    bin/runcase.py.in
+    config/cs_auto_flags.sh
+    config/cs_mpi.m4
+    po/fr.po
+    src/base/cs_base.c
+
 * 04/05/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix memory leaks in radiative transfer and particles when using GUI.
   modified files:

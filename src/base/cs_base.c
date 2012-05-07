@@ -60,6 +60,10 @@
 #include <common/bgp_personality_inlines.h>
 #endif
 
+#if defined(__bgq__)
+#include <spi/include/kernel/location.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * BFT library headers
  *----------------------------------------------------------------------------*/
@@ -1356,6 +1360,9 @@ cs_base_system_info(void)
 #if defined(__bgp__)
   _BGP_Personality_t personality;
   Kernel_GetPersonality(&personality, sizeof(personality));
+#elif defined(__bgq__)
+  Personality_t personality;
+  Kernel_GetPersonality(&personality, sizeof(personality));
 #endif
 
   /* Date */
@@ -1368,6 +1375,8 @@ cs_base_system_info(void)
 
 #if defined(__bgp__)
   ram = personality.DDR_Config.DDRSizeMB;
+#elif defined(__bgq__)
+  ram = personality.DDR_Config.DDRSizeMB;
 #else
   ram = bft_sys_info_mem_ram() / (size_t)1024;
 #endif
@@ -1378,7 +1387,7 @@ cs_base_system_info(void)
 
   /* Functions not available on IBM Blue Gene or Cray XT,
      but a stub may exist, so we make sure we ignore it */
-#if   defined(__blrts__) || defined(__bgp__) \
+#if   defined(__blrts__) || defined(__bg__) \
    || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
   pwd_user = NULL;
 #else
@@ -1477,12 +1486,33 @@ cs_base_system_info(void)
                personality.Network_Config.Ynodes,
                personality.Network_Config.Znodes);
   }
+#elif defined(__bgq__)
+  {
+    int a_torus, b_torus, c_torus, d_torus, e_torus;
+    int n_flags = personality.Network_Config.NetFlags;
+
+    bft_printf("  %s%d\n", _("MPI ranks:           "), n_ranks);
+    if (n_world_ranks > n_ranks)
+      bft_printf("  %s%d\n", _("MPI_COMM_WORLD size: "),
+                 n_world_ranks);
+    if (n_flags & ND_ENABLE_TORUS_DIM_A) a_torus = 1; else a_torus = 0;
+    if (n_flags & ND_ENABLE_TORUS_DIM_B) b_torus = 1; else b_torus = 0;
+    if (n_flags & ND_ENABLE_TORUS_DIM_C) c_torus = 1; else c_torus = 0;
+    if (n_flags & ND_ENABLE_TORUS_DIM_D) d_torus = 1; else d_torus = 0;
+    if (n_flags & ND_ENABLE_TORUS_DIM_E) e_torus = 1; else e_torus = 0;
+
+    bft_printf("  %s<%d,%d,%d,%d,%d>\n", _("Block shape:         "),
+               personality.Network_Config.Anodes,
+               personality.Network_Config.Bnodes,
+               personality.Network_Config.Cnodes,
+               personality.Network_Config.Dnodes,
+               personality.Network_Config.Enodes);
+
+    bft_printf("  %s<%d,%d,%d,%d,%d>\n", _("Torus links enabled: "),
+               a_torus, b_torus, c_torus, d_torus, e_torus);
+    }
 #elif defined(HAVE_MPI)
   bft_printf("  %s%d\n", _("MPI ranks:         "), cs_glob_n_ranks);
-#endif
-
-#if defined(HAVE_OPENMP)
-  bft_printf("  %s%d\n", _("OpenMP threads:    "), cs_glob_n_threads);
 #endif
 }
 

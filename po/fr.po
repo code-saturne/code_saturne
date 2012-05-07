@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-08-24 11:55+0200\n"
+"POT-Creation-Date: 2012-05-07 11:45+0200\n"
 "PO-Revision-Date: 2011-08-24 11:58+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -108,7 +108,7 @@ msgstr ""
 "\n"
 " Destruction des structures et clôture du calcul\n"
 
-#: src/base/cs_base.c:228
+#: src/base/cs_base.c:232
 #, c-format
 msgid ""
 "Fatal error: bft_printf() called on a message of size %d\n"
@@ -117,7 +117,7 @@ msgstr ""
 "Erreur fatale: bft_printf() appellé sur message de taille %d\n"
 "alors que le tampon d'impression est de taille %d."
 
-#: src/base/cs_base.c:404
+#: src/base/cs_base.c:408
 #, c-format
 msgid ""
 "\n"
@@ -126,7 +126,7 @@ msgstr ""
 "\n"
 "Erreur système : %s\n"
 
-#: src/base/cs_base.c:406
+#: src/base/cs_base.c:410
 #, c-format
 msgid ""
 "\n"
@@ -137,7 +137,7 @@ msgstr ""
 "%s:%d: Erreur fatale.\n"
 "\n"
 
-#: src/base/cs_base.c:426
+#: src/base/cs_base.c:430
 msgid ""
 "\n"
 "\n"
@@ -151,27 +151,27 @@ msgstr ""
 "------------------------------\n"
 "\n"
 
-#: src/base/cs_base.c:433
+#: src/base/cs_base.c:437
 #, c-format
 msgid "Theoretical current allocated memory:   %llu kB\n"
 msgstr "Mémoire dynamique instrumentée théorique : %llu ko\n"
 
-#: src/base/cs_base.c:437
+#: src/base/cs_base.c:441
 #, c-format
 msgid "Theoretical maximum allocated memory:   %llu kB\n"
 msgstr "Mémoire dynamique instrumentée théorique : %llu ko\n"
 
-#: src/base/cs_base.c:447
+#: src/base/cs_base.c:451
 #, c-format
 msgid "Maximum program memory measure:         %llu kB\n"
 msgstr "Mémoire programme mesurée maximale:        %llu ko\n"
 
-#: src/base/cs_base.c:455
+#: src/base/cs_base.c:459
 #, c-format
 msgid "Current program memory measure:         %llu kB\n"
 msgstr "Mémoire programme mesurée courante:        %llu ko\n"
 
-#: src/base/cs_base.c:517
+#: src/base/cs_base.c:521
 msgid ""
 "\n"
 "Call stack:\n"
@@ -179,7 +179,7 @@ msgstr ""
 "\n"
 "Pile d'appels :\n"
 
-#: src/base/cs_base.c:545
+#: src/base/cs_base.c:549
 msgid ""
 "End of stack\n"
 "\n"
@@ -187,7 +187,7 @@ msgstr ""
 "Fin de la pile\n"
 "\n"
 
-#: src/base/cs_base.c:563
+#: src/base/cs_base.c:567
 msgid ""
 "SIGHUP signal (hang-up) intercepted.\n"
 "--> computation interrupted.\n"
@@ -195,7 +195,7 @@ msgstr ""
 "Signal SIGHUP (déconnexion) intercepté.\n"
 "--> calcul interrompu.\n"
 
-#: src/base/cs_base.c:569
+#: src/base/cs_base.c:573
 msgid ""
 "SIGINT signal (Control+C or equivalent) received.\n"
 "--> computation interrupted by user.\n"
@@ -203,7 +203,7 @@ msgstr ""
 "Signal SIGINT (Control+C ou équivalent) reçu.\n"
 "--> calcul interrompu par l'utilisateur.\n"
 
-#: src/base/cs_base.c:574
+#: src/base/cs_base.c:578
 msgid ""
 "SIGTERM signal (termination) received.\n"
 "--> computation interrupted by environment.\n"
@@ -211,24 +211,24 @@ msgstr ""
 "Signal SIGTERM (terminaison) reçu.\n"
 "--> calcul interrompu par l'environnement.\n"
 
-#: src/base/cs_base.c:579
+#: src/base/cs_base.c:583
 msgid "SIGFPE signal (floating point exception) intercepted!\n"
 msgstr "Signal SIGFPE (exception en virgule flottante) intercepté !\n"
 
-#: src/base/cs_base.c:584
+#: src/base/cs_base.c:588
 msgid "SIGSEGV signal (forbidden memory area access) intercepted!\n"
 msgstr "Signal SIGSEGV (accès à une zone mémoire interdite) intercepté !\n"
 
-#: src/base/cs_base.c:590
+#: src/base/cs_base.c:594
 msgid "SIGXCPU signal (CPU time limit reached) intercepted.\n"
 msgstr "Signal SIGXCPU (temps CPU limite atteint) intercepté.\n"
 
-#: src/base/cs_base.c:596
+#: src/base/cs_base.c:600
 #, c-format
 msgid "Signal %d intercepted!\n"
 msgstr "Signal %d intercepté !\n"
 
-#: src/base/cs_base.c:654
+#: src/base/cs_base.c:658
 #, c-format
 msgid ""
 "\n"
@@ -239,7 +239,7 @@ msgstr ""
 "Erreur MPI (communicateur %s):\n"
 "%s\n"
 
-#: src/base/cs_base.c:657
+#: src/base/cs_base.c:661
 #, c-format
 msgid ""
 "\n"
@@ -250,7 +250,7 @@ msgstr ""
 "Erreur MPI :\n"
 "%s\n"
 
-#: src/base/cs_base.c:772
+#: src/base/cs_base.c:776
 #, c-format
 msgid ""
 " Sub-routine calling iasize:                %s\n"
@@ -265,7 +265,7 @@ msgstr ""
 "\n"
 " ----> Définir iasize au moins égale à %d entiers)."
 
-#: src/base/cs_base.c:816
+#: src/base/cs_base.c:820
 #, c-format
 msgid ""
 " Sub-routine calling rasize:             %s\n"
@@ -280,15 +280,15 @@ msgstr ""
 "\n"
 " ----> Définir rasize au moins égale à %d réels)."
 
-#: src/base/cs_base.c:1126
+#: src/base/cs_base.c:1130
 msgid "Total memory used:                       "
 msgstr "Consommation mémoire totale mesurée :     "
 
-#: src/base/cs_base.c:1127
+#: src/base/cs_base.c:1131
 msgid "Theoretical instrumented dynamic memory: "
 msgstr "Mémoire dynamique instrumentée théorique :"
 
-#: src/base/cs_base.c:1131
+#: src/base/cs_base.c:1135
 msgid ""
 "\n"
 "Memory use summary:\n"
@@ -298,22 +298,22 @@ msgstr ""
 "Bilan de l'occupation mémoire :\n"
 "\n"
 
-#: src/base/cs_base.c:1194
+#: src/base/cs_base.c:1198
 #, c-format
 msgid "  %s %12.3f %cB\n"
 msgstr "  %s %12.3f %co\n"
 
-#: src/base/cs_base.c:1199
+#: src/base/cs_base.c:1203
 #, c-format
 msgid "                             local minimum: %12.3f %cB  (rank %d)\n"
 msgstr "                             minimum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1202
+#: src/base/cs_base.c:1206
 #, c-format
 msgid "                             local maximum: %12.3f %cB  (rank %d)\n"
 msgstr "                             maximum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1242
+#: src/base/cs_base.c:1246
 #, c-format
 msgid ""
 "\n"
@@ -332,7 +332,7 @@ msgstr ""
 "   Mémoire de travail maximale locale demandée %12.3f %co\n"
 "                                      utilisée %12.3f %co\n"
 
-#: src/base/cs_base.c:1279
+#: src/base/cs_base.c:1283
 msgid ""
 "\n"
 "Calculation time summary:\n"
@@ -340,7 +340,7 @@ msgstr ""
 "\n"
 "Bilan des temps de calcul :\n"
 
-#: src/base/cs_base.c:1293
+#: src/base/cs_base.c:1297
 #, c-format
 msgid ""
 "\n"
@@ -349,12 +349,12 @@ msgstr ""
 "\n"
 "  Temps CPU utilisateur : %12.3f s\n"
 
-#: src/base/cs_base.c:1295
+#: src/base/cs_base.c:1299
 #, c-format
 msgid "  System CPU time:     %12.3f s\n"
 msgstr "  Temps CPU système :     %12.3f s\n"
 
-#: src/base/cs_base.c:1300
+#: src/base/cs_base.c:1304
 #, c-format
 msgid ""
 "\n"
@@ -363,12 +363,12 @@ msgstr ""
 "\n"
 "  Temps CPU :             %12.3f s\n"
 
-#: src/base/cs_base.c:1309
+#: src/base/cs_base.c:1313
 #, c-format
 msgid "  Total CPU time:      %12.3f s\n"
 msgstr "  Temps CPU cumulé :      %12.3f s\n"
 
-#: src/base/cs_base.c:1320
+#: src/base/cs_base.c:1324
 #, c-format
 msgid ""
 "\n"
@@ -377,80 +377,92 @@ msgstr ""
 "\n"
 "  Temps écoulé :          %12.3f s\n"
 
-#: src/base/cs_base.c:1323
+#: src/base/cs_base.c:1327
 #, c-format
 msgid "  CPU / elapsed time   %12.3f\n"
 msgstr "  Temps CPU / écoulé      %12.3f\n"
 
-#: src/base/cs_base.c:1424
+#: src/base/cs_base.c:1433
 msgid "Local case configuration:\n"
 msgstr "Configuration locale du cas :\n"
 
-#: src/base/cs_base.c:1426
+#: src/base/cs_base.c:1435
 msgid "Date:              "
 msgstr "Date :             "
 
-#: src/base/cs_base.c:1434
+#: src/base/cs_base.c:1443
 msgid "System:            "
 msgstr "Système :          "
 
-#: src/base/cs_base.c:1436
+#: src/base/cs_base.c:1445
 msgid "Machine:           "
 msgstr "Machine :          "
 
-#: src/base/cs_base.c:1440
+#: src/base/cs_base.c:1449
 msgid "Processor:         "
 msgstr "Processeur :       "
 
-#: src/base/cs_base.c:1443
+#: src/base/cs_base.c:1452
 msgid "Memory:            "
 msgstr "Mémoire :          "
 
-#: src/base/cs_base.c:1444
+#: src/base/cs_base.c:1453
 msgid "MB"
 msgstr "Mo"
 
-#: src/base/cs_base.c:1447
+#: src/base/cs_base.c:1456
 msgid "User:              "
 msgstr "Utilisateur :      "
 
-#: src/base/cs_base.c:1451
+#: src/base/cs_base.c:1460
 msgid "Directory:         "
 msgstr "Répertoire :       "
 
-#: src/base/cs_base.c:1458
+#: src/base/cs_base.c:1467
 msgid "SMP mode"
 msgstr ""
 
-#: src/base/cs_base.c:1459
+#: src/base/cs_base.c:1468
 msgid "Virtual-node mode"
 msgstr ""
 
-#: src/base/cs_base.c:1460
+#: src/base/cs_base.c:1469
 msgid "Dual mode"
 msgstr ""
 
-#: src/base/cs_base.c:1461
+#: src/base/cs_base.c:1470
 msgid "Unknown mode"
 msgstr ""
 
-#: src/base/cs_base.c:1471 src/base/cs_base.c:1481
+#: src/base/cs_base.c:1480 src/base/cs_base.c:1515
 msgid "MPI ranks:         "
 msgstr "Rangs MPI :        "
 
-#: src/base/cs_base.c:1473
+#: src/base/cs_base.c:1482
 msgid "pset size:         "
 msgstr ""
 
-#: src/base/cs_base.c:1475
+#: src/base/cs_base.c:1484
 msgid "Torus dimensions:  "
+msgstr "Dimensions du tore : "
+
+#: src/base/cs_base.c:1494
+msgid "MPI ranks:           "
+msgstr "Rangs MPI :          "
+
+#: src/base/cs_base.c:1496
+msgid "MPI_COMM_WORLD size: "
 msgstr ""
 
-#: src/base/cs_base.c:1485
-msgid "OpenMP threads:    "
-msgstr "Threads OpenMP:    "
+#: src/base/cs_base.c:1504
+msgid "Block shape:         "
+msgstr "Forme de bloc :      "
 
-#: src/base/cs_base.c:1515
+#: src/base/cs_base.c:1511
+msgid "Torus links enabled: "
+msgstr "Liens du tore actifs :"
+
+#: src/base/cs_base.c:1545
 #, c-format
 msgid ""
 "\n"
@@ -1096,13 +1108,13 @@ msgstr ""
 "\"%s\"\n"
 " ne correspond à aucune face de bord.\n"
 
-#: src/base/cs_gui_boundary_conditions.c:1680
-#: src/base/cs_gui_boundary_conditions.c:1843
+#: src/base/cs_gui_boundary_conditions.c:1675
+#: src/base/cs_gui_boundary_conditions.c:1838
 #, c-format
 msgid "boundary nature %s is unknown \n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:1856
+#: src/base/cs_gui_boundary_conditions.c:1851
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1126,7 +1138,7 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:1895
+#: src/base/cs_gui_boundary_conditions.c:1890
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1314,7 +1326,7 @@ msgstr ""
 msgid "--output boundary faces: %s value %i \n"
 msgstr ""
 
-#: src/base/cs_gui_radiative_transfer.c:1012
+#: src/base/cs_gui_radiative_transfer.c:1008
 msgid ""
 "One tries to define radiative boundary conditions on boundary which is not a "
 "wall.\n"
@@ -2944,7 +2956,7 @@ msgstr ""
 "avec une synchronisation de halo externe, précédée d'une sauvegarde\n"
 "et suivie d'une restoration du halo de rotation."
 
-#: src/base/cs_matrix.c:2008
+#: src/base/cs_matrix.c:1816
 msgid ""
 "Assigning non-symmetric matrix coefficients to a matrix\n"
 "in a symmetric CSR format."
@@ -2952,7 +2964,7 @@ msgstr ""
 "Affectation de coefficients matriciels non symétriques\n"
 "à une matrice en stockage CSR symmétrique."
 
-#: src/base/cs_matrix.c:2611
+#: src/base/cs_matrix.c:2419
 #, c-format
 msgid ""
 "Handling of matrixes in %s format\n"
@@ -2961,9 +2973,9 @@ msgstr ""
 "La gestion des matrices au format %s \n"
 "n'est pas encore opérationnelle."
 
-#: src/base/cs_matrix.c:2747 src/base/cs_matrix.c:2764
-#: src/base/cs_matrix.c:2790 src/base/cs_matrix.c:2810
-#: src/base/cs_matrix.c:2832
+#: src/base/cs_matrix.c:2549 src/base/cs_matrix.c:2566
+#: src/base/cs_matrix.c:2592 src/base/cs_matrix.c:2612
+#: src/base/cs_matrix.c:2634
 msgid "The matrix is not defined."
 msgstr "La matrice n'est pas définie."
 
@@ -4051,28 +4063,28 @@ msgstr ""
 "  Version MPI %d.%d\n"
 "\n"
 
-#: src/base/cs_opts.c:606
+#: src/base/cs_opts.c:596
 #, c-format
 msgid ""
 "%s was built without MPI support,\n"
 "so option \"%s\" may not be used.\n"
 msgstr ""
 
-#: src/base/cs_opts.c:657
+#: src/base/cs_opts.c:647
 #, c-format
 msgid ""
 "%s was built without XML support,\n"
 "so parameter file \"%s\" may not be loaded.\n"
 msgstr ""
 
-#: src/base/cs_opts.c:716
+#: src/base/cs_opts.c:706
 #, c-format
 msgid ""
 "%s was built without socket support,\n"
 "so option \"%s\" may not be used.\n"
 msgstr ""
 
-#: src/base/cs_opts.c:733
+#: src/base/cs_opts.c:723
 #, c-format
 msgid ""
 "%s was built without dynamic loader support,\n"
@@ -5739,3 +5751,6 @@ msgstr ""
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
+
+#~ msgid "OpenMP threads:    "
+#~ msgstr "Threads OpenMP:    "

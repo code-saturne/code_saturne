@@ -288,9 +288,13 @@ if __name__ == '__main__':
 
     # mpi_env.bindir = path to mpi binaries
     # mpi_env.mpiexec = mpiexec, mpirun, or equivalent command
+    # mpi_env.mpiexec_opts = mpiexec command options
     # mpi_env.mpiexec_args = option to pass arguments (usually None, or -args)
     # mpi_env.mpiexec_exe = option to define executable (usually None, of -exe)
     # mpi_env.mpiexec_n = option to define number of ranks (e.g. ' -n ', ' -np ')
+    # mpi_env.mpiexec_n_per_node = option to define number of ranks per node
+    #                              (e.g. ' -ppn 6 ', ' --ranks-per-node 16 ')
+    # mpi_env.mpiexec_separator = separator after options (':' for Blue Gene/Q)
     # mpi_env.gen_hostsfile = shell command to generate hostsfile if required
     # mpi_env.del_hostsfile = shell command to delete hostsfile if required
     # mpi_env.mpiboot = command to start environment (e.g. mpdboot, lamboot)

@@ -89,8 +89,8 @@ class case:
 
         if syr_domains == None:
             self.syr_domains = ()
-        elif type(syr_domains) == tuple or  type(syr_domains) == list:
-                self.syr_domains = syr_domains
+        elif type(syr_domains) == tuple or type(syr_domains) == list:
+            self.syr_domains = syr_domains
         else:
             self.syr_domains = (syr_domains,)
 
@@ -849,9 +849,15 @@ class case:
         mpi_cmd_args = ''
         if n_procs > 1 and mpi_env.mpiexec != None:
             mpi_cmd = mpi_env.mpiexec
+            if mpi_env.mpiexec_opts != None:
+                mpi_cmd += ' ' + mpi_env.mpiexec_opts
             if mpiexec_mpmd == False:
                 if mpi_env.mpiexec_n != None:
                     mpi_cmd += mpi_env.mpiexec_n + str(n_procs)
+                if mpi_env.mpiexec_n_per_node != None:
+                    mpi_cmd += mpi_env.mpiexec_n_per_node
+                if mpi_env.mpiexec_separator != None:
+                    mpi_cmd += ' ' + mpi_env.mpiexec_separator
                 mpi_cmd += ' '
                 if mpi_env.mpiexec_exe != None:
                     mpi_cmd += mpi_env.mpiexec_exe + ' '

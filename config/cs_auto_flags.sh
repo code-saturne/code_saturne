@@ -31,7 +31,6 @@
 # cflags_default_opt     # Added to $CFLAGS for optimization (default: "-O")
 # cflags_default_hot     # Optimization for specific files   (default: "-O")
 # cflags_default_prf     # Added to $CFLAGS for profiling    (default: "")
-# cflags_default_omp     # Added to $CFLAGS for OpenMP       (default: "")
 # cflags_default_ext     # Added to $CFLAGS for extended     (default: "")
 #                        # precision if available
 
@@ -40,7 +39,6 @@
 # fcflags_default_opt    # Added to $FCFLAGS for optimization (default: "-O")
 # fcflags_default_hot    # Optimization for specific files    (default: "-O")
 # fcflags_default_prf    # Added to $FCFLAGS for profiling    (default: "")
-# fcflags_default_omp    # Added to $FCFLAGS for OpenMP       (default: "")
 #
 # ldflags_default        # Base LDFLAGS                       (default: "")
 # ldflags_default_dbg    # Added to $LDFLAGS for debugging    (default: "-g")
@@ -171,7 +169,6 @@ if test "x$cs_gcc" = "xgcc"; then
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
   cflags_default_prf="-pg"
-  cflags_default_omp="-fopenmp"
 
   # Modify default flags on certain systems
 
@@ -214,13 +211,9 @@ if test "x$cs_gcc" = "xgcc"; then
   esac
 
   case "$cs_cc_vendor-$cs_cc_version" in
-    gcc-2.*|gcc-3*|gcc-4.[012]*)
-      cflags_default_omp=""
+    gcc-3*|gcc-4.[01234]*)
       ;;
-  esac
-
-  case "$cs_cc_vendor-$cs_cc_version" in
-    gcc-4.[56]*)
+    *)
       cflags_default_opt="$cflags_default_opt -fexcess-precision=fast"
       cflags_default_hot="$cflags_default_hot -fexcess-precision=fast"
       ;;
@@ -253,7 +246,6 @@ elif test "x$cs_gcc" = "xicc"; then
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
   cflags_default_prf="-p"
-  cflags_default_omp="-openmp"
 
   # Modify default flags on certain systems
 
@@ -288,7 +280,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     cflags_default_opt="-O2"
     cflags_default_hot="-fast"
     cflags_default_prf="-Mprof=func,lines"
-    cflags_default_omp="-mp"
 
   fi
 
@@ -311,12 +302,11 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     cs_linker_set=yes
 
     # Default compiler flags
-    cflags_default="-q64"
+    cflags_default="-qlanglvl=stdc99 -q64"
     cflags_default_opt="-O3"
     cflags_default_hot="-O3"
     cflags_default_dbg="-g"
     cflags_default_prf="-pg"
-    cflags_default_omp="-qsmp=omp"
 
     # Default  linker flags
     ldflags_default=""
@@ -331,15 +321,27 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
       # Default compiler flags (we assume that MPI wrappers are used)
       cs_ibm_bg_type=`grep 'Blue Gene' $outfile | sed -e 's/.*Blue Gene\/\([A-Z]\).*/\1/'`
       if test "x$cs_ibm_bg_type" = "xL" ; then
-        cflags_default=""
+        cppflags_default="-I/bgl/BlueLight/ppcfloor/bglsys/include"
+        cflags_default="-qlanglvl=stdc99"
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
+        ldflags_default="-Wl,-allow-multiple-definition"
       elif test "x$cs_ibm_bg_type" = "xP" ; then
-        cflags_default="-I/bgsys/drivers/ppcfloor/arch/include"
+        cppflags_default="-I/bgsys/drivers/ppcfloor/arch/include"
+        cflags_default="-qlanglvl=extc99"
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
+        ldflags_default="-Wl,-allow-multiple-definition"
+      else
+        cs_ibm_bg_type="Q"
+        cppflags_default=""
+        cflags_default=""                    # "-qlanglvl=extc99" by default
+        cflags_default_opt="-O3"
+        cflags_default_hot="-O3 -qhot"
+        cflags_default_dbg="-g"
+        ldflags_default="-Wl,-allow-multiple-definition"
       fi
     fi
 
@@ -377,7 +379,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
             cflags_default_hot="-O"
             cflags_default_dbg="-g"
             cflags_default_prf="-pg"
-            cflags_default_omp="-omp"
           ;;
         esac
 
@@ -411,7 +412,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cflags_default_opt=""
         cflags_default_dbg=""
         cflags_default_prf=""
-        cflags_default_omp=""
 
         # Default linker flags
         ldflags_default=""
@@ -468,14 +468,12 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cflags_default_hot="+O3"
         cflags_default_dbg="-g"
         cflags_default_prf="-G"
-        cflags_default_omp="+Oopenmp" # most pragmas require +O3
 
         # Default linker flags
         ldflags_default="+FPVZOUD +U77"
         ldflags_default_opt="+O1"
         ldflags_default_dbg="-g"
         ldflags_default_prf="-fbexe"
-        cflags_default_omp="+Oopenmp"
 
         if test "$host_cpu" = "ia64" ; then
           cflags_default="$cflags_default +DD64"
@@ -509,7 +507,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cflags_default_hot="-xO3"
         cflags_default_dbg="-g"
         cflags_default_prf="-pg"
-        cflags_default_omp="-xopenmp"
 
      fi
      ;;
@@ -523,7 +520,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
       cflags_default_opt="-O"
       cflags_default_dbg="-g"
       cflags_default_prf=""
-      cflags_default_omp=""
       ;;
 
   esac
@@ -602,7 +598,6 @@ if test "$?" = "0" ; then
   fcflags_default_opt="-O"
   fcflags_default_hot="-O2"
   fcflags_default_prf="-pg"
-  fcflags_default_omp="-fopenmp"
 
   # Deactivate bounds checking with older gfortran 4.1
   # to avoid issue in turrij.f90
@@ -638,7 +633,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_opt="-O2"
     fcflags_default_hot="-O3"
     fcflags_default_prf="-p"
-    fcflags_default_omp="-openmp"
 
     # Modify default flags on certain systems
 
@@ -673,7 +667,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_opt="-O2"
     fcflags_default_hot="-fast"
     fcflags_default_prf="-Mprof=func,lines"
-    fcflags_default_omp="-mp"
 
   fi
 
@@ -699,7 +692,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_dbg="-g"
     fcflags_default_opt="-O3"
     fcflags_default_prf="-pg"
-    fcflags_default_omp="-qsmp=omp"
 
     # Adjust options for IBM Blue Gene cross-compiler
 
@@ -715,6 +707,11 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
         fcflags_default_opt="-O3"
         fcflags_default_hot="-O3 -qhot"
       elif test "$cs_ibm_bg_type" = "P" ; then
+        fcflags_default="-qextname -qsuffix=cpp=f90"
+        fcflags_default_dbg="-g"
+        fcflags_default_opt="-O3"
+        fcflags_default_hot="-O3 -qhot"
+      elif test "x$cs_ibm_bg_type" = "xQ" ; then
         fcflags_default="-qextname -qsuffix=cpp=f90"
         fcflags_default_dbg="-g"
         fcflags_default_opt="-O3"
@@ -750,7 +747,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
         fcflags_default_hot=""
         fcflags_default_dbg=""
         fcflags_default_prf=""
-        fcflags_default_omp=""
 
       fi
       ;;
@@ -776,7 +772,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
         fcflags_default_hot="+O2"
         fcflags_default_dbg="-g"
         fcflags_default_prf="-G"
-        fcflags_default_omp="+Oopenmp" # most pragmas require +O3
 
       fi
       ;;

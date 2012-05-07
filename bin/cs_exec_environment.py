@@ -627,7 +627,10 @@ class mpi_environment:
         self.mpiboot = None
         self.mpihalt = None
         self.mpiexec = None
+        self.mpiexec_opts = None
         self.mpiexec_n = None
+        self.mpiexec_n_per_node = None
+        self.mpiexec_separator = None
         self.mpiexec_exe = None
         self.mpiexec_args = None
         self.mpmd = MPI_MPMD_none
@@ -645,6 +648,7 @@ class mpi_environment:
                                'LAM_MPI':self.__init_lam__,
                                'BGL_MPI':self.__init_bgl__,
                                'BGP_MPI':self.__init_bgp__,
+                               'BGQ_MPI':self.__init_bgq__,
                                'HP_MPI':self.__init_hp_mpi__,
                                'MPIBULL2':self.__init_mpibull2__}
             if self.type in mpi_env_by_type:
@@ -736,6 +740,10 @@ class mpi_environment:
             if self.mpiexec != None:
                 break
 
+        if (self.mpiexec == None):
+            basename = 'mpiexec'
+            self.mpiexec = 'mpiexec'
+
         # Determine if MPD should be handled
         # (if we are using a root MPD, no need for setup)
 
@@ -807,6 +815,11 @@ class mpi_environment:
                 hostsfile = resource_info.get_hosts_file(wdir)
                 if hostsfile != None:
                     self.mpiexec += ' -f ' + hostsfile
+
+            if (resource_info != None):
+                ppn = resource_info.n_procs_per_node()
+                if ppn != 1:
+                    self.mpiexec_n_per_node = ' -ppn ' + str(ppn)
 
         elif pm == 'gforker':
             hosts = False
@@ -921,6 +934,10 @@ class mpi_environment:
         launcher_base = os.path.basename(self.mpiexec)
 
         self.mpiexec_n = ' -n '
+        if (resource_info != None):
+            ppn = resource_info.n_procs_per_node()
+            if ppn != 1:
+                self.mpiexec_n_per_node = ' --npernode ' + str(ppn)
         if launcher_base[:7] == 'mpiexec':
             self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_script
         elif launcher_base[:7] == 'mpirun':
@@ -1055,12 +1072,40 @@ class mpi_environment:
 
         # Determine processor count and MPMD handling
 
-        launcher_base = os.path.basename(self.mpiexec)
-
         self.mpiexec_n = None
         self.mpmd = MPI_MPMD_configfile
 
         # Other options to add
+
+        # Info commands
+
+    #---------------------------------------------------------------------------
+
+    def __init_bgq__(self, p, resource_info=None, wdir = None):
+
+        """
+        Initialize for Blue Gene/Q environment.
+        """
+
+        # Set base executable path
+
+        self.mpiexec = 'runjob'
+
+        # Determine processor count and MPMD handling
+
+        self.mpiexec_n = ' --np '
+        if (resource_info != None):
+            ppn = resource_info.n_procs_per_node()
+            if ppn != 1:
+                self.mpiexec_n_per_node = ' --ranks-per-node ' + str(ppn)
+        self.mpiexec_separator = ':'
+        self.mpmd = None
+
+        # Other options to add
+
+        # self.mpiexec_exe = '--exe'
+        # self.mpiexec_args = '--args'
+        # self.mpiexec_envs = '--envs OMP_NUM_THREADS=' + str(omp_num_threads)
 
         # Info commands
 
@@ -1231,6 +1276,7 @@ if __name__ == '__main__':
     print('mpi_env.mpiexec =       ', mpi_env.mpiexec)
     print('mpi_env.mpiexec_args =  ', mpi_env.mpiexec_args)
     print('mpi_env.mpiexec_exe =   ', mpi_env.mpiexec_exe)
+    print('mpi_env.mpiexec_opts =  ', mpi_env.mpiexec_opts)
     print('mpi_env.mpiexec_n =     ', mpi_env.mpiexec_n)
     print('mpi_env.gen_hostsfile = ', mpi_env.gen_hostsfile)
     print('mpi_env.del_hostsfile = ', mpi_env.del_hostsfile)
