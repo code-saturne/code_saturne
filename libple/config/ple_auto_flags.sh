@@ -256,13 +256,20 @@ if test "x$ple_compiler_known" != "xyes" ; then
         cflags_default="-g -qmaxmem=-1 -qarch=440d -qtune=440"
         cflags_default_opt="-O2"
         cflags_default_dbg=""
-        ldflags_default="-Wl,-allow-multiple-definition -L/bgl/BlueLight/ppcfloor/bglsys/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lnss_files -lnss_dns -lresolv"
+        ldflags_default="-L/bgl/BlueLight/ppcfloor/bglsys/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lnss_files -lnss_dns -lresolv"
       elif test "$ple_ibm_bg_type" = "P" ; then
         cppflags_default="-I/bgsys/drivers/ppcfloor/comm/include"
         cflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450"
         cflags_default_opt="-O1"
         cflags_default_dbg=""
-        ldflags_default="-Wl,-allow-multiple-definition -L/bgsys/drivers/ppcfloor/comm/lib -lmpich.cnk -ldcmfcoll.cnk -ldcmf.cnk"
+        ldflags_default=""
+      else
+        ple_ibm_bg_type="Q"
+        cppflags_default=""
+        cflags_default=""
+        cflags_default_opt="-O3"
+        cflags_default_hot="-O3 -qhot"
+        cflags_default_dbg="-g"
       fi
     fi
 
@@ -293,7 +300,7 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
     cflags_default_omp="-h omp"              # default: use "-h noomp" to disable
 
     # Default  linker flags
-    ldflags_default="-z muldefs"
+    ldflags_default=""
     ldflags_default_opt="-O2"
     ldflags_default_dbg="-g"
     ldflags_default_prf="-h profile_generate"

@@ -666,6 +666,10 @@ class case:
                 mpi_cmd += ' ' + mpi_env.mpiexec_opts
             if mpi_env.mpiexec_n != None:
                 mpi_cmd += mpi_env.mpiexec_n + str(d.partition_n_procs)
+            if mpi_env.mpiexec_n_per_node != None:
+                mpi_cmd += mpi_env.mpiexec_n_per_node
+            if mpi_env.mpiexec_separator != None:
+                mpi_cmd += ' ' + mpi_env.mpiexec_separator
             mpi_cmd += ' '
             if mpi_env.mpiexec_exe != None:
                 mpi_cmd += mpi_env.mpiexec_exe + ' '
@@ -1028,6 +1032,10 @@ fi
             if mpiexec_mpmd == False:
                 if mpi_env.mpiexec_n != None:
                     mpi_cmd += mpi_env.mpiexec_n + str(n_procs)
+                if mpi_env.mpiexec_n_per_node != None:
+                    mpi_cmd += mpi_env.mpiexec_n_per_node
+                if mpi_env.mpiexec_separator != None:
+                    mpi_cmd += ' ' + mpi_env.mpiexec_separator
                 mpi_cmd += ' '
                 if mpi_env.mpiexec_exe != None:
                     mpi_cmd += mpi_env.mpiexec_exe + ' '

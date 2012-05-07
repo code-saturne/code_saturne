@@ -399,6 +399,22 @@ class resource_info(batch_info):
 
     #---------------------------------------------------------------------------
 
+    def n_procs_per_node(self):
+
+        """
+        Determine number of processors per node.
+        """
+
+        ppn = 1
+        if self.n_procs != None and  self.n_nodes != None:
+            print self.n_procs
+            print self.n_nodes
+            ppn = self.n_procs / self.n_nodes
+
+        return ppn
+
+    #---------------------------------------------------------------------------
+
     def n_procs_from_hosts_file(self, hosts_file):
 
         """
@@ -599,7 +615,7 @@ class mpi_environment:
         Returns MPI environment info.
         """
 
-        # Note that self.mpiexec will usually be ' -n ' if present;
+        # Note that self.mpiexec_n will usually be ' -n ' if present;
         # blanks are used to separate from the surrounding arguments,
         # but in the case of srun, which uses a -n<n_procs> instead
         # of -n <n_procs> syntax, setting it to ' -n' will be enough.
@@ -614,6 +630,8 @@ class mpi_environment:
         self.mpiexec = None
         self.mpiexec_opts = None
         self.mpiexec_n = None
+        self.mpiexec_n_per_node = None
+        self.mpiexec_separator = None
         self.mpiexec_exe = None
         self.mpiexec_args = None
         self.mpmd = MPI_MPMD_none
@@ -799,6 +817,11 @@ class mpi_environment:
                 if hostsfile != None:
                     self.mpiexec += ' -f ' + hostsfile
 
+            if (resource_info != None):
+                ppn = resource_info.n_procs_per_node()
+                if ppn != 1:
+                    self.mpiexec_n_per_node = ' -ppn ' + str(ppn)
+
         elif pm == 'gforker':
             hosts = False
             hostslist = resource_info.get_hosts_list()
@@ -912,6 +935,10 @@ class mpi_environment:
         launcher_base = os.path.basename(self.mpiexec)
 
         self.mpiexec_n = ' -n '
+        if (resource_info != None):
+            ppn = resource_info.n_procs_per_node()
+            if ppn != 1:
+                self.mpiexec_n_per_node = ' --npernode ' + str(ppn)
         if launcher_base[:7] == 'mpiexec':
             self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_script
         elif launcher_base[:7] == 'mpirun':
@@ -1046,8 +1073,6 @@ class mpi_environment:
 
         # Determine processor count and MPMD handling
 
-        launcher_base = os.path.basename(self.mpiexec)
-
         self.mpiexec_n = None
         self.mpmd = MPI_MPMD_configfile
 
@@ -1069,12 +1094,19 @@ class mpi_environment:
 
         # Determine processor count and MPMD handling
 
-        launcher_base = os.path.basename(self.mpiexec)
-
-        self.mpiexec_n = None
+        self.mpiexec_n = ' --np '
+        if (resource_info != None):
+            ppn = resource_info.n_procs_per_node()
+            if ppn != 1:
+                self.mpiexec_n_per_node = ' --ranks-per-node ' + str(ppn)
+        self.mpiexec_separator = ':'
         self.mpmd = None
 
         # Other options to add
+
+        # self.mpiexec_exe = '--exe'
+        # self.mpiexec_args = '--args'
+        # self.mpiexec_envs = '--envs OMP_NUM_THREADS=' + str(omp_num_threads)
 
         # Info commands
 

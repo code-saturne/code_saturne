@@ -338,19 +338,22 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
+        ldflags_default="-Wl,-allow-multiple-definition"
       elif test "x$cs_ibm_bg_type" = "xP" ; then
         cppflags_default="-I/bgsys/drivers/ppcfloor/arch/include"
         cflags_default="-qlanglvl=extc99"
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
+        ldflags_default="-Wl,-allow-multiple-definition"
       else
         cs_ibm_bg_type="Q"
         cppflags_default=""
-        cflags_default=""
+        cflags_default=""                    # "-qlanglvl=extc99" by default
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
+        ldflags_default="-Wl,-allow-multiple-definition"
       fi
     fi
 

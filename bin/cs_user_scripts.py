@@ -255,32 +255,46 @@ def define_mpi_environment(mpi_env):
     # (due to the wide variety of MPI implementations and build options,
     # the default configuration may not give correct values in some cases).
 
-    # mpi_env.bindir        : path to mpi binaries
+    # mpi_env.bindir             : path to mpi binaries
 
-    # mpi_env.mpiexec       : mpiexec, mpirun, or equivalent command
-    # mpi_env.mpiexec_opts  : mpiexec command options
+    # mpi_env.mpiexec            : mpiexec, mpirun, or equivalent command
+    # mpi_env.mpiexec_opts       : mpiexec command options
 
-    # mpi_env.mpiexec_args  : option to pass arguments (usually None, or '-args')
-    # mpi_env.mpiexec_exe   : option to define executable (usually None, or '-exe')
-    # mpi_env.mpiexec_n     : option to define number of ranks
-    #                         (usually ' -n ' or ' -np '; trailing whitespace
-    #                         is significant, as SLURM for example requires
-    #                         ' -n', for a -n<n_procs> type syntax)
+    # mpi_env.mpiexec_args       : option to pass arguments (usually None,
+    #                              or '-args')
+    # mpi_env.mpiexec_exe        : option to define executable (usually None,
+    #                              or '-exe')
+    # mpi_env.mpiexec_n          : option to define number of ranks
+    #                              (usually ' -n ' or ' -np '; trailing
+    #                              whitespace is significant, as SLURM for
+    #                              example requires ' -n', for a -n<n_procs>
+    #                              type syntax)
+    # mpi_env.mpiexec_n_per_node : option to define number of ranks per node
+    #                              (e.g. ' -ppn 6 ', ' --ranks-per-node 16 ')
+    # mpi_env.mpiexec_separator  : separator after MPI options section
+    #                              (usually None, ':' for Blue Gene/Q)
 
-    # mpi_env.gen_hostsfile : shell command to generate hostsfile if required
-    # mpi_env.del_hostsfile : shell command to delete hostsfile if required
+    # mpi_env.gen_hostsfile      : shell command to generate hostsfile if
+    #                              required. When using a fixed hostfile, passing
+    #                              it in mpiexec_opts is simpler, so this command
+    #                              is only useful when using a resource manager
+    #                              which is not handled correctly by the MPI
+    #                              library
+    # mpi_env.del_hostsfile      : shell command to delete hostsfile if required
 
-    # mpi_env.mpiboot       : command to start environment (e.g. 'mpdboot'
-    #                         for some MPICH2 configurations using MPD,
-    #                         'lamboot' required for obsolescent LAM-MPI)
-    # mpi_env.mpihalt       : command to halt environment (e.g. 'mpdallexit'
-    #                         after 'mpdboot', lamhalt after 'lamboot')
+    # mpi_env.mpiboot            : command to start environment (e.g. 'mpdboot'
+    #                              for some MPICH2 configurations using MPD,
+    #                              'lamboot' required for obsolescent LAM-MPI)
+    # mpi_env.mpihalt            : command to halt environment (e.g. 'mpdallexit'
+    #                              after 'mpdboot', lamhalt after 'lamboot')
 
-    # mpi_env.mpmd          : Multiple program/multiple data mode for couplings:
-    #                         MPI_MPMD_mpiexec (mpiexec ':'-separated syntax), or
-    #                         MPI_MPMD_configfile (mpiexec -configfile), or
-    #                         MPI_MPMD_script, or
-    #                         MPI_MPMD_execve
+    # mpi_env.mpmd               : Multiple program/multiple data mode for
+    #                              couplings:
+    #                              MPI_MPMD_mpiexec (mpiexec ':'-separated
+    #                                                syntax), or
+    #                              MPI_MPMD_configfile (mpiexec -configfile), or
+    #                              MPI_MPMD_script, or
+    #                              MPI_MPMD_execve
 
     return
 
