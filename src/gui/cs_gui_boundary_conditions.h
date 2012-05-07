@@ -87,6 +87,8 @@ typedef struct {
   mei_tree_t **velocity;   /* formula for norm or mass flow rate of velocity  */
   mei_tree_t **direction;  /* formula for direction of velocity               */
   cs_meteo_t  *meteo;      /* inlet or outlet info for atmospheric flow       */
+  mei_tree_t ***scalar;    /* formula for scalar (neumann, dirichlet or excange
+                              coefficient)*/
 } cs_boundary_t;
 
 
@@ -102,7 +104,10 @@ typedef enum {
   NEUMANN,
   COEF_ECHANGE,
   COALFLOW,
-  WALL_FUNCTION
+  WALL_FUNCTION,
+  DIRICHLET_FORMULA,
+  NEUMANN_FORMULA,
+  COEF_ECHANGE_FORMULA
 } cs_boundary_value_t;
 
 /*============================================================================

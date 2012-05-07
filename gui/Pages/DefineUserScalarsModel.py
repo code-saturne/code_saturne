@@ -232,6 +232,25 @@ class DefineUserScalarsModel(Variables, Model):
         return list
 
 
+    def getMeteoScalarsList(self):
+        node_list = []
+        models = self.case.xmlGetNode('thermophysical_models')
+        node = models.xmlGetNode('atmospheric_flows', 'model')
+        if node == None:
+            return
+
+        model = node['model']
+        if model != 'off':
+            node_list = node.xmlGetNodeList('scalar')
+            list_scalar=[]
+            for node_scalar in node_list:
+                list_scalar.append(node_scalar['label'])
+        else:
+            return
+
+        return list_scalar
+
+
     def getUserScalarLabelsList(self):
         """Public method.
         Return the user scalar label list (without thermal scalar).
@@ -252,12 +271,12 @@ class DefineUserScalarsModel(Variables, Model):
         for node in self.node_bc.xmlGetChildNodeList('inlet'):
             model = Boundary('inlet', node['label'], self.case)
             for label in self.getScalarLabelsList():
-                model.setScalar(label, 0.0)
+                model.setScalarValue(label, 'dirichlet', 0.0)
 
         for node in self.node_bc.xmlGetChildNodeList('outlet'):
             model = Boundary('outlet', node['label'], self.case)
             for label in self.getScalarLabelsList():
-                model.setScalar(label, 0.0)
+                model.setScalarValue(label, 'dirichlet', 0.0)
 
 
     def addUserScalar(self, label=None):
@@ -574,6 +593,29 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar_label, self.getScalarLabelsList())
         node = self.scalar_node.xmlGetNode('scalar', 'name', label=scalar_label)
         return node['name']
+
+
+    def getMeteoScalarType(self, scalar_label):
+        """
+        Return type of scalar for choice of color (for view)
+        """
+        self.isInList(scalar_label, self.getMeteoScalarsList())
+        models = self.case.xmlGetNode('thermophysical_models')
+        node = models.xmlGetNode('atmospheric_flows', 'model')
+        n = node.xmlGetNode('scalar', 'type', label=scalar_label)
+        Model().isInList(n['type'], ('user', 'thermal', 'model'))
+        return n['type']
+
+
+    def getMeteoScalarName(self, scalar_label):
+        """
+        Return type of scalar for choice of color (for view)
+        """
+        self.isInList(scalar_label, self.getMeteoScalarsList())
+        models = self.case.xmlGetNode('thermophysical_models')
+        node = models.xmlGetNode('atmospheric_flows', 'model')
+        n = node.xmlGetNode('scalar', 'name', label=scalar_label)
+        return n['name']
 
 
 #-------------------------------------------------------------------------------

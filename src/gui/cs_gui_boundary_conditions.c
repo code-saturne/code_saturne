@@ -333,6 +333,43 @@ _inlet_turbulence(const char *const choice,
 }
 
 /*-----------------------------------------------------------------------------
+ * Initialize mei tree and check for symbols existence
+ *
+ * parameters:
+ *   formula        -->  mei formula
+ *   symbols        -->  array of symbol to check
+ *   symbol_size    -->  number of symbol in symbols
+ *----------------------------------------------------------------------------*/
+
+static mei_tree_t *_boundary_scalar_init_mei_tree(const char *formula,
+                                           const char *symbols[],
+                                           const int   symbol_size)
+{
+  int i = 0;
+
+  /* return an empty interpreter */
+  mei_tree_t *tree = mei_tree_new(formula);
+
+  /* add commun variables */
+  mei_tree_insert(tree, "x", 0.0);
+  mei_tree_insert(tree, "y", 0.0);
+  mei_tree_insert(tree, "z", 0.0);
+
+  /* try to build the interpreter */
+  if (mei_tree_builder(tree))
+    bft_error(__FILE__, __LINE__, 0,
+        _("Error: can not interpret expression: %s\n"), tree->string);
+
+  /* check for symbols */
+  for (i = 0; i < symbol_size; ++i)
+    if (mei_tree_find_symbol(tree, symbols[i]))
+      bft_error(__FILE__, __LINE__, 0,
+          _("Error: can not find the required symbol: %s\n"), symbols[i]);
+
+  return tree;
+}
+
+/*-----------------------------------------------------------------------------
  * get scalar's values
  *
  * parameters:
@@ -351,6 +388,7 @@ _boundary_scalar(const char *const nature,
   char *path_commun = NULL;
   char *path2 = NULL;
   char *choice = NULL;
+  char *formula = NULL;
   double result;
 
   cs_var_t  *vars = cs_glob_var;
@@ -393,6 +431,30 @@ _boundary_scalar(const char *const nature,
       if (cs_gui_get_double(path, &result)) {
         boundaries->type_code[vars->rtp[numvar]][izone] = NEUMANN;
         boundaries->values[vars->rtp[numvar]][izone].val3 = result;
+      }
+    } else if (cs_gui_strcmp(choice, "dirichlet_formula")) {
+      cs_xpath_add_element(&path, "dirichlet_formula");
+      cs_xpath_add_function_text(&path);
+      if (cs_gui_get_text_value(path)){
+        const char *sym[] = {vars->label[nsca]};
+        boundaries->type_code[vars->rtp[numvar]][izone] = DIRICHLET_FORMULA;
+        boundaries->scalar[vars->rtp[numvar]][izone] = _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 1);
+      }
+    } else if (cs_gui_strcmp(choice, "neumann_formula")) {
+      cs_xpath_add_element(&path, "neumann_formula");
+      cs_xpath_add_function_text(&path);
+      if (cs_gui_get_text_value(path)){
+        const char *sym[] = {"flux"};
+        boundaries->type_code[vars->rtp[numvar]][izone] = NEUMANN_FORMULA;
+        boundaries->scalar[vars->rtp[numvar]][izone] = _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 1);
+      }
+    } else if (cs_gui_strcmp(choice, "exchange_coefficient_formula")){
+      cs_xpath_add_element (&path, "exchange_coefficient_formula");
+      cs_xpath_add_function_text(&path);
+      if (cs_gui_get_text_value(path)){
+        const char *sym[] = {vars->label[nsca],"hc"};
+        boundaries->type_code[vars->rtp[numvar]][izone] = COEF_ECHANGE_FORMULA;
+        boundaries->scalar[vars->rtp[numvar]][izone] = _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 2);
       }
     }
 
@@ -823,6 +885,11 @@ _init_boundaries(const int *const nfabor,
             for (isca = 0; isca < vars->nscaus; isca++)
                 _boundary_scalar("inlet", izone, isca);
 
+            /* Inlet: METEO SCALARS */
+            if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
+                for (isca = 0; isca < vars->nscapp; isca++)
+                    _boundary_scalar("inlet", izone, isca+vars->nscaus);
+
         }
         else if (cs_gui_strcmp(nature, "wall"))
         {
@@ -843,6 +910,11 @@ _init_boundaries(const int *const nfabor,
             for (isca = 0; isca < vars->nscaus; isca++)
                 _boundary_scalar("wall", izone, isca);
 
+            /* Wall: METEO SCALARS */
+            if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
+                for (isca = 0; isca < vars->nscapp; isca++)
+                    _boundary_scalar("wall", izone, isca+vars->nscaus);
+
         }
         else if (cs_gui_strcmp(nature, "outlet"))
         {
@@ -856,6 +928,11 @@ _init_boundaries(const int *const nfabor,
             /* Outlet: USER SCALARS */
             for (isca = 0; isca < vars->nscaus; isca++)
                 _boundary_scalar("outlet", izone, isca);
+
+            /* Outlet: METEO SCALARS */
+            if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
+                for (isca = 0; isca < vars->nscapp; isca++)
+                    _boundary_scalar("outlet", izone, isca+vars->nscaus);
 
         }  /* if (cs_gui_strcmp(nature, "outlet")) */
         BFT_FREE(nature);
@@ -1756,6 +1833,46 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                     = boundaries->values[ivar][izone].val2;
                         }
                     break;
+
+                    case DIRICHLET_FORMULA:
+
+                        for (ifac = 0; ifac < faces; ifac++)
+                        {
+                            ifbr = faces_list[ifac]-1;
+                            mei_evaluate(boundaries->scalar[ivar][izone]);
+                            icodcl[ivar *(*nfabor) + ifbr] = 5;
+                            rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+                                = mei_tree_lookup(boundaries->scalar[ivar][izone],
+                                                  vars->label[ivar - vars->nvar + vars->nscaus + vars->nscapp]);
+                        }
+                    break;
+
+                    case NEUMANN_FORMULA:
+
+                        for (ifac = 0; ifac < faces; ifac++)
+                        {
+                            ifbr = faces_list[ifac]-1;
+                            mei_evaluate(boundaries->scalar[ivar][izone]);
+                            icodcl[ivar *(*nfabor) + ifbr] = 3;
+                            rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+                                              = mei_tree_lookup(boundaries->scalar[ivar][izone], "flux");
+                        }
+                    break;
+
+                    case COEF_ECHANGE_FORMULA:
+
+                        for (ifac = 0; ifac < faces; ifac++)
+                        {
+                            ifbr = faces_list[ifac]-1;
+                            mei_evaluate(boundaries->scalar[ivar][izone]);
+                            icodcl[ivar *(*nfabor) + ifbr] = 5;
+                            rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+                                    = mei_tree_lookup(boundaries->scalar[ivar][izone],
+                                                      vars->label[ivar - vars->nvar + vars->nscaus + vars->nscapp]);
+                            rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+                                    = mei_tree_lookup(boundaries->scalar[ivar][izone], "hc");
+                        }
+                    break;
                 } /* switch */
             } /* for (i = 0; i < vars->nvar; i++) */
 
@@ -1784,6 +1901,19 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                         icodcl[ivar *(*nfabor) + ifbr] = 1;
                         rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
                             = boundaries->values[ivar][izone].val1;
+                    }
+                break;
+
+                case DIRICHLET_FORMULA:
+
+                    for (ifac = 0; ifac < faces; ifac++)
+                        {
+                        ifbr = faces_list[ifac]-1;
+                        mei_evaluate(boundaries->scalar[ivar][izone]);
+                        icodcl[ivar *(*nfabor) + ifbr] = 1;
+                        rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+                            = mei_tree_lookup(boundaries->scalar[ivar][izone],
+                                              vars->label[ivar - vars->nvar + vars->nscaus + vars->nscapp]);
                     }
                 break;
                 }
@@ -2097,12 +2227,17 @@ cs_gui_boundary_conditions_free_memory(const int *const ncharb)
       BFT_FREE(boundaries->nature[izone]);
       mei_tree_destroy(boundaries->velocity[izone]);
       mei_tree_destroy(boundaries->direction[izone]);
+      for (i = 0 ; i < vars->nvar ; i++) {
+        ivar = vars->rtp[i];
+        mei_tree_destroy(boundaries->scalar[ivar][izone]);
+      }
     }
 
     for (i=0; i < vars->nvar; i++) {
       ivar = vars->rtp[i];
       BFT_FREE(boundaries->type_code[ivar]);
       BFT_FREE(boundaries->values[ivar]);
+      BFT_FREE(boundaries->scalar[ivar]);
     }
 
     if (cs_gui_strcmp(vars->model, "pulverized_coal")) {
@@ -2140,6 +2275,7 @@ cs_gui_boundary_conditions_free_memory(const int *const ncharb)
     BFT_FREE(boundaries->dirz);
     BFT_FREE(boundaries->velocity);
     BFT_FREE(boundaries->direction);
+    BFT_FREE(boundaries->scalar);
     BFT_FREE(boundaries);
   }
 }
