@@ -1,4 +1,16 @@
 * 07/05/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Initial (minimal) port to Blue Gene/Q.
+  added files:
+    bin/macros_zumbrota.mk
+  modified files:
+    bin/cs_profile
+    src/base/cs_base.c
+    src/base/cs_suite.c
+    src/base/tremai.c
+  moved files:
+    bin/macros_Blue_Gene_P.mk moved to bin/macros_frontier.mk
+
+* 07/05/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove macro example for untested/unmaintained Darwin build.
   removed files:
     bin/macros_Darwin.mk

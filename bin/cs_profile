@@ -45,7 +45,11 @@ if [ "$NOM_ARCH" = "Linux" ] ; then
       NOM_ARCH=calibre5
     fi
   elif [ -d /bgsys/drivers/ppcfloor ] ; then
-    NOM_ARCH=Blue_Gene_P
+    if [ "`hostname | cut -c1-6`" = "bgqfen" ] ; then
+      NOM_ARCH=zumbrota
+    elif [ "`hostname | cut -c1-4`" = "fenp" ] ; then
+      NOM_ARCH=frontier
+    fi
   elif [ "`hostname | cut -c1-6`" = "titane" ] ; then
     NOM_ARCH=titane
   fi
@@ -55,16 +59,16 @@ fi
 
 if [ "$NOM_ARCH" = "titane" ] ; then 
   CS_ROOT=/ccc/cont002/home/edf/saturne/Code_Saturne/1.3
-elif [ "$NOM_ARCH" = "Blue_Gene_P" ] ; then 
+elif [ "$NOM_ARCH" = "frontier" ] ; then 
   CS_ROOT=/gpfs/home/saturne/Code_Saturne/1.3
 elif [ "$NOM_ARCH" = "calibre7" ] ; then
   CS_ROOT=/netdata/saturne/Code_Saturne/1.3
-elif [ "$NOM_ARCH" = "ivanoe" ] ; then
+elif [ "$NOM_ARCH" = "ivanoe" -o "$NOM_ARCH" = "zumbrota" ] ; then
   CS_ROOT=/home/projets/saturne/Code_Saturne/1.3
 else
   CS_ROOT=/home/saturne/Code_Saturne/1.3
 fi
-CS_HOME=${CS_ROOT}/Noyau/ncs-1.3.5
+CS_HOME=${CS_ROOT}/Noyau/ncs-1.3.6
 ECS_HOME=${CS_ROOT}/Enveloppe/ecs-1.3.4
 CSGUI_HOME=${CS_ROOT}/Interface/ics-1.3.4
 SYRCS_HOME=${CS_ROOT}/opt/syr_cs-2.1.2

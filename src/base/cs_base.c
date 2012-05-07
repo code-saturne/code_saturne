@@ -833,7 +833,7 @@ void cs_base_info_systeme
   /* Utilisateur */
 
   /* Fonctions non disponibles sur IBM Blue Gene ou Cray XT */
-#if   defined(__blrts__) || defined(__bgp__) \
+#if   defined(__blrts__) || defined(__bg__) \
    || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
   pwd_user = NULL;
 #else
