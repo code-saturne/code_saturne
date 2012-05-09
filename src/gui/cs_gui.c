@@ -2404,20 +2404,20 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
   algo_choice = cs_gui_variable_choice(vars->name[0], "solveur_choice");
   if (cs_gui_strcmp(algo_choice, "multigrid"))
   {
-    iresol[j] == 0;
+    iresol[j] = 0;
     imgr[j] = 1;
   }
   else if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
-    iresol[j] == 0;
+    iresol[j] = 0;
   else if (cs_gui_strcmp(algo_choice, "jacobi"))
-    iresol[j] == 1;
+    iresol[j] = 1;
   else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
-    iresol[j] == 2;
+    iresol[j] = 2;
   else if (cs_gui_strcmp(algo_choice, "gmres"))
-    iresol[j] == 3;
+    iresol[j] = 3;
   else //default value
   {
-    iresol[j] == 0;
+    iresol[j] = 0;
     imgr[j] = 1;
   }
 
@@ -2432,15 +2432,15 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     algo_choice = cs_gui_variable_choice(vars->name[i], "solveur_choice");
 
     if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
-      iresol[j] == 0;
+      iresol[j] = 0;
     else if (cs_gui_strcmp(algo_choice, "jacobi"))
-      iresol[j] == 1;
+      iresol[j] = 1;
     else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
-      iresol[j] == 2;
+      iresol[j] = 2;
     else if (cs_gui_strcmp(algo_choice, "gmres"))
-      iresol[j] == 3;
+      iresol[j] = 3;
     else //default value
-      iresol[j] == 1;
+      iresol[j] = 1;
 
     tmp = (double) nitmax[j];
     cs_gui_variable_value(vars->name[i], "max_iter_number", &tmp);
@@ -2465,15 +2465,15 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
 
       algo_choice = cs_gui_variable_choice(vars->name[i], "solveur_choice");
       if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
-        iresol[j] == 0;
+        iresol[j] = 0;
       else if (cs_gui_strcmp(algo_choice, "jacobi"))
-        iresol[j] == 1;
+        iresol[j] = 1;
       else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
-        iresol[j] == 2;
+        iresol[j] = 2;
       else if (cs_gui_strcmp(algo_choice, "gmres"))
-        iresol[j] == 3;
+        iresol[j] = 3;
       else //default value
-        iresol[j] == 1;
+        iresol[j] = 1;
 
       cs_gui_scalar_value(vars->label[i], "time_step_factor", &cdtvar[j]);
       tmp = (double) nitmax[j];
@@ -2502,15 +2502,15 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
 
       algo_choice = cs_gui_variable_choice(vars->name[0], "solveur_choice");
       if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
-        iresol[j] == 0;
+        iresol[j] = 0;
       else if (cs_gui_strcmp(algo_choice, "jacobi"))
-        iresol[j] == 1;
+        iresol[j] = 1;
       else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
-        iresol[j] == 2;
+        iresol[j] = 2;
       else if (cs_gui_strcmp(algo_choice, "gmres"))
-        iresol[j] == 3;
+        iresol[j] = 3;
       else //default value
-        iresol[j] == 1;
+        iresol[j] = 1;
 
       tmp = (double) nitmax[jj];
       cs_gui_model_scalar_value(vars->model, vars->label[j], "max_iter_number", &tmp);
