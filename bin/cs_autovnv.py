@@ -65,6 +65,10 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="verbose", default=False,
                       help="don't print status messages to stdout")
 
+    parser.add_option("-u", "--update",
+                      action="store_true", dest="update", default=False,
+                      help="update scripts in the repository")
+
     parser.add_option("-r", "--run",
                       action="store_true", dest="runcase", default=False,
                       help="run all cases")
@@ -83,8 +87,8 @@ def process_cmd_line(argv, pkg):
 
     (options, args) = parser.parse_args(argv)
 
-    return  options.filename, options.verbose, options.runcase, \
-        options.compare, options.post, options.addresses
+    return  options.filename, options.verbose, options.update, \
+        options.runcase, options.compare, options.post, options.addresses
 
 #-------------------------------------------------------------------------------
 # Send the report.
@@ -161,7 +165,7 @@ def release():
 # Start point of Auto V & V script
 #-------------------------------------------------------------------------------
 
-def runAutoverif(pkg, opt_f, opt_v, opt_r, opt_c, opt_p, opt_to):
+def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to):
     """
     Main function
       1. parse the command line,
@@ -176,19 +180,11 @@ def runAutoverif(pkg, opt_f, opt_v, opt_r, opt_c, opt_p, opt_to):
 
     # Scripts
 
-    if pkg.name == "code_saturne":
-        cs_exe = os.path.join(pkg.bindir, pkg.name)
-        nc_exe = None
-    elif pkg.name == "neptune_cfd":
-        nc_exe = os.path.join(pkg.bindir, pkg.name)
-        from cs_package import package
-        cs_exe = os.path.join(package().bindir, package().name)
-    else:
-        sys.exit(1)
+    exe = os.path.join(pkg.bindir, pkg.name)
 
     dif = pkg.get_io_dump()
 
-    for p in cs_exe, dif:
+    for p in exe, dif:
         if not os.path.isfile(p):
             print "Error: executable %s not found." % p
             sys.exit(1)
@@ -197,7 +193,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_r, opt_c, opt_p, opt_to):
 
     # Read the file of parameters
 
-    studies = Studies(opt_f, opt_v, opt_r, opt_c, opt_p, cs_exe, nc_exe, dif)
+    studies = Studies(pkg, opt_f, opt_v, opt_r, opt_c, opt_p, exe, dif)
     os.chdir(studies.getDestination())
 
     # Print header
@@ -221,10 +217,17 @@ def runAutoverif(pkg, opt_f, opt_v, opt_r, opt_c, opt_p, opt_to):
     studies.reporting(" Working directory:  " + os.getcwd())
     studies.reporting("\n")
 
+    # Update repository if needed
+
+    if opt_u:
+        studies.updateRepository()
+        sys.exit(0)
+
     # Check if xml for result directories in the repository are OK
 
     if opt_c:
         studies.check_compare(destination=False)
+
     if opt_p:
         studies.check_script(destination=False)
         studies.check_plot(destination=False)
@@ -281,10 +284,10 @@ def main(argv, pkg):
 
     # Command line
 
-    opt_f, opt_v, opt_c, opt_r, opt_p, addresses = process_cmd_line(argv, pkg)
+    opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, addresses = process_cmd_line(argv, pkg)
     opt_to  = string.split(addresses)
 
-    retcode = runAutoverif(pkg, opt_f, opt_v, opt_c, opt_r, opt_p, opt_to)
+    retcode = runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to)
 
     sys.exit(retcode)
 

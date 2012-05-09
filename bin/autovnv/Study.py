@@ -90,7 +90,7 @@ class RunThread(threading.Thread):
 #-------------------------------------------------------------------------------
 
 class Case(object):
-    def __init__(self, rlog, diff, study, data, repo, dest):
+    def __init__(self, pkg, rlog, diff, study, data, repo, dest):
         """
         @type data: C{Dictionary}
         @param data: contains all keyword and value read in the parameters file
@@ -114,18 +114,132 @@ class Case(object):
         self.is_compare = "not done"
         self.threshold  = "default"
         self.diff_value = []
-        self.exe        = None
+
+        self.exe, self.pkg = self.__get_exe()
 
 
-    def compile(self):
+    def __get_exe(self):
+        """
+        Return the name of the exe of the case, in order to mix
+        Code_Saturne and NEPTUNE_CFD test cases in the same study.
+        """
+        run_ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
+
+        # Read the runcase script from the Repository
+
+        try:
+            f = file(run_ref, mode = 'r')
+        except IOError:
+            print "Error: can not opening %s\n" % run_ref
+            sys.exit(1)
+
+        lines = f.readlines()
+        f.close()
+
+        exe    = ""
+        for name in ('code_saturne', 'neptune_cfd'):
+            for line in lines:
+                if re.search(r'^\\' + name, line):
+                    exe = name
+
+        if not exe:
+            print "Error: name of the executable for the case %s not found. Stop." % self.label
+            sys.exit(1)
+
+        if exe == "code_saturne":
+            from Base.XMLinitialize import XMLinit
+            from cs_package import package
+            pkg = package()
+        elif exe == "neptune_cfd":
+            from core.XMLinitialize import XMLinit
+            from nc_package import package
+            pkg = package()
+
+        return exe, pkg
+
+
+    def update(self):
+        """
+        Update path for the script in the Repository.
+        """
+        # 1) Load the xml file of parameters in order to update it
+        #    with the __backwardCompatibility method.
+
+        from Base.XMLengine import Case
+
+        if self.exe == "code_saturne":
+            from Base.XMLinitialize import XMLinit
+        elif self.exe == "neptune_cfd":
+            from core.XMLinitialize import XMLinit
+
+        try:
+            fn = os.path.join(self.__repo, self.label, "DATA", "liu.xml")
+            case = Case(package = self.pkg, file_name = fn)
+        except:
+            print "File of parameters reading error.\n"
+            print "This file is not in accordance with XML specifications."
+            sys.exit(1)
+
+        case['xmlfile'] = fn
+        case.xmlCleanAllBlank(case.xmlRootNode())
+        XMLinit(case).initialize()
+        case.xmlSaveDocument()
+
+        # 2) Create RESU directory if needed
+        r = os.path.join(self.__repo, self.label, "RESU")
+        if not os.path.isdir(r):
+            os.makedirs(r)
+
+        # 3) Update the GUI script from the Repository
+        ref = os.path.join(self.__repo, self.label, "DATA", self.pkg.guiname)
+
+        try:
+            f = file(ref, mode = 'r')
+        except IOError:
+            print "Error: can not opening %s\n" % ref
+            sys.exit(1)
+
+        lines = f.readlines()
+        f.close()
+
+        for i in range(len(lines)):
+            if re.search(r'^prefix=', lines[i]):
+                 lines[i] = "prefix=" + self.pkg.prefix + "\n"
+
+        f = file(ref, mode = 'w')
+        f.writelines(lines)
+        f.close()
+
+        # 4) Update the runcase script from the Repository
+        ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
+
+        try:
+            f = file(ref, mode = 'r')
+        except IOError:
+            print "Error: can not opening %s\n" % ref
+            sys.exit(1)
+
+        lines = f.readlines()
+        f.close()
+
+        for i in range(len(lines)):
+            if re.search(r'^export PATH=', lines[i]):
+                 lines[i] = 'export PATH="' + self.pkg.bindir +'":$PATH\n'
+
+        f = file(ref, mode = 'w')
+        f.writelines(lines)
+        f.close()
+
+
+    def compile(self, d):
         """
         Just compile user sources if exist.
         @rtype: C{String}
         @return: the status of the succes of the compilation.
         """
         home = os.getcwd()
-        os.chdir(os.path.join(self.__dest, self.label, 'SRC'))
-        cmd = self.exe + " compile -t"
+        os.chdir(os.path.join(d, self.label, 'SRC'))
+        cmd = os.path.join(self.pkg.bindir, self.exe) + " compile -t"
 
         p = subprocess.Popen(cmd,
                              shell=True,
@@ -145,13 +259,14 @@ class Case(object):
 
     def __suggest_run_id(self):
 
-        cmd = self.exe + " run --suggest-id"
+        cmd = os.path.join(self.pkg.bindir, self.exe) + " run --suggest-id"
         p = subprocess.Popen(cmd,
                              shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         i = p.communicate()[0]
         run_id = string.join(i.split())
+
         return run_id, os.path.join(self.__dest, self.label, "RESU", run_id)
 
 
@@ -165,38 +280,34 @@ class Case(object):
         # Read the runcase from the Repository
 
         try:
-            run_ref_f = file(run_ref, mode='r')
+            f = file(run_ref, mode = 'r')
         except IOError:
             print "Error: can not opening %s\n" % run_ref
             sys.exit(1)
 
-        patterns = r'^\\code_saturne', r'^\\neptune_cfd'
-
-        for line in run_ref_f.readlines():
-            for p in patterns:
-                if re.search(p, line):
-                    run_cmd = string.join(line.split())
-        run_ref_f.close()
+        for line in f.readlines():
+            if re.search(r'^\\' + self.exe, line):
+                run_cmd = string.join(line.split())
+        f.close()
 
         # Write the new runcase
 
         try:
-            run_new_f = file(run_new, mode='r')
+            f = file(run_new, mode = 'r')
         except IOError:
             print "Error: can not opening %s\n" % run_new
             sys.exit(1)
 
-        lines = run_new_f.readlines()
-        run_new_f.close()
+        lines = f.readlines()
+        f.close()
 
         for i in range(len(lines)):
-            for p in patterns:
-                if re.search(p, lines[i]):
-                    lines[i] = run_cmd + " --id=" + run_id
+            if re.search(r'^\\' + self.exe, lines[i]):
+                lines[i] = run_cmd + " --id=" + run_id
 
-        run_new_f = file(run_new, mode='w')
-        run_new_f.writelines(lines)
-        run_new_f.close()
+        f = file(run_new, mode = 'w')
+        f.writelines(lines)
+        f.close()
 
 
     def run(self):
@@ -269,7 +380,10 @@ class Case(object):
         for i in range(len(info)):
             if info[i][:4] == 'Diff':
                 if info[i-3] not in ['i4', 'u4']:
-                    tab.append([info[i-7].replace("_", "\_"), info[i+3], info[i+5], self.threshold])
+                    tab.append( [info[i-7].replace("_", "\_"),
+                                 info[i+3],
+                                 info[i+5],
+                                 self.threshold] )
 
         os.chdir(home)
 
@@ -281,7 +395,7 @@ class Study(object):
     """
     Create, run and compare all cases fir a given study.
     """
-    def __init__(self, parser, study, cs_exe, nc_exe, dif, rlog):
+    def __init__(self, pkg, parser, study, exe, dif, rlog):
         """
         Constructor.
           1. initialize attributes,
@@ -297,12 +411,11 @@ class Study(object):
         @param dif: name of the diff executable: C{cs_io_dump -d}.
         """
         # Initialize attributes
-        self.__parser  = parser
-        self.__study   = study
-        self.__cs_exe  = cs_exe
-        self.__nc_exe  = nc_exe
-        self.__diff    = dif
-        self.__log     = rlog
+        self.__parser   = parser
+        self.__study    = study
+        self.__main_exe = exe
+        self.__diff     = dif
+        self.__log      = rlog
 
         self.__repo = os.path.join(self.__parser.getRepository(),  study)
         self.__dest = os.path.join(self.__parser.getDestination(), study)
@@ -319,7 +432,8 @@ class Study(object):
 
         self.Cases = []
         for data in self.__parser.getCasesKeywords(self.__study):
-            c = Case(self.__log,
+            c = Case(pkg,
+                     self.__log,
                      self.__diff,
                      self.__study,
                      data,
@@ -340,31 +454,6 @@ class Study(object):
         return self.cases
 
 
-    def getExe(self, c):
-        """
-        Return the name of the exe of the cas, in order to mix
-        Code_Saturne and NEPTUNE_CFD test cases in the same study.
-        """
-        run_ref = os.path.join(self.__repo, c, "SCRIPTS", "runcase")
-
-        # Read the runcase from the Repository
-
-        try:
-            run_ref_f = file(run_ref, mode='r')
-        except IOError:
-            print "Error: can not opening %s\n" % run_ref
-            sys.exit(1)
-
-        for line in run_ref_f.readlines():
-            if re.search(r'^\\code_saturne', line):
-                 exe = self.__cs_exe
-            if re.search(r'^\\neptune_cfd', line):
-                 exe = self.__nc_exe
-        run_ref_f.close()
-
-        return exe
-
-
     def createCases(self):
         """
         Create a single study with its all cases.
@@ -373,7 +462,7 @@ class Study(object):
 
         # Create study if necessary
         if not os.path.isdir(self.__dest):
-            cmd = self.__cs_exe + " create --quiet --study " + self.__dest
+            cmd = self.__main_exe + " create --quiet --study " + self.__dest
             retval, t = run_command(cmd, self.__log)
             shutil.rmtree(os.path.join(self.__dest, "CASE1"))
 
@@ -410,9 +499,9 @@ class Study(object):
         os.chdir(self.__dest)
 
         for c in self.Cases:
-            c.exe = self.getExe(c.label)
             if not os.path.isdir(c.label):
-                cmd = c.exe + " create --case " + c.label  \
+                e = os.path.join(c.pkg.bindir, c.exe)
+                cmd = e + " create --case " + c.label  \
                       + " --quiet --noref --copy-from "    \
                       + os.path.join(self.__repo, c.label)
                 retval, t = run_command(cmd, self.__log)
@@ -427,7 +516,7 @@ class Studies(object):
     """
     Manage all Studies and all Cases described in the files of parameters.
     """
-    def __init__(self, f, v, r, c, p, cs_exe, nc_exe, dif):
+    def __init__(self, pkg, f, v, r, c, p, exe, dif):
         """
         Constructor.
           1. create if necessary the destination directory,
@@ -456,19 +545,17 @@ class Studies(object):
 
         # Test if the repository exists
 
-        self.getRepository()
+        self.repo = self.getRepository()
 
         # create if necessary the destination directory
 
-        try:
-            os.makedirs(self.getDestination())
-        except:
-            pass
+        self.dest = self.getDestination()
+        if not os.path.isdir(self.dest):
+            os.makedirs(self.dest)
 
         # copy the xml file of parameters for update and restart
 
-        file = os.path.join(self.getDestination(), \
-                            os.path.basename(f))
+        file = os.path.join(self.dest, os.path.basename(f))
         try:
             shutil.copyfile(f, file)
         except:
@@ -482,16 +569,16 @@ class Studies(object):
 
         # build the list of the studies
 
-        doc = os.path.join(self.getDestination(), "auto_vnv.log")
+        doc = os.path.join(self.dest, "auto_vnv.log")
         self.__log = open(doc, "w")
         self.labels  = self.__parser.getStudiesLabel()
         self.studies = []
         for l in self.labels:
-            self.studies.append( [l, Study(self.__parser, l, \
-                                  cs_exe, nc_exe, dif, self.__log)] )
+            self.studies.append( [l, Study(pkg, self.__parser, l, \
+                                  exe, dif, self.__log)] )
 
         # start the report
-        self.report = os.path.join(self.getDestination(), "report.txt")
+        self.report = os.path.join(self.dest, "report.txt")
         self.reportFile = open(self.report, mode='w')
         self.reportFile.write('\n')
 
@@ -566,6 +653,26 @@ class Studies(object):
         return self.__parser.getDestination()
 
 
+    def updateRepository(self):
+        """
+        Create all studies and all cases.
+        """
+        iok = 0
+        for l, s in self.studies:
+            self.reporting('  o Update repository: ' + l)
+            for case in s.Cases:
+                self.reporting('    - update  %s' % case.label)
+                case.update()
+                if case.compile(os.path.join(self.repo, l)) == "OK":
+                    self.reporting('    - compile %s --> OK' % case.label)
+                else:
+                    self.reporting('    - compile %s --> FAILED' % case.label)
+                    iok+=1
+        if iok:
+            self.reporting('Error: compilation failed. Number of failed cases: %s' % iok)
+            sys.exit(1)
+
+
     def createStudies(self):
         """
         Create all studies and all cases.
@@ -586,7 +693,7 @@ class Studies(object):
             self.reporting('  o Compile study: ' + l)
             for case in s.Cases:
                 if case.compute == 'on':
-                    if case.compile() == "OK":
+                    if case.compile(os.path.join(self.dest, l)) == "OK":
                         self.reporting('    - compile %s --> OK' % case.label)
                     else:
                         self.reporting('    - compile %s --> FAILED' % case.label)
@@ -606,11 +713,11 @@ class Studies(object):
                 pre, label, nodes, args = self.__parser.getPrepro(case.node)
                 for i in range(len(label)):
                     if pre[i]:
-                        cmd = os.path.join(self.getDestination(), l, "MESH", label[i])
+                        cmd = os.path.join(self.dest, l, "MESH", label[i])
                         if os.path.isfile(cmd):
                             cmd += " " + args[i]
                             repbase = os.getcwd()
-                            os.chdir(os.path.join(self.getDestination(), l, "MESH"))
+                            os.chdir(os.path.join(self.dest, l, "MESH"))
                             retcode, t = run_command(cmd, self.__log)
                             os.chdir(repbase)
                             self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
@@ -687,11 +794,11 @@ class Studies(object):
         Check coherency between xml file of parameters and repository and destination.
         """
         if repo != None:
-            result = os.path.join(self.getRepository(), study_label, case_label, 'RESU')
+            result = os.path.join(self.repo, study_label, case_label, 'RESU')
             self.__check_dir(study_label, case_label, node, result, repo, "repo")
 
         if dest != None:
-            result = os.path.join(self.getDestination(), study_label, case_label, 'RESU')
+            result = os.path.join(self.dest, study_label, case_label, 'RESU')
             self.__check_dir(study_label, case_label, node, result, dest, "dest")
 
 
@@ -751,14 +858,14 @@ class Studies(object):
                 script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
                 for i in range(len(label)):
                     if script[i] and case.is_run != "KO":
-                        cmd = os.path.join(self.getDestination(), l, "POST", label[i])
+                        cmd = os.path.join(self.dest, l, "POST", label[i])
                         if os.path.isfile(cmd):
                             cmd += " " + args[i]
                             if repo[i]:
-                                r = os.path.join(self.getRepository(),  l, case.label, "RESU", repo[i])
+                                r = os.path.join(self.repo,  l, case.label, "RESU", repo[i])
                                 cmd += " -r " + r
                             if dest[i]:
-                                d = os.path.join(self.getDestination(), l, case.label, "RESU", dest[i])
+                                d = os.path.join(self.dest, l, case.label, "RESU", dest[i])
                                 cmd += " -d " + d
                             retcode, t = run_command(cmd, self.__log)
                             self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
