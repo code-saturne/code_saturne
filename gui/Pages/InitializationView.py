@@ -165,7 +165,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.modelMeteo = ComboModel(self.comboBoxMeteo, 1, 1)
         self.scalar_meteo = ""
         scalar_meteo_list = DefineUserScalarsModel( self.case).getMeteoScalarsList()
-        if scalar_meteo_list != []:
+        if scalar_meteo_list != None and scalar_meteo_list != []:
             self.scalar_meteo = scalar_meteo_list[0]
             for item in self.meteo_group:
                 item.show()
