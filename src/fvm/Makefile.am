@@ -45,7 +45,6 @@ $(HDF5_CPPFLAGS) $(MED_CPPFLAGS) $(MPI_CPPFLAGS)
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
-fvm_block_to_part.h \
 fvm_defs.h \
 fvm_group.h \
 fvm_io_num.h \
@@ -58,7 +57,6 @@ fvm_nodal_order.h \
 fvm_nodal_project.h \
 fvm_nodal_triangulate.h \
 fvm_nodal_extract.h \
-fvm_part_to_block.h \
 fvm_periodicity.h \
 fvm_point_location.h \
 fvm_selector.h \
@@ -67,7 +65,6 @@ fvm_triangulate.h \
 fvm_writer.h
 
 noinst_HEADERS = \
-fvm_block_dist.h \
 fvm_box.h \
 fvm_box_priv.h \
 fvm_box_tree.h \
@@ -95,8 +92,6 @@ libfvm_la_LIBADD = $(LTLIBINTL)
 libfvm_filters_la_LIBADD =
 
 libfvm_la_SOURCES = \
-fvm_block_dist.c \
-fvm_block_to_part.c \
 fvm_box.c \
 fvm_box_tree.c \
 fvm_convert_array.c \
@@ -115,7 +110,6 @@ fvm_nodal_order.c \
 fvm_nodal_project.c \
 fvm_nodal_triangulate.c \
 fvm_nodal_extract.c \
-fvm_part_to_block.c \
 fvm_periodicity.c \
 fvm_point_location.c \
 fvm_selector.c \

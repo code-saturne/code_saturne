@@ -53,11 +53,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_block_to_part.h"
 #include "fvm_io_num.h"
 #include "fvm_periodicity.h"
 
 #include "cs_base.h"
+#include "cs_block_dist.h"
+#include "cs_block_to_part.h"
 #include "cs_file.h"
 #include "cs_interface.h"
 #include "cs_mesh.h"
@@ -150,11 +151,10 @@ typedef struct {
 
   /* Block ranges for parallel distribution */
 
-  fvm_block_to_part_info_t   cell_bi;     /* Block info for cell data */
-  fvm_block_to_part_info_t   face_bi;     /* Block info for face data */
-  fvm_block_to_part_info_t   vertex_bi;   /* Block info for vertex data */
-  fvm_block_to_part_info_t  *per_face_bi; /* Block info for parallel face
-                                             couples */
+  cs_block_dist_info_t   cell_bi;     /* Block info for cell data */
+  cs_block_dist_info_t   face_bi;     /* Block info for face data */
+  cs_block_dist_info_t   vertex_bi;   /* Block info for vertex data */
+  cs_block_dist_info_t  *per_face_bi; /* Block info for parallel face couples */
 
 } _mesh_reader_t;
 
@@ -413,37 +413,37 @@ _set_block_ranges(cs_mesh_t       *mesh,
   /* Always build per_face_range in case of periodicity */
 
   if (mr->n_perio > 0) {
-    BFT_REALLOC(mr->per_face_bi, mr->n_perio, fvm_block_to_part_info_t);
-    memset(mr->per_face_bi, 0, sizeof(fvm_block_to_part_info_t)*mr->n_perio);
+    BFT_REALLOC(mr->per_face_bi, mr->n_perio, cs_block_dist_info_t);
+    memset(mr->per_face_bi, 0, sizeof(cs_block_dist_info_t)*mr->n_perio);
   }
 
   /* Set block sizes and ranges (useful for parallel mode) */
 
-  mr->cell_bi = fvm_block_to_part_compute_sizes(rank_id,
-                                                n_ranks,
-                                                0,
-                                                0,
-                                                mesh->n_g_cells);
+  mr->cell_bi = cs_block_dist_compute_sizes(rank_id,
+                                            n_ranks,
+                                            0,
+                                            0,
+                                            mesh->n_g_cells);
 
-  mr->face_bi = fvm_block_to_part_compute_sizes(rank_id,
-                                                n_ranks,
-                                                0,
-                                                0,
-                                                mr->n_g_faces);
+  mr->face_bi = cs_block_dist_compute_sizes(rank_id,
+                                            n_ranks,
+                                            0,
+                                            0,
+                                            mr->n_g_faces);
 
-  mr->vertex_bi = fvm_block_to_part_compute_sizes(rank_id,
-                                                  n_ranks,
-                                                  0,
-                                                  0,
-                                                  mesh->n_g_vertices);
+  mr->vertex_bi = cs_block_dist_compute_sizes(rank_id,
+                                              n_ranks,
+                                              0,
+                                              0,
+                                               mesh->n_g_vertices);
 
   for (i = 0; i < mr->n_perio; i++)
     mr->per_face_bi[i]
-      = fvm_block_to_part_compute_sizes(rank_id,
-                                        n_ranks,
-                                        0,
-                                        0,
-                                        mr->n_g_per_face_couples[i]);
+      = cs_block_dist_compute_sizes(rank_id,
+                                    n_ranks,
+                                    0,
+                                    0,
+                                    mr->n_g_per_face_couples[i]);
 }
 
 /*----------------------------------------------------------------------------
@@ -1559,7 +1559,7 @@ _precompute_cell_center(const _mesh_reader_t    *mr,
 
   cs_real_t *_vtx_coord = NULL;
 
-  fvm_block_to_part_t *d = NULL;
+  cs_block_to_part_t *d = NULL;
 
   /* Initialization */
 
@@ -1583,36 +1583,36 @@ _precompute_cell_center(const _mesh_reader_t    *mr,
   /* Distribute faces */
   /*------------------*/
 
-  d = fvm_block_to_part_create_by_adj_s(comm,
-                                        mr->face_bi,
-                                        mr->cell_bi,
-                                        2,
-                                        mr->face_cells,
-                                        NULL,
-                                        NULL);
+  d = cs_block_to_part_create_by_adj_s(comm,
+                                       mr->face_bi,
+                                       mr->cell_bi,
+                                       2,
+                                       mr->face_cells,
+                                       NULL,
+                                       NULL);
 
-  _n_faces = fvm_block_to_part_get_n_part_ents(d);
+  _n_faces = cs_block_to_part_get_n_part_ents(d);
 
   BFT_MALLOC(_face_gcells, _n_faces*2, cs_gnum_t);
 
   /* Face -> cell connectivity */
 
-  fvm_block_to_part_copy_array(d,
-                               gnum_type,
-                               2,
-                               mr->face_cells,
-                               _face_gcells);
+  cs_block_to_part_copy_array(d,
+                              gnum_type,
+                              2,
+                              mr->face_cells,
+                              _face_gcells);
 
   /* Now convert face -> cell connectivity to local cell numbers */
 
   BFT_MALLOC(_face_cells, _n_faces*2, cs_lnum_t);
 
-  fvm_block_to_part_global_to_local(_n_faces*2,
-                                    1,
-                                    _n_cells,
-                                    _cell_num,
-                                    _face_gcells,
-                                    _face_cells);
+  cs_block_to_part_global_to_local(_n_faces*2,
+                                   1,
+                                   _n_cells,
+                                   _cell_num,
+                                   _face_gcells,
+                                   _face_cells);
 
   BFT_FREE(_cell_num);
   BFT_FREE(_face_gcells);
@@ -1621,54 +1621,54 @@ _precompute_cell_center(const _mesh_reader_t    *mr,
 
   BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
 
-  fvm_block_to_part_copy_index(d,
-                               mr->face_vertices_idx,
-                               _face_vertices_idx);
+  cs_block_to_part_copy_index(d,
+                              mr->face_vertices_idx,
+                              _face_vertices_idx);
 
   BFT_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], cs_gnum_t);
 
-  fvm_block_to_part_copy_indexed(d,
-                                 gnum_type,
-                                 mr->face_vertices_idx,
-                                 mr->face_vertices,
-                                 _face_vertices_idx,
-                                 _face_gvertices);
+  cs_block_to_part_copy_indexed(d,
+                                gnum_type,
+                                mr->face_vertices_idx,
+                                mr->face_vertices,
+                                _face_vertices_idx,
+                                _face_gvertices);
 
-  _face_num = fvm_block_to_part_transfer_gnum(d);
+  _face_num = cs_block_to_part_transfer_gnum(d);
 
-  fvm_block_to_part_destroy(&d);
+  cs_block_to_part_destroy(&d);
 
   /* Vertices */
 
-  d = fvm_block_to_part_create_adj(comm,
-                                   mr->vertex_bi,
-                                   _face_vertices_idx[_n_faces],
-                                   _face_gvertices);
+  d = cs_block_to_part_create_adj(comm,
+                                  mr->vertex_bi,
+                                  _face_vertices_idx[_n_faces],
+                                  _face_gvertices);
 
-  _n_vertices = fvm_block_to_part_get_n_part_ents(d);
+  _n_vertices = cs_block_to_part_get_n_part_ents(d);
 
   BFT_MALLOC(_vtx_coord, _n_vertices*3, cs_real_t);
 
-  fvm_block_to_part_copy_array(d,
-                               real_type,
-                               3,
-                               mr->vertex_coords,
-                               _vtx_coord);
+  cs_block_to_part_copy_array(d,
+                              real_type,
+                              3,
+                              mr->vertex_coords,
+                              _vtx_coord);
 
-  _vtx_num = fvm_block_to_part_transfer_gnum(d);
+  _vtx_num = cs_block_to_part_transfer_gnum(d);
 
-  fvm_block_to_part_destroy(&d);
+  cs_block_to_part_destroy(&d);
 
   /* Now convert face -> vertex connectivity to local vertex numbers */
 
   BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
 
-  fvm_block_to_part_global_to_local(_face_vertices_idx[_n_faces],
-                                    1,
-                                    _n_vertices,
-                                    _vtx_num,
-                                    _face_gvertices,
-                                    _face_vertices);
+  cs_block_to_part_global_to_local(_face_vertices_idx[_n_faces],
+                                   1,
+                                   _n_vertices,
+                                   _vtx_num,
+                                   _face_gvertices,
+                                   _face_vertices);
 
   BFT_FREE(_face_gvertices);
 
@@ -1884,7 +1884,7 @@ _precompute_free_face_center(const _mesh_reader_t   *mr,
 
   cs_real_t *_vtx_coord = NULL;
 
-  fvm_block_to_part_t *d = NULL;
+  cs_block_to_part_t *d = NULL;
 
   /* Initialization */
 
@@ -1897,35 +1897,35 @@ _precompute_free_face_center(const _mesh_reader_t   *mr,
   /* Distribute vertices */
   /*---------------------*/
 
-  d = fvm_block_to_part_create_adj(comm,
-                                   mr->vertex_bi,
-                                   mr->face_vertices_idx[_n_faces],
-                                   mr->face_vertices);
+  d = cs_block_to_part_create_adj(comm,
+                                  mr->vertex_bi,
+                                  mr->face_vertices_idx[_n_faces],
+                                  mr->face_vertices);
 
-  _n_vertices = fvm_block_to_part_get_n_part_ents(d);
+  _n_vertices = cs_block_to_part_get_n_part_ents(d);
 
   BFT_MALLOC(_vtx_coord, _n_vertices*3, cs_real_t);
 
-  fvm_block_to_part_copy_array(d,
+  cs_block_to_part_copy_array(d,
                                real_type,
                                3,
                                mr->vertex_coords,
                                _vtx_coord);
 
-  _vtx_num = fvm_block_to_part_transfer_gnum(d);
+  _vtx_num = cs_block_to_part_transfer_gnum(d);
 
-  fvm_block_to_part_destroy(&d);
+  cs_block_to_part_destroy(&d);
 
   /* Now convert face -> vertex connectivity to local vertex numbers */
 
   BFT_MALLOC(_face_vertices, mr->face_vertices_idx[_n_faces], cs_lnum_t);
 
-  fvm_block_to_part_global_to_local(mr->face_vertices_idx[_n_faces],
-                                    1,
-                                    _n_vertices,
-                                    _vtx_num,
-                                    mr->face_vertices,
-                                    _face_vertices);
+  cs_block_to_part_global_to_local(mr->face_vertices_idx[_n_faces],
+                                   1,
+                                   _n_vertices,
+                                   _vtx_num,
+                                   mr->face_vertices,
+                                   _face_vertices);
 
   _f_face_center(n_f_faces,
                  f_face_ids,
@@ -2002,7 +2002,7 @@ _default_face_rank(_mesh_reader_t     *mr,
                    MPI_Comm            comm)
 {
   cs_lnum_t i;
-  fvm_block_to_part_info_t free_face_bi;
+  cs_block_dist_info_t free_face_bi;
 
   int n_ranks = 0, rank_id = -1;
 
@@ -2044,11 +2044,11 @@ _default_face_rank(_mesh_reader_t     *mr,
 
   MPI_Comm_size(comm, &n_ranks);
   MPI_Comm_size(comm, &rank_id);
-  free_face_bi = fvm_block_to_part_compute_sizes(rank_id,
-                                                 n_ranks,
-                                                 0,
-                                                 0,
-                                                 n_g_free_faces);
+  free_face_bi = cs_block_dist_compute_sizes(rank_id,
+                                             n_ranks,
+                                             0,
+                                             0,
+                                             n_g_free_faces);
 
   /* Define distribution of isolated faces based on sfc */
 
@@ -2132,7 +2132,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
   char *face_type = NULL;
   cs_interface_set_t *face_ifs = NULL;
 
-  fvm_block_to_part_t *d = NULL;
+  cs_block_to_part_t *d = NULL;
 
   /* Initialization */
 
@@ -2159,25 +2159,25 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   if (use_cell_rank != 0) {
 
-    d = fvm_block_to_part_create_by_rank(comm,
-                                         mr->cell_bi,
-                                         mr->cell_rank);
+    d = cs_block_to_part_create_by_rank(comm,
+                                        mr->cell_bi,
+                                        mr->cell_rank);
 
-    mesh->n_cells = fvm_block_to_part_get_n_part_ents(d);
+    mesh->n_cells = cs_block_to_part_get_n_part_ents(d);
 
     BFT_MALLOC(mesh->cell_family, mesh->n_cells, cs_lnum_t);
 
-    fvm_block_to_part_copy_array(d,
-                                 lnum_type,
-                                 1,
-                                 mr->cell_gc_id,
-                                 mesh->cell_family);
+    cs_block_to_part_copy_array(d,
+                                lnum_type,
+                                1,
+                                mr->cell_gc_id,
+                                mesh->cell_family);
 
     BFT_FREE(mr->cell_gc_id);
 
-    mesh->global_cell_num = fvm_block_to_part_transfer_gnum(d);
+    mesh->global_cell_num = cs_block_to_part_transfer_gnum(d);
 
-    fvm_block_to_part_destroy(&d);
+    cs_block_to_part_destroy(&d);
 
   }
   else {
@@ -2204,30 +2204,30 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   default_face_rank = _default_face_rank(mr, comm);
 
-  d = fvm_block_to_part_create_by_adj_s(comm,
-                                        mr->face_bi,
-                                        mr->cell_bi,
-                                        2,
-                                        mr->face_cells,
-                                        mr->cell_rank,
-                                        default_face_rank);
+  d = cs_block_to_part_create_by_adj_s(comm,
+                                       mr->face_bi,
+                                       mr->cell_bi,
+                                       2,
+                                       mr->face_cells,
+                                       mr->cell_rank,
+                                       default_face_rank);
 
   if (default_face_rank != NULL)
     BFT_FREE(default_face_rank);
 
   BFT_FREE(mr->cell_rank); /* Not needed anymore */
 
-  _n_faces = fvm_block_to_part_get_n_part_ents(d);
+  _n_faces = cs_block_to_part_get_n_part_ents(d);
 
   BFT_MALLOC(_face_gcells, _n_faces*2, cs_gnum_t);
 
   /* Face -> cell connectivity */
 
-  fvm_block_to_part_copy_array(d,
-                               gnum_type,
-                               2,
-                               mr->face_cells,
-                               _face_gcells);
+  cs_block_to_part_copy_array(d,
+                              gnum_type,
+                              2,
+                              mr->face_cells,
+                              _face_gcells);
 
   BFT_FREE(mr->face_cells);
 
@@ -2235,12 +2235,12 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   BFT_MALLOC(_face_cells, _n_faces*2, cs_lnum_t);
 
-  fvm_block_to_part_global_to_local(_n_faces*2,
-                                    1,
-                                    mesh->n_cells,
-                                    mesh->global_cell_num,
-                                    _face_gcells,
-                                    _face_cells);
+  cs_block_to_part_global_to_local(_n_faces*2,
+                                   1,
+                                   mesh->n_cells,
+                                   mesh->global_cell_num,
+                                   _face_gcells,
+                                   _face_cells);
 
   BFT_FREE(_face_gcells);
 
@@ -2248,11 +2248,11 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   BFT_MALLOC(_face_gc_id, _n_faces, cs_lnum_t);
 
-  fvm_block_to_part_copy_array(d,
-                               lnum_type,
-                               1,
-                               mr->face_gc_id,
-                               _face_gc_id);
+  cs_block_to_part_copy_array(d,
+                              lnum_type,
+                              1,
+                              mr->face_gc_id,
+                              _face_gc_id);
 
   BFT_FREE(mr->face_gc_id);
 
@@ -2260,59 +2260,59 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
 
-  fvm_block_to_part_copy_index(d,
-                               mr->face_vertices_idx,
-                               _face_vertices_idx);
+  cs_block_to_part_copy_index(d,
+                              mr->face_vertices_idx,
+                              _face_vertices_idx);
 
   BFT_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], cs_gnum_t);
 
-  fvm_block_to_part_copy_indexed(d,
-                                 gnum_type,
-                                 mr->face_vertices_idx,
-                                 mr->face_vertices,
-                                 _face_vertices_idx,
-                                 _face_gvertices);
+  cs_block_to_part_copy_indexed(d,
+                                gnum_type,
+                                mr->face_vertices_idx,
+                                mr->face_vertices,
+                                _face_vertices_idx,
+                                _face_gvertices);
 
   BFT_FREE(mr->face_vertices_idx);
   BFT_FREE(mr->face_vertices);
 
-  _face_num = fvm_block_to_part_transfer_gnum(d);
+  _face_num = cs_block_to_part_transfer_gnum(d);
 
-  fvm_block_to_part_destroy(&d);
+  cs_block_to_part_destroy(&d);
 
   /* Vertices */
 
-  d = fvm_block_to_part_create_adj(comm,
-                                   mr->vertex_bi,
-                                   _face_vertices_idx[_n_faces],
-                                   _face_gvertices);
+  d = cs_block_to_part_create_adj(comm,
+                                  mr->vertex_bi,
+                                  _face_vertices_idx[_n_faces],
+                                  _face_gvertices);
 
-  mesh->n_vertices = fvm_block_to_part_get_n_part_ents(d);
+  mesh->n_vertices = cs_block_to_part_get_n_part_ents(d);
 
   BFT_MALLOC(mesh->vtx_coord, mesh->n_vertices*3, cs_real_t);
 
-  fvm_block_to_part_copy_array(d,
-                               real_type,
-                               3,
-                               mr->vertex_coords,
-                               mesh->vtx_coord);
+  cs_block_to_part_copy_array(d,
+                              real_type,
+                              3,
+                              mr->vertex_coords,
+                              mesh->vtx_coord);
 
   BFT_FREE(mr->vertex_coords);
 
-  mesh->global_vtx_num = fvm_block_to_part_transfer_gnum(d);
+  mesh->global_vtx_num = cs_block_to_part_transfer_gnum(d);
 
-  fvm_block_to_part_destroy(&d);
+  cs_block_to_part_destroy(&d);
 
   /* Now convert face -> vertex connectivity to local vertex numbers */
 
   BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
 
-  fvm_block_to_part_global_to_local(_face_vertices_idx[_n_faces],
-                                    1,
-                                    mesh->n_vertices,
-                                    mesh->global_vtx_num,
-                                    _face_gvertices,
-                                    _face_vertices);
+  cs_block_to_part_global_to_local(_face_vertices_idx[_n_faces],
+                                   1,
+                                   mesh->n_vertices,
+                                   mesh->global_vtx_num,
+                                   _face_gvertices,
+                                   _face_vertices);
 
   BFT_FREE(_face_gvertices);
 

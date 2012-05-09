@@ -56,14 +56,15 @@
 
 #include "fvm_defs.h"
 #include "fvm_convert_array.h"
-#include "fvm_part_to_block.h"
 #include "fvm_io_num.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
 #include "fvm_writer_priv.h"
 
+#include "cs_block_dist.h"
 #include "cs_file.h"
 #include "cs_parall.h"
+#include "cs_part_to_block.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -568,17 +569,17 @@ _export_vertex_coords_g(const fvm_to_medcoupling_t  *this_writer,
 
   /* Initialize distribution info */
 
-  fvm_part_to_block_info_t bi
-    = fvm_part_to_block_compute_sizes(this_writer->rank,
-                                      this_writer->n_ranks,
-                                      0,
-                                      n_g_vertices,
-                                      n_g_vertices);
+  cs_block_dist_info_t bi
+    = cs_block_dist_compute_sizes(this_writer->rank,
+                                  this_writer->n_ranks,
+                                  0,
+                                  n_g_vertices,
+                                  n_g_vertices);
 
-  fvm_part_to_block_t *d = fvm_part_to_block_create_by_gnum(this_writer->comm,
-                                                            bi,
-                                                            n_vertices,
-                                                            g_num);
+  cs_part_to_block_t *d = cs_part_to_block_create_by_gnum(this_writer->comm,
+                                                          bi,
+                                                          n_vertices,
+                                                          g_num);
 
   /* Vertex coordinates */
   /*--------------------*/
@@ -616,22 +617,22 @@ _export_vertex_coords_g(const fvm_to_medcoupling_t  *this_writer,
       }
     }
 
-    fvm_part_to_block_copy_array(d,
-                                 CS_DOUBLE,
-                                 3,
-                                 part_coords,
-                                 block_coords);
+    cs_part_to_block_copy_array(d,
+                                CS_DOUBLE,
+                                3,
+                                part_coords,
+                                block_coords);
 
     BFT_FREE(part_coords);
 
   }
   else
 
-    fvm_part_to_block_copy_array(d,
-                                 CS_DOUBLE,
-                                 3,
-                                 vertex_coords,
-                                 block_coords);
+    cs_part_to_block_copy_array(d,
+                                CS_DOUBLE,
+                                3,
+                                vertex_coords,
+                                block_coords);
 
   if (med_mesh != NULL) {
     assert(this_writer->rank < 1);
@@ -639,7 +640,7 @@ _export_vertex_coords_g(const fvm_to_medcoupling_t  *this_writer,
     Coords->decrRef();
   }
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -892,11 +893,11 @@ _write_indexed_connect_g(INTERP_KERNEL::NormalizedCellType   med_type,
                          MEDCouplingUMesh                   *med_mesh)
 {
   int rank, n_ranks;
-  fvm_part_to_block_info_t bi;
+  cs_block_dist_info_t bi;
 
   cs_datatype_t lnum_type = (sizeof(cs_lnum_t) == 8) ? CS_INT64 : CS_INT32;
   cs_gnum_t loc_size = 0, tot_size = 0, block_size = 0;
-  fvm_part_to_block_t  *d = NULL;
+  cs_part_to_block_t  *d = NULL;
   cs_lnum_t   *block_index = NULL;
   cs_lnum_t  *block_vtx_num = NULL;
   size_t  min_block_size
@@ -923,30 +924,30 @@ _write_indexed_connect_g(INTERP_KERNEL::NormalizedCellType   med_type,
 
   /* Allocate memory for additionnal indexes */
 
-  bi = fvm_part_to_block_compute_sizes(rank,
-                                       n_ranks,
-                                       0,
-                                       min_block_size,
-                                       n_g_elements);
+  bi = cs_block_dist_compute_sizes(rank,
+                                   n_ranks,
+                                   0,
+                                   min_block_size,
+                                   n_g_elements);
 
   BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
 
-  d = fvm_part_to_block_create_by_gnum(comm, bi, n_elements, g_elt_num);
+  d = cs_part_to_block_create_by_gnum(comm, bi, n_elements, g_elt_num);
 
-  fvm_part_to_block_copy_index(d,
-                               vertex_index,
-                               block_index);
+  cs_part_to_block_copy_index(d,
+                              vertex_index,
+                              block_index);
 
   block_size = block_index[bi.gnum_range[1] - bi.gnum_range[0]];
 
   BFT_MALLOC(block_vtx_num, block_size, cs_lnum_t);
 
-  fvm_part_to_block_copy_indexed(d,
-                                 lnum_type,
-                                 vertex_index,
-                                 vertex_num,
-                                 block_index,
-                                 block_vtx_num);
+  cs_part_to_block_copy_indexed(d,
+                                lnum_type,
+                                vertex_index,
+                                vertex_num,
+                                block_index,
+                                block_vtx_num);
 
   /* Write to object */
 
@@ -961,7 +962,7 @@ _write_indexed_connect_g(INTERP_KERNEL::NormalizedCellType   med_type,
   /* Free memory */
 
   BFT_FREE(block_vtx_num);
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
   BFT_FREE(block_index);
 }
 
@@ -1271,10 +1272,10 @@ _export_nodal_strided_g(const fvm_nodal_section_t  *section,
 
   cs_datatype_t lnum_type = (sizeof(cs_lnum_t) == 8) ? CS_INT64 : CS_INT32;
 
-  fvm_part_to_block_info_t bi;
+  cs_block_dist_info_t bi;
 
   cs_lnum_t   block_size = 0;
-  fvm_part_to_block_t  *d = NULL;
+  cs_part_to_block_t  *d = NULL;
   cs_lnum_t  *part_vtx_num = NULL, *block_vtx_num = NULL;
 
   const int  stride = fvm_nodal_n_vertices_element[section->type];
@@ -1298,16 +1299,16 @@ _export_nodal_strided_g(const fvm_nodal_section_t  *section,
 
   /* Prepare distribution structures */
 
-  bi = fvm_part_to_block_compute_sizes(rank,
-                                       n_ranks,
-                                       0,
-                                       min_block_size,
-                                       n_g_elements);
+  bi = cs_block_dist_compute_sizes(rank,
+                                   n_ranks,
+                                   0,
+                                   min_block_size,
+                                   n_g_elements);
 
-  d = fvm_part_to_block_create_by_gnum(comm,
-                                       bi,
-                                       n_elements,
-                                       g_elt_num);
+  d = cs_part_to_block_create_by_gnum(comm,
+                                      bi,
+                                      n_elements,
+                                      g_elt_num);
 
   /* Build connectivity */
 
@@ -1323,11 +1324,11 @@ _export_nodal_strided_g(const fvm_nodal_section_t  *section,
     }
   }
 
-  fvm_part_to_block_copy_array(d,
-                               lnum_type,
-                               stride,
-                               part_vtx_num,
-                               block_vtx_num);
+  cs_part_to_block_copy_array(d,
+                              lnum_type,
+                              stride,
+                              part_vtx_num,
+                              block_vtx_num);
 
   BFT_FREE(part_vtx_num);
 
@@ -1340,7 +1341,7 @@ _export_nodal_strided_g(const fvm_nodal_section_t  *section,
 
   BFT_FREE(block_vtx_num);
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 }
 
 /*----------------------------------------------------------------------------
@@ -1395,18 +1396,18 @@ _export_field_values_ng(const fvm_nodal_t       *mesh,
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &n_ranks);
 
-  fvm_part_to_block_info_t bi = fvm_part_to_block_compute_sizes(rank,
-                                                                n_ranks,
-                                                                0,
-                                                                n_g_vertices,
-                                                                n_g_vertices);
+  cs_block_dist_info_t bi = cs_block_dist_compute_sizes(rank,
+                                                        n_ranks,
+                                                        0,
+                                                        n_g_vertices,
+                                                        n_g_vertices);
 
-  fvm_part_to_block_t *d = fvm_part_to_block_create_by_gnum(comm,
-                                                            bi,
-                                                            n_vertices,
-                                                            g_num);
+  cs_part_to_block_t *d = cs_part_to_block_create_by_gnum(comm,
+                                                          bi,
+                                                          n_vertices,
+                                                          g_num);
 
-  part_size = fvm_part_to_block_get_n_part_ents(d);
+  part_size = cs_part_to_block_get_n_part_ents(d);
 
   BFT_MALLOC(part_values, part_size*dim, double);
 
@@ -1429,18 +1430,18 @@ _export_field_values_ng(const fvm_nodal_t       *mesh,
                     field_values,
                     part_values);
 
-  fvm_part_to_block_copy_array(d,
-                               CS_DOUBLE,
-                               dim,
-                               part_values,
-                               block_values);
+  cs_part_to_block_copy_array(d,
+                              CS_DOUBLE,
+                              dim,
+                              part_values,
+                              block_values);
 
   assert(   f == NULL
          || (bi.gnum_range[0] == 1 && bi.gnum_range[1] == n_g_vertices));
 
   BFT_FREE(part_values);
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -1534,8 +1535,8 @@ _export_field_values_eg(const fvm_nodal_t               *mesh,
   int section_id;
   int  rank, n_ranks;
 
-  fvm_part_to_block_info_t  bi;
-  fvm_part_to_block_t  *d = NULL;
+  cs_block_dist_info_t  bi;
+  cs_part_to_block_t  *d = NULL;
 
   int         n_sections = 0;
   cs_lnum_t   part_size = 0;
@@ -1602,16 +1603,16 @@ _export_field_values_eg(const fvm_nodal_t               *mesh,
 
   /* Build distribution structures */
 
-  bi = fvm_part_to_block_compute_sizes(rank,
-                                       n_ranks,
-                                       0,
-                                       n_g_elements,
-                                       n_g_elements);
+  bi = cs_block_dist_compute_sizes(rank,
+                                   n_ranks,
+                                   0,
+                                   n_g_elements,
+                                   n_g_elements);
 
-  d = fvm_part_to_block_create_by_gnum(comm, bi, part_size, g_elt_num);
+  d = cs_part_to_block_create_by_gnum(comm, bi, part_size, g_elt_num);
 
   if (_g_elt_num != NULL)
-    fvm_part_to_block_transfer_gnum(d, _g_elt_num);
+    cs_part_to_block_transfer_gnum(d, _g_elt_num);
 
   g_elt_num = NULL;
   _g_elt_num = NULL;
@@ -1657,15 +1658,15 @@ _export_field_values_eg(const fvm_nodal_t               *mesh,
 
   /* Distribute part values */
 
-  fvm_part_to_block_copy_array(d,
-                               CS_DOUBLE,
-                               1,
-                               part_values,
-                               block_values);
+  cs_part_to_block_copy_array(d,
+                              CS_DOUBLE,
+                              1,
+                              part_values,
+                              block_values);
 
   BFT_FREE(part_values);
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 }
 
 #endif /* defined(HAVE_MPI) */

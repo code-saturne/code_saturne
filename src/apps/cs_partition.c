@@ -114,9 +114,9 @@ void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "fvm_block_to_part.h"
-
 #include "cs_base.h"
+#include "cs_block_dist.h"
+#include "cs_block_to_part.h"
 #include "cs_file.h"
 #include "cs_io.h"
 #include "cs_system_info.h"
@@ -707,11 +707,11 @@ _read_global_count(cs_io_t             *inp,
  *----------------------------------------------------------------------------*/
 
 static void
-_read_adjacency_array(cs_io_t                         *inp,
-                      int                              rec_id,
-                      const fvm_block_to_part_info_t  *bi,
-                      cs_io_sec_header_t              *header,
-                      cs_gnum_t                       *adjacency)
+_read_adjacency_array(cs_io_t                     *inp,
+                      int                          rec_id,
+                      const cs_block_dist_info_t  *bi,
+                      cs_io_sec_header_t          *header,
+                      cs_gnum_t                   *adjacency)
 {
   assert(inp != NULL);
 
@@ -771,11 +771,11 @@ _read_adjacency_array(cs_io_t                         *inp,
  *----------------------------------------------------------------------------*/
 
 static void
-_add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
-                           cs_gnum_t                 g_face_cells[],
-                           cs_lnum_t                 n_periodic_couples,
-                           const cs_gnum_t           periodic_couples[],
-                           MPI_Comm                  comm)
+_add_perio_to_face_cells_g(cs_block_dist_info_t  bi,
+                           cs_gnum_t             g_face_cells[],
+                           cs_lnum_t             n_periodic_couples,
+                           const cs_gnum_t       periodic_couples[],
+                           MPI_Comm              comm)
 {
   int i;
   cs_lnum_t j;
@@ -1832,8 +1832,8 @@ _read_input(const char   *path,
             cs_lnum_t    *n_faces,
             cs_gnum_t   **g_face_cells)
 {
-  fvm_block_to_part_info_t cell_bi;
-  fvm_block_to_part_info_t face_bi;
+  cs_block_dist_info_t cell_bi;
+  cs_block_dist_info_t face_bi;
 
   int rank_id = cs_glob_rank_id;
   int n_ranks = cs_glob_n_ranks;
@@ -1852,7 +1852,7 @@ _read_input(const char   *path,
   cs_gnum_t *g_per_face_couples = NULL;
 
 #if defined(HAVE_MPI)
-  fvm_block_to_part_t *d = NULL;
+  cs_block_to_part_t *d = NULL;
 #endif
 
   cs_io_t *inp = NULL;
@@ -1893,11 +1893,11 @@ _read_input(const char   *path,
 
     if (strcmp("n_cells", header.sec_name) == 0) {
       *n_g_cells = _read_global_count(inp, rec_id, &header);
-      cell_bi = fvm_block_to_part_compute_sizes(rank_id,
-                                                n_ranks,
-                                                0,
-                                                0,
-                                                *n_g_cells);
+      cell_bi = cs_block_dist_compute_sizes(rank_id,
+                                            n_ranks,
+                                            0,
+                                            0,
+                                            *n_g_cells);
 
     }
     else if (strcmp("n_faces", header.sec_name) == 0)
@@ -1912,11 +1912,11 @@ _read_input(const char   *path,
       if (header.n_vals != (cs_file_off_t)(n_g_faces*2))
         bft_error(__FILE__, __LINE__, 0, unexpected_msg,
                   header.sec_name, cs_io_get_name(inp));
-      face_bi = fvm_block_to_part_compute_sizes(rank_id,
-                                                n_ranks,
-                                                min_rank_step,
-                                                min_block_size,
-                                                n_g_faces);
+      face_bi = cs_block_dist_compute_sizes(rank_id,
+                                            n_ranks,
+                                            min_rank_step,
+                                            min_block_size,
+                                            n_g_faces);
 
       n_elts = (face_bi.gnum_range[1] - face_bi.gnum_range[0])*2;
       BFT_MALLOC(_g_face_cells, n_elts, cs_gnum_t);
@@ -1934,18 +1934,18 @@ _read_input(const char   *path,
                                    header.sec_name,
                                    strlen("periodicity_faces_"))) {
 
-      fvm_block_to_part_info_t per_face_bi;
+      cs_block_dist_info_t per_face_bi;
       cs_gnum_t n_per_face_couples_prev = n_per_face_couples;
 
       if (n_g_faces == 0)
         bft_error(__FILE__, __LINE__, 0, unexpected_msg,
                   header.sec_name, cs_io_get_name(inp));
 
-      per_face_bi = fvm_block_to_part_compute_sizes(rank_id,
-                                                    n_ranks,
-                                                    min_rank_step,
-                                                    min_block_size,
-                                                    header.n_vals/2);
+      per_face_bi = cs_block_dist_compute_sizes(rank_id,
+                                                n_ranks,
+                                                min_rank_step,
+                                                min_block_size,
+                                                header.n_vals/2);
 
       n_per_face_couples  += (  per_face_bi.gnum_range[1]
                               - per_face_bi.gnum_range[0]);
@@ -2022,31 +2022,31 @@ _read_input(const char   *path,
       = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
     cs_gnum_t *_g_face_cells_tmp = NULL;
 
-    d = fvm_block_to_part_create_by_adj_s(cs_glob_mpi_comm,
-                                          face_bi,
-                                          cell_bi,
-                                          2,
-                                          _g_face_cells,
+    d = cs_block_to_part_create_by_adj_s(cs_glob_mpi_comm,
+                                         face_bi,
+                                         cell_bi,
+                                         2,
+                                         _g_face_cells,
                                           NULL,
-                                          NULL);
+                                         NULL);
 
-    *n_faces = fvm_block_to_part_get_n_part_ents(d);
+    *n_faces = cs_block_to_part_get_n_part_ents(d);
 
     BFT_MALLOC(_g_face_cells_tmp, (*n_faces)*2, cs_gnum_t);
 
     /* Face -> cell connectivity */
 
-    fvm_block_to_part_copy_array(d,
-                                 gnum_type,
-                                 2,
-                                 _g_face_cells,
-                                 _g_face_cells_tmp);
+    cs_block_to_part_copy_array(d,
+                                gnum_type,
+                                2,
+                                _g_face_cells,
+                                _g_face_cells_tmp);
 
     BFT_FREE(_g_face_cells);
     _g_face_cells = _g_face_cells_tmp;
     _g_face_cells_tmp = NULL;
 
-    fvm_block_to_part_destroy(&d);
+    cs_block_to_part_destroy(&d);
   }
 
 #endif /* defined(HAVE_MPI) */

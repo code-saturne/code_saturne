@@ -47,24 +47,18 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_block_dist.h"
-
+#include "cs_block_dist.h"
 #include "cs_order.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "fvm_block_to_part.h"
+#include "cs_block_to_part.h"
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -78,7 +72,7 @@ extern "C" {
 
 #if defined(HAVE_MPI)
 
-struct _fvm_block_to_part_t {
+struct _cs_block_to_part_t {
 
   MPI_Comm     comm;         /* Associated MPI communicator */
 
@@ -220,8 +214,8 @@ _ordered_list(size_t              n_ents,
  *----------------------------------------------------------------------------*/
 
 static void
-_init_global_num(fvm_block_to_part_t       *d,
-                 fvm_block_to_part_info_t   bi)
+_init_global_num(cs_block_to_part_t       *d,
+                 cs_block_dist_info_t   bi)
 {
   size_t j;
 
@@ -285,14 +279,14 @@ _init_global_num(fvm_block_to_part_t       *d,
  *   empty communicator structure
  *----------------------------------------------------------------------------*/
 
-static fvm_block_to_part_t *
+static cs_block_to_part_t *
 _block_to_part_create(MPI_Comm comm)
 {
   int i;
 
-  fvm_block_to_part_t *d;
+  cs_block_to_part_t *d;
 
-  BFT_MALLOC(d, 1, fvm_block_to_part_t);
+  BFT_MALLOC(d, 1, cs_block_to_part_t);
 
   d->comm = comm;
 
@@ -325,44 +319,6 @@ _block_to_part_create(MPI_Comm comm)
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Compute block size and rank info for use with a block distribution.
- *
- * arguments:
- *   rank_id        <-- id of local rank (ignored in serial mode)
- *   n_ranks        <-- number of associated ranks
- *   min_rank_step  <-- minimum rank step between blocks
- *   min_block_size <-- minimum number of entities per block
- *   n_g_ents       <-- total number of associated entities
- *
- * returns:
- *   block size and range info structure
- *----------------------------------------------------------------------------*/
-
-fvm_block_to_part_info_t
-fvm_block_to_part_compute_sizes(int        rank_id,
-                                int        n_ranks,
-                                int        min_rank_step,
-                                cs_lnum_t  min_block_size,
-                                cs_gnum_t  n_g_ents)
-{
-  fvm_block_to_part_info_t bi;
-
-  fvm_block_dist_info_t _bi= fvm_block_dist_compute_sizes(rank_id,
-                                                          n_ranks,
-                                                          min_rank_step,
-                                                          min_block_size,
-                                                          n_g_ents);
-
-  bi.gnum_range[0] = _bi.gnum_range[0];
-  bi.gnum_range[1] = _bi.gnum_range[1];
-  bi.n_ranks = _bi.n_ranks;
-  bi.rank_step = _bi.rank_step;
-  bi.block_size = _bi.block_size;
-
-  return bi;
-}
-
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
@@ -378,15 +334,15 @@ fvm_block_to_part_compute_sizes(int        rank_id,
  *   initialized block to partition distributor
  *----------------------------------------------------------------------------*/
 
-fvm_block_to_part_t *
-fvm_block_to_part_create_by_rank(MPI_Comm                  comm,
-                                 fvm_block_to_part_info_t  block,
-                                 int                       ent_rank[])
+cs_block_to_part_t *
+cs_block_to_part_create_by_rank(MPI_Comm              comm,
+                                cs_block_dist_info_t  block,
+                                int                   ent_rank[])
 {
   int i;
   size_t j;
 
-  fvm_block_to_part_t *d = _block_to_part_create(comm);
+  cs_block_to_part_t *d = _block_to_part_create(comm);
 
   const int n_ranks = d->n_ranks;
 
@@ -457,14 +413,14 @@ fvm_block_to_part_create_by_rank(MPI_Comm                  comm,
  *   initialized block to partition distributor
  *----------------------------------------------------------------------------*/
 
-fvm_block_to_part_t *
-fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
-                                  fvm_block_to_part_info_t  block,
-                                  fvm_block_to_part_info_t  adjacent_block,
-                                  int                       stride,
-                                  cs_gnum_t                 adjacency[],
-                                  int                       adjacent_ent_rank[],
-                                  int                       default_rank[])
+cs_block_to_part_t *
+cs_block_to_part_create_by_adj_s(MPI_Comm              comm,
+                                 cs_block_dist_info_t  block,
+                                 cs_block_dist_info_t  adjacent_block,
+                                 int                   stride,
+                                 cs_gnum_t             adjacency[],
+                                 int                   adjacent_ent_rank[],
+                                 int                   default_rank[])
 {
   int i, k;
   cs_lnum_t j;
@@ -475,7 +431,7 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
   cs_lnum_t   *rank_flag = NULL;
   cs_gnum_t   *adj_send_num = NULL, *adj_recv_num = NULL;
 
-  fvm_block_to_part_t *d = _block_to_part_create(comm);
+  cs_block_to_part_t *d = _block_to_part_create(comm);
 
   int rank = -1;
   const int n_ranks = d->n_ranks;
@@ -675,11 +631,11 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
  *   initialized block to partition distributor
  *----------------------------------------------------------------------------*/
 
-fvm_block_to_part_t *
-fvm_block_to_part_create_adj(MPI_Comm                  comm,
-                             fvm_block_to_part_info_t  adjacent_block,
-                             size_t                    adjacency_size,
-                             const cs_gnum_t           adjacency[])
+cs_block_to_part_t *
+cs_block_to_part_create_adj(MPI_Comm              comm,
+                            cs_block_dist_info_t  adjacent_block,
+                            size_t                adjacency_size,
+                            const cs_gnum_t       adjacency[])
 {
   int i;
   size_t j;
@@ -688,7 +644,7 @@ fvm_block_to_part_create_adj(MPI_Comm                  comm,
   cs_lnum_t *adj_list = NULL, *_adj_list = NULL;
   cs_gnum_t *send_num = NULL, *recv_num = NULL;
 
-  fvm_block_to_part_t *d = _block_to_part_create(comm);
+  cs_block_to_part_t *d = _block_to_part_create(comm);
 
   const int n_ranks = d->n_ranks;
 
@@ -792,7 +748,7 @@ fvm_block_to_part_create_adj(MPI_Comm                  comm,
  * Initialize block to partition distributor based global element numbers
  * for partitioned data.
  *
- * This function is similar to fvm_block_to_part_create_adj(), but is
+ * This function is similar to cs_block_to_part_create_adj(), but is
  * intended to be used with already partitioned data, which may have
  * been renumbered; as such, it does not sort or remove duplicates from the
  * list of global elements, and global entity numbers must be nonzero.
@@ -807,11 +763,11 @@ fvm_block_to_part_create_adj(MPI_Comm                  comm,
  *   initialized partition to block distributor
  *----------------------------------------------------------------------------*/
 
-fvm_block_to_part_t *
-fvm_block_to_part_create_by_gnum(MPI_Comm                   comm,
-                                 fvm_block_to_part_info_t   bi,
-                                 cs_lnum_t                  n_part_ents,
-                                 const cs_gnum_t            global_ent_num[])
+cs_block_to_part_t *
+cs_block_to_part_create_by_gnum(MPI_Comm               comm,
+                                cs_block_dist_info_t   bi,
+                                cs_lnum_t              n_part_ents,
+                                const cs_gnum_t        global_ent_num[])
 {
   int i;
   size_t j;
@@ -819,7 +775,7 @@ fvm_block_to_part_create_by_gnum(MPI_Comm                   comm,
   size_t recv_size = 0;
   cs_gnum_t *send_num = NULL, *recv_num = NULL;
 
-  fvm_block_to_part_t *d = _block_to_part_create(comm);
+  cs_block_to_part_t *d = _block_to_part_create(comm);
 
   const int n_ranks = d->n_ranks;
 
@@ -908,9 +864,9 @@ fvm_block_to_part_create_by_gnum(MPI_Comm                   comm,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_block_to_part_destroy(fvm_block_to_part_t **d)
+cs_block_to_part_destroy(cs_block_to_part_t **d)
 {
-  fvm_block_to_part_t *_d = *d;
+  cs_block_to_part_t *_d = *d;
 
   BFT_FREE(_d->send_count);
   BFT_FREE(_d->recv_count);
@@ -936,7 +892,7 @@ fvm_block_to_part_destroy(fvm_block_to_part_t **d)
  *----------------------------------------------------------------------------*/
 
 cs_lnum_t
-fvm_block_to_part_get_n_part_ents(fvm_block_to_part_t *d)
+cs_block_to_part_get_n_part_ents(cs_block_to_part_t *d)
 {
   cs_lnum_t retval = 0;
 
@@ -961,7 +917,7 @@ fvm_block_to_part_get_n_part_ents(fvm_block_to_part_t *d)
  *----------------------------------------------------------------------------*/
 
 cs_gnum_t *
-fvm_block_to_part_transfer_gnum(fvm_block_to_part_t *d)
+cs_block_to_part_transfer_gnum(cs_block_to_part_t *d)
 {
   cs_gnum_t *retval = d->_recv_global_num;
 
@@ -982,11 +938,11 @@ fvm_block_to_part_transfer_gnum(fvm_block_to_part_t *d)
  *----------------------------------------------------------------------------*/
 
 void
-fvm_block_to_part_copy_array(fvm_block_to_part_t  *d,
-                             cs_datatype_t         datatype,
-                             int                   stride,
-                             const void           *block_values,
-                             void                 *part_values)
+cs_block_to_part_copy_array(cs_block_to_part_t  *d,
+                            cs_datatype_t        datatype,
+                            int                  stride,
+                            const void          *block_values,
+                            void                *part_values)
 {
   int        i;
   size_t     j, k;
@@ -1076,9 +1032,9 @@ fvm_block_to_part_copy_array(fvm_block_to_part_t  *d,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_block_to_part_copy_index(fvm_block_to_part_t  *d,
-                             const cs_lnum_t      *block_index,
-                             cs_lnum_t            *part_index)
+cs_block_to_part_copy_index(cs_block_to_part_t  *d,
+                            const cs_lnum_t     *block_index,
+                            cs_lnum_t           *part_index)
 
 {
   size_t i;
@@ -1136,12 +1092,12 @@ fvm_block_to_part_copy_index(fvm_block_to_part_t  *d,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_block_to_part_copy_indexed(fvm_block_to_part_t  *d,
-                               cs_datatype_t         datatype,
-                               const cs_lnum_t      *block_index,
-                               const void           *block_val,
-                               const cs_lnum_t      *part_index,
-                               void                 *part_val)
+cs_block_to_part_copy_indexed(cs_block_to_part_t  *d,
+                              cs_datatype_t        datatype,
+                              const cs_lnum_t     *block_index,
+                              const void          *block_val,
+                              const cs_lnum_t     *part_index,
+                              void                *part_val)
 {
   int    i;
   size_t j, k, w_displ, r_displ;
@@ -1303,12 +1259,12 @@ fvm_block_to_part_copy_indexed(fvm_block_to_part_t  *d,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_block_to_part_global_to_local(cs_lnum_t        n_ents,
-                                  cs_lnum_t        base,
-                                  cs_lnum_t        global_list_size,
-                                  const cs_gnum_t  global_list[],
-                                  const cs_gnum_t  global_number[],
-                                  cs_lnum_t        local_number[])
+cs_block_to_part_global_to_local(cs_lnum_t        n_ents,
+                                 cs_lnum_t        base,
+                                 cs_lnum_t        global_list_size,
+                                 const cs_gnum_t  global_list[],
+                                 const cs_gnum_t  global_number[],
+                                 cs_lnum_t        local_number[])
 {
   cs_lnum_t i;
 
@@ -1351,7 +1307,4 @@ fvm_block_to_part_global_to_local(cs_lnum_t        n_ents,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
+END_C_DECLS

@@ -1,8 +1,8 @@
-#ifndef __FVM_BLOCK_DIST_H__
-#define __FVM_BLOCK_DIST_H__
+#ifndef __CS_BLOCK_DIST_H__
+#define __CS_BLOCK_DIST_H__
 
 /*============================================================================
- * Utility functions for block distribution.
+ * Definition of a block distribution.
  *============================================================================*/
 
 /*
@@ -31,16 +31,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_defs.h"
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -63,7 +58,7 @@ typedef struct {
                                   blocks on only a few ranks) */
   cs_lnum_t    block_size;     /* Basic block size */
 
-} fvm_block_dist_info_t;
+} cs_block_dist_info_t;
 
 /*=============================================================================
  * Public function prototypes
@@ -83,12 +78,12 @@ typedef struct {
  *   block size and range info structure
  *----------------------------------------------------------------------------*/
 
-fvm_block_dist_info_t
-fvm_block_dist_compute_sizes(int         rank_id,
-                             int         n_ranks,
-                             int         min_rank_step,
-                             cs_lnum_t   min_block_size,
-                             cs_gnum_t  n_g_ents);
+cs_block_dist_info_t
+cs_block_dist_compute_sizes(int         rank_id,
+                            int         n_ranks,
+                            int         min_rank_step,
+                            cs_lnum_t   min_block_size,
+                            cs_gnum_t  n_g_ents);
 
 /*----------------------------------------------------------------------------
  * Compute block size and rank info for use with a block distribution
@@ -105,16 +100,14 @@ fvm_block_dist_compute_sizes(int         rank_id,
  *   block size and range info structure
  *----------------------------------------------------------------------------*/
 
-fvm_block_dist_info_t
-fvm_block_dist_compute_sizes_nr(int        rank_id,
-                                int        n_ranks,
-                                int        n_block_ranks,
-                                cs_gnum_t  n_g_ents);
+cs_block_dist_info_t
+cs_block_dist_compute_sizes_nr(int        rank_id,
+                               int        n_ranks,
+                               int        n_block_ranks,
+                               cs_gnum_t  n_g_ents);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
-#endif /* __FVM_BLOCK_DIST_H__ */
+#endif /* __CS_BLOCK_DIST_H__ */

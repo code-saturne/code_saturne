@@ -67,11 +67,12 @@
 #include "fvm_io_num.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
-#include "fvm_part_to_block.h"
 #include "fvm_writer_helper.h"
 #include "fvm_writer_priv.h"
 
+#include "cs_block_dist.h"
 #include "cs_parall.h"
+#include "cs_part_to_block.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1676,8 +1677,8 @@ _export_families_g(const fvm_writer_section_t  *export_section,
 {
   cs_lnum_t   i, j;
 
-  fvm_part_to_block_info_t  bi;
-  fvm_part_to_block_t  *d = NULL;
+  cs_block_dist_info_t  bi;
+  cs_part_to_block_t  *d = NULL;
 
   int         n_sections = 0;
   _Bool       have_tesselation = false;
@@ -1805,18 +1806,18 @@ _export_families_g(const fvm_writer_section_t  *export_section,
 
   /* Build distribution structures */
 
-  bi = fvm_part_to_block_compute_sizes(writer->rank,
-                                       writer->n_ranks,
-                                       0,
-                                       n_g_elements,  /* min_block_size */
-                                       n_g_elements);
+  bi = cs_block_dist_compute_sizes(writer->rank,
+                                   writer->n_ranks,
+                                   0,
+                                   n_g_elements,  /* min_block_size */
+                                   n_g_elements);
 
   block_size = bi.gnum_range[1] - bi.gnum_range[0];
 
-  d = fvm_part_to_block_create_by_gnum(writer->comm, bi, part_size, g_elt_num);
+  d = cs_part_to_block_create_by_gnum(writer->comm, bi, part_size, g_elt_num);
 
   if (_g_elt_num != NULL)
-    fvm_part_to_block_transfer_gnum(d, _g_elt_num);
+    cs_part_to_block_transfer_gnum(d, _g_elt_num);
 
   g_elt_num = NULL;
   _g_elt_num = NULL;
@@ -1826,11 +1827,11 @@ _export_families_g(const fvm_writer_section_t  *export_section,
   if (have_tesselation) {
 
     BFT_MALLOC(block_n_sub, block_size, int);
-    fvm_part_to_block_copy_array(d,
-                                 sizeof(int),
-                                 1,
-                                 part_n_sub,
-                                 block_n_sub);
+    cs_part_to_block_copy_array(d,
+                                sizeof(int),
+                                1,
+                                part_n_sub,
+                                block_n_sub);
     BFT_FREE(part_n_sub);
 
     for (i = 0; i < block_size; i++)
@@ -1908,11 +1909,11 @@ _export_families_g(const fvm_writer_section_t  *export_section,
 
   /* Distribute part values */
 
-  fvm_part_to_block_copy_array(d,
-                               sizeof(med_int),
-                               1,
-                               part_values,
-                               block_values);
+  cs_part_to_block_copy_array(d,
+                              sizeof(med_int),
+                              1,
+                              part_values,
+                              block_values);
 
   /* Scatter values to sub-elements in case of tesselation */
 
@@ -1954,7 +1955,7 @@ _export_families_g(const fvm_writer_section_t  *export_section,
   BFT_FREE(block_values);
   BFT_FREE(part_values);
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 
   if (block_n_sub != NULL)
     BFT_FREE(block_n_sub);

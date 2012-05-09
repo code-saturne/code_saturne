@@ -1,5 +1,5 @@
 /*============================================================================
- * Utility functions for block distribution.
+ * \file Definition of a block distribution.
  *============================================================================*/
 
 /*
@@ -51,16 +51,11 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "fvm_block_dist.h"
+#include "cs_block_dist.h"
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -78,33 +73,33 @@ extern "C" {
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Compute block size and rank info for use with a block distribution.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute block size and rank info for use with a block distribution.
  *
- * arguments:
- *   rank_id        <-- id of local rank (ignored in serial mode)
- *   n_ranks        <-- number of associated ranks
- *   min_rank_step  <-- minimum rank step between blocks
- *   min_block_size <-- minimum number of entities per block
- *   n_g_ents       <-- total number of associated entities
+ * \param[in]  rank_id         id of local rank (ignored in serial mode)
+ * \param[in]  n_ranks         number of associated ranks
+ * \param[in]  min_rank_step   minimum rank step between blocks
+ * \param[in]  min_block_size  minimum number of entities per block
+ * \param[in]  n_g_ents        total number of associated entities
  *
- * returns:
- *   block size and range info structure
- *----------------------------------------------------------------------------*/
+ * \return  block size and range info structure
+ */
+/*----------------------------------------------------------------------------*/
 
-fvm_block_dist_info_t
-fvm_block_dist_compute_sizes(int        rank_id,
-                             int        n_ranks,
-                             int        min_rank_step,
-                             cs_lnum_t  min_block_size,
-                             cs_gnum_t  n_g_ents)
+cs_block_dist_info_t
+cs_block_dist_compute_sizes(int        rank_id,
+                            int        n_ranks,
+                            int        min_rank_step,
+                            cs_lnum_t  min_block_size,
+                            cs_gnum_t  n_g_ents)
 {
   int _rank_id = rank_id;
   cs_gnum_t _min_block_size = 1;
   cs_gnum_t _block_size = 0;
   cs_gnum_t _n_ranks = n_ranks;
 
-  fvm_block_dist_info_t bi;
+  cs_block_dist_info_t bi;
 
   /* Special case: only 1 rank */
 
@@ -178,33 +173,33 @@ fvm_block_dist_compute_sizes(int        rank_id,
   return bi;
 }
 
-/*----------------------------------------------------------------------------
- * Compute block size and rank info for use with a block distribution
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute block size and rank info for use with a block distribution
  * for a new global number of entities with a given number of active
  * ranks.
  *
- * arguments:
- *   rank_id        <-- id of local rank (ignored in serial mode)
- *   n_ranks        <-- number of associated ranks
- *   n_block_ranks  <-- number of ranks associated with a block
- *   n_g_ents       <-- total number of associated entities
+ * \param[in]  rank_id        id of local rank (ignored in serial mode)
+ * \param[in]  n_ranks        number of associated ranks
+ * \param[in]  n_block_ranks  number of ranks associated with a block
+ * \param[in]  n_g_ents       total number of associated entities
  *
- * returns:
- *   block size and range info structure
- *----------------------------------------------------------------------------*/
+ * \return  block size and range info structure
+ */
+/*----------------------------------------------------------------------------*/
 
-fvm_block_dist_info_t
-fvm_block_dist_compute_sizes_nr(int        rank_id,
-                                int        n_ranks,
-                                int        n_block_ranks,
-                                cs_gnum_t  n_g_ents)
+cs_block_dist_info_t
+cs_block_dist_compute_sizes_nr(int        rank_id,
+                               int        n_ranks,
+                               int        n_block_ranks,
+                               cs_gnum_t  n_g_ents)
 {
   int _rank_id = rank_id;
 
   cs_gnum_t _block_size = 0;
   cs_gnum_t _n_ranks = n_ranks;
 
-  fvm_block_dist_info_t bi;
+  cs_block_dist_info_t bi;
 
   /* Special case: only 1 rank */
 
@@ -275,7 +270,4 @@ fvm_block_dist_compute_sizes_nr(int        rank_id,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
+END_C_DECLS

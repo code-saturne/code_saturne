@@ -45,8 +45,6 @@
 #include <bft_error.h>
 #include <bft_printf.h>
 
-#include <fvm_defs.h>
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -571,8 +569,17 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
              (double)ibad / (double)n_cells_tot * 100.0);
 
   /* Post processing */
-  cs_post_write_var(-1, "Ortho_Norm_Tag", 1, false, true, CS_POST_TYPE_cs_int_t,
-                    -1, 0.0, bad_ortho_norm_cells, NULL, NULL);
+  cs_post_write_var(-1,
+                    "Ortho_Norm_Tag",
+                    1,
+                    false,
+                    true,
+                    CS_POST_TYPE_cs_int_t,
+                    -1,
+                    0.0,
+                    bad_ortho_norm_cells,
+                    NULL,
+                    NULL);
 
   BFT_FREE(working_array);
 
@@ -622,8 +629,17 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
              (double)ibad / (double)n_cells_tot * 100.0);
 
   /* Post processing */
-  cs_post_write_var(-1, "Offset_Tag", 1, false, true, CS_POST_TYPE_cs_int_t,
-                    -1, 0.0, bad_ortho_aframe_cells, NULL, NULL);
+  cs_post_write_var(-1,
+                    "Offset_Tag",
+                    1,
+                    false,
+                    true,
+                    CS_POST_TYPE_cs_int_t,
+                    -1,
+                    0.0,
+                    bad_ortho_aframe_cells,
+                    NULL,
+                    NULL);
 
   BFT_FREE(working_array);
 

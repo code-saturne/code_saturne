@@ -56,6 +56,8 @@ src/base/cs_ale.c
 src/base/cs_ast_coupling.c
 src/base/cs_base.c
 src/base/cs_base_fortran.c
+src/base/cs_block_dist.c
+src/base/cs_block_to_part.c
 src/base/cs_boundary_conditions.c
 src/base/cs_calcium.c
 src/base/cs_coupling.c
@@ -73,6 +75,7 @@ src/base/cs_numbering.c
 src/base/cs_opts.c
 src/base/cs_order.c
 src/base/cs_parall.c
+src/base/cs_part_to_block.c
 src/base/cs_post.c
 src/base/cs_post_default.c
 src/base/cs_preprocessor_data.c
@@ -99,8 +102,6 @@ src/ctwr/cs_ctwr_air_props.c
 src/ctwr/cs_ctwr.c
 src/ctwr/cs_ctwr_halo.c
 src/ctwr/cs_ctwr_mesh.c
-src/fvm/fvm_block_dist.c
-src/fvm/fvm_block_to_part.c
 src/fvm/fvm_box.c
 src/fvm/fvm_box_tree.c
 src/fvm/fvm_convert_array.c
@@ -119,7 +120,6 @@ src/fvm/fvm_nodal_from_desc.c
 src/fvm/fvm_nodal_order.c
 src/fvm/fvm_nodal_project.c
 src/fvm/fvm_nodal_triangulate.c
-src/fvm/fvm_part_to_block.c
 src/fvm/fvm_periodicity.c
 src/fvm/fvm_point_location.c
 src/fvm/fvm_selector.c

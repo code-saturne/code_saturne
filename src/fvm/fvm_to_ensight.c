@@ -47,7 +47,6 @@
 
 #include "fvm_defs.h"
 #include "fvm_convert_array.h"
-#include "fvm_part_to_block.h"
 #include "fvm_io_num.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
@@ -55,8 +54,10 @@
 #include "fvm_writer_helper.h"
 #include "fvm_writer_priv.h"
 
+#include "cs_block_dist.h"
 #include "cs_file.h"
 #include "cs_parall.h"
+#include "cs_part_to_block.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -551,11 +552,11 @@ _extra_vertex_get_gnum(const fvm_nodal_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_vertex_part_to_block_create(const fvm_nodal_t          *mesh,
-                             _Bool                       divide_polyhedra,
-                             MPI_Comm                    comm,
-                             fvm_part_to_block_info_t   *bi,
-                             fvm_part_to_block_t       **d)
+_vertex_part_to_block_create(const fvm_nodal_t      *mesh,
+                             _Bool                   divide_polyhedra,
+                             MPI_Comm                comm,
+                             cs_block_dist_info_t   *bi,
+                             cs_part_to_block_t    **d)
 {
   int  rank, n_ranks;
 
@@ -564,8 +565,8 @@ _vertex_part_to_block_create(const fvm_nodal_t          *mesh,
 
   cs_gnum_t   *_g_num = NULL;
 
-  fvm_part_to_block_info_t  _bi;
-  fvm_part_to_block_t       *_d;
+  cs_block_dist_info_t  _bi;
+  cs_part_to_block_t   *_d;
 
   size_t min_block_size
     = cs_parall_get_min_coll_buf_size() / sizeof(float);
@@ -592,11 +593,11 @@ _vertex_part_to_block_create(const fvm_nodal_t          *mesh,
   n_vertices_tot = n_vertices + n_extra_vertices;
   n_g_vertices_tot = n_g_vertices + n_g_extra_vertices;
 
-  _bi = fvm_part_to_block_compute_sizes(rank,
-                                        n_ranks,
-                                        0,
-                                        min_block_size,
-                                        n_g_vertices_tot);
+  _bi = cs_block_dist_compute_sizes(rank,
+                                    n_ranks,
+                                    0,
+                                    min_block_size,
+                                    n_g_vertices_tot);
 
   /* Global vertex numbers */
 
@@ -614,10 +615,10 @@ _vertex_part_to_block_create(const fvm_nodal_t          *mesh,
 
   /* Build distribution structures */
 
-  _d = fvm_part_to_block_create_by_gnum(comm, _bi, n_vertices_tot, g_num);
+  _d = cs_part_to_block_create_by_gnum(comm, _bi, n_vertices_tot, g_num);
 
   if (n_extra_vertices > 0)
-    fvm_part_to_block_transfer_gnum(_d, _g_num);
+    cs_part_to_block_transfer_gnum(_d, _g_num);
 
   /* Return initialized structures */
 
@@ -644,15 +645,15 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
 {
   cs_lnum_t   i, j;
   size_t stride;
-  fvm_part_to_block_info_t  bi;
+  cs_block_dist_info_t  bi;
 
   cs_gnum_t    n_g_extra_vertices = 0, n_g_vertices_tot = 0;
   cs_lnum_t    n_extra_vertices = 0, n_vertices_tot = 0;
   cs_coord_t  *extra_vertex_coords = NULL;
   float        *part_coords = NULL, *block_coords = NULL;
 
-  fvm_part_to_block_t   *d = NULL;
-  size_t                 block_buf_size = 0;
+  cs_part_to_block_t   *d = NULL;
+  size_t                block_buf_size = 0;
 
   const double      *vertex_coords = mesh->vertex_coords;
   const cs_lnum_t   *parent_vertex_num = mesh->parent_vertex_num;
@@ -719,11 +720,11 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
         part_coords[i] = 0.0;
     }
 
-    fvm_part_to_block_copy_array(d,
-                                 CS_FLOAT,
-                                 1,
-                                 part_coords,
-                                 block_coords);
+    cs_part_to_block_copy_array(d,
+                                CS_FLOAT,
+                                1,
+                                part_coords,
+                                block_coords);
 
     _write_block_floats_g(bi.gnum_range[0],
                           bi.gnum_range[1],
@@ -733,7 +734,7 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
 
   } /* end of loop on spatial dimension */
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 
   BFT_FREE(block_coords);
   BFT_FREE(part_coords);
@@ -1132,7 +1133,7 @@ _export_point_elements_g(const fvm_nodal_t  *mesh,
     int  rank, n_ranks;
     cs_lnum_t   i;
     cs_gnum_t j;
-    fvm_part_to_block_info_t  bi;
+    cs_block_dist_info_t  bi;
 
     size_t min_block_size
       = cs_parall_get_min_coll_buf_size() / sizeof(float);
@@ -1143,11 +1144,11 @@ _export_point_elements_g(const fvm_nodal_t  *mesh,
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &n_ranks);
 
-    bi = fvm_part_to_block_compute_sizes(rank,
-                                         n_ranks,
-                                         0,
-                                         min_block_size,
-                                         n_g_vertices);
+    bi = cs_block_dist_compute_sizes(rank,
+                                     n_ranks,
+                                     0,
+                                     min_block_size,
+                                     n_g_vertices);
 
     BFT_MALLOC(connect, bi.gnum_range[1] - bi.gnum_range[0], int32_t);
 
@@ -1235,12 +1236,12 @@ _write_lengths_g(const fvm_io_num_t  *global_element_num,
 {
   int  rank, n_ranks;
   cs_lnum_t   i;
-  fvm_part_to_block_info_t   bi;
+  cs_block_dist_info_t   bi;
 
   int32_t  *part_lengths = NULL;
   int32_t  *block_lengths = NULL;
 
-  fvm_part_to_block_t  *d = NULL;
+  cs_part_to_block_t  *d = NULL;
 
   const size_t min_block_size
     = cs_parall_get_min_coll_buf_size() / sizeof(int32_t);
@@ -1258,11 +1259,11 @@ _write_lengths_g(const fvm_io_num_t  *global_element_num,
 
   /* Allocate block buffer */
 
-  bi = fvm_part_to_block_compute_sizes(rank,
-                                       n_ranks,
-                                       0,
-                                       min_block_size,
-                                       n_g_elements);
+  bi = cs_block_dist_compute_sizes(rank,
+                                   n_ranks,
+                                   0,
+                                   min_block_size,
+                                   n_g_elements);
 
   /* Build distribution structures */
 
@@ -1272,15 +1273,15 @@ _write_lengths_g(const fvm_io_num_t  *global_element_num,
   for (i = 0; i < n_elements; i++)
     part_lengths[i] = vertex_index[i+1] - vertex_index[i];
 
-  d = fvm_part_to_block_create_by_gnum(comm, bi, n_elements, g_num);
+  d = cs_part_to_block_create_by_gnum(comm, bi, n_elements, g_num);
 
-  fvm_part_to_block_copy_array(d,
-                               CS_INT32,
-                               1,
-                               part_lengths,
-                               block_lengths);
+  cs_part_to_block_copy_array(d,
+                              CS_INT32,
+                              1,
+                              part_lengths,
+                              block_lengths);
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
   BFT_FREE(part_lengths);
 
   /* Write to file */
@@ -1397,10 +1398,10 @@ _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
                          _ensight_file_t      f)
 {
   int  rank, n_ranks;
-  fvm_part_to_block_info_t bi;
+  cs_block_dist_info_t bi;
 
   cs_gnum_t loc_size = 0, tot_size = 0, block_size = 0;
-  fvm_part_to_block_t  *d = NULL;
+  cs_part_to_block_t  *d = NULL;
   cs_lnum_t   *block_index = NULL;
   int32_t  *block_vtx_num = NULL;
   size_t  min_block_size
@@ -1427,30 +1428,30 @@ _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
 
   /* Allocate memory for additionnal indexes */
 
-  bi = fvm_part_to_block_compute_sizes(rank,
-                                       n_ranks,
-                                       0,
-                                       min_block_size,
-                                       n_g_elements);
+  bi = cs_block_dist_compute_sizes(rank,
+                                   n_ranks,
+                                   0,
+                                   min_block_size,
+                                   n_g_elements);
 
   BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
 
-  d = fvm_part_to_block_create_by_gnum(comm, bi, n_elements, g_elt_num);
+  d = cs_part_to_block_create_by_gnum(comm, bi, n_elements, g_elt_num);
 
-  fvm_part_to_block_copy_index(d,
-                               vertex_index,
-                               block_index);
+  cs_part_to_block_copy_index(d,
+                              vertex_index,
+                              block_index);
 
   block_size = block_index[bi.gnum_range[1] - bi.gnum_range[0]];
 
   BFT_MALLOC(block_vtx_num, block_size, int32_t);
 
-  fvm_part_to_block_copy_indexed(d,
-                                 CS_INT32,
-                                 vertex_index,
-                                 vertex_num,
-                                 block_index,
-                                 block_vtx_num);
+  cs_part_to_block_copy_indexed(d,
+                                CS_INT32,
+                                vertex_index,
+                                vertex_num,
+                                block_index,
+                                block_vtx_num);
 
   /* Write to file */
 
@@ -1464,7 +1465,7 @@ _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
   /* Free memory */
 
   BFT_FREE(block_vtx_num);
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
   BFT_FREE(block_index);
 }
 
@@ -1491,9 +1492,9 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
   cs_lnum_t   i, j, k, l, face_id;
 
   cs_lnum_t   face_length, cell_length;
-  fvm_part_to_block_info_t  bi;
+  cs_block_dist_info_t  bi;
 
-  fvm_part_to_block_t  *d = NULL;
+  cs_part_to_block_t  *d = NULL;
   const fvm_writer_section_t  *current_section;
 
   /* Get info on the current MPI communicator */
@@ -1561,33 +1562,33 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
 
     /* Prepare distribution structures */
 
-    bi = fvm_part_to_block_compute_sizes(rank,
-                                         n_ranks,
-                                         0,
-                                         min_block_size,
-                                         n_g_elements);
+    bi = cs_block_dist_compute_sizes(rank,
+                                     n_ranks,
+                                     0,
+                                     min_block_size,
+                                     n_g_elements);
 
-    d = fvm_part_to_block_create_by_gnum(comm,
-                                         bi,
-                                         n_elements,
-                                         g_elt_num);
+    d = cs_part_to_block_create_by_gnum(comm,
+                                        bi,
+                                        n_elements,
+                                        g_elt_num);
 
     BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
 
-    fvm_part_to_block_copy_index(d,
-                                 section->face_index,
-                                 block_index);
+    cs_part_to_block_copy_index(d,
+                                section->face_index,
+                                block_index);
 
     block_size = block_index[bi.gnum_range[1] - bi.gnum_range[0]];
 
     BFT_MALLOC(block_face_len, block_size, int32_t);
 
-    fvm_part_to_block_copy_indexed(d,
-                                   CS_INT32,
-                                   section->face_index,
-                                   part_face_len,
-                                   block_index,
-                                   block_face_len);
+    cs_part_to_block_copy_indexed(d,
+                                  CS_INT32,
+                                  section->face_index,
+                                  part_face_len,
+                                  block_index,
+                                  block_face_len);
 
     MPI_Scan(&block_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, comm);
     block_end += 1;
@@ -1602,7 +1603,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
 
     BFT_FREE(block_face_len);
 
-    fvm_part_to_block_destroy(&d);
+    cs_part_to_block_destroy(&d);
 
     BFT_FREE(block_index);
     BFT_FREE(part_face_len);
@@ -2172,7 +2173,7 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
 {
   int  rank, n_ranks;
   cs_lnum_t   i;
-  fvm_part_to_block_info_t bi;
+  cs_block_dist_info_t bi;
 
   cs_lnum_t   part_size = 0;
 
@@ -2180,7 +2181,7 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
   cs_gnum_t   n_g_sub_elements = 0, global_num_end = 0;
   cs_gnum_t   block_size = 0, block_start = 0, block_end = 0;
 
-  fvm_part_to_block_t  *d = NULL;
+  cs_part_to_block_t  *d = NULL;
   cs_lnum_t   *part_index, *block_index = NULL;
   int32_t     *part_vtx_num = NULL, *block_vtx_num = NULL;
   cs_gnum_t   *part_vtx_gnum = NULL;
@@ -2248,16 +2249,16 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
 
   /* Allocate memory for additionnal indexes and decoded connectivity */
 
-  bi = fvm_part_to_block_compute_sizes(rank,
-                                       n_ranks,
-                                       0,
-                                       min_block_size,
-                                       n_g_elements);
+  bi = cs_block_dist_compute_sizes(rank,
+                                   n_ranks,
+                                   0,
+                                   min_block_size,
+                                   n_g_elements);
 
   BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
   BFT_MALLOC(part_index, n_elements + 1, cs_lnum_t);
 
-  d = fvm_part_to_block_create_by_gnum(comm, bi, n_elements, g_elt_num);
+  d = cs_part_to_block_create_by_gnum(comm, bi, n_elements, g_elt_num);
 
   part_index[0] = 0;
   for (i = 0; i < n_elements; i++) {
@@ -2267,9 +2268,9 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
 
   /* Copy index */
 
-  fvm_part_to_block_copy_index(d,
-                               part_index,
-                               block_index);
+  cs_part_to_block_copy_index(d,
+                              part_index,
+                              block_index);
 
   block_size = (block_index[bi.gnum_range[1] - bi.gnum_range[0]]);
 
@@ -2277,14 +2278,14 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
 
   BFT_MALLOC(block_vtx_num, block_size, int32_t);
 
-  fvm_part_to_block_copy_indexed(d,
-                                 CS_INT32,
-                                 part_index,
-                                 part_vtx_num,
-                                 block_index,
-                                 block_vtx_num);
+  cs_part_to_block_copy_indexed(d,
+                                CS_INT32,
+                                part_index,
+                                part_vtx_num,
+                                block_index,
+                                block_vtx_num);
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 
   BFT_FREE(part_vtx_num);
   BFT_FREE(part_index);
@@ -2472,10 +2473,10 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
 
   do { /* loop on sections which should be appended */
 
-    fvm_part_to_block_info_t bi;
+    cs_block_dist_info_t bi;
 
     cs_lnum_t   block_size = 0;
-    fvm_part_to_block_t  *d = NULL;
+    cs_part_to_block_t  *d = NULL;
     int32_t  *part_vtx_num = NULL, *block_vtx_num = NULL;
 
     const fvm_nodal_section_t  *section = current_section->section;
@@ -2495,16 +2496,16 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
 
     /* Prepare distribution structures */
 
-    bi = fvm_part_to_block_compute_sizes(rank,
-                                         n_ranks,
-                                         0,
-                                         min_block_size,
-                                         n_g_elements);
+    bi = cs_block_dist_compute_sizes(rank,
+                                     n_ranks,
+                                     0,
+                                     min_block_size,
+                                     n_g_elements);
 
-    d = fvm_part_to_block_create_by_gnum(comm,
-                                         bi,
-                                         n_elements,
-                                         g_elt_num);
+    d = cs_part_to_block_create_by_gnum(comm,
+                                        bi,
+                                        n_elements,
+                                        g_elt_num);
 
     /* Build connectivity */
 
@@ -2520,11 +2521,11 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
       }
     }
 
-    fvm_part_to_block_copy_array(d,
-                                 CS_INT32,
-                                 stride,
-                                 part_vtx_num,
-                                 block_vtx_num);
+    cs_part_to_block_copy_array(d,
+                                CS_INT32,
+                                stride,
+                                part_vtx_num,
+                                block_vtx_num);
 
     BFT_FREE(part_vtx_num);
 
@@ -2537,7 +2538,7 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
 
     BFT_FREE(block_vtx_num);
 
-    fvm_part_to_block_destroy(&d);
+    cs_part_to_block_destroy(&d);
 
     current_section = current_section->next;
 
@@ -2586,11 +2587,11 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
                         MPI_Comm                  comm)
 {
   int  i;
-  fvm_part_to_block_info_t  bi;
+  cs_block_dist_info_t  bi;
 
   cs_lnum_t   part_size = 0, block_size = 0;
   float  *part_values = NULL, *block_values = NULL;
-  fvm_part_to_block_t  *d = NULL;
+  cs_part_to_block_t  *d = NULL;
 
   /* Initialize distribution info */
 
@@ -2600,7 +2601,7 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
                                &bi,
                                &d);
 
-  part_size = fvm_part_to_block_get_n_part_ents(d);
+  part_size = cs_part_to_block_get_n_part_ents(d);
   block_size = bi.gnum_range[1] - bi.gnum_range[0];
 
   BFT_MALLOC(part_values, part_size, float);
@@ -2672,11 +2673,11 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
 
       assert(end_id == part_size);
 
-      fvm_part_to_block_copy_array(d,
-                                   CS_FLOAT,
-                                   1,
-                                   part_values,
-                                   block_values);
+      cs_part_to_block_copy_array(d,
+                                  CS_FLOAT,
+                                  1,
+                                  part_values,
+                                  block_values);
 
     }
 
@@ -2698,7 +2699,7 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
   BFT_FREE(block_values);
   BFT_FREE(part_values);
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -2819,8 +2820,8 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
   int  i;
   cs_lnum_t   j, k;
 
-  fvm_part_to_block_info_t  bi;
-  fvm_part_to_block_t  *d = NULL;
+  cs_block_dist_info_t  bi;
+  cs_part_to_block_t  *d = NULL;
 
   int         n_sections = 0;
   _Bool       have_tesselation = false;
@@ -2926,18 +2927,18 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
 
   /* Build distribution structures */
 
-  bi = fvm_part_to_block_compute_sizes(rank,
-                                       n_ranks,
-                                       0,
-                                       min_block_size,
-                                       n_g_elements);
+  bi = cs_block_dist_compute_sizes(rank,
+                                   n_ranks,
+                                   0,
+                                   min_block_size,
+                                   n_g_elements);
 
   block_size = bi.gnum_range[1] - bi.gnum_range[0];
 
-  d = fvm_part_to_block_create_by_gnum(comm, bi, part_size, g_elt_num);
+  d = cs_part_to_block_create_by_gnum(comm, bi, part_size, g_elt_num);
 
   if (_g_elt_num != NULL)
-    fvm_part_to_block_transfer_gnum(d, _g_elt_num);
+    cs_part_to_block_transfer_gnum(d, _g_elt_num);
 
   g_elt_num = NULL;
   _g_elt_num = NULL;
@@ -2947,11 +2948,11 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
   if (have_tesselation) {
 
     BFT_MALLOC(block_n_sub, block_size, int);
-    fvm_part_to_block_copy_array(d,
-                                 CS_INT32,
-                                 1,
-                                 part_n_sub,
-                                 block_n_sub);
+    cs_part_to_block_copy_array(d,
+                                CS_INT32,
+                                1,
+                                part_n_sub,
+                                block_n_sub);
     BFT_FREE(part_n_sub);
 
     for (j = 0; j < block_size; j++)
@@ -3026,11 +3027,11 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
 
       /* Distribute part values */
 
-      fvm_part_to_block_copy_array(d,
-                                   CS_FLOAT,
-                                   1,
-                                   part_values,
-                                   block_values);
+      cs_part_to_block_copy_array(d,
+                                  CS_FLOAT,
+                                  1,
+                                  part_values,
+                                  block_values);
 
       /* Scatter values to sub-elements in case of tesselation */
 
@@ -3064,7 +3065,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
   BFT_FREE(block_values);
   BFT_FREE(part_values);
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 
   if (block_n_sub != NULL)
     BFT_FREE(block_n_sub);

@@ -69,6 +69,8 @@ cs_ale.h \
 cs_ast_coupling.h \
 cs_base.h \
 cs_base_fortran.h \
+cs_block_dist.h \
+cs_block_to_part.h \
 cs_boundary_conditions.h \
 cs_calcium.h \
 cs_coupling.h \
@@ -86,6 +88,7 @@ cs_numbering.h \
 cs_opts.h \
 cs_order.h \
 cs_parall.h \
+cs_part_to_block.h \
 cs_post.h \
 cs_post_default.h \
 cs_preprocessor_data.h \
@@ -114,6 +117,8 @@ noinst_LTLIBRARIES = libcscore.la \
 
 libcscore_la_SOURCES = \
 cs_base.c \
+cs_block_dist.c \
+cs_block_to_part.c \
 cs_defs.c \
 cs_file.c \
 cs_interface.c \
@@ -121,6 +126,7 @@ cs_io.c \
 cs_log.c \
 cs_map.c \
 cs_order.c \
+cs_part_to_block.c \
 cs_system_info.c \
 cs_timer.c
 libcscore_la_LDFLAGS = -no-undefined

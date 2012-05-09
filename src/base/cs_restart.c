@@ -40,29 +40,21 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_block_to_part.h>
-#include <fvm_part_to_block.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
+
 #include "cs_base.h"
+#include "cs_block_dist.h"
+#include "cs_block_to_part.h"
 #include "cs_file.h"
 #include "cs_io.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
+#include "cs_part_to_block.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -414,9 +406,9 @@ _read_ent_values(cs_restart_t        *r,
 
   size_t  nbr_byte_ent;
 
-  fvm_block_to_part_info_t bi;
+  cs_block_dist_info_t bi;
 
-  fvm_block_to_part_t *d = NULL;
+  cs_block_to_part_t *d = NULL;
 
   /* Initialization */
 
@@ -432,16 +424,16 @@ _read_ent_values(cs_restart_t        *r,
     assert(val_type == CS_TYPE_cs_int_t || val_type == CS_TYPE_cs_real_t);
   }
 
-  bi = fvm_block_to_part_compute_sizes(cs_glob_rank_id,
-                                       cs_glob_n_ranks,
-                                       0,
-                                       cs_restart_def_buf_size / nbr_byte_ent,
-                                       n_glob_ents);
+  bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
+                                   cs_glob_n_ranks,
+                                   0,
+                                   cs_restart_def_buf_size / nbr_byte_ent,
+                                   n_glob_ents);
 
-  d = fvm_block_to_part_create_by_gnum(cs_glob_mpi_comm,
-                                       bi,
-                                       n_ents,
-                                       ent_global_num);
+  d = cs_block_to_part_create_by_gnum(cs_glob_mpi_comm,
+                                      bi,
+                                      n_ents,
+                                      ent_global_num);
 
   /* Read blocks */
 
@@ -458,17 +450,17 @@ _read_ent_values(cs_restart_t        *r,
 
  /* Distribute blocks on ranks */
 
-  fvm_block_to_part_copy_array(d,
-                               header->elt_type,
-                               n_location_vals,
-                               buffer,
-                               vals);
+  cs_block_to_part_copy_array(d,
+                              header->elt_type,
+                              n_location_vals,
+                              buffer,
+                              vals);
 
   /* Free buffer */
 
   BFT_FREE(buffer);
 
-  fvm_block_to_part_destroy(&d);
+  cs_block_to_part_destroy(&d);
 }
 
 /*----------------------------------------------------------------------------
@@ -503,9 +495,9 @@ _write_ent_values(const cs_restart_t  *r,
   size_t      nbr_byte_ent;
   cs_byte_t  *buffer = NULL;
 
-  fvm_part_to_block_info_t bi;
+  cs_block_dist_info_t bi;
 
-  fvm_part_to_block_t *d = NULL;
+  cs_part_to_block_t *d = NULL;
 
   /* Initialization */
 
@@ -523,16 +515,16 @@ _write_ent_values(const cs_restart_t  *r,
     assert(val_type == CS_TYPE_cs_int_t || val_type == CS_TYPE_cs_real_t);
   }
 
-  bi = fvm_part_to_block_compute_sizes(cs_glob_rank_id,
-                                       cs_glob_n_ranks,
-                                       0,
-                                       cs_restart_def_buf_size / nbr_byte_ent,
-                                       n_glob_ents);
+  bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
+                                   cs_glob_n_ranks,
+                                   0,
+                                   cs_restart_def_buf_size / nbr_byte_ent,
+                                   n_glob_ents);
 
-  d = fvm_part_to_block_create_by_gnum(cs_glob_mpi_comm,
-                                       bi,
-                                       n_ents,
-                                       ent_global_num);
+  d = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
+                                      bi,
+                                      n_ents,
+                                      ent_global_num);
 
   /* Distribute to blocks */
 
@@ -543,11 +535,11 @@ _write_ent_values(const cs_restart_t  *r,
 
   /* Distribute blocks on ranks */
 
-  fvm_part_to_block_copy_array(d,
-                               elt_type,
-                               n_location_vals,
-                               vals,
-                               buffer);
+  cs_part_to_block_copy_array(d,
+                              elt_type,
+                              n_location_vals,
+                              vals,
+                              buffer);
 
   /* Write blocks */
 
@@ -566,7 +558,7 @@ _write_ent_values(const cs_restart_t  *r,
 
   BFT_FREE(buffer);
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 }
 
 #endif /* #if defined(HAVE_MPI) */

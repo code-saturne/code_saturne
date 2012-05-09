@@ -1,5 +1,5 @@
-#ifndef __FVM_PART_TO_BLOCK_H__
-#define __FVM_PART_TO_BLOCK_H__
+#ifndef __CS_PART_TO_BLOCK_H__
+#define __CS_PART_TO_BLOCK_H__
 
 /*============================================================================
  * Convert between general domain partition and block distribution.
@@ -35,16 +35,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_defs.h"
+#include "cs_defs.h"
+#include "cs_block_dist.h"
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -54,53 +50,17 @@ extern "C" {
  * Type definitions
  *============================================================================*/
 
-/* Information structure for block size and entity range */
-
-typedef struct {
-
-  cs_gnum_t    gnum_range[2];  /* Start and past-the-end global numbers
-                                  associated with local block */
-  int          n_ranks;        /* Number of active ranks */
-  int          rank_step;      /* Step between active block ranks
-                                  (1 in basic case, > 1 if we seek to
-                                  avoid too small buffers and agglomerate
-                                  blocks on only a few ranks) */
-  cs_lnum_t    block_size;     /* Basic block size */
-
-} fvm_part_to_block_info_t;
-
 /* Opaque general domain partitioning to block distribution structure */
 
 #if defined(HAVE_MPI)
 
-typedef struct _fvm_part_to_block_t  fvm_part_to_block_t;
+typedef struct _cs_part_to_block_t  cs_part_to_block_t;
 
 #endif
 
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compute block size and rank info for use with a partitioned distribution.
- *
- * arguments:
- *   rank_id        <-- id of local rank
- *   n_ranks        <-- number of associated ranks
- *   min_rank_step  <-- minimum rank step between blocks
- *   min_block_size <-- minimum number of entities per block
- *   n_g_ents       <-- total number of associated entities
- *
- * returns:
- *   block size and range info structure
- *----------------------------------------------------------------------------*/
-
-fvm_part_to_block_info_t
-fvm_part_to_block_compute_sizes(int         rank_id,
-                                int         n_ranks,
-                                int         min_rank_step,
-                                cs_lnum_t   min_block_size,
-                                cs_gnum_t   n_g_ents);
 
 #if defined(HAVE_MPI)
 
@@ -117,11 +77,11 @@ fvm_part_to_block_compute_sizes(int         rank_id,
  *   initialized partition to block distributor
  *----------------------------------------------------------------------------*/
 
-fvm_part_to_block_t *
-fvm_part_to_block_create_by_gnum(MPI_Comm                   comm,
-                                 fvm_part_to_block_info_t   bi,
-                                 cs_lnum_t                  n_ents,
-                                 const cs_gnum_t            global_ent_num[]);
+cs_part_to_block_t *
+cs_part_to_block_create_by_gnum(MPI_Comm              comm,
+                                cs_block_dist_info_t  bi,
+                                cs_lnum_t             n_ents,
+                                const cs_gnum_t       global_ent_num[]);
 
 /*----------------------------------------------------------------------------
  * Destroy a partition to block distributor structure.
@@ -131,7 +91,7 @@ fvm_part_to_block_create_by_gnum(MPI_Comm                   comm,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_part_to_block_destroy(fvm_part_to_block_t **d);
+cs_part_to_block_destroy(cs_part_to_block_t **d);
 
 /*----------------------------------------------------------------------------
  * Transfer ownership of global entity numbers to a block distributor.
@@ -145,8 +105,8 @@ fvm_part_to_block_destroy(fvm_part_to_block_t **d);
  *----------------------------------------------------------------------------*/
 
 void
-fvm_part_to_block_transfer_gnum(fvm_part_to_block_t  *d,
-                                cs_gnum_t             global_ent_num[]);
+cs_part_to_block_transfer_gnum(cs_part_to_block_t  *d,
+                               cs_gnum_t            global_ent_num[]);
 
 /*----------------------------------------------------------------------------
  * Return number of entities associated with local partition
@@ -159,7 +119,7 @@ fvm_part_to_block_transfer_gnum(fvm_part_to_block_t  *d,
  *----------------------------------------------------------------------------*/
 
 cs_lnum_t
-fvm_part_to_block_get_n_part_ents(fvm_part_to_block_t *d);
+cs_part_to_block_get_n_part_ents(cs_part_to_block_t *d);
 
 /*----------------------------------------------------------------------------
  * Copy array data from general domain partition to block distribution.
@@ -173,11 +133,11 @@ fvm_part_to_block_get_n_part_ents(fvm_part_to_block_t *d);
  *----------------------------------------------------------------------------*/
 
 void
-fvm_part_to_block_copy_array(fvm_part_to_block_t   *d,
-                             cs_datatype_t          datatype,
-                             int                    stride,
-                             const void            *part_values,
-                             void                  *block_values);
+cs_part_to_block_copy_array(cs_part_to_block_t   *d,
+                            cs_datatype_t         datatype,
+                            int                   stride,
+                            const void           *part_values,
+                            void                 *block_values);
 
 /*----------------------------------------------------------------------------
  * Copy local index from general domain partition to block distribution.
@@ -193,9 +153,9 @@ fvm_part_to_block_copy_array(fvm_part_to_block_t   *d,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_part_to_block_copy_index(fvm_part_to_block_t  *d,
-                             const cs_lnum_t      *part_index,
-                             cs_lnum_t            *block_index);
+cs_part_to_block_copy_index(cs_part_to_block_t  *d,
+                            const cs_lnum_t     *part_index,
+                            cs_lnum_t           *block_index);
 
 /*----------------------------------------------------------------------------
  * Copy indexed data from general domain partition to block distribution.
@@ -214,19 +174,17 @@ fvm_part_to_block_copy_index(fvm_part_to_block_t  *d,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_part_to_block_copy_indexed(fvm_part_to_block_t   *d,
-                               cs_datatype_t          datatype,
-                               const cs_lnum_t       *part_index,
-                               const void            *part_val,
-                               const cs_lnum_t       *block_index,
-                               void                  *block_val);
+cs_part_to_block_copy_indexed(cs_part_to_block_t   *d,
+                              cs_datatype_t         datatype,
+                              const cs_lnum_t      *part_index,
+                              const void           *part_val,
+                              const cs_lnum_t      *block_index,
+                              void                 *block_val);
 
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
-#endif /* __FVM_PART_TO_BLOCK_H__ */
+#endif /* __CS_PART_TO_BLOCK_H__ */

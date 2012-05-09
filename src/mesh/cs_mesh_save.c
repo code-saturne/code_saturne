@@ -49,16 +49,16 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "fvm_block_to_part.h"
-#include "fvm_part_to_block.h"
 #include "fvm_io_num.h"
 #include "fvm_periodicity.h"
 
 #include "cs_base.h"
+#include "cs_block_dist.h"
 #include "cs_interface.h"
+#include "cs_io.h"
 #include "cs_mesh.h"
 #include "cs_order.h"
-#include "cs_io.h"
+#include "cs_part_to_block.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -141,10 +141,10 @@ _write_mesh_perio_metadata(const cs_mesh_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_write_face_vertices_g(const cs_mesh_t           *mesh,
-                       fvm_part_to_block_info_t   face_bi,
-                       fvm_part_to_block_t       *d,
-                       cs_io_t                   *pp_out)
+_write_face_vertices_g(const cs_mesh_t       *mesh,
+                       cs_block_dist_info_t   face_bi,
+                       cs_part_to_block_t    *d,
+                       cs_io_t               *pp_out)
 {
   cs_lnum_t i, j, k;
   cs_gnum_t block_size, g_vtx_connect_size, n_block_faces, n_face_vertices;
@@ -180,7 +180,7 @@ _write_face_vertices_g(const cs_mesh_t           *mesh,
     face_vtx_idx[j+1] = face_vtx_idx[j] + n_face_vertices;
   }
 
-  fvm_part_to_block_copy_index(d, face_vtx_idx, _face_vtx_idx);
+  cs_part_to_block_copy_index(d, face_vtx_idx, _face_vtx_idx);
 
   /* Copy index from block to global values */
 
@@ -252,12 +252,12 @@ _write_face_vertices_g(const cs_mesh_t           *mesh,
 
   BFT_MALLOC(_face_vtx_g, block_size, cs_gnum_t);
 
-  fvm_part_to_block_copy_indexed(d,
-                                 gnum_type,
-                                 face_vtx_idx,
-                                 face_vtx_g,
-                                 _face_vtx_idx,
-                                 _face_vtx_g);
+  cs_part_to_block_copy_indexed(d,
+                                gnum_type,
+                                face_vtx_idx,
+                                face_vtx_g,
+                                _face_vtx_idx,
+                                _face_vtx_g);
 
   BFT_FREE(face_vtx_g);
   BFT_FREE(_face_vtx_idx);
@@ -291,10 +291,10 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
 {
   cs_lnum_t i, j;
 
-  fvm_part_to_block_info_t cell_bi;
-  fvm_part_to_block_info_t face_bi;
-  fvm_part_to_block_info_t vtx_bi;
-  fvm_part_to_block_t *d = NULL;
+  cs_block_dist_info_t cell_bi;
+  cs_block_dist_info_t face_bi;
+  cs_block_dist_info_t vtx_bi;
+  cs_part_to_block_t *d = NULL;
 
   cs_lnum_t *_cell_gc_id = NULL, *_face_gc_id = NULL;
   cs_lnum_t *face_gc_id = NULL;
@@ -317,28 +317,28 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
   /* Distribute cell group class info to blocks (write later) */
   /*----------------------------------------------------------*/
 
-  cell_bi = fvm_part_to_block_compute_sizes(cs_glob_rank_id,
-                                            cs_glob_n_ranks,
-                                            0,
-                                            0,
-                                            mesh->n_g_cells);
+  cell_bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
+                                        cs_glob_n_ranks,
+                                        0,
+                                        0,
+                                        mesh->n_g_cells);
 
   BFT_MALLOC(_cell_gc_id,
              (cell_bi.gnum_range[1] - cell_bi.gnum_range[0]),
              cs_lnum_t);
 
-  d = fvm_part_to_block_create_by_gnum(cs_glob_mpi_comm,
-                                       cell_bi,
-                                       mesh->n_cells,
-                                       mesh->global_cell_num);
+  d = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
+                                      cell_bi,
+                                      mesh->n_cells,
+                                      mesh->global_cell_num);
 
-  fvm_part_to_block_copy_array(d,
-                               lnum_type,
-                               1,
-                               mesh->cell_family,
-                               _cell_gc_id);
+  cs_part_to_block_copy_array(d,
+                              lnum_type,
+                              1,
+                              mesh->cell_family,
+                              _cell_gc_id);
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 
   /* Build global face part to block distribution structures */
   /*---------------------------------------------------------*/
@@ -350,16 +350,16 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
   for (i = 0, j = n_i_faces; i < n_b_faces; i++, j++)
     face_gnum[j] = mesh->global_b_face_num[i] + mesh->n_g_i_faces;
 
-  face_bi = fvm_part_to_block_compute_sizes(cs_glob_rank_id,
-                                            cs_glob_n_ranks,
-                                            0,
-                                            0,
-                                            n_g_faces);
+  face_bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
+                                        cs_glob_n_ranks,
+                                        0,
+                                        0,
+                                        n_g_faces);
 
-  d = fvm_part_to_block_create_by_gnum(cs_glob_mpi_comm,
-                                       face_bi,
-                                       n_faces,
-                                       face_gnum);
+  d = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
+                                      face_bi,
+                                      n_faces,
+                                      face_gnum);
 
   /* face_gnum is simply referenced by d, so its lifecycle must be
      at least as long as that of d. */
@@ -391,11 +391,11 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
              (face_bi.gnum_range[1] - face_bi.gnum_range[0]) * 2,
              cs_gnum_t);
 
-  fvm_part_to_block_copy_array(d,
-                               gnum_type,
-                               2,
-                               face_cell_g,
-                               _face_cell_g);
+  cs_part_to_block_copy_array(d,
+                              gnum_type,
+                              2,
+                              face_cell_g,
+                              _face_cell_g);
 
   BFT_FREE(face_cell_g);
 
@@ -444,11 +444,11 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
 
   /* Distribute to blocks and write */
 
-  fvm_part_to_block_copy_array(d,
-                               lnum_type,
-                               1,
-                               face_gc_id,
-                               _face_gc_id);
+  cs_part_to_block_copy_array(d,
+                              lnum_type,
+                              1,
+                              face_gc_id,
+                              _face_gc_id);
 
   BFT_FREE(face_gc_id);
 
@@ -472,32 +472,32 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
 
   /* Free face part to block distribution structures */
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
   BFT_FREE(face_gnum);
 
   /* Vertex coordinates */
   /*--------------------*/
 
-  vtx_bi = fvm_part_to_block_compute_sizes(cs_glob_rank_id,
-                                           cs_glob_n_ranks,
-                                           0,
-                                           0,
-                                           mesh->n_g_vertices);
+  vtx_bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
+                                       cs_glob_n_ranks,
+                                       0,
+                                       0,
+                                       mesh->n_g_vertices);
 
-  d = fvm_part_to_block_create_by_gnum(cs_glob_mpi_comm,
-                                       vtx_bi,
-                                       mesh->n_vertices,
-                                       mesh->global_vtx_num);
+  d = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
+                                      vtx_bi,
+                                      mesh->n_vertices,
+                                      mesh->global_vtx_num);
 
   BFT_MALLOC(_vtx_coords,
              (vtx_bi.gnum_range[1] - vtx_bi.gnum_range[0]) * 3,
              cs_real_t);
 
-  fvm_part_to_block_copy_array(d,
-                               real_type,
-                               3,
-                               mesh->vtx_coord,
-                               _vtx_coords);
+  cs_part_to_block_copy_array(d,
+                              real_type,
+                              3,
+                              mesh->vtx_coord,
+                              _vtx_coords);
 
   cs_io_write_block_buffer("vertex_coords",
                            mesh->n_g_vertices,
@@ -512,7 +512,7 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
 
   BFT_FREE(_vtx_coords);
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 }
 
 /*----------------------------------------------------------------------------
@@ -532,12 +532,12 @@ _write_mesh_perio_data_g(int         perio_num,
                          cs_io_t    *pp_out)
 {
   char section_name[32];
-  fvm_part_to_block_info_t bi;
+  cs_block_dist_info_t bi;
 
   cs_gnum_t  n_g_couples = 0;
   cs_gnum_t  *_perio_couples = NULL;
   const cs_gnum_t  *couple_g_num = NULL;
-  fvm_part_to_block_t *d = NULL;
+  cs_part_to_block_t *d = NULL;
 
   const cs_datatype_t gnum_type
     = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
@@ -554,28 +554,28 @@ _write_mesh_perio_data_g(int         perio_num,
 
   /* Create associated block info and distribution */
 
-  bi = fvm_part_to_block_compute_sizes(cs_glob_rank_id,
-                                       cs_glob_n_ranks,
-                                       0,
-                                       0,
-                                       n_g_couples);
+  bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
+                                   cs_glob_n_ranks,
+                                   0,
+                                   0,
+                                   n_g_couples);
 
-  d = fvm_part_to_block_create_by_gnum(cs_glob_mpi_comm,
-                                       bi,
-                                       n_perio_couples,
-                                       couple_g_num);
+  d = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
+                                      bi,
+                                      n_perio_couples,
+                                      couple_g_num);
 
   BFT_MALLOC(_perio_couples,
              (bi.gnum_range[1] - bi.gnum_range[0]) * 2,
              cs_gnum_t);
 
-  fvm_part_to_block_copy_array(d,
-                               gnum_type,
-                               2,
-                               perio_couples,
-                               _perio_couples);
+  cs_part_to_block_copy_array(d,
+                              gnum_type,
+                              2,
+                              perio_couples,
+                              _perio_couples);
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 
   c_io_num = fvm_io_num_destroy(c_io_num);
 

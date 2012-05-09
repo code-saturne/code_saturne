@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-05-04 17:32+0200\n"
+"POT-Creation-Date: 2012-05-09 18:39+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4413,6 +4413,12 @@ msgstr "Le répertoire %s ne peut être créé"
 
 #, c-format
 msgid ""
+"inconsistent sizes computed for a block to partition distributor\n"
+"(%llu expected, %llu determined)."
+msgstr ""
+
+#, c-format
+msgid ""
 "\n"
 "First face with boundary condition definition error\n"
 "  (out of %llu)\n"
@@ -6316,6 +6322,9 @@ msgstr ""
 msgid "Torus dimensions:    "
 msgstr "Dimensions du tore : "
 
+msgid "Hardware threads:    "
+msgstr "Threads matériels :  "
+
 msgid "Block shape:         "
 msgstr "Forme de bloc :      "
 
@@ -6807,12 +6816,6 @@ msgstr " Création des halos\n"
 
 msgid " Defining halos\n"
 msgstr " Définition des halos\n"
-
-#, c-format
-msgid ""
-"inconsistent sizes computed for a block to partition distributor\n"
-"(%llu expected, %llu determined)."
-msgstr ""
 
 #, c-format
 msgid ""
@@ -7646,15 +7649,15 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Invalid number of coal-> dp_FCP: %i xml: %i\n"
-msgstr ""
-
-#, c-format
 msgid "Error: can not interpret expression: %s\n"
 msgstr ""
 
 #, c-format
 msgid "Error: can not find the required symbol: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid number of coal-> dp_FCP: %i xml: %i\n"
 msgstr ""
 
 #, c-format

@@ -42,12 +42,11 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "fvm_part_to_block.h"
-
 #include "fvm_box.h"
 #include "fvm_box_tree.h"
 
 #include "cs_order.h"
+#include "cs_part_to_block.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -477,11 +476,11 @@ _sync_by_block(fvm_neighborhood_t  *n,
   MPI_Comm_rank(n->comm, &rank_id);
   MPI_Comm_size(n->comm, &n_ranks);
 
-  fvm_part_to_block_info_t bi = fvm_part_to_block_compute_sizes(rank_id,
-                                                                n_ranks,
-                                                                0,
-                                                                0,
-                                                                n_g_elts);
+  cs_block_dist_info_t bi = cs_block_dist_compute_sizes(rank_id,
+                                                        n_ranks,
+                                                        0,
+                                                        0,
+                                                        n_g_elts);
 
   /* Allocate buffers */
 

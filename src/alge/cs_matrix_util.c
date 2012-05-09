@@ -50,7 +50,6 @@
 #include "bft_printf.h"
 
 #include "fvm_io_num.h"
-#include "fvm_part_to_block.h"
 
 #include "cs_base.h"
 #include "cs_blas.h"
@@ -59,6 +58,7 @@
 #include "cs_log.h"
 #include "cs_numbering.h"
 #include "cs_order.h"
+#include "cs_part_to_block.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 
@@ -1298,10 +1298,10 @@ _write_matrix_g(const cs_matrix_t  *m,
   cs_gnum_t  *b_coords = NULL, *c_coords = NULL, *r_coords = NULL;
   double  *b_vals = NULL;
 
-  fvm_part_to_block_info_t bi;
+  cs_block_dist_info_t bi;
 
   fvm_io_num_t *io_num = NULL;
-  fvm_part_to_block_t *d = NULL;
+  cs_part_to_block_t *d = NULL;
 
   cs_lnum_t  n_entries = 0;
   cs_gnum_t  *m_coords = NULL;
@@ -1320,16 +1320,16 @@ _write_matrix_g(const cs_matrix_t  *m,
 
   n_glob_ents = fvm_io_num_get_global_count(io_num);
 
-  bi = fvm_part_to_block_compute_sizes(cs_glob_rank_id,
-                                       cs_glob_n_ranks,
-                                       0,
-                                       1024*1024*8/2,
-                                       n_glob_ents);
+  bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
+                                   cs_glob_n_ranks,
+                                   0,
+                                   1024*1024*8/2,
+                                   n_glob_ents);
 
-  d = fvm_part_to_block_create_by_gnum(cs_glob_mpi_comm,
-                                       bi,
-                                       n_entries,
-                                       fvm_io_num_get_global_num(io_num));
+  d = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
+                                      bi,
+                                      n_entries,
+                                      fvm_io_num_get_global_num(io_num));
 
   /* Write number of entries */
 
@@ -1344,7 +1344,7 @@ _write_matrix_g(const cs_matrix_t  *m,
   if (block_size > 0)
     BFT_MALLOC(b_coords, block_size*2, cs_gnum_t);
 
-  fvm_part_to_block_copy_array(d, gnum_type, 2, m_coords, b_coords);
+  cs_part_to_block_copy_array(d, gnum_type, 2, m_coords, b_coords);
 
   BFT_FREE(m_coords);
 
@@ -1382,7 +1382,7 @@ _write_matrix_g(const cs_matrix_t  *m,
   if (block_size > 0)
     BFT_MALLOC(b_vals, block_size, double);
 
-  fvm_part_to_block_copy_array(d, CS_DOUBLE, 1, m_vals, b_vals);
+  cs_part_to_block_copy_array(d, CS_DOUBLE, 1, m_vals, b_vals);
 
   BFT_FREE(m_vals);
 
@@ -1399,7 +1399,7 @@ _write_matrix_g(const cs_matrix_t  *m,
 
   /* Free matrix coefficient distribution structures */
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
   io_num = fvm_io_num_destroy(io_num);
 }
 
@@ -1501,9 +1501,9 @@ _write_vector_g(cs_lnum_t         n_elts,
   cs_gnum_t  *g_elt_num = NULL;
   double  *b_vals = NULL;
 
-  fvm_part_to_block_info_t bi;
+  cs_block_dist_info_t bi;
 
-  fvm_part_to_block_t *d = NULL;
+  cs_part_to_block_t *d = NULL;
 
   cs_gnum_t loc_shift = n_elts;
   MPI_Scan(&loc_shift, &coo_shift, 1, CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
@@ -1524,16 +1524,16 @@ _write_vector_g(cs_lnum_t         n_elts,
 
   /* Redistribution structures */
 
-  bi = fvm_part_to_block_compute_sizes(cs_glob_rank_id,
-                                       cs_glob_n_ranks,
-                                       0,
-                                       1024*1024*8/2,
-                                       n_glob_ents);
+  bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
+                                   cs_glob_n_ranks,
+                                   0,
+                                   1024*1024*8/2,
+                                   n_glob_ents);
 
-  d = fvm_part_to_block_create_by_gnum(cs_glob_mpi_comm,
-                                       bi,
-                                       n_elts,
-                                       g_elt_num);
+  d = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
+                                      bi,
+                                      n_elts,
+                                      g_elt_num);
 
   /* Write number of entries */
 
@@ -1551,11 +1551,11 @@ _write_vector_g(cs_lnum_t         n_elts,
     BFT_MALLOC(p_vals, n_elts, double);
     for (ii = 0; ii < n_elts; ii++)
       p_vals[ii] = vals[ii];
-    fvm_part_to_block_copy_array(d, CS_DOUBLE, 1, p_vals, b_vals);
+    cs_part_to_block_copy_array(d, CS_DOUBLE, 1, p_vals, b_vals);
     BFT_FREE(p_vals);
   }
   else
-    fvm_part_to_block_copy_array(d, CS_DOUBLE, 1, vals, b_vals);
+    cs_part_to_block_copy_array(d, CS_DOUBLE, 1, vals, b_vals);
 
   /* Write value blocks */
 
@@ -1570,7 +1570,7 @@ _write_vector_g(cs_lnum_t         n_elts,
 
   /* Free distribution structures */
 
-  fvm_part_to_block_destroy(&d);
+  cs_part_to_block_destroy(&d);
 
   BFT_FREE(g_elt_num);
 }
