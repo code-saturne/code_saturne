@@ -87,8 +87,8 @@ typedef struct {
   mei_tree_t **velocity;   /* formula for norm or mass flow rate of velocity  */
   mei_tree_t **direction;  /* formula for direction of velocity               */
   cs_meteo_t  *meteo;      /* inlet or outlet info for atmospheric flow       */
-  mei_tree_t ***scalar;    /* formula for scalar (neumann, dirichlet or excange
-                              coefficient)*/
+  mei_tree_t ***scalar;    /* formula for scalar (neumann, dirichlet or
+                              exchange coefficient)*/
 } cs_boundary_t;
 
 
@@ -248,58 +248,59 @@ cs_gui_boundary_zones_number(void);
  *----------------------------------------------------------------------------*/
 
 char *
-cs_gui_boundary_zone_nature(const int ith_zone);
+cs_gui_boundary_zone_nature(int  ith_zone);
 
 /*-----------------------------------------------------------------------------
  * Return the label of boundary condition for the given zone
  *----------------------------------------------------------------------------*/
 
 char *
-cs_gui_boundary_zone_label(const int ith_zone);
+cs_gui_boundary_zone_label(int  ith_zone);
 
 /*-----------------------------------------------------------------------------
  * Return the zone number of boundary condition for the given zone
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_boundary_zone_number(const int ith_zone);
+cs_gui_boundary_zone_number(int  ith_zone);
 
 /*-----------------------------------------------------------------------------
  * Return the description of a boundary zone
  *
  * parameters:
- *   label                 -->  label of boundary zone
+ *   label <--  label of boundary zone
  *----------------------------------------------------------------------------*/
 
 char *
-cs_gui_boundary_zone_localization(const char *const label);
+cs_gui_boundary_zone_localization(const char *label);
 
 /*-----------------------------------------------------------------------------
  * Helper to get the face list for the izone
  *
  * parameters:
- *   izone     -->  zone index
- *   label     -->  boundary label
- *   nfabor    -->  number of boundary faces
- *   nozppm    -->  max number of boundary zone for preefined physics
- *   faces     <--  number of face
+ *   izone   <--  zone index
+ *   label   <--  boundary label
+ *   nfabor  <--  number of boundary faces
+ *   nozppm  <--  max number of boundary zone for preefined physics
+ *   faces   -->  number of faces
  *----------------------------------------------------------------------------*/
 
 int*
-cs_gui_get_faces_list(const int   izone,
-                      const char *label,
-                      const int   nfabor,
-                      const int   nozppm,
-                            int  *faces );
+cs_gui_get_faces_list(int          izone,
+                      const char  *label,
+                      int          nfabor,
+                      int          nozppm,
+                      int         *faces );
 
 /*----------------------------------------------------------------------------
- * Free memory
+ * Free boundary conditions structures
  *
- * INTEGER          NCHARB  --> number of coal
+ * parameters:
+ *   ncharb  <-- number of coals
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_boundary_conditions_free_memory(const int *const ncharb);
+cs_gui_boundary_conditions_free_memory(const int  *ncharb);
 
 /*----------------------------------------------------------------------------*/
 

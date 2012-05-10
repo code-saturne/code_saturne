@@ -64,6 +64,7 @@
 
 #include "cs_base.h"
 #include "cs_gui_util.h"
+#include "cs_gui_specific_physics.h"
 #include "cs_gui_variables.h"
 #include "cs_mesh.h"
 #include "cs_prototypes.h"
@@ -102,9 +103,9 @@ cs_boundary_t *boundaries = NULL;
  * Return the choice for the scalar of boundary condition type
  *
  * parameters:
- *   nature      -->  nature of boundary condition (inlet, wall, symmetry ..)
- *   label       -->  label of boundary condition
- *   var_sca     -->  name of variable(velocity_pressure, turbulence ...)
+ *   nature      <--  nature of boundary condition (inlet, wall, symmetry ..)
+ *   label       <--  label of boundary condition
+ *   var_sca     <--  name of variable(velocity_pressure, turbulence ...)
  *----------------------------------------------------------------------------*/
 
 static char*
@@ -133,9 +134,9 @@ _boundary_choice(const char *const nature,
  * Value of velocity for sliding wall.
  *
  * parameters:
- *   label       -->  label of wall boundary condition
- *   izone       -->  number of zone
- *   ivar        -->  number of variable
+ *   label       <--  label of wall boundary condition
+ *   izone       <--  number of zone
+ *   ivar        <--  number of variable
  *----------------------------------------------------------------------------*/
 
 static void
@@ -170,8 +171,8 @@ _sliding_wall(const char *const label,
  * Value of roughness for wall
  *
  * parameters:
- *   label       -->  label of boundary condition
- *   izone       -->  number of zone
+ *   label       <--  label of boundary condition
+ *   izone       <--  number of zone
  *----------------------------------------------------------------------------*/
 
 static void
@@ -196,9 +197,9 @@ _wall_roughness(const char *const label,
  * Get value of data for inlet velocity.
  *
  * parameters:
- *   label       -->  label of the inlet
- *   tag         -->  name of researched data
- *   data       <--   value associated to the data
+ *   label       <--  label of the inlet
+ *   tag         <--  name of researched data
+ *   data       -->   value associated to the data
  *----------------------------------------------------------------------------*/
 
 static void
@@ -224,10 +225,10 @@ _inlet_data(const char *const  label,
  * Get status of data for inlet or outlet information.
  *
  * parameters:
- *   nature      -->  nature of the boundary
- *   label       -->  label of the inlet or the outlet
- *   tag         -->  name of researched data
- *   data       <--   value associated to the data
+ *   nature      <--  nature of the boundary
+ *   label       <--  label of the inlet or the outlet
+ *   tag         <--  name of researched data
+ *   data       -->   value associated to the data
  *----------------------------------------------------------------------------*/
 
 static void
@@ -254,7 +255,7 @@ _boundary_status(const char *const  nature,
  * Formula inlet velocity.
  *
  * parameters:
- *   label       -->  label of the inlet
+ *   label       <--  label of the inlet
  *----------------------------------------------------------------------------*/
 
 static char*
@@ -279,8 +280,8 @@ _inlet_formula(const char *const label,
  * Values for turbulence variable for the current inlet.
  *
  * parameters:
- *   choice      -->  type of choice to calculate turbulence
- *   izone       -->  number of zone
+ *   choice      <--  type of choice to calculate turbulence
+ *   izone       <--  number of zone
  *----------------------------------------------------------------------------*/
 
 static void
@@ -336,14 +337,15 @@ _inlet_turbulence(const char *const choice,
  * Initialize mei tree and check for symbols existence
  *
  * parameters:
- *   formula        -->  mei formula
- *   symbols        -->  array of symbol to check
- *   symbol_size    -->  number of symbol in symbols
+ *   formula        <--  mei formula
+ *   symbols        <--  array of symbol to check
+ *   symbol_size    <--  number of symbol in symbols
  *----------------------------------------------------------------------------*/
 
-static mei_tree_t *_boundary_scalar_init_mei_tree(const char *formula,
-                                           const char *symbols[],
-                                           const int   symbol_size)
+static mei_tree_t *
+_boundary_scalar_init_mei_tree(const char  *formula,
+                               const char  *symbols[],
+                               int          symbol_size)
 {
   int i = 0;
 
@@ -358,13 +360,13 @@ static mei_tree_t *_boundary_scalar_init_mei_tree(const char *formula,
   /* try to build the interpreter */
   if (mei_tree_builder(tree))
     bft_error(__FILE__, __LINE__, 0,
-        _("Error: can not interpret expression: %s\n"), tree->string);
+              _("Error: can not interpret expression: %s\n"), tree->string);
 
   /* check for symbols */
   for (i = 0; i < symbol_size; ++i)
     if (mei_tree_find_symbol(tree, symbols[i]))
       bft_error(__FILE__, __LINE__, 0,
-          _("Error: can not find the required symbol: %s\n"), symbols[i]);
+                _("Error: can not find the required symbol: %s\n"), symbols[i]);
 
   return tree;
 }
@@ -373,22 +375,21 @@ static mei_tree_t *_boundary_scalar_init_mei_tree(const char *formula,
  * get scalar's values
  *
  * parameters:
- *   nature      -->  nature of boundary condition
- *   izone       -->  number of zone
- *   nsca        -->  number of user scalar
+ *   nature      <--  nature of boundary condition
+ *   izone       <--  number of zone
+ *   nsca        <--  number of user scalar
  *----------------------------------------------------------------------------*/
 
 static void
-_boundary_scalar(const char *const nature,
-                 const int         izone,
-                 const int         nsca)
+_boundary_scalar(const char  *nature,
+                 int          izone,
+                 int          nsca)
 {
   int numvar;
   char *path = NULL;
   char *path_commun = NULL;
   char *path2 = NULL;
   char *choice = NULL;
-  char *formula = NULL;
   double result;
 
   cs_var_t  *vars = cs_glob_var;
@@ -480,9 +481,9 @@ _boundary_scalar(const char *const nature,
  * for an oxydant, of for oxydant and coal.
  *
  * parameters:
- *   izone       -->  number of the current zone
- *   ncharb      -->  number of coals (1 to 3)
- *   nclpch      -->  number of class for eah coal
+ *   izone       <--  number of the current zone
+ *   ncharb      <--  number of coals (1 to 3)
+ *   nclpch      <--  number of class for eah coal
  *----------------------------------------------------------------------------*/
 
 static void
@@ -603,9 +604,9 @@ _inlet_coal(const int         izone,
  * Initialize mei tree and check for symbols existence
  *
  * parameters:
- *   formula        -->  mei formula
- *   symbols        -->  array of symbol to check
- *   symbol_size    -->  number of symbol in symbols
+ *   formula        <--  mei formula
+ *   symbols        <--  array of symbol to check
+ *   symbol_size    <--  number of symbol in symbols
  *----------------------------------------------------------------------------*/
 
 static mei_tree_t *_boundary_init_mei_tree(const char *formula,
@@ -643,11 +644,11 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
  * Boundary conditions treatment: global structure initialization
  *
  * parameters:
- *   nfabor               -->  number of boundary faces
- *   nozppm               -->  max number of boundary conditions zone
- *   ncharb               -->  number of simulated coals
- *   nclpch               -->  number of simulated class per coals
- *   izfppp               -->  zone number for each boundary face
+ *   nfabor               <--  number of boundary faces
+ *   nozppm               <--  max number of boundary conditions zone
+ *   ncharb               <--  number of simulated coals
+ *   nclpch               <--  number of simulated class per coals
+ *   izfppp               <--  zone number for each boundary face
  *----------------------------------------------------------------------------*/
 
 static void
@@ -692,6 +693,7 @@ _init_boundaries(const int *const nfabor,
 
     BFT_MALLOC(boundaries->velocity,  zones,      mei_tree_t*  );
     BFT_MALLOC(boundaries->direction, zones,      mei_tree_t*  );
+    BFT_MALLOC(boundaries->scalar,    vars->nvar, mei_tree_t** );
 
     if (cs_gui_strcmp(vars->model, "pulverized_coal"))
     {
@@ -739,6 +741,7 @@ _init_boundaries(const int *const nfabor,
         i = vars->rtp[ivar];
         BFT_MALLOC(boundaries->type_code[i], zones, int);
         BFT_MALLOC(boundaries->values[i], zones, cs_val_t);
+        BFT_MALLOC(boundaries->scalar[i], zones, mei_tree_t *);
     }
 
     for (izone = 0; izone < zones; izone++)
@@ -787,6 +790,7 @@ _init_boundaries(const int *const nfabor,
             boundaries->values[i][izone].val1 = 1.e30;
             boundaries->values[i][izone].val2 = 1.e30;
             boundaries->values[i][izone].val3 = 0.;
+            boundaries->scalar[i][izone] = NULL;
         }
     }
 
@@ -1084,7 +1088,7 @@ int cs_gui_boundary_zone_number(const int ith_zone)
  * Return the description of a boundary zone
  *
  * parameters:
- *   label                   -->  label of boundary zone
+ *   label                   <--  label of boundary zone
  *----------------------------------------------------------------------------*/
 
 char *cs_gui_boundary_zone_localization(const char *const label)
@@ -1108,53 +1112,52 @@ char *cs_gui_boundary_zone_localization(const char *const label)
  * Helper to get the face list for the izone
  *
  * parameters:
- *   izone     -->  zone index
- *   label     -->  boundary label
- *   nfabor    -->  number of boundary faces
- *   nozppm    -->  max number of boundary zone for preefined physics
- *   faces     <--  number of face
+ *   izone   <--  zone index
+ *   label   <--  boundary label
+ *   nfabor  <--  number of boundary faces
+ *   nozppm  <--  max number of boundary zone for preefined physics
+ *   faces   -->  number of faces
  *----------------------------------------------------------------------------*/
 
 int*
-cs_gui_get_faces_list(const int   izone,
-                      const char *label,
-                      const int   nfabor,
-                      const int   nozppm,
-                            int  *faces )
+cs_gui_get_faces_list(int          izone,
+                      const char  *label,
+                      int          nfabor,
+                      int          nozppm,
+                      int         *faces )
 {
-    int  c_id        = 0;
-    int  *faces_list = NULL;
-    char *description = NULL;
+  int  c_id        = 0;
+  int  *faces_list = NULL;
+  char *description = NULL;
 
-    int  boundary_zones = cs_gui_boundary_zone_number(izone + 1);
+  int  boundary_zones = cs_gui_boundary_zone_number(izone + 1);
 
-    if (nozppm && boundary_zones >  nozppm)
-        bft_error(__FILE__, __LINE__, 0,
-                _("zone's label number %i is greater than %i,"
+  if (nozppm && boundary_zones >  nozppm)
+    bft_error(__FILE__, __LINE__, 0,
+              _("zone's label number %i is greater than %i,"
                 " the maximum allowed \n"), boundary_zones , nozppm);
 
-    description = cs_gui_boundary_zone_localization(label);
+  description = cs_gui_boundary_zone_localization(label);
 
-    /* list of faces building */
-    BFT_MALLOC(faces_list, nfabor, int);
+  /* list of faces building */
+  BFT_MALLOC(faces_list, nfabor, int);
 
-    c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                                 description,
-                                 faces,
-                                 faces_list);
+  c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                               description,
+                               faces,
+                               faces_list);
 
-    if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0)
-    {
-        const char *missing
-            = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-        cs_base_warn(__FILE__, __LINE__);
-        bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                        "criteria:\n"  "\"%s\"\n"
-                        " does not correspond to any boundary face.\n"),
-                        missing, description);
-    }
-    BFT_FREE(description);
-    return faces_list;
+  if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
+    const char *missing
+      = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                 "criteria:\n"  "\"%s\"\n"
+                 " does not correspond to any boundary face.\n"),
+               missing, description);
+  }
+  BFT_FREE(description);
+  return faces_list;
 }
 
 /*============================================================================
@@ -1171,40 +1174,40 @@ cs_gui_get_faces_list(const int   izone,
  * SUBROUTINE UICLIM
  * *****************
  *
- * INTEGER          NTCABS  --> current iteration number
- * INTEGER          NFABOR  --> number of boundary faces
- * INTEGER          NOZPPM  --> max number of boundary conditions zone
- * INTEGER          NCHARM  --> maximal number of coals
- * INTEGER          NCHARB  --> number of simulated coals
- * INTEGER          NCLPCH  --> number of simulated class per coals
- * INTEGER          IINDEF  --> type of boundary: not defined
- * INTEGER          IENTRE  --> type of boundary: inlet
- * INTEGER          IPAROI  --> type of boundary: smooth wall
- * INTEGER          IPARUG  --> type of boundary: rough wall
- * INTEGER          ISYMET  --> type of boundary: symetry
- * INTEGER          ISOLIB  --> type of boundary: outlet
- * INTEGER          IQIMP   --> 1 if flow rate is applied
- * INTEGER          ICALKE  --> 1 for automatic turbulent boundary conditions
- * INTEGER          IENTAT  --> 1 for air temperature boundary conditions (coal)
- * INTEGER          IENTCP  --> 1 for coal temperature boundary conditions (coal)
- * integer          inmoxy  --> coal: number of oxydant for the current inlet
- * integer          iprofm  --> atmospheric flows: on/off for profile from data
- * INTEGER          ITYPFB  --> type of boundary for each face
- * INTEGER          IZFPPP  --> zone number for each boundary face
- * INTEGER          ICODCL  --> boundary conditions array type
- * DOUBLE PRECISION DTREF   --> time step
- * DOUBLE PRECISION TTCABS  --> current time
- * DOUBLE PRECISION SURFBO  --> boundary faces surface
- * DOUBLE PRECISION CGDFBO  --> boundary faces center of gravity
- * DOUBLE PRECISION QIMP    --> inlet flow rate
- * DOUBLE PRECISION QIMPAT  --> inlet air flow rate (coal)
- * DOUBLE PRECISION QIMPCP  --> inlet coal flow rate (coal)
- * DOUBLE PRECISION DH      --> hydraulic diameter
- * DOUBLE PRECISION XINTUR  --> turbulent intensity
- * DOUBLE PRECISION TIMPAT  --> air temperature boundary conditions (coal)
- * DOUBLE PRECISION TIMPCP  --> inlet coal temperature (coal)
- * DOUBLE PRECISION DISTCH  --> ratio for each coal
- * DOUBLE PRECISION RCODCL  --> boundary conditions array value
+ * INTEGER          NTCABS  <-- current iteration number
+ * INTEGER          NFABOR  <-- number of boundary faces
+ * INTEGER          NOZPPM  <-- max number of boundary conditions zone
+ * INTEGER          NCHARM  <-- maximal number of coals
+ * INTEGER          NCHARB  <-- number of simulated coals
+ * INTEGER          NCLPCH  <-- number of simulated class per coals
+ * INTEGER          IINDEF  <-- type of boundary: not defined
+ * INTEGER          IENTRE  <-- type of boundary: inlet
+ * INTEGER          IPAROI  <-- type of boundary: smooth wall
+ * INTEGER          IPARUG  <-- type of boundary: rough wall
+ * INTEGER          ISYMET  <-- type of boundary: symetry
+ * INTEGER          ISOLIB  <-- type of boundary: outlet
+ * INTEGER          IQIMP   <-- 1 if flow rate is applied
+ * INTEGER          ICALKE  <-- 1 for automatic turbulent boundary conditions
+ * INTEGER          IENTAT  <-- 1 for air temperature boundary conditions (coal)
+ * INTEGER          IENTCP  <-- 1 for coal temperature boundary conditions (coal)
+ * integer          inmoxy  <-- coal: number of oxydant for the current inlet
+ * integer          iprofm  <-- atmospheric flows: on/off for profile from data
+ * INTEGER          ITYPFB  <-- type of boundary for each face
+ * INTEGER          IZFPPP  <-- zone number for each boundary face
+ * INTEGER          ICODCL  <-- boundary conditions array type
+ * DOUBLE PRECISION DTREF   <-- time step
+ * DOUBLE PRECISION TTCABS  <-- current time
+ * DOUBLE PRECISION SURFBO  <-- boundary faces surface
+ * DOUBLE PRECISION CGDFBO  <-- boundary faces center of gravity
+ * DOUBLE PRECISION QIMP    <-- inlet flow rate
+ * DOUBLE PRECISION QIMPAT  <-- inlet air flow rate (coal)
+ * DOUBLE PRECISION QIMPCP  <-- inlet coal flow rate (coal)
+ * DOUBLE PRECISION DH      <-- hydraulic diameter
+ * DOUBLE PRECISION XINTUR  <-- turbulent intensity
+ * DOUBLE PRECISION TIMPAT  <-- air temperature boundary conditions (coal)
+ * DOUBLE PRECISION TIMPCP  <-- inlet coal temperature (coal)
+ * DOUBLE PRECISION DISTCH  <-- ratio for each coal
+ * DOUBLE PRECISION RCODCL  <-- boundary conditions array value
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
@@ -1805,7 +1808,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                         {
                             ifbr = faces_list[ifac]-1;
                             icodcl[ivar *(*nfabor) + ifbr] = 5;
-                            /* if wall_function --> icodcl[ivar *(*nfabor) + ifbr] = 1; */
+                            /* if wall_function <-- icodcl[ivar *(*nfabor) + ifbr] = 1; */
                             rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
                                 = boundaries->values[ivar][izone].val1;
                         }
@@ -2061,16 +2064,16 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
  * SUBROUTINE UICLVE
  * *****************
  *
- * INTEGER          NFABOR  --> number of boundary faces
- * INTEGER          NOZPPM  --> max number of boundary conditions zone
- * INTEGER          IINDEF  --> type of boundary: not defined
- * INTEGER          IENTRE  --> type of boundary: inlet
- * INTEGER          IPAROI  --> type of boundary: smooth wall
- * INTEGER          IPARUG  --> type of boundary: rough wall
- * INTEGER          ISYMET  --> type of boundary: symetry
- * INTEGER          ISOLIB  --> type of boundary: outlet
- * INTEGER          ITYPFB  --> type of boundary for each face
- * INTEGER          IZFPPP  --> zone number
+ * INTEGER          NFABOR  <-- number of boundary faces
+ * INTEGER          NOZPPM  <-- max number of boundary conditions zone
+ * INTEGER          IINDEF  <-- type of boundary: not defined
+ * INTEGER          IENTRE  <-- type of boundary: inlet
+ * INTEGER          IPAROI  <-- type of boundary: smooth wall
+ * INTEGER          IPARUG  <-- type of boundary: rough wall
+ * INTEGER          ISYMET  <-- type of boundary: symetry
+ * INTEGER          ISOLIB  <-- type of boundary: outlet
+ * INTEGER          ITYPFB  <-- type of boundary for each face
+ * INTEGER          IZFPPP  <-- zone number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
@@ -2201,26 +2204,27 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Free memory
+ * Free boundary conditions structures
  *
- * INTEGER          NCHARB  --> number of coal
+ * parameters:
+ *   ncharb  <-- number of coals
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_boundary_conditions_free_memory(const int *const ncharb)
+cs_gui_boundary_conditions_free_memory(const int  *ncharb)
 {
-    int i;
-    int ivar;
-    int izone;
-    int zones;
-    int icharb;
+  int i;
+  int ivar;
+  int izone;
+  int zones;
+  int icharb;
 
-    cs_var_t  *vars = cs_glob_var;
+  cs_var_t  *vars = cs_glob_var;
 
-    /* clean memory for global private structure boundaries */
+  /* clean memory for global private structure boundaries */
 
-  if (boundaries != NULL)
-  {
+  if (boundaries != NULL) {
+
     zones = cs_gui_boundary_zones_number();
     for (izone=0 ; izone < zones ; izone++) {
       BFT_FREE(boundaries->label[izone]);
