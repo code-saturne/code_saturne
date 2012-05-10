@@ -172,15 +172,23 @@ class Case(object):
         elif self.exe == "neptune_cfd":
             from core.XMLinitialize import XMLinit
 
+        for fn in os.listdir(os.path.join(self.__repo, self.label, "DATA")):
+            fp = os.path.abspath(fn)
+            if os.path.isfile(fp):
+                fd = os.open(fp , os.O_RDONLY)
+                f = os.fdopen(fd)
+                l = f.readline()
+                f.close()
+                if l.startswith('''<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI''') or \
+                   l.startswith('''<?xml version="1.0" encoding="utf-8"?><NEPTUNE_CFD_GUI'''):
         try:
-            fn = os.path.join(self.__repo, self.label, "DATA", "liu.xml")
-            case = Case(package = self.pkg, file_name = fn)
+                        case = Case(package = self.pkg, file_name = fp)
         except:
             print "File of parameters reading error.\n"
             print "This file is not in accordance with XML specifications."
             sys.exit(1)
 
-        case['xmlfile'] = fn
+        case['xmlfile'] = fp
         case.xmlCleanAllBlank(case.xmlRootNode())
         XMLinit(case).initialize()
         case.xmlSaveDocument()
