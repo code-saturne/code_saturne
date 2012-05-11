@@ -20,6 +20,55 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file distyp.f90
+!>
+!> \brief This subroutine computes the dimensionless distance to the wall
+!> solving a transport equation.
+!>
+!> This function solves the following transport equation on \f$ \varia \f$:
+!> \f[
+!> \dfrac{\partial \varia}{\partial t} + \divs \left( \varia \vect{V} \right)
+!>     - \divs \left( \vect{V} \right) \varia = 0
+!> \f]
+!> where the vector field \f$ \vect{V} \f$ is defined by:
+!> \f[
+!>  \vect{V} = \dfrac{ \grad y }{\norm{\grad y} }
+!> \f]
+!> The boundary conditions on \f$ \varia \f$ read:
+!> \f[
+!>  \varia = \dfrac{u_\star}{\nu} \textrm{ on walls}
+!> \f]
+!> \f[
+!>  \dfrac{\partial \varia}{\partial n} = 0 \textrm{ elsewhere}
+!> \f]
+!>
+!> Then the dimensionless distance is deduced by:
+!> \f[
+!>  y^+ = y \varia
+!> \f]
+!>
+!>
+!> Remarks:
+!> - a stationary state is looked for.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     itypfb        boundary face types
+!> \param[in]     distpa        tab des distances a la paroi
+!> \param[in]     propce        physical properties at cell centers
+!> \param[out]    disty         dimensionless distance \f$ y^+ \f$
+!_______________________________________________________________________________
+
 subroutine distyp &
 !================
 
@@ -27,41 +76,6 @@ subroutine distyp &
    itypfb ,                                                       &
    distpa , propce , disty  )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! CALCUL DE LA DISTANCE A LA PAROI PAR UTILISATION D'UNE EQUATION
-! DE TRANSPORT
-
-! On resout dT/dt + grad (T U) = Gamma Ti
-
-!    avec U = grad(distance a la paroi)/||grad(distance a la paroi)||
-!         Gamma = div U
-!         Ti = T (puits ou injection a la valeur locale)
-!    et aux parois
-!         T = u*/nu
-!    et ailleurs
-!         grad(T).n = 0
-
-!    on cherche un etat stationnaire
-
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! distpa(ncelet    ! tr ! <-- ! tab des distances a la paroi                   !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! disty(ncelet)    ! tr ! --> ! distance y+                                    !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -101,7 +115,7 @@ integer          ndircp, ireslp
 integer          iescap, iflmb0, imaspe
 integer          ncymxp, nitmfp, ipp
 integer          ifac  , iel   , ipcvis, init  , ipcrom
-integer          inc   , iccocg, isym  , ntcont, infpar
+integer          inc   , iccocg, isym  , isweep, infpar
 
 double precision xnorme, dtminy, dtmaxy, relaxp, thetap, timey
 double precision xusnmx, xusnmn, xnorm0
@@ -125,7 +139,7 @@ save             ipass
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATIONS
+! 1. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays for the distance resolution
@@ -139,21 +153,20 @@ allocate(coefbx(nfabor), coefby(nfabor), coefbz(nfabor))
 ! Allocate work arrays
 allocate(w2(ncelet))
 
-
 ipass  = ipass + 1
 
-ipcrom = ipproc(irom  )
+ipcrom = ipproc(irom)
 ipcvis = ipproc(iviscl)
 
 !===============================================================================
-! 2. AU PREMIER PAS DE TEMPS
+! 2. At the first time step
 !===============================================================================
 
-!     Au premier pas de temps, on a en general u* = 0 (ou faux)
-!       on ne calcule pas y+
+! Au premier pas de temps, on a en general u* = 0 (ou faux)
+!   on ne calcule pas y+
 
-!     En effet ca prend du temps, d'autant plus que u* est petit, car il
-!       alors calculer y+ jusqu'a une grande distance des parois
+! En effet ca prend du temps, d'autant plus que u* est petit, car il
+!   alors calculer y+ jusqu'a une grande distance des parois
 
 if(ntcabs.eq.1) then
 
@@ -170,15 +183,14 @@ if(ntcabs.eq.1) then
 endif
 
 !===============================================================================
-! 3. CALCUL DE Q=Grad(DISTPA)/|Grad(DISTPA)|
+! 3. Compute  V = Grad(DISTPA)/|Grad(DISTPA)|
 !===============================================================================
 
-!     La distance a la paroi vaut 0 en paroi
-!       par definition et obeit a un flux nul ailleurs
+! La distance a la paroi vaut 0 en paroi
+!   par definition et obeit a un flux nul ailleurs
 
 do ifac = 1, nfabor
-  if(itypfb(ifac).eq.iparoi .or.                            &
-     itypfb(ifac).eq.iparug ) then
+  if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
     coefax(ifac) = 0.0d0
     coefbx(ifac) = 0.0d0
   else
@@ -190,8 +202,9 @@ enddo
 ! Allocate a temporary array for the gradient calculation
 allocate(grad(ncelet,3))
 
-!     Calcul du gradient
+! Compute the gradient of the distance to the wall
 
+! Paralellism and periodicity
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(distpa)
   !==========
@@ -209,7 +222,7 @@ call grdcel                                                       &
    grad   )
 
 
-!     Normalisation (attention, le gradient peut etre nul, parfois)
+! Normalisation (attention, le gradient peut etre nul, parfois)
 
 do iel = 1, ncel
   xnorme = max(sqrt(grad(iel,1)**2+grad(iel,2)**2+grad(iel,3)**2),epzero)
@@ -218,13 +231,17 @@ do iel = 1, ncel
   qz(iel) = grad(iel,3)/xnorme
 enddo
 
+! Paralellism and periodicity
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synvec(qx, qy, qz)
+endif
+
 ! Free memory
 deallocate(grad)
 
 !===============================================================================
-! 4. CALCUL DU FLUX DE Q ET DE GAMMA = div(Q)
+! 4. Compute the flux of V
 !===============================================================================
-
 
 do ifac = 1, nfabor
   romb(ifac) = 1.d0
@@ -233,9 +250,8 @@ do iel = 1, ncelet
   rom(iel)  = 1.d0
 enddo
 
-
-!     Le gradient normal de la distance a la paroi vaut -1 en paroi
-!       par definition et obeit a un flux nul ailleurs
+! Le gradient normal de la distance a la paroi vaut -1 en paroi
+!   par definition et obeit a un flux nul ailleurs
 
 do ifac = 1, nfabor
   if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
@@ -256,28 +272,19 @@ do ifac = 1, nfabor
   endif
 enddo
 
+! Calcul du flux de masse
 
-!     Parallelisme et periodicite en preparation du calcul du flux
-
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synvec(qx, qy, qz)
-  !==========
-endif
-
-
-!     Calcul du flux de masse
-
-!     On ne le met pas a zero en paroi (justement)
+! On ne le met pas a zero en paroi (justement)
 iflmb0 = 0
-!     On l'initialise a 0
+! On l'initialise a 0
 init   = 1
-!     On prend en compte les Dirichlet
+! On prend en compte les Dirichlet
 inc    = 1
-!     On recalcule les gradients complets
+! On recalcule les gradients complets
 iccocg = 1
-!     Calcul de flux std (pas de divrij)
+! Calcul de flux std (pas de divrij)
 imaspe = 1
-!     Il ne s'agit ni de U ni de R
+! Il ne s'agit ni de U ni de R
 ivar = 0
 
 call inimas                                                       &
@@ -292,20 +299,16 @@ call inimas                                                       &
    coefax , coefay , coefaz , coefbx , coefby , coefbz ,          &
    flumas , flumab )
 
-
-
-!     A partir d'ici, QX, QY et QZ sont des tableaux de travail.
-
+! A partir d'ici, QX, QY et QZ sont des tableaux de travail.
 
 !===============================================================================
-! 5.CONDITIONS LIMITES
+! 5. Boundary conditions
 !===============================================================================
 
-!     Dirichlet en u*/nu aux parois, et flux nul ailleurs
+! Dirichlet en u*/nu aux parois, et flux nul ailleurs
 
 do ifac = 1, nfabor
-  if(itypfb(ifac).eq.iparoi .or.                            &
-     itypfb(ifac).eq.iparug) then
+  if(itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
     iel = ifabor(ifac)
     coefax(ifac) = uetbor(ifac)*propce(iel,ipcrom)/propce(iel,ipcvis)
     coefbx(ifac) = 0.0d0
@@ -316,30 +319,30 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 6.CALCUL DU PAS DE TEMPS
+! 6. Compute the time step
 !===============================================================================
 
-!     On vise un Courant infini (de l'ordre de 1000).
+! On vise un Courant infini (de l'ordre de 1000).
 
-!     On calcule avec MATRDT DA = Sigma a S/d
+! On calcule avec MATRDT DA = Sigma a S/d
 iconvp = 1
 idiffp = 0
 !     La matrice est non symetrique
 isym   = 2
 
-call matrdt                                                       &
+call matrdt &
 !==========
  ( iconvp , idiffp , isym   ,                                     &
    coefbx , flumas , flumab , flumas , flumab , w2     )
 
-!     Le Courant est COUMXY = DT W2 / VOLUME
-!         d'ou DTMINY = MIN(COUMXY * VOLUME/W2)
-!     Au cas ou une cellule serait a W2(IEL)=0,
-!       on ne la prend pas en compte
+! Le Courant est COUMXY = DT w2 / VOLUME
+!     d'ou DTMINY = MIN(COUMXY * VOLUME/w2)
+! Au cas ou une cellule serait a w2(IEL)=0,
+!   on ne la prend pas en compte
 
-!     On prend dans QZ un pas de temps variable,
-!       si on ne trouve pas de pas de temps, on prend le minimum
-!       (cellules sources)
+! On prend dans QZ un pas de temps variable,
+!   si on ne trouve pas de pas de temps, on prend le minimum
+!   (cellules sources)
 dtminy = grand
 dtmaxy = -grand
 do iel = 1, ncel
@@ -367,7 +370,7 @@ if(iwarny.ge.2) then
 endif
 
 !===============================================================================
-! 7. DIAGONALE DE LA MATRICE
+! 7. Diagonale part of the matrix
 !===============================================================================
 
 do iel = 1, ncel
@@ -375,36 +378,34 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 8. BOUCLE EN TEMPS
+! 8. Time loop
 !===============================================================================
 
-!     Initialisations
-!    =================
+! Initializations
+!=================
 
-!     Iterations
-ntcont = 0
+! Iterations
+isweep = 0
 
-!     Temps
+! Temps
 timey = 0.d0
 
+! Inconnue
+!   Au cas ou on n'atteint pas tout a fait l'etat stationnaire,
+!   il faut que le yplus ne soit pas nul dans la zone ou les
+!   conditions aux limites n'ont pas ete convectees. On voudrait
+!   plutot que yplus y soit maximum.
+!   Si on utilise zero ou une valeur negative comme initialisation,
+!   on risque de se retrouver avec des valeurs proches de
+!   zero issues de la diffusion due au schema upwind au voisinage
+!   du front convecte et donc avec des yplus proches de zero
+!   n'importe ou.
+!   On va donc utiliser la valeur max de u*/nu.
 
+!   A partir du second pas de temps, on a egalement le yplus du pas
+!     de temps precedent
 
-!     Inconnue
-!       Au cas ou on n'atteint pas tout a fait l'etat stationnaire,
-!       il faut que le yplus ne soit pas nul dans la zone ou les
-!       conditions aux limites n'ont pas ete convectees. On voudrait
-!       plutot que yplus y soit maximum.
-!       Si on utilise zero ou une valeur negative comme initialisation,
-!       on risque de se retrouver avec des valeurs proches de
-!       zero issues de la diffusion due au schema upwind au voisinage
-!       du front convecte et donc avec des yplus proches de zero
-!       n'importe ou.
-!       On va donc utiliser la valeur max de u*/nu.
-
-!       A partir du second pas de temps, on a egalement le yplus du pas
-!         de temps precedent
-
-!     On calcule le min et le max
+! On calcule le min et le max
 xusnmx = -grand
 xusnmn =  grand
 do ifac = 1, nfabor
@@ -432,8 +433,8 @@ else
   enddo
 endif
 
-!     Norme de reference (moyenne des u*/nu)
-!       (on divise par le nombre de faces)
+! Norme de reference (moyenne des u*/nu)
+!   (on divise par le nombre de faces)
 xnorm0 = 0.d0
 infpar = 0
 do ifac = 1, nfabor
@@ -449,22 +450,22 @@ if(irangp.ge.0) then
 endif
 xnorm0 = xnorm0/dble(infpar)
 
-!     Pour ne pas diviser par zero
-if(xnorm0.le.epzero**2) goto 100
+! To prevent division by 0
+if (xnorm0.le.epzero**2) goto 100
 
 
-!     Debut des iterations
-!    ======================
+! Loops beginning
+!=================
 
-do ntcont = 1, ntcmxy
+do isweep = 1, ntcmxy
 
-!     Instant (arbitrairement +DTMINY)
+  ! Instant (arbitrairement +DTMINY)
   timey = timey + dtminy
 
-! -- Echange pour les cas paralleles
-!       a la premiere iteration, c'est inutile (on a fait l'init sur NCELET)
+  ! -- Echange pour les cas paralleles
+  !     a la premiere iteration, c'est inutile (on a fait l'init sur NCELET)
 
-  if(ntcont.gt.1.or.ipass.gt.1) then
+  if(isweep.gt.1.or.ipass.gt.1) then
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(rtpdp)
@@ -474,47 +475,47 @@ do ntcont = 1, ntcmxy
   endif
 
 
-!     Sauvegarde de la solution pour test de convergence
-!    ====================================================
+  ! Save of the solution for convergence test
+  !===========================================
 
   do iel = 1, ncel
     qy(iel) = rtpdp(iel)
   enddo
 
-!     Second membre
-!    ===============
-!       Obligatoirement a tous les pas de temps
+  ! Right hand side
+  !=================
+  !   Obligatoirement a tous les pas de temps
 
   do iel = 1, ncel
     smbdp(iel) = 0.d0
   enddo
 
-!     Resolution
-!    ============
+  ! Solving
+  !=========
 
-!     La variable n'est pas la vitesse ou une composante de Rij
+  ! La variable n'est pas la vitesse ou une composante de Rij
   ivar = 0
-!     Le cas est convectif, non diffusif
+  ! Le cas est convectif, non diffusif
   iconvp = 1
   idiffp = 0
-!     Il y a des Dirichlet (car il y a des parois)
+  ! Il y a des Dirichlet (car il y a des parois)
   ndircp = 1
-!     On resout par la methode automatique
+  ! On resout par la methode automatique
   ireslp = -1
-!     Pas d'estimateurs, ni de multigrille (100 et 10 sont arbitraires)
+  ! Pas d'estimateurs, ni de multigrille (100 et 10 sont arbitraires)
   iescap = 0
   ncymxp = 100
   nitmfp = 10
-!     La case 1 est une poubelle
+  ! La case 1 est une poubelle
   ipp    = 1
-  NOMVAR(IPP) = 'YplusPar'
-!     Ordre 1 en temps (etat stationnaire cherche)
+  nomvar(ipp) = 'YplusPar'
+  ! Ordre 1 en temps (etat stationnaire cherche)
   thetap = 1.d0
-!     Pas de stationnaire ni de relaxation -> a modifier eventuellement
+  ! Pas de stationnaire ni de relaxation -> a modifier eventuellement
   idtva0 = 0
   relaxp = 1.d0
 
-  call codits                                                     &
+  call codits &
   !==========
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmay , &
@@ -530,34 +531,25 @@ do ntcont = 1, ntcmxy
    rvoid  )
 
 
-!     Clipping (indispensable si on initialise par u*/nu du pas de
-!    ==========                                   temps precedent)
+  ! Clipping (indispensable si on initialise par u*/nu du pas de
+  !==========                                   temps precedent)
 
   do iel = 1, ncel
     rtpdp(iel) = max(rtpdp(iel),xusnmn)
     rtpdp(iel) = min(rtpdp(iel),xusnmx)
   enddo
 
-!     Test d'arret
-!    ==============
+  ! Stopping test
+  !===============
 
-!     on utilise QY dans lequel la solution precedente a ete sauvee
-!     on souhaite que la variation de l'inconnue sur chaque cellule
-!       soit inferieure a un pourcentage de la valeur moyenne de
-!       u*/nu calculee sur les faces de bord
-!     on limite le test aux cellules qui pourront avoir un interet pour
-!       VanDriest, c'est a dire qu'on ignore celles a y+ > YPLMXY
-!       comme on ne connait pas encore y+, on se base sur min(u*/nu) :
-!       on ignore les cellules a y min(u*/nu) > YPLMXY
-
-!        XNORME = 0.D0
-!        DO IEL = 1, NCEL
-!          XNORME = XNORME + (RTPDP(IEL)-QY(IEL))**2
-!        ENDDO
-!        IF(IRANGP.GE.0) THEN
-!          CALL PARSOM (XNORME)
-!        ENDIF
-!        XNORME = XNORME/DBLE(NCELGB)
+  ! on utilise QY dans lequel la solution precedente a ete sauvee
+  ! on souhaite que la variation de l'inconnue sur chaque cellule
+  !   soit inferieure a un pourcentage de la valeur moyenne de
+  !   u*/nu calculee sur les faces de bord
+  ! on limite le test aux cellules qui pourront avoir un interet pour
+  !   VanDriest, c'est a dire qu'on ignore celles a y+ > YPLMXY
+  !   comme on ne connait pas encore y+, on se base sur min(u*/nu) :
+  !   on ignore les cellules a y min(u*/nu) > YPLMXY
 
   xnorme = -grand
   do iel = 1, ncel
@@ -565,24 +557,24 @@ do ntcont = 1, ntcmxy
       xnorme = max(xnorme,(rtpdp(iel)-qy(iel))**2)
     endif
   enddo
-  if(irangp.ge.0) then
+  if (irangp.ge.0) then
     call parmax (xnorme)
   endif
 
-  if(iwarny.ge.2) then
-    write(nfecra,3000)ntcont,xnorme,xnorm0,xnorme/xnorm0
+  if (iwarny.ge.2) then
+    write(nfecra,3000)isweep,xnorme,xnorm0,xnorme/xnorm0
   endif
 
-  if(xnorme.le.epscvy*xnorm0) goto 100
+  if (xnorme.le.epscvy*xnorm0) goto 100
 
 enddo
 
-write(nfecra,8000)xnorme,xnorm0,xnorme/xnorm0,ntcmxy
+write(nfecra,8000) xnorme, xnorm0, xnorme/xnorm0, ntcmxy
 
  100  continue
 
 !===============================================================================
-! 9. CALCUL DE YPLUS ET IMPRESSIONS
+! 9. Finalization and printing
 !===============================================================================
 
 
@@ -603,10 +595,9 @@ if (irangp.ge.0) then
   call parmax(dismax)
 endif
 
-if(iwarny.ge.1) then
-  write(nfecra,1000)dismin, dismax, min(ntcont,ntcmxy)
+if (iwarny.ge.1) then
+  write(nfecra,1000) dismin, dismax, min(isweep,ntcmxy)
 endif
-
 
 ! Free memory
 deallocate(rtpdp, smbdp, rovsdp)
@@ -617,10 +608,13 @@ deallocate(coefax, coefay, coefaz)
 deallocate(coefbx, coefby, coefbz)
 deallocate(w2)
 
+!--------
+! Formats
+!--------
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(                                                           &
+ 1000 format( &
 '                                                             ',/,&
 ' ** DISTANCE A LA PAROI ADIMENSIONNELLE                      ',/,&
 '    ------------------------------------                     ',/,&
@@ -628,26 +622,26 @@ deallocate(w2)
 '  Distance+ min = ',E14.5    ,' Distance+ max = ',E14.5       ,/,&
 '                                                             ',/,&
 '     (Calcul de la distance realise en ',I10   ,' iterations)',/)
- 2000 format(                                                           &
+ 2000 format( &
 '                                                             ',/,&
 ' ** DISTANCE A LA PAROI ADIMENSIONNELLE                      ',/,&
 '    ------------------------------------                     ',/,&
 '                                                             ',/,&
 ' Yplus:  Dt min = ',E14.5    ,'        Dt max = ',E14.5       ,/)
- 3000 format(                                                           &
+ 3000 format( &
 '                                                             ',/,&
 ' ** DISTANCE A LA PAROI ADIMENSIONNELLE                      ',/,&
 '    ------------------------------------                     ',/,&
 '                                                             ',/,&
 ' Yplus:  iteration   residu abs.     reference   residu rel. ',/,&
 ' Yplus: ',I10    ,E14.5        ,E14.5        ,E14.5           ,/)
- 7000 format(                                                           &
+ 7000 format( &
 '                                                             ',/,&
 ' ** DISTANCE A LA PAROI ADIMENSIONNELLE                      ',/,&
 '    ------------------------------------                     ',/,&
 '                                                             ',/,&
 '  Elle n''est pas calculee au premier pas de temps           ',/)
- 8000   format(                                                         &
+ 8000 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -670,7 +664,7 @@ deallocate(w2)
 
 #else
 
- 1000 format(                                                           &
+ 1000 format( &
 '                                                             ',/,&
 ' ** DIMENSIONLESS WALL DISTANCE                              ',/,&
 '    ---------------------------                              ',/,&
@@ -678,26 +672,26 @@ deallocate(w2)
 '  Min distance+ = ',E14.5    ,' Max distance+ = ',E14.5       ,/,&
 '                                                             ',/,&
 '     (Distance calculation done in ',I10   ,' iterations)'    ,/)
- 2000 format(                                                           &
+ 2000 format( &
 '                                                             ',/,&
 ' ** DIMENSIONLESS WALL DISTANCE                              ',/,&
 '    ---------------------------                              ',/,&
 '                                                             ',/,&
 ' Yplus:  Min dt = ',E14.5    ,'        Max dt = ',E14.5       ,/)
- 3000 format(                                                           &
+ 3000 format( &
 '                                                             ',/,&
 ' ** DIMENSIONLESS WALL DISTANCE                              ',/,&
 '    ---------------------------                              ',/,&
 '                                                             ',/,&
 ' Yplus:  iteration   abs. residu     reference   rel. residu ',/,&
 ' Yplus: ',I10    ,E14.5        ,E14.5        ,E14.5           ,/)
- 7000 format(                                                           &
+ 7000 format( &
 '                                                             ',/,&
 ' ** DIMENSIONLESS WALL DISTANCE                              ',/,&
 '    ---------------------------                              ',/,&
 '                                                             ',/,&
 '  It is not computed at the first time step                  ',/)
- 8000   format(                                                         &
+ 8000 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -720,7 +714,9 @@ deallocate(w2)
 
 #endif
 
-
+!----
+! End
+!----
 
 return
 end subroutine
