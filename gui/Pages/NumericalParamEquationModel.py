@@ -93,15 +93,15 @@ class NumericalParamEquatModel(Model):
         self.default = {}
         self.default['time_step_factor'] = 1.0
         self.default['max_iter_number'] = 10000
-        self.default['solveur_precision'] = 1e-8
-        self.default['solveur_precision_pressure'] = 1e-8
+        self.default['solver_precision'] = 1e-8
+        self.default['solver_precision_pressure'] = 1e-8
         if NumericalParamGlobalModel(self.case).getTimeSchemeOrder() == 2:
-            self.default['solveur_precision'] = 1e-5
+            self.default['solver_precision'] = 1e-5
         self.default['slope_test'] = 'on'
         self.default['flux_reconstruction'] = 'on'
 
-        self.default['solveur_choice_pressure'] = 'multigrid'
-        self.default['solveur_choice'] = 'jacobi'
+        self.default['solver_choice_pressure'] = 'multigrid'
+        self.default['solver_choice'] = 'jacobi'
 
         if label not in self.var:
             self.default['order_scheme'] = 'upwind'
@@ -206,8 +206,8 @@ class NumericalParamEquatModel(Model):
         return self.var_shem
 
 
-    def _getSolveurNodesList(self):
-        """ Return list of nodes for class view Solveur"""
+    def _getSolverNodesList(self):
+        """ Return list of nodes for class view Solver"""
         self.var_solv = []
         for part in (self.node_varVP,
                      self.model.getTurbVariable(),
@@ -221,7 +221,7 @@ class NumericalParamEquatModel(Model):
 
 
     def _getClippingLabelNode(self, label):
-        """ Private method: return node called with label'label' for solveur scheme"""
+        """ Private method: return node called with label'label' for solver scheme"""
         for node in self._getClippingNodesList():
             for n in node:
                 if n['label'] == label:
@@ -241,9 +241,9 @@ class NumericalParamEquatModel(Model):
         raise ValueError("This label does not exist: " + label)
 
 
-    def _getSolveurLabelNode(self, label):
-        """ Private method: return node called with label'label' for solveur scheme"""
-        for node in self._getSolveurNodesList():
+    def _getSolverLabelNode(self, label):
+        """ Private method: return node called with label'label' for solver scheme"""
+        for node in self._getSolverNodesList():
             for n in node:
                 if n['label'] == label:
                     return n
@@ -290,10 +290,10 @@ class NumericalParamEquatModel(Model):
         return list
 
 
-    def getSolveurList(self):
-        """ Return the variables label list for solveur parameters """
+    def getSolverList(self):
+        """ Return the variables label list for solver parameters """
         list = []
-        for node in self._getSolveurNodesList():
+        for node in self._getSolverNodesList():
             for n in node:
                 list.append(n['label'])
         return list
@@ -302,9 +302,9 @@ class NumericalParamEquatModel(Model):
     def isScalar(self, label):
         """
         Return : 1 if type of node is 'user' or 'thermal' or 'model',
-                 0 if not.  Only used by the view by solveur class
+                 0 if not.  Only used by the view by solver class
         """
-        node = self._getSolveurLabelNode(label)
+        node = self._getSolverLabelNode(label)
         if node:
             if node['type'] in ['user', 'thermal', 'model']:
                 return 1
@@ -433,86 +433,86 @@ class NumericalParamEquatModel(Model):
         node.xmlSetData('rhs_reconstruction', value)
 
 
-# Following methods for dependances of solveur:
+# Following methods for dependances of solver:
 
     def setMaxIterNumber(self, label, value):
         """ Put number of maximum iterations for variable labelled label """
         self.isInt(value)
-        node = self._getSolveurLabelNode(label)
+        node = self._getSolverLabelNode(label)
         if value != self._defaultValues()['max_iter_number']:
             node.xmlSetData('max_iter_number', value)
         else:
             node.xmlRemoveChild('max_iter_number')
 
 
-    def setSolveurPrecision(self, label, value):
-        """ Put value of solveur precision for variable labelled label """
+    def setSolverPrecision(self, label, value):
+        """ Put value of solver precision for variable labelled label """
         # for pressure default value always equal to 1e-8
         self.isPositiveFloat(value)
-        node = self._getSolveurLabelNode(label)
+        node = self._getSolverLabelNode(label)
         if self._isPressure(node):
-            default = self._defaultValues()['solveur_precision_pressure']
+            default = self._defaultValues()['solver_precision_pressure']
         else:
-            default = self._defaultValues()['solveur_precision']
+            default = self._defaultValues()['solver_precision']
 
         if value != default:
-            node.xmlSetData('solveur_precision', value)
+            node.xmlSetData('solver_precision', value)
         else:
-            node.xmlRemoveChild('solveur_precision')
+            node.xmlRemoveChild('solver_precision')
 
 
-    def setSolveurChoice(self, label, value):
-        """ Put choice of solveur for variable labelled label """
+    def setSolverChoice(self, label, value):
+        """ Put choice of solver for variable labelled label """
         self.isInList(value, ('multigrid', 'conjugate_gradient', 'jacobi', 'bi_cgstab', 'gmres'))
-        node = self._getSolveurLabelNode(label)
+        node = self._getSolverLabelNode(label)
         if self._isPressure(node):
-            default = self._defaultValues()['solveur_choice_pressure']
+            default = self._defaultValues()['solver_choice_pressure']
         else:
-            default = self._defaultValues()['solveur_choice']
+            default = self._defaultValues()['solver_choice']
 
         if value != default:
-            n = node.xmlInitNode('solveur_choice')
+            n = node.xmlInitNode('solver_choice')
             n['choice'] = value
         else:
-            node.xmlRemoveChild('solveur_choice')
+            node.xmlRemoveChild('solver_choice')
 
 
     def getMaxIterNumber(self, label):
         """ Return number of maximum iterations for variable labelled label """
-        node = self._getSolveurLabelNode(label)
+        node = self._getSolverLabelNode(label)
         value = node.xmlGetInt('max_iter_number')
         if value == None:
             value = self._defaultValues()['max_iter_number']
         return value
 
 
-    def getSolveurPrecision(self, label):
-        """ Return value of solveur precision for variable labelled label """
-        node = self._getSolveurLabelNode(label)
+    def getSolverPrecision(self, label):
+        """ Return value of solver precision for variable labelled label """
+        node = self._getSolverLabelNode(label)
 
         if self._isPressure(node):
-            default = self._defaultValues()['solveur_precision_pressure']
+            default = self._defaultValues()['solver_precision_pressure']
         else:
-            default = self._defaultValues()['solveur_precision']
+            default = self._defaultValues()['solver_precision']
 
-        value = node.xmlGetDouble('solveur_precision')
+        value = node.xmlGetDouble('solver_precision')
         if value == None:
             value = default
         return value
 
 
-    def getSolveurChoice(self, label):
-        """ Return choice of solveur for variable labelled label """
-        node = self._getSolveurLabelNode(label)
-        n = node.xmlGetNode('solveur_choice')
+    def getSolverChoice(self, label):
+        """ Return choice of solver for variable labelled label """
+        node = self._getSolverLabelNode(label)
+        n = node.xmlGetNode('solver_choice')
 
         if n:
             value = n['choice']
         else:
             if self._isPressure(node):
-                default = self._defaultValues()['solveur_choice_pressure']
+                default = self._defaultValues()['solver_choice_pressure']
             else:
-                default = self._defaultValues()['solveur_choice']
+                default = self._defaultValues()['solver_choice']
             value = default
         return value
 
@@ -520,7 +520,7 @@ class NumericalParamEquatModel(Model):
     def getScalarTimeStepFactor(self, label):
         """ Return value of time_step_factor for variable labelled label """
         if self.isScalar(label):
-            node = self._getSolveurLabelNode(label)
+            node = self._getSolverLabelNode(label)
             value = node.xmlGetDouble('time_step_factor')
             if value == None:
                 value = self._defaultValues()['time_step_factor']
@@ -533,7 +533,7 @@ class NumericalParamEquatModel(Model):
         """ Put value of time_step_factor for variable labelled label """
         self.isStrictPositiveFloat(value)
         if self.isScalar(label):
-            node = self._getSolveurLabelNode(label)
+            node = self._getSolverLabelNode(label)
             if value != self._defaultValues()['time_step_factor']:
                 node.xmlSetData('time_step_factor', value)
             else:
@@ -737,24 +737,24 @@ class NumericalParamEquatTestCase(ModelTest):
         assert model.getMaxIterNumber('Pressure') == 22222,\
                 'Could not get max of number of iterations in NumericalParamEquationModel'
 
-    def checkSetAndGetSolveurPrecision(self):
+    def checkSetAndGetSolverPrecision(self):
         """
-        Check whether the NumericalParamEquatModel class could set and get solveur precision
+        Check whether the NumericalParamEquatModel class could set and get solver precision
         """
         model = NumericalParamEquatModel(self.case)
 
-        assert model.getSolveurPrecision('Pressure') == 1e-8,\
-                'Could not get solveur precision for pressure in NumericalParamEquationModel'
+        assert model.getSolverPrecision('Pressure') == 1e-8,\
+                'Could not get solver precision for pressure in NumericalParamEquationModel'
         from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
         NumericalParamGlobalModel(self.case).setTimeSchemeOrder(2)
         del NumericalParamGlobalModel
-        assert model.getSolveurPrecision('VelocitU') == 1e-5
+        assert model.getSolverPrecision('VelocitU') == 1e-5
 
-        model.setSolveurPrecision('VelocitU', 2e-6)
+        model.setSolverPrecision('VelocitU', 2e-6)
         doc = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
                     <variable label="VelocitU" name="velocity_U">
-                            <solveur_precision>2e-06</solveur_precision>
+                            <solver_precision>2e-06</solver_precision>
                     </variable>
                     <variable label="VelocitV" name="velocity_V"/>
                     <variable label="VelocitW" name="velocity_W"/>
@@ -764,9 +764,9 @@ class NumericalParamEquatTestCase(ModelTest):
                     <property label="all_variables" name="all_variables" support="boundary"/>
                  </velocity_pressure>"""
         assert model.node_vitpre == self.xmlNodeFromString(doc),\
-                'Could not set solveur precision in NumericalParamEquationModel'
-        assert model.getSolveurPrecision('VelocitU') == 2e-6,\
-                'Could not get solveur precision in NumericalParamEquationModel'
+                'Could not set solver precision in NumericalParamEquationModel'
+        assert model.getSolverPrecision('VelocitU') == 2e-6,\
+                'Could not get solver precision in NumericalParamEquationModel'
 
     def checkSetAndGetScalarTimeStepFactor(self):
         """

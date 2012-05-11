@@ -2394,14 +2394,14 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
   /* 1) variables from velocity_pressure and turbulence */
   /* 1-a) for pressure */
   j = vars->rtp[0];
-  cs_gui_variable_value(vars->name[0], "solveur_precision", &epsilo[j]);
+  cs_gui_variable_value(vars->name[0], "solver_precision", &epsilo[j]);
   tmp = (double) nitmax[j];
   cs_gui_variable_value(vars->name[0], "max_iter_number", &tmp);
   nitmax[j] = (int) tmp;
 
   imgr[j] = 0;
 
-  algo_choice = cs_gui_variable_choice(vars->name[0], "solveur_choice");
+  algo_choice = cs_gui_variable_choice(vars->name[0], "solver_choice");
   if (cs_gui_strcmp(algo_choice, "multigrid"))
   {
     iresol[j] = 0;
@@ -2425,11 +2425,11 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
   for (i=1; i < k; i++) {
     j = vars->rtp[i];
     cs_gui_variable_value(vars->name[i], "blending_factor", &blencv[j]);
-    cs_gui_variable_value(vars->name[i], "solveur_precision", &epsilo[j]);
+    cs_gui_variable_value(vars->name[i], "solver_precision", &epsilo[j]);
 
     imgr[j] = 0;
 
-    algo_choice = cs_gui_variable_choice(vars->name[i], "solveur_choice");
+    algo_choice = cs_gui_variable_choice(vars->name[i], "solver_choice");
 
     if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
       iresol[j] = 0;
@@ -2459,11 +2459,11 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     for (i=0 ; i < vars->nscaus; i++) {
       j = isca[i]-1;
       cs_gui_scalar_value(vars->label[i], "blending_factor", &blencv[j]);
-      cs_gui_scalar_value(vars->label[i], "solveur_precision", &epsilo[j]);
+      cs_gui_scalar_value(vars->label[i], "solver_precision", &epsilo[j]);
 
       imgr[j] = 0;
 
-      algo_choice = cs_gui_variable_choice(vars->name[i], "solveur_choice");
+      algo_choice = cs_gui_variable_choice(vars->name[i], "solver_choice");
       if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
         iresol[j] = 0;
       else if (cs_gui_strcmp(algo_choice, "jacobi"))
@@ -2495,12 +2495,12 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       j = iscapp[i] -1;
       jj = isca[j]-1;
       cs_gui_model_scalar_value(vars->model, vars->label[j], "blending_factor", &blencv[jj]);
-      cs_gui_model_scalar_value(vars->model, vars->label[j], "solveur_precision", &epsilo[jj]);
+      cs_gui_model_scalar_value(vars->model, vars->label[j], "solver_precision", &epsilo[jj]);
       cs_gui_model_scalar_value(vars->model, vars->label[j], "time_step_factor", &cdtvar[jj]);
 
       imgr[j] = 0;
 
-      algo_choice = cs_gui_variable_choice(vars->name[0], "solveur_choice");
+      algo_choice = cs_gui_variable_choice(vars->name[0], "solver_choice");
       if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
         iresol[j] = 0;
       else if (cs_gui_strcmp(algo_choice, "jacobi"))

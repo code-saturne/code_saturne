@@ -103,12 +103,12 @@ class SchemeOrderDelegate(QItemDelegate):
 # Combo box delegate for IRESOL
 #-------------------------------------------------------------------------------
 
-class SolveurChoiceDelegate(QItemDelegate):
+class SolverChoiceDelegate(QItemDelegate):
     """
     Use of a combo box in the table.
     """
     def __init__(self, parent=None, xml_model=None):
-        super(SolveurChoiceDelegate, self).__init__(parent)
+        super(SolverChoiceDelegate, self).__init__(parent)
         self.parent = parent
         self.mdl = xml_model
 
@@ -212,9 +212,9 @@ class RhsReconstructionDelegate(QItemDelegate):
 # Delegate for Solver QTableView
 #-------------------------------------------------------------------------------
 
-class SolveurDelegate(QItemDelegate):
+class SolverDelegate(QItemDelegate):
     def __init__(self, parent = None):
-        super(SolveurDelegate, self).__init__(parent)
+        super(SolverDelegate, self).__init__(parent)
         self.parent = parent
 
 
@@ -460,15 +460,15 @@ class StandardItemModelSolver(QStandardItemModel):
                        "Jacobi": 'jacobi', "BI-CGSTAB": 'bi_cgstab', "GMRES": 'gmres'}
         self.dicoM2V= {"multigrid" : 'Multigrid',"conjugate_gradient" : 'Conjugate gradient',
                        "jacobi": 'Jacobi', "bi_cgstab": 'BI-CGSTAB', 'gmres': "GMRES"}
-        for label in self.NPE.getSolveurList():
+        for label in self.NPE.getSolverList():
             row = self.rowCount()
             self.setRowCount(row + 1)
 
             dico           = {}
             dico['label']  = label
-            dico['iresol'] = self.NPE.getSolveurChoice(label)
+            dico['iresol'] = self.NPE.getSolverChoice(label)
             dico['nitmax'] = self.NPE.getMaxIterNumber(label)
-            dico['epsilo'] = self.NPE.getSolveurPrecision(label)
+            dico['epsilo'] = self.NPE.getSolverPrecision(label)
             if self.NPE.isScalar(label):
                 dico['cdtvar'] = self.NPE.getScalarTimeStepFactor(label)
             else:
@@ -554,7 +554,7 @@ class StandardItemModelSolver(QStandardItemModel):
 
         if index.column() == 1:
             self.dataSolver[row]['iresol'] = self.dicoV2M[str(value.toString())]
-            self.NPE.setSolveurChoice(label, self.dataSolver[row]['iresol'])
+            self.NPE.setSolverChoice(label, self.dataSolver[row]['iresol'])
 
         elif index.column() == 2:
             self.dataSolver[row]['nitmax'], ok = value.toInt()
@@ -562,7 +562,7 @@ class StandardItemModelSolver(QStandardItemModel):
 
         elif index.column() == 3:
             self.dataSolver[row]['epsilo'], ok = value.toDouble()
-            self.NPE.setSolveurPrecision(label, self.dataSolver[row]['epsilo'])
+            self.NPE.setSolverPrecision(label, self.dataSolver[row]['epsilo'])
 
         elif index.column() == 4:
             self.dataSolver[row]['cdtvar'], ok = value.toDouble()
@@ -806,7 +806,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         delegateNSWRSM = RhsReconstructionDelegate(self.tableViewScheme, self.turb)
         self.tableViewScheme.setItemDelegateForColumn(5, delegateNSWRSM)
 
-        # Solveur
+        # Solver
         self.modelSolver = StandardItemModelSolver(self.NPE, self.SM)
         self.tableViewSolver.setModel(self.modelSolver)
         self.tableViewSolver.setAlternatingRowColors(True)
@@ -820,10 +820,10 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         if self.SM.getSteadyFlowManagement() == 'on':
             self.tableViewSolver.setColumnHidden(4, True)
 
-        delegate = SolveurDelegate(self.tableViewSolver)
+        delegate = SolverDelegate(self.tableViewSolver)
         self.tableViewSolver.setItemDelegate(delegate)
 
-        delegateSolverChoice = SolveurChoiceDelegate(self.tableViewSolver)
+        delegateSolverChoice = SolverChoiceDelegate(self.tableViewSolver)
         self.tableViewSolver.setItemDelegateForColumn(1, delegateSolverChoice)
 
         # Clipping

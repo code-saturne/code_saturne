@@ -186,6 +186,12 @@ class XMLinit(Variables):
         for node in self.case.xmlGetNodeList('initial_value', 'zone'):
             node['zone_id'] = node['zone']
 
+        for varNode in self.case.xmlGetNodeList('variable'):
+            value = varNode.xmlGetDouble('solveur_precision')
+            if value:
+                varNode.xmlSetData('solver_precision', value)
+                varNode.xmlRemoveChild('solveur_precision')
+
         XMLSolutionDomainNode = self.case.xmlInitNode('solution_domain')
         self.__XMLVolumicConditionsNode = XMLSolutionDomainNode.xmlInitNode('volumic_conditions')
         for node in self.__XMLVolumicConditionsNode.xmlGetNodeList('zone'):
