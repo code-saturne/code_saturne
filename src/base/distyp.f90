@@ -297,16 +297,6 @@ call inimas                                                       &
 !     A partir d'ici, QX, QY et QZ sont des tableaux de travail.
 
 
-
-!     Calcul de la divergence du flux de masse
-
-init = 1
-
-call divmas                                                       &
-!==========
- ( ncelet , ncel   , nfac   , nfabor , init   , nfecra ,          &
-   ifacel , ifabor , flumas , flumab , qx)
-
 !===============================================================================
 ! 5.CONDITIONS LIMITES
 !===============================================================================
@@ -381,7 +371,7 @@ endif
 !===============================================================================
 
 do iel = 1, ncel
-  rovsdp(iel) = volume(iel)*rom(iel)/qz(iel)-qx(iel)
+  rovsdp(iel) = volume(iel)*rom(iel)/qz(iel)
 enddo
 
 !===============================================================================
@@ -496,7 +486,7 @@ do ntcont = 1, ntcmxy
 !       Obligatoirement a tous les pas de temps
 
   do iel = 1, ncel
-    smbdp(iel) = qx(iel)*rtpdp(iel)
+    smbdp(iel) = 0.d0
   enddo
 
 !     Resolution
