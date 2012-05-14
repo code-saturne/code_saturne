@@ -547,8 +547,6 @@ compulsory.
 
 (the continuous phase is managed in the same way as for a case of standard
 physics)\\
-(the Lagrangian module is not accessible through the Graphical User Interface in
-version \verscs)
     \begin{list}{}{}
         \item {\em compulsory:}
         \begin{list}{-}{}
@@ -2685,7 +2683,7 @@ Some particular points should be reminded:
 \end{list}
 
 %==================================
-\subsubsubsection{Geometry and particule  arrays
+\subsubsubsection{Geometry and particle arrays
       related to Lagrangian modeling}
 %==================================
 
@@ -2736,11 +2734,6 @@ statistical variables}
 variables}
 
 \variab{nvgaus}{nvgaus}{i}{Number of gaussian random variables}
-
-\minititre{Note: continuous eulerian phase number}
-The current version of Lagrangian module is planned to work with only one
-eulerian phase. This phase carries inclusions, and source terms of
-backward coupling are applied to it, if necessary.
 
 \minititre{Lagrangian arrays}
 
@@ -2841,7 +2834,7 @@ continuous phase)}
 related to the dispersed phase; these statistics are the kind of results
 expected with the Lagrangian module. It is from these statistics that we
 obtain information concerning the particle cloud (the particle
-trajectories should only be observed on ``pedagogical'' account); they
+trajectories should only be observed for illustrastive purpose); they
 are marked out by the following ``pointers'':
 \begin{list}{$\rightarrow$}{}
 \item \texttt{ilvx,ilvy,ilvz}: mean dispersed phase velocity
@@ -7109,75 +7102,113 @@ Examples are provided in '\texttt{ussyrc}'.
 
 
 %==================================
-\subsection{Lagrangian modeling of multiphase flows with dipersed inclusions}
+\subsection{Particle-tracking (Lagrangian) Module}
 %==================================
 
 %==================================
-\subsubsection{Initialisation  of the Lagrangian
-   modeling parameters}\label{sec:Ini-lag}
+\subsubsection{General information}\label{sec:over-lag}
 %==================================
 
-The initialisation of the Lagrangian module parameters can be performed in
- the Graphical User Interface (GUI) or in the user subroutine \texttt{uslag1} 
-(called only during the calculation initialisation). In the GUI, the selection
- of the Lagrangian module in the item ``Calculation features'' under the heading
- ``Thermophysical models'' activates the heading ``Particle and droplets 
-tracking''. The initialisation is performed in the three items included in 
-this heading. In ``Global settings'', the user defines the Eulerian/Lagrangian 
-multi-phase treatment, the main parameters, the specific physics associated with
- the particles and numerical adavanced options, see figs. \ref {fig:Ini-Lag1}
- to \ref {fig:Ini-Lag3}. In the item ``Statistics'', names are associated to 
-volume and boundary statistical variables for listing and post-processing, 
-see fig. \ref {fig:Ini-Lag4}. In the item ``Output'', the user defines the
- output frequency, post-precessing options for particles and selects the variables
- that will appear in the listing, see.fig. \ref {fig:Ini-Lag5}.
+\begin{itemize} 
+
+\item[-] The particle-tracking (or Lagrangian) module enables the simulation of poly-dispersed particulate flows, by calculating the trajectories of individual particles, mainly characterized by their diameter and density (if no heat or mass transfer between particle and fluid is activated). 
+
+\item[-] The standard use of the particle-tracking module follows the \textbf{Moments/PDF approach} : the instantaneous properties of the underlying flow needed to calculate the particle motion are reconstructed from the averaged values (obtained by Reynolds-Averaged Navier-Stokes simulation) by using stochastic processes. The statistics of interest are then obtained through Monte-Carlo simulation.
+
+\item[-] As a consequence, is is important to emphasize that the most important (and physically meaningful) results of a particle-tracking calculation following the Moments/PDF approach are \mbox{\textbf{statistics}}. Volume and surface statistics, steady or unsteady, can be calculated. Individual particle trajectories (as 1D, \textit{EnSight}-readable cases) and displacements (as \textit{EnSight}-readable animations) can also be provided, but only for illustrative purposes.   
+                                                                                                                                                                                                              
+\item[-] WARNING: Up to now, parallelism is not compatible with the Lagrangian module. This compatibility will be soon implemented. It is however possible, in the framework of a Lagrangian calculation on a frozen field, to carry out as a first step the calculation of the continuous phase using parallelism, and to conduct in a second step the Lagrangian calculation by doing a restart on only one processor.
+
+\end{itemize}
+
+%==================================
+\subsubsection{Activating the particle-tracking module}\label{sec:acti-lag}
+%==================================
+
+The activation of the particle-tracking module is performed either:
+%
+\begin{itemize}
+ \item [$\bullet$] in the Graphical User Interface (GUI): \texttt{Calculation features} $\rightarrow$ \texttt{Thermophysical models} $\rightarrow$ \texttt{Eulerian-Lagrangian multi-phase treatment}~$\rightarrow$ ~\texttt{particles and droplets tracking}
+ \item [$\bullet$] or in the user subroutine \texttt{uslag1}, by setting the \texttt{iilagr} parameter to a non-null value. 
+\end{itemize}
+
+%==================================
+\subsubsection{Basic guidelines for standard simulations}
+%==================================
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+Except from the cases where the flow conditions depend on the time, it is generally recommended to perform a first Lagrangian calculation whose aim is to reach a steady-state (i.e. to reach a time starting from which the relevant statistics do not depend on time anymore). In a second step, a calculation restart is done to calculate the statistics. When the single-phase flow is steady and the particle volume fraction is low enough to neglect their influence on the continuous phase behavior, it is recommended to perform a Lagrangian calculation on a frozen field.\\
+
+ It is then possible to calculate steady-state volumetric statistics and to give a statistical weight higher than 1 to the particles, in order to reduce the number to treat while keeping the right concentrations. Otherwise, when the continuous phase flow is stationary, but the two-coupling coupling must be taken into consideration, it is still possible to activate stationary statistics. \\
+                                                                                                                                                                                                                                                                                                 
+When the continuous phase flow is non-stationary, it is no longer possible to use stationary statistics. To have correct statistics at every moment in the whole calculation domain, it is imperative to have an established particle seeding and it is recommended (when it is possible) not to impose statistical weights different from the unity. \\
+
+Finally, when the complete model is used for the turbulent dispersion modeling, the user must make sure that the volumetric statistics are directly used for the calculation of the locally undisturbed fluid flow field.\\ 
+
+When the thermal evolution of the particles is activated, the associated particulate scalars are always the inclusion temperature and the locally
+undisturbed fluid flow temperature expressed in degrees Celsius, whatever the thermal scalar associated with the continuous phase is (temperature or enthalpy). If the
+thermal scalar associated with the continuous phase is the temperature in Kelvin, the unit change is done automatically. If the thermal scalar associated with the continuous phase is the enthalpy, the enthalpy-temperature conversion subroutine \texttt{usthht} must be completed for \texttt{mode}=1, and must express temperatures in degrees Celsius. In all cases, the thermal backward coupling of the dispersed phase on the continuous phase is adapted to the thermal scalar transported by the fluid.
+
+
+%==================================
+\subsubsection{Prescribing the main modeling parameters (GUI and/or \texttt{uslag1})}\label{sec:Ini-lag}
+%==================================
+
+\minititre{Use of the GUI}
+
+In the GUI, the selection of the Lagrangian module activates the heading \texttt{Particle and droplets tracking} in the tree menu. The initialization is performed in the three items included in 
+this heading:
+%
+\begin{itemize}
+ \item [$\bullet$] \texttt{Global settings}. Here, the user defines the kind of Euler/Lagrange multi-phase treatment, the main parameters, the specific physics associated with the particles and advanced numerical options, see figs. \ref {fig:Ini-Lag1} to \ref {fig:Ini-Lag3}.
+ \item [$\bullet$] \texttt{Statistics}. Here, the user can select volume and boundary statistics to be post-processed.
+ \item [$\bullet$] \texttt{Output}. the user defines the output frequency, post-processing options for particles and select the variables that will appear in the listing.
+\end{itemize}
 
 \begin{figure}[ht]
 \begin{center}
 \includegraphics[width=12cm]{gui_lagr_global_settings}
-\caption{Lagrangian module - global settings}
+\caption{Lagrangian module - View of the \texttt{Global Settings} page}
 \label{fig:Ini-Lag1}
 \end{center}
 \end{figure}
+% 
+% \begin{figure}[ht]
+% \begin{center}
+% \includegraphics[width=10cm]{gui_lagr_global_settings_coal}
+% \caption{Lagrangian module - global settings, specific physics}
+% \label{fig:Ini-Lag2}
+% \end{center}
+% \end{figure}
+% 
+ \begin{figure}[ht]
+ \begin{center}
+ \includegraphics[width=8cm]{gui_lagr_global_advanced}
+ \caption{Lagrangian module - Global Settings, advanced numerical options}
+ \label{fig:Ini-Lag3}
+ \end{center}
+ \end{figure}
+% 
+% \begin{figure}[ht]
+% \begin{center}
+% \includegraphics[width=11cm]{gui_lagr_statistics}
+% \caption{Lagrangian module - statistics}
+% \label{fig:Ini-Lag4}
+% \end{center}
+% \end{figure}
+% 
+% \begin{figure}[ht]
+% \begin{center}
+% \includegraphics[width=11cm]{gui_lagr_output}
+% \caption{Lagrangian module - output}
+% \label{fig:Ini-Lag5}
+% \end{center}
+% \end{figure}
 
-\begin{figure}[ht]
-\begin{center}
-\includegraphics[width=10cm]{gui_lagr_global_settings_coal}
-\caption{Lagrangian module - global settings, specific physics}
-\label{fig:Ini-Lag2}
-\end{center}
-\end{figure}
-
-\begin{figure}[ht]
-\begin{center}
-\includegraphics[width=8cm]{gui_lagr_global_advanced}
-\caption{Lagrangian module - global settings, advanced numerical options}
-\label{fig:Ini-Lag3}
-\end{center}
-\end{figure}
-
-\begin{figure}[ht]
-\begin{center}
-\includegraphics[width=11cm]{gui_lagr_statistics}
-\caption{Lagrangian module - statistics}
-\label{fig:Ini-Lag4}
-\end{center}
-\end{figure}
-
-\begin{figure}[ht]
-\begin{center}
-\includegraphics[width=11cm]{gui_lagr_output}
-\caption{Lagrangian module - output}
-\label{fig:Ini-Lag5}
-\end{center}
-\end{figure}
+\minititre{Use of the subroutine \texttt{uslag1}}
 
 \noindent
-When the GUI is not used, \texttt{uslag1} is one of the two subroutines which must be completed in
-the case of a calculation using a Lagrangian multiphase flow model. This
-subroutine gathers in different headings all the key word which are
-necessary to configure the Lagrangian module. The different headings
-refer to:
+When the GUI is not used, \texttt{uslag1} must be completed. This subroutine gathers in different headings all the key words which are
+necessary to configure the Lagrangian module. The different headings refer to:
 \begin{list}{$\bullet$}{}
 \item the global configuration parameters
 \item the specific physical models describing the particle behaviour
@@ -7193,127 +7224,33 @@ refer to:
 For more details about the different parameters, the user may refer to the
 key word list (\S\ref{prg_motscles_lagr}).
 
-\noindent
-The results of the lagangian module consist in some information about
-the particle cloud. These pieces of information are displayed in the
-form of statistics. It is therefore necessary to activate the
-calculation of the statistics at a given instant during the
-simulation. To do so, there are different strategies which are strongly
-related to the flow nature, stationary or not. \\
-Except from the cases where the injection conditions depend on the time,
-it is generally recommended to realise a first Lagrangian calculation
-whose aim is to get a nearly constant particle number in the calculation
-domain. In a second step, a calculation restart is done to calculate the
-statistics. \\
-When the single-phase flow is steady and the inclusion presence rate
-is low enough to neglect their influence on the continuous phase
-behaviour, it is better to realise a Lagrangian calculation on a fixed
-field. It is then possible to calculate stationary volumetric statistics and
-to give a statistical weight higher than 1 to the particles, in order to
-reduce the number to treat while keeping the right concentrations. \\
-Otherwise, when the continuous phase flow is stationary, but the backward
-coupling must be taken into consideration, it is still possible to
-activate stationary statistics. \\
-When the continuous phase flow is non-stationary, it is no longer possible
-to use stationary statistics. To have correct statistics at every moment
-in the whole calculation domain, it is imperative to have an established
-particle seeding and it is recommended (when it is possible) not to
-impose statistical weights different from the unity. \\
-Finally, when the complete model is used for the turbulent dispersion
-modeling, the user must make sure that the volumetric statistics are
-directly used for the calculation of the locally undisturbed fluid flow
-field. \\
-\noindent
-When the thermal evolution of the particles is activated, the associated
-particulate scalars are always the inclusion temperature and the locally
-undisturbed fluid flow
-temperature expressed in degrees Celsius, whatever the thermal scalar
-associated with the continuous phase is (temperature or enthalpy). If the
-thermal scalar associated with the continuous phase is the temperature
-in Kelvin, the unit change is done automatically. If the
-thermal scalar associated with the continuous phase is the enthalpy, the
-enthalpy-temperature conversion subroutine \texttt{usthht} must be
-completed for \texttt{mode}=1, and must express temperatures in degrees
-Celsius. \\
-In all cases, the thermal backward coupling of the dispersed phase on
-the continuous phase is adapted to the thermal scalar transported by the
-fluid.
 
-\noindent
-\emph{WARNING: Up to now, parallelism and periodicity are not compatible with
-the Lagrangian module. This compatibility will be soon implemented. It
-is however possible, in the framework of a Lagrangian calculation on a
-fixed field, to realise in a first step the calculation of the
-continuous phase using parallelism, and to conduct in a second step the
-Lagrangian calculation by doing a restart on only one processor.}
+
 
 %==================================
-\subsubsection{Management of the boundary conditions related to the
-  particles}
+\subsubsection{Prescribing particle boundary conditions (GUI and/or \texttt{uslag2})}
 %==================================
-The boundary conditions related to particles can be defined in the 
-Graphical User Interface (GUI) or in the subroutines \texttt{uslag2} and 
-\texttt{uslain}. In the GUI, the selection of the Lagrangian module in the 
-item ``Calculation features'' under the heading ``Thermophysical models''
- activates the item ``Particle boundary conditions'' under the heading 
-``Boundary conditions''. Different options are available depending on the
- type of standard boundary conditions selected (wall, inlet/outlet, etc...),
- see fig. \ref{fig:CL-Lag}.
+In the framework of the multiphase Lagrangian modeling, the management of the boundary conditions concerns the particle behavior when there is an interaction between its trajectory and a boundary face. These boundary conditions may be imposed independently of those concerning the Eulerian fluid phase (but they are of course generally consistent). The boundary condition zones are actually redefined by the Lagrangian module (cf. \S\ref{fvm_selector}), and a type of particle behavior is associated with each one. The boundary conditions related to particles can be defined in the Graphical User Interface (GUI) or in the subroutine \texttt{uslag2}. More advanced user-defined boundary conditions can be prescribed in the user-subroutines \texttt{uslain} and \texttt{uslabo}.
 
-\begin{figure}[ht]
-\begin{center}
-\includegraphics[width=16cm]{gui_lagr_bc}
-\caption{Lagrangian module - boundary conditions}
-\label{fig:CL-Lag}
-\end{center}
-\end{figure}
+\minititre{Use of the GUI}
 
-\noindent
-In the framework of the multiphase lagrangrian modeling, the management
-of the boundary conditions concerns the particle behaviour when there
-is an interaction between its trajectory and a boundary face. These
-boundary conditions may be imposed independently of those concerning the
-eulerian fluid phase (they are of course generally coherent). The
-boundary condition zones are actually redefined by the Lagrangian
-module (cf. \S\ref{fvm_selector}), and a type of particle behaviour
-is associated with each one. \\
-The management of the Lagrangian boundary conditions is done by means of
-several user subroutines: \texttt{uslag2} for the classic conditions and
-\texttt{uslain} to specify profiles if necessary. Otherwise, the
-subroutine \texttt{uslabo} allows to define the type of particle/wall
-interaction. It will be described in a specific paragraph.
+ In the GUI, selecting the Lagrangian module in the activates the item \texttt{Particle boundary conditions} under the heading \texttt{Boundary conditions} in the tree menu. Different options are available depending on the type of standard boundary conditions selected (wall, inlet/outlet, etc...), see fig. \ref{fig:CL-Lag}.
 
-\minititre{Subroutine \texttt{uslag2}}
+% \begin{figure}[ht]
+% \begin{center}
+% \includegraphics[width=16cm]{gui_lagr_bc}
+% \caption{Lagrangian module - boundary conditions}
+% \label{fig:CL-Lag}
+% \end{center}
+% \end{figure}
 
-\noindent
-\textit{Subroutine called every time step.}
+\minititre{Use of the subroutine \texttt{uslag2}}
 
-\noindent
-It is the second indispensable subroutine for every calculation using the
-Lagrangian module. The main numerical variables are described below.
+The main numerical variables are described below.
 
-\variab{ifrlag}{ifrlag(nfabor)}{ia}{In the Lagrangian module, the user
-defines \texttt{nfrlag\index{nfrlag}} boundary zones from the color of the
-boundary faces, or more generally from their properties (colors, groups
-...), from the boundary conditions defined in \texttt{cs\_user\_boundary\_conditions}, or even
-from their coordinates. To do so, the array \texttt{ifrlag(nfabor)} giving for
-each face \texttt{ifac} the number \texttt{ifrlag(ifac)} corresponding to the zone to
-which it belongs, is completed. The zone numbers ({\em i.e.} the values
-of \texttt{ifrlag(ifac)}) are chosen freely by the user, but must be strictly
-positive integers inferior or equal to \texttt{nflagm\index{nflagm}} (parameter
-stored in lagpar, whose default value is 100). A zone type is
-associated with every zone; it will be used to impose global boundary
-conditions. \emph{WARNING: it is essential that every boundary face
-belongs to a zone.}}
+\variab{ifrlag}{ifrlag(nfabor)}{ia}{In the Lagrangian module, the user defines \texttt{nfrlag\index{nfrlag}} boundary zones from the color of the boundary faces, or more generally from their properties (colors, groups...), from the boundary conditions defined in \texttt{cs\_user\_boundary\_conditions}, or even from their coordinates. To do so, the array \texttt{ifrlag(nfabor)} giving for each face \texttt{ifac} the number \texttt{ifrlag(ifac)} corresponding to the zone to which it belongs, is completed. The zone numbers ({\em i.e.} the values of \texttt{ifrlag(ifac)}) are chosen freely by the user, but must be strictly positive integers inferior or equal to \texttt{nflagm\index{nflagm}} (parameter stored in lagpar, whose default value is 100). A zone type is associated with every zone; it will be used to impose global boundary conditions. \emph{WARNING: it is essential that every boundary face belongs to a zone.}}
 
-\variab{iusncl}{iusncl(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones
-previously identified, the number of classes \texttt{nbclas}\footnote{a class is a set
-of particles sharing the same physical properties and the same
-characteristics concerning the injection in the calculation domain} of
-entering particles is given: \texttt{iusncl(izone)} = \texttt{nbclas}.
-By default, the number of particle classes is zero. The maximum number of
-classes is \texttt{nclagm\index{nclagm}} (parameter stored in lagpar,
-whose default value is 20).}
+\variab{iusncl}{iusncl(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones previously identified, the number of classes \texttt{nbclas}\footnote{a class is a set of particles sharing the same physical properties and the same characteristics concerning the injection in the calculation domain} of entering particles is given: \texttt{iusncl(izone)} = \texttt{nbclas}. By default, the number of particle classes is zero. The maximum number of classes is \texttt{nclagm\index{nclagm}} (parameter stored in lagpar, whose default value is 20).}
 
 \variablist{iusclb}{iusclb(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones
 previously identified, a particle boundary condition type is
@@ -7328,33 +7265,16 @@ particle behaviour must be defined in the subroutine \texttt{uslabo}.
 
 \begin{list}{$\bullet$}{}
 
- \item if \texttt{iusclb(izone)} = \texttt{ientrl, izone} is a particle injection zone.
-       For each particle class associated with this zone, some pieces of
-       information must be given (see below). If a particle trajectory
-       crosses an injection zone, then we consider that this particle
-       leaves the calculation domain.
+ \item if \texttt{iusclb(izone)} = \texttt{ientrl, izone} is a particle injection zone. For each particle class associated with this zone, information must be provided (see below). If a particle trajectory may cross an injection zone, then this particle leaves the calculation domain.
 
- \item if \texttt{iusclb(izone)} = \texttt{isortl}, the particles interacting with
-       the zone \texttt{izone} leave the calculation domain.
+ \item if \texttt{iusclb(izone)} = \texttt{isortl}, the particles interacting with the zone \texttt{izone} leave definitely the calculation domain.
 
- \item if \texttt{iusclb(izone)} = \texttt{irebol}, the particles undergo an elastic
-       rebound on the boundary zone \texttt{izone}.
+ \item if \texttt{iusclb(izone)} = \texttt{irebol}, the particles undergo an elastic rebound on the boundary zone \texttt{izone}.
 
- \item if \texttt{iusclb(izone)} = \texttt{idepo1}, the particles settle definitevely on
-       the boundary zone \texttt{izone}. These particles can not be put in suspension
-       again, and we consider that they leave the calculation domain.
+ \item if \texttt{iusclb(izone)} = \texttt{idepo1}, the particles settle definitely on the boundary zone \texttt{izone}. These particles leave the calculation domain and are definitely erased from the calculation
 
- \item if \texttt{iusclb(izone)} = \texttt{idepo2}, the particles settle definitevely on
-       the boundary zone \texttt{izone}, but they are kept in the calculation
-       domain. This distinction with the type \texttt{idepo1} is useful only when
-       post-processings in movement mode (\texttt{ifensi2} = 1) are realised: the
-       particles do not disappear after touching the boundary
-       zone. However, using \texttt{idepo2} type zones necessitates more memory
-       than using \texttt{idepo1} type zones.
-
- \item if \texttt{iusclb(izone)} = \texttt{idepo3}, the particles settle on the boudary
-       zone \texttt{izone}, but can be put in suspension again depending on the
-       local description of the continuous phase flow.
+ \item if \texttt{iusclb(izone)} = \texttt{idepo2}, the particles settle definitevely on the boundary zone \texttt{izone} and they are kept in the calculation
+   domain: the particles do not disappear after touching the boundary zone. However, using \texttt{idepo2} type zones necessitates more memory than using \texttt{idepo1} type zones.
 
  \item if \texttt{iusclb(izone)} = \texttt{iencrl}, the particles which are coal particles
        (if \texttt{iphyla} = 2) can become fouled up on the zone \texttt{izone}. The
@@ -7502,35 +7422,28 @@ selection with \textit{EnSight}. Each selection will be split in
 \textit{EnSight} parts according to the geometric types of the present
 boundary faces ((\textit{i.e.} 'tria3', 'quad4' and 'nsided').}
 
-\minititre{Subroutine \texttt{uslain}}
 
-\noindent
-\textit{Subroutine called every time step.}
 
-\noindent
-It is not mandatory to intervene in this subroutine.
-
-\noindent
-\texttt{uslain} is used to complete \texttt{uslag2} when the particles
-must be injected in the domain according to fine constraints (profile,
-position, ...): the arrays \texttt{ettp}, \texttt{tepa} and \texttt{itepa}
-can be modified here for the new particles (these arrays were previously
-completed automatically by the code from the data provided by the user
-in \texttt{uslag2}).
-
-\noindent
-In the case of a more advanced utilisation, it is possible to modify
-here all the arrays \texttt{ettp}, \texttt{tepa} and \texttt{itepa}.
-The particles already present in the calculation domain are marked out
-by an index varying between 1 and \texttt{nbpart}. The particles entering
-the calculation domain at the current iteration are marked out by an index
-varying between \texttt{nbpart}+1 and \texttt{nbpnew}.
-
-\clearpage
 
 %==================================
-\subsubsection{Treatment of the particle/boundary interaction}
+\subsubsection{Advanced particle-tracking set-up}
 %==================================
+
+In this section, some information is provided for a more advanced numerical set-up of a particle-tracking simulation. 
+
+%==================================
+\minititre{User-defined inlet particle profile}
+%==================================
+
+\noindent
+The user subroutine \texttt{uslain} can be used to complete \texttt{uslag2} when the particles must be injected in the domain according to fine constraints (profile, position, ...): the arrays \texttt{ettp}, \texttt{tepa} and \texttt{itepa} can be modified here for the new particles (these arrays were previously completed automatically by the code from the data provided by the user in \texttt{uslag2}).
+
+\noindent
+In the case of a more advanced use, it is possible to modify here all the arrays \texttt{ettp}, \texttt{tepa} and \texttt{itepa}. The particles already present in the calculation domain are marked out by an index varying between 1 and \texttt{nbpart}. The particles entering the calculation domain at the current iteration are marked out by an index varying between \texttt{nbpart}+1 and \texttt{nbpnew}.
+
+
+
+\minititre{Setting up non-standard particle boundary conditions}
 
 \noindent
 The subroutine \texttt{uslabo} is not mandatory but is required in four different
@@ -7612,64 +7525,21 @@ in the subroutine \texttt{uslabo}.
 
 \end{enumerate}
 
-\minititre{Note: order of the numerical scheme after a particle/boundary
-interaction}
-
-When a particle interacts with a boundary face, the integration order of
-the associated stochastic equations is always a first-order, even if a
-second-order scheme is used elsewhere.
-
-%==================================
-\subsubsection{Option for particle cloning/merging}
-%==================================
-
-\noindent
-\textit{Subroutine called every Lagrangian iteration.}
-
-\noindent
-An intervention in the subroutine \texttt{uslaru} is required when the particle
-cloning/merging option is activated {\em via} the key word \texttt{iroule}. The
-important function '\texttt{croule}' must then be completed. \\
-The aim of this technique is to reduce the number of particles to treat in
-the whole flow and to refine the description of the particle cloud only
-where the user wants to get more accurate volumetric statistics than in the
-rest of the calculation domain. \\
-The values given to the importance function are strictly positive real
-numbers allowing to classify the zones according to their
-importance. The higher the value given to the importance function, the
-more important the zone.
-
-\noindent
-For instance, when a particle moves from a zone of importance 1 to a
-zone of importance 2, it undergoes a cloning: the particle is replaced by two
-identical particles, whose statistical weight is the half of the initial
-particle. When a particle moves from a zone of importance 2 to a zone of
-importance 1, it undergoes a fusion: the particle survives to its passing
-through with a probability of 1/2. A random dawing is used to
-determine if the particle will survive or disappear.\\
-In the same way, when a particle moves from a zone of importance 3 to a
-zone of importance 7, it undergoes a cloning. The particle is cloned in
-Int(7/3)=2 or Int(7/3)+1=3 particles with a probability of respectively
-1-(7/3-Int(7/3))=2/3 and 7/3-Int(7/3)=1/3. If the particle moves from a
-zone of importance 7 to a zone of importance 3, it undergoes a fusion:
-it survives with a probability of 3/7.
-
-\noindent
-\emph{WARNING: The importance function must be a strictly positive real
-number in every cell}
+% --> to go to theory guide
+%--------------------------
+% \minititre{Note: order of the numerical scheme after a particle/boundary
+% interaction}
+% 
+% When a particle interacts with a boundary face, the integration order of
+% the associated stochastic equations is always a first-order, even if a
+% second-order scheme is used elsewhere.
 
 %==================================
-\subsubsection{Manipulation of particulate variables at the end of an
-   iteration and user volumetric statistics}
+\minititre{User-defined volume statistics : \texttt{uslast} and \texttt{uslaen}}
 %==================================
-
 \noindent
-\texttt{uslast}\textit{: subroutine called at the end of every
-Lagrangian iteration}
-
-\noindent
-\texttt{uslaen}\textit{: subroutine called at every chronological output
-and every listing printing}
+An intervention in both subroutines \texttt{uslast} and \texttt{uslaen}
+is required if supplementary user volumetric statistics are wanted.
 
 \noindent
 The subroutine \texttt{uslast} is called at the end of every Lagrangian
@@ -7677,11 +7547,6 @@ iteration, it allows therefore the modification of variables related to
 the particles, or the extraction and preparation of data to display in
 the listing or the post-processing.
 
-\noindent
-An intervention in both subroutines \texttt{uslast} and \texttt{uslaen}
-is required if supplementary user volumetric statistics are wanted.
-
-\minititre{User volumetric statistics:}
 
 \noindent
 The volumetric statistics are calculated by means of the array \texttt{statis}. Two
@@ -7694,16 +7559,13 @@ situations may happen:
       be averaged at the end of the calculation in the subroutine
       \texttt{uslaen}.
 \end{list}
+
 According to the user parameter settings, it may happen that during the
 same calculation, the statistics will be non-stationary in a first part and
 stationary in second part.
 
-\begin{list}{$\bullet$}{}
-\item\minititre{User volumetric statistics: subroutine \texttt{uslast}}
 \noindent
-
-\noindent
-In this subroutine, the variable whose volumetric statistic is wanted is
+In the subroutine \texttt{uslaen}, the variable whose volumetric statistic is wanted is
 stored in the array \texttt{statis}. In the framework of stationary statistics,
 the average itself is calculated in the subroutine \texttt{uslaen}. This
 average is obtained through the division of the cumulated value by: \\
@@ -7713,18 +7575,16 @@ average is obtained through the division of the cumulated value by: \\
 This method of averaging is applied to every piece in the listing and
      to the post-processing outputs.
 
-\item\minititre{User volumetric statistics: subroutine \texttt{uslaen}}
-
 \noindent
 In this subroutine is calculated the average corresponding to the
 cumulated value obtained in the subroutine \texttt{uslast}. This subroutine is
 also used for the standard volumetric statistics. Several examples are
 therefore described.
-\end{list}
 
-%==================================
-\subsubsection{User stochastic differential equations}
-%==================================
+
+
+\minititre{User-defined stochastic differential equations}
+%-------------------------------------------------
 
 \noindent
 An intervention in the subroutine \texttt{uslaed} is required if supplementary user
@@ -7768,39 +7628,58 @@ parameters must be provided:
 \end{list}
 
 \noindent
-If necessary, the thermal characteristic time $\tau_c$, whose
-calculation can be modified by the user in the subroutine
-\texttt{uslatc}, is stored for each particle in the part
-\texttt{tempct(nbpmax,1)} of the array \texttt{tempct}.
+If necessary, the thermal characteristic time $\tau_c$, whose calculation can be modified by the user in the subroutine
+\texttt{uslatc}, is stored for each particle in the part \texttt{tempct(nbpmax,1)} of the array \texttt{tempct}.
 
-
-%==================================
-\subsubsection{Particle relaxation time}
-%==================================
+\minititre{User-defined particle relaxation time}
+%-------------------------------------------------
 
 \noindent
-An intervention in this subroutine is not mandatory.
+The particle relaxation time may be modified in the subroutine \texttt{uslatp} according to the chosen formulation of the drag coefficient. The particle relaxation time, modified or not by the user, is available in the array \texttt{taup}.
+
+
+\minititre{User-defined particle thermal characteristic time}
+%-------------------------------------------
 
 \noindent
-The particle relaxation time may be modified in the subroutine \texttt{uslatp} 
-according to the chosen formulation of the drag coefficient. \\
-The particle relaxation time, modified or not by the user, is available
-in the array \texttt{taup}.
+The particle thermal characteristic time may be modified in the subroutine \texttt{uslatc} according to the chosen correlation for the calculation of the Nusselt number. This subroutine is called ar each Lagrangian sub-step. The thermal characteristic time, modified or not by the user, is available in the zone \texttt{tempct(nbpmax,1)} of the array \texttt{tempct}.
 
-%==================================
-\subsubsection{Particle thermal characteristic time}
-%==================================
+
+
+\minititre{Particle cloning/merging technic}
+%-------------------------------------------
 
 \noindent
-An intervention in this subroutine is not mandatory.
+An intervention in the subroutine \texttt{uslaru} is required when the particle
+cloning/merging option is activated {\em via} the key word \texttt{iroule}. The
+important function '\texttt{croule}' must then be completed. \\
+The aim of this technique is to reduce the number of particles to treat in
+the whole flow and to refine the description of the particle cloud only
+where the user wants to get more accurate volumetric statistics than in the
+rest of the calculation domain. \\
+The values given to the importance function are strictly positive real
+numbers allowing to classify the zones according to their
+importance. The higher the value given to the importance function, the
+more important the zone.
 
 \noindent
-The particle thermal characteristic time may be
-modified in the subroutine \texttt{uslatc} according to the chosen correlation 
-for the calculation of the
-Nusselt number. This subroutine is called ar each Lagrangian sub-step. \\
-The thermal characteristic time, modified or not by the user, is
-available in the zone \texttt{tempct(nbpmax,1)} of the array \texttt{tempct}.
+For instance, when a particle moves from a zone of importance 1 to a
+zone of importance 2, it undergoes a cloning: the particle is replaced by two
+identical particles, whose statistical weight is the half of the initial
+particle. When a particle moves from a zone of importance 2 to a zone of
+importance 1, it undergoes a fusion: the particle survives to its passing
+through with a probability of 1/2. A random dawing is used to
+determine if the particle will survive or disappear.\\
+In the same way, when a particle moves from a zone of importance 3 to a
+zone of importance 7, it undergoes a cloning. The particle is cloned in
+Int(7/3)=2 or Int(7/3)+1=3 particles with a probability of respectively
+1-(7/3-Int(7/3))=2/3 and 7/3-Int(7/3)=1/3. If the particle moves from a
+zone of importance 7 to a zone of importance 3, it undergoes a fusion:
+it survives with a probability of 3/7.
+
+\noindent
+\emph{WARNING: The importance function must be a strictly positive real
+number in every cell}
 
 %==================================
 \subsection{Compressible module}
