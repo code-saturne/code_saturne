@@ -408,7 +408,7 @@ if(iihmpr.eq.1) then
              (nmodpp,                                             &
               irovar, ivivar, icorio,                             &
               gx, gy, gz, omegax, omegay, omegaz ,                &
-              ro0, viscl0, cp0, t0, p0)
+              ro0, viscl0, viscv0, cp0, t0, p0, xmasmr)
 
 !     Scamin, scamax
   call cssca2(iscavr, scamin, scamax)

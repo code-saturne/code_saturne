@@ -79,6 +79,7 @@ module cstphy
                             p0     , pred0 ,     &
                             xyzp0(3), t0    ,    &
                             cp0
+  double precision, save :: xmasmr
 
   ! Uniform thermodynamic pressure for the low-Mach algorithm
 

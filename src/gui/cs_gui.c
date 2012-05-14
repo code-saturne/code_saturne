@@ -1721,6 +1721,30 @@ void CS_PROCF (cscpva, CSCPVA) (int *const icp)
 }
 
 /*----------------------------------------------------------------------------
+ * Volumic viscosity variable or constant indicator.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSCVVVA (ICP)
+ * *****************
+ *
+ * INTEGER          IVISCV     <--   specific heat variable or constant indicator
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csvvva, CSVVVA) (int *const iviscv)
+{
+  int choice;
+
+  if (cs_gui_properties_choice("volumic_viscosity", &choice))
+    *iviscv = choice;
+
+#if _XML_DEBUG_
+  bft_printf("==>CSVVVA\n");
+  bft_printf("--iviscv = %i\n", *iviscv);
+#endif
+}
+
+/*----------------------------------------------------------------------------
  * User scalars number.
  *
  * Fortran Interface:
@@ -1931,6 +1955,37 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
 #if _XML_DEBUG_
   bft_printf("==>CSIPHY\n");
   bft_printf("--iphydr = %i\n", *iphydr);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Hydrostatic equilibrium parameter.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSCFGP (icfgrp)
+ * *****************
+ *
+ * INTEGER          icfgrp  <--   hydrostatic equilibrium
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cscfgp, CSCFGP) (int *const icfgrp)
+{
+  char *path = NULL;
+  int   result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "numerical_parameters");
+  cs_xpath_add_element(&path, "hydrostatic_equilibrium");
+  cs_xpath_add_attribute(&path, "status");
+
+  if (cs_gui_get_status(path, &result)) *icfgrp = result;
+
+  BFT_FREE(path);
+
+#if _XML_DEBUG_
+  bft_printf("==>CSCFGP\n");
+  bft_printf("--icfgrp = %i\n", *icfgrp);
 #endif
 }
 
@@ -2615,9 +2670,11 @@ void CS_PROCF (csphys, CSPHYS)
           double *const omegaz,
           double *const ro0,
           double *const viscl0,
+          double *const viscv0,
           double *const cp0,
           double *const t0,
-          double *const p0
+          double *const p0,
+          double *const xmasmr
   )
 {
   int choice;
@@ -2640,6 +2697,8 @@ void CS_PROCF (csphys, CSPHYS)
   cs_gui_properties_value("density", ro0);
   cs_gui_properties_value("molecular_viscosity", viscl0);
   cs_gui_properties_value("specific_heat", cp0);
+  if (cs_gui_strcmp(vars->model, "compressible_model"))
+    cs_gui_properties_value("volumic_viscosity", viscv0);
 
   cs_gui_reference_initialization("pressure", p0);
 
@@ -2655,7 +2714,9 @@ void CS_PROCF (csphys, CSPHYS)
   /* T0 if necessary */
 
   if (vars->model != NULL)
-    cs_gui_reference_initialization("temperature", p0);
+    cs_gui_reference_initialization("temperature", t0);
+  if (cs_gui_strcmp(vars->model, "compressible_model"))
+    cs_gui_reference_initialization("mass_molar", xmasmr);
 
 #if _XML_DEBUG_
   bft_printf("==>CSPHYS\n");
@@ -2671,6 +2732,10 @@ void CS_PROCF (csphys, CSPHYS)
   bft_printf("--Cp = %g \n", *cp0);
   bft_printf("--T0 = %f \n", *t0);
   bft_printf("--P0 = %f \n", *p0);
+  if (cs_gui_strcmp(vars->model, "compressible_model")) {
+    bft_printf("--viscv0 = %g \n", *viscv0);
+    bft_printf("--xmasmr = %f \n", *xmasmr);
+  }
 #endif
 }
 
@@ -2846,7 +2911,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
   int itype = 0;
   int n;
   int i = 0;
-  int nbp = 6;
+  int nbp = 5;
   char *name = NULL;
 
   /* Compute the new size of vars->properties_name,
@@ -2861,6 +2926,9 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
       if (ivisls[i] > 0 && iscavr[i] <= 0)
         nbp++;
   }
+
+  if (!cs_gui_strcmp(cs_glob_var->model, "compressible_model"))
+    nbp++;
 
   if (*iale) {
     cs_gui_get_ale_viscosity_type(&itype);
@@ -2922,10 +2990,12 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
       strcpy(cs_glob_var->properties_name[n++], "specific_heat");
     }
 
-    cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *iprtot-1 ]-1 ];
-    cs_glob_var->propce[n] = *iprtot;
-    BFT_MALLOC(cs_glob_var->properties_name[n], strlen("total_pressure")+1, char);
-    strcpy(cs_glob_var->properties_name[n++], "total_pressure");
+    if (!cs_gui_strcmp(cs_glob_var->model, "compressible_model")) {
+      cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *iprtot-1 ]-1 ];
+      cs_glob_var->propce[n] = *iprtot;
+      BFT_MALLOC(cs_glob_var->properties_name[n], strlen("total_pressure")+1, char);
+      strcpy(cs_glob_var->properties_name[n++], "total_pressure");
+    }
 
     if (*iale) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisma[0]-1 ]-1 ];
@@ -3273,6 +3343,39 @@ cs_gui_get_cells_list(const char *zone_id,
   return cells_list;
 }
 
+/*-----------------------------------------------------------------------------
+ * Initialize mei tree and check for symbols existence
+ *
+ * parameters:
+ *   formula        -->  mei formula
+ *   symbols        -->  array of symbol to check
+ *   symbol_size    -->  number of symbol in symbols
+ *----------------------------------------------------------------------------*/
+
+static mei_tree_t *_init_mei_tree(const char *formula,
+        const char *symbols)
+{
+
+  /* return an empty interpreter */
+  mei_tree_t *tree = mei_tree_new(formula);
+
+  /* add commun variables */
+  mei_tree_insert(tree, "x",    0.0);
+  mei_tree_insert(tree, "y",    0.0);
+  mei_tree_insert(tree, "z",    0.0);
+
+  /* try to build the interpreter */
+  if (mei_tree_builder(tree))
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: can not interpret expression: %s\n"), tree->string);
+  /* check for symbols */
+  if (mei_tree_find_symbol(tree, symbols))
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: can not find the required symbol: %s\n"), symbols);
+
+  return tree;
+}
+
 /*----------------------------------------------------------------------------
  * Variables and user scalars initialization.
  *
@@ -3285,6 +3388,11 @@ cs_gui_get_cells_list(const char *zone_id,
  * integer          isuite   -->  restart indicator
  * integer          isca     -->  indirection array for scalar number
  * integer          iscold   -->  scalar number for restart
+ * integer          iccfth   -->  type of initialisation(compressible model)
+ * integer          ipr      -->  rtp index for pressure
+ * integer          irho     -->  rtp index for density
+ * integer          itempk   -->  rtp index for temperature (in K)
+ * integer          ienerg   -->  rtp index for energy total
  * DOUBLE PRECISION RO0      -->  value of density if IROVAR=0
  * DOUBLE PRECISION CP0      -->  value of specific heat if ICP=0
  * DOUBLE PRECISION VISCL0   -->  value of viscosity if IVIVAR=0
@@ -3299,6 +3407,11 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                               const int          *isuite,
                               const int          *isca,
                               const int          *iscold,
+                                    int          *iccfth,
+                              const int *const    ipr,
+                              const int *const    irho,
+                              const int *const    itempk,
+                              const int *const    ienerg,
                               const cs_real_t    *ro0,
                               const cs_real_t    *cp0,
                               const cs_real_t    *viscl0,
@@ -3313,25 +3426,31 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
   int i, j, icel, iel;
   int zones            = 0;
   int cells            = 0;
+  int ccfth            = 0;
   int *cells_list      = NULL;
   double initial_value = 0;
   char *choice         = NULL;
+  char *buff           = NULL;
   char *path           = NULL;
+  char *path1          = NULL;
   char *path_velocity  = NULL;
   char *path_turb      = NULL;
   char *path_sca       = NULL;
+  char *path_meteo     = NULL;
   char *status         = NULL;
   char *zone_id        = NULL;
   char *formula_uvw    = NULL;
   char *formula_turb   = NULL;
   char *formula_sca    = NULL;
+  char *formula_meteo  = NULL;
   char *formula        = NULL;
   char *model          = NULL;
 
-  mei_tree_t *ev_formula_uvw  = NULL;
-  mei_tree_t *ev_formula_turb = NULL;
-  mei_tree_t *ev_formula_sca  = NULL;
-  mei_tree_t *ev_formula      = NULL;
+  mei_tree_t *ev_formula_uvw   = NULL;
+  mei_tree_t *ev_formula_turb  = NULL;
+  mei_tree_t *ev_formula_sca   = NULL;
+  mei_tree_t *ev_formula_meteo = NULL;
+  mei_tree_t *ev_formula       = NULL;
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -3630,8 +3749,195 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
         }
         BFT_FREE(formula_sca);
       }
+      /* Meteo Scalars initialization */
+      if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
+        for (j=vars->nscaus;j< vars->nscaus + vars->nscapp;j++) {
+          path_meteo = cs_xpath_init_path();
+          cs_xpath_add_elements(&path_meteo, 3,
+                                 "thermophysical_models",
+                                 "atmospheric_flows",
+                                 "scalar");
+          cs_xpath_add_test_attribute(&path_meteo, "label", vars->label[j]);
+          cs_xpath_add_element(&path_meteo, "formula");
+          cs_xpath_add_test_attribute(&path_meteo, "zone_id", zone_id);
+          cs_xpath_add_function_text(&path_meteo);
+          formula_meteo = cs_gui_get_text_value(path_meteo);
+          BFT_FREE(path_meteo);
+          if (formula_meteo != NULL) {
+            ev_formula_meteo = mei_tree_new(formula_meteo);
+            mei_tree_insert(ev_formula_meteo,"x",0.);
+            mei_tree_insert(ev_formula_meteo,"y",0.);
+            mei_tree_insert(ev_formula_meteo,"z",0.);
+            /* try to build the interpreter */
+            if (mei_tree_builder(ev_formula_meteo))
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Error: can not interpret expression: %s\n %i"),
+                        ev_formula_meteo->string, mei_tree_builder(ev_formula_meteo));
 
-      BFT_FREE(cells_list);
+            if (mei_tree_find_symbol(ev_formula_meteo, vars->label[j]))
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Error: can not find the required symbol: %s\n"),
+                        vars->label[j]);
+
+            if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+              for (icel = 0; icel < cells; icel++) {
+                iel = cells_list[icel]-1;
+                mei_tree_insert(ev_formula_meteo, "x", xyzcen[3 * iel + 0]);
+                mei_tree_insert(ev_formula_meteo, "y", xyzcen[3 * iel + 1]);
+                mei_tree_insert(ev_formula_meteo, "z", xyzcen[3 * iel + 2]);
+                mei_evaluate(ev_formula_meteo);
+                rtp[(isca[j]-1)*(*ncelet) + iel] =
+                         mei_tree_lookup(ev_formula_meteo,vars->label[j]);
+              }
+            }
+            mei_tree_destroy(ev_formula_meteo);
+          }
+          else{
+
+            if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+              for (icel = 0; icel < cells; icel++) {
+                iel = cells_list[icel]-1;
+                rtp[(isca[j]-1)*(*ncelet) + iel] = 0.0;
+              }
+            }
+          }
+          BFT_FREE(formula_meteo);
+        }
+      }
+
+      if (cs_gui_strcmp(vars->model, "compressible_model")) {
+        ccfth = 10000;
+        //              pressure initialisation
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 3, "thermophysical_models","velocity_pressure","variable");
+        cs_xpath_add_test_attribute(&path, "name", "pressure");
+        cs_xpath_add_element(&path, "formula");
+        cs_xpath_add_test_attribute(&path, "zone_id",zone_id);
+        BFT_MALLOC(path1, strlen(path) +1, char);
+        strcpy(path1, path);
+        cs_xpath_add_attribute(&path, "status");
+        buff = cs_gui_get_attribute_value(path);
+
+        if (cs_gui_strcmp(buff,"on")) {
+          ccfth = ccfth * 2;
+          cs_xpath_add_function_text(&path1);
+          formula = cs_gui_get_text_value(path1);
+          ev_formula = _init_mei_tree(formula, "P");
+          if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+            for (icel = 0; icel < cells; icel++) {
+              iel = cells_list[icel]-1;
+              mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
+              mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
+              mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
+              mei_evaluate(ev_formula);
+              rtp[(*ipr-1) * (*ncelet) + iel] = mei_tree_lookup(ev_formula, "P");
+            }
+          }
+          mei_tree_destroy(ev_formula);
+        }
+        BFT_FREE(buff);
+        BFT_FREE(formula);
+        BFT_FREE(path);
+        BFT_FREE(path1);
+
+        //              density initialisation
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 3, "thermophysical_models","compressible_model","scalar");
+        cs_xpath_add_test_attribute(&path, "name", "Rho");
+        cs_xpath_add_element(&path, "formula");
+        cs_xpath_add_test_attribute(&path, "zone_id",zone_id);
+        BFT_MALLOC(path1, strlen(path) +1, char);
+        strcpy(path1, path);
+        cs_xpath_add_attribute(&path, "status");
+        buff = cs_gui_get_attribute_value(path);
+        if (cs_gui_strcmp(buff,"on")) {
+          ccfth = ccfth * 3;
+          cs_xpath_add_function_text(&path1);
+          formula = cs_gui_get_text_value(path1);
+          ev_formula = _init_mei_tree(formula,"rho");
+          if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+            for (icel = 0; icel < cells; icel++) {
+              iel = cells_list[icel]-1;
+              mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
+              mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
+              mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
+              mei_evaluate(ev_formula);
+              rtp[(isca[*irho-1]-1)*(*ncelet) + iel] = mei_tree_lookup(ev_formula, "rho");
+            }
+          }
+          mei_tree_destroy(ev_formula);
+        }
+        BFT_FREE(buff);
+        BFT_FREE(formula);
+        BFT_FREE(path);
+        BFT_FREE(path1);
+
+        //              Temperature initialisation
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 3, "thermophysical_models","compressible_model","scalar");
+        cs_xpath_add_test_attribute(&path, "name", "TempK");
+        cs_xpath_add_element(&path, "formula");
+        cs_xpath_add_test_attribute(&path, "zone_id",zone_id);
+        BFT_MALLOC(path1, strlen(path) +1, char);
+        strcpy(path1, path);
+        cs_xpath_add_attribute(&path, "status");
+        buff = cs_gui_get_attribute_value(path);
+        if (cs_gui_strcmp(buff,"on")){
+          ccfth = ccfth * 5;
+          cs_xpath_add_function_text(&path1);
+          formula = cs_gui_get_text_value(path1);
+          ev_formula = _init_mei_tree(formula,"T");
+          if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+            for (icel = 0; icel < cells; icel++) {
+              iel = cells_list[icel]-1;
+              mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
+              mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
+              mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
+              mei_evaluate(ev_formula);
+              rtp[(isca[*itempk-1]-1)*(*ncelet) + iel] = mei_tree_lookup(ev_formula, "T");
+            }
+          }
+          mei_tree_destroy(ev_formula);
+        }
+        BFT_FREE(buff);
+        BFT_FREE(formula);
+        BFT_FREE(path);
+        BFT_FREE(path1);
+        //              Total energy initialisation
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 3, "thermophysical_models","compressible_model","scalar");
+        cs_xpath_add_test_attribute(&path, "name", "EnergieT");
+        cs_xpath_add_element(&path, "formula");
+        cs_xpath_add_test_attribute(&path, "zone_id",zone_id);
+        BFT_MALLOC(path1, strlen(path) +1, char);
+        strcpy(path1, path);
+        cs_xpath_add_attribute(&path, "status");
+        buff = cs_gui_get_attribute_value(path);
+        if (cs_gui_strcmp(buff,"on")) {
+          ccfth = ccfth * 7;
+          cs_xpath_add_function_text(&path1);
+          formula = cs_gui_get_text_value(path1);
+          ev_formula = _init_mei_tree(formula,"E");
+          if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+            for (icel = 0; icel < cells; icel++) {
+              iel = cells_list[icel]-1;
+              mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
+              mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
+              mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
+              mei_evaluate(ev_formula);
+              rtp[(isca[*ienerg-1]-1)*(*ncelet) + iel] = mei_tree_lookup(ev_formula, "E");
+            }
+          }
+          mei_tree_destroy(ev_formula);
+        }
+        BFT_FREE(buff);
+        BFT_FREE(formula);
+        BFT_FREE(path);
+        BFT_FREE(path1);
+        *iccfth = ccfth;
+    }
+
+    BFT_FREE(cells_list);
 
 #if _XML_DEBUG_
       bft_printf("--zone zone_id: %s\n", zone_id);
@@ -3945,6 +4251,8 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
  * INTEGER          ISCALT   -->  pointer for the thermal scalar in ISCA
  * INTEGER          ISCAVR   -->  scalars that are variance
  * INTEGER          IPPROC   -->  indirection array for cell properties
+ * INTEGER          IVISCV   -->  pointer for volumic viscosity viscv
+ * INTEGER          ITEMPK   -->  pointer for temperature (in K)
  * DOUBLE PRECISION P0       -->  pressure reference value
  * DOUBLE PRECISION T0       -->  temperature reference value
  * DOUBLE PRECISION RO0      -->  density reference value
@@ -3968,6 +4276,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_int_t         iscalt[],
                               const cs_int_t         iscavr[],
                               const cs_int_t         ipproc[],
+                              const cs_int_t         iviscv[],
+                              const cs_int_t         itempk[],
                               const cs_real_t        p0[],
                               const cs_real_t        t0[],
                               const cs_real_t        ro0[],
@@ -3983,11 +4293,13 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
   mei_tree_t *ev_cp  = NULL;
   mei_tree_t *ev_la  = NULL;
   mei_tree_t *ev_Ds  = NULL;
+  mei_tree_t *ev_viscv  = NULL;
   char *law_rho = NULL;
   char *law_mu  = NULL;
   char *law_cp  = NULL;
   char *law_la  = NULL;
   char *law_Ds  = NULL;
+  char *law_viscv  = NULL;
 
   char *path = NULL;
   int i, j, iel;
@@ -4098,6 +4410,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     mei_tree_insert(ev_mu, "mu0", *viscl0);
     mei_tree_insert(ev_mu, "p0", *p0);
     mei_tree_insert(ev_mu, "rho", 0.0);
+    if (cs_gui_strcmp(vars->model, "compressible_model"))
+      mei_tree_insert(ev_mu, "t0", 0.0);
 
     for (i = 0; i < *nscaus; i++)
       mei_tree_insert(ev_mu, vars->label[i], 0.0);
@@ -4127,7 +4441,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                       "rho",
                       propce[ipcrom * (*ncelet) + iel]);
 
-      tmp = mei_evaluate(ev_mu);
+      if (cs_gui_strcmp(vars->model, "compressible_model"))
+        mei_tree_insert(ev_mu, "T", rtp[(isca[*itempk] -1) * (*ncelet) + iel]);
+
+       tmp = mei_evaluate(ev_mu);
       propce[ipcvis * (*ncelet) + iel] = mei_tree_lookup(ev_mu, "mu");
     }
 
@@ -4370,6 +4687,64 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     }
     BFT_FREE(name);
+  }
+
+  /* law for volumic viscosity (compressible model) */
+  if (cs_gui_strcmp(vars->model, "compressible_model")) {
+    user_law = 0;
+    if (*iviscv > 0)
+    {
+      char *prop_choice = _properties_choice("volumic_viscosity");
+      if (cs_gui_strcmp(prop_choice, "user_law"))
+        user_law = 1;
+      BFT_FREE(prop_choice);
+    }
+
+    if (user_law)
+    {
+      /* search the formula for the law */
+
+      path = cs_xpath_short_path();
+      cs_xpath_add_element(&path, "property");
+      cs_xpath_add_test_attribute(&path, "name", "volumic_viscosity");
+      cs_xpath_add_element(&path, "formula");
+      cs_xpath_add_function_text(&path);
+
+      law_viscv = cs_gui_get_text_value(path);
+      BFT_FREE(path);
+
+      /* return an empty interpreter */
+
+      ev_viscv = mei_tree_new(law_viscv);
+      mei_tree_insert(ev_cp,"viscv0", *cp0);
+      mei_tree_insert(ev_cp,"p0", *p0);
+      mei_tree_insert(ev_cp,"T", 0.);
+      mei_tree_insert(ev_cp,"t0", *t0);
+
+      /* try to build the interpreter */
+
+      if (mei_tree_builder(ev_viscv))
+        bft_error(__FILE__, __LINE__, 0,
+            _("Error: can not interpret expression: %s\n"), ev_viscv->string);
+
+      if (mei_tree_find_symbol(ev_viscv, "viscv0"))
+        bft_error(__FILE__, __LINE__, 0,
+            _("Error: can not find the required symbol: %s\n"), "viscv");
+
+      /* for each cell, update the value of the table of symbols for each scalar
+         (including the thermal scalar), and evaluate the interpreter */
+
+      for (iel = 0; iel < *ncel; iel++)
+      {
+        mei_tree_insert(ev_viscv, "T", rtp[(isca[*itempk] -1) * (*ncelet) + iel] );
+
+        tmp = mei_evaluate(ev_viscv);
+        propce[ipccp * (*ncelet) + iel] = mei_tree_lookup(ev_viscv, "viscv0");
+        printf("visco0 = %f\n", propce[ipccp * (*ncelet) + iel]);
+      }
+
+      mei_tree_destroy(ev_viscv);
+    }
   }
 
 #if _XML_DEBUG_

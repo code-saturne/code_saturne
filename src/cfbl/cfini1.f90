@@ -223,6 +223,8 @@ ivivar = 0
 ! 4. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
+call cscfgp(icfgrp)
+
 call uscfx1
 !==========
 

@@ -98,6 +98,7 @@ double precision frcxt(ncelet,3)
 character*80     chaine
 integer          ivar  , iscal , imom
 integer          iel
+integer          iccfth
 integer          iclip , ipp  , iok   , ii
 integer          idtcm , ipcmom, iiptot
 integer          ibormo(nbmomx)
@@ -137,7 +138,9 @@ iusini = 1
 
 if (iihmpr.eq.1) then
 
+  iccfth = 0
   call uiiniv (ncelet, isuite, isca, iscold,       &
+               iccfth, ipr, irho, itempk, ienerg,  &
                ro0, cp0, viscl0, visls0, uref,     &
                almax, xyzcen, rtp)
   !==========

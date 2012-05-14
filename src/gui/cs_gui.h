@@ -91,6 +91,19 @@ void CS_PROCF (csturb, CSTURB) (int *const iturb,
 void CS_PROCF (cscpva, CSCPVA) (int *const icp);
 
 /*----------------------------------------------------------------------------
+ * Volumic viscosity variable or constant indicator.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSCVVVA (ICP)
+ * *****************
+ *
+ * INTEGER          IVISCV     <--   specific heat variable or constant indicator
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csvvva, CSVVVA) (int *const iviscv);
+
+/*----------------------------------------------------------------------------
  * User scalars number.
  *
  * Fortran Interface:
@@ -160,6 +173,19 @@ void CS_PROCF(csidtv, CSIDTV) (int *const idtvar);
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csiphy, CSIPHY) (int *const iphydr);
+
+/*----------------------------------------------------------------------------
+ * Hydrostatic equilibrium parameter.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSCFGP (ICFGRP)
+ * *****************
+ *
+ * INTEGER          ICFGRP  <--   hydrostatic equilibrium
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cscfgp, CSCFGP) (int *const icfgrp);
 
 /*----------------------------------------------------------------------------
  *
@@ -316,9 +342,11 @@ void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
                                       double *const omegaz,
                                       double *const ro0,
                                       double *const viscl0,
+                                      double *const viscv0,
                                       double *const cp0,
                                       double *const t0,
-                                      double *const p0);
+                                      double *const p0,
+                                      double *const xmasmr);
 
 /*----------------------------------------------------------------------------
  * User scalar min and max values for clipping.
@@ -425,6 +453,11 @@ void CS_PROCF(nvamem, NVAMEM) (void);
  * integer          isuite   -->  restart indicator
  * integer          isca     -->  indirection array for scalar number
  * integer          iscold   -->  scalar number for restart
+ * integer          iccfth   -->  type of initialisation(compressible model)
+ * integer          ipr      -->  rtp index for pressure
+ * integer          irho     -->  rtp index for density
+ * integer          itempk   -->  rtp index for temperature (in K)
+ * integer          ienerg   -->  rtp index for energy total
  * DOUBLE PRECISION RO0      -->  value of density if IROVAR=0
  * DOUBLE PRECISION CP0      -->  value of specific heat if ICP=0
  * DOUBLE PRECISION VISCL0   -->  value of viscosity if IVIVAR=0
@@ -439,6 +472,11 @@ void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
                                const int         *isuite,
                                const int          isca[],
                                const int          iscold[],
+                                     int         *iccfth,
+                               const int *const   ipr,
+                               const int *const   irho,
+                               const int *const   itempk,
+                               const int *const   ienerg,
                               const cs_real_t    *ro0,
                               const cs_real_t    *cp0,
                               const cs_real_t    *viscl0,
@@ -469,6 +507,8 @@ void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
  * INTEGER          ISCALT   -->  pointer for the thermal scalar in ISCA
  * INTEGER          ISCAVR   -->  scalars that are variance
  * INTEGER          IPPROC   -->  indirection array for cell properties
+ * INTEGER          IVISCV   -->  pointer for volumic viscosity viscv
+ * INTEGER          ITEMPK   -->  pointer for temperature (in K)
  * DOUBLE PRECISION P0       -->  pressure reference value
  * DOUBLE PRECISION T0       -->  temperature reference value
  * DOUBLE PRECISION RO0      -->  density reference value
@@ -492,6 +532,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_int_t         iscalt[],
                               const cs_int_t         iscavr[],
                               const cs_int_t         ipproc[],
+                              const cs_int_t         iviscv[],
+                              const cs_int_t         itempk[],
                               const cs_real_t        p0[],
                               const cs_real_t        t0[],
                               const cs_real_t        ro0[],
