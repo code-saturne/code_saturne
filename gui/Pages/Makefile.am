@@ -33,6 +33,7 @@ BatchRunningView.py \
 BodyForcesModel.py \
 BodyForcesView.py \
 BoundaryConditionsCoalInletView.py \
+BoundaryConditionsCompressibleOutletView.py \
 BoundaryConditionsMeteoView.py \
 BoundaryConditionsMobileMeshView.py \
 BoundaryConditionsParticlesModel.py \
@@ -49,6 +50,7 @@ CoalCombustionModel.py \
 CoalCombustionView.py \
 CoalThermoChemistry.py \
 CommonCombustion.py \
+CompressibleModel.py \
 ConjugateHeatTransferView.py \
 ConjugateHeatTransferModel.py \
 CoriolisSourceTermsModel.py \
@@ -131,6 +133,7 @@ BatchRunningStopByIterationDialogForm.ui \
 BatchRunningUserFilesDialogForm.ui \
 BodyForcesForm.ui \
 BoundaryConditionsCoalInletForm.ui \
+BoundaryConditionsCompressibleOutletForm.ui \
 BoundaryConditionsForm.ui \
 BoundaryConditionsMeteoForm.ui \
 BoundaryConditionsMobileMeshForm.ui \
@@ -141,6 +144,7 @@ BoundaryConditionsTurbulenceInletForm.ui \
 BoundaryConditionsVelocityInletForm.ui \
 BoundaryConditionsWallRadiativeTransferForm.ui \
 CoalCombustionForm.ui \
+CompressibleForm.ui \
 ConjugateHeatTransferForm.ui \
 CoriolisSourceTermsForm.ui \
 CurrentSpeciesForm.ui \
