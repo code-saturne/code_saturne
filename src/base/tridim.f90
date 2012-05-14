@@ -719,9 +719,11 @@ do while (iterns.le.nterup)
     !==========
   ( ntcabs, nfabor,                                                &
     nozppm, ncharm, ncharb, nclpch,                                &
-    iindef, ientre, iparoi, iparug, isymet, isolib,                &
+    iindef, ientre, iesicf, isspcf, ierucf, isopcf,                &
+    iparoi, iparug, isymet, isolib, isca  ,                        &
+    ipr   , irho  , itempk, ienerg,                                &
     iqimp,  icalke, ientat, ientcp, inmoxy, iprofm,                &
-    itypfb, izfppp, icodcl,                                    &
+    itypfb, izfppp, icodcl,                                        &
     dtref,  ttcabs, surfbo, cdgfbo,                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
     timpat, timpcp, distch, rcodcl)
@@ -771,7 +773,8 @@ do while (iterns.le.nterup)
     call uiclve &
     !==========
   ( nfabor, nozppm,                                                &
-    iindef, ientre, iparoi, iparug, isymet, isolib,                &
+    iindef, ientre, iesicf, ierucf, isspcf, isopcf,                &
+    iparoi, iparug, isymet, isolib,                                &
     itypfb, izfppp )
 
   endif

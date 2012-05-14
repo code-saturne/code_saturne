@@ -50,6 +50,7 @@ from Base.Toolbox import GuiParam
 from Pages.ReferenceValuesForm import Ui_ReferenceValuesForm
 import Base.QtPage as QtPage
 from Pages.ReferenceValuesModel import ReferenceValuesModel
+from Pages.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # log config

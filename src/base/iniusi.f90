@@ -185,7 +185,7 @@ if (iihmpr.eq.1) then
  ( ippmod, icod3p, icodeq, icoebu, icobml,                        &
    icolwc, icp3pl, icpl3c, icfuel,                                &
    ieljou, ielarc, ielion, icompf, iatmos,                        &
-   iaeros, indjon, ieqco2)
+   iaeros, indjon, ieos  , ieqco2)
 
 endif
 

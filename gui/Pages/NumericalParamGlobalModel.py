@@ -74,6 +74,7 @@ class NumericalParamGlobalModel(Model):
         self.default['density_relaxation'] = 0.95
         self.default['velocity_pressure_coupling'] ='off'
         self.default['hydrostatic_pressure'] ='off'
+        self.default['hydrostatic_equilibrium'] ='on'
         self.default['wall_pressure_extrapolation'] = 'neumann'
         self.default['gradient_reconstruction'] = 0
         self.default['time_scheme_order'] = 1
@@ -103,6 +104,18 @@ class NumericalParamGlobalModel(Model):
         if not status:
             status = self._defaultValues()['velocity_pressure_coupling']
             self.setVelocityPressureCoupling(status)
+        return status
+
+
+    def getHydrostaticEquilibrium(self):
+        """
+        Return status of ICFGRP value (for hydrostatic equilibrium) is activated or not
+        """
+        node = self.node_np.xmlInitNode('hydrostatic_equilibrium', 'status')
+        status = node['status']
+        if not status:
+            status = self._defaultValues()['hydrostatic_equilibrium']
+            self.setHydrostaticEquilibrium(status)
         return status
 
 
@@ -224,6 +237,15 @@ class NumericalParamGlobalModel(Model):
         else:
             for node in node_ipucou.xmlGetNodeList('property'):
                 node.xmlRemoveNode()
+
+
+    def setHydrostaticEquilibrium(self, var):
+        """
+        Put status of hydrostatic equilibrium
+        """
+        self.isOnOff(var)
+        node = self.node_np.xmlInitNode('hydrostatic_equilibrium', 'status')
+        node['status'] = var
 
 
     def setHydrostaticPressure(self, var):

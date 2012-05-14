@@ -74,6 +74,13 @@ typedef struct {
   double     *timpat;      /* inlet temperature of oxydant (coal combustion)  */
   double    **qimpcp;      /* inlet coal flow rate (coal combustion)          */
   double    **timpcp;      /* inlet coal temperature (coal combustion)        */
+  int        *itype;       /* type of inlet/outlet (compressible model)       */
+  double     *prein;       /* inlet pressure (compressible model)             */
+  double     *rhoin;       /* inlet density  (compressible model)             */
+  double     *tempin;      /* inlet temperature (compressible model)          */
+  double     *entin;       /* inlet total energy (compressible model)         */
+  double     *denin;       /* inlet density for subsonic (compressible model) */
+  double     *preout;      /* outlet pressure for subsonic(compressible model)*/
   double     *dh;          /* inlet hydraulic diameter                        */
   double     *xintur;      /* inlet turbulent intensity                       */
   int       **type_code;   /* type of boundary for each variables             */
@@ -138,10 +145,19 @@ extern cs_boundary_t *boundaries;
  * INTEGER          NCLPCH  --> number of simulated class per coals
  * INTEGER          IINDEF  --> type of boundary: not defined
  * INTEGER          IENTRE  --> type of boundary: inlet
+ * INTEGER          IESICF  --> type of boundary: imposed inlet (compressible)
+ * INTEGER          ISSPCF  --> type of boundary: supersonic outlet (compressible)
+ * INTEGER          IERUCF  --> type of boundary: subsonic inlet (compressible)
+ * INTEGER          ISOPCF  --> type of boundary: subsonic outlet (compressible)
  * INTEGER          IPAROI  --> type of boundary: smooth wall
  * INTEGER          IPARUG  --> type of boundary: rough wall
  * INTEGER          ISYMET  --> type of boundary: symetry
  * INTEGER          ISOLIB  --> type of boundary: outlet
+ * INTEGER          ISCA    <-- indirection array for scalar number
+ * INTEGER          IPR     <-- rtp index for pressure
+ * INTEGER          IRHO    <-- rtp index for density
+ * INTEGER          ITEMPK  <-- rtp index for temperature (in K)
+ * INTEGER          IENERG  <-- rtp index for energy total
  * INTEGER          IQIMP   --> 1 if flow rate is applied
  * INTEGER          ICALKE  --> 1 for automatic turbulent boundary conditions
  * INTEGER          IENTAT  --> 1 for air temperature boundary conditions (coal)
@@ -174,10 +190,19 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                const    int *const nclpch,
                                const    int *const iindef,
                                const    int *const ientre,
+                               const    int *const iesicf,
+                               const    int *const isspcf,
+                               const    int *const ierucf,
+                               const    int *const isopcf,
                                const    int *const iparoi,
                                const    int *const iparug,
                                const    int *const isymet,
                                const    int *const isolib,
+                               const    int       *isca,
+                               const    int *const ipr,
+                               const    int *const irho,
+                               const    int *const itempk,
+                               const    int *const ienerg,
                                         int *const iqimp,
                                         int *const icalke,
                                         int *const ientat,
@@ -213,6 +238,10 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
  * INTEGER          NOZPPM  --> max number of boundary conditions zone
  * INTEGER          IINDEF  --> type of boundary: not defined
  * INTEGER          IENTRE  --> type of boundary: inlet
+ * INTEGER          IESICF  --> type of boundary: imposed inlet (compressible)
+ * INTEGER          ISSPCF  --> type of boundary: supersonic outlet (compressible)
+ * INTEGER          IERUCF  --> type of boundary: subsonic inlet (compressible)
+ * INTEGER          ISOPCF  --> type of boundary: subsonic outlet (compressible)
  * INTEGER          IPAROI  --> type of boundary: wall
  * INTEGER          IPARUG  --> type of boundary: wall with rugosity
  * INTEGER          ISYMET  --> type of boundary: symmetry
@@ -225,6 +254,10 @@ void CS_PROCF (uiclve, UICLVE) (const int *const nfabor,
                                 const int *const nozppm,
                                 const int *const iindef,
                                 const int *const ientre,
+                                const int *const iesicf,
+                                const int *const ierucf,
+                                const int *const isspcf,
+                                const int *const isopcf,
                                 const int *const iparoi,
                                 const int *const iparug,
                                 const int *const isymet,

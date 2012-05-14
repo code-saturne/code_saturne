@@ -51,6 +51,7 @@ from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.ElectricalModelsModel import ElectricalModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.LocalizationModel import LocalizationModel
+from Pages.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # Variables and Scalar model initialization modelling class
@@ -71,6 +72,8 @@ class InitializationModel(Model):
         self.node_veloce     = self.models.xmlGetNode('velocity_pressure')
         self.node_turb       = self.models.xmlGetNode('turbulence', 'model')
         self.node_therm      = self.models.xmlGetNode('thermal_scalar', 'model')
+        if CompressibleModel(self.case).getCompressibleModel() != 'off':
+            self.node_comp = self.models.xmlGetNode('compressible_model', 'model')
 
         self.VelocityList  = ('velocity_U', 'velocity_V', 'velocity_W')
         self.Turb_var_List = ('turb_k', 'turb_eps',
@@ -92,6 +95,7 @@ class InitializationModel(Model):
         default = {}
         default['init_mode_turb'] = "reference_value"
         default['velocity']       = 0.0
+        default['status']         = 'off'
 
         return default
 
@@ -257,6 +261,243 @@ omega = k^0.5/almax;"""
 
         formula = node.xmlGetString('formula', zone_id=zone)
         return formula
+
+
+    def getDensityStatus(self, zone):
+        """
+        Return status of Density for the initialisation
+        """
+        node = self.node_comp.xmlGetNode('scalar', name = 'Rho')
+        n = node.xmlInitNode('formula', 'status', zone_id = zone)
+        status = n['status']
+        if not status:
+            status = self.__defaultValues()['status']
+            self.setDensityStatus(zone, status)
+        return status
+
+
+    def setDensityStatus(self, zone, status):
+        """
+        Put status of Density for the initialisation
+        """
+        self.isOnOff(status)
+        node = self.node_comp.xmlGetNode('scalar', name = 'Rho')
+        n = node.xmlInitNode('formula', 'status', zone_id = zone)
+        n['status'] = status
+
+
+    def getTemperatureStatus(self, zone):
+        """
+        Return status of Temperature for the initialisation
+        """
+        node = self.node_comp.xmlGetNode('scalar', name = 'TempK')
+        n = node.xmlInitNode('formula', 'status', zone_id = zone)
+        status = n['status']
+        if not status:
+            status = self.__defaultValues()['status']
+            self.setTemperatureStatus(zone, status)
+        return status
+
+
+    def setTemperatureStatus(self, zone, status):
+        """
+        Put status of Temperature for the initialisation
+        """
+        self.isOnOff(status)
+        node = self.node_comp.xmlGetNode('scalar', name = 'TempK')
+        n = node.xmlInitNode('formula', 'status', zone_id = zone)
+        n['status'] = status
+
+
+    def getEnergyStatus(self, zone):
+        """
+        Return status of total energy for the initialisation
+        """
+        node = self.node_comp.xmlGetNode('scalar', name = 'EnergieT')
+        n = node.xmlInitNode('formula', 'status', zone_id = zone)
+        status = n['status']
+        if not status:
+            status = self.__defaultValues()['status']
+            self.setEnergyStatus(zone, status)
+        return status
+
+
+    def setEnergyStatus(self, zone, status):
+        """
+        Put status of Energy for the initialisation
+        """
+        self.isOnOff(status)
+        node = self.node_comp.xmlGetNode('scalar', name = 'EnergieT')
+        n = node.xmlInitNode('formula', 'status', zone_id = zone)
+        n['status'] = status
+
+
+    def getPressureStatus(self, zone):
+        """
+        Return status of pressure for the initialisation
+        """
+        node = self.node_veloce.xmlGetNode('variable', name = 'pressure')
+        n = node.xmlInitNode('formula', 'status', zone_id = zone)
+        status = n['status']
+        if not status:
+            status = self.__defaultValues()['status']
+            self.setPressureStatus(zone, status)
+        return status
+
+
+    def setPressureStatus(self, zone, status):
+        """
+        Put status of pressure for the initialisation
+        """
+        self.isOnOff(status)
+        node = self.node_veloce.xmlGetNode('variable', name = 'pressure')
+        n = node.xmlInitNode('formula', 'status', zone_id = zone)
+        n['status'] = status
+
+
+    def setPressureFormula(self, zone, formula):
+        """
+        Public method.
+        Set the formula for Pressure.
+        """
+        self.__verifyZone(zone)
+        node = self.node_veloce.xmlGetNode('variable', name = 'pressure')
+
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = node.xmlGetNode('formula', zone_id = zone)
+        n.xmlSetTextNode(formula)
+
+
+    def getPressureFormula(self, zone):
+        """
+        Public method.
+        Return the formula for pressure.
+        """
+        self.__verifyZone(zone)
+        node = self.node_veloce.xmlGetNode('variable', name = 'pressure')
+
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+
+        formula = node.xmlGetString('formula', zone_id=zone)
+        return formula
+
+
+    def setDensityFormula(self, zone, formula):
+        """
+        Public method.
+        Set the formula for density.
+        """
+        self.__verifyZone(zone)
+        node = self.node_comp.xmlGetNode('scalar', name = 'Rho')
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = node.xmlGetNode('formula', zone_id = zone)
+        n.xmlSetTextNode(formula)
+
+
+    def getDensityFormula(self, zone):
+        """
+        Public method.
+        Return the formula for density.
+        """
+        self.__verifyZone(zone)
+        node = self.node_comp.xmlGetNode('scalar', name = 'Rho')
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+
+        formula = node.xmlGetString('formula', zone_id=zone)
+        return formula
+
+
+    def setTemperatureFormula(self, zone, formula):
+        """
+        Public method.
+        Set the formula for temperature.
+        """
+        self.__verifyZone(zone)
+        node = self.node_comp.xmlGetNode('scalar', name = 'TempK')
+
+
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = node.xmlGetNode('formula', zone_id = zone)
+        n.xmlSetTextNode(formula)
+
+
+    def getTemperatureFormula(self, zone):
+        """
+        Public method.
+        Return the formula for temperature.
+        """
+        self.__verifyZone(zone)
+        node = self.node_comp.xmlGetNode('scalar', name = 'TempK')
+
+
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+
+        formula = node.xmlGetString('formula', zone_id=zone)
+        return formula
+
+
+
+
+    def setEnergyFormula(self, zone, formula):
+        """
+        Public method.
+        Set the formula for totale energy.
+        """
+        self.__verifyZone(zone)
+        node = self.node_comp.xmlGetNode('scalar', name = 'EnergieT')
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = node.xmlGetNode('formula', zone_id = zone)
+        n.xmlSetTextNode(formula)
+
+
+    def getEnergyFormula(self, zone):
+        """
+        Public method.
+        Return the formula for energy.
+        """
+        self.__verifyZone(zone)
+        node = self.node_comp.xmlGetNode('scalar', name = 'EnergieT')
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+
+        formula = node.xmlGetString('formula', zone_id=zone)
+        return formula
+
+
+    def getCheckedBoxList(self,zone):
+        """
+        Public method.
+        return a list of selected variable for initialisation
+        """
+        box_list = []
+        status = self.getPressureStatus(zone)
+        if status == 'on':
+            box_list.append('Pressure')
+        status = self.getDensityStatus(zone)
+        if status == 'on':
+            box_list.append('Density')
+        status = self.getTemperatureStatus(zone)
+        if status == 'on':
+            box_list.append('Temperature')
+        status = self.getEnergyStatus(zone)
+        if status == 'on':
+            box_list.append('Energy')
+        return box_list
 
 
     def setSpeciesFormula(self, zone, species, formula):

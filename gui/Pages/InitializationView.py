@@ -54,7 +54,7 @@ from Pages.GasCombustionModel import GasCombustionModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
 from Pages.InitializationModel import InitializationModel
-from Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from Pages.CompressibleModel import CompressibleModel
 from Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
@@ -88,6 +88,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.turb    = TurbulenceModel(self.case)
         self.therm   = ThermalScalarModel(self.case)
         self.th_sca  = DefineUserScalarsModel(self.case)
+        self.comp    = CompressibleModel(self.case)
         self.volzone = LocalizationModel('VolumicZone', self.case)
 
         # create group to control hide/show options
@@ -96,10 +97,15 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.thermal_group = [self.labelThermal, self.pushButtonThermal]
         self.species_group = [self.labelSpecies, self.comboBoxSpecies, self.pushButtonSpecies]
         self.meteo_group =   [self.labelMeteo, self.comboBoxMeteo, self.pushButtonMeteo]
+        self.thermodynamic_list = ['Pressure', 'Density', 'Temperature', 'Energy']
 
         # 1/ Combo box models
 
         self.modelZone = ComboModel(self.comboBoxZone, 1, 1)
+        if self.comp.getCompressibleModel() != 'off':
+            self.groupBoxThermodynamic.show()
+        else:
+            self.groupBoxThermodynamic.hide()
 
         self.zone = ""
         zones = self.volzone.getZones()
@@ -125,11 +131,19 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.connect(self.comboBoxTurbulence,   SIGNAL("activated(const QString&)"),   self.slotChoice)
         self.connect(self.comboBoxSpecies,      SIGNAL("activated(const QString&)"),   self.slotSpeciesChoice)
         self.connect(self.comboBoxMeteo,        SIGNAL("activated(const QString&)"),   self.slotMeteoChoice)
+        self.connect(self.checkBoxPressure,     SIGNAL("clicked()"),                   self.slotPressure)
+        self.connect(self.checkBoxDensity,      SIGNAL("clicked()"),                   self.slotDensity)
+        self.connect(self.checkBoxTemperature,  SIGNAL("clicked()"),                   self.slotTemperature)
+        self.connect(self.checkBoxEnergy,       SIGNAL("clicked()"),                   self.slotEnergy)
         self.connect(self.pushButtonVelocity,   SIGNAL("clicked()"),                   self.slotVelocityFormula)
         self.connect(self.pushButtonThermal,    SIGNAL("clicked()"),                   self.slotThermalFormula)
         self.connect(self.pushButtonTurbulence, SIGNAL("clicked()"),                   self.slotTurbulenceFormula)
         self.connect(self.pushButtonSpecies,    SIGNAL("clicked()"),                   self.slotSpeciesFormula)
         self.connect(self.pushButtonMeteo,      SIGNAL("clicked()"),                   self.slotMeteoFormula)
+        self.connect(self.pushButtonPressure,   SIGNAL("clicked()"),                   self.slotPressureFormula)
+        self.connect(self.pushButtonDensity,    SIGNAL("clicked()"),                   self.slotDensityFormula)
+        self.connect(self.pushButtonTemperature,SIGNAL("clicked()"),                   self.slotTemperatureFormula)
+        self.connect(self.pushButtonEnergy,     SIGNAL("clicked()"),                   self.slotEnergyFormula)
 
         # Define thermal variable if needed
         th_sca_label = ''
@@ -524,6 +538,233 @@ nusa = (cmu * k)/eps;;"""
             setGreenColor(self.sender(), False)
 
 
+    @pyqtSignature("")
+    def slotPressure(self):
+        """
+        Pressure selected or not for the initialisation.
+        """
+        if self.checkBoxPressure.isChecked():
+            self.init.setPressureStatus(self.zone,"on")
+            box_list = self.init.getCheckedBoxList(self.zone)
+            self.pushButtonPressure.setEnabled(True)
+            setGreenColor(self.pushButtonPressure,True)
+            if len(box_list) == 2:
+                for name in self.thermodynamic_list:
+                    if name not in box_list:
+                        __checkBox = getattr(self, "checkBox" + name)
+                        __checkBox.setEnabled(False)
+        else:
+            self.init.setPressureStatus(self.zone,"off")
+            box_list = self.init.getCheckedBoxList(self.zone)
+            self.pushButtonPressure.setEnabled(False)
+            setGreenColor(self.pushButtonPressure,False)
+            if len(box_list) == 1:
+                for name in self.thermodynamic_list:
+                    if name != 'Pressure':
+                        __checkBox = getattr(self, "checkBox" + name)
+                        __checkBox.setEnabled(True)
+                if box_list[0] =='Energy':
+                    self.checkBoxTemperature.setEnabled(False)
+                if box_list[0] =='Temperature':
+                    self.checkBoxEnergy.setEnabled(False)
+
+
+    @pyqtSignature("")
+    def slotDensity(self):
+        """
+        Density selected or not for the initialisation.
+        """
+        if self.checkBoxDensity.isChecked():
+            self.init.setDensityStatus(self.zone,"on")
+            box_list = self.init.getCheckedBoxList(self.zone)
+            self.pushButtonDensity.setEnabled(True)
+            setGreenColor(self.pushButtonDensity,True)
+            if len(box_list) == 2:
+                for name in self.thermodynamic_list:
+                    if name not in box_list:
+                        __checkBox = getattr(self, "checkBox" + name)
+                        __checkBox.setEnabled(False)
+        else:
+            self.init.setDensityStatus(self.zone,"off")
+            box_list = self.init.getCheckedBoxList(self.zone)
+            self.pushButtonDensity.setEnabled(False)
+            setGreenColor(self.pushButtonDensity,False)
+            if len(box_list) == 1:
+                for name in self.thermodynamic_list:
+                    if name != 'Density':
+                        __checkBox = getattr(self, "checkBox" + name)
+                        __checkBox.setEnabled(True)
+                if box_list[0] =='Energy':
+                    self.checkBoxTemperature.setEnabled(False)
+                if box_list[0] =='Temperature':
+                    self.checkBoxEnergy.setEnabled(False)
+
+
+    @pyqtSignature("")
+    def slotTemperature(self):
+        """
+        Temperature selected or not for the initialisation.
+        """
+        if self.checkBoxTemperature.isChecked():
+            self.init.setTemperatureStatus(self.zone,"on")
+            box_list = self.init.getCheckedBoxList(self.zone)
+            self.pushButtonTemperature.setEnabled(True)
+            setGreenColor(self.pushButtonTemperature,True)
+            if len(box_list) == 2:
+                for name in self.thermodynamic_list:
+                    if name not in box_list:
+                        __checkBox = getattr(self, "checkBox" + name)
+                        __checkBox.setEnabled(False)
+            self.checkBoxEnergy.setEnabled(False)
+        else:
+            self.init.setTemperatureStatus(self.zone,"off")
+            box_list = self.init.getCheckedBoxList(self.zone)
+            self.pushButtonTemperature.setEnabled(False)
+            setGreenColor(self.pushButtonTemperature,False)
+            if len(box_list) == 1:
+                for name in self.thermodynamic_list:
+                    if name != 'Temperature':
+                        __checkBox = getattr(self, "checkBox" + name)
+                        __checkBox.setEnabled(True)
+            self.checkBoxEnergy.setEnabled(True)
+
+
+    @pyqtSignature("")
+    def slotEnergy(self):
+        """
+        Energy selected or not for the initialisation.
+        """
+        if self.checkBoxEnergy.isChecked():
+            self.init.setEnergyStatus(self.zone,"on")
+            box_list = self.init.getCheckedBoxList(self.zone)
+            self.pushButtonEnergy.setEnabled(True)
+            setGreenColor(self.pushButtonEnergy,True)
+            if len(box_list) == 2:
+                for name in self.thermodynamic_list:
+                    if name not in box_list:
+                        __checkBox = getattr(self, "checkBox" + name)
+                        __Button = getattr(self, "pushButton" + name)
+                        __checkBox.setEnabled(False)
+                        __Button.setEnabled(False)
+                        setGreenColor(__Button,False)
+            if len(box_list) == 1:
+                self.checkBoxTemperature.setEnabled(False)
+        else:
+            self.init.setEnergyStatus(self.zone,"off")
+            box_list = self.init.getCheckedBoxList(self.zone)
+            self.pushButtonEnergy.setEnabled(False)
+            setGreenColor(self.pushButtonEnergy,False)
+            if len(box_list) == 1:
+                for name in self.thermodynamic_list:
+                    if name != 'Energy':
+                        __checkBox = getattr(self, "checkBox" + name)
+                        __Button = getattr(self, "pushButton" + name)
+                        __checkBox.setEnabled(True)
+                        __Button.setEnabled(False)
+                        setGreenColor(__Button,False)
+            self.checkBoxTemperature.setEnabled(True)
+
+
+
+    @pyqtSignature("constQStrinq&")
+    def slotPressureFormula(self):
+        """
+        Input the initial Pressure formula
+        """
+        exp = self.init.getPressureFormula(self.zone)
+        if not exp:
+            exp = """P = 0;\n"""
+        exa = """#example: """
+        req = [('P', 'pressure')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+        dialog = QMeiEditorView(self,expression = exp,
+                                 required   = req,
+                                 symbols    = sym,
+                                 examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotPressureFormula -> %s" % str(result))
+            self.init.setPressureFormula(self.zone, result)
+            setGreenColor(self.pushButtonPressure, False)
+
+
+
+    @pyqtSignature("constQStrinq&")
+    def slotDensityFormula(self):
+        """
+        Input the initial Density formula
+        """
+        exp = self.init.getDensityFormula(self.zone)
+        if not exp:
+            exp = """rho = 0;\n"""
+        exa = """#example: """
+        req = [('rho', 'density')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+        dialog = QMeiEditorView(self,expression = exp,
+                                 required   = req,
+                                 symbols    = sym,
+                                 examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotDensityFormula -> %s" % str(result))
+            self.init.setDensityFormula(self.zone, result)
+            setGreenColor(self.pushButtonDensity, False)
+
+
+
+    @pyqtSignature("constQStrinq&")
+    def slotTemperatureFormula(self):
+        """
+        Input the initial Temperature formula
+        """
+        exp = self.init.getTemperatureFormula(self.zone)
+        if not exp:
+            exp = """T = 0;\n"""
+        exa = """#example: """
+        req = [('T', 'temperature')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+        dialog = QMeiEditorView(self,expression = exp,
+                                 required   = req,
+                                 symbols    = sym,
+                                 examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotTemperatureFormula -> %s" % str(result))
+            self.init.setTemperatureFormula(self.zone, result)
+            setGreenColor(self.pushButtonTemperature, False)
+
+
+
+    @pyqtSignature("constQStrinq&")
+    def slotEnergyFormula(self):
+        """
+        Input the initial Energy formula
+        """
+        exp = self.init.getEnergyFormula(self.zone)
+        if not exp:
+            exp = """E = 0;\n"""
+        exa = """#example: """
+        req = [('E', 'Energy')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+        dialog = QMeiEditorView(self,expression = exp,
+                                 required   = req,
+                                 symbols    = sym,
+                                 examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotEnergyFormula -> %s" % str(result))
+            self.init.setEnergyFormula(self.zone, result)
+            setGreenColor(self.pushButtonEnergy, False)
+
+
     def initializeVariables(self, zone):
         """
         Initialize variables when a new volumic zone is choosen
@@ -581,6 +822,52 @@ nusa = (cmu * k)/eps;;"""
                 th_formula = self.th_sca_label+""" = 0;\n"""
             self.init.setThermalFormula(zone, self.th_sca_label, th_formula)
             setGreenColor(self.pushButtonThermal, True)
+
+        # Initialisation of the termodynamics values for the compressible model
+        if self.comp.getCompressibleModel() != 'off':
+            nb_box = 0
+            box_list = self.init.getCheckedBoxList(self.zone)
+            if box_list == []:
+                for name in self.thermodynamic_list:
+                    __checkBox = getattr(self, "checkBox" + name)
+                    __Button = getattr(self, "pushButton" + name)
+                    __checkBox.setChecked(False)
+                    __Button.setEnabled(False)
+                    setGreenColor(__Button, False)
+            elif len(box_list) == 1:
+                box = box_list[0]
+                for name in self.thermodynamic_list:
+                    if name != box:
+                        __checkBox = getattr(self, "checkBox" + name)
+                        __Button = getattr(self, "pushButton" + name)
+                        __checkBox.setChecked(False)
+                        __Button.setEnabled(False)
+                        setGreenColor(__Button,False)
+                if box == 'Temperature':
+                    self.checkBoxEnergy.setEnabled(False)
+                elif box == 'Energy':
+                    self.checkBoxTemperature.setEnabled(False)
+                __checkBox = getattr(self, "checkBox" + box)
+                __checkBox.setChecked(True)
+                __Button = getattr(self, "pushButton" + box)
+                __Button.setEnabled(True)
+                setGreenColor(__Button, True)
+            elif len(box_list) == 2:
+                box1 = box_list[0]
+                box2 = box_list[1]
+                for name in self.thermodynamic_list:
+                    if name not in box_list:
+                        __checkBox = getattr(self, "checkBox" + name)
+                        __Button = getattr(self, "pushButton" + name)
+                        __checkBox.setChecked(False)
+                        __checkBox.setEnabled(False)
+                        __Button.setEnabled(False)
+                for name in box_list:
+                    __checkBox = getattr(self, "checkBox" + name)
+                    __Button = getattr(self, "pushButton" + name)
+                    __checkBox.setChecked(True)
+                    __Button.setEnabled(True)
+                    setGreenColor(__Button, True)
 
 
     def tr(self, text):

@@ -70,6 +70,7 @@ BEGIN_C_DECLS
  * INTEGER          IAEROS  --> cooling tower
  * INTEGER          INDJON  --> INDJON=1: a JANAF enthalpy-temperature
  *                              tabulation is used. INDJON=1: users tabulation
+ * INTEGER          IEOS    --> compressible
  * INTEGER          IEQCO2  --> CO2 massic fraction transport
  *
  *----------------------------------------------------------------------------*/
@@ -90,6 +91,7 @@ void CS_PROCF (uippmo, UIPPMO) (int *const ippmod,
                                 int *const iatmos,
                                 int *const iaeros,
                                 int *const indjon,
+                                int *const ieos,
                                 int *const ieqco2);
 
 /*----------------------------------------------------------------------------
@@ -157,6 +159,14 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                                 const int *const igmhet,
                                 const int *const ighco2,
                                 const int *const igmsec);
+
+/*----------------------------------------------------------------------------
+ * Pointers definition for scalars for compressible model
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uicfsc, UICFSC) (const int *const irho,
+                                const int *const ienerg,
+                                const int *const itempk);
 
 /*----------------------------------------------------------------------------
  * Atmospheric flows: read of meteorological file of data

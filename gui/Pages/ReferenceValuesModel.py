@@ -48,6 +48,7 @@ from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.GasCombustionModel import GasCombustionModel
 from Pages.ElectricalModelsModel import ElectricalModel
 from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from Pages.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # Reference values model class
@@ -70,6 +71,7 @@ class ReferenceValuesModel(Model):
         self.node_gas       = self.node_models.xmlGetNode('gas_combustion',  'model')
         self.node_joule     = self.node_models.xmlGetNode('joule_effect',  'model')
         self.node_atmo      = self.node_models.xmlGetNode('atmospheric_flows',  'model')
+        self.node_comp      = self.node_models.xmlGetNode('compressible',  'model')
 
 
     def defaultValues(self):
@@ -138,6 +140,8 @@ class ReferenceValuesModel(Model):
 
         node_init = self.node_reference.xmlInitNode('length')
         node_init['choice'] = choice
+        if choice == 'automatic':
+            self.node_reference.xmlRemoveChild('length')
 
 
     def getLengthChoice(self):
@@ -220,6 +224,7 @@ class ReferenceValuesModel(Model):
         gasModel = GasCombustionModel(self.case).getGasCombustionModel()
         jouleModel = ElectricalModel(self.case).getElectricalModel()
         atmoModel = AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel()
+        compModel = CompressibleModel(self.case).getCompressibleModel()
 
         if coalModel != 'off':
             model = "coal"
@@ -229,6 +234,8 @@ class ReferenceValuesModel(Model):
             model = "joule"
         elif atmoModel != 'off':
             model = "atmo"
+        elif compModel != 'off':
+            model = "comp"
 
         return model
 

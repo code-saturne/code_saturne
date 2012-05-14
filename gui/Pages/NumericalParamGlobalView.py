@@ -49,6 +49,7 @@ from Pages.NumericalParamGlobalForm import Ui_NumericalParamGlobalForm
 import Base.QtPage as QtPage
 from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
 from Pages.SteadyManagementModel import SteadyManagementModel
+from Pages.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -107,6 +108,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         # Connections
         self.connect(self.checkBoxIVISSE, SIGNAL("clicked()"), self.slotIVISSE)
         self.connect(self.checkBoxIPUCOU, SIGNAL("clicked()"), self.slotIPUCOU)
+        self.connect(self.checkBoxICFGRP, SIGNAL("clicked()"), self.slotICFGRP)
         self.connect(self.checkBoxImprovedPressure, SIGNAL("clicked()"), self.slotImprovedPressure)
         self.connect(self.comboBoxEXTRAG, SIGNAL("activated(const QString&)"), self.slotEXTRAG)
         self.connect(self.lineEditRELAXP, SIGNAL("textChanged(const QString &)"), self.slotRELAXP)
@@ -132,6 +134,20 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.checkBoxIPUCOU.setChecked(True)
         else:
             self.checkBoxIPUCOU.setChecked(False)
+
+        status_compressible = CompressibleModel(self.case).getCompressibleModel()
+        if status_compressible != 'off':
+            self.labelICFGRP.show()
+            self.checkBoxICFGRP.show()
+            self.line_4.show()
+            if self.model.getHydrostaticEquilibrium() == 'on':
+                self.checkBoxICFGRP.setChecked(True)
+            else:
+                self.checkBoxICFGRP.setChecked(False)
+        else:
+            self.labelICFGRP.hide()
+            self.checkBoxICFGRP.hide()
+            self.line_4.hide()
 
         if self.model.getHydrostaticPressure() == 'on':
             self.checkBoxImprovedPressure.setChecked(True)
@@ -192,6 +208,17 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.model.setVelocityPressureCoupling("on")
         else:
             self.model.setVelocityPressureCoupling("off")
+
+
+    @pyqtSignature("")
+    def slotICFGRP(self):
+        """
+        Set value for parameter IPUCOU
+        """
+        if self.checkBoxICFGRP.isChecked():
+            self.model.setHydrostaticEquilibrium("on")
+        else:
+            self.model.setHydrostaticEquilibrium("off")
 
 
     @pyqtSignature("")

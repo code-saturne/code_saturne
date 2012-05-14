@@ -600,6 +600,159 @@ _inlet_coal(const int         izone,
     }
 }
 
+
+/*-----------------------------------------------------------------------------
+ * Get compressible data for inlet.
+ *
+ * parameters:
+ *   izone       -->  number of the current zone
+ *----------------------------------------------------------------------------*/
+
+static void
+_inlet_compressible(const    int                izone,
+                    const    int *const         iesicf,
+                    const    int *const         ierucf)
+{
+    double value;
+    char  *buff  = NULL;
+    char  *status  = NULL;
+    char  *path0 = NULL;
+    char  *path1 = NULL;
+    char  *path_value = NULL;
+    char  *path2 = NULL;
+    char  *path3 = NULL;
+    char  *path4 = NULL;
+
+    path0 = cs_xpath_init_path();
+    cs_xpath_add_elements(&path0, 2, "boundary_conditions", "inlet");
+    cs_xpath_add_test_attribute(&path0, "label", boundaries->label[izone]);
+    cs_xpath_add_element(&path0, "velocity_pressure");
+    BFT_MALLOC(path1, strlen(path0) + 1, char);
+    strcpy(path1, path0);
+    BFT_MALLOC(path2, strlen(path0) + 1, char);
+    strcpy(path2, path0);
+    BFT_MALLOC(path3, strlen(path0) + 1, char);
+    strcpy(path3, path0);
+    BFT_MALLOC(path4, strlen(path0) + 1, char);
+    strcpy(path4, path0);
+    cs_xpath_add_element(&path0, "compressible_type");
+    cs_xpath_add_attribute(&path0, "choice");
+    buff = cs_gui_get_attribute_value(path0);
+
+    if (cs_gui_strcmp(buff, "imposed_inlet")) {
+        boundaries->itype[izone] = *iesicf;
+        cs_xpath_add_element(&path1, "pressure");
+        BFT_MALLOC(path_value, strlen(path1) + 1, char);
+        strcpy(path_value, path1);
+        cs_xpath_add_attribute(&path1, "status");
+        status = cs_gui_get_attribute_value(path1);
+        if (cs_gui_strcmp(status, "on")){
+            cs_xpath_add_function_text(&path_value);
+            if (cs_gui_get_double(path_value, &value))
+                boundaries->prein[izone] = value;
+        }
+        BFT_FREE(status);
+        BFT_FREE(path_value);
+
+        cs_xpath_add_element(&path2, "density");
+        BFT_MALLOC(path_value, strlen(path2) + 1, char);
+        strcpy(path_value, path2);
+        cs_xpath_add_attribute(&path2, "status");
+        status = cs_gui_get_attribute_value(path2);
+        if (cs_gui_strcmp(status, "on")){
+            cs_xpath_add_function_text(&path_value);
+            if (cs_gui_get_double(path_value, &value))
+                boundaries->rhoin[izone] = value;
+        }
+        BFT_FREE(status);
+        BFT_FREE(path_value);
+
+        cs_xpath_add_element(&path3, "temperature");
+        BFT_MALLOC(path_value, strlen(path3) + 1, char);
+        strcpy(path_value, path3);
+        cs_xpath_add_attribute(&path3, "status");
+        status = cs_gui_get_attribute_value(path3);
+        if (cs_gui_strcmp(status, "on")){
+            cs_xpath_add_function_text(&path_value);
+            if (cs_gui_get_double(path_value, &value))
+                boundaries->tempin[izone] = value;
+        }
+        BFT_FREE(status);
+        BFT_FREE(path_value);
+
+        cs_xpath_add_element(&path4, "energy");
+        BFT_MALLOC(path_value, strlen(path4) + 1, char);
+        strcpy(path_value, path4);
+        cs_xpath_add_attribute(&path4, "status");
+        status = cs_gui_get_attribute_value(path4);
+        if (cs_gui_strcmp(status, "on")){
+            cs_xpath_add_function_text(&path_value);
+            if (cs_gui_get_double(path_value, &value))
+                boundaries->entin[izone] = value;
+        }
+        BFT_FREE(status);
+        BFT_FREE(path_value);
+    }
+    else if (cs_gui_strcmp(buff, "subsonic_inlet")){
+        boundaries->itype[izone] = *ierucf;
+        cs_xpath_add_element(&path1, "density");
+        cs_xpath_add_function_text(&path1);
+        if (cs_gui_get_double(path1, &value))
+            boundaries->denin[izone] = value;
+    }
+    BFT_FREE(path0);
+    BFT_FREE(path1);
+    BFT_FREE(path2);
+    BFT_FREE(path3);
+    BFT_FREE(path4);
+    BFT_FREE(buff);
+
+}
+
+/*-----------------------------------------------------------------------------
+ * Get compressible data for inlet.
+ *
+ * parameters:
+ *   izone       -->  number of the current zone
+ *----------------------------------------------------------------------------*/
+
+static void
+_outlet_compressible(const   int                izone,
+                    const    int *const         isspcf,
+                    const    int *const         isopcf)
+{
+    double value;
+    char  *buff  = NULL;
+    char  *path0 = NULL;
+    char  *path1 = NULL;
+
+    path0 = cs_xpath_init_path();
+    cs_xpath_add_elements(&path0, 2, "boundary_conditions", "outlet");
+    cs_xpath_add_test_attribute(&path0, "label", boundaries->label[izone]);
+    BFT_MALLOC(path1, strlen(path0) + 1, char);
+    strcpy(path1, path0);
+    cs_xpath_add_element(&path0, "compressible_type");
+    cs_xpath_add_attribute(&path0, "choice");
+    buff = cs_gui_get_attribute_value(path0);
+
+    if (cs_gui_strcmp(buff, "supersonic_outlet")){
+        boundaries->itype[izone] = *isspcf;
+    }
+    else if (cs_gui_strcmp(buff, "subsonic_outlet")){
+        boundaries->itype[izone] = *isopcf;
+        cs_xpath_add_element(&path1, "dirichlet");
+        cs_xpath_add_test_attribute(&path1, "name", "pressure");
+        cs_xpath_add_function_text(&path1);
+        if (cs_gui_get_double(path1, &value))
+            boundaries->preout[izone] = value;
+    }
+
+    BFT_FREE(path0);
+    BFT_FREE(path1);
+    BFT_FREE(buff);
+
+}
+
 /*-----------------------------------------------------------------------------
  * Initialize mei tree and check for symbols existence
  *
@@ -649,6 +802,10 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
  *   ncharb               <--  number of simulated coals
  *   nclpch               <--  number of simulated class per coals
  *   izfppp               <--  zone number for each boundary face
+ *   iesicf               <-- type of boundary: imposed inlet (compressible)
+ *   isspcf               <-- type of boundary: supersonic outlet (compressible)
+ *   ierucf               <-- type of boundary: subsonic inlet (compressible)
+ *   isopcf               <-- type of boundary: subsonic outlet (compressible)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -656,7 +813,11 @@ _init_boundaries(const int *const nfabor,
                  const int *const nozppm,
                  const int *const ncharb,
                  const int *const nclpch,
-                       int *const izfppp)
+                       int *const izfppp,
+                 const int *const iesicf,
+                 const int *const isspcf,
+                 const int *const ierucf,
+                 const int *const isopcf)
 {
     int faces = 0;
     int zones = 0;
@@ -717,6 +878,16 @@ _init_boundaries(const int *const nfabor,
                            double);
         }
     }
+    else if (cs_gui_strcmp(vars->model, "compressible_model"))
+    {
+        BFT_MALLOC(boundaries->itype,  zones, int      );
+        BFT_MALLOC(boundaries->prein,   zones, double   );
+        BFT_MALLOC(boundaries->rhoin,   zones, double   );
+        BFT_MALLOC(boundaries->tempin,  zones, double   );
+        BFT_MALLOC(boundaries->entin,   zones, double   );
+        BFT_MALLOC(boundaries->preout , zones, double   );
+        BFT_MALLOC(boundaries->denin , zones, double    );
+    }
     else
     {
         boundaries->ientat = NULL;
@@ -771,6 +942,16 @@ _init_boundaries(const int *const nfabor,
                 for (iclass = 0; iclass < nclpch[icharb]; iclass++)
                     boundaries->distch[izone][icharb][iclass] = 0;
             }
+        }
+        else if (cs_gui_strcmp(vars->model, "compressible_model"))
+        {
+            boundaries->itype[izone]     = 0;
+            boundaries->prein[izone]     = 0;
+            boundaries->rhoin[izone]     = 0;
+            boundaries->tempin[izone]    = 0;
+            boundaries->preout[izone]    = 0;
+            boundaries->denin[izone]     = 0;
+            boundaries->entin[izone]     = 0;
         }
         else if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
         {
@@ -873,6 +1054,12 @@ _init_boundaries(const int *const nfabor,
                 _inlet_coal(izone, ncharb, nclpch);
             }
 
+            /* Inlet: data for COMPRESSIBLE MODEL */
+            if (cs_gui_strcmp(vars->model, "compressible_model"))
+            {
+                _inlet_compressible(izone, iesicf, ierucf);
+            }
+
             /* Inlet: data for ATMOSPHERIC FLOWS */
             if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
             {
@@ -938,6 +1125,9 @@ _init_boundaries(const int *const nfabor,
                 for (isca = 0; isca < vars->nscapp; isca++)
                     _boundary_scalar("outlet", izone, isca+vars->nscaus);
 
+            /* Inlet: data for COMPRESSIBLE MODEL */
+            if (cs_gui_strcmp(vars->model, "compressible_model"))
+                _outlet_compressible(izone, isspcf, isopcf);
         }  /* if (cs_gui_strcmp(nature, "outlet")) */
         BFT_FREE(nature);
         BFT_FREE(label);
@@ -1182,10 +1372,19 @@ cs_gui_get_faces_list(int          izone,
  * INTEGER          NCLPCH  <-- number of simulated class per coals
  * INTEGER          IINDEF  <-- type of boundary: not defined
  * INTEGER          IENTRE  <-- type of boundary: inlet
+ * INTEGER          IESICF  <-- type of boundary: imposed inlet (compressible)
+ * INTEGER          ISSPCF  <-- type of boundary: supersonic outlet (compressible)
+ * INTEGER          IERUCF  <-- type of boundary: subsonic inlet (compressible)
+ * INTEGER          ISOPCF  <-- type of boundary: subsonic outlet (compressible)
  * INTEGER          IPAROI  <-- type of boundary: smooth wall
  * INTEGER          IPARUG  <-- type of boundary: rough wall
  * INTEGER          ISYMET  <-- type of boundary: symetry
  * INTEGER          ISOLIB  <-- type of boundary: outlet
+ * INTEGER          ISCA    <-- indirection array for scalar number
+ * INTEGER          IPR     <-- rtp index for pressure
+ * INTEGER          IRHO    <-- rtp index for density
+ * INTEGER          ITEMPK  <-- rtp index for temperature (in K)
+ * INTEGER          IENERG  <-- rtp index for energy total
  * INTEGER          IQIMP   <-- 1 if flow rate is applied
  * INTEGER          ICALKE  <-- 1 for automatic turbulent boundary conditions
  * INTEGER          IENTAT  <-- 1 for air temperature boundary conditions (coal)
@@ -1218,10 +1417,19 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                const    int *const nclpch,
                                const    int *const iindef,
                                const    int *const ientre,
+                               const    int *const iesicf,
+                               const    int *const isspcf,
+                               const    int *const ierucf,
+                               const    int *const isopcf,
                                const    int *const iparoi,
                                const    int *const iparug,
                                const    int *const isymet,
                                const    int *const isolib,
+                               const    int       *isca,
+                               const    int *const ipr,
+                               const    int *const irho,
+                               const    int *const itempk,
+                               const    int *const ienerg,
                                         int *const iqimp,
                                         int *const icalke,
                                         int *const ientat,
@@ -1268,7 +1476,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
     /* First iteration only: memory allocation */
 
     if (boundaries == NULL)
-        _init_boundaries(nfabor, nozppm, ncharb, nclpch, izfppp);
+        _init_boundaries(nfabor, nozppm, ncharb, nclpch, izfppp, iesicf, isspcf, ierucf, isopcf);
 
     /* At each time-step, loop on boundary faces:
      One sets itypfb, rcodcl and icodcl thanks to the arrays
@@ -1318,6 +1526,26 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                             = boundaries->distch[izone][icharb][iclass];
                 }
             }
+            else if (cs_gui_strcmp(vars->model, "compressible_model"))
+            {
+                if (boundaries->itype[izone] == *iesicf) {
+                    for (ifac = 0; ifac < faces; ifac++)
+                    {
+                        ifbr = faces_list[ifac] -1;
+                        rcodcl[(*ipr-1) * (*nfabor) + ifbr] = boundaries->prein[izone];
+                        rcodcl[(isca[*irho-1]-1) * (*nfabor) + ifbr] = boundaries->rhoin[izone];
+                        rcodcl[(isca[*itempk-1]-1) * (*nfabor) + ifbr] = boundaries->tempin[izone];
+                        rcodcl[(isca[*ienerg-1]-1) * (*nfabor) + ifbr] = boundaries->entin[izone];
+                    }
+                }
+                if (boundaries->itype[izone] == *ierucf) {
+                    for (ifac = 0; ifac < faces; ifac++)
+                    {
+                        ifbr = faces_list[ifac] -1;
+                        rcodcl[(isca[*irho-1]-1) * (*nfabor) + ifbr] = boundaries->denin[izone];
+                    }
+                }
+            }
             else
             {
                 if (cs_gui_strcmp(choice_v, "flow1_formula") || cs_gui_strcmp(choice_v, "flow2_formula") )
@@ -1346,7 +1574,10 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
 
                 /* zone number and nature of boundary */
                 izfppp[ifbr] = zone_nbr;
-                itypfb[ifbr] = *ientre;
+                if (cs_gui_strcmp(vars->model, "compressible_model"))
+                    itypfb[ifbr] = boundaries->itype[izone];
+                else
+                    itypfb[ifbr] = *ientre;
 
                 /* dirichlet for turbulent variables and scalars */
 
@@ -1887,7 +2118,10 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
             {
                 ifbr = faces_list[ifac]-1;
                 izfppp[ifbr] = zone_nbr;
-                itypfb[ifbr] = *isolib;
+                if (cs_gui_strcmp(vars->model, "compressible_model"))
+                    itypfb[ifbr] = boundaries->itype[izone];
+                else
+                    itypfb[ifbr] = *isolib;
             }
 
             for (i = 0; i < vars->nvar; i++)
@@ -1931,6 +2165,17 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                     {
                         ifbr = faces_list[ifac]- 1;
                         itypfb[ifbr] = 0;
+                    }
+                }
+            }
+            else if (cs_gui_strcmp(vars->model, "compressible_model"))
+            {
+                if (boundaries->itype[izone] == *isopcf)
+                {
+                    for (ifac = 0; ifac < faces; ifac++)
+                    {
+                        ifbr = faces_list[ifac] -1;
+                        rcodcl[(*ipr-1) * (*nfabor) + ifbr] = boundaries->preout[izone];
                     }
                 }
             }
@@ -2022,6 +2267,23 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                       distch[iclass * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]);
                 }
             }
+            else if (cs_gui_strcmp(vars->model, "compressible_model"))
+            {
+                if (boundaries->itype[izone] == *iesicf)
+                {
+                    bft_printf("-----imposed_inlet\n");
+                    bft_printf("-----premin=%i \n",boundaries->prein[zone_nbr-1]);
+                    bft_printf("-----rhoin=%i \n",boundaries->rhoin[zone_nbr-1]);
+                    bft_printf("-----tempin=%i \n",boundaries->tempin[zone_nbr-1]);
+                    bft_printf("-----entin=%i \n",boundaries->entin[zone_nbr-1]);
+
+                }
+                if (boundaries->itype[izone] == *ierucf)
+                {
+                    bft_printf("-----subsonic_inlet\n");
+                    bft_printf("-----denin=%i \n",boundaries->denin[zone_nbr-1]);
+                }
+            }
             else
             {
                 bft_printf("-----iqimp=%i, qimp=%12.5e \n",
@@ -2068,6 +2330,10 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
  * INTEGER          NOZPPM  <-- max number of boundary conditions zone
  * INTEGER          IINDEF  <-- type of boundary: not defined
  * INTEGER          IENTRE  <-- type of boundary: inlet
+ * INTEGER          IESICF  --> type of boundary: imposed inlet (compressible)
+ * INTEGER          ISSPCF  --> type of boundary: supersonic outlet (compressible)
+ * INTEGER          IERUCF  --> type of boundary: subsonic inlet (compressible)
+ * INTEGER          ISOPCF  --> type of boundary: subsonic outlet (compressible)
  * INTEGER          IPAROI  <-- type of boundary: smooth wall
  * INTEGER          IPARUG  <-- type of boundary: rough wall
  * INTEGER          ISYMET  <-- type of boundary: symetry
@@ -2080,6 +2346,10 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
                                const int *const nozppm,
                                const int *const iindef,
                                const int *const ientre,
+                               const int *const iesicf,
+                               const int *const ierucf,
+                               const int *const isspcf,
+                               const int *const isopcf,
                                const int *const iparoi,
                                const int *const iparug,
                                const int *const isymet,
@@ -2171,6 +2441,17 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
                         inature2 = inature;
                 }
             }
+            else if (cs_gui_strcmp(cs_glob_var->model, "compressible_model"))
+            {
+                if (inature == *ientre  && inature2 == *iesicf)
+                    inature2 = inature;
+                if (inature == *ientre  && inature2 == *ierucf)
+                    inature2 = inature;
+                if (inature == *isolib  && inature2 == *isspcf)
+                    inature2 = inature;
+                if (inature == *isolib  && inature2 == *isopcf)
+                    inature2 = inature;
+            }
 
             if (inature2 != inature)
                 bft_error(__FILE__, __LINE__, 0,
@@ -2259,6 +2540,15 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
       BFT_FREE(boundaries->qimpcp);
       BFT_FREE(boundaries->timpcp);
       BFT_FREE(boundaries->distch);
+    }
+    if (cs_gui_strcmp(vars->model, "compressible_model")) {
+      BFT_FREE(boundaries->itype);
+      BFT_FREE(boundaries->prein);
+      BFT_FREE(boundaries->rhoin);
+      BFT_FREE(boundaries->tempin);
+      BFT_FREE(boundaries->entin);
+      BFT_FREE(boundaries->preout);
+      BFT_FREE(boundaries->denin);
     }
     if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
         BFT_FREE(boundaries->meteo);

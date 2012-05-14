@@ -160,6 +160,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.slidingWidget.setup(self.__case)
         self.velocityWidget.setup(self.__case)
         self.turbulenceWidget.setup(self.__case)
+        self.compressibleOutletWidget.setup(self.__case)
         self.coalWidget.setup(self.__case)
         self.meteoWidget.setup(self.__case, self.velocityWidget, self.turbulenceWidget)
         self.scalarsWidget.setup(self.__case)
@@ -225,6 +226,10 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.scalarsWidget.showWidget(boundary)
         self.mobileMeshWidget.showWidget(boundary)
         self.meteoWidget.showWidget(boundary)
+        if self.compressibleOutletWidget.getCompressibleModel() != "off":
+            self.compressibleOutletWidget.showWidget(boundary)
+        else:
+            self.compressibleOutletWidget.hideWidget()
         #self.pressureWidget.showWidget(boundary)
 
 
@@ -244,6 +249,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.velocityWidget.hideWidget()
         self.turbulenceWidget.hideWidget()
         self.coalWidget.hideWidget()
+        self.compressibleOutletWidget.hideWidget()
         self.meteoWidget.hideWidget()
         self.scalarsWidget.hideWidget()
         self.mobileMeshWidget.hideWidget()

@@ -65,6 +65,9 @@ class Boundary(object) :
             from Pages.CoalCombustionModel import CoalCombustionModel
             Model().isNotInList(CoalCombustionModel(case).getCoalCombustionModel(), ("off",))
             return CoalInletBoundary.__new__(CoalInletBoundary, label, case)
+        elif nature == 'compressible_outlet':
+            from Pages.CompressibleModel import CompressibleModel
+            return CompressibleOutletBoundary.__new__(CompressibleOutletBoundary, label, case)
         elif nature == 'outlet':
             return OutletBoundary.__new__(OutletBoundary, label, case)
         elif nature == 'symmetry':
@@ -98,6 +101,7 @@ class Boundary(object) :
 
         # Create nodes
         if nature not in ["coal_inlet",
+                          "compressible_outlet",
                           "radiative_wall",
                           "mobile_boundary",
                           "coupling_mobile_boundary",
@@ -108,6 +112,9 @@ class Boundary(object) :
         else:
             if nature == "coal_inlet":
                 self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', label = label)
+
+            elif nature == "compressible_outlet":
+                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('outlet', label = label)
 
             elif nature in ["radiative_wall",
                             "mobile_boundary",
@@ -199,6 +206,8 @@ class InletBoundary(Boundary):
         self._scalarChoicesList = ['dirichlet', 'neumann', 'exchange_coefficient',
                                    'dirichlet_formula', 'neumann_formula', 'exchange_coefficient_formula']
 
+        self.typeList = ['imposed_inlet', 'subsonic_inlet']
+
         self.th_model = ThermalScalarModel(self._case)
 
         # Initialize nodes if necessary
@@ -240,6 +249,12 @@ class InletBoundary(Boundary):
         dico['direction_formula'] = "dir_x = 1;\ndir_y = 0;\ndir_z = 0;\n"
         dico['scalar'] = 0.0
         dico['scalarChoice'] = 'dirichlet'
+        dico['pressure']    = 101300.
+        dico['density']     = 0.0
+        dico['temperature'] = 273.
+        dico['energy']      = 0.0
+        dico['status']      = 'off'
+        dico['compressible_type']   = 'imposed_inlet'
 
         return dico
 
@@ -688,6 +703,134 @@ omega = 0.;"""
         n = scalarNode.xmlSetData(choice, formula)
 
 
+    def getInletType(self):
+        """
+        Return type for velocities's boundary conditions for inlet gas combustion.
+        """
+        node = self.boundNode.xmlGetNode('velocity_pressure')
+        n = node.xmlInitNode('compressible_type')
+        type = n['choice']
+        if type == None:
+            type = self.__defaultValues()['compressible_type']
+            self.setInletType(type)
+        return type
+
+
+    def getThermoStatus(self, var):
+        """
+        Return status of var for the initialisation
+        """
+        node = self.boundNode.xmlGetNode('velocity_pressure')
+        n = node.xmlInitNode(var, 'status')
+        status = n['status']
+        if status == "":
+            status = self.__defaultValues()['status']
+            self.setThermoStatus(var, status)
+        return status
+
+
+    def setThermoStatus(self, var, status):
+        """
+        Put status of var for the initialisation
+        """
+        node = self.boundNode.xmlGetNode('velocity_pressure')
+        if status == 'off':
+            node.xmlRemoveChild(var)
+        n = node.xmlInitNode(var, 'status')
+        n['status'] = status
+
+
+    def setInletType(self, type):
+        """
+        Set type of inlet.
+        """
+        Model().isInList(type, self.typeList)
+        node = self.boundNode.xmlGetNode('velocity_pressure')
+        n= node.xmlInitNode('compressible_type')
+        old_model = n['choice']
+        if old_model != type and type == "subsonic_inlet":
+            n.xmlRemoveChild('pressure')
+            n.xmlRemoveChild('temperature')
+            n.xmlRemoveChild('energy')
+
+        n['choice'] = type
+
+    def getThermoValue(self, var):
+        """
+        Return value of the variable
+        """
+        n = self.boundNode.xmlGetNode('velocity_pressure')
+        value = n.xmlGetChildDouble(var, 'status')
+        if value == None:
+            value = self.__defaultValues()[var]
+            self.setThermoValue(var, value)
+
+        return value
+
+
+    def setThermoValue(self, var, value):
+        """
+        Set value of the variable
+        """
+        Model().isFloat(value)
+        node = self.boundNode.xmlInitNode('velocity_pressure')
+        node.xmlSetData(var, value)
+
+
+    def getCheckedBoxList(self):
+        """
+        Public method.
+        return a list of selected variable for initialisation
+        """
+        box_list = []
+        status = self.getThermoStatus('pressure')
+        if status == 'on':
+            box_list.append('Pressure')
+        status = self.getThermoStatus('density')
+        if status == 'on':
+            box_list.append('Density')
+        status = self.getThermoStatus('temperature')
+        if status == 'on':
+            box_list.append('Temperature')
+        status = self.getThermoStatus('energy')
+        if status == 'on':
+            box_list.append('Energy')
+        return box_list
+
+
+    def getListValue(self):
+        """
+        Public method.
+        return a list of value for initialisation
+        """
+        value_list = []
+        status = self.getThermoStatus('pressure')
+        if status == 'on':
+            value_list.append(self.getThermoValue('pressure'))
+        status = self.getThermoStatus('density')
+        if status == 'on':
+            value_list.append(self.getThermoValue('density'))
+        status = self.getThermoStatus('temperature')
+        if status == 'on':
+            value_list.append(self.getThermoValue('temperature'))
+        status = self.getThermoStatus('energy')
+        if status == 'on':
+            value_list.append(self.getThermoValue('energy'))
+
+        return value_list
+
+
+    def deleteCompressibleInlet(self):
+        """
+        Delete all information of compressible model in boundary conditions.
+        """
+        n = self.boundNode.xmlGetNode('velocity_pressure')
+        n.xmlRemoveChild('compressible_type')
+        n.xmlRemoveChild('density')
+        n.xmlRemoveChild('pressure')
+        n.xmlRemoveChild('temperature')
+        n.xmlRemoveChild('energy')
+
 #-------------------------------------------------------------------------------
 # Atmospheric flow inlet/outlet boundary.
 #-------------------------------------------------------------------------------
@@ -1087,6 +1230,94 @@ class CoalInletBoundary(InletBoundary) :
         n.xmlRemoveChild('oxydant')
         n.xmlRemoveChild('coal')
         n.xmlRemoveChild('temperature')
+
+#-------------------------------------------------------------------------------
+# Compressible flow outlet boundary
+#-------------------------------------------------------------------------------
+
+class CompressibleOutletBoundary(Boundary) :
+    """
+    """
+    def __new__(cls, label, case) :
+        """
+        Constructor
+        """
+        return object.__new__(cls)
+
+
+    def _initBoundary(self):
+        """
+        Initialize the boundary, add nodes in the boundary node
+        """
+        self.typeList = ['supersonic_outlet', 'subsonic_outlet']
+
+        # Initialize nodes if necessary
+        type = self.getOutletType()
+        self.setOutletType(type)
+
+
+    def __defaultValues(self):
+        """
+        Default values
+        """
+        dico = {}
+        dico['pressure']    = 101300.
+        dico['compressible_type']   = 'supersonic_outlet'
+
+        return dico
+
+
+    def getOutletType(self):
+        """
+        Return type of boundary conditions for outlet
+        """
+        node = self.boundNode.xmlInitNode('compressible_type')
+        type = node['choice']
+        if type == None:
+            type = self.__defaultValues()['compressible_type']
+            self.setOutletType(type)
+        return type
+
+
+    def setOutletType(self, type):
+        """
+        Set type of boundary conditions for outlet
+        """
+        Model().isInList(type, self.typeList)
+
+        node = self.boundNode.xmlInitNode('compressible_type')
+        node['choice'] = type
+        if type == 'supersonic_outlet':
+            self.boundNode.xmlRemoveChild('dirichlet', name='pressure')
+
+    def getPressureValue(self):
+        """
+        Return value of the pressure
+        """
+        pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
+        if pressure == None:
+            pressure = self.__defaultValues()['pressure']
+            self.setPressureValue(pressure)
+
+        return pressure
+
+
+    def setPressureValue(self, value):
+        """
+        Set value of the pressure
+        """
+        Model().isFloat(value)
+        node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
+        self.boundNode.xmlSetData('dirichlet', value, name='pressure')
+
+
+    def deleteCompressibleOutlet(self):
+        """
+        Delete all information of compressible model in boundary conditions.
+        """
+        n = self.boundNode
+        n.xmlRemoveChild('compressible_type')
+        n.xmlRemoveChild('pressure')
 
 #-------------------------------------------------------------------------------
 # Outlet boundary

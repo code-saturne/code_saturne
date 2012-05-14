@@ -140,6 +140,7 @@ _scalar_number(const char* model)
  * INTEGER          IAEROS  --> cooling tower
  * INTEGER          INDJON  --> INDJON=1: a JANAF enthalpy-temperature
  *                              tabulation is used. INDJON=1: users tabulation
+ * INTEGER          IEOS    --> compressible
  * INTEGER          IEQCO2  --> CO2 massic fraction transport
  *
  *----------------------------------------------------------------------------*/
@@ -160,6 +161,7 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
                                int *const iatmos,
                                int *const iaeros,
                                int *const indjon,
+                               int *const ieos,
                                int *const ieqco2)
 {
     int isactiv = 0;
@@ -181,6 +183,7 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
     ippmod[*icompf - 1] = -1;
     ippmod[*iatmos - 1] = -1;
     ippmod[*iaeros - 1] = -1;
+    ippmod[*ieos   - 1] = -1;
 
     *indjon = 1;
     *ieqco2 = 0;
@@ -212,6 +215,25 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
             else
                 bft_error(__FILE__, __LINE__, 0,
                           _("Invalid atmospheric flow model: %s.\n"),
+                          vars->model_value);
+        }
+        else if  (cs_gui_strcmp(vars->model, "compressible_model"))
+        {
+            if (cs_gui_strcmp(vars->model_value, "constant_gamma")){
+                ippmod[*icompf - 1] = 0;
+                ippmod[*ieos - 1] = 0;
+            }
+            else if (cs_gui_strcmp(vars->model_value, "variable_gamma'")){
+                ippmod[*icompf - 1] = 0;
+                ippmod[*ieos - 1] = 1;
+            }
+            else if (cs_gui_strcmp(vars->model_value, "van_der_waals")){
+                ippmod[*icompf - 1] = 0;
+                ippmod[*ieos - 1] = 2;
+            }
+            else
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Invalid compressible model: %s.\n"),
                           vars->model_value);
         }
 
@@ -728,6 +750,38 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
 
 }
 
+/*------------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
+ * for the model scalar (compressible model)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uicfsc, UICFSC) (const int *const irho,
+                                const int *const ienerg,
+                                const int *const itempk)
+{
+  cs_var_t *vars = cs_glob_var;
+  int i = 0;
+  if (vars->nscaus > 0) {
+    BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
+  } else {
+    BFT_MALLOC(vars->label, vars->nscapp, char*);
+  }
+
+  BFT_MALLOC(vars->label[*irho -1], strlen("Rho")+1, char);
+  strcpy(vars->label[*irho -1], "Rho");
+  BFT_MALLOC(vars->label[*ienerg -1], strlen("EnergieT")+1, char);
+  strcpy(vars->label[*ienerg -1], "EnergieT");
+  BFT_MALLOC(vars->label[*itempk -1], strlen("TempK")+1, char);
+  strcpy(vars->label[*itempk -1], "TempK");
+
+#if _XML_DEBUG_
+  bft_printf("==>UICPSC\n");
+  for (i=0; i< vars->nscaus+vars->nscapp; i++)
+      bft_printf("--label of scalar[%i]: %s\n", i, vars->label[i]);
+#endif
+
+}
+
 /*----------------------------------------------------------------------------
  * Atmospheric flows: read of meteorological file of data
  *
@@ -826,6 +880,30 @@ void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
 #endif
 }
 
+/*-----------------------------------------------------------------------------
+ * Return the label or the name from a scalar.
+ *
+ * parameters:
+ *----------------------------------------------------------------------------*/
+
+static char *_scalar_label(const char *name)
+{
+  char *path = NULL;
+  char *str  = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "atmospheric_flows");
+  cs_xpath_add_element(&path, "scalar");
+  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_xpath_add_attribute(&path, "label");
+
+  str = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return str;
+}
+
 /*----------------------------------------------------------------------------
  * Atmospheric flows: indirection between the solver numbering and the XML one
  * for models scalars.
@@ -863,22 +941,22 @@ void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
     if (ippmod[*iatmos -1] == 1)
     {
         /* itempp */
-        BFT_MALLOC(vars->label[*itempp -1], strlen("potential_temperature")+1, char);
-        strcpy(vars->label[*itempp -1], "potential_temperature");
+        BFT_MALLOC(vars->label[*itempp -1], strlen(_scalar_label("potential_temperature"))+1, char);
+        strcpy(vars->label[*itempp -1], _scalar_label("potential_temperature"));
     }
     else if (ippmod[*iatmos -1] == 2)
     {
         /* itempl */
-        BFT_MALLOC(vars->label[*itempl -1], strlen("liquid_potential_temperature")+1, char);
-        strcpy(vars->label[*itempl -1], "liquid_potential_temperature");
+        BFT_MALLOC(vars->label[*itempl -1], strlen(_scalar_label("liquid_potential_temperature"))+1, char);
+        strcpy(vars->label[*itempl -1], _scalar_label("liquid_potential_temperature"));
 
         /* itotwt */
-        BFT_MALLOC(vars->label[*itotwt -1], strlen("total_water")+1, char);
-        strcpy(vars->label[*itotwt -1], "total_water");
+        BFT_MALLOC(vars->label[*itotwt -1], strlen(_scalar_label("total_water"))+1, char);
+        strcpy(vars->label[*itotwt -1], _scalar_label("total_water"));
 
         /* intdrp */
-        BFT_MALLOC(vars->label[*intdrp -1], strlen("number_of_droplets")+1, char);
-        strcpy(vars->label[*intdrp -1], "number_of_droplets");
+        BFT_MALLOC(vars->label[*intdrp -1], strlen(_scalar_label("number_of_droplets"))+1, char);
+        strcpy(vars->label[*intdrp -1], _scalar_label("number_of_droplets"));
     }
 #if _XML_DEBUG_
     {
@@ -935,7 +1013,8 @@ cs_gui_get_activ_thermophysical_model(void)
     const char *name[] = { "pulverized_coal",
                            "gas_combustion",
                            "joule_effect",
-                           "atmospheric_flows" };
+                           "atmospheric_flows",
+                           "compressible_model" };
     int name_nbr = sizeof(name) / sizeof(name[0]);
 
     if (vars->model != NULL && vars->model_value != NULL)

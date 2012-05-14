@@ -53,7 +53,7 @@ from Pages.FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.ReferenceValuesModel import ReferenceValuesModel
-
+from Pages.CompressibleModel import CompressibleModel
 from Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
@@ -119,6 +119,8 @@ Cp1 = 520.3;
 Cp2 = 1040.0;
 cp = Y1 * Cp1 + Y2 *Cp2;
 """
+    volumic_viscosity="""# volumic_viscosity
+"""
     thermal_conductivity="""# oxygen
 lambda = 6.2e-5 * Temp_K + 8.1e-3;
 
@@ -141,10 +143,17 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.case = case
         self.mdl = FluidCharacteristicsModel(self.case)
 
-        list = [('density', 'Rho'),
-                ('molecular_viscosity', 'Mu'),
-                ('specific_heat', 'Cp'),
-                ('thermal_conductivity', 'Al')]
+        if CompressibleModel(self.case).getCompressibleModel() != 'off':
+            list = [('density', 'Rho'),
+                    ('molecular_viscosity', 'Mu'),
+                    ('specific_heat', 'Cp'),
+                    ('volumic_viscosity', 'Viscv0'),
+                    ('thermal_conductivity', 'Al')]
+        else:
+            list = [('density', 'Rho'),
+                    ('molecular_viscosity', 'Mu'),
+                    ('specific_heat', 'Cp'),
+                    ('thermal_conductivity', 'Al')]
 
         self.list_scalars = []
         self.m_sca = DefineUserScalarsModel(self.case)
@@ -162,6 +171,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.modelAl       = ComboModel(self.comboBoxAl, 3, 1)
         self.modelDiff     = ComboModel(self.comboBoxDiff, 2, 1)
         self.modelNameDiff = ComboModel(self.comboBoxNameDiff,1,1)
+        self.modelCv       = ComboModel(self.comboBoxCv, 3, 1)
+        self.modelViscv0   = ComboModel(self.comboBoxViscv0, 3, 1)
 
         self.modelRho.addItem(self.tr('constant'), 'constant')
         self.modelRho.addItem(self.tr('user law'), 'user_law')
@@ -177,6 +188,12 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.modelAl.addItem(self.tr('user subroutine (usphyv)'), 'variable')
         self.modelDiff.addItem(self.tr('constant'), 'constant')
         self.modelDiff.addItem(self.tr('user law'), 'user_law')
+        self.modelCv.addItem(self.tr('constant'), 'constant')
+        self.modelCv.addItem(self.tr('user law'), 'user_law')
+        self.modelCv.addItem(self.tr('user subroutine (usphyv)'), 'variable')
+        self.modelViscv0.addItem(self.tr('constant'), 'constant')
+        self.modelViscv0.addItem(self.tr('user law'), 'user_law')
+        self.modelViscv0.addItem(self.tr('user subroutine (usphyv)'), 'variable')
 
         self.scalar = ""
         scalar_list = self.m_sca.getUserScalarLabelsList()
@@ -206,33 +223,40 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.connect(self.pushButtonCp,     SIGNAL("clicked()"), self.slotFormulaCp)
         self.connect(self.pushButtonAl,     SIGNAL("clicked()"), self.slotFormulaAl)
         self.connect(self.pushButtonDiff,   SIGNAL("clicked()"), self.slotFormulaDiff)
+        self.connect(self.comboBoxViscv0,   SIGNAL("activated(const QString&)"), self.slotStateViscv0)
+        self.connect(self.lineEditViscv0,   SIGNAL("textChanged(const QString &)"), self.slotViscv0)
+        self.connect(self.pushButtonViscv0, SIGNAL("clicked()"), self.slotFormulaViscv0)
 
         # Validators
 
-        validatorRho  = DoubleValidator(self.lineEditRho, min = 0.0)
-        validatorMu   = DoubleValidator(self.lineEditMu, min = 0.0)
-        validatorCp   = DoubleValidator(self.lineEditCp, min = 0.0)
-        validatorAl   = DoubleValidator(self.lineEditAl, min = 0.0)
-        validatorDiff = DoubleValidator(self.lineEditDiff, min = 0.0)
+        validatorRho    = DoubleValidator(self.lineEditRho, min = 0.0)
+        validatorMu     = DoubleValidator(self.lineEditMu, min = 0.0)
+        validatorCp     = DoubleValidator(self.lineEditCp, min = 0.0)
+        validatorAl     = DoubleValidator(self.lineEditAl, min = 0.0)
+        validatorDiff   = DoubleValidator(self.lineEditDiff, min = 0.0)
+        validatorCv     = DoubleValidator(self.lineEditCv, min = 0.0)
+        validatorViscv0 = DoubleValidator(self.lineEditViscv0, min = 0.0)
 
         validatorRho.setExclusiveMin(True)
         validatorMu.setExclusiveMin(True)
         validatorCp.setExclusiveMin(True)
         validatorAl.setExclusiveMin(True)
         validatorDiff.setExclusiveMin(True)
+        validatorCv.setExclusiveMin(True)
 
         self.lineEditRho.setValidator(validatorRho)
         self.lineEditMu.setValidator(validatorMu)
         self.lineEditCp.setValidator(validatorCp)
         self.lineEditAl.setValidator(validatorAl)
         self.lineEditDiff.setValidator(validatorDiff)
+        self.lineEditCv.setValidator(validatorCv)
+        self.lineEditViscv0.setValidator(validatorViscv0)
 
         if scalar_list == []:
             self.groupBoxDiff.hide()
         else :
             self.groupBoxDiff.show()
             self.lineEditDiff.setText(QString(str(self.m_sca.getScalarDiffusivityInitialValue(self.scalar))))
-            self.pushButtonDiff.setEnabled(False)
             diff_choice =  self.m_sca.getScalarDiffusivityChoice(self.scalar)
             self.modelDiff.setItem(str_model=diff_choice)
             self.modelNameDiff.setItem(str_model=str(self.scalar))
@@ -243,6 +267,12 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                 self.pushButtonDiff.setEnabled(True)
                 setGreenColor(self.pushButtonDiff, True)
 
+        self.labelCv.setText(QString(self.tr("Deduce from the \nisobaric specific heat")))
+
+        #compressible
+        self.groupBoxCv.hide()
+        self.groupBoxViscv0.hide()
+
         # Standard Widget initialization
 
         for tag, symbol in list:
@@ -250,13 +280,17 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
             __line   = getattr(self, "lineEdit" + symbol)
             __button = getattr(self, "pushButton" + symbol)
             __label  = getattr(self, "label" + symbol)
-            c = self.mdl.getPropertyMode(tag)
-            __model.setItem(str_model=c)
-            if c == 'user_law':
-                __button.setEnabled(True)
-                __label.setText(QString(self.tr("Reference value")))
+            if tag != 'dynamic_diffusion':
+                c = self.mdl.getPropertyMode(tag)
+                __model.setItem(str_model=c)
+                if c == 'user_law':
+                    __button.setEnabled(True)
+                    __label.setText(QString(self.tr("Reference value")))
+                else:
+                    __button.setEnabled(False)
+                    __label.setText(QString(self.tr("Reference value")))
             else:
-                __button.setEnabled(False)
+
                 __label.setText(QString(self.tr("Reference value")))
             self.mdl.getInitialValue(tag)
             __line.setText(QString(str(self.mdl.getInitialValue(tag))))
@@ -301,6 +335,34 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                 if tag == 'density':
                     __model.disableItem(str_model='constant')
 
+            # Compressible Flows
+            if CompressibleModel(self.case).getCompressibleModel() != 'off':
+                if tag == 'density':
+                    __model.setItem(str_model='variable')
+                    __combo.setEnabled(False)
+                    __button.setEnabled(False)
+                    self.mdl.setPropertyMode(tag, 'variable')
+                    __line.setText(QString(str("")))
+                    __line.setEnabled(False)
+                self.groupBoxCv.hide()
+                self.groupBoxViscv0.hide()
+                if tag == 'specific_heat':
+                    __model.setItem(str_model='constant')
+                    __combo.setEnabled(False)
+                    __button.setEnabled(False)
+                    self.mdl.setPropertyMode(tag, 'constant')
+                    self.groupBoxCp.setTitle(QString('Isobaric specific heat'))
+                if tag == 'volumic_viscosity':
+                    __model.setItem(str_model='constant')
+                    __combo.setEnabled(False)
+                    __button.setEnabled(False)
+                    self.mdl.setPropertyMode(tag, 'constant')
+                self.groupBoxCv.show()
+                self.groupBoxViscv0.show()
+            else:
+                if tag == 'specific_heat':
+                    self.groupBoxCp.setTitle(QString('Specific heat'))
+
 
     @pyqtSignature("const QString &")
     def slotStateRho(self, text):
@@ -324,6 +386,14 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         Method to call 'getState' with correct arguements for 'Cp'
         """
         self.__changeChoice(str(text), 'Cp', 'specific_heat')
+
+
+    @pyqtSignature("const QString &")
+    def slotStateViscv0(self, text):
+        """
+        Method to call 'getState' with correct arguements for 'Viscv0'
+        """
+        self.__changeChoice(str(text), 'Viscv0', 'volumic_viscosity')
 
 
     @pyqtSignature("const QString &")
@@ -418,6 +488,16 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
 
 
     @pyqtSignature("const QString &")
+    def slotViscv0(self, text):
+        """
+        Update the volumic viscosity
+        """
+        viscv0, ok = self.lineEditViscv0.text().toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setInitialValueVolumicViscosity(viscv0)
+
+
+    @pyqtSignature("const QString &")
     def slotAl(self, text):
         """
         Update the thermal conductivity
@@ -443,8 +523,6 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         User formula for density
         """
         exp = self.mdl.getFormula('density')
-        if not exp:
-            exp = "rho ="
         req = [('rho', 'Density')]
         exa = FluidCharacteristicsView.density
         setGreenColor(self.sender(), False)
@@ -474,8 +552,6 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         User formula for molecular viscosity
         """
         exp = self.mdl.getFormula('molecular_viscosity')
-        if not exp:
-            exp = "mu ="
         req = [('mu', 'Molecular Viscosity')]
         exa = FluidCharacteristicsView.molecular_viscosity
 
@@ -507,8 +583,6 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         User formula for specific heat
         """
         exp = self.mdl.getFormula('specific_heat')
-        if not exp:
-            exp = "cp ="
         req = [('cp', 'Specific heat')]
         exa = FluidCharacteristicsView.specific_heat
 
@@ -532,13 +606,38 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
 
 
     @pyqtSignature("")
+    def slotFormulaViscv0(self):
+        """
+        User formula for volumic viscosity
+        """
+        exp = self.mdl.getFormula('volumic_viscosity')
+        req = [('Viscv', 'Volumic viscosity')]
+        exa = FluidCharacteristicsView.volumic_viscosity
+        symbols_viscv0 = []
+        for s in self.list_scalars:
+           symbols_cp.append(s)
+        viscv0_value = self.mdl.getInitialValueVolumicViscosity()
+        ref_pressure = ReferenceValuesModel(self.case).getPressure()
+        ref_temperature = ReferenceValuesModel(self.case).getTemperature()
+        symbols_cp.append(('cp0', 'Specific heat (reference value) = ' + str(cp0_value)))
+        symbols_cp.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+        dialog = QMeiEditorView(self,expression = exp,
+                                     required   = req,
+                                     symbols    = symbols_viscv0,
+                                     examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotFormulaViscv0 -> %s" % str(result))
+            self.mdl.setFormula('volumic_viscosity', result)
+            setGreenColor(self.sender(), False)
+
+
+    @pyqtSignature("")
     def slotFormulaAl(self):
         """
         User formula for thermal conductivity
         """
         exp = self.mdl.getFormula('thermal_conductivity')
-        if not exp:
-            exp = "lambda ="
         req = [('lambda', 'Thermal conductivity')]
         exa = FluidCharacteristicsView.thermal_conductivity
 
@@ -556,7 +655,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                                      examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
-            log.debug("slotFormulaRho -> %s" % str(result))
+            log.debug("slotFormulaAl -> %s" % str(result))
             self.mdl.setFormula('thermal_conductivity', result)
             setGreenColor(self.sender(), False)
 
@@ -566,10 +665,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         User formula for the diffusion coefficient
         """
-        exp = self.m_sca.getDiffFormula(self.scalar)
         name = self.m_sca.getScalarDiffusivityName(self.scalar)
-        if not exp:
-            exp = str(name)+" = 1.83e-05;"
+        exp = self.m_sca.getDiffFormula(self.scalar)
         req = [(str(name), str(self.scalar)+'diffusion coefficient')]
         exa = ''
         sym = [('x','cell center coordinate'),

@@ -727,6 +727,7 @@ Calculation management
         node4 = node0.xmlGetNode('thermal_scalar',     'model')
         node5 = node0.xmlGetNode('radiative_transfer', 'model')
         node6 = node0.xmlGetNode('atmospheric_flows',  'model')
+        node7 = node0.xmlGetNode('compressible_model', 'model')
 
         if node1['model'] in ('ebu', '3p'):
             self.setRowClose(self.tr('Thermal model'))
@@ -760,6 +761,10 @@ Calculation management
             self.setRowOpen(self.tr('Conjugate heat transfer'))
             if node5.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
+
+        elif node7['model']!= 'off':
+            self.setRowClose(self.tr('Thermal model'))
+            self.setRowClose(self.tr('Turbulence models'))
 
         else:
             self.setRowOpen(self.tr('Thermal model'))

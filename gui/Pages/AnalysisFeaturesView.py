@@ -56,6 +56,7 @@ from Pages.TurbulenceModel import TurbulenceModel
 from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.LagrangianModel import LagrangianModel
 from Pages.GasCombustionModel import GasCombustionModel
+from Pages.CompressibleModel import CompressibleModel
 from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.ElectricalModelsModel import ElectricalModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
@@ -100,6 +101,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.scal  = DefineUserScalarsModel(self.case)
         self.std   = SteadyManagementModel(self.case)
         self.atmo  = AtmosphericFlowsModel(self.case)
+        self.comp  = CompressibleModel(self.case)
 
         # Set models and number of elements for combo boxes
 
@@ -109,6 +111,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelGasCombustionModel = QtPage.ComboModel(self.comboBoxGasCombustionModel,3,1)
         self.modelPulverizedCoal     = QtPage.ComboModel(self.comboBoxPulverizedCoal,3,1)
         self.modelJouleEffect        = QtPage.ComboModel(self.comboBoxJouleEffect,3,1)
+        self.modelCompressible       = QtPage.ComboModel(self.comboBoxCompressible,4,1)
 
         self.modelSteadyFlow.addItem(self.tr("steady flow"), "on")
         self.modelSteadyFlow.addItem(self.tr("unsteady flow"), "off")
@@ -135,14 +138,20 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelJouleEffect.addItem(self.tr("Joule Effect"), "joule")
         self.modelJouleEffect.addItem(self.tr("Joule Effect and Lorentz Forces"), "arc")
 
+        self.modelCompressible.addItem(self.tr("off"), 'off')
+        self.modelCompressible.addItem(self.tr("Perfect gas with constant gamma"), 'constant_gamma')
+        self.modelCompressible.addItem(self.tr("Perfect gas with variable gamma"), 'variable_gamma')
+        self.modelCompressible.addItem(self.tr("Van Der Waals"), 'van_der_waals')
+
         # Connect signals to slots
 
-        self.connect(self.comboBoxSteadyFlow, SIGNAL("activated(const QString&)"), self.slotSteadyFlow)
-        self.connect(self.comboBoxLagrangian, SIGNAL("activated(const QString&)"), self.slotLagrangian)
-        self.connect(self.comboBoxAtmospheric, SIGNAL("activated(const QString&)"), self.slotAtmospheric)
+        self.connect(self.comboBoxSteadyFlow,         SIGNAL("activated(const QString&)"), self.slotSteadyFlow)
+        self.connect(self.comboBoxLagrangian,         SIGNAL("activated(const QString&)"), self.slotLagrangian)
+        self.connect(self.comboBoxAtmospheric,        SIGNAL("activated(const QString&)"), self.slotAtmospheric)
         self.connect(self.comboBoxGasCombustionModel, SIGNAL("activated(const QString&)"), self.slotGasCombustionModel)
-        self.connect(self.comboBoxPulverizedCoal, SIGNAL("activated(const QString&)"), self.slotPulverizedCoal)
-        self.connect(self.comboBoxJouleEffect, SIGNAL("activated(const QString&)"), self.slotJouleEffect)
+        self.connect(self.comboBoxPulverizedCoal,     SIGNAL("activated(const QString&)"), self.slotPulverizedCoal)
+        self.connect(self.comboBoxJouleEffect,        SIGNAL("activated(const QString&)"), self.slotJouleEffect)
+        self.connect(self.comboBoxCompressible,       SIGNAL("activated(const QString&)"), self.slotCompressibleModel)
 
         # Initialize Widgets
 
@@ -184,6 +193,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         #self.modelPulverizedCoal.disableItem(str_model='coal_homo2') # to delete
         coal = self.pcoal.getCoalCombustionModel()
         self.modelPulverizedCoal.setItem(str_model=coal)
+
+        compressible = self.comp.getCompressibleModel()
+        self.modelCompressible.setItem(str_model=compressible)
 
         # Multi-phase flow and coal combustion
         # WARNING: the 'coal_lagr' model is deprecated
@@ -308,7 +320,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                         'Atmospheric',
                         'GasCombustionModel',
                         'PulverizedCoal',
-                        'JouleEffect']:
+                        'JouleEffect',
+                        'Compressible']:
             log.debug("__stringModelFromCombo() Incorrect name for QComboBox name")
             string = ""
         else:
@@ -467,6 +480,31 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.comboBoxJouleEffect.setEnabled(True)
 
         self.elect.setElectricalModel(model)
+        self.browser.configureTree(self.case)
+
+
+    @pyqtSignature("const QString&")
+    def slotCompressibleModel(self, text):
+        """
+        Private slot.
+        Binding method for gas combustion models.
+        """
+        self.__activateComboBox()
+
+        model = self.__stringModelFromCombo('Compressible')
+        self.comp.setCompressibleModel(model)
+
+        if model != 'off':
+            # we inform that thermal scalar will be removed if it exists
+            th_label = self.scal.getThermalScalarLabel()
+            if th_label != '':
+                title = self.tr("Warning")
+                msg   = self.tr("This selection implies the destruction of the thermal scalar")
+                QMessageBox.warning(self, title, msg)
+
+            self.__disableComboBox()
+            self.comboBoxCompressible.setEnabled(True)
+
         self.browser.configureTree(self.case)
 
 

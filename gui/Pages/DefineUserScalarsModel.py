@@ -518,7 +518,25 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar, self.getUserScalarLabelsList())
         n = self.scalar_node.xmlGetNode('scalar',label = scalar)
         node = n.xmlGetNode('property')
-        return node.xmlGetString('formula')
+        formula = node.xmlGetString('formula')
+        if not formula:
+            formula = self.getDefaultFormula(scalar)
+            self.setDiffFormula(scalar, formula)
+        return formula
+
+
+    def getDefaultFormula(self, scalar):
+        """
+        Return default formula
+        """
+        self.isNotInList(scalar, self.getScalarsVarianceList())
+        self.isInList(scalar, self.getUserScalarLabelsList())
+
+        name = self.getScalarDiffusivityName(scalar)
+
+        formula = str(name) + " ="
+
+        return formula
 
 
     def setDiffFormula(self, scalar, str):
