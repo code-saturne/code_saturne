@@ -29,7 +29,7 @@ subroutine uscfth &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   sorti1 , sorti2 , gamagr , xmasmr )
+   sorti1 , sorti2 , gamagr , xmasm1 )
 
 !===============================================================================
 ! Purpose:
@@ -200,7 +200,7 @@ subroutine uscfth &
 ! gamagr(*)        ! ra ! --> ! equivalent "gamma" constant of the gas         !
 !                  !    !     !   (unused if iccfth.lt.0)                      !
 !                  !    !     !   (first value only used for perfect gas)      !
-! xmasmr(*)        ! ra ! --> ! molar mass of the components of the gas        !
+! xmasm1(*)        ! ra ! --> ! molar mass of the components of the gas        !
 !                  !    !     !   (unused if iccfth.lt.0)                      !
 !__________________!____!_____!________________________________________________!
 
@@ -239,7 +239,7 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*), propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
-double precision sorti1(*), sorti2(*), gamagr(*), xmasmr(*)
+double precision sorti1(*), sorti2(*), gamagr(*), xmasm1(*)
 
 ! Local variables
 
@@ -1076,7 +1076,7 @@ elseif (ieos.eq.2) then
 
       ! Calculation of the molar mass of the mixture at cell centers
       do iel = 1, ncel
-        xmasmr(iel) = 1.d0 / ( rtp(iel,isca(1))/cstgr(1)          &
+        xmasm1(iel) = 1.d0 / ( rtp(iel,isca(1))/cstgr(1)          &
                              + rtp(iel,isca(2))/cstgr(2)          &
                              + rtp(iel,isca(3))/cstgr(3) )
       enddo
@@ -1084,7 +1084,7 @@ elseif (ieos.eq.2) then
       ! Calculation of the equivalent gamma of the mixture at cell centers
       do iel = 1, ncel
         gamagr(iel) = propce(iel,ipproc(icp))              &
-           / ( propce(iel,ipproc(icp)) - rr/xmasmr(iel) )
+           / ( propce(iel,ipproc(icp)) - rr/xmasm1(iel) )
       enddo
 
     endif
@@ -1130,8 +1130,8 @@ elseif (ieos.eq.2) then
     do iel = 1, ncel
       propce(iel,ipproc(icp)) = cp0
       propce(iel,ipproc(icv)) =                            &
-           cp0 - rr/xmasmr(iel)
-      rtp(iel,irh) = p0*xmasmr(iel)/rr/t0
+           cp0 - rr/xmasm1(iel)
+      rtp(iel,irh) = p0*xmasm1(iel)/rr/t0
       rtp(iel,ien) = propce(iel,ipproc(icv))*t0
     enddo
 
@@ -1144,7 +1144,7 @@ elseif (ieos.eq.2) then
 
       ! Temperature
       sorti1(iel) =                                               &
-           xmasmr(iel)/rr*rtp(iel,ipr)/rtp(iel,irh)
+           xmasm1(iel)/rr*rtp(iel,ipr)/rtp(iel,irh)
 
       ! Total energy
       sorti2(iel) = propce(iel,ipproc(icv))*sorti1(iel)           &
@@ -1169,7 +1169,7 @@ elseif (ieos.eq.2) then
 
       ! Density
       sorti1(iel) =                                               &
-           xmasmr(iel)/rr*rtp(iel,ipr)/rtp(iel,itk)
+           xmasm1(iel)/rr*rtp(iel,ipr)/rtp(iel,itk)
 
       ! Total energy
       sorti2(iel) =                                               &
@@ -1199,7 +1199,7 @@ elseif (ieos.eq.2) then
   - 0.5d0*( rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2 ))
 
       ! Temperature
-      sorti2(iel) = xmasmr(iel)/rr*rtp(iel,ipr)/sorti1(iel)
+      sorti2(iel) = xmasm1(iel)/rr*rtp(iel,ipr)/sorti1(iel)
 
     enddo
 
@@ -1220,7 +1220,7 @@ elseif (ieos.eq.2) then
 
       ! Pressure
       sorti1(iel) =                                               &
-           rtp(iel,irh)*rr/xmasmr(iel)*rtp(iel,itk)
+           rtp(iel,irh)*rr/xmasm1(iel)*rtp(iel,itk)
 
       ! Total energy
       sorti2(iel) =                                               &
@@ -1250,7 +1250,7 @@ elseif (ieos.eq.2) then
   - 0.5d0*( rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2 ) )
 
       ! Temperature
-      sorti2(iel) = xmasmr(iel)/rr*sorti1(iel)/rtp(iel,irh)
+      sorti2(iel) = xmasm1(iel)/rr*sorti1(iel)/rtp(iel,irh)
 
     enddo
 
@@ -1325,7 +1325,7 @@ elseif (ieos.eq.2) then
 
     do iel = 1, ncel
 
-      sorti1(iel) = propce(iel,ipproc(icp))-rr/xmasmr(iel)
+      sorti1(iel) = propce(iel,ipproc(icp))-rr/xmasm1(iel)
 
     enddo
 
@@ -1610,7 +1610,7 @@ elseif (ieos.eq.2) then
     iel  = ifabor(ifac)
 
     ! Temperature
-    coefa(ifac,iclt) = xmasmr(iel)/rr*coefa(ifac,iclp)            &
+    coefa(ifac,iclt) = xmasm1(iel)/rr*coefa(ifac,iclp)            &
                                         /coefa(ifac,iclr)
 
     ! Total energy
@@ -1627,7 +1627,7 @@ elseif (ieos.eq.2) then
     iel  = ifabor(ifac)
 
     ! Density
-    coefa(ifac,iclr) = xmasmr(iel)/rr*coefa(ifac,iclp)            &
+    coefa(ifac,iclr) = xmasm1(iel)/rr*coefa(ifac,iclp)            &
                                        /coefa(ifac,iclt)
 
     ! Total energy
@@ -1649,7 +1649,7 @@ elseif (ieos.eq.2) then
                  + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 ))
 
     ! Temperature
-    coefa(ifac,iclt)= xmasmr(iel)/rr*coefa(ifac,iclp)             &
+    coefa(ifac,iclt)= xmasm1(iel)/rr*coefa(ifac,iclp)             &
                                        /coefa(ifac,iclr)
 
 
@@ -1661,7 +1661,7 @@ elseif (ieos.eq.2) then
     iel  = ifabor(ifac)
 
     ! Pressure
-    coefa(ifac,iclp) = coefa(ifac,iclr)*rr/xmasmr(iel)            &
+    coefa(ifac,iclp) = coefa(ifac,iclr)*rr/xmasm1(iel)            &
                                        *coefa(ifac,iclt)
 
     ! Total energy
@@ -1684,7 +1684,7 @@ elseif (ieos.eq.2) then
 
 
     ! Temperature
-    coefa(ifac,iclt)= xmasmr(iel)/rr*coefa(ifac,iclp)             &
+    coefa(ifac,iclt)= xmasm1(iel)/rr*coefa(ifac,iclp)             &
                                        /coefa(ifac,iclr)
 
 
