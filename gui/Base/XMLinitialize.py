@@ -204,6 +204,67 @@ class XMLinit(Variables):
             newnode.xmlChildsCopy(oldnode)
             oldnode.xmlRemoveNode()
 
+        # Reference values
+        XMLThermoPhysicalNode = self.case.xmlInitNode('thermophysical_models')
+        self.__XMLVelocityPressureNode = XMLThermoPhysicalNode.xmlInitNode('velocity_pressure')
+        self.__RefValuesNode = XMLThermoPhysicalNode.xmlInitNode('reference_values')
+
+        nodeP = self.__XMLVelocityPressureNode.xmlGetNode('variable', name="pressure")
+        if nodeP:
+            value = nodeP.xmlGetDouble('reference_pressure')
+            if value:
+                self.__RefValuesNode.xmlSetData('pressure', value)
+                nodeP.xmlRemoveChild('reference_pressure')
+
+        nodeTurb = XMLThermoPhysicalNode.xmlInitNode('turbulence')
+        nodeInit = nodeTurb.xmlGetNode('initialization')
+        if nodeInit:
+            value = nodeInit.xmlGetDouble('reference_velocity')
+            if value:
+                self.__RefValuesNode.xmlSetData('velocity', value)
+                nodeInit.xmlRemoveChild('reference_velocity')
+
+            value = nodeInit.xmlGetDouble('reference_length')
+            if value:
+                self.__RefValuesNode.xmlSetData('length', value)
+                nodeInit.xmlRemoveChild('reference_length')
+
+        for node in self.case.xmlGetNodeList('scalar'):
+            value = node.xmlGetDouble('initial_value', zone_id="1")
+            if value != None:
+                formula = node['label'] + " = " + str(value) + ";"
+                n = node.xmlInitChildNode('formula', zone_id="1")
+                n.xmlSetTextNode(formula)
+                node.xmlRemoveChild('initial_value', zone_id="1")
+
+        # solver
+        XMLNumParameterNode = self.case.xmlInitNode('numerical_parameters')
+        node = XMLNumParameterNode.xmlGetNode('multigrid')
+        if node:
+            if node['status'] == "off":
+                if nodeP:
+                    nodeP.xmlInitNode('solver_choice', choice='conjugate_gradient')
+            node.xmlRemoveNode()
+
+        # hydrostatique pressure
+        XMLPhysicalPropNode = self.case.xmlInitNode('physical_properties')
+        node = XMLPhysicalPropNode.xmlGetNode('hydrostatic_pressure')
+        if node:
+            stat = node['status']
+            XMLNumParameterNode.xmlInitNode('hydrostatic_pressure', status=stat)
+            node.xmlRemoveNode()
+
+        # Profiles
+        compt = 0
+        for node in self.case.xmlGetNodeList('profile'):
+            nodeInit = node.xmlGetNode('x1')
+            if nodeInit:
+                node.xmlRemoveNode()
+                compt = compt + 1
+        if compt != 0:
+            print "Profiles have been suppress from your files for incompatibility"
+            print "You must re-create them"
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

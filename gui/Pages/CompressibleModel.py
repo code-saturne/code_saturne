@@ -130,7 +130,6 @@ class CompressibleModel(Variables, Model):
         """
         for v in self.var_list:
             self.node_comp.xmlRemoveChild('scalar', name=v)
-        ThermalScalarModel(self.case).setThermalModel('off')
 
 
 #-------------------------------------------------------------------------------
