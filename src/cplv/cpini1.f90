@@ -584,10 +584,8 @@ ivivar = 0
 
 if(iihmpr.eq.1) then
 
-  call uicpi1(srrom)
+  call uicpi1(srrom, diftl0)
   !==========
-
-  diftl0 = 4.25d-5
 
 endif
 

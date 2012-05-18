@@ -102,9 +102,25 @@ void CS_PROCF (uippmo, UIPPMO) (int *const ippmod,
  * SUBROUTINE UICPI1 (SRROM)
  * *****************
  * DOUBLE PRECISION SRROM   <--   density relaxation
+ * DOUBLE PRECISION DIFTL0  <--   dynamic diffusion
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uicpi1, UICPI1) (double *const srrom);
+void CS_PROCF (uicpi1, UICPI1) (double *const srrom,
+                                double *const diftl0);
+
+/*----------------------------------------------------------------------------
+ * Temperature for D3P Gas Combustion
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UICPI2 (SRROM)
+ * *****************
+ * DOUBLE PRECISION Toxy   <--   Oxydant temperature
+ * DOUBLE PRECISION Tfuel  <--   Fuel temperature
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
+                                double *const tfuel);
 
 /*----------------------------------------------------------------------------
  * Pointers definition for scalars and coal combustion
@@ -134,7 +150,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
                                 const int *const iyco2);
 
 /*----------------------------------------------------------------------------
- * Defintion des pointeurs des proprietes pour le charbon
+ * Defintion des pointeurs des proprietes pour la combustion gaz
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
@@ -167,6 +183,52 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
 void CS_PROCF (uicfsc, UICFSC) (const int *const irho,
                                 const int *const ienerg,
                                 const int *const itempk);
+
+/*-----------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
+ * for physical properties of the activated specific physics (gaz combustion)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
+                                const int *const ippmod,
+                                const int *const ipppro,
+                                const int *const ipproc,
+                                const int *const icod3p,
+                                const int *const icoebu,
+                                const int *const icolwc,
+                                const int *const iirayo,
+                                const int *const itemp,
+                                const int *const imam,
+                                const int *const iym,
+                                const int *const ickabs,
+                                const int *const it4m,
+                                const int *const it3m,
+                                const int *const ix2,
+                                const int *const itsc,
+                                const int *const irhol,
+                                const int *const iteml,
+                                const int *const ifmel,
+                                const int *const ifmal,
+                                const int *const iampl,
+                                const int *const itscl,
+                                const int *const imaml);
+
+/*------------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
+ * for the model scalar (gas combustion)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
+                                const int *const icolwc,
+                                const int *const icoebu,
+                                const int *const icod3p,
+                                const int *const ihm,
+                                const int *const ifm,
+                                const int *const ifp2m,
+                                const int *const iygfm,
+                                const int *const iyfm,
+                                const int *const iyfp2m,
+                                const int *const icoyfp);
 
 /*----------------------------------------------------------------------------
  * Atmospheric flows: read of meteorological file of data

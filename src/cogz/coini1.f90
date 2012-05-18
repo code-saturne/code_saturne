@@ -63,6 +63,7 @@ use coincl
 use cpincl
 use ppincl
 use radiat
+use ihmpre
 
 !===============================================================================
 
@@ -580,9 +581,16 @@ ivivar = 0
 !===============================================================================
 
 if ( ippmod(icoebu).ge.0 ) then
+  if (iihmpr.eq.1) then
+    call uicpi1 (srrom, diftl0)
+    cebu   = 2.5d0
+  endif
   call usebu1
   !==========
 else if( ippmod(icod3p).ge.0 ) then
+  if (iihmpr.eq.1) then
+    call uicpi2 (tinoxy, tinfue)
+  endif
   call usd3p1
   !==========
 else if( ippmod(icolwc).ge.0 ) then

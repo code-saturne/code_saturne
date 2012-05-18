@@ -729,7 +729,7 @@ Calculation management
         node6 = node0.xmlGetNode('atmospheric_flows',  'model')
         node7 = node0.xmlGetNode('compressible_model', 'model')
 
-        if node1['model'] in ('ebu', '3p'):
+        if node1['model'] in ('ebu', 'd3p', 'lwp'):
             self.setRowClose(self.tr('Thermal model'))
             self.setRowOpen(self.tr('Gas combustion'))
             self.setRowOpen(self.tr('Radiative transfers'))

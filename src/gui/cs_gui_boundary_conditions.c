@@ -602,6 +602,70 @@ _inlet_coal(const int         izone,
 
 
 /*-----------------------------------------------------------------------------
+ * Get gas combustion's data for inlet. Check if the current zone is an inlet only
+ * for an oxydant, of for oxydant and coal.
+ *
+ * parameters:
+ *   izone       -->  number of the current zone
+ *----------------------------------------------------------------------------*/
+
+static void
+_inlet_gas(const int         izone)
+{
+    double value;
+    char  *buff  = NULL;
+    char  *path0 = NULL;
+    char  *path1 = NULL;
+    char  *path2 = NULL;
+
+    path0 = cs_xpath_init_path();
+    cs_xpath_add_elements(&path0, 2, "boundary_conditions", "inlet");
+    cs_xpath_add_test_attribute(&path0, "label", boundaries->label[izone]);
+    cs_xpath_add_element(&path0, "velocity_pressure");
+    BFT_MALLOC(path1, strlen(path0) + 1, char);
+    strcpy(path1, path0);
+    BFT_MALLOC(path2, strlen(path0) + 1, char);
+    strcpy(path2, path0);
+    cs_xpath_add_element(&path0, "gas_type");
+    cs_xpath_add_attribute(&path0, "choice");
+    buff = cs_gui_get_attribute_value(path0);
+
+    if (cs_gui_strcmp(buff, "oxydant")) {
+        boundaries->ientox[izone] = 1;
+    }
+    else if (cs_gui_strcmp(buff, "fuel")) {
+        boundaries->ientfu[izone] = 1;
+    }
+    else if (cs_gui_strcmp(buff,"unburned")) {
+        boundaries->ientgf[izone] = 1;
+        cs_xpath_add_element(&path1, "temperature");
+        cs_xpath_add_function_text(&path1);
+        if (cs_gui_get_double(path1, &value))
+            boundaries->tkent[izone] = value;
+        cs_xpath_add_element(&path2, "fraction");
+        cs_xpath_add_function_text(&path2);
+        if (cs_gui_get_double(path2, &value))
+            boundaries->fment[izone] = value;
+    }
+    else if (cs_gui_strcmp(buff,"burned")) {
+        boundaries->ientgb[izone] = 1;
+        cs_xpath_add_element(&path1, "temperature");
+        cs_xpath_add_function_text(&path1);
+        if (cs_gui_get_double(path1, &value))
+            boundaries->tkent[izone] = value;
+        cs_xpath_add_element(&path2, "fraction");
+        cs_xpath_add_function_text(&path2);
+        if (cs_gui_get_double(path2, &value))
+            boundaries->fment[izone] = value;
+    }
+    BFT_FREE(path0);
+    BFT_FREE(path1);
+    BFT_FREE(path2);
+    BFT_FREE(buff);
+}
+
+
+/*-----------------------------------------------------------------------------
  * Get compressible data for inlet.
  *
  * parameters:
@@ -878,20 +942,35 @@ _init_boundaries(const int *const nfabor,
                            double);
         }
     }
+    else if (cs_gui_strcmp(vars->model, "gas_combustion"))
+    {
+        BFT_MALLOC(boundaries->ientfu,  zones, int   );
+        BFT_MALLOC(boundaries->ientox,  zones, int   );
+        BFT_MALLOC(boundaries->ientgb,  zones, int   );
+        BFT_MALLOC(boundaries->ientgf,  zones, int   );
+        BFT_MALLOC(boundaries->tkent,   zones, double);
+        BFT_MALLOC(boundaries->fment,   zones, double);
+    }
     else if (cs_gui_strcmp(vars->model, "compressible_model"))
     {
-        BFT_MALLOC(boundaries->itype,  zones, int      );
-        BFT_MALLOC(boundaries->prein,   zones, double   );
-        BFT_MALLOC(boundaries->rhoin,   zones, double   );
-        BFT_MALLOC(boundaries->tempin,  zones, double   );
-        BFT_MALLOC(boundaries->entin,   zones, double   );
-        BFT_MALLOC(boundaries->preout , zones, double   );
-        BFT_MALLOC(boundaries->denin , zones, double    );
+        BFT_MALLOC(boundaries->itype,   zones, int   );
+        BFT_MALLOC(boundaries->prein,   zones, double);
+        BFT_MALLOC(boundaries->rhoin,   zones, double);
+        BFT_MALLOC(boundaries->tempin,  zones, double);
+        BFT_MALLOC(boundaries->entin,   zones, double);
+        BFT_MALLOC(boundaries->preout,  zones, double);
+        BFT_MALLOC(boundaries->denin,   zones, double);
     }
     else
     {
         boundaries->ientat = NULL;
+        boundaries->ientfu = NULL;
+        boundaries->ientox = NULL;
+        boundaries->ientgb = NULL;
+        boundaries->ientgf = NULL;
         boundaries->timpat = NULL;
+        boundaries->tkent  = NULL;
+        boundaries->fment  = NULL;
         boundaries->ientcp = NULL;
         boundaries->qimpcp = NULL;
         boundaries->timpcp = NULL;
@@ -942,6 +1021,15 @@ _init_boundaries(const int *const nfabor,
                 for (iclass = 0; iclass < nclpch[icharb]; iclass++)
                     boundaries->distch[izone][icharb][iclass] = 0;
             }
+        }
+        else if (cs_gui_strcmp(vars->model, "gas_combustion"))
+        {
+            boundaries->ientfu[izone]  = 0;
+            boundaries->ientox[izone]  = 0;
+            boundaries->ientgb[izone]  = 0;
+            boundaries->ientgf[izone]  = 0;
+            boundaries->tkent[izone]   = 0;
+            boundaries->fment[izone]   = 0;
         }
         else if (cs_gui_strcmp(vars->model, "compressible_model"))
         {
@@ -1053,6 +1141,9 @@ _init_boundaries(const int *const nfabor,
                 _inlet_data(label, "oxydant", &boundaries->inmoxy[izone]);
                 _inlet_coal(izone, ncharb, nclpch);
             }
+
+            if (cs_gui_strcmp(vars->model, "gas_combustion"))
+                _inlet_gas(izone);
 
             /* Inlet: data for COMPRESSIBLE MODEL */
             if (cs_gui_strcmp(vars->model, "compressible_model"))
@@ -1390,6 +1481,10 @@ cs_gui_get_faces_list(int          izone,
  * INTEGER          IENTAT  <-- 1 for air temperature boundary conditions (coal)
  * INTEGER          IENTCP  <-- 1 for coal temperature boundary conditions (coal)
  * integer          inmoxy  <-- coal: number of oxydant for the current inlet
+ * INTEGER          IENTOX  <-- 1 for an air fow inlet (gas combustion)
+ * INTEGER          IENTFU  <-- 1 for fuel flow inlet (gas combustion)
+ * INTEGER          IENTGB  <-- 1 for burned gas inlet (gas combustion)
+ * INTEGER          IENTGF  <-- 1 for unburned gas inlet (gas combustion)
  * integer          iprofm  <-- atmospheric flows: on/off for profile from data
  * INTEGER          ITYPFB  <-- type of boundary for each face
  * INTEGER          IZFPPP  <-- zone number for each boundary face
@@ -1405,6 +1500,8 @@ cs_gui_get_faces_list(int          izone,
  * DOUBLE PRECISION XINTUR  <-- turbulent intensity
  * DOUBLE PRECISION TIMPAT  <-- air temperature boundary conditions (coal)
  * DOUBLE PRECISION TIMPCP  <-- inlet coal temperature (coal)
+ * DOUBLE PRECISION TKENT   <-- inlet temperature (gas combustion)
+ * DOUBLE PRECISION FMENT   <-- Mean Mixture Fraction at Inlet (gas combustion)
  * DOUBLE PRECISION DISTCH  <-- ratio for each coal
  * DOUBLE PRECISION RCODCL  <-- boundary conditions array value
  *----------------------------------------------------------------------------*/
@@ -1435,6 +1532,10 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                         int *const ientat,
                                         int *const ientcp,
                                         int *const inmoxy,
+                                        int *const ientox,
+                                        int *const ientfu,
+                                        int *const ientgb,
+                                        int *const ientgf,
                                         int *const iprofm,
                                         int *const itypfb,
                                         int *const izfppp,
@@ -1450,6 +1551,8 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                      double *const xintur,
                                      double *const timpat,
                                      double *const timpcp,
+                                     double *const tkent,
+                                     double *const fment,
                                      double *const distch,
                                      double *const rcodcl)
 {
@@ -1525,6 +1628,15 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                         distch[iclass * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]
                             = boundaries->distch[izone][icharb][iclass];
                 }
+            }
+            else if (cs_gui_strcmp(vars->model, "gas_combustion"))
+            {
+                ientfu[zone_nbr-1] = boundaries->ientfu[izone];
+                ientox[zone_nbr-1] = boundaries->ientox[izone];
+                ientgb[zone_nbr-1] = boundaries->ientgb[izone];
+                ientgf[zone_nbr-1] = boundaries->ientgf[izone];
+                tkent[zone_nbr-1]  = boundaries->tkent[izone];
+                fment[zone_nbr-1]  = boundaries->fment[izone];
             }
             else if (cs_gui_strcmp(vars->model, "compressible_model"))
             {
@@ -2267,6 +2379,13 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                       distch[iclass * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]);
                 }
             }
+            else if (cs_gui_strcmp(vars->model, "gas_combustion"))
+            {
+                bft_printf("-----iqimp=%i \n",
+                           iqimp[zone_nbr-1]);
+                bft_printf("-----ientox=%i, ientfu=%i, ientgf=%i, ientgb=%i \n",
+                           ientox[zone_nbr-1], ientfu[zone_nbr-1], ientgf[zone_nbr-1], ientgb[zone_nbr-1]);
+            }
             else if (cs_gui_strcmp(vars->model, "compressible_model"))
             {
                 if (boundaries->itype[izone] == *iesicf)
@@ -2540,6 +2659,14 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
       BFT_FREE(boundaries->qimpcp);
       BFT_FREE(boundaries->timpcp);
       BFT_FREE(boundaries->distch);
+    }
+    if (cs_gui_strcmp(vars->model, "gas_combustion")) {
+      BFT_FREE(boundaries->ientfu);
+      BFT_FREE(boundaries->ientox);
+      BFT_FREE(boundaries->ientgb);
+      BFT_FREE(boundaries->ientgf);
+      BFT_FREE(boundaries->tkent);
+      BFT_FREE(boundaries->fment);
     }
     if (cs_gui_strcmp(vars->model, "compressible_model")) {
       BFT_FREE(boundaries->itype);

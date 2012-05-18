@@ -206,7 +206,8 @@ class InletBoundary(Boundary):
         self._scalarChoicesList = ['dirichlet', 'neumann', 'exchange_coefficient',
                                    'dirichlet_formula', 'neumann_formula', 'exchange_coefficient_formula']
 
-        self.typeList = ['imposed_inlet', 'subsonic_inlet']
+        self.typeList        = ['imposed_inlet', 'subsonic_inlet']
+        self.typeListGasComb = ['oxydant', 'fuel', 'unburned', 'burned']
 
         self.th_model = ThermalScalarModel(self._case)
 
@@ -255,6 +256,16 @@ class InletBoundary(Boundary):
         dico['energy']      = 0.0
         dico['status']      = 'off'
         dico['compressible_type']   = 'imposed_inlet'
+        dico['fraction'] = 0.0
+        from Pages.GasCombustionModel import GasCombustionModel
+        model = GasCombustionModel(self._case).getGasCombustionModel()
+        del GasCombustionModel
+        if model == 'lwp' or model == 'ebu':
+            dico['gas_type'] = 'unburned'
+        elif model == 'd3p':
+            dico['gas_type'] = 'oxydant'
+        from Pages.ReferenceValuesModel import ReferenceValuesModel
+        dico['temperatureGas'] = ReferenceValuesModel(self._case).getTemperature()
 
         return dico
 
@@ -830,6 +841,84 @@ omega = 0.;"""
         n.xmlRemoveChild('pressure')
         n.xmlRemoveChild('temperature')
         n.xmlRemoveChild('energy')
+
+
+    def getInletGasCombustionType(self):
+        """
+        Return type for velocities's boundary conditions for inlet gas combustion.
+        """
+        node = self.boundNode.xmlGetNode('velocity_pressure')
+        n = node.xmlInitNode('gas_type')
+        type = n['choice']
+
+        if type == None:
+            type = self.__defaultValues()['gas_type']
+            self.setInletGasCombustionType(type)
+
+        return type
+
+
+    def setInletGasCombustionType(self, type):
+        """
+        Set type for velocities's boundary conditions for inlet gas combustion.
+        """
+        Model().isInList(type, self.typeListGasComb)
+
+        node = self.boundNode.xmlGetNode('velocity_pressure')
+        n= node.xmlInitNode('gas_type')
+        n['choice'] = type
+
+
+    def getGasCombustionTemperature(self):
+        """
+        Return value of the temperature for inlet gas combustion.
+        """
+        n = self.boundNode.xmlGetNode('velocity_pressure')
+        temperature = n.xmlGetChildDouble('temperature')
+        if temperature == None:
+            temperature = self.__defaultValues()['temperatureGas']
+            self.setGasCombustionTemperature(temperature)
+
+        return temperature
+
+
+    def setGasCombustionTemperature(self, value):
+        """
+        Set value of the temperature for inlet gas combustion.
+        """
+        Model().isFloat(value)
+        self.boundNode.xmlInitNode('velocity_pressure').xmlSetData('temperature',value)
+
+
+    def getMeanMixtureFraction(self):
+        """
+        Return value of the mean mixture fraction
+        """
+        n = self.boundNode.xmlGetNode('velocity_pressure')
+        fraction = n.xmlGetChildDouble('fraction')
+        if fraction == None:
+            fraction = self.__defaultValues()['fraction']
+            self.setMeanMixtureFraction(fraction)
+        return fraction
+
+
+    def setMeanMixtureFraction(self, value):
+        """
+        Set value of the mean mixture fraction
+        """
+        Model().isGreaterOrEqual(value, 0.0)
+        Model().isLowerOrEqual(value, 1.0)
+        self.boundNode.xmlInitNode('velocity_pressure').xmlSetData('fraction',value)
+
+
+    def deleteGas(self):
+        """
+        Delete all information of coal combustion in boundary conditions.
+        """
+        n = self.boundNode.xmlGetNode('velocity_pressure')
+        n.xmlRemoveChild('gas_type')
+        n.xmlRemoveChild('fraction')
+        n.xmlRemoveChild('temperature')
 
 #-------------------------------------------------------------------------------
 # Atmospheric flow inlet/outlet boundary.

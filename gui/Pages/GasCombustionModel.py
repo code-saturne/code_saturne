@@ -45,6 +45,9 @@ import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
 from Pages.ThermalRadiationModel import ThermalRadiationModel
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+from Pages.NumericalParamEquationModel import NumericalParamEquatModel
+from Pages.LocalizationModel import LocalizationModel
+from Pages.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 # Gas combustion model class
@@ -65,8 +68,15 @@ class GasCombustionModel(Variables, Model):
         self.node_coal  = nModels.xmlGetNode('pulverized_coal', 'model')
         self.node_joule = nModels.xmlGetNode('joule_effect',    'model')
         self.node_therm = nModels.xmlGetNode('thermal_scalar',  'model')
+        self.node_models = self.case.xmlGetNode('thermophysical_models')
+        self.node_reference = self.node_models.xmlInitNode('reference_values')
 
-        self.gasCombustionModel = ('off', 'ebu', 'd3p')
+        self.gasCombustionModel = ('off', 'ebu', 'd3p','lwp')
+        self.d3p_list = ("adiabatic", "extended")
+        self.ebu_list = ("spalding", "enthalpy_st", "mixture_st", "enthalpy_mixture_st")
+        self.lwp_list = ("2-peak_adiabatic", "2-peak_enthalpy",
+                         "3-peak_adiabatic", "3-peak_enthalpy",
+                         "4-peak_adiabatic", "4-peak_enthalpy")
 
 
     def defaultGasCombustionValues(self):
@@ -75,6 +85,16 @@ class GasCombustionModel(Variables, Model):
         """
         default = {}
         default['model'] = "off"
+
+        model = self.getGasCombustionModel()
+        if model == 'd3p':
+            default['option'] = "adiabatic"
+        elif model == 'ebu':
+            default['option'] = "spalding"
+        elif model == 'lwp':
+            default['option'] = "2-peak_adiabatic"
+        elif model == 'off':
+            default['option'] = "off"
 
         return default
 
@@ -119,11 +139,27 @@ class GasCombustionModel(Variables, Model):
         if model == 'off':
             self.node_gas['model'] = model
             ThermalRadiationModel(self.case).setRadiativeModel('off')
+            for tag in ('scalar',
+                        'property',
+                        'reference_mass_molar',
+                        'reference_temperature'):
+                for node in self.node_gas.xmlGetNodeList(tag):
+                    node.xmlRemoveNode()
+            for zone in LocalizationModel('BoundaryZone', self.case).getZones():
+                if zone.getNature() == "inlet":
+                    Boundary("gas_comb_inlet", zone.getLabel(), self.case).deleteGas()
+
         else:
             self.node_gas['model'] = model
             self.node_coal['model']  = 'off'
             self.node_joule['model'] = 'off'
             self.node_therm['model'] = 'off'
+
+        if model != 'd3p':
+            self.node_reference.xmlRemoveChild('oxydant_temperature')
+            self.node_reference.xmlRemoveChild('fuel_temperature')
+
+        self.createModel()
 
 
     def getGasCombustionModel(self):
@@ -136,6 +172,181 @@ class GasCombustionModel(Variables, Model):
             self.setGasCombustionModel(model)
 
         return model
+
+
+    def getGasCombustionOption(self):
+        """
+        Return the current gas combustion option.
+        """
+        option = self.node_gas['option']
+        if option == None:
+            option = self.defaultGasCombustionValues()['option']
+            self.setGasCombustionOption(option)
+
+        model = self.getGasCombustionModel()
+        if model == 'd3p':
+            if option not in self.d3p_list:
+                option = self.defaultGasCombustionValues()['option']
+                self.setGasCombustionOption(option)
+        elif model == 'ebu':
+            if option not in self.ebu_list:
+                option = self.defaultGasCombustionValues()['option']
+                self.setGasCombustionOption(option)
+        elif model == 'lwp':
+            if option not in self.lwp_list:
+                option = self.defaultGasCombustionValues()['option']
+                self.setGasCombustionOption(option)
+        elif model == 'off':
+            option = 'off'
+        return option
+
+
+    def setGasCombustionOption(self, option):
+        """
+        Return the current gas combustion option.
+        """
+        model = self.getGasCombustionModel()
+        if model == 'd3p':
+            self.isInList(option, self.d3p_list)
+        elif model == 'ebu':
+            self.isInList(option, self.ebu_list)
+        elif model == 'lwp':
+            self.isInList(option, self.lwp_list)
+        elif model == 'off':
+            self.isInList(option, ('off'))
+        self.node_gas['option'] = option
+        option = self.node_gas['option']
+        self.createModel()
+
+
+    def __createModelScalarsList(self , model):
+        """
+        Private method
+        Create model scalar list
+        """
+        option = self.getGasCombustionOption()
+        list_options = ["3-peak_adiabatic", "3-peak_enthalpy",
+                        "4-peak_adiabatic", "4-peak_enthalpy"]
+        acceptable_options = ["2-peak_enthalpy", "3-peak_enthalpy",
+                              "4-peak_enthalpy"]
+        list = []
+
+        if model == 'd3p':
+            list.append("Fra_MEL")
+            list.append("Var_FMe")
+            if option == 'extended':
+                list.append("Enthalpy")
+        elif model == 'ebu':
+            list.append("Fra_GF")
+            if option == "mixture_st" or option =="enthalpy_misture_st":
+                list.append("Fra_MEL")
+            elif option == "enthalpy_st" or option =="enthalpy_mixture_st":
+                list.append("Enthalpy")
+        elif model == 'lwp':
+            list.append("Fra_MEL")
+            list.append("Var_FMe")
+            list.append("Fra_Mas")
+            list.append("COYF_PP4")
+            if option in list_options:
+                list.append("Var_FMa")
+            if option in acceptable_options:
+                list.append("Enthalpy")
+        return list
+
+
+    def __createModelPropertiesList(self, model):
+        """
+        Private method
+        Create model properties
+        """
+        list = []
+        list.append("Temperature")
+        list.append("YM_Fuel")
+        list.append("YM_Oxyd")
+        list.append("YM_Prod")
+        if model == 'lwp':
+            list.append("T.SOURCE")
+            list.append("Mas_Mol")
+            ndirac = self.getNdirac()
+            for idirac in range(ndirac):
+                list.append("RHOL0" + str(idirac + 1))
+                list.append("TEML0" + str(idirac + 1))
+                list.append("FMEL0" + str(idirac + 1))
+                list.append("FMAL0" + str(idirac + 1))
+                list.append("AMPL0" + str(idirac + 1))
+                list.append("TSCL0" + str(idirac + 1))
+                list.append("MAML0" + str(idirac + 1))
+        return list
+
+
+    def __createModelScalars(self , model):
+        """
+        Private method
+        Create model scalar
+        """
+        previous_list = []
+        nodes = self.node_gas.xmlGetChildNodeList('scalar')
+        for node in nodes:
+            previous_list.append(node['name'])
+
+        new_list = self.__createModelScalarsList(model)
+        for name in previous_list:
+            if name not in new_list:
+                self.node_gas.xmlRemoveChild('scalar',  name = name)
+
+        for name in new_list:
+            if name not in previous_list:
+                self.setNewModelScalar(self.node_gas, name)
+
+        NPE = NumericalParamEquatModel(self.case)
+        for node in self.node_gas.xmlGetChildNodeList('scalar'):
+            NPE.setBlendingFactor(node['label'], 0.)
+            NPE.setScheme(node['label'], 'upwind')
+            NPE.setFluxReconstruction(node['label'], 'off')
+
+
+    def getNdirac(self):
+        """
+        """
+        option = self.getGasCombustionOption()
+        self.isInList(option, self.lwp_list)
+        if option == '2-peak_adiabatic' or option == '2-peak_enthalpy':
+            ndirac = 2
+        if option == '3-peak_adiabatic' or option == '3-peak_enthalpy':
+            ndirac = 3
+        if option == '4-peak_adiabatic' or option == '4-peak_enthalpy':
+            ndirac = 4
+        return ndirac
+
+
+    def __createModelProperties(self, model):
+        """
+        Private method
+        Create model properties
+        """
+        previous_list = []
+        nodes = self.node_gas.xmlGetChildNodeList('property')
+        for node in nodes:
+            previous_list.append(node['name'])
+
+        new_list = self.__createModelPropertiesList(model)
+        for name in previous_list:
+            if name not in new_list:
+                self.node_gas.xmlRemoveChild('property',  name = name)
+
+        for name in new_list:
+            if name not in previous_list:
+                self.setNewProperty(self.node_gas, name)
+
+
+    def createModel (self) :
+        """
+        Private method
+        Create scalars and properties when gas combustion is selected
+        """
+        model = self.getGasCombustionModel()
+        self.__createModelScalars(model)
+        self.__createModelProperties(model)
 
 
 #-------------------------------------------------------------------------------

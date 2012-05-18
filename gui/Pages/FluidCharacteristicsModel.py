@@ -67,13 +67,14 @@ class FluidCharacteristicsModel(Variables, Model):
         self.node_viscosity = self.setNewFluidProperty(self.node_fluid, 'molecular_viscosity')
         self.node_heat      = self.setNewFluidProperty(self.node_fluid, 'specific_heat')
         self.node_cond      = self.setNewFluidProperty(self.node_fluid, 'thermal_conductivity')
+        self.node_dyn       = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')
         self.nodeList = (self.node_density, self.node_viscosity,
-                         self.node_heat, self.node_cond)
+                         self.node_heat, self.node_cond, self.node_dyn)
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
             self.node_vol_visc  = self.setNewFluidProperty(self.node_fluid, 'volumic_viscosity')
             self.nodeList = (self.node_density, self.node_viscosity,
                              self.node_heat, self.node_cond,
-                             self.node_vol_visc)
+                             self.node_vol_visc, self.node_dyn)
 
 
     def __nodeFromTag(self, name):
@@ -98,6 +99,7 @@ class FluidCharacteristicsModel(Variables, Model):
         default['molecular_viscosity']  = 1.83e-05
         default['specific_heat']        = 1017.24
         default['thermal_conductivity'] = 0.02495
+        default['dynamic_diffusion']    = 0.01
         default['volumic_viscosity']    = 1.83e-05
 
         return default
@@ -161,7 +163,7 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity',
-                            'volumic_viscosity'))
+                            'volumic_viscosity', 'dynamic_diffusion'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
         pp = node.xmlGetDouble('initial_value')
         if pp == None:
@@ -177,7 +179,7 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity',
-                            'volumic_viscosity'))
+                            'volumic_viscosity', 'dynamic_diffusion'))
         self.isGreater(val, 0.)
         node = self.node_fluid.xmlGetNode('property', name=tag)
         node.xmlSetData('initial_value', val)
@@ -231,6 +233,16 @@ class FluidCharacteristicsModel(Variables, Model):
     def setInitialValueCond(self, val):
         """Put initial value for conductivity"""
         self.setInitialValue('thermal_conductivity', val)
+
+
+    def getInitialValueDyn(self):
+        """Return initial value of conductivity"""
+        return self.getInitialValue('dynamic_diffusion')
+
+
+    def setInitialValueDyn(self, val):
+        """Put initial value for conductivity"""
+        self.setInitialValue('dynamic_diffusion', val)
 
 
     def getFormula(self, tag):

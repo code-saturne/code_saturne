@@ -318,7 +318,7 @@ cs_gui_scalar_properties_choice(const int scalar_num, int *const choice)
   } else {
     ichoice = 1;
 
-    if (cs_gui_strcmp(buff, "user_law"))
+    if (cs_gui_strcmp(buff, "variable") || cs_gui_strcmp(buff, "user_law"))
       *choice = 1;
     else if (cs_gui_strcmp(buff, "constant"))
       *choice = 0;
@@ -880,7 +880,7 @@ cs_gui_coriolis_value(const char   *const param,
  *   value              <--   new initial value of the property
  *----------------------------------------------------------------------------*/
 
-static void
+void
 cs_gui_properties_value(const char   *const property_name,
                               double *const value)
 {
@@ -954,10 +954,11 @@ cs_gui_properties_choice(const char *const property_name, int *choice)
  * Initialization choice of the reference variables parameters.
  *
  * parameters:
- *   p0              <--   value of pressure
+ *   name            <--   parameter name
+ *   value           -->   parameter value
  *----------------------------------------------------------------------------*/
 
-static void
+void
 cs_gui_reference_initialization(const char   *const param,
                                       double *const value)
 {

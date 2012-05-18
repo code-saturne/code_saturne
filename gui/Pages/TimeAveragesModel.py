@@ -105,6 +105,7 @@ class TimeAveragesModel(Model):
                          output.getAdditionalScalarProperty(),
                          output.getTimeProperty(),
                          output.getPuCoalScalProper(),
+                         output.getGasCombScalProper(),
                          output.getMeteoScalProper(),
                          output.getThermalScalar(),
                          output.getAdditionalScalar()]:

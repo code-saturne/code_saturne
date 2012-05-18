@@ -195,6 +195,44 @@ class ReferenceValuesModel(Model):
         return value
 
 
+    def setTempOxydant(self, value):
+        """
+        Set reference temperature for Oxydant.
+        """
+        self.isGreater(value, 0.0)
+        self.node_reference.xmlSetData('oxydant_temperature', value)
+
+
+    def getTempOxydant(self):
+        """
+        Get reference temperaturefor Oxydant.
+        """
+        value = self.node_reference.xmlGetDouble('oxydant_temperature')
+        if not value :
+            value = self.defaultValues()['reference_temperature']
+            self.setTemperature(value)
+        return value
+
+
+    def setTempFuel(self, value):
+        """
+        Set reference temperature.
+        """
+        self.isGreater(value, 0.0)
+        self.node_reference.xmlSetData('fuel_temperature', value)
+
+
+    def getTempFuel(self):
+        """
+        Get reference temperature.
+        """
+        value = self.node_reference.xmlGetDouble('fuel_temperature')
+        if not value :
+            value = self.defaultValues()['reference_temperature']
+            self.setTemperature(value)
+        return value
+
+
     def setMassemol(self, value):
         """
         Set reference mass molar.

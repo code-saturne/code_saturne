@@ -60,6 +60,7 @@ class ThermalRadiationModel(Model):
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_ray    = self.node_models.xmlInitNode('radiative_transfer')
         self.node_Coal   = self.node_models.xmlGetNode('pulverized_coal')
+        self.node_gas    = self.node_models.xmlGetNode('gas_combustion')
 
         self.radiativeModels = ('off', 'dom', 'p-1')
         self.optionsList = [0, 1, 2]
@@ -283,6 +284,18 @@ class ThermalRadiationModel(Model):
         return value
 
 
+    def isGasCombustion(self):
+        """
+        Return 0 if gas combustion attribute model is 'off',
+        return 1 if it's different
+        """
+        value = 0
+        if self.node_gas and self.node_gas.xmlGetAttribute('model') != 'off':
+            value = 1
+
+        return value
+
+
 #    def _setVariable_ray(self):
 #        """
 #        Private method: put all variables for thermal radiative transfer
@@ -339,6 +352,15 @@ class ThermalRadiationModel(Model):
             self._setVariable_ray()
             self._setBoundCond()
             self._updateModelParameters(model)
+            if self.isGasCombustion():
+                self.setNewProperty(self.node_gas, "KABS")
+                self.setNewProperty(self.node_gas, "TEMP4")
+                self.setNewProperty(self.node_gas, "TEMP3")
+        else:
+            if self.isGasCombustion():
+                self.node_gas.xmlRemoveChild('property',  name = "KABS")
+                self.node_gas.xmlRemoveChild('property',  name = "TEMP4")
+                self.node_gas.xmlRemoveChild('property',  name = "TEMP3")
 
 
     def getNbDir(self):

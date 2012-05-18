@@ -127,6 +127,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelGasCombustionModel.addItem(self.tr("off"), "off")
         self.modelGasCombustionModel.addItem(self.tr("premixed flame (Eddy Break-Up)"), "ebu")
         self.modelGasCombustionModel.addItem(self.tr("equilibrium chemistry diffusion flame (Presumed PDF)"), "d3p")
+        self.modelGasCombustionModel.addItem(self.tr("premixed flame (Libby_Williams)"), "lwp")
 
         self.modelPulverizedCoal.addItem(self.tr("off"), "off")
         self.modelPulverizedCoal.addItem(self.tr("homogeneous approach"), "coal_homo")
@@ -176,9 +177,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         val = self.atmo.getAtmosphericFlowsModel()
         self.modelAtmospheric.setItem(str_model=val)
 
-        self.modelGasCombustionModel.setItem(str_model='off') # to delete
-        self.modelGasCombustionModel.disableItem(str_model='ebu') # to delete
-        self.modelGasCombustionModel.disableItem(str_model='d3p') # to delete
         model = self.gas.getGasCombustionModel()
         self.modelGasCombustionModel.setItem(str_model=model)
 
@@ -236,6 +234,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             self.modelGasCombustionModel.disableItem(str_model='ebu')
             self.modelGasCombustionModel.disableItem(str_model='d3p')
+            self.modelGasCombustionModel.disableItem(str_model='lwp')
 
             self.modelJouleEffect.disableItem(str_model='joule')
             self.modelJouleEffect.disableItem(str_model='arc')
@@ -306,6 +305,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxPulverizedCoal.setEnabled(False)
         self.comboBoxJouleEffect.setEnabled(False)
         self.comboBoxAtmospheric.setEnabled(False)
+        self.comboBoxCompressible.setEnabled(False)
 
 
     def __stringModelFromCombo(self, name):

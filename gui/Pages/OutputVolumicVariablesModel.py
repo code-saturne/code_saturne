@@ -73,6 +73,7 @@ class OutputVolumicVariablesModel(Model):
                               self.getTimeProperty(),
                               self.getMeteoScalProper(),
                               self.getPuCoalScalProper(),
+                              self.getGasCombScalProper(),
                               self._getWeightMatrixProperty(),
                               self.getListOfTimeAverage(),
                               self._getListOfAleMethod(),
@@ -180,6 +181,23 @@ class OutputVolumicVariablesModel(Model):
         """
         nodList = []
         node = self.node_models.xmlGetNode('pulverized_coal', 'model')
+        model = node['model']
+        varList = []
+        if model != 'off':
+            for var in ('scalar', 'property'):
+                nodList = node.xmlGetNodeList(var)
+                for nodvar in nodList:
+                    varList.append(nodvar)
+        return varList
+
+
+    def getGasCombScalProper(self):
+        """
+        Return list fo nodes of gas combustion.
+        Also called by ProfilesModel and TimeAveragesModel
+        """
+        nodList = []
+        node = self.node_models.xmlGetNode('gas_combustion', 'model')
         model = node['model']
         varList = []
         if model != 'off':

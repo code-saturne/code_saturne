@@ -50,6 +50,7 @@ from Base.Toolbox import GuiParam
 from Pages.ReferenceValuesForm import Ui_ReferenceValuesForm
 import Base.QtPage as QtPage
 from Pages.ReferenceValuesModel import ReferenceValuesModel
+from Pages.GasCombustionModel import GasCombustionModel
 from Pages.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
@@ -93,6 +94,8 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         self.connect(self.comboBoxLength,    SIGNAL("activated(const QString&)"),    self.slotLengthChoice)
         self.connect(self.lineEditL0,        SIGNAL("textChanged(const QString &)"), self.slotLength)
         self.connect(self.lineEditT0,        SIGNAL("textChanged(const QString &)"), self.slotTemperature)
+        self.connect(self.lineEditOxydant,   SIGNAL("textChanged(const QString &)"), self.slotTempOxydant)
+        self.connect(self.lineEditFuel,      SIGNAL("textChanged(const QString &)"), self.slotTempFuel)
         self.connect(self.lineEditMassMolar, SIGNAL("textChanged(const QString &)"), self.slotMassemol)
 
         # Validators
@@ -110,6 +113,14 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         validatorT0.setExclusiveMin(True)
         self.lineEditT0.setValidator(validatorT0)
 
+        validatorOxydant = QtPage.DoubleValidator(self.lineEditOxydant,  min=0.0)
+        validatorOxydant.setExclusiveMin(True)
+        self.lineEditOxydant.setValidator(validatorOxydant)
+
+        validatorFuel = QtPage.DoubleValidator(self.lineEditFuel,  min=0.0)
+        validatorFuel.setExclusiveMin(True)
+        self.lineEditFuel.setValidator(validatorFuel)
+
         validatorMM = QtPage.DoubleValidator(self.lineEditMassMolar, min=0.0)
         validatorMM.setExclusiveMin(True)
         self.lineEditMassMolar.setValidator(validatorMM)
@@ -125,9 +136,23 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         elif model != "off":
             self.groupBoxTemperature.show()
             self.groupBoxMassMolar.show()
+        elif model == "comp":
+            self.groupBoxTemperature.show()
+            self.groupBoxMassMolar.show()
         else:
             self.groupBoxTemperature.hide()
             self.groupBoxMassMolar.hide()
+
+        gas_comb = GasCombustionModel(self.case).getGasCombustionModel()
+        if gas_comb == 'd3p':
+            self.groupBoxTempd3p.show()
+            self.groupBoxTemperature.hide()
+            t_oxy  = self.mdl.getTempOxydant()
+            t_fuel = self.mdl.getTempFuel()
+            self.lineEditOxydant.setText(QString(str(t_oxy)))
+            self.lineEditFuel.setText(QString(str(t_fuel)))
+        else:
+            self.groupBoxTempd3p.hide()
 
         # Initialization
 
@@ -213,6 +238,26 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         t, ok = text.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setTemperature(t)
+
+
+    @pyqtSignature("const QString&")
+    def slotTempOxydant(self,  text):
+        """
+        Input oxydant TEMPERATURE.
+        """
+        t, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setTempOxydant(t)
+
+
+    @pyqtSignature("const QString&")
+    def slotTempFuel(self,  text):
+        """
+        Input fuel TEMPERATURE.
+        """
+        t, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setTempFuel(t)
 
 
     @pyqtSignature("const QString&")

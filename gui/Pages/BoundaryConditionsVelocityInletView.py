@@ -51,6 +51,7 @@ from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
 from Pages.CompressibleModel import CompressibleModel
+from Pages.GasCombustionModel import GasCombustionModel
 
 from Pages.QMeiEditorView import QMeiEditorView
 
@@ -87,13 +88,14 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         self.__case = case
         self.__boundary = None
-        self.mdl =  CompressibleModel(self.__case)
+        self.mdl = CompressibleModel(self.__case)
+        self.gas = GasCombustionModel(self.__case)
 
         # Connections
         self.connect(self.comboBoxVelocity, SIGNAL("activated(const QString&)"), self.__slotChoiceVelocity)
         self.connect(self.lineEditVelocity, SIGNAL("textChanged(const QString &)"), self.__slotVelocityValue)
 
-        self.connect(self.comboBoxDirection, SIGNAL("activated(const QString&)"), self.__slotChoiceDirection)
+        self.connect(self.comboBoxDirection,  SIGNAL("activated(const QString&)"), self.__slotChoiceDirection)
         self.connect(self.lineEditDirectionX, SIGNAL("textChanged(const QString &)"), self.__slotDirX)
         self.connect(self.lineEditDirectionY, SIGNAL("textChanged(const QString &)"), self.__slotDirY)
         self.connect(self.lineEditDirectionZ, SIGNAL("textChanged(const QString &)"), self.__slotDirZ)
@@ -108,6 +110,10 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.connect(self.lineEditDensity2,     SIGNAL("textChanged(const QString &)"), self.__slotDensity2Value)
         self.connect(self.lineEditTemperature,  SIGNAL("textChanged(const QString &)"), self.__slotTemperatureValue)
         self.connect(self.lineEditEnergy,       SIGNAL("textChanged(const QString &)"), self.__slotEnergyValue)
+
+        self.connect(self.comboBoxTypeInletGasComb,   SIGNAL("activated(const QString&)"), self.__slotInletTypeGasComb)
+        self.connect(self.lineEditTemperatureGasComb, SIGNAL("textChanged(const QString &)"),  self.__slotTemperatureGasComb)
+        self.connect(self.lineEditFraction,           SIGNAL("textChanged(const QString &)"),  self.__slotMeanMixtureFraction)
 
         # Combo models
         self.modelVelocity = ComboModel(self.comboBoxVelocity, 6, 1)
@@ -127,6 +133,15 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.modelTypeInlet.addItem(self.tr("imposed inlet"), 'imposed_inlet')
         self.modelTypeInlet.addItem(self.tr("subsonic inlet"), 'subsonic_inlet')
 
+        self.modelTypeInletGasComb = ComboModel(self.comboBoxTypeInletGasComb, 2, 1)
+        model = self.gas.getGasCombustionModel()
+        if model == 'lwp' or model =='ebu':
+            self.modelTypeInletGasComb.addItem(self.tr("Unburned gas"), 'unburned')
+            self.modelTypeInletGasComb.addItem(self.tr("Burned gas"), 'burned')
+        elif model == 'd3p':
+            self.modelTypeInletGasComb.addItem(self.tr("Oxydant"), 'oxydant')
+            self.modelTypeInletGasComb.addItem(self.tr("Fuel"), 'fuel')
+
         # Validators
         validatorVelocity = DoubleValidator(self.lineEditVelocity)
         validatorX = DoubleValidator(self.lineEditDirectionX)
@@ -137,6 +152,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         validatorT = DoubleValidator(self.lineEditTemperature, min = 0.0)
         validatorE = DoubleValidator(self.lineEditEnergy, min = 0.0)
         validatorD2 = DoubleValidator(self.lineEditDensity2, min = 0.0)
+        validatorTemp = DoubleValidator(self.lineEditTemperatureGasComb, min=0.)
+        validatorFrac = DoubleValidator(self.lineEditFraction, min=0., max=1.)
 
         # Apply validators
         self.lineEditVelocity.setValidator(validatorVelocity)
@@ -148,6 +165,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.lineEditTemperature.setValidator(validatorT)
         self.lineEditEnergy.setValidator(validatorE)
         self.lineEditDensity2.setValidator(validatorD2)
+        self.lineEditTemperatureGasComb.setValidator(validatorTemp)
+        self.lineEditFraction.setValidator(validatorFrac)
 
         self.connect(self.pushButtonVelocityFormula, SIGNAL("clicked()"), self.__slotVelocityFormula)
         self.connect(self.pushButtonDirectionFormula, SIGNAL("clicked()"), self.__slotDirectionFormula)
@@ -269,6 +288,33 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                 self.lineEditDensity2.setText(QString(str(density)))
         else:
             self.groupBoxCompressible.hide()
+
+
+        # Initialize temperature and mean mixture fraction
+        model = self.gas.getGasCombustionModel()
+        if model != 'off':
+            self.groupBoxGasCombustion.show()
+            if model == 'd3p':
+                self.lineEditTemperatureGasComb.hide()
+                self.labelTemperature_2.hide()
+                self.labelUnitTemp.hide()
+                self.lineEditFraction.setEnabled(False)
+                f = self.__boundary.setMeanMixtureFraction(1)
+                self.lineEditFraction.setText(QString(str(1)))
+            else :
+                self.lineEditTemperatureGasComb.show()
+                self.labelTemperature_2.show()
+                self.labelUnitTemp.show()
+                t = self.__boundary.getGasCombustionTemperature()
+                self.lineEditTemperatureGasComb.setText(QString(str(t)))
+                self.lineEditFraction.setEnabled(True)
+                f = self.__boundary.getMeanMixtureFraction()
+                self.lineEditFraction.setText(QString(str(f)))
+
+            inlet_type = self.__boundary.getInletGasCombustionType()
+            self.modelTypeInletGasComb.setItem(str_model = inlet_type)
+        else:
+            self.groupBoxGasCombustion.hide()
 
         self.show()
 
@@ -635,6 +681,37 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         t, ok = text.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setThermoValue('density', t)
+
+
+    @pyqtSignature("const QString&")
+    def __slotTemperatureGasComb(self, text):
+        """
+        INPUT inlet temperature
+        """
+        t, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.__boundary.setGasCombustionTemperature(t)
+
+
+    @pyqtSignature("const QString&")
+    def __slotMeanMixtureFraction(self, text):
+        """
+        INPUT inlet mean mixutre fraction
+        """
+        f, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.__boundary.setMeanMixtureFraction(f)
+
+
+    @pyqtSignature("const QString&")
+    def __slotInletTypeGasComb(self, text):
+        """
+        INPUT inlet type : 'oxydant'/'fuel' or 'burned'/'unburned'
+        """
+        value = self.modelTypeInletGasComb.dicoV2M[str(text)]
+        log.debug("__slotInletTypeGasComb value = %s " % value)
+        self.__boundary.setInletGasCombustionType(value)
+        self.initialize()
 
 
     def tr(self, text):

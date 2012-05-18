@@ -111,8 +111,9 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.ThermalScalarView as Page
         thisPage = Page.ThermalScalarView(root, case, tree)
 
-##     elif page_name == tr("Gas combustion"):
-##         thisPage = root.fr2.p2.fr.window.myPage
+    elif page_name == tr("Gas combustion"):
+        import Pages.GasCombustionView as Page
+        thisPage = Page.GasCombustionView(root, case)
 
     elif page_name == tr("Current species"):
         import Pages.CurrentSpeciesView as Page

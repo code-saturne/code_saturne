@@ -62,6 +62,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use ihmpre
 
 !===============================================================================
 
@@ -135,6 +136,15 @@ if (ippmod(icolwc).ge.0 ) then
   if (ippmod(icolwc).eq.3 .or.                                    &
       ippmod(icolwc).eq.5 ) ihm = iscapp(6)
 
+endif
+
+!   - Interface Code_Saturne
+!     ======================
+!     Construction de l'indirection entre la numerotation du noyau et XML
+
+if (iihmpr.eq.1) then
+   call uicosc(ippmod, icolwc, icoebu, icod3p, ihm,               &
+               ifm, ifp2m, iygfm, iyfm, iyfp2m, icoyfp)
 endif
 
 !===============================================================================

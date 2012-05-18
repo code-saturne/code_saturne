@@ -66,14 +66,20 @@ typedef struct {
   char      **label;       /* label for each boundary zone                    */
   char      **nature;      /* nature for each boundary zone                   */
   int        *iqimp;       /* 1 if a flow rate is applied                     */
+  int        *ientfu;      /* 1  for a fuel flow inlet (gas combustion - D3P) */
+  int        *ientox;      /* 1 for an air flow inlet (gas combustion - D3P)  */
+  int        *ientgb;      /* 1 for burned gas inlet (gas combustion)         */
+  int        *ientgf;      /* 1 for unburned gas inlet (gas combustion)       */
   int        *ientat;      /* 1 if inlet for oxydant (coal combustion)        */
   int        *ientcp;      /* 1 if inlet for oxydant+coal (coal combustion)   */
   int        *icalke;      /* automatic boundaries for turbulent variables    */
   double     *qimp;        /* oxydant flow rate (coal combustion)             */
   double     *inmoxy;      /* oxydant number (coal combustion)                */
   double     *timpat;      /* inlet temperature of oxydant (coal combustion)  */
+  double     *tkent;       /* inlet temperature (gas combustion)              */
   double    **qimpcp;      /* inlet coal flow rate (coal combustion)          */
   double    **timpcp;      /* inlet coal temperature (coal combustion)        */
+  double     *fment;       /* Mean Mixture Fraction at Inlet (gas combustion) */
   int        *itype;       /* type of inlet/outlet (compressible model)       */
   double     *prein;       /* inlet pressure (compressible model)             */
   double     *rhoin;       /* inlet density  (compressible model)             */
@@ -163,6 +169,10 @@ extern cs_boundary_t *boundaries;
  * INTEGER          IENTAT  --> 1 for air temperature boundary conditions (coal)
  * INTEGER          IENTCP  --> 1 for coal temperature boundary conditions (coal)
  * INTEGER          inmoxy  --> oxydant number (coal)
+ * INTEGER          IENTOX  --> 1 for an air fow inlet (gas combustion)
+ * INTEGER          IENTFU  --> 1 for fuel flow inlet (gas combustion)
+ * INTEGER          IENTGB  --> 1 for burned gas inlet (gas combustion)
+ * INTEGER          IENTGF  --> 1 for unburned gas inlet (gas combustion)
  * integer          iprofm  --> atmospheric flows: on/off for profile from data
  * INTEGER          ITYPFB  --> type of boundary for each face
  * INTEGER          IZFPPP  --> zone number for each boundary face
@@ -178,6 +188,8 @@ extern cs_boundary_t *boundaries;
  * DOUBLE PRECISION XINTUR  --> turbulent intensity
  * DOUBLE PRECISION TIMPAT  --> air temperature boundary conditions (coal)
  * DOUBLE PRECISION TIMPCP  --> inlet coal temperature (coal)
+ * DOUBLE PRECISION TKENT   --> inlet temperature (gas combustion)
+ * DOUBLE PRECISION FMENT   --> Mean Mixture Fraction at Inlet (gas combustion)
  * DOUBLE PRECISION DISTCH  --> ratio for each coal
  * DOUBLE PRECISION RCODCL  --> boundary conditions array value
  *----------------------------------------------------------------------------*/
@@ -208,6 +220,10 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                         int *const ientat,
                                         int *const ientcp,
                                         int *const inmoxy,
+                                        int *const ientox,
+                                        int *const ientfu,
+                                        int *const ientgf,
+                                        int *const ientgb,
                                         int *const iprofm,
                                         int *const itypfb,
                                         int *const izfppp,
@@ -223,6 +239,8 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                      double *const xintur,
                                      double *const timpat,
                                      double *const timpcp,
+                                     double *const tkent,
+                                     double *const fment,
                                      double *const distch,
                                      double *const rcodcl);
 

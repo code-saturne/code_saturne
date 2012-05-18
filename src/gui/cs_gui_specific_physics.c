@@ -204,6 +204,37 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
                 bft_error(__FILE__, __LINE__, 0,
                           _("Invalid coal model: %s.\n"), vars->model_value);
         }
+        else if  (cs_gui_strcmp(vars->model, "gas_combustion"))
+        {
+            if (cs_gui_strcmp(vars->model_value, "adiabatic"))
+                ippmod[*icod3p - 1] = 0;
+            else if (cs_gui_strcmp(vars->model_value, "extended"))
+                ippmod[*icod3p - 1] = 1;
+            else if (cs_gui_strcmp(vars->model_value, "spalding"))
+                ippmod[*icoebu - 1] = 0;
+            else if (cs_gui_strcmp(vars->model_value, "enthalpy_st"))
+                ippmod[*icoebu - 1] = 1;
+            else if (cs_gui_strcmp(vars->model_value, "mixture_st"))
+                ippmod[*icoebu - 1] = 2;
+            else if (cs_gui_strcmp(vars->model_value, "enthalpy_mixture_st"))
+                ippmod[*icoebu - 1] = 3;
+            else if (cs_gui_strcmp(vars->model_value, "2-peak_adiabatic"))
+                ippmod[*icolwc - 1] = 0;
+            else if (cs_gui_strcmp(vars->model_value, "2-peak_enthalpy"))
+                ippmod[*icolwc - 1] = 1;
+            else if (cs_gui_strcmp(vars->model_value, "3-peak_adiabatic"))
+                ippmod[*icolwc - 1] = 2;
+            else if (cs_gui_strcmp(vars->model_value, "3-peak_enthalpy"))
+                ippmod[*icolwc - 1] = 3;
+            else if (cs_gui_strcmp(vars->model_value, "4-peak_adiabatic"))
+                ippmod[*icolwc - 1] = 4;
+            else if (cs_gui_strcmp(vars->model_value, "4-peak_enthalpy"))
+                ippmod[*icolwc - 1] = 5;
+            else
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Invalid gas combustion flow model: %s.\n"),
+                          vars->model_value);
+        }
         else if  (cs_gui_strcmp(vars->model, "atmospheric_flows"))
         {
             if (cs_gui_strcmp(vars->model_value, "constant"))
@@ -260,18 +291,53 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
  *
  * Fortran Interface:
  *
- * SUBROUTINE UICPI1 (SRROM)
+ * SUBROUTINE UICPI1 (SRROM, DIFTL0)
  * *****************
  * DOUBLE PRECISION SRROM   <--   density relaxation
+ * DOUBLE PRECISION DIFTL0  <--   dynamic diffusion
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uicpi1, UICPI1) (double *const srrom)
+void CS_PROCF (uicpi1, UICPI1) (double *const srrom,
+                                double *const diftl0)
 {
+  cs_var_t  *vars = cs_glob_var;
+
   cs_gui_numerical_double_parameters("density_relaxation", srrom);
+
+  if (cs_gui_strcmp(vars->model, "gas_combustion") ||
+      cs_gui_strcmp(vars->model, "pulverized_coal")) {
+      cs_gui_properties_value("dynamic_diffusion", diftl0);
+  }
 
 #if _XML_DEBUG_
   bft_printf("==>UICPI1\n");
   bft_printf("--srrom  = %f\n", *srrom);
+  if (cs_gui_strcmp(vars->model, "gas_combustion")) {
+      bft_printf("--diftl0  = %f\n", *diftl0);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Temperature for D3P Gas Combustion
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UICPI2 (Toxy, Tfuel)
+ * *****************
+ * DOUBLE PRECISION Toxy   <--   Oxydant temperature
+ * DOUBLE PRECISION Tfuel  <--   Fuel temperature
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
+                                double *const tfuel)
+{
+  cs_gui_reference_initialization("oxydant_temperature", toxy);
+  cs_gui_reference_initialization("fuel_temperature", tfuel);
+#if _XML_DEBUG_
+  bft_printf("==>UICPI2\n");
+  bft_printf("--toxy  = %f\n", *toxy);
+  bft_printf("--tfuel  = %f\n", *tfuel);
 #endif
 }
 
@@ -555,6 +621,283 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                  i, vars->propce[i],
                  i, vars->properties_name[i]);
 #endif
+}
+
+/*-----------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
+ * for physical properties of the activated specific physics (gaz combustion)
+ *----------------------------------------------------------------------------*/
+void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
+                                const int *const ippmod,
+                                const int *const ipppro,
+                                const int *const ipproc,
+                                const int *const icod3p,
+                                const int *const icoebu,
+                                const int *const icolwc,
+                                const int *const iirayo,
+                                const int *const itemp,
+                                const int *const imam,
+                                const int *const iym,
+                                const int *const ickabs,
+                                const int *const it4m,
+                                const int *const it3m,
+                                const int *const ix2,
+                                const int *const itsc,
+                                const int *const irhol,
+                                const int *const iteml,
+                                const int *const ifmel,
+                                const int *const ifmal,
+                                const int *const iampl,
+                                const int *const itscl,
+                                const int *const imaml)
+{
+    int i = 0;
+    int n, ndirac, idirac, j;
+    char *name = NULL;
+    char *snumpp = NULL;
+
+    cs_var_t  *vars = cs_glob_var;
+
+    n = vars->nprop;
+    vars->nprop  += *nsalpp;
+    vars->nsalpp  = *nsalpp;
+
+    BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
+    BFT_REALLOC(vars->propce,          vars->nprop, int);
+    BFT_REALLOC(vars->properties_name, vars->nprop, char*);
+    BFT_MALLOC(snumpp, 1 + 2, char);
+    /* Source Term */
+    if (ippmod[*icolwc -1] >= 0) {
+        vars->properties_ipp[n] = ipppro[ ipproc[ *itsc -1 ]-1 ];
+        vars->propce[n] = *itsc;
+        BFT_MALLOC(vars->properties_name[n], strlen("T.SOURCE")+1, char);
+        strcpy(vars->properties_name[n++], "T.SOURCE");
+    }
+
+    /* Temperature */
+    vars->properties_ipp[n] = ipppro[ ipproc[ *itemp -1 ]-1 ];
+    vars->propce[n] = *itemp;
+    BFT_MALLOC(vars->properties_name[n], strlen("Temperature")+1, char);
+    strcpy(vars->properties_name[n++], "Temperature");
+
+    if (ippmod[*icolwc -1]>=0) {
+        /* Mass Molaire */
+        vars->properties_ipp[n] = ipppro[ ipproc[ *imam -1 ]-1 ];
+        vars->propce[n] = *imam;
+        BFT_MALLOC(vars->properties_name[n], strlen("Mas_Mol")+1, char);
+        strcpy(vars->properties_name[n++], "Mas_Mol");
+    }
+
+    /* Fuel mass fraction */
+    vars->properties_ipp[n] = ipppro[ ipproc[ iym[0] -1 ]-1 ];
+    vars->propce[n] = iym[0];
+    BFT_MALLOC(vars->properties_name[n], strlen("YM_Fuel")+1, char);
+    strcpy(vars->properties_name[n++], "YM_Fuel");
+
+    /*  Oxydizer Mass fraction */
+    vars->properties_ipp[n] = ipppro[ ipproc[ iym[1] -1 ]-1 ];
+    vars->propce[n] = iym[1];
+    BFT_MALLOC(vars->properties_name[n], strlen("YM_Oxyd")+1, char);
+    strcpy(vars->properties_name[n++], "YM_Oxyd");
+
+    /*  Product Mass fraction */
+    vars->properties_ipp[n] = ipppro[ ipproc[ iym[2] -1 ]-1 ];
+    vars->propce[n] = iym[2];
+    BFT_MALLOC(vars->properties_name[n], strlen("YM_Prod")+1, char);
+    strcpy(vars->properties_name[n++], "YM_Prod");
+    if (ippmod[*icolwc -1]>0) {
+        if (ippmod[*icolwc -1] == 0 || ippmod[*icolwc -1] == 1) {
+            ndirac = 2;
+        } else if (ippmod[*icolwc -1] == 2 || ippmod[*icolwc -1] == 3) {
+            ndirac = 3;
+        } else if (ippmod[*icolwc -1] == 4 || ippmod[*icolwc -1] == 5) {
+            ndirac = 4;
+        }
+        BFT_MALLOC(name, strlen("RHOL")+1 + 2, char);
+        strcpy(name, "RHOL");
+        for (idirac = 0; idirac < ndirac; idirac++) {
+            vars->properties_ipp[n] = ipppro[ ipproc[ irhol[idirac] -1 ]-1 ];
+            vars->propce[n] = irhol[idirac];
+            BFT_MALLOC(vars->properties_name[n], strlen(name)+1+2, char);
+            sprintf(snumpp, "%2.2i", idirac+1);
+            strcat(name, snumpp);
+            strcpy(vars->properties_name[n++], name);
+            strcpy(name, "TEML");
+
+
+            vars->properties_ipp[n] = ipppro[ ipproc[ iteml[idirac] -1 ]-1 ];
+            vars->propce[n] = iteml[idirac];
+            BFT_MALLOC(vars->properties_name[n], strlen(name)+1+2, char);
+            sprintf(snumpp, "%2.2i", idirac+1);
+            strcat(name, snumpp);
+            strcpy(vars->properties_name[n++], name);
+            strcpy(name, "FMEL");
+
+            vars->properties_ipp[n] = ipppro[ ipproc[ ifmel[idirac] -1 ]-1 ];
+            vars->propce[n] = ifmel[idirac];
+            BFT_MALLOC(vars->properties_name[n], strlen(name)+1+2, char);
+            sprintf(snumpp, "%2.2i", idirac+1);
+            strcat(name, snumpp);
+            strcpy(vars->properties_name[n++], name);
+            strcpy(name, "FMAL");
+
+            vars->properties_ipp[n] = ipppro[ ipproc[ ifmal[idirac] -1 ]-1 ];
+            vars->propce[n] = ifmal[idirac];
+            BFT_MALLOC(vars->properties_name[n], strlen(name)+1+2, char);
+            sprintf(snumpp, "%2.2i", idirac+1);
+            strcat(name, snumpp);
+            strcpy(vars->properties_name[n++], name);
+            strcpy(name, "AMPL");
+
+            vars->properties_ipp[n] = ipppro[ ipproc[ iampl[idirac] -1 ]-1 ];
+            vars->propce[n] = iampl[idirac];
+            BFT_MALLOC(vars->properties_name[n], strlen(name)+1+2, char);
+            sprintf(snumpp, "%2.2i", idirac+1);
+            strcat(name, snumpp);
+            strcpy(vars->properties_name[n++], name);
+            strcpy(name, "TSCL");
+
+            vars->properties_ipp[n] = ipppro[ ipproc[ itscl[idirac] -1 ]-1 ];
+            vars->propce[n] = itscl[idirac];
+            BFT_MALLOC(vars->properties_name[n], strlen(name)+1+2, char);
+            sprintf(snumpp, "%2.2i", idirac+1);
+            strcat(name, snumpp);
+            strcpy(vars->properties_name[n++], name);
+            strcpy(name, "MAML");
+
+            vars->properties_ipp[n] = ipppro[ ipproc[ imaml[idirac] -1 ]-1 ];
+            vars->propce[n] = imaml[idirac];
+            BFT_MALLOC(vars->properties_name[n], strlen(name)+1+2, char);
+            sprintf(snumpp, "%2.2i", idirac+1);
+            strcat(name, snumpp);
+            strcpy(vars->properties_name[n++], name);
+            strcpy(name, "RHOL");
+        }
+    }
+    if (iirayo >= 0) {
+        /* Absoption coefficient */
+        vars->properties_ipp[n] = ipppro[ ipproc[ *ickabs -1 ]-1 ];
+        vars->propce[n] = *ickabs;
+        BFT_MALLOC(vars->properties_name[n], strlen("KABS")+1, char);
+        strcpy(vars->properties_name[n++], "KABS");
+
+        /* Term T^4 */
+        vars->properties_ipp[n] = ipppro[ ipproc[ *it4m -1 ]-1 ];
+        vars->propce[n] = *it4m;
+        BFT_MALLOC(vars->properties_name[n], strlen("TEMP4")+1, char);
+        strcpy(vars->properties_name[n++], "TEMP4");
+
+        /* Term T^3 */
+        vars->properties_ipp[n] = ipppro[ ipproc[ *it3m -1 ]-1 ];
+        vars->propce[n] = *it3m;
+        BFT_MALLOC(vars->properties_name[n], strlen("TEMP3")+1, char);
+        strcpy(vars->properties_name[n++], "TEMP3");
+    }
+
+
+    BFT_FREE(name);
+    BFT_FREE(snumpp);
+
+    if (n != vars->nsalpp)
+        bft_error(__FILE__, __LINE__, 0,
+                _("number of properties is not correct: %i instead of: %i\n"),
+                n, vars->nsalpp);
+
+#if _XML_DEBUG_
+    bft_printf("==>UICPPR\n");
+    bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
+    for (i=0 ; i<vars->nprop ; i++)
+        bft_printf("-->properties_ipp[%i]: %i propce[%i]: %i "
+                "properties_name[%i]: %s\n",
+                i, vars->properties_ipp[i],
+                i, vars->propce[i],
+                i, vars->properties_name[i]);
+#endif
+}
+
+/*------------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
+ * for the model scalar (gas combustion)
+ *----------------------------------------------------------------------------*/
+void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
+                                const int *const icolwc,
+                                const int *const icoebu,
+                                const int *const icod3p,
+                                const int *const ihm,
+                                const int *const ifm,
+                                const int *const ifp2m,
+                                const int *const iygfm,
+                                const int *const iyfm,
+                                const int *const iyfp2m,
+                                const int *const icoyfp)
+{
+    cs_var_t  *vars = cs_glob_var;
+    int i = 0;
+
+    if (vars->nscaus > 0) {
+        BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
+    } else {
+        BFT_MALLOC(vars->label, vars->nscapp, char*);
+    }
+    //   model D3P
+    if (ippmod[*icod3p-1] >=0) {
+        BFT_MALLOC(vars->label[*ifm -1], strlen("Fra_MEL")+1, char);
+        strcpy(vars->label[*ifm -1], "Fra_MEL");
+
+        BFT_MALLOC(vars->label[*ifp2m -1], strlen("Var_FMe")+1, char);
+        strcpy(vars->label[*ifp2m -1], "Var_FMe");
+
+        if (ippmod[*icod3p-1] == 1 ) {
+            BFT_MALLOC(vars->label[*ihm -1], strlen("Enthalpy")+1, char);
+            strcpy(vars->label[*ihm -1], "Enthalpy");
+        }
+    }
+    // model EBU
+    if (ippmod[*icoebu-1] >= 0) {
+        BFT_MALLOC(vars->label[*iygfm -1], strlen("Fra_GF")+1, char);
+        strcpy(vars->label[*iygfm -1], "Fra_GF");
+
+        if (ippmod[*icoebu-1] >= 2) {
+            BFT_MALLOC(vars->label[*ifm -1], strlen("Fra_MEL")+1, char);
+            strcpy(vars->label[*ifm -1], "Fra_MEL");
+        }
+
+        if (ippmod[*icoebu-1] == 1 || ippmod[*icoebu-1] == 3) {
+            BFT_MALLOC(vars->label[*ihm -1], strlen("Enthalpy")+1, char);
+            strcpy(vars->label[*ihm -1], "Enthalpy");
+        }
+    }
+    // model LWC
+    if (ippmod[*icolwc-1] >= 0) {
+        BFT_MALLOC(vars->label[*ifm -1], strlen("Fra_MEL")+1, char);
+        strcpy(vars->label[*ifm -1], "Fra_MEL");
+
+        BFT_MALLOC(vars->label[*ifp2m -1], strlen("Var_FMe")+1, char);
+        strcpy(vars->label[*ifp2m -1], "Var_FMe");
+
+        BFT_MALLOC(vars->label[*iyfm -1], strlen("Fra_Mas")+1, char);
+        strcpy(vars->label[*iyfm -1], "Fra_Mas");
+
+        BFT_MALLOC(vars->label[*iyfp2m -1], strlen("Var_FMa")+1, char);
+        strcpy(vars->label[*iyfp2m -1], "Var_FMa");
+    }
+
+    if (ippmod[*icolwc-1] >= 2) {
+        BFT_MALLOC(vars->label[*icoyfp -1], strlen("COYF_PP4")+1, char);
+        strcpy(vars->label[*icoyfp -1], "COYF_PP4");
+    }
+    if (ippmod[*icolwc-1] == 1 || ippmod[*icolwc-1] == 3 || ippmod[*icolwc-1] == 5) {
+        BFT_MALLOC(vars->label[*ihm -1], strlen("Enthalpy")+1, char);
+        strcpy(vars->label[*ihm -1], "Enthalpy");
+    }
+
+
+#if _XML_DEBUG_
+    bft_printf("==>UICPSC\n");
+    for (i=0; i< vars->nscaus+vars->nscapp; i++)
+        bft_printf("--label of scalar[%i]: %s\n", i, vars->label[i]);
+#endif
+
 }
 
 /*------------------------------------------------------------------------------
@@ -987,7 +1330,11 @@ cs_gui_get_thermophysical_model(const char *const model_thermo)
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "thermophysical_models", model_thermo);
-  cs_xpath_add_attribute(&path, "model");
+  if (cs_gui_strcmp(model_thermo, "gas_combustion")) {
+      cs_xpath_add_attribute(&path, "option");
+  } else {
+      cs_xpath_add_attribute(&path, "model");
+  }
 
   model = cs_gui_get_attribute_value(path);
 

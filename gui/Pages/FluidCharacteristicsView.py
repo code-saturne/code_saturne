@@ -148,12 +148,14 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                     ('molecular_viscosity', 'Mu'),
                     ('specific_heat', 'Cp'),
                     ('volumic_viscosity', 'Viscv0'),
-                    ('thermal_conductivity', 'Al')]
+                    ('thermal_conductivity', 'Al'),
+                    ('dynamic_diffusion', 'Diftl0')]
         else:
             list = [('density', 'Rho'),
                     ('molecular_viscosity', 'Mu'),
                     ('specific_heat', 'Cp'),
-                    ('thermal_conductivity', 'Al')]
+                    ('thermal_conductivity', 'Al'),
+                    ('dynamic_diffusion', 'Diftl0')]
 
         self.list_scalars = []
         self.m_sca = DefineUserScalarsModel(self.case)
@@ -173,6 +175,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.modelNameDiff = ComboModel(self.comboBoxNameDiff,1,1)
         self.modelCv       = ComboModel(self.comboBoxCv, 3, 1)
         self.modelViscv0   = ComboModel(self.comboBoxViscv0, 3, 1)
+        self.modelDiftl0   = ComboModel(self.comboBoxDiftl0, 3, 1)
 
         self.modelRho.addItem(self.tr('constant'), 'constant')
         self.modelRho.addItem(self.tr('user law'), 'user_law')
@@ -194,6 +197,9 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.modelViscv0.addItem(self.tr('constant'), 'constant')
         self.modelViscv0.addItem(self.tr('user law'), 'user_law')
         self.modelViscv0.addItem(self.tr('user subroutine (usphyv)'), 'variable')
+        self.modelDiftl0.addItem(self.tr('constant'), 'constant')
+        self.modelDiftl0.addItem(self.tr('user law'), 'user_law')
+        self.modelDiftl0.addItem(self.tr('user subroutine (usphyv)'), 'variable')
 
         self.scalar = ""
         scalar_list = self.m_sca.getUserScalarLabelsList()
@@ -213,18 +219,19 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.connect(self.comboBoxAl,       SIGNAL("activated(const QString&)"), self.slotStateAl)
         self.connect(self.comboBoxDiff,     SIGNAL("activated(const QString&)"), self.slotStateDiff)
         self.connect(self.comboBoxNameDiff, SIGNAL("activated(const QString&)"), self.slotNameDiff)
+        self.connect(self.comboBoxViscv0,   SIGNAL("activated(const QString&)"), self.slotStateViscv0)
         self.connect(self.lineEditRho,      SIGNAL("textChanged(const QString &)"), self.slotRho)
         self.connect(self.lineEditMu,       SIGNAL("textChanged(const QString &)"), self.slotMu)
         self.connect(self.lineEditCp,       SIGNAL("textChanged(const QString &)"), self.slotCp)
         self.connect(self.lineEditAl,       SIGNAL("textChanged(const QString &)"), self.slotAl)
         self.connect(self.lineEditDiff,     SIGNAL("textChanged(const QString &)"), self.slotDiff)
+        self.connect(self.lineEditDiftl0,   SIGNAL("textChanged(const QString &)"), self.slotDiftl0)
+        self.connect(self.lineEditViscv0,   SIGNAL("textChanged(const QString &)"), self.slotViscv0)
         self.connect(self.pushButtonRho,    SIGNAL("clicked()"), self.slotFormulaRho)
         self.connect(self.pushButtonMu,     SIGNAL("clicked()"), self.slotFormulaMu)
         self.connect(self.pushButtonCp,     SIGNAL("clicked()"), self.slotFormulaCp)
         self.connect(self.pushButtonAl,     SIGNAL("clicked()"), self.slotFormulaAl)
         self.connect(self.pushButtonDiff,   SIGNAL("clicked()"), self.slotFormulaDiff)
-        self.connect(self.comboBoxViscv0,   SIGNAL("activated(const QString&)"), self.slotStateViscv0)
-        self.connect(self.lineEditViscv0,   SIGNAL("textChanged(const QString &)"), self.slotViscv0)
         self.connect(self.pushButtonViscv0, SIGNAL("clicked()"), self.slotFormulaViscv0)
 
         # Validators
@@ -236,6 +243,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         validatorDiff   = DoubleValidator(self.lineEditDiff, min = 0.0)
         validatorCv     = DoubleValidator(self.lineEditCv, min = 0.0)
         validatorViscv0 = DoubleValidator(self.lineEditViscv0, min = 0.0)
+        validatorDiftl0 = DoubleValidator(self.lineEditDiftl0, min = 0.0)
 
         validatorRho.setExclusiveMin(True)
         validatorMu.setExclusiveMin(True)
@@ -243,6 +251,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         validatorAl.setExclusiveMin(True)
         validatorDiff.setExclusiveMin(True)
         validatorCv.setExclusiveMin(True)
+        validatorDiftl0.setExclusiveMin(True)
 
         self.lineEditRho.setValidator(validatorRho)
         self.lineEditMu.setValidator(validatorMu)
@@ -251,6 +260,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.lineEditDiff.setValidator(validatorDiff)
         self.lineEditCv.setValidator(validatorCv)
         self.lineEditViscv0.setValidator(validatorViscv0)
+        self.lineEditDiftl0.setValidator(validatorDiftl0)
 
         if scalar_list == []:
             self.groupBoxDiff.hide()
@@ -272,6 +282,9 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         #compressible
         self.groupBoxCv.hide()
         self.groupBoxViscv0.hide()
+
+        # combustion
+        self.groupBoxDiftl0.hide()
 
         # Standard Widget initialization
 
@@ -303,6 +316,9 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         if mdl_joule == 'off' and mdl_thermal == 'off' and mdl_atmo == 'off':
             self.groupBoxAl.hide()
 
+        if mdl_gas != 'off' or mdl_coal != 'off':
+            self.groupBoxDiftl0.show()
+
         for tag, symbol in list:
             __model  = getattr(self, "model" + symbol)
             __line   = getattr(self, "lineEdit" + symbol)
@@ -320,6 +336,10 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                     __label.setText(QString(self.tr("Calculation by\n perfect gas law")))
                     __line.setText(QString(str("")))
                     __line.setEnabled(False)
+                elif tag == 'dynamic_diffusion':
+                    __model.setItem(str_model='user_law')
+                    __combo.setEnabled(False)
+                    __button.setEnabled(False)
                 else:
                     __model.setItem(str_model='constant')
                     self.mdl.setPropertyMode(tag, 'constant')
@@ -508,6 +528,16 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
 
 
     @pyqtSignature("const QString &")
+    def slotDiftl0(self, text):
+        """
+        Update the thermal conductivity
+        """
+        diftl0, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setInitialValueDyn(diftl0)
+
+
+    @pyqtSignature("const QString &")
     def slotDiff(self, text):
         """
         Update the thermal conductivity
@@ -565,6 +595,10 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         symbols_mu.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
         symbols_mu.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
         symbols_mu.append(('rho', 'Density'))
+        if CompressibleModel(self.case).getCompressibleModel() == 'on':
+            symbols_mu.append(('T', 'Temperature'))
+            ref_temperature = ReferenceValuesModel(self.case).getTemperature()
+            symbols_mu.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
 
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,
@@ -619,8 +653,10 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         viscv0_value = self.mdl.getInitialValueVolumicViscosity()
         ref_pressure = ReferenceValuesModel(self.case).getPressure()
         ref_temperature = ReferenceValuesModel(self.case).getTemperature()
-        symbols_cp.append(('cp0', 'Specific heat (reference value) = ' + str(cp0_value)))
-        symbols_cp.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+        symbols_viscv0.append(('viscv0', 'Volumic viscosity (reference value) = '+str(viscv0_value)+' J/kg/K'))
+        symbols_viscv0.append(('p0', 'Reference pressure = '+str(ref_pressure)+' Pa'))
+        symbols_viscv0.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
+        symbols_viscv0.append(('T', 'Temperature'))
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,
                                      symbols    = symbols_viscv0,

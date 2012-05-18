@@ -59,6 +59,7 @@ use cstnum
 use ppppar
 use ppthch
 use ppincl
+use ihmpre
 
 !===============================================================================
 
@@ -138,6 +139,13 @@ if ( ippmod(icompf).ge.0 ) then
 !===============================================================================
 ! 3. ON REDONNE LA MAIN A L'UTILISATEUR
 !===============================================================================
+!   - Interface Code_Saturne
+!     ======================
+!     Construction de l'indirection entre la numerotation du noyau et XML
+if (iihmpr.eq.1) then
+   call uicfsc(irho, ienerg, itempk)
+endif
+
   call csvvva(iviscv)
 
   call uscfx2

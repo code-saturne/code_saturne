@@ -611,6 +611,30 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb);
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
+ * Get initial value from property markup.
+ *
+ * parameters:
+ *   property_name       -->  name of the property
+ *   value              <--   new initial value of the property
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_properties_value(const char   *const property_name,
+                              double *const value);
+
+/*-----------------------------------------------------------------------------
+ * Initialization choice of the reference variables parameters.
+ *
+ * parameters:
+ *   name            <--   parameter name
+ *   value           -->   parameter value
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_reference_initialization(const char   *const param,
+                                      double *const value);
+
+/*-----------------------------------------------------------------------------
  * Return value of partitioning option.
  *
  * returns:

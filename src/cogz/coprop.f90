@@ -71,6 +71,7 @@ use coincl
 use cpincl
 use ppincl
 use radiat
+use ihmpre
 
 !===============================================================================
 
@@ -510,6 +511,16 @@ if ( ippmod(icolwc).ge.0 ) then
 
 endif
 
+!   - Interface Code_Saturne
+!     ======================
+!     Construction de l'indirection entre la numerotation du noyau et XML
+if (iihmpr.eq.1) then
+  call uicopr (nsalpp, ippmod, ipppro, ipproc, icod3p, icoebu,      &
+               icolwc, iirayo, itemp, imam, iym, ickabs, it4m, it3m,&
+               ix2, itsc, irhol, iteml, ifmel, ifmal, iampl, itscl, &
+               imaml)
+
+endif
 
 return
 

@@ -154,6 +154,16 @@ class NumericalParamEquatModel(Model):
         return nodList
 
 
+    def _getGasScalarsNodes(self):
+        """ Private method: return list of gas combustion scalar's nodes """
+        nodList = []
+        node = self.node_models.xmlGetNode('gas_combustion', 'model')
+        model = node['model']
+        if model != 'off':
+            nodList = node.xmlGetNodeList('scalar')
+        return nodList
+
+
     def _getMeteoScalarsNodes(self):
         """ Private method: return list of meteo scalar's nodes """
         nodList = []
@@ -186,6 +196,7 @@ class NumericalParamEquatModel(Model):
 
         for part in (self._getThermalScalarNode(),
                      self._getPuCoalScalarsNodes(),
+                     self._getGasScalarsNodes(),
                      self._getMeteoScalarsNodes(),
                      self._getAdditionalScalarNodes()):
             self.var_clip.append(part)
@@ -200,6 +211,7 @@ class NumericalParamEquatModel(Model):
                      self.model.getTurbVariable(),
                      self._getThermalScalarNode(),
                      self._getPuCoalScalarsNodes(),
+                     self._getGasScalarsNodes(),
                      self._getMeteoScalarsNodes(),
                      self._getAdditionalScalarNodes()):
             self.var_shem.append(part)
@@ -213,6 +225,7 @@ class NumericalParamEquatModel(Model):
                      self.model.getTurbVariable(),
                      self._getThermalScalarNode(),
                      self._getPuCoalScalarsNodes(),
+                     self._getGasScalarsNodes(),
                      self._getMeteoScalarsNodes(),
                      self._getAdditionalScalarNodes(),
                      self._getAleVariablesNodes()):

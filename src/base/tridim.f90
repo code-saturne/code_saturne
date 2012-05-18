@@ -722,11 +722,12 @@ do while (iterns.le.nterup)
     iindef, ientre, iesicf, isspcf, ierucf, isopcf,                &
     iparoi, iparug, isymet, isolib, isca  ,                        &
     ipr   , irho  , itempk, ienerg,                                &
-    iqimp,  icalke, ientat, ientcp, inmoxy, iprofm,                &
+    iqimp,  icalke, ientat, ientcp, inmoxy, ientfu,                &
+    ientox, ientgb, ientgf, iprofm,                                &
     itypfb, izfppp, icodcl,                                        &
     dtref,  ttcabs, surfbo, cdgfbo,                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
-    timpat, timpcp, distch, rcodcl)
+    timpat, timpcp, tkent ,  fment, distch, rcodcl)
 
     if (ippmod(iphpar).eq.0) then
 
