@@ -66,6 +66,7 @@ FluidCharacteristicsView.py \
 FluidStructureInteractionModel.py \
 FluidStructureInteractionView.py \
 GasCombustionModel.py \
+GasCombustionView.py \
 HeadLossesModel.py \
 HeadLossesView.py \
 IdentityAndPathesModel.py \
@@ -153,6 +154,7 @@ FacesSelectionForm.ui \
 FluidCharacteristicsForm.ui \
 FluidStructureInteractionAdvancedOptionsDialogForm.ui \
 FluidStructureInteractionForm.ui \
+GasCombustionForm.ui \
 HeadLossesForm.ui \
 IdentityAndPathesForm.ui \
 InitializationForm.ui \
