@@ -216,7 +216,7 @@ class XMLinit(Variables):
                 self.__RefValuesNode.xmlSetData('pressure', value)
                 nodeP.xmlRemoveChild('reference_pressure')
 
-        nodeTurb = XMLThermoPhysicalNode.xmlInitNode('turbulence')
+        nodeTurb = XMLThermoPhysicalNode.xmlInitNode('turbulence', 'model')
         nodeInit = nodeTurb.xmlGetNode('initialization')
         if nodeInit:
             value = nodeInit.xmlGetDouble('reference_velocity')
