@@ -282,10 +282,9 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
          const fvm_writer_var_loc_t         location,
          const int                          time_set)
 {
-  char line[80], description[20];
+  char line[1024], description[50];
   int i, l;
   int remain_len, prefix_len, base_len, postfix_len;
-  _Bool rename_file;
 
   fvm_to_ensight_case_var_t  *var;
 
@@ -297,10 +296,10 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
   BFT_MALLOC(var->name, l + 1, char);
   strcpy(var->name, name);
 
-  /* Create description (19 chars max) */
+  /* Create description (49 chars max) */
 
-  if (l > 19)
-      l = 19;
+  if (l > 49)
+      l = 49;
 
   strncpy(description, name, l);
   description[l] = '\0';
@@ -327,7 +326,7 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
       description[i] = '_';
       break;
     default:
-      break;
+       break;
     }
   }
 
@@ -341,7 +340,7 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
 
   /* Create associated case file line, up to file name
      (which may depend on the number of remaining characters,
-     so as to avoid going beyond 79 characters if possible) */
+     so as to avoid going beyond 1024 characters if possible) */
 
   switch(var->dim) {
   case 0:
@@ -386,43 +385,27 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
                         time set number < 100 (EnSight maximum:
                         16, apparently only for measured data) */
 
-  sprintf(line + l, "%19s ", description); /* Description max 19 chars,
-                                              so 79 char line limit not
+  sprintf(line + l, "%32s ", description); /* Description max 49 chars,
+                                              (32 recommended for compatibility
+                                              with other formats)
+                                              so 1024 char line limit not
                                               exceeded here */
 
-  for (l = strlen(line) ; l < 48 ; l++)
+  for (l = strlen(line); l < 61; l++)
     line[l] = ' ';
-  line[l] = '\0'; /* Line length = 35 + 19 + 1 = 55 max at this stage,
-                     usually 48 */
+  line[l] = '\0'; /* Line length = 35 + 49 + 1 = 85 max at this stage,
+                     usually 31 + 32 + 1 = 64 */
 
-  /* Create (current) file name.
-     To avoid lines longer than 79 characters in the case file, we limit the
-     local file name to 79 - l characters. If this limit should be exceeded,
-     we try to assign a file name based on the variable index :
-     '<case_prefix>.var_***'. If this is not possible due to the length
-     of the file name prefix (based on the case name), we choose to
-     allow generation of an "incorrect" case file and which can be
-     corrected by the user (who will need to rename files) rather than risk
-     the possibility of confusing EnSight cases in a same directory due to
-     name truncation. */
+  /* Create (current) file name. */
 
-  remain_len = 79 - strlen(line);
+  remain_len = 1024 - strlen(line);
   prefix_len =   strlen(this_case->file_name_prefix)
                - this_case->dir_name_length + 1;
   base_len = strlen(name);
   if (var->time_set > -1)
-    postfix_len = 5;
+    postfix_len = 6;
   else
     postfix_len = 0;
-
-  if (   (prefix_len + base_len + postfix_len > remain_len)
-      && (prefix_len + 7 + postfix_len <= remain_len)
-      && (this_case->n_vars < 1000)) {
-    base_len = 7;
-    rename_file = true;
-  }
-  else
-    rename_file = false;
 
   BFT_MALLOC(var->file_name,
              (  this_case->dir_name_length + prefix_len
@@ -430,34 +413,29 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
              char);
   sprintf(var->file_name, "%s.", this_case->file_name_prefix);
 
-  if (rename_file == true)
-    sprintf(var->file_name + strlen(var->file_name),
-            "var_%03d", this_case->n_vars);
-  else {
-    strcat(var->file_name, name);
-    for (i = this_case->dir_name_length + prefix_len ;
-         i < this_case->dir_name_length + prefix_len + base_len ;
-         i++) {
-      switch (var->file_name[i]) {
-      case '@':
-      case ' ':
-      case '\t':
-      case '!':
-      case '#':
-      case '*':
-      case '^':
-      case '$':
-      case '/':
-        var->file_name[i] = '_';
-      default:
-        var->file_name[i] = tolower(var->file_name[i]);
-      }
+  strcat(var->file_name, name);
+  for (i = this_case->dir_name_length + prefix_len ;
+       i < this_case->dir_name_length + prefix_len + base_len ;
+       i++) {
+    switch (var->file_name[i]) {
+    case '@':
+    case ' ':
+    case '\t':
+    case '!':
+    case '#':
+    case '*':
+    case '^':
+    case '$':
+    case '/':
+      var->file_name[i] = '_';
+    default:
+      var->file_name[i] = tolower(var->file_name[i]);
     }
   }
 
   if (var->time_set > -1) {
     sprintf(var->file_name + strlen(var->file_name),
-            ".%04d", (this_case->time_set[var->time_set])->n_time_values);
+            ".%05d", (this_case->time_set[var->time_set])->n_time_values);
   }
 
   /* Now we may finish associated case file line */
@@ -473,9 +451,18 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
   /* Replace current time index by wildcards */
 
   if (var->time_set > -1)
-    strcpy(var->case_line + strlen(var->case_line) -4, "****");
+    strcpy(var->case_line + strlen(var->case_line) -5, "*****");
 
   /* Finally, associate variable entry in case file */
+
+  if (strlen(var->case_line) > 1024) {
+    bft_printf
+      (_("Line of the EnSight case file \"%s\"\n"
+         "for variable \"%s\",\n"
+         "exceeds 1024 characters, so this file must be edited and variable\n"
+         "descriptions or referenced files renamed so as to be readable.\n"),
+       this_case->case_file_name, name);
+  }
 
   BFT_REALLOC(this_case->var, this_case->n_vars, fvm_to_ensight_case_var_t *);
 
@@ -537,7 +524,7 @@ _update_geom_file_name(fvm_to_ensight_case_t  *const this_case)
       if (this_case->geom_time_set > -1)
         geom_index =
           (this_case->time_set[this_case->geom_time_set])->n_time_values;
-      sprintf(extension, ".geo.%04d", geom_index);
+      sprintf(extension, ".geo.%05d", geom_index);
     }
 
     BFT_MALLOC(this_case->geom_file_name,
@@ -554,8 +541,8 @@ _update_geom_file_name(fvm_to_ensight_case_t  *const this_case)
     if (this_case->geom_time_set > -1) {
       geom_index =
         (this_case->time_set[this_case->geom_time_set])->n_time_values;
-      sprintf(this_case->geom_file_name + strlen(this_case->geom_file_name) - 4,
-              "%04d", geom_index);
+      sprintf(this_case->geom_file_name + strlen(this_case->geom_file_name) - 5,
+              "%05d", geom_index);
     }
   }
 
@@ -967,7 +954,7 @@ fvm_to_ensight_case_get_var_file(fvm_to_ensight_case_t       *const this_case,
     retval.name = var->file_name;
     if (var->time_set > -1) {  /* if variable is time-dependant */
       var_index = (this_case->time_set[var->time_set])->n_time_values;
-      sprintf(var->file_name + strlen(var->file_name) - 4, "%04d", var_index);
+      sprintf(var->file_name + strlen(var->file_name) - 5, "%05d", var_index);
       if (var->last_time_step == time_step)
         retval.queried = true;
       else

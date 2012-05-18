@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-05-18 14:17+0200\n"
+"POT-Creation-Date: 2012-05-18 15:24+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7456,6 +7456,14 @@ msgstr "la valeur du pas de temps fournie devrait être >= 0, et non %d.\n"
 #, c-format
 msgid "The given time step value should be >= %d, and not %d.\n"
 msgstr "la valeur du pas de temps fournie devrait être >= %d, et non %d.\n"
+
+#, c-format
+msgid ""
+"Line of the EnSight case file \"%s\"\n"
+"for variable \"%s\",\n"
+"exceeds 1024 characters, so this file must be edited and variable\n"
+"descriptions or referenced files renamed so as to be readable.\n"
+msgstr ""
 
 #, c-format
 msgid ""
