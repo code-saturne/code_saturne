@@ -43,6 +43,7 @@
 
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_mesh_bad_cells.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -82,6 +83,8 @@ CS_PROCF (algrma, ALGRMA)(void)
 
   cs_mesh_quantities_compute(cs_glob_mesh,
                              cs_glob_mesh_quantities);
+  cs_mesh_bad_cells_detect(cs_glob_mesh,
+                           cs_glob_mesh_quantities);
 
 }
 

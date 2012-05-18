@@ -34,7 +34,7 @@
 #include "cs_base.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-#include "cs_mesh_bad_cells_detection.h"
+#include "cs_mesh_bad_cells.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-05-09 18:39+0200\n"
+"POT-Creation-Date: 2012-05-18 14:17+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7902,6 +7902,10 @@ msgid "Invalid atmospheric flow model: %s.\n"
 msgstr ""
 
 #, c-format
+msgid "Invalid compressible model: %s.\n"
+msgstr ""
+
+#, c-format
 msgid "Unable to parse the file: %s\n"
 msgstr ""
 
@@ -9088,6 +9092,24 @@ msgstr ""
 "    Le calcul sera effectué mais la qualité de la solution peut être "
 "dégradée...\n"
 
+msgid "Bad Cell Ortho Norm"
+msgstr ""
+
+msgid "Bad Cell Offset"
+msgstr ""
+
+msgid "Bad Cell LSQ Gradient"
+msgstr ""
+
+msgid "Bad Cell Volume Ratio"
+msgstr ""
+
+msgid "Bad Cell Association"
+msgstr ""
+
+msgid "Bad Cell by User"
+msgstr ""
+
 msgid "    Checking the face -> cells connectivity coherency\n"
 msgstr "    Test de cohérence de la connectivité faces -> cellules\n"
 
@@ -9535,8 +9557,3 @@ msgstr ""
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
 "\n"
-
-msgid ""
-"\n"
-"  Criteria 6: User Specific Tag:\n"
-msgstr ""

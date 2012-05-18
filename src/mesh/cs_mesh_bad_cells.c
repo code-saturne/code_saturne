@@ -1,5 +1,5 @@
 /*============================================================================
- * Detect and post-process bad cells within meshes.
+ * \file Detect bad cells within meshes.
  *============================================================================*/
 
 /*
@@ -51,14 +51,14 @@
 
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-#include "cs_post.h"
 #include "cs_parall.h"
+#include "cs_post.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_mesh_bad_cells_detection.h"
+#include "cs_mesh_bad_cells.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -110,7 +110,6 @@ static const int _type_flag_mask[] = {CS_BAD_CELL_ORTHO_NORM,
  * parameters:
  *   mesh                 <-- pointer to associated mesh structure.
  *   mesh_quantities      <-- pointer to associated mesh quantities structure
- *   bad_ortho_norm_cells <-- array storing bad cells for postprocessing
  *   bad_cell_flag        <-- array of bad cell flags for various uses
  *----------------------------------------------------------------------------*/
 
@@ -119,7 +118,6 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
                     const cs_mesh_quantities_t  *mesh_quantities,
                     cs_real_t                    i_face_ortho[],
                     cs_real_t                    b_face_ortho[],
-                    cs_lnum_t                    bad_ortho_norm_cells[],
                     unsigned                     bad_cell_flag[])
 {
   cs_lnum_t  i, face_id, cell1, cell2;
@@ -163,7 +161,6 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
     i_face_ortho[face_id] = cos_alpha;
 
     if (i_face_ortho[face_id] < 0.1) {
-      bad_ortho_norm_cells[cell1] = 1;
       bad_cell_flag[cell1] = bad_cell_flag[cell1] | _type_flag_mask[0];
     }
   }
@@ -199,7 +196,6 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
     b_face_ortho[face_id] = cos_alpha;
 
     if (b_face_ortho[face_id] < 0.1) {
-      bad_ortho_norm_cells[cell1] = 1;
       bad_cell_flag[cell1] = bad_cell_flag[cell1] | _type_flag_mask[0];
     }
   }
@@ -215,7 +211,6 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
  *   mesh                   <-- pointer to associated mesh structure
  *   mesh_quantities        <-- pointer to associated mesh quantities
  *                              structure
- *   bad_ortho_aframe_cells --> array storing bad cells for postprocessing
  *   bad_cell_flag          <-- array of bad cell flags for various uses
  *----------------------------------------------------------------------------*/
 
@@ -224,7 +219,6 @@ _compute_weighting_offsetting(const cs_mesh_t         *mesh,
                               const cs_mesh_quantities_t  *mesh_quantities,
                               cs_real_t                weighting[],
                               cs_real_t                offsetting[],
-                              cs_lnum_t                bad_ortho_aframe_cells[],
                               unsigned                 bad_cell_flag[])
 {
   cs_lnum_t  i, face_id, cell1, cell2;
@@ -293,7 +287,6 @@ _compute_weighting_offsetting(const cs_mesh_t         *mesh,
                                    / _MODULE_3D(face_normal));
 
     if (offsetting[face_id] < 0.1) {
-      bad_ortho_aframe_cells[cell1] = 1;
       bad_cell_flag[cell1] = bad_cell_flag[cell1] | _type_flag_mask[1];
     }
   }
@@ -309,7 +302,6 @@ _compute_weighting_offsetting(const cs_mesh_t         *mesh,
  * parameters:
  *   mesh               <-- pointer to associated mesh structure
  *   mesh_quantities    <-- pointer to associated mesh quantities structure
- *   bad_lsq_grad_cells --> array storing bad cells for postprocessing
  *   bad_cell_flag      --> array of bad cell flags for various uses
  *----------------------------------------------------------------------------*/
 
@@ -317,7 +309,6 @@ static void
 _compute_least_squares(const cs_mesh_t             *mesh,
                        const cs_mesh_quantities_t  *mesh_quantities,
                        cs_real_t                    lsq[],
-                       cs_lnum_t                    bad_lsq_grad_cells[],
                        unsigned                     bad_cell_flag[])
 {
   const cs_lnum_t  dim = mesh->dim;
@@ -412,7 +403,6 @@ _compute_least_squares(const cs_mesh_t             *mesh,
     lsq[cell_id] = min_diag / max_diag;
 
     if (lsq[cell_id] < 0.1) {
-      bad_lsq_grad_cells[cell_id] = 1;
       bad_cell_flag[cell_id] = _type_flag_mask[2];
     }
   }
@@ -430,7 +420,6 @@ _compute_least_squares(const cs_mesh_t             *mesh,
  * parameters:
  *   mesh                <-- pointer to associated mesh structure
  *   mesh_quantities     <-- pointer to associated mesh quantities structure
- *   bad_vol_ratio_cells --> array storing bad cells for postprocessing
  *   bad_cell_flag       --> array of bad cell flags for various uses
  *----------------------------------------------------------------------------*/
 
@@ -438,7 +427,6 @@ static void
 _compute_volume_ratio(const cs_mesh_t             *mesh,
                       const cs_mesh_quantities_t  *mesh_quantities,
                       cs_real_t                    vol_ratio[],
-                      cs_lnum_t                    bad_vol_ratio_cells[],
                       unsigned                     bad_cell_flag[])
 {
   cs_real_t *volume = mesh_quantities->cell_vol;
@@ -457,8 +445,6 @@ _compute_volume_ratio(const cs_mesh_t             *mesh,
                               volume[cell2] / volume[cell1 ]);
 
     if (vol_ratio[face_id] < 0.1*0.1) {
-      bad_vol_ratio_cells[cell1] = 1;
-      bad_vol_ratio_cells[cell2] = 1;
       bad_cell_flag[cell1] = _type_flag_mask[3];
       bad_cell_flag[cell2] = _type_flag_mask[3];
     }
@@ -471,7 +457,7 @@ _compute_volume_ratio(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute and post-process mesh quality indicators.
+ * \brief Compute bad cell quality indicators.
  *
  * \param [in]       mesh             pointer to associated mesh structure
  * \param [in, out]  mesh_quantities  pointer to associated mesh quantities
@@ -480,8 +466,8 @@ _compute_volume_ratio(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
-                            cs_mesh_quantities_t  *mesh_quantities)
+cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
+                         cs_mesh_quantities_t  *mesh_quantities)
 {
   double  *working_array = NULL;
   unsigned *bad_cell_flag = NULL;
@@ -518,8 +504,6 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
   iwarning = 0;
   n_cells_tot = mesh->n_g_cells;
 
-  /* Standard post-processing writer activation */
-  cs_post_activate_writer(-1, true);
 
   /* Evaluate mesh quality criteria */
   /*--------------------------------*/
@@ -527,14 +511,9 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
   /* Condition 1: Orthogonal Normal */
   /*--------------------------------*/
 
-  cs_lnum_t  *bad_ortho_norm_cells = NULL;
   cs_real_t  *i_face_ortho = NULL, *b_face_ortho = NULL;
 
-  BFT_MALLOC(bad_ortho_norm_cells, n_cells_wghosts, cs_lnum_t);
   BFT_MALLOC(working_array, n_i_faces + n_b_faces, cs_real_t);
-
-  for (i = 0; i < n_cells_wghosts; i++)
-    bad_ortho_norm_cells[i] = 0;
 
   for (i = 0; i < n_i_faces + n_b_faces; i++)
     working_array[i] = 0.;
@@ -546,7 +525,6 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
                       mesh_quantities,
                       i_face_ortho,
                       b_face_ortho,
-                      bad_ortho_norm_cells,
                       bad_cell_flag);
 
   ibad = 0;
@@ -568,33 +546,15 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
              (unsigned long long)ibad,
              (double)ibad / (double)n_cells_tot * 100.0);
 
-  /* Post processing */
-  cs_post_write_var(-1,
-                    "Ortho_Norm_Tag",
-                    1,
-                    false,
-                    true,
-                    CS_POST_TYPE_cs_int_t,
-                    -1,
-                    0.0,
-                    bad_ortho_norm_cells,
-                    NULL,
-                    NULL);
-
   BFT_FREE(working_array);
 
   /* Condition 2: Orthogonal A-Frame */
   /*---------------------------------*/
 
-  cs_lnum_t  *bad_ortho_aframe_cells = NULL;
   cs_real_t  *weighting = NULL, *offsetting = NULL;
 
   /* Only defined on interior faces */
-  BFT_MALLOC(bad_ortho_aframe_cells, n_cells_wghosts, cs_lnum_t);
   BFT_MALLOC(working_array, 2*n_i_faces, cs_real_t);
-
-  for (i = 0; i < n_cells_wghosts; i++)
-    bad_ortho_aframe_cells[i] = 0;
 
   for (i = 0; i < 2*n_i_faces; i++)
     working_array[i] = 0.;
@@ -606,7 +566,6 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
                                 mesh_quantities,
                                 weighting,
                                 offsetting,
-                                bad_ortho_aframe_cells,
                                 bad_cell_flag);
 
   ibad = 0;
@@ -628,32 +587,14 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
              (unsigned long long)ibad,
              (double)ibad / (double)n_cells_tot * 100.0);
 
-  /* Post processing */
-  cs_post_write_var(-1,
-                    "Offset_Tag",
-                    1,
-                    false,
-                    true,
-                    CS_POST_TYPE_cs_int_t,
-                    -1,
-                    0.0,
-                    bad_ortho_aframe_cells,
-                    NULL,
-                    NULL);
-
   BFT_FREE(working_array);
 
   /* Condition 3: Least Squares Gradient */
   /*-------------------------------------*/
 
-  cs_lnum_t  *bad_lsq_grad_cells = NULL;
   cs_real_t  *lsq = NULL;
 
-  BFT_MALLOC(bad_lsq_grad_cells, n_cells_wghosts, cs_lnum_t);
   BFT_MALLOC(working_array, n_cells_wghosts, cs_real_t);
-
-  for (i = 0; i < n_cells_wghosts; i++)
-    bad_lsq_grad_cells[i] = 0;
 
   for (i = 0; i < n_cells_wghosts; i++)
     working_array[i] = 0.;
@@ -663,7 +604,6 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
   _compute_least_squares(mesh,
                          mesh_quantities,
                          lsq,
-                         bad_lsq_grad_cells,
                          bad_cell_flag);
 
   ibad = 0;
@@ -685,31 +625,14 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
              (unsigned long long)ibad,
              (double)ibad / (double)n_cells_tot * 100.0);
 
-  /* Post processing */
-  cs_post_write_var(-1, "LSQ_Gradient_Tag",
-                    1,
-                    false,
-                    true,
-                    CS_POST_TYPE_cs_int_t,
-                    -1,
-                    0.0,
-                    bad_lsq_grad_cells,
-                    NULL,
-                    NULL);
-
   BFT_FREE(working_array);
 
   /* Condition 4: Volume Ratio */
   /*---------------------------*/
 
-  cs_lnum_t  *bad_vol_ratio_cells = NULL;
   cs_real_t  *vol_ratio = NULL;
 
-  BFT_MALLOC(bad_vol_ratio_cells, n_cells_wghosts, cs_lnum_t);
   BFT_MALLOC(working_array, n_i_faces, cs_real_t);
-
-  for (i = 0; i < n_cells_wghosts; i++)
-    bad_vol_ratio_cells[i] = 0;
 
   for (i = 0; i < n_i_faces; i++)
     working_array[i] = 0.;
@@ -719,7 +642,6 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
   _compute_volume_ratio(mesh,
                         mesh_quantities,
                         vol_ratio,
-                        bad_vol_ratio_cells,
                         bad_cell_flag);
 
   ibad = 0;
@@ -740,19 +662,6 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
   bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
              (unsigned long long)ibad,
              (double)ibad / (double)n_cells_tot * 100.0);
-
-  /* Post processing */
-  cs_post_write_var(-1,
-                    "Volume_Ratio_Tag",
-                    1,
-                    false,
-                    true,
-                    CS_POST_TYPE_cs_int_t,
-                    -1,
-                    0.0,
-                    bad_vol_ratio_cells,
-                    NULL,
-                    NULL);
 
   BFT_FREE(working_array);
 
@@ -783,11 +692,8 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
     if (bad_guilt_cells[i] >= 5 && bad_cell_flag[i] == 0) {
       ibad++;
       iwarning++;
-      bad_guilt_cells[i] = 1;
       bad_cell_flag[i] = _type_flag_mask[4];
     }
-    else
-      bad_guilt_cells[i] = 0;
   }
 
   if (cs_glob_rank_id >= 0) {
@@ -800,19 +706,6 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
   bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
              (unsigned long long)ibad,
              (double)ibad / (double)n_cells_tot * 100.0);
-
-  /* Post processing */
-  cs_post_write_var(-1,
-                    "Guilt_Cells_Tag",
-                    1,
-                    false,
-                    true,
-                    CS_POST_TYPE_cs_int_t,
-                    -1,
-                    0.0,
-                    bad_guilt_cells,
-                    NULL,
-                    NULL);
 
   /* Warning printed in the log file */
   /*---------------------------------*/
@@ -827,14 +720,91 @@ cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
          " degraded...\n"));
   }
 
-  BFT_FREE(bad_ortho_norm_cells);
-  BFT_FREE(bad_ortho_aframe_cells);
-  BFT_FREE(bad_lsq_grad_cells);
-  BFT_FREE(bad_vol_ratio_cells);
   BFT_FREE(bad_guilt_cells);
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Post-process bad cell quality indicators.
+ *
+ * \param [in]  mesh             pointer to associated mesh structure
+ * \param [in]  mesh_quantities  pointer to associated mesh quantities
+ *                               structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_bad_cells_postprocess(const cs_mesh_t             *mesh,
+                              const cs_mesh_quantities_t  *mesh_quantities)
+{
+  int i;
+
+  cs_lnum_t  *bad_cells_v = NULL;
+
+  const cs_lnum_t  n_cells       = mesh->n_cells;
+  const unsigned  *bad_cell_flag = mesh_quantities->bad_cell_flag;
+
+  const unsigned criterion[] = {CS_BAD_CELL_ORTHO_NORM,
+                                CS_BAD_CELL_OFFSET,
+                                CS_BAD_CELL_LSQ_GRAD,
+                                CS_BAD_CELL_RATIO,
+                                CS_BAD_CELL_GUILT,
+                                CS_BAD_CELL_USER};
+
+  const char *criterion_name[] = {N_("Bad Cell Ortho Norm"),
+                                  N_("Bad Cell Offset"),
+                                  N_("Bad Cell LSQ Gradient"),
+                                  N_("Bad Cell Volume Ratio"),
+                                  N_("Bad Cell Association"),
+                                  N_("Bad Cell by User")};
+
+  const int n_criteria = 6;
+
+  /* Activate default post-processing writer */
+
+  cs_post_activate_writer(-1, true);
+
+  BFT_MALLOC(bad_cells_v, n_cells, int);
+
+  /* Loop on criteria */
+  /*------------------*/
+
+  for (i = 0; i < n_criteria; i++) {
+
+    cs_lnum_t j;
+    cs_lnum_t crit_flag = 0;
+
+    for (j = 0; j < n_cells; j++) {
+      if (bad_cell_flag[j] & criterion[i]) {
+        bad_cells_v[j] = 1;
+        crit_flag = 1;
+      }
+      else
+        bad_cells_v[j] = 0;
+    }
+
+    cs_parall_counter_max(&crit_flag, 1);
+
+    if (crit_flag > 0)
+      cs_post_write_var(-1,
+                        _(criterion_name[i]),
+                        1,
+                        false,
+                        true,
+                        CS_POST_TYPE_int,
+                        -1,
+                        0.0,
+                        bad_cells_v,
+                        NULL,
+                        NULL);
+
+  }
+
+  BFT_FREE(bad_cells_v);
+}
+
+/*----------------------------------------------------------------------------*/
+
 /* Delete local macros */
 
 #undef _CROSS_PRODUCT_3D

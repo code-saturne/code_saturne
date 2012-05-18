@@ -1,8 +1,8 @@
-#ifndef __CS_MESH_BAD_CELLS_DETECTION_H__
-#define __CS_MESH_BAD_CELLS_DETECTION_H__
+#ifndef __CS_MESH_BAD_CELLS_H__
+#define __CS_MESH_BAD_CELLS_H__
 
 /*============================================================================
- *  Detect and post-process bad cells within meshes.
+ * Detect bad cells within meshes.
  *============================================================================*/
 
 /*
@@ -59,19 +59,31 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute and post-process mesh quality indicators.
+ * Compute bad cell quality indicators.
  *
  * parameters:
- *   mesh             --> pointer to a mesh structure.
- *   mesh_quantities  <-> pointer to a mesh quantities structures.
+ *   mesh            <-- pointer to a mesh structure.
+ *   mesh_quantities <-> pointer to a mesh quantities structures.
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_bad_cells_detection(const cs_mesh_t       *mesh,
-                            cs_mesh_quantities_t  *mesh_quantities);
+cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
+                         cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------
+ * Post-process bad cell quality indicators.
+ *
+ * parameters:
+ *   mesh            <-- pointer to a mesh structure.
+ *   mesh_quantities <-- pointer to a mesh quantities structures.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_bad_cells_postprocess(const cs_mesh_t             *mesh,
+                              const cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_MESH_BAD_CELLS_DETECTION_H__ */
+#endif /* __CS_MESH_BAD_CELLS_H__ */

@@ -71,7 +71,7 @@
 #include "cs_join_perio.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-#include "cs_mesh_bad_cells_detection.h"
+#include "cs_mesh_bad_cells.h"
 #include "cs_mesh_smoother.h"
 #include "cs_mesh_thinwall.h"
 #include "cs_parall.h"
@@ -594,7 +594,7 @@ cs_user_mesh_smoothe(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
- * Tag bad cells within the mesh based on geometric criteria.
+ * Tag bad cells within the mesh based on user-defined geometric criteria.
  *
  * The mesh structure is described in cs_mesh.h
  *----------------------------------------------------------------------------*/
@@ -662,24 +662,11 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
     cs_parall_counter(&iwarning, 1);
   }
 
-  /* Display listing output */
-  bft_printf(_("\n  Criteria 6: User Specific Tag:\n"));
-  bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
+  /* Display log output */
+  bft_printf("\n  Criteria 6: User Specific Tag:\n");
+  bft_printf("    Number of bad cells detected: %llu --> %3.0f %%\n",
              (unsigned long long)ibad,
              (double)ibad / (double)n_cells_tot * 100.0);
-
-  /* Post processing */
-  cs_post_write_var(-1,
-                    "User_bad_cells",
-                    1,
-                    false,
-                    true,
-                    CS_POST_TYPE_cs_int_t,
-                    -1,
-                    0.0,
-                    bad_vol_cells,
-                    NULL,
-                    NULL);
 
   if (iwarning > 0)
     bft_printf
@@ -687,6 +674,12 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
        " --------\n"
        "    Mesh quality issue based on user criteria has been detected\n\n"
        "    The mesh should be re-considered using the listed criteria.\n\n");
+
+  /* Post processing is activated automatically in mesh quality mode
+     for the CS_BAD_CELL_USER tag, as for all tags defined in
+     cs_user_bad_cells.h.
+     For a different tag, postprocessing could be done with a user
+     postprocessing function, or calling directly cs_post_write_var(). */
 
   BFT_FREE(bad_vol_cells);
 }

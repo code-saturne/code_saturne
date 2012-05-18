@@ -93,7 +93,7 @@
 #include "cs_mesh_location.h"
 #include "cs_mesh_quality.h"
 #include "cs_mesh_quantities.h"
-#include "cs_mesh_bad_cells_detection.h"
+#include "cs_mesh_bad_cells.h"
 #include "cs_mesh_save.h"
 #include "cs_mesh_smoother.h"
 #include "cs_mesh_warping.h"
@@ -336,7 +336,7 @@ cs_run(void)
 
   t1 = cs_timer_wtime();
   cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
-  cs_mesh_bad_cells_detection(cs_glob_mesh, cs_glob_mesh_quantities);
+  cs_mesh_bad_cells_detect(cs_glob_mesh, cs_glob_mesh_quantities);
   cs_user_mesh_bad_cells_tag(cs_glob_mesh, cs_glob_mesh_quantities);
   t2 = cs_timer_wtime();
 
@@ -365,6 +365,7 @@ cs_run(void)
     bft_printf(_("\n Computing quality criteria\n"));
     cs_mesh_quality(cs_glob_mesh, cs_glob_mesh_quantities);
     cs_mesh_coherency_check();
+    cs_mesh_bad_cells_postprocess(cs_glob_mesh, cs_glob_mesh_quantities);
   }
   else if (opts.preprocess == true)
     cs_mesh_coherency_check();
