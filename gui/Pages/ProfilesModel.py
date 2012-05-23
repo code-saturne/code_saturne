@@ -102,7 +102,7 @@ class ProfilesModel(Model):
                          output.getTimeProperty(),
                          output.getListOfTimeAverage(),
                          output.getPuCoalScalProper(),
-                         output.getGasComScalProper(),
+                         output.getGasCombScalProper(),
                          output.getMeteoScalProper(),
                          output.getThermalScalar(),
                          output.getAdditionalScalar()]:
