@@ -165,9 +165,12 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         for s in self.m_sca.getUserScalarLabelsList():
             self.list_scalars.append((s, self.tr("Additional scalar")))
 
+        # Particular Widget initialization taking into account of "Calculation Features"
+        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal = self.mdl.getThermoPhysicalModel()
+
         # Combo models
 
-        self.modelRho      = ComboModel(self.comboBoxRho, 3, 1)
+        self.modelRho      = ComboModel(self.comboBoxRho, 4, 1)
         self.modelMu       = ComboModel(self.comboBoxMu, 3, 1)
         self.modelCp       = ComboModel(self.comboBoxCp, 3, 1)
         self.modelAl       = ComboModel(self.comboBoxAl, 3, 1)
@@ -179,7 +182,10 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
 
         self.modelRho.addItem(self.tr('constant'), 'constant')
         self.modelRho.addItem(self.tr('user law'), 'user_law')
-        self.modelRho.addItem(self.tr('user subroutine (usphyv)'), 'variable')
+        if mdl_atmo != 'off':
+            self.modelRho.addItem(self.tr('defined in atphyv'), 'variable')
+        else:
+            self.modelRho.addItem(self.tr('user subroutine (usphyv)'), 'variable')
         self.modelMu.addItem(self.tr('constant'), 'constant')
         self.modelMu.addItem(self.tr('user law'), 'user_law')
         self.modelMu.addItem(self.tr('user subroutine (usphyv)'), 'variable')
@@ -308,10 +314,6 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
             self.mdl.getInitialValue(tag)
             __line.setText(QString(str(self.mdl.getInitialValue(tag))))
 
-        # Particular Widget initialization taking into account of "Calculation Features"
-
-        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal = self.mdl.getThermoPhysicalModel()
-
         # no 'thermal_conductivity' if not Joule and not Thermal scalar and not
         if mdl_joule == 'off' and mdl_thermal == 'off' and mdl_atmo == 'off':
             self.groupBoxAl.hide()
@@ -354,6 +356,11 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
             if mdl_atmo != 'off':
                 if tag == 'density':
                     __model.disableItem(str_model='constant')
+                    __model.disableItem(str_model='user_law')
+                    __model.disableItem(str_model='variable')
+                    __model.setItem(str_model='variable')
+                    __combo.setEnabled(False)
+                    __button.setEnabled(False)
 
             # Compressible Flows
             if CompressibleModel(self.case).getCompressibleModel() != 'off':
