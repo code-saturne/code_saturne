@@ -342,6 +342,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         INPUT label for choice of zone
         """
         self.thermal = self.modelThermal.dicoV2M[str(text)]
+        self.initializeVariables()
 
 
     @pyqtSignature("const QString&")
@@ -360,6 +361,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         INPUT label for choice of zone
         """
         self.species = self.modelSpecies.dicoV2M[str(text)]
+        self.initializeVariables()
 
 
     @pyqtSignature("const QString&")
@@ -378,6 +380,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         INPUT label for choice of zone
         """
         self.meteo = self.modelMeteo.dicoV2M[str(text)]
+        self.initializeVariables()
 
 
     @pyqtSignature("const QString&")
