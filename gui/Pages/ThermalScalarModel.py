@@ -134,19 +134,6 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         return thermalScalarList
 
 
-    def thermalScalarActiveModels(self):
-        """
-        Return name of active model (multi-phases model, and reactive flow models).
-        """
-        Model = 'off'
-
-        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_meteo):
-            if node['model'] != 'off':
-                Model = node['model']
-
-        return Model
-
-
     def setThermalModel(self, thermal_scalar):
         """
         Update the thermal model and create the thermal scalar markup from the XML document.
@@ -157,8 +144,9 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
 
         model = 'off'
         for node in (self.node_gas, self.node_coal, self.node_joule, self.node_meteo):
-            if node['model'] != 'off':
-                model = node['model']
+            if node != None:
+                if node['model'] != 'off':
+                    model = node['model']
 
         if thermal_scalar != 'off':
             node = self.scalar_node.xmlGetNode('scalar', type='thermal')
