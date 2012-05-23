@@ -72,7 +72,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         self.node_joule = self.node_models.xmlGetChildNode('joule_effect',       'model')
         self.node_gas   = self.node_models.xmlGetChildNode('gas_combustion',     'model')
         self.node_ray   = self.node_models.xmlGetChildNode('radiative_transfer', 'model')
-        self.node_meteo = self.node_models.xmlGetChildNode('atmospheric_flows',  'model')
+        self.node_atmo  = self.node_models.xmlGetChildNode('atmospheric_flows',  'model')
 
         self.old_scaTh = "off"
 
@@ -127,11 +127,24 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         """
         thermalScalarList = self.thermalModel
 
-        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_meteo):
+        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_atmo):
             if node['model'] != 'off':
                 thermalScalarList = ('off',)
 
         return thermalScalarList
+
+
+    def isSpecificPhysicActiv(self):
+        """
+        """
+        spec = False
+        self.node_atmo = self.node_models.xmlGetChildNode('atmospheric_flows', 'model')
+        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_atmo):
+            if node != None:
+                if node['model'] != 'off':
+                    spec = True
+
+        return spec
 
 
     def setThermalModel(self, thermal_scalar):
@@ -141,12 +154,6 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         self.isInList(thermal_scalar, self.thermalModel)
 
         self.node_therm['model'] = thermal_scalar
-
-        model = 'off'
-        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_meteo):
-            if node != None:
-                if node['model'] != 'off':
-                    model = node['model']
 
         if thermal_scalar != 'off':
             node = self.scalar_node.xmlGetNode('scalar', type='thermal')
@@ -168,7 +175,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
             ThermalRadiationModel(self.case).setRadiativeModel('off')
             ConjugateHeatTransferModel(self.case).deleteConjugateHeatTransfer()
 
-            if model == 'off':
+            if not self.isSpecificPhysicActiv():
                 self.node_therm.xmlRemoveChild('property',
                                                name="input_thermal_flux",
                                                support="boundary")

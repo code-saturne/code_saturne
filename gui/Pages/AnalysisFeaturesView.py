@@ -382,16 +382,16 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         model = self.__stringModelFromCombo('Atmospheric')
         self.atmo.setAtmosphericFlowsModel(model)
+        self.therm.setThermalModel('off')
+
+        # we inform that thermal scalar will be removed if it exists
+        th_label = self.scal.getThermalScalarLabel()
+        if th_label != '':
+            title = self.tr("Warning")
+            msg   = self.tr("This selection implies the destruction of the thermal scalar")
+            QMessageBox.warning(self, title, msg)
 
         if model != 'off':
-            # we inform that thermal scalar will be removed if it exists
-            th_label = self.scal.getThermalScalarLabel()
-            if th_label != '':
-                title = self.tr("Warning")
-                msg   = self.tr("This selection implies the destruction of the thermal scalar")
-                QMessageBox.warning(self, title, msg)
-
-            self.therm.setThermalModel('off')
             self.__disableComboBox()
             self.comboBoxAtmospheric.setEnabled(True)
 
@@ -408,16 +408,16 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         model = self.__stringModelFromCombo('GasCombustionModel')
         self.gas.setGasCombustionModel(model)
+        self.therm.setThermalModel('off')
+
+        # we inform that thermal scalar will be removed if it exists
+        th_label = self.scal.getThermalScalarLabel()
+        if th_label != '':
+            title = self.tr("Warning")
+            msg   = self.tr("This selection implies the destruction of the thermal scalar")
+            QMessageBox.warning(self, title, msg)
 
         if model != 'off':
-            # we inform that thermal scalar will be removed if it exists
-            th_label = self.scal.getThermalScalarLabel()
-            if th_label != '':
-                title = self.tr("Warning")
-                msg   = self.tr("This selection implies the destruction of the thermal scalar")
-                QMessageBox.warning(self, title, msg)
-
-            self.therm.setThermalModel('off')
             self.__disableComboBox()
             self.comboBoxGasCombustionModel.setEnabled(True)
 
@@ -434,6 +434,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         model = self.__stringModelFromCombo('PulverizedCoal')
         self.pcoal.setCoalCombustionModel(model)
+        self.therm.setThermalModel('off')
 
         # WARNING: the 'coal_lagr' model is deprecated
 #        if model == 'coal_lagr':
@@ -441,15 +442,14 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 #        else:
 #            self.modelLagrangian.enableItem(str_model='single_phase')
 
-        if model != 'off':
-            # we inform that thermal scalar will be removed if it exists
-            th_label = self.scal.getThermalScalarLabel()
-            if th_label != '':
-                title = self.tr("Warning")
-                msg   = self.tr("This selection implies the destruction of the thermal scalar")
-                QMessageBox.warning(self, title, msg)
+        # we inform that thermal scalar will be removed if it exists
+        th_label = self.scal.getThermalScalarLabel()
+        if th_label != '':
+            title = self.tr("Warning")
+            msg   = self.tr("This selection implies the destruction of the thermal scalar")
+            QMessageBox.warning(self, title, msg)
 
-            self.therm.setThermalModel('off')
+        if model != 'off':
             self.__disableComboBox()
             self.comboBoxPulverizedCoal.setEnabled(True)
 
@@ -466,16 +466,16 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         model = self.__stringModelFromCombo('JouleEffect')
         self.elect.setElectricalModel(model)
+        self.therm.setThermalModel('off')
+
+         # we inform that thermal scalar will be removed if it exists
+        th_label = self.scal.getThermalScalarLabel()
+        if th_label != '':
+            title = self.tr("Warning")
+            msg   = self.tr("This selection implies the destruction of the thermal scalar")
+            QMessageBox.warning(self, title, msg)
 
         if model != 'off':
-            # we inform that thermal scalar will be removed if it exists
-            th_label = self.scal.getThermalScalarLabel()
-            if th_label != '':
-                title = self.tr("Warning")
-                msg   = self.tr("This selection implies the destruction of the thermal scalar")
-                QMessageBox.warning(self, title, msg)
-
-            self.therm.setThermalModel('off')
             self.__disableComboBox()
             self.comboBoxJouleEffect.setEnabled(True)
 

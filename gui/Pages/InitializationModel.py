@@ -190,7 +190,7 @@ omega = k^0.5/almax;"""
 
         formula = node.xmlGetString('formula')
         if not formula:
-            formula = self.init.getDefaultTurbFormula(turb_model)
+            formula = self.getDefaultTurbFormula(turb_model)
             self.setTurbFormula(zone, formula)
         return formula
 
