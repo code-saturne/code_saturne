@@ -381,6 +381,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.__activateComboBox()
 
         model = self.__stringModelFromCombo('Atmospheric')
+        self.atmo.setAtmosphericFlowsModel(model)
 
         if model != 'off':
             # we inform that thermal scalar will be removed if it exists
@@ -394,7 +395,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.__disableComboBox()
             self.comboBoxAtmospheric.setEnabled(True)
 
-        self.atmo.setAtmosphericFlowsModel(model)
         self.browser.configureTree(self.case)
 
 
@@ -407,6 +407,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.__activateComboBox()
 
         model = self.__stringModelFromCombo('GasCombustionModel')
+        self.gas.setGasCombustionModel(model)
 
         if model != 'off':
             # we inform that thermal scalar will be removed if it exists
@@ -420,7 +421,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.__disableComboBox()
             self.comboBoxGasCombustionModel.setEnabled(True)
 
-        self.gas.setGasCombustionModel(model)
         self.browser.configureTree(self.case)
 
 
@@ -433,6 +433,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.__activateComboBox()
 
         model = self.__stringModelFromCombo('PulverizedCoal')
+        self.pcoal.setCoalCombustionModel(model)
 
         # WARNING: the 'coal_lagr' model is deprecated
 #        if model == 'coal_lagr':
@@ -452,7 +453,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.__disableComboBox()
             self.comboBoxPulverizedCoal.setEnabled(True)
 
-        self.pcoal.setCoalCombustionModel(model)
         self.browser.configureTree(self.case)
 
 
@@ -465,6 +465,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.__activateComboBox()
 
         model = self.__stringModelFromCombo('JouleEffect')
+        self.elect.setElectricalModel(model)
 
         if model != 'off':
             # we inform that thermal scalar will be removed if it exists
@@ -478,7 +479,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.__disableComboBox()
             self.comboBoxJouleEffect.setEnabled(True)
 
-        self.elect.setElectricalModel(model)
         self.browser.configureTree(self.case)
 
 
@@ -486,23 +486,12 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
     def slotCompressibleModel(self, text):
         """
         Private slot.
-        Binding method for gas combustion models.
+        Binding method for gas compressible models.
         """
         self.__activateComboBox()
 
         model = self.__stringModelFromCombo('Compressible')
         self.comp.setCompressibleModel(model)
-
-        if model != 'off':
-            # we inform that thermal scalar will be removed if it exists
-            th_label = self.scal.getThermalScalarLabel()
-            if th_label != '':
-                title = self.tr("Warning")
-                msg   = self.tr("This selection implies the destruction of the thermal scalar")
-                QMessageBox.warning(self, title, msg)
-
-            self.__disableComboBox()
-            self.comboBoxCompressible.setEnabled(True)
 
         self.browser.configureTree(self.case)
 

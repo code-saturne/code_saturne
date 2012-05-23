@@ -68,10 +68,11 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         self.node_therm    = self.node_models.xmlInitChildNode('thermal_scalar', 'model')
         self.node_prop     = self.case.xmlGetNode('physical_properties').xmlGetNode('fluid_properties')
 
-        self.node_coal  = self.node_models.xmlGetChildNode('pulverized_coal', 'model')
-        self.node_joule = self.node_models.xmlGetChildNode('joule_effect',    'model')
-        self.node_gas   = self.node_models.xmlGetChildNode('gas_combustion',  'model')
+        self.node_coal  = self.node_models.xmlGetChildNode('pulverized_coal',    'model')
+        self.node_joule = self.node_models.xmlGetChildNode('joule_effect',       'model')
+        self.node_gas   = self.node_models.xmlGetChildNode('gas_combustion',     'model')
         self.node_ray   = self.node_models.xmlGetChildNode('radiative_transfer', 'model')
+        self.node_meteo = self.node_models.xmlGetChildNode('atmospheric_flows',  'model')
 
         self.old_scaTh = "off"
 
@@ -126,11 +127,24 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         """
         thermalScalarList = self.thermalModel
 
-        for node in (self.node_gas, self.node_coal, self.node_joule):
+        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_meteo):
             if node['model'] != 'off':
                 thermalScalarList = ('off',)
 
         return thermalScalarList
+
+
+    def thermalScalarActiveModels(self):
+        """
+        Return name of active model (multi-phases model, and reactive flow models).
+        """
+        Model = 'off'
+
+        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_meteo):
+            if node['model'] != 'off':
+                Model = node['model']
+
+        return Model
 
 
     def setThermalModel(self, thermal_scalar):
@@ -140,6 +154,12 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         self.isInList(thermal_scalar, self.thermalModel)
 
         self.node_therm['model'] = thermal_scalar
+
+        model = 'off'
+        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_meteo):
+            if node['model'] != 'off':
+                model = node['model']
+
         if thermal_scalar != 'off':
             node = self.scalar_node.xmlGetNode('scalar', type='thermal')
             if node:
@@ -159,10 +179,17 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
             self._removeThermalTimeStep()
             ThermalRadiationModel(self.case).setRadiativeModel('off')
             ConjugateHeatTransferModel(self.case).deleteConjugateHeatTransfer()
-            self.node_therm.xmlRemoveChild('property',
-                                           name="input_thermal_flux",
-                                           support="boundary")
 
+            if model == 'off':
+                self.node_therm.xmlRemoveChild('property',
+                                               name="input_thermal_flux",
+                                               support="boundary")
+            else:
+                n = self.node_therm.xmlInitChildNode('property',
+                                                     name="input_thermal_flux",
+                                                     support="boundary")
+                if not n['label']:
+                    n['label'] = "input_thermal_flux"
 
 
     def getThermalScalarModel(self):

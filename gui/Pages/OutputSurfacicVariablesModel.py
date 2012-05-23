@@ -94,10 +94,9 @@ class OutputSurfacicVariablesModel(Model):
         """
         nodeList = []
         self.node_therm = self.node_models.xmlGetNode('thermal_scalar')
-        if ThermalScalarModel(self.case).getThermalScalarModel() != "off":
-            for node in self.node_therm.xmlGetChildNodeList('property'):
-                if node['support']:
-                    nodeList.append(node)
+        for node in self.node_therm.xmlGetChildNodeList('property'):
+            if node['support']:
+               nodeList.append(node)
         return nodeList
 
 
