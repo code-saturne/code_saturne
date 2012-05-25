@@ -506,17 +506,6 @@ endif
 
 ! --- Flux de masse predit et premiere composante Rhie et Chow
 
-! On annule la viscosite facette pour les faces couplees pour ne pas modifier
-! le flux de masse au bord dans le cas d'un dirichlet de pression: la correction
-! de pression et le filtre sont annules.
-if (nbrcpl.ge.1) then
-  do ifac = 1, nfabor
-    if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
-      viscb(ifac) = 0.d0
-    endif
-  enddo
-endif
-
 ! Allocate a work array for the gradient calculation
 allocate(gradp(ncelet,3))
 
@@ -655,6 +644,17 @@ if(arak.gt.0.d0) then
     viscb(ifac) = arak*viscb(ifac)
   enddo
 
+  ! On annule la viscosite facette pour les faces couplees pour ne pas modifier
+  ! le flux de masse au bord dans le cas d'un dirichlet de pression: la correction
+  ! de pression et le filtre sont annules.
+  if (nbrcpl.gt.0) then
+    do ifac = 1, nfabor
+      if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+        viscb(ifac) = 0.d0
+      endif
+    enddo
+  endif
+
   if (idtsca.eq.0) then
     do iel = 1, ncel
       dt(iel) = arak*dt(iel)
@@ -786,6 +786,35 @@ if(arak.gt.0.d0) then
   do ifac = 1, nfabor
     viscb(ifac) = viscb(ifac)*unsara
   enddo
+
+  ! If Saturne/Saturne coupling, re-set the boundary face viscosity to
+  ! the non-zero value
+  if (nbrcpl.gt.0) then
+    if( idiff(ipr).ge. 1 ) then
+      if (idtsca.eq.0) then
+        call viscfa                                                   &
+        !==========
+     ( imvisf ,                                                       &
+       dt     ,                                                       &
+       viscf  , viscb  )
+      else
+        !interleaved version of visort
+        call viortv                                                   &
+        !==========
+     ( imvisf ,                                                       &
+       tpucou ,                                                       &
+       viscf  , viscb  )
+      endif
+    else
+      do ifac = 1, nfac
+        viscf(ifac) = 0.d0
+      enddo
+      do ifac = 1, nfabor
+        viscb(ifac) = 0.d0
+      enddo
+    endif
+
+  endif
 
 endif
 
@@ -1107,6 +1136,17 @@ endif
 
 ! Update the mass flux
 !---------------------
+
+! On annule la viscosite facette pour les faces couplees pour ne pas modifier
+! le flux de masse au bord dans le cas d'un dirichlet de pression: la correction
+! de pression et le filtre sont annules.
+if (nbrcpl.ge.0) then
+  do ifac = 1, nfabor
+    if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+      viscb(ifac) = 0.d0
+    endif
+  enddo
+endif
 
 iccocg = 1
 init = 0

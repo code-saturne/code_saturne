@@ -860,11 +860,10 @@ if (imobil.eq.1) then
   ipcrom = ipproc(irom  )
   ipbrom = ipprob(irom  )
 
-  !$omp parallel do private(iel1, iel2, dtfac, rhofac, vitbox, vitboy, vitboz)
+  !$omp parallel do private(iel1, iel2, rhofac, vitbox, vitboy, vitboz)
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
-    dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
     rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
     vitbox = omegay*cdgfac(3,ifac) - omegaz*cdgfac(2,ifac)
     vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
@@ -872,11 +871,10 @@ if (imobil.eq.1) then
     propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(        &
          vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboz*surfac(3,ifac) )
   enddo
-  !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
+  !$omp parallel do private(iel, rhofac, vitbox, vitboy, vitboz) &
   !$omp          if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    dtfac  = dt(iel)
     rhofac = propfb(ifac,ipbrom)
     vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
     vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)

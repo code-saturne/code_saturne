@@ -1319,7 +1319,8 @@ endif ! idtvar
 if (ivisep.eq.1) then
 
   ! We do not know what condition to put in the inlets and the outlets, so we
-  ! assume that there is an equilibrium
+  ! assume that there is an equilibrium. Moreover, cells containing a coupled
+  ! are removed.
 
   ! Allocate a temporary array
   allocate(bndcel(ncelet))
@@ -1332,7 +1333,9 @@ if (ivisep.eq.1) then
   !$omp parallel do private(ityp) if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     ityp = itypfb(ifac)
-    if (ityp.eq.isolib.or.ityp.eq.ientre) bndcel(ifabor(ifac)) = 0.d0
+    if (    ityp.eq.isolib                          &
+       .or. ityp.eq.ientre                          &
+       .or.(ifaccp.eq.1.and.ityp.eq.icscpl)) bndcel(ifabor(ifac)) = 0.d0
   enddo
 
   ! ---> Interior faces
