@@ -703,7 +703,7 @@ endif
 !     These terms are taken into account in bilsc4.
 !     We only compute here the secondary viscosity.
 
-if (ivisse.eq.1.and.iterns.eq.1) then
+if (ivisse.eq.1) then
 
   call visecv &
   !==========
