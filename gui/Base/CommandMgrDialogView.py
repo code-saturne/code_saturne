@@ -252,11 +252,13 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
                                 self.tr('Error'),
                                 self.tr('The process is not running.'))
             return
-        if QMessageBox.question(self,
-                                self.tr("Kill"),
-                                self.tr("Kill the process "),
-                                QMessageBox.Yes|QMessageBox.No):
 
+        r = QMessageBox.question(self,
+                                 self.tr("Kill"),
+                                 self.tr("Kill the process "),
+                                 QMessageBox.Yes|QMessageBox.No)
+
+        if r == QMessageBox.Yes:
             self.__killChilds()
             self.proc.kill()
 
