@@ -635,8 +635,8 @@ if (iok.ne.0) then
   !==========
 endif
 
-! 2.4 VERIFICATIONS DES COHERENCES INTER VARIABLES INTRA PHASE
-! =============================================================
+! 2.4 VERIFICATIONS DES COHERENCES INTER VARIABLES
+! ================================================
 
 ippprp = ipprtp(ipr)
 ippuip = ipprtp(iu )

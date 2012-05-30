@@ -604,7 +604,7 @@ endif
 !===============================================================================
 
 
-! ---> Calcul des bornes des variables par phase et impressions
+! ---> Calcul des bornes des variables et impressions
 
 ! Indicateur d'erreur
 iok = 0
@@ -774,7 +774,7 @@ if(nscal.ge.1) then
 
 ! Verifications de valeur physique
 
-! IOK a deja ete initialise pour les valeurs liees aux phases
+! IOK a deja ete initialise
 
   do iscal = 1, nscal
 
@@ -902,12 +902,11 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
 '@    =========                                               ',/,&
-'@    INCOHERENCE ENTRE USPHYV ET LES PARAMETRES              ',/,&
-'@                                          LA MASSE VOLUMIQUE',/,&
+'@    INCOHERENCE ENTRE LES PARAMETRES ET LA MASSE VOLUMIQUE  ',/,&
 '@                                                            ',/,&
 '@  On a indique que la masse volumique etait                 ',/,&
 '@     constante (IROVAR=0) mais on a modifie ses             ',/,&
-'@     valeurs aux cellules ou aux faces de bord dans usphyv. ',/,&
+'@     valeurs aux cellules ou aux faces de bord.             ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -921,12 +920,12 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
 '@    =========                                               ',/,&
-'@    INCOHERENCE ENTRE USPHYV ET LES PARAMETRES POUR         ',/,&
+'@    INCOHERENCE ENTRE LES PARAMETRES ET                     ',/,&
 '@                                    LA VISCOSITE MOLECULAIRE',/,&
 '@                                                            ',/,&
 '@  On a indique que la viscosite moleculaire                 ',/,&
 '@     etait constante (IVIVAR=0) mais on a modifie ses',/,&
-'@     valeurs aux cellules dans usphyv.                      ',/,&
+'@     valeurs aux cellules.                                  ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -968,7 +967,7 @@ endif
 '@                                                            ',/,&
 '@  La propriete physique identifiee ci-dessus est variable et',/,&
 '@    le minimum atteint est ',E12.4                           ,/,&
-'@  Verifier que cette propriete a ete definie dans usphyv et ',/,&
+'@  Verifier que cette propriete a ete definie et             ',/,&
 '@    que la loi adoptee conduit a des valeurs correctes.     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -986,8 +985,8 @@ endif
 '@                                                            ',/,&
 '@  Le minimum atteint est ',E12.4                             ,/,&
 '@  Verifier le cas echeant la definition de la masse         ',/,&
-'@    volumique dans usphyv et la modification de la viscosite',/,&
-'@    turbulente dans usvist.                                 ',/,&
+'@    volumique et la modification de la viscosite turbulente ',/,&
+'@    dans usvist.                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1006,7 +1005,7 @@ endif
 '@                                                            ',/,&
 '@  La propriete physique identifiee ci-dessus est variable et',/,&
 '@    le minimum atteint est ',E12.4                           ,/,&
-'@  Verifier que cette propriete a ete definie dans usphyv et ',/,&
+'@  Verifier que cette propriete a bien ete definie et        ',/,&
 '@    que la loi adoptee conduit a des valeurs correctes.     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1024,7 +1023,7 @@ endif
 '@                                                            ',/,&
 '@  Le minimum atteint est ',E12.4                             ,/,&
 '@  Verifier le cas echeant la modification de la viscosite   ',/,&
-'@    dans usvima ou dans l interface graphique.              ',/,&
+'@    dans usvima ou dans l''interface graphique.             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1042,7 +1041,8 @@ endif
 '@                                                            ',/,&
 '@  Se reporter aux impressions precedentes pour plus de      ',/,&
 '@    renseignements.                                         ',/,&
-'@  Verifier usphyv.                                          ',/,&
+'@  Verifier les definitions et lois definies                 ',/,&
+'@    dans usphyv ou dans l''interface graphique.             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1088,7 +1088,7 @@ endif
 '@                                                            ',/,&
 '@  The density has been declared constant                    ',/,&
 '@     (IROVAR=0) but its value has been modified             ',/,&
-'@     in cells of at boundary faces in usphyv.               ',/,&
+'@     in cells or at boundary faces.                         ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
@@ -1102,12 +1102,12 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
 '@    ========                                                ',/,&
-'@    INCOHERENCY BETWEEN USPHYV AND PARAMETERS FOR           ',/,&
+'@    INCOHERENCY BETWEEN PARAMETERS FOR                      ',/,&
 '@                                     THE MOLECULAR VISCOSITY',/,&
 '@                                                            ',/,&
 '@  The molecular viscosity has been declared constant        ',/,&
 '@     (IVIVAR=0) but its value has been  modified in cells   ',/,&
-'@     or at boundary faces in usphyv.                        ',/,&
+'@     or at boundary faces.                                  ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
@@ -1148,7 +1148,7 @@ endif
 '@                                                            ',/,&
 '@  The physical property identified is variable and the      ',/,&
 '@    minimum reached is ',E12.4                               ,/,&
-'@  Verify that this property has been defined in usphyv and  ',/,&
+'@  Verify that this property has been defined and            ',/,&
 '@    that the chosen law leads to correct values.            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1159,14 +1159,13 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
 '@    ========                                                ',/,&
-'@    THE TURBULENT VISCOSITY OF PHASE                        ',/,&
-'@                                          CORRECTLY DEFINED.',/,&
+'@    THE TURBULENT VISCOSITY HAS NOT BEEN CORRECTLY DEFINED. ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
 '@  The  minimum reached is ',E12.4                            ,/,&
-'@  Verify the density definition in usphyv and a turbulent   ',/,&
-'@    viscosity modification in usvist (if any).              ',/,&
+'@  Verify the density definition  and the turbulent viscosity',/,&
+'@    modification in usvist (if any).                        ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

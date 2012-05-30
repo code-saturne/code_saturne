@@ -2205,7 +2205,7 @@ endif
 '@    - desactiver le choix d''extrapolation de Cp en temps   ',/,&
 '@      ou                                                    ',/,&
 '@    - imposer Cp variable                                   ',/,&
-'@         (et le renseigner alors dans usphyv)               ',/,&
+'@         (et le renseigner alors via l''interface ou usphyv)',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -2231,7 +2231,7 @@ endif
 '@                                     de la diffusivite      ',/,&
 '@      ou                                                    ',/,&
 '@    - imposer la diffusivite variable                       ',/,&
-'@         (et la renseigner alors dans usphyv)               ',/,&
+'@         (et le renseigner alors via l''interface ou usphyv)',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -3215,7 +3215,7 @@ endif
 '@  Elle peut varier en fonction d''autres grandeurs que      ',/,&
 '@    la temperature ou l''enthalpie ; si c''est le cas, ce   ',/,&
 '@    message pourra etre ignore ; sinon, verifier usipsu     ',/,&
-'@    ou imposer une variation de masse volumique dans usphyv.',/,&
+'@    ou imposer une variation de masse volumique.            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -3783,7 +3783,7 @@ endif
 '@  VISLS0(I) est le coefficient de diffusion moleculaire du  ',/,&
 '@    scalaire et doit etre positif quand ivisls est different',/,&
 '@    de 1 (dans ce cas, un coefficient variable est donne    ',/,&
-'@    dans usphyv).                                           ',/,&
+'@    via l''interface ou usphyv).                            ',/,&
 '@  Verifier les parametres donnes via l''interface           ',/,&
 '@    ou cs_user_parameters.f90.                              ',/,&
 '@                                                            ',/,&
@@ -4701,7 +4701,7 @@ endif
 '@    - deactivate xtrapolation of Cp in time                 ',/,&
 '@      or                                                    ',/,&
 '@    - define Cp as variable                                 ',/,&
-'@         (give its variation law in   usphyv)               ',/,&
+'@         (define its variation law in the GUI ou usphyv)    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -4726,7 +4726,7 @@ endif
 '@                                     for diffusivity        ',/,&
 '@      or                                                    ',/,&
 '@    - impose diffusivite variable                           ',/,&
-'@         (and describe variation law in usphyv)             ',/,&
+'@         (define its variation law in the GUI ou usphyv)    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -5705,8 +5705,7 @@ endif
 '@  gravity usualy afects turbulence only via density effects ',/,&
 '@    Check that density is variable.                         ',/,&
 '@     other than via temperature                             ',/,&
-'@  this could be by user defined density                     ',/,&
-'@    in subroutine   usphyv.                                 ',/,&
+'@  this could be by user defined density.                    ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -6274,7 +6273,8 @@ endif
 '@                                                            ',/,&
 '@  VISLS0(I) is the molecular diffusion coefficient  of the  ',/,&
 '@    scalar and  MUST BE POSITIVE when ivisls is  different  ',/,&
-'@    from 1 (it must then be defined in USPHYV )             ',/,&
+'@    from 1 (in which case a variable coefficient is given   ',/,&
+'@    using the User Interface or usphyv).                    ',/,&
 '@                                                            ',/,&
 '@ Check the input data given through the User Interface      ',/,&
 '@   or in cs_user_parameters.f90.                            ',/,&

@@ -2606,7 +2606,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES PHASE ',I10    ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
 '@    ON IMPOSE UN SCHEMA EN TEMPS D ORDRE 2 (ISCHTP = ',I10   ,/,&
 '@    EN BL-V2/K  (ITURB = ',I10,' )'                         ,/,&
@@ -3603,7 +3603,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA FOR  PHASE ',I10    ,/,&
+'@ @@ WARNING   : STOP AT THE INITIAL DATA                    ',/,&
 '@    =========                                               ',/,&
 '@    A 2nd ORDER SCHEME HAS BEEN IMPOSED    (ISCHTP = ',I10   ,/,&
 '@    FOR BL-V2/K  (ITURB = ',I10,' )'                        ,/,&

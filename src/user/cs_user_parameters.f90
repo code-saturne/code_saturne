@@ -1594,7 +1594,7 @@ omegaz = 0.d0
 
 !       ro0        : density in kg/m3
 !       viscl0     : dynamic viscosity in kg/(m s)
-!       cp0        : specific heat in J/(degres kg)
+!       cp0        : specific heat in J/(Kelvin kg)
 !       t0         : reference temperature in Kelvin
 !       p0         : total reference pressure in Pascal
 !                    the calculation is based on a

@@ -226,7 +226,7 @@
             <item>
              <widget class="QCheckBox" name="checkBoxINPDT0">
               <property name="toolTip">
-               <string>Code_Saturne key word: IPTLRO</string>
+               <string>Code_Saturne key word: INPDT0</string>
               </property>
               <property name="text">
                <string/>
