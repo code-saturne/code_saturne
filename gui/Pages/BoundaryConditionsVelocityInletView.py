@@ -284,7 +284,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             else:
                 self.groupBoxThermodynamic.hide()
                 self.frameDensity.show()
-                density = self.__boundary.getDensityValue()
+                density = self.__boundary.getThermoValue('density')
                 self.lineEditDensity2.setText(QString(str(density)))
         else:
             self.groupBoxCompressible.hide()
