@@ -106,6 +106,8 @@ ScriptRunningModel.py \
 SolutionDomainModel.py \
 SolutionDomainView.py \
 SolutionVerifView.py \
+SourceTermsModel.py \
+SourceTermsView.py \
 StartRestartModel.py \
 StartRestartView.py \
 SteadyManagementModel.py \
@@ -176,6 +178,7 @@ QMeiEditorForm.ui \
 ReferenceValuesForm.ui \
 SolutionDomainForm.ui \
 SolutionVerifForm.ui \
+SourceTermsForm.ui \
 StartRestartAdvancedDialogForm.ui \
 StartRestartForm.ui \
 SteadyManagementForm.ui \

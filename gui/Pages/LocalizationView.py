@@ -224,7 +224,7 @@ class StandardItemVolumeNature(QStandardItemModel):
     Attr. dicoNature holds value 'on' or 'off' if the item is checked or not.
     """
 
-    def __init__(self, dicoM2V, data):
+    def __init__(self, dicoM2V, case, data):
         """
         """
         QStandardItemModel.__init__(self)
@@ -235,15 +235,14 @@ class StandardItemVolumeNature(QStandardItemModel):
         self.dicoNature = data
 
         #self.keys = self.natureList.keys() # ordered tuple
-        self.keys = Zone('VolumicZone').getNatureList()
+        self.keys = Zone('VolumicZone', case = case).getNatureList()
 
         self.setColumnCount(1)
 
         row = 0
         for key in self.keys:
-            if key in ('initialization', 'head_losses'):
-                self.setItem(row, QStandardItem(QString(str(self.dicoM2V[key]))))
-                row += 1
+            self.setItem(row, QStandardItem(QString(str(self.dicoM2V[key]))))
+            row += 1
         self.setRowCount(row)
 
 
@@ -274,17 +273,7 @@ class StandardItemVolumeNature(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
 
-        cpt = 0
-        disable_row = 0
-        for row in range(self.rowCount()):
-            if self.dicoNature[self.keys[row]] == "on":
-                disable_row = row
-                cpt += 1
-
-        if cpt == 1 and index.row() == disable_row:
-            return Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
-        else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
 
 
     def setData(self, index, value, role=None):
@@ -358,8 +347,9 @@ class VolumeNatureDelegate(QItemDelegate):
     """
     Use of a combo box in the table.
     """
-    def __init__(self, parent):
+    def __init__(self, parent, case):
         super(VolumeNatureDelegate, self).__init__(parent)
+        self.case = case
 
 
     def createEditor(self, parent, option, index):
@@ -375,7 +365,7 @@ class VolumeNatureDelegate(QItemDelegate):
         data = index.model().getData(index.row(), index.column())
         dicoM2V = index.model().dicoM2V
 
-        self.flagbox_model = StandardItemVolumeNature(dicoM2V, data)
+        self.flagbox_model = StandardItemVolumeNature(dicoM2V, self.case, data)
         editor.setModel(self.flagbox_model)
 
 
@@ -429,7 +419,7 @@ class LocalizationSelectorDelegate(QItemDelegate):
 #-------------------------------------------------------------------------------
 
 class StandardItemModelLocalization(QStandardItemModel):
-    def __init__(self, mdl, zoneType, dicoM2V):
+    def __init__(self, mdl, zoneType, dicoM2V, tree = None, case = None):
         """
         """
         QStandardItemModel.__init__(self)
@@ -442,6 +432,8 @@ class StandardItemModelLocalization(QStandardItemModel):
         self.mdl      = mdl
         self.zoneType = zoneType
         self.dicoM2V  = dicoM2V
+        self.browser = tree
+        self.case = case
 
         self._data = []
         self._disable = []
@@ -497,6 +489,7 @@ class StandardItemModelLocalization(QStandardItemModel):
         [old_label, old_code, old_nature, old_local] = self._data[row]
 
         old_zone = Zone(self.zoneType,
+                        case         = self.case,
                         label        = old_label,
                         codeNumber   = old_code,
                         localization = old_local,
@@ -540,6 +533,7 @@ class StandardItemModelLocalization(QStandardItemModel):
             self._data[row][col] = new_local
 
         new_zone = Zone(self.zoneType,
+                        case         = self.case,
                         label        = new_label,
                         codeNumber   = new_code,
                         localization = new_local,
@@ -548,6 +542,7 @@ class StandardItemModelLocalization(QStandardItemModel):
         self.mdl.replaceZone(old_zone, new_zone)
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.browser.configureTree(self.case)
         return True
 
 
@@ -556,7 +551,7 @@ class StandardItemModelLocalization(QStandardItemModel):
         Add an element in the table view.
         """
         if not zone:
-            zone = self.mdl.addZone(Zone(self.zoneType))
+            zone = self.mdl.addZone(Zone(self.zoneType, case = self.case))
 
         line = [zone.getLabel(),
                 zone.getCodeNumber(),
@@ -602,7 +597,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
     """
     Main class
     """
-    def __init__(self, zoneType, parent, case, dicoM2V):
+    def __init__(self, zoneType, parent, case, dicoM2V, tree = None):
         """
         Constructor
         """
@@ -613,9 +608,10 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
 
         self.zoneType = zoneType
         self.mdl = LocalizationModel(zoneType, case)
+        self.browser = tree
 
         # Model for table View
-        self.modelLocalization = StandardItemModelLocalization(self.mdl, zoneType, dicoM2V)
+        self.modelLocalization = StandardItemModelLocalization(self.mdl, zoneType, dicoM2V, tree, case)
         self.tableView.setModel(self.modelLocalization)
 
         # Delegates
@@ -812,21 +808,23 @@ class VolumeLocalizationView(LocalizationView):
     """
     Define volume regions class.
     """
-    def __init__(self, parent=None, case=None):
+    def __init__(self, parent=None, case=None, tree = None):
         """
         Constructor.
         """
         self.case = case
-        dicoM2V = Zone("VolumicZone").getModel2ViewDictionary()
+        self.browser = tree
+        dicoM2V = Zone("VolumicZone", self.case).getModel2ViewDictionary()
 
-        LocalizationView.__init__(self, "VolumicZone", parent, self.case, dicoM2V)
+        LocalizationView.__init__(self, "VolumicZone", parent, self.case, dicoM2V, tree)
 
         title = self.tr("Definition of volume regions")
         self.groupBoxLocalization.setTitle(title)
 
         # Delegates
-        delegateNature = VolumeNatureDelegate(self.tableView)
+        delegateNature = VolumeNatureDelegate(self.tableView, self.case)
         self.tableView.setItemDelegateForColumn(2, delegateNature)
+        self.browser.configureTree(self.case)
 
 #-------------------------------------------------------------------------------
 # Define Boundary regions class
@@ -836,14 +834,15 @@ class BoundaryLocalizationView(LocalizationView):
     """
     Define boundary regions class.
     """
-    def __init__(self, parent=None, case=None):
+    def __init__(self, parent=None, case=None, tree = None):
         """
         Constructor.
         """
         self.case = case
         dicoM2V = Zone("BoundaryZone").getModel2ViewDictionary()
+        self.browser = tree
 
-        LocalizationView.__init__(self, "BoundaryZone", parent, self.case, dicoM2V)
+        LocalizationView.__init__(self, "BoundaryZone", parent, self.case, dicoM2V, tree)
 
         title = self.tr("Definition of boundary regions")
         self.groupBoxLocalization.setTitle(title)

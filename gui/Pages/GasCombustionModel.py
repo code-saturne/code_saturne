@@ -62,12 +62,13 @@ class GasCombustionModel(Variables, Model):
         """
         self.case = case
 
-        nModels         = self.case.xmlGetNode('thermophysical_models')
-        self.node_turb  = nModels.xmlGetNode('turbulence',      'model')
-        self.node_gas   = nModels.xmlGetNode('gas_combustion',  'model')
-        self.node_coal  = nModels.xmlGetNode('pulverized_coal', 'model')
-        self.node_joule = nModels.xmlGetNode('joule_effect',    'model')
-        self.node_therm = nModels.xmlGetNode('thermal_scalar',  'model')
+        nModels          = self.case.xmlGetNode('thermophysical_models')
+        self.node_turb   = nModels.xmlGetNode('turbulence',        'model')
+        self.node_gas    = nModels.xmlGetNode('gas_combustion',    'model')
+        self.node_coal   = nModels.xmlGetNode('pulverized_coal',   'model')
+        self.node_joule  = nModels.xmlGetNode('joule_effect',      'model')
+        self.node_therm  = nModels.xmlGetNode('thermal_scalar',    'model')
+        self.node_atmo   = nModels.xmlGetNode('atmospheric_flows', 'model')
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_reference = self.node_models.xmlInitNode('reference_values')
 

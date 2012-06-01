@@ -138,7 +138,6 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         """
         """
         spec = False
-        self.node_atmo = self.node_models.xmlGetChildNode('atmospheric_flows', 'model')
         for node in (self.node_gas, self.node_coal, self.node_joule, self.node_atmo):
             if node != None:
                 if node['model'] != 'off':

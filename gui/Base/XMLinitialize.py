@@ -114,7 +114,7 @@ class XMLinit(Variables):
             if zone.getLabel() == 'all_cells':
                 iok = 1
         if iok == 0:
-            zone = Zone("VolumicZone", label = 'all_cells', localization = 'all[]')
+            zone = Zone("VolumicZone", self.case, label = 'all_cells', localization = 'all[]')
             LocalizationModel("VolumicZone", self.case).addZone(zone)
             zone = LocalizationModel("VolumicZone", self.case).getCodeNumberOfZoneLabel('all_cells')
             InitializationModel(self.case).getInitialTurbulenceChoice(zone)

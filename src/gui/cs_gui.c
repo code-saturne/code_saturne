@@ -3344,6 +3344,257 @@ cs_gui_get_cells_list(const char *zone_id,
   return cells_list;
 }
 
+/*----------------------------------------------------------------------------
+ * Variables and user scalars initialization.
+ *
+ * Fortran Interface:
+ *
+ * subroutine uisterm (ncelet, isuite, isca, iscold, rtp)
+ * *****************
+ *
+ * integer          ncelet   -->  number of cells with halo
+ * integer          isuite   -->  restart indicator
+ * integer          isca     -->  indirection array for scalar number
+ * integer          iscold   -->  scalar number for restart
+ * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(uisterm, UISTERM)(const int          *ncelet,
+                                const int          *isuite,
+                                const int          *isca,
+                                const int          *iscold,
+                                const double *const xyzcen)
+{
+  /* Coal combustion: the initialization of the model scalar are not given */
+  int i, j, icel, iel;
+  int zones = 0;
+  int cells = 0;
+  int *cells_list = NULL;
+  double initial_value = 0;
+  char *path = NULL;
+  char *status = NULL;
+  char *zone_id = NULL;
+  char *formula = NULL;
+  char *model = NULL;
+  cs_int_t iphas = 0;
+  double *aaa;
+  BFT_MALLOC(aaa, (*ncelet)*6, double);
+
+  mei_tree_t *ev_formula  = NULL;
+
+  cs_var_t  *vars = cs_glob_var;
+
+  /* number of volumic zone */
+
+  zones = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone\n", 1);
+
+#if _XML_DEBUG_
+  bft_printf("==>UISTERM\n");
+#endif
+
+  for (i=1; i < zones+1; i++) {
+    /* momentum source term */
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+    cs_xpath_add_element_num(&path, "zone", i);
+    cs_xpath_add_attribute(&path, "momentum_source_term");
+    status = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
+
+    if (cs_gui_strcmp(status, "on")) {
+      zone_id = cs_gui_volumic_zone_id(i);
+      cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
+
+      if (*isuite == 0) {
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 1, "thermophysical_models");
+        cs_xpath_add_elements(&path, 1, "source_terms");
+        cs_xpath_add_elements(&path, 1, "momentum_formula");
+        cs_xpath_add_test_attribute(&path, "zone_id",zone_id);
+        cs_xpath_add_function_text(&path);
+        formula = cs_gui_get_text_value(path);
+        BFT_FREE(path);
+        if (formula != NULL) {
+          ev_formula = mei_tree_new(formula);
+          mei_tree_insert(ev_formula,"x",0.0);
+          mei_tree_insert(ev_formula,"y",0.0);
+          mei_tree_insert(ev_formula,"z",0.0);
+          /* try to build the interpreter */
+          if (mei_tree_builder(ev_formula))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not interpret expression: %s\n %i"),
+                      ev_formula->string, mei_tree_builder(ev_formula));
+          const char *symbols[] = {"Su","Sv","Sw","dSudu","dSvdv","dSwdw"};
+          if (mei_tree_find_symbols(ev_formula, 6, symbols))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not find the required symbol: %s\n"),
+                      "Su, Sv, Sw, dSudu, dSvdv or dSwdw");
+          for (icel = 0; icel < cells; icel++) {
+            iel = cells_list[icel]-1;
+            mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
+            mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
+            mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
+            mei_evaluate(ev_formula);
+            double crvexp;
+            double crvimp;
+            crvimp = mei_tree_lookup(ev_formula,"Su");
+            crvexp = mei_tree_lookup(ev_formula,"dSudu");
+
+            aaa[1*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"Su");
+            aaa[2*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"Sv");
+            aaa[3*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"Sw");
+            aaa[4*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"dSudu");
+            aaa[5*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"dSvdv");
+            aaa[6*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"dSwdw");
+          }
+          mei_tree_destroy(ev_formula);
+        }
+        else {
+          for (icel = 0; icel < cells; icel++) {
+            iel = cells_list[icel]-1;
+            aaa[1*(*ncelet)+iel] = 0.;
+            aaa[2*(*ncelet)+iel] = 0.;
+            aaa[3*(*ncelet)+iel] = 0.;
+            aaa[4*(*ncelet)+iel] = 0.;
+            aaa[5*(*ncelet)+iel] = 0.;
+            aaa[6*(*ncelet)+iel] = 0.;
+          }
+        }
+      }
+      BFT_FREE(cells_list);
+      BFT_FREE(zone_id);
+    }
+
+    /* thermal source term */
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+    cs_xpath_add_element_num(&path, "zone", i);
+    cs_xpath_add_attribute(&path, "thermal_source_term");
+    status = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
+
+    if (cs_gui_strcmp(status, "on")) {
+      zone_id = cs_gui_volumic_zone_id(i);
+      cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
+
+      if (*isuite == 0) {
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 1, "thermophysical_models");
+        cs_xpath_add_elements(&path, 1, "source_terms");
+        cs_xpath_add_elements(&path, 1, "thermal_formula");
+        cs_xpath_add_test_attribute(&path, "zone_id",zone_id);
+        cs_xpath_add_function_text(&path);
+        formula = cs_gui_get_text_value(path);
+        BFT_FREE(path);
+        if (formula != NULL) {
+          ev_formula = mei_tree_new(formula);
+          mei_tree_insert(ev_formula,"x",0.0);
+          mei_tree_insert(ev_formula,"y",0.0);
+          mei_tree_insert(ev_formula,"z",0.0);
+          /* try to build the interpreter */
+          if (mei_tree_builder(ev_formula))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not interpret expression: %s\n %i"),
+                      ev_formula->string, mei_tree_builder(ev_formula));
+          const char *symbols[] = {"S", "dS"};
+          if (mei_tree_find_symbols(ev_formula, 2, symbols))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not find the required symbol: %s\n"),
+                      "S or dS");
+          for (icel = 0; icel < cells; icel++) {
+            iel = cells_list[icel]-1;
+            mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
+            mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
+            mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
+            mei_evaluate(ev_formula);
+            aaa[1*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"S");
+            aaa[2*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"dS");
+          }
+          mei_tree_destroy(ev_formula);
+        }
+        else {
+          for (icel = 0; icel < cells; icel++) {
+            iel = cells_list[icel]-1;
+            aaa[1*(*ncelet)+iel] = 0.;
+            aaa[2*(*ncelet)+iel] = 0.;
+          }
+        }
+      }
+      BFT_FREE(cells_list);
+      BFT_FREE(zone_id);
+    }
+
+    /* species source term */
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+    cs_xpath_add_element_num(&path, "zone", i);
+    cs_xpath_add_attribute(&path, "scalar_source_term");
+    status = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
+
+    if (cs_gui_strcmp(status, "on")) {
+      zone_id = cs_gui_volumic_zone_id(i);
+      cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
+
+      if (*isuite == 0) {
+        for (j=0; j < vars->nscaus; j++) {
+          path = cs_xpath_init_path();
+          cs_xpath_add_elements(&path, 3,
+                                "thermophysical_models",
+                                "source_terms",
+                                "scalar_formula");
+          cs_xpath_add_test_attribute(&path, "label", vars->label[j]);
+          cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+          cs_xpath_add_function_text(&path);
+          formula = cs_gui_get_text_value(path);
+          BFT_FREE(path);
+          if (formula != NULL) {
+            ev_formula = mei_tree_new(formula);
+            mei_tree_insert(ev_formula,"x",0.);
+            mei_tree_insert(ev_formula,"y",0.);
+            mei_tree_insert(ev_formula,"z",0.);
+            /* try to build the interpreter */
+            if (mei_tree_builder(ev_formula))
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Error: can not interpret expression: %s\n %i"),
+                        ev_formula->string, mei_tree_builder(ev_formula));
+
+            const char *symbols[] = {"S","dS"};
+            if (mei_tree_find_symbols(ev_formula, 2, symbols))
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Error: can not find the required symbol: %s\n"), "S or dS");
+            if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+              for (icel = 0; icel < cells; icel++) {
+                iel = cells_list[icel]-1;
+                mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
+                mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
+                mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
+                mei_evaluate(ev_formula);
+                aaa[1*(*ncelet*j)+iel] = mei_tree_lookup(ev_formula,"S");
+                aaa[2*(*ncelet*j)+iel] = mei_tree_lookup(ev_formula,"dS");
+              }
+            }
+            mei_tree_destroy(ev_formula);
+          }
+          else {
+            if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+              for (icel = 0; icel < cells; icel++) {
+                iel = cells_list[icel]-1;
+                aaa[1*(*ncelet*j)+iel] = 0.;
+                aaa[2*(*ncelet*j)+iel] = 0.;
+              }
+            }
+          }
+        }
+      }
+      BFT_FREE(cells_list);
+      BFT_FREE(zone_id);
+    }
+    BFT_FREE(status);
+  }
+    BFT_FREE(aaa);
+}
+
 /*-----------------------------------------------------------------------------
  * Initialize mei tree and check for symbols existence
  *

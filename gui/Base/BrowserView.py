@@ -433,6 +433,7 @@ Volume conditions
     Volume regions definition
     Initialization
     Head losses
+    Source terms
     Coriolis Source Terms
 Particles and droplets tracking
     Global settings
@@ -666,6 +667,7 @@ Calculation management
         self.setRowClose(self.tr('Thermohydraulic parameters'))
         self.setRowClose(self.tr('Mobil mesh boundary'))
         self.setRowClose(self.tr('Fluid structure interaction'))
+        self.setRowClose(self.tr('Source terms'))
 
         # Steady flow management
 
@@ -778,6 +780,24 @@ Calculation management
         if node7 and node7['status'] == 'on':
             self.setRowOpen(self.tr('Mobil mesh boundary'))
             self.setRowOpen(self.tr('Fluid structure interaction'))
+
+        # Source terms view
+        node_domain = case.xmlGetNode('solution_domain')
+        node_vol = node_domain.xmlGetNode('volumic_conditions')
+        nb_zone = 0
+
+        for node in node_vol.xmlGetChildNodeList('zone'):
+            if node['momentum_source_term'] == 'on':
+                nb_zone = nb_zone + 1
+            elif node['mass_source_term'] == 'on':
+                nb_zone = nb_zone + 1
+            elif node['thermal_source_term'] == 'on':
+                nb_zone = nb_zone + 1
+            elif node['scalar_source_term'] == 'on':
+                nb_zone = nb_zone + 1
+
+        if nb_zone > 0:
+            self.setRowOpen(self.tr('Source terms'))
 
         self.__hideRow()
 

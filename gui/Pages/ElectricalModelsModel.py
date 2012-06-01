@@ -60,11 +60,12 @@ class ElectricalModel(Variables, Model):
         self.case = case
 
         nModels         = self.case.xmlGetNode('thermophysical_models')
-        self.node_turb  = nModels.xmlGetNode('turbulence',      'model')
-        self.node_gas   = nModels.xmlInitNode('gas_combustion',  'model')
-        self.node_coal  = nModels.xmlInitNode('pulverized_coal', 'model')
-        self.node_joule = nModels.xmlInitNode('joule_effect',    'model')
-        self.node_therm = nModels.xmlGetNode('thermal_scalar',  'model')
+        self.node_turb  = nModels.xmlGetNode('turbulence',         'model')
+        self.node_gas   = nModels.xmlInitNode('gas_combustion',    'model')
+        self.node_coal  = nModels.xmlInitNode('pulverized_coal',   'model')
+        self.node_joule = nModels.xmlInitNode('joule_effect',      'model')
+        self.node_therm = nModels.xmlInitNode('thermal_scalar',    'model')
+        self.node_atmo  = nModels.xmlInitNode('atmospheric_flows', 'model')
 
         self.electricalModel = ('off', 'joule', 'arc')
 
@@ -124,6 +125,7 @@ class ElectricalModel(Variables, Model):
             self.node_coal['model']  = 'off'
             self.node_joule['model'] = model
             self.node_therm['model'] = 'off'
+            self.node_atmo['model']  = 'off'
 
 
     def getElectricalModel(self):

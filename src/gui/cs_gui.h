@@ -446,6 +446,27 @@ void CS_PROCF(nvamem, NVAMEM) (void);
  *
  * Fortran Interface:
  *
+ * subroutine uisterm (ncelet, isuite, isca, iscold, rtp)
+ * *****************
+ *
+ * integer          ncelet   -->  number of cells with halo
+ * integer          isuite   -->  restart indicator
+ * integer          isca     -->  indirection array for scalar number
+ * integer          iscold   -->  scalar number for restart
+ * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(uisterm, UISTERM) (const int          *ncelet,
+                                 const int          *isuite,
+                                 const int           isca[],
+                                 const int           iscold[],
+                                 const double *const xyzcen);
+
+/*----------------------------------------------------------------------------
+ * Variables and user scalars initialization.
+ *
+ * Fortran Interface:
+ *
  * subroutine uiiniv (ncelet, isuite, isca, iscold, rtp)
  * *****************
  *

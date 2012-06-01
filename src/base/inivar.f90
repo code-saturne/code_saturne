@@ -144,6 +144,7 @@ if (iihmpr.eq.1) then
                ro0, cp0, viscl0, visls0, uref,     &
                almax, xyzcen, rtp)
   !==========
+  call uisterm (ncelet, isuite, isca, iscold, xyzcen)
 
 endif
 

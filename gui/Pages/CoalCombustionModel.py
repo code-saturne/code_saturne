@@ -67,12 +67,13 @@ class CoalCombustionModel(Variables, Model):
         self.case = case
 
         nModels         = self.case.xmlGetNode('thermophysical_models')
-        self.node_lagr  = self.case.xmlGetNode('lagrangian', 'model')
-        self.node_turb  = nModels.xmlGetNode('turbulence',       'model')
-        self.node_gas   = nModels.xmlInitNode('gas_combustion',  'model')
-        self.node_coal  = nModels.xmlInitNode('pulverized_coal', 'model')
-        self.node_joule = nModels.xmlInitNode('joule_effect',    'model')
-        self.node_therm = nModels.xmlInitNode('thermal_scalar',  'model')
+        self.node_lagr  = self.case.xmlGetNode('lagrangian',       'model')
+        self.node_turb  = nModels.xmlGetNode('turbulence',         'model')
+        self.node_gas   = nModels.xmlInitNode('gas_combustion',    'model')
+        self.node_coal  = nModels.xmlInitNode('pulverized_coal',   'model')
+        self.node_joule = nModels.xmlInitNode('joule_effect',      'model')
+        self.node_therm = nModels.xmlInitNode('thermal_scalar',    'model')
+        self.node_atmo  = nModels.xmlInitNode('atmospheric_flows', 'model')
 
         self.coalCombustionModel = ('off', 'coal_homo', 'coal_homo2')
 
@@ -557,6 +558,7 @@ class CoalCombustionModel(Variables, Model):
             self.node_coal['model']  = model
             self.node_joule['model'] = 'off'
             self.node_therm['model'] = 'off'
+            self.node_atmo['model']  = 'off'
             self.createModel()
             for zone in LocalizationModel('BoundaryZone', self.case).getZones():
                 if zone.getNature() == "inlet":

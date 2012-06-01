@@ -91,7 +91,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
 
     elif page_name == tr("Volume regions definition"):
         import Pages.LocalizationView as Page
-        thisPage = Page.VolumeLocalizationView(root, case)
+        thisPage = Page.VolumeLocalizationView(root, case, tree)
 ##         import Pages.AddScalarFieldBoundView as Page
 ##         thisPage = Page.AddScalarFieldBoundView(root, case)
 
@@ -142,6 +142,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.HeadLossesView as Page
         thisPage = Page.HeadLossesView(root, case)
 
+    elif page_name == tr("Source terms"):
+        import Pages.SourceTermsView as Page
+        thisPage = Page.SourceTermsView(root, case, stbar)
+
     elif page_name == tr("Coriolis Source Terms"):
         import Pages.CoriolisSourceTermsView as Page
         thisPage = Page.CoriolisSourceTermsView(root, case)
@@ -176,7 +180,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
 
     elif page_name == tr("Definition of boundary regions"):
         import Pages.LocalizationView as Page
-        thisPage = Page.BoundaryLocalizationView(root, case)
+        thisPage = Page.BoundaryLocalizationView(root, case, tree)
 
     elif page_name == tr("Boundary conditions"):
         import Pages.BoundaryConditionsView as Page

@@ -57,7 +57,7 @@ class Zone(object):
     """
     Zone API
     """
-    def __new__(cls, typeZone , label = None, codeNumber = None, localization = None, nature = None):
+    def __new__(cls, typeZone, case = None, label = None, codeNumber = None, localization = None, nature = None):
         """
         Factory
         """
@@ -69,9 +69,10 @@ class Zone(object):
             raise ValueError("Unknown type zone")
 
 
-    def __init__(self, typeZone , label = None, codeNumber = None, localization = None, nature = None):
+    def __init__(self, typeZone, case = None, label = None, codeNumber = None, localization = None, nature = None):
         """
         """
+        self._case = case
         self._initNatureList()
 
         if label:
@@ -202,20 +203,26 @@ class VolumicZone(Zone):
 
 
     def _initNatureList(self):
-        self._natureList= ['initialization',
-                           'head_losses',
-                           'momentum_source_term',
-                           'mass_source_term',
-                           'thermal_source_term',
-                           'scalar_source_term']
+        self._natureList = ['initialization',
+                            'head_losses',
+                            'momentum_source_term']
 
         self._natureDict = {}
         self._natureDict['initialization']       = self.tr("Initialization")
         self._natureDict['head_losses']          = self.tr("Head losses")
-        self._natureDict['momentum_source_term'] = self.tr("Momentum source term")
-        self._natureDict['mass_source_term']     = self.tr("Mass source term")
-        self._natureDict['thermal_source_term']  = self.tr("Thermal source term")
-        self._natureDict['scalar_source_term']   = self.tr("Scalar source term")
+        self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
+
+        from Pages.ThermalScalarModel import ThermalScalarModel
+        if ThermalScalarModel(self._case).getThermalScalarModel() != 'off':
+            self._natureList.append('thermal_source_term')
+            self._natureDict['thermal_source_term']  = self.tr("Thermal source term")
+        del ThermalScalarModel
+
+        node = self._case.xmlGetNode('additional_scalars')
+        number = len(node.xmlGetNodeList('scalar', type='user'))
+        if number > 0:
+            self._natureList.append('scalar_source_term')
+            self._natureDict['scalar_source_term']   = self.tr("Scalar source term")
 
 
     def defaultValues(self):
@@ -488,8 +495,8 @@ class VolumicLocalizationModel(LocalizationModel):
         """
         XMLSolutionDomainNode = self._case.xmlInitNode('solution_domain')
         self.__XMLVolumicConditionsNode = XMLSolutionDomainNode.xmlInitNode('volumic_conditions')
-        self.__natureOptions = Zone('VolumicZone').getNatureList()
-        self._tagList = ['initial_value', 'head_loss']
+        self.__natureOptions = Zone('VolumicZone', case = self._case).getNatureList()
+        self._tagList = ['formula', 'head_loss']
         self.node_models = self._case.xmlGetNode('thermophysical_models')
         self.node_veloce = self.node_models.xmlGetNode('velocity_pressure')
         self.scalar_node = self._case.xmlGetNode('additional_scalars')
@@ -509,6 +516,7 @@ class VolumicLocalizationModel(LocalizationModel):
             localization = str(node.xmlGetTextNode())
             nature = self.getNature(label)
             zone = Zone('VolumicZone',
+                        case = self._case,
                         label = label,
                         codeNumber = codeNumber,
                         localization = localization,
@@ -663,19 +671,6 @@ class VolumicLocalizationModel(LocalizationModel):
                 nodeid = int(node['zone_id'])
                 if nodeid > int(name):
                     node['zone_id'] = str(nodeid-1)
-
-        for tag in self._tagList:
-            for n in self.node_veloce.xmlGetNodeList('variable'):
-                node = n.xmlGetNode('initial_value')
-                if node:
-                    nodeid = int(node['zone_id'])
-                    if nodeid > int(name):
-                        node['zone_id'] = str(nodeid-1)
-            for n in self.scalar_node.xmlGetNodeList('scalar'):
-                for node in n.xmlGetNodeList('initial_value', 'zone_id'):
-                    nodeid = int(node['zone_id'])
-                    if nodeid > int(name):
-                        node['zone_id'] = str(nodeid-1)
 
 #-------------------------------------------------------------------------------
 #

@@ -245,6 +245,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             label, title, format, list, freq, formula, nb_point = self.mdl.getProfileData(lab)
             self.__insertProfile(label, list)
 
+        setGreenColor(self.pushButtonFormula, True)
         self.__eraseEntries()
 
 
