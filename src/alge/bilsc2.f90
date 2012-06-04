@@ -333,7 +333,7 @@ if (iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0) then
     !==========
   endif
 
-  if (iperot.eq.1) then
+  if (iperio.eq.1) then
     call pergra(ivar, idimtr, irpvar)
     !==========
     if (idimtr .gt. 0) then

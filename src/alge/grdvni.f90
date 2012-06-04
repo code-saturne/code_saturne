@@ -147,6 +147,7 @@ double precision rvoid(1)
 ! Il est necessaire que ITENSO soit toujours initialise, meme hors
 !   periodicite, donc on l'initialise au prealable a sa valeur par defaut.
 
+idimtr = 0
 
 if (iperot.eq.1) then
 
