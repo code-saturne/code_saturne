@@ -20,50 +20,55 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function :
+! --------
+
+!> Compute the correction of the exchange coefficient between the fluid and
+!> the wall for a turbulent flow.
+!>
+!> This is function of the dimensionless
+!> distance to the wall \f$ y^+ = \dfrac{\centip \centf u_\star}{\nu}\f$.
+!>
+!> Then the return coefficient reads:
+!> \f[
+!> h_{tur} = Pr \dfrac{y^+}{T^+}
+!> \f]
+!>
+!> This coefficient is computed thanks to a similarity model between
+!> dynamic viscous sub-layer and themal sub-layer.
+!>
+!> \f$ T^+ \f$ is computed as follows:
+!>
+!> - For a laminar Prandtl number smaller than 0.1 (such as liquid metals),
+!>   the standard model with two sub-layers (Prandtl-Taylor) is used.
+!>
+!> - For a laminar Prandtl number larger than 0.1 (such as liquids and gaz),
+!>   a model with three sub-layers (Arpaci-Larsen) is used.
+!>
+!> The final exchange coefficient is:
+!> \f[
+!> h = \dfrac{K}{\centip \centf} h_{tur}
+!> \f]
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     yplus         dimensionless distance to the wall
+!> \param[in]     ckarm         Von Karman constant
+!> \param[in]     prt           turbulent Prandtl number
+!> \param[in]     prl           laminar Prandtl number
+!> \param[out]    htur          corrected exchange coefficient
+!_______________________________________________________________________________
+
 subroutine hturbp &
 !================
 
  ( prl    , prt    , ckarm  , yplus  , htur   )
 
-!===============================================================================
-
-! FONCTION :
-! --------
-! 1) CALCUL DU COEFFICIENT CORRECTEUR DU COEFFICIENT D'ECHANGE
-!   ENTRE LE FLUIDE ET LA PAROI POUR UN ECOULEMENT TURBULENT
-!   EN FONCTION DE LA DISTANCE ADIMENSIONELLE YPLUS = USTAR*DP/RNU
-!   HTUR = PR*YPLUS/TPLUS
-
-
-! CE COEFFICIENT EST CALCULE A L'AIDE D'UN MODELE DE SIMILITUDE
-! ENTRE COUCHE LIMITE DYNAMIQUE ET COUCHE LIMITE THERMIQUE
-
-! LE  TPLUS EST CALCULE :
-
-! - POUR UN NOMBRE DE PRANDTL  << 0.1 (METAUX LIQUIDES) :
-!   PAR LE MODELE STANDARD A DEUX COUCHES (PRANDTL-TAYLOR)
-
-! - POUR UN NOMBRE DE PRANDTL  >> 0.1  (LIQUIDES et GAZ):
-!   PAR UN MODELE A TROIS COUCHES (ARPACI-LARSEN)
-
-! -->> LE COEFFICIENT D'ECHANGE FINAL : H = (K/dp)*htur
-
-!-------------------------------------------------------------------------------
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! yplus            ! r  ! <-- ! distance a la paroi adimensionnelle            !
-! ckarm            ! r  ! <-- ! constante de karman                            !
-! prt              ! r  ! <-- ! nombre de prandtl turbulent                    !
-! prl              ! r  ! <-- ! nombre de prandtl moleculaire                  !
-! htur             ! r  ! --> ! coefficient correcteur d'echange(adim          !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!-------------------------------------------------------------------------------
 !===============================================================================
 
 implicit none
@@ -84,8 +89,9 @@ double precision prlm1
 
 !============================================================================
 
-!     1)INITIALISATIONS
-!     -----------------
+!===============================================================================
+! 1. Initializations
+!===============================================================================
 
 htur = 1.d0
 
@@ -96,42 +102,40 @@ yp2   = ckarm*1000.d0/prt
 yp2   = sqrt(yp2)
 yp1   = (1000.d0/prl)**(1.d0/3.d0)
 
-!     ====================================================
-!     2) CALCUL DU COEFFICIENT CORRECTEUR
-!        POUR LES NOMBRES DE PRANDTL TRES PETITS
-!     ====================================================
-if( prl .le. prlm1) then
-  if(yplus .gt. yp0) then
+!===============================================================================
+! 2. Compute htur for small Prandtl numbers
+!===============================================================================
+
+if (prl.le.prlm1) then
+  if (yplus .gt. yp0) then
     tplus = prl*yp0 + prt/ckarm * log(yplus/yp0)
+    htur = prl*yplus/tplus
+  endif
+endif
+
+!===============================================================================
+! 3. Compute htur for the model with three sub-layers
+!===============================================================================
+
+if (prl.gt.prlm1) then
+
+  a2 = 15.d0*(prl**(2.d0/3.d0))
+  beta2 = a2 - 500.d0/ (yp2**2)
+
+  if ((yplus.ge.yp1).and.(yplus.lt.yp2)) then
+    tplus = a2 - 500.d0/(yplus*yplus)
+    htur = prl*yplus/tplus
+  endif
+
+  if ((yplus.ge.yp2)) then
+    tplus = beta2 + prt/ckarm*log(yplus/yp2)
     htur = prl*yplus/tplus
   endif
 
 endif
 
-
-!     ====================================================
-!     3) CALCUL DU COEFFICIENT CORRECTEUR
-!        POUR UN MODELE A TROIS COUCHES
-!     ====================================================
-if( prl .gt. prlm1) then
-
- a2 = 15.d0*(prl**(2.d0/3.d0))
- beta2 = a2 - 500.d0/ (yp2**2)
-
- if( (yplus .ge. yp1) .and. (yplus.lt.yp2) )then
-    tplus = a2 - 500.d0/(yplus*yplus)
-    htur = prl*yplus/tplus
- endif
-
- if( (yplus .ge. yp2) )then
-    tplus = beta2 + prt/ckarm*log(yplus/yp2)
-    htur = prl*yplus/tplus
- endif
-
-endif
-
 !----
-! FIN
+! End
 !----
 
 return
