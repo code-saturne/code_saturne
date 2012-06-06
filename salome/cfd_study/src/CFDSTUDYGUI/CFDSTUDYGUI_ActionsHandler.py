@@ -1594,7 +1594,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
                 # xml case file not already opened
                 aCmd = []
-                aCmd.append('-f')
+                aCmd.append('-p')
                 if CFD_Code() == CFD_Saturne:
                     aCmd.append(aXmlFileName)
                 elif CFD_Code() == CFD_Neptune:
