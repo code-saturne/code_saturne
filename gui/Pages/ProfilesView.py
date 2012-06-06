@@ -395,7 +395,6 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             QMessageBox.information(self, title, msg)
         else:
             old_label, title, format, vlist, freq, formula, nb_point = self.__infoProfile(row)
-            self.line_formula = formula
 
             var_prof = [str(s) for s in self.modelDrop.stringList()]
             log.debug("slotEditProfile -> %s" % (var_prof,))
