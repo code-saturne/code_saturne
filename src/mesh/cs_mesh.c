@@ -93,10 +93,6 @@ BEGIN_C_DECLS
 
 cs_mesh_t  *cs_glob_mesh = NULL;
 
-/* Pointer on the temporary mesh used for building main mesh */
-
-cs_mesh_builder_t  *cs_glob_mesh_builder = NULL;
-
 /*============================================================================
  * Public FORTRAN function prototypes
  *============================================================================*/
@@ -927,7 +923,7 @@ _build_cell_face_perio_match(const cs_mesh_t    *mesh,
  * parameters:
  *   mesh                 <-- pointer to mesh structure
  *   n_perio_face_couples --> local number of periodic couples per
- *                          periodicity (size: mesh->n_init_perio)
+ *                            periodicity (size: mesh->n_init_perio)
  *   perio_face_couples   --> arrays of global periodic couple face numbers,
  *                            for each periodicity
  *----------------------------------------------------------------------------*/
@@ -2258,27 +2254,6 @@ cs_mesh_create(void)
 }
 
 /*----------------------------------------------------------------------------
- * Create an empty mesh builder structure.
- *
- * returns:
- *   A pointer to a mesh builder structure
- *----------------------------------------------------------------------------*/
-
-cs_mesh_builder_t *
-cs_mesh_builder_create(void)
-{
-  cs_mesh_builder_t  *mb = NULL;
-
-  BFT_MALLOC(mb, 1, cs_mesh_builder_t);
-
-  mb->n_perio = 0;
-  mb->n_perio_couples = NULL;
-  mb->perio_couples = NULL;
-
-  return mb;
-}
-
-/*----------------------------------------------------------------------------
  * Destroy a mesh structure.
  *
  * mesh       <->  pointer to a mesh structure
@@ -2316,6 +2291,27 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   if (mesh->n_init_perio > 0)
     mesh->periodicity = fvm_periodicity_destroy(mesh->periodicity);
 
+  cs_mesh_free_rebuildable(mesh, true);
+
+  BFT_FREE(mesh);
+
+  return mesh;
+}
+
+/*----------------------------------------------------------------------------
+ * Remove arrays and structures that mey be rebuilt.
+ *
+ * mesh       <-> pointer to a mesh structure
+ * free_halos <-- if true, free halos and parallel/periodic interface
+ *                structures
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
+                         bool        free_halos)
+{
+  /* Free structures that may be rebuilt */
+
   if (mesh->b_cells != NULL)
     BFT_FREE(mesh->b_cells);
 
@@ -2329,14 +2325,18 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
     BFT_FREE(mesh->gcell_vtx_lst);
   }
 
-  /* Free halo structure */
+  /* Free halo and interface structures */
 
-  if (mesh == cs_glob_mesh)
-    cs_halo_free_buffer();
+  if (free_halos) {
 
-  if (mesh->vtx_interfaces != NULL)
-    cs_interface_set_destroy(&(mesh->vtx_interfaces));
-  mesh->halo = cs_halo_destroy(mesh->halo);
+    if (mesh == cs_glob_mesh)
+      cs_halo_free_buffer();
+
+    if (mesh->vtx_interfaces != NULL)
+      cs_interface_set_destroy(&(mesh->vtx_interfaces));
+    mesh->halo = cs_halo_destroy(mesh->halo);
+
+  }
 
   /* Free numbering info */
 
@@ -2346,11 +2346,6 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
     cs_numbering_destroy(&(mesh->b_face_numbering));
 
   /* Free selection structures */
-
-  if (mesh->n_groups > 0) {
-    BFT_FREE(mesh->group_idx);
-    BFT_FREE(mesh->group_lst);
-  }
 
   if (mesh->select_cells != NULL)
     mesh->select_cells = fvm_selector_destroy(mesh->select_cells);
@@ -2364,35 +2359,6 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   if (cs_glob_mesh->class_defs != NULL)
     cs_glob_mesh->class_defs
       = fvm_group_class_set_destroy(cs_glob_mesh->class_defs);
-
-  BFT_FREE(mesh);
-
-  return mesh;
-}
-
-/*----------------------------------------------------------------------------
- * Destroy a mesh builder structure
- *
- * mesh_builder <->  pointer to a mesh structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_builder_destroy(cs_mesh_builder_t  **mesh_builder)
-{
-  if (mesh_builder != NULL) {
-
-    int i;
-    cs_mesh_builder_t *_mb = *mesh_builder;
-
-    if (_mb->perio_couples != NULL) {
-      for (i = 0; i < _mb->n_perio; i++)
-        BFT_FREE(_mb->perio_couples[i]);
-    }
-    BFT_FREE(_mb->perio_couples);
-    BFT_FREE(_mb->n_perio_couples);
-
-    BFT_FREE(*mesh_builder);
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -2849,17 +2815,17 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
     if (mb != NULL) {
       face_interfaces = cs_interface_set_create(n_i_faces,
-                                                 NULL,
-                                                 g_i_face_num,
-                                                 mesh->periodicity,
-                                                 mesh->n_init_perio,
-                                                 perio_num,
-                                                 mb->n_perio_couples,
-                      (const cs_gnum_t *const *)(mb->perio_couples));
+                                                NULL,
+                                                g_i_face_num,
+                                                mesh->periodicity,
+                                                mesh->n_init_perio,
+                                                perio_num,
+                                                mb->n_per_face_couples,
+                      (const cs_gnum_t *const *)(mb->per_face_couples));
       for (i = 0; i < mb->n_perio; i++)
-        BFT_FREE(mb->perio_couples[i]);
-      BFT_FREE(mb->perio_couples);
-      BFT_FREE(mb->n_perio_couples);
+        BFT_FREE(mb->per_face_couples[i]);
+      BFT_FREE(mb->per_face_couples);
+      BFT_FREE(mb->n_per_face_couples);
       mb->n_perio = 0;
     }
     else

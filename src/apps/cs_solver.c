@@ -90,6 +90,7 @@
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_coherency.h"
+#include "cs_mesh_from_builder.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quality.h"
 #include "cs_mesh_quantities.h"
@@ -242,7 +243,7 @@ cs_run(void)
 
   /* Choose partitioning type */
 
-  cs_preprocessor_data_part_choice(cs_gui_get_sfc_partition_type() + 2);
+  cs_mesh_from_builder_part_choice(cs_gui_get_sfc_partition_type() + 2);
 
   /* Read Preprocessor output */
 
@@ -304,22 +305,26 @@ cs_run(void)
 
   }
 
+  /* Now that mesh modification is finished, save mesh if modified
+     (do this before building colors, which adds internal groups) */
+
+  if (cs_glob_mesh->modified == 1) {
+    cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, "mesh_output");
+    cs_mesh_from_builder(cs_glob_mesh, cs_glob_mesh_builder);
+    cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder);
+    cs_mesh_update_auxiliary(cs_glob_mesh);
+  }
+
+  /* Destroy the temporary structure used to build the main mesh */
+
+  cs_mesh_builder_destroy(&cs_glob_mesh_builder);
+
   /* Renumber mesh based on code options */
 
   bft_printf(_("\n Renumbering mesh:\n"));
   bft_printf_flush();
   cs_renumber_mesh(cs_glob_mesh,
                    cs_glob_mesh_quantities);
-
-  /* Destroy the temporary structure used to build the main mesh */
-
-  cs_mesh_builder_destroy(&cs_glob_mesh_builder);
-
-  /* Now that mesh modification is finished, save mesh if modified
-     (do this before building colors, which adds internal groups) */
-
-  if (cs_glob_mesh->modified == 1)
-    cs_mesh_save(cs_glob_mesh, "mesh_output");
 
   /* Initialize group classes and insert colors if possible */
 

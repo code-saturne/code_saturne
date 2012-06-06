@@ -3188,6 +3188,107 @@ cs_io_write_global(const char     *sec_name,
  * total number of values read equals
  * (global_num_end - global_num_start) * header->n_location_vals.
  *
+ * This function does not modify the values in its input buffer (notably,
+ * a copy is used to convert from little-endian to big-endian or vice-versa
+ * if necessary).
+ *
+ * parameters:
+ *   section_name     <-- section name
+ *   n_g_elts         <-- number of global elements (locations)
+ *   global_num_start <-- global number of first block item (1 to n numbering)
+ *   global_num_end   <-- global number of past-the end block item
+ *   location_id      <-- id of associated location, or 0
+ *   index_id         <-- id of associated index, or 0
+ *   n_location_vals  <-- number of values per location
+ *   elt_type         <-- element type
+ *                        (1 to n numbering)
+ *   elts             <-- pointer to element data
+ *   outp             <-> output kernel IO structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_write_block(const char     *sec_name,
+                  cs_gnum_t       n_g_elts,
+                  cs_gnum_t       global_num_start,
+                  cs_gnum_t       global_num_end,
+                  size_t          location_id,
+                  size_t          index_id,
+                  size_t          n_location_vals,
+                  cs_datatype_t   elt_type,
+                  const void     *elts,
+                  cs_io_t        *outp)
+{
+  double t_start = 0.;
+  size_t n_written = 0;
+  size_t n_g_vals = n_g_elts;
+  size_t n_vals = global_num_end - global_num_start;
+  size_t stride = 1;
+  cs_io_log_t  *log = NULL;
+
+  if (n_location_vals > 1) {
+    stride = n_location_vals;
+    n_g_vals *= n_location_vals;
+    n_vals *= n_location_vals;
+  }
+
+  _write_header(sec_name,
+                n_g_vals,
+                location_id,
+                index_id,
+                n_location_vals,
+                elt_type,
+                NULL,
+                outp);
+
+  if (outp->log_id > -1) {
+    log = _cs_io_log[outp->mode] + outp->log_id;
+    t_start = cs_timer_wtime();
+  }
+
+  _write_padding(outp->body_align, outp);
+
+  n_written = cs_file_write_block(outp->f,
+                                  elts,
+                                  cs_datatype_size[elt_type],
+                                  stride,
+                                  global_num_start,
+                                  global_num_end);
+
+# if !defined(__bgq__) /* Work around BG/Q XL compiler bug */
+  if (n_vals != (cs_gnum_t)n_written)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error writing %llu bytes to file \"%s\"."),
+              (unsigned long long)n_vals, cs_file_get_name(outp->f));
+#endif
+
+  if (log != NULL) {
+    double t_end = cs_timer_wtime();
+    log->wtimes[1] += t_end - t_start;
+    log->data_size[1] += n_written*cs_datatype_size[elt_type];
+  }
+
+  if (n_vals != 0 && outp->echo > CS_IO_ECHO_HEADERS)
+    _echo_data(outp->echo, n_g_vals,
+               (global_num_start-1)*stride + 1,
+               (global_num_end -1)*stride + 1,
+               elt_type, elts);
+}
+
+/*----------------------------------------------------------------------------
+ * Write a section to file, each associated process providing a contiguous
+ * of the section's body.
+ *
+ * Each process should provide a (possibly empty) block of the body,
+ * and we should have:
+ *   global_num_start at rank 0 = 1
+ *   global_num_start at rank i+1 = global_num_end at rank i.
+ * Otherwise, behavior (especially positioning for future reads) is undefined.
+ *
+ * If location_id > 0 and n_location_vals > 1, then global_num_start
+ * and global_num_end will be based on location element numbers, so the
+ * total number of values read equals
+ * (global_num_end - global_num_start) * header->n_location_vals.
+ *
  * This function is intended to be used mainly on data that is already of
  * copy of original data (such as data that has been redistributed across
  * processors just for the sake of output), or that is to be deleted after

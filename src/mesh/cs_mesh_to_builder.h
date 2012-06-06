@@ -1,8 +1,8 @@
-#ifndef __CS_MESH_SAVE_H__
-#define __CS_MESH_SAVE_H__
+#ifndef __CS_MESH_TO_BUILDER_H__
+#define __CS_MESH_TO_BUILDER_H__
 
 /*============================================================================
- * Save mesh Preprocessor data
+ * Define cs_mesh_builder_t fields from cs_mesh_t fields.
  *============================================================================*/
 
 /*
@@ -28,41 +28,65 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
+#include "fvm_group.h"
+#include "fvm_selector.h"
+#include "fvm_periodicity.h"
+
 #include "cs_base.h"
+
 #include "cs_mesh.h"
+#include "cs_mesh_builder.h"
+#include "cs_part_to_block.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Macro definitions
+ *============================================================================*/
+
 /*============================================================================
- *  Public function prototypes
+ * Type definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/*=============================================================================
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Save a mesh as preprocessor data.
+ * Transfer mesh to mesh builder structure.
+ *
+ * As the dataflow is very similar, but may be done array-by array to minimize
+ * memory overhead, this function also handles a part of the output
+ * to file needed to save a mesh file.
  *
  * parameters:
- *   mesh     <-- pointer to mesh structure
- *   mb       <-- pointer to optional mesh builder structure, or NULL
- *   filename <-- file name
+ *   mesh     <-> pointer to mesh structure
+ *   mb       <-> pointer to mesh builder structure
+ *   transfer <-- if true, data is transferred from mesh to builder;
+ *                if false, builder fields are only used as a temporary
+ *                arrays.
+ *   pp_out   <-> optional output file, or NULL
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_save(cs_mesh_t          *mesh,
-             cs_mesh_builder_t  *mb,
-             const char         *filename);
+cs_mesh_to_builder(cs_mesh_t          *mesh,
+                   cs_mesh_builder_t  *mb,
+                   bool                transfer,
+                   cs_io_t            *pp_out);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_MESH_SAVE_H__ */
-
+#endif /* __CS_MESH_TO_BUILDER_H__ */

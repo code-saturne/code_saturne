@@ -79,10 +79,10 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 cs_block_dist_info_t
-cs_block_dist_compute_sizes(int         rank_id,
-                            int         n_ranks,
-                            int         min_rank_step,
-                            cs_lnum_t   min_block_size,
+cs_block_dist_compute_sizes(int        rank_id,
+                            int        n_ranks,
+                            int        min_rank_step,
+                            cs_lnum_t  min_block_size,
                             cs_gnum_t  n_g_ents);
 
 /*----------------------------------------------------------------------------

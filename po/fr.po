@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-05-18 15:24+0200\n"
+"POT-Creation-Date: 2012-06-06 18:09+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5524,52 +5524,6 @@ msgstr ""
 "inattendue ou de taille incorrecte"
 
 #, c-format
-msgid " No \"%s\" file available;\n"
-msgstr " Pas de fichier \"%s\" disponible;\n"
-
-msgid "   an unoptimized domain partitioning will be used.\n"
-msgstr "   un découpage de domaines non optimisé sera utilisé.\n"
-
-msgid "   domain partitioning will use a space-filling curve.\n"
-msgstr "   le partitionnement sera basé sur une courbe fractale.\n"
-
-#, c-format
-msgid ""
-"The number of cells reported by file\n"
-"\"%s\" (%llu)\n"
-"does not correspond the those of the mesh (%llu)."
-msgstr ""
-"Le nombre de cellules indiqué par le fichier\n"
-"\"%s\" (%llu)\n"
-"ne correspond pas au maillage courant (%llu)."
-
-#, c-format
-msgid ""
-"The number of ranks reported by file\n"
-"\"%s\" (%d) does not\n"
-"correspond to the current number of ranks (%d)."
-msgstr ""
-"Le nombre de rangs indiqué par le fichier\n"
-"\"%s\" (%d)\n"
-"ne correspond pas au nombre de rangs courant (%d)."
-
-#, c-format
-msgid "Section of type <%s> on <%s> is unexpected."
-msgstr "Section de type <%s> sur <%s> inattendue."
-
-#, c-format
-msgid ""
-"Number of cells on rank %d is zero.\n"
-"(number of cells / number of processes ratio too low)."
-msgstr ""
-"Le nombre de cellules pour le rang %d est nul.\n"
-"(rapport nombre de cellules / nombre de processeurs trop faible)."
-
-#, c-format
-msgid " Partitioning by space-filling curve: %s.\n"
-msgstr " Partitionnement par courbe fractale : %s.\n"
-
-#, c-format
 msgid " Reading metadata from file: \"%s\"\n"
 msgstr " Lecture des méta-données du fichier: \"%s\"\n"
 
@@ -5612,18 +5566,32 @@ msgstr ""
 "inattendue."
 
 #, c-format
+msgid " No \"%s\" file available;\n"
+msgstr " Pas de fichier \"%s\" disponible;\n"
+
+#, c-format
 msgid ""
-"The algorithm selection indicator for domain partitioning\n"
-"can take the following values:\n"
-"  1:   partition based on initial numbering\n"
-"  2-5: partition based on space-filling curve\n"
-"and not %d."
+"The number of cells reported by file\n"
+"\"%s\" (%llu)\n"
+"does not correspond the those of the mesh (%llu)."
 msgstr ""
-"L'indicateur de choix d'algorithme de partitionement de domaine\n"
-"peut prendre les valeurs suivantes :\n"
-"  1 :   partition basée sur la numérotation initiale\n"
-"  2-5 : partition basée sur une courbe fractale\n"
-"et non %d."
+"Le nombre de cellules indiqué par le fichier\n"
+"\"%s\" (%llu)\n"
+"ne correspond pas au maillage courant (%llu)."
+
+#, c-format
+msgid ""
+"The number of ranks reported by file\n"
+"\"%s\" (%d) does not\n"
+"correspond to the current number of ranks (%d)."
+msgstr ""
+"Le nombre de rangs indiqué par le fichier\n"
+"\"%s\" (%d)\n"
+"ne correspond pas au nombre de rangs courant (%d)."
+
+#, c-format
+msgid "Section of type <%s> on <%s> is unexpected."
+msgstr "Section de type <%s> sur <%s> inattendue."
 
 msgid "    no value\n"
 msgstr "    aucune valeur\n"
@@ -7906,6 +7874,10 @@ msgid "Invalid coal model: %s.\n"
 msgstr ""
 
 #, c-format
+msgid "Invalid gas combustion flow model: %s.\n"
+msgstr ""
+
+#, c-format
 msgid "Invalid atmospheric flow model: %s.\n"
 msgstr ""
 
@@ -9215,6 +9187,41 @@ msgstr ""
 "Le maillage principal ne contient pas de connectivité\n"
 "faces->sommets, indispensable à la reconstruction\n"
 "de la connectivité nodale (cs_mesh_connect_faces_to_nodal)."
+
+#, c-format
+msgid ""
+"Number of cells on rank %d is zero.\n"
+"(number of cells / number of processes ratio too low)."
+msgstr ""
+"Le nombre de cellules pour le rang %d est nul.\n"
+"(rapport nombre de cellules / nombre de processeurs trop faible)."
+
+#, c-format
+msgid " Partitioning by space-filling curve: %s.\n"
+msgstr " Partitionnement par courbe fractale : %s.\n"
+
+#, c-format
+msgid ""
+"The algorithm selection indicator for domain partitioning\n"
+"can take the following values:\n"
+"  1:   partition based on initial numbering\n"
+"  2-5: partition based on space-filling curve\n"
+"and not %d."
+msgstr ""
+"L'indicateur de choix d'algorithme de partitionement de domaine\n"
+"peut prendre les valeurs suivantes :\n"
+"  1 :   partition basée sur la numérotation initiale\n"
+"  2-5 : partition basée sur une courbe fractale\n"
+"et non %d."
+
+msgid " No partitioning information available;\n"
+msgstr ""
+
+msgid "   an unoptimized domain partitioning will be used.\n"
+msgstr "   un découpage de domaines non optimisé sera utilisé.\n"
+
+msgid "   domain partitioning will use a space-filling curve.\n"
+msgstr "   le partitionnement sera basé sur une courbe fractale.\n"
 
 #, c-format
 msgid ""

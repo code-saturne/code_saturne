@@ -47,16 +47,19 @@ cs_join_set.h \
 cs_join_split.h \
 cs_join_update.h \
 cs_join_util.h \
-cs_mesh_coherency.h \
-cs_mesh_connect.h \
 cs_mesh.h \
 cs_mesh_bad_cells.h \
+cs_mesh_builder.h \
+cs_mesh_coherency.h \
+cs_mesh_connect.h \
+cs_mesh_from_builder.h \
 cs_mesh_halo.h \
 cs_mesh_location.h \
 cs_mesh_quality.h \
 cs_mesh_quantities.h \
 cs_mesh_save.h \
 cs_mesh_thinwall.h \
+cs_mesh_to_builder.h \
 cs_mesh_warping.h \
 cs_mesh_smoother.h
 
@@ -77,14 +80,17 @@ cs_join_update.c \
 cs_join_util.c \
 cs_mesh.c \
 cs_mesh_bad_cells.c \
+cs_mesh_builder.c \
 cs_mesh_coherency.c \
 cs_mesh_connect.c \
+cs_mesh_from_builder.c \
 cs_mesh_halo.c \
 cs_mesh_location.c \
 cs_mesh_quality.c \
 cs_mesh_quantities.c \
 cs_mesh_save.c \
 cs_mesh_thinwall.c \
+cs_mesh_to_builder.c \
 cs_mesh_warping.c \
 cs_mesh_smoother.c
 

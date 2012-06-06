@@ -42,6 +42,8 @@
 #include "cs_interface.h"
 #include "cs_numbering.h"
 
+#include "cs_mesh_builder.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -174,28 +176,11 @@ typedef struct {
 
 } cs_mesh_t;
 
-/* Auxiliary and temporary structure used to build mesh */
-/* ---------------------------------------------------- */
-
-typedef struct {
-
-  int          n_perio;               /* Number of periodicities */
-
-  cs_lnum_t   *n_perio_couples ;      /* Local number of periodic face
-                                         couples for each periodicity */
-  cs_gnum_t  **perio_couples;         /* List of global numbering of
-                                         periodic faces. */
-
-} cs_mesh_builder_t;
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
 extern cs_mesh_t *cs_glob_mesh; /* Pointer to main mesh structure */
-
-extern cs_mesh_builder_t  *cs_glob_mesh_builder; /* Pointer to builder mesh
-                                                    structure */
 
 /*============================================================================
  *  Public function prototypes for Fortran API
@@ -429,16 +414,6 @@ cs_mesh_t *
 cs_mesh_create(void);
 
 /*----------------------------------------------------------------------------
- * Create an empty mesh builder structure
- *
- * returns:
- *   A pointer to a mesh builder structure.
- *----------------------------------------------------------------------------*/
-
-cs_mesh_builder_t *
-cs_mesh_builder_create(void);
-
-/*----------------------------------------------------------------------------
  * Destroy a mesh structure
  *
  * mesh       <->  pointer to a mesh structure
@@ -451,13 +426,16 @@ cs_mesh_t *
 cs_mesh_destroy(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
- * Destroy a mesh builder structure
+ * Remove arrays and structures that mey be rebuilt.
  *
- * mesh_builder <->  pointer to a mesh structure
+ * mesh       <-> pointer to a mesh structure
+ * free_halos <-- if true, free halos and parallel/periodic interface
+ *                structures
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_builder_destroy(cs_mesh_builder_t  **mesh_builder);
+cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
+                         bool        free_halos);
 
 /*----------------------------------------------------------------------------
  * Discard free (isolated) faces from a mesh.

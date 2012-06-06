@@ -53,29 +53,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Query or modification of the option for domain partitioning when no
- * partitioning file is present.
- *
- * This function returns 1 or 2 according to the selected algorithm.
- *
- * Fortran interface :
- *
- * subroutine algdom (iopt)
- * *****************
- *
- * integer          iopt        : <-> : choice of the partitioning base
- *                                        0: query
- *                                        1: initial numbering
- *                                        2: Morton curve (bounding box)
- *                                        3: Morton curve (bounding cube)
- *                                        4: Hilbert curve (bounding box)
- *                                        5: Hilbert curve (bounding cube)
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (algdom, ALGDOM)(cs_int_t  *iopt);
-
-/*----------------------------------------------------------------------------
  * Receive messages from the pre-processor about the dimensions of mesh
  * parameters
  *
@@ -98,48 +75,9 @@ CS_PROCF(ledevi, LEDEVI)(const cs_int_t   *ndim,
                          cs_int_t         *iperio,
                          cs_int_t         *iperot);
 
-/*----------------------------------------------------------------------------
- * Define preprocessed mesh to read.
- *
- * If this function is never called, the default file read is
- * "preprocessor_data". The first time this function is called,  this default
- * is overriden by the defined file, and all subsequent calls define
- * additional meshes to read.
- *
- * FORTRAN Interface:
- *
- * SUBROUTINE ADDPPI(NAME)
- * *****************
- *
- * CHARACTER        NAME        : <-- : Mesh file name
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF(addppi, ADDPPI)(const char  *name);
-
 /*============================================================================
  *  Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Query or modification of the option for domain partitioning when no
- * partitioning file is present.
- *
- *  0 : query
- *  1 : based on initial numbering
- *  2 : based on Morton space-filling curve in bounding box
- *  3 : based on Morton space-filling curve in bounding cube
- *  4 : based on Hilbert space-filling curve in bounding box
- *  5 : based on Hilbert space-filling curve in bounding cube (default)
- *
- * choice <-- of partitioning algorithm.
- *
- * returns:
- *   1 to 5 according to the selected algorithm.
- *----------------------------------------------------------------------------*/
-
-int
-cs_preprocessor_data_part_choice(int choice);
 
 /*----------------------------------------------------------------------------
  * Define input mesh file to read.

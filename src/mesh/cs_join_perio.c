@@ -525,11 +525,11 @@ cs_join_perio_init(cs_join_t           *this_join,
 
   assert(mesh->n_init_perio == _builder->n_perio);
 
-  BFT_REALLOC(_builder->n_perio_couples, mesh->n_init_perio, cs_lnum_t);
-  BFT_REALLOC(_builder->perio_couples, mesh->n_init_perio, cs_gnum_t *);
+  BFT_REALLOC(_builder->n_per_face_couples, mesh->n_init_perio, cs_lnum_t);
+  BFT_REALLOC(_builder->per_face_couples, mesh->n_init_perio, cs_gnum_t *);
 
-  _builder->n_perio_couples[mesh->n_init_perio - 1] = 0;
-  _builder->perio_couples[mesh->n_init_perio - 1] = NULL;
+  _builder->n_per_face_couples[mesh->n_init_perio - 1] = 0;
+  _builder->per_face_couples[mesh->n_init_perio - 1] = NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -1528,8 +1528,8 @@ cs_join_perio_split_back(cs_join_t          *this_join,
   /* Store periodic couples. First in local join numbering.
      Will move next to a global numbering (after interior face add) */
 
-  builder->n_perio_couples[perio_id] = n_couples;
-  BFT_MALLOC(builder->perio_couples[perio_id], 2*n_couples, cs_gnum_t);
+  builder->n_per_face_couples[perio_id] = n_couples;
+  BFT_MALLOC(builder->per_face_couples[perio_id], 2*n_couples, cs_gnum_t);
 
   n2_faces = n1_faces;
   n1_faces = 0;
@@ -1557,8 +1557,8 @@ cs_join_perio_split_back(cs_join_t          *this_join,
 
       n1_faces++;
       n2_faces++;
-      builder->perio_couples[perio_id][2*n_couples] = n2_faces;
-      builder->perio_couples[perio_id][2*n_couples+1] = n1_faces;
+      builder->per_face_couples[perio_id][2*n_couples] = n2_faces;
+      builder->per_face_couples[perio_id][2*n_couples+1] = n1_faces;
       n_couples++;
 
       /* Define face connectivity */
@@ -1728,16 +1728,16 @@ cs_join_perio_split_update(cs_join_param_t             param,
 
   /* Apply new numbering */
 
-  for (i = 0; i < mesh_builder->n_perio_couples[perio_id]; i++) {
+  for (i = 0; i < mesh_builder->n_per_face_couples[perio_id]; i++) {
 
-    cs_gnum_t  old1 = mesh_builder->perio_couples[perio_id][2*i] - 1;
-    cs_gnum_t  old2 = mesh_builder->perio_couples[perio_id][2*i+1] - 1;
+    cs_gnum_t  old1 = mesh_builder->per_face_couples[perio_id][2*i] - 1;
+    cs_gnum_t  old2 = mesh_builder->per_face_couples[perio_id][2*i+1] - 1;
 
     assert(o2n_num[old1] > 0);
     assert(o2n_num[old2] > 0);
 
-    mesh_builder->perio_couples[perio_id][2*i] = o2n_num[old1];
-    mesh_builder->perio_couples[perio_id][2*i+1] = o2n_num[old2];
+    mesh_builder->per_face_couples[perio_id][2*i] = o2n_num[old1];
+    mesh_builder->per_face_couples[perio_id][2*i+1] = o2n_num[old2];
 
   }
 

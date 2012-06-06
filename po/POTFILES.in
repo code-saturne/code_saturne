@@ -163,8 +163,10 @@ src/mesh/cs_join_update.c
 src/mesh/cs_join_util.c
 src/mesh/cs_mesh.c
 src/mesh/cs_mesh_bad_cells.c
+src/mesh/cs_mesh_builder.c
 src/mesh/cs_mesh_coherency.c
 src/mesh/cs_mesh_connect.c
+src/mesh/cs_mesh_from_builder.c
 src/mesh/cs_mesh_halo.c
 src/mesh/cs_mesh_location.c
 src/mesh/cs_mesh_quality.c
@@ -172,6 +174,7 @@ src/mesh/cs_mesh_quantities.c
 src/mesh/cs_mesh_save.c
 src/mesh/cs_mesh_smoother.c
 src/mesh/cs_mesh_thinwall.c
+src/mesh/cs_mesh_to_builder.c
 src/mesh/cs_mesh_warping.c
 src/turb/cs_les_filter.c
 src/user/cs_user_coupling.c
