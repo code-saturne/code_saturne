@@ -83,7 +83,7 @@ if test "x$with_salome" != "xno" ; then
     if test "x$SALOMEENVCMD" = "x"; then
       salome_env=$(find $with_salome -maxdepth 1 -name salome_modules*.sh 2>/dev/null)
       if test "x$salome_env" != "x"; then
-        salome_pre=$(find $with_salome -maxdepth 1 -name salome_prerequis*.sh 2>/dev/null)
+        salome_pre=$(find $with_salome -maxdepth 1 -name salome_prerequisites_*_appli.sh 2>/dev/null)
         if test "x$salome_pre" != "x"; then
           SALOMEENVCMD=". $salome_pre; export ROOT_SALOME=$with_salome; . $salome_env"
           SALOMEPRE="$salome_pre"
