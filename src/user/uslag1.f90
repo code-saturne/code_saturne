@@ -224,10 +224,9 @@ endif
 ! 4. Number of particles allowed simultaneously inside the computational domain
 !===============================================================================
 
-!     default: NBPMAX = 1000
 !     * Warning, memory is allocated with NBPMAX
 
-nbpmax = 1000
+nbpmax = 1000000
 
 !===============================================================================
 ! 5. Calculation features for the dispersed phases
@@ -651,7 +650,6 @@ iensi2 = 0
 !     Maximal number of particles to visualize = nliste
 !     (default nbvis=nliste)
 !     Be careful, nbvis must not be greater than nbpmax nor nliste
-!     (parameter equal to 500 in lagpar.h)
 
 nbvis = nliste
 

@@ -83,7 +83,7 @@ class LagrangianModel(Model):
         default['coupling_mode'] = "one_way"
         default['restart'] = "off"
         default['carrier_field_stationary'] = "off"
-        default['particles_max_number'] = 10000
+        default['particles_max_number'] = 1000000
         default['continuous_injection'] = "off"
         default['particles_models'] = "off"
         default['thermal'] = "off"
