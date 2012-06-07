@@ -163,6 +163,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             if s in self.species_list:
                 self.species_list.remove(s)
 
+        self.species = ""
         if self.species_list != []:
             self.groupBoxSpecies.show()
             self.modelSpecies = ComboModel(self.comboBoxSpecies, 1, 1)
@@ -251,7 +252,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.pushButtonSpecies.setEnabled(False)
         setGreenColor(self.pushButtonSpecies, False)
 
-        if self.species_list != None:
+        if self.species_list != None and self.species_list != []:
             self.species_type = self.__boundary.getScalarChoice(self.species)
             self.modelTypeSpecies.setItem(str_model = self.species_type)
             self.labelValueSpecies.setText('Value')
