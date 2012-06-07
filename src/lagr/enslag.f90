@@ -267,7 +267,7 @@ endif
 if (nfin.eq.1) then
 
   NAME = ' '
-  NAME = 'trajectoire'
+  NAME = 'Trajectory'
 
   !  0) ouverture du fichier .ensight.CASE :
 
@@ -840,13 +840,13 @@ call csexit(1)
 
  3010 format('part')
 
- 4000 format('vitesse fluide vu')
- 4001 format('vitesse particules')
- 4002 format('temps de sejour')
- 4003 format('diametre')
- 4004 format('masse')
- 4005 format('temerature')
- 4006 format('temperature')
+ 4000 format('Traj_Fluid_Velo')
+ 4001 format('Traj_Part_Velo')
+ 4002 format('Traj_Res_Time')
+ 4003 format('Traj_Diam')
+ 4004 format('Traj_Mass')
+ 4005 format('Traj_Temp')
+ 4006 format('Traj_Temp')
  4007 format('dck')
  4008 format('mch')
  4009 format('mck')
@@ -856,13 +856,13 @@ call csexit(1)
  5012 format('GEOMETRY')
  5013 format('model: ', A)
  5014 format('VARIABLE')
- 5015 format('vector per node: vitesse_fluide_vu       ', A)
- 5016 format('vector per node: vitesse_particules      ', A)
- 5017 format('scalar per node: temps_de_sejour         ', A)
- 5018 format('scalar per node: diametre                ', A)
- 5019 format('scalar per node: masse                   ', A)
- 5020 format('scalar per node: temperature             ', A)
- 5021 format('scalar per node: temperature             ', A)
+ 5015 format('vector per node: Traj_Fluid_Velo         ', A)
+ 5016 format('vector per node: Traj_Part_Velo          ', A)
+ 5017 format('scalar per node: Traj_Res_Time           ', A)
+ 5018 format('scalar per node: Traj_Diam               ', A)
+ 5019 format('scalar per node: Traj_Mass               ', A)
+ 5020 format('scalar per node: Traj_Temp               ', A)
+ 5021 format('scalar per node: Traj_Temp               ', A)
  5022 format('scalar per node: dck                     ', A)
  5023 format('scalar per node: mch                     ', A)
  5024 format('scalar per node: mck                     ', A)

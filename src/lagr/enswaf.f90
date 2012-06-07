@@ -123,7 +123,7 @@ if (nfin.eq.0) ipwaf = ipwaf + 1
 if (ipwaf.eq.1) itlag = 0
 
 FICH = ' '
-FICH = 'deplacement'
+FICH = 'Displacement'
 call verlon (fich,ii1,ii2,lpos)
 entet = fich(ii1:ii2)
 
@@ -202,7 +202,7 @@ if ( (mod(ipwaf-1,nvisla).eq.0 .and. nfin.eq.0)   .or.            &
 !-->Ecriture de la geometrie Ensight
 
   WRITE(IMPLA1,'(A)') 'part   1'
-  WRITE(IMPLA1,'(A)') 'deplacements'
+  WRITE(IMPLA1,'(A)') 'Displacements'
   WRITE(IMPLA1,'(A)') 'point'
   WRITE(IMPLA1,'(I8)') NPT
 
@@ -649,7 +649,7 @@ deallocate(trav)
 !       WRITE(IMPLA1,'(A)') NAME(II1:II2)
 
   if (ivistp.eq.1) then
-    NAME = 'scalar per node:      1    temps_de_sejour  '
+    NAME = 'scalar per node:      1    Dis_Resid_Time  '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 2
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -661,7 +661,7 @@ deallocate(trav)
   endif
 
   if (iviste.eq.1) then
-    NAME = 'scalar per node:      1    temperature      '
+    NAME = 'scalar per node:      1    Dis_Temp      '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 6
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -673,7 +673,7 @@ deallocate(trav)
   endif
 
   if (ivisdm.eq.1) then
-    NAME = 'scalar per node:      1    diametre         '
+    NAME = 'scalar per node:      1    Dis_Diameter         '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 9
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -685,7 +685,7 @@ deallocate(trav)
   endif
 
   if (ivismp.eq.1) then
-    NAME = 'scalar per node:      1    masse            '
+    NAME = 'scalar per node:      1    Dis_Mass            '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 12
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -745,7 +745,7 @@ deallocate(trav)
   endif
 
   if (ivisv1.eq.1) then
-    NAME = 'vector per node:      1    vitesse_fluide   '
+    NAME = 'vector per node:      1    Dis_Fluid_Velo   '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 3
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -757,7 +757,7 @@ deallocate(trav)
   endif
 
   if (ivisv2.eq.1) then
-    NAME = 'vector per node:      1    vitesse_partic   '
+    NAME = 'vector per node:      1    Dis_Part_Velo   '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 3
     name(ii2+1:ii2+n2)=fich(n1:n2)
