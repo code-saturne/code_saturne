@@ -762,7 +762,7 @@ endif
 if (nor.eq.nordre) then
 
   do npt = 1,nbpart
-    if ( itepa(npt,jisor).gt.0 ) then
+    if ( itepa(npt,jisor).ne.0 ) then
       tepa(npt,jrtsp) = tepa(npt,jrtsp) + dtp
     endif
   enddo
