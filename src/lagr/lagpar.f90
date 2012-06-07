@@ -121,7 +121,7 @@ module lagpar
   !     NLISTE : Nombre maximum de particules visualisable
 
   integer         nliste
-  parameter      (nliste = 500)
+  parameter      (nliste = 100000)
 
   !=============================================================================
   ! 9. Types d'interaction au bord
