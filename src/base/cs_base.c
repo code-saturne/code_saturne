@@ -1490,9 +1490,12 @@ cs_base_system_info(void)
   {
     int a_torus, b_torus, c_torus, d_torus, e_torus;
     int n_flags = personality.Network_Config.NetFlags;
+    int n_world_ranks = cs_glob_n_ranks;
 
-    bft_printf("  %s%d\n", _("MPI ranks:           "), n_ranks);
-    if (n_world_ranks > n_ranks)
+    MPI_Comm_size(MPI_COMM_WORLD, &n_world_ranks);
+
+    bft_printf("  %s%d\n", _("MPI ranks:           "), cs_glob_n_ranks);
+    if (n_world_ranks > cs_glob_n_ranks)
       bft_printf("  %s%d\n", _("MPI_COMM_WORLD size: "),
                  n_world_ranks);
     if (n_flags & ND_ENABLE_TORUS_DIM_A) a_torus = 1; else a_torus = 0;

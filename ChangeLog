@@ -1,4 +1,4 @@
-* 07/05/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+* 12/06/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Preliminary port to Blue Gene/Q.
   modified files:
     bin/cs_case.py
