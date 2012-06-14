@@ -86,10 +86,10 @@ if test "x$with_scotch" != "xno" ; then
 
   if test "x$cs_have_ptscotch_header" = "xno" ; then
     unset ac_cv_header_ptscotch_h
-    SCOTCH_CPPFLAGS="$saved_CPPFLAGS -I/usr/include/scotch $MPI_CPPFLAGS"
-    CPPFLAGS="$saved_CPPFLAGS $SCOTCH_CPPFLAGS"
+    CPPFLAGS="$saved_CPPFLAGS -I/usr/include/scotch $MPI_CPPFLAGS"
     AC_CHECK_HEADERS([ptscotch.h],
-                     [cs_have_ptscotch_header=yes],
+                     [cs_have_ptscotch_header=yes
+                      SCOTCH_CPPFLAGS=-I/usr/include/scotch],
                      [], 
                      [#include <stdio.h>
                       #include <stdint.h>
