@@ -5111,16 +5111,18 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
       cs_xpath_add_element(&path, "formula");
       cs_xpath_add_function_text(&path);
       formula = cs_gui_get_text_value(path);
-
       ev_formula = mei_tree_new(formula);
       mei_tree_insert(ev_formula, "t", 0.0);
+
       /* try to build the interpreter */
 
       if (mei_tree_builder(ev_formula))
         bft_error(__FILE__, __LINE__, 0,
                   _("Error: can not interpret expression: %s\n %i"),
                   ev_formula->string, mei_tree_builder(ev_formula));
+
       const char *coord[] = {"x","y","z"};
+
       if (mei_tree_find_symbols(ev_formula, 3, coord))
         bft_error(__FILE__, __LINE__, 0,
                   _("Error: can not find the required symbol: %s\n"),
@@ -5170,7 +5172,6 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
           fprintf(file, "# Code_Saturne results 1D profile\n#\n");
           fprintf(file, "# Iteration output: %i\n", *ntcabs);
           fprintf(file, "# Time output:     %12.5e\n#\n", *ttcabs);
-          fprintf(file, "# Formula : %s\n", formula);
           fprintf(file, "#TITLE: %s\n", title);
           fprintf(file, "#COLUMN_TITLES: Distance | X | Y | Z");
           for (ii = 0 ; ii < nvar_prop ; ii++) {
