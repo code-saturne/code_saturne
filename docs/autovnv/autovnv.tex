@@ -104,11 +104,12 @@ needs to run specific scripts.
 \section{Installation and prerequisites}
 
 \textsc{Autovnv} does not need a specific installation: the related files are
-installed with the other Python scripts of \CS. Additional prerequisites
-required are:
+installed with the other Python scripts of \CS. Nevertheless, additional
+prerequisites required are:
 \begin{list}{$\bullet$}{}
 \item \texttt{numpy},
-\item \texttt{matplotlib}.
+\item \texttt{matplotlib},
+\item \texttt{python-vtk}.
 \end{list}
 
 \section{Command line options}
@@ -121,6 +122,8 @@ autovnv -h}.
 \textsc{Autovnv}. This file is mandatory, and therefore this option must be
 completed;
 \item \texttt{-q, --quiet}: does not print status messages to stdout;
+\item \texttt{-u, --update}: update installation pathes in scripts (i.e. \texttt{SaturneGUI} and
+\texttt{runcase}) only in the repository, reinitialize xml files of parameters and compile;
 \item \texttt{-r, --run}: runs all cases;
 \item \texttt{-c, --compare}: compares chekpoint files between
 \textbf{repository} and \textbf{destination};
@@ -140,7 +143,7 @@ cases if defined in \texttt{sample.xml};
 \item \texttt{code\_saturne autovnv -f sample.xml -r -c}: as above, and compares
 all new checkpoint files with those from the \textbf{repository} if defined
 in \texttt{sample.xml};
-\item \texttt{code\_saturne autovnv -f sample.xml -r -c -p}: as above, and plots
+\item \texttt{code\_saturne autovnv -f sample.xml -rcp}: as above, and plots
 results if defined in \texttt{sample.xml};
 \item \texttt{code\_saturne autovnv -f sample.xml -r -c -p -m
 "dt@moulinsart.be dd@moulinsart.be"}: as above, and send the two
@@ -329,7 +332,8 @@ significant (default: $1e-30$ for all variables);
 activate or desactivate the markup.
 \end{list}
 
-Only the attributes \texttt{repo}, \texttt{dest} and \texttt{status} are mandatory.
+Only the attributes \texttt{repo}, \texttt{dest} and \texttt{status} are
+mandatory.
 
 Several comparisons with different options are permitted:
 \small
@@ -563,7 +567,7 @@ if __name__ == '__main__':
 \end{verbatim}
 \normalsize
 
-\subsection{Post-processing}
+\subsection{Post-processing: curves}
 
 The post-processing is activated if the option \texttt{-p, --post} is present
 in the command line.
@@ -924,6 +928,202 @@ are \texttt{line} and \texttt{lines} (with \texttt{line = lines[0]}).
 \normalsize
 
 \end{list}
+
+\subsection{Post-processing: scalar map}
+
+The post-processing is activated if the option \texttt{-p, --post} is present
+in the command line.
+
+\textsc{Autovnv} is able to draw colored maps from results on cut planes of the
+computational domain. The results must be a set of ensight files. The following
+example shows the drawing of a scalar map using the master file of result
+\texttt{RESULTS.case}. The figure will be saved on the disk in a
+\textbf{png} format, in the \texttt{POST} directory of the related study in the
+\textbf{destination}. Each drawing of a single scalar map is defined as a markup
+child of a file of data inside a case.
+
+\small
+\begin{verbatim}
+<case label='Grid1' status='on' compute="on" post="on">
+    <resu file="RESULTS.case" dest="">
+        <scalar name="alpha1" variable="alpha1" normal="(0,0,1)">
+            <scale legend="Water fraction" levels="10" />
+            <title label="Grid level 1" fontsize="15"/>
+            <axes/>
+        </scalar>
+        <scalar name="pressure" variable="Pressure"/>
+    </resu>
+</case>
+\end{verbatim}
+\normalsize
+
+In the file of parameters, scalar map are defined with two markups:
+\texttt{<resu>} and \texttt{<scalar>}. Three other markups can be used:
+\texttt{<scale>}, \texttt{<title>} and \texttt{<axes>} as childs of
+the markups \texttt{<scalar>}.
+
+\begin{list}{$\bullet$}{}
+\item \texttt{<resu>}: child of markup \texttt{<case>}, defines the master file
+of set of ensight files;
+\begin{list}{$\rightarrow$}{}
+\item \texttt{file}: name of the master ensight file
+\item \texttt{repo} or \texttt{dest}: id of the results directory either in the
+\textbf{repository} or in the \textbf{destination};
+\begin{list}{$\Rightarrow$}{}
+\item if the id is not known already because the case has not yet run, just let
+the attribute empty \texttt{dest=""}, the value will be updated after the run
+step in the \textbf{destination} directory (see section \ref{sec:restart});
+\item if there is a single results directory in the \texttt{RESU} directory
+(either in the \textbf{repository} or in the \textbf{destination}) of the case,
+the id can be ommitted: \texttt{repo=""} or \texttt{dest=""}, the id will be
+completed automatically.
+\end{list}
+\end{list}
+The attribute \texttt{file} is mandatory, and either \texttt{repo} or
+\texttt{dest} must be present (but not the both) even if it is empty.
+
+\item \texttt{<scalar>}: child of markup \texttt{<resu>}, defines a scalar map;
+\begin{list}{$\rightarrow$}{}
+\item \texttt{name}: name of the image file on the disk
+\item \texttt{variable}: name of the variable to draw (must be present in the master ensight file)
+\item \texttt{normal}: tuple to set the normal of the cut plane of the computational domain
+\item \texttt{center}: tuple to set the center of the cut plane of the computational domain
+\item \texttt{dilatation}: tuple to transform the view of the cut plane
+\item \texttt{time-step}: select the physical time of the value to display
+\item \texttt{size}: size of the png image
+\item \texttt{zoom}: adjust the zoom for the point of view of the cut plane
+\item \texttt{wireframe}: switch on or off the mapping on the grid
+\end{list}
+
+See default values for these attributes in the table \ref{table:scalar}.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Attributes} & \textbf{Default values} \\
+\hline
+normal & (0,0,1) \\
+center & (0,0,0) \\
+dilatation & (1,1,1) \\
+time-step & -1 \textit{i.e. the last record} \\
+size & (500,400) \\
+zoom & 1.0 \\
+wireframe & \texttt{off} \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Default attributes values of the markup \texttt{scalar}.}
+\label{table:scalar}
+\end{table}
+
+The attributes \texttt{name} and \texttt{variable} are mandatory.
+
+
+\item \texttt{<scale>}: child of markup \texttt{<scalar>}, defines a color bar;
+\begin{list}{$\rightarrow$}{}
+\item \texttt{color}: set a predefined palette in "hsv", "gray", "hot", "flag", "jet", "blue\_to\_yellow", "spring", "summer", "winter", "autumn"
+\item \texttt{range}: tuple to set the range of values to display
+\item \texttt{coord}: tuple to set the normalized coordinates of the color bar
+\item \texttt{levels}: number of levels for the color bar
+\item \texttt{height}: set the height  of the color bar
+\item \texttt{width}: set the width  of the color bar
+\item \texttt{position}: simple predefined position for the color bar in "North", "South", "West", or "East" 
+\item \texttt{legend}: legend of the color bar
+\item \texttt{fontsize}: font size for the legend
+\item \texttt{format}: float format to display the value of the levels of the color bar
+\end{list}
+
+See default values for these attributes in the table \ref{table:scale}.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Attributes} & \textbf{Default values} \\
+\hline
+color & \textit{default vtk palette} \\
+range & \textit{all values} \\
+coord & (0.9,0.09) \\
+levels & 10 \\
+height & 0.8 \\
+width & 0.1 \\
+position & East \\
+legend & \textit{no legend} \\
+fontsize & 20 \\
+format & \%4.4f \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Default attributes values of the markup \texttt{scale}.}
+\label{table:scale}
+\end{table}
+
+No attribute is mandatory.
+
+
+\item \texttt{<title>}: child of markup \texttt{<scalar>}, defines a title for the scalarmap;
+\begin{list}{$\rightarrow$}{}
+\item \texttt{label}: text for the title
+\item \texttt{fontsize}: font size for the title
+\item \texttt{coord}: tuple to set the normalized coordinates of the title
+\end{list}
+
+See default values for these attributes in the table \ref{table:title}.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Attributes} & \textbf{Default values} \\
+\hline
+label & \textit{no title} \\
+fontsize & 20 \\
+coord & (0.5,0.99) \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Default attributes values of the markup \texttt{title}.}
+\label{table:title}
+\end{table}
+
+No attribute is mandatory.
+
+\item \texttt{<axes>}:  child of markup \texttt{<scalar>}, defines axes bars around the scalarmap;
+\begin{list}{$\rightarrow$}{}
+\item \texttt{fontsize}: font size for the ticks of the axes
+\item \texttt{format}: float format to display the ticks of the axes
+\item \texttt{levels}: number of ticks of all axes
+\item \texttt{xlabel}: text of the X axe
+\item \texttt{ylabel}: text of the Y axe
+\item \texttt{zlabel}: text of the Z axe
+\end{list}
+
+See default values for these attributes in the table \ref{table:axes}.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Attributes} & \textbf{Default values} \\
+\hline
+fontsize & 20 \\
+format & \%6.3g \\
+levels & 3 \\
+xlabel & \textit{no text} \\
+ylabel & \textit{no text} \\
+zlabel & \textit{no text} \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Default attributes values of the markup \texttt{axes}.}
+\label{table:axes}
+\end{table}
+
+No attribute is mandatory.
+
+\end{list}
+
 
 \section{Output and restart}\label{sec:restart}
 
