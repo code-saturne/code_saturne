@@ -70,7 +70,7 @@ def get_shell_type():
     user_shell = os.getenv('SHELL')
     if not user_shell:
         user_shell = '/bin/sh'
-    elif user_shell[-3] == 'csh':
+    elif user_shell[-3:] == 'csh':
         user_shell = '/bin/sh'
 
     return user_shell
