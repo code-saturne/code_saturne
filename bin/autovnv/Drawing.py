@@ -474,16 +474,18 @@ class Plotter(object):
 
                     if dest:
                         d = dest
+                        dd = self.parser.getDestination()
                     elif repo:
                         d = repo
+                        dd = self.parser.getRepository()
 
-                    f = os.path.join(self.parser.getDestination(),
+                    f = os.path.join(dd,
                                      study_label,
                                      case.label, "RESU",
                                      d, file_name)
 
                     if not os.path.isfile(f):
-                        f = os.path.join(self.parser.getDestination(),
+                        f = os.path.join(dd,
                                          study_label,
                                          case.label, "RESU",
                                          d, "monitoring", file_name)
