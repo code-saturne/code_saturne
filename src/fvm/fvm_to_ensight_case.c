@@ -1029,12 +1029,12 @@ fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *this_case,
             this_case->file_name_prefix + this_case->dir_name_length);
 
   else if (this_case->time_dependency == FVM_WRITER_TRANSIENT_COORDS)
-    fprintf(f, "model: %d %s.geo.****  change_coords_only\n",
+    fprintf(f, "model: %d %s.geo.*****  change_coords_only\n",
             this_case->geom_time_set + 1,
             this_case->file_name_prefix + this_case->dir_name_length);
 
   else
-    fprintf(f, "model: %d %s.geo.****\n",
+    fprintf(f, "model: %d %s.geo.*****\n",
             this_case->geom_time_set + 1,
             this_case->file_name_prefix + this_case->dir_name_length);
 
