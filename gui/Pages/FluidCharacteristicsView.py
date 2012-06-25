@@ -170,7 +170,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
 
         # Combo models
 
-        self.modelRho      = ComboModel(self.comboBoxRho, 4, 1)
+        self.modelRho      = ComboModel(self.comboBoxRho, 3, 1)
         self.modelMu       = ComboModel(self.comboBoxMu, 3, 1)
         self.modelCp       = ComboModel(self.comboBoxCp, 3, 1)
         self.modelAl       = ComboModel(self.comboBoxAl, 3, 1)
@@ -185,27 +185,27 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         if mdl_atmo != 'off':
             self.modelRho.addItem(self.tr('defined in atphyv'), 'variable')
         else:
-            self.modelRho.addItem(self.tr('user subroutine (usphyv)'), 'variable')
+            self.modelRho.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
         self.modelMu.addItem(self.tr('constant'), 'constant')
         self.modelMu.addItem(self.tr('user law'), 'user_law')
-        self.modelMu.addItem(self.tr('user subroutine (usphyv)'), 'variable')
+        self.modelMu.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
         self.modelCp.addItem(self.tr('constant'), 'constant')
         self.modelCp.addItem(self.tr('user law'), 'user_law')
-        self.modelCp.addItem(self.tr('user subroutine (usphyv)'), 'variable')
+        self.modelCp.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
         self.modelAl.addItem(self.tr('constant'), 'constant')
         self.modelAl.addItem(self.tr('user law'), 'user_law')
-        self.modelAl.addItem(self.tr('user subroutine (usphyv)'), 'variable')
+        self.modelAl.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
         self.modelDiff.addItem(self.tr('constant'), 'constant')
         self.modelDiff.addItem(self.tr('user law'), 'user_law')
         self.modelCv.addItem(self.tr('constant'), 'constant')
         self.modelCv.addItem(self.tr('user law'), 'user_law')
-        self.modelCv.addItem(self.tr('user subroutine (usphyv)'), 'variable')
+        self.modelCv.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
         self.modelViscv0.addItem(self.tr('constant'), 'constant')
         self.modelViscv0.addItem(self.tr('user law'), 'user_law')
-        self.modelViscv0.addItem(self.tr('user subroutine (usphyv)'), 'variable')
+        self.modelViscv0.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
         self.modelDiftl0.addItem(self.tr('constant'), 'constant')
         self.modelDiftl0.addItem(self.tr('user law'), 'user_law')
-        self.modelDiftl0.addItem(self.tr('user subroutine (usphyv)'), 'variable')
+        self.modelDiftl0.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
 
         self.scalar = ""
         scalar_list = self.m_sca.getUserScalarLabelsList()
