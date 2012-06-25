@@ -421,7 +421,8 @@ if(iihmpr.eq.1) then
 
 !     Init turb (uref, almax) si necessaire (modele RANS)
   if (itytur.eq.2 .or. itytur.eq.3 .or.             &
-      itytur.eq.5 .or. itytur.eq.6 ) then
+      itytur.eq.5 .or. itytur.eq.6 .or.             &
+      itytur.eq.7) then
     call cstini(uref, almax)
     !==========
   endif
