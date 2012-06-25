@@ -92,21 +92,30 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
         self.default = default
         self.result  = self.default.copy()
 
-        # Combo
+        self.checkBoxGravity.setEnabled(True)
+        self.comboBoxScales.setEnabled(True)
 
-        self.modelScales = QtPage.ComboModel(self.comboBoxScales, 3, 1)
-
-        self.modelScales.addItem(self.tr("One scale model"), '0')
-        self.modelScales.addItem(self.tr("Two scale model"), '1')
-        self.modelScales.addItem(self.tr("Scalable wall function"), '2')
-
-        # Initialization
-
-        self.modelScales.setItem(str_model=str(self.result['scale_model']))
-        if self.result['gravity_terms'] == 'on':
-            self.checkBoxGravity.setChecked(True)
-        else:
+        if default['model'] == 'Spalart-Allmaras':
+            self.modelScales = QtPage.ComboModel(self.comboBoxScales, 1, 1)
+            self.modelScales.addItem(self.tr("One scale model"), '0')
             self.checkBoxGravity.setChecked(False)
+            self.checkBoxGravity.setEnabled(False)
+            self.comboBoxScales.setEnabled(False)
+        else:
+            # Combo
+            self.modelScales = QtPage.ComboModel(self.comboBoxScales, 3, 1)
+
+            self.modelScales.addItem(self.tr("One scale model"), '0')
+            self.modelScales.addItem(self.tr("Two scale model"), '1')
+            self.modelScales.addItem(self.tr("Scalable wall function"), '2')
+
+            # Initialization
+
+            self.modelScales.setItem(str_model=str(self.result['scale_model']))
+            if self.result['gravity_terms'] == 'on':
+                self.checkBoxGravity.setChecked(True)
+            else:
+                self.checkBoxGravity.setChecked(False)
 
 
     def get_result(self):

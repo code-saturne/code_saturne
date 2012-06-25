@@ -338,6 +338,11 @@ class TurbulenceModel(Variables, Model):
             gravity = self.defaultTurbulenceValues()['gravity_terms']
             self.setGravity(gravity)
 
+        # force gravity force to off for Spalart-Allmaras model
+        if self.getTurbulenceModel() == 'Spalart-Allmaras':
+            gravity = 'off'
+            self.setGravity(gravity)
+
         return gravity
 
 
