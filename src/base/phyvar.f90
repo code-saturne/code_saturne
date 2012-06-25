@@ -181,7 +181,7 @@ if (iihmpr.eq.1) then
   !===========
 ( ncel, ncelet, nscaus,                                         &
   irom, iviscl, icp,    ivisls, irovar, ivivar,                 &
-  isca, iscalt, iscavr, ipproc,                                 &
+  isca, iscalt, iscavr, ipproc, iviscv, itempk,                 &
   p0  , t0    , ro0   , cp0   , viscl0, visls0,                 &
   rtp,    propce)
 endif
