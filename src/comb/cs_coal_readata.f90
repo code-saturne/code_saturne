@@ -58,6 +58,7 @@ use cpincl
 use ppincl
 use ppcpfu
 use cs_coal_incl
+use ihmpre
 
 !===============================================================================
 
@@ -81,7 +82,6 @@ double precision fcor   , pcisec , pcipur , xashpc
 double precision hco20  , ho20   , hh2o0 , hso20, hnh30
 double precision den1   , den2
 double precision tmin   , tmax
-double precision ipci(ncharm)
 double precision wmolce(ngazem), ehcoel(ngazem,npot)
 double precision cpcoel(ngazem,npot),det,matdet
 double precision wmv1,wmvch1,wmv2,wmvch2
@@ -101,7 +101,6 @@ integer          itypdp , nbrf
 !
 double precision dprefus(nbrfmax),refus(nbrfmax)
 double precision pourc(nclcpm),rf(nclcpm)
-double precision xashsec(ncharm)
 !
 integer          iclag
 double precision kk1,kk2,kk3,kk4,xx,qq,var
@@ -117,24 +116,11 @@ double precision coef
 !
 
 !===============================================================================
-
-!===============================================================================
 ! 1. LECTURE DU FICHIER DONNEES SPECIFIQUES
 !===============================================================================
 
-! --> Ouverture du fichier
+ncoel = 13
 
-open ( unit=impfpp, file=ficfpp,                                  &
-        STATUS='OLD', FORM='FORMATTED', ACCESS='SEQUENTIAL',      &
-                                        iostat=ios, err=99 )
-rewind (unit=impfpp,err=99 )
-! --> Lecture thermochimie
-
-read (impfpp,*,err=999,end=999 )
-
-! ---- Nb de constituants elementaires (gazeux et solide)
-
-read ( impfpp,*,err=999,end=999 ) ncoel
 if ( ncoel.gt.ngazem ) then
   write(nfecra,9991) ngazem,ncoel
   call csexit (1)
@@ -142,7 +128,7 @@ endif
 
 ! ---- Nb de points de tabulation ENTH-TEMP
 
-read ( impfpp,*,err=999,end=999 ) npo
+npo = 8
 if ( npo.gt.npot ) then
   write(nfecra,9992) npot,npo
   call csexit (1)
@@ -164,8 +150,7 @@ do inicha=1,len(chain2)
   CHAIN2(INICHA:INICHA)=' '
 enddo
 
-read (impfpp,*,err=999,end=999 )
-read (impfpp,1010,err=999,end=999 ) chain1
+chain1 = 'CH4 C2H4 CO H2S H2 HCN NH3 O2 CO2 H2O SO2 N2 C(S)'
 call verlon (chain1, idebch, ifinch, lonch)
 chain2(1:lonch)=chain1(idebch:ifinch)
 
@@ -183,16 +168,14 @@ do ichai=1,lonch
   endif
 enddo
 
- 1010 format(a150)
-
 ! --- Temperature Min et Max
 
-read (impfpp,*,err=999,end=999) tmin
-read (impfpp,*,err=999,end=999) tmax
+tmin = 300.d0
+tmax = 2400.d0
 
 ! ---- Nb especes atomiques (C, H, O, S et N)
 
-read (impfpp,*,err=999,end=999 ) nato
+nato = 5
 if ( nato.gt.natom ) then
   write(nfecra,9993) natom,nato
   call csexit (1)
@@ -203,10 +186,102 @@ endif
 !      Composition des constituants elementaires en fonction
 !        des especes elementaires
 
-do iat = 1, nato
-  read (impfpp,*,err=999,end=999 ) wmolat(iat),                   &
-                      ( atcoel(ice,iat),ice=1,ncoel )
-enddo
+wmolat(1) = 0.012d0
+wmolat(2) = 0.001d0
+wmolat(3) = 0.016d0
+wmolat(4) = 0.014d0
+wmolat(5) = 0.032d0
+
+! CH4
+atcoel(1,1) = 1
+atcoel(1,2) = 4
+atcoel(1,3) = 0
+atcoel(1,4) = 0
+atcoel(1,5) = 0
+
+! CH4
+atcoel(2,1) = 2
+atcoel(2,2) = 4
+atcoel(2,3) = 0
+atcoel(2,4) = 0
+atcoel(2,5) = 0
+
+! CO
+atcoel(3,1) = 1
+atcoel(3,2) = 0
+atcoel(3,3) = 1
+atcoel(3,4) = 0
+atcoel(3,5) = 0
+
+! H2S
+atcoel(4,1) = 0
+atcoel(4,2) = 2
+atcoel(4,3) = 0
+atcoel(4,4) = 0
+atcoel(4,5) = 1
+
+! H2
+atcoel(5,1) = 0
+atcoel(5,2) = 2
+atcoel(5,3) = 0
+atcoel(5,4) = 0
+atcoel(5,5) = 0
+
+! 'HCN
+atcoel(6,1) = 1
+atcoel(6,2) = 1
+atcoel(6,3) = 0
+atcoel(6,4) = 1
+atcoel(6,5) = 0
+
+! NH3
+atcoel(7,1) = 0
+atcoel(7,2) = 3
+atcoel(7,3) = 0
+atcoel(7,4) = 1
+atcoel(7,5) = 0
+
+! O2
+atcoel(8,1) = 0
+atcoel(8,2) = 0
+atcoel(8,3) = 2
+atcoel(8,4) = 0
+atcoel(8,5) = 0
+
+! CO2
+atcoel(9,1) = 1
+atcoel(9,2) = 0
+atcoel(9,3) = 2
+atcoel(9,4) = 0
+atcoel(9,5) = 0
+
+! H2O
+atcoel(10,1) = 0
+atcoel(10,2) = 2
+atcoel(10,3) = 1
+atcoel(10,4) = 0
+atcoel(10,5) = 0
+
+! SO2
+atcoel(11,1) = 0
+atcoel(11,2) = 0
+atcoel(11,3) = 2
+atcoel(11,4) = 0
+atcoel(11,5) = 1
+
+! N2
+atcoel(12,1) = 0
+atcoel(12,2) = 0
+atcoel(12,3) = 0
+atcoel(12,4) = 2
+atcoel(12,5) = 0
+
+! C(S)
+atcoel(13,1) = 1
+atcoel(13,2) = 0
+atcoel(13,3) = 0
+atcoel(13,4) = 0
+atcoel(13,5) = 0
 
 ! ---- Calcul des masses molaires des constituants elementaires
 
@@ -216,364 +291,6 @@ do ice = 1, ncoel
     wmolce(ice)= wmolce(ice) + atcoel(ice,iat)*wmolat(iat)
   enddo
 enddo
-
-
-! --> Lecture rayonnement
-
-read (impfpp,*,err=999,end=999 )
-
-! ---- Coefficient d'absorption du melange gazeux
-
-read (impfpp,*,err=999,end=999 ) ckabs1
-
-! --> Lecture caracteristiques charbon
-
-read (impfpp,*,err=999,end=999 )
-
-! ---- Nb de charbons
-
-read ( impfpp,*,err=999,end=999 ) ncharb
-if ( ncharb.gt.ncharm ) then
-  write(nfecra,9995) ncharm,ncharb
-  call csexit (1)
-endif
-
-!-- loop on the coals
-!--------------------
-
-iclag  = 0
-nclacp = 0
-idecal = 0
-
-do icha = 1, ncharb
-
-  !-- Nb de classes par charbon
-
-  read (impfpp,*,err=999,end=999 ) nclpch(icha)
-  if ( nclpch(icha).gt.ncpcmx ) then
-    write(nfecra,9996) nclcpm,nclpch(icha),icha
-    call csexit (1)
-  endif
-
-  !-- Calcul du nb de classes et remplissage de ICHCOR
-
-  nclacp = nclacp + nclpch(icha)
-
-  do iclapc = 1, nclpch(icha)
-    icla = iclapc+idecal
-    ichcor(icla) = icha
-  enddo
-  idecal = nclpch(icha)
-
-  !-- type de diametres = 1 ---> diametre donnes
-  !                     = 2 ---> loi de Rosin-Rammler
-
-  read (impfpp,*,err=999,end=999 ) itypdp
-
-  ! diametres
-
-  if (itypdp.eq.1) then
-    read (impfpp,*,err=999,end=999 )                   &
-     ( diam20(icla),icla=iclag+1,iclag+nclpch(icha) )
-
-    ! Transformation du diametre en (micron) en (metre)
-    do icla=iclag+1,iclag+nclpch(icha)
-      diam20(icla) = diam20(icla)*1.0d-6
-    enddo
-
-  else if (itypdp.eq.2) then
-    read (impfpp,*,err=999,end=999 )      &
-      nbrf,(dprefus(ii),ii=1,nbrf),       &
-           (refus(ii)  ,ii=1,nbrf),       &
-           (pourc(ii)  ,ii=1,nclpch(icha))
-
-    !  decoupage des classes
-
-    rf(1) = pourc(1)/2.d0
-    do icla=2,nclpch(icha)
-      rf(icla) = rf(icla-1) + (pourc(icla)+pourc(icla-1))/2.d0
-    enddo
-
-    kk1 = 0.d0
-    kk2 = 0.d0
-    kk3 = 0.d0
-    kk4 = 0.d0
-
-    do ii=1,nbrf
-      kk1 = kk1 + log(dprefus(ii))
-      kk2 = kk2 + log(-log(refus(ii)))
-      kk3 = kk3 + log(dprefus(ii))*log(dprefus(ii))
-      kk4 = kk4 + log(dprefus(ii))*log(-log(refus(ii)))
-    enddo
-
-    qq  = (dble(nbrf)*kk4-kk1*kk2)/(dble(nbrf)*kk3-kk1*kk1)
-    var  = (kk2*kk3-kk1*kk4)/(dble(nbrf)*kk3-kk1*kk1)
-    xx = exp(-var/qq)
-
-    do icla=iclag+1,iclag+nclpch(icha)
-      diam20(icla)=  xx*(-log(1.d0-rf(icla-iclag)))**(1.d0/qq)
-    enddo
-
-    ! Transformation du diametre en (micron) en (metre)
-    do icla=iclag+1,iclag+nclpch(icha)
-      diam20(icla) = diam20(icla)*1.0d-6
-    enddo
-
-    write(nfecra,8200) icha
-    write(nfecra,8201)
-    do icla=1,nbrf
-      write(nfecra,'(3e12.4)') dprefus(icla),refus(icla),      &
-                      exp(-(dprefus(icla)/xx)**(qq))
-    enddo
-    write(nfecra,8202)
-    do icla=1,nbrf
-      write(nfecra,'(3e12.4)') refus(icla),dprefus(icla),     &
-                      xx*(-log(refus(icla)))**(1.d0/qq)
-    enddo
-    write(nfecra,8203)
-    do icla=iclag+1,iclag+nclpch(icha)
-      write(nfecra,'(i6,1e12.4)') icla-iclag,diam20(icla)
-    enddo
-
-!================================================================
-8200 format                                                      &
-  (/,                                                            &
-   3X,'** Rosin-Rammeler results for the coal', i6,' **' , /,    &
-   3X,'--------------------------------------','-------' , /,    &
-   3X,'      [ Checking of the Rosin-Rammeler law ]    ')
-!================================================================
-
-!================================================================
-8201 format                                                      &
-  (/,                                                            &
-   '---', '--------',                                            &
-   '-----------------------------------', /,                     &
-   3X,'Diameter',                                                &
-   '   refus given   refus computed '   , /,                     &
-   '---', '--------',                                            &
-   '-----------------------------------', /,                     &
-   3X, 2e12.4, 3X, 1e12.4, /,                                    &
-   '---','---------',                                            &
-   '-----------------------------------')
-!================================================================
-
-!================================================================
-8202 format                                                      &
-  (/,                                                            &
-   '---', '-----',                                               &
-   '-----------------------------------', /,                     &
-   3X,'  Refus',                                                 &
-   '   diam. given   diam. computed ', /,                        &
-   '---', '-----',                                               &
-   '-----------------------------------', /,                     &
-   3X, 3e12.4, /,                                                &
-   '---','---------',                                            &
-   '-----------------------------------')
-!================================================================
-
-!================================================================
-8203 format                                                      &
-  (/,                                                            &
-   '-----', '-------------------------------------------', /,    &
-   3X,' Diameters computed by the Rosin-Rammeler law:   ', /,    &
-   '-----', '-------------------------------------------', /,    &
-   3X, i6, 1e12.4, /,                                            &
-   '---','--------------------------')
-!================================================================
-
-!
-  else
-    write(nfecra,9900)
-    call csexit(1)
-  endif
-  iclag = iclag+nclpch(icha)
-
-!==============================================================DS
-! ---- Composition elementaire en C, H , O , N , S
-!                 sur sec (% en masse)
-
-read (impfpp,*,err=999,end=999 ) cch(icha)
-read (impfpp,*,err=999,end=999 ) hch(icha)
-read (impfpp,*,err=999,end=999 ) och(icha)
-read (impfpp,*,err=999,end=999 ) nch(icha)
-read (impfpp,*,err=999,end=999 ) sch(icha)
-
-! ---- PCI sur charbon sec ou pur suivant la valeur de IPCI
-
-read (impfpp,*,err=999,end=999 ) ipci(icha), pcich(icha)
-
-! ---- CP moyen du charbon sec (J/kg/K)
-
-read (impfpp,*,err=999,end=999 ) cp2ch(icha)
-
-! ---- Masse volumique initiale (kg/m3)
-
-read (impfpp,*,err=999,end=999 ) rho0ch(icha)
-
-! ---- Caracteristiques coke
-
-read (impfpp,*,err=999,end=999 )
-
-! ------- Composition elementaire en C , H , O , N , S sur sec (%)
-
-read (impfpp,*,err=999,end=999 ) cck(icha)
-read (impfpp,*,err=999,end=999 ) hck(icha)
-read (impfpp,*,err=999,end=999 ) ock(icha)
-read (impfpp,*,err=999,end=999 ) nck(icha)
-read (impfpp,*,err=999,end=999 ) sck(icha)
-
-! ------ PCI sur charbon sec
-
-read (impfpp,*,err=999,end=999 ) pcick(icha)
-
-! ---- Caracteristiques cendres
-
-read (impfpp,*,err=999,end=999 )
-
-! ------ Taux de cendre (kg/kg) en %
-
-read (impfpp,*,err=999,end=999 ) xashsec(icha)
-!        Transformation en kg/kg
-  xashch(icha) = xashsec(icha)/100.d0
-
-! ------ Enthalpie de formation des cendres (J/kg)
-
-read (impfpp,*,err=999,end=999 ) h0ashc(icha)
-
-! ------ CP des cendres (J/kg/K)
-
-read (impfpp,*,err=999,end=999 ) cpashc(icha)
-
-! ------ Taux d'humidite (kg/kg) en %
-
-read (impfpp,*,err=999,end=999 ) xwatch(icha)
-
-!        Transformation en kg/kg
-  xwatch(icha) = xwatch(icha)/100.d0
-
-!      Transformation du taux de cendre de sec
-!      sur humide en kg/kg
-
-  xashch(icha) = xashch(icha)*(1.d0-xwatch(icha))
-
-! ---- Parametres de devolatilisation (modele de Kobayashi)
-
-read (impfpp,*,err=999,end=999 )
-
-read (impfpp,*,err=999,end=999 )  iy1ch(icha), y1ch(icha)
-read (impfpp,*,err=999,end=999 )  iy2ch(icha), y2ch(icha)
-read (impfpp,*,err=999,end=999 )  a1ch(icha)
-read (impfpp,*,err=999,end=999 )  a2ch(icha)
-read (impfpp,*,err=999,end=999 )  e1ch(icha)
-read (impfpp,*,err=999,end=999 )  e2ch(icha)
-! ---- Repartition de l'azote entre HCN et NH3
-read (impfpp,*,err=999,end=999 )  crepn1(1,icha)
-read (impfpp,*,err=999,end=999 )  crepn1(2,icha)
-read (impfpp,*,err=999,end=999 )  crepn2(1,icha)
-read (impfpp,*,err=999,end=999 )  crepn2(2,icha)
-! ---- Parametres combustion heterogene pour O2
-!      (modele a sphere retrecissante)
-read (impfpp,*,err=999,end=999 )
-
-read (impfpp,*,err=999,end=999 )  ahetch(icha)
-read (impfpp,*,err=999,end=999 )  ehetch(icha)
-read (impfpp,*,err=999,end=999 )  iochet(icha)
-! ---- Parametres combustion heterogene pour CO2
-!      (modele a sphere retrecissante)
-read (impfpp,*,err=999,end=999 )
-
-read (impfpp,*,err=999,end=999 )  ahetc2(icha)
-read (impfpp,*,err=999,end=999 )  ehetc2(icha)
-read (impfpp,*,err=999,end=999 )  ioetc2(icha)
-
-! ---- Parametres combustion heterogene pour H2O
-!      (modele a sphere retrecissante)
-
-read (impfpp,*,err=999,end=999 )
-
-read (impfpp,*,err=999,end=999 )  ahetwt(icha)
-read (impfpp,*,err=999,end=999 )  ehetwt(icha)
-read (impfpp,*,err=999,end=999 )  ioetwt(icha)
-
-!
-! ---- Parametres modele de NOX
-!      qpr = % d'azote libere pendant la devol./%de MV libere
-!              pendant la devol
-
-  read (impfpp,*,err=999,end=999 )
-
-  read (impfpp,*,err=999,end=999 ) qpr(icha)
-!
-enddo
-!
-! Fin de bcle de lceture sur les charbons
-!
-! --> Lecture caracteristiques Oxydants
-
-read (impfpp,*,err=999,end=999 )
-
-! ---- Nb d'oxydants
-
-read ( impfpp,*,err=999,end=999 ) noxyd
-if ( noxyd.lt.1 .or. noxyd .gt. 3 ) then
-  write(nfecra,9895) noxyd
-  call csexit (1)
-endif
-
-! ---- type d'oxydant
-
-read ( impfpp,*,err=999,end=999 ) itypoxy
-
-! ---- Composition en O2,N2,H2O,N2
-
-do ioxy=1,3
-  oxyo2 (ioxy) = 0.d0
-  oxyn2 (ioxy) = 0.d0
-  oxyh2o(ioxy) = 0.d0
-  oxyco2(ioxy) = 0.d0
-enddo
-
-read (impfpp,*,err=999,end=999 )                                  &
-     ( oxyo2(ioxy),ioxy=1,noxyd )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( oxyn2(ioxy),ioxy=1,noxyd )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( oxyh2o(ioxy),ioxy=1,noxyd )
-read (impfpp,*,err=999,end=999 )                                  &
-     ( oxyco2(ioxy),ioxy=1,noxyd )
-
-if ( itypoxy .eq. 1 ) then
-
-!
-! transformation pourcentage volumique en nombre de mole
-!
-  do ioxy=1,noxyd
-!
-     coef = 100.d0
-     if ( oxyo2(ioxy) .gt. 0.d0 ) then
-        coef =min(coef,oxyo2(ioxy))
-     endif
-     if ( oxyn2(ioxy) .gt. 0.d0 ) then
-        coef =min(coef,oxyn2(ioxy))
-     endif
-     if ( oxyh2o(ioxy) .gt. 0.d0 ) then
-        coef =min(coef,oxyh2o(ioxy))
-     endif
-     if ( oxyco2(ioxy) .gt. 0.d0 ) then
-        coef =min(coef,oxyco2(ioxy))
-     endif
-!
-     oxyo2 (ioxy) = oxyo2 (ioxy)/coef
-     oxyn2 (ioxy) = oxyn2 (ioxy)/coef
-     oxyh2o(ioxy) = oxyh2o(ioxy)/coef
-     oxyco2(ioxy) = oxyco2(ioxy)/coef
-!
-  enddo
-!
-endif
-! --> Fermeture du fichier (ne pas oublier, car l'unite sert pour janaf)
-
-close(impfpp)
 
 !===============================================================================
 ! 2. CALCULS DE DONNEES COMPLEMENTAIRES
@@ -756,7 +473,7 @@ enddo
 fcor = 1.2
 do icha = 1, ncharb
 
-xwatpc = xwatch(icha)*100.d0
+  xwatpc = xwatch(icha)*100.d0
 
   if (ipci(icha).eq.1) then
     !On transforme le PCI sur sec J/kg ---> kcal/kg
@@ -1710,7 +1427,6 @@ call csexit (1)
   (/,                                                        &
    3X, 1e12.4, 3X, 1e12.4, 3X, 1e12.4, 3X, 1e12.4, 3X, 1e12.4)
 !================================================================
- 8050 format(/,3X,'Coal composition ')
  8051 format(/,5X,'Coal number',7X,'CHX1',12X,'CHX2')
  8052 format( 10x, i3, 8x,1e12.4,1x,1e12.4)
 !================================================================
@@ -1727,25 +1443,6 @@ call csexit (1)
  8104 format(/,12X,'Option 2: CHX1 and CHX2 fixed ')
  8105 format(  12X,'Y1_ch = ', 1e12.4,3X,'Y2_ch = ', 1e12.4)
 !================================================================
-
- 9900 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  LA VALEUR DU TYPE DE DIAMETRE DOIT ETRE EGALE A 1 ou 2:   ',/,&
-'@      = 1 : diametres donnees                               ',/,&
-'@      = 2 : calcul des diametres avec la loi Rosin-Rammler  ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
  9970 format(                                                     &
 '@                                                            ',/,&
@@ -1887,41 +1584,6 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9995 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  Le nombre de charbons est limite a      ',I10              ,/,&
-'@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9996 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  Le nombre de classes par charbon est limite a ',I10        ,/,&
-'@   Il vaut ',I10   ,' pour le charbon ',I10                  ,/,&
-'@                      dans le fichier parametrique          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  9998 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1949,24 +1611,6 @@ call csexit (1)
 '@    ou son format inadapte.                                 ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9895 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  Le nombre d''Oxydants doit etre compris entre 1 et 3      ',/,&
-'@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -2027,27 +1671,6 @@ call csexit (1)
 '@     CO2 :  ',G15.7,'                                       ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9899 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  LA COMPOSITION DE L''OXYDANT 1 EST ERRONEE                ',/,&
-'@     O2  :  ',G15.7,'                                       ',/,&
-'@     N2  :  ',G15.7,'                                       ',/,&
-'@     H2O :  ',G15.7,'                                       ',/,&
-'@     CO2 :  ',G15.7,'                                       ',/,&
-'@                                                            ',/,&
-'@  ALORS QUE L''OXYDANT 1 DOIT OBLIGATOIREMENT CONTENIR      ',/,&
-'@  DE L''OXYGENE                                             ',/,&
 '@                                                            ',/,&
 '@  Verifier le fichier parametrique.                         ',/,&
 '@                                                            ',/,&

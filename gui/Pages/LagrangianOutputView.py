@@ -31,50 +31,39 @@ This module contains the following classes and function:
 # Standard modules
 #-------------------------------------------------------------------------------
 
-
 import logging
-
 
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
-
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
-
 from Pages.LagrangianOutputForm import Ui_LagrangianOutputForm
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, DoubleValidator
 from Pages.LagrangianOutputModel import LagrangianOutputModel
-import Pages.CoalThermoChemistry as CoalThermoChemistry
-
 
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
 
-
 logging.basicConfig()
 log = logging.getLogger("LagrangianOutputView")
 log.setLevel(GuiParam.DEBUG)
-
 
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
 
-
 class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
     """
     """
-
     def __init__(self, parent, case):
         """
         Constructor

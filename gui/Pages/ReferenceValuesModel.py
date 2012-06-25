@@ -67,7 +67,7 @@ class ReferenceValuesModel(Model):
         self.node_models    = self.case.xmlGetNode('thermophysical_models')
         self.node_reference = self.node_models.xmlInitNode('reference_values')
         self.node_veloce    = self.node_models.xmlGetNode('velocity_pressure')
-        self.node_coal      = self.node_models.xmlGetNode('pulverized_coal', 'model')
+        self.node_coal      = self.node_models.xmlGetNode('solid_fuels', 'model')
         self.node_gas       = self.node_models.xmlGetNode('gas_combustion',  'model')
         self.node_joule     = self.node_models.xmlGetNode('joule_effect',  'model')
         self.node_atmo      = self.node_models.xmlGetNode('atmospheric_flows',  'model')
@@ -317,11 +317,11 @@ class ReferenceValuesTestCase(ModelTest):
         """Check whether the ReferenceValuesModel class could be set and get Temperature"""
         mdl = ReferenceValuesModel(self.case)
         from Pages.CoalCombustionModel import CoalCombustionModel
-        CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
+        CoalCombustionModel(self.case).setCoalCombustionModel('homogeneous_fuel')
         del CoalCombustionModel
         mdl.setTemperature(55.5)
 
-        doc = """<pulverized_coal model="coal_homo">
+        doc = """<solid_fuels model="homogeneous_fuel">
                     <scalar label="Enthalpy" name="Enthalpy" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
@@ -351,7 +351,7 @@ class ReferenceValuesTestCase(ModelTest):
                     <property label="Ga_HET01" name="Ga_HET01"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
                     <reference_temperature>55.5</reference_temperature>
-                 </pulverized_coal>"""
+                 </solid_fuels>"""
         assert mdl.node_coal == self.xmlNodeFromString(doc),\
             'Could not set temperature ReferenceValuesModel'
         assert mdl.getTemperature() == 55.5,\

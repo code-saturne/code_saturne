@@ -56,6 +56,10 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use ihmpre
+use cs_coal_incl
+use ppcpfu
+use radiat
 
 !===============================================================================
 
@@ -92,6 +96,16 @@ if ( ippmod(icp3pl).ge.0 ) then
 endif
 
 if ( ippmod(iccoal).ge.0 ) then
+  call uisofu(iirayo, iihmpr, ncharm, ncharb, nclpch, nclacp,         &
+              ncpcmx, ichcor, diam20, cch,                            &
+              hch, och, nch, sch, ipci, pcich, cp2ch, rho0ch,         &
+              cck, hck, ock, nck, sck, pcick, xashch, xashsec,        &
+              xwatch, h0ashc, cpashc,                                 &
+              iy1ch, y1ch, iy2ch, y2ch, a1ch, a2ch, e1ch, e2ch,       &
+              crepn1, crepn2, ahetch, ehetch, iochet, ahetc2,         &
+              ehetc2, ioetc2, ahetwt, ehetwt, ioetwt,                 &
+              ieqnox, ihtco2, ihth2o, qpr, fn,                        &
+              ckabs1, noxyd, oxyo2, oxyn2, oxyh2o, oxyco2)
   call cs_coal_readata
   !==================
 endif

@@ -231,7 +231,7 @@
    <item row="4" column="0">
     <widget class="QGroupBox" name="groupBoxCoalCombustion">
      <property name="title">
-      <string>Pulverized coal combustion</string>
+      <string>Pulverized fuel combustion</string>
      </property>
      <layout class="QGridLayout">
       <item row="0" column="0">

@@ -111,7 +111,7 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         modelList = []
         node1 = self.node_models.xmlGetNode('gas_combustion',    'model')
-        node2 = self.node_models.xmlGetNode('pulverized_coal',   'model')
+        node2 = self.node_models.xmlGetNode('solid_fuels',       'model')
         node3 = self.node_models.xmlGetNode('joule_effect',      'model')
         node4 = self.node_models.xmlGetNode('thermal_scalar',    'model')
         node5 = self.node_models.xmlGetNode('atmospheric_flows', 'model')
@@ -141,7 +141,7 @@ class FluidCharacteristicsModel(Variables, Model):
         d = {}
         d['joule_effect']      = 'off'
         d['gas_combustion']    = 'off'
-        d['pulverized_coal']   = 'off'
+        d['solid_fuels']       = 'off'
         d['thermal_scalar']    = 'off'
         d['atmospheric_flows'] = 'off'
 
@@ -153,7 +153,7 @@ class FluidCharacteristicsModel(Variables, Model):
                d['joule_effect'],      \
                d['thermal_scalar'],    \
                d['gas_combustion'],    \
-               d['pulverized_coal']
+               d['solid_fuels']
 
 
     def getInitialValue(self, tag):

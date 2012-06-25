@@ -154,6 +154,10 @@ endif
 !     Construction de l'indirection entre la numerotation du noyau et XML
 
 if (iihmpr.eq.1) then
+
+  write(nfecra,*) ' interface non mise a jour pour cette version'
+  call csexit(1)
+!
   call uicpsc (ncharb, nclacp, noxyd, ippmod,       &
                icp3pl, ieqco2, ihtco2,              &
                ihm, inp, ixch, ixck, ixwt, ih2,     &

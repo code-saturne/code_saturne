@@ -62,10 +62,10 @@ class TurbulenceModel(Variables, Model):
 
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_lagr   = self.case.xmlGetNode('lagrangian')
-        self.node_coal   = self.node_models.xmlGetChildNode('pulverized_coal', 'model')
-        self.node_joule  = self.node_models.xmlGetChildNode('joule_effect',    'model')
-        self.node_gas    = self.node_models.xmlGetChildNode('gas_combustion',  'model')
-        self.node_turb   = self.node_models.xmlInitChildNode('turbulence', 'model')
+        self.node_coal   = self.node_models.xmlGetChildNode('solid_fuels',    'model')
+        self.node_joule  = self.node_models.xmlGetChildNode('joule_effect',   'model')
+        self.node_gas    = self.node_models.xmlGetChildNode('gas_combustion', 'model')
+        self.node_turb   = self.node_models.xmlInitChildNode('turbulence',    'model')
         self.node_bc     = self.case.xmlGetNode('boundary_conditions')
 
         self.__turbModel = ('off',
@@ -166,9 +166,12 @@ class TurbulenceModel(Variables, Model):
             turbList = self.RANSmodels()
             turbList.insert(0, "off")
 
-        for node in (self.node_gas, self.node_coal, self.node_joule):
+        for node in (self.node_gas, self.node_joule):
             if node and node['model'] != 'off':
                 turbList = self.RANSmodels()
+
+        if self.node_coal and self.node_coal['model'] != 'off':
+            turbList = ('off', 'k-epsilon', 'k-epsilon-PL')
 
         return turbList
 

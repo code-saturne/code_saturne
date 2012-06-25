@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="MD_INTERFACE" study="MARCUS" version="2.0">
+	<thermophysical_models>
+		<solid_fuels model="homogeneous_fuel">
+			<solid_fuel fuel_id="1" name="Coal_1" type="coal">
+				<class>
+					<diameter class_id="1">2.5e-05</diameter>
+				</class>
+				<diameter_type>automatic</diameter_type>
+				<C_composition_on_dry>76.65</C_composition_on_dry>
+				<H_composition_on_dry>5.16</H_composition_on_dry>
+				<O_composition_on_dry>9.9</O_composition_on_dry>
+				<N_composition_on_dry>0</N_composition_on_dry>
+				<S_composition_on_dry>0</S_composition_on_dry>
+				<PCI choice="PCI">
+					<value>3e+07</value>
+					<type>dry_ash_free</type>
+				</PCI>
+				<volatile_matter>0</volatile_matter>
+				<specific_heat_average>1800</specific_heat_average>
+				<density>1200</density>
+				<moisture>0</moisture>
+				<rate_of_ashes_on_mass>6.21</rate_of_ashes_on_mass>
+				<ashes_enthalpy>0</ashes_enthalpy>
+				<ashes_thermal_capacity>0</ashes_thermal_capacity>
+				<devolatilisation_parameters>
+					<stoichiometric_coefficient type="user_define">
+						<Y1>0.37</Y1>
+						<Y2>0.74</Y2>
+					</stoichiometric_coefficient>
+					<A1_pre-exponential_factor>370000</A1_pre-exponential_factor>
+					<A2_pre-exponential_factor>1.3e+13</A2_pre-exponential_factor>
+					<E1_energy_of_activation>74000</E1_energy_of_activation>
+					<E2_energy_of_activation>250000</E2_energy_of_activation>
+					<HCN_NO_partitionning_reaction_1>0.5</HCN_NO_partitionning_reaction_1>
+					<HCN_NO_partitionning_reaction_2>0.5</HCN_NO_partitionning_reaction_2>
+				</devolatilisation_parameters>
+				<char_combustion>
+					<specie nature="O2" status="on">
+						<pre-exponential_constant>17.88</pre-exponential_constant>
+						<energy_of_activation>16.55</energy_of_activation>
+						<order_of_reaction choice="1"/>
+					</specie>
+					<specie nature="CO2" status="on">
+						<pre-exponential_constant>17.88</pre-exponential_constant>
+						<energy_of_activation>16.55</energy_of_activation>
+						<order_of_reaction choice="1"/>
+					</specie>
+					<specie nature="H2O" status="on">
+						<pre-exponential_constant>17.88</pre-exponential_constant>
+						<energy_of_activation>16.55</energy_of_activation>
+						<order_of_reaction choice="1"/>
+					</specie>
+				</char_combustion>
+				<nox_formation status="on">
+					<nitrogen_fraction>1.1</nitrogen_fraction>
+					<nitrogen_concentration>0.015</nitrogen_concentration>
+				</nox_formation>
+			</solid_fuel>
+			<scalar label="Fr_HET_O2" name="Fr_HET_O2" type="model">
+				<flux_reconstruction status="off"/>
+				<rhs_reconstruction>1</rhs_reconstruction>
+				<min_value>0</min_value>
+				<max_value>1</max_value>
+			</scalar>
+			<scalar label="Enthalpy" name="Enthalpy" type="model">
+				<flux_reconstruction status="off"/>
+				<rhs_reconstruction>1</rhs_reconstruction>
+				<min_value>0</min_value>
+				<max_value>1</max_value>
+			</scalar>
+			<scalar label="NP_CP01" name="NP_CP01" type="model">
+				<flux_reconstruction status="off"/>
+				<rhs_reconstruction>1</rhs_reconstruction>
+				<min_value>0</min_value>
+				<max_value>1</max_value>
+			</scalar>
+			<scalar label="XCH_CP01" name="XCH_CP01" type="model">
+				<flux_reconstruction status="off"/>
+				<rhs_reconstruction>1</rhs_reconstruction>
+				<min_value>0</min_value>
+				<max_value>1</max_value>
+			</scalar>
+			<scalar label="XCK_CP01" name="XCK_CP01" type="model">
+				<flux_reconstruction status="off"/>
+				<rhs_reconstruction>1</rhs_reconstruction>
+				<min_value>0</min_value>
+				<max_value>1</max_value>
+			</scalar>
+			<scalar label="ENT_CP01" name="ENT_CP01" type="model">
+				<flux_reconstruction status="off"/>
+				<rhs_reconstruction>1</rhs_reconstruction>
+				<min_value>0</min_value>
+				<max_value>1</max_value>
+			</scalar>
+			<scalar label="Fr_MV101" name="Fr_MV101" type="model">
+				<flux_reconstruction status="off"/>
+				<rhs_reconstruction>1</rhs_reconstruction>
+				<min_value>0</min_value>
+				<max_value>1</max_value>
+			</scalar>
+			<scalar label="Fr_MV201" name="Fr_MV201" type="model">
+				<flux_reconstruction status="off"/>
+				<rhs_reconstruction>1</rhs_reconstruction>
+				<min_value>0</min_value>
+				<max_value>1</max_value>
+			</scalar>
+			<scalar label="Var_AIR" name="Var_AIR" type="model">
+				<flux_reconstruction status="off"/>
+				<rhs_reconstruction>1</rhs_reconstruction>
+				<min_value>0</min_value>
+				<max_value>1</max_value>
+			</scalar>
+			<property label="Temp_GAZ" name="Temp_GAZ"/>
+			<property label="ROM_GAZ" name="ROM_GAZ"/>
+			<property label="YM_CHx1m" name="YM_CHx1m"/>
+			<property label="YM_CHx2m" name="YM_CHx2m"/>
+			<property label="YM_CO" name="YM_CO"/>
+			<property label="YM_O2" name="YM_O2"/>
+			<property label="YM_CO2" name="YM_CO2"/>
+			<property label="YM_H2O" name="YM_H2O"/>
+			<property label="YM_N2" name="YM_N2"/>
+			<property label="XM" name="XM"/>
+			<property label="Temp_CP01" name="Temp_CP01"/>
+			<property label="Frm_CP01" name="Frm_CP01"/>
+			<property label="Rho_CP01" name="Rho_CP01"/>
+			<property label="Dia_CK01" name="Dia_CK01"/>
+			<property label="Ga_DCH01" name="Ga_DCH01"/>
+			<property label="Ga_DV101" name="Ga_DV101"/>
+			<property label="Ga_DV201" name="Ga_DV201"/>
+			<property label="Ga_HET_O201" name="Ga_HET_O201"/>
+			<property label="IntLuminance_4PI" name="IntLuminance_4PI"/>
+			<absorption_coefficient>0.1</absorption_coefficient>
+		</solid_fuels>
+		<oxidants>
+			<oxidant ox_id="1">
+				<O2_composition>1</O2_composition>
+				<N2_composition>3.76</N2_composition>
+				<H2O_composition>0</H2O_composition>
+				<CO2_composition>0</CO2_composition>
+			</oxidant>
+			<oxidant_type>volumic_percent</oxidant_type>
+		</oxidants>
+	</thermophysical_models>
+</Code_Saturne_GUI>

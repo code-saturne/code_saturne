@@ -44,7 +44,6 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Model
 from Base.XMLmodel import ModelTest
-import Pages.CoalThermoChemistry as CoalThermoChemistry
 
 #-------------------------------------------------------------------------------
 # log config
@@ -432,9 +431,8 @@ class LagrangianModel(Model):
         node_coal = node_model.xmlInitChildNode('coal_fouling', 'status')
         node_coal['status'] = status
         if status == "on":
-            self.coalThermoChModel = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
-            coals = self.coalThermoChModel.getCoals()
-            for icoal in range(coals.getNumber()):
+            self.coalCombustionModel = CoalCombustionModel(self.case)
+            for icoal in range(self.coalCombustionModel.getCoalNumber()):
                 self.getThresholdTemperatureOfFouling(icoal+1)
                 self.getCriticalViscosityOfFouling(icoal+1)
                 self.getCoef1OfFouling(icoal+1)

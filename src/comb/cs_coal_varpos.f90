@@ -154,14 +154,12 @@ endif
 
 if (iihmpr.eq.1) then
 !
-  write(nfecra,*) ' interface non mise a jour pour cette version'
-  call csexit(1)
-!
-  call uicpsc (ncharb, nclacp, noxyd, ippmod,       &
-               iccoal, ieqco2, ihtco2,              &
-               ihm, inp, ixch, ixck, ixwt, ih2,     &
-               if1m, if2m, if3m, if3mc2, if4p2m,    &
-               if5m, if6m, if7m, iyco2)
+  call uicpsc (ncharb, nclacp, noxyd, ippmod,               &
+               iccoal, ieqnox, ieqco2, ihtco2,              &
+               ihth2o, ihm, inp, ixch, ixck, ixwt, ih2,     &
+               if1m, if2m, if4m, if5m, if6m,                &
+               if7m, if8m, ifvp2m, iyco2, if9m,             &
+               iyhcn, iyno, ihox )
 endif
 
 !===============================================================================

@@ -419,7 +419,7 @@ Thermophysical models
     Thermal model
     Gas combustion
     Current species
-    Pulverized coal combustion
+    Pulverized fuel combustion
     Electrical models
     Radiative transfers
     Conjugate heat transfer
@@ -652,7 +652,7 @@ Calculation management
         self.setRowClose(self.tr('Particles and droplets tracking'))
         self.setRowClose(self.tr('Gas combustion'))
         self.setRowClose(self.tr('Current species'))
-        self.setRowClose(self.tr('Pulverized coal combustion'))
+        self.setRowClose(self.tr('Pulverized fuel combustion'))
         self.setRowClose(self.tr('Electrical models'))
         self.setRowClose(self.tr('Radiative transfers'))
         self.setRowClose(self.tr('Conjugate heat transfer'))
@@ -724,7 +724,7 @@ Calculation management
 
         node0 = case.xmlGetNode('thermophysical_models')
         node1 = node0.xmlGetNode('gas_combustion',     'model')
-        node2 = node0.xmlGetNode('pulverized_coal',    'model')
+        node2 = node0.xmlGetNode('solid_fuels',        'model')
         node3 = node0.xmlGetNode('joule_effect',       'model')
         node4 = node0.xmlGetNode('thermal_scalar',     'model')
         node5 = node0.xmlGetNode('radiative_transfer', 'model')
@@ -739,10 +739,10 @@ Calculation management
             if node5.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
 
-        elif node2['model'] in ('coal_homo', 'coal_homo2'):
+        elif node2['model'] in ('homogeneous_fuel', 'homogeneous_fuel_moisture'):
             self.setRowClose(self.tr('Thermal model'))
             self.setRowOpen(self.tr('Current species'))
-            self.setRowOpen(self.tr('Pulverized coal combustion'))
+            self.setRowOpen(self.tr('Pulverized fuel combustion'))
             self.setRowOpen(self.tr('Radiative transfers'))
             self.setRowOpen(self.tr('Conjugate heat transfer'))
             if node5.xmlGetAttribute('model') != 'off':

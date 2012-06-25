@@ -75,6 +75,7 @@ use cpincl
 use ppincl
 use ppcpfu
 use radiat
+use cs_coal_incl
 
 !===============================================================================
 
@@ -183,7 +184,7 @@ if (iihmpr.eq.1) then
   call uippmo                                                     &
   !==========
  ( ippmod, icod3p, icodeq, icoebu, icobml,                        &
-   icolwc, icp3pl, icpl3c, icfuel,                                &
+   icolwc, iccoal, icpl3c, icfuel,                                &
    ieljou, ielarc, ielion, icompf, iatmos,                        &
    iaeros, indjon, ieos  , ieqco2)
 

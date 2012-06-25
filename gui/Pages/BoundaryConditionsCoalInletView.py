@@ -49,7 +49,6 @@ from PyQt4.QtGui  import *
 
 from Pages.BoundaryConditionsCoalInletForm import Ui_BoundaryConditionsCoalInletForm
 import Pages.CoalCombustionModel as CoalCombustion
-import Pages.CoalThermoChemistry as CoalThermoChemistry
 
 from Base.Toolbox import GuiParam
 from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
@@ -345,12 +344,11 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
         mdl =  CoalCombustion.CoalCombustionModel(self.__case)
         if mdl.getCoalCombustionModel() != "off":
-            coalModel = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.__case)
-            self.__coalNumber = coalModel.getCoals().getNumber()
+            self.__coalNumber = mdl.getCoalNumber()
             self.__coalClassesNumber = []
             for coal in range(0, self.__coalNumber):
-                self.__coalClassesNumber.append(coalModel.getCoals().getCoal(coal+1).getClassesNumber())
-            self.__maxOxydantNumber = coalModel.getOxydants().getNumber()
+                self.__coalClassesNumber.append(mdl.getClassNumber(str(coal+1)))
+            self.__maxOxydantNumber = mdl.getOxidantNumber()
         else:
             self.__coalNumber = 0
             self.__coalClassesNumber = [0]

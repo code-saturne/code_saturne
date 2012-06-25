@@ -295,7 +295,7 @@ class Parser:
             if node:
                 model = str(node.getAttribute('model'))
                 if model != 'off': # 'coal_homo' or 'coal_homo2'
-                    self.dict['thermochemistry_data'] = 'dp_FCP'
+                    self.dict['thermochemistry_data'] = 'dp_FCP.xml'
 
         # Search for user input files
 

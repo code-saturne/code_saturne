@@ -276,10 +276,9 @@ class StandardItemModelCoals(QStandardItemModel):
         self.case = case
         self.model = model
 
-        import Pages.CoalThermoChemistry as CoalThermoChemistry
-        self.coalThermoChModel = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
-        coals = self.coalThermoChModel.getCoals()
-        CoalsNumber = coals.getNumber()
+        import Pages.CoalCombustionModel as CoalCombustionModel
+        self.coalModel = CoalCombustionModel.CoalCombustionModel(self.case)
+        CoalsNumber = self.coalModel.getCoalNumber()
 
         for icoal in range(CoalsNumber):
             line = []

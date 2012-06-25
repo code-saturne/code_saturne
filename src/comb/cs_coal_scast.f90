@@ -182,7 +182,7 @@ double precision anmr,xcot,xo2t,xco2e,xo2e,xcoe,tauchi,tautur
 double precision sqh2o , x2
 double precision err1mx,err2mx
 double precision errch,ter1,ddelta,xden
-double precision fn,fn0,fn1,fn2,anmr0,anmr1,anmr2
+double precision fn0,fn1,fn2,anmr0,anmr1,anmr2
 double precision lnk0p,l10k0e,lnk0m,t0e,xco2eq,xcoeq,xo2eq
 double precision xcom,xo2m,xkcequ,xkpequ
 
@@ -1720,12 +1720,11 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
         do icha=1,ncharb
 !        % d'azote sur pur dans le charbon
-          fn = nch(icha)*(1.d0-xwatch(icha))/(100.d0)
 !
-          aux = -volume(iel)*fn*wmhcn/(wmole(in2)/2.d0)              &
+          aux = -volume(iel)*fn(icha)*wmhcn/(wmole(in2)/2.d0)        &
                             *(qpr(icha)*(gmdev1(icha)+gmdev2(icha)))
           if(xo2.gt.0.03d0) then
-            aux=aux-volume(iel)*fn*wmhcn/(wmole(in2)/2.d0)           &
+            aux=aux-volume(iel)*fn(icha)*wmhcn/(wmole(in2)/2.d0)     &
                                * (1.d0-qpr(icha)*y2ch(icha))         &
                                 / (1-y2ch(icha))*gmhet(icha)         &
                                 * (1.d0-xashch(icha))

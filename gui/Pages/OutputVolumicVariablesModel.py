@@ -180,7 +180,7 @@ class OutputVolumicVariablesModel(Model):
         Also called by ProfilesModel and TimeAveragesModel
         """
         nodList = []
-        node = self.node_models.xmlGetNode('pulverized_coal', 'model')
+        node = self.node_models.xmlGetNode('solid_fuels', 'model')
         model = node['model']
         varList = []
         if model != 'off':
@@ -492,11 +492,8 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
 ##        properties of pulverized coal
 ##        """
 ##        mdl = OutputVolumicVariablesModel(self.case)
-##        from Pages.CoalCombustionModel import CoalCombustionModel
-##        CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
-##        del CoalCombustionModel
 ##        mdl.getPuCoalScalProper()
-##        node = mdl.node_models.xmlGetNode('pulverized_coal', 'model')
+##        node = mdl.node_models.xmlGetNode('solid_fuels', 'model')
 ##        print(node)
 ##        print(mdl.getPuCoalScalProper())
 

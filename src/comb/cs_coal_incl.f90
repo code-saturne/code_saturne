@@ -34,8 +34,9 @@ module cs_coal_incl
 
   ! Modele de NOx
   ! qpr : % d'azote libere pendant la devol.% de MV libere pendant la devol.
+  ! fn : concentration en azote sur pur
 
-  double precision, save :: qpr(ncharm)
+  double precision, save :: qpr(ncharm), fn(ncharm), ipci(ncharm), xashsec(ncharm)
 
   !=============================================================================
 

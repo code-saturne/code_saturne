@@ -130,8 +130,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelGasCombustionModel.addItem(self.tr("premixed flame (Libby_Williams)"), "lwp")
 
         self.modelPulverizedCoal.addItem(self.tr("off"), "off")
-        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach"), "coal_homo")
-        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach (wet)"), "coal_homo2")
+        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach"), "homogeneous_fuel")
+        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach with moisture"), "homogeneous_fuel_moisture")
         # WARNING: the 'coal_lagr' model is deprecated
         #self.modelPulverizedCoal.addItem(self.tr("Gaseous phase coupling with Lagrangian coal transport"), "coal_lagr")
 
@@ -186,10 +186,12 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         elec = self.elect.getElectricalModel()
         self.modelJouleEffect.setItem(str_model=elec)
 
-        #self.modelPulverizedCoal.disableItem(str_model='coal_homo') # to delete
-        #self.modelPulverizedCoal.disableItem(str_model='coal_homo2') # to delete
         coal = self.pcoal.getCoalCombustionModel()
         self.modelPulverizedCoal.setItem(str_model=coal)
+        if coal != 'off':
+            self.modelLagrangian.disableItem(str_model='lagrangian')
+        else:
+            self.modelLagrangian.enableItem(str_model='lagrangian')
 
         compressible = self.comp.getCompressibleModel()
         self.modelCompressible.setItem(str_model=compressible)
@@ -239,8 +241,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.modelJouleEffect.disableItem(str_model='joule')
             self.modelJouleEffect.disableItem(str_model='arc')
 
-            self.modelPulverizedCoal.disableItem(str_model='coal_homo')
-            self.modelPulverizedCoal.disableItem(str_model='coal_homo2')
+            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
+            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture')
             # WARNING: the 'coal_lagr' model is deprecated
             #self.modelPulverizedCoal.disableItem(str_model='coal_lagr')
 
@@ -452,6 +454,10 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         if model != 'off':
             self.__disableComboBox()
             self.comboBoxPulverizedCoal.setEnabled(True)
+            self.modelLagrangian.disableItem(str_model='lagrangian')
+        else:
+            self.modelLagrangian.enableItem(str_model='lagrangian')
+            self.pcoal.setCoalCombustionModel(model)
 
         self.browser.configureTree(self.case)
 

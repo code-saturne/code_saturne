@@ -68,7 +68,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         self.node_therm    = self.node_models.xmlInitChildNode('thermal_scalar', 'model')
         self.node_prop     = self.case.xmlGetNode('physical_properties').xmlGetNode('fluid_properties')
 
-        self.node_coal  = self.node_models.xmlGetChildNode('pulverized_coal',    'model')
+        self.node_coal  = self.node_models.xmlGetChildNode('solid_fuels',        'model')
         self.node_joule = self.node_models.xmlGetChildNode('joule_effect',       'model')
         self.node_gas   = self.node_models.xmlGetChildNode('gas_combustion',     'model')
         self.node_ray   = self.node_models.xmlGetChildNode('radiative_transfer', 'model')

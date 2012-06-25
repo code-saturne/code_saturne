@@ -373,9 +373,11 @@ if (iihmpr.eq.1) then
   call uicppr &
   !==========
  ( nclacp, nsalpp, nsalto, ippmod, iccoal, ipppro,    &
-   ipproc, ihtco2, itemp1, irom1, iym1, immel,        &
+   ipproc, ieqnox, ieqco2, ihtco2, ihth2o, itemp1,    &
+   irom1, iym1, ighcn1, ighcn2, ignoth, immel,        &
    itemp2, ix2, irom2, idiam2, igmdch, igmdv1,        &
-   igmdv2, igmhet, ighco2, igmsec)
+   igmdv2, igmhet, ighco2, ighh2o, igmsec,            &
+   ibcarbone, iboxygen, ibhydrogen)
 endif
 
 !--------

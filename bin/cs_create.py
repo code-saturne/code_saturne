@@ -527,7 +527,7 @@ class Study:
             ref           = os.path.join(data, 'REFERENCE')
             os.mkdir(ref)
             for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE',
-                      'dp_FCP', 'dp_FCP_new',
+                      'dp_FCP', 'dp_FCP.xml',
                       'dp_FUE', 'dp_FUE_new',
                       'meteo']:
                 abs_f = os.path.join(thch_distpath, f)

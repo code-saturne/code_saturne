@@ -920,7 +920,7 @@ _init_boundaries(const int *const nfabor,
     BFT_MALLOC(boundaries->direction, zones,      mei_tree_t*  );
     BFT_MALLOC(boundaries->scalar,    vars->nvar, mei_tree_t** );
 
-    if (cs_gui_strcmp(vars->model, "pulverized_coal"))
+    if (cs_gui_strcmp(vars->model, "solid_fuels"))
     {
         BFT_MALLOC(boundaries->ientat, zones, int      );
         BFT_MALLOC(boundaries->inmoxy, zones, double   );
@@ -1006,7 +1006,7 @@ _init_boundaries(const int *const nfabor,
         boundaries->velocity[izone] = NULL;
         boundaries->direction[izone] = NULL;
 
-        if (cs_gui_strcmp(vars->model, "pulverized_coal"))
+        if (cs_gui_strcmp(vars->model, "solid_fuels"))
         {
             boundaries->ientat[izone] = 0;
             boundaries->inmoxy[izone] = 1;
@@ -1135,7 +1135,7 @@ _init_boundaries(const int *const nfabor,
             BFT_FREE(choice_d);
 
             /* Inlet: data for COAL */
-            if (cs_gui_strcmp(vars->model, "pulverized_coal"))
+            if (cs_gui_strcmp(vars->model, "solid_fuels"))
             {
                 _inlet_data(label, "temperature", &boundaries->timpat[izone]);
                 _inlet_data(label, "oxydant", &boundaries->inmoxy[izone]);
@@ -1611,7 +1611,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
             xintur[zone_nbr-1] = boundaries->xintur[izone];
             icalke[zone_nbr-1] = boundaries->icalke[izone];
 
-            if (cs_gui_strcmp(vars->model, "pulverized_coal"))
+            if (cs_gui_strcmp(vars->model, "solid_fuels"))
             {
                 ientat[zone_nbr-1] = boundaries->ientat[izone];
                 inmoxy[zone_nbr-1] = (int) boundaries->inmoxy[izone];
@@ -2360,7 +2360,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
             BFT_FREE(choice_v);
             BFT_FREE(choice_d);
 
-            if (cs_gui_strcmp(vars->model, "pulverized_coal"))
+            if (cs_gui_strcmp(vars->model, "solid_fuels"))
             {
                 bft_printf("-----iqimp=%i, qimpat=%12.5e \n",
                              iqimp[zone_nbr-1], qimpat[zone_nbr-1]);
@@ -2644,7 +2644,7 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
       BFT_FREE(boundaries->scalar[ivar]);
     }
 
-    if (cs_gui_strcmp(vars->model, "pulverized_coal")) {
+    if (cs_gui_strcmp(vars->model, "solid_fuels")) {
       for (izone=0 ; izone < zones ; izone++) {
         BFT_FREE(boundaries->qimpcp[izone]);
         BFT_FREE(boundaries->timpcp[izone]);

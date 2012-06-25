@@ -1009,13 +1009,13 @@ class CoalInletBoundary(InletBoundary) :
 
 
     def __updateCoalInfo(self):
-        from Pages.CoalThermoChemistry import CoalThermoChemistryModel
-        coalThermoChModel = CoalThermoChemistryModel("dp_FCP", self._case)
-        self.coalNumber = coalThermoChModel.getCoals().getCoalNumber()
+        from Pages.CoalCombustionModel import CoalCombustionModel
+        CoalCombustionModel = CoalCombustionModel(self._case)
+        self.coalNumber = CoalCombustionModel.getCoalNumber()
         log.debug("__updateCoalInfo coalNumber: %i " % self.coalNumber)
         self.coalClassesNumber = []
         for c in range(0, self.coalNumber):
-            self.coalClassesNumber.append(coalThermoChModel.getCoals().getCoal(c+1).getClassesNumber())
+            self.coalClassesNumber.append(CoalCombustionModel.getClassNumber(str(c+1)))
             log.debug("__updateCoalInfo number of classes: %i " % self.coalClassesNumber[c])
 
 
@@ -2961,7 +2961,7 @@ class CoalInletBoundaryTestCase(ModelTest):
         Check whether the CoalInletBoundary class could be instantiated
         """
         from Pages.CoalCombustionModel import CoalCombustionModel
-        CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
+        CoalCombustionModel(self.case).setCoalCombustionModel('homogeneous_fuel')
         model = None
         model = Boundary("coal_inlet", "entree1", self.case)
         assert model != None, 'Could not instantiate CoalInletBoundary'
@@ -2970,7 +2970,7 @@ class CoalInletBoundaryTestCase(ModelTest):
     def checkSetAndgetInletType(self):
         """Check whether the type of inlet coal could be set and get for coal inlet boundary."""
         from Pages.CoalCombustionModel import CoalCombustionModel
-        CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
+        CoalCombustionModel(self.case).setCoalCombustionModel('homogeneous_fuel')
 
         model = Boundary("inlet", "charb1", self.case)
         coal_model = Boundary("coal_inlet", "charb1", self.case)
@@ -3023,7 +3023,7 @@ class CoalInletBoundaryTestCase(ModelTest):
     def checkSetAndGetOxydantAndCoalTemperature(self):
         """Check whether the temperature of oxydant and coal could be set and get for coal inlet boundary."""
         from Pages.CoalCombustionModel import CoalCombustionModel
-        CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
+        CoalCombustionModel(self.case).setCoalCombustionModel('homogeneous_fuel')
 
         model = Boundary("inlet", "charb1", self.case)
         coal_model = Boundary("coal_inlet", "charb1", self.case)
@@ -3063,7 +3063,7 @@ class CoalInletBoundaryTestCase(ModelTest):
     def checkSetAndGetCoalFlow(self):
         """Check whether the flow of inlet coal could be set and get for coal inlet boundary."""
         from Pages.CoalCombustionModel import CoalCombustionModel
-        CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
+        CoalCombustionModel(self.case).setCoalCombustionModel('homogeneous_fuel')
 
         model = Boundary("inlet", "charb1", self.case)
         coal_model = Boundary("coal_inlet", "charb1", self.case)
@@ -3101,7 +3101,7 @@ class CoalInletBoundaryTestCase(ModelTest):
         os.remove("dp_FCP")
         from Pages.CoalCombustionModel import CoalCombustionModel
         m = CoalCombustionModel(self.case)
-        m.setCoalCombustionModel('coal_homo')
+        m.setCoalCombustionModel('homogeneous_fuel')
 
         # creation du fichier dp_FCP avec 2 charbons et 3 classes
         self.case['data_path'] = "."
@@ -3170,7 +3170,7 @@ class CoalInletBoundaryTestCase(ModelTest):
         os.remove("dp_FCP")
         from Pages.CoalCombustionModel import CoalCombustionModel
         m = CoalCombustionModel(self.case)
-        m.setCoalCombustionModel('coal_homo')
+        m.setCoalCombustionModel('homogeneous_fuel')
 
         # creation du fichier dp_FCP avec 3 charbons et 6 classes
         self.case['data_path'] = "."

@@ -126,7 +126,7 @@ def define_domain_parameters(domain):
 
     # If thermochemistry applies, the name of the thermochemistry data file
     # may be specified. For example:
-    # domain.thermochemistry_data = 'dp_FCP'
+    # domain.thermochemistry_data = 'dp_FCP.xml'
 
     if domain.param == None:
         domain.thermochemistry_data = None

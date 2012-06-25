@@ -111,6 +111,1064 @@ _scalar_number(const char* model)
   return nb;
 }
 
+/*-----------------------------------------------------------------------------
+ * Return an integer for class number
+ *
+ *   parameters:
+ *    icha    -->   char number
+ *    type    -->   type of diameter definition
+ *    value  <--    nomber of class
+ *----------------------------------------------------------------------------*/
+
+static int
+_cs_gui_get_nb_class(const int icha,
+                     const int type)
+{
+    char *path;
+    int value = 0;
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    if (type == 1)
+        cs_xpath_add_elements(&path, 2, "class", "diameter");
+    else if (type == 2)
+        cs_xpath_add_elements(&path, 2, "class", "mass_percent");
+    value = cs_gui_get_nb_element(path);
+    BFT_FREE(path);
+
+    return value;
+}
+/*-----------------------------------------------------------------------------
+ * Return an integer for the refusal number
+ *
+ *   parameters:
+ *    icha    -->   char number
+ *    value  <--    nomber of refusal
+ *----------------------------------------------------------------------------*/
+
+static int
+_cs_gui_get_nb_refusal(const int icha)
+{
+    char *path;
+    int value = 0;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "refusal");
+    value = cs_gui_get_nb_element(path);
+    BFT_FREE(path);
+
+    return value ;
+}
+/*-----------------------------------------------------------------------------
+ * Return integer for diameter type
+ *
+ *   parameters:
+ *    icha     -->  char number
+ *    ichoice  <--  integer for diameter type
+ *----------------------------------------------------------------------------*/
+
+static int
+_get_diameter_type(const int icha)
+{
+    char *path;
+    char *buff = NULL;
+    int   ichoice;
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "diameter_type");
+    cs_xpath_add_function_text(&path);
+    buff = cs_gui_get_text_value(path);
+    if (buff == NULL) {
+        ichoice = 1;
+    } else {
+        if (cs_gui_strcmp(buff, "automatic"))
+            ichoice = 1;
+        else if (cs_gui_strcmp(buff, "rosin-rammler_law"))
+            ichoice = 2;
+        else
+            bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+    }
+    BFT_FREE(path);
+    BFT_FREE(buff);
+
+    return ichoice;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for diameter value
+ *
+ *   parameters:
+ *    icha     -->  char number
+ *    icla     -->  class number
+ *    result  <--   diameter value
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_solid_fuel_diameter(const int icha,
+                         const int icla)
+{
+    char *path;
+    double result;
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "class");
+    cs_xpath_add_element_num(&path, "diameter", icla);
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+    BFT_FREE(path);
+
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for refusal diameter
+ *
+ *   parameters:
+ *    icha     -->  char number
+ *    ii       -->  refusal number
+ *    result  <--   refusal diameter
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_solid_fuel_refusal_diameter(const int ii,
+                                 const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element_num(&path, "refusal", ii);
+    cs_xpath_add_element(&path, "diameter");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for refusal value
+ *
+ *   parameters:
+ *    icha     -->  char number
+ *    ii       -->  refusal number
+ *    result  <--   refusal value
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_solid_fuel_refusal_value(const int ii,
+                              const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element_num(&path, "refusal", ii);
+    cs_xpath_add_element(&path, "value");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for refusal percent
+ *
+ *   parameters:
+ *    icha     -->  char number
+ *    ii       -->  refusal number
+ *    result  <--   refusal value
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_solid_fuel_pourc(const int ii,
+                      const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "class");
+    cs_xpath_add_element_num(&path, "mass_percent", ii);
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for the composition on dry
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    type     <--   type of elementaire
+ *    resutl   <--   composition on dry value
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_solid_fuel_composition_on_dry(const int icha,
+                                   const char *const type)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, type);
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for specific heat average
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   specific heat average
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_solid_fuel_specific_heat_average(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "specific_heat_average");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for solid fuel density
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   density
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_solid_fuel_density(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "density");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for ashes rate
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   ashes rate
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_ashes_rate(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "rate_of_ashes_on_mass");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for humidity rate
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   humiditu rate
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_humidity_rate(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "moisture");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for volatile matter
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   valatile matter rate
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_volatile_matter(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "volatile_matter");
+    cs_xpath_add_function_text(&path);
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for ashes enthalpy
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   ashes enthalpy
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_ashes_enthalpy(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "ashes_enthalpy");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for ashes thermal capacity
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   ashes thermal capacity
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_ashes_thermal_capacity(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "ashes_thermal_capacity");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return integer for PCI type
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    ichoice  <--   integer for PCI type
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_PCI_type(const int icha)
+{
+    char *path;
+    char *path2;
+    char *buff = NULL;
+    char *buff2 = NULL;
+    double   ichoice;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "PCI");
+    cs_xpath_add_attribute(&path,"choice");
+    buff = cs_gui_get_attribute_value(path);
+    if (buff == NULL) {
+        ichoice = 0.;
+    } else {
+        if (cs_gui_strcmp(buff, "PCI"))
+        {
+            path2 = cs_xpath_init_path();
+            cs_xpath_add_elements(&path2,2,"thermophysical_models", "solid_fuels");;
+            cs_xpath_add_element_num(&path2, "solid_fuel", icha);
+            cs_xpath_add_element(&path2, "PCI");
+            cs_xpath_add_element(&path2, "type");
+            cs_xpath_add_function_text(&path2);
+            buff2 = cs_gui_get_text_value(path2);
+            if (buff2 == NULL) {
+                ichoice = 1;
+            } else {
+                if (cs_gui_strcmp(buff2, "dry_basis"))
+                    ichoice = 1;
+                else if (cs_gui_strcmp(buff2, "dry_ash_free"))
+                    ichoice = 0;
+                else if (cs_gui_strcmp(buff2, "as_received"))
+                    ichoice = 2;
+                else
+                    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path2);
+            }
+        }
+        else if (cs_gui_strcmp(buff, "PCS"))
+        {
+            path2 = cs_xpath_init_path();
+            cs_xpath_add_elements(&path2,2,"thermophysical_models", "solid_fuels");
+            cs_xpath_add_element_num(&path2, "solid_fuel", icha);
+            cs_xpath_add_element(&path2, "PCI");
+            cs_xpath_add_element(&path2, "type");
+            cs_xpath_add_function_text(&path2);
+            buff2 = cs_gui_get_text_value(path2);
+            if (buff2 == NULL) {
+                ichoice = 4;
+            } else {
+                if (cs_gui_strcmp(buff2, "dry_basis"))
+                    ichoice = 4;
+                else if (cs_gui_strcmp(buff2, "dry_ash_free"))
+                    ichoice = 3;
+                else if (cs_gui_strcmp(buff2, "as_received"))
+                    ichoice = 5;
+                else
+                    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path2);
+            }
+        }
+        else if (cs_gui_strcmp(buff, "IGT_correlation"))
+            ichoice = 6;
+        else
+            bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+    }
+    BFT_FREE(path);
+    BFT_FREE(buff);
+    return ichoice;
+}
+/*-----------------------------------------------------------------------------
+ * Return integer for Y1/Y2 coeffficient type
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    ichoice  <--   integer for Y1/Y2 coefficient type
+ *----------------------------------------------------------------------------*/
+
+static int
+_get_Y1Y2_coefficient_type(const int icha)
+{
+    char *path;
+    char *buff = NULL;
+    int   ichoice;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path,2,"devolatilisation_parameters","stoichiometric_coefficient");
+    cs_xpath_add_attribute(&path,"type");
+    buff = cs_gui_get_attribute_value(path);
+    if (buff == NULL) {
+        ichoice = 0;
+    } else {
+        if (cs_gui_strcmp(buff, "automatic_CHONS"))
+            ichoice = 0;
+        else if (cs_gui_strcmp(buff, "user_define"))
+            ichoice = 1;
+        else if (cs_gui_strcmp(buff, "automatic_formula")) // ATTENTION DEFINIR UN TRUC ICI
+            ichoice = 2;
+        else
+            bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+    }
+    BFT_FREE(path);
+    BFT_FREE(buff);
+    return ichoice;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for PCI value
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   PCI value
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_PCI_value(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path,"PCI");
+    cs_xpath_add_element(&path,"value");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for Y1 coefficient
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   Y1 coefficient
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_Y1_coefficient(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path,3,"devolatilisation_parameters","stoichiometric_coefficient", "Y1");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for Y2 coefficient
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   Y2 coefficient
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_Y2_coefficient(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path,3,"devolatilisation_parameters","stoichiometric_coefficient", "Y2");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for pre exponential factor
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   A1 pre exponentia factor
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_A1_pre_exponential_factor(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path,2,"devolatilisation_parameters", "A1_pre-exponential_factor");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for A2 pre exponential factor
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   A2 ore exoibebtuak factor
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_A2_pre_exponential_factor(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path,2,"devolatilisation_parameters", "A2_pre-exponential_factor");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for E1 energy of activation
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   E1 energy of activation
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_E1_energy_of_activation(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path,2,"devolatilisation_parameters", "E1_energy_of_activation");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for E2 energy of activation
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   E2 energy of activation
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_E2_energy_of_activation(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path,2,"devolatilisation_parameters", "E2_energy_of_activation");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for partition in HCN NO reaction number 1
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   partition in HCN/NO reaction number 1
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_nitrogen_partition_in_HCN_NH3_reaction_1(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path, 2, "devolatilisation_parameters", "HCN_NH3_partitionning_reaction_1");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for partition in HCN/NO reaction number 2
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   partition in HCN/NO reaction number 2
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_nitrogen_partition_in_HCN_NH3_reaction_2(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path, 2, "devolatilisation_parameters", "HCN_NH3_partitionning_reaction_2");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for nitrogen fraction
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    result   <--   nitrogen fraction
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_nitrogen_fraction(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path, 2, "nox_formation", "nitrogen_fraction");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for nitrogen concentration
+ *
+ *   parameters:
+ *    param    -->   name of parameter
+ *    keyword  <--   nitrogen concentration
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_nitrogen_concentration(const int icha)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path, 2, "nox_formation", "nitrogen_concentration");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for pre exponential consant
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    species  -->   species choice
+ *    result   <--   pre exponential constant
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_pre_exponential_constant(const int icha,
+			      const char *const species)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path,2,"char_combustion","specie");
+    cs_xpath_add_test_attribute(&path, "nature", species);
+    cs_xpath_add_element(&path,"pre-exponential_constant");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for energy of activation
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    species  -->   species choice
+ *    result   <--   energy of activation
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_energy_of_activation(const int icha,
+			      const char *const species)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path,2,"char_combustion","specie");
+    cs_xpath_add_test_attribute(&path, "nature", species);
+    cs_xpath_add_element(&path,"energy_of_activation");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return integer for order of reaction
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    species  -->   species choice
+ *    ichoice  <--   order of reaction
+ *----------------------------------------------------------------------------*/
+
+static int
+_get_order_of_reaction(const int icha,
+                       const char *const species)
+{
+    char *path;
+    char *buff = NULL;
+    int   ichoice;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path,2,"char_combustion","specie");
+    cs_xpath_add_test_attribute(&path, "nature", species);
+    cs_xpath_add_element(&path,"order_of_reaction");
+    cs_xpath_add_attribute(&path,"choice");
+    buff = cs_gui_get_attribute_value(path);
+    if (buff == NULL) {
+        ichoice = 0;
+    } else {
+        if (cs_gui_strcmp(buff, "0.5"))
+            ichoice = 0;
+        else if (cs_gui_strcmp(buff, "1"))
+            ichoice = 1;
+        else
+            bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+    }
+    BFT_FREE(path);
+    BFT_FREE(buff);
+    return ichoice;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for oxydan composition
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    species  -->   species choice
+ *    result   <--   oxydant composition
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_oxydant_composition(const int icha,
+			      const char *const species)
+{
+    char *path;
+    double result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,3,
+                          "thermophysical_models",
+                          "solid_fuels",
+                          "oxidants");
+    cs_xpath_add_element_num(&path, "oxidant", icha);
+    cs_xpath_add_element(&path, species);
+    cs_xpath_add_function_text(&path);
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(path);
+    return result;
+}
+/*-----------------------------------------------------------------------------
+ * Return integer parameters for oxydant type
+ *
+ *   parameters:
+ *    ichoice  <--   value of parameter
+ *----------------------------------------------------------------------------*/
+
+static int
+_get_oxydant_type(void) /*ici un char*/
+{
+    char *path;
+    char *buff = NULL;
+    int   ichoice;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,3,
+            "thermophysical_models",
+            "solid_fuels",
+            "oxidants");
+    cs_xpath_add_element(&path,"oxidant_type");
+    cs_xpath_add_function_text(&path);
+    buff = cs_gui_get_text_value(path);
+    if (buff == NULL) {
+        ichoice = 0;
+    } else {
+        if (cs_gui_strcmp(buff, "volumic_percent"))
+            ichoice = 0;
+        else if (cs_gui_strcmp(buff, "molar"))
+            ichoice = 1;
+        else
+            bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+    }
+    BFT_FREE(path);
+    BFT_FREE(buff);
+    return ichoice;
+}
+/*-----------------------------------------------------------------------------
+ * Return double for absorption coeffient
+ *
+ *   parameters:
+ *    result  <--   absorption coefficient
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_absorption_coefficient(void) /*ici un char*/
+{
+    char *path;
+    double   result;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element(&path,"absorption_coefficient");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &result))
+        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+    BFT_FREE(path);
+    return result;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return integer for kinetics status
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    element  -->   char element (CO2, H2O)
+ *    keyword  <--  value of attribute node
+ *----------------------------------------------------------------------------*/
+static void
+_getKineticsStatus(const int   *const icha,
+                   const char*        element,
+                         int   *const keyword)
+{
+    char *path   = NULL;
+    int   status = 0;
+
+    path = cs_xpath_init_path();
+
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_elements(&path, 2, "char_combustion", "specie");
+    cs_xpath_add_test_attribute(&path, "nature", element);
+
+    cs_xpath_add_attribute(&path, "status");
+
+    if (cs_gui_get_status(path, &status))
+        *keyword = status;
+    BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Return integer for NOx combustion status
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    keyword  <--  value of attribute node
+ *----------------------------------------------------------------------------*/
+static void
+_getNOxStatus(const int   *const icha,
+                    int   *const keyword)
+{
+    char *path   = NULL;
+    int   status = 0;
+
+    path = cs_xpath_init_path();
+
+    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+    cs_xpath_add_element_num(&path, "solid_fuel", icha);
+    cs_xpath_add_element(&path, "nox_formation");
+
+    cs_xpath_add_attribute(&path, "status");
+
+    if (cs_gui_get_status(path, &status))
+        *keyword = status;
+    BFT_FREE(path);
+}
+
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/
@@ -151,7 +1209,7 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
                                int *const icoebu,
                                int *const icobml,
                                int *const icolwc,
-                               int *const icp3pl,
+                               int *const iccoal,
                                int *const icpl3c,
                                int *const icfuel,
                                int *const ieljou,
@@ -174,7 +1232,7 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
     ippmod[*icoebu - 1] = -1;
     ippmod[*icobml - 1] = -1;
     ippmod[*icolwc - 1] = -1;
-    ippmod[*icp3pl - 1] = -1;
+    ippmod[*iccoal - 1] = -1;
     ippmod[*icpl3c - 1] = -1;
     ippmod[*icfuel - 1] = -1;
     ippmod[*ieljou - 1] = -1;
@@ -194,12 +1252,12 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
 
     if (isactiv)
     {
-        if (cs_gui_strcmp(vars->model, "pulverized_coal"))
+        if (cs_gui_strcmp(vars->model, "solid_fuels"))
         {
-            if (cs_gui_strcmp(vars->model_value, "coal_homo"))
-                ippmod[*icp3pl - 1] = 0;
-            else if (cs_gui_strcmp(vars->model_value, "coal_homo2"))
-                ippmod[*icp3pl - 1] = 1;
+            if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel"))
+                ippmod[*iccoal - 1] = 0;
+            else if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture"))
+                ippmod[*iccoal - 1] = 1;
             else
                 bft_error(__FILE__, __LINE__, 0,
                           _("Invalid coal model: %s.\n"), vars->model_value);
@@ -305,7 +1363,7 @@ void CS_PROCF (uicpi1, UICPI1) (double *const srrom,
   cs_gui_numerical_double_parameters("density_relaxation", srrom);
 
   if (cs_gui_strcmp(vars->model, "gas_combustion") ||
-      cs_gui_strcmp(vars->model, "pulverized_coal")) {
+      cs_gui_strcmp(vars->model, "solid_fuels")) {
       cs_gui_properties_value("dynamic_diffusion", diftl0);
   }
 
@@ -350,13 +1408,19 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                                 const int *const nsalpp,
                                 const int *const nsalto,
                                 const int *const ippmod,
-                                const int *const icp3pl,
+                                const int *const iccoal,
                                 const int *const ipppro,
                                 const int *const ipproc,
+                                const int *const ieqnox,
+                                const int *const ieqco2,
                                 const int *const ihtco2,
+                                const int *const ihth2o,
                                 const int *const itemp1,
                                 const int *const irom1,
                                 const int *const iym1,
+                                const int *const ighcn1,
+                                const int *const ighcn2,
+                                const int *const ignoth,
                                 const int *const immel,
                                 const int *const itemp2,
                                 const int *const ix2,
@@ -367,7 +1431,11 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                                 const int *const igmdv2,
                                 const int *const igmhet,
                                 const int *const ighco2,
-                                const int *const igmsec)
+                                const int *const ighh2o,
+                                const int *const igmsec,
+                                const int *const ibcarbone,
+                                const int *const iboxygen,
+                                const int *const ibhydrogen)
 {
   int i = 0;
   int n;
@@ -414,29 +1482,80 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CO")+1, char);
   strcpy(vars->properties_name[n++], "YM_CO");
 
- /*  YM_O2 */
+ /*  YM_H2S */
   vars->properties_ipp[n] = ipppro[ ipproc[ iym1[3] -1 ]-1 ];
   vars->propce[n] = iym1[3];
+  BFT_MALLOC(vars->properties_name[n], strlen("YM_H2S")+1, char);
+  strcpy(vars->properties_name[n++], "YM_H2S");
+
+ /*  YM_H2 */
+  vars->properties_ipp[n] = ipppro[ ipproc[ iym1[4] -1 ]-1 ];
+  vars->propce[n] = iym1[4];
+  BFT_MALLOC(vars->properties_name[n], strlen("YM_H2")+1, char);
+  strcpy(vars->properties_name[n++], "YM_H2");
+
+ /*  YM_HCN */
+  vars->properties_ipp[n] = ipppro[ ipproc[ iym1[5] -1 ]-1 ];
+  vars->propce[n] = iym1[5];
+  BFT_MALLOC(vars->properties_name[n], strlen("YM_HCN")+1, char);
+  strcpy(vars->properties_name[n++], "YM_HCN");
+
+ /*  YM_NH3 */
+  vars->properties_ipp[n] = ipppro[ ipproc[ iym1[6] -1 ]-1 ];
+  vars->propce[n] = iym1[6];
+  BFT_MALLOC(vars->properties_name[n], strlen("YM_NH3")+1, char);
+  strcpy(vars->properties_name[n++], "YM_NH3");
+
+ /*  YM_O2 */
+  vars->properties_ipp[n] = ipppro[ ipproc[ iym1[7] -1 ]-1 ];
+  vars->propce[n] = iym1[7];
   BFT_MALLOC(vars->properties_name[n], strlen("YM_O2")+1, char);
   strcpy(vars->properties_name[n++], "YM_O2");
 
  /*  YM_CO2 */
-  vars->properties_ipp[n] = ipppro[ ipproc[ iym1[4] -1 ]-1 ];
-  vars->propce[n] = iym1[4];
+  vars->properties_ipp[n] = ipppro[ ipproc[ iym1[8] -1 ]-1 ];
+  vars->propce[n] = iym1[8];
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CO2")+1, char);
   strcpy(vars->properties_name[n++], "YM_CO2");
 
  /*  YM_H2O */
-  vars->properties_ipp[n] = ipppro[ ipproc[ iym1[5] -1 ]-1 ];
-  vars->propce[n] = iym1[5];
+  vars->properties_ipp[n] = ipppro[ ipproc[ iym1[9] -1 ]-1 ];
+  vars->propce[n] = iym1[9];
   BFT_MALLOC(vars->properties_name[n], strlen("YM_H2O")+1, char);
   strcpy(vars->properties_name[n++], "YM_H2O");
 
+ /*  YM_SO2 */
+  vars->properties_ipp[n] = ipppro[ ipproc[ iym1[10] -1 ]-1 ];
+  vars->propce[n] = iym1[10];
+  BFT_MALLOC(vars->properties_name[n], strlen("YM_SO2")+1, char);
+  strcpy(vars->properties_name[n++], "YM_SO2");
+
  /*  YM_N2 */
-  vars->properties_ipp[n] = ipppro[ ipproc[ iym1[6] -1 ]-1 ];
-  vars->propce[n] = iym1[6];
+  vars->properties_ipp[n] = ipppro[ ipproc[ iym1[11] -1 ]-1 ];
+  vars->propce[n] = iym1[11];
   BFT_MALLOC(vars->properties_name[n], strlen("YM_N2")+1, char);
   strcpy(vars->properties_name[n++], "YM_N2");
+
+  if (*ieqnox == 1)
+  {
+      /* IGHCN1 */
+      vars->properties_ipp[n] = ipppro[ ipproc[ *ighcn1 -1 ]-1 ];
+      vars->propce[n] = *ighcn1;
+      BFT_MALLOC(vars->properties_name[n], strlen("EXP1")+1, char);
+      strcpy(vars->properties_name[n++], "EXP1");
+
+      /* IGHCN2 */
+      vars->properties_ipp[n] = ipppro[ ipproc[ *ighcn2 -1 ]-1 ];
+      vars->propce[n] = *ighcn2;
+      BFT_MALLOC(vars->properties_name[n], strlen("EXP2")+1, char);
+      strcpy(vars->properties_name[n++], "EXP2");
+
+      /* ignoth */
+      vars->properties_ipp[n] = ipppro[ ipproc[ *ignoth -1 ]-1 ];
+      vars->propce[n] = *ignoth;
+      BFT_MALLOC(vars->properties_name[n], strlen("EXP3")+1, char);
+      strcpy(vars->properties_name[n++], "EXP3");
+  }
 
  /* IMEL */
   vars->properties_ipp[n] = ipppro[ ipproc[ *immel -1 ]-1 ];
@@ -584,7 +1703,26 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
         }
     }
 
-    if (ippmod[*icp3pl -1] == 1)
+    if (*ihth2o == 1)
+    {
+        /* IGNH2O loop on classes */
+        BFT_REALLOC(name, strlen("Ga_HET_H2O")+1 + 2, char);
+        strcpy(name, "Ga_HET_H2O");
+        for (i = 0; i < *nclass; i++)
+        {
+            sprintf(snumpp, "%2.2i", i+1);
+            strcat(name, snumpp);
+
+            vars->properties_ipp[n] = ipppro[ ipproc[ ighh2o[i] -1 ]-1 ];
+            vars->propce[n] = ighh2o[i];
+            BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+            strcpy(vars->properties_name[n++], name);
+
+           strcpy(name, "Ga_HET_H2O");
+        }
+    }
+
+    if (ippmod[*iccoal -1] == 1)
     {
         /* IGMSEC loop on classes */
         BFT_REALLOC(name, strlen("Ga_SEC")+1 + 2, char);
@@ -602,6 +1740,24 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
             strcpy(name, "Ga_SEC");
         }
     }
+
+ /* Bilan_C */
+  vars->properties_ipp[n] = ipppro[ ipproc[ *ibcarbone -1 ]-1 ];
+  vars->propce[n] = *ibcarbone;
+  BFT_MALLOC(vars->properties_name[n], strlen("Bilan_C")+1, char);
+  strcpy(vars->properties_name[n++], "Bilan_C");
+
+ /* Bilan_O */
+  vars->properties_ipp[n] = ipppro[ ipproc[ *iboxygen -1 ]-1 ];
+  vars->propce[n] = *iboxygen;
+  BFT_MALLOC(vars->properties_name[n], strlen("Bilan_O")+1, char);
+  strcpy(vars->properties_name[n++], "Bilan_O");
+
+ /* Bilan_H */
+  vars->properties_ipp[n] = ipppro[ ipproc[ *ibhydrogen -1 ]-1 ];
+  vars->propce[n] = *ibhydrogen;
+  BFT_MALLOC(vars->properties_name[n], strlen("Bilan_H")+1, char);
+  strcpy(vars->properties_name[n++], "Bilan_H");
 
   BFT_FREE(name);
   BFT_FREE(snumpp);
@@ -909,9 +2065,11 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
                                 const int *const nclass,
                                 const int *const noxyd,
                                 const int *const ippmod,
-                                const int *const icp3pl,
+                                const int *const iccoal,
+                                const int *const ieqnox,
                                 const int *const ieqco2,
                                 const int *const ihtco2,
+                                const int *const ihth2o,
                                 const int *const ihm,
                                 const int *const inp,
                                 const int *const ixch,
@@ -920,19 +2078,34 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
                                 const int *const ih2,
                                 const int *const if1m,
                                 const int *const if2m,
-                                const int *const if3m,
-                                const int *const if3mc2,
-                                const int *const if4p2m,
+                                const int *const if4m,
                                 const int *const if5m,
                                 const int *const if6m,
                                 const int *const if7m,
-                                const int *const iyco2)
+                                const int *const if8m,
+                                const int *const ifvp2m,
+                                const int *const iyco2,
+                                const int *const if9m,
+                                const int *const iyhcn,
+                                const int *const iyno,
+                                const int *const ihox)
 {
   int i;
   char *name = NULL;
   char *snumsca = NULL;
+  int n = 0;
 
   cs_var_t  *vars = cs_glob_var;
+
+  if (*ieqnox == 1 )
+      n = n + 3;
+  if (*ieqco2 == 1 )
+      n = n + 1;
+  if (*ihtco2 == 1 )
+      n = n + 1;
+  if (*ihth2o == 1 )
+      n = n + 1;
+  vars->nscapp +=n;
 
   if (vars->nscaus > 0) {
     BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
@@ -1025,22 +2198,22 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
     strcpy(name, "Fr_MV2");
   }
 
-    /* IF3M */
-    BFT_MALLOC(vars->label[*if3m -1], strlen("Fr_HET_O2")+1, char);
-    strcpy(vars->label[*if3m -1], "Fr_HET_O2");
+    /* IF7M */
+    BFT_MALLOC(vars->label[*if7m -1], strlen("Fr_HET_O2")+1, char);
+    strcpy(vars->label[*if7m -1], "Fr_HET_O2");
 
     if (*ihtco2 == 1)
     {
         /* IF3MC2 */
-        BFT_MALLOC(vars->label[*if3mc2 -1], strlen("Fr_HET_CO2")+1, char);
-        strcpy(vars->label[*if3mc2 -1], "Fr_HET_CO2");
+        BFT_MALLOC(vars->label[*if8m -1], strlen("Fr_HET_CO2")+1, char);
+        strcpy(vars->label[*if8m -1], "Fr_HET_CO2");
     }
 
-    /* IF4P2M */
-    BFT_MALLOC(vars->label[*if4p2m -1], strlen("Var_AIR")+1, char);
-    strcpy(vars->label[*if4p2m -1], "Var_AIR");
+    /* IFVP2M */
+    BFT_MALLOC(vars->label[*ifvp2m -1], strlen("Var_F1F2")+1, char);
+    strcpy(vars->label[*ifvp2m -1], "Var_F1F2");
 
-    if (ippmod[*icp3pl -1] == 1)
+    if (ippmod[*iccoal -1] == 1)
     {
         /* IXWT */
         BFT_MALLOC(name, strlen("XWT_CP")+1 + 2, char);
@@ -1055,24 +2228,24 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
             strcpy(name, "XWT_CP");
         }
 
-        /* IF5M */
-        BFT_MALLOC(vars->label[*if5m -1], strlen("FR_H20")+1, char);
-        strcpy(vars->label[*if5m -1], "FR_H20");
+        /* IF6M */
+        BFT_MALLOC(vars->label[*if6m -1], strlen("FR_H20")+1, char);
+        strcpy(vars->label[*if6m -1], "FR_H20");
     }
 
 
     if (*noxyd >= 2)
     {
-        /* IF6M */
-        BFT_MALLOC(vars->label[*if6m -1], strlen("FR_OXYD2")+1, char);
-        strcpy(vars->label[*if6m -1], "FR_OXYD2");
+        /* IF4M */
+        BFT_MALLOC(vars->label[*if4m -1], strlen("FR_OXYD2")+1, char);
+        strcpy(vars->label[*if4m -1], "FR_OXYD2");
     }
 
     if (*noxyd == 3)
     {
-        /* IF7M */
-        BFT_MALLOC(vars->label[*if7m -1], strlen("FR_OXYD3")+1, char);
-        strcpy(vars->label[*if7m -1], "FR_OXYD3");
+        /* IF5M */
+        BFT_MALLOC(vars->label[*if5m -1], strlen("FR_OXYD3")+1, char);
+        strcpy(vars->label[*if5m -1], "FR_OXYD3");
     }
 
     if (*ieqco2 == 1)
@@ -1080,6 +2253,29 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
         /* IYCO2 */
         BFT_MALLOC(vars->label[*iyco2 -1], strlen("FR_CO2")+1, char);
         strcpy(vars->label[*iyco2 -1], "FR_CO2");
+    }
+
+    if (*ihth2o == 1)
+    {
+        /* FR_HET_H2O */
+        BFT_MALLOC(vars->label[*if9m -1], strlen("FR_HET_H2O")+1, char);
+        strcpy(vars->label[*if9m -1], "FR_HET_H2O");
+    }
+
+
+    if (*ieqnox == 1)
+    {
+        /* FR_HCN */
+        BFT_MALLOC(vars->label[*iyhcn -1], strlen("FR_HCN")+1, char);
+        strcpy(vars->label[*iyhcn -1], "FR_HCN");
+
+        /* FR_NO */
+        BFT_MALLOC(vars->label[*iyno -1], strlen("FR_NO")+1, char);
+        strcpy(vars->label[*iyno -1], "FR_NO");
+
+        /* Enth_Ox */
+        BFT_MALLOC(vars->label[*ihox -1], strlen("Enth_Ox")+1, char);
+        strcpy(vars->label[*ihox -1], "Enth_Ox");
     }
 
   BFT_FREE(name);
@@ -1311,6 +2507,366 @@ void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
 #endif
 }
 
+
+/*----------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
+ * for physical properties of the activated specific physics (pulverized solid fuels)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
+				const int    *const iihmpr,
+				const int    *const ncharm,
+                                      int    *const ncharb,
+                                      int    *const nclpch,
+                                      int    *const nclacp,
+				const int    *const ncpcmx,
+				      int    *const ichcor,
+				      double *const diam20,
+                                      double *const cch,
+                                      double *const hch,
+                                      double *const och,
+                                      double *const nch,
+                                      double *const sch,
+                                      double *const ipci,
+                                      double *const pcich,
+                                      double *const cp2ch,
+                                      double *const rho0ch,
+                                      double *const cck,
+                                      double *const hck,
+                                      double *const ock,
+                                      double *const nck,
+                                      double *const sck,
+                                      double *const pcick,
+                                      double *const xashch,
+                                      double *const xashsec,
+                                      double *const xwatch,
+                                      double *const h0ashc,
+                                      double *const cpashc,
+                                      int    *const iy1ch,
+                                      double *const y1ch,
+				      int    *const iy2ch,
+                                      double *const y2ch,
+                                      double *const a1ch,
+                                      double *const a2ch,
+                                      double *const e1ch,
+                                      double *const e2ch,
+                                      double *const crepn1,
+                                      double *const crepn2,
+                                      double *const ahetch,
+                                      double *const ehetch,
+                                      int    *const iochet,
+                                      double *const ahetc2,
+                                      double *const ehetc2,
+                                      int    *const ioetc2,
+                                      double *const ahetwt,
+                                      double *const ehetwt,
+                                      int    *const ioetwt,
+                                const int    *const ieqnox,
+                                const int    *const ihtco2,
+                                const int    *const ihth2o,
+                                      double *const qpr,
+                                      double *const fn,
+                                      double *const ckabs1,
+                                      int    *const noxyd,
+                                      double *const oxyo2,
+                                      double *const oxyn2,
+                                      double *const oxyh2o,
+                                      double *const oxyco2)
+{
+    char *model = NULL;
+    int iclag;
+    int idecal;
+    int isactiv = 0;
+    int itypdp;
+    int itypoxy;
+    int icha;
+    int iclapc;
+    int icla;
+    int ii;
+    double *pourc = NULL;
+    double *refus= NULL;
+    double *rf = NULL;
+    double kk1, kk2, kk3, kk4;
+    double tmp, qq, var, xx;
+    int ioxy;
+    double coef;
+    int nbrf;
+    double *dprefus= NULL;
+    double volatile_matter = 0.;
+
+    if (*iihmpr != 1)
+        cs_gui_load_file("dp_FCP.xml");
+
+    /* ---- Nb de charbons */
+    *ncharb = cs_gui_get_tag_number("/solid_fuels/solid_fuel", 1);
+    if (*ncharb > *ncharm)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Coal number is limited to %i\n"
+                  "In the parametric file it is %i.\n"
+                  "Calculation is interupted. Check the parametric file.\n"),
+                  *ncharb, *ncharm);
+
+    /* --- BCLE SUR LES CHARBONS */
+    iclag  = 0;
+    idecal = 0;
+
+    for (icha = 0; icha < *ncharb; icha++)
+    {
+        /* ---- Nb de classes */
+        itypdp = _get_diameter_type(icha+1);
+        nclpch[icha] = _cs_gui_get_nb_class(icha+1, itypdp);
+        if (nclpch[icha] > *ncpcmx)
+        {
+            bft_error(__FILE__, __LINE__, 0,
+                      _("class number by coal is limited.\n"
+                      "For coal %i it is %i \n in the parametric file \n"),
+                      icha, nclpch[icha]);
+        }
+
+        /*---- Calcul du nb de classes et remplissage de ICHCOR */
+        *nclacp = *nclacp + nclpch[icha];
+        for (iclapc = 0; iclapc < nclpch[icha]; iclapc++)
+        {
+            icla = iclapc+idecal;
+            ichcor[icla] = icha +1 ;
+        }
+        idecal = nclpch[icha];
+
+        /* Type de diametres  = 1 ---> diametre donnes
+                              = 2 ---> loi de Rosin-Rammler */
+        if (itypdp == 1)
+        {
+            for (icla = iclag; icla < iclag+nclpch[icha]; icla++)
+                diam20[icla] = _get_solid_fuel_diameter(icha+1,icla+1);
+        } else if (itypdp == 2) {
+            nbrf = _cs_gui_get_nb_refusal(icha+1);
+
+            BFT_MALLOC(dprefus, nbrf,         double);
+            BFT_MALLOC(refus,   nbrf,         double);
+            BFT_MALLOC(pourc,   nclpch[icha], double);
+
+            for (ii = 0; ii < nbrf; ii++)
+            {
+                dprefus[ii] = _get_solid_fuel_refusal_diameter(ii+1,icha+1)*1000000;
+                refus[ii] = _get_solid_fuel_refusal_value(ii+1,icha+1);
+            }
+            for (ii = 0; ii<nclpch[icha]; ii++)
+                pourc[ii] = _get_solid_fuel_pourc(ii+1,icha+1);
+
+            /* decoupage des classes */
+            BFT_MALLOC(rf, nclpch[icha], double);
+            rf[0] = pourc[0] / 2.;
+
+            for (icla = 1; icla < nclpch[icha];icla++)
+                rf[icla] = rf[icla-1] + (pourc[icla] + pourc[icla-1]) / 2.;
+
+            kk1 = 0.;
+            kk2 = 0.;
+            kk3 = 0.;
+            kk4 = 0.;
+            for (ii = 0; ii < nbrf ; ii++)
+            {
+                kk1 = kk1 + log(dprefus[ii]);
+                kk2 = kk2 + log(-log(refus[ii]));
+                kk3 = kk3 + log(dprefus[ii])*log(dprefus[ii]);
+                kk4 = kk4 + log(dprefus[ii])*log(-log(refus[ii]));
+            }
+
+            qq  = (nbrf * kk4 - kk1 * kk2) / (nbrf * kk3 - kk1 * kk1);
+            var = (kk2 * kk3 - kk1 * kk4) / (nbrf * kk3 - kk1 * kk1);
+            xx  = exp(-var / qq);
+
+            for (icla = iclag; icla < iclag + nclpch[icha]; icla++)
+                diam20[icla]=  xx*pow((-log(1.-rf[icla-iclag])),(1./qq))*1000000;
+
+            bft_printf("** Rosin-Rammeler results for the coal %i **\n"
+                       "[ Checking of the Rosin-Rammeler law ]\n"
+                       "Diameter       refus given      refus computed\n\n", icha+1);
+
+            for (icla = 0; icla< nbrf; icla++)
+                bft_printf("%f     %f     %f \n", dprefus[icla], refus[icla],
+                           exp(-pow((dprefus[icla]/xx),(qq))));
+
+            bft_printf("\nRefus       diam. given      diam. computed\n");
+
+            for (icla = 0; icla< nbrf; icla++)
+                bft_printf("%f     %f     %f \n", refus[icla], dprefus[icla],
+                           xx*pow((-log(refus[icla])),(1./qq)));
+
+            bft_printf("\nDiameters computed by the Rosin-Rammeler law\n");
+
+            for (icla = iclag; icla <iclag+nclpch[icha]; icla ++)
+                bft_printf("%f     %f \n", icla-iclag,diam20[icla]);
+
+            BFT_FREE(pourc);
+            BFT_FREE(refus);
+            BFT_FREE(dprefus);
+            BFT_FREE(rf);
+
+        } else {
+            bft_error(__FILE__, __LINE__, 0,
+                      _("type diameter value must be equal to 1 or 2.\n"
+                      "Calculation is interupted \n"));
+        }
+
+        iclag = iclag + nclpch[icha];
+
+        /* ---- Composition elementaire en C, H , O , N , S sur sec (% en masse) */
+        cch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"C_composition_on_dry");
+        hch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"H_composition_on_dry");
+        och[icha] = _get_solid_fuel_composition_on_dry(icha+1,"O_composition_on_dry");
+        nch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"N_composition_on_dry");
+        sch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"S_composition_on_dry");
+
+        /* ---- PCI sur charbon sec ou pur suivant la valeur de IPCI */
+        ipci[icha] = _get_PCI_type(icha+1);
+        if (ipci[icha] < 6)
+            pcich[icha] = _get_PCI_value(icha+1);
+
+        volatile_matter = _get_volatile_matter(icha+1);
+        h0ashc[icha] = _get_ashes_enthalpy(icha+1);
+        cpashc[icha] = _get_ashes_thermal_capacity(icha+1);
+
+        /*  ---- CP moyen du charbon sec (J/kg/K) */
+        cp2ch[icha] = _get_solid_fuel_specific_heat_average(icha+1);
+
+        /* ---- Masse volumique initiale (kg/m3) */
+        rho0ch[icha] = _get_solid_fuel_density(icha+1);
+
+        /* ---- Caracteristiques cendres */
+
+        /* ------ Taux de cendre (kg/kg) en % */
+        xashsec[icha] = _get_ashes_rate(icha+1);
+
+        /*      Transformation en kg/kg */
+        xashch[icha] = xashsec[icha]/100.;
+
+        /* ------ Taux d'humidite (kg/kg) en % */
+        xwatch[icha] = _get_humidity_rate(icha+1);
+
+        /*      Transformation en kg/kg */
+        xwatch[icha] = xwatch[icha]/100.;
+
+        /*      Transformation du taux de cendre de sec
+                sur humide en kg/kg */
+        xashch[icha] = xashch[icha]*(1.-xwatch[icha]);
+
+        /* ---- Parametres de devolatilisation (modele de Kobayashi) */
+
+        iy1ch[icha] = _get_Y1Y2_coefficient_type(icha+1);
+        iy2ch[icha] = iy1ch[icha];
+        if (iy1ch[icha] > 0)
+        {
+            y1ch[icha] = _get_Y1_coefficient(icha+1);
+            y2ch[icha] = _get_Y2_coefficient(icha+1);
+        }
+        a1ch[icha] = _get_A1_pre_exponential_factor(icha+1);
+        a2ch[icha] = _get_A2_pre_exponential_factor(icha+1);
+        e1ch[icha] = _get_E1_energy_of_activation(icha+1);
+        e2ch[icha] = _get_E2_energy_of_activation(icha+1);
+
+        /* ---- Repartition de l'azote entre HCN et NH3 */
+        crepn1[icha] = _get_nitrogen_partition_in_HCN_NH3_reaction_1(icha+1);
+        crepn1[*ncharb+icha] = 1-crepn1[icha];
+        crepn2[icha] = _get_nitrogen_partition_in_HCN_NH3_reaction_2(icha+1);
+        crepn2[*ncharb+icha] = 1-crepn2[icha];
+
+        /*  ---- Parametres combustion heterogene pour O2(modele a sphere retrecissante) */
+        ahetch[icha] = _get_pre_exponential_constant(icha+1,"O2");
+        ehetch[icha] = _get_energy_of_activation(icha+1,"O2");
+        iochet[icha] = _get_order_of_reaction(icha+1,"O2");
+
+        /* ---- Parametres combustion heterogene pour CO2(modele a sphere retrecissante) */
+        _getKineticsStatus(icha+1, "CO2", ihtco2);
+        if (ihtco2)
+        {
+            ahetc2[icha] = _get_pre_exponential_constant(icha+1,"CO2");
+            ehetc2[icha] = _get_energy_of_activation(icha+1,"CO2");
+            ioetc2[icha] = _get_order_of_reaction(icha+1,"CO2");
+        }
+
+        /* ---- Parametres combustion heterogene pour H2O (modele a sphere retrecissante) */
+        _getKineticsStatus(icha+1, "H2O", ihth2o);
+        if (ihth2o)
+        {
+            ahetwt[icha] = _get_pre_exponential_constant(icha+1,"H2O");
+            ehetwt[icha] = _get_energy_of_activation(icha+1,"H2O");
+            ioetwt[icha] = _get_order_of_reaction(icha+1,"H2O");
+        }
+
+        /* ---- Parametres modele de NOX
+                QPR = % d'azote libere pendant la devol./%de MV libere pendant la devol */
+        _getNOxStatus(icha+1, ieqnox);
+        if (ieqnox)
+        {
+            qpr[icha] = _get_nitrogen_fraction(icha+1);
+            fn[icha] = _get_nitrogen_concentration(icha+1);
+        }
+    }
+
+    /*        ! --> Lecture rayonnement */
+
+    /*  ! ---- Coefficient d'absorption du melange gazeux */
+    if (*iirayo>0)
+        *ckabs1 = _get_absorption_coefficient();
+
+    /* --> Lecture caracteristiques Oxydants */
+
+    /* ---- Nb d'oxydants */
+    *noxyd = cs_gui_get_tag_number("/oxidants/oxidant", 1);
+    if (*noxyd < 1 || *noxyd > 3 )
+    {
+        bft_error(__FILE__, __LINE__, 0,
+                _("Oxidant number must be between 1 and 3.\n"
+                    "It is  %i in the parametric file \n"
+                    "Calculation is interupted \n"),
+                *noxyd);
+    }
+    itypoxy = _get_oxydant_type();
+
+    /* ---- Composition en O2,N2,H2O,N2 */
+
+    for (ioxy = 0; ioxy < 3; ioxy++)
+    {
+        oxyo2 [ioxy] = 0.;
+        oxyn2 [ioxy] = 0.;
+        oxyh2o[ioxy] = 0.;
+        oxyco2[ioxy] = 0.;
+    }
+    for (ioxy = 0; ioxy < *noxyd; ioxy++)
+    {
+        oxyo2[ioxy] = _get_oxydant_composition(ioxy+1,"O2_composition");
+        oxyn2[ioxy] = _get_oxydant_composition(ioxy+1,"N2_composition");
+        oxyh2o[ioxy] = _get_oxydant_composition(ioxy+1,"H2O_composition");
+        oxyco2[ioxy] = _get_oxydant_composition(ioxy+1,"CO2_composition");
+    }
+
+
+    if (itypoxy == 1)
+    {
+        /* transformation pourcentage volumique en nombre de mole */
+        for (ioxy = 0; ioxy<*noxyd ; ioxy++)
+        {
+            coef = 100.;
+            if (oxyo2[ioxy] > 0.)
+                coef = CS_MIN(coef,oxyo2[ioxy]);
+            if (oxyn2[ioxy] > 0.)
+                coef = CS_MIN(coef,oxyn2[ioxy]);
+            if (oxyh2o[ioxy] > 0.)
+                coef = CS_MIN(coef,oxyh2o[ioxy]);
+            if (oxyco2[ioxy] > 0.)
+                coef = CS_MIN(coef,oxyco2[ioxy]);
+
+            oxyo2 [ioxy] = oxyo2 [ioxy]/coef;
+            oxyn2 [ioxy] = oxyn2 [ioxy]/coef;
+            oxyh2o[ioxy] = oxyh2o[ioxy]/coef;
+            oxyco2[ioxy] = oxyco2[ioxy]/coef;
+        }
+    }
+
+    BFT_FREE(model);
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1357,7 +2913,7 @@ cs_gui_get_activ_thermophysical_model(void)
 
     cs_var_t  *vars = cs_glob_var;
 
-    const char *name[] = { "pulverized_coal",
+    const char *name[] = { "solid_fuels",
                            "gas_combustion",
                            "joule_effect",
                            "atmospheric_flows",

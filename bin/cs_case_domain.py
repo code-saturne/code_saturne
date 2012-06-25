@@ -701,7 +701,7 @@ class domain(base_domain):
 
         if self.thermochemistry_data != None:
             self.copy_data_file(self.thermochemistry_data,
-                                'dp_thch',
+                                'dp_FCP.xml',
                                 'thermochemistry')
             if not os.path.isfile('JANAF'):
                 self.copy_data_file(os.path.join(self.package.pkgdatadir,

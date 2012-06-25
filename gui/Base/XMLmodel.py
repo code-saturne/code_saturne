@@ -208,7 +208,7 @@ class XMLmodelTestCase(unittest.TestCase):
 ##        Check whether the thermal model could be get.
 ##        """
 ##        doc = XMLmodel(self.case)
-##        node_coal = self.case.xmlGetNode('pulverized_coal', 'model')
+##        node_coal = self.case.xmlGetNode('solid_fuels', 'model')
 ##        node_coal['model'] = "toto"
 ##        nodeThermal, model = doc.getThermalModel()
 ##
@@ -222,7 +222,7 @@ class XMLmodelTestCase(unittest.TestCase):
 ##        Check whether the specific thermophysical model could be get.
 ##        """
 ##        doc = XMLmodel(self.case)
-##        node_coal = self.case.xmlGetNode('pulverized_coal', 'model')
+##        node_coal = self.case.xmlGetNode('solid_fuels', 'model')
 ##        node_coal['model'] = "toto"
 ##        model = doc.getThermoPhysicalModel()
 ##

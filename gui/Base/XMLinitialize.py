@@ -334,7 +334,7 @@ class XMLinitTestCase(unittest.TestCase):
                 '</initialization>'\
                 '<thermal_scalar model="off"/>'\
                 '<gas_combustion model="off"/>'\
-                '<pulverized_coal model="off"/>'\
+                '<solid_fuels model="off"/>'\
                 '<joule_effect model="off"/>'\
                 '<radiative_transfer model="off"/>'\
         '</thermophysical_models>'\

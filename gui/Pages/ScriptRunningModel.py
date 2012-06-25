@@ -39,7 +39,6 @@ import os, os.path, shutil, sys, string, types, re
 
 import Base.Toolbox as Tool
 from Pages.SolutionDomainModel import MeshModel, SolutionDomainModel
-from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 from Base.XMLvariables import Variables, Model
 

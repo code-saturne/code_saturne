@@ -158,6 +158,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.modelTypeSpecies.addItem(self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
             self.modelTypeMeteo.addItem(  self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
 
+        self.species = ""
         self.species_list = self.sca_mo.getUserScalarLabelsList()
         for s in self.sca_mo.getScalarsVarianceList():
             if s in self.species_list:

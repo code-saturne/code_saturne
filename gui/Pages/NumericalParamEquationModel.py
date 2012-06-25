@@ -147,7 +147,7 @@ class NumericalParamEquatModel(Model):
     def _getPuCoalScalarsNodes(self):
         """ Private method: return list of pulverized coal scalar's nodes """
         nodList = []
-        node = self.node_models.xmlGetNode('pulverized_coal', 'model')
+        node = self.node_models.xmlGetNode('solid_fuels', 'model')
         model = node['model']
         if model != 'off':
             nodList = node.xmlGetNodeList('scalar')
