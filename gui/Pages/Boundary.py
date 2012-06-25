@@ -63,7 +63,6 @@ class Boundary(object) :
             return InletBoundary.__new__(InletBoundary, label, case)
         elif nature == 'coal_inlet':
             from Pages.CoalCombustionModel import CoalCombustionModel
-            Model().isNotInList(CoalCombustionModel(case).getCoalCombustionModel(), ("off",))
             return CoalInletBoundary.__new__(CoalInletBoundary, label, case)
         elif nature == 'compressible_outlet':
             from Pages.CompressibleModel import CompressibleModel

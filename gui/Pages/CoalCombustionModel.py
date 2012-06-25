@@ -590,7 +590,7 @@ class CoalCombustionModel(Variables, Model):
 
             for zone in LocalizationModel('BoundaryZone', self.case).getZones():
                 if zone.getNature() == "inlet":
-                    Boundary("coal_inlet", zone.getLabel(), self.case).deleteSolidFuels()
+                    Boundary("coal_inlet", zone.getLabel(), self.case).deleteCoals()
 
             ThermalRadiationModel(self.case).setRadiativeModel('off')
             self.node_fuel['model'] = 'off'
