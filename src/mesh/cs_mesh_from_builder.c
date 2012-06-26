@@ -53,6 +53,7 @@
 #include "cs_block_to_part.h"
 #include "cs_mesh.h"
 #include "cs_mesh_builder.h"
+#include "cs_partition.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -81,9 +82,6 @@ typedef double  _vtx_coords_t[3];
 /*============================================================================
  * Static global variables
  *============================================================================*/
-
-static bool             _use_sfc = true;
-static fvm_io_num_sfc_t _sfc_type = FVM_IO_NUM_SFC_MORTON_BOX;
 
 /*=============================================================================
  * Private function definitions
@@ -808,366 +806,6 @@ _extract_periodic_faces_l(cs_mesh_builder_t  *mb,
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Compute cell centers using minimal local data.
- *
- * parameters:
- *   n_cells      <-- number of cells
- *   n_faces      <-- number of faces
- *   face_cells   <-- face -> cells connectivity
- *   face_vtx_idx <-- face -> vertices connectivity index
- *   face_vtx     <-- face -> vertices connectivity
- *   vtx_coord    <-- vertex coordinates
- *   cell_center  --> cell centers
- *----------------------------------------------------------------------------*/
-
-static void
-_cell_center(cs_lnum_t         n_cells,
-             cs_lnum_t         n_faces,
-             const cs_lnum_t   face_cells[],
-             const cs_lnum_t   face_vtx_idx[],
-             const cs_lnum_t   face_vtx[],
-             const cs_real_t   vtx_coord[],
-             cs_coord_t        cell_center[])
-{
-  cs_lnum_t i, j;
-  cs_lnum_t vtx_id, face_id, start_id, end_id;
-  cs_lnum_t n_face_vertices;
-  cs_coord_t ref_normal[3], vtx_cog[3], face_center[3];
-
-  cs_lnum_t n_max_face_vertices = 0;
-
-  _vtx_coords_t *face_vtx_coord = NULL;
-  cs_coord_t *weight = NULL;
-
-  const double surf_epsilon = 1e-24;
-
-  assert(face_vtx_idx[0] == 0);
-
-  BFT_MALLOC(weight, n_cells, cs_coord_t);
-
-  for (i = 0; i < n_cells; i++) {
-    weight[i] = 0.0;
-    for (j = 0; j < 3; j++)
-      cell_center[i*3 + j] = 0.0;
-  }
-
-  /* Counting and allocation */
-
-  n_max_face_vertices = 0;
-
-  for (face_id = 0; face_id < n_faces; face_id++) {
-    n_face_vertices = face_vtx_idx[face_id + 1] - face_vtx_idx[face_id];
-    if (n_max_face_vertices <= n_face_vertices)
-      n_max_face_vertices = n_face_vertices;
-  }
-
-  BFT_MALLOC(face_vtx_coord, n_max_face_vertices, _vtx_coords_t);
-
-  /* Loop on each face */
-
-  for (face_id = 0; face_id < n_faces; face_id++) {
-
-    /* Initialization */
-
-    cs_lnum_t tri_id;
-
-    cs_lnum_t cell_id_0 = face_cells[face_id*2] -1;
-    cs_lnum_t cell_id_1 = face_cells[face_id*2 + 1] -1;
-    cs_coord_t unweighted_center[3] = {0.0, 0.0, 0.0};
-    cs_coord_t face_surface = 0.0;
-
-    n_face_vertices = 0;
-
-    start_id = face_vtx_idx[face_id];
-    end_id = face_vtx_idx[face_id + 1];
-
-    /* Define the polygon (P) according to the vertices (Pi) of the face */
-
-    for (vtx_id = start_id; vtx_id < end_id; vtx_id++) {
-
-      cs_lnum_t shift = 3 * (face_vtx[vtx_id] - 1);
-      for (i = 0; i < 3; i++)
-        face_vtx_coord[n_face_vertices][i] = vtx_coord[shift + i];
-      n_face_vertices++;
-
-    }
-
-    /* Compute the barycentre of the face vertices */
-
-    for (i = 0; i < 3; i++) {
-      vtx_cog[i] = 0.0;
-      for (vtx_id = 0; vtx_id < n_face_vertices; vtx_id++)
-        vtx_cog[i] += face_vtx_coord[vtx_id][i];
-      vtx_cog[i] /= n_face_vertices;
-    }
-
-    /* Loop on the triangles of the face (defined by an edge of the face
-       and its barycentre) */
-
-    for (i = 0; i < 3; i++) {
-      ref_normal[i] = 0.;
-      face_center[i] = 0.0;
-    }
-
-    for (tri_id = 0 ; tri_id < n_face_vertices ; tri_id++) {
-
-      cs_coord_t tri_surface;
-      cs_coord_t vect1[3], vect2[3], tri_normal[3], tri_center[3];
-
-      cs_lnum_t id0 = tri_id;
-      cs_lnum_t id1 = (tri_id + 1)%n_face_vertices;
-
-      /* Normal for each triangle */
-
-      for (i = 0; i < 3; i++) {
-        vect1[i] = face_vtx_coord[id0][i] - vtx_cog[i];
-        vect2[i] = face_vtx_coord[id1][i] - vtx_cog[i];
-      }
-
-      tri_normal[0] = vect1[1] * vect2[2] - vect2[1] * vect1[2];
-      tri_normal[1] = vect2[0] * vect1[2] - vect1[0] * vect2[2];
-      tri_normal[2] = vect1[0] * vect2[1] - vect2[0] * vect1[1];
-
-      if (tri_id == 0) {
-        for (i = 0; i < 3; i++)
-          ref_normal[i] = tri_normal[i];
-      }
-
-      /* Center of gravity for a triangle */
-
-      for (i = 0; i < 3; i++) {
-        tri_center[i] = (  vtx_cog[i]
-                         + face_vtx_coord[id0][i]
-                         + face_vtx_coord[id1][i]) / 3.0;
-      }
-
-      tri_surface = sqrt(  tri_normal[0]*tri_normal[0]
-                         + tri_normal[1]*tri_normal[1]
-                         + tri_normal[2]*tri_normal[2]) * 0.5;
-
-      if ((  tri_normal[0]*ref_normal[0]
-           + tri_normal[1]*ref_normal[1]
-           + tri_normal[2]*ref_normal[2]) < 0.0)
-        tri_surface *= -1.0;
-
-      /* Now compute contribution to face center and surface */
-
-      face_surface += tri_surface;
-
-      for (i = 0; i < 3; i++) {
-        face_center[i] += tri_surface * tri_center[i];
-        unweighted_center[i] = tri_center[i];
-      }
-
-    } /* End of loop  on triangles of the face */
-
-    if (face_surface > surf_epsilon) {
-      for (i = 0; i < 3; i++)
-        face_center[i] /= face_surface;
-    }
-    else {
-      face_surface = surf_epsilon;
-for (i = 0; i < 3; i++)
-        face_center[i] = unweighted_center[i] * face_surface / n_face_vertices;
-    }
-
-    /* Now contribute to cell centers */
-
-    assert(cell_id_0 > -2 && cell_id_1 > -2);
-
-    if (cell_id_0 > -1) {
-      for (i = 0; i < 3; i++)
-        cell_center[cell_id_0*3 + i] += face_center[i]*face_surface;
-      weight[cell_id_0] += face_surface;
-    }
-
-    if (cell_id_1 > -1) {
-      for (i = 0; i < 3; i++)
-        cell_center[cell_id_1*3 + i] += face_center[i]*face_surface;
-      weight[cell_id_1] += face_surface;
-    }
-
-  } /* End of loop on faces */
-
-  BFT_FREE(face_vtx_coord);
-
-  for (i = 0; i < n_cells; i++) {
-    for (j = 0; j < 3; j++)
-      cell_center[i*3 + j] /= weight[i];
-  }
-
-  BFT_FREE(weight);
-}
-
-/*----------------------------------------------------------------------------
- * Compute cell centers using block data read from file.
- *
- * parameters:
- *   mb          <-- pointer to mesh builder helper structure
- *   cell_center --> cell centers array
- *   comm        <-- associated MPI communicator
- *----------------------------------------------------------------------------*/
-
-static void
-_precompute_cell_center(const cs_mesh_builder_t  *mb,
-                        cs_coord_t                cell_center[],
-                        MPI_Comm                  comm)
-{
-  cs_lnum_t i;
-  int n_ranks = 0;
-
-  cs_datatype_t gnum_type = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
-  cs_datatype_t real_type = (sizeof(cs_real_t) == 8) ? CS_DOUBLE : CS_FLOAT;
-
-  cs_lnum_t _n_cells = 0;
-  cs_lnum_t _n_faces = 0;
-  cs_lnum_t _n_vertices = 0;
-
-  cs_gnum_t *_cell_num = NULL;
-  cs_gnum_t *_face_num = NULL;
-  cs_gnum_t *_vtx_num = NULL;
-  cs_gnum_t *_face_gcells = NULL;
-  cs_gnum_t *_face_gvertices = NULL;
-
-  cs_lnum_t *_face_cells = NULL;
-  cs_lnum_t *_face_vertices_idx = NULL;
-  cs_lnum_t *_face_vertices = NULL;
-
-  cs_real_t *_vtx_coord = NULL;
-
-  cs_block_to_part_t *d = NULL;
-
-  /* Initialization */
-
-  MPI_Comm_size(comm, &n_ranks);
-
-  assert((sizeof(cs_lnum_t) == 4) || (sizeof(cs_lnum_t) == 8));
-
-  _n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
-
-  BFT_MALLOC(_cell_num, _n_cells, cs_gnum_t);
-
-  for (i = 0; i < _n_cells; i++)
-    _cell_num[i] = mb->cell_bi.gnum_range[0] + i;
-
-  if (_n_cells == 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Number of cells on rank %d is zero.\n"
-                "(number of cells / number of processes ratio too low)."),
-              (int)cs_glob_rank_id);
-
-  /* Distribute faces */
-  /*------------------*/
-
-  d = cs_block_to_part_create_by_adj_s(comm,
-                                       mb->face_bi,
-                                       mb->cell_bi,
-                                       2,
-                                       mb->face_cells,
-                                       NULL,
-                                       NULL);
-
-  _n_faces = cs_block_to_part_get_n_part_ents(d);
-
-  BFT_MALLOC(_face_gcells, _n_faces*2, cs_gnum_t);
-
-  /* Face -> cell connectivity */
-
-  cs_block_to_part_copy_array(d,
-                              gnum_type,
-                              2,
-                              mb->face_cells,
-                              _face_gcells);
-
-  /* Now convert face -> cell connectivity to local cell numbers */
-
-  BFT_MALLOC(_face_cells, _n_faces*2, cs_lnum_t);
-
-  cs_block_to_part_global_to_local(_n_faces*2,
-                                   1,
-                                   _n_cells,
-                                   _cell_num,
-                                   _face_gcells,
-                                   _face_cells);
-
-  BFT_FREE(_cell_num);
-  BFT_FREE(_face_gcells);
-
-  /* Face connectivity */
-
-  BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
-
-  cs_block_to_part_copy_index(d,
-                              mb->face_vertices_idx,
-                              _face_vertices_idx);
-
-  BFT_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], cs_gnum_t);
-
-  cs_block_to_part_copy_indexed(d,
-                                gnum_type,
-                                mb->face_vertices_idx,
-                                mb->face_vertices,
-                                _face_vertices_idx,
-                                _face_gvertices);
-
-  _face_num = cs_block_to_part_transfer_gnum(d);
-
-  cs_block_to_part_destroy(&d);
-
-  /* Vertices */
-
-  d = cs_block_to_part_create_adj(comm,
-                                  mb->vertex_bi,
-                                  _face_vertices_idx[_n_faces],
-                                  _face_gvertices);
-
-  _n_vertices = cs_block_to_part_get_n_part_ents(d);
-
-  BFT_MALLOC(_vtx_coord, _n_vertices*3, cs_real_t);
-
-  cs_block_to_part_copy_array(d,
-                              real_type,
-                              3,
-                              mb->vertex_coords,
-                              _vtx_coord);
-
-  _vtx_num = cs_block_to_part_transfer_gnum(d);
-
-  cs_block_to_part_destroy(&d);
-
-  /* Now convert face -> vertex connectivity to local vertex numbers */
-
-  BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
-
-  cs_block_to_part_global_to_local(_face_vertices_idx[_n_faces],
-                                   1,
-                                   _n_vertices,
-                                   _vtx_num,
-                                   _face_gvertices,
-                                   _face_vertices);
-
-  BFT_FREE(_face_gvertices);
-
-  _cell_center(_n_cells,
-               _n_faces,
-               _face_cells,
-               _face_vertices_idx,
-               _face_vertices,
-               _vtx_coord,
-               cell_center);
-
-  BFT_FREE(_vtx_coord);
-  BFT_FREE(_vtx_num);
-
-  BFT_FREE(_face_cells);
-
-  BFT_FREE(_face_vertices_idx);
-  BFT_FREE(_face_vertices);
-
-  BFT_FREE(_face_num);
-}
-
-/*----------------------------------------------------------------------------
  * Compute free (isolated) face centers using minimal local data.
  *
  * parameters:
@@ -1331,7 +969,7 @@ _f_face_center(cs_lnum_t         n_f_faces,
 }
 
 /*----------------------------------------------------------------------------
- * Compute face centers using block data read from file.
+ * Compute face centers using block data.
  *
  * parameters:
  *   mb          <-- pointer to mesh builder helper structure
@@ -1416,53 +1054,6 @@ _precompute_free_face_center(const cs_mesh_builder_t  *mb,
 }
 
 /*----------------------------------------------------------------------------
- * Compute cell centers using block data read from file.
- *
- * parameters:
- *   mb          <-- pointer to mesh builder helper structure
- *   cell_rank   --> cell rank
- *   comm        <-- associated MPI communicator
- *----------------------------------------------------------------------------*/
-
-static void
-_cell_rank_by_sfc(const cs_mesh_builder_t  *mb,
-                  int                       cell_rank[],
-                  MPI_Comm                  comm)
-{
-  cs_lnum_t i;
-  cs_lnum_t n_cells = 0, block_size = 0, rank_step = 0;
-  cs_coord_t *cell_center = NULL;
-  fvm_io_num_t *cell_io_num = NULL;
-  const cs_gnum_t *cell_num = NULL;
-
-  bft_printf(_(" Partitioning by space-filling curve: %s.\n"),
-             fvm_io_num_sfc_type_name[_sfc_type]);
-
-  n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
-  block_size = mb->cell_bi.block_size;
-  rank_step = mb->cell_bi.rank_step;
-
-  BFT_MALLOC(cell_center, n_cells*3, cs_coord_t);
-
-  _precompute_cell_center(mb, cell_center, comm);
-
-  cell_io_num = fvm_io_num_create_from_sfc(cell_center,
-                                           3,
-                                           n_cells,
-                                           _sfc_type);
-
-  BFT_FREE(cell_center);
-
-  cell_num = fvm_io_num_get_global_num(cell_io_num);
-
-  /* Determine rank based on global numbering with SFC ordering */
-  for (i = 0; i < n_cells; i++)
-    cell_rank[i] = ((cell_num[i] - 1) / block_size) * rank_step;
-
-  cell_io_num = fvm_io_num_destroy(cell_io_num);
-}
-
-/*----------------------------------------------------------------------------
  * Compute default face destination rank array in case of isolated faces.
  *
  * parameters:
@@ -1526,7 +1117,10 @@ _default_face_rank(const cs_mesh_builder_t  *mb,
                                              0,
                                              n_g_free_faces);
 
-  /* Define distribution of isolated faces based on sfc */
+  /* Define distribution of isolated faces based on sfc;
+   *
+   *  As those faces are not connected, the main objective of this function
+   *  is to ensure some measure of load balancing. */
 
   BFT_MALLOC(default_rank, _n_faces, int);
   for (i = 0; i < _n_faces; i++)
@@ -1550,7 +1144,7 @@ _default_face_rank(const cs_mesh_builder_t  *mb,
   free_face_io_num = fvm_io_num_create_from_sfc(free_face_centers,
                                                 3,
                                                 n_free_faces,
-                                                _sfc_type);
+                                                FVM_IO_NUM_SFC_MORTON_BOX);
 
   BFT_FREE(free_face_centers);
 
@@ -1590,8 +1184,6 @@ _decompose_data_g(cs_mesh_t          *mesh,
   cs_datatype_t gnum_type = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
   cs_datatype_t real_type = (sizeof(cs_real_t) == 8) ? CS_DOUBLE : CS_FLOAT;
 
-  int use_cell_rank = 0;
-
   cs_lnum_t _n_faces = 0;
   cs_gnum_t *_face_num = NULL;
   cs_gnum_t *_face_gcells = NULL;
@@ -1619,21 +1211,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
   /* Different handling of cells depending on whether decomposition
      data is available or not. */
 
-  if (mb->have_cell_rank == true)
-    use_cell_rank = 1;
-
-  else if (_use_sfc == true && mb->have_cell_rank == false) {
-
-    cs_lnum_t _n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
-
-    BFT_MALLOC(mb->cell_rank, _n_cells, int);
-
-    _cell_rank_by_sfc(mb, mb->cell_rank, comm);
-
-    use_cell_rank = 1;
-  }
-
-  if (use_cell_rank != 0) {
+  if (mb->have_cell_rank == true) {
 
     d = cs_block_to_part_create_by_rank(comm,
                                         mb->cell_bi,
@@ -2005,85 +1583,9 @@ _decompose_data_l(cs_mesh_t          *mesh,
   BFT_FREE(face_type);
 }
 
-/*============================================================================
- *  Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Query or modification of the option for domain partitioning when no
- * partitioning file is present.
- *
- * This function returns 1 or 2 according to the selected algorithm.
- *
- * Fortran interface :
- *
- * subroutine algdom (iopt)
- * *****************
- *
- * integer          iopt        : <-> : choice of the partitioning base
- *                                        0: query
- *                                        1: initial numbering
- *                                        2: Morton curve (bounding box)
- *                                        3: Morton curve (bounding cube)
- *                                        4: Hilbert curve (bounding box)
- *                                        5: Hilbert curve (bounding cube)
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF(algdom, ALGDOM)(cs_int_t  *iopt)
-{
-  *iopt = cs_mesh_from_builder_part_choice(*iopt);
-}
-
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Query or modification of the option for domain partitioning when no
- *  partitioning file is present.
- *
- *  0 : query
- *  1 : based on initial numbering
- *  2 : based on Morton space-filling curve in bounding box
- *  3 : based on Morton space-filling curve in bounding cube
- *  4 : based on Hilbert space-filling curve in bounding box
- *  5 : based on Hilbert space-filling curve in bounding cube (default)
- *
- * \param[in]  choice   partitioning algorithm choice
- *
- * \return  1 to 5 according to the selected algorithm.
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_mesh_from_builder_part_choice(int choice)
-{
-  int retval = 0;
-
-  if (choice < 0 || choice > 5)
-    bft_error(__FILE__, __LINE__,0,
-              _("The algorithm selection indicator for domain partitioning\n"
-                "can take the following values:\n"
-                "  1:   partition based on initial numbering\n"
-                "  2-5: partition based on space-filling curve\n"
-                "and not %d."), choice);
-
-  if (choice == 1)
-    _use_sfc = false;
-  else if (choice >= 2) {
-    _use_sfc = true;
-    _sfc_type = choice - 2;
-  }
-
-  if (_use_sfc == true)
-    retval = _sfc_type + 2;
-  else
-    retval = 1;
-
-  return retval;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2095,17 +1597,9 @@ cs_mesh_from_builder_part_choice(int choice)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_from_builder(cs_mesh_t          *mesh,
-                     cs_mesh_builder_t  *mesh_builder)
+cs_mesh_from_builder(cs_mesh_t             *mesh,
+                     cs_mesh_builder_t     *mesh_builder)
 {
-  if (mesh_builder->have_cell_rank == false) {
-    bft_printf(_(" No partitioning information available;\n"));
-    if (_use_sfc == false)
-      bft_printf(_("   an unoptimized domain partitioning will be used.\n"));
-    else
-      bft_printf(_("   domain partitioning will use a space-filling curve.\n"));
-  }
-
   /* Clear previous builder data if present (periodicity done separately) */
 
   cs_mesh_free_rebuildable(mesh, true);

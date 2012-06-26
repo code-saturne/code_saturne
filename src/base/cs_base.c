@@ -1572,6 +1572,40 @@ cs_base_string_f_to_c_free(char  **c_str)
     BFT_FREE(*c_str);
 }
 
+/*----------------------------------------------------------------------------
+ * Clean a string representing options.
+ *
+ * Characters are converted to lowercase, leading and trailing whitespace
+ * is removed, and multi ple whitespaces or tabs are replaced by single
+ * spaces.
+ *
+ * parameters:
+ *   s <-> string to be cleaned
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_option_string_clean(char  *s)
+{
+  if (s != NULL) {
+
+    int i, j;
+
+    int l = strlen(s);
+
+    for (i = 0, j = 0 ; i < l ; i++) {
+      s[j] = tolower(s[i]);
+      if (s[j] == ',' || s[j] == ';' || s[j] == '\t')
+        s[j] = ' ';
+      if (s[j] != ' ' || (j > 0 && s[j-1] != ' '))
+        j++;
+    }
+    if (j > 0 && s[j-1] == ' ')
+      j--;
+
+    s[j] = '\0';
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

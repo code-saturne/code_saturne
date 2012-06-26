@@ -84,6 +84,7 @@ $(top_builddir)/src/base/libcscore.la \
 $(top_builddir)/src/pprt/libcspprt.la \
 $(top_builddir)/src/alge/libcsalge.la \
 $(top_builddir)/src/mesh/libcsmesh.la \
+$(top_builddir)/src/mesh/libcspartition.la \
 $(top_builddir)/src/turb/libcsturb.la \
 $(top_builddir)/src/atmo/libcsatmo.la \
 $(top_builddir)/src/cfbl/libcscfbl.la \
@@ -123,12 +124,6 @@ if HAVE_FRONTEND
 pkglibexec_PROGRAMS += cs_check_syntax
 endif
 
-# MPI partitioning program
-
-if HAVE_PARTITIONER
-pkglibexec_PROGRAMS += cs_partition
-endif
-
 cs_solver_SOURCES =
 cs_solver_LDADD = libsaturne.la \
 $(LIBPLE_LA) \
@@ -139,6 +134,8 @@ $(LDFLAGS_PLE) $(LIBS_PLE) \
 $(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
 $(MED_LDFLAGS) $(MED_LIBS) \
 $(HDF5_LDFLAGS) $(HDF5_LIBS) \
+$(METIS_LDFLAGS) $(METIS_LIBS) \
+$(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) \
 $(MPI_LDFLAGS) $(MPI_LIBS) \
 $(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
 $(LDADD_BLAS) \
@@ -168,24 +165,3 @@ $(ORIGINRUNPATH)
 
 endif
 
-# Code_Saturne partitioner
-
-if HAVE_PARTITIONER
-
-cs_partition_CPPFLAGS = $(AM_CPPFLAGS) \
--I$(top_srcdir)/src/bft \
-$(METIS_CPPFLAGS) $(SCOTCH_CPPFLAGS)
-cs_partition_SOURCES = cs_partition.c
-cs_partition_LDADD = \
-$(top_builddir)/src/base/libcscore.la \
-$(top_builddir)/src/bft/libbft.la \
-$(LIBPLE_LA) \
-$(LTLIBINTL) \
-$(LDFLAGS_PLE) $(LIBS_PLE) \
-$(METIS_LDFLAGS) $(METIS_LIBS) \
-$(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) \
-$(MPI_LDFLAGS) $(MPI_LIBS)
-cs_partition_LDFLAGS = \
-$(ORIGINRUNPATH)
-
-endif

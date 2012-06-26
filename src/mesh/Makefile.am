@@ -61,11 +61,13 @@ cs_mesh_save.h \
 cs_mesh_thinwall.h \
 cs_mesh_to_builder.h \
 cs_mesh_warping.h \
-cs_mesh_smoother.h
+cs_mesh_smoother.h \
+cs_partition.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcsmesh.la
+noinst_LTLIBRARIES = libcsmesh.la \
+                     libcspartition.la
 
 libcsmesh_la_SOURCES = \
 cs_join.c \
@@ -95,3 +97,11 @@ cs_mesh_warping.c \
 cs_mesh_smoother.c
 
 libcsmesh_la_LDFLAGS = -no-undefined
+
+# Partitioner (may require extra headers)
+
+libcspartition_la_CPPFLAGS = $(AM_CPPFLAGS) \
+$(METIS_CPPFLAGS) $(SCOTCH_CPPFLAGS)
+libcspartition_la_SOURCES = cs_partition.c
+libcspartition_la_LDFLAGS = -no-undefined
+

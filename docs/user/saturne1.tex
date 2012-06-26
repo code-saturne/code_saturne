@@ -57,12 +57,11 @@ various mesh types which may be hybrid (containing several kinds of
 elements) and may have structural non-conformities (hanging nodes).
 
 
-\CS is composed of three main elements and an optional GUI,
+\CS is composed of two main elements and an optional GUI,
 as shown on figure \ref{Fig_elements}:
 \begin{itemize}
 \item the Kernel module is the numerical solver
 \item the Preprocessor module is in charge of mesh import
-\item the Partitioner is in charge of optimizing domain decomposition
 for parallel computing (optional, but highly recommended for parallel
 performance)\\
 \end{itemize}
@@ -73,11 +72,9 @@ performance)\\
 \caption{\CS elements}\label{Fig_elements}
 \end{figure}
 
-\indent\CS also relies on one library (by the same team, under LGPL licence),
-which can also be used independently:
-\begin{itemize}
-\item PLE (Parallel Location and Exchange) for the management of code coupling
-\end{itemize}
+\indent\CS also relies on the PLE (Parallel Location and Exchange) library (by
+the same team, under LGPL licence) for the management of code coupling;
+this library can also be used independently.
 
 The present document is a practical user's guide for \CS version \verscs.
 It is the result of the joint effort of
@@ -628,8 +625,7 @@ accumulate and may hinder the correct operation of the machine.\\
 %==================================
 \label{prg_executionmodes}%
 As explained before, \CS is composed of two main modules, the Preprocessor and the
-Kernel, and an optional Partitioner. The Preprocessor reads the meshes.
-The Partitioner optimizes domain decomposition for parallel runs.
+Kernel. The Preprocessor reads the meshes.
 The resulting data is transfered to the Kernel through specific
 files, named \texttt{mesh\_input} and \texttt{domain\_number\_*}, where
 \texttt{*} is the number of processors used. In a standard calculation, the files
@@ -638,13 +634,9 @@ as they have no interest for data analysis, and are considered ``internal''
 files, whose format or contents is not guaranteed not to change between \CS versions.
 
 Yet, the Preprocessor does not run in parallel and may require a
-large amount of memory. Similarly, the Partitioner may be run on a
-reduced number of processors to obtain a better partition quality, so it
-is sometimes useful to run the Preprocessor and Partitioner
-separately, on a machine or in batch queues with extended memory, and to run the
-proper parallel calculation on another machine or in another batch
-queue. The launch scripts therefore allows specifically choosing
-which modules to run, either through the GUI or through \texttt{cs\_user\_scripts.py}:
+large amount of memory. The launch scripts therefore allows specifically
+choosing which modules to run, either through the GUI or through
+\texttt{cs\_user\_scripts.py}:
 
 \sloppy
 
@@ -653,13 +645,8 @@ either a {mesh\_input} from a previous Preprocessor run or a {mesh\_output}
 from a previous solver run), the script will copy or link it to
 the execution directory, and the Preprocessor will not be run again.
 
-\hspace*{0.5cm} If \texttt{domain.exec\_partition = False}, the Partitioner
-will not be run. A previous partitioning may be used by defining the
-\texttt{domain.partition\_input} path.
-
 \hspace*{0.5cm} If \texttt{domain.exec\_kernel = False}, the Kernel will not
-be run. This is useful when only the mesh import and optionnaly partitioning
-stages are required.
+be run. This is useful when only the mesh import stage is required.
 
 \fussy
 
@@ -668,16 +655,16 @@ this speeds up calculations by not re-importing meshes for each run.
 For some configurations, such as IBM Blue Gene machines with different
 front-end an compute nodes, mesh import may be impossible on the
 compute nodes (as the Preprocessor does not run in parallel, and may require
-too much memory), so mesh import (and serial partitioning) should be
+too much memory), so mesh import should be
 run separately on the front-end nodes, while later calculation stages
 should be run on compute nodes.
 
-Note also that depending on its configuration, the Partitioner may
-be run either or both in serial or parallel mode. By default, serial
-mode is currently chosen (due to limited feedback on partitioning
-quality in parallel mode), but setting \texttt{domain.partition\_n\_procs}
-to a value greater than 1 in the user scripts allows running
-the Partitioner in parallel.
+Note also that if the code was built only with a serial partitioning library,
+graph-based partitioning may best be run in a serial pre-processing stage.
+In some cases, serial partitioning might also provide better partitioning
+quality then parallel partitioning, so if both are available, comparing
+the performance of the code may be worthwhile, at least for calculations
+expected to run for many iterations.
 
 %==================================
 \subsubsection{Interactive modification of the target time step}
@@ -3750,7 +3737,7 @@ the mesh quality. This procedure can help for the calculus robustness or/and
 results quality.
 
 The user subroutine \texttt{cs\_user\_mesh\_smoothe} allows to use different
-smoothing functions detailled below.
+smoothing functions detailed below.
 
 {\em WARNING 1: Caution must be exercised when using this subroutine
 along with periodicity. Indeed, the periodicity parameters are not
@@ -3788,42 +3775,81 @@ Be aware that, in some cases, this algorithm may degrade other mesh quality
 criteria.
 
 %==================================
-\section{Partitioning for parallel runs\label{sec:parall}}
+\section{Partitioning for parallel runs\label{sec:parall:part}}
 %==================================
 
 Graph partitioning (using one of the optional \metis or
-\scotch libraries) is done using a secondary executable,\\
-\texttt{cs\_partition},
-which reads the file produced by the \pcs and builds one or
-several ``cell $\rightarrow$ domain'' distribution files, named
-{\tt domain\_number\_\it{p}} for a partitioning on $p$ sub-domains.
+\scotch libraries) is done by the Kernel. Unless exlicitely
+deactivated, this stage produces one or several ``cell $\rightarrow$ domain''
+distribution files, named {\tt domain\_number\_\it{p}} for a partitioning on
+$p$ sub-domains, which may be read when starting a subsequent computation so as
+to avoid re-running that stage. These files are placed in a directory named
+{\tt partition\_output}.
 
-This separation leads to extra work for the Kernel, which must
-redistribute data read in {\tt mesh\_input}
-based on the associated partitioning, but avoids requiring
-re-running the \pcs whenever running on a different number of
-processors.
+The Kernel redistributes data read in {\tt mesh\_input} based on the associated
+(re-read or computed) partitioning, so there is no need to run any
+prior script when running on a different number of processors, although
+a previous partitioning may optionally be re-used.
 
-Without partitioning (for example if neither \metis nor
-\scotch is available, or the partitioner has not been run
-for the required number of sub-domains), the Kernel will
-use a built-in partitioning using a space-filling curve
-(Z-curve) technique. This usually leads to partitionings
+Without a graph-based partitioning library, or based on the user's choice,
+the Kernel will use a built-in partitioning using a space-filling curve
+(Z or Hilber curve) technique. This usually leads to partitionings
 of lower quality than with graph partitioning, but parallel
 performance remains reasonable.
 
-\subsection{Options\label{sec:optcmd:parall}}
+Partitioning options may be defined using the GUI or by calling
+the appropriate functions in the
+\texttt{cs\_user\_partition\_options} user function.
 
-To list the partitioner's options, use the following command:
-{\tt cs\_partition~-h} 
+\subsection{Partitioning stages\label{sec:parall:part:stages}}
 
-We provide the list of required partitionings an optionally additional
-options. For example, to simulate a partitioning for calculations on
-64 and 128 processes with no output, we may use the following command:
+Partitioning is always done just after reading the mesh, unless a
+partitioning input file is available, in which case the partitioning
+read replaces this stage.
 
-\texttt{cs\_partition 64 128 --no-write}
+When a mesh modification implying a change of cell connectivity graph
+is expected, the mesh may be re-partitioned after the pre-processing
+stage, prior to calculation. By default, re-partitioning is only done
+if the partitioning algorithm chosen for that stage is expected to
+produce different results due to the connectivity change. This is
+the case for graph-based algorithms such as those of \metis or \scotch,
+when mesh joining is defined, or additional periodic matching is defined
+(and the algorithm is not configured to ignore periodicity information).
 
-\subsubsection{Ignore periodicity\label{sec:optcmdpart:noperiod}}
+There are thus two possible partitioning stages:
+
+\begin{itemize}
+\item \texttt{CS\_PARTITION\_FOR\_PREPROCESS}, which is optional, and
+      occurs just  after reading the mesh.
+\item \texttt{CS\_PARTITION\_MAIN}, which occurs just after reading the
+      mesh if it is the only stage,, or after mesh preprocessing (and
+      before computation), if the partitioning for preprocessing stage
+      is activated.
+\end{itemize}
+
+The number of partitioning stages is determined automatically based on
+information provided through \texttt{cs\_partition\_set\_preprocess\_hints()},
+but re-partitioning may also be forced or inhibited using the
+\texttt{cs\_partition\_set\_preprocess()} user function.
+
+\subsection{Partitioner choice\label{sec:parall:part:partlib}}
+
+If the Kernel has been configured with both \ptscotch or \scotch and
+\parmetis or \metis libaries, \ptscotch will be used by default\footnote{
+Though \parmetis will be chosen before serial \scotch in a parallel
+run}, but the user may force the selection of another partitioning
+type using either the GUI or user routines.
+
+In addition to graph-based partitionings, a space-filling curve based
+algorithm is available, using either a Morton (Z) or Peano-Hilbert
+curve, in the computation domain's bounding box or bounding cuve.
+
+When partitioning for preprocessing, a space-filling curve is used,
+unless forced by calling\\ \texttt{cs\_partition\_set\_algorithm()}
+with the appropriate algorithm choice for the\\
+\texttt{CS\_PARTITION\_FOR\_PREPROCESS} stage.
+
+\subsection{Effect of periodicity\label{sec:parall:part:noperiod}}
 
 By default, face periodicity relations are taken into account when building
 the ``cell $\rightarrow$ cell'' connectivity graph used for partitioning.
@@ -3831,33 +3857,13 @@ This allows better partitioning optimization, but increases the probability
 of having groups of cells at opposite sides of the domain in a same
 sub-domain. This is not an issue for standard calculations, but may
 degrade performance of search algorithms based on bounding boxes.
-It is thus possible to ignore periodicity when partitioning a mesh
-using the \texttt{--no-perio} option.
+It is thus possible to ignore periodicity when partitioning a mesh.
+
+Also, partitioning using a space-filling curve ignores periodicity.
 
 Note that nothing guarantees that a graph partitioner will not place
 disjoint cells in the same sub-domain independently of this option,
 but this behavior is rare.
-
-\subsubsection{Partitioner choice\label{sec:optpart:partlib}}
-
-If the Partitioner has been configured with both \metis and
-\scotch libaries, using the \texttt{--metis} or \texttt{--scotch}
-option allows choosing between either library. By default, \emph{metis} is
-used if both choices are available.
-
-\subsubsection{Simulation mode\label{sec:optpart:nowrite}}
-
-Using the \texttt{--no-write} option, we can tell the partitioner
-not to output a {\tt domain\_number\_\it{p}} file.
-Partitioning is thus computed, but not saved.
-
-\subsubsection{Environment variables\label{sec:optpart:envvar}}
-
-\envvar{CS\_PARTITION\_MEM\_LOG}
-
-Allows defining a file name in which memory allocations, reallocations,
-and frees will be logged.
-
 
 %==================================
 \section{Basic modelling setup}

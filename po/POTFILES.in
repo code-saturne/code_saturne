@@ -50,7 +50,6 @@ src/alge/cs_multigrid.c
 src/alge/cs_sles.c
 src/apps/cs_check_syntax.c
 src/apps/cs_io_dump.c
-src/apps/cs_partition.c
 src/apps/cs_solver.c
 src/base/cs_ale.c
 src/base/cs_ast_coupling.c
@@ -176,8 +175,10 @@ src/mesh/cs_mesh_smoother.c
 src/mesh/cs_mesh_thinwall.c
 src/mesh/cs_mesh_to_builder.c
 src/mesh/cs_mesh_warping.c
+src/mesh/cs_partition.c
 src/turb/cs_les_filter.c
 src/user/cs_user_coupling.c
 src/user/cs_user_mesh.c
+src/user/cs_user_parallel.c
 src/user/cs_user_postprocess.c
 src/user/cs_user_solver.c

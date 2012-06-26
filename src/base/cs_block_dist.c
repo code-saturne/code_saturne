@@ -123,14 +123,16 @@ cs_block_dist_compute_sizes(int        rank_id,
   if (min_block_size > 1)
     _min_block_size = min_block_size;
 
+  if (bi.rank_step < min_rank_step) {
+    bi.rank_step = min_rank_step;
+    _n_ranks = n_ranks / bi.rank_step;
+  }
   while (   n_g_ents/_n_ranks < _min_block_size
          && _n_ranks > 1
          && bi.rank_step < n_ranks) {
     bi.rank_step *= 2;
     _n_ranks = n_ranks / bi.rank_step;
   }
-  if (bi.rank_step < min_rank_step)
-    bi.rank_step = min_rank_step;
   if (bi.rank_step > n_ranks) {
     bi.rank_step = n_ranks;
     _n_ranks = 1;

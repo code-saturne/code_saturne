@@ -97,9 +97,11 @@
 #include "cs_mesh_bad_cells.h"
 #include "cs_mesh_save.h"
 #include "cs_mesh_smoother.h"
+#include "cs_mesh_to_builder.h"
 #include "cs_mesh_warping.h"
 #include "cs_multigrid.h"
 #include "cs_opts.h"
+#include "cs_partition.h"
 #include "cs_post.h"
 #include "cs_preprocessor_data.h"
 #include "cs_prototypes.h"
@@ -178,6 +180,7 @@ cs_run(void)
 {
   double  t1, t2;
 
+  bool partition_preprocess = false;
   int  _verif = -1;
   int  check_mask = 0;
   int  cwf_post = 0;
@@ -192,6 +195,8 @@ cs_run(void)
 #endif
 
   cs_io_defaults_info();
+
+  cs_partition_external_library_info();
 
   /* Initialize global structures for main mesh */
 
@@ -241,9 +246,24 @@ cs_run(void)
 
   cs_sat_coupling_all_init();
 
-  /* Choose partitioning type */
+  /* Set partitioning options */
 
-  cs_mesh_from_builder_part_choice(cs_gui_get_sfc_partition_type() + 2);
+  {
+    int j_id;
+    bool join = false;
+    bool join_periodic = false;
+
+    for (j_id = 0; j_id < cs_glob_n_joinings; j_id++) {
+      if ((cs_glob_join_array[j_id])->param.perio_type == FVM_PERIODICITY_NULL)
+        join = true;
+      else
+        join_periodic = true;
+    }
+
+    cs_partition_set_preprocess_hints(join, join_periodic);
+    cs_gui_partition();
+    cs_user_partition();
+  }
 
   /* Read Preprocessor output */
 
@@ -308,11 +328,20 @@ cs_run(void)
   /* Now that mesh modification is finished, save mesh if modified
      (do this before building colors, which adds internal groups) */
 
-  if (cs_glob_mesh->modified == 1) {
-    cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, "mesh_output");
-    cs_mesh_from_builder(cs_glob_mesh, cs_glob_mesh_builder);
-    cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder);
-    cs_mesh_update_auxiliary(cs_glob_mesh);
+  partition_preprocess = cs_partition_get_preprocess();
+  if (cs_glob_mesh->modified > 0 || partition_preprocess) {
+    if (partition_preprocess) {
+      if (cs_glob_mesh->modified > 0)
+        cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, "mesh_output");
+      else
+        cs_mesh_to_builder(cs_glob_mesh, cs_glob_mesh_builder, true, NULL);
+      cs_partition(cs_glob_mesh, cs_glob_mesh_builder, CS_PARTITION_MAIN);
+      cs_mesh_from_builder(cs_glob_mesh, cs_glob_mesh_builder);
+      cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder);
+      cs_mesh_update_auxiliary(cs_glob_mesh);
+    }
+    else
+      cs_mesh_save(cs_glob_mesh, NULL, "mesh_output");
   }
 
   /* Destroy the temporary structure used to build the main mesh */

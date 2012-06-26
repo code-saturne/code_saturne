@@ -335,18 +335,13 @@ class Parser:
             if path:
                 self.dict['restart_input'] = path
 
-        val = getDataFromNode(calc_node, 'partition_type')
-        if val:
-            if val == 'scotch':
-                self.dict['partition_args'] = '--scotch'
-            elif val == 'metis':
-                self.dict['partition_args'] = '--metis'
-            elif val.find('sfc') > -1:
-                self.dict['exec_partition'] = False
-
-        partition_list = getDataFromNode(calc_node, 'partition_list')
-        if partition_list:
-           self.dict['partition_list'] = partition_list.split()
+        node = getChildNode(calc_node, 'partitioning')
+        if node != None:
+            node = getChildNode(node, 'partition_input')
+        if node != None:
+            path = str(node.getAttribute('path'))
+            if path:
+                self.dict['partition_input'] = path
 
         val = getDataFromNode(calc_node, 'run_type')
         if val:

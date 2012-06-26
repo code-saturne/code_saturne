@@ -351,7 +351,6 @@ class domain(base_domain):
                  n_procs_weight = None,       # recommended number of processes
                  n_procs_min = None,          # min. number of processes
                  n_procs_max = None,          # max. number of processes
-                 n_procs_partition = None,    # n. processes for partitioner
                  logging_args = None,         # command-line options for logging
                  param = None,                # XML parameters file
                  prefix = None,               # installation prefix
@@ -383,18 +382,8 @@ class domain(base_domain):
 
         # Preprocessor options
 
-        self.mesh_input = None
-
         self.mesh_dir = None
         self.meshes = None
-
-        # Partition options
-
-        self.exec_partition = True
-
-        self.partition_n_procs = n_procs_partition
-        self.partition_list = None
-        self.partition_args = None
 
         # Solver options
 
@@ -653,27 +642,6 @@ class domain(base_domain):
         if not self.exec_solver:
             return
 
-        if self.n_procs < 2:
-            self.exec_partition = False
-        elif self.exec_partition == False and self.partition_input != None:
-            partition_input = os.path.expanduser(self.partition_input)
-            if not os.path.isabs(partition_input):
-                partition_input = os.path.join(self.case_dir, partition_input)
-            part_name = 'domain_number_' + str(self.n_procs)
-            partition = os.path.join(partition_input, part_name)
-            if os.path.isfile(partition):
-                part_dir = os.path.join(self.exec_dir, 'partition')
-                if not os.path.isdir(part_dir):
-                    os.mkdir(part_dir)
-                self.symlink(partition, os.path.join(part_dir, part_name))
-            else:
-                w_str = \
-                    'Warning: no partitioning file is available\n' \
-                    '         (no ' + partition + ').\n' \
-                    '\n' \
-                    '         Geometry-based partitioning will be used.\n'
-                sys.stderr.write(w_str)
-
         # Parameters file
 
         if self.param != None:
@@ -697,6 +665,23 @@ class domain(base_domain):
                 else:
                     self.symlink(restart_input,
                                  os.path.join(self.exec_dir, 'restart'))
+
+        # Partition input files
+
+        if self.partition_input != None:
+
+            partition_input = os.path.expanduser(self.partition_input)
+            if not os.path.isabs(partition_input):
+                partition_input = os.path.join(self.case_dir, partition_input)
+
+            if os.path.exists(partition):
+
+                if not os.path.isdir(partition_input):
+                    err_str = partition_input + ' is not a directory.'
+                    raise RunCaseError(err_str)
+                else:
+                    self.symlink(partition_input,
+                                 os.path.join(self.exec_dir, 'partition_input'))
 
         # Data for specific physics
 
@@ -843,7 +828,6 @@ class domain(base_domain):
                     'Check the preprocessor.log file for details.\n\n'
                 sys.stderr.write(err_str)
 
-                self.exec_partition = False
                 self.exec_solver = False
 
                 self.error = 'preprocess'
@@ -856,146 +840,6 @@ class domain(base_domain):
             os.chdir(cur_dir)
 
         return retcode
-
-    #---------------------------------------------------------------------------
-
-    def check_partitioner(self):
-        """
-        Tests if the partitioner is available and partitioning is defined.
-        """
-
-        if self.n_procs < 2 and self.partition_list == None:
-            self.exec_partition = False
-
-        if (self.exec_partition == False):
-            return
-
-        w_str = None
-
-        if self.partition_n_procs < 2:
-            partitioner = self.package.get_partitioner()
-        else:
-            partitioner = self.package_compute.get_partitioner()
-
-        if not os.path.isfile(partitioner):
-            if self.n_procs > 1:
-                w_str = \
-                    'Warning: ' + partitioner + ' not found.\n\n' \
-                    'The partitioner may not have been installed' \
-                    '  (this is the case if neither METIS nor SCOTCH ' \
-                    ' are available).\n\n'
-
-        if os.path.isdir(os.path.join(self.exec_dir, 'mesh_input')):
-            w_str = \
-                'Warning: mesh_input is a directory\n\n' \
-                'The Kernel must be run to concatenate its contents\n' \
-                ' before graph-based partitioning is available.\n\n'
-
-        if w_str:
-            w_str += 'Partitioning by a space-filling curve will be used.\n\n'
-            sys.stderr.write(w_str)
-            self.exec_partition = False
-            self.partition_n_procs = None
-
-    #---------------------------------------------------------------------------
-
-    def run_partitioner(self):
-        """
-        Runs the partitioner in the execution directory
-        """
-
-        self.check_partitioner()
-        if self.exec_partition == False:
-            return
-
-        # Build command
-
-        cmd = self.package.get_partitioner()
-
-        if self.logging_args != None:
-            cmd += ' ' + self.logging_args
-
-        if self.partition_args != None:
-            cmd += ' ' + self.partition_args
-
-        if self.partition_list != None:
-            cmd += ' ' + any_to_str(self.partition_list)
-
-        if self.exec_solver and self.n_procs != None:
-            np = self.n_procs
-            if self.partition_list == None:
-                cmd += ' ' + str(np)
-            elif np > 1 and not np in self.partition_list:
-                cmd += ' ' + str(np)
-
-        # Run command
-
-        cur_dir = os.path.realpath(os.getcwd())
-        if cur_dir != self.exec_dir:
-            os.chdir(self.exec_dir)
-
-        retcode = run_command(cmd)
-
-        if retcode != 0:
-            err_str = \
-                'Error running the partitioner.\n' \
-                'Check the partition.log file for details.\n\n'
-            sys.stderr.write(err_str)
-
-            self.exec_solver = False
-
-            self.error = 'partition'
-
-        if cur_dir != self.exec_dir:
-            os.chdir(cur_dir)
-
-        return retcode
-
-    #---------------------------------------------------------------------------
-
-    def partitioner_command(self):
-        """
-        Returns a tuple indicating the partitioner's working directory,
-        executable path, and associated command-line arguments.
-        """
-        # Working directory and executable path
-
-        wd = self.exec_dir
-        exec_path = self.package_compute.get_partitioner()
-
-        # Build kernel command-line arguments
-
-        args = ''
-
-        if self.logging_args != None:
-            args += ' ' + self.logging_args
-
-        if self.partition_n_procs > 1:
-            args += ' --mpi'
-
-        if self.mpi_io != None:
-            args += ' --mpi-io ' + self.mpi_io
-
-        if self.partition_args != None:
-            args += ' ' + self.partition_args
-
-        if self.partition_list != None:
-            args += ' ' + any_to_str(self.partition_list)
-
-        if self.exec_solver and self.n_procs != None:
-            np = self.n_procs
-            if self.partition_list == None:
-                args += ' ' + str(np)
-            elif np > 1 and not np in self.partition_list:
-                args += ' ' + str(np)
-
-        # Adjust for Valgrind if used
-
-        if self.valgrind != None:
-            args = self.solver_path + ' ' + args
-            exec_path = self.valgrind
-
-        return wd, exec_path, args
 
     #---------------------------------------------------------------------------
 
@@ -1088,53 +932,6 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def copy_partition_results(self):
-        """
-        Retrieve partition results from the execution directory
-        """
-
-        if not self.exec_partition:
-            return
-
-        # Determine if we should purge the execution directory
-
-        purge = True
-        if self.error == 'partition':
-            purge = False
-
-        # Copy log file first.
-
-        f = os.path.join(self.exec_dir, 'partition.log')
-        if os.path.isfile(f):
-            self.copy_result(f, purge)
-
-        # Copy output if required (only purge if we have no further
-        # errors, as it may be necessary for future debugging).
-
-        if self.error != '':
-            purge = False
-
-        if purge:
-            f = os.path.join(self.exec_dir, 'partition.sh')
-            if os.path.isfile(f):
-                self.purge_result(f)
-
-        d = os.path.join(self.exec_dir, 'partition')
-
-        if self.partition_list or not self.exec_solver:
-            if os.path.isdir(d):
-                self.copy_result(d, purge)
-        elif purge:
-            self.purge_result(d)
-
-        # Purge mesh_input if it was used solely by the partitioner
-
-        if self.mesh_input and self.exec_solver == False:
-            if self.error == '':
-                self.purge_result('mesh_input')
-
-    #---------------------------------------------------------------------------
-
     def copy_solver_results(self):
         """
         Retrieve solver results from the execution directory
@@ -1159,13 +956,9 @@ class domain(base_domain):
 
         purge_list = []
 
-        for f in ['mesh_input', 'restart']:
+        for f in ['mesh_input', 'restart', 'partition_input']:
             if f in dir_files:
                 purge_list.append(f)
-
-        f = 'partition'
-        if f in dir_files and (not self.partition_list):
-            purge_list.append(f)
 
         # Determine files from this stage to ignore or to possibly remove
 
@@ -1237,10 +1030,6 @@ class domain(base_domain):
         if not self.mesh_input:
             p = self.package.get_preprocessor()
             s.write('    preprocessor : ' + any_to_str(p) + '\n')
-
-        if self.exec_partition:
-            p = self.package.get_partitioner()
-            s.write('    partitioner  : ' + any_to_str(p) + '\n')
 
         if self.exec_solver:
             s.write('    solver       : ' + self.solver_path + '\n')

@@ -83,6 +83,7 @@
 #include "cs_gui_specific_physics.h"
 #include "cs_gui_mobile_mesh.h"
 #include "cs_mesh.h"
+#include "cs_partition.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 
@@ -5328,44 +5329,150 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
- * Return value of partitioning option.
- *
- * returns:
- *   id of selected (or default) partitioning type (0-3)
+ * Set partitioning options.
  *----------------------------------------------------------------------------*/
 
-  int
-cs_gui_get_sfc_partition_type(void)
+void
+cs_gui_partition(void)
 {
   char  *path = NULL;
-  char  *sfc = NULL;
-  int retval = 0;
+  char  *part_name = NULL;
+  char  *s_perio = NULL;
+  char  *s_output = NULL;
+  char  *s_list = NULL;
+
+  cs_partition_algorithm_t a = CS_PARTITION_DEFAULT;
+  bool ignore_perio = false;
+  int  rank_step = 1;
+  int  write_level = 1;
+  int  n_add_parts = 0;
+  int  *add_parts = NULL;
 
   if (!cs_gui_file_is_loaded())
-    return retval;
+    return;
+
+  /* Partitioning type */
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "calculation_management", "partition_type");
+  cs_xpath_add_elements(&path, 3,
+                        "calculation_management", "partitioning", "type");
   cs_xpath_add_function_text(&path);
 
-  sfc = cs_gui_get_text_value(path);
+  part_name = cs_gui_get_text_value(path);
 
-  if (sfc != NULL) {
-    if (!strcmp(sfc, "morton sfc"))
-      retval = 0;
-    else if (!strcmp(sfc, "morton sfc cube"))
-      retval = 1;
-    else if (!strcmp(sfc, "hilbert sfc"))
-      retval = 2;
-    else if (!strcmp(sfc, "hilbert sfc cube"))
-      retval = 3;
+  if (part_name != NULL) {
+    if (!strcmp(part_name, "default"))
+      a = CS_PARTITION_DEFAULT;
+    else if (!strcmp(part_name, "morton sfc"))
+      a = CS_PARTITION_SFC_MORTON_BOX;
+    else if (!strcmp(part_name, "morton sfc cube"))
+      a = CS_PARTITION_SFC_MORTON_CUBE;
+    else if (!strcmp(part_name, "hilbert sfc"))
+      a = CS_PARTITION_SFC_HILBERT_BOX;
+    else if (!strcmp(part_name, "hilbert sfc cube"))
+      a = CS_PARTITION_SFC_HILBERT_CUBE;
+    else if (!strcmp(part_name, "scotch"))
+      a = CS_PARTITION_SCOTCH;
+    else if (!strcmp(part_name, "metis"))
+      a = CS_PARTITION_METIS;
+    else if (!strcmp(part_name, "block"))
+      a = CS_PARTITION_BLOCK;
+    BFT_FREE(part_name);
   }
 
+  BFT_FREE(path);
+
+  /* Rank step */
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "calculation_management",
+                        "partitioning",
+                        "rank_step");
+  cs_xpath_add_function_text(&path);
+  cs_gui_get_int(path, &rank_step);
+  
+  BFT_FREE(path);
+
+  /* Ignore periodicity option */
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "calculation_management",
+                        "partitioning",
+                        "ignore_periodicity");
+  cs_xpath_add_attribute(&path, "status");
+  s_perio = cs_gui_get_attribute_value(path);
+  if (s_perio != NULL) {
+    if (cs_gui_strcmp(s_perio, "on"))
+      ignore_perio = true;
+    BFT_FREE(s_perio);
+  }
+  
+  BFT_FREE(path);
+
+  /* Output option */
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "calculation_management", "partitioning", "output");
+  cs_xpath_add_function_text(&path);
+
+  s_output = cs_gui_get_text_value(path);
+
+  if (s_output != NULL) {
+    if (!strcmp(s_output, "no"))
+      write_level = 0;
+    else if (!strcmp(s_output, "default"))
+      write_level = 1;
+    else if (!strcmp(s_output, "yes"))
+      write_level = 2;
+    BFT_FREE(s_output);
+  }
 
   BFT_FREE(path);
-  BFT_FREE(sfc);
 
-  return retval;
+  /* List of partitions to output */
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "calculation_management",
+                        "partitioning",
+                        "partition_list");
+  cs_xpath_add_function_text(&path);
+
+  s_list = cs_gui_get_text_value(path);
+
+  if (s_list != NULL) {
+    char *p = strtok(s_list, " \t,;");
+    while (p != NULL) {
+      int np = atoi(p);
+      if (np > 1) {
+        BFT_REALLOC(add_parts, n_add_parts + 1, int);
+        add_parts[n_add_parts] = np;
+        n_add_parts += 1;
+      }
+      p = strtok(NULL, " \t,;");
+    }
+    BFT_FREE(s_list);
+  }
+
+  BFT_FREE(path);
+
+  /* Set options */
+
+  cs_partition_set_algorithm
+    (CS_PARTITION_MAIN,
+     a,
+     rank_step,
+     ignore_perio);
+
+  cs_partition_set_write_level(write_level);
+
+  if (n_add_parts > 0) {
+    cs_partition_add_partitions(n_add_parts, add_parts);
+    BFT_FREE(add_parts);
+  }
 }
 
 /*-----------------------------------------------------------------------------

@@ -458,6 +458,7 @@ Calculation control
     Profiles
 Calculation management
     Start/Restart
+    Partitioning
     Prepare batch calculation
 """
         return tree

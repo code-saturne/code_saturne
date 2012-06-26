@@ -300,21 +300,12 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
         # Combo models
         self.modelSCRATCHDIR   = ComboModel(self.comboBoxSCRATCHDIR, 2, 1)
-        self.modelPartitType   = ComboModel(self.comboBox_2, 4, 1)
         self.modelCSOUT1       = ComboModel(self.comboBox_6, 2, 1)
         self.modelCSOUT2       = ComboModel(self.comboBox_7, 3, 1)
 
         # Combo items
         self.modelSCRATCHDIR.addItem(self.tr("automatic"), 'automatic')
         self.modelSCRATCHDIR.addItem(self.tr("prescribed"), 'prescribed')
-
-        self.modelPartitType.addItem(self.tr("Default"), 'default')
-        self.modelPartitType.addItem(self.tr("Scotch"), 'scotch')
-        self.modelPartitType.addItem(self.tr("Metis"), 'metis')
-        self.modelPartitType.addItem(self.tr("Morton curve (bounding box)"), 'morton sfc')
-        self.modelPartitType.addItem(self.tr("Morton curve (bounding cube)"), 'morton sfc cube')
-        self.modelPartitType.addItem(self.tr("Hilbert curve (bounding box)"), 'hilbert sfc')
-        self.modelPartitType.addItem(self.tr("Hilbert curve (bounding cube)"), 'hilbert sfc cube')
 
         self.modelCSOUT1.addItem(self.tr("to standard output"), 'stdout')
         self.modelCSOUT1.addItem(self.tr("to listing"), 'listing')
@@ -323,16 +314,10 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.modelCSOUT2.addItem(self.tr("to standard output"), 'stdout')
         self.modelCSOUT2.addItem(self.tr("to listing_n<p>"), 'listing')
 
-        # Validators
-        partListVd = RegExpValidator(self.lineEdit_2, QRegExp("[0-9- ]*"))
-        self.lineEdit_2.setValidator(partListVd)
-
         # Connections
         self.connect(self.comboBoxSCRATCHDIR, SIGNAL("activated(const QString&)"), self.slotSCRATCHDIR)
         self.connect(self.toolButton, SIGNAL("clicked()"), self.slotSearchDirectory)
-        self.connect(self.comboBox_2, SIGNAL("activated(const QString&)"), self.slotExePartit)
         self.connect(self.toolButton_2, SIGNAL("clicked()"), self.slotSearchFile)
-        self.connect(self.lineEdit_2, SIGNAL("textChanged(const QString &)"), self.slotPartitionList)
         self.connect(self.lineEdit_3, SIGNAL("textChanged(const QString &)"), self.slotValgrind)
         self.connect(self.comboBox_6, SIGNAL("activated(const QString&)"), self.slotLogType)
         self.connect(self.comboBox_7, SIGNAL("activated(const QString&)"), self.slotLogType)
@@ -349,12 +334,6 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
             self.lineEdit.setEnabled(True)
             self.toolButton.setEnabled(True)
             self.modelSCRATCHDIR.setItem(str_model='prescribed')
-
-        self.partition_type = str(self.parent.mdl.getPartitionType())
-        self.modelPartitType.setItem(str_model=self.partition_type)
-
-        self.partition_list = self.parent.mdl.getString('partition_list')
-        self.lineEdit_2.setText(QString(self.partition_list))
 
         self.valgrind = self.parent.mdl.getString('valgrind')
         if self.valgrind != None:
@@ -382,27 +361,11 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
 
     @pyqtSignature("const QString &")
-    def slotPartitionList(self, text):
-        """
-        Input for Partitioner.
-        """
-        self.partition_list = str(text)
-
-
-    @pyqtSignature("const QString &")
     def slotValgrind(self, text):
         """
         Input for Valgrind.
         """
         self.valgrind = str(text)
-
-
-    @pyqtSignature("const QString &")
-    def slotExePartit(self, text):
-        """
-        Partitioner execution mode option.
-        """
-        self.partition_type = self.modelPartitType.dicoV2M[str(text)]
 
 
     def setLogType(self):
@@ -481,9 +444,6 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         """
         Method called when user clicks 'OK'
         """
-
-        self.parent.mdl.setPartitionType(self.partition_type)
-        self.parent.mdl.setString('partition_list', self.partition_list.strip())
 
         self.parent.mdl.setString('valgrind', self.valgrind.strip())
         self.parent.mdl.setString('scratchdir', self.scratchdir)
@@ -777,12 +737,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         self.modelArg_cs_verif = ComboModel(self.comboBoxRunType, 2, 1)
 
-        self.modelArg_cs_verif.addItem(self.tr("Import mesh / partition only"), 'none')
+        self.modelArg_cs_verif.addItem(self.tr("Import mesh only"), 'none')
         self.modelArg_cs_verif.addItem(self.tr("Mesh preprocessing"), 'mesh preprocess')
         self.modelArg_cs_verif.addItem(self.tr("Mesh quality criteria"), 'mesh quality')
         self.modelArg_cs_verif.addItem(self.tr("Standard"), 'standard')
         self.modelArg_cs_verif.setItem(str_model=self.mdl.getRunType())
-
 
         # initialize Widgets
 
@@ -1166,7 +1125,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Layout of the second part of this page.
         """
 
-        self.job_name     = self.jmdl.dictValues['job_name']
+        self.job_name  = self.jmdl.dictValues['job_name']
         self.job_nodes = self.jmdl.dictValues['job_nodes']
         self.job_ppn  = self.jmdl.dictValues['job_ppn']
         self.job_procs = self.jmdl.dictValues['job_procs']

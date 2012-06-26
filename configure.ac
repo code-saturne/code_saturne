@@ -435,18 +435,6 @@ CS_AC_TEST_MEDCOUPLING
 
 CS_AC_TEST_DOCS
 
-cs_have_partitioner=no
-if test x$cs_have_parmetis = xyes -o x$cs_have_metis = xyes ; then
-  cs_have_partitioner=yes
-fi
-if test x$cs_have_ptscotch = xyes -o x$cs_have_scotch = xyes ; then
-  cs_have_partitioner=yes
-fi
-
-AM_CONDITIONAL(HAVE_PARTITIONER, test x$cs_have_partitioner = xyes)
-
-unset cs_have_partitioner
-
 # Check if we need to force link with C++
 cs_have_link_cxx=no
 if test x$cs_have_med_link_cxx = xyes ; then

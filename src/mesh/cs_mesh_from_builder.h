@@ -90,26 +90,6 @@ CS_PROCF (algdom, ALGDOM)(cs_int_t  *iopt);
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Query or modification of the option for domain partitioning when no
- * partitioning file is present.
- *
- *  0 : query
- *  1 : based on initial numbering
- *  2 : based on Morton space-filling curve in bounding box
- *  3 : based on Morton space-filling curve in bounding cube
- *  4 : based on Hilbert space-filling curve in bounding box
- *  5 : based on Hilbert space-filling curve in bounding cube (default)
- *
- * choice <-- of partitioning algorithm.
- *
- * returns:
- *   1 to 5 according to the selected algorithm.
- *----------------------------------------------------------------------------*/
-
-int
-cs_mesh_from_builder_part_choice(int choice);
-
-/*----------------------------------------------------------------------------
  * Transfer mesh builder to mesh structure.
  *
  * parameters:

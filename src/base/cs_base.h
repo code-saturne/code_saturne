@@ -282,6 +282,20 @@ cs_base_string_f_to_c_create(const char  *f_str,
 void
 cs_base_string_f_to_c_free(char  **c_str);
 
+/*----------------------------------------------------------------------------
+ * Clean a string representing options.
+ *
+ * Characters are converted to lowercase, leading and trailing whitespace
+ * is removed, and multi ple whitespaces or tabs are replaced by single
+ * spaces.
+ *
+ * parameters:
+ *   s <-> string to be cleaned
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_option_string_clean(char  *s);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

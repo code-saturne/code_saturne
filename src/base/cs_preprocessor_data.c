@@ -62,6 +62,7 @@
 #include "cs_interface.h"
 #include "cs_mesh.h"
 #include "cs_mesh_from_builder.h"
+#include "cs_partition.h"
 #include "cs_io.h"
 
 /*----------------------------------------------------------------------------
@@ -257,8 +258,6 @@ _mesh_reader_create(int                 *n_mesh_files,
   mr->n_g_cells_read = 0;
   mr->n_g_faces_read = 0;
   mr->n_g_faces_connect_read = 0;
-
-  mr->read_cell_rank = 0;
 
   mr->cell_rank = NULL;
 
@@ -1710,162 +1709,6 @@ _read_data(int                 file_id,
 }
 
 /*----------------------------------------------------------------------------
- * Read cell rank if available
- *
- * parameters:
- *   mesh <-- pointer to mesh structure
- *   mb   <-> pointer to mesh builder helper structure
- *   echo <-- echo (verbosity) level
- *----------------------------------------------------------------------------*/
-
-static void
-_read_cell_rank(cs_mesh_t          *mesh,
-                cs_mesh_builder_t  *mb,
-                long                echo)
-{
-  char file_name[64]; /* more than enough for
-                         "partition/domain_number_<n_ranks>" */
-  size_t  i;
-  cs_io_sec_header_t  header;
-
-  cs_io_t  *rank_pp_in = NULL;
-  cs_lnum_t   n_ranks = 0;
-  cs_gnum_t   n_elts = 0;
-  cs_gnum_t   n_g_cells = 0;
-
-  const char  *unexpected_msg = N_("Section of type <%s> on <%s>\n"
-                                   "unexpected or of incorrect size");
-
-  if (n_ranks == 1)
-    return;
-
-#if (__STDC_VERSION__ < 199901L)
-  sprintf(file_name,
-          "partition%cdomain_number_%d",
-          _dir_separator, cs_glob_n_ranks);
-#else
-  snprintf(file_name, 64,
-           "partition%cdomain_number_%d",
-           _dir_separator, cs_glob_n_ranks);
-#endif
-  file_name[63] = '\0'; /* Just in case; processor counts would need to be
-                           in the exa-range for this to be necessary. */
-
-  /* Test if file exists */
-
-  if (! cs_file_isreg(file_name)) {
-    bft_printf(_(" No \"%s\" file available;\n"), file_name);
-    return;
-  }
-
-  /* Open file */
-
-#if defined(HAVE_MPI)
-  rank_pp_in = cs_io_initialize(file_name,
-                                "Domain partitioning, R0",
-                                CS_IO_MODE_READ,
-                                cs_glob_io_hints,
-                                echo,
-                                cs_glob_mpi_comm);
-#else
-  rank_pp_in = cs_io_initialize(file_name,
-                                "Domain partitioning, R0",
-                                CS_IO_MODE_READ,
-                                cs_glob_io_hints,
-                                echo);
-#endif
-
-  if (echo > 0)
-    bft_printf("\n");
-
-  /* Loop on read sections */
-
-  while (rank_pp_in != NULL) {
-
-    /* Receive headers */
-
-    cs_io_read_header(rank_pp_in, &header);
-
-    /* Treatment according to the header name */
-
-    if (strncmp(header.sec_name, "n_cells",
-                CS_IO_NAME_LEN) == 0) {
-
-      if (header.n_vals != 1)
-        bft_error(__FILE__, __LINE__, 0,
-                  _(unexpected_msg), header.sec_name,
-                  cs_io_get_name(rank_pp_in));
-      else {
-        cs_io_set_cs_gnum(&header, rank_pp_in);
-        cs_io_read_global(&header, &n_g_cells, rank_pp_in);
-        if (n_g_cells != mesh->n_g_cells)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("The number of cells reported by file\n"
-                      "\"%s\" (%llu)\n"
-                      "does not correspond the those of the mesh (%llu)."),
-                    cs_io_get_name(rank_pp_in),
-                    (unsigned long long)(n_g_cells),
-                    (unsigned long long)(mesh->n_g_cells));
-      }
-
-    }
-    else if (strncmp(header.sec_name, "n_ranks",
-                     CS_IO_NAME_LEN) == 0) {
-
-      if (header.n_vals != 1)
-        bft_error(__FILE__, __LINE__, 0,
-                  _(unexpected_msg), header.sec_name,
-                  cs_io_get_name(rank_pp_in));
-      else {
-        cs_io_set_cs_lnum(&header, rank_pp_in);
-        cs_io_read_global(&header, &n_ranks, rank_pp_in);
-        if (n_ranks != cs_glob_n_ranks)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("The number of ranks reported by file\n"
-                      "\"%s\" (%d) does not\n"
-                      "correspond to the current number of ranks (%d)."),
-                    cs_io_get_name(rank_pp_in), (int)n_ranks,
-                    (int)cs_glob_n_ranks);
-      }
-
-    }
-    else if (strncmp(header.sec_name, "cell:domain number",
-                     CS_IO_NAME_LEN) == 0) {
-
-      n_elts = mesh->n_g_cells;
-      if (header.n_vals != (cs_file_off_t)n_elts)
-        bft_error(__FILE__, __LINE__, 0,
-                  _(unexpected_msg), header.sec_name,
-                  cs_io_get_name(rank_pp_in));
-      else {
-        mb->have_cell_rank = true;
-        cs_io_set_cs_lnum(&header, rank_pp_in);
-        if (mb->cell_bi.gnum_range[0] > 0)
-          n_elts = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
-        BFT_MALLOC(mb->cell_rank, n_elts, cs_lnum_t);
-        cs_io_read_block(&header,
-                         mb->cell_bi.gnum_range[0],
-                         mb->cell_bi.gnum_range[1],
-                         mb->cell_rank, rank_pp_in);
-        for (i = 0; i < n_elts; i++) /* Convert 1 to n to 0 to n-1 */
-          mb->cell_rank[i] -= 1;
-      }
-      cs_io_finalize(&rank_pp_in);
-      rank_pp_in = NULL;
-
-    }
-
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("Section of type <%s> on <%s> is unexpected."),
-                header.sec_name, cs_io_get_name(rank_pp_in));
-  }
-
-  if (rank_pp_in != NULL)
-    cs_io_finalize(&rank_pp_in);
-}
-
-/*----------------------------------------------------------------------------
  * Descend binary tree for the ordering of a mesh's groups.
  *
  * parameters:
@@ -2285,6 +2128,10 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
 {
   int file_id;
 
+  cs_partition_stage_t partition_stage
+    =     (cs_partition_get_preprocess())
+       ?  CS_PARTITION_FOR_PREPROCESS : CS_PARTITION_MAIN;
+
   long  echo = CS_IO_ECHO_OPEN_CLOSE;
   _mesh_reader_t  *mr = _cs_glob_mesh_reader;
 
@@ -2296,10 +2143,9 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
   if (mr->n_files > 1)
     mesh->modified = 1;
 
-  /* Read cell rank data if available */
+  /* Partition data */
 
-  if (cs_glob_n_ranks > 1 && mr->n_files == 1)
-    _read_cell_rank(mesh, mesh_builder, echo);
+  cs_partition(mesh, mesh_builder, partition_stage);
 
   bft_printf("\n");
 

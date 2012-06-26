@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-06-06 18:09+0200\n"
+"POT-Creation-Date: 2012-06-26 17:01+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3860,333 +3860,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Usage: %s [options] <n_ranks> [<n_ranks_2> ... <n_ranks_n>]\n"
-"\n"
-"Compute domain partition(s) of Code_Saturne mesh_input file.\n"
-"\n"
-"<n_ranks> number of ranks of destination partition (> 1).\n"
-msgstr ""
-"Utilisation : %s [options] <n_rangs> [<n_ragks_2> ... <n_rangs_n>]\n"
-"\n"
-"Détermine les partitions d'un fichier mesh_input de Code_Saturne.\n"
-"\n"
-"<n_rangs> nombre de rangs de la partition cible (> 1).\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-"Command line options:\n"
-"\n"
-msgstr ""
-"\n"
-"Options de la ligne de commandes :\n"
-"\n"
-
-msgid ""
-" --no-perio        ignore periodicity information if present.\n"
-" --no-write        do not write output.\n"
-msgstr ""
-" --no-perio        ignore l'information sur la périodicité si présente.\n"
-" --no-write        ne pas écrire de données de sortie.\n"
-
-msgid " --metis           use ParMETIS for partitioning.\n"
-msgstr " --metis           utiliser ParMETIS pour le partitionnement.\n"
-
-msgid " --metis           use METIS for partitioning.\n"
-msgstr " --metis           utiliser METIS pour le partitionnement.\n"
-
-msgid " --scotch          use PT-SCOTCH for partitioning (default).\n"
-msgstr ""
-" --scotch          utiliser PT-SCOTCH pour le partitionnement (défaut).\n"
-
-msgid " --scotch          use SCOTCH for partitioning (default).\n"
-msgstr " --scotch          utiliser SCOTCH pour le partitionnement (défaut).\n"
-
-msgid " --mpi             use MPI for parallelism\n"
-msgstr " --mpi             partitionnement parallèle via MPI\n"
-
-#, c-format
-msgid ""
-" --mpi-io          <mode> set parallel I/O behavior\n"
-"                     off: do not use MPI-IO\n"
-"                     eo:  MPI-IO with explicit offsets\n"
-"                          (default if available)\n"
-"                     ip:  MPI-IO with individual file pointers\n"
-msgstr ""
-" --mpi-io          <mode> choix du mode des E/S parallèles\n"
-"                     off: ne pas utiliser MPI-IO\n"
-"                     eo:  MPI-IO avec positions explicites\n"
-"                          (défaut si disponible)\n"
-"                     ip:  MPI-IO avec pointeurs de fichiers individuels\n"
-
-msgid ""
-" --log             output redirection for rank -1 or 0:\n"
-"                     0: standard output\n"
-"                     1: output in \"partition.log\" (default)\n"
-msgstr ""
-" --log             redirection des sorties de rang -1 ou 0 :\n"
-"                     0 : sortie standard\n"
-"                     1 : sorties dans \"partition.log\" (défaut)\n"
-
-msgid ""
-" --logp            output redirection for rank > 0:\n"
-"                    -1: remove output (default)\n"
-"                     0: no redirection (if independant\n"
-"                        terminals, debugger type)\n"
-"                     1: output in \"partition_n<rank>.log\"\n"
-msgstr ""
-" --logp            redirection des sorties de rang > 0 :\n"
-"                    -1 : sorties supprimées (défaut)\n"
-"                     0 : aucune redirection (si terminaux\n"
-"                         indépendants, type deboggeur)\n"
-"                     1 : sorties dans \"partition_n<rang>\"\n"
-
-#, c-format
-msgid " --version         print version number\n"
-msgstr " --version         affiche le numéro de version\n"
-
-#, c-format
-msgid ""
-" -h, --help        this help message\n"
-"\n"
-msgstr ""
-" -h, --help        appel de l'aide (cet affichage)\n"
-"\n"
-
-#, c-format
-msgid "  %s version %s\n"
-msgstr "  %s version %s\n"
-
-msgid ""
-"\n"
-"  External library:\n"
-msgstr ""
-"\n"
-"  Librairie externe :\n"
-
-msgid ""
-"\n"
-"  External libraries:\n"
-msgstr ""
-"\n"
-"  Librairies externes :\n"
-
-#, c-format
-msgid ""
-"%s was built without MPI support,\n"
-"so option \"%s\" may not be used.\n"
-msgstr ""
-"%s a été construit sans support MPI,\n"
-"donc l'option \"%s\" n'est pas disponible.\n"
-
-#, c-format
-msgid ""
-"%s was built without METIS or ParMETIS support,\n"
-"so option \"%s\" may not be used.\n"
-msgstr ""
-"%s a été construit sans support METIS ou ParMETIS,\n"
-"donc l'option \"%s\" n'est pas disponible.\n"
-
-#, c-format
-msgid ""
-"%s was built without SCOTCH or PT-SCOTCH support,\n"
-"so option \"%s\" may not be used.\n"
-msgstr ""
-"%s a été construit sans support SCOTCH ou PT-SCOTCH,\n"
-"donc l'option \"%s\" n'est pas disponible.\n"
-
-msgid "  Number of cells per domain (histogramm):\n"
-msgstr "  Nombre de cellules par domaine (histogramme) :\n"
-
-#, c-format
-msgid ""
-"Section: \"%s\" of file \"%s\" has  %d values per\n"
-"location where 0 or 1 were expected."
-msgstr ""
-"La section : \"%s\" du fichier \"%s\" a %d valeurs par\n"
-"emplacement alors qu'on en attendait 0 ou 1."
-
-#, c-format
-msgid ""
-"Section: \"%s\" of file \"%s\" is not\n"
-"of unsigned integer type."
-msgstr ""
-"La section: \"%s\" du fichier \"%s\" n'est pas\n"
-"de type entier non signé."
-
-#, c-format
-msgid ""
-"Section: \"%s\" of file \"%s\" has  %d values per\n"
-"location where 2 were expected."
-msgstr ""
-"La section : \"%s\" du fichier \"%s\" a %d valeurs par\n"
-"emplacement alors qu'on en attendait 2."
-
-#, c-format
-msgid ""
-"Section: \"%s\" of file \"%s\" is not\n"
-"of integer type."
-msgstr ""
-"La section : \"%s\" du fichier \"%s\" n'est pas\n"
-"de type entier."
-
-#, c-format
-msgid ""
-"\n"
-"Partitioning %d cells to %d domains (METIS_PartGraphRecursive).\n"
-msgstr ""
-"\n"
-"Partition de %d cellules vers %d domaines (METIS_PartGraphRecursive).\n"
-
-#, c-format
-msgid ""
-"\n"
-"Partitioning %d cells to %d domains (METIS_PartGraphKway).\n"
-msgstr ""
-"\n"
-"Partition de %d cellules vers %d domaines (METIS_PartGraphKway).\n"
-
-#, c-format
-msgid ""
-"\n"
-"  Total number of faces on parallel boundaries: %llu\n"
-"  wall-clock time: %f s; CPU time: %f s\n"
-"\n"
-msgstr ""
-"\n"
-"  Nombre total de faces sur des frontières parallèles : %llu\n"
-"  temps écoulé : %f s ; temps CPU : %f s\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-"Partitioning %llu cells to %d domains (ParMETIS_V3_PartKway).\n"
-msgstr ""
-"\n"
-"Partition de %llu cellules vers %d domaines (ParMETIS_V3_PartKway).\n"
-
-msgid "Error in ParMETIS partitioning.\n"
-msgstr "Erreur au cours du partitionnement avec ParMETIS.\n"
-
-#, c-format
-msgid ""
-"\n"
-"  Total number of faces on parallel boundaries: %llu\n"
-"  wall-clock time: %f s\n"
-"\n"
-msgstr ""
-"\n"
-"  Nombre total de faces sur des frontières parallèles : %llu\n"
-"  temps écoulé : %f s\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-"  wall-clock time: %f s\n"
-"\n"
-msgstr ""
-"\n"
-"  temps écoulé : %f s\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-"Fatal error encountered by libScotch.\n"
-"\n"
-msgstr ""
-"\n"
-"Erreur bloquante rencontrée par libScotch.\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-"Warning (libScotch):\n"
-"\n"
-msgstr ""
-"\n"
-"Attention (libScotch) :\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-"Partitioning %d cells to %d domains (SCOTCH_graphPart).\n"
-msgstr ""
-"\n"
-"Partition de %d cellules vers %d domaines (SCOTCH_graphpart).\n"
-
-#, c-format
-msgid ""
-"\n"
-"Partitioning %llu cells to %d domains (SCOTCH_dgraphPart).\n"
-msgstr ""
-"\n"
-"Partition de %llu cellules vers %d domaines (SCOTCH_dgraphpart).\n"
-
-msgid "Read:   "
-msgstr "Lu :    "
-
-msgid "Ignored:"
-msgstr "Ignoré :"
-
-#, c-format
-msgid ""
-"Section of type <%s> on <%s>\n"
-"unexpected or of incorrect size."
-msgstr ""
-"Section de type <%s> sur <%s>\n"
-"inattendue ou de taille incorrecte."
-
-#, c-format
-msgid "  %s \"%-32s\"; Type: %-6s; Size: %llu\n"
-msgstr "  %s \"%-32s\" ; Type : %-6s ; Taille : %llu\n"
-
-#, c-format
-msgid "  %s \"%-32s\"\n"
-msgstr "  %s \"%-32s\"\n"
-
-msgid "The partitioning directory cannot be created"
-msgstr "Le répertoire de partitionnement n'a pas pu être créé"
-
-msgid ""
-" .------------------------------.\n"
-" |   Code_Saturne Partitioner   |\n"
-" `------------------------------'\n"
-"\n"
-msgstr ""
-" .--------------------------------.\n"
-" |   Partitionneur Code_Saturne   |\n"
-" `--------------------------------'\n"
-"\n"
-
-#, c-format
-msgid ""
-"\"%s\" is a directory. Run the Kernel to concatenate\n"
-"its contents into a single file before partitioning."
-msgstr ""
-"\"%s\" est un répertoire. Utilisez le Noyau pour concaténer\n"
-"son contenu en un seul fichier avant de partitionner."
-
-msgid ""
-"\n"
-" .------------------------.\n"
-" |   Partitioner finish   |\n"
-" `------------------------'\n"
-"\n"
-msgstr ""
-"\n"
-" .--------------------------------------.\n"
-" |   Fin d'exécution du Partitionneur   |\n"
-" `--------------------------------------'\n"
-"\n"
-
-#, c-format
-msgid ""
 "\n"
 " Cutting warped faces (%.3g s)\n"
 msgstr ""
@@ -5269,6 +4942,16 @@ msgstr "Utilisation : %s [options]\n"
 
 #, c-format
 msgid ""
+"\n"
+"Command line options:\n"
+"\n"
+msgstr ""
+"\n"
+"Options de la ligne de commandes :\n"
+"\n"
+
+#, c-format
+msgid ""
 " --app-name        <app_name> to name this code instance\n"
 "                   (default: working directory base name)\n"
 msgstr ""
@@ -5287,6 +4970,14 @@ msgstr ""
 
 #, c-format
 msgid ""
+" -h, --help        this help message\n"
+"\n"
+msgstr ""
+" -h, --help        appel de l'aide (cet affichage)\n"
+"\n"
+
+#, c-format
+msgid ""
 " --mpi             force use of MPI for parallelism or coupling\n"
 "                   (usually automatic, only required for\n"
 "                   undetermined MPI libraries)\n"
@@ -5294,6 +4985,20 @@ msgstr ""
 " --mpi             calcul parallèle ou couplé via MPI ;\n"
 "                   (généralement automatique, nécessaire uniquement\n"
 "                   pour des librairies MPI inconnues)\n"
+
+#, c-format
+msgid ""
+" --mpi-io          <mode> set parallel I/O behavior\n"
+"                     off: do not use MPI-IO\n"
+"                     eo:  MPI-IO with explicit offsets\n"
+"                          (default if available)\n"
+"                     ip:  MPI-IO with individual file pointers\n"
+msgstr ""
+" --mpi-io          <mode> choix du mode des E/S parallèles\n"
+"                     off: ne pas utiliser MPI-IO\n"
+"                     eo:  MPI-IO avec positions explicites\n"
+"                          (défaut si disponible)\n"
+"                     ip:  MPI-IO avec pointeurs de fichiers individuels\n"
 
 #, c-format
 msgid ""
@@ -5332,8 +5037,20 @@ msgid " -q, --quality     mesh quality verification mode\n"
 msgstr " -q, --quality     vérification de la qualité du maillage\n"
 
 #, c-format
+msgid " --version         print version number\n"
+msgstr " --version         affiche le numéro de version\n"
+
+#, c-format
 msgid "%s version %s\n"
 msgstr "%s version %s\n"
+
+#, c-format
+msgid ""
+"%s was built without MPI support,\n"
+"so option \"%s\" may not be used.\n"
+msgstr ""
+"%s a été construit sans support MPI,\n"
+"donc l'option \"%s\" n'est pas disponible.\n"
 
 #, c-format
 msgid ""
@@ -5560,38 +5277,18 @@ msgstr ""
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
+"unexpected or of incorrect size."
+msgstr ""
+"Section de type <%s> sur <%s>\n"
+"inattendue ou de taille incorrecte."
+
+#, c-format
+msgid ""
+"Section of type <%s> on <%s>\n"
 "unexpected."
 msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendue."
-
-#, c-format
-msgid " No \"%s\" file available;\n"
-msgstr " Pas de fichier \"%s\" disponible;\n"
-
-#, c-format
-msgid ""
-"The number of cells reported by file\n"
-"\"%s\" (%llu)\n"
-"does not correspond the those of the mesh (%llu)."
-msgstr ""
-"Le nombre de cellules indiqué par le fichier\n"
-"\"%s\" (%llu)\n"
-"ne correspond pas au maillage courant (%llu)."
-
-#, c-format
-msgid ""
-"The number of ranks reported by file\n"
-"\"%s\" (%d) does not\n"
-"correspond to the current number of ranks (%d)."
-msgstr ""
-"Le nombre de rangs indiqué par le fichier\n"
-"\"%s\" (%d)\n"
-"ne correspond pas au nombre de rangs courant (%d)."
-
-#, c-format
-msgid "Section of type <%s> on <%s> is unexpected."
-msgstr "Section de type <%s> sur <%s> inattendue."
 
 msgid "    no value\n"
 msgstr "    aucune valeur\n"
@@ -7886,6 +7583,32 @@ msgid "Invalid compressible model: %s.\n"
 msgstr ""
 
 #, c-format
+msgid ""
+"Coal number is limited to %i\n"
+"In the parametric file it is %i.\n"
+"Calculation is interupted. Check the parametric file.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"class number by coal is limited.\n"
+"For coal %i it is %i \n"
+" in the parametric file \n"
+msgstr ""
+
+msgid ""
+"type diameter value must be equal to 1 or 2.\n"
+"Calculation is interupted \n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Oxidant number must be between 1 and 3.\n"
+"It is  %i in the parametric file \n"
+"Calculation is interupted \n"
+msgstr ""
+
+#, c-format
 msgid "Unable to parse the file: %s\n"
 msgstr ""
 
@@ -9197,33 +8920,6 @@ msgstr ""
 "(rapport nombre de cellules / nombre de processeurs trop faible)."
 
 #, c-format
-msgid " Partitioning by space-filling curve: %s.\n"
-msgstr " Partitionnement par courbe fractale : %s.\n"
-
-#, c-format
-msgid ""
-"The algorithm selection indicator for domain partitioning\n"
-"can take the following values:\n"
-"  1:   partition based on initial numbering\n"
-"  2-5: partition based on space-filling curve\n"
-"and not %d."
-msgstr ""
-"L'indicateur de choix d'algorithme de partitionement de domaine\n"
-"peut prendre les valeurs suivantes :\n"
-"  1 :   partition basée sur la numérotation initiale\n"
-"  2-5 : partition basée sur une courbe fractale\n"
-"et non %d."
-
-msgid " No partitioning information available;\n"
-msgstr ""
-
-msgid "   an unoptimized domain partitioning will be used.\n"
-msgstr "   un découpage de domaines non optimisé sera utilisé.\n"
-
-msgid "   domain partitioning will use a space-filling curve.\n"
-msgstr "   le partitionnement sera basé sur une courbe fractale.\n"
-
-#, c-format
 msgid ""
 "Repeated inconsistency in the halo construction.\n"
 "Several local points have the same distant correspondant;\n"
@@ -9571,4 +9267,200 @@ msgstr ""
 "\n"
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
+"\n"
+
+msgid "  Number of cells per domain (histogramm):\n"
+msgstr "  Nombre de cellules par domaine (histogramme) :\n"
+
+#, c-format
+msgid ""
+"\n"
+" Partitioning by space-filling curve: %s.\n"
+msgstr ""
+"\n"
+" Partitionnement par courbe fractale : %s.\n"
+
+#, c-format
+msgid "  Morton (Z) curve:           %.3g s \n"
+msgstr "  Courbe de Morton (Z) :      %.3g s \n"
+
+#, c-format
+msgid "  Peano-Hilbert curve:        %.3g s \n"
+msgstr "  Courbe de Peano-Hilbert :   %.3g s \n"
+
+#, c-format
+msgid ""
+"\n"
+" Partitioning %llu cells to %d domains   (METIS_PartGraphRecursive).\n"
+msgstr ""
+"\n"
+"Partition de %llu cellules vers %d domaines (METIS_PartGraphRecursive).\n"
+
+#, c-format
+msgid ""
+"\n"
+" Partitioning %llu cells to %d domains\n"
+"  (METIS_PartGraphKway).\n"
+msgstr ""
+"\n"
+" Partition de %llu cellules vers %d domaines\n"
+"  (METIS_PartGraphKway).\n"
+
+#, c-format
+msgid ""
+"\n"
+"  Total number of faces on parallel boundaries: %llu\n"
+"  wall-clock time: %f s\n"
+"\n"
+msgstr ""
+"\n"
+"  Nombre total de faces sur des frontières parallèles : %llu\n"
+"  temps écoulé : %f s\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+" Partitioning %llu cells to %d domains on %d ranks\n"
+"   (ParMETIS_V3_PartKway).\n"
+msgstr ""
+"\n"
+" Partition de %llu cellules vers %d domaines sur %d rangs\n"
+"   (ParMETIS_V3_PartKway).\n"
+
+msgid "Error in ParMETIS partitioning.\n"
+msgstr "Erreur au cours du partitionnement avec ParMETIS.\n"
+
+#, c-format
+msgid ""
+"\n"
+"  wall-clock time: %f s\n"
+"\n"
+msgstr ""
+"\n"
+"  temps écoulé : %f s\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+"Fatal error encountered by libScotch.\n"
+"\n"
+msgstr ""
+"\n"
+"Erreur bloquante rencontrée par libScotch.\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+"Warning (libScotch):\n"
+"\n"
+msgstr ""
+"\n"
+"Attention (libScotch) :\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+" Partitioning %llu cells to %d domains\n"
+"   (SCOTCH_graphPart).\n"
+msgstr ""
+"\n"
+" Partition de %llu cellules vers %d domaines\n"
+"   (SCOTCH_graphPart).\n"
+
+#, c-format
+msgid ""
+"\n"
+" Partitioning %llu cells to %d domains on %d ranks\n"
+"   (SCOTCH_dgraphPart).\n"
+msgstr ""
+"\n"
+" Partition de %llu cellules vers %d domaines sur %d rangs\n"
+"   (SCOTCH_dgraphPart).\n"
+
+msgid ""
+"\n"
+" Ignoring periodicity for graph-based partitioning.\n"
+msgstr ""
+
+msgid "The partitioning directory cannot be created"
+msgstr "Le répertoire de partitionnement n'a pas pu être créé"
+
+#, c-format
+msgid " No \"%s\" file available;\n"
+msgstr " Pas de fichier \"%s\" disponible;\n"
+
+#, c-format
+msgid ""
+"The number of cells reported by file\n"
+"\"%s\" (%llu)\n"
+"does not correspond to those of the mesh (%llu)."
+msgstr ""
+"Le nombre de cellules indiqué par le fichier\n"
+"\"%s\" (%llu)\n"
+"ne correspond pas au maillage courant (%llu)."
+
+#, c-format
+msgid ""
+"The number of ranks reported by file\n"
+"\"%s\" (%d) does not\n"
+"correspond to the current number of ranks (%d)."
+msgstr ""
+"Le nombre de rangs indiqué par le fichier\n"
+"\"%s\" (%d)\n"
+"ne correspond pas au nombre de rangs courant (%d)."
+
+#, c-format
+msgid "Section of type <%s> on <%s> is unexpected."
+msgstr "Section de type <%s> sur <%s> inattendue."
+
+msgid ""
+"\n"
+"  External libraries for partitioning:\n"
+msgstr ""
+"\n"
+"  Librairies externes pour le partitionnement :\n"
+
+#, c-format
+msgid ""
+"Partitioning with %s requested, but %s is not available,\n"
+"so serial %s will be used."
+msgstr ""
+
+#, c-format
+msgid ""
+"Partitioning with %s required but neither\n"
+"%s nor %s is available."
+msgstr ""
+
+msgid ""
+"\n"
+"Partitioning:\n"
+"\n"
+msgstr ""
+"\n"
+"Partitionnement :\n"
+"\n"
+
+#, c-format
+msgid "  preparing graph:            %.3g s\n"
+msgstr "  preparation du graphe ;     %.3g s\n"
+
+#, c-format
+msgid ""
+"\n"
+" Partitioning finished (%.3g s)\n"
+msgstr ""
+"\n"
+" Partitionnement terminé (%.3g s)\n"
+
+#, c-format
+msgid ""
+"  wall clock time:            %.3g s\n"
+"\n"
+msgstr ""
+"  temps écoulé :              %.3g s\n"
 "\n"

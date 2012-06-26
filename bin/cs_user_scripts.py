@@ -87,33 +87,6 @@ def define_domain_parameters(domain):
     if domain.param == None:
         domain.meshes = None
 
-    # Partitioning options
-    #---------------------
-
-    # Use of a graph-based partitioner (using SCOTCH/PT-SCOTCH or
-    # METIS/ParMETIS) may be deactivated by setting
-    #   domain.exec_partition = False
-
-    # Otherwise, if ParMETIS or PT-SCOTCH are available, the number of
-    # MPI processes used for partitioning may also be forced, for example:
-    #   domain.partition_nprocs = 32
-
-    # If we want to prepare partitioning for future runs, a tuple
-    # of partitionings to compute may be defined, for example:
-    #   domain.partition_list = (64, 128, 256)
-    # will produce files 'domain_number_64', 'domain_number_128',
-    # and 'domain_number_256' in RESU/partition.
-
-    # Finally, additional command-line options may be passed to the
-    # partitioner, for example:
-    #   domain.partition_args = '--scotch --no-perio'
-
-    if domain.param == None:
-        domain.exec_partition = True
-        domain.partition_n_procs = None
-        domain.partition_list = None
-        domain.partition_args = None
-
     # User data files
     #----------------
 
@@ -153,7 +126,7 @@ def define_domain_parameters(domain):
     if domain.param == None:
         domain.logging_args = None
 
-    # Optional MPI IO behavior for both the partitioner and the solver
+    # Optional MPI IO behavior for the solver
     # may be forced using domain.mpi_io = <option>, where option is one of:
     #   'off' (disable MPI_IO)
     #   'eo' (use explicit offsets)

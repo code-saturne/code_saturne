@@ -54,9 +54,6 @@ BEGIN_C_DECLS
  * Global variables
  *===========================================================================*/
 
-extern int  cs_glob_n_join_perio;   /* Number of periodicity defined through
-                                       a joining operation */
-
 /*============================================================================
  *  Public function prototypes for Fortran API
  *============================================================================*/

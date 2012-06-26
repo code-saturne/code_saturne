@@ -656,14 +656,11 @@ cs_gui_reference_initialization(const char   *const param,
                                       double *const value);
 
 /*-----------------------------------------------------------------------------
- * Return value of partitioning option.
- *
- * returns:
- *   id of selected (or default) partitioning type (0-3)
+ * Set partitioning options.
  *----------------------------------------------------------------------------*/
 
-int
-cs_gui_get_sfc_partition_type(void);
+void
+cs_gui_partition(void);
 
 /*-----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables

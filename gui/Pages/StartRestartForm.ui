@@ -37,9 +37,6 @@
         </item>
         <item>
          <widget class="QLabel" name="label">
-          <property name="toolTip">
-           <string>Code_Saturne key word: ISUITE</string>
-          </property>
           <property name="text">
            <string>Calculation restart:</string>
           </property>
@@ -47,9 +44,6 @@
         </item>
         <item>
          <widget class="QRadioButton" name="radioButtonYes">
-          <property name="toolTip">
-           <string>Code_Saturne key word: ISUITE</string>
-          </property>
           <property name="text">
            <string>on</string>
           </property>
@@ -57,9 +51,6 @@
         </item>
         <item>
          <widget class="QRadioButton" name="radioButtonNo">
-          <property name="toolTip">
-           <string>Code_Saturne key word: ISUITE</string>
-          </property>
           <property name="text">
            <string>off</string>
           </property>
@@ -99,19 +90,6 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
-            <spacer name="horizontalSpacer">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
             <widget class="QLineEdit" name="lineEdit">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -139,26 +117,7 @@
               <iconset resource="resources_pages.qrc">
                <normaloff>:/new/prefix1/icons/22x22/document-open.png</normaloff>:/new/prefix1/icons/22x22/document-open.png</iconset>
              </property>
-             <property name="iconSize">
-              <size>
-               <width>22</width>
-               <height>22</height>
-              </size>
-             </property>
             </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_2">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
            </item>
           </layout>
          </item>

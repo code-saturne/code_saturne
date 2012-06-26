@@ -79,55 +79,6 @@ class ScriptRunningModel(Model):
         self.node_mgt.xmlSetData('run_type', run)
 
 
-    def getPartitionType(self):
-        """
-        Get partition type.
-        """
-        val = self.node_mgt.xmlGetString('partition_type')
-        if not val:
-            val = 'default'
-
-        return val
-
-
-    def setPartitionType(self, run):
-        """
-        Set partition type.
-        """
-        self.isInList(run, ('default', 'scotch', 'metis',
-                            'morton sfc', 'morton sfc cube',
-                            'hilbert sfc', 'hilbert sfc cube'))
-        if run == 'default':
-            node = self.node_mgt.xmlGetNode('partition_type')
-            if node:
-                node.xmlRemoveNode()
-        else:
-            self.node_mgt.xmlSetData('partition_type', run)
-
-
-    def getPartitionList(self):
-        """
-        Get partitions list.
-        """
-        val = self.node_mgt.xmlGetString('partition_list')
-        if not val:
-            val = ''
-
-        return val
-
-
-    def setPartitionList(self, parts):
-        """
-        Set partitions list.
-        """
-        if not parts:
-            node = self.node_mgt.xmlGetNode('partition_list')
-            if node:
-                node.xmlRemoveNode()
-        else:
-            self.node_mgt.xmlSetData('partition_list', parts)
-
-
     def getLogType(self):
         """
         Get logging options.
