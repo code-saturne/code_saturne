@@ -409,6 +409,7 @@ class domain(base_domain):
         # Additional data
 
         self.thermochemistry_data = None
+        self.janaf_data = None
         self.meteo_data = None
 
         self.user_input_files = None
@@ -703,6 +704,7 @@ class domain(base_domain):
             self.copy_data_file(self.thermochemistry_data,
                                 'dp_FCP.xml',
                                 'thermochemistry')
+        if self.janaf_data == 'on' or self.thermochemistry_data != None:
             if not os.path.isfile('JANAF'):
                 self.copy_data_file(os.path.join(self.package.pkgdatadir,
                                                  'data',

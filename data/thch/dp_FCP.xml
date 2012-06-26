@@ -31,8 +31,8 @@
 					<A2_pre-exponential_factor>1.3e+13</A2_pre-exponential_factor>
 					<E1_energy_of_activation>74000</E1_energy_of_activation>
 					<E2_energy_of_activation>250000</E2_energy_of_activation>
-					<HCN_NO_partitionning_reaction_1>0.5</HCN_NO_partitionning_reaction_1>
-					<HCN_NO_partitionning_reaction_2>0.5</HCN_NO_partitionning_reaction_2>
+					<HCN_NH3_partitionning_reaction_1>0.5</HCN_NH3_partitionning_reaction_1>
+					<HCN_NH3_partitionning_reaction_2>0.5</HCN_NH3_partitionning_reaction_2>
 				</devolatilisation_parameters>
 				<char_combustion>
 					<specie nature="O2" status="on">
@@ -130,15 +130,15 @@
 			<property label="Ga_HET_O201" name="Ga_HET_O201"/>
 			<property label="IntLuminance_4PI" name="IntLuminance_4PI"/>
 			<absorption_coefficient>0.1</absorption_coefficient>
+		        <oxidants>
+			        <oxidant ox_id="1">
+				        <O2_composition>1</O2_composition>
+				        <N2_composition>3.76</N2_composition>
+				        <H2O_composition>0</H2O_composition>
+				        <CO2_composition>0</CO2_composition>
+			        </oxidant>
+			        <oxidant_type>volumic_percent</oxidant_type>
+        		</oxidants>
 		</solid_fuels>
-		<oxidants>
-			<oxidant ox_id="1">
-				<O2_composition>1</O2_composition>
-				<N2_composition>3.76</N2_composition>
-				<H2O_composition>0</H2O_composition>
-				<CO2_composition>0</CO2_composition>
-			</oxidant>
-			<oxidant_type>volumic_percent</oxidant_type>
-		</oxidants>
 	</thermophysical_models>
 </Code_Saturne_GUI>

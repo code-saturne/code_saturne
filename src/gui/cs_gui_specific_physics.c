@@ -2778,7 +2778,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
 
         /* ---- Parametres combustion heterogene pour CO2(modele a sphere retrecissante) */
         _getKineticsStatus(icha+1, "CO2", ihtco2);
-        if (ihtco2)
+        if (*ihtco2)
         {
             ahetc2[icha] = _get_pre_exponential_constant(icha+1,"CO2");
             ehetc2[icha] = _get_energy_of_activation(icha+1,"CO2");
@@ -2787,7 +2787,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
 
         /* ---- Parametres combustion heterogene pour H2O (modele a sphere retrecissante) */
         _getKineticsStatus(icha+1, "H2O", ihth2o);
-        if (ihth2o)
+        if (*ihth2o)
         {
             ahetwt[icha] = _get_pre_exponential_constant(icha+1,"H2O");
             ehetwt[icha] = _get_energy_of_activation(icha+1,"H2O");
@@ -2797,7 +2797,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
         /* ---- Parametres modele de NOX
                 QPR = % d'azote libere pendant la devol./%de MV libere pendant la devol */
         _getNOxStatus(icha+1, ieqnox);
-        if (ieqnox)
+        if (*ieqnox)
         {
             qpr[icha] = _get_nitrogen_fraction(icha+1);
             fn[icha] = _get_nitrogen_concentration(icha+1);
