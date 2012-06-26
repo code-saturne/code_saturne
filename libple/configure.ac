@@ -30,7 +30,7 @@ m4_define([ple_licence_c_comment],
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2010  EDF
+  Copyright (C) 2005-2012  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -49,7 +49,7 @@ m4_define([ple_licence_c_comment],
 
 m4_define([ple_major_version], [1])
 m4_define([ple_minor_version], [0])
-m4_define([ple_release_version], [0])
+m4_define([ple_release_version], [1])
 m4_define([ple_version_extra], [])
 m4_define([ple_version_string],
           [ple_major_version.ple_minor_version.ple_release_version@&t@ple_version_extra])
@@ -70,8 +70,8 @@ AH_TOP([#ifndef __PLE_CONFIG_PRIV_H__
 #define __PLE_CONFIG_PRIV_H__
 
 /*
-  This file is part of the "Finite Volume Mesh" library, intended to provide
-  finite volume mesh and associated fields I/O and manipulation services.
+  This file is part of the "Parallel Location and Exchange" library,
+  intended to provide mesh or particle-based code coupling services.
 */])
 
 AH_BOTTOM([#endif /* __PLE_CONFIG_PRIV_H__ */])
@@ -108,6 +108,7 @@ PLE_AC_CONFIG_PUBL_DEFINE(PLE_RELEASE_VERSION, ple_release_version,
 user_CPPFLAGS=$CPPFLAGS
 user_CFLAGS=$CFLAGS
 user_LDFLAGS=$LDFLAGS
+user_LIBS=$LIBS
 
 AC_PROG_CC
 AC_PROG_INSTALL
@@ -118,37 +119,51 @@ AM_PROG_CC_C_O
 # Debug or production compilation mode (debug by default) ?
 
 AC_ARG_ENABLE(debug,
-  [  --enable-debug          enable debugging (reduces optimization)],
+  [AS_HELP_STRING([--enable-debug], [enable debugging (reduces optimization)])],
   [
     case "${enableval}" in
-      yes) debug=true ;;
-      no)  debug=false ;;
+      yes) debug=yes ;;
+      no)  debug=no ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
     esac
   ],
-  [ debug=false ]
+  [ debug=no ]
 )
-AM_CONDITIONAL(DEBUG, test x$debug = xtrue)
+AC_SUBST(debug)
 
 # Optionally deactivate automatic determination of flags on known systems
 
 AC_ARG_ENABLE(auto-flags,
-  [  --disable-auto-flags    do not define *FLAGS on known systems],
+  [AS_HELP_STRING([--disable-auto-flags], [do not define *FLAGS on known systems])],
   [
     case "${enableval}" in
-      yes) auto_flags=true ;;
-      no)  auto_flags=false ;;
+      yes) auto_flags=yes ;;
+      no)  auto_flags=no ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-auto-flags]) ;;
     esac
   ],
-  [ auto_flags=true ]
+  [ auto_flags=yes ]
 )
+
+AC_ARG_ENABLE(enable_static_libs,
+  [AS_HELP_STRING([--enable-static-libs], [allow use of static external libraries])],
+  [
+    case "${enableval}" in
+      yes) enable_static_libs=yes ;;
+      no)  enable_static_libs=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-static-libs]) ;;
+    esac
+  ],
+  [ relocatable=no ]
+)
+AC_SUBST(enable_static_libs)
+AM_CONDITIONAL(HAVE_RELOCATABLE, [test "${enable_static_libs}" = yes])
 
 # Default compiler options (may be modified
 # by defining CFLAGS in the environment)
 #------------------------------------------
 
-if test "x$auto_flags" = "xtrue" ; then
+if test "x$auto_flags" = "xyes" ; then
 
   # Source associated recommended compiler options
 
@@ -159,72 +174,42 @@ if test "x$auto_flags" = "xtrue" ; then
     AC_MSG_WARN([config/ple_auto_flags.sh default configuration file not found])
   fi
 
-  if test "x$user_CPPFLAGS" = "x"; then
-    CPPFLAGS="$cppflags_default"
+  # Default flags
+  CPPFLAGS="$cppflags_default $user_CPPFLAGS"
+  CFLAGS="$cflags_default $user_CFLAGS"
+  LDFLAGS="$ldflags_default $user_LDFLAGS"
+  LIBS="$libs_default $user_LIBS"
+  LDRPATH="$ldflags_rpath"
+
+  if test "x$debug" = xyes; then
+    # Debug flags
+    CFLAGS_DBG="$cflags_default_dbg"
+    # Add debug flags for linker
+    LDFLAGS="$LDFLAGS $ldflags_default_dbg"
   else
-    AC_MSG_NOTICE([default CPPFLAGS overridden by user definition])
+    # Normal optimization flags
+    CFLAGS_OPT="$cflags_default_opt"
+    # Add optimization flags for linker
+    LDFLAGS="$LDFLAGS $ldflags_default_opt"
   fi
 
-  if test "x$user_CFLAGS" = "x"; then
+  AC_SUBST(CFLAGS_DBG)
+  AC_SUBST(CFLAGS_OPT)
 
-    CFLAGS="$cflags_default"
-
-    if test "x$debug" = xtrue; then
-      CFLAGS="${CFLAGS} $cflags_default_dbg"
-    else
-      CFLAGS="${CFLAGS} $cflags_default_opt"
-    fi
-
-  else
-
-    AC_MSG_NOTICE([default CFLAGS overridden by user definition])
-
-  fi
-
-  if test "x$user_LDFLAGS" = "x"; then
-
-    LDFLAGS="$ldflags_default"
-
-    if test "x$debug" = xtrue; then
-      LDFLAGS="${LDFLAGS} $ldflags_default_dbg"
-    else
-      LDFLAGS="${LDFLAGS} $ldflags_default_opt"
-    fi
-
-  else
-
-    AC_MSG_NOTICE([default LDFLAGS overridden by user definition])
-
-  fi
+  AC_SUBST(LDRPATH)
 
 fi
 
 LIBS="${LIBS} -lm"
 
-# Optional additional user flags
-#-------------------------------
+# Preprocessor flags for debugging purposes
 
-AC_ARG_VAR(CPP_ADD,  [Additional user C preprocessor flags])
-AC_ARG_VAR(CC_ADD,   [Additional user C compiler flags])
-AC_ARG_VAR(LD_ADD,   [Additional user linker flags, e.g. -L<libdir>])
-AC_ARG_VAR(LIBS_ADD, [Additional user librairies, e.g. -l<lib>])
-
-if test "x$CPP_ADD" != x ; then
-  CPPFLAGS="${CPPFLAGS} $CPP_ADD"
+if test "x$debug" = "xyes"; then
+  CPPFLAGS="${CPPFLAGS} -DDEBUG"
+else
+  CPPFLAGS="${CPPFLAGS} -DNDEBUG"
 fi
-
-if test "x$CC_ADD" != x ; then
-  CFLAGS="${CFLAGS} $CC_ADD"
-fi
-
-if test "x$LD_ADD" != x ; then
-  LDFLAGS="${LDFLAGS} $LD_ADD"
-fi
-
-if test "x$LIBS_ADD" != x ; then
-  LIBS="${LIBS} $LIBS_ADD"
-fi
-
+ 
 #------------------------------------------------------------------------------
 
 # We may only turn on processing for libtool now that the basic compiler
@@ -239,6 +224,7 @@ fi
 if test "x$ple_disable_shared" = "xyes" ; then
   enable_shared=no
 fi
+AC_SUBST(enable_shared)
 
 LT_INIT
 

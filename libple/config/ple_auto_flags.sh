@@ -1,6 +1,6 @@
 # Shell script
 
-# Copyright (C) 2005-2010 EDF
+# Copyright (C) 2005-2012 EDF
 
 # This file is part of the PLE software package.  For license
 # information, see the COPYING file in the top level directory of the
@@ -242,9 +242,6 @@ if test "x$ple_compiler_known" != "xyes" ; then
     ldflags_default_dbg="-g"
     ldflags_default_prf="-pg"
 
-    # Disable shared libraries in all cases
-    ple_disable_shared=yes
-
     # Adjust options for IBM Blue Gene cross-compiler
 
     grep 'Blue Gene' $outfile > /dev/null
@@ -257,12 +254,14 @@ if test "x$ple_compiler_known" != "xyes" ; then
         cflags_default_opt="-O2"
         cflags_default_dbg=""
         ldflags_default="-L/bgl/BlueLight/ppcfloor/bglsys/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lnss_files -lnss_dns -lresolv"
+        ple_disable_shared=yes # Disable shared libraries
       elif test "$ple_ibm_bg_type" = "P" ; then
         cppflags_default="-I/bgsys/drivers/ppcfloor/comm/include"
         cflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450"
         cflags_default_opt="-O1"
         cflags_default_dbg=""
         ldflags_default=""
+        ple_disable_shared=yes # Disable shared libraries
       else
         ple_ibm_bg_type="Q"
         cppflags_default=""

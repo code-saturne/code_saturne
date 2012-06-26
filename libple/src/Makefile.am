@@ -2,7 +2,7 @@
 #   This file is part of the "Parallel Location and Exchange" library,
 #   intended to provide mesh or particle-based code coupling services.
 #
-#   Copyright (C) 2005-2010  EDF
+#   Copyright (C) 2005-2012  EDF
 #
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Lesser General Public
@@ -19,17 +19,9 @@
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-# Add any debug flags
-
-if DEBUG
-  DEBUG_CPPFLAGS = -DDEBUG
-else
-  DEBUG_CPPFLAGS = -DNDEBUG
-endif
-
 # Main part
 
-AM_CPPFLAGS = $(DEBUG_CPPFLAGS) $(MPI_CPPFLAGS)
+AM_CPPFLAGS = $(MPI_CPPFLAGS)
 AM_CFLAGS =
 AM_LDFLAGS = $(MPI_LDFLAGS)
 
@@ -48,12 +40,11 @@ ple_config_defs.h
 
 lib_LTLIBRARIES = libple.la
 noinst_LTLIBRARIES =
-libple_la_LIBADD =
+libple_la_LIBADD = $(MPI_LIBS) -lm
 libple_la_SOURCES = ple_defs.c ple_locator.c
 
 if HAVE_MPI
 libple_la_SOURCES += ple_coupling.c
 endif
 
-libple_la_LDFLAGS = -no-undefined -version-info 0:0:0
-
+libple_la_LDFLAGS = $(MPI_LDFLAGS) -no-undefined -version-info 0:0:0
