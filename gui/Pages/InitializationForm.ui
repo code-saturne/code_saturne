@@ -577,7 +577,6 @@
  </widget>
  <resources>
   <include location="resources_pages.qrc"/>
-  <include location="../../../../tmp/version_melanie_mission4212011/gui/Pages/resources_pages.qrc"/>
  </resources>
  <connections/>
 </ui>
