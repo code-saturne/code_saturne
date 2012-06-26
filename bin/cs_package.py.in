@@ -47,7 +47,6 @@ class package:
         self.code_name = "Code_Saturne"
 
         self.preprocessor = "cs_preprocess"
-        self.partitioner = "cs_partition"
         self.solver = "cs_solver"
         self.check_syntax = "cs_check_syntax"
         self.io_dump = "cs_io_dump"
@@ -68,9 +67,10 @@ class package:
         self.fcmoddir="@pkgincludedir@"
         self.fcmodinclude="@FCMODINCLUDE@"
         self.ldflags = "@CS_LDFLAGS@"
-        self.libs = "-lsaturne -lmei -lbft @CS_LIBS@"
+        self.libs = "-lsaturne @CS_LIBS@"
         self.deplibs = "@LDFLAGS@ @LIBINTL@ @LIBS@ @FCLIBS@"
         self.rpath="@LDRPATH@"
+        self.special_user_link="@cs_special_user_link@"
 
         # PLE library can be an internal or external library
         # Its flags are included in other build flags,

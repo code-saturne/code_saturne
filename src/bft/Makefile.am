@@ -41,8 +41,8 @@ bft_printf.h
 
 # Library source files
 
-lib_LTLIBRARIES = libbft.la
-libbft_la_SOURCES   = \
+noinst_LTLIBRARIES = libbft.la
+libbft_la_SOURCES  = \
 bft_backtrace.c \
 bft_error.c \
 bft_mem.c \

@@ -32,6 +32,13 @@ cs_have_ptscotch=no
 cs_have_scotch_header=no
 cs_have_scotch=no
 
+# Common library dependencies for PT-SCOTCH
+cs_scotch_l0="-lm"
+cs_scotch_l1="-lz -lm"
+cs_scotch_l2="-lm -lpthread"
+cs_scotch_l3="-lz -lm -lpthread"
+SCOTCH_LIBS_ADD=""
+
 AC_ARG_WITH(scotch,
             [AS_HELP_STRING([--with-scotch=PATH],
                             [specify prefix directory for SCOTCH])],
@@ -60,10 +67,14 @@ AC_ARG_WITH(scotch-lib,
             [if test "x$with_scotch" = "xcheck" -o "x$with_scotch" = "xno"; then
                with_scotch=yes
              fi
-             SCOTCH_LDFLAGS="-L$with_scotch_lib"],
+             SCOTCH_LDFLAGS="-L$with_scotch_lib"
+             # Add the libdir to the runpath as SCOTCH is not libtoolized
+             SCOTCHRUNPATH="-R$with_scotch_lib"],
             [if test "x$with_scotch" != "xno" -a "x$with_scotch" != "xyes" \
 	          -a "x$with_scotch" != "xcheck"; then
                SCOTCH_LDFLAGS="-L$with_scotch/lib"
+               # Add the libdir to the runpath as SCOTCH is not libtoolized
+               SCOTCHRUNPATH="-R$with_scotch/lib"
              fi])
 
 
@@ -97,18 +108,27 @@ if test "x$with_scotch" != "xno" ; then
   fi
 
   LDFLAGS="${LDFLAGS} ${SCOTCH_LDFLAGS} ${MPI_LDFLAGS}"
-  SCOTCH_LIBS="-lptscotch -lptscotcherr -lm"
-  LIBS="${LIBS} ${SCOTCH_LIBS}  ${MPI_LIBS}"
+  SCOTCH_LIBS="-lptscotch -lptscotcherr"
+  LIBS="${LIBS} ${SCOTCH_LIBS} ${MPI_LIBS}"
 
   AC_MSG_CHECKING([for PT-SCOTCH])
-  AC_LINK_IFELSE([AC_LANG_PROGRAM(
+
+  for cs_scotch_ladd in "$cs_scotch_l0" "$cs_scotch_l1" "$cs_scotch_l2" "$cs_scotch_l3"
+  do
+    if test "x$cs_have_ptscotch" = "xno" ; then
+      LIBS="${LIBS} ${SCOTCH_LIBS} ${cs_scotch_ladd} ${MPI_LIBS}"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <stdio.h>
 #include <stdint.h>
 #include <mpi.h>
 #include <ptscotch.h>]],
 [[ SCOTCH_dgraphInit((void *)0, MPI_COMM_WORLD); ]])],
-[cs_have_ptscotch=yes],
+[cs_have_ptscotch=yes
+ SCOTCH_LIBS_ADD="${cs_scotch_ladd}"],
 [cs_have_ptscotch=no])
+    fi
+  done
+
   AC_MSG_RESULT($cs_have_ptscotch)
 
   # Test for SCOTCH second
@@ -133,27 +153,34 @@ if test "x$with_scotch" != "xno" ; then
     fi
 
     LDFLAGS="${saved_LDFLAGS} ${SCOTCH_LDFLAGS}"
-    SCOTCH_LIBS="-lscotch -lscotcherr -lm"
+    SCOTCH_LIBS="-lscotch -lscotcherr"
     LIBS="${saved_LIBS} ${SCOTCH_LIBS}"
 
     AC_MSG_CHECKING([for SCOTCH])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM(
+
+    for cs_scotch_ladd in "$cs_scotch_l0" "$cs_scotch_l1" "$cs_scotch_l2" "$cs_scotch_l3"
+    do
+      if test "x$cs_have_scotch" = "xno" ; then
+        LIBS="${LIBS} ${SCOTCH_LIBS} ${cs_scotch_ladd}"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <stdio.h>
 #include <stdint.h>
 #include <scotch.h>]],
 [[ SCOTCH_graphInit((void *)0); ]])],
-[cs_have_scotch=yes],
+[cs_have_scotch=yes
+ SCOTCH_LIBS_ADD="${cs_scotch_ladd}"],
 [cs_have_scotch=no])
-    AC_MSG_RESULT($cs_have_scotch)
+      fi
+    done
 
   fi
 
   if test "x$cs_have_ptscotch" = "xyes"; then
     AC_DEFINE([HAVE_PTSCOTCH], 1, [use SCOTCH])
-    SCOTCH_LIBS="-lptscotch -lm" # libptscotcherr functions in cs_partition    
+    SCOTCH_LIBS="-lptscotch ${SCOTCH_LIBS_ADD}" # libptscotcherr functions in cs_partition
   elif test "x$cs_have_scotch" = "xyes"; then
     AC_DEFINE([HAVE_SCOTCH], 1, [use SCOTCH])
-    SCOTCH_LIBS="-lscotch -lm" # libscotcherr functions in cs_partition    
+    SCOTCH_LIBS="-lscotch ${SCOTCH_LIBS_ADD}" # libscotcherr functions in cs_partition
   else
     SCOTCH_CPPFLAGS=""
     SCOTCH_LDFLAGS=""
@@ -169,11 +196,16 @@ LIBS="$saved_LIBS"
 unset saved_CPPFLAGS
 unset saved_LDFLAGS
 unset saved_LIBS
+unset cs_scotch_l0
+unset cs_scotch_l1
+unset cs_scotch_l2
+unset cs_scotch_l3
 
 AC_SUBST(cs_have_scotch)
 AC_SUBST(SCOTCH_CPPFLAGS)
 AC_SUBST(SCOTCH_LDFLAGS)
 AC_SUBST(SCOTCH_LIBS)
+AC_SUBST(SCOTCHRUNPATH)
 
 ])dnl
 

@@ -44,8 +44,8 @@ noinst_HEADERS = \
 mei_math_util.h \
 mei_parser_glob.h
 
-lib_LTLIBRARIES = libmei.la
-libmei_la_LIBADD = $(LTLIBINTL)
+noinst_LTLIBRARIES = libmei.la
+libmei_la_LIBADD =
 libmei_la_SOURCES = \
 mei_evaluate.c \
 mei_hash_table.c \

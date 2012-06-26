@@ -5391,7 +5391,7 @@ cs_gui_partition(void)
                         "rank_step");
   cs_xpath_add_function_text(&path);
   cs_gui_get_int(path, &rank_step);
-  
+
   BFT_FREE(path);
 
   /* Ignore periodicity option */
@@ -5408,7 +5408,7 @@ cs_gui_partition(void)
       ignore_perio = true;
     BFT_FREE(s_perio);
   }
-  
+
   BFT_FREE(path);
 
   /* Output option */

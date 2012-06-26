@@ -33,7 +33,7 @@
 #include <bft_error.h>
 #include <bft_printf.h>
 
-#include "fvm_part_to_block.h"
+#include "cs_block_dist.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -47,7 +47,7 @@ main (int argc, char *argv[])
   int n_ranks = 4096;
   cs_gnum_t n_g_ents[] = {500, 1100000000, 2200000000,5400000000};
 
-  fvm_part_to_block_info_t bi;
+  cs_block_dist_info_t bi;
 
   for (i = 0; i < 4; i++) {
 
@@ -57,11 +57,11 @@ main (int argc, char *argv[])
     bft_printf("\ntest for n_g_ents = %llu\n",
                (unsigned long long)(n_g_ents[i]));
     for (j = 0; j < 4; j++) {
-      bi = fvm_part_to_block_compute_sizes(rank_id[j],
-                                           n_ranks,
-                                           0,
-                                           1024*1024,
-                                           n_g_ents[i]);
+      bi = cs_block_dist_compute_sizes(rank_id[j],
+                                       n_ranks,
+                                       0,
+                                       1024*1024,
+                                       n_g_ents[i]);
       bft_printf("%d/%d [%llu %llu] block step %d, block size %d\n",
                  rank_id[j], n_ranks, (unsigned long long)(bi.gnum_range[0]),
                  (unsigned long long)(bi.gnum_range[1]),
