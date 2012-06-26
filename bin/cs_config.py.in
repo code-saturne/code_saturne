@@ -399,7 +399,7 @@ def main(argv, pkg):
 
     if opts.libs is not None:
         if opts.libs == "saturne":
-            print("-lsaturne -lmei -lbft")
+            print("-lsaturne")
         elif opts.libs == "ple":
             print(pkg.ple_libs)
         else:
