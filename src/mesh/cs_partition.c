@@ -2820,9 +2820,9 @@ cs_partition_set_algorithm(cs_partition_stage_t      stage,
 #if defined(HAVE_SCOTCH)
     if (n_part_ranks > 1) {
       rank_step = cs_glob_n_ranks;
-      bft_printf
-        (_warn(__FILE__, __LINE__);
-         _("Partitioning with %s requested, but %s is not available,\n"
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(
+        _("Partitioning with %s requested, but %s is not available,\n"
            "so serial %s will be used."), "LibSCOTCH", "PT-SCOTCH", "SCOTCH");
     }
 #else
@@ -2838,8 +2838,8 @@ cs_partition_set_algorithm(cs_partition_stage_t      stage,
 #if defined(HAVE_METIS)
     if (n_part_ranks > 1) {
       rank_step = cs_glob_n_ranks;
-      bft_printf
-        (_warn(__FILE__, __LINE__);
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(
          _("Partitioning with %s requested, but %s is not available,\n"
            "so serial %s will be used."), "METIS", "ParMETIS", "METIS");
     }
