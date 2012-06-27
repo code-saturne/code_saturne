@@ -225,7 +225,7 @@ tstat = tstat + dtp
 
 npstt = iplas - idstnt + 1
 
-if (npst.lt.2) then
+if ((npst.lt.2).and.(ilfv.gt.0)) then
    do iel = 1,ncel
       stativ(iel,ilfv) = 0
    enddo

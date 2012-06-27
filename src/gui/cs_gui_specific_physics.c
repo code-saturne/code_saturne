@@ -934,7 +934,7 @@ _get_nitrogen_concentration(const int icha)
 
 static double
 _get_pre_exponential_constant(const int icha,
-			      const char *const species)
+                              const char *const species)
 {
     char *path;
     double result;
@@ -964,7 +964,7 @@ _get_pre_exponential_constant(const int icha,
 
 static double
 _get_energy_of_activation(const int icha,
-			      const char *const species)
+                              const char *const species)
 {
     char *path;
     double result;
@@ -1033,7 +1033,7 @@ _get_order_of_reaction(const int icha,
 
 static double
 _get_oxydant_composition(const int icha,
-			      const char *const species)
+                              const char *const species)
 {
     char *path;
     double result;
@@ -2514,14 +2514,14 @@ void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
-				const int    *const iihmpr,
-				const int    *const ncharm,
+                                const int    *const iihmpr,
+                                const int    *const ncharm,
                                       int    *const ncharb,
                                       int    *const nclpch,
                                       int    *const nclacp,
-				const int    *const ncpcmx,
-				      int    *const ichcor,
-				      double *const diam20,
+                                const int    *const ncpcmx,
+                                      int    *const ichcor,
+                                      double *const diam20,
                                       double *const cch,
                                       double *const hch,
                                       double *const och,
@@ -2544,7 +2544,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
                                       double *const cpashc,
                                       int    *const iy1ch,
                                       double *const y1ch,
-				      int    *const iy2ch,
+                                      int    *const iy2ch,
                                       double *const y2ch,
                                       double *const a1ch,
                                       double *const a2ch,

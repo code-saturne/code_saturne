@@ -1134,7 +1134,7 @@ call lagtri
 !     NVEP  : Variables d'etat (reels)   sur les particules (TEPA)
 !     NIVEP : Variables d'etat (entiers) sur les particules (ITEPA)
 
-nvp   = 11
+nvp   = 12
 nvep  = 2
 nivep = 1
 
@@ -1219,6 +1219,7 @@ nvp1 = nvp - 9
 
 !    JMP,JDP      : MASSE, DIAMETRE
 !    JTP,JTF,JCP  : TEMPERATURE PARTICULE ET FLUIDE ET CHALEUR SPECIFIQUE
+!    JTAUX        : AUXILIAIRE DE CALCUL UTILE EN PARALLELE
 !    JVLS(NUSVAR) : VARIABLE SUPPLEMENTAIRES
 
 !   Charbon
@@ -1233,6 +1234,7 @@ jcp  = 0
 jhp  = 0
 jmch = 0
 jmck = 0
+jtaux = 0
 do ii = 1,nusvar
   jvls(ii) = 0
 enddo
@@ -1278,7 +1280,8 @@ jwp = jvp + 1
 juf = jwp + 1
 jvf = juf + 1
 jwf = jvf + 1
-irf = jwf
+jtaux = jwf + 1
+irf = jtaux
 
 if (irf.gt.nvp) then
   write(nfecra,3004) irf, nvp

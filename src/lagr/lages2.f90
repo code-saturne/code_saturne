@@ -246,7 +246,7 @@ if (nor.eq.1) then
 
     if (itepa(ip,jisor).gt.0) then
 
-      auxl(ip,7) = taup(ip)
+      ettp(ip,jtaux) = taup(ip)
 
     endif
 
@@ -372,7 +372,7 @@ else
              + (tlag(ip,id) / dtp) * aux4 * aux5)                 &
              + auxl(ip,id) * (1.d0 - (aux2 - 1.d0) / aux0)
 
-        tapn  = auxl(ip,7)
+        tapn  = ettp(ip,jtaux)
         aux7  = exp(-dtp / tapn)
         aux8  = 1.d0 - aux3 * aux7
         aux9  = 1.d0 - aux6

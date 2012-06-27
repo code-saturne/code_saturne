@@ -243,13 +243,15 @@ dnbpar = dnbpar + dnpclo
 !    et celles qui ont subit le clonage.
 !===============================================================================
 
-call lageli                                                       &
-!==========
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   npars  ,                                                       &
-   itepa  ,                                                       &
-   dnpars ,                                                       &
-   ettp   , ettpa  , tepa   )
+! FIXME : rewrite former lageli function
+
+!!$call lageli                                                       &
+!!$!==========
+!!$ ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+!!$   npars  ,                                                       &
+!!$   itepa  ,                                                       &
+!!$   dnpars ,                                                       &
+!!$   ettp   , ettpa  , tepa   )
 
 if ( npars.ne.(npkill+npcsup) ) then
   write(nfecra,9000)

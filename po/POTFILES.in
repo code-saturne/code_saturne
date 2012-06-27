@@ -144,6 +144,7 @@ src/gui/cs_gui_specific_physics.c
 src/gui/cs_gui_util.c
 src/lagr/cs_lagr_perio.c
 src/lagr/cs_lagr_snap_to_grid.c
+src/lagr/cs_lagr_tracking.c
 src/lagr/cs_lagr_utils.c
 src/mei/mei_evaluate.c
 src/mei/mei_hash_table.c

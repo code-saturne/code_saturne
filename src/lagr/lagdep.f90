@@ -32,7 +32,7 @@ subroutine lagdep &
    ettp   , ettpa  , tepa   , statis ,                            &
    taup   , tlag   , piil   ,                                     &
    bx     , vagaus , gradpr , gradvf , romp   ,                   &
-   brgaus , terbru , fextla )
+   brgaus , terbru , fextla , vislen)
 
 !===============================================================================
 ! Purpose:
@@ -178,7 +178,7 @@ double precision d3 , vpart, vvue
 double precision px , py , pz , distp , d1
 double precision dismin,dismax, ustar, visccf,depint
 
-integer, allocatable, dimension(:) :: ifacl
+double precision vislen(nfabor)
 
 !===============================================================================
 
@@ -186,9 +186,6 @@ integer, allocatable, dimension(:) :: ifacl
 ! 0.  Memory management
 !===============================================================================
 
-
-! Allocae a work array
-allocate(ifacl(nbpart))
 
 !===============================================================================
 ! 1.  Initialization
@@ -260,64 +257,6 @@ endif
         tempf = t0
       endif
 
-!===============================================================================
-! 2. calculation of the normalized wall-normal particle distance (y^+)
-!===============================================================================
-
-
-      dismin = 1.d+20
-      dismax = -1.d+20
-
-      distp = 1.0d+20
-      tepa(ip,jryplu) = 1.0d3
-      nbfac = 0
-
-      do il = itycel(iel),itycel(iel+1)-1
-
-         ifac = icocel(il)
-
-         if (ifac.lt.0) then
-
-            ifac = -ifac
-            izone = ifrlag(ifac)
-
-
- !          Test if the particle is located in a boundary cell
-
-
-            if ( iusclb(izone) .eq. idepo1 .or.                   &
-                 iusclb(izone) .eq. idepo2 .or.                   &
-                 iusclb(izone) .eq. idepfa .or.                   &
-                 iusclb(izone) .eq. irebol     ) then
-
-!
-!              Calculation of the wall units
-!
-               ustar = uetbor(ifac)
-               lvisq = visccf / ustar
-               tvisq =  visccf / (ustar * ustar)
-
-               px = ettp(ip,jxp)
-               py = ettp(ip,jyp)
-               pz = ettp(ip,jzp)
-
-               d1 = abs(px*dlgeo(ifac,1)+py*dlgeo(ifac,2)         &
-                    +pz*dlgeo(ifac,3)+dlgeo(ifac,4))           &
-                    /sqrt( dlgeo(ifac,1)*dlgeo(ifac,1)            &
-                    +dlgeo(ifac,2)*dlgeo(ifac,2)               &
-                    +dlgeo(ifac,3)*dlgeo(ifac,3))
-
-               if (d1.lt.distp) then
-                  ifacl(ip) = ifac
-                  distp = d1
-                  tepa(ip,jryplu)= distp/lvisq
-               endif
-
-            endif
-
-         endif
-
-      enddo
 
 !=========================================================================
 !   If y^+ is greater than the interface location,
@@ -476,11 +415,11 @@ endif
                   itepa(ip,jimark) = 0
                endif
 
-               if ( itepa(ip,jimark) .eq. 0   .and.                    &
-                    itepa(ip,jdiel)  .eq. iel .and.                    &
-                    ifacl(ip)  .ne. itepa(ip,jdfac)) then
-                  itepa(ip,jimark) = 10
-               endif
+!               if ( itepa(ip,jimark) .eq. 0   .and.                    &
+!                    itepa(ip,jdiel)  .eq. iel .and.                    &
+!                    ifacl(ip)  .ne. itepa(ip,jdfac)) then
+!                  itepa(ip,jimark) = 10
+!               endif
 
             else
 
@@ -494,15 +433,12 @@ endif
 
             endif
 
-            itepa(ip,jdfac) = ifacl(ip)
-            itepa(ip,jdiel) = itepa(ip,jisor)
-
-            dismin=min(dismin,distp)
-            dismax=max(dismax,distp)
+            lvisq = vislen(itepa(ip,jdfac))
+            tvisq = lvisq / uetbor(itepa(ip,jdfac))
 
             call lagesd                                                   &
             !==========
-            ( ifacl(ip) , ip     ,                                         &
+            ( itepa(ip,jdfac) , ip     ,                                   &
               nvar   , nscal  ,                                            &
               nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
               ntersl , nvlsta , nvisbr ,                                   &
@@ -519,9 +455,6 @@ endif
       endif
 
    enddo
-
-! Free memory
-deallocate(ifacl)
 
 !----
 ! FIN

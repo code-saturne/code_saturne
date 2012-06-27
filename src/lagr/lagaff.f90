@@ -132,11 +132,17 @@ double precision statis(ncelet,nvlsta)
 
 double precision dnbpr
 
+integer nbpartall, nbpnewall, nbpoutall, nbperrall, nbpdepall
+
+double precision dnbparall, dnbperall, dnbpouall, dnbpnwall, dnbdepall
+
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
 integer          ipass
 data             ipass /0/
 save             ipass
+
+
 
 !===============================================================================
 
@@ -150,6 +156,38 @@ save             ipass
 !===============================================================================
 
 ipass = ipass + 1
+
+! Parallelism management
+
+nbpartall = nbpart
+nbpnewall = nbpnew
+nbpoutall = nbpout
+nbperrall = nbperr
+nbpdepall = nbpdep
+
+dnbparall = dnbpar
+dnbpnwall = dnbpnw
+dnbpouall = dnbpou
+dnbperall = dnbper
+dnbdepall = dnbdep
+
+
+if (irangp.ge.0) then
+
+   call parcpt(nbpartall)
+   call parcpt(nbpnewall)
+   call parcpt(nbpoutall)
+   call parcpt(nbperrall)
+   call parcpt(nbpdepall)
+
+   call parsom(dnbparall)
+   call parsom(dnbpnwall)
+   call parsom(dnbpouall)
+   call parsom(dnbperall)
+   call parsom(dnbdepall)
+
+endif
+
 
 !===============================================================================
 ! 2. OUVERTURE DU FICHIER DE STOCKAGE
@@ -175,9 +213,14 @@ if (irangp.le.0) then
 
   endif
 
+
+
 !===============================================================================
 ! 2 - Ecriture des INFORMATIONS
 !===============================================================================
+
+
+
 
   if (nbptot.gt.0) then
     dnbpr = (nbpert*100.d0)/dble(nbptot)
@@ -189,11 +232,11 @@ if (irangp.le.0) then
        (iphyla.eq.2 .and. iencra.eq.1) ) then
 
     write(implal,2000) iplas,(dtp*iplas),                         &
-         nbpart        , dnbpar        ,                          &
-         nbpnew        , dnbpnw        ,                          &
-         nbpout-nbperr , dnbpou-dnbper ,                          &
-         nbpdep        , dnbdep        ,                          &
-         nbperr        , dnbper        ,                          &
+         nbpartall        , dnbparall        ,                    &
+         nbpnewall        , dnbpnwall        ,                    &
+         nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
+         nbpdepall        , dnbdepall        ,                    &
+         nbperrall        , dnbperall        ,                    &
          dnbpr         ,                                          &
          npcsup        , dnpcsu        ,                          &
          npclon        , dnpclo        ,                          &
@@ -204,11 +247,11 @@ if (irangp.le.0) then
          (iphyla.ne.2 .or. iencra.ne.1) ) then
 
     write(implal,2001) iplas,(dtp*iplas),                         &
-         nbpart        , dnbpar        ,                          &
-         nbpnew        , dnbpnw        ,                          &
-         nbpout-nbperr , dnbpou-dnbper ,                          &
-         nbpdep        , dnbdep        ,                          &
-         nbperr        , dnbper        ,                          &
+         nbpartall     , dnbparall        ,                       &
+         nbpnewall     , dnbpnwall        ,                       &
+         nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
+         nbpdepall        , dnbdepall        ,                    &
+         nbperrall        , dnbperall        ,                    &
          dnbpr         ,                                          &
          npcsup        , dnpcsu        ,                          &
          npclon        , dnpclo        ,                          &
@@ -218,22 +261,22 @@ if (irangp.le.0) then
          (iphyla.eq.2 .and. iencra.eq.1) ) then
 
     write(implal,2002) iplas,(dtp*iplas),                         &
-         nbpart        , dnbpar        ,                          &
-         nbpnew        , dnbpnw        ,                          &
-         nbpout-nbperr , dnbpou-dnbper ,                          &
-         nbpdep        , dnbdep        ,                          &
-         nbperr        , dnbper        ,                          &
+         nbpartall     , dnbparall        ,                       &
+         nbpnewall        , dnbpnwall        ,                    &
+         nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
+         nbpdepall        , dnbdepall        ,                    &
+         nbperrall        , dnbperall        ,                    &
          dnbpr         ,                                          &
          npencr        , dnpenc
 
   else
 
     write(implal,2003) iplas,(dtp*iplas),                         &
-         nbpart        , dnbpar        ,                          &
-         nbpnew        , dnbpnw        ,                          &
-         nbpout-nbperr , dnbpou-dnbper ,                          &
-         nbpdep        , dnbdep        ,                          &
-         nbperr        , dnbper        ,                          &
+         nbpartall     , dnbparall        ,                       &
+         nbpnewall        , dnbpnwall        ,                    &
+         nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
+         nbpdepall        , dnbdepall        ,                    &
+         nbperrall        , dnbperall        ,                    &
          dnbpr
 
   endif

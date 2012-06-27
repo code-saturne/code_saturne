@@ -1636,11 +1636,6 @@ endif
 ! 5. TABLEAUX DE parall : formats 6000 (limitations)
 !===============================================================================
 
-! --- parallelisme incompatible avec lagrangien
-if(irangp.ge.0.and.iilagr.ne.0) then
-  write(nfecra,6002)irangp,iilagr
-  iok = iok + 1
-endif
 
 ! --- parallelisme incompatible avec le mode de calcul
 !       direct de la distance a la paroi
@@ -6553,23 +6548,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 6002 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
-'@    =========                                               ',/,&
-'@    PARALLEL COMPUTING AND LAGRANGIAN PARTICULE TRANSPORT   ',/,&
-'@      OR NOT COMPATIBLE IN THE CURRENT VERSION              ',/,&
-'@                                                            ',/,&
-'@   The calculation could NOT run.                           ',/,&
-'@                                                            ',/,&
-'@  The present CPU has rank ',I10                             ,/,&
-'@  Flag  IILAGR had value',I10                                ,/,&
-'@    in uslag1 ( lagrangien module is active for  IILAGR>0). ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+ 
  6004 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

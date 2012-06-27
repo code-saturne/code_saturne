@@ -154,6 +154,7 @@ module lagran
   !    JUF,JVF,JWF  : COMPOSANTES DE LA VITESSE DU FLUIDE VU
 
   !    JMP,JDP      : MASSE, DIAMETRE
+  !    JTAUX        : POUR L'ORDRE 2, AUXILIAIRE DE CALCUL UTILE EN PARALLELE
   !    JTP,JTF,JCP  : TEMPERATURE PARTICULE ET FLUIDE ET CHALEUR SPECIFIQUE
   !    JVLS(NUSVAR) : VARIABLE SUPPLEMENTAIRES
 
@@ -167,7 +168,7 @@ module lagran
                              jup , jvp , jwp ,                               &
                              juf , jvf , jwf ,                               &
                              jmp , jdp , jtp , jtf , jcp ,                   &
-                             jhp , jmch, jmck,                               &
+                             jhp , jmch, jmck, jtaux,                        &
                              jvls(nusvar)
 
   !   Tableau TEPA

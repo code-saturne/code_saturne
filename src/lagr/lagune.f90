@@ -156,12 +156,10 @@ integer          modntl , iromf
 
 double precision dnpars
 
-integer          ifac , nn , ifab , ifap , kfap
-integer          n10,n20,n30,n50,n100,nmax
-integer          ius
+integer          ifac , ifab , ifap , kfap
 
-double precision distp , d1 , px,py,pz, lvisq, visccf, romf
-double precision tvisq, ustar, ustarmoy
+double precision visccf, romf
+double precision ustarmoy, surftot, surfb
 
 integer, allocatable, dimension(:) :: indep, ibord
 
@@ -183,11 +181,19 @@ double precision, allocatable, dimension(:,:) :: auxl, auxl2
 
 double precision, allocatable, dimension(:,:) :: tslag
 
+double precision, allocatable, save, dimension(:) :: vislen
+
+
+integer nrangpp, ii
+integer nbpartall
+
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
 integer          ipass
 data             ipass /0/
 save             ipass
+
+
 
 !===============================================================================
 !===============================================================================
@@ -237,6 +243,10 @@ endif
 
 ipass = ipass + 1
 
+if ((idepst.eq.1).and.(ipass.eq.1)) then
+   allocate(vislen(nfabor))
+endif
+
 
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -279,12 +289,11 @@ endif
 
 if (iplar.eq.1) then
 
-!       Connectivite cellules -> faces
+!      Connectivite cellules -> faces + Alloc. structures en C
 
-  call lagdeb                                                     &
+  call lagbeg                                                     &
   !==========
- ( lndnod ,                                                       &
-   icocel , itycel )
+ ( nbpmax , iphyla , nvls, nbclst)
 
 !
 ! --> if the deposition model is activated
@@ -293,128 +302,52 @@ if (iplar.eq.1) then
   if (idepst.ge.1) then
 
      ustarmoy = 0.d0
-     ius = 0
+     surftot = 0.d0
 
     ! boundary faces data
 
      call laggeo                                                  &
      !==========
- ( lndnod ,                                                       &
-   dlgeo  )
+ ( lndnod ,  dlgeo  )
 
-    ! the mesh elements yplus checking
+     ! Average friction velocity calculation
+     do ifac = 1, nfabor
 
-     n10  = 0
-     n20  = 0
-     n30  = 0
-     n50  = 0
-     n100 = 0
-     nmax = 0
+        if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
 
-     do ifac=1, nfabor
+           iel = ifabor(ifac)
 
-       if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
+           surfb = sqrt( surfbo(1,ifac)*surfbo(1,ifac)              &
+                      +  surfbo(2,ifac)*surfbo(2,ifac)              &
+                      +  surfbo(3,ifac)*surfbo(3,ifac) )
 
-         distp = 0.d0
-         iel = ifabor(ifac)
+           ! the density pointer according to the flow location
 
-      ! the density pointer according to the flow location
-
-         if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
-           iromf = ipproc(irom1)
-         else
-           iromf = ipproc(irom)
-         endif
-
-         romf = propce(iel,iromf)
-         visccf = propce(iel,ipproc(iviscl)) / romf
-
-         do kfap = itycel(iel), itycel(iel+1)-1
-
-           ifap = icocel(kfap)
-
-           if (ifap.gt.0) then
-
-             do nn = ipnfac(ifap), ipnfac(ifap+1)-1
-
-               px = xyznod(1,nodfac(nn))
-               py = xyznod(2,nodfac(nn))
-               pz = xyznod(3,nodfac(nn))
-               d1 = abs( px*dlgeo(ifac,1)+py*dlgeo(ifac,2)            &
-                    +pz*dlgeo(ifac,3)+   dlgeo(ifac,4) )              &
-                    /sqrt( dlgeo(ifac,1)*dlgeo(ifac,1)                &
-                    +dlgeo(ifac,2)*dlgeo(ifac,2)                      &
-                    +dlgeo(ifac,3)*dlgeo(ifac,3) )
-
-               if ( d1 .gt. distp ) then
-                 distp = d1
-               endif
-
-             enddo
-
+           if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
+              iromf = ipproc(irom1)
            else
+              iromf = ipproc(irom)
+           endif
 
-             ifab = -ifap
+           romf = propce(iel,iromf)
+           visccf = propce(iel,ipproc(iviscl)) / romf
 
-             do nn = ipnfbr(ifab), ipnfbr(ifab+1)-1
+           if ( uetbor(ifac).gt.1.d-15) then
 
-               px = xyznod(1,nodfbr(nn))
-               py = xyznod(2,nodfbr(nn))
-               pz = xyznod(3,nodfbr(nn))
-
-               d1 = abs( px*dlgeo(ifac,1)+py*dlgeo(ifac,2)           &
-                        +pz*dlgeo(ifac,3)+ dlgeo(ifac,4))            &
-                  /sqrt( dlgeo(ifac,1)*dlgeo(ifac,1)                 &
-                       + dlgeo(ifac,2)*dlgeo(ifac,2)                 &
-                       + dlgeo(ifac,3)*dlgeo(ifac,3))
-
-               if ( d1.gt.distp) then
-                 distp = d1
-               endif
-
-             enddo
+              ustarmoy = (surftot * ustarmoy +  surfb * uetbor(ifac))   &
+                       / (surftot + surfb)
+              surftot = surftot +  surfb
+              vislen(ifac) = visccf / uetbor(ifac)
 
            endif
 
-         enddo
-
-         ustar = uetbor(ifac)
-
-         if (ustar.gt.0.d0) then
-
-           ustarmoy = ustarmoy + ustar
-           ius = ius + 1
-
-           lvisq = visccf / ustar
-
-
-           distp = distp/lvisq
-
-           if ( distp .le. 10.d0 ) then
-             n10 = n10+1
-           else if ( distp .le. 20.d0 ) then
-             n20 = n20+1
-           else if ( distp .le. 30.d0 ) then
-             n30 = n30+1
-           else if ( distp .le. 50.d0 ) then
-             n50 = n50+1
-           else if ( distp .le. 100.d0 ) then
-             n100 = n100+1
-           else
-             nmax = nmax +1
-           endif
-
-         endif
-
-       endif
+        endif
 
      enddo
 
-     ustarmoy = ustarmoy / ius
+!  Average friction velocity display
 
-! the mesh edge yplus and average friction velocity display
-
-     write(nfecra,4100) nfabor,n10,n20,n30,n50,n100,nmax,ustarmoy
+     write(nfecra,4100) ustarmoy
 !
   endif
 
@@ -500,7 +433,14 @@ ttclag = ttclag + dtp
 
 !-->Test pour savoir si le domaine contient des particules
 
-if (nbpart.eq.0) goto 20
+nbpartall = nbpart
+
+if ( irangp .ge. 0 ) then
+  call parcpt(nbpartall)
+endif
+
+!
+if (nbpartall.eq.0) goto 20
 
 !-->On enregistre l'element de depart de la particule
 
@@ -649,7 +589,7 @@ call lagesp                                                       &
      statis , stativ , taup   , tlag   , piil   ,                 &
      tsuf   , tsup   , bx     , tsfext ,                          &
      vagaus , gradpr , gradvf , brgaus , terbru ,                 &
-     auxl(1,1) , auxl2 )
+     auxl(1,1) , auxl2        , vislen)
 
 !---> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
 !     LIEES AUX PHYSIQUES PARTICULIERES PARTICULAIRES
@@ -712,18 +652,63 @@ endif
 
 if (nor.eq.1) then
 
-  call lagcel                                                     &
+!--> Si on est en instationnaire, RAZ des statistiques aux frontieres
+
+if (iensi3.eq.1) then
+
+  if (isttio.eq.0 .or. (isttio.eq.1 .and. iplas.le.nstbor)) then
+    tstatp = 0.d0
+    npstf = 0
+    do ii = 1,nvisbr
+      do ifac = 1,nfabor
+        parbor(ifac,ii) = 0.d0
+      enddo
+    enddo
+  endif
+
+  tstatp = tstatp + dtp
+  npstf  = npstf  + 1
+  npstft = npstft + 1
+
+endif
+
+  call getbdy                                                     &
   !==========
- ( lndnod ,                                                       &
-   nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
-   itypfb , itrifb ,                                              &
-   icocel , itycel , ifrlag , itepa  , ibord  , indep  ,          &
-   dlgeo  ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ettp   , ettpa  , tepa   , parbor , auxl   )
+ ( nflagm , nfrlag , injcon , ilflag , iusncl ,                   &
+   iusclb , iusmoy , iuslag , deblag , ifrlag )
+
+
+  call prtget                                                     &
+  !==========
+ ( nbpmax , nbpart , dnbpar , liste  , nbvis  ,                   &
+   ettp   , ettpa  , itepa  , tepa   ,                            &
+   ibord  , indep  ,                                              &
+   jisor  , jrpoi  , jrtsp  , jdp    , jmp    ,                   &
+   jxp    , jyp    , jzp    ,                                     &
+   jup    , jvp    , jwp    ,                                     &
+   juf    , jvf    , jwf    , jtaux  , jryplu, jdfac,             &
+   jimark , idepst)
+
+
+  call dplprt                                                     &
+  !==========
+ ( nbpart , dnbpar, nordre, parbor, iensi3,                       &
+   nvisbr , inbr  , inbrbd,                                       &
+   iflm   , iflmbd, iang  , iangbd, ivit  ,  ivitbd,              &
+   nusbor , iusb,   vislen,  dlgeo , rtp , iu    ,                &
+   iv     , iw  ,   idepst)
+
+
+  call prtput                                                     &
+  !==========
+ ( nbpmax , nbpart , dnbpar , nbpout , dnbpou , nbperr , dnbper,  &
+   liste  , nbvis,                                                &
+   ettp   , ettpa  , itepa  , tepa   ,                            &
+   ibord  ,                                                       &
+   jisor  , jrpoi  , jrtsp  , jdp    ,                            &
+   jmp    , jxp    , jyp    , jzp    ,                            &
+   jup    , jvp    , jwp    , juf    , jvf    , jwf , jtaux,      &
+   jryplu , jdfac  , jimark , idepst )
 
   if (ierr.eq.1) then
     call lagerr
@@ -733,27 +718,6 @@ if (nor.eq.1) then
 
 endif
 
-!===============================================================================
-! 9.  ELIMINATION DES PARTICULES QUI SONT SORTIES DU DOMAINE
-!===============================================================================
-
-!     ATTENTION : NBPOUT contient les particules sorties de facon
-!                 normal + les particules sorties en erreur de reperage.
-
-if (nor.eq.nordre) then
-
-  call lageli                                                     &
-  !==========
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   npars  ,                                                       &
-   itepa  ,                                                       &
-   dnpars ,                                                       &
-   ettp   , ettpa  , tepa   )
-
-  nbpout = npars
-  dnbpou = dnpars
-
-endif
 
 !===============================================================================
 ! 10.  TEMPS DE SEJOUR
@@ -966,6 +930,10 @@ if (nordre.eq.2) then
   deallocate(auxl2)
 endif
 
+if ((idepst.eq.1).and.(ntcabs.eq.ntmabs)) then
+   deallocate(vislen)
+endif
+
 !===============================================================================
 
 !--------
@@ -996,16 +964,9 @@ endif
  4100 format(                                                     &
 '                                                               '/,&
 '   ** LAGRANGIAN MODULE:  '                                     /,&
-'   ** Check of the mesh for the deposition submodel  '         ,/,&
+'   ** deposition submodel  '                                   ,/,&
 '      ---------------------------------------------  '         ,/,&
 '                                                               '/,&
-' Number of boundary faces                        ',I10         ,/,&
-' Number of boundary faces with 0  < y^+ < 10     ',I10         ,/,&
-' Number of boundary faces with 10 < y^+ < 20     ',I10         ,/,&
-' Number of boundary faces with 20 < y^+ < 30     ',I10         ,/,&
-' Number of boundary faces with 30 < y^+ < 50     ',I10         ,/,&
-' Number of boundary faces with 50 < y^+ < 100    ',I10         ,/,&
-' Number of boundary faces with y^+ > 100         ',I10         ,/,&
 '                                                               '/,&
 '   ** Mean friction velocity  (ustar) =  ',F7.3                ,/,&
 '---------------------------------------------------------------  ',/)

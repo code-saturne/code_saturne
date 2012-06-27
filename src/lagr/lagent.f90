@@ -1147,33 +1147,33 @@ if ( injcon.eq.1 ) then
 
 !   reinitialisation du compteur de nouvelles particules
 
-  npt = nbpart
-
-!       pour chaque zone de bord:
-
-  do ii = 1,nfrlag
-    nb = ilflag(ii)
-
-!         pour chaque classe :
-
-    do nc = 1, iusncl(nb)
-
-!           si de nouvelles particules doivent entrer :
-      if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 ) then
-
-        call lagnwc                                               &
-        !==========
-  ( lndnod ,                                                      &
-    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
-    itycel , icocel ,                                             &
-    ifrlag , itepa(1,jisor)  , iwork  ,                           &
-    ettp   )
-
-      endif
-
-    enddo
-  enddo
+!!$  npt = nbpart
+!!$
+!!$!       pour chaque zone de bord:
+!!$
+!!$  do ii = 1,nfrlag
+!!$    nb = ilflag(ii)
+!!$
+!!$!         pour chaque classe :
+!!$
+!!$    do nc = 1, iusncl(nb)
+!!$
+!!$!           si de nouvelles particules doivent entrer :
+!!$      if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 ) then
+!!$
+!!$        call lagnwc                                               &
+!!$        !==========
+!!$  ( lndnod ,                                                      &
+!!$    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
+!!$    npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
+!!$    itycel , icocel ,                                             &
+!!$    ifrlag , itepa(1,jisor)  , iwork  ,                           &
+!!$    ettp   )
+!!$
+!!$      endif
+!!$
+!!$    enddo
+!!$  enddo
 
 endif
 

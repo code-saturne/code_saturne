@@ -33,7 +33,8 @@ subroutine lagesp &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
-   vagaus , gradpr , gradvf , brgaus , terbru , romp   , auxl2  )
+   vagaus , gradpr , gradvf , brgaus , terbru , romp   , auxl2 ,  &
+   vislen  )
 
 !===============================================================================
 ! Purpose:
@@ -162,6 +163,8 @@ double precision vagaus(nbpmax,*)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision brgaus(nbpmax,*) , terbru(nbpmax)
 double precision romp(nbpmax) , auxl2(nbpmax,7)
+double precision vislen(nfabor)
+
 
 ! Local variables
 
@@ -269,7 +272,7 @@ if (nordre.eq.1) then
      ettp   , ettpa  , tepa   ,                                   &
      statis , taup   , tlag   , piil   ,                          &
      bx     , vagaus , gradpr , gradvf , romp   ,                 &
-     brgaus , terbru , fextla )
+     brgaus , terbru , fextla , vislen)
 
   endif
 

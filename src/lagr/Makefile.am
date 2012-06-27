@@ -53,6 +53,7 @@ cs_lagr_perio.h
 noinst_LTLIBRARIES = libcslagr.la
 libcslagr_la_SOURCES = \
 cs_lagr_snap_to_grid.c \
+cs_lagr_tracking.c \
 cs_lagr_perio.c \
 cs_lagr_utils.c \
 diverv.f90 \
@@ -60,7 +61,6 @@ enslag.f90 \
 enswaf.f90 \
 lagaff.f90 \
 lagcar.f90 \
-lagcel.f90 \
 lagcli.f90 \
 lagcou.f90 \
 lagdcl.f90 \
@@ -68,7 +68,6 @@ lagdeb.f90 \
 lagdep.f90 \
 lagdif.f90 \
 lageje.f90 \
-lageli.f90 \
 lagent.f90 \
 lageqp.f90 \
 lagerr.f90 \
@@ -91,7 +90,6 @@ laglec.f90 \
 laglis.f90 \
 lagnew.f90 \
 lagnpr.f90 \
-lagnwc.f90 \
 lagopt.f90 \
 lagout.f90 \
 lagphy.f90 \
@@ -103,8 +101,6 @@ lagstf.f90 \
 lagswe.f90 \
 lagtri.f90 \
 lagune.f90 \
-ouessg.f90 \
-ouestu.f90 
 libcslagr_la_LDFLAGS = -no-undefined
 
 clean-local:

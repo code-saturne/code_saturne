@@ -494,14 +494,14 @@ endif
 
 if (iilagr.gt.0) then
 
-  call laglec                                                     &
-  !==========
- ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
-   ra(irtpa) , ra(ipropc) ,                                       &
-   ettp   , tepa   , statis , stativ , parbor , tslagr )
+      call laglec                                                     &
+      !==========
+     ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
+       nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+       ntersl , nvlsta , nvisbr ,                                     &
+       itepa  ,                                                       &
+       ra(irtpa) , ra(ipropc) ,                                       &
+       ettp   , tepa   , statis , stativ , parbor , tslagr )
 
 endif
 
@@ -967,17 +967,22 @@ if (iisuit.eq.1) then
 
   if (iilagr.gt.0) then
 
-    call lagout                                                   &
-    !==========
- ( lndnod ,                                                       &
-   nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
-   icocel , itycel , itepa  ,                                     &
-   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  ,                                              &
-   ettp   , tepa   , parbor , statis , stativ , tslagr )
+     ! Lagrangian restart only possible in sequential mode for the moment
+     if (irangp.lt.0) then
+
+        call lagout                                                   &
+        !==========
+      ( lndnod ,                                                       &
+        nvar   , nscal  ,                                              &
+        nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+        ntersl , nvlsta , nvisbr ,                                     &
+        icocel , itycel , itepa  ,                                     &
+        ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
+        ra(ipropc) , propfa , propfb ,                                 &
+        coefa  , coefb  ,                                              &
+        ettp   , tepa   , parbor , statis , stativ , tslagr )
+
+     endif
 
   endif
 

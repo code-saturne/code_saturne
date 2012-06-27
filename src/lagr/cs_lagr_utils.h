@@ -41,66 +41,43 @@ BEGIN_C_DECLS
  * Public function definitions
  *============================================================================*/
 
-
 /*----------------------------------------------------------------------------
  * Check the relative localization of two vertices. We want to know if these
  * two vertices are identical.
  *
- * px                   --> X coordinate of the vertex P
- * py                   --> Y coordinate of the vertex P
- * pz                   --> Z coordinate of the vertex P
- * qx                   --> X coordinate of the vertex Q
- * qy                   --> Y coordinate of the vertex Q
- * qz                   --> Z coordinate of the vertex Q
- * sign                 <-> return tag (1 -> identical else 0)
+ * parameters:
+ *   p             --> X, Y, Z coordinates of the vertex P
+ *   q             --> X, Y, Z coordinates of the vertex Q
  *
- * Returns:
+ * returns:
+ *  1 if the two vertices are identical otherwise 0
  *----------------------------------------------------------------------------*/
 
-void
-CS_PROCF (coloca,COLOCA)(cs_real_t  *px,
-                         cs_real_t  *py,
-                         cs_real_t  *pz,
-                         cs_real_t  *qx,
-                         cs_real_t  *qy,
-                         cs_real_t  *qz,
-                         cs_int_t   *sign);
+cs_int_t
+cs_lagrang_check_colocalization(double  p[3],
+                                double  q[3]);
 
 /*----------------------------------------------------------------------------
  * Look for coordinate system orientation to locate particles in relation to
  * faces.
  *
- * px                   --> X coordinate of the first vertex
- * py                   --> Y coordinate of the first vertex
- * pz                   --> Z coordinate of the first vertex
- * qx                   --> X coordinate of the second vertex
- * qy                   --> Y coordinate of the second vertex
- * qz                   --> Z coordinate of the second vertex
- * cdgx                 --> X coordinate of the third vertex
- * cdgy                 --> Y coordinate of the third vertex
- * cdgz                 --> Z coordinate of the third vertex
- * crgx                 --> X coordinate of the fourth vertex
- * crgy                 --> Y coordinate of the fourth vertex
- * crgz                 --> Z coordinate of the fourth vertex
- * sign                 <-> orientation of the four vertices.
+ * parameters:
+ *  p1            --> X, Y, Z coordinate of the first vertex
+ *  p2            --> X, Y, Z coordinate of the second vertex
+ *  p3            --> X, Y, Z coordinate of the third vertex
+ *  p4            --> X, Y, Z coordinate of the fourth vertex
+ *  perturbation  <-> an indicator if perturbation is used (1: true, 0: false)
  *
- * Returns:
+ * returns:
+ *  an indicator on the orientation of the tetrahedron [p1, p2, p3, p4]
  *----------------------------------------------------------------------------*/
 
-void
-CS_PROCF (coturn,COTURN)(cs_real_t   *px,
-                         cs_real_t   *py,
-                         cs_real_t   *pz,
-                         cs_real_t   *qx,
-                         cs_real_t   *qy,
-                         cs_real_t   *qz,
-                         cs_real_t   *cdgx,
-                         cs_real_t   *cdgy,
-                         cs_real_t   *cdgz,
-                         cs_real_t   *crdx,
-                         cs_real_t   *crdy,
-                         cs_real_t   *crdz,
-                         cs_int_t    *sign);
+cs_int_t
+cs_lagrang_tetra_orientation(double      p1[3],
+                             double      p2[3],
+                             double      p3[3],
+                             double      p4[3],
+                             cs_int_t       perturbation);
 
 /*----------------------------------------------------------------------------*/
 
