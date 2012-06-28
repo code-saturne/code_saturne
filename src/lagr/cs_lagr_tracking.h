@@ -187,7 +187,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_n_particles,
                                 cs_real_t       *p_parts_weight,
                           cs_int_t        *p_scheme_order,
                           cs_real_t        boundary_stat[],
-                          const cs_int_t  *const iensi3,                        
+                          const cs_int_t  *const iensi3,
                           const cs_int_t  *const nvisbr,
                           const cs_int_t  *const inbr,
                           const cs_int_t  *const inbrbd,
@@ -204,7 +204,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_n_particles,
                           cs_real_t        rtp[],
                           const cs_int_t  *const iu,
                           const cs_int_t  *const iv,
-                          const cs_int_t  *const iw,                        
+                          const cs_int_t  *const iw,
                           cs_int_t        *idepst);
 
 /*----------------------------------------------------------------------------*/

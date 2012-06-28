@@ -1145,6 +1145,13 @@ enddo
 
 if ( injcon.eq.1 ) then
 
+ write(nfecra,*) "Error : pseudo-continuous injection not implemented "
+ call csexit (1)
+
+!  FIXME : Reimplementation of the continuous injection with the
+!          the new cs_lagr_tracking.c routines
+
+!
 !   reinitialisation du compteur de nouvelles particules
 
 !!$  npt = nbpart

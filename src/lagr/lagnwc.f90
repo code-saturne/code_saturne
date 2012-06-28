@@ -252,33 +252,16 @@ do np = 1,new
         itypfo = ipnfac(ifac+1) - ipnfac(ifac) + 1
         iconfo(itypfo) = iconfo(1)
 
-        if (istogr.eq.0) then
-
-           call ouestu                                               &
-           !==========
-      (    nfecra , ndim   , nnod ,                                  &
-           ierrie ,                                                  &
-           ettp(npt,jxp)  , ettp(npt,jyp)  , ettp(npt,jzp)  ,        &
-           xf                , yf                , zf               ,&
-           cdgfac(1,ifac)    , cdgfac(2,ifac)    , cdgfac(3,ifac)   ,&
-           xyzcen(1,iel)     , xyzcen(2,iel)     , xyzcen(3,iel)    ,&
-           itypfo , iconfo , xyznod ,                                &
-           indian )
-
-        else
-
-           call ouessg                                               &
-           !==========
-      (    nfecra , ndim   , nnod ,                                  &
-           ierrie ,                                                  &
-           ettp(npt,jxp)  , ettp(npt,jyp)  , ettp(npt,jzp)  ,        &
-           xf                , yf                , zf               ,&
-           cdgfac(1,ifac)    , cdgfac(2,ifac)    , cdgfac(3,ifac)   ,&
-           xyzcen(1,iel)     , xyzcen(2,iel)     , xyzcen(3,iel)    ,&
-           itypfo , iconfo , xyznod ,                                &
-           indian )
-
-        endif
+        call ouestu                                               &
+        !==========
+      ( nfecra , ndim   , nnod ,                                  &
+        ierrie ,                                                  &
+        ettp(npt,jxp)  , ettp(npt,jyp)  , ettp(npt,jzp)  ,        &
+        xf                , yf                , zf               ,&
+        cdgfac(1,ifac)    , cdgfac(2,ifac)    , cdgfac(3,ifac)   ,&
+        xyzcen(1,iel)     , xyzcen(2,iel)     , xyzcen(3,iel)    ,&
+        itypfo , iconfo , xyznod ,                                &
+        indian )
 
 
         if (ierrie.eq.1) then

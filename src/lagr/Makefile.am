@@ -44,7 +44,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
-cs_lagr_snap_to_grid.h \
+cs_lagr_tracking.h \
 cs_lagr_utils.h \
 cs_lagr_perio.h
 
@@ -52,7 +52,6 @@ cs_lagr_perio.h
 
 noinst_LTLIBRARIES = libcslagr.la
 libcslagr_la_SOURCES = \
-cs_lagr_snap_to_grid.c \
 cs_lagr_tracking.c \
 cs_lagr_perio.c \
 cs_lagr_utils.c \

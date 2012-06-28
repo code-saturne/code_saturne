@@ -536,7 +536,7 @@ _remove_particle(cs_lagr_particle_set_t   *set,
 
     cs_lnum_t first_free = set->first_free_id;
 
-    cs_lnum_t old_next = set->particles[first_free].next_id;        
+    cs_lnum_t old_next = set->particles[first_free].next_id;
 
     set->particles[first_free].next_id = cur_id;
     set->particles[cur_id].next_id = set->particles[first_free].next_id;
@@ -955,10 +955,10 @@ _resize_particle_set(cs_lagr_particle_set_t  **p_particle_set,
       // FIX ME
         /* bft_printf("nmax local = %d\n",particle_set->n_particles_max); */
          /* bft_printf("n demande : %d\n",n_particles_max); */
-        
+
         /* bft_error(__FILE__, __LINE__, 0, */
         /*           _(" The current situation is not managed.\n")); */
-        
+
     }
 
     /* Returns pointer */
@@ -1900,7 +1900,7 @@ static void
 _test_wall_cell(cs_lagr_particle_t *particle,
                 cs_real_t           visc_length[],
                 cs_real_t           dlgeo[]
-                
+
   )
 {
 
@@ -1937,14 +1937,14 @@ _test_wall_cell(cs_lagr_particle_t *particle,
            (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO2) ||
            (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IREBOL) ||
            (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA) )
-      {        
+      {
 
         cs_real_t x_faceid = dlgeo[face_id];
         cs_real_t y_faceid = dlgeo[face_id + (mesh->n_b_faces)];
         cs_real_t z_faceid = dlgeo[face_id + (mesh->n_b_faces) * 2];
         cs_real_t offset_faceid = dlgeo[face_id + (mesh->n_b_faces) * 3];
 
-        
+
         cs_real_t dist_norm =   CS_ABS( particle->coord[0] * x_faceid +
                                       particle->coord[1] * y_faceid +
                                       particle->coord[2] * z_faceid +
@@ -1982,7 +1982,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
                cs_int_t             *p_move_particle,
                cs_int_t             *p_n_failed_particles,
                cs_real_t            *p_failed_particle_weight,
-               const cs_int_t       *const iensi3,                        
+               const cs_int_t       *const iensi3,
                const cs_int_t       *const nvisbr,
                const cs_int_t       *const inbr,
                const cs_int_t       *const inbrbd,
@@ -2191,7 +2191,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
         /* Number of particle-boundary interactions  */
         if (*inbrbd > 0)
           boundary_stat[(*inbr -1) * nfabor + face_id] +=  particle.stat_weight;
-        
+
         /* Particulate boundary mass flux */
         if (*iflmbd > 0)
           boundary_stat[(*iflm -1) * nfabor + face_id] +=
@@ -2204,17 +2204,17 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
                                    / (face_area * norm_vit));
           boundary_stat[(*iang -1) * nfabor + face_id] += imp_ang * particle.stat_weight;
         }
-        
+
         if (*ivitbd > 0)
           boundary_stat[(*ivit -1) * nfabor + face_id] += norm_vit * particle.stat_weight;
-        
+
           /* User statistics management. By defaut, set to zero */
         if (*nusbor > 0)
           for (int n1 = 0; n1 < *nusbor; n1++)
             boundary_stat[(iusb[n1] -1) * nfabor + face_id] = 0.0;
       }
     }
-        
+
     return particle_state;
 }
 
@@ -2257,7 +2257,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                    const cs_int_t         *const nusbor,
                    cs_int_t                iusb[],
                    cs_real_t               visc_length[],
-                   cs_real_t               dlgeo[],        
+                   cs_real_t               dlgeo[],
                    cs_real_t               rtp[],
                    const cs_int_t  *const iu,
                    const cs_int_t  *const iv,
@@ -2390,17 +2390,17 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                     particle_state = CS_LAGR_PART_TO_SYNC;
                     move_particle = CS_LAGR_PART_ERR;
                   } else {
-                
+
                     /* Specific treatment for the particle deposition model */
 
                     if (*idepst > 0) {
-                
+
                       cs_int_t save_close_face_id = particle.close_face_id;
 
                       /*Wall cell detection */
 
                       _test_wall_cell(&particle,visc_length,dlgeo);
-                        
+
 
                       if (particle.close_face_id >= 0)
                       {
@@ -2420,7 +2420,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                           y_p_q * face_normal[1] +
                           z_p_q * face_normal[2];
 
-                        
+
                         cs_real_t bb = ( face_normal[0] * face_cog[0] +
                                          face_normal[1] * face_cog[1] +
                                          face_normal[2] * face_cog[2] -
@@ -2431,17 +2431,17 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                         cs_real_t xk =  prev_particle.coord[0] + bb * x_p_q;
                         cs_real_t yk =  prev_particle.coord[1] + bb * y_p_q;
                         cs_real_t zk =  prev_particle.coord[2] + bb * z_p_q;
-                        
+
 
                         cs_real_t* xyzcen = cs_glob_mesh_quantities->cell_cen;
-                        
+
                         particle.coord[0] =  xk + 1e-8 * (xyzcen[ 3* (particle.cur_cell_num - 1)] - xk);
                         particle.coord[1] =  yk + 1e-8 * (xyzcen[ 3* (particle.cur_cell_num - 1) + 1] - yk);
                         particle.coord[2] =  zk + 1e-8 * (xyzcen[ 3* (particle.cur_cell_num - 1) + 2] - zk);
 
-                        /* Second test with the new particle position */                        
+                        /* Second test with the new particle position */
 
-                        _test_wall_cell(&particle,visc_length,dlgeo);                
+                        _test_wall_cell(&particle,visc_length,dlgeo);
 
 
                         if (particle.yplus < 100.e0 && particle.marko_val >= 0) {
@@ -2456,13 +2456,13 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
 
                           for (k = 0; k < 3; k++)
                             old_bdy_normal[k] = cs_glob_mesh_quantities->b_face_normal[3 * save_close_face_id + k];
-                                                                          
+
                           cs_real_t old_area  = _get_norm(old_bdy_normal);
 
                           cs_real_t  old_face_norm[3] = {old_bdy_normal[0]/old_area,
                                                          old_bdy_normal[1]/old_area,
-                                                         old_bdy_normal[2]/old_area};        
-                        
+                                                         old_bdy_normal[2]/old_area};
+
 
 
                         cs_real_t old_fl_seen_norm = particle.velocity_seen[0] * old_face_norm[0] +
@@ -2478,7 +2478,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                         cs_real_t e2_x = dlgeo[particle.close_face_id + (mesh->n_b_faces) * 7];
                         cs_real_t e2_y = dlgeo[particle.close_face_id + (mesh->n_b_faces) * 8];
                         cs_real_t e2_z = dlgeo[particle.close_face_id + (mesh->n_b_faces) * 9];
-                        
+
                         /* e3 vector coordinates */
                         cs_real_t e3_x = dlgeo[particle.close_face_id + (mesh->n_b_faces) * 10];
                         cs_real_t e3_y = dlgeo[particle.close_face_id + (mesh->n_b_faces) * 11];
@@ -2492,7 +2492,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                                                old_fl_seen_norm * e1_z};
 
                         /* (U . e2) * e2 */
-                        
+
                         cs_real_t flow_e2 = flow_velo_x * e2_x +
                                             flow_velo_y * e2_y +
                                             flow_velo_z * e2_z;
@@ -2502,7 +2502,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                                                     flow_e2 * e2_z};
 
                         /* (U . e3) * e3 */
-                        
+
                         cs_real_t flow_e3 = flow_velo_x * e3_x +
                                             flow_velo_y * e3_y +
                                             flow_velo_z * e3_z;
@@ -2522,15 +2522,15 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
 
                         move_particle =  CS_LAGR_PART_MOVE_OFF;
                         particle_state = CS_LAGR_PART_TREATED;
-                        
+
                       }
-                    }                
+                    }
                   }
                 } else if (indian == -1) {
                       move_particle =  CS_LAGR_PART_MOVE_OFF;
                       particle_state = CS_LAGR_PART_TREATED;
                     }
-                
+
             } /* End if face_num > 0 (interior face) && face_num != old_face_num */
 
             else if (face_num < 0 &&  face_num != old_face_num) {
@@ -3035,7 +3035,7 @@ _sync_particle_sets(cs_lagr_halo_t           *lag_halo,
           for (k = 0; k < n_interfaces; k++) {
 
             interface = cs_interface_set_get(face_ifs,k);
-                        
+
             distant_rank = cs_interface_rank(interface);
 
             if (distant_rank == search_rank)
@@ -3049,16 +3049,16 @@ _sync_particle_sets(cs_lagr_halo_t           *lag_halo,
                       _(" Cannot find the relative distant rank.\n"));
 
           } else {
-                        
+
             n_entities = cs_interface_size(interface);
             local_num = cs_interface_get_elt_ids(interface);
-                        
+
             id = cs_search_binary(n_entities, cur_part.last_face_num - 1, local_num);
-                        
+
             if (id == -1)
               bft_error(__FILE__, __LINE__, 0,
                         _(" Cannot find the relative distant face num.\n"));
-                        
+
             dist_num = cs_interface_get_match_ids(interface);
             cur_part.last_face_num = dist_num[id] + 1;
           }
@@ -3376,7 +3376,7 @@ CS_PROCF (prtget, PRTGET)(const cs_int_t   *const nbpmax,  /* n_particles max. *
                           const cs_real_t         tepa[],
                           const cs_int_t          ibord[],
                           const cs_int_t          indep[],
-                          const cs_int_t   *const jisor,                        
+                          const cs_int_t   *const jisor,
                           const cs_int_t   *const jrpoi,
                           const cs_int_t   *const jrtsp,
                           const cs_int_t   *const jdp,
@@ -3569,7 +3569,7 @@ CS_PROCF (prtget, PRTGET)(const cs_int_t   *const nbpmax,  /* n_particles max. *
           cur_part.marko_val = itepa[id];
 
         } else {
-        
+
           cur_part.yplus = 10000;
           cur_part.close_face_id = -1;
           cur_part.marko_val = -1;
@@ -3681,11 +3681,11 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *const nbpmax,  /* n_particles max. *
         // Data needed if the deposition model is activated
 
         if (*idepst > 0) {
-        
+
           tepa[ (*jryplu - 1) * (*nbpmax) + i] = cur_part.yplus;
 
-          itepa[(*jdfac - 1) * (*nbpmax) + i]  = cur_part.close_face_id + 1;         
-          itepa[(*jimark - 1) * (*nbpmax) + i]  = cur_part.marko_val;         
+          itepa[(*jdfac - 1) * (*nbpmax) + i]  = cur_part.close_face_id + 1;
+          itepa[(*jimark - 1) * (*nbpmax) + i]  = cur_part.marko_val;
 
         }
 
@@ -3756,14 +3756,14 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *const nbpmax,  /* n_particles max. *
         /* Next particle id to treat */
 
         /* Visualization information */
-        
+
         if (cur_part.visualized == 1)
         {
           liste[k] = i + 1;
           k++;
         }
 
-        
+
         j = cur_part.next_id;
 
         assert(cur_part.next_id == prev_part.next_id);
@@ -4003,7 +4003,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_n_particles,
 
               tot_weight += cur_part.stat_weight;
             }
-        
+
             /*
               cur_part.next_id modified inside _remove_particle() has no effect
               to the next line. As cur_part is a parameter of _remove_particle(), it's only a
@@ -4046,9 +4046,9 @@ CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_n_particles,
     if (*idepst > 0) {
 
       for (i = 0, j = set->first_used_id; i < set->n_particles; i++) {
-        
+
         cs_lagr_particle_t*  cur_part = &set->particles[j];
-                
+
         _test_wall_cell(cur_part,visc_length,dlgeo);
 
         if (cur_part->yplus < 100.e0) {
@@ -4059,7 +4059,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_n_particles,
         j = cur_part->next_id;
 
       }
-    }        
+    }
 
 
     /* Returns pointers */
