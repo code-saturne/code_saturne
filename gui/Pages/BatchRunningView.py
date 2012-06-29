@@ -928,11 +928,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             cmd = batch
             key = 'localhost'
         elif key[0:3] == 'CCC':
-            cmd = 'qsub ' + batch
+            cmd = 'msub ' + batch
         elif key[0:5] == 'LOADL':
             cmd = 'llsubmit ' + batch
         elif key[0:3] == 'LSF':
-            cmd = 'bsub < ' + batch + ' ' + self.case['batch'] + ' &'
+            cmd = 'bsub < ' + batch
         elif key[0:3] == 'PBS' or key[0:3] == 'SGE':
             cmd = 'qsub ' + batch
         elif key[0:5] == 'SLURM':
