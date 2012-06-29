@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-06-26 17:01+0200\n"
+"POT-Creation-Date: 2012-06-29 13:43+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7687,16 +7687,98 @@ msgid "No markup found: %s \n"
 msgstr ""
 
 #, c-format
-msgid ""
-"overflow |%g| > %g\n"
-"Verify the bounding box for your data."
-msgstr ""
-"Dépassement |%g| > %g\n"
-"Vérifiez la boite englobante pour vos données."
+msgid "%s\n"
+msgstr "%s\n"
 
-msgid "IEEE 754 arithmetic is not supported by the current architecture."
+#, c-format
+msgid ""
+" Lagrangian module warning.\n"
+"  Failure during the particle tracking.\n"
+"  Wrong face orientation  => particle is lost.\n"
+"  Local face num.:  %d\n"
+"  Local cell num.:  %d\n"
 msgstr ""
-"L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
+
+#, c-format
+msgid ""
+" Lagrangian module warning.\n"
+"  Failure during the particle tracking.\n"
+"  [P, Q, Face CoG, V(1)] orientation failed  => Particle is lost.\n"
+"  Local face num.:  %d\n"
+"  Local cell num.:  %d\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Lagrangian module warning.\n"
+"  Failure during the particle tracking.\n"
+"  [P, Q, Face CoG, V(%d)] orientation failed  => Particle is lost.\n"
+"  Local face num.:  %d\n"
+"  Local cell num.:  %d\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Lagrangian module warning.\n"
+"  Failure during the particle tracking.\n"
+"  [P, Q, V(%d), V(%d)] orientation failed  => Particle is lost.\n"
+"  Local face num.:  %d\n"
+"  Local cell num.:  %d\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Lagrangian module warning.\n"
+"  Failure during the particle tracking.\n"
+"  Local orientation counter must be -2, 0 or 2. Here is %d  => Particle is "
+"lost.\n"
+"  Local face num.:  %d\n"
+"  Local cell num.:  %d\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Lagrangian module warning.\n"
+"  Failure during the particle tracking.\n"
+"  => Particle is lost.\n"
+"  Local face num.:  %d\n"
+"  Local cell num.:  %d\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Lagrangian module warning.\n"
+"  Failure during the particle tracking.\n"
+"  Do not find the relative position between:\n"
+"   - P [%9.4f, %9.4f, %9.4f]\n"
+"   - Q [%9.4f, %9.4f, %9.4f]\n"
+"   - and the current face: CoG [%9.4f, %9.4f, %9.4f]\n"
+"  => Particle is lost.\n"
+"  Local face num.:  %d\n"
+"  Local cell num.:  %d\n"
+msgstr ""
+
+#, c-format
+msgid " Boundary condition %d not recognized.\n"
+msgstr "La condition limite %d n'est pas reconnue.\n"
+
+#, c-format
+msgid " Incoherent value for move_particle = %d. Value must be 0 or 1.  \n"
+msgstr ""
+
+msgid " Cannot find the relative distant rank.\n"
+msgstr ""
+
+msgid " Cannot find the relative distant face num.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Not enough memory to receive particles.\n"
+" We can still receive %d particles and we have to receive %d additional "
+"particles.\n"
+" Check n_particles_max (%d).\n"
+msgstr ""
 
 msgid "Error: _check_symbol\n"
 msgstr ""
