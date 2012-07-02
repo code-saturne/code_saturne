@@ -819,6 +819,7 @@ _file_write_block(cs_file_t  *f,
   if (f->n_ranks > 1) {
 
     cs_file_serializer_t  s;
+    cs_lnum_t  local_count;
     cs_lnum_t *count = NULL;
     void  *write_buf = NULL;
 
@@ -852,7 +853,10 @@ _file_write_block(cs_file_t  *f,
     else
       BFT_MALLOC(count, s.n_ranks, cs_lnum_t);
 
-    MPI_Scatter(count, 1, MPI_INT, &retval, 1, MPI_INT,  0, f->comm);
+    MPI_Scatter(count, 1, CS_MPI_LNUM,
+                &local_count, 1, CS_MPI_LNUM,
+                0, f->comm);
+    retval = local_count;
 
     if (s.rank_id != 0)
       BFT_FREE(count);
