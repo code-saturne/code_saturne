@@ -663,8 +663,10 @@ cs_halo_update_buffers(const cs_halo_t *halo)
 void
 cs_halo_free_buffer(void)
 {
-  if (_cs_glob_halo_rot_backup != NULL)
+  if (_cs_glob_halo_rot_backup != NULL) {
+    _cs_glob_halo_rot_backup_size = 0;
     BFT_FREE(_cs_glob_halo_rot_backup);
+  }
 }
 
 /*----------------------------------------------------------------------------
