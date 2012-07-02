@@ -299,14 +299,6 @@ class Figure(object):
                     self.o_subplots.append(p)
 
 
-    def options(self):
-        """
-        Additional figure options.
-        """
-        if self.title:
-            plt.suptitle(self.title, fontsize=12)
-
-
     def layout(self):
         """
         Automatic layout, based on the number of subplots
@@ -380,20 +372,12 @@ class Figure(object):
             rcParams['font.size'] = 6
             rcParams['lines.markersize']= 4
 
-        plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
-
         if self.nbrow:
             nbrow = int(self.nbrow)
         if self.nbcol:
             nbcol = int(self.nbcol)
 
         return nbrow, nbcol, hs, ri, le, ws
-
-
-    def save(self, f):
-        """method used to save the figure in a png format"""
-        plt.savefig(f)
-        plt.close()
 
 #-------------------------------------------------------------------------------
 # Plotter
@@ -437,7 +421,7 @@ class Plotter(object):
         self.curves  = []
         self.figures = []
 
-        # Read the parser for the Measurments Files
+        # Read the parser for the Measurements Files
         nodes_list, files = self.parser.getMeasurement(study_label)
         for i in range(len(files)):
             nodes = nodes_list[i]
@@ -509,7 +493,6 @@ class Plotter(object):
             self.figures.append(Figure(node, self.parser, self.curves, self.n_plots, subplots))
 
         for figure in self.figures:
-
             # additional matplotlib raw commands for figure
             for cmd in figure.cmd:
                 c = open("./tmp.py", "w")
@@ -530,7 +513,7 @@ class Plotter(object):
                              "POST",
                              figure.file_name)
 
-            figure.save(f)
+            self.__save(f)
 
             # store the name of the figure for the build of
             # the detailed report
@@ -595,9 +578,6 @@ class Plotter(object):
 
 
     def __draw_legend(self, ax, p, bool, hs, ws, ri, le):
-        if p.title:
-            ax.set_title(p.title)
-
         if p.legstatus == "on":
             handles, labels = ax.get_legend_handles_labels()
 
@@ -637,17 +617,23 @@ class Plotter(object):
                     ri2 = min(0.9, ri*1.1)
                     le2 = max(0.125, le/1.1)
                     ws2 = min(0.3, ws/1.8)
-                    plt.subplots_adjust(hspace=hs, wspace=ws2, right=ri2, left=le2)
+                    plt.subplots_adjust(hspace=hs,
+                                        wspace=ws2,
+                                        right=ri2,
+                                        left=le2)
 
 
     def plot_figure(self, figure):
         """
         Plotter of a single figure with several subplots.
         """
+        plt.figure()
+
         # Layout
         nbrow, nbcol, hs, ri, le, ws = figure.layout()
         log.debug("plot_figure --> layout: n_plots: %s nbcol: %s nbrow: %s l_subplots: %s" % \
                   (self.n_plots, nbcol, nbrow, figure.l_subplots))
+        plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
 
         # list of numbers of curves per subplot
         n_fig = [0] * self.n_plots
@@ -665,22 +651,27 @@ class Plotter(object):
 
         plt.hold(False)
 
-        # axis and legend
+        # title of subplot, axis and legend
         bool = len(figure.l_subplots) > 1
 
         for i in range(len(figure.l_subplots)):
-            j = figure.l_subplots[i]
             p = figure.o_subplots[i]
             ax = plt.subplot(nbrow, nbcol, i + 1)
-            self.__draw_axis(ax, p)
-            self.__draw_legend(ax, p, bool, hs, ws, ri, le)
 
-        # suptitle
-        figure.options()
+            if p.title:
+                ax.set_title(p.title)
+
+            self.__draw_axis(ax, p)
+
+            if n_fig[i] > 0:
+                self.__draw_legend(ax, p, bool, hs, ws, ri, le)
+
+        # title of the figure
+        if figure.title:
+           plt.suptitle(figure.title, fontsize=12)
 
         # additional matplotlib raw commands for subplot
         for i in range(len(figure.l_subplots)):
-            j = figure.l_subplots[i]
             p = figure.o_subplots[i]
             ax = plt.subplot(nbrow, nbcol, i + 1)
             for cmd in p.cmd:
@@ -692,5 +683,11 @@ class Plotter(object):
                 except:
                     print "Error with the matplotlib command: %s" % cmd
                 os.remove("./tmp.py")
+
+
+    def __save(self, f):
+        """method used to save the figure in a png format"""
+        plt.savefig(f)
+        plt.close()
 
 #-------------------------------------------------------------------------------
