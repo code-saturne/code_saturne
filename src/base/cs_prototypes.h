@@ -397,6 +397,18 @@ void
 cs_user_mesh_smoothe(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
+ * Enable or disable mesh saving.
+ *
+ * By default, mesh is saved when modified.
+ *
+ * parameters:
+ *   mesh <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_mesh_save(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
  * Tag bad cells within the mesh based on geometric criteria.
  *----------------------------------------------------------------------------*/
 

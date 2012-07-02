@@ -594,6 +594,30 @@ cs_user_mesh_smoothe(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
+ * Enable or disable mesh saving.
+ *
+ * By default, mesh is saved when modified.
+ *
+ * parameters:
+ *   mesh <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_mesh_save(cs_mesh_t  *mesh)
+{
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
+  if (false) {
+
+    /* Mark mesh as not modified (0) to disable saving;
+       Mark it as modified (> 0) to force saving */
+
+    mesh->modified = 0;
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Tag bad cells within the mesh based on user-defined geometric criteria.
  *
  * The mesh structure is described in cs_mesh.h

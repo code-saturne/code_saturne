@@ -328,6 +328,8 @@ cs_run(void)
   /* Now that mesh modification is finished, save mesh if modified
      (do this before building colors, which adds internal groups) */
 
+  cs_user_mesh_save(cs_glob_mesh); /* Disable or force */
+
   partition_preprocess = cs_partition_get_preprocess();
   if (cs_glob_mesh->modified > 0 || partition_preprocess) {
     if (partition_preprocess) {
