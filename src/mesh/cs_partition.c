@@ -315,7 +315,7 @@ _cell_part_histogram(cs_gnum_t   cell_range[2],
   int n_steps = 10;
   size_t n_cells = 0;
 
-  if (cell_range[1] < cell_range[0])
+  if (cell_range[1] > cell_range[0])
     n_cells = cell_range[1] - cell_range[0];
 
   if (n_parts <= 1) /* Should never happen */
@@ -649,12 +649,6 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
   for (i = 0; i < _n_cells; i++)
     _cell_num[i] = mb->cell_bi.gnum_range[0] + i;
 
-  if (_n_cells == 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Number of cells on rank %d is zero.\n"
-                "(number of cells / number of processes ratio too low)."),
-              (int)cs_glob_rank_id);
-
   /* Distribute faces */
   /*------------------*/
 
@@ -789,7 +783,7 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
   cs_lnum_t n_faces = mb->face_bi.gnum_range[1] - mb->face_bi.gnum_range[0];
 
   const cs_gnum_t  *face_cells = mb->face_cells;
-  const cs_gnum_t  *face_vtx_idx = mb->face_cells;
+  const cs_lnum_t  *face_vtx_idx = mb->face_vertices_idx;
   const cs_gnum_t  *face_vtx = mb->face_vertices;
   const cs_real_t  *vtx_coord = mb->vertex_coords;
 
@@ -837,8 +831,8 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
 
     n_face_vertices = 0;
 
-    start_id = face_vtx_idx[face_id] - 1;
-    end_id = face_vtx_idx[face_id + 1] - 1;
+    start_id = face_vtx_idx[face_id];
+    end_id = face_vtx_idx[face_id + 1];
 
     /* Define the polygon (P) according to the vertices (Pi) of the face */
 
@@ -962,6 +956,7 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
  * Define cell ranks using a space-filling curve.
  *
  * parameters:
+ *   n_g_cells   <-- global number of cells
  *   mb          <-- pointer to mesh builder helper structure
  *   sfc_type    <-- type of space-filling curve
  *   cell_rank   --> cell rank (1 to n numbering)
@@ -969,14 +964,17 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
  *----------------------------------------------------------------------------*/
 
 static void
-_cell_rank_by_sfc(const cs_mesh_builder_t  *mb,
+_cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
+                  const cs_mesh_builder_t  *mb,
                   fvm_io_num_sfc_t          sfc_type,
                   int                       cell_rank[],
                   MPI_Comm                  comm)
 {
   cs_lnum_t i;
-  cs_lnum_t n_cells = 0, block_size = 0, rank_step = 0;
   double  start_time, end_time;
+  int n_ranks = cs_glob_n_ranks, rank_id = cs_glob_rank_id;
+
+  cs_lnum_t n_cells = 0, block_size = 0;
 
   cs_coord_t *cell_center = NULL;
   fvm_io_num_t *cell_io_num = NULL;
@@ -989,7 +987,6 @@ _cell_rank_by_sfc(const cs_mesh_builder_t  *mb,
 
   n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
   block_size = mb->cell_bi.block_size;
-  rank_step = mb->cell_bi.rank_step;
 
   BFT_MALLOC(cell_center, n_cells*3, cs_coord_t);
 
@@ -1009,9 +1006,27 @@ _cell_rank_by_sfc(const cs_mesh_builder_t  *mb,
 
   cell_num = fvm_io_num_get_global_num(cell_io_num);
 
-  /* Determine rank based on global numbering with SFC ordering */
-  for (i = 0; i < n_cells; i++)
-    cell_rank[i] = (((cell_num[i] - 1) / block_size) * rank_step);
+  block_size = n_g_cells / n_ranks;
+  if (n_g_cells % n_ranks)
+    block_size += 1;
+
+  /* Determine rank based on global numbering with SFC ordering;
+     use variable block size if necessary so that all ranks have some
+     cells assigned if possible */
+
+  if ((n_g_cells - 1) % block_size < n_ranks - 1) {
+    int max_rank = n_ranks - 1;
+    double _block_size = n_g_cells / (double)n_ranks;
+    for (i = 0; i < n_cells; i++) {
+      cell_rank[i] = (((cell_num[i] - 1) / _block_size) + 0.5);
+      if (cell_rank[i] > max_rank)
+        cell_rank[i] = max_rank;
+    }
+  }
+  else {
+    for (i = 0; i < n_cells; i++)
+      cell_rank[i] = ((cell_num[i] - 1) / block_size);
+  }
 
   cell_io_num = fvm_io_num_destroy(cell_io_num);
 
@@ -1699,6 +1714,46 @@ _part_parmetis(cs_gnum_t   n_g_cells,
 #if defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH)
 
 /*----------------------------------------------------------------------------
+ * Sort an array "a" between its left bound "l" and its right bound "r"
+ * thanks to a shell sort (Knuth algorithm).
+ *
+ * parameters:
+ *   l <-- left bound
+ *   r <-- right bound
+ *   a <-> array to sort
+ *---------------------------------------------------------------------------*/
+
+static void
+_scotch_sort_shell(SCOTCH_Num  l,
+                   SCOTCH_Num  r,
+                   SCOTCH_Num  a[])
+{
+  int i, j, h;
+
+  /* Compute stride */
+  for (h = 1; h <= (r-l)/9; h = 3*h+1) ;
+
+  /* Sort array */
+  for (; h > 0; h /= 3) {
+
+    for (i = l+h; i < r; i++) {
+
+      SCOTCH_Num v = a[i];
+
+      j = i;
+      while ((j >= l+h) && (v < a[j-h])) {
+        a[j] = a[j-h];
+        j -= h;
+      }
+      a[j] = v;
+
+    } /* Loop on array elements */
+
+  } /* End of loop on stride */
+
+}
+
+/*----------------------------------------------------------------------------
  * Print an error message and exit with an EXIT_FAILURE code.
  *
  * An implementation of this function is required by libScotch.
@@ -1795,9 +1850,9 @@ _scotch_cell_cells(size_t        n_cells,
                    SCOTCH_Num  **cell_idx,
                    SCOTCH_Num  **cell_neighbors)
 {
-  size_t i, id_0, id_1;
-
-  cs_gnum_t  c_num[2];
+  size_t i;
+  cs_gnum_t  id_0, id_1, c_num[2];
+  SCOTCH_Num  start_id, end_id, c_id;
 
   SCOTCH_Num  *n_neighbors;
   SCOTCH_Num  *_cell_idx;
@@ -1862,6 +1917,42 @@ _scotch_cell_cells(size_t        n_cells,
 
   BFT_FREE(n_neighbors);
 
+  /* Clean graph */
+
+  c_id = 0;
+  start_id = _cell_idx[0]; /* also = 0 */
+  end_id = 0;
+
+  for (i = 0; i < n_cells; i++) {
+
+    SCOTCH_Num j, n_prev;
+
+    end_id = _cell_idx[i+1];
+
+    _scotch_sort_shell(start_id, end_id, _cell_neighbors);
+
+    n_prev = _cell_neighbors[start_id];
+    _cell_neighbors[c_id] = n_prev;
+    c_id += 1;
+
+    for (j = start_id + 1; j < end_id; j++) {
+      if (_cell_neighbors[j] != n_prev) {
+        n_prev = _cell_neighbors[j];
+        _cell_neighbors[c_id] = n_prev;
+        c_id += 1;
+      }
+    }
+
+    start_id = end_id;
+    _cell_idx[i+1] = c_id;
+
+  }
+
+  if (c_id < end_id)
+    BFT_REALLOC(_cell_neighbors, c_id - 1, SCOTCH_Num);
+
+  /* Set return values */
+
   *cell_idx = _cell_idx;
   *cell_neighbors = _cell_neighbors;
 }
@@ -1900,7 +1991,7 @@ _part_scotch(SCOTCH_Num   n_cells,
   start_time = cs_timer_wtime();
 
   if (sizeof(SCOTCH_Num) == sizeof(int))
-    _cell_part = cell_part;
+    _cell_part = (SCOTCH_Num *)cell_part;
   else
     BFT_MALLOC(_cell_part, n_cells, SCOTCH_Num);
 
@@ -2027,7 +2118,7 @@ _part_ptscotch(cs_gnum_t    n_g_cells,
   MPI_Comm_size(comm, &n_ranks);
 
   if (sizeof(SCOTCH_Num) == sizeof(int))
-    _cell_part = cell_part;
+    _cell_part = (SCOTCH_Num *)cell_part;
   else
     BFT_MALLOC(_cell_part, n_cells, SCOTCH_Num);
 
@@ -2119,7 +2210,6 @@ _prepare_input(const cs_mesh_t           *mesh,
   int rank_id = cs_glob_rank_id;
   int n_ranks = cs_glob_n_ranks;
 
-  cs_gnum_t n_g_faces = 0;
   cs_gnum_t *_g_face_cells = NULL;
 
 #if defined(HAVE_MPI)
@@ -2256,7 +2346,7 @@ _prepare_input(const cs_mesh_t           *mesh,
 #endif /* defined(HAVE_MPI) */
 
   if (cs_glob_n_ranks == 1)
-    *n_faces = n_g_faces;
+    *n_faces = mb->n_g_faces;
 
   /* Prepare auxiliary return values */
 
@@ -3032,11 +3122,16 @@ cs_partition(cs_mesh_t             *mesh,
 
   /* Read cell rank data if available */
 
-  if (cs_glob_n_ranks
-      && (   stage != CS_PARTITION_MAIN
-          || cs_partition_get_preprocess() == false)) {
-    _read_cell_rank(mesh, mb, CS_IO_ECHO_OPEN_CLOSE);
-    if (mb->have_cell_rank)
+  if (cs_glob_n_ranks > 1) {
+    if (   stage != CS_PARTITION_MAIN
+        || cs_partition_get_preprocess() == false) {
+      _read_cell_rank(mesh, mb, CS_IO_ECHO_OPEN_CLOSE);
+      if (mb->have_cell_rank)
+        return;
+    }
+  }
+  else { /* if (cs_glob_n_ranks == 1) */
+    if (stage != CS_PARTITION_MAIN || n_extra_partitions < 1)
       return;
   }
 
@@ -3360,7 +3455,8 @@ cs_partition(cs_mesh_t             *mesh,
       if (n_ranks < 2)
         continue;
 
-      _cell_rank_by_sfc(mb,
+      _cell_rank_by_sfc(mesh->n_g_cells,
+                        mb,
                         sfc_type,
                         cell_part,
                         cs_glob_mpi_comm);
