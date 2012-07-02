@@ -260,7 +260,7 @@ class Setup:
     def __init__(self):
 
         # Optional libraries
-        self.optlibs = ['cgns', 'hdf5', 'med', 'mpi', 'libxml2']
+        self.optlibs = ['hdf5', 'cgns', 'med', 'mpi', 'libxml2']
 
         # Code_Saturne version
         self.version = '2.3-alpha'
