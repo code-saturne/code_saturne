@@ -256,15 +256,17 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         coal  = self.pcoal.getCoalCombustionModel()
         joule = self.elect.getElectricalModel()
         atmospheric = self.atmo.getAtmosphericFlowsModel()
+        compressible = self.comp.getCompressibleModel()
 
         self.modelGasCombustionModel.setItem(str_model=flame)
         self.modelPulverizedCoal.setItem(str_model=coal)
         self.modelJouleEffect.setItem(str_model=joule)
         self.modelAtmospheric.setItem(str_model=atmospheric)
+        self.modelCompressible.setItem(str_model=compressible)
 
         # If one model is turned on, the others are turned off
 
-        if (flame, coal, joule, atmospheric) != ('off', 'off', 'off', 'off'):
+        if (flame, coal, joule, atmospheric, compressible) != ('off', 'off', 'off', 'off', 'off'):
 
             if flame == 'off':
                 self.comboBoxGasCombustionModel.setEnabled(False)
@@ -277,6 +279,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             if atmospheric == 'off':
                 self.comboBoxAtmospheric.setEnabled(False)
+
+            if compressible == 'off':
+                self.comboBoxCompressible.setEnabled(False)
 
         # Update the Tree files and folders
 
@@ -294,6 +299,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxPulverizedCoal.setEnabled(True)
         self.comboBoxJouleEffect.setEnabled(True)
         self.comboBoxAtmospheric.setEnabled(True)
+        self.comboBoxCompressible.setEnabled(True)
 
 
     def __disableComboBox(self):
@@ -308,6 +314,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxJouleEffect.setEnabled(False)
         self.comboBoxAtmospheric.setEnabled(False)
         self.comboBoxCompressible.setEnabled(False)
+        # Update the Tree files and folders
+
+        self.browser.configureTree(self.case)
 
 
     def __stringModelFromCombo(self, name):
