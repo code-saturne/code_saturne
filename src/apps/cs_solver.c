@@ -41,7 +41,7 @@
    exceptions is helpful. */
 
 #if defined(__linux__) || defined(__linux) || defined(linux)
-#if    (!defined(__ia64__) && !defined(__blrts__) && !defined(__bgp__)) \
+#if    (!defined(__ia64__) && !defined(__blrts__) && !defined(__bg__)) \
     || defined(DEBUG)
 #define _GNU_SOURCE
 #endif
