@@ -132,27 +132,31 @@ icondf = iclrtp(ivar, icoeff)
 
 call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
 !==========
-call fldbcm(ivarfl(ivar),                             &
-!==========
-            coefa(1, icondl), coefb(1, icondl),       &
-            coefa(1, icondf), coefb(1, icondf))
+if (nfabor .gt. 0) then
+  call fldbcm(ivarfl(ivar),                             &
+  !==========
+              coefa(1, icondl), coefb(1, icondl),       &
+              coefa(1, icondf), coefb(1, icondf))
+endif
 
 ivar = iu
 call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
 !==========
 
-if (ivelco .eq. 0) then
-  icondl = iclrtp(ivar, icoef)
-  icondf = iclrtp(ivar, icoeff)
-  call fldbcm(ivarfl(ivar),                           &
-  !==========
-              coefa(1, icondl), coefb(1, icondl),     &
-              coefa(1, icondf), coefb(1, icondf))
-else
-  call fldbcm(ivarfl(ivar),                           &
-  !==========
-              coefau(1, 1), coefbu(1, 1, 1),          &
-              cofafu(1, 1), cofbfu(1, 1, 1))
+if (nfabor .gt. 0) then
+  if (ivelco .eq. 0) then
+    icondl = iclrtp(ivar, icoef)
+    icondf = iclrtp(ivar, icoeff)
+    call fldbcm(ivarfl(ivar),                           &
+    !==========
+                coefa(1, icondl), coefb(1, icondl),     &
+                coefa(1, icondf), coefb(1, icondf))
+  else
+    call fldbcm(ivarfl(ivar),                           &
+    !==========
+                coefau(1, 1), coefbu(1, 1, 1),          &
+                cofafu(1, 1), cofbfu(1, 1, 1))
+  endif
 endif
 
 ! Turbulence
@@ -210,10 +214,12 @@ do ii = 1, nfld
   icondf = iclrtp(ivar, icoeff)
   call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
   !==========
-  call fldbcm(ivarfl(ivar),                           &
-  !==========
-              coefa(1, icondl), coefb(1, icondl),     &
-              coefa(1, icondf), coefb(1, icondf))
+  if (nfabor .gt. 0) then
+    call fldbcm(ivarfl(ivar),                           &
+    !==========
+                coefa(1, icondl), coefb(1, icondl),     &
+                coefa(1, icondf), coefb(1, icondf))
+  endif
 enddo
 
 nfld = 0
@@ -225,18 +231,20 @@ if (iale.eq.1) then
   ivar = iuma
   call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
   !==========
-  if (ivelco .eq. 0) then
-    icondl = iclrtp(ivar, icoef)
-    icondf = iclrtp(ivar, icoeff)
-    call fldbcm(ivarfl(ivar),                         &
-    !==========
-                coefa(1, icondl), coefb(1, icondl),   &
-                coefa(1, icondf), coefb(1, icondf))
-  else
-    call fldbcm(ivarfl(ivar),                         &
-    !==========
-                cfaale(1, 1), cfbale(1, 1, 1),        &
-                cfaale(1, 1), cfbale(1, 1, 1))
+  if (nfabor .gt. 0) then
+    if (ivelco .eq. 0) then
+      icondl = iclrtp(ivar, icoef)
+      icondf = iclrtp(ivar, icoeff)
+      call fldbcm(ivarfl(ivar),                         &
+      !==========
+                  coefa(1, icondl), coefb(1, icondl),   &
+                  coefa(1, icondf), coefb(1, icondf))
+    else
+      call fldbcm(ivarfl(ivar),                         &
+      !==========
+                  cfaale(1, 1), cfbale(1, 1, 1),        &
+                  cfaale(1, 1), cfbale(1, 1, 1))
+    endif
   endif
 endif
 
@@ -252,10 +260,12 @@ do ii = 1, nscal
     icondf = iclrtp(ivar, icoeff)
     call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
     !==========
-    call fldbcm(ivarfl(ivar),                         &
-    !==========
-                coefa(1, icondl), coefb(1, icondl),   &
-                coefa(1, icondf), coefb(1, icondf))
+    if (nfabor .gt. 0) then
+      call fldbcm(ivarfl(ivar),                         &
+      !==========
+                  coefa(1, icondl), coefb(1, icondl),   &
+                  coefa(1, icondf), coefb(1, icondf))
+    endif
   endif
 enddo
 
