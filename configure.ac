@@ -470,7 +470,7 @@ fi
 have_dlloader=no
 
 AC_ARG_ENABLE(dlloader,
-  [  --disable-dlloader      disable dynamic shared library loading],
+  [  --enable-dlloader       enable dynamic shared library loading],
   [
     case "${enableval}" in
       yes) have_dlloader=yes ;;
@@ -478,7 +478,7 @@ AC_ARG_ENABLE(dlloader,
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-dlloader]) ;;
     esac
   ],
-  [ have_dlloader=yes ]
+  [ have_dlloader=no ]
 )
 
 if test "x$have_dlloader" = "xyes" ; then
