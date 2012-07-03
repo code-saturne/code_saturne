@@ -271,7 +271,7 @@ class Setup:
         self.satlibs = ['bft', 'fvm', 'mei', 'ecs', 'ncs']
 
         # Optional libraries
-        self.optlibs = ['cgns', 'hdf5', 'med', 'mpi', 'libxml2', 'swig']
+        self.optlibs = ['hdf5', 'cgns', 'med', 'mpi', 'libxml2', 'swig']
 
         self.libs = self.optlibs + self.satlibs
 
@@ -345,8 +345,8 @@ class Setup:
             Package(name="FVM",
                     description="Finite Volume Mesh",
                     package="fvm",
-                    version="0.15.3",
-                    archive="fvm-0.15.3.tar.gz",
+                    version="0.15.4",
+                    archive="fvm-0.15.4.tar.gz",
                     url=url_cs)
 
         p = self.packages['fvm']
