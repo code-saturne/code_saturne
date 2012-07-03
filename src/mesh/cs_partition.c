@@ -1949,7 +1949,7 @@ _scotch_cell_cells(size_t        n_cells,
   }
 
   if (c_id < end_id)
-    BFT_REALLOC(_cell_neighbors, c_id - 1, SCOTCH_Num);
+    BFT_REALLOC(_cell_neighbors, c_id, SCOTCH_Num);
 
   /* Set return values */
 
