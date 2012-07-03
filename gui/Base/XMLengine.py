@@ -96,10 +96,10 @@ class Dico:
         self.data['resu_path']              = ""
         self.data['scripts_path']           = ""
         self.data['relevant_subdir']        = "no"
+        self.data['batch_type']             = ""
         self.data['case_path']              = ""
-        self.data['batchScript']            = {}
-        self.data['backupBatchScript']      = {}
-        self.data['computer']               = ""
+        self.data['batchScript']            = ""
+        self.data['backupBatchScript']      = ""
         self.data['no_boundary_conditions'] = False
         self.data['salome']                 = False
 

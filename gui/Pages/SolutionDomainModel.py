@@ -245,19 +245,17 @@ class SolutionDomainModel(MeshModel, Model):
                                'CWF_OFF',
                                'JOIN_OFF',
                                'PERIO_OFF'))
-        key = self.case['computer']
-        if key:
-            if not self.case['batchScript'][key]: return
+        if not self.case['batchScript']: return
 
-            from BatchRunningModel import BatchRunningModel
-            batch = BatchRunningModel(self.case)
-            if keyword in ('CWF_OFF', 'JOIN_OFF', 'PERIO_OFF'):
-                cmd = string.split(keyword,'_')[:1][0]
-                keyword = 'COMMAND_' + str(cmd)
-                batch.dicoValues[keyword] = ''
-            batch.initializeBatchScriptFile()
-            batch.updateBatchScriptFile(keyword)
-            del BatchRunningModel
+        from BatchRunningModel import BatchRunningModel
+        batch = BatchRunningModel(self.case)
+        if keyword in ('CWF_OFF', 'JOIN_OFF', 'PERIO_OFF'):
+            cmd = string.split(keyword,'_')[:1][0]
+            keyword = 'COMMAND_' + str(cmd)
+            batch.dicoValues[keyword] = ''
+        batch.initializeBatchScriptFile()
+        batch.updateBatchScriptFile(keyword)
+        del BatchRunningModel
 
 
 #To follow : private methods to get or put faces

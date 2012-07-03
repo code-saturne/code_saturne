@@ -1,3 +1,23 @@
+* 03/07/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  GUI: backport handling of batch systems from version 2.2.
+  This should help avoid mistakenly running the code on a cluster's
+  front-end nodes, as well as provide additional comfort.
+  modified files:
+    Makefile.am
+    bin/cs_config.py.in
+    gui/Base/MainView.py
+    gui/Base/XMLengine.py
+    gui/Pages/BatchRunningForm.ui
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/BatchRunningView.py
+    gui/Pages/Makefile.am
+    gui/Pages/ProfilesModel.py
+    gui/Pages/SolutionDomainModel.py
+  removed files:
+    gui/Pages/BatchRunningPBSJobManagementDialogForm.ui
+
+    configure.ac
+
 * 28/06/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Disable dynamic loader by default, as it is not used by any operational
   functionnality of this version.

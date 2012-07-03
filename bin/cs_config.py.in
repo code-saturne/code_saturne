@@ -69,6 +69,12 @@ class env_modules:
     modules = "@cs_env_modules@"
     modules_cmd = "@cs_env_modules_cmd@"
 
+# Optional Batch system
+#-----------------------------
+
+class batch_template:
+    template = "@cs_batch_template@"
+
 #-------------------------------------------------------------------------------
 
 def get_config():
@@ -105,7 +111,8 @@ MPI library information:
             'pkgdata':dirs.pkgdatadir, 'doc':dirs.docdir, 'pdf':dirs.pdfdir,
             'ecs':dirs.ecs_bindir, 'syrthes':dirs.syrthes_prefix,
             'mpi_type':mpi_lib.type, 'mpi_bindir':mpi_lib.bindir,
-            'mpi_libdir':mpi_lib.libdir }
+            'mpi_libdir':mpi_lib.libdir,
+            'batch_template': batch_template.template}
 
 #-------------------------------------------------------------------------------
 

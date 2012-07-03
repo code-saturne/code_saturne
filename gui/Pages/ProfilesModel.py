@@ -115,25 +115,23 @@ class ProfilesModel(Model):
         """
         Update the backup file if it's ready to run.
         """
-        key = self.case['computer']
-        if key:
-            if not self.case['batchScript'][key]:
-                return
+        if not self.case['batchScript']:
+            return
 
-            from BatchRunningModel import BatchRunningModel
-            batch = BatchRunningModel(self.case)
-            batch.initializeBatchScriptFile()
+        from BatchRunningModel import BatchRunningModel
+        batch = BatchRunningModel(self.case)
+        batch.initializeBatchScriptFile()
 
-            if batch.dicoValues['USER_OUTPUT_FILES']:
-                v = string.split(batch.dicoValues['USER_OUTPUT_FILES'])
-            else:
-                v = []
+        if batch.dicoValues['USER_OUTPUT_FILES']:
+            v = string.split(batch.dicoValues['USER_OUTPUT_FILES'])
+        else:
+            v = []
 
-            vlist = self.updateOutputFiles(v)
+        vlist = self.updateOutputFiles(v)
 
-            batch.dicoValues['USER_OUTPUT_FILES'] = string.join(vlist, " ")
-            batch.updateBatchScriptFile('USER_OUTPUT_FILES')
-            del BatchRunningModel
+        batch.dicoValues['USER_OUTPUT_FILES'] = string.join(vlist, " ")
+        batch.updateBatchScriptFile('USER_OUTPUT_FILES')
+        del BatchRunningModel
 
 
     def getVariablesAndVolumeProperties(self):

@@ -50,6 +50,8 @@ from AtmosphericFlowsModel import AtmosphericFlowsModel
 from ProfilesModel import ProfilesModel
 from Base.XMLvariables import Variables, Model
 
+import cs_config
+
 #-------------------------------------------------------------------------------
 # Class BatchRunningModel
 #-------------------------------------------------------------------------------
@@ -64,16 +66,20 @@ class RuncaseModel:
         self.case = case
 
         if not self.case['batchScript']:
-            self.case['batchScript'] = {'station': "",
-                                        'pbs': "",
-                                        'lsf': "",
-                                        'sge': ""}
+            self.case['batchScript'] = ""
 
         if not self.case['backupBatchScript']:
-            self.case['backupBatchScript'] = {'station': "no",
-                                              'pbs': "no",
-                                              'lsf': "no",
-                                              'sge': "no"}
+            self.case['backupBatchScript'] = "no"
+
+        # get type of batch file
+
+        self.case['batch_type'] = ''
+        batch_template = cs_config.batch_template.template
+        if batch_template and batch_template != 'no':
+            if os.path.isabs(batch_template):
+                self.case['batch_type'] = os.path.basename(batch_template)
+            else:
+                self.case['batch_type'] = batch_template
 
 
 class BatchRunningModel(Model):
@@ -88,20 +94,17 @@ class BatchRunningModel(Model):
 
         RuncaseModel(self.case)
 
-        # we get up batch script file
-        key = self.case['computer']
-
-        self.script1 = self.case['scripts_path'] + "/" + self.case['batchScript'][key]
+        self.script1 = self.case['scripts_path'] + "/" + self.case['batchScript']
 
         # Save a backup file before any modification.
         # There is only one backup for the entire session.
 
         script2 = self.script1 + "~"
 
-        if self.case['backupBatchScript'][key] == "no" \
+        if self.case['backupBatchScript'] == "no" \
                or not os.path.isfile(script2):
             os.popen('cp ' + self.script1 + " " +script2)
-            self.case['backupBatchScript'][key] = "yes"
+            self.case['backupBatchScript'] = "yes"
 
         # Read the batch script file line by line.
         # All lines are stored in a list called "self.lines".
@@ -110,9 +113,21 @@ class BatchRunningModel(Model):
         self.lines = f.readlines()
         f.close()
 
+        for i in range(len(self.lines)):
+            self.lines[i] = self.lines[i].rstrip(' \t')
+
         # DicoValues's initialisation
 
         self.dicoValues = {}
+
+        self.dicoValues['job_name'] = None
+        self.dicoValues['job_nodes'] = None
+        self.dicoValues['job_ppn'] = None
+        self.dicoValues['job_procs'] = None
+        self.dicoValues['job_walltime'] = None
+        self.dicoValues['job_class'] = None
+        self.dicoValues['job_group'] = None
+
         self.dicoValues['SOLCOM'] = '0'
         self.dicoValues['PARAM'] = ""
         self.dicoValues['NUMBER_OF_PROCESSORS'] = ""
@@ -126,10 +141,6 @@ class BatchRunningModel(Model):
         self.dicoValues['COMMAND_JOIN'] = ""
         self.dicoValues['COMMAND_CWF'] = ""
         self.dicoValues['COMMAND_PERIO'] = ""
-        self.dicoValues['PBS_JOB_NAME'] = ""
-        self.dicoValues['PBS_nodes'] = '1'
-        self.dicoValues['PBS_ppn'] = '2'
-        self.dicoValues['PBS_walltime'] = '1:00:00'
         self.dicoValues['EXEC_PREPROCESS'] = "yes"
         self.dicoValues['EXEC_PARTITION'] = "yes"
         self.dicoValues['EXEC_KERNEL'] = "yes"
@@ -236,16 +247,484 @@ class BatchRunningModel(Model):
         return ch
 
 
+    def preParse(self, s):
+        """
+        Pre-parse batch file lines
+        """
+        r = ' '
+        i = s.find('#')
+        if i > -1:
+            s = s[:i]
+        s = r.join(s.split())
+
+        return s
+
+
+    def parseBatchCCC(self):
+        """
+        Parse Platform LSF batch file lines
+        """
+        batch_lines = self.lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:5] == '#MSUB':
+                batch_args = self.preParse(batch_lines[i][5:])
+                tok = batch_args.split()
+                if len(tok) < 2:
+                    continue
+                kw = tok[0]
+                val = tok[1].split(',')[0].strip()
+                if kw == '-r':
+                    self.dicoValues['job_name'] = val
+                elif kw == '-n':
+                    self.dicoValues['job_procs'] = int(val)
+                elif kw == '-N':
+                    self.dicoValues['job_nodes'] = int(val)
+                elif kw == '-T':
+                    self.dicoValues['job_walltime'] = int(val)
+                elif kw == '-q':
+                        self.dicoValues['job_class'] = val
+
+
+    def updateBatchCCC(self):
+        """
+        Update the Platform LSF batch file lines
+        """
+        batch_lines = self.lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:5] == '#MSUB':
+                batch_args = self.preParse(batch_lines[i][5:])
+                tok = batch_args.split()
+                if len(tok) < 2:
+                    continue
+                kw = tok[0]
+                if kw == '-r':
+                    val = str(self.dicoValues['job_name'])
+                elif kw == '-n':
+                    val = str(self.dicoValues['job_procs'])
+                elif kw == '-N':
+                    val = str(self.dicoValues['job_nodes'])
+                elif kw == '-T':
+                    val = str(self.dicoValues['job_walltime'])
+                elif kw == '-q':
+                    val = self.dicoValues['job_class']
+                else:
+                    continue
+                batch_lines[i] = '#MSUB ' + kw + ' ' + str(val) + '\n'
+
+
+    def parseBatchLOADL(self):
+        """
+        Parse LoadLeveler batch file lines
+        """
+        batch_lines = self.lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0] == '#':
+                batch_args = self.preParse(batch_lines[i][1:])
+                try:
+                    if batch_args[0] == '@':
+                        kw, val = batch_args[1:].split('=')
+                        kw = kw.strip()
+                        val = val.split(',')[0].strip()
+                        if kw == 'job_name':
+                            self.dicoValues['job_name'] = val
+                        elif kw == 'node':
+                            self.dicoValues['job_nodes'] = val
+                        elif kw == 'tasks_per_node':
+                            self.dicoValues['job_ppn'] = val
+                        elif kw == 'total_tasks':
+                            self.dicoValues['job_procs'] = val
+                        elif kw == 'wall_clock_limit':
+                            wt = (val.split(',')[0].rstrip()).split(':')
+                            if len(wt) == 3:
+                                self.dicoValues['job_walltime'] \
+                                    = int(wt[0])*3600 + int(wt[1])*60 + int(wt[2])
+                            elif len(wt) == 2:
+                                self.dicoValues['job_walltime'] \
+                                    = int(wt[0])*60 + int(wt[1])
+                            elif len(wt) == 1:
+                                self.dicoValues['job_walltime'] = int(wt[0])
+                        elif kw == 'class':
+                            self.dicoValues['job_class'] = val
+                        elif kw == 'group':
+                            self.dicoValues['job_group'] = val
+                except Exception:
+                    pass
+
+
+    def updateBatchLOADL(self):
+        """
+        Update the LoadLeveler batch file from dictionary self.dicoValues.
+        """
+
+        batch_lines = self.lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0] == '#':
+                batch_args = self.preParse(batch_lines[i][1:])
+                try:
+                    if batch_args[0] == '@':
+                        kw, val = batch_args[1:].split('=')
+                        kw = kw.strip()
+                        val = val.split(',')[0].strip()
+                        if kw == 'job_name':
+                            val = self.dicoValues['job_name']
+                        elif kw == 'node':
+                            val = self.dicoValues['job_nodes']
+                        elif kw == 'tasks_per_node':
+                            val = self.dicoValues['job_ppn']
+                        elif kw == 'total_tasks':
+                            val = self.dicoValues['job_procs']
+                        elif kw == 'wall_clock_limit':
+                            wt = self.dicoValues['job_walltime']
+                            val = '%d:%02d:%02d' % (wt/3600,
+                                                    (wt%3600)/60,
+                                                    wt%60)
+                        elif kw == 'class':
+                            val = self.dicoValues['job_class']
+                        elif kw == 'group':
+                            val = self.dicoValues['job_group']
+                        else:
+                            continue
+                        batch_lines[i] = '# @ ' + kw + ' = ' + str(val) + '\n'
+                except Exception:
+                    pass
+
+
+    def parseBatchLSF(self):
+        """
+        Parse Platform LSF batch file lines
+        """
+        batch_lines = self.lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:5] == '#BSUB':
+                batch_args = self.preParse(batch_lines[i][5:])
+                tok = batch_args.split()
+                kw = tok[0]
+                val = tok[1].split(',')[0].strip()
+                if kw == '-J':
+                    self.dicoValues['job_name'] = val
+                elif kw == '-n':
+                    self.dicoValues['job_procs'] = int(val)
+                elif kw == '-W' or kw == '-wt' or kw == '-We':
+                    wt = val.split(':')
+                    if len(wt) == 1:
+                        self.dicoValues['job_walltime'] = int(wt[0])*60
+                    elif len(wt) == 2:
+                        self.dicoValues['job_walltime'] \
+                            = int(wt[0])*3600 + int(wt[1])*60
+                elif kw == '-q':
+                        self.dicoValues['job_class'] = val
+
+
+    def updateBatchLSF(self):
+        """
+        Update the Platform LSF batch file lines
+        """
+        batch_lines = self.lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:5] == '#BSUB':
+                batch_args = self.preParse(batch_lines[i][5:])
+                tok = batch_args.split()
+                kw = tok[0]
+                if kw == '-J':
+                    val = str(self.dicoValues['job_name'])
+                elif kw == '-n':
+                    val = str(self.dicoValues['job_procs'])
+                elif kw == '-W' or kw == '-wt' or kw == '-We':
+                    wt = self.dicoValues['job_walltime']
+                    val = '%d:%02d' % (wt/3600, (wt%3600)/60)
+                elif kw == '-q':
+                    val = self.dicoValues['job_class']
+                else:
+                    continue
+                batch_lines[i] = '#BSUB ' + kw + ' ' + str(val) + '\n'
+
+
+    def parseBatchPBS(self):
+        """
+        Parse PBS batch file lines
+        """
+        batch_lines = self.lines
+
+        # TODO: specialize for PBS Professional and TORQUE (OpenPBS has not been
+        # maintained since 2004, so we do not support it).
+        # We use the "-l nodes=N:ppn=P" syntax here, which is common to all PBS
+        # variants, but PBS Pro considers the syntax depecated, and prefers its
+        # own "-l select=N:ncpus=P:mpiprocs=P" syntax.
+        # We do not have access to a PBS Professional system, but according to
+        # its documentation, it has commands such as "pbs-report" or "pbs_probe"
+        # which are not part of TORQUE, while the latter has "pbsnodelist" or
+        # #pbs-config". The presence of either could help determine which
+        # system is available.
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:4] == '#PBS':
+                batch_args = ' ' + self.preParse(batch_lines[i][4:])
+                index = string.rfind(batch_args, ' -')
+                while index > -1:
+                    arg = batch_args[index+1:]
+                    batch_args = batch_args[0:index]
+                    if arg[0:2] == '-N':
+                        self.dicoValues['job_name'] = arg.split()[1]
+                    elif arg[0:9] == '-l nodes=':
+                        arg_tmp = arg[9:].split(':')
+                        self.dicoValues['job_nodes'] = arg_tmp[0]
+                        self.dicoValues['job_ppn'] = arg_tmp[1].split('=')[1]
+                    elif arg[0:12] == '-l walltime=':
+                        wt = (arg.split('=')[1]).split(':')
+                        if len(wt) == 3:
+                            self.dicoValues['job_walltime'] \
+                                = int(wt[0])*3600 + int(wt[1])*60 + int(wt[2])
+                        elif len(wt) == 2:
+                            self.dicoValues['job_walltime'] \
+                                = int(wt[0])*60 + int(wt[1])
+                        elif len(wt) == 1:
+                            self.dicoValues['job_walltime'] \
+                                = int(wt[0])
+                    elif arg[0:2] == '-q':
+                            self.dicoValues['job_class'] = arg.split()[1]
+                    index = string.rfind(batch_args, ' -')
+
+
+    def updateBatchPBS(self):
+        """
+        Update the PBS batch file from dictionary self.dicoValues.
+        """
+        batch_lines = self.lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:4] == '#PBS':
+                ch = '\n'
+                batch_args = ' ' + self.preParse(batch_lines[i][4:])
+                index = string.rfind(batch_args, ' -')
+                while index > -1:
+                    arg = batch_args[index+1:]
+                    batch_args = batch_args[0:index]
+                    if arg[0:2] == '-N':
+                        ch = ' -N ' + self.dicoValues['job_name'] + ch
+                    elif arg[0:9] == '-l nodes=':
+                        ch = ' -l nodes=' + self.dicoValues['job_nodes'] \
+                            +  ':ppn=' + self.dicoValues['job_ppn'] + ch
+                    elif arg[0:12] == '-l walltime=':
+                        wt = self.dicoValues['job_walltime']
+                        s_wt = '%d:%02d:%02d' % (wt/3600,
+                                                 (wt%3600)/60,
+                                                 wt%60)
+                        ch = ' -l walltime=' + s_wt + ch
+                    elif arg[0:2] == '-q':
+                        ch = ' -q ' + self.dicoValues['job_class'] + ch
+                    else:
+                        ch = ' ' + arg + ch
+                    index = string.rfind(batch_args, ' -')
+                ch = '#PBS' + ch
+                batch_lines[i] = ch
+
+
+    def parseBatchSGE(self):
+        """
+        Parse Sun Grid Engine batch file lines
+        """
+        batch_lines = self.lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:2] == '#$':
+                batch_args = ' ' + self.preParse(batch_lines[i][2:])
+                index = string.rfind(batch_args, ' -')
+                while index > -1:
+                    arg = batch_args[index+1:]
+                    batch_args = batch_args[0:index]
+                    if arg[0:2] == '-N':
+                        self.dicoValues['job_name'] = arg.split()[1]
+                    elif arg[0:3] == '-pe':
+                        try:
+                            arg_tmp = arg[3:].split(' ')
+                            self.dicoValues['job_procs'] = arg_tmp[2]
+                        except Exception:
+                            pass
+                    elif arg[0:8] == '-l h_rt=':
+                        wt = (arg.split('=')[1]).split(':')
+                        if len(wt) == 3:
+                            self.dicoValues['job_walltime'] \
+                                = int(wt[0])*3600 + int(wt[1])*60 + int(wt[2])
+                        elif len(wt) == 2:
+                            self.dicoValues['job_walltime'] \
+                                = int(wt[0])*60 + int(wt[1])
+                        elif len(wt) == 1:
+                            self.dicoValues['job_walltime'] = int(wt[0])
+                    elif arg[0:2] == '-q':
+                        self.dicoValues['job_class'] = arg.split()[1]
+                    index = string.rfind(batch_args, ' -')
+
+
+    def updateBatchSGE(self):
+        """
+        Update the Sun Grid Engine batch file lines
+        """
+        batch_lines = self.lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:2] == '#$':
+                ch = '\n'
+                batch_args = ' ' + self.preParse(batch_lines[i][2:])
+                index = string.rfind(batch_args, ' -')
+                while index > -1:
+                    arg = batch_args[index+1:]
+                    batch_args = batch_args[0:index]
+                    if arg[0:2] == '-N':
+                        ch = ' -N ' + self.dicoValues['job_name'] + ch
+                    elif arg[0:3] == '-pe':
+                        try:
+                            arg_tmp = arg[3:].split(' ')
+                            ch = ' -pe ' + arg_tmp[1] + ' ' \
+                                + str(self.dicoValues['job_procs']) + ch
+                        except Exception:
+                            pass
+                    elif arg[0:8] == '-l h_rt=':
+                        wt = self.dicoValues['job_walltime']
+                        s_wt = '%d:%02d:%02d' % (wt/3600,
+                                                 (wt%3600)/60,
+                                                 wt%60)
+                        ch = ' -l h_rt=' + s_wt + ch
+                    elif arg[0:2] == '-q':
+                        ch = ' -q ' + self.dicoValues['job_class'] + ch
+                    else:
+                        ch = ' ' + arg + ch
+                    index = string.rfind(batch_args, ' -')
+                    ch = '#$' + ch
+                    batch_lines[i] = ch
+
+
+    def parseBatchSLURM(self):
+        """
+        Parse SLURM batch file lines
+        """
+        batch_lines = self.lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:7] == '#SBATCH':
+                batch_args = self.preParse(batch_lines[i][7:])
+                if batch_args[0:2] == '--':
+                    tok = batch_args.split('=')
+                    if len(tok) < 2:
+                        continue
+                    kw = tok[0] + '='
+                    val = tok[1].split(',')[0].strip()
+                elif batch_args[0] == '-':
+                    kw = batch_args[0:2]
+                    val = batch_args[2:].split(',')[0].strip()
+                else:
+                    continue
+                if kw == '--job-name=' or kw == '-J':
+                    self.dicoValues['job_name'] = val
+                elif kw == '--ntasks=' or kw == '-n':
+                    self.dicoValues['job_procs'] = val
+                elif kw == '--nodes=' or kw == '-N':
+                    self.dicoValues['job_nodes'] = val
+                elif kw == '--ntasks-per-node=':
+                    self.dicoValues['job_ppn'] = val
+                elif kw == '--time=' or kw == '-t':
+                    wt0 = val.split('-')
+                    if len(wt0) == 2:
+                        th = int(wt0[0])*3600*24
+                        wt = wt0[1].split(':')
+                    else:
+                        th = 0
+                        wt = wt0[0].split(':')
+                    if len(wt) == 3:
+                        self.dicoValues['job_walltime'] \
+                            = th + int(wt[0])*3600 + int(wt[1])*60 + int(wt[2])
+                    elif len(wt) == 2:
+                        if len(wt0) == 2:
+                            self.dicoValues['job_walltime'] \
+                                = th + int(wt[0])*3600 + int(wt[1])*60
+                        else:
+                            self.dicoValues['job_walltime'] \
+                                = th + int(wt[0])*60 + int(wt[1])
+                    elif len(wt) == 1:
+                        if len(wt0) == 2:
+                            self.dicoValues['job_walltime'] \
+                                = th + int(wt[0])*3600
+                        else:
+                            self.dicoValues['job_walltime'] \
+                                = th + int(wt[0])*60
+                elif kw == '--partition=' or kw == '-p':
+                    self.dicoValues['job_class'] = val
+
+
+    def updateBatchSLURM(self):
+        """
+        Update the SLURM batch file from dictionary self.dicoValues.
+        """
+        batch_lines = self.lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:7] == '#SBATCH':
+                batch_args = self.preParse(batch_lines[i][7:])
+                if batch_args[0:2] == '--':
+                    tok = batch_args.split('=')
+                    if len(tok) < 2:
+                        continue
+                    kw = tok[0] + '='
+                    val = tok[1].split(',')[0].strip()
+                elif batch_args[0] == '-':
+                    kw = batch_args[0:2]
+                    val = batch_args[2:].split(',')[0].strip()
+                if kw == '--job-name=' or kw == '-J':
+                    val = str(self.dicoValues['job_name'])
+                elif kw == '--ntasks=' or kw == '-n':
+                    val = str(self.dicoValues['job_procs'])
+                elif kw == '--nodes=' or kw == '-N':
+                    val = str(self.dicoValues['job_nodes'])
+                elif kw == '--ntasks-per-node=':
+                    val = self.dicoValues['job_ppn']
+                elif kw == '--time=' or kw == '-t':
+                    wt = self.dicoValues['job_walltime']
+                    if wt > 86400: # 3600*24
+                        val = '%d-%d:%02d:%02d' % (wt/86400,
+                                                   (wt%86400)/3600,
+                                                   (wt%3600)/60,
+                                                   wt%60)
+                    else:
+                        val = '%d:%02d:%02d' % (wt/3600,
+                                                (wt%3600)/60,
+                                                wt%60)
+                elif kw == '--partition=' or kw == '-p':
+                    val = self.dicoValues['job_class']
+                else:
+                    continue
+                batch_lines[i] = '#SBATCH ' + kw + str(val) + '\n'
+
+
     def readBatchScriptFile(self):
         """
         Fill self.dicoValues reading the backup file.
         """
+
+        if self.case['batch_type'] != '':
+            if self.case['batch_type'][0:3] == 'CCC':
+                self.parseBatchCCC()
+            elif self.case['batch_type'][0:5] == 'LOADL':
+                self.parseBatchLOADL()
+            elif self.case['batch_type'][0:3] == 'LSF':
+                self.parseBatchLSF()
+            elif self.case['batch_type'][0:3] == 'PBS':
+                self.parseBatchPBS()
+            elif self.case['batch_type'][0:3] == 'SGE':
+                self.parseBatchSGE()
+            elif self.case['batch_type'][0:5] == 'SLURM':
+                self.parseBatchSLURM()
+
         lines = self.lines
 
-        list = ['PBS_JOB_NAME','PBS_nodes','PBS_ppn','PBS_walltime']
-
+        # Other keywords
         for k in self.dicoValues.keys():
-            if k not in list and k not in ('THERMOCHEMISTRY_DATA', 'METEO_DATA'):
+            if k not in ('THERMOCHEMISTRY_DATA', 'METEO_DATA') \
+                    and k[0:4] != 'job_':
                 nbkey = 0
                 for i in range(len(lines)):
                     reg = self._getRegex(k)
@@ -262,40 +741,6 @@ class BatchRunningModel(Model):
                                 # batch script file, only the first one is modified
                                 #
                                 pass
-
-        # TODO: specialize for PBS Professional and TORQUE (OpenPBS has not been
-        # maintained since 2004, so we do not expect to encounter it).
-        # We use the "-l nodes=N:ppn=P" syntax here, which common to all PBS
-        # variants, but PBS Pro considers the syntax depecated, and prefers its
-        # own "-l select=N:ncpus=P:mpiprocs=P" syntax.
-        # We do not have access to a PBS Professional system, but according to
-        # its documentation, it has commands such as "pbs-report" or "pbs_probe"
-        # which are not part of TORQUE, while the latter has "pbsnodelist" or
-        # #pbs-config". The presence of either could help determine which
-        # system is available.
-
-        if self.case['computer'] == "pbs":
-            for i in range(len(lines)):
-                if lines[i][0:4] == "#PBS":
-                    try:
-                        batch_args = lines[i][4:]
-                        index = string.rfind(batch_args, '\n')
-                        batch_args = batch_args[0:index]
-                        index = string.rfind(batch_args, ' -')
-                        while index > -1:
-                            arg = batch_args[index+1:]
-                            batch_args = batch_args[0:index]
-                            if arg[0:2] == "-N":
-                                self.dicoValues['PBS_JOB_NAME'] = arg.split()[1]
-                            elif arg[0:9] == "-l nodes=":
-                                arg_tmp = arg[9:].split(':')
-                                self.dicoValues['PBS_nodes'] = arg_tmp[0]
-                                self.dicoValues['PBS_ppn'] = arg_tmp[1].split('=')[1]
-                            elif arg[0:12] == "-l walltime=":
-                                self.dicoValues['PBS_walltime'] = arg.split('=')[1]
-                            index = string.rfind(batch_args, ' -')
-                    except Exception:
-                        pass
 
         self.initializeBatchScriptFile()
 
@@ -358,14 +803,38 @@ class BatchRunningModel(Model):
 
         l = self.dicoValues.keys()
         l.append(None) # Add 'None' when no keyword is specified in argument.
-        self.isInList(keyword, l)
+        for k in self.dicoValues.keys():
+            if self.dicoValues[k] == 'None':
+                self.dicoValues[k] = None
+
         lines = self.lines
 
-        if self.case['computer'] == "pbs" \
+        if keyword == None or keyword[0:4] == 'job_':
+            batch_type = self.case['batch_type']
+            if batch_type:
+                if batch_type[0:3] == 'CCC':
+                    self.updateBatchCCC()
+                elif batch_type[0:5] == 'LOADL':
+                    self.updateBatchLOADL()
+                elif batch_type[0:3] == 'LSF':
+                    self.updateBatchLSF()
+                elif batch_type[0:3] == 'PBS':
+                    self.updateBatchPBS()
+                elif batch_type[0:3] == 'SGE':
+                    self.updateBatchSGE()
+                elif batch_type[0:5] == 'SLURM':
+                    self.updateBatchSLURM()
+
+        else:
+            self.isInList(keyword, l)
+
+        if self.case['batch_type'] != "" \
           or str(self.dicoValues['NUMBER_OF_PROCESSORS']) == "1":
             self.dicoValues['NUMBER_OF_PROCESSORS'] = ""
 
         for k in self.dicoValues.keys():
+            if k[0:4] == 'job_':
+                continue
             nbkey = 0
             if keyword: k = keyword
             for i in range(len(lines)):
@@ -379,30 +848,6 @@ class BatchRunningModel(Model):
                             lines[i] = self._substituteLine(pat, new, lines[i])
             if keyword: break
 
-        #  keywords only for the PBS Cluster
-        if self.case['computer'] == "pbs":
-            for i in range(len(lines)):
-                if lines[i][0:4] == "#PBS":
-                    ch = "\n"
-                    batch_args = lines[i][4:]
-                    index = string.rfind(batch_args, '\n')
-                    batch_args = batch_args[0:index]
-                    index = string.rfind(batch_args, ' -')
-                    while index > -1:
-                        arg = batch_args[index+1:]
-                        batch_args = batch_args[0:index]
-                        if arg[0:2] == "-N":
-                            ch = " -N " + self.dicoValues['PBS_JOB_NAME'] + ch
-                        elif arg[0:9] == "-l nodes=":
-                            ch = " -l nodes=" + self.dicoValues['PBS_nodes'] \
-                                +  ":ppn=" + self.dicoValues['PBS_ppn'] + ch
-                        elif arg[0:12] == "-l walltime=":
-                            ch = " -l walltime=" + self.dicoValues['PBS_walltime'] + ch
-                        else:
-                            ch = ' ' + arg + ch
-                        index = string.rfind(batch_args, ' -')
-                    ch = "#PBS" + ch
-                    lines[i] = ch
 
         f = open(self.script1, 'w')
         f.writelines(lines)
@@ -438,10 +883,8 @@ class BatchRunningModelTestCase(unittest.TestCase):
         domain.setOrientation('on')
 
         self.case['xmlfile'] = 'NEW.xml'
-        self.case['computer'] = 'station'
         self.case['scripts_path'] = os.getcwd()
-        self.case['batchScript'] = {'pbs': 'lance_PBS', 'lsf': 'lance_LSF', 'station': 'lance_test'}
-        self.case['backupBatchScript'] = {'pbs': 'yes', 'lsf': 'yes', 'station': 'yes'}
+        self.case['backupBatchScript'] = ''
         lance_test = '# test \n'\
         '#SOLCOM=6\n'\
         'SOLCOM=999\n'\
@@ -465,31 +908,8 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'ARG_CS_OUTPUT=''\n'\
         'ARG_CS_VERIF=''\n'
 
-        lance_PBS = '# test \n'\
-        '#\n'\
-        '#                  CARTES BATCH POUR CLUSTERS sous PBS\n'\
-        '#\n'\
-        '#PBS -l nodes=16:ppn=1,walltime=34:77:22\n'\
-        '#PBS -j eo -N super_toto\n'
-
-        lance_LSF = '# test \n'\
-        '#\n'\
-        '#        CARTES BATCH POUR LE CCRT (Nickel/Chrome/Tantale sous LSF)\n'\
-        '#\n'\
-        '#BSUB -n 2\n'\
-        '#BSUB -c 00:05\n'\
-        '#BSUB -o super_tataco.%J\n'\
-        '#BSUB -e super_tatace.%J\n'\
-        '#BSUB -J super_truc\n'
-
         self.f = open('lance_test','w')
         self.f.write(lance_test)
-        self.f.close()
-        self.f = open('lance_PBS','w')
-        self.f.write(lance_PBS)
-        self.f.close()
-        self.f = open('lance_LSF','w')
-        self.f.write(lance_LSF)
         self.f.close()
 
 
@@ -497,10 +917,9 @@ class BatchRunningModelTestCase(unittest.TestCase):
         """
         This method is executed after all 'check' methods.
         """
-        for plateform in ('station', 'pbs','lsf'):
-            f = self.case['batchScript'][plateform]
-            if os.path.isfile(f): os.remove(f)
-            if os.path.isfile(f+"~"): os.remove(f+"~")
+        f = self.case['batchScript']
+        if os.path.isfile(f): os.remove(f)
+        if os.path.isfile(f+"~"): os.remove(f+"~")
 
 
     def checkGetRegexAndGetLineToModify(self):
@@ -577,7 +996,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
 
     def checkReadBatchScriptFile(self):
         """ Check whether the BatchRunningModel class could be read file"""
-        self.case['computer'] = 'station'
         mdl = BatchRunningModel(self.case)
         mdl.readBatchScriptFile()
 
@@ -592,9 +1010,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         dico = {\
         'PROCESSOR_LIST': '',
         'PARTITION_LIST': '',
-        'PBS_nodes': '1',
         'MESH': 'mail1.des mail2.des mail3.des',
-        'PBS_JOB_NAME': '',
         'COMMAND_CWF': ' --cwf 0.0321',
         'SOLCOM': '999',
         'USER_OUTPUT_FILES': 'titi',
@@ -604,8 +1020,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'COMMAND_JOIN': '',
         'COMMAND_REORIENT': ' --reorient ',
         'CS_TMP_PREFIX': '/home/toto',
-        'PBS_ppn': '2',
-        'PBS_walltime': '1:00:00',
         'COMMAND_PERIO': '',
         'EXEC_PREPROCESS':'yes',
         'EXEC_PARTITION':'yes',
@@ -625,44 +1039,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         assert  mdl.dicoValues == dico, 'could not read batch script file'
 
 
-    def checkReadBatchScriptPBS(self):
-        """ Check whether the BatchRunningModel class could be read file"""
-        self.case['computer'] = 'pbs'
-        mdl = BatchRunningModel(self.case)
-        mdl.readBatchScriptFile()
-
-        # The following keywords from the batch script file
-        # are cancelled by the informations from the case !
-        #   MESH
-        #   COMMAND_JOIN
-        #   COMMAND_CWF
-        #   COMMAND_PERIO
-        #
-        #
-        dico_PBS = {\
-        'PBS_nodes': '16',
-        'MESH': 'mail1.des mail2.des mail3.des',
-        'PBS_JOB_NAME': 'super_toto',
-        'COMMAND_CWF': ' --cwf 0.0321',
-        'SOLCOM': '0',
-        'PARAM': 'NEW.xml',
-        'NUMBER_OF_PROCESSORS': '',
-        'USER_INPUT_FILES': '',
-        'COMMAND_JOIN': '',
-        'COMMAND_REORIENT': ' --reorient ',
-        'CS_TMP_PREFIX': '',
-        'PBS_ppn': '1',
-        'PBS_walltime': '34:77:22',
-        'COMMAND_PERIO': ''}
-
-        for k in dico_PBS.keys():
-            if mdl.dicoValues[k] != dico_PBS[k] :
-                print "\nwarning for key: ", k
-                print "  read value in the script:", mdl.dicoValues[k]
-                print "  reference value:", dico_PBS[k]
-            assert  mdl.dicoValues[k] == dico_PBS[k], 'could not read the batch script file'
-
-
     def checkUpdateBatchScriptFile(self):
         """ Check whether the BatchRunningModel class could update file"""
         mdl = BatchRunningModel(self.case)
@@ -674,19 +1050,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         dico_read = mdl.dicoValues
 
         assert dico_updated == dico_read, 'error on updating batch script file'
-
-
-    def checkUpdateBatchScriptPBS(self):
-        """ Check whether the BatchRunningModel class could update file"""
-        mdl = BatchRunningModel(self.case)
-        mdl.readBatchScriptFile()
-        mdl.dicoValues['PBS_walltime']='12:42:52'
-        dicoPBS_updated = mdl.dicoValues
-        mdl.updateBatchScriptFile()
-        mdl.readBatchScriptFile()
-        dicoPBS_read = mdl.dicoValues
-
-        assert dicoPBS_updated == dicoPBS_read, 'error on updating PBS batch script file'
 
 
 def suite():

@@ -141,7 +141,6 @@ AnalysisFeaturesForm.ui \
 AtmosphericFlowsForm.ui \
 BatchRunningAdvancedOptionsDialogForm.ui \
 BatchRunningForm.ui \
-BatchRunningPBSJobManagementDialogForm.ui \
 BatchRunningUserFilesDialogForm.ui \
 BodyForcesForm.ui \
 BoundaryConditionsCoalInletForm.ui \

@@ -373,9 +373,9 @@ class MainView(QMainWindow, Ui_MainForm):
 
         self.IdPthMdl.setPathI('mesh_path',
                                os.path.abspath(os.path.split(file_dir)[0] + '/' + 'MESH'))
-        self.case['computer'] = 'station'
-        self.case['batchScript'] = {'pbs': '', 'station': self.batch_file}
-        self.case['backupBatchScript'] = {'pbs': 'no', 'station': 'yes'}
+        self.case['batchScript'] = self.batch_file
+        self.case['backupBatchScript'] = 'yes'
+
         del IdentityAndPathesModel
 
         self.updateStudyId()
@@ -747,11 +747,9 @@ class MainView(QMainWindow, Ui_MainForm):
                 title = os.path.basename(self.case['xmlfile']) + " - " + self.tr("Code_Saturne GUI")
                 self.setWindowTitle(title)
 
-                for k,v in self.case['batchScript'].items():
-                    if v:
-                        self.case['computer'] = k
-                        mdl = BatchRunningModel(self.case)
-                        mdl.updateBatchScriptFile('PARAM')
+                if self.case['batchScript']:
+                    mdl = BatchRunningModel(self.case)
+                    mdl.updateBatchScriptFile('PARAM')
             else:
                 msg = self.tr("Saving aborted")
                 self.statusbar.showMessage(msg, 2000)
