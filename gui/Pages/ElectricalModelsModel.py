@@ -62,7 +62,7 @@ class ElectricalModel(Variables, Model):
         nModels         = self.case.xmlGetNode('thermophysical_models')
         self.node_turb  = nModels.xmlGetNode('turbulence',         'model')
         self.node_gas   = nModels.xmlInitNode('gas_combustion',    'model')
-        self.node_coal  = nModels.xmlInitNode('pulverized_coal',   'model')
+        self.node_coal  = nModels.xmlInitNode('solid_fuels',       'model')
         self.node_joule = nModels.xmlInitNode('joule_effect',      'model')
         self.node_therm = nModels.xmlInitNode('thermal_scalar',    'model')
         self.node_atmo  = nModels.xmlInitNode('atmospheric_flows', 'model')

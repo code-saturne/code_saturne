@@ -1113,27 +1113,54 @@ _get_absorption_coefficient(void) /*ici un char*/
 }
 
 /*-----------------------------------------------------------------------------
- * Return integer for kinetics status
+ * Return integer for CO2 kinetics status
  *
  *   parameters:
  *    icha     -->   char number
- *    element  -->   char element (CO2, H2O)
  *    keyword  <--  value of attribute node
  *----------------------------------------------------------------------------*/
 static void
-_getKineticsStatus(const int   *const icha,
-                   const char*        element,
-                         int   *const keyword)
+_getCO2KineticsStatus(const int   *const icha,
+                            int   *const keyword)
 {
     char *path   = NULL;
     int   status = 0;
 
     path = cs_xpath_init_path();
 
-    cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
-    cs_xpath_add_element_num(&path, "solid_fuel", icha);
-    cs_xpath_add_elements(&path, 2, "char_combustion", "specie");
-    cs_xpath_add_test_attribute(&path, "nature", element);
+    cs_xpath_add_elements(&path, 3,
+                          "thermophysical_models",
+                          "solid_fuels",
+                          "CO2_kinetics");
+
+    cs_xpath_add_attribute(&path, "status");
+
+    if (cs_gui_get_status(path, &status))
+        *keyword = status;
+    BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Return integer for H2O kinetics status
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    keyword  <--  value of attribute node
+ *----------------------------------------------------------------------------*/
+static void
+_getH2OKineticsStatus(const int   *const icha,
+                            int   *const keyword)
+{
+    char *path   = NULL;
+    int   status = 0;
+
+    path = cs_xpath_init_path();
+
+
+    cs_xpath_add_elements(&path, 3,
+                          "thermophysical_models",
+                          "solid_fuels",
+                          "H2O_kinetics");
 
     cs_xpath_add_attribute(&path, "status");
 
@@ -1159,8 +1186,7 @@ _getNOxStatus(const int   *const icha,
     path = cs_xpath_init_path();
 
     cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
-    cs_xpath_add_element_num(&path, "solid_fuel", icha);
-    cs_xpath_add_element(&path, "nox_formation");
+    cs_xpath_add_element(&path, "NOx_formation");
 
     cs_xpath_add_attribute(&path, "status");
 
@@ -1261,6 +1287,8 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
             else
                 bft_error(__FILE__, __LINE__, 0,
                           _("Invalid coal model: %s.\n"), vars->model_value);
+            // ieqco2 fix to transport of CO2 mass fraction
+            *ieqco2 = 1;
         }
         else if  (cs_gui_strcmp(vars->model, "gas_combustion"))
         {
@@ -2097,14 +2125,8 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
 
   cs_var_t  *vars = cs_glob_var;
 
-  if (*ieqnox == 1 )
-      n = n + 3;
-  if (*ieqco2 == 1 )
-      n = n + 1;
-  if (*ihtco2 == 1 )
-      n = n + 1;
-  if (*ihth2o == 1 )
-      n = n + 1;
+  if (*ieqnox == 1)
+    n = n + 3;
   vars->nscapp +=n;
 
   if (vars->nscaus > 0) {
@@ -2134,7 +2156,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
   }
 
   /* INP */
-  BFT_REALLOC(name, strlen("NP_CP")+1 + 2, char);
+  BFT_REALLOC(name, strlen("NP_CP") + 1 + 2, char);
   strcpy(name, "NP_CP");
   for (i = 0; i < *nclass; i++) {
     sprintf(snumsca,"%2.2i", i+1);
@@ -2198,85 +2220,84 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
     strcpy(name, "Fr_MV2");
   }
 
-    /* IF7M */
-    BFT_MALLOC(vars->label[*if7m -1], strlen("Fr_HET_O2")+1, char);
-    strcpy(vars->label[*if7m -1], "Fr_HET_O2");
+  /* IF7M */
+  BFT_MALLOC(vars->label[*if7m -1], strlen("Fr_HET_O2")+1, char);
+  strcpy(vars->label[*if7m -1], "Fr_HET_O2");
 
-    if (*ihtco2 == 1)
+  if (*ihtco2 == 1)
+  {
+    /* IF3MC2 */
+    BFT_MALLOC(vars->label[*if8m -1], strlen("Fr_HET_CO2")+1, char);
+    strcpy(vars->label[*if8m -1], "Fr_HET_CO2");
+  }
+
+  if (*ihth2o == 1)
+  {
+    /* IF3MC2 */
+    BFT_MALLOC(vars->label[*if9m -1], strlen("Fr_HET_H2O")+1, char);
+    strcpy(vars->label[*if9m -1], "Fr_HET_H2O");
+  }
+
+  /* IFVP2M */
+  BFT_MALLOC(vars->label[*ifvp2m -1], strlen("Var_F1F2")+1, char);
+  strcpy(vars->label[*ifvp2m -1], "Var_F1F2");
+
+  if (ippmod[*iccoal -1] == 1)
+  {
+    /* IXWT */
+    BFT_MALLOC(name, strlen("XWT_CP")+1 + 2, char);
+    strcpy(name, "XWT_CP");
+    for (i = 0; i < *nclass; i++)
     {
-        /* IF3MC2 */
-        BFT_MALLOC(vars->label[*if8m -1], strlen("Fr_HET_CO2")+1, char);
-        strcpy(vars->label[*if8m -1], "Fr_HET_CO2");
+      sprintf(snumsca,"%2.2i", i+1);
+      strcat(name, snumsca);
+
+      BFT_MALLOC(vars->label[ixwt[i] -1], strlen(name)+1, char);
+      strcpy(vars->label[ixwt[i] -1], name);
+      strcpy(name, "XWT_CP");
     }
 
-    /* IFVP2M */
-    BFT_MALLOC(vars->label[*ifvp2m -1], strlen("Var_F1F2")+1, char);
-    strcpy(vars->label[*ifvp2m -1], "Var_F1F2");
-
-    if (ippmod[*iccoal -1] == 1)
-    {
-        /* IXWT */
-        BFT_MALLOC(name, strlen("XWT_CP")+1 + 2, char);
-        strcpy(name, "XWT_CP");
-        for (i = 0; i < *nclass; i++)
-        {
-            sprintf(snumsca,"%2.2i", i+1);
-            strcat(name, snumsca);
-
-            BFT_MALLOC(vars->label[ixwt[i] -1], strlen(name)+1, char);
-            strcpy(vars->label[ixwt[i] -1], name);
-            strcpy(name, "XWT_CP");
-        }
-
-        /* IF6M */
-        BFT_MALLOC(vars->label[*if6m -1], strlen("FR_H20")+1, char);
-        strcpy(vars->label[*if6m -1], "FR_H20");
-    }
+    /* IF6M */
+    BFT_MALLOC(vars->label[*if6m -1], strlen("FR_H20")+1, char);
+    strcpy(vars->label[*if6m -1], "FR_H20");
+  }
 
 
-    if (*noxyd >= 2)
-    {
-        /* IF4M */
-        BFT_MALLOC(vars->label[*if4m -1], strlen("FR_OXYD2")+1, char);
-        strcpy(vars->label[*if4m -1], "FR_OXYD2");
-    }
+  if (*noxyd >= 2)
+  {
+    /* IF4M */
+    BFT_MALLOC(vars->label[*if4m -1], strlen("FR_OXYD2")+1, char);
+    strcpy(vars->label[*if4m -1], "FR_OXYD2");
+  }
 
-    if (*noxyd == 3)
-    {
-        /* IF5M */
-        BFT_MALLOC(vars->label[*if5m -1], strlen("FR_OXYD3")+1, char);
-        strcpy(vars->label[*if5m -1], "FR_OXYD3");
-    }
+  if (*noxyd == 3)
+  {
+    /* IF5M */
+    BFT_MALLOC(vars->label[*if5m -1], strlen("FR_OXYD3")+1, char);
+    strcpy(vars->label[*if5m -1], "FR_OXYD3");
+  }
 
-    if (*ieqco2 == 1)
-    {
-        /* IYCO2 */
-        BFT_MALLOC(vars->label[*iyco2 -1], strlen("FR_CO2")+1, char);
-        strcpy(vars->label[*iyco2 -1], "FR_CO2");
-    }
+  if (*ieqco2 == 1)
+  {
+    /* IYCO2 */
+    BFT_MALLOC(vars->label[*iyco2 -1], strlen("FR_CO2")+1, char);
+    strcpy(vars->label[*iyco2 -1], "FR_CO2");
+  }
 
-    if (*ihth2o == 1)
-    {
-        /* FR_HET_H2O */
-        BFT_MALLOC(vars->label[*if9m -1], strlen("FR_HET_H2O")+1, char);
-        strcpy(vars->label[*if9m -1], "FR_HET_H2O");
-    }
+  if (*ieqnox == 1)
+  {
+    /* FR_HCN */
+    BFT_MALLOC(vars->label[*iyhcn -1], strlen("FR_HCN")+1, char);
+    strcpy(vars->label[*iyhcn -1], "FR_HCN");
 
+    /* FR_NO */
+    BFT_MALLOC(vars->label[*iyno -1], strlen("FR_NO")+1, char);
+    strcpy(vars->label[*iyno -1], "FR_NO");
 
-    if (*ieqnox == 1)
-    {
-        /* FR_HCN */
-        BFT_MALLOC(vars->label[*iyhcn -1], strlen("FR_HCN")+1, char);
-        strcpy(vars->label[*iyhcn -1], "FR_HCN");
-
-        /* FR_NO */
-        BFT_MALLOC(vars->label[*iyno -1], strlen("FR_NO")+1, char);
-        strcpy(vars->label[*iyno -1], "FR_NO");
-
-        /* Enth_Ox */
-        BFT_MALLOC(vars->label[*ihox -1], strlen("Enth_Ox")+1, char);
-        strcpy(vars->label[*ihox -1], "Enth_Ox");
-    }
+    /* Enth_Ox */
+    BFT_MALLOC(vars->label[*ihox -1], strlen("Enth_Ox")+1, char);
+    strcpy(vars->label[*ihox -1], "Enth_Ox");
+  }
 
   BFT_FREE(name);
   BFT_FREE(snumsca);
@@ -2777,7 +2798,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
         iochet[icha] = _get_order_of_reaction(icha+1,"O2");
 
         /* ---- Parametres combustion heterogene pour CO2(modele a sphere retrecissante) */
-        _getKineticsStatus(icha+1, "CO2", ihtco2);
+        _getCO2KineticsStatus(icha+1, ihtco2);
         if (*ihtco2)
         {
             ahetc2[icha] = _get_pre_exponential_constant(icha+1,"CO2");
@@ -2786,7 +2807,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
         }
 
         /* ---- Parametres combustion heterogene pour H2O (modele a sphere retrecissante) */
-        _getKineticsStatus(icha+1, "H2O", ihth2o);
+        _getH2OKineticsStatus(icha+1, ihth2o);
         if (*ihth2o)
         {
             ahetwt[icha] = _get_pre_exponential_constant(icha+1,"H2O");

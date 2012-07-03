@@ -46,9 +46,7 @@ import Pages.IdentityAndPathesModel as IdentityAndPathesModel
 from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
-from Pages.NumericalParamEquationModel import NumericalParamEquatModel
 from Pages.ThermalRadiationModel import ThermalRadiationModel
-from Pages.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 from Pages.LocalizationModel import LocalizationModel
 from Pages.Boundary import Boundary
 
@@ -66,17 +64,18 @@ class CoalCombustionModel(Variables, Model):
         self.case = case
 
         nModels         = self.case.xmlGetNode('thermophysical_models')
-        self.node_lagr  = self.case.xmlGetNode('lagrangian',       'model')
-        self.node_turb  = nModels.xmlGetNode('turbulence',         'model')
-        self.node_gas   = nModels.xmlInitNode('gas_combustion',    'model')
-        self.node_coal  = nModels.xmlInitNode('pulverized_coal',   'model')
-        self.node_joule = nModels.xmlInitNode('joule_effect',      'model')
-        self.node_therm = nModels.xmlInitNode('thermal_scalar',    'model')
-        self.node_atmo  = nModels.xmlInitNode('atmospheric_flows', 'model')
+        self.node_lagr  = self.case.xmlGetNode('lagrangian', 'model')
+        self.node_turb  = nModels.xmlGetNode('turbulence',   'model')
         self.node_fuel  = nModels.xmlInitNode('solid_fuels', 'model')
-        self.node_oxi   = self.node_fuel.xmlInitNode('oxidants')
 
         self.coalCombustionModel = ('off', 'homogeneous_fuel', 'homogeneous_fuel_moisture')
+
+        self.ModelVariables =  ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP"]
+        self.ModelProperties = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
+                                "Ga_DV1",  "Ga_DV2", "Ga_HET_O2"]
+        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
+            self.ModelVariables.append("XWT_CP")
+            self.ModelProperties.append("Ga_SEC")
 
 
     def defaultValues(self):
@@ -88,8 +87,6 @@ class CoalCombustionModel(Variables, Model):
         default['model']                           = "off"
         default['diameter']                        = 0.000122
         default['mass_percent']                    = 0.1
-        default['ihtco2']                          = 0
-        default['ieqco2']                          = 0
         default['C_compo_dry']                     = 70.9
         default['H_compo_dry']                     = 4.6
         default['O_compo_dry']                     = 10.8
@@ -130,6 +127,8 @@ class CoalCombustionModel(Variables, Model):
         default['oxidant_type']                    = 'molar'
         default['fuel_type']                       = 'coal'
         default['NOx_formation']                   = 'on'
+        default['CO2_Kinetics']                    = 'off'
+        default['H2O_Kinetics']                    = 'off'
 
         return default
 
@@ -149,7 +148,7 @@ class CoalCombustionModel(Variables, Model):
         if m != "off" and m not in coalCombustionList:
             coalCombustionList = ('off',)
 
-        if self.node_turb != None :
+        if self.node_turb != None:
             if self.node_turb['model'] not in ('k-epsilon',
                                                'k-epsilon-PL',
                                                'Rij-epsilon',
@@ -165,38 +164,42 @@ class CoalCombustionModel(Variables, Model):
         return coalCombustionList
 
 
-    def __createModelScalarsList(self):
+    def __createModelVariableList(self):
         """
         Private method
-        Create model scalar list
+        Create list of scalar for all fuels and classes
         """
-        coalsNumber = self.getCoalNumber()
-        classesNumber = self.getClassesNumber()
+        coalsNumber = self.getCoalNumber()      # total number of solid fuel
+        classesNumber = self.getClassesNumber() # total number of class (diameter)
 
         list = []
-        # add new scalars
+
         list.append("Enthalpy")
 
-        baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP"]
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
-            baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "XWT_CP", "ENT_CP"]
+        baseNames = self.ModelVariables
+        for name in baseNames:
+            list.append(name)
 
+        # list of coal variables
+        baseNames = ["Fr_MV1", "Fr_MV2"]
         for baseName in baseNames:
-            for classe in range(0,classesNumber):
-                name = '%s%2.2i' % (baseName, classe+1)
-                list.append(name)
-
-        baseNames = [ "Fr_MV1", "Fr_MV2"]
-        for baseName in baseNames:
-            for coal in range(0,coalsNumber):
+            for coal in range(0, coalsNumber):
                 name = '%s%2.2i' % (baseName, coal+1)
                 list.append(name)
 
-        self.setNewModelScalar(self.node_fuel, "Fr_HET_O2")
+        # list of class variables
+        for baseName in baseNames:
+            for classe in range(0, classesNumber):
+                name = '%s%2.2i' % (baseName, classe+1)
+                list.append(name)
+
         list.append("Fr_HET_O2")
 
-        if self.defaultValues()['ihtco2'] == 1:
+        if self.getCO2KineticsStatus() == "on":
             list.append("Fr_HET_CO2")
+
+        if self.getH2OKineticsStatus() == "on":
+            list.append("Fr_HET_H2O")
 
         list.append("Var_AIR")
 
@@ -209,8 +212,10 @@ class CoalCombustionModel(Variables, Model):
         if self.getOxidantNumber() == 3:
             list.append("FR_OXYD3")
 
-        if self.defaultValues()['ieqco2'] == 1:
-            list.append("FR_CO2")
+        # ieqco2 fix to 1
+        list.append("FR_CO2")
+
+        list.append("Var_F1F2")
 
         return list
 
@@ -218,14 +223,14 @@ class CoalCombustionModel(Variables, Model):
     def __createModelScalars(self):
         """
         Private method
-        Create model scalar
+        Create and update model scalar
         """
         previous_list = []
         nodes = self.node_fuel.xmlGetChildNodeList('scalar')
         for node in nodes:
             previous_list.append(node['name'])
 
-        new_list = self.__createModelScalarsList()
+        new_list = self.__createModelVariableList()
         for name in previous_list:
             if name not in new_list:
                 self.node_fuel.xmlRemoveChild('scalar',  name = name)
@@ -234,43 +239,21 @@ class CoalCombustionModel(Variables, Model):
             if name not in previous_list:
                 self.setNewModelScalar(self.node_fuel, name)
 
-        NPE = NumericalParamEquatModel(self.case)
-        for node in self.node_fuel.xmlGetChildNodeList('scalar'):
-            NPE.setBlendingFactor(node['label'], 0.)
-            NPE.setScheme(node['label'], 'upwind')
-            NPE.setFluxReconstruction(node['label'], 'off')
-
 
     def __createModelPropertiesList(self):
         """
         Private method
-        Create model properties
+        Create list of properties for all fuels and classes
         """
         classesNumber = self.getClassesNumber()
 
-        list = []
-        list.append("Temp_GAZ")
-        list.append("ROM_GAZ")
-        list.append("YM_CHx1m")
-        list.append("YM_CHx2m")
-        list.append("YM_CO")
-        list.append("YM_O2")
-        list.append("YM_CO2")
-        list.append("YM_H2O")
-        list.append("YM_N2")
-        list.append("XM")
+        list = ["Temp_GAZ", "ROM_GAZ", "YM_CHx1m", "YM_CHx2m",
+                "YM_CO", "YM_O2", "YM_CO2", "YM_H2O", "YM_N2", "XM"]
 
-        baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                     "Ga_DV1", "Ga_DV2", "Ga_HET_O2"]
-
-        if self.defaultValues()['ihtco2'] == 1:
-            baseNames.append("Ga_HET_CO2")
-
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
-            baseNames.append("Ga_SEC")
+        baseNames = self.ModelProperties
 
         for baseName in baseNames:
-            for classe in range(0,classesNumber):
+            for classe in range(0, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
                 list.append(name)
 
@@ -282,7 +265,7 @@ class CoalCombustionModel(Variables, Model):
     def __createModelProperties(self):
         """
         Private method
-        Create model properties
+        Create and update model properties
         """
         previous_list = []
         nodes = self.node_fuel.xmlGetChildNodeList('property')
@@ -299,21 +282,25 @@ class CoalCombustionModel(Variables, Model):
                 self.setNewProperty(self.node_fuel, name)
 
 
-    def createModel (self) :
+    def createModel(self) :
         """
         Private method
         Create scalars and properties when coal combustion is selected
         """
+        self.node_fuel.xmlInitNode('CO2_kinetics', status = self.defaultValues()['CO2_Kinetics'])
+        self.node_fuel.xmlInitNode('H2O_kinetics', status = self.defaultValues()['H2O_Kinetics'])
+        self.node_fuel.xmlInitNode('NOx_formation', status = self.defaultValues()['NOx_formation'])
         self.__createModelScalars()
         self.__createModelProperties()
 
 
-    def __deleteWetScalarsAndProperty(self):
+    def __updateWetScalarsAndProperty(self):
         """
         Private method
         Delete scalars XWT_CP and Fr_H20 and property Ga_SEC
         if model isn't 'homogeneous_fuel_moisture'
         """
+        # TODO a supprimer doit etre appele si on change le modele uniquement
         if self.getCoalCombustionModel() != 'homogeneous_fuel_moisture':
             nod = self.node_fuel.xmlGetNode('scalar', type="model", name="FR_H20")
             if nod:
@@ -326,114 +313,12 @@ class CoalCombustionModel(Variables, Model):
                     node.xmlRemoveNode()
 
 
-    def __deleteSolidFuelModelProperties(self, classMin, classMax, classesNumber):
-        """
-        Private method
-        Delete properties for one solid fuel
-        """
-        baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                     "Ga_DV1", "Ga_DV2", "Ga_HET_O2"]
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
-            baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                         "Ga_DV1", "Ga_DV2", "Ga_HET_O2", "Ga_SEC"]
-        #
-        # Remove coal classes
-        nodeList = self.node_fuel.xmlGetNodeList('property')
-        if nodeList != None:
-            for node in nodeList :
-                nameNode =node['name']
-                for baseName in baseNames:
-                    for classe in range(classMin, classMax):
-                        name = '%s%2.2i' % (baseName, classe+1)
-                        if ( nameNode == name):
-                            node.xmlRemoveNode()
-        #
-        # Rename other classes
-        nodeList = self.node_fuel.xmlGetNodeList('property')
-        delta = classMax - classMin
-        if nodeList != None:
-            for node in nodeList:
-                try:
-                    oldName = node['name']
-                    if oldName[:-2] in baseNames :
-                        oldNum = int(oldName[-2:])
-                        if oldNum in range(classMax+1, classesNumber+1):
-                            name = '%s%2.2i' % (oldName[:-2], oldNum-delta)
-                            node['name'] = name
-                            if node['label'] == oldName:
-                                node['label'] = name
-
-                except:
-                    pass
-
-
-    def __deleteSolidFuelModelScalars(self, classMin, classMax, classesNumber, fuelNumber, fuelsNumber):
-        """
-        Private method
-        Delete scalars for one solid fuel
-        """
-        baseNames = ["NP_CP",  "XCH_CP", "XCK_CP", "ENT_CP"]
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
-            baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP", "XWT_CP"]
-        #
-        # Remove fuel classes
-        nodeList = self.node_fuel.xmlGetNodeList('scalar', 'name')
-        if nodeList != None:
-            for node in nodeList :
-                nameNode = node['name']
-                for baseName in baseNames:
-                    for classe in range(classMin, classMax):
-                        name = '%s%2.2i' % (baseName, classe+1)
-                        if (nameNode == name):
-                            node.xmlRemoveNode()
-        #
-        # Rename other classes
-        nodeList = self.node_fuel.xmlGetNodeList('scalar')
-        delta = classMax - classMin
-        if nodeList != None:
-            for node in nodeList:
-                try:
-                    oldName = node['name']
-                    if oldName[:-2] in baseNames :
-                        oldNum = int(oldName[-2:])
-                        if oldNum in range(classMax+1, classesNumber+1):
-                            name = '%s%2.2i' % (oldName[:-2], oldNum-delta)
-                            node['name'] = name
-                            if node['label'] == oldName:
-                                node['label'] = name
-                except:
-                    pass
-        #
-        # Remove fuel scalars
-        baseNames = [ "Fr_MV1", "Fr_MV2"]
-        nodeList = self.node_fuel.xmlGetNodeList('scalar')
-        if nodeList != None:
-            for node in nodeList :
-                nameNode = node['name']
-                for baseName in baseNames:
-                    name = '%s%2.2i' % (baseName, fuelNumber+1)
-                    if (nameNode == name):
-                        node.xmlRemoveNode()
-        #
-        # Rename other fuels
-        nodeList = self.node_fuel.xmlGetNodeList('scalar')
-        if nodeList != None:
-            for node in nodeList:
-                oldName = node['name']
-                if oldName[:-2] in baseNames :
-                    oldNum = int(oldName[-2:])
-                    if oldNum in range(fuelNumber+1, fuelsNumber+1):
-                        name = '%s%2.2i' % (oldName[:-2], oldNum-1)
-                        node['name'] = name
-                        if node['label'] == oldName:
-                            node['label'] = name
-
-
     def __updateSolidFuelCombustionDensity(self, model):
         """
         Private method
         Update the coal combustion model markup from the XML document.
         """
+        # TODO : a revoir pas necessaire a priori
         self.isInList(model, self.__coalCombustionModelsList())
 
         mdl = FluidCharacteristicsModel(self.case)
@@ -462,33 +347,23 @@ class CoalCombustionModel(Variables, Model):
             mdl.node_cond.xmlRemoveNode()
 
 
-    def __createCoalModelScalars(self , coalsNumber, coalClassesNumber, classesNumber):
+    def __createCoalModelScalars(self, coalsNumber, coalClassesNumber, classesNumber):
         """
         Private method
         Create new scalars for one coal
         """
         # add new scalars
-        baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP"]
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
-            baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP", "XWT_CP"]
-        else:
-            self.__deleteWetScalarsAndProperty()
+        baseNames = self.ModelVariables
 
         for baseName in baseNames:
             for classe in range(classesNumber - coalClassesNumber, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
                 self.setNewModelScalar(self.node_fuel, name)
 
-        baseNames = [ "Fr_MV1", "Fr_MV2"]
+        baseNames = ["Fr_MV1", "Fr_MV2"]
         for baseName in baseNames:
             name = '%s%2.2i' % (baseName, coalsNumber)
             self.setNewModelScalar(self.node_fuel, name)
-
-        NPE = NumericalParamEquatModel(self.case)
-        for node in self.node_fuel.xmlGetChildNodeList('scalar'):
-            NPE.setBlendingFactor(node['label'], 0.)
-            NPE.setScheme(node['label'], 'upwind')
-            NPE.setFluxReconstruction(node['label'], 'off')
 
 
     def __createCoalModelProperties(self, coalsNumber, coalClassesNumber, classesNumber):
@@ -497,11 +372,8 @@ class CoalCombustionModel(Variables, Model):
         Create new properties for one coal
         """
         # create new properties
-        baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                     "Ga_DV1", "Ga_DV2", "Ga_HET_O2"]
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
-            baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                         "Ga_DV1", "Ga_DV2", "Ga_HET_O2", "Ga_SEC"]
+        baseNames = self.ModelProperties
+
         for baseName in baseNames:
             for classe in range(classesNumber - coalClassesNumber, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
@@ -513,12 +385,8 @@ class CoalCombustionModel(Variables, Model):
         Private method
         Create class of model properties
         """
-        baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                     "Ga_DV1", "Ga_DV2", "Ga_HET_O2"]
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
-            baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                         "Ga_DV1", "Ga_DV2", "Ga_HET_O2", "Ga_SEC"]
-        #
+        baseNames = self.ModelProperties
+
         # Rename other classes
         nodeList = self.node_fuel.xmlGetNodeList('property')
         if nodeList != None:
@@ -543,12 +411,8 @@ class CoalCombustionModel(Variables, Model):
         Private method
         Create a new coal and associated scalars
         """
-        baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP"]
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
-            baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP", "XWT_CP"]
-        else:
-            self.__deleteWetScalarsAndProperty()
-        #
+        baseNames = self.ModelVariables
+
         # Rename other classes
         nodeList = self.node_fuel.xmlGetNodeList('scalar')
         if nodeList != None:
@@ -561,17 +425,11 @@ class CoalCombustionModel(Variables, Model):
                         node['name'] = name
                         if node['label'] == oldName:
                             node['label'] = name
-        #
+
         # create new scalars
         for i in range(len(baseNames)):
             name = '%s%2.2i' % (baseNames[i], classNum)
             self.setNewModelScalar(self.node_fuel, name)
-
-        NPE = NumericalParamEquatModel(self.case)
-        for node in self.node_fuel.xmlGetChildNodeList('scalar'):
-            NPE.setBlendingFactor(node['label'], 0.)
-            NPE.setScheme(node['label'], 'upwind')
-            NPE.setFluxReconstruction(node['label'], 'off')
 
 
     def setCoalCombustionModel(self, model):
@@ -579,6 +437,15 @@ class CoalCombustionModel(Variables, Model):
         Update the coal combustion model markup from the XML document.
         """
         self.isInList(model, self.__coalCombustionModelsList())
+
+        self.node_fuel['model']  = model
+        self.__updateScalarAndProperty()
+
+    def __updateScalarAndProperty(self):
+        """
+        Update scalars and properties depending on model
+        """
+        model = self.getCoalCombustionModel()
 
         if model == 'off':
             for tag in ('scalar',
@@ -592,28 +459,20 @@ class CoalCombustionModel(Variables, Model):
                 if zone.getNature() == "inlet":
                     Boundary("coal_inlet", zone.getLabel(), self.case).deleteCoals()
 
-            ThermalRadiationModel(self.case).setRadiativeModel('off')
-            self.node_fuel['model'] = 'off'
+            self.node_fuel.xmlRemoveChild('oxidants')
+            self.node_fuel.xmlRemoveChild('solid_fuel')
+            self.node_fuel.xmlRemoveChild('CO2_kinetics')
+            self.node_fuel.xmlRemoveChild('H2O_kinetics')
+            self.node_fuel.xmlRemoveChild('NOx_formation')
+            self.node_fuel.xmlRemoveChild('absorption_coefficient')
 
         else:
-            old_model = self.node_fuel['model']
-            if old_model == 'off':
-                if model != old_model:
-                    self.createCoal()
-                    self.createOxidant()
-            self.node_gas['model']   = 'off'
-            self.node_fuel['model']  = model
-            self.node_joule['model'] = 'off'
-            self.node_therm['model'] = 'off'
-            self.node_atmo['model']  = 'off'
             self.createModel()
-            for zone in LocalizationModel('BoundaryZone', self.case).getZones():
-                if zone.getNature() == "inlet":
-                    b = Boundary("coal_inlet", zone.getLabel(), self.case)
-                    b.getOxidantTemperature()
-                    b.getOxidantNumber()
+            self.createCoal()
+            self.createOxidant()
 
-        self.__updateSolidFuelCombustionDensity(model)
+            if self.getCoalCombustionModel() != 'homogeneous_fuel_moisture':
+                self.__updateWetScalarsAndProperty()
 
 
     def getCoalCombustionModel(self):
@@ -636,7 +495,7 @@ class CoalCombustionModel(Variables, Model):
         Create new scalars and new properties for one coal
         """
         coalsNumber = self.getCoalNumber()
-        coalClassesNumber = self.getClassNumber(str(coalsNumber))
+        coalClassesNumber = self.getClassNumber(coalsNumber)
         classesNumber = self.getClassesNumber()
 
         # add new scalars and properties
@@ -668,20 +527,37 @@ class CoalCombustionModel(Variables, Model):
         """
         self.isInt(coalNumber)
 
-        classMin = 0
-        for coal in range(0, coalNumber):
-            classMin += self.getClassNumber(str(coal + 1))
-        classMax = classMin + self.getClassNumber(str(coalNumber))
-        classesNumber = self.getClassesNumber()
-        coalsNumber = self.getCoalNumber()
+        for classId in range(self.getClassNumber(coalNumber), 0):
+            self.deleteClass(coalNumber, classId + 1)
 
-        self.__deleteSolidFuelModelScalars(classMin, classMax, classesNumber, coalNumber, coalsNumber)
-        self.__deleteSolidFuelModelProperties(classMin, classMax, classesNumber)
+        # Remove fuel scalars
+        baseNames = [ "Fr_MV1", "Fr_MV2"]
+        nodeList = self.node_fuel.xmlGetNodeList('scalar')
+        if nodeList != None:
+            for node in nodeList :
+                nameNode = node['name']
+                for baseName in baseNames:
+                    name = '%s%2.2i' % (baseName, coalNumber)
+                    if (nameNode == name):
+                        node.xmlRemoveNode()
+
+        # Rename other fuels
+        nodeList = self.node_fuel.xmlGetNodeList('scalar')
+        if nodeList != None:
+            for node in nodeList:
+                oldName = node['name']
+                if oldName[:-2] in baseNames :
+                    oldNum = int(oldName[-2:])
+                    if oldNum in range(coalNumber + 1, self.getCoalNumber() + 1):
+                        name = '%s%2.2i' % (oldName[:-2], oldNum - 1)
+                        node['name'] = name
+                        if node['label'] == oldName:
+                            node['label'] = name
 
 
     def deleteClassModelScalars(self, coalNumber, classeNumber):
         """
-        delete class of model scalars
+        delete scalar model for a define coalNumber and class number
         """
         self.isInt(coalNumber)
         self.isInt(classeNumber)
@@ -689,26 +565,27 @@ class CoalCombustionModel(Variables, Model):
         classNum = 0
         if (coalNumber >= 1) :
             for coal in range(0, coalNumber - 1):
-                classNum += self.getClassNumber(str(coal + 1))
+                classNum += self.getClassNumber(coal + 1)
+
+        # global class number
         classNum += classeNumber
 
+        # total class number
         classesNumber = self.getClassesNumber()
 
-        baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP"]
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
-            baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP", "XWT_CP"]
+        # list of variables for a class
+        baseNames = self.ModelVariables
 
-        #
         # Remove coal classes
         nodeList = self.node_fuel.xmlGetNodeList('scalar')
         if nodeList != None:
             for node in nodeList :
                 nodeName = node['name']
                 for baseName in baseNames:
-                    name = '%s%2.2i' % (baseName, classNum+1)
+                    name = '%s%2.2i' % (baseName, classNum)
                     if (nodeName == name):
                         node.xmlRemoveNode()
-        #
+
         # Rename other classes
         nodeList = self.node_fuel.xmlGetNodeList('scalar')
         if nodeList != None:
@@ -717,7 +594,7 @@ class CoalCombustionModel(Variables, Model):
                 if oldName[:-2] in baseNames :
                     oldNum = int(oldName[-2:])
                     if oldNum in range(classNum + 1, classesNumber + 1):
-                        name = '%s%2.2i' % (oldName[:-2], oldNum-1)
+                        name = '%s%2.2i' % (oldName[:-2], oldNum - 1)
                         node['name'] = name
                         if node['label'] == oldName:
                             node['label'] = name
@@ -725,7 +602,7 @@ class CoalCombustionModel(Variables, Model):
 
     def deleteClassModelProperties(self, coalNumber, classeNumber):
         """
-        delete class of model properties
+        delete properties model for a define coalNumber and class number
         """
         self.isInt(coalNumber)
         self.isInt(classeNumber)
@@ -733,26 +610,26 @@ class CoalCombustionModel(Variables, Model):
         classNum = 0
         if (coalNumber >= 1) :
             for coal in range(0, coalNumber - 1):
-                classNum += self.getClassNumber(str(coal + 1))
+                classNum += self.getClassNumber(coal + 1)
+        # global class number
         classNum += classeNumber
 
+        # total class number
         classesNumber = self.getClassesNumber()
-        baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                     "Ga_DV1", "Ga_DV2", "Ga_HET_O2"]
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
-            baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                         "Ga_DV1", "Ga_DV2", "Ga_HET_O2", "Ga_SEC"]
-        #
+
+        # list of properties for a class
+        baseNames = self.ModelProperties
+
         # Remove coal classes
         nodeList = self.node_fuel.xmlGetNodeList('property')
         if nodeList != None:
             for node in nodeList :
                 nodeName = node['name']
                 for baseName in baseNames:
-                    name = '%s%2.2i' % (baseName, classNum+1)
+                    name = '%s%2.2i' % (baseName, classNum)
                     if (nodeName == name):
                         node.xmlRemoveNode()
-        #
+
         # Rename other classes
         nodeList = self.node_fuel.xmlGetNodeList('property')
         if nodeList != None:
@@ -761,7 +638,7 @@ class CoalCombustionModel(Variables, Model):
                 if oldName[:-2] in baseNames :
                     oldNum = int(oldName[-2:])
                     if oldNum in range(classNum + 1, classesNumber + 1):
-                        name = '%s%2.2i' % (oldName[:-2], oldNum-1)
+                        name = '%s%2.2i' % (oldName[:-2], oldNum - 1)
                         node['name'] = name
                         if node['label'] == oldName:
                             node['label'] = name
@@ -868,7 +745,8 @@ class CoalCombustionModel(Variables, Model):
         """
         return global number oxidant
         """
-        nb = len(self.node_oxi.xmlGetNodeList('oxidant'))
+        node_oxi = self.node_fuel.xmlInitNode('oxidants')
+        nb = len(node_oxi.xmlGetNodeList('oxidant'))
         return nb
 
 
@@ -876,8 +754,9 @@ class CoalCombustionModel(Variables, Model):
         """
         return list of oxidant Id's
         """
+        node_oxi = self.node_fuel.xmlInitNode('oxidants')
         oxidant = []
-        for node in self.node_oxi.xmlGetNodeList('oxidant'):
+        for node in node_oxi.xmlGetNodeList('oxidant'):
             oxidant.append(node['ox_id'])
         return oxidant
 
@@ -887,23 +766,24 @@ class CoalCombustionModel(Variables, Model):
         create a new solid fuel
         """
         number = self.getCoalNumber()
-        new = str(number + 1)
+        new = number + 1
         solid_fuel = self.node_fuel.xmlInitNode('solid_fuel', fuel_id = new)
         self.isLowerOrEqual(number, 3)
         self.createClass(new)
         char_comb = solid_fuel.xmlInitNode('char_combustion')
-        char_comb.xmlInitNode('specie', nature= "O2", status = 'on')
-        char_comb.xmlInitNode('specie', nature= "CO2", status = 'off')
-        char_comb.xmlInitNode('specie', nature= "H2O", status = 'off')
-        solid_fuel.xmlInitNode('nox_formation', status = self.defaultValues()['NOx_formation'])
+        char_comb.xmlInitNode('specie', nature= "O2")
+        char_comb.xmlInitNode('specie', nature= "CO2")
+        char_comb.xmlInitNode('specie', nature= "H2O")
+        solid_fuel.xmlInitNode('nox_formation')
 
 
-    def deleteSolidFuel(self, number):
+    def deleteSolidFuel(self, fuelId):
         """
         delete a solid fuel
         """
-        self.isInList(number, self.getFuelIdList())
-        node = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = number)
+        self.isInList(str(fuelId), self.getFuelIdList())
+        self.deleteCoalModelScalarsAndProperties(fuelId)
+        node = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node.xmlRemoveNode()
         self.__updateFuelId()
 
@@ -923,9 +803,10 @@ class CoalCombustionModel(Variables, Model):
         """
         create a new oxidant
         """
+        node_oxi = self.node_fuel.xmlInitNode('oxidants')
         number = self.getOxidantNumber()
-        new = str(number + 1)
-        self.node_oxi.xmlInitNode('oxidant', ox_id = new)
+        new = number + 1
+        node_oxi.xmlInitNode('oxidant', ox_id = new)
         self.isLowerOrEqual(number, 3)
 
 
@@ -933,8 +814,9 @@ class CoalCombustionModel(Variables, Model):
         """
         delete an oxidant
         """
-        self.isInList(number, self.getOxidantIdList())
-        node = self.node_oxi.xmlGetNode('oxidant', ox_id = number)
+        node_oxi = self.node_fuel.xmlInitNode('oxidants')
+        self.isInList(str(number), self.getOxidantIdList())
+        node = node_oxi.xmlGetNode('oxidant', ox_id = number)
         node.xmlRemoveNode()
         self.__updateOxidantId()
 
@@ -942,20 +824,22 @@ class CoalCombustionModel(Variables, Model):
     def __updateOxidantId(self):
         """
         """
+        node_oxi = self.node_fuel.xmlInitNode('oxidants')
         list = []
         n = 0
-        for node in self.node_oxi.xmlGetNodeList('oxidant'):
+        for node in node_oxi.xmlGetNodeList('oxidant'):
             if int(node['ox_id']) > 0 :
                 n = n + 1
-                node['ox_id'] =str(n)
+                node['ox_id'] = str(n)
 
 
     def getElementComposition(self, oxId, element):
         """
         return contribution of an element for a define oxidant
         """
-        self.isInList(oxId, self.getOxidantIdList())
-        oxidant = self.node_oxi.xmlGetNode('oxidant', ox_id = oxId)
+        node_oxi = self.node_fuel.xmlInitNode('oxidants')
+        self.isInList(str(oxId), self.getOxidantIdList())
+        oxidant = node_oxi.xmlGetNode('oxidant', ox_id = oxId)
         name = element + "_composition"
         value = oxidant.xmlGetDouble(name)
         if value == None:
@@ -969,9 +853,10 @@ class CoalCombustionModel(Variables, Model):
         """
         set contribution of an element for a define oxidant
         """
-        self.isInList(oxId, self.getOxidantIdList())
+        node_oxi = self.node_fuel.xmlInitNode('oxidants')
+        self.isInList(str(oxId), self.getOxidantIdList())
         self.isPositiveFloat(value)
-        oxidant = self.node_oxi.xmlGetNode('oxidant', ox_id = oxId)
+        oxidant = node_oxi.xmlGetNode('oxidant', ox_id = oxId)
         name = element + "_composition"
         oxidant.xmlSetData(name, value)
 
@@ -980,7 +865,7 @@ class CoalCombustionModel(Variables, Model):
         """
         return an oxidant
         """
-        self.isInList(oxId, self.getOxidantIdList())
+        self.isInList(str(oxId), self.getOxidantIdList())
         O2  = self.getElementComposition(oxId, "O2")
         N2  = self.getElementComposition(oxId, "N2")
         H2O = self.getElementComposition(oxId, "H2O")
@@ -993,7 +878,7 @@ class CoalCombustionModel(Variables, Model):
         """
         return diameter model for a define fuel Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
 
         value = solid_fuel.xmlGetString('diameter_type')
@@ -1007,7 +892,7 @@ class CoalCombustionModel(Variables, Model):
         """
         put diameter model for a define fuel Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isInList(choice, ('automatic', 'rosin-rammler_law'))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         old_type = solid_fuel.xmlGetString('diameter_type')
@@ -1029,8 +914,8 @@ class CoalCombustionModel(Variables, Model):
         """
         create a new diameter class for define fuel Id
         """
-        number = self.getClassNumber(str(fuelId))
-        new = str(number + 1)
+        number = self.getClassNumber(fuelId)
+        new = number + 1
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_class = solid_fuel.xmlInitNode('class')
         diameter_type = self.getDiameterType(fuelId)
@@ -1046,7 +931,11 @@ class CoalCombustionModel(Variables, Model):
         """
         delete a diameter class for a define fuel Id
         """
-        self.isInList(number, self.getClassIdList(fuelId))
+        self.isInList(str(number), self.getClassIdList(fuelId))
+
+        self.deleteClassModelProperties(fuelId, number)
+        self.deleteClassModelScalars(fuelId, number)
+
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_class = solid_fuel.xmlInitNode('class')
         diameter_type = self.getDiameterType(fuelId)
@@ -1061,8 +950,8 @@ class CoalCombustionModel(Variables, Model):
             refusal_number = self.getRefusalNumber(fuelId)
             class_number = self.getClassNumber(fuelId)
             if refusal_number > class_number:
-                for num in range (class_number+1, refusal_number +1):
-                    self.deleteRefusal(fuelId, str(num))
+                for num in range (class_number + 1, refusal_number + 1):
+                    self.deleteRefusal(fuelId, num)
 
         self.__updateClassId(fuelId)
 
@@ -1093,7 +982,7 @@ class CoalCombustionModel(Variables, Model):
         """
         number = 0
         number = self.getRefusalNumber(fuelId)
-        new = str(number + 1)
+        new = number + 1
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         solid_fuel.xmlInitNode('refusal', id = new)
         self.getRefusalDiameter(fuelId, new)
@@ -1104,7 +993,7 @@ class CoalCombustionModel(Variables, Model):
         """
         delete a refusal for define fuel Id
         """
-        self.isInList(number, self.getRefusalIdList(fuelId))
+        self.isInList(str(number), self.getRefusalIdList(fuelId))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlGetNode('refusal', id = number)
         node.xmlRemoveNode()
@@ -1127,8 +1016,8 @@ class CoalCombustionModel(Variables, Model):
         """
         Return the refusal diameter for a define fuel Id  and refusal Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
-        self.isInList(refusal_number, self.getRefusalIdList(fuelId))
+        self.isInList(str(fuelId), self.getFuelIdList())
+        self.isInList(str(refusal_number), self.getRefusalIdList(fuelId))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_refusal = solid_fuel.xmlGetNode('refusal', id = refusal_number)
         value = node_refusal.xmlGetDouble('diameter')
@@ -1142,8 +1031,8 @@ class CoalCombustionModel(Variables, Model):
         """
         Put the refusal diameter for a define fuel Id  and refusal Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
-        self.isInList(refusal_number, self.getRefusalIdList(fuelId))
+        self.isInList(str(fuelId), self.getFuelIdList())
+        self.isInList(str(refusal_number), self.getRefusalIdList(fuelId))
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_refusal = solid_fuel.xmlGetNode('refusal', id = refusal_number)
@@ -1154,8 +1043,8 @@ class CoalCombustionModel(Variables, Model):
         """
         Return the refusal value for a define fuel Id  and refusal Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
-        self.isInList(refusal_number, self.getRefusalIdList(fuelId))
+        self.isInList(str(fuelId), self.getFuelIdList())
+        self.isInList(str(refusal_number), self.getRefusalIdList(fuelId))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_refusal = solid_fuel.xmlGetNode('refusal', id = refusal_number)
         value = node_refusal.xmlGetDouble('value')
@@ -1169,8 +1058,8 @@ class CoalCombustionModel(Variables, Model):
         """
         Return all characteristics of a refusal
         """
-        self.isInList(fuelId, self.getFuelIdList())
-        self.isInList(refusal_number, self.getRefusalIdList(fuelId))
+        self.isInList(str(fuelId), self.getFuelIdList())
+        self.isInList(str(refusal_number), self.getRefusalIdList(fuelId))
         diameter = self.getRefusalDiameter(fuelId, refusal_number)
         value = self.getRefusalValue(fuelId, refusal_number)
         return [refusal_number, diameter, value]
@@ -1180,8 +1069,8 @@ class CoalCombustionModel(Variables, Model):
         """
         Put the refusal value for a define fuel Id  and refusal Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
-        self.isInList(refusal_number, self.getRefusalIdList(fuelId))
+        self.isInList(str(fuelId), self.getFuelIdList())
+        self.isInList(str(refusal_number), self.getRefusalIdList(fuelId))
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_refusal = solid_fuel.xmlGetNode('refusal', id = refusal_number)
@@ -1192,7 +1081,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return diameter for a define fuel Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_class = solid_fuel.xmlGetNode('class')
         value = node_class.xmlGetDouble('diameter', class_id = class_number)
@@ -1206,7 +1095,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Put diameter for a define fuel Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_class = solid_fuel.xmlGetNode('class')
@@ -1217,7 +1106,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return mass percent for a define fuel Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_classe = solid_fuel.xmlGetNode('class')
         value = node_classe.xmlGetDouble('mass_percent', class_id = class_number)
@@ -1231,7 +1120,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Put mass percent for a define fuel Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_class = solid_fuel.xmlGetNode('class')
@@ -1242,7 +1131,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return label for a define fuel Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         label = solid_fuel['name']
         if label == None:
@@ -1269,7 +1158,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Set a fuel label
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         solid_fuel['name']= label
 
@@ -1278,7 +1167,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return the type for a define fuel Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         fuel_type = solid_fuel['type']
         if fuel_type == None:
@@ -1291,7 +1180,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Set the type for a define fuel Id
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isInList(fuel_type, ('biomass', 'coal' ))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         solid_fuel['type']= fuel_type
@@ -1320,7 +1209,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return composition for a define fuel Id and an element
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         name = element + "_composition_on_dry"
         composition = solid_fuel.xmlGetDouble(name)
@@ -1335,7 +1224,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Set composition for a define fuel Id and an element
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(composition)
         name = element + "_composition_on_dry"
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
@@ -1346,7 +1235,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return PCI Value for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('PCI')
         value = node.xmlGetDouble('value')
@@ -1360,7 +1249,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Set PCI Value for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('PCI')
@@ -1371,7 +1260,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return PCI choice for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('PCI')
         PCIChoice = node['choice']
@@ -1385,7 +1274,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Set PCI choice for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isInList(choice, ('PCI', 'PCS', 'IGT_correlation'))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('PCI')
@@ -1399,7 +1288,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return PCI type for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('PCI')
         value = node.xmlGetString('type')
@@ -1413,7 +1302,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Set PCI type for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isInList(choice, ('dry_basis', 'dry_ash_free', 'as_received'))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('PCI')
@@ -1424,7 +1313,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return value for a define fuel Id and property
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         value = solid_fuel.xmlGetDouble(name)
         if value == None:
@@ -1437,7 +1326,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Set value for a define fuel Id and property
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         solid_fuel.xmlSetData(name, value)
@@ -1447,7 +1336,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return Y1Y2 value for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
         node = devolatilisation.xmlInitNode('stoichiometric_coefficient')
@@ -1462,7 +1351,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Set Y1Y2 value for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isInList(choice, ('user_define', 'automatic_CHONS', 'automatic_formula'))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('stoichiometric_coefficient')
@@ -1475,7 +1364,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return Y1 stoichiometric coefficient for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isInList(self.getY1Y2(fuelId),('user_define', 'automatic_formula'))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
@@ -1495,7 +1384,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Set Y1 stoichiometric coefficient for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isInList(self.getY1Y2(fuelId),('user_define', 'automatic_formula'))
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
@@ -1508,7 +1397,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return Y2 stoichiometric coefficient for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isInList(self.getY1Y2(fuelId),('user_define', 'automatic_formula'))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
@@ -1528,7 +1417,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Set Y2 stoichiometric coefficient for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isInList(self.getY1Y2(fuelId),('user_define', 'automatic_formula'))
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
@@ -1540,7 +1429,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return Y1 automatic value for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         volatile_matter = self.getProperty(fuelId, "volatile_matter")
         ash_ratio = self.getProperty(fuelId, "rate_of_ashes_on_mass")
         moisture = self.getProperty(fuelId, "moisture")
@@ -1551,7 +1440,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return Y2 automatic value for a fuel
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         Y1 = self.__Y1AutomaticFormula(fuelId)
         Y2 = 1.4 * Y1
         return Y2
@@ -1561,7 +1450,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Return value for a define fuel Id and nitrogen partition parameter
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
         value = devolatilisation.xmlGetDouble(param)
@@ -1575,7 +1464,7 @@ class CoalCombustionModel(Variables, Model):
         """
         Set value for a define fuel Id and nitrogen partition parameter
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
@@ -1585,7 +1474,7 @@ class CoalCombustionModel(Variables, Model):
     def getDevolatilisationParameter(self, fuelId, param):
         """
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
         value = devolatilisation.xmlGetDouble(param)
@@ -1598,7 +1487,7 @@ class CoalCombustionModel(Variables, Model):
     def setDevolatilisationParameter(self, fuelId, param, value):
         """
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
@@ -1608,7 +1497,7 @@ class CoalCombustionModel(Variables, Model):
     def getPreExponentialConstant(self, fuelId, specie):
         """
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         char_comb = solid_fuel.xmlGetNode('char_combustion')
         specie_node = char_comb.xmlGetNode('specie', nature = specie)
@@ -1622,7 +1511,7 @@ class CoalCombustionModel(Variables, Model):
     def setPreExponentialConstant(self, fuelId, specie, value):
         """
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         char_comb = solid_fuel.xmlGetNode('char_combustion')
@@ -1633,7 +1522,7 @@ class CoalCombustionModel(Variables, Model):
     def getEnergyOfActivation(self, fuelId, specie):
         """
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         char_comb = solid_fuel.xmlGetNode('char_combustion')
         specie_node = char_comb.xmlGetNode('specie', nature = specie)
@@ -1647,7 +1536,7 @@ class CoalCombustionModel(Variables, Model):
     def setEnergyOfActivation(self, fuelId, specie, value):
         """
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         char_comb = solid_fuel.xmlGetNode('char_combustion')
@@ -1658,7 +1547,7 @@ class CoalCombustionModel(Variables, Model):
     def getOrderOfReaction(self, fuelId, specie):
         """
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         char_comb = solid_fuel.xmlGetNode('char_combustion')
         specie_node = char_comb.xmlGetNode('specie', nature = specie)
@@ -1673,7 +1562,7 @@ class CoalCombustionModel(Variables, Model):
     def setOrderOfReaction(self, fuelId, specie, choice):
         """
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isInList(choice, ("1", "0.5"))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         char_comb = solid_fuel.xmlGetNode('char_combustion')
@@ -1685,9 +1574,9 @@ class CoalCombustionModel(Variables, Model):
     def getNitrogenFraction(self, fuelId):
         """
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
-        node = solid_fuel.xmlGetNode('nox_formation')
+        node = solid_fuel.xmlInitNode('nox_formation')
         value = node.xmlGetDouble('nitrogen_fraction')
         if value == None:
             value = self.defaultValues()['N_fraction']
@@ -1698,7 +1587,7 @@ class CoalCombustionModel(Variables, Model):
     def setNitrogenFraction(self, fuelId, value):
         """
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlGetNode('nox_formation')
@@ -1708,9 +1597,9 @@ class CoalCombustionModel(Variables, Model):
     def getNitrogenConcentration(self, fuelId):
         """
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
-        node = solid_fuel.xmlGetNode('nox_formation')
+        node = solid_fuel.xmlInitNode('nox_formation')
         value = node.xmlGetDouble('nitrogen_concentration')
         if value == None:
             value = self.defaultValues()['N_concentration']
@@ -1721,7 +1610,7 @@ class CoalCombustionModel(Variables, Model):
     def setNitrogenConcentration(self, fuelId, value):
         """
         """
-        self.isInList(fuelId, self.getFuelIdList())
+        self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlGetNode('nox_formation')
@@ -1731,7 +1620,8 @@ class CoalCombustionModel(Variables, Model):
     def getOxidantType(self):
         """
         """
-        value = self.node_oxi.xmlGetString('oxidant_type')
+        node_oxi = self.node_fuel.xmlInitNode('oxidants')
+        value = node_oxi.xmlGetString('oxidant_type')
         if value == '':
             value = self.defaultValues()['oxidant_type']
             self.setOxidantType(value)
@@ -1741,98 +1631,115 @@ class CoalCombustionModel(Variables, Model):
     def setOxidantType(self, choice):
         """
         """
+        node_oxi = self.node_fuel.xmlInitNode('oxidants')
         self.isInList(choice, ('volumic_percent', 'molar' ))
-        old_type = self.node_oxi.xmlGetString('oxidant_type')
-        self.node_oxi.xmlSetData('oxidant_type', choice)
+        old_type = node_oxi.xmlGetString('oxidant_type')
+        node_oxi.xmlSetData('oxidant_type', choice)
 
 
-    def setNOxFormationStatus(self, fuelId, status):
+    def setNOxFormationStatus(self, status):
         """
         put NOx formation status
         """
-        self.isInList(fuelId, self.getFuelIdList())
         self.isOnOff(status)
 
-        solid_fuel = self.node_fuel.xmlInitNode('solid_fuel', fuel_id = fuelId)
-        node = solid_fuel.xmlGetNode('nox_formation')
+        node = self.node_fuel.xmlGetNode('NOx_formation')
         node['status'] = status
         if status == "off":
-            node.xmlRemoveChild('nitrogen_fraction')
-            node.xmlRemoveChild('nitrogen_concentration')
-            node.xmlRemoveChild('HCN_NH3_partitionning_reaction_1')
-            node.xmlRemoveChild('HCN_NH3_partitionning_reaction_2')
+            for fuelId in range (1, self.getCoalNumber() + 1):
+                fuelNode = self.node_fuel.xmlGetNode("solid_fuel", fuel_id = fuelId)
+                devol_node = fuelNode.xmlGetNode("devolatilisation_parameters")
+                nox_node = fuelNode.xmlGetNode("nox_formation")
+                nox_node.xmlRemoveChild('nitrogen_fraction')
+                nox_node.xmlRemoveChild('nitrogen_concentration')
+                devol_node.xmlRemoveChild('HCN_NH3_partitionning_reaction_1')
+                devol_node.xmlRemoveChild('HCN_NH3_partitionning_reaction_2')
+        else:
+            for fuelId in range (1, self.getCoalNumber() + 1):
+                fuelNode = self.node_fuel.xmlGetNode("solid_fuel", fuel_id = fuelId)
+                self.getNitrogenFraction(fuelId)
+                self.getNitrogenConcentration(fuelId)
+                self.getHCNParameter(fuelId, 'HCN_NH3_partitionning_reaction_1')
+                self.getHCNParameter(fuelId, 'HCN_NH3_partitionning_reaction_2')
 
 
-    def getNOxFormationStatus(self, fuelId):
+    def getNOxFormationStatus(self):
         """
         get NOx formation status
         """
-        self.isInList(fuelId, self.getFuelIdList())
-
-        solid_fuel = self.node_fuel.xmlInitNode('solid_fuel', fuel_id = fuelId)
-        node = solid_fuel.xmlGetNode('nox_formation')
+        node = self.node_fuel.xmlGetNode('NOx_formation')
         status = node['status']
 
         return status
 
 
-    def setCO2KineticsStatus(self, fuelId, status):
+    def setCO2KineticsStatus(self, status):
         """
         put CO2 Kinetics status
         """
-        self.isInList(fuelId, self.getFuelIdList())
         self.isOnOff(status)
 
-        solid_fuel = self.node_fuel.xmlInitNode('solid_fuel', fuel_id = fuelId)
-        char_comb = solid_fuel.xmlGetNode('char_combustion')
-        node = char_comb.xmlGetNode('specie', nature= "CO2")
+        node = self.node_fuel.xmlGetNode('CO2_kinetics')
         node['status'] = status
         if status == "off":
-            node.xmlRemoveChild('pre-exponential_constant')
-            node.xmlRemoveChild('energy_of_activation')
-            node.xmlRemoveChild('order_of_reaction')
+            for fuelId in range (1, self.getCoalNumber() + 1):
+                fuelNode = self.node_fuel.xmlGetNode("solid_fuel", fuel_id = fuelId)
+                combu_node = fuelNode.xmlGetNode("char_combustion")
+                co2_node = combu_node.xmlGetNode("specie", nature = "CO2")
+                co2_node.xmlRemoveChild('pre-exponential_constant')
+                co2_node.xmlRemoveChild('energy_of_activation')
+                co2_node.xmlRemoveChild('order_of_reaction')
+            self.ModelProperties.remove("Ga_HET_CO2")
+            self.node_fuel.xmlRemoveChild("Fr_HET_CO2")
+        else:
+            self.ModelProperties.append("Ga_HET_CO2")
+            for fuelId in range (1, self.getCoalNumber() + 1):
+                self.getPreExponentialConstant(fuelId, "CO2")
+                self.getEnergyOfActivation(fuelId, "CO2")
+                self.getOrderOfReaction(fuelId, "CO2")
 
 
-    def getCO2KineticsStatus(self, fuelId):
+    def getCO2KineticsStatus(self):
         """
         get CO2 Kinetics status
         """
-        self.isInList(fuelId, self.getFuelIdList())
-
-        solid_fuel = self.node_fuel.xmlInitNode('solid_fuel', fuel_id = fuelId)
-        char_comb = solid_fuel.xmlGetNode('char_combustion')
-        node = char_comb.xmlGetNode('specie', nature= "CO2")
+        node = self.node_fuel.xmlGetNode('CO2_kinetics')
         status = node['status']
 
         return status
 
 
-    def setH2OKineticsStatus(self, fuelId, status):
+    def setH2OKineticsStatus(self, status):
         """
         put H2O Kinetics status
         """
-        self.isInList(fuelId, self.getFuelIdList())
         self.isOnOff(status)
 
-        solid_fuel = self.node_fuel.xmlInitNode('solid_fuel', fuel_id = fuelId)
-        char_comb = solid_fuel.xmlGetNode('char_combustion')
-        node = char_comb.xmlGetNode('specie', nature= "H2O")
+        node = self.node_fuel.xmlGetNode('H2O_kinetics')
         node['status'] = status
         if status == "off":
-            node.xmlRemoveChild('pre-exponential_constant')
-            node.xmlRemoveChild('energy_of_activation')
-            node.xmlRemoveChild('order_of_reaction')
+            for fuelId in range (1, self.getCoalNumber() + 1):
+                fuelNode = self.node_fuel.xmlGetNode("solid_fuel", fuel_id = fuelId)
+                combu_node = fuelNode.xmlGetNode("char_combustion")
+                h2o_node = combu_node.xmlGetNode("specie", nature = "H2O")
+                h2o_node.xmlRemoveChild('pre-exponential_constant')
+                h2o_node.xmlRemoveChild('energy_of_activation')
+                h2o_node.xmlRemoveChild('order_of_reaction')
+            self.ModelProperties.remove("Ga_HET_H2O")
+            self.node_fuel.xmlRemoveChild("Fr_HET_H2O")
+        else:
+            self.ModelProperties.append("Ga_HET_H2O")
+            for fuelId in range (1, self.getCoalNumber() + 1):
+                self.getPreExponentialConstant(fuelId, "H2O")
+                self.getEnergyOfActivation(fuelId, "H2O")
+                self.getOrderOfReaction(fuelId, "H2O")
 
 
-    def getH2OKineticsStatus(self, fuelId):
+    def getH2OKineticsStatus(self):
         """
         get H2O Kinetics status
         """
-        self.isInList(fuelId, self.getFuelIdList())
-
-        solid_fuel = self.node_fuel.xmlInitNode('solid_fuel', fuel_id = fuelId)
-        char_comb = solid_fuel.xmlGetNode('char_combustion')
-        node = char_comb.xmlGetNode('specie', nature= "H2O")
+        node = self.node_fuel.xmlGetNode('H2O_kinetics')
         status = node['status']
 
         return status
@@ -1857,7 +1764,7 @@ class CoalCombustionModelTestCase(ModelTest):
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
 
-        doc = '''<pulverized_coal model="coal_homo">
+        doc = '''<solid_fuels model="coal_homo">
                     <scalar label="Enthalpy" name="Enthalpy" type="model">
                             <flux_reconstruction status="off"/>
                     </scalar>
@@ -1904,9 +1811,9 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV201" name="Ga_DV201"/>
                     <property label="Ga_HET_O201" name="Ga_HET_O201"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
-            </pulverized_coal>'''
+            </solid_fuels>'''
 
-        assert model.node_coal == self.xmlNodeFromString(doc),\
+        assert model.node_fuel == self.xmlNodeFromString(doc),\
            'Could not set a model of combustion'
         assert model.getCoalCombustionModel() == 'coal_homo',\
            'Could not get a model of combustion'
@@ -1922,7 +1829,7 @@ class CoalCombustionModelTestCase(ModelTest):
 
         model.createCoalModelScalarsAndProperties(coalThermoChModel)
 
-        doc = '''<pulverized_coal model="coal_homo">
+        doc = '''<solid_fuels model="coal_homo">
                     <scalar label="Enthalpy" name="Enthalpy" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
@@ -1977,9 +1884,9 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV102" name="Ga_DV102"/>
                     <property label="Ga_DV202" name="Ga_DV202"/>
                     <property label="Ga_HET_O202" name="Ga_HET_O202"/>
-            </pulverized_coal>'''
+            </solid_fuels>'''
 
-        assert model.node_coal == self.xmlNodeFromString(doc),\
+        assert model.node_fuel == self.xmlNodeFromString(doc),\
             'Could not create newscalars and properties for new coal'
 
 
@@ -1993,7 +1900,7 @@ class CoalCombustionModelTestCase(ModelTest):
 
         model.createClassModelScalarsAndProperties(coalThermoChModel, 2)
 
-        doc = '''<pulverized_coal model="coal_homo">
+        doc = '''<solid_fuels model="coal_homo">
                     <scalar label="Enthalpy" name="Enthalpy" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
@@ -2086,9 +1993,9 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV104" name="Ga_DV104"/>
                     <property label="Ga_DV204" name="Ga_DV204"/>
                     <property label="Ga_HET_O204" name="Ga_HET_O204"/>
-                </pulverized_coal>'''
+                </solid_fuels>'''
 
-        assert model.node_coal == self.xmlNodeFromString(doc),\
+        assert model.node_fuel == self.xmlNodeFromString(doc),\
            'Could not create a new class of scalars and properties for one coal'
 
 
@@ -2103,7 +2010,7 @@ class CoalCombustionModelTestCase(ModelTest):
         model.createClassModelScalarsAndProperties(coalThermoChModel, 2)
         model.deleteCoalModelScalarsAndProperties(coalThermoChModel, 1)
 
-        doc = '''<pulverized_coal model="coal_homo">
+        doc = '''<solid_fuels model="coal_homo">
                     <scalar label="Enthalpy" name="Enthalpy" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
@@ -2178,9 +2085,9 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV104" name="Ga_DV104"/>
                     <property label="Ga_DV204" name="Ga_DV204"/>
                     <property label="Ga_HET_O204" name="Ga_HET_O204"/>
-                </pulverized_coal>'''
+                </solid_fuels>'''
 
-        assert model.node_coal == self.xmlNodeFromString(doc),\
+        assert model.node_fuel == self.xmlNodeFromString(doc),\
            "Could not delete one coal's scalars and properties"
 
 
@@ -2195,7 +2102,7 @@ class CoalCombustionModelTestCase(ModelTest):
         model.createClassModelScalarsAndProperties(coalThermoChModel, 2)
         model.deleteClassModelScalars(coalThermoChModel, 2, 1)
 
-        doc = '''<pulverized_coal model="coal_homo">
+        doc = '''<solid_fuels model="coal_homo">
                     <scalar label="Enthalpy" name="Enthalpy" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
@@ -2276,9 +2183,9 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV102" name="Ga_DV102"/>
                     <property label="Ga_DV202" name="Ga_DV202"/>
                     <property label="Ga_HET_O202" name="Ga_HET_O202"/>
-            </pulverized_coal>'''
+            </solid_fuels>'''
 
-        assert model.node_coal == self.xmlNodeFromString(doc),\
+        assert model.node_fuel == self.xmlNodeFromString(doc),\
            "Could not delete one class of scalars and properties for one given coal"
 
 

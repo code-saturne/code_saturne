@@ -348,11 +348,11 @@ class StandardItemModelCoals(QStandardItemModel):
             old_plabel = self.dataCoals[row]['name']
             new_plabel = str(value.toString())
             self.dataCoals[row]['name'] = new_plabel
-            self.mdl.setFuelLabel(str(row+1), new_plabel)
+            self.mdl.setFuelLabel(row + 1, new_plabel)
 
         elif col == 1:
             self.dataCoals[row]['type'] = self.dicoV2M[str(value.toString())]
-            self.mdl.setFuelType(str(row+1), self.dataCoals[row]['type'])
+            self.mdl.setFuelType(row + 1, self.dataCoals[row]['type'])
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
@@ -369,8 +369,8 @@ class StandardItemModelCoals(QStandardItemModel):
         else:
             self.mdl.createCoal()
             number = self.mdl.getCoalNumber()
-            dico['name'] = self.mdl.getFuelLabel(str(number))
-            dico['type'] = self.mdl.getFuelType(str(number))
+            dico['name'] = self.mdl.getFuelLabel(number)
+            dico['type'] = self.mdl.getFuelType(number)
         self.dataCoals.append(dico)
 
         row = self.rowCount()
@@ -423,11 +423,6 @@ class StandardItemModelClasses(QStandardItemModel):
 
         self.setColumnCount(len(self.headers))
         self.dataClasses = []
-        self.coalNumber = None
-
-
-    def setCoalNumber(self, coalNumber):
-        self.coalNumber = coalNumber
 
 
     def data(self, index, role):
@@ -466,9 +461,9 @@ class StandardItemModelClasses(QStandardItemModel):
 
             diameter_type = self.model.getDiameterType(self.fuel)
             if diameter_type == 'automatic' :
-                self.model.setDiameter(str(self.fuel), str(ClassId), newDiameter)
+                self.model.setDiameter(self.fuel, ClassId, newDiameter)
             elif diameter_type == 'rosin-rammler_law':
-                self.model.setMassPercent(str(self.fuel), str(ClassId), newDiameter)
+                self.model.setMassPercent(self.fuel, ClassId, newDiameter)
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
@@ -557,13 +552,13 @@ class StandardItemModelOxidant(QStandardItemModel):
         oxId = row + 1
 
         if col == 1:
-            self.model.setElementComposition(str(oxId), "O2", v)
+            self.model.setElementComposition(oxId, "O2", v)
         elif col == 2:
-            self.model.setElementComposition(str(oxId), "N2", v)
+            self.model.setElementComposition(oxId, "N2", v)
         elif col == 3:
-            self.model.setElementComposition(str(oxId), "H2O", v)
+            self.model.setElementComposition(oxId, "H2O", v)
         elif col == 4:
-            self.model.setElementComposition(str(oxId), "CO2", v)
+            self.model.setElementComposition(oxId, "CO2", v)
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
@@ -574,10 +569,10 @@ class StandardItemModelOxidant(QStandardItemModel):
         Add a row in the table.
         """
         label = str(num)
-        O2  = self.model.getElementComposition(str(num), "O2")
-        N2  = self.model.getElementComposition(str(num), "N2")
-        H2O = self.model.getElementComposition(str(num), "H2O")
-        CO2 = self.model.getElementComposition(str(num), "CO2")
+        O2  = self.model.getElementComposition(num, "O2")
+        N2  = self.model.getElementComposition(num, "N2")
+        H2O = self.model.getElementComposition(num, "H2O")
+        CO2 = self.model.getElementComposition(num, "CO2")
         item = [label, O2, N2, H2O, CO2]
         self.dataClasses.append(item)
         row = self.rowCount()
@@ -595,7 +590,7 @@ class StandardItemModelOxidant(QStandardItemModel):
         del self.dataClasses[row]
         row = self.rowCount()
         self.setRowCount(row-1)
-        self.model.deleteOxidant(str(row+1))
+        self.model.deleteOxidant(row+1)
 
     def deleteAll(self):
         """
@@ -655,9 +650,9 @@ class StandardItemModelRefusal(QStandardItemModel):
         self.dataClasses[row][col] = v
 
         if col == 1:
-            self.model.setRefusalDiameter(self.fuel, str(row+1), v)
+            self.model.setRefusalDiameter(self.fuel, row+1, v)
         elif col == 2:
-            self.model.setRefusalValue(self.fuel, str(row+1), v)
+            self.model.setRefusalValue(self.fuel, row+1, v)
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
@@ -684,7 +679,7 @@ class StandardItemModelRefusal(QStandardItemModel):
         del self.dataClasses[row]
         row = self.rowCount()
         self.setRowCount(row-1)
-        self.model.deleteRefusal(self.fuel, str(row+1))
+        self.model.deleteRefusal(self.fuel, row+1)
 
     def deleteAll(self):
         """
@@ -715,7 +710,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.model = CoalCombustionModel(self.case)
 
         # widgets layout.
-        self.fuel = '1'
+        self.fuel = 1
 
         # Models
         # ------
@@ -741,11 +736,6 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.tableViewOxidants.setModel(self.modelOxidants)
         self.tableViewOxidants.resizeColumnsToContents()
         self.tableViewOxidants.resizeRowsToContents()
-
-        # set Coal number in modelClasses
-        self.coalNumber = self.treeViewCoals.currentIndex().row()
-        log.debug("coalNumber row = %i " % self.coalNumber)
-        self.modelClasses.setCoalNumber(self.coalNumber)
 
         delegateDiameter = DiameterDelegate(self.treeViewClasses)
         self.treeViewClasses.setItemDelegateForColumn(1, delegateDiameter)
@@ -1009,7 +999,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.pushButtonAddRefusal.hide()
 
             for number in range(0, ClassesNumber):
-                diam  = self.model.getDiameter(self.fuel, str(number+1))
+                diam  = self.model.getDiameter(self.fuel, number+1)
                 self.modelClasses.addItem(number + 1, diam)
         else:
             self.treeViewRefusal.show()
@@ -1017,11 +1007,11 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             RefusalNumber = self.model.getRefusalNumber(self.fuel)
 
             for number in range(0, ClassesNumber):
-                diam  = self.model.getMassPercent(self.fuel, str(number+1))
+                diam  = self.model.getMassPercent(self.fuel, number+1)
                 self.modelClasses.addItem(number + 1, diam)
 
             for number in range(0, RefusalNumber):
-                refusal = self.model.getRefusal(self.fuel, str(number+1))
+                refusal = self.model.getRefusal(self.fuel, number+1)
                 self.modelRefusal.addItem(number+1, refusal)
                 log.debug("slotDeleteRefusal number + 1 = %i " % (number+1))
             self._updateRefusalButton()
@@ -1033,7 +1023,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         initialize NOx tabview for a define solid fuel
         """
-        if self.model.getNOxFormationStatus(self.fuel) == 'on':
+        if self.model.getNOxFormationStatus() == 'on':
             self.checkBoxNOxFormation.setChecked(True)
             self.groupBoxNOxFormation.show()
             self.lineEditQPR.setText(QString(str(self.model.getNitrogenFraction(self.fuel))))
@@ -1052,7 +1042,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         initialize kinetic tabview for a define solid fuel
         """
-        if self.model.getCO2KineticsStatus(self.fuel) == 'on':
+        if self.model.getCO2KineticsStatus() == 'on':
             self.checkBoxCO2Kinetics.setChecked(True)
             self.groupBoxParametersCO2.show()
             self.lineEditConstCO2.setText(QString(str(self.model.getPreExponentialConstant(self.fuel, "CO2"))))
@@ -1068,7 +1058,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.checkBoxCO2Kinetics.setChecked(False)
             self.groupBoxParametersCO2.hide()
 
-        if self.model.getH2OKineticsStatus(self.fuel) == 'on':
+        if self.model.getH2OKineticsStatus() == 'on':
             self.checkBoxH2OKinetics.setChecked(True)
             self.groupBoxParametersH2O.show()
             self.lineEditConstH2O.setText(QString(str(self.model.getPreExponentialConstant(self.fuel, "H2O"))))
@@ -1177,8 +1167,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         row = self.treeViewCoals.currentIndex().row()
         log.debug("selectCoal row = %i "%row)
 
-        self.fuel = str(row + 1)
-        self.coalNumber = row + 1
+        self.fuel = row + 1
 
         self.initializeView()
 
@@ -1210,9 +1199,6 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
         number = row + 1
 
-        # update Scalars and properties
-        self.model.deleteCoalModelScalarsAndProperties(number)
-
         # update boundary conditions (1/2)
         # TODO : a deplacer dans le modele
         for zone in LocalizationModel('BoundaryZone', self.case).getZones():
@@ -1222,15 +1208,14 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
                 bc = Boundary("coal_inlet", label, self.case)
                 bc.deleteCoalFlow(number-1, self.model.getNumberCoal())
 
-        self.model.deleteSolidFuel(str(number))
+        self.model.deleteSolidFuel(number)
 
         # suppress item
         self.modelCoals.deleteItem(row)
 
         # First coal is selected
         row = 0
-        self.fuel = str(row + 1)
-        self.coalNumber = row + 1
+        self.fuel = row + 1
 
         self.initializeView()
 
@@ -1247,14 +1232,14 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         ClassNumber = self.model.getClassNumber(self.fuel)
         diameter_type = self.model.getDiameterType(self.fuel)
         if diameter_type == 'automatic':
-            diam = self.model.getDiameter(self.fuel, str(ClassNumber) )
+            diam = self.model.getDiameter(self.fuel, ClassNumber)
         elif diameter_type == 'rosin-rammler_law':
-            diam = self.model.getMassPercent(self.fuel, str(ClassNumber) )
+            diam = self.model.getMassPercent(self.fuel, ClassNumber)
         self.modelClasses.addItem(ClassNumber, diam)
 
         log.debug("slotCreateClass number + 1 = %i " % (ClassNumber))
 
-        self.model.createClassModelScalarsAndProperties(self.coalNumber)
+        self.model.createClassModelScalarsAndProperties(self.fuel)
 
         # FIXME: bug ici
         # TODO : a deplacer dans le modele
@@ -1263,7 +1248,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         for zone in LocalizationModel('BoundaryZone', self.case).getZones():
             if zone.getNature() == "inlet":
                 b = Boundary("coal_inlet", zone.getLabel(), self.case)
-                b.updateCoalRatios(self.coalNumber-1)
+                b.updateCoalRatios(self.fuel-1)
 
         # Update buttons
         self._updateClassButton()
@@ -1279,10 +1264,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
         number = row + 1
 
-        self.model.deleteClassModelProperties( self.coalNumber, number - 1)
-        self.model.deleteClassModelScalars(self.coalNumber, number - 1)
-
-        self.model.deleteClass(self.fuel, str(number))
+        self.model.deleteClass(self.fuel, number)
 
         # Init
         self.initializeDiameter()
@@ -1300,8 +1282,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
         # Init
         RefusalNumber = self.model.getRefusalNumber(self.fuel)
-        refusal = self.model.getRefusal(self.fuel, str(RefusalNumber) )
-        self.modelRefusal.addItem(RefusalNumber,refusal)
+        refusal = self.model.getRefusal(self.fuel, RefusalNumber)
+        self.modelRefusal.addItem(RefusalNumber, refusal)
         log.debug("slotCreateRefusal number + 1 = %i " % (RefusalNumber))
 
         # Update buttons
@@ -1318,13 +1300,13 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
         number = row + 1
 
-        self.model.deleteRefusal(self.fuel, str(number))
+        self.model.deleteRefusal(self.fuel, number)
 
         # Init
         self.modelRefusal.deleteAll()
         RefusalNumber = self.model.getRefusalNumber(self.fuel)
         for number in range(0, RefusalNumber):
-            refusal = self.model.getRefusal(self.fuel, str(number+1))
+            refusal = self.model.getRefusal(self.fuel, number+1)
             self.modelRefusal.addItem(number+1, refusal)
             log.debug("slotDeleteRefusal number + 1 = %i " % (number+1))
 
@@ -1354,7 +1336,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             return
 
         number = row + 1
-        self.model.deleteOxidant(str(number))
+        self.model.deleteOxidant(number)
 
         # TODO : a deplacer dans le modele
         # Update boundary conditions
@@ -1803,7 +1785,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         status = 'off'
         if checked:
             status = 'on'
-        self.model.setNOxFormationStatus(self.fuel, status)
+        self.model.setNOxFormationStatus(status)
         self.initializeNOxView()
 
 
@@ -1815,7 +1797,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         status = 'off'
         if checked:
             status = 'on'
-        self.model.setCO2KineticsStatus(self.fuel, status)
+        self.model.setCO2KineticsStatus(status)
         self.initializeKineticsView()
 
 
@@ -1827,7 +1809,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         status = 'off'
         if checked:
             status = 'on'
-        self.model.setH2OKineticsStatus(self.fuel, status)
+        self.model.setH2OKineticsStatus(status)
         self.initializeKineticsView()
 
 

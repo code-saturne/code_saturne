@@ -457,7 +457,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.modelLagrangian.disableItem(str_model='lagrangian')
         else:
             self.modelLagrangian.enableItem(str_model='lagrangian')
-            self.pcoal.setCoalCombustionModel(model)
 
         self.browser.configureTree(self.case)
 

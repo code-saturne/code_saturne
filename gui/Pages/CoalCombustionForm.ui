@@ -117,7 +117,7 @@
            </layout>
           </item>
           <item row="1" column="0">
-           <widget class="QTabWidget" name="tabWidget">
+           <widget class="QTabWidget" name="tabWidgetCoal">
             <property name="currentIndex">
              <number>0</number>
             </property>

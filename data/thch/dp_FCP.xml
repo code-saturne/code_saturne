@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="MD_INTERFACE" study="MARCUS" version="2.0">
 	<thermophysical_models>
 		<solid_fuels model="homogeneous_fuel">
+			<CO2_kinetics status="off"/>
+			<H2O_kinetics status="off"/>
+			<NOx_formation status="on"/>
 			<solid_fuel fuel_id="1" name="Coal_1" type="coal">
 				<class>
 					<diameter class_id="1">2.5e-05</diameter>
@@ -35,23 +38,15 @@
 					<HCN_NH3_partitionning_reaction_2>0.5</HCN_NH3_partitionning_reaction_2>
 				</devolatilisation_parameters>
 				<char_combustion>
-					<specie nature="O2" status="on">
+					<specie nature="O2">
 						<pre-exponential_constant>17.88</pre-exponential_constant>
 						<energy_of_activation>16.55</energy_of_activation>
 						<order_of_reaction choice="1"/>
 					</specie>
-					<specie nature="CO2" status="on">
-						<pre-exponential_constant>17.88</pre-exponential_constant>
-						<energy_of_activation>16.55</energy_of_activation>
-						<order_of_reaction choice="1"/>
-					</specie>
-					<specie nature="H2O" status="on">
-						<pre-exponential_constant>17.88</pre-exponential_constant>
-						<energy_of_activation>16.55</energy_of_activation>
-						<order_of_reaction choice="1"/>
-					</specie>
+					<specie nature="CO2"/>
+					<specie nature="H2O"/>
 				</char_combustion>
-				<nox_formation status="on">
+				<nox_formation>
 					<nitrogen_fraction>1.1</nitrogen_fraction>
 					<nitrogen_concentration>0.015</nitrogen_concentration>
 				</nox_formation>
