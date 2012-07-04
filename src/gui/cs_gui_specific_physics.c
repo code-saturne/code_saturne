@@ -2112,6 +2112,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
                                 const int *const if7m,
                                 const int *const if8m,
                                 const int *const ifvp2m,
+                                const int *const if4p2m,
                                 const int *const iyco2,
                                 const int *const if9m,
                                 const int *const iyhcn,
@@ -2236,6 +2237,10 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
   /* IFVP2M */
   BFT_MALLOC(vars->label[*ifvp2m -1], strlen("Var_F1F2")+1, char);
   strcpy(vars->label[*ifvp2m -1], "Var_F1F2");
+
+  /* IF4P2M */
+  BFT_MALLOC(vars->label[*if4p2m -1], strlen("Var_AIR")+1, char);
+  strcpy(vars->label[*if4p2m -1], "Var_AIR");
 
   if (ippmod[*iccoal -1] == 1)
   {

@@ -219,6 +219,7 @@ class CoalCombustionModel(Variables, Model):
         list.append("FR_CO2")
 
         list.append("Var_F1F2")
+        list.append("Var_AIR")
 
         return list
 

@@ -134,6 +134,8 @@ endif
 ! variance
 is = is+1
 ifvp2m  = iscapp(is)
+is = is+1
+if4p2m  = iscapp(is)
 ! Transport du CO ou du CO2
 if ( ieqco2 .ge. 1 ) then
   is    = is+1
@@ -158,7 +160,7 @@ if (iihmpr.eq.1) then
                iccoal, ieqnox, ieqco2, ihtco2,              &
                ihth2o, ihm, inp, ixch, ixck, ixwt, ih2,     &
                if1m, if2m, if4m, if5m, if6m,                &
-               if7m, if8m, ifvp2m, iyco2, if9m,             &
+               if7m, if8m, ifvp2m, if4p2m, iyco2, if9m,     &
                iyhcn, iyno, ihox )
 endif
 
