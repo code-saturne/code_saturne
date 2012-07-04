@@ -480,6 +480,7 @@ class CoalCombustionModel(Variables, Model):
             self.createModel()
             self.createCoal()
             self.createOxidant()
+            self.createCoalModelScalarsAndProperties()
 
             if self.getCoalCombustionModel() != 'homogeneous_fuel_moisture':
                 self.__updateWetScalarsAndProperty()
