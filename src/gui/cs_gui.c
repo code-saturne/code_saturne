@@ -5198,7 +5198,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
       cs_xpath_add_element_num(&path, "profile", i+1);
-      cs_xpath_add_element(&path, "NbPoint");
+      cs_xpath_add_element(&path, "points");
       cs_xpath_add_function_text(&path);
       if (!cs_gui_get_int(path, &npoint))
         bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
