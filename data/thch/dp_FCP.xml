@@ -14,10 +14,10 @@
 				<O_composition_on_dry>9.9</O_composition_on_dry>
 				<N_composition_on_dry>0</N_composition_on_dry>
 				<S_composition_on_dry>0</S_composition_on_dry>
-				<PCI choice="PCI">
+				<Heating_model choice="LHV">
 					<value>3e+07</value>
 					<type>dry_ash_free</type>
-				</PCI>
+				</Heating_model>
 				<volatile_matter>0</volatile_matter>
 				<specific_heat_average>1800</specific_heat_average>
 				<density>1200</density>

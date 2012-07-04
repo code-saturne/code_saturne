@@ -747,8 +747,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         # Combo box
         # ---------
         self.modelPCI = ComboModel(self.comboBoxPCIList,3,1)
-        self.modelPCI.addItem(self.tr("PCS"), "PCS")
-        self.modelPCI.addItem(self.tr("PCI"), "PCI")
+        self.modelPCI.addItem(self.tr("LHV"), "LHV")
+        self.modelPCI.addItem(self.tr("HHV"), "HHV")
         self.modelPCI.addItem(self.tr("IGT correlation"), "IGT_correlation")
 
         self.modelPCIType = ComboModel(self.comboBoxPCIType,3,1)

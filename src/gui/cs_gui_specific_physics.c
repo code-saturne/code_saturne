@@ -540,18 +540,18 @@ _get_PCI_type(const int icha)
     path = cs_xpath_init_path();
     cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
     cs_xpath_add_element_num(&path, "solid_fuel", icha);
-    cs_xpath_add_element(&path, "PCI");
+    cs_xpath_add_element(&path, "Heating_model");
     cs_xpath_add_attribute(&path,"choice");
     buff = cs_gui_get_attribute_value(path);
     if (buff == NULL) {
         ichoice = 0.;
     } else {
-        if (cs_gui_strcmp(buff, "PCI"))
+        if (cs_gui_strcmp(buff, "LHV"))
         {
             path2 = cs_xpath_init_path();
             cs_xpath_add_elements(&path2,2,"thermophysical_models", "solid_fuels");;
             cs_xpath_add_element_num(&path2, "solid_fuel", icha);
-            cs_xpath_add_element(&path2, "PCI");
+            cs_xpath_add_element(&path2, "Heating_model");
             cs_xpath_add_element(&path2, "type");
             cs_xpath_add_function_text(&path2);
             buff2 = cs_gui_get_text_value(path2);
@@ -568,12 +568,12 @@ _get_PCI_type(const int icha)
                     bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path2);
             }
         }
-        else if (cs_gui_strcmp(buff, "PCS"))
+        else if (cs_gui_strcmp(buff, "HHV"))
         {
             path2 = cs_xpath_init_path();
             cs_xpath_add_elements(&path2,2,"thermophysical_models", "solid_fuels");
             cs_xpath_add_element_num(&path2, "solid_fuel", icha);
-            cs_xpath_add_element(&path2, "PCI");
+            cs_xpath_add_element(&path2, "Heating_model");
             cs_xpath_add_element(&path2, "type");
             cs_xpath_add_function_text(&path2);
             buff2 = cs_gui_get_text_value(path2);
@@ -653,7 +653,7 @@ _get_PCI_value(const int icha)
     path = cs_xpath_init_path();
     cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
     cs_xpath_add_element_num(&path, "solid_fuel", icha);
-    cs_xpath_add_element(&path,"PCI");
+    cs_xpath_add_element(&path,"Heating_model");
     cs_xpath_add_element(&path,"value");
     cs_xpath_add_function_text(&path);
 

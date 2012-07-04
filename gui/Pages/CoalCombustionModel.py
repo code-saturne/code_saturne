@@ -96,7 +96,7 @@ class CoalCombustionModel(Variables, Model):
         default['N2_oxi']                          = 3.76
         default['H2O_oxi']                         = 0
         default['CO2_oxi']                         = 0
-        default['PCIChoice']                       = 'PCI'
+        default['PCIChoice']                       = 'LHV'
         default['PCIType']                         = 'dry_basis'
         default['diameter_type']                   = 'automatic'
         default['stoichiometric_coefficient']      = 'user_define'
@@ -1247,7 +1247,7 @@ class CoalCombustionModel(Variables, Model):
         """
         self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
-        node = solid_fuel.xmlInitNode('PCI')
+        node = solid_fuel.xmlInitNode('Heating_model')
         value = node.xmlGetDouble('value')
         if value == None:
             value = self.defaultValues()['PCI']
@@ -1262,7 +1262,7 @@ class CoalCombustionModel(Variables, Model):
         self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
-        node = solid_fuel.xmlInitNode('PCI')
+        node = solid_fuel.xmlInitNode('Heating_model')
         node.xmlSetData('value', value)
 
 
@@ -1272,7 +1272,7 @@ class CoalCombustionModel(Variables, Model):
         """
         self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
-        node = solid_fuel.xmlInitNode('PCI')
+        node = solid_fuel.xmlInitNode('Heating_model')
         PCIChoice = node['choice']
         if PCIChoice == None:
             PCIChoice = self.defaultValues()['PCIChoice']
@@ -1285,9 +1285,9 @@ class CoalCombustionModel(Variables, Model):
         Set PCI choice for a fuel
         """
         self.isInList(str(fuelId), self.getFuelIdList())
-        self.isInList(choice, ('PCI', 'PCS', 'IGT_correlation'))
+        self.isInList(choice, ('LHV', 'HHV', 'IGT_correlation'))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
-        node = solid_fuel.xmlInitNode('PCI')
+        node = solid_fuel.xmlInitNode('Heating_model')
         node['choice'] = choice
         if choice == 'IGT_correlation':
             node.xmlRemoveChild('value')
@@ -1300,7 +1300,7 @@ class CoalCombustionModel(Variables, Model):
         """
         self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
-        node = solid_fuel.xmlInitNode('PCI')
+        node = solid_fuel.xmlInitNode('Heating_model')
         value = node.xmlGetString('type')
         if value == None:
             value = self.defaultValues()['PCIType']
@@ -1315,7 +1315,7 @@ class CoalCombustionModel(Variables, Model):
         self.isInList(str(fuelId), self.getFuelIdList())
         self.isInList(choice, ('dry_basis', 'dry_ash_free', 'as_received'))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
-        node = solid_fuel.xmlInitNode('PCI')
+        node = solid_fuel.xmlInitNode('Heating_model')
         node.xmlSetData('type', choice)
 
 
