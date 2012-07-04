@@ -94,7 +94,6 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 integer          ivar  , iel
 integer          iclvar, iclvaf
-integer          iclalp
 integer          ipcrom, ipcroo, ipcvis, ipcvlo, ipcvst, ipcvso
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp, iphydp, ipp
@@ -129,8 +128,6 @@ ipcvst = ipproc(ivisct)
 iflmas = ipprof(ifluma(iu))
 iflmab = ipprob(ifluma(iu))
 
-iclalp = iclrtp(ial,icoef)
-
 d1s2 = 1.d0/2.d0
 d1s4 = 1.d0/4.d0
 d3s2 = 3.d0/2.d0
@@ -145,8 +142,8 @@ endif
 !===============================================================================
 
 ivar = ial
-iclvar = iclalp
-iclvaf = iclalp
+iclvar = iclrtp(ial,icoef)
+iclvaf = iclrtp(ial,icoeff)
 ipp    = ipprtp(ivar)
 
 if(iwarni(ivar).ge.1) then

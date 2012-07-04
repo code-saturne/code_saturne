@@ -20,6 +20,106 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file bilsc2.f90
+!>
+!> \brief This function adds the explicit part of the convection/diffusion
+!> terms of a transport equation of a scalar field \f$ \varia \f$.
+!>
+!> More precisely, the right hand side \f$ Rhs \f$ is updated as
+!> follows:
+!> \f[
+!> Rhs = Rhs + \sum_{\fij \in \Facei{\celli}}      \left(
+!>        \dot{m}_\ij \varia_\fij
+!>      - \mu_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
+!> \f]
+!>
+!> Warning:
+!> \f$ Rhs \f$ has already been initialized before calling bilsc!
+!>
+!> Options:
+!> - blencp = 0: upwind scheme for the advection
+!> - blencp = 1: no upwind scheme except in the slope test
+!> - ischcp = 0: second order
+!> - ischcp = 1: centred
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     idtvar        indicator of the temporal scheme
+!> \param[in]     ivar          index of the current variable
+!> \param[in]     iconvp        indicator
+!>                               - 1 convection,
+!>                               - 0 sinon
+!> \param[in]     idiffp        indicator
+!>                               - 1 diffusion,
+!>                               - 0 sinon
+!> \param[in]     nswrgp        number of reconstruction sweeps for the
+!>                               gradients
+!> \param[in]     imligp        clipping gradient method
+!>                               - < 0 no clipping
+!>                               - = 0 thank to neighbooring gradients
+!>                               - = 1 thank to the mean gradient
+!> \param[in]     ircflp        indicator
+!>                               - 1 flux reconstruction,
+!>                               - 0 otherwise
+!> \param[in]     ischcp        indicator
+!>                               - 1 centred
+!>                               - 0 2nd order
+!> \param[in]     isstpp        indicator
+!>                               - 1 without slope test
+!>                               - 0 with slope test
+!> \param[in]     inc           indicator
+!>                               - 0 when solving an increment
+!>                               - 1 otherwise
+!> \param[in]     imrgra        indicator
+!>                               - 0 iterative gradient
+!>                               - 1 least square gradient
+!> \param[in]     iccocg        indicator
+!>                               - 1 re-compute cocg matrix (for iterativ gradients)
+!>                               - 0 otherwise
+!> \param[in]     ipp*          index of the variable for post-processing
+!> \param[in]     iwarnp        verbosity
+!> \param[in]     blencp        fraction of upwinding
+!> \param[in]     epsrgp        relative precision for the gradient
+!>                               reconstruction
+!> \param[in]     climgp        clipping coeffecient for the computation of
+!>                               the gradient
+!> \param[in]     extrap        coefficient for extrapolation of the gradient
+!> \param[in]     relaxp        coefficient of relaxation
+!> \param[in]     thetap        weightening coefficient for the theta-schema,
+!>                               - thetap = 0: explicit scheme
+!>                               - thetap = 0.5: time-centred
+!>                               scheme (mix between Crank-Nicolson and
+!>                               Adams-Bashforth)
+!>                               - thetap = 1: implicit scheme
+!> \param[in]     pvar          solved variable (current time step)
+!> \param[in]     pvara         solved variable (previous time step)
+!> \param[in]     coefa         boundary condition array for the variable
+!>                               (Explicit part)
+!> \param[in]     coefb         boundary condition array for the variable
+!>                               (Impplicit part)
+!> \param[in]     cofaf         boundary condition array for the diffusion
+!>                               of the variable (Explicit part)
+!> \param[in]     cofbf         boundary condition array for the diffusion
+!>                               of the variable (Implicit part)
+!> \param[in]     flumas        mass flux at interior faces
+!> \param[in]     flumab        mass flux at boundary faces
+!> \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+!>                               at interior faces for the r.h.s.
+!> \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+!>                               at border faces for the r.h.s.
+!> \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+!_______________________________________________________________________________
+
 subroutine bilsc2 &
 !================
 
@@ -32,86 +132,6 @@ subroutine bilsc2 &
    flumas , flumab , viscf  , viscb  ,                            &
    smbrp  )
 
-!===============================================================================
-! FONCTION :
-! ---------
-
-! CALCUL DU BILAN EXPLICITE DE LA VARIABLE PVAR (VITESSE,SCALAIRES)
-
-!                   -- .                  ----->        -->
-! SMBRP = SMBRP -  \   m   PVAR +Visc   ( grad PVAR )  . n
-!                  /__  ij    ij     ij             ij    ij
-!                   j
-
-! ATTENTION : SMBRP DEJA INITIALISE AVANT L'APPEL A BILSCA
-!            IL CONTIENT LES TERMES SOURCES EXPLICITES, ETC....
-
-! BLENCP = 1 : PAS D'UPWIND EN DEHORS DU TEST DE PENTE
-! BLENCP = 0 : UPWIND
-! ISCHCP = 1 : CENTRE
-! ISCHCP = 0 : SECOND ORDER
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! idtvar           ! e  ! <-- ! indicateur du schema temporel                  !
-! ivar             ! e  ! <-- ! numero de la variable                          !
-! iconvp           ! e  ! <-- ! indicateur = 1 convection, 0 sinon             !
-! idiffp           ! e  ! <-- ! indicateur = 1 diffusion , 0 sinon             !
-! nswrgp           ! e  ! <-- ! nombre de sweep pour reconstruction            !
-!                  !    !     !             des gradients                      !
-! imligp           ! e  ! <-- ! methode de limitation du gradient              !
-!                  !    !     !  < 0 pas de limitation                         !
-!                  !    !     !  = 0 a partir des gradients voisins            !
-!                  !    !     !  = 1 a partir du gradient moyen                !
-! ircflp           ! e  ! <-- ! indicateur = 1 rec flux, 0 sinon               !
-! ischcp           ! e  ! <-- ! indicateur = 1 centre , 0 2nd order            !
-! isstpp           ! e  ! <-- ! indicateur = 1 sans test de pente              !
-!                  !    !     !            = 0 avec test de pente              !
-! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
-!                  !    !     !              1 sinon                           !
-! imrgra           ! e  ! <-- ! indicateur = 0 gradrc 97                       !
-!                  ! e  ! <-- !            = 1 gradmc 99                       !
-! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
-!                  !    !     !              0 sinon                           !
-! ipp              ! e  ! <-- ! numero de variable pour post                   !
-! iwarnp           ! i  ! <-- ! verbosity                                      !
-! blencp           ! r  ! <-- ! 1 - proportion d'upwind                        !
-! epsrgp           ! r  ! <-- ! precision relative pour la                     !
-!                  !    !     !  reconstruction des gradients 97               !
-! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
-! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! relaxp           ! r  ! <-- ! coefficient de relaxation                      !
-! thetap           ! r  ! <-- ! coefficient de ponderation pour le             !
-!                  !    !     ! theta-schema (on ne l'utilise pour le          !
-!                  !    !     ! moment que pour u,v,w et les scalaire          !
-!                  !    !     ! - thetap = 0.5 correspond a un schema          !
-!                  !    !     !   totalement centre en temps (mixage           !
-!                  !    !     !   entre crank-nicolson et adams-               !
-!                  !    !     !   bashforth)                                   !
-! pvar (ncelet     ! tr ! <-- ! variable resolue (instant courant)             !
-! pvar (ncelet     ! tr ! <-- ! variable resolue (instant precedent)           !
-! coefap, b        ! tr ! <-- ! tableaux des cond lim pour p                   !
-!   (nfabor)       !    !     !  sur la normale a la face de bord              !
-! cofafp, b        ! tr ! <-- ! tableaux des cond lim pour le flux de          !
-!   (nfabor)       !    !     !  diffusion de p                                !
-! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
-! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
-! viscf (nfac)     ! tr ! <-- ! visc*surface/dist aux faces internes           !
-!                  !    !     !  pour second membre                            !
-! viscb (nfabor    ! tr ! <-- ! visc*surface/dist aux faces de bord            !
-!                  !    !     !  pour second membre                            !
-! smbrp(ncelet     ! tr ! <-- ! bilan au second membre                         !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -176,7 +196,7 @@ double precision, allocatable, dimension(:) :: dpdxa, dpdya, dpdza
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate work arrays
@@ -888,12 +908,12 @@ else
 
     do ig = 1, ngrpi
        !$omp parallel do private(ifac, ii, jj, dijpfx, dijpfy, dijpfz, pnd,     &
-      !$omp                     distf, srfan, diipfx, diipfy, diipfz, djjpfx,   &
-      !$omp                     djjpfy, djjpfz, dpxf, dpyf, dpzf, pip, pjp,     &
-      !$omp                     flui, fluj, testi, testj, testij, dcc, ddi,     &
-      !$omp                     ddj, tesqck, pif, pjf, difx, dify, difz,        &
-      !$omp                     djfx, djfy, djfz, flux, pi, pj)                 &
-      !$omp             reduction(+:infac)
+       !$omp                     distf, srfan, diipfx, diipfy, diipfz, djjpfx,  &
+       !$omp                     djjpfy, djjpfz, dpxf, dpyf, dpzf, pip, pjp,    &
+       !$omp                     flui, fluj, testi, testj, testij, dcc, ddi,    &
+       !$omp                     ddj, tesqck, pif, pjf, difx, dify, difz,       &
+       !$omp                     djfx, djfy, djfz, flux, pi, pj)                &
+       !$omp             reduction(+:infac)
        do it = 1, nthrdi
         do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
@@ -1068,7 +1088,7 @@ if (idtvar.lt.0) then
         pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pipr
 
         flux =   iconvp*(flui*pir + fluj*pfac - flumab(ifac)*pi )               &
-               + idiffp*viscb(ifac)*(pipr -pfacd)
+               + idiffp*viscb(ifac)*pfacd
         smbrp(ii) = smbrp(ii) - flux
 
       enddo
@@ -1109,7 +1129,7 @@ else
         pfacd = inc*cofafp(ifac) + cofbfp(ifac)*pip
 
         flux =   iconvp*((flui - flumab(ifac))*pi + fluj*pfac)         &
-               + idiffp*viscb(ifac)*(pip -pfacd)
+               + idiffp*viscb(ifac)*pfacd
         smbrp(ii) = smbrp(ii) - thetap * flux
 
       enddo

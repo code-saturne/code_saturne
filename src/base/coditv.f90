@@ -592,10 +592,10 @@ if (iescap.gt.0) then
 !     On calcule sans relaxation meme en stationnaire
   idtva0 = 0
 
-  call bilsc4                                                     &
+  call bilsc4 &
   !==========
  ( nvar   , nscal  ,                                              &
-   idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
+   idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &

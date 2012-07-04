@@ -26,8 +26,8 @@ subroutine raysol &
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   cofrua , cofrub ,                                              &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
@@ -89,10 +89,8 @@ subroutine raysol &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! cofrua,cofrub    ! tr ! --- ! conditions aux limites aux                     !
-!(nfabor)          !    !     !    faces de bord pour la luminance             !
+! coefap,coefbp    ! tr ! --- ! conditions aux limites aux                     !
+!  cofafp, cofbfp  !    !     !    faces de bord pour la luminance             !
 ! flurds,flurdb    ! tr ! --- ! pseudo flux de masse (faces internes           !
 !(nfac)(nfabor)    !    !     !    et faces de bord )                          !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
@@ -144,9 +142,9 @@ integer          itypfb(nfabor)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
-double precision cofrua(nfabor), cofrub(nfabor)
+double precision coefap(nfabor), coefbp(nfabor)
+double precision cofafp(nfabor), cofbfp(nfabor)
 double precision flurds(nfac), flurdb(nfabor)
 
 double precision viscf(nfac), viscb(nfabor)
@@ -178,7 +176,7 @@ double precision relaxp, thetap
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: w10
+double precision, allocatable, dimension(:) :: rhs0
 
 !===============================================================================
 
@@ -187,7 +185,7 @@ double precision, allocatable, dimension(:) :: w10
 !===============================================================================
 
 ! Allocate a work array
-allocate(w10(ncelet))
+allocate(rhs0(ncelet))
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -195,7 +193,6 @@ allocate(w10(ncelet))
 
 ivar0   = 0
 nitmap  = 1000
-!     IMRGRA  = 0
 nswrsp  = 2
 nswrgp  = 100
 imligp  = -1
@@ -272,8 +269,9 @@ do ii = -1,1,2
   enddo
 enddo
 
-do ifac = 1,nfabor
-  cofrua(ifac) = cofrua(ifac) *(pi /snplus(ifac))
+do ifac = 1, nfabor
+  coefap(ifac) = coefap(ifac) *(pi /snplus(ifac))
+  cofafp(ifac) = cofafp(ifac) *(pi /snplus(ifac))
 enddo
 
 !===============================================================================
@@ -296,7 +294,7 @@ enddo
 !    a chaque changement de direction
 
 do iel = 1, ncel
-  w10(iel) =  smbrs(iel)
+  rhs0(iel) =  smbrs(iel)
 enddo
 
 !--> ROVSDT charge une seule fois
@@ -352,7 +350,7 @@ do ii = -1,1,2
 !--> Terme source explicite
 
         do iel = 1, ncel
-          smbrs(iel) = w10(iel)
+          smbrs(iel) = rhs0(iel)
         enddo
 
 !--> Terme source implicite (ROVSDT vu plus haut)
@@ -406,7 +404,7 @@ do ii = -1,1,2
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rua    , ru     ,                                              &
-   cofrua , cofrub , cofrua , cofrub , flurds , flurdb ,          &
+   coefap , coefbp , cofafp , cofbfp , flurds , flurdb ,          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , ru    ,                                      &
    rvoid  )
@@ -448,7 +446,7 @@ do ii = -1,1,2
 enddo
 
 ! Free memory
-deallocate(w10)
+deallocate(rhs0)
 
 !--------
 ! FORMATS

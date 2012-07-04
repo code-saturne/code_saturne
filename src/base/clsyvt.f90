@@ -20,69 +20,72 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function :
+! --------
+
+!> \file clsyvt.f90
+!>
+!> \brief Symmetry boundary conditions for vectors and tensors.
+!>
+!> Correspond to the code icodcl(ivar) = 4.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rought wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in,out] rcodcl        boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughtness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
+!> \param[in]     velipb        value of the velocity at \f$ \centip \f$
+!>                               of boundary cells
+!> \param[in]     rijipb        value of \f$ R_{ij} \f$ at \f$ \centip \f$
+!>                               of boundary cells
+!> \param[out]    coefa         explicit boundary condition coefficient
+!> \param[out]    coefb         implicit boundary condition coefficient
+!_______________________________________________________________________________
+
+
 subroutine clsyvt &
 !================
 
  ( nvar   , nscal  ,                                              &
    icodcl ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefu  , rijipb , coefa  , coefb  )
+   velipb , rijipb , coefa  , coefb  )
 
-!===============================================================================
-! FONCTION :
-! --------
-
-! CONDITIONS LIMITES EN SYMETRIE POUR LES VECTEURS ET TENSEURS
-
-! ON SUPPOSE QUE ICODCL(IU) = 4 =>
-!                     SYMETRIE POUR LA VITESSE ET RIJ
-!  (A PRIORI PEU RESTRICTIF EN MONOPHASIQUE)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! coefu            ! tr ! <-- ! tab de trav pour valeurs en iprime             !
-! (nfabor,3   )    !    !     !  des comp de la vitesse au bord                !
-! rijipb           ! tr ! <-- ! tab de trav pour valeurs en iprime             !
-! (nfabor,6   )    !    !     !  des rij au bord                               !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -113,27 +116,31 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision coefu(nfabor,ndim), rijipb(nfabor,6)
+double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
 integer          ifac, ii, isou, jsou
 integer          iclu  , iclv  , iclw
+integer          icluma, iclvma, iclwma
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icluf , iclvf , iclwf
-integer          iclvar
+integer          iclumf, iclvmf, iclwmf
+integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
+integer          iclvar, iel
 double precision rnx, rny, rnz, rxnn
 double precision upx, upy, upz, usn
 double precision tx, ty, tz, txn, t2x, t2y, t2z
 double precision clsyme
 double precision eloglo(3,3), alpha(6,6)
-double precision srfbnf, rcodcn
+double precision srfbnf, rcodcn, hint, visclc, visctc, distbf
+double precision vismsh(3), hintv(3)
 
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1. Initializations
 !===============================================================================
 
 ! Initialize variables to avoid compiler warnings
@@ -146,13 +153,11 @@ icl13 = 0
 icl23 = 0
 iclvar = 0
 
-! --- Memoire
-
-! --- Conditions aux limites
+! --- Gradient Boundary Conditions
 iclu   = iclrtp(iu ,icoef)
 iclv   = iclrtp(iv ,icoef)
 iclw   = iclrtp(iw ,icoef)
-if(itytur.eq.3) then
+if (itytur.eq.3) then
   icl11  = iclrtp(ir11,icoef)
   icl22  = iclrtp(ir22,icoef)
   icl33  = iclrtp(ir33,icoef)
@@ -161,39 +166,45 @@ if(itytur.eq.3) then
   icl23  = iclrtp(ir23,icoef)
 endif
 
+! --- Flux Boundary Conditions
 icluf  = iclrtp(iu ,icoeff)
 iclvf  = iclrtp(iv ,icoeff)
 iclwf  = iclrtp(iw ,icoeff)
+if (itytur.eq.3) then
+  icl11f = iclrtp(ir11,icoeff)
+  icl22f = iclrtp(ir22,icoeff)
+  icl33f = iclrtp(ir33,icoeff)
+  icl12f = iclrtp(ir12,icoeff)
+  icl13f = iclrtp(ir13,icoeff)
+  icl23f = iclrtp(ir23,icoeff)
+endif
 
-
-! --- Boucle sur les faces de bord : debut
+! --- Begin the loop over boundary faces
 do ifac = 1, nfabor
 
-! --- Test sur la presence d'une condition de symetrie vitesse : debut
-  if( icodcl(ifac,iu).eq.4 ) then
+  ! --- Test sur la presence d'une condition de symetrie vitesse : debut
+  if (icodcl(ifac,iu).eq.4) then
 
-! --- Pour annuler le flux de masse
+    ! --- To cancel the mass flux
     isympa(ifac) = 0
 
-! --- Grandeurs geometriques
+    ! Geometric quantities
     srfbnf = surfbn(ifac)
 
-!===============================================================================
-! 1. REPERE LOCAL
-!      POUR LA VITESSE, SEULE EST NECESSAIRE LA NORMALE
-!      POUR RIJ, IL FAUT LE REPERE COMPLET
-!===============================================================================
+    !===========================================================================
+    ! 1. Local framework
+    !===========================================================================
 
-! ---> NORMALE UNITAIRE
+    ! Unit normal
 
     rnx = surfbo(1,ifac)/srfbnf
     rny = surfbo(2,ifac)/srfbnf
     rnz = surfbo(3,ifac)/srfbnf
 
-!     En ALE, on a eventuellement une vitesse de deplacement de la face
-!       donc seule la composante normale importe (on continue a determiner
-!       TX a partir de la vitesse tangentielle absolue car l'orientation
-!       de TX et T2X est sans importance pour les symetries)
+    ! En ALE, on a eventuellement une vitesse de deplacement de la face
+    !   donc seule la composante normale importe (on continue a determiner
+    !   TX a partir de la vitesse tangentielle absolue car l'orientation
+    !   de TX et T2X est sans importance pour les symetries)
     rcodcn = 0.d0
     if (iale.eq.1) then
       rcodcn = rcodcl(ifac,iu,1)*rnx                           &
@@ -201,13 +212,13 @@ do ifac = 1, nfabor
              + rcodcl(ifac,iw,1)*rnz
     endif
 
-    upx = coefu(ifac,1)
-    upy = coefu(ifac,2)
-    upz = coefu(ifac,3)
+    upx = velipb(ifac,1)
+    upy = velipb(ifac,2)
+    upz = velipb(ifac,3)
 
     if (itytur.eq.3) then
 
-! ---> VITESSE TANGENTIELLE RELATIVE
+      ! Relative tangential velocity
 
       usn = upx*rnx+upy*rny+upz*rnz
       tx  = upx -usn*rnx
@@ -215,17 +226,18 @@ do ifac = 1, nfabor
       tz  = upz -usn*rnz
       txn = sqrt( tx**2 +ty**2 +tz**2 )
 
-! ---> TANGENTE UNITAIRE
+      ! Unit tangent
 
       if( txn.ge.epzero) then
 
-        tx  = tx/txn
-        ty  = ty/txn
-        tz  = tz/txn
+        tx = tx/txn
+        ty = ty/txn
+        tz = tz/txn
 
       else
 
-!      SI LA VITESSE EST NULLE, LE VECTEUR T EST NORMAL ET QCQUE
+        ! If the velocity is zero, vector T is normal and random;
+        !   we need it for the reference change for Rij, and we cancel the velocity.
 
         if(abs(rny).ge.epzero.or.abs(rnz).ge.epzero)then
           rxnn = sqrt(rny**2+rnz**2)
@@ -245,21 +257,20 @@ do ifac = 1, nfabor
       endif
 
 
-! ---> T2 = RN X T (OU X EST LE PRODUIT VECTORIEL)
+      ! --> T2 = RN X T (where X is the cross product)
 
       t2x = rny*tz - rnz*ty
       t2y = rnz*tx - rnx*tz
       t2z = rnx*ty - rny*tx
 
-!     --> MATRICE ORTHOGONALE DE CHANGEMENT DE BASE ELOGLOij
-!         (DE LA BASE LOCALE VERS LA BASE GLOBALE)
+      ! --> Orthogonal matrix for change of reference frame ELOGLOij
+      !     (from local to global reference frame)
 
-!                            |TX  -RNX  T2X|
-!                   ELOGLO = |TY  -RNY  T2Y|
-!                            |TZ  -RNZ  T2Z|
+      !                      |TX  -RNX  T2X|
+      !             ELOGLO = |TY  -RNY  T2Y|
+      !                      |TZ  -RNZ  T2Z|
 
-!         SA TRANSPOSEE ELOGLOt EST SON INVERSE
-
+      !    Its transpose ELOGLOt is its inverse
 
       eloglo(1,1) =  tx
       eloglo(1,2) = -rnx
@@ -271,36 +282,33 @@ do ifac = 1, nfabor
       eloglo(3,2) = -rnz
       eloglo(3,3) =  t2z
 
-!     --> ON CALCULE ALPHA(6,6)
+      ! --> Commpute alpha(6,6)
 
-!       SOIT f LE CENTRE DE LA FACE DE BORD ET
-!            I LE CENTRE DE LA CELLULE CORRESPONDANTE
+      ! Let f be the center of the boundary faces and
+      !   I the center of the matching cell
 
-!       EN NOTE RG (RESP RL) INDICE PAR f OU PAR I
-!          LE TENSEUR DE REYNOLDS DANS LA BASE GLOBALE (RESP LOCALE)
+      ! We noteE Rg (resp. Rl) indexed by f or by I
+      !   the Reynolds Stress tensor in the global basis (resp. local)
 
-!       LA MATRICE ALPHA APPLIQUEE AU VECTEUR GLOBAL EN I'
-!         (RG11,I'|RG22,I'|RG33,I'|RG12,I'|RG13,I'|RG23,I')t
-!         DOIT DONNER LES VALEURS A IMPOSER A LA FACE
-!         (RG11,f |RG22,f |RG33,f |RG12,f |RG13,f |RG23,f )t
-!         AUX CONDITIONS LIMITES DE DIRICHLET PRES (AJOUTEES ENSUITE)
+      ! The alpha matrix applied to the global vector in I'
+      !   (Rg11,I'|Rg22,I'|Rg33,I'|Rg12,I'|Rg13,I'|Rg23,I')t
+      !    must provide the values to prescribe to the face
+      !   (Rg11,f |Rg22,f |Rg33,f |Rg12,f |Rg13,f |Rg23,f )t
+      !    except for the Dirichlet boundary conditions (added later)
 
-!       ON LA DEFINIT EN CALCULANT RG,f EN FONCTION DE RG,I' COMME SUIT
+      ! We define it by computing Rg,f as a function of Rg,I' as follows
 
-!         RG,f = ELOGLO.RL,f.ELOGLOt (PRODUITS MATRICIELS)
+      !   RG,f = ELOGLO.RL,f.ELOGLOt (matrix products)
 
-!                          | RL,I'(1,1)     B*U*.Uk     C*RL,I'(1,3) |
-!           AVEC    RL,f = | B*U*.Uk       RL,I'(2,2)       0        |
-!                          | C*RL,I'(1,3)     0         RL,I'(3,3)   |
+      !                     | RL,I'(1,1)     B*U*.Uk     C*RL,I'(1,3) |
+      !      with    RL,f = | B*U*.Uk       RL,I'(2,2)       0        |
+      !                     | C*RL,I'(1,3)     0         RL,I'(3,3)   |
 
-!                  AVEC    RL,I = ELOGLOt.RG,I'.ELOGLO
-!                          B = 0
-!                    ET    C = 0 EN PAROI (1 EN SYMETRIE)
+      !             with    RL,I = ELOGLOt.RG,I'.ELOGLO
+      !                     B = 0
+      !              and    C = 0 at the wall (1 with symmetry)
 
-
-
-!          ON CALCULE EN FAIT   ELOGLO.PROJECTEUR.ELOGLOt
-
+      ! We compute in fact  ELOGLO.projector.ELOGLOt
 
       clsyme=1.d0
       call clca66 ( clsyme , eloglo , alpha )
@@ -308,11 +316,14 @@ do ifac = 1, nfabor
 
     endif
 
-!===============================================================================
-! 2. CONDITIONS SUR LES VITESSES (PARTIELLEMENT IMPLICITES)
-!===============================================================================
+    !===========================================================================
+    ! 2. Boundary conditions on the velocity
+    !    (partially (ivelco=0) or totaly (ivelco=1) implicit)
+    !    The condition is a zero (except in ALE) Dirichlet on the normal component
+    !                     a homogenous Neumann on the other components
+    !===========================================================================
 
-    coefa(ifac,iclu) = rcodcn*rnx - rnx*(rny*upy+rnz*upz)
+    coefa(ifac,iclu) = rcodcn*rnx - rnx*(rny*upy+rnz*upz) !FIXME with the new formulation
     coefb(ifac,iclu) = 1.d0-rnx**2
     coefa(ifac,iclv) = rcodcn*rny - rny*(rnz*upz+rnx*upx)
     coefb(ifac,iclv) = 1.d0-rny**2
@@ -321,13 +332,29 @@ do ifac = 1, nfabor
 
     ! Coupled solving of the velocity components
     if (ivelco.eq.1) then
+
+      iel = ifabor(ifac)
+      ! --- Physical properties
+      visclc = propce(iel,ipproc(iviscl))
+      visctc = propce(iel,ipproc(ivisct))
+
+      ! --- Geometrical quantity
+      distbf = distb(ifac)
+
+      if (itytur.eq.3) then
+        hint =   visclc         /distbf
+      else
+        hint = ( visclc+visctc )/distbf
+      endif
+
+      ! Gradient BCs
       coefau(1,ifac) = rcodcn*rnx
       coefau(2,ifac) = rcodcn*rny
       coefau(3,ifac) = rcodcn*rnz
 
-      coefbu(1,1,ifac) = coefb(ifac,iclu)
-      coefbu(2,2,ifac) = coefb(ifac,iclv)
-      coefbu(3,3,ifac) = coefb(ifac,iclw)
+      coefbu(1,1,ifac) = 1.d0-rnx**2
+      coefbu(2,2,ifac) = 1.d0-rny**2
+      coefbu(3,3,ifac) = 1.d0-rnz**2
 
       coefbu(1,2,ifac) = -rnx*rny
       coefbu(1,3,ifac) = -rnx*rnz
@@ -335,12 +362,29 @@ do ifac = 1, nfabor
       coefbu(2,3,ifac) = -rny*rnz
       coefbu(3,1,ifac) = -rnz*rnx
       coefbu(3,2,ifac) = -rnz*rny
+
+      ! Flux BCs
+      cofafu(1,ifac) = -hint*rcodcn*rnx
+      cofafu(2,ifac) = -hint*rcodcn*rny
+      cofafu(3,ifac) = -hint*rcodcn*rnz
+
+      cofbfu(1,1,ifac) = hint*rnx**2
+      cofbfu(2,2,ifac) = hint*rny**2
+      cofbfu(3,3,ifac) = hint*rnz**2
+
+      cofbfu(1,2,ifac) = hint*rnx*rny
+      cofbfu(1,3,ifac) = hint*rnx*rnz
+      cofbfu(2,1,ifac) = hint*rny*rnx
+      cofbfu(2,3,ifac) = hint*rny*rnz
+      cofbfu(3,1,ifac) = hint*rnz*rnx
+      cofbfu(3,2,ifac) = hint*rnz*rny
+
     endif
 
 
-!===============================================================================
-! 3. CONDITIONS SUR RIJ (PARTIELLEMENT IMPLICITES)
-!===============================================================================
+    !===========================================================================
+    ! 3. Boundary conditions on Rij (partially implicited)
+    !===========================================================================
 
     if (itytur.eq.3) then
 
@@ -374,7 +418,7 @@ do ifac = 1, nfabor
           iclvar = icl23
         endif
 
-!     IMPLICITATION PARTIELLE EVENTUELLE DES CL
+        ! IMPLICITATION PARTIELLE EVENTUELLE DES CL
         if (iclsyr.eq.1) then
           do ii = 1, 6
             if (ii.ne.isou) then
@@ -390,6 +434,7 @@ do ifac = 1, nfabor
           enddo
           coefb(ifac,iclvar) = 0.d0
         endif
+        ! Translate coefa into cofaf and coefb into cofbf Done in resssg.f90
 
       enddo
 
@@ -399,43 +444,142 @@ do ifac = 1, nfabor
 ! --- Test sur la presence d'une condition de symetrie vitesse : fin
 
 enddo
-! ---  Boucle sur les faces de bord : fin
+! ---  End of loop over boundary faces
 
 !===============================================================================
-! 4. COEFAF et COEFBF BIDONS POUR LES VITESSES
+! 4. Flux BC coefficient for the veloctiy
 !===============================================================================
 
 if (iclu.ne.icluf) then
   do ifac = 1, nfabor
-    if( icodcl(ifac,iu).eq.4) then
-      coefa(ifac,icluf) = coefa(ifac,iclu)
-      coefb(ifac,icluf) = coefb(ifac,iclu)
-      coefa(ifac,iclvf) = coefa(ifac,iclv)
-      coefb(ifac,iclvf) = coefb(ifac,iclv)
-      coefa(ifac,iclwf) = coefa(ifac,iclw)
-      coefb(ifac,iclwf) = coefb(ifac,iclw)
+
+    iel = ifabor(ifac)
+    ! --- Physical properties
+    visclc = propce(iel,ipproc(iviscl))
+    visctc = propce(iel,ipproc(ivisct))
+
+    ! --- Geometrical quantities
+    distbf = distb(ifac)
+
+    if (itytur.eq.3) then
+      hint =  visclc          /distbf
+    else
+      hint = (visclc + visctc)/distbf
+    endif
+
+    if (icodcl(ifac,iu).eq.4) then
+      coefa(ifac,icluf) = -hint*coefa(ifac,iclu)
+      coefa(ifac,iclvf) = -hint*coefa(ifac,iclv)
+      coefa(ifac,iclwf) = -hint*coefa(ifac,iclw)
+      coefb(ifac,icluf) = hint*(1.d0-coefb(ifac,iclu))
+      coefb(ifac,iclvf) = hint*(1.d0-coefb(ifac,iclv))
+      coefb(ifac,iclwf) = hint*(1.d0-coefb(ifac,iclw))
     endif
   enddo
 endif
 
-! Coupled solving of the velocity components
-if (ivelco.eq.1) then
+!===============================================================================
+! 5. Symmetry boundary conditions for mesh velocity (ALE module)
+!===============================================================================
+
+if (iale.eq.1) then
+
+  icluma = iclrtp(iuma,icoef)
+  iclvma = iclrtp(ivma,icoef)
+  iclwma = iclrtp(iwma,icoef)
+  iclumf = iclrtp(iuma,icoeff)
+  iclvmf = iclrtp(ivma,icoeff)
+  iclwmf = iclrtp(iwma,icoeff)
+
   do ifac = 1, nfabor
-    if( icodcl(ifac,iu).eq.4) then
-      do isou = 1, 3
-        cofafu(isou,ifac) = coefau(isou,ifac)
-        do jsou = 1, 3
-          cofbfu(isou,jsou,ifac) = coefbu(isou,jsou,ifac)
-        enddo
-      enddo
+    if (icodcl(ifac,iuma).eq.4) then
+
+      ! For a sliding boundary, the normal velocity is enforced to zero
+      ! whereas the other components have an Homogenous Neumann
+      ! NB: no recontruction in I' here
+
+      ! --- Geometrical quantity
+      distbf = distb(ifac)
+      srfbnf = surfbn(ifac)
+
+      ! --- Physical properties
+      vismsh(1) = propce(iel, ipproc(ivisma(1)))
+      vismsh(2) = propce(iel, ipproc(ivisma(2)))
+      vismsh(3) = propce(iel, ipproc(ivisma(3)))
+
+      hintv(1) = vismsh(1)/distbf
+      hintv(2) = vismsh(2)/distbf
+      hintv(3) = vismsh(3)/distbf
+
+      ! Unit normal
+      rnx = surfbo(1,ifac)/srfbnf
+      rny = surfbo(2,ifac)/srfbnf
+      rnz = surfbo(3,ifac)/srfbnf
+
+      upx = rtpa(iel,iuma)
+      upy = rtpa(iel,ivma)
+      upz = rtpa(iel,iwma)
+
+      ! Gradient BCs
+      coefa(ifac,icluma) = - rnx*(rny*upy+rnz*upz)
+      coefb(ifac,icluma) = 1.d0-rnx**2
+      coefa(ifac,iclvma) = - rny*(rnz*upz+rnx*upx)
+      coefb(ifac,iclvma) = 1.d0-rny**2
+      coefa(ifac,iclwma) = - rnz*(rnx*upx+rny*upy)
+      coefb(ifac,iclwma) = 1.d0-rnz**2
+
+      ! Flux BCs
+      coefa(ifac,iclumf) = hintv(1)*rnx*(rny*upy+rnz*upz)
+      coefb(ifac,iclumf) = hintv(1)*rnx**2
+      coefa(ifac,iclvmf) = hintv(2)*rny*(rnz*upz+rnx*upx)
+      coefb(ifac,iclvmf) = hintv(2)*rny**2
+      coefa(ifac,iclwmf) = hintv(3)*rnz*(rnx*upx+rny*upy)
+      coefb(ifac,iclwmf) = hintv(3)*rnz**2
+
+      ! Coupled solving of the velocity components
+      if (ivelco.eq.1) then
+
+        ! Gradient BCs
+        claale(1,ifac) = 0.d0
+        claale(2,ifac) = 0.d0
+        claale(3,ifac) = 0.d0
+
+        clbale(1,1,ifac) = 1.d0-rnx**2
+        clbale(2,2,ifac) = 1.d0-rny**2
+        clbale(3,3,ifac) = 1.d0-rnz**2
+
+        clbale(1,2,ifac) = -rnx*rny
+        clbale(2,1,ifac) = -rny*rnx
+        clbale(1,3,ifac) = -rnx*rnz
+        clbale(3,1,ifac) = -rnz*rnx
+        clbale(2,3,ifac) = -rny*rnz
+        clbale(3,2,ifac) = -rnz*rny
+
+        ! Flux BCs
+        cfaale(1,ifac) = 0.d0
+        cfaale(2,ifac) = 0.d0
+        cfaale(3,ifac) = 0.d0
+
+        cfbale(1,1,ifac) = hintv(1)*rnx**2
+        cfbale(2,2,ifac) = hintv(2)*rny**2
+        cfbale(3,3,ifac) = hintv(3)*rnz**2
+
+        cfbale(1,2,ifac) = hintv(1)*rnx*rny
+        cfbale(2,1,ifac) = hintv(2)*rny*rnx
+        cfbale(1,3,ifac) = hintv(1)*rnx*rnz
+        cfbale(3,1,ifac) = hintv(3)*rnz*rnx
+        cfbale(2,3,ifac) = hintv(2)*rny*rnz
+        cfbale(3,2,ifac) = hintv(3)*rnz*rny
+      endif
+
     endif
   enddo
+
 endif
 
 !===============================================================================
-! 7.  FORMATS
+! 6. Formats
 !===============================================================================
-
 
 #if defined(_CS_LANG_FR)
 
@@ -450,7 +594,7 @@ endif
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

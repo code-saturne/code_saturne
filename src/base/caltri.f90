@@ -494,14 +494,14 @@ endif
 
 if (iilagr.gt.0) then
 
-      call laglec                                                     &
-      !==========
-     ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
-       nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-       ntersl , nvlsta , nvisbr ,                                     &
-       itepa  ,                                                       &
-       ra(irtpa) , ra(ipropc) ,                                       &
-       ettp   , tepa   , statis , stativ , parbor , tslagr )
+  call laglec                                                     &
+  !==========
+ ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
+   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   ntersl , nvlsta , nvisbr ,                                     &
+   itepa  ,                                                       &
+   ra(irtpa) , ra(ipropc) ,                                       &
+   ettp   , tepa   , statis , stativ , parbor , tslagr )
 
 endif
 

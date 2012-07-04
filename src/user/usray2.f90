@@ -133,7 +133,8 @@ subroutine usray2 &
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! icodcl           ! ia ! <-- ! boundary condition code                        !
 !  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
-!                  !    !     ! = 2  -> flux density                           !
+!                  !    !     ! = 2  -> convective outelet                     !
+!                  !    !     ! = 3  -> flux density                           !
 !                  !    !     ! = 4  -> sliding wall and u.n=0 (velocity)      !
 !                  !    !     ! = 5  -> friction and u.n=0 (velocity)          !
 !                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
@@ -204,7 +205,6 @@ implicit none
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
-
 integer          icodcl(nfabor,nvar)
 integer          izfrdp(nfabor), isothp(nfabor)
 
@@ -215,7 +215,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-
 
 double precision tparop(nfabor), qincid(nfabor)
 double precision hfcnvp(nfabor),flcnvp(nfabor)

@@ -101,6 +101,8 @@ integer          imgrp , ncymxp, nitmfp, ivisep
 double precision blencp, epsilp, epsrgp, climgp, extrap, thetv
 double precision epsrsp, prosrf
 double precision relaxp
+double precision hint, distbf, srfbn2
+double precision rinfiv(3), pimpv(3), qimpv(3)
 
 double precision rvoid(1)
 
@@ -120,7 +122,9 @@ allocate(smbr(3,ncelet))
 allocate(meshv(3,ncelet), meshva(3,ncelet))
 allocate(fimp(3,3,ncelet))
 
-
+rinfiv(1) = rinfin
+rinfiv(2) = rinfin
+rinfiv(3) = rinfin
 ipcvmx = ipproc(ivisma(1))
 ipcvmy = ipproc(ivisma(2))
 ipcvmz = ipproc(ivisma(3))
@@ -142,18 +146,29 @@ ipbrom = ipprob(irom)
 ! The mesh move in the direction of the gravity in case of free-surface
 do ifac = 1, nfabor
   if (ialtyb(ifac) .eq. ifresf) then
+
+    iel = ifabor(ifac)
+    distbf = distb(ifac)
+    srfbn2 = surfbn(ifac)**2
+    if (ipcvmx.eq.ipcvmy) then
+      hint = propce(iel,ipproc(ivisma(1)))/distbf
+    else !FIXME
+      hint = ( propce(iel,ipproc(ivisma(1)))*surfbo(1,ifac)**2    &
+             + propce(iel,ipproc(ivisma(2)))*surfbo(2,ifac)**2    &
+             + propce(iel,ipproc(ivisma(3)))*surfbo(3,ifac)**2 )  &
+           /distbf/srfbn2
+    endif
+
     prosrf = gx*surfbo(1,ifac) + gy*surfbo(2,ifac) + gz*surfbo(3,ifac)
-    cfaale(1,ifac) = gx*                                     &
-       propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*prosrf)
-    cfaale(2,ifac) = gy*                                     &
-       propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*prosrf)
-    cfaale(3,ifac) = gz*                                     &
-       propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*prosrf)
-    do isou = 1, 3
-      do jsou = 1, 3
-        cfbale(isou,jsou,ifac) = 0.d0
-      enddo
-    enddo
+    pimpv(1) = gx*propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*prosrf)
+    pimpv(2) = gy*propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*prosrf)
+    pimpv(3) = gz*propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*prosrf)
+
+    call set_dirichlet_vector &
+         !====================
+       ( claale(1,ifac)  , cfaale(1,ifac)  ,             &
+         clbale(1,1,ifac), cfbale(1,1,ifac),             &
+         pimpv           , hint            , rinfiv )
   endif
 enddo
 
@@ -237,7 +252,7 @@ call coditv &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    meshva , meshva ,                                              &
-   cfaale , cfbale , cfaale , cfbale ,                            &
+   claale , clbale , cfaale , cfbale ,                            &
    propfa(1,iflmas), propfb(1,iflmab),                            &
    viscf  , viscb  , viscf  , viscb  , viscf  , viscb  ,          &
    fimp   ,                                                       &

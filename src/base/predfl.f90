@@ -130,13 +130,14 @@ integer          ibsize, iphydp
 double precision residu, resold
 double precision thetap
 double precision epsrgp, climgp, extrap, epsilp
-double precision drom  , tcrite, relaxp, rnorm
+double precision drom  , tcrite, relaxp, rnorm, hint, qimp
 
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
 double precision, allocatable, dimension(:) :: divu, pot, pota, dpot, rhs
+double precision, allocatable, dimension(:) :: clapot, clbpot
 double precision, allocatable, dimension(:) :: cfapot, cfbpot
 double precision, allocatable, dimension(:) :: viscf, viscb
 
@@ -149,6 +150,7 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac,2))
 allocate(divu(ncelet))
+allocate(clapot(nfabor), clbpot(nfabor))
 allocate(cfapot(nfabor), cfbpot(nfabor))
 allocate(viscf(nfac), viscb(nfabor))
 allocate(pot(ncelet), pota(ncelet), dpot(ncelet), rhs(ncelet))
@@ -184,8 +186,21 @@ endif
 
 ! Boundary conditions on the potential (homogenous Neumann)
 do ifac = 1, nfabor
-  cfapot(ifac) = 0.d0
-  cfbpot(ifac) = 1.d0
+
+  iel = ifabor(ifac)
+
+  ! Neumann Boundary Conditions
+  !----------------------------
+
+  hint = dt(iel)/distb(ifac)
+  qimp = 0.d0
+
+  call set_neumann_scalar &
+       !==================
+     ( clapot(ifac), cfapot(ifac),             &
+       clbpot(ifac), cfbpot(ifac),             &
+       qimp        , hint )
+
 enddo
 
 !===============================================================================
@@ -263,14 +278,14 @@ ndircp = 0
 
 thetap = 1.d0
 
-call matrix                                                       &
+call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp ,                                     &
    isym   , nfecra ,                                              &
    thetap ,                                                       &
    ifacel , ifabor ,                                              &
-   cfbpot , pot    ,                                              &
+   clbpot , cfbpot , pot    ,                                     &
    propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
    dam    , xam    )
 
@@ -396,7 +411,9 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
      iwarnp , nfecra ,                                              &
      epsrgp , climgp , extrap ,                                     &
      rvoid  , rvoid  , rvoid  ,                                     &
-     pot    , cfapot , cfbpot ,                                     &
+     pot    ,                                                       &
+     clapot , clbpot ,                                              &
+     cfapot , cfbpot ,                                              &
      viscf  , viscb  ,                                              &
      dt     , dt     , dt     ,                                     &
      rhs   )
@@ -458,7 +475,9 @@ call itrmas &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    rvoid  , rvoid  , rvoid  ,                                     &
-   pota   , cfapot , cfbpot ,                                     &
+   pota   ,                                                       &
+   clapot , clbpot ,                                              &
+   cfapot , cfbpot ,                                              &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    propfa(1,iflmas), propfb(1,iflmab))
@@ -477,7 +496,9 @@ call itrmas &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    rvoid  , rvoid  , rvoid  ,                                     &
-   dpot   , cfapot , cfbpot ,                                     &
+   dpot   ,                                                       &
+   clapot , clbpot ,                                              &
+   cfapot , cfbpot ,                                              &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    propfa(1,iflmas), propfb(1,iflmab))
@@ -496,6 +517,7 @@ endif
 ! Free memory
 deallocate(dam, xam)
 deallocate(divu, pot, pota, dpot, rhs)
+deallocate(clapot, clbpot)
 deallocate(cfapot, cfbpot)
 deallocate(viscf, viscb)
 

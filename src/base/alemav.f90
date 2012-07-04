@@ -146,14 +146,14 @@ call grdvec &
   nswrgr(iuma)    , imligr(iuma)    , iwarni(iuma) ,             &
   nfecra , epsrgr(iuma), climgr(iuma), extrag(iuma),             &
   ilved  ,                                                       &
-  meshv  , cfaale , cfbale ,                                     &
+  meshv  , claale , clbale ,                                     &
   gradm  )
 
 call aledis &
 !==========
  ( ifacel , ifabor , ipnfac , nodfac , ipnfbr , nodfbr , ialtyb , &
    pond   , meshv  , gradm  ,                                     &
-   cfaale , cfbale ,                                              &
+   claale , clbale ,                                              &
    dt     , dproj  )
 
 ! Mise a jour du deplacement sur les noeuds ou on ne l'a pas impose

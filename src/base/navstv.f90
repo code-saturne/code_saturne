@@ -160,6 +160,7 @@ double precision, dimension(:,:), allocatable :: vel
 double precision, dimension(:,:), allocatable :: vela
 double precision, dimension(:,:), allocatable :: mshvel
 double precision, dimension(:,:), allocatable :: tpucov
+double precision, dimension(:), allocatable :: coefap
 
 !===============================================================================
 
@@ -178,7 +179,11 @@ if (ipucou.eq.1 .or. ncpdct.gt.0) then
 endif
 
 ! Allocate other arrays, depending on user options
-!if (iphydr.eq.1) allocate(dfrcxt(ncelet,3))
+
+! Array for delta p gradient boundary conditions
+allocate(coefap(nfabor))
+
+!if (iphydr.eq.1) allocate(dfrcxt(ncelet,3))!FIXME
 allocate(dfrcxt(ncelet,3))
 if (icalhy.eq.1) allocate(frchy(ncelet,ndim), dfrchy(ncelet,ndim))
 if (iescal(iestot).gt.0) allocate(esflum(nfac), esflub(nfabor))
@@ -493,7 +498,7 @@ call resopv &
    isostd , idtsca ,                                              &
    dt     , rtp    , rtpa   , vel    , vela   ,                   &
    propce , propfa , propfb ,                                     &
-   coefa  , coefb  , coefau , coefbu ,                            &
+   coefa  , coefb  , coefau , coefbu , coefap ,                   & !TODO
    ckupdc , smacel ,                                              &
    frcxt  , dfrcxt , tpucov , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
@@ -581,7 +586,7 @@ if (irevmc.eq.0) then
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rvoid  ,                                                       &
    dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-   drtp   , coefa(1,iclipf) , coefb(1,iclipr)  ,                  &
+   drtp   , coefap        , coefb(1,iclipr)  ,                    & !TODO
    gradp  )
 
   thetap = thetav(ipr)
@@ -654,9 +659,10 @@ if (irevmc.eq.0) then
     iclipr = iclrtp(ipr,icoef)
     iclipf = iclrtp(ipr,icoeff)
     !$omp parallel do if(nfabor > thr_n_min)
-    do ifac = 1,nfabor
-      if (isostd(ifac).eq.1)                                            &
-           coefa(ifac,iclipr) = coefa(ifac,iclipr) + coefa(ifac,iclipf)
+    do ifac = 1, nfabor
+      if (isostd(ifac).eq.1) then
+        coefa(ifac,iclipr) = coefa(ifac,iclipr) + coefap(ifac)
+      endif
     enddo
   endif
 endif
@@ -693,13 +699,13 @@ if (iale.eq.1) then
   call inimav &
   !==========
 ( nvar   , nscal  ,                                              &
-  iu     ,                                                       &
+  iuma   ,                                                       &
   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
   propce(1,ipcrom), propfb(1,ipbrom),                            &
   mshvel ,                                                       &
-  cfaale , cfbale ,                                              &
+  claale , clbale ,                                              &
   intflx , bouflx )
 
   ! Here we need of the opposite of the mesh velocity.
@@ -1136,6 +1142,7 @@ enddo
 !--------------
 deallocate(vel)
 deallocate(vela)
+deallocate(coefap)
 if (ipucou.eq.1 .or. ncpdct.gt.0) deallocate(tpucov)
 
 !--------

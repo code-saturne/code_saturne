@@ -242,7 +242,7 @@ if (iale.eq.1) then
     else
       call fldbcm(ivarfl(ivar),                         &
       !==========
-                  cfaale(1, 1), cfbale(1, 1, 1),        &
+                  claale(1, 1), clbale(1, 1, 1),        &
                   cfaale(1, 1), cfbale(1, 1, 1))
     endif
   endif

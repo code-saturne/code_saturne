@@ -312,13 +312,13 @@ endif
 ! 1.  Building of the "simplified" matrix
 !===============================================================================
 
-call matrix                                                       &
+call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp , isym   , nfecra ,                   &
    thetap ,                                                       &
    ifacel , ifabor ,                                              &
-   coefbp , rovsdt , flumas , flumab , viscfm , viscbm ,          &
+   coefbp , cofbfp , rovsdt , flumas , flumab , viscfm , viscbm , &
    dam    , xam    )
 
 !     En stationnaire, on relaxe la diagonale

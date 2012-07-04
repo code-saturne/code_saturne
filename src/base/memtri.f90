@@ -75,6 +75,7 @@ use cfpoin
 use lagpar
 use lagdim
 use lagran
+use radiat, only: iirayo
 use ihmpre
 use cplsat
 use mesh
@@ -202,6 +203,11 @@ if (iale.eq.1) then
   ivar = ivma
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
   ivar = iwma
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+endif
+
+if (iirayo.gt.0) then
+  ivar = ilum
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
 endif
 

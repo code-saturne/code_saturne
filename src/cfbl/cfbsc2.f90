@@ -663,7 +663,7 @@ do ifac = 1, nfabor
 !            FLUX = ICONVP*( FLUI*PVAR(II) +FLUJ*PFAC )
 !     &           + IDIFFP*VISCB(IFAC)*( PIP -PFACD )
   flux = iconvp*( flui*pvar(ii) +fluj*pfac ) *dble(1-ifbrus(ifac)) &
-       + idiffp*viscb(ifac)*( pip -pfacd )
+       + idiffp*viscb(ifac)*pfacd
   smbrp(ii) = smbrp(ii) -flux
 
 enddo

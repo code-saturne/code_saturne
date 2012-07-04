@@ -135,18 +135,20 @@ double precision viscf(nfac), viscb(nfabor)
 
 integer          iccocg, inc, iel, ifac, ivar, isou, ii, jj, init
 integer          idim, ig, it
-integer          iclvar
+integer          iclvaf
 integer          nswrgp, imligp, iwarnp
 integer          ipcrom, ipbrom, ipcvis, ipcvst, iflmas, iflmab
 integer          ipcvsv
 
 double precision epsrgp, climgp, extrap
 double precision romf, d2s3m, vecfac
+double precision hint
 
 double precision, allocatable, dimension(:) :: vistot
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w4, w6
+double precision, allocatable, dimension(:) :: coefap, coefbp
 
 !===============================================================================
 
@@ -233,15 +235,29 @@ endif
 ! Allocate a temporary array for the gradient calculation
 allocate(grad(ncelet,3))
 allocate(w4(ncelet), w6(ncelet))
-
+allocate(coefap(nfabor), coefbp(nfabor))
 do isou = 1, 3
 
   if (isou.eq.1) ivar = iu
   if (isou.eq.2) ivar = iv
   if (isou.eq.3) ivar = iw
 
-! Ceci pointe eventuellement sur ICLRTP(IVAR,ICOEF)
-  iclvar = iclrtp(ivar,icoeff)
+  ! FIXME: the previous version of CS took the flux BCS to compute the gradient
+  iclvaf = iclrtp(ivar,icoeff)
+
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+
+    if (itytur.eq.3) then
+      hint = propce(iel,ipcvis)/distb(ifac)
+    else
+      hint = (propce(iel,ipcvis) + propce(iel,ipcvst))/distb(ifac)
+    endif
+
+    coefap(ifac) = -coefa(ifac,iclvaf)/hint
+    coefbp(ifac) = 1-coefb(ifac,iclvaf)/hint
+  enddo
+
 
 ! --- Calcul du gradient de la vitesse
 
@@ -254,11 +270,11 @@ do isou = 1, 3
   climgp = climgr(ivar)
   extrap = extrag(ivar)
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
+   rtpa(1,ivar)    , coefap , coefbp ,                            &
    grad   )
 
   !$omp parallel do
@@ -336,6 +352,7 @@ enddo
 ! Free memory
 deallocate(grad)
 deallocate(w6)
+deallocate(coefap, coefbp)
 
 !===============================================================================
 ! 3.  CALCUL DES TERMES EN DIV

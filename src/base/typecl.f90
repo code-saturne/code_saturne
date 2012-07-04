@@ -132,15 +132,15 @@ integer          nswrgp, imligp, iwarnp
 integer          iii
 integer          irangd, iclipr, iiptot
 integer          ifadir
-double precision pref, epsrgp, climgp, extrap, coefup
+double precision pref, epsrgp, climgp, extrap, pipb
 double precision diipbx, diipby, diipbz
 double precision flumbf, flumty(ntypmx)
 double precision xxp0, xyp0, xzp0, d0, d0min
-double precision xyzref(4) ! xyzref(3) + coefup for broadcast
+double precision xyzref(4) ! xyzref(3) + PI' for broadcast
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: coefu
+double precision, allocatable, dimension(:) :: pripb
 double precision, allocatable, dimension(:,:) :: grad
 
 integer          ipass
@@ -155,7 +155,7 @@ save             ipass
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(coefu(nfabor))
+allocate(pripb(nfabor))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -485,7 +485,7 @@ do ivar=1, nvar
 enddo
 
 !===============================================================================
-! 5.  Compute pressure at boundary (in coefu(*))
+! 5.  Compute pressure at boundary (in pripb(*))
 !     (if we need it, that is if there are outlet boudary faces).
 
 !     The loop on phases starts here and ends at the end of the next block.
@@ -560,7 +560,7 @@ if (itbslb.gt.0) then
        grad   )
 
 
-  !  Put in coefu the value at I' or F (depending on iphydr) of the
+  !  Put in pripb the value at I' or F (depending on iphydr) of the
   !  total pressure, computed from P*
 
   if (iphydr.eq.0) then
@@ -569,7 +569,7 @@ if (itbslb.gt.0) then
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      coefu(ifac) = rtpa(ii,ipr)                                      &
+      pripb(ifac) = rtpa(ii,ipr)                                      &
            + diipbx*grad(ii,1)+ diipby*grad(ii,2) + diipbz*grad(ii,3) &
            + ro0*( gx*(cdgfbo(1,ifac)-xxp0)                           &
            + gy*(cdgfbo(2,ifac)-xyp0)                                 &
@@ -579,7 +579,7 @@ if (itbslb.gt.0) then
   else
     do ifac = 1, nfabor
       ii = ifabor(ifac)
-      coefu(ifac) = rtpa(ii,ipr)                                &
+      pripb(ifac) = rtpa(ii,ipr)                                &
            + (cdgfbo(1,ifac)-xyzcen(1,ii))*grad(ii,1)           &
            + (cdgfbo(2,ifac)-xyzcen(2,ii))*grad(ii,2)           &
            + (cdgfbo(3,ifac)-xyzcen(3,ii))*grad(ii,3)           &
@@ -666,25 +666,25 @@ endif
 
 if (itbslb.gt.0) then
 
-  ! If irangd is the local rank, we assign PI' to coefup
+  ! If irangd is the local rank, we assign PI' to xyzref(4)
   ! (this is always the case in serial mode)
 
   if (irangp.eq.irangd) then
     xyzref(1) = cdgfbo(1,ifrslb)
     xyzref(2) = cdgfbo(2,ifrslb)
     xyzref(3) = cdgfbo(3,ifrslb)
-    xyzref(4) = coefu(ifrslb) ! coefup
+    xyzref(4) = pripb(ifrslb)
     if (iphydr.eq.1) isostd(nfabor+1) = ifrslb
   endif
 
-  ! Broadcast coefup and pressure reference
+  ! Broadcast PI' and pressure reference
   ! from irangd to all other ranks.
   if (irangp.ge.0) then
     inb = 4
     call parbcr(irangd, inb, xyzref)
   endif
 
-  coefup = xyzref(4)
+  pipb = xyzref(4)
   xyzref(4) = 0.d0
 
   ! If the user has not specified anything, we set ixyzp0 to 2 so as
@@ -762,9 +762,9 @@ if (ixyzp0.eq.2) then
   if (itbslb.gt.0) then
     write(nfecra,8000)xxp0,xyp0,xzp0
     do ifac = 1, nfabor
-      coefu(ifac) = coefu(ifac) - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
+      pripb(ifac) = pripb(ifac) - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
     enddo
-    coefup = coefup - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
+    pipb = pipb - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
   else
     write(nfecra,8001)xxp0,xyp0,xzp0
   endif
@@ -785,7 +785,7 @@ if (itbslb.gt.0) then
        + ro0*( gx*(xyzref(1)-xxp0)                     &
        + gy*(xyzref(2)-xyp0)                           &
        + gz*(xyzref(3)-xzp0) )                         &
-       - coefup
+       - pipb
 endif
 
 
@@ -800,7 +800,7 @@ do ivar = 1, nvar
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 1
-        rcodcl(ifac,ivar,1) = coefu(ifac) + pref
+        rcodcl(ifac,ivar,1) = pripb(ifac) + pref
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
       endif
@@ -819,7 +819,7 @@ do ivar = 1, nvar
 enddo
 
 ! Free memory
-deallocate(coefu)
+deallocate(pripb)
 
 
 ! 6.3 SYMETRIE

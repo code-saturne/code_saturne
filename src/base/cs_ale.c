@@ -268,8 +268,8 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
  * DOUBLE PRECISION POND(NFAC)       : --> : Interior faces geometric weight
  * DOUBLE PRECISION MESHV(3,NCELET)  : --> : Mesh velocity
  * DOUBLE PRECISION GRADM(3,3,NCELET): --> : Mesh velocity gradient
- * DOUBLE PRECISION CFAALE(3,NCELET) : --> : Boundary conditions A
- * DOUBLE PRECISION CFBALE(3,3,NECLET: --> : Boundary conditions B
+ * DOUBLE PRECISION CLAALE(3,NCELET) : --> : Boundary conditions A
+ * DOUBLE PRECISION CLBALE(3,3,NECLET: --> : Boundary conditions B
  * DOUBLE PRECISION DT(NCELET)       : --> : Time step
  * DOUBLE PRECISION DEPROJ(NNOD,3))  : <-- : Displacement projected on vertices
  *----------------------------------------------------------------------------*/
@@ -285,8 +285,8 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
                           const cs_real_t   opond[],
                           cs_real_t        *meshv,
                           cs_real_t        *gradm,
-                          cs_real_t        *cfaale,
-                          cs_real_t        *cfbale,
+                          cs_real_t        *claale,
+                          cs_real_t        *clbale,
                           cs_real_t        *dt,
                           cs_real_t        *disp_proj)
 {
@@ -423,30 +423,30 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
 
         /* 1st order extrapolation of the mesh velocity at the face center to the node */
 
-        cs_real_t vel_node_x = cfaale[3*face_id  ] + gradm[9*cell_id  ]*face_node_x
+        cs_real_t vel_node_x = claale[3*face_id  ] + gradm[9*cell_id  ]*face_node_x
                                                    + gradm[9*cell_id+3]*face_node_y
                                                    + gradm[9*cell_id+6]*face_node_z;
-        cs_real_t vel_node_y = cfaale[3*face_id+1] + gradm[9*cell_id+1]*face_node_x
+        cs_real_t vel_node_y = claale[3*face_id+1] + gradm[9*cell_id+1]*face_node_x
                                                    + gradm[9*cell_id+4]*face_node_y
                                                    + gradm[9*cell_id+7]*face_node_z;
-        cs_real_t vel_node_z = cfaale[3*face_id+2] + gradm[9*cell_id+2]*face_node_x
+        cs_real_t vel_node_z = claale[3*face_id+2] + gradm[9*cell_id+2]*face_node_x
                                                    + gradm[9*cell_id+5]*face_node_y
                                                    + gradm[9*cell_id+8]*face_node_z;
 
         disp_proj[dim*vtx_id] += dsurf*
-          dt[cell_id]*(vel_node_x + cfbale[9*face_id  ]*vel_cen_x
-                                  + cfbale[9*face_id+1]*vel_cen_y
-                                  + cfbale[9*face_id+2]*vel_cen_z);
+          dt[cell_id]*(vel_node_x + clbale[9*face_id  ]*vel_cen_x
+                                  + clbale[9*face_id+1]*vel_cen_y
+                                  + clbale[9*face_id+2]*vel_cen_z);
 
         disp_proj[1 + dim*vtx_id] += dsurf*
-          dt[cell_id]*(vel_node_y + cfbale[9*face_id+3]*vel_cen_x
-                                  + cfbale[9*face_id+4]*vel_cen_y
-                                  + cfbale[9*face_id+5]*vel_cen_z);
+          dt[cell_id]*(vel_node_y + clbale[9*face_id+3]*vel_cen_x
+                                  + clbale[9*face_id+4]*vel_cen_y
+                                  + clbale[9*face_id+5]*vel_cen_z);
 
         disp_proj[2 + dim*vtx_id] += dsurf*
-          dt[cell_id]*(vel_node_z + cfbale[9*face_id+6]*vel_cen_x
-                                  + cfbale[9*face_id+7]*vel_cen_y
-                                  + cfbale[9*face_id+8]*vel_cen_z);
+          dt[cell_id]*(vel_node_z + clbale[9*face_id+6]*vel_cen_x
+                                  + clbale[9*face_id+7]*vel_cen_y
+                                  + clbale[9*face_id+8]*vel_cen_z);
 
         vtx_counter[vtx_id] += dsurf;
 
@@ -457,15 +457,15 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
 
       else {
 
-        cs_real_t tempox = cfbale[9*face_id  ]*disp_proj[dim*vtx_id]
-                         + cfbale[9*face_id+1]*disp_proj[dim*vtx_id + 1]
-                         + cfbale[9*face_id+2]*disp_proj[dim*vtx_id + 2];
-        cs_real_t tempoy = cfbale[9*face_id+3]*disp_proj[dim*vtx_id]
-                         + cfbale[9*face_id+4]*disp_proj[dim*vtx_id + 1]
-                         + cfbale[9*face_id+5]*disp_proj[dim*vtx_id + 2];
-        cs_real_t tempoz = cfbale[9*face_id+6]*disp_proj[dim*vtx_id]
-                         + cfbale[9*face_id+7]*disp_proj[dim*vtx_id + 1]
-                         + cfbale[9*face_id+8]*disp_proj[dim*vtx_id + 2];
+        cs_real_t tempox = clbale[9*face_id  ]*disp_proj[dim*vtx_id]
+                         + clbale[9*face_id+1]*disp_proj[dim*vtx_id + 1]
+                         + clbale[9*face_id+2]*disp_proj[dim*vtx_id + 2];
+        cs_real_t tempoy = clbale[9*face_id+3]*disp_proj[dim*vtx_id]
+                         + clbale[9*face_id+4]*disp_proj[dim*vtx_id + 1]
+                         + clbale[9*face_id+5]*disp_proj[dim*vtx_id + 2];
+        cs_real_t tempoz = clbale[9*face_id+6]*disp_proj[dim*vtx_id]
+                         + clbale[9*face_id+7]*disp_proj[dim*vtx_id + 1]
+                         + clbale[9*face_id+8]*disp_proj[dim*vtx_id + 2];
 
         disp_proj[  dim*vtx_id] = tempox;
         disp_proj[1+dim*vtx_id] = tempoy;

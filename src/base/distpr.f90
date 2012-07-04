@@ -70,7 +70,7 @@ use optcal
 use cstphy
 use cstnum
 use ppppar
-use coincl
+!use coincl !FIXME usefull?
 use parall
 use period
 use mltgrd
@@ -100,10 +100,11 @@ integer          isweep, nittot, idtva0
 integer          ibsize, mmprpl, nswrsl
 
 double precision relaxp, thetap, rnorm, residu, rnoini
-double precision dismax, dismin
+double precision dismax, dismin, hint, pimp, qimp
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: coefad, coefbd
+double precision, allocatable, dimension(:) :: cofafd, cofbfd
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
 double precision, allocatable, dimension(:) :: rtpdp, smbdp, rovsdp
@@ -121,6 +122,7 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 ! Allocate temporary arrays for the species resolution
 allocate(viscf(nfac), viscb(nfabor))
 allocate(coefad(nfabor), coefbd(nfabor))
+allocate(cofafd(nfabor), cofbfd(nfabor))
 allocate(dam(ncelet), xam(nfac,2))
 allocate(rtpdp(ncelet), smbdp(ncelet), rovsdp(ncelet))
 
@@ -148,12 +150,35 @@ ndircp = 0
 do ifac = 1, nfabor
   if(itypfb(ifac).eq.iparoi .or.                            &
      itypfb(ifac).eq.iparug) then
-    coefad(ifac) = 0.0d0
-    coefbd(ifac) = 0.0d0
+
+    ! Dirichlet Boundary Condition
+    !-----------------------------
+
+    hint = 1.d0/distb(ifac)
+    pimp = 0.d0
+
+    call set_dirichlet_scalar &
+         !====================
+       ( coefad(ifac), cofafd(ifac),             &
+         coefbd(ifac), cofbfd(ifac),             &
+         pimp        , hint        , rinfin )
+
+
     ndircp = 1
   else
-    coefad(ifac) = 0.0d0
-    coefbd(ifac) = 1.0d0
+
+    ! Neumann Boundary Conditions
+    !----------------------------
+
+    hint = 1.d0/distb(ifac)
+    qimp = 0.d0
+
+    call set_neumann_scalar &
+         !==================
+       ( coefad(ifac), cofafd(ifac),             &
+         coefbd(ifac), cofbfd(ifac),             &
+         qimp        , hint )
+
   endif
 enddo
 
@@ -184,14 +209,14 @@ idiffp = 1
 isym   = 1
 thetap = 1.d0
 
-call matrix                                                       &
+call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp ,                                     &
    isym   , nfecra ,                                              &
    thetap ,                                                       &
    ifacel , ifabor ,                                              &
-   coefbd , rovsdp ,                                              &
+   coefbd , cofbfd , rovsdp ,                                     &
    viscf  , viscb  , viscf  , viscb  ,                            &
    dam    , xam    )
 
@@ -279,7 +304,7 @@ do isweep = 0, nswrsl
    ischcy , isstpy , inc    , imrgra , iccocg ,                   &
    ipp    , iwarny ,                                              &
    blency , epsrgy , climgy , extray , relaxp , thetap ,          &
-   rtpdp  , rtpdp  , coefad , coefbd , coefad , coefbd ,          &
+   rtpdp  , rtpdp  , coefad , coefbd , coefad , cofbfd ,          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    smbdp  )
 
@@ -373,6 +398,7 @@ write(nfecra,1000)dismin, dismax, nittot
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(coefad, coefbd)
+deallocate(cofafd, cofbfd)
 deallocate(dam, xam)
 deallocate(rtpdp, smbdp, rovsdp)
 deallocate(w1, w2, w3)

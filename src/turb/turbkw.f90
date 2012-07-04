@@ -113,7 +113,7 @@ integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          ii, iivar , iiun  , ifacpt
 integer          iclipk, iclipw, isqrt
 integer          nswrgp, imligp
-integer          iclikp, iclomg
+integer          iclik , iclomg, iclikf, iclomf
 integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
@@ -127,7 +127,7 @@ double precision rnorm , d2s3, divp23, epz2
 double precision deltk , deltw, a11, a12, a22, a21
 double precision unsdet, romvsd
 double precision prdtur, xk, xw, xeps, xnu
-double precision visct , rom
+double precision visct , rom, visclc, visctc, hint
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision thetp1, thetak, thetaw, thets, thetap, epsrsp
 double precision tuexpk, tuexpw
@@ -165,8 +165,10 @@ allocate(w7(ncelet), w8(ncelet))
 
 epz2 = epzero**2
 
-iclikp = iclrtp(ik ,icoef)
+iclik  = iclrtp(ik ,icoef)
 iclomg = iclrtp(iomg,icoef)
+iclikf = iclrtp(ik ,icoeff)
+iclomf = iclrtp(iomg,icoeff)
 
 ipcrom = ipproc(irom  )
 ipcvst = ipproc(ivisct)
@@ -226,7 +228,7 @@ call grdcel &
 !==========
  ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,ik)   , coefa(1,iclikp) , coefb(1,iclikp) ,             &
+   rtpa(1,ik)   , coefa(1,iclik)  , coefb(1,iclik)  ,             &
    gradk  )
 
 nswrgp = nswrgr(iomg)
@@ -494,6 +496,40 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
 endif
 
+!===============================================================================
+! 8.2 Re-set Boundary conditions flux coefficient for k and omega
+
+!     The definition of cofaf requires hint=(mu+muT/sigma)/distb where sigma
+!     is not constant in the k-omega model (and not directly accessible)
+!===============================================================================
+
+do ifac = 1, nfabor
+
+  iel = ifabor(ifac)
+
+  ! --- Physical Propreties
+  visclc = propce(iel,ipcvis)
+  visctc = propce(iel,ipcvst)
+
+  xxf1 = xf1(iel)
+
+  ! k
+  sigma = xxf1*ckwsk1 + (1.d0-xxf1)*ckwsk2
+  hint = (visclc+visctc/sigma)/distb(ifac)
+
+  ! Translate coefa into cofaf and coefb into cofbf
+  coefa(ifac, iclikf) = -hint*coefa(ifac,iclik)
+  coefb(ifac, iclikf) = hint*(1.d0-coefb(ifac,iclik))
+
+  ! Omega
+  sigma = xxf1*ckwsw1 + (1.d0-xxf1)*ckwsw2
+  hint = (visclc+visctc/sigma)/distb(ifac)
+
+  ! Translate coefa into cofaf and coefb into cofbf
+  coefa(ifac, iclomf) = -hint*coefa(ifac,iclomg)
+  coefb(ifac, iclomf) = hint*(1.d0-coefb(ifac,iclomg))
+
+enddo
 
 !===============================================================================
 ! 9. PRISE EN COMPTE DES TERMES DE CONV/DIFF DANS LE SECOND MEMBRE
@@ -919,7 +955,6 @@ iescap = 0
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
-!MO      IPP    =
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)

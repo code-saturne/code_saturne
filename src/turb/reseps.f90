@@ -151,6 +151,7 @@ double precision surfn2
 double precision tseps , kseps , ceps2
 double precision tuexpe, thets , thetv , thetap, thetp1
 double precision prdeps, xttdrb, xttke , xttkmg
+double precision hint
 
 double precision rvoid(1)
 
@@ -706,6 +707,21 @@ if (iturb.eq.30.or.iturb.eq.32) then
    w1     , w2     , w3     ,                                     &
    viscf  , viscb  )
 
+    ! Translate coefa into cofaf and coefb into cofbf
+    do ifac = 1, nfabor
+
+      iel = ifabor(ifac)
+
+      hint = ( w1(iel)*surfbo(1,ifac)*surfbo(1,ifac)                            &
+             + w2(iel)*surfbo(2,ifac)*surfbo(2,ifac)                            &
+             + w3(iel)*surfbo(3,ifac)*surfbo(3,ifac))/surfbn(ifac)**2/distb(ifac)
+
+      ! Translate coefa into cofaf and coefb into cofbf
+      coefa(ifac, iclvaf) = -hint*coefa(ifac,iclvar)
+      coefb(ifac, iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
+
+    enddo
+
   else
 
     do ifac = 1, nfac
@@ -713,11 +729,16 @@ if (iturb.eq.30.or.iturb.eq.32) then
     enddo
     do ifac = 1, nfabor
       viscb(ifac) = 0.d0
+
+      ! Translate coefa into cofaf and coefb into cofbf
+      coefa(ifac, iclvaf) = 0.d0
+      coefb(ifac, iclvaf) = 0.d0
     enddo
 
   endif
 
 else
+
 !===============================================================================
 ! 8.c TERMES DE DIFFUSION
 !     RIJ SSG
@@ -748,7 +769,6 @@ else
   endif
 
 endif
-
 
 !===============================================================================
 ! 9. RESOLUTION

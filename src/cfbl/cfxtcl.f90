@@ -304,6 +304,7 @@ do ifac = 1, nfabor
 !        et COEFB directement, on gagnerait en simplicite, mais cela
 !        demanderait un test sur IPPMOD dans condli : à voir)
 
+!FIXME with the new cofaf
       icodcl(ifac,ipr) = 1
       if(coefb(ifac,iclp).lt.rinfin*0.5d0.and.                  &
            coefb(ifac,iclp).gt.0.d0  ) then

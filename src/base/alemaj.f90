@@ -114,10 +114,9 @@ if(iwarni(iuma).ge.1) then
   write(nfecra,1000)
 endif
 
-
-icluma = iclrtp(iuma,icoef )
-iclvma = iclrtp(ivma,icoef )
-iclwma = iclrtp(iwma,icoef )
+icluma = iclrtp(iuma, icoef)
+iclvma = iclrtp(ivma, icoef)
+iclwma = iclrtp(iwma, icoef)
 
 !===============================================================================
 ! 2.  MISE A JOUR DE LA GEOMETRIE

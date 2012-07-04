@@ -85,7 +85,7 @@
 !> \param[in]     inc           indicator
 !>                               - 0 when solving an increment
 !>                               - 1 otherwise
-!> \param[in]     imrgra        indicateur
+!> \param[in]     imrgra        indicator
 !>                               - 0 iterative gradient
 !>                               - 1 least square gradient
 !> \param[in]     ivisep        indicator to take \f$ \divv
@@ -279,7 +279,7 @@ if ((idiffp.ne.0 .and. ircflp.eq.1) .or. ivisep.eq.1 .or.         &
 
   call grdvec &
   !==========
-( iu     , imrgra , inc    , nswrgp , imligp ,                   &
+( ivar   , imrgra , inc    , nswrgp , imligp ,                   &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
   ilved  ,                                                       &
   pvar   , coefav , coefbv ,                                     &
@@ -1244,7 +1244,7 @@ if (idtvar.lt.0) then
                              + gradv(isou,3,ii)*diipbv(3))
 
           flux = iconvp*(flui*pir + fluj*pfac - flumab(ifac)*pi)     &
-               + idiffp*viscb(ifac)*(pipr -pfacd)
+               + idiffp*viscb(ifac)*pfacd
           smbr(isou,ii) = smbr(isou,ii) - flux
 
         enddo ! isou
@@ -1301,7 +1301,7 @@ else
                             + gradv(isou,3,ii)*diipbv(3))
 
           flux = iconvp*((flui-flumab(ifac))*pi + fluj*pfac)                 &
-               + idiffp*viscb(ifac)*(pip -pfacd)
+               + idiffp*viscb(ifac)*pfacd
           smbr(isou,ii) = smbr(isou,ii) - thetap * flux
 
         enddo ! isou

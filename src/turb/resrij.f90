@@ -152,6 +152,7 @@ double precision grdpx , grdpy , grdpz , grdsn
 double precision surfn2
 double precision tuexpr, thets , thetv , thetp1
 double precision d1s3  , d2s3
+double precision hint
 
 double precision rvoid(1)
 
@@ -644,7 +645,7 @@ endif
 
 ! ---> Viscosite orthotrope pour partie implicite
 
-if( idiff(ivar).ge. 1 ) then
+if (idiff(ivar).ge.1) then
   do iel = 1, ncel
     trrij = w8(iel)
     rctse = propce(iel,ipcrom) * csrij * trrij / rtpa(iel,iep)
@@ -659,6 +660,21 @@ if( idiff(ivar).ge. 1 ) then
    w1     , w2     , w3     ,                                     &
    viscf  , viscb  )
 
+  ! Translate coefa into cofaf and coefb into cofbf
+  do ifac = 1, nfabor
+
+    iel = ifabor(ifac)
+
+    hint = ( w1(iel)*surfbo(1,ifac)*surfbo(1,ifac)                            &
+           + w2(iel)*surfbo(2,ifac)*surfbo(2,ifac)                            &
+           + w3(iel)*surfbo(3,ifac)*surfbo(3,ifac))/surfbn(ifac)**2/distb(ifac)
+
+    ! Translate coefa into cofaf and coefb into cofbf
+    coefa(ifac, iclvaf) = -hint*coefa(ifac,iclvar)
+    coefb(ifac, iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
+
+  enddo
+
 else
 
   do ifac = 1, nfac
@@ -666,6 +682,10 @@ else
   enddo
   do ifac = 1, nfabor
     viscb(ifac) = 0.d0
+
+    ! Translate coefa into cofaf and coefb into cofbf
+    coefa(ifac, iclvaf) = 0.d0
+    coefb(ifac, iclvaf) = 0.d0
   enddo
 
 endif
@@ -698,7 +718,6 @@ iescap = 0
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
-!MO      IPP    =
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)

@@ -86,6 +86,7 @@ use ppthch
 use ppincl
 use coincl
 use cpincl
+use radiat, only: iirayo
 use cs_fuel_incl
 use elincl
 use ppcpfu
@@ -446,6 +447,9 @@ if (iale.eq.1) then
   nomrtp(iuma)='vit_maillage_u_ce'
   nomrtp(ivma)='vit_maillage_v_ce'
   nomrtp(iwma)='vit_maillage_w_ce'
+endif
+if (iirayo.gt.0) then
+  nomrtp(ilum)='luminance_ce_phase'//cphase
 endif
 
 !     Dans le cas ou il y a plusieurs phases,
@@ -876,6 +880,9 @@ if (iecaux.eq.1) then
     nomflu(ivma)='fm_vit_maill_v'
     nomflu(iwma)='fm_vit_maill_w'
   endif
+  if (iirayo.gt.0) then
+    nomrtp(ilum)='fm_luminance_phase'//cphase
+  endif
 
 
   do ivar = 1, nvar
@@ -971,6 +978,9 @@ if (iecaux.eq.1) then
     nomflu(iuma)='fm_a_vit_maill_u'
     nomflu(ivma)='fm_a_vit_maill_v'
     nomflu(iwma)='fm_a_vit_maill_w'
+  endif
+  if (iirayo.gt.0) then
+    nomrtp(ilum)='fm_a_luminance_phase'//cphase
   endif
 
 
@@ -1078,6 +1088,9 @@ if (iecaux.eq.1) then
     nomcli(iuma)='_vit_maillage_u'
     nomcli(ivma)='_vit_maillage_v'
     nomcli(iwma)='_vit_maillage_w'
+  endif
+  if (iirayo.gt.0) then
+    nomrtp(ilum)='_luminance_phase'//cphase
   endif
 
 !     Dans le cas ou il y a plusieurs phases,

@@ -28,7 +28,7 @@ subroutine itrgrv &
    iphydp , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
    fextx  , fexty  , fextz  ,                                     &
-   pvar   , coefap , coefbp , viscf  , viscb  ,                   &
+   pvar   , coefap , coefbp , cofafp , cofbfp , viscf  , viscb  , &
    visel  ,                                                       &
    diverg )
 
@@ -76,6 +76,8 @@ subroutine itrgrv &
 ! pvar  (ncelet    ! tr ! <-- ! variable (pression)                            !
 ! coefap, b        ! tr ! <-- ! tableaux des cond lim pour pvar                !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
+! cof*fp           ! tr ! <-- ! tableaux des cond lim pour pvar                !
+!   (nfabor)       !    !     !  sur la normale a la face de bord              !
 ! viscf (nfac)     ! tr ! <-- ! "viscosite" face interne(dt*surf/dist          !
 ! viscb (nfabor    ! tr ! <-- ! "viscosite" face de bord(dt*surf/dist          !
 ! visel(3,ncelet)  ! tr ! <-- ! "viscosite" par cellule  dir x, y , z          !
@@ -115,6 +117,7 @@ double precision epsrgp , climgp , extrap
 
 
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
+double precision cofafp(nfabor), cofbfp(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision visel(3,ncelet)
 double precision diverg(ncelet)
@@ -195,9 +198,9 @@ if (nswrgp.le.1) then
       do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
         ii = ifabor(ifac)
-        pfac = inc*coefap(ifac) +coefbp(ifac)*pvar(ii)
+        pfac = inc*cofafp(ifac) +cofbfp(ifac)*pvar(ii)
 
-        flumab = viscb(ifac)*( pvar(ii) -pfac )
+        flumab = viscb(ifac)*pfac
         diverg(ii) = diverg(ii) + flumab
 
       enddo
@@ -289,9 +292,9 @@ if (nswrgp.gt.1) then
         diipbz = diipb(3,ifac)
 
         pip = pvar(ii) + grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz
-        pfac = inc*coefap(ifac) +coefbp(ifac)*pip
+        pfac = inc*cofafp(ifac) +cofbfp(ifac)*pip
 
-        flumab = viscb(ifac)*( pip -pfac )
+        flumab = viscb(ifac)*pfac
         diverg(ii) = diverg(ii) + flumab
 
       enddo

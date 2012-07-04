@@ -112,7 +112,6 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
-
 ! Local variables
 
 character*8      cnom
@@ -133,11 +132,12 @@ double precision cfmax,cfmin, coufou, w1min, w2min, w3min
 double precision unpvdt, rom
 double precision xyzmax(3), xyzmin(3)
 double precision dtsdtm,dtsdt0
+double precision hint
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:) :: wcf
-double precision, allocatable, dimension(:) :: cofbdt, coefbr
+double precision, allocatable, dimension(:) :: cofbft, coefbt, coefbr
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
 
@@ -150,7 +150,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 ! Allocate temporary arrays for the time-step resolution
 allocate(viscf(nfac), viscb(nfabor))
 allocate(dam(ncelet))
-allocate(cofbdt(nfabor))
+allocate(cofbft(nfabor), coefbt(nfabor))
 
 ! Allocate other arrays, depending on user options
 if (ippmod(icompf).ge.0) then
@@ -196,20 +196,7 @@ if (                                                              &
 endif
 
 !===============================================================================
-! 1.  CONDITION LIMITE POUR MATRDT
-!===============================================================================
-
-
-do ifac = 1, nfabor
-  if(propfb(ifac,iflmab).lt.0.d0) then
-    cofbdt(ifac) = 0.d0
-  else
-    cofbdt(ifac) = 1.d0
-  endif
-enddo
-
-!===============================================================================
-! 2.  CALCUL DE LA LIMITATION EN COMPRESSIBLE
+! 1.  CALCUL DE LA LIMITATION EN COMPRESSIBLE
 !===============================================================================
 
 !     On commence par cela afin de disposer de VISCF VISCB comme
@@ -226,15 +213,14 @@ enddo
    coefa  , coefb  , ckupdc , smacel ,                            &
    wcf    ,                                                       &
 !        ---
-   viscf  , viscb  , cofbdt )
+   viscf  , viscb  , cofbft )
 
   endif
 
 
 !===============================================================================
-! 3.  CALCUL DE LA VISCOSITE FACETTES
+! 2. Compute the diffusivity at the faces
 !===============================================================================
-
 
 !     On s'en sert dans les divers matrdt suivants
 
@@ -259,6 +245,24 @@ else
     viscb(ifac) = 0.d0
   enddo
 endif
+!===============================================================================
+! 3.  CONDITION LIMITE POUR MATRDT
+!===============================================================================
+
+do ifac = 1, nfabor
+
+  if(propfb(ifac,iflmab).lt.0.d0) then
+    iel = ifabor(ifac)
+    hint = idiff(iu)*( propce(iel,ipcvis)                         &
+                     + idifft(iu)*propce(iel,ipcvst))/distb(ifac)
+    coefbt(ifac) = 0.d0
+    cofbft(ifac) = hint
+  else
+    coefbt(ifac) = 1.d0
+    cofbft(ifac) = 0.d0
+  endif
+enddo
+
 
 !===============================================================================
 ! 4.  ALGORITHME INSTATIONNAIRE
@@ -340,8 +344,8 @@ if (idtvar.ge.0) then
 
       call matrdt &
       !==========
- ( iconv(iu)    , idiff0          , isym   ,                      &
-   cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
+ ( iconv(iu)       , idiff0          , isym   ,                            &
+   coefbt , cofbft , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    )
 
       do iel = 1, ncel
@@ -391,8 +395,8 @@ if (idtvar.ge.0) then
 
       call matrdt &
       !==========
- ( iconv0          , idiff(iu)    , isym   ,                      &
-   cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
+ ( iconv0          , idiff(iu)    , isym   ,                               &
+   coefbt , cofbft , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    )
 
       do iel = 1, ncel
@@ -625,8 +629,8 @@ if (idtvar.ge.0) then
 
     call matrdt &
     !==========
- ( iconv(iu)    , idiff0          , isym   ,                      &
-   cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
+ ( iconv(iu)      , idiff0          , isym   ,                            &
+   coefbt ,cofbft , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    )
 
     do iel = 1, ncel
@@ -708,8 +712,8 @@ if (idtvar.ge.0) then
 
     call matrdt &
     !==========
- ( iconv0          , idiff(iu)    , isym   ,                      &
-   cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
+ ( iconv0          , idiff(iu)       , isym   ,                            &
+   coefbt , cofbft , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    )
 
     do iel = 1, ncel
@@ -795,8 +799,8 @@ if (idtvar.ge.0) then
 
     call matrdt &
     !==========
- ( iconv(iu)    , idiff(iu)    , isym   ,                         &
-   cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
+ ( iconv(iu)       , idiff(iu)       , isym   ,                            &
+   coefbt , cofbft , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    )
 
     do iel = 1, ncel
@@ -936,9 +940,10 @@ else
 
   call matrdt &
   !==========
- ( iconv(iu)    , idiff(iu)    , isym,                            &
-   coefb(1,iu)  , propfa(1,iflmas), propfb(1,iflmab),             &
-                                                viscf  , viscb  , &
+ ( iconv(iu), idiff(iu)      , isym,                            &
+   coefb(1,iclrtp(iu,icoef)) , coefb(1,iclrtp(iu,icoeff)),      &
+   propfa(1,iflmas)          , propfb(1,iflmab),                &
+   viscf  , viscb  ,                                            &
    dt     )
 
   do iel = 1, ncel
@@ -951,7 +956,7 @@ endif
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(dam)
-deallocate(cofbdt)
+deallocate(cofbft)
 if (allocated(wcf)) deallocate(wcf)
 deallocate(w1, w2, w3)
 

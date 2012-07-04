@@ -268,25 +268,24 @@ do ifac = 1, nfabor
   icodcv = icodcl(ifac,iv)
   icodcw = icodcl(ifac,iw)
 
-  if(icodcu.ne. 1.and.                 icodcu.ne. 3.and.        &
-       icodcu.ne. 4.and.icodcu.ne. 5.and.icodcu.ne. 6.and.        &
-       icodcu.ne. 9) then
+  if(icodcu.ne. 1.and.icodcu.ne. 2.and.icodcu.ne. 3.and.        &
+     icodcu.ne. 4.and.icodcu.ne. 5.and.icodcu.ne. 6.and.        &
+     icodcu.ne. 9) then
     chaine=nomvar(ippuip)
-    write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
-         icodcl(ifac,iu)
+    write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icodcl(ifac,iu)
     nstvit = nstvit + 1
   endif
-  if(icodcv.ne. 1.and.                 icodcv.ne. 3.and.        &
-       icodcv.ne. 4.and.icodcv.ne. 5.and.icodcv.ne. 6.and.        &
-       icodcv.ne. 9) then
+  if(icodcv.ne. 1.and.icodcv.ne. 2.and.icodcv.ne. 3.and.        &
+     icodcv.ne. 4.and.icodcv.ne. 5.and.icodcv.ne. 6.and.        &
+     icodcv.ne. 9) then
     chaine=nomvar(ippvip )
     write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
          icodcl(ifac,iv)
     nstvit = nstvit + 1
   endif
-  if(icodcw.ne. 1.and.                 icodcw.ne. 3.and.        &
-       icodcw.ne. 4.and.icodcw.ne. 5.and.icodcv.ne. 6.and.        &
-       icodcw.ne. 9) then
+  if(icodcw.ne. 1.and.icodcw.ne. 2.and.icodcw.ne. 3.and.        &
+     icodcw.ne. 4.and.icodcw.ne. 5.and.icodcv.ne. 6.and.        &
+     icodcw.ne. 9) then
     chaine=nomvar(ippwip)
     write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
          icodcl(ifac,iw)
@@ -314,8 +313,8 @@ enddo
 ! --- Conditions admissibles pour la pression
 do ifac = 1, nfabor
 
-  if(icodcl(ifac,ipr).ne. 1.and.                             &
-       icodcl(ifac,ipr).ne. 3) then
+  if(icodcl(ifac,ipr).ne. 1.and.icodcl(ifac,ipr).ne. 2.and.     &
+     icodcl(ifac,ipr).ne. 3) then
     chaine=nomvar(ippprp)
     write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),  &
          icodcl(ifac,ipr)
@@ -330,13 +329,15 @@ if (itytur.eq.2) then
   do ifac = 1, nfabor
 
     if((icodcl(ifac,ik ).ne. 1.and.                          &
-         icodcl(ifac,ik ).ne. 3.and.                          &
-         icodcl(ifac,ik ).ne. 5.and.                          &
-         icodcl(ifac,ik ).ne. 6     ).or.                     &
-         (icodcl(ifac,iep).ne. 1.and.                          &
-         icodcl(ifac,iep).ne. 3.and.                          &
-         icodcl(ifac,iep).ne. 5.and.                          &
-         icodcl(ifac,iep).ne. 6     ) )then
+        icodcl(ifac,ik ).ne. 2.and.                          &
+        icodcl(ifac,ik ).ne. 3.and.                          &
+        icodcl(ifac,ik ).ne. 5.and.                          &
+        icodcl(ifac,ik ).ne. 6     ).or.                     &
+       (icodcl(ifac,iep).ne. 1.and.                          &
+        icodcl(ifac,iep).ne. 2.and.                          &
+        icodcl(ifac,iep).ne. 3.and.                          &
+        icodcl(ifac,iep).ne. 5.and.                          &
+        icodcl(ifac,iep).ne. 6     ) )then
       chaine=nomvar(ippkip)
       write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
            icodcl(ifac,ik )
@@ -354,8 +355,8 @@ elseif(itytur.eq.3) then
   ivar = ir11
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
-    if(icode.ne. 1.and.                icode.ne. 3.and.         &
-         icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
+    if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
+        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
       chaine=nomvar(ipp11p)
       write(nfecra,1010)                                        &
            ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
@@ -366,8 +367,8 @@ elseif(itytur.eq.3) then
   ivar = ir22
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
-    if(icode.ne. 1.and.                icode.ne. 3.and.         &
-         icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
+    if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
+        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
       chaine=nomvar(ipp22p)
       write(nfecra,1010)                                        &
            ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
@@ -378,8 +379,8 @@ elseif(itytur.eq.3) then
   ivar = ir33
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
-    if(icode.ne. 1.and.                icode.ne. 3.and.         &
-         icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
+    if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
+        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
       chaine=nomvar(ipp33p)
       write(nfecra,1010)                                        &
            ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
@@ -390,8 +391,8 @@ elseif(itytur.eq.3) then
   ivar = ir12
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
-    if(icode.ne. 1.and.                icode.ne. 3.and.         &
-         icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
+    if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
+        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
       chaine=nomvar(ipp12p)
       write(nfecra,1010)                                        &
            ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
@@ -402,8 +403,8 @@ elseif(itytur.eq.3) then
   ivar = ir13
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
-    if(icode.ne. 1.and.                icode.ne. 3.and.         &
-         icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
+    if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
+        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
       chaine=nomvar(ipp13p)
       write(nfecra,1010)                                        &
            ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
@@ -414,8 +415,8 @@ elseif(itytur.eq.3) then
   ivar = ir23
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
-    if(icode.ne. 1.and.                icode.ne. 3.and.         &
-         icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
+    if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
+        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
       chaine=nomvar(ipp23p)
       write(nfecra,1010)                                        &
            ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
@@ -425,7 +426,8 @@ elseif(itytur.eq.3) then
 
   do ifac = 1, nfabor
     icode = icodcl(ifac,iep)
-    if (icode.ne.1.and.icode.ne.3.and.icode.ne.5.and.icode.ne.6) then
+    if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
+        icode.ne. 5.and.icode.ne.6) then
       chaine=nomvar(ippepp)
       write(nfecra,1010)                                        &
            ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
@@ -436,7 +438,8 @@ elseif(itytur.eq.3) then
   if (iturb.eq.32) then
     do ifac = 1, nfabor
       icode = icodcl(ifac,ial)
-      if (icode.ne.1.and.icode.ne.3.and.icode.ne.5.and.icode.ne.6) then
+      if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
+          icode.ne. 5.and.icode.ne.6) then
         chaine=nomvar(ippalp)
         write(nfecra,1010)                                      &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
@@ -458,21 +461,25 @@ elseif (iturb.eq.50) then
   do ifac = 1, nfabor
 
     if((icodcl(ifac,ik ).ne. 1.and.                          &
-         icodcl(ifac,ik ).ne. 3.and.                          &
-         icodcl(ifac,ik ).ne. 5.and.                          &
-         icodcl(ifac,ik ).ne. 6     ).or.                     &
-         (icodcl(ifac,iep).ne. 1.and.                          &
-         icodcl(ifac,iep).ne. 3.and.                          &
-         icodcl(ifac,iep).ne. 5.and.                          &
-         icodcl(ifac,iep).ne. 6     ).or.                     &
-         (icodcl(ifac,iphi).ne. 1.and.                          &
-         icodcl(ifac,iphi).ne. 3.and.                          &
-         icodcl(ifac,iphi).ne. 5.and.                          &
-         icodcl(ifac,iphi).ne. 6     ).or.                     &
-         (icodcl(ifac,ifb).ne. 1.and.                          &
-         icodcl(ifac,ifb).ne. 3.and.                          &
-         icodcl(ifac,ifb).ne. 5.and.                          &
-         icodcl(ifac,ifb).ne. 6     ) )then
+        icodcl(ifac,ik ).ne. 2.and.                          &
+        icodcl(ifac,ik ).ne. 3.and.                          &
+        icodcl(ifac,ik ).ne. 5.and.                          &
+        icodcl(ifac,ik ).ne. 6     ).or.                     &
+       (icodcl(ifac,iep).ne. 1.and.                          &
+        icodcl(ifac,iep).ne. 2.and.                          &
+        icodcl(ifac,iep).ne. 3.and.                          &
+        icodcl(ifac,iep).ne. 5.and.                          &
+        icodcl(ifac,iep).ne. 6     ).or.                     &
+       (icodcl(ifac,iphi).ne. 1.and.                         &
+        icodcl(ifac,iphi).ne. 2.and.                         &
+        icodcl(ifac,iphi).ne. 3.and.                         &
+        icodcl(ifac,iphi).ne. 5.and.                         &
+        icodcl(ifac,iphi).ne. 6     ).or.                    &
+       (icodcl(ifac,ifb).ne. 1.and.                          &
+        icodcl(ifac,ifb).ne. 2.and.                          &
+        icodcl(ifac,ifb).ne. 3.and.                          &
+        icodcl(ifac,ifb).ne. 5.and.                          &
+        icodcl(ifac,ifb).ne. 6     ) )then
       chaine=nomvar(ippkip)
       write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
            icodcl(ifac,ik )
@@ -497,18 +504,22 @@ elseif (iturb.eq.51) then
   do ifac = 1, nfabor
 
     if((icodcl(ifac,ik ).ne. 1.and.                          &
+        icodcl(ifac,ik ).ne. 2.and.                          &
         icodcl(ifac,ik ).ne. 3.and.                          &
         icodcl(ifac,ik ).ne. 5.and.                          &
         icodcl(ifac,ik ).ne. 6     ).or.                     &
        (icodcl(ifac,iep).ne. 1.and.                          &
+        icodcl(ifac,iep).ne. 2.and.                          &
         icodcl(ifac,iep).ne. 3.and.                          &
         icodcl(ifac,iep).ne. 5.and.                          &
         icodcl(ifac,iep).ne. 6     ).or.                     &
-       (icodcl(ifac,iphi).ne. 1.and.                          &
-        icodcl(ifac,iphi).ne. 3.and.                          &
-        icodcl(ifac,iphi).ne. 5.and.                          &
-        icodcl(ifac,iphi).ne. 6     ).or.                     &
-        (icodcl(ifac,ial).ne. 1.and.                          &
+       (icodcl(ifac,iphi).ne. 1.and.                         &
+        icodcl(ifac,iphi).ne. 2.and.                         &
+        icodcl(ifac,iphi).ne. 3.and.                         &
+        icodcl(ifac,iphi).ne. 5.and.                         &
+        icodcl(ifac,iphi).ne. 6     ).or.                    &
+       (icodcl(ifac,ial).ne. 1.and.                          &
+        icodcl(ifac,ial).ne. 2.and.                          &
         icodcl(ifac,ial).ne. 3.and.                          &
         icodcl(ifac,ial).ne. 5.and.                          &
         icodcl(ifac,ial).ne. 6     ) )then
@@ -536,13 +547,15 @@ elseif (iturb.eq.60) then
   do ifac = 1, nfabor
 
     if((icodcl(ifac,ik ).ne. 1.and.                          &
-         icodcl(ifac,ik ).ne. 3.and.                          &
-         icodcl(ifac,ik ).ne. 5.and.                          &
-         icodcl(ifac,ik ).ne. 6     ).or.                     &
-         (icodcl(ifac,iomg).ne. 1.and.                          &
-         icodcl(ifac,iomg).ne. 3.and.                          &
-         icodcl(ifac,iomg).ne. 5.and.                          &
-         icodcl(ifac,iomg).ne. 6     ) )then
+        icodcl(ifac,ik ).ne. 2.and.                          &
+        icodcl(ifac,ik ).ne. 3.and.                          &
+        icodcl(ifac,ik ).ne. 5.and.                          &
+        icodcl(ifac,ik ).ne. 6     ).or.                     &
+       (icodcl(ifac,iomg).ne. 1.and.                         &
+        icodcl(ifac,iomg).ne. 2.and.                         &
+        icodcl(ifac,iomg).ne. 3.and.                         &
+        icodcl(ifac,iomg).ne. 5.and.                         &
+        icodcl(ifac,iomg).ne. 6     ) )then
       chaine=nomvar(ippkip)
       write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
            icodcl(ifac,ik )
@@ -559,10 +572,11 @@ elseif (iturb.eq.70) then
 
   do ifac = 1, nfabor
 
-    if(icodcl(ifac,inusa ).ne. 1.and.                           &
-         icodcl(ifac,inusa ).ne. 3.and.                          &
-         icodcl(ifac,inusa ).ne. 5.and.                          &
-         icodcl(ifac,inusa ).ne. 6           )then
+    if(icodcl(ifac,inusa ).ne. 1.and.                          &
+       icodcl(ifac,inusa ).ne. 2.and.                          &
+       icodcl(ifac,inusa ).ne. 3.and.                          &
+       icodcl(ifac,inusa ).ne. 5.and.                          &
+       icodcl(ifac,inusa ).ne. 6           )then
       chaine=nomvar(ippnup)
       write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
            icodcl(ifac,inusa )

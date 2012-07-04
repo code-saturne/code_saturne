@@ -678,24 +678,23 @@ if (nterup.gt.1) then
 
 endif
 
+! Allocate temporary arrays for boundary conditions
+allocate(icodcl(nfabor,nvar))
+allocate(rcodcl(nfabor,nvar,3))
+if (isvhb.gt.0) then
+  allocate(hbord(nfabor))
+endif
+if (isvtb.gt.0 .or. iirayo.gt.0) then
+  allocate(tbord(nfabor))
+endif
+if (itytur.eq.4 .and. idries.eq.1) then
+  allocate(visvdr(ncelet))
+endif
 
 icvrge = 0
 inslst = 0
 iterns = 1
 do while (iterns.le.nterup)
-
-  ! Allocate temporary arrays for boundary conditions
-  allocate(icodcl(nfabor,nvar))
-  allocate(rcodcl(nfabor,nvar,3))
-  if (isvhb.gt.0) then
-    allocate(hbord(nfabor))
-  endif
-  if (isvtb.gt.0 .or. iirayo.gt.0) then
-    allocate(tbord(nfabor))
-  endif
-  if (itytur.eq.4 .and. idries.eq.1) then
-    allocate(visvdr(ncelet))
-  endif
 
   call precli &
   !==========
@@ -1141,12 +1140,6 @@ do while (iterns.le.nterup)
     write(nfecra,4010)tditot
   endif
 
-  ! Free memory
-  deallocate(icodcl, rcodcl)
-  if (allocated(hbord)) deallocate(hbord)
-  if (allocated(tbord)) deallocate(tbord)
-  if (allocated(visvdr)) deallocate(visvdr)
-
 !===============================================================================
 ! 10. DANS LE CAS  "zero pas de temps" EN "NON SUITE" DE CALCUL
 !      ON SORT ICI
@@ -1339,6 +1332,10 @@ enddo
 100 continue
 
 ! Free memory
+if (allocated(hbord)) deallocate(hbord)
+if (allocated(tbord)) deallocate(tbord)
+if (allocated(visvdr)) deallocate(visvdr)
+
 if (nterup.gt.1) then
   deallocate(uvwk, trava)
   if (ivelco.eq.0) then
@@ -1532,16 +1529,16 @@ endif  ! Fin si calcul sur champ de vitesse fige SUITE
 
 if (nscal.ge.1 .and. iirayo.gt.0) then
 
-  if(iwarni(iu).ge.1 .and. mod(ntcabs,nfreqr).eq.0) then
+  if (iwarni(iu).ge.1 .and. mod(ntcabs,nfreqr).eq.0) then
     write(nfecra,1070)
   endif
 
-  call raydom                                                     &
+  call raydom &
   !==========
  ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
+   itypfb , icodcl ,                                              &
    izfrad ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  )
 
 endif
@@ -1560,6 +1557,9 @@ if (nscal.ge.1) then
    tslagr , coefa  , coefb  )
 
 endif
+
+! Free memory
+deallocate(icodcl, rcodcl)
 
 !===============================================================================
 ! 17.  TRAITEMENT DU FLUX DE MASSE, DE LA VISCOSITE,

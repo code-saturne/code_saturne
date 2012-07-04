@@ -122,8 +122,8 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
  * DOUBLE PRECISION POND(NFAC)       : --> : Interior faces geometric weight
  * DOUBLE PRECISION MESHV(3,NCELET)  : --> : Mesh velocity
  * DOUBLE PRECISION GRADM(3,3,NCELET): --> : Mesh velocity gradient
- * DOUBLE PRECISION CFAALE(3,NCELET) : --> : Boundary conditions A
- * DOUBLE PRECISION CFBALE(3,3,NECLET: --> : Boundary conditions B
+ * DOUBLE PRECISION CLAALE(3,NCELET) : --> : Boundary conditions A
+ * DOUBLE PRECISION CLBALE(3,3,NECLET: --> : Boundary conditions B
  * DOUBLE PRECISION DT(NCELET)       : --> : Time step
  * DOUBLE PRECISION DEPROJ(NNOD,3))  : <-- : Displacement projected on vertices
  *----------------------------------------------------------------------------*/
@@ -139,8 +139,8 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
                           const cs_real_t   pond[],
                           cs_real_t        *meshv,
                           cs_real_t        *gradm,
-                          cs_real_t        *cfaale,
-                          cs_real_t        *cfbale,
+                          cs_real_t        *claale,
+                          cs_real_t        *clbale,
                           cs_real_t        *dt,
                           cs_real_t        *disp_proj);
 

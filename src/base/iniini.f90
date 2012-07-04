@@ -470,6 +470,7 @@ iphi   = 0
 ifb    = 0
 ial    = 0
 inusa  = 0
+ilum   = 0
 
 do iscal = 1, nscamx
   isca  (iscal) = 0

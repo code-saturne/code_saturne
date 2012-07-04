@@ -24,7 +24,7 @@ subroutine matrdt &
 !================
 
  ( iconvp , idiffp , isym   ,                                     &
-   coefbp , flumas , flumab , viscf  , viscb  ,                   &
+   coefbp , cofbfp , flumas , flumab , viscf  , viscb  ,          &
    da     )
 
 !===============================================================================
@@ -46,6 +46,7 @@ subroutine matrdt &
 ! isym             ! e  ! <-- ! indicateur = 1 matrice symetrique              !
 !                  !    !     !              2 matrice non symetrique          !
 ! coefbp(nfabor    ! tr ! <-- ! tab b des cl pour le pdt considere             !
+! cofbfp(nfabor    ! tr ! <-- ! tab b des cl pour le pdt considere             !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
 ! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
 ! viscf(nfac)      ! tr ! <-- ! visc*surface/dist aux faces internes           !
@@ -78,6 +79,7 @@ integer          iconvp , idiffp , isym
 
 
 double precision coefbp(nfabor)
+double precision cofbfp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision da(ncelet )
@@ -165,7 +167,7 @@ do ig = 1, ngrpb
       flui = 0.5d0*(flumab(ifac) - abs(flumab(ifac)))
       fluj =-0.5d0*(flumab(ifac) + abs(flumab(ifac)))
       da(ii) = da(ii) +iconvp*(-fluj + flui*coefbp(ifac))       &
-                      +idiffp*viscb(ifac)*(1.d0-coefbp(ifac))
+                      +idiffp*viscb(ifac)*cofbfp(ifac)
     enddo
   enddo
 enddo

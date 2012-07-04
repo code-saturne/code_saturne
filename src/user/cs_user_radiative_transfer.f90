@@ -433,11 +433,12 @@ subroutine usray5 &
 !================
 
  ( nvar   , nscal  , iappel ,                                     &
-   itypfb ,                                                       &
+   itypfb , icodcl ,                                              &
    izfrdp ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
-   cofrua , cofrub ,                                              &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    tparoi , qincid , flunet , xlam   , epa    , eps     ,  ck   )
 
 !===============================================================================
@@ -467,7 +468,7 @@ subroutine usray5 &
 ! 1/ Gray wall: isotropic radiation field.
 !                                    4
 !                      eps.sig.tparoi         (1-eps).qincid
-!        cofrua   =    --------------    +    --------------
+!        coefap   =    --------------    +    --------------
 !                            pi                     pi
 !  wall intensity     wall emission           reflecting flux.
 
@@ -476,7 +477,7 @@ subroutine usray5 &
 
 ! 2/ Free boundary: entering intensity is fixed to zero
 
-!        cofrua   =   0.D0
+!        coefap   =   0.D0
 
 !    (if the user has more information, he can do something better)
 
@@ -508,6 +509,15 @@ subroutine usray5 &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iappel           ! i  ! <-- ! current subroutine call number                 !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
+! icodcl           ! ia ! <-- ! boundary condition code                        !
+!  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
+!                  !    !     ! = 2  -> convective outelet                     !
+!                  !    !     ! = 3  -> flux density                           !
+!                  !    !     ! = 4  -> sliding wall and u.n=0 (velocity)      !
+!                  !    !     ! = 5  -> friction and u.n=0 (velocity)          !
+!                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
+!                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
+!                  !    !     !         inflowing possibly blocked             !
 ! izfrdp(nfabor)   ! ia ! --> ! boundary faces -> zone number                  !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -515,10 +525,15 @@ subroutine usray5 &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
+! rcodcl           ! ra ! --> ! boundary condition values                      !
+!                  !    !     ! rcodcl(1) = Dirichlet value                    !
+!                  !    !     ! rcodcl(2) = convective number                  !
+!                  !    !     ! rcodcl(3) = flux density value                 !
+!                  !    !     !  (negative for gain) in w/m2                   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! cofrua, cofrub   ! ra ! --> ! boundary conditions for intensity or P-1 model !
-!  (nfabor, *)     !    !     !                                                !
+! coefap, coefbp   ! ra ! --> ! boundary conditions for intensity or P-1 model !
+!  cofafp,cofbfp   !    !     !                                                !
 ! tparoi(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
 ! qincid(nfabor)   ! ra ! <-- ! radiative incident flux  (W/m2)                !
 ! flunet(nfabor)   ! ra ! --> ! net flux (W/m2)                                !
@@ -526,6 +541,8 @@ subroutine usray5 &
 ! epap(nfabor)     ! ra ! --> ! thickness (m)                                  !
 ! epsp(nfabor)     ! ra ! --> ! emissivity (>0)                                !
 ! ck(ncelet)       ! ra ! <-- ! absoprtion coefficient                         !
+! ckmel(ncelet)    ! tr ! <-- ! coeff d'absorption du melange                  !
+!                  !    !     !   gaz-particules de charbon                    !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -562,15 +579,18 @@ implicit none
 integer          nvar   , nscal  , iappel
 
 integer          itypfb(nfabor)
+integer          icodcl(nfabor,nvar)
 integer          izfrdp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
+double precision rcodcl(nfabor,nvar,3)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
-double precision cofrua(nfabor), cofrub(nfabor)
-
+double precision ckmel(ncelet)
+double precision coefap(nfabor), coefbp(nfabor)
+double precision cofafp(nfabor), cofbfp(nfabor)
 double precision tparoi(nfabor), qincid(nfabor)
 double precision xlam(nfabor), epa(nfabor)
 double precision eps(nfabor), flunet(nfabor)
@@ -587,7 +607,6 @@ double precision unspi, xit, distbf
 ! 0 - Initialization
 !===============================================================================
 
-
 ! Stop indicator (forgotten boundary faces)
 iok = 0
 
@@ -599,7 +618,6 @@ unspi = 1.d0/pi
 !===============================================================================
 
 if (iappel.eq.1) then
-
 
 !===============================================================================
 !  1.1 - Boundary conditions:
@@ -619,7 +637,7 @@ if (iappel.eq.1) then
 
   if (iirayo.eq.1) then
 
-    do ifac = 1,nfabor
+    do ifac = 1, nfabor
 
 !      1.1.1 - Symmetry :
 !              ----------
@@ -628,8 +646,8 @@ if (iappel.eq.1) then
 
       if (itypfb(ifac).eq.isymet) then
 
-        cofrua(ifac) = qincid(ifac) * unspi
-
+        icodcl(ifac, ilum) = 1
+        rcodcl(ifac, ilum, 1) = qincid(ifac) * unspi
 
 !      1.1.2 - Inlet/Outlet face: entering intensity fixed to zero
 !              (WARNING: the treatment is different from than of P-1 model)
@@ -638,8 +656,8 @@ if (iappel.eq.1) then
       else if (itypfb(ifac).eq.ientre                             &
           .or. itypfb(ifac).eq.isolib) then
 
-        cofrua(ifac) = epzero
-
+        icodcl(ifac, ilum) = 1
+        rcodcl(ifac, ilum, 1) = epzero
 
 !      1.1.3. - Wall boundary face: calculaed intensity
 !               ---------------------------------------
@@ -647,7 +665,8 @@ if (iappel.eq.1) then
       else if (itypfb(ifac).eq.iparoi                             &
           .or. itypfb(ifac).eq.iparug) then
 
-        cofrua(ifac)  = eps(ifac)*stephn*(tparoi(ifac)**4)*unspi  &
+        icodcl(ifac, ilum) = 1
+        rcodcl(ifac, ilum, 1) = eps(ifac) * stephn*(tparoi(ifac)**4)*unspi  &
                           + (1.d0-eps(ifac))* qincid(ifac)*unspi
 
       else
@@ -679,19 +698,18 @@ if (iappel.eq.1) then
 
   else if (iirayo.eq.2) then
 
-    do ifac = 1,nfabor
+    do ifac = 1, nfabor
 
 !      1.1.1 - Symmetry or reflecting wall (EPS = 0) :
 !              zero flux
 !              ----------------------------------------
 
-      if (itypfb(ifac).eq.isymet     .or.                         &
-         ((itypfb(ifac).eq.iparoi.or.                             &
-           itypfb(ifac).eq.iparug).and.eps(ifac).eq.0d0)) then
+      if (itypfb(ifac).eq.isymet.or.                             &
+        ((itypfb(ifac).eq.iparoi.or.                             &
+          itypfb(ifac).eq.iparug).and.eps(ifac).eq.0d0)) then
 
-        cofrua(ifac) = 0.d0
-        cofrub(ifac) = 1.d0
-
+        icodcl(ifac, ilum) = 3
+        rcodcl(ifac, ilum, 1) = 0.d0
 
 !      1.1.2 - Inlet/Outlet faces: zero flux
 !              (WARNING: the treatment is different from than of DO model)
@@ -700,9 +718,8 @@ if (iappel.eq.1) then
       else if (itypfb(ifac).eq.ientre                             &
           .or. itypfb(ifac).eq.isolib) then
 
-        cofrua(ifac) = 0.d0
-        cofrub(ifac) = 1.d0
-
+        icodcl(ifac, ilum) = 3
+        rcodcl(ifac, ilum, 1) = 0.d0
 
 !      1.1.3 - Wall boundary faces
 !              -------------------
@@ -715,8 +732,9 @@ if (iappel.eq.1) then
         xit = 1.5d0 *distbf *ck(ifabor(ifac))                     &
             * (2.d0 /(2.d0-eps(ifac)) -1.d0)
 
-        cofrub(ifac) = 1.d0 / (1.d0 + xit)
-        cofrua(ifac) = xit * tparoi(ifac)**4 * cofrub(ifac)
+        icodcl(ifac, ilum) = 2
+        rcodcl(ifac, ilum, 1) = tparoi(ifac)**4
+        rcodcl(ifac, ilum, 2) = xit
 
       else
 
@@ -782,7 +800,7 @@ else if (iappel.eq.2) then
 
     else if (itypfb(ifac).eq.isymet) then
 
-      flunet(ifac)= zero
+      flunet(ifac) = zero
 
 
 !      2.1.3 - Inlet/Outlet
@@ -793,7 +811,7 @@ else if (iappel.eq.2) then
 
       if (iirayo.eq.1) then
 
-      flunet(ifac)= qincid(ifac) -pi*cofrua(ifac)
+      flunet(ifac) = qincid(ifac) -pi*coefap(ifac)
 
       else if (iirayo.eq.2) then
 

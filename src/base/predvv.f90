@@ -187,8 +187,8 @@ double precision vela  (3  ,ncelet)
 integer          iel   , ielpdc, ifac  , ivar  , isou
 integer          iccocg, inc   , init  , ii    , isqrt
 integer          ireslp, nswrgp, imligp, iwarnp, ippt  , ipp
-integer                  iclipr, icliup, iclivp, icliwp
-integer                          iclik
+integer          iclipr
+integer          iclik
 integer          ipcrom, ipcroa, ipcroo, ipcrho, ipcvis, ipcvst
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
@@ -238,9 +238,6 @@ if (iescal(iespre).gt.0) then
 endif
 
 iclipr = iclrtp(ipr,icoef)
-icliup = iclrtp(iu ,icoef)
-iclivp = iclrtp(iv ,icoef)
-icliwp = iclrtp(iw ,icoef)
 
 if(itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
   iclik  = iclrtp(ik ,icoef)
@@ -338,8 +335,6 @@ if (iappel.eq.1.and.iphydr.eq.1) then
   endif
 
 endif
-
-
 
 !-------------------------------------------------------------------------------
 ! ---> PRISE EN COMPTE DU GRADIENT DE PRESSION
@@ -1271,7 +1266,6 @@ if (ncesmp.gt.0) then
   deallocate(gavinj)
 
 endif
-
 
 ! ---> INITIALISATION DU SECOND MEMBRE
 

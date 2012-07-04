@@ -138,13 +138,13 @@ double precision smbr(ncelet), rovsdt(ncelet)
 integer          init  , ifac  , iel
 integer          ii    , jj    , kk    , iiun  , iii   , jjj
 integer          ipcrom, ipcvis, iflmas, iflmab, ipcroo
-integer          iclvar, iclvaf
+integer          iclvar, iclvaf, iclal , iclalf
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iptsta
-integer          iclalp, inc, iccocg, iphydp, ll, kkk
+integer          inc, iccocg, iphydp, ll, kkk
 integer          ipcvlo
 integer          idimte, itenso
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
@@ -160,6 +160,7 @@ double precision xttke, xttkmg, xttdrb
 double precision grdpx, grdpy, grdpz, grdsn, surfn2
 double precision pij, phiij1, phiij2, phiij3, epsij
 double precision phiijw, epsijw
+double precision hint
 
 double precision rvoid(1)
 
@@ -193,7 +194,8 @@ iflmas = ipprof(ifluma(iu))
 iflmab = ipprob(ifluma(iu))
 
 if (iturb.eq.32) then
-  iclalp = iclrtp(ial,icoeff)
+  iclal  = iclrtp(ial,icoef)
+  iclalf = iclrtp(ial,icoeff)
 endif
 
 ipcrom = ipproc(irom)
@@ -373,11 +375,11 @@ if (iturb.eq.32) then
   extrap = extrag(ial)
   iphydp = 0
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
  ( ial    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,ial )    , coefa(1,iclalp) , coefb(1,iclalp) ,          &
+   rtpa(1,ial )    , coefa(1,iclal)  , coefb(1,iclal)  ,          &
    grad   )
 
 
@@ -478,12 +480,12 @@ do iel=1,ncel
   xrotac(3,3) = 0.d0
 
   do ii=1,3
-   do jj = 1,3
-     ! aii = aij.aij
-     aii    = aii+xaniso(ii,jj)*xaniso(ii,jj)
-     ! aklskl = aij.Sij
-     aklskl = aklskl + xaniso(ii,jj)*xstrai(ii,jj)
-   enddo
+    do jj = 1,3
+      ! aii = aij.aij
+      aii    = aii+xaniso(ii,jj)*xaniso(ii,jj)
+      ! aklskl = aij.Sij
+      aklskl = aklskl + xaniso(ii,jj)*xstrai(ii,jj)
+    enddo
   enddo
 
   do kk = 1,3
@@ -670,6 +672,20 @@ if (iturb.eq.31) then
      w1     ,                                                       &
      viscf  , viscb  )
 
+    ! Translate coefa into cofaf and coefb into cofbf
+    do ifac = 1, nfabor
+
+      iel = ifabor(ifac)
+
+      hint = w1(iel)/distb(ifac)
+
+      ! Translate coefa into cofaf and coefb into cofbf
+      coefa(ifac, iclvaf) = -hint*coefa(ifac,iclvar)
+      coefb(ifac, iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
+
+    enddo
+
+
   else
 
     do ifac = 1, nfac
@@ -677,6 +693,10 @@ if (iturb.eq.31) then
     enddo
     do ifac = 1, nfabor
       viscb(ifac) = 0.d0
+
+      ! Translate coefa into cofaf and coefb into cofbf
+      coefa(ifac, iclvaf) = 0.d0
+      coefb(ifac, iclvaf) = 0.d0
     enddo
 
   endif
@@ -875,6 +895,21 @@ else
      w1     , w2     , w3     ,                                  &
      viscf  , viscb  )
 
+    ! Translate coefa into cofaf and coefb into cofbf
+    do ifac = 1, nfabor
+
+      iel = ifabor(ifac)
+
+      hint = ( w1(iel)*surfbo(1,ifac)*surfbo(1,ifac)                            &
+             + w2(iel)*surfbo(2,ifac)*surfbo(2,ifac)                            &
+             + w3(iel)*surfbo(3,ifac)*surfbo(3,ifac))/surfbn(ifac)**2/distb(ifac)
+
+      ! Translate coefa into cofaf and coefb into cofbf
+      coefa(ifac, iclvaf) = -hint*coefa(ifac,iclvar)
+      coefb(ifac, iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
+
+    enddo
+
     ! Free memory
     deallocate(w3)
 
@@ -885,6 +920,10 @@ else
     enddo
     do ifac = 1, nfabor
       viscb(ifac) = 0.d0
+
+      ! Translate coefa into cofaf and coefb into cofbf
+      coefa(ifac, iclvaf) = 0.d0
+      coefb(ifac, iclvaf) = 0.d0
     enddo
 
   endif

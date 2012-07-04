@@ -47,7 +47,7 @@ subroutine viscfa &
 !                  !    !     !  = 1 harmonique                                !
 ! vistot(ncelet    ! tr ! <-- ! valeur de la viscosite                         !
 ! viscf(nfac)      ! tr ! --> ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --> ! visc*surface/dist aux faces de bord            !
+! viscb(nfabor     ! tr ! --> ! surface aux faces de bord                      !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -131,7 +131,7 @@ if (iporos.eq.0) then
 
     ii = ifabor(ifac)
 
-    viscb(ifac) = vistot(ii)*surfbn(ifac)/distb(ifac)
+    viscb(ifac) = surfbn(ifac)
 
   enddo
 
@@ -173,7 +173,7 @@ else
 
     ii = ifabor(ifac)
 
-    viscb(ifac) = vistot(ii)*surfbn(ifac)/distb(ifac)*porosi(ii)
+    viscb(ifac) = surfbn(ifac)*porosi(ii)
 
   enddo
 

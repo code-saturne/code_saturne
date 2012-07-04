@@ -475,7 +475,7 @@ if (ivelco.eq.1) then
       do jsou = 1, 3
         if (jsou.eq.isou) then
           coefbu(isou,jsou,ifac) = 1.d0
-          cofbfu(isou,jsou,ifac) = 1.d0
+          cofbfu(isou,jsou,ifac) = 0.d0
         else
           coefbu(isou,jsou,ifac) = 0.d0
           cofbfu(isou,jsou,ifac) = 0.d0

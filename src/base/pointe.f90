@@ -52,14 +52,16 @@ module pointe
 
   ! coefau ! (3,nfabor)     ! explicit Boundary conditions for the velocity
   ! coefbu ! (3,3,nfabor)   ! implicit Boundary conditions for the velocity
+  ! claale ! (3,nfabor)     ! explicit Boundary conditions for the mesh velocity
+  ! clbale ! (3,3,nfabor)   ! implicit Boundary conditions for the mesh velocity
   ! cfaale ! (3,nfabor)     ! explicit Boundary conditions for the mesh velocity
   ! cfbale ! (3,3,nfabor)   ! implicit Boundary conditions for the mesh velocity
 
   double precision, dimension(:,:), allocatable :: coefau, cofafu
   double precision, dimension(:,:,:), allocatable :: coefbu, cofbfu
 
-  double precision, dimension(:,:), allocatable :: cfaale
-  double precision, dimension(:,:,:), allocatable :: cfbale
+  double precision, dimension(:,:), allocatable :: cfaale, claale
+  double precision, dimension(:,:,:), allocatable :: cfbale, clbale
 
   ! dudxy  ! (ncelet-ncel,3,3)   ! sauvegarde du gradient de la
   !        !                     ! vitesse en cas de rotation
@@ -189,8 +191,8 @@ contains
     if (iale.eq.1) then
       allocate(idfstr(nfabor))
       if (ivelco.eq.1) then
-        allocate(cfaale(3,nfabor))
-        allocate(cfbale(3,3,nfabor))
+        allocate(cfaale(3,nfabor), claale(3,nfabor))
+        allocate(cfbale(3,3,nfabor), clbale(3,3,nfabor))
       endif
     endif
 
@@ -274,7 +276,7 @@ contains
     if (allocated(izft1d)) deallocate(izft1d)
     if (allocated(coefau)) deallocate(coefau, cofafu, coefbu, cofbfu)
     if (allocated(porosi)) deallocate(porosi)
-    if (allocated(cfaale)) deallocate(cfaale, cfbale)
+    if (allocated(cfaale)) deallocate(cfaale, cfbale, claale, clbale)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)
     if (allocated(ifapat)) deallocate(ifapat)

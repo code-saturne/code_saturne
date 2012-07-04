@@ -113,7 +113,6 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 integer           iel    , ifac   , ivar   ,ivar0 , ivarsc
 integer           icla   , icha   , numcha
 integer           inc    , iccocg , nswrgp , imligp , iwarnp
-integer           iphydp
 integer           ipcrom , ipcvst , ipcx2c , ipcte1 , ipcte2
 integer           ixchcl , ixckcl , ixnpcl , ipcgd1 , ipcgd2
 integer           iold
@@ -124,8 +123,8 @@ double precision aux
 double precision gvap , t2mt1
 !
 integer           iok1,iok2
-double precision , dimension ( : )     , allocatable :: x1,f1f2
-double precision , dimension ( : )     , allocatable :: coefa , coefb
+double precision, dimension(:), allocatable :: x1,f1f2
+double precision, dimension(:), allocatable :: coefap , coefbp
 double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
@@ -188,24 +187,21 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 
 ! --> Calcul du gradient de f1f2
 !-----------------------------
-! Deallocation dynamic arrays
-!----
-  allocate(coefa(1:nfabor),coefb(1:nfabor),STAT=iok1)
-!----
-  if ( iok1 > 0 ) then
+
+  ! Allocate temporary arrays
+  allocate(coefap(nfabor), coefbp(nfabor), STAT=iok1)
+
+  if (iok1 > 0) then
     write(nfecra,*) ' Memory allocation error inside: '
     write(nfecra,*) '     cs_fuel_fp2st               '
-    write(nfecra,*) ' with coefa and coefb            '
+    write(nfecra,*) ' with coefap and coefbp            '
     call csexit(1)
   endif
-!------------------------------
+
   do ifac = 1, nfabor
-    coefa(ifac) = zero
-    coefb(ifac) = 1.d0
-    if ( itypfb(ifac).eq.ientre ) then
-      coefa(ifac) = zero
-      coefb(ifac)=  1.d0
-    endif
+    ! Homogenous Neumann on the gradient
+    coefap(ifac) = zero
+    coefbp(ifac) = 1.d0
   enddo
 
 ! En periodique et parallele, echange avant calcul du gradient
@@ -218,12 +214,11 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
 !     n'est pas la vitesse ni Rij)
   ivar0  = 0
-  iphydp = 0
-  call grdcel                                                     &
+  call grdcel &
   !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   f1f2   , coefa  , coefb  ,                                     &
+   f1f2   , coefap , coefbp ,                                     &
    grad   )
 
   do iel = 1, ncel
@@ -251,9 +246,7 @@ endif
 !===============================================================================
 ! 3. PRISE EN COMPTE DES TERMES SOURCES RELATIF AUX ECHANGES INTERFACIAUX
 !==============================================================================
-!
-!
-!
+
 ipcrom = ipproc(irom)
 ipcte1 = ipproc(itemp1)
 do icla=1,nclafu
@@ -283,21 +276,18 @@ do icla=1,nclafu
 enddo
 !
 !--------
-! FORMATS
+! Formats
 !--------
 
-!===============================================================================
-! Deallocation dynamic arrays
-!----
+! Free memory
 deallocate(x1,f1f2,grad,STAT=iok1)
-deallocate(coefa,coefb,STAT=iok2)
-!----
-if ( iok1 > 0 .or. iok2 > 0) THEN
+deallocate(coefap,coefbp,STAT=iok2)
+
+if (iok1 > 0 .or. iok2 > 0) then
   write(nfecra,*) ' Memory deallocation error inside: '
   write(nfecra,*) '     cs_fuel_fp2st                 '
   call csexit(1)
 endif
-!===============================================================================
 
 !----
 ! End

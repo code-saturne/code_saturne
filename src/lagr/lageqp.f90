@@ -104,6 +104,7 @@ integer          imgrp, ncymxp, nitmfp
 
 double precision epsrgp, climgp, extrap, blencp, epsilp, epsrsp
 double precision relaxp, thetap
+double precision qimp  , hint, pimp
 
 double precision rvoid(1)
 
@@ -115,6 +116,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: coefax, coefay, coefaz
 double precision, allocatable, dimension(:) :: coefbx, coefby, coefbz
 double precision, allocatable, dimension(:) :: coefap, coefbp
+double precision, allocatable, dimension(:) :: cofafp, cofbfp
 
 !===============================================================================
 
@@ -206,49 +208,46 @@ deallocate(coefbx, coefby, coefbz)
 
 ! Allocate temporary arrays
 allocate(coefap(nfabor), coefbp(nfabor))
+allocate(cofafp(nfabor), cofbfp(nfabor))
 
 do ifac = 1, nfabor
   iel = ifabor(ifac)
 
-  if ( itypfb(ifac) .eq. ientre ) then
+  hint = alphal(iel)/distb(ifac)
 
-!      Flux Nul
+  if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.iparoi.or.       &
+      itypfb(ifac).eq.iparug.or.itypfb(ifac).eq.isymet) then
 
-    coefap(ifac) = zero
-    coefbp(ifac) = 1.d0
+    ! Neumann Boundary Conditions
+    !----------------------------
 
-  else if ( itypfb(ifac) .eq. iparoi) then
+    qimp = 0.d0
 
-!      FLux nul
-
-    coefap(ifac) = zero
-    coefbp(ifac) = 1.d0
-
-  else if ( itypfb(ifac) .eq. iparug) then
-
-!      FLux nul
+    call set_neumann_scalar &
+         !==================
+       ( coefap(ifac), cofafp(ifac),             &
+         coefbp(ifac), cofbfp(ifac),             &
+         qimp        , hint )
 
     coefap(ifac) = zero
     coefbp(ifac) = 1.d0
 
-  else if ( itypfb(ifac) .eq. isymet) then
+  else if (itypfb(ifac).eq.isolib) then
 
-!      FLux nul
+    ! Dirichlet Boundary Condition
+    !-----------------------------
 
-    coefap(ifac) = zero
-    coefbp(ifac) = 1.d0
+    pimp = phia(iel)
 
-  else if ( itypfb(ifac) .eq. isolib ) then
-
-!      Valeur Imposee
-
-    coefap(ifac) = phia(iel)
-    coefbp(ifac) = zero
+    call set_dirichlet_scalar &
+         !====================
+       ( coefap(ifac), cofafp(ifac),             &
+         coefbp(ifac), cofbfp(ifac),             &
+         pimp        , hint        , rinfin )
 
   else
     write(nfecra,1100) itypfb(ifac)
     call csexit (1)
-!              ======
   endif
 
 enddo
@@ -319,7 +318,7 @@ call codits                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    phia   , phia   , coefap , coefbp ,                            &
-            coefap , coefbp ,                                     &
+            cofafp , cofbfp ,                                     &
             fmala  , fmalb  ,                                     &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , phi    ,                                     &
@@ -331,6 +330,7 @@ deallocate(viscf, viscb)
 deallocate(smbrs, rovsdt)
 deallocate(fmala, fmalb)
 deallocate(coefap, coefbp)
+deallocate(cofafp, cofbfp)
 deallocate(phia)
 deallocate(w1, w2, w3)
 

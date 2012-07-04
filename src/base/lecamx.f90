@@ -103,6 +103,7 @@ use cpincl
 use cs_fuel_incl
 use elincl
 use ppcpfu
+use radiat, only: iirayo
 
 !===============================================================================
 
@@ -770,6 +771,9 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     NOMFLU(IVMA)='fm_vit_maill_v'
     NOMFLU(IWMA)='fm_vit_maill_w'
   endif
+  if (iirayo.gt.0) then
+    nomflu(ilum)='fm_luminance_phase'//CPHASE
+  endif
 
 !     --Pour les variables
   do ivar = 1, nvar
@@ -960,6 +964,9 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     NOMFLU(IVMA)='fm_a_vit_maill_v'
     NOMFLU(IWMA)='fm_a_vit_maill_w'
   endif
+  if (iirayo.gt.0) then
+    nomflu(ilum)='fm_a_luminance_phase'//CPHASE
+  endif
 
 !     --Pour les variables
   do ivar = 1, nvar
@@ -1111,6 +1118,9 @@ if (nfabok.eq.1) then
     NOMCLI(IUMA)='_vit_maillage_u'
     NOMCLI(IVMA)='_vit_maillage_v'
     NOMCLI(IWMA)='_vit_maillage_w'
+  endif
+  if (iirayo.gt.0) then
+    nomflu(ilum)='_luminance_phase'//CPHASE
   endif
 
 !     --Pour les variables

@@ -135,6 +135,7 @@ double precision epsrsp
 double precision thetp1, thetak, thetae, thets, thetap
 double precision tuexpk, tuexpe
 double precision cmueta, sqrcmu, xs
+double precision hint
 
 logical          ilved
 
@@ -481,6 +482,20 @@ if (iturb.eq.51) then
 
   ivar = ik
   iclvar = iclrtp(ivar,icoef)
+  iclvaf = iclrtp(ivar,icoeff)
+
+  ! Translate coefa into cofaf and coefb into cofbf
+  do ifac = 1, nfabor
+
+    iel = ifabor(ifac)
+
+    hint = w3(iel)/distb(ifac)
+
+    ! Translate coefa into cofaf and coefb into cofbf
+    coefa(ifac, iclvaf) = -hint*coefa(ifac,iclvar)
+    coefb(ifac, iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
+
+  enddo
 
   iccocg = 1
   inc = 1
@@ -501,7 +516,9 @@ if (iturb.eq.51) then
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
   w2     , w2     , w2     ,                                     &
-  rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
+  rtpa(1,ivar)    ,                                              &
+  coefa(1,iclvar) , coefb(1,iclvar) ,                            &
+  coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
   viscf  , viscb  ,                                              &
   w3     , w3     , w3     ,                                     &
   w10    )
@@ -781,6 +798,21 @@ if (ikecou.eq.1) then
    w4     ,                                                       &
    viscf  , viscb  )
 
+    if (iturb.eq.51) then
+      ! Translate coefa into cofaf and coefb into cofbf
+      do ifac = 1, nfabor
+
+        iel = ifabor(ifac)
+
+        hint = w4(iel)/distb(ifac)
+
+        ! Translate coefa into cofaf and coefb into cofbf
+        coefa(ifac, iclvaf) = -hint*coefa(ifac,iclvar)
+        coefb(ifac, iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
+
+      enddo
+    endif
+
   else
 
     do ifac = 1, nfac
@@ -854,6 +886,21 @@ if (ikecou.eq.1) then
  ( imvisf ,                                                       &
    w4     ,                                                       &
    viscf  , viscb  )
+
+    if (iturb.eq.51) then
+      ! Translate coefa into cofaf and coefb into cofbf
+      do ifac = 1, nfabor
+
+        iel = ifabor(ifac)
+
+        hint = w4(iel)/distb(ifac)
+
+        ! Translate coefa into cofaf and coefb into cofbf
+        coefa(ifac, iclvaf) = -hint*coefa(ifac,iclvar)
+        coefb(ifac, iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
+
+      enddo
+    endif
 
   else
 

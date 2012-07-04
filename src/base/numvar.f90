@@ -47,6 +47,7 @@ module numvar
   ! nscaus                     nbre de scalaires utilisateur
   ! nscapp                     nbre de scalaires physique particuliere
   ! iuma, ivma, iwma           Vitesse de maillage en ALE
+  ! ilum                       Luminance for radiative transfert
 
   integer, save :: ipr ,                                        &
                    iu  , iv    , iw  ,                          &
@@ -57,7 +58,8 @@ module numvar
                    inusa,                                       &
                    isca(nscamx), iscapp(nscamx),                &
                    nscaus      , nscapp        ,                &
-                   iuma        , ivma          , iwma
+                   iuma        , ivma          , iwma ,         &
+                   ilum
 
   ! Position des proprietes (physiques ou numeriques)
   !  (dans propce, propfa et propfb)

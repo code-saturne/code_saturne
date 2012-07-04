@@ -116,7 +116,8 @@ integer          init  , ifac  , iel   , inc   , iccocg
 integer          ivar, ipp
 integer          iiun
 integer          iclvar, iclvaf
-integer          iclikp, iclphi, iclfbp, iclalp
+integer          iclk  , iclphi, iclfb , iclal
+integer          iclkf , iclphf, iclfbf, iclalf
 integer          ipcrom, ipcroo, ipcvis, ipcvlo, ipcvst, ipcvso
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp, iphydp
@@ -131,6 +132,7 @@ double precision tuexpe, thets , thetv , thetap, thetp1
 double precision d2s3, d1s4, d3s2
 double precision xk, xe, xnu, xrom, ttke, ttmin, llke, llmin, tt
 double precision fhomog
+double precision hint
 
 double precision rvoid(1)
 
@@ -161,12 +163,22 @@ ipcvst = ipproc(ivisct)
 iflmas = ipprof(ifluma(iu))
 iflmab = ipprob(ifluma(iu))
 
-iclikp = iclrtp(ik,icoef)
+! --- Gradient Boundary Conditions
+iclk = iclrtp(ik,icoef)
 iclphi = iclrtp(iphi,icoef)
 if(iturb.eq.50) then
-  iclfbp = iclrtp(ifb,icoef)
+  iclfb = iclrtp(ifb,icoef)
 elseif(iturb.eq.51) then
-  iclalp = iclrtp(ial,icoef)
+  iclal = iclrtp(ial,icoef)
+endif
+
+! --- Flux Boundary Conditions
+iclkf = iclrtp(ik,icoeff)
+iclphf = iclrtp(iphi,icoeff)
+if(iturb.eq.50) then
+  iclfbf = iclrtp(ifb,icoeff)
+elseif(iturb.eq.51) then
+  iclalf = iclrtp(ial,icoeff)
 endif
 
 if(isto2t.gt.0) then
@@ -223,7 +235,7 @@ call grdcel &
 !==========
  ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,ik )  , coefa(1,iclikp) , coefb(1,iclikp) ,             &
+   rtpa(1,ik)   , coefa(1,iclk) , coefb(1,iclk) ,                 &
    gradk  )
 
 do iel = 1, ncel
@@ -241,12 +253,12 @@ deallocate(gradp, gradk)
 
 if(iturb.eq.50) then
   ivar = ifb
-  iclvar = iclfbp
-  iclvaf = iclfbp
+  iclvar = iclfb
+  iclvaf = iclfbf
 elseif(iturb.eq.51) then
   ivar = ial
-  iclvar = iclalp
-  iclvaf = iclalp
+  iclvar = iclal
+  iclvaf = iclalf
 endif
 ipp    = ipprtp(ivar)
 
@@ -339,6 +351,18 @@ call viscfa                                                       &
    w3     ,                                                       &
    viscf  , viscb  )
 
+! Translate coefa into cofaf and coefb into cofbf
+do ifac = 1, nfabor
+
+  iel = ifabor(ifac)
+
+  hint = w3(iel)/distb(ifac)
+
+  ! Translate coefa into cofaf and coefb into cofbf
+  coefa(ifac, iclphf) = -hint*coefa(ifac,iclphi)
+  coefb(ifac, iclphf) = hint*(1.d0-coefb(ifac,iclphi))
+
+enddo
 
 iccocg = 1
 inc = 1
@@ -359,7 +383,9 @@ call itrgrp &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    w2     , w2     , w2     ,                                     &
-   rtpa(1,iphi)   , coefa(1,iclphi) , coefb(1,iclphi) ,           &
+   rtpa(1,iphi)    ,                                              &
+   coefa(1,iclphi) , coefb(1,iclphi) ,                            &
+   coefa(1,iclphf) , coefb(1,iclphf) ,                            &
    viscf  , viscb  ,                                              &
    w3     , w3     , w3     ,                                     &
    w2     )
@@ -499,7 +525,7 @@ call codits                                                       &
 
 ivar = iphi
 iclvar = iclphi
-iclvaf = iclphi
+iclvaf = iclphf
 ipp    = ipprtp(ivar)
 
 if(iwarni(ivar).ge.1) then
@@ -708,33 +734,48 @@ enddo
 !  -> on rajoute artificiellement de la diffusion (sachant que comme k=0 a
 !  la paroi, on se moque de la valeur de phi).
 
-  if( idiff(ivar).ge. 1 ) then
-    do iel = 1, ncel
-      if(iturb.eq.50) then
-        w2(iel) = propce(iel,ipcvis)      + propce(iel,ipcvst)/sigmak
-      elseif(iturb.eq.51) then
-        w2(iel) = propce(iel,ipcvis)/2.d0 + propce(iel,ipcvst)/sigmak
-      endif
-    enddo
+if (idiff(ivar).ge.1) then
+  do iel = 1, ncel
+    if(iturb.eq.50) then
+      w2(iel) = propce(iel,ipcvis)      + propce(iel,ipcvst)/sigmak
+    elseif(iturb.eq.51) then
+      w2(iel) = propce(iel,ipcvis)/2.d0 + propce(iel,ipcvst)/sigmak !FIXME
+    endif
+  enddo
 
-    call viscfa                                                   &
-   !==========
- ( imvisf ,                                                       &
-   w2     ,                                                       &
-   viscf  , viscb  )
+  call viscfa &
+ !==========
+( imvisf ,                                                       &
+  w2     ,                                                       &
+  viscf  , viscb  )
 
-  else
+  ! Translate coefa into cofaf and coefb into cofbf
+  do ifac = 1, nfabor
 
-    do ifac = 1, nfac
-      viscf(ifac) = 0.d0
-    enddo
-    do ifac = 1, nfabor
-      viscb(ifac) = 0.d0
-    enddo
+    iel = ifabor(ifac)
 
-  endif
+    hint = w2(iel)/distb(ifac)
 
+    ! Translate coefa into cofaf and coefb into cofbf
+    coefa(ifac, iclphf) = -hint*coefa(ifac,iclphi)
+    coefb(ifac, iclphf) = hint*(1.d0-coefb(ifac,iclphi))
 
+  enddo
+
+else
+
+  do ifac = 1, nfac
+    viscf(ifac) = 0.d0
+  enddo
+  do ifac = 1, nfabor
+    viscb(ifac) = 0.d0
+
+    ! Translate coefa into cofaf and coefb into cofbf
+    coefa(ifac, iclphf) = 0.d0
+    coefb(ifac, iclphf) = 0.d0
+  enddo
+
+endif
 
 !===============================================================================
 ! 4.6 RESOLUTION EFFECTIVE DE L'EQUATION DE PHI

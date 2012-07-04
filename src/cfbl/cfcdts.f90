@@ -63,11 +63,6 @@ subroutine cfcdts &
 !  Y COMPRIS DANS LE HALO EN PERIODICITE (appel a promav pour
 !  le calcul de la norme)
 
-
-
-
-
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -264,13 +259,13 @@ endif
 ! 1.  CONSTRUCTION MATRICE "SIMPLIFIEE" DE RESOLUTION
 !===============================================================================
 
-call matrix                                                       &
+call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp , isym   , nfecra ,                   &
    thetap ,                                                       &
    ifacel , ifabor ,                                              &
-   coefbp , rovsdt , flumas , flumab , viscfm , viscbm ,          &
+   coefbp , cofbfp , rovsdt , flumas , flumab , viscfm , viscbm , &
    dam    , xam    )
 
 

@@ -20,6 +20,64 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file matrix.f90
+!>
+!> \brief This function builds the matrix of advection/diffusion for a scalar
+!> field.
+!>
+!> The advection is upwind, the diffusion is not reconstructed.
+!> The matrix is splitted into a diagonal block (number of cells)
+!> and an extra diagonal part (of dimension 2 time the number of internal
+!> faces).
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     nfac          number of interior faces
+!> \param[in]     nfabor        number of boundary faces
+!> \param[in]     iconvp        indicator
+!>                               - 1 advection
+!>                               - 0 otherwise
+!> \param[in]     idiffp        indicator
+!>                               - 1 diffusion
+!>                               - 0 otherwise
+!> \param[in]     ndircp        indicator
+!>                               - 0 if the diagonal stepped aside
+!> \param[in]     isym          indicator
+!>                               - 1 symmetric matrix
+!>                               - 2 non symmmetric matrix
+!> \param[in]     thetap        weightening coefficient for the theta-schema,
+!>                               - thetap = 0: explicit scheme
+!>                               - thetap = 0.5: time-centred
+!>                               scheme (mix between Crank-Nicolson and
+!>                               Adams-Bashforth)
+!>                               - thetap = 1: implicit scheme
+!> \param[in]     ifacel        cell indexes of interior faces
+!> \param[in]     ifabor        no de l'elt voisin d'une face de bord
+!> \param[in]     coefbp        boundary condition array for the variable
+!>                               (Impplicit part)
+!> \param[in]     cofbfp        boundary condition array for the variable flux
+!>                               (Impplicit part)
+!> \param[in]     flumas        mass flux at interior faces
+!> \param[in]     flumab        mass flux at border faces
+!> \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+!>                               at interior faces for the matrix
+!> \param[in]     viscb         \f$ S_\fib \f$
+!>                               at border faces for the matrix
+!> \param[out]    da            diagonal part of the matrix
+!> \param[out]    xa            extra interleaved diagonal part of the matrix
+!_______________________________________________________________________________
+!
+
 subroutine matrix &
 !================
 
@@ -27,53 +85,9 @@ subroutine matrix &
    iconvp , idiffp , ndircp , isym   , nfecra ,                   &
    thetap ,                                                       &
    ifacel , ifabor ,                                              &
-   coefbp , rovsdt , flumas , flumab , viscf  , viscb  ,          &
+   coefbp , cofbfp ,rovsdt , flumas , flumab , viscf  , viscb  ,  &
    da     , xa     )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! CONSTRUCTION DE LA MATRICE DE CONVECTION UPWIND/DIFFUSION/TS
-
-!     IL EST INTERDIT DE MODIFIER ROVSDT ICI
-
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! iconvp           ! e  ! <-- ! indicateur = 1 convection, 0 sinon             !
-! idiffp           ! e  ! <-- ! indicateur = 1 diffusion , 0 sinon             !
-! ndircp           ! e  ! <-- ! indicateur = 0 si decalage diagonale           !
-! isym             ! e  ! <-- ! indicateur = 1 matrice symetrique              !
-!                  !    !     !              2 matrice non symetrique          !
-! thetap           ! r  ! <-- ! coefficient de ponderation pour le             !
-!                  !    !     ! theta-schema (on ne l'utilise pour le          !
-!                  !    !     ! moment que pour u,v,w et les scalaire          !
-!                  !    !     ! - thetap = 0.5 correspond a un schema          !
-!                  !    !     !   totalement centre en temps (mixage           !
-!                  !    !     !   entre crank-nicolson et adams-               !
-!                  !    !     !   bashforth)                                   !
-! ifacel(2,nfac    ! te ! <-- ! no des elts voisins d'une face intern          !
-! ifabor(nfabor    ! te ! <-- ! no de l'elt voisin d'une face de bord          !
-! coefbp(nfabor    ! tr ! <-- ! tab b des cl pour la var consideree            !
-! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
-! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
-! viscf(nfac)      ! tr ! <-- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! <-- ! visc*surface/dist aux faces de bord            !
-! da (ncelet       ! tr ! --> ! partie diagonale de la matrice                 !
-! xa (nfac,*)      ! tr ! --> ! extra  diagonale de la matrice                 !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -94,7 +108,7 @@ integer          nfecra
 double precision thetap
 
 integer          ifacel(2,nfac), ifabor(nfabor)
-double precision coefbp(nfabor), rovsdt(ncelet)
+double precision coefbp(nfabor), cofbfp(nfabor), rovsdt(ncelet)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision da(ncelet ), xa(nfac ,isym)
@@ -210,9 +224,8 @@ do ig = 1, ngrpb
     do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
       ii = ifabor(ifac)
       flui = 0.5d0*(flumab(ifac) - abs(flumab(ifac)))
-      da(ii) = da(ii) + thetap*(                                          &
-                                  iconvp*flui*(coefbp(ifac)-1.d0)         &
-                                + idiffp*viscb(ifac)*(1.d0-coefbp(ifac)))
+      da(ii) = da(ii) + thetap*( iconvp*flui*(coefbp(ifac)-1.d0)         &
+                               + idiffp*viscb(ifac)*cofbfp(ifac))
     enddo
   enddo
 enddo

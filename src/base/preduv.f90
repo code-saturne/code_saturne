@@ -178,8 +178,8 @@ double precision xnormp(ncelet)
 integer          iel   , ielpdc, ifac  , ivar  , isou
 integer          iccocg, inc   , init  , ii    , isqrt
 integer          ireslp, nswrgp, imligp, iwarnp, ippt  , ipp
-integer                  iclipr, icliup, iclivp, icliwp
-integer                          iclik , iclvar, iclvaf
+integer          iclipr, iclu  , iclv  , iclw
+integer          iclik , iclvar, iclvaf
 integer          ipcrom, ipcroa, ipcroo, ipcrho, ipcvis, ipcvst
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
@@ -217,9 +217,9 @@ endif
 
 
 iclipr = iclrtp(ipr,icoef)
-icliup = iclrtp(iu ,icoef)
-iclivp = iclrtp(iv ,icoef)
-icliwp = iclrtp(iw ,icoef)
+iclu = iclrtp(iu ,icoef)
+iclv = iclrtp(iv ,icoef)
+iclw = iclrtp(iw ,icoef)
 
 if(itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
   iclik  = iclrtp(ik ,icoef)
@@ -440,8 +440,8 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
    epsrgp , climgp , extrap ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    trav(1,1) , trav(1,2) , trav(1,3) ,                            &
-   coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
-   coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
+   coefa(1,iclu), coefa(1,iclv), coefa(1,iclw),                   &
+   coefb(1,iclu), coefb(1,iclv), coefb(1,iclw),                   &
    viscf  , viscb  )
 
 !     Calcul de div(rho dt/rho*grad P)
@@ -1605,8 +1605,8 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
    epsrgp , climgp , extrap ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtp(1,iu) , rtp(1,iv) , rtp(1,iw) ,                            &
-   coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
-   coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
+   coefa(1,iclu), coefa(1,iclv), coefa(1,iclw),                   &
+   coefb(1,iclu), coefb(1,iclv), coefb(1,iclw),                   &
    viscf  , viscb  )
 
   init = 0

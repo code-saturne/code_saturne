@@ -278,7 +278,7 @@ do ifac = 1, nfabor
   pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
   pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
 
-  flux = iconvp*( flui*pvar(ii) +fluj*pfac ) + idiffp*viscb(ifac)*( pip -pfacd )
+  flux = iconvp*( flui*pvar(ii) +fluj*pfac ) + idiffp*viscb(ifac)*pfacd
 
 ! --- FLVARB(IFAC) : flux de convection-diffusion de la variable
 !                    a la face de bord i

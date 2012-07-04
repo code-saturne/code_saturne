@@ -151,6 +151,7 @@ double precision, allocatable, dimension(:,:) :: dfrcxt
 double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: flint, flbrd
+double precision, allocatable, dimension(:) :: coefap
 
 double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
 
@@ -164,6 +165,9 @@ double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
 allocate(viscf(nfac), viscb(nfabor))
 allocate(drtp(ncelet), smbr(ncelet), rovsdt(ncelet))
 allocate(trav(ncelet,3))
+
+! Array for delta p gradient boundary conditions
+allocate(coefap(nfabor))
 
 ! Allocate other arrays, depending on user options
 !if (iphydr.eq.1) allocate(dfrcxt(ncelet,3))
@@ -382,7 +386,7 @@ if ( iprco.le.0 ) then
     call inimas &
     !==========
  ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe ,                                     &
+   iuma   , ivma   , iwma   , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -503,7 +507,7 @@ call resolp &
    icepdc , icetsm , itypsm ,                                     &
    isostd , idtsca ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
+   coefa  , coefb  , coefap ,                                     &
    ckupdc , smacel ,                                              &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
@@ -667,7 +671,7 @@ else
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rvoid  ,                                                       &
    dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-   drtp   , coefa(1,iclipf) , coefb(1,iclipr)  ,                  &
+   drtp   , coefap        , coefb(1,iclipr)  ,                    &
    grad   )
 
   !     REACTUALISATION DU CHAMP DE VITESSES
@@ -727,8 +731,9 @@ else
     iclipr = iclrtp(ipr,icoef)
     iclipf = iclrtp(ipr,icoeff)
     do ifac = 1,nfabor
-      if (isostd(ifac).eq.1)                              &
-           coefa(ifac,iclipr) = coefa(ifac,iclipr) + coefa(ifac,iclipf)
+      if (isostd(ifac).eq.1) then
+        coefa(ifac,iclipr) = coefa(ifac,iclipr) + coefap(ifac)
+      endif
     enddo
   endif
 
@@ -1242,6 +1247,7 @@ deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
 deallocate(w7, w8, w9)
 if (allocated(w10)) deallocate(w10)
+deallocate(coefap)
 
 !--------
 ! FORMATS

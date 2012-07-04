@@ -26,8 +26,8 @@ subroutine raypun &
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   cofrua , cofrub ,                                              &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
@@ -60,10 +60,8 @@ subroutine raypun &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! cofrua,cofrub    ! tr ! --- ! conditions aux limites aux                     !
-!(nfabor)          !    !     !    faces de bord pour la luminance             !
+! coefap,coefbp    ! tr ! --- ! conditions aux limites aux                     !
+!  cofafp, cofbfp  !    !     !    faces de bord pour la luminance             !
 ! flurds,flurdb    ! tr ! --- ! pseudo flux de masse (faces internes           !
 !(nfac)(nfabor)    !    !     !    et faces de bord )                          !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
@@ -120,9 +118,8 @@ integer          itypfb(nfabor)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-
-double precision cofrua(nfabor), cofrub(nfabor)
+double precision coefap(nfabor), coefbp(nfabor)
+double precision cofafp(nfabor), cofbfp(nfabor)
 double precision flurds(nfac), flurdb(nfabor)
 
 double precision viscf(nfac), viscb(nfabor)
@@ -242,12 +239,12 @@ call viscfa                                                       &
 thetap = 1.d0
 idtva0 = 0
 
-CNOM = ' '
-WRITE(CNOM,'(A)') 'Rayon P1'
+cnom = ' '
+write(cnom,'(A)') 'Rayon P1'
 inum = 1
 nomvar(inum) = cnom
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 , nitmap , &
@@ -256,7 +253,7 @@ call codits                                                       &
    imgr1  , ncymap , nitmgp , inum   , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   thetaa , thetaa , cofrua , cofrub , cofrua , cofrub ,          &
+   thetaa , thetaa , coefap , coefbp , cofafp , cofbfp ,          &
    flurds , flurdb ,                                              &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , theta4 ,                                     &
@@ -287,16 +284,16 @@ extrap  = 0.d0
 nswrgp  = 100
 ivar0   = 0
 
-call grdcel                                                       &
+call grdcel &
 !==========
    ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp,         &
      iwarnp , nfecra , epsrgp , climgp , extrap ,                 &
-     theta4 , cofrua , cofrub ,                                   &
+     theta4 , coefap , coefbp ,                                   &
      grad   )
 
 aa = - stephn * 4.d0 / 3.d0
 
-do iel = 1,ncel
+do iel = 1, ncel
   aaa = aa * ckmel(iel)
   qx(iel) = grad(iel,1) * aaa
   qy(iel) = grad(iel,2) * aaa

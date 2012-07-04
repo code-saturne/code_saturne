@@ -191,11 +191,20 @@ endif
 
 do ifac = 1, nfabor
   if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
+
+    ! Dirichlet Boundary Condition for gradients
+    !-------------------------------------------
+
     coefax(ifac) = 0.0d0
     coefbx(ifac) = 0.0d0
   else
+
+    ! Neumann Boundary Condition for gradients
+    !-----------------------------------------
+
     coefax(ifac) = 0.0d0
     coefbx(ifac) = 1.0d0
+
   endif
 enddo
 
@@ -330,10 +339,12 @@ idiffp = 0
 !     La matrice est non symetrique
 isym   = 2
 
+! Warning: no diffusion here, so no need of other Boundary coefficient
+
 call matrdt &
 !==========
  ( iconvp , idiffp , isym   ,                                     &
-   coefbx , flumas , flumab , flumas , flumab , w2     )
+   coefbx , coefbx , flumas , flumab , flumas , flumab , w2     )
 
 ! Le Courant est COUMXY = DT w2 / VOLUME
 !     d'ou DTMINY = MIN(COUMXY * VOLUME/w2)
@@ -514,6 +525,8 @@ do isweep = 1, ntcmxy
   ! Pas de stationnaire ni de relaxation -> a modifier eventuellement
   idtva0 = 0
   relaxp = 1.d0
+
+  ! Warning: no diffusion so no need of other diffusive Boundary coeeficient
 
   call codits &
   !==========

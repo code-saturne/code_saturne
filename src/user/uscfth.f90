@@ -724,7 +724,7 @@ if (ieos.eq.1) then
     !     situation and a shock configuration from one time step to the
     !     next.
 
-    !   Rarefaction
+    !   Rarefaction !FIXME with the new cofaf cofbf
     if (xmach.lt.0.d0.and.coefb(ifac,iclp).le.1.d0) then
 
       if (xmach.gt.2.d0/(1.d0-gamagp)) then
@@ -1403,7 +1403,7 @@ elseif (ieos.eq.2) then
 
     coefa(ifac,iclp) = 0.d0
 
-    ! Pression and entropy: rarefaction
+    ! Pression and entropy: rarefaction !FIXME with the new cofaf
 
     if (xmach.le.0.d0 .and. xmach.gt.2.d0/(1.d0-gamagr(iel))) then
       coefb(ifac,iclp) = (1.d0 + (gamagr(iel)-1.d0)/2.d0 * xmach) &

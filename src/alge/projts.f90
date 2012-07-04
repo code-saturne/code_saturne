@@ -28,7 +28,7 @@ subroutine projts &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu ,                                              &
    fextx  , fexty  , fextz  ,                                     &
-   coefbp ,                                                       &
+   cofbfp ,                                                       &
    flumas , flumab , viscf  , viscb  ,                            &
    viselx , visely , viselz )
 
@@ -70,7 +70,7 @@ subroutine projts &
 ! epsrgu           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgu           ! r  ! <-- ! coef gradient*distance/ecart                   !
-! coefbp(nfabor    ! tr ! <-- ! tableaux des cond lim de pression              !
+! cofbfp(nfabor    ! tr ! <-- ! tableaux des cond lim de pression              !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
 ! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
 !__________________!____!_____!________________________________________________!
@@ -106,7 +106,7 @@ double precision pnd
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 double precision viscf(nfac), viscb(nfabor)
 double precision viselx(ncelet), visely(ncelet), viselz(ncelet)
-double precision coefbp(nfabor)
+double precision cofbfp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 
 ! Local variables
@@ -122,9 +122,6 @@ double precision distbf,surfn
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
-
-
-
 
 if( init.eq.1 ) then
   do ifac = 1, nfac
@@ -163,7 +160,6 @@ if( nswrgu.le.1 ) then
 
   enddo
 
-
 !     FLUX DE MASSE SUR LES FACETTES DE BORD
 
   do ifac = 1, nfabor
@@ -173,7 +169,7 @@ if( nswrgu.le.1 ) then
     distbf = distb(ifac)
 
     flumab(ifac) = flumab(ifac)+viscb(ifac)*distbf/surfn          &
-         *(1.d0-coefbp(ifac))*(fextx(ii)*surfbo(1,ifac)           &
+         *cofbfp(ifac)*(fextx(ii)*surfbo(1,ifac)                  &
          +fexty(ii)*surfbo(2,ifac)+fextz(ii)*surfbo(3,ifac) )
 
   enddo
@@ -230,7 +226,7 @@ else
     distbf = distb(ifac)
 
     flumab(ifac) = flumab(ifac)+viscb(ifac)*distbf/surfn          &
-         *(1.d0-coefbp(ifac))*(fextx(ii)*surfbo(1,ifac)           &
+         *cofbfp(ifac)*(fextx(ii)*surfbo(1,ifac)                  &
          +fexty(ii)*surfbo(2,ifac)+fextz(ii)*surfbo(3,ifac) )
 
   enddo

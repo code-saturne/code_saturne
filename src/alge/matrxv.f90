@@ -26,7 +26,8 @@
 
 !> \file matrxv.f90
 !>
-!> \brief This function builds the matrix of advection/diffusion.
+!> \brief This function builds the matrix of advection/diffusion for a vector
+!> field.
 !>
 !> The advection is upwind, the diffusion is not reconstructed.
 !> The matrix is splitted into a diagonal block (3x3 times number of cells)
@@ -91,6 +92,7 @@ subroutine matrxv &
 !===============================================================================
 
 use parall
+use mesh, only:surfbn
 
 !===============================================================================
 
@@ -218,12 +220,12 @@ do ifac = 1,nfabor
       if(isou.eq.jsou) then
         da(isou,jsou,ii) = da(isou,jsou,ii) + thetap*(                    &
                        iconvp*flui*(coefbu(isou,jsou,ifac)-1.d0)          &
-                      +idiffp*viscb(ifac)*(1.d0-cofbfu(isou,jsou,ifac))   &
+                      +idiffp*viscb(ifac)*cofbfu(isou,jsou,ifac)          &
                              )
       else
         da(isou,jsou,ii) = da(isou,jsou,ii) + thetap*(                    &
                        iconvp*( flui*coefbu(isou,jsou,ifac) )             &
-                      +idiffp*viscb(ifac)*(-cofbfu(isou,jsou,ifac))       &
+                      +idiffp*viscb(ifac)*cofbfu(isou,jsou,ifac)          &
                              )
       endif
     enddo

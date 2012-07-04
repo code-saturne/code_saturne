@@ -28,7 +28,8 @@ subroutine calhyd &
    fextx  , fexty  , fextz  ,                                     &
    dfextx , dfexty , dfextz ,                                     &
    phydr  , flumas , flumab ,                                     &
-   coefa  , coefb  ,                                              &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbr   )
@@ -53,7 +54,9 @@ subroutine calhyd &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
+! coefap,coefbp    ! tr ! <-- ! conditions aux limites aux                     !
+!  (nfabor)        !    !     !    faces de bord                               !
+! cof*fp           ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor)        !    !     !    faces de bord                               !
 ! fextx,fexty      ! tr ! <-- ! force exterieure generant la pression          !
 ! fextz(ncelet)    !    !     !    hydrostatique                               !
@@ -102,7 +105,8 @@ double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 double precision dfextx(ncelet),dfexty(ncelet),dfextz(ncelet)
 double precision phydr(ncelet)
 double precision flumas(nfac), flumab(nfabor)
-double precision coefa(nfabor), coefb(nfabor)
+double precision coefap(nfabor), coefbp(nfabor)
+double precision cofafp(nfabor), cofbfp(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision dam(ncelet), xam(nfac,2)
 double precision drtp(ncelet)
@@ -231,14 +235,14 @@ idiffp = 1
 ndircp = 0
 
 thetap = 1.d0
-call matrix                                                       &
+call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp ,                                     &
    isym   , nfecra ,                                              &
    thetap ,                                                       &
    ifacel , ifabor ,                                              &
-   coefb  , w1     ,                                              &
+   coefbp , cofbfp , w1     ,                                     &
    flumas , flumab , viscf  , viscb  ,                            &
    dam    , xam    )
 
@@ -265,7 +269,7 @@ call projts                                                       &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    dfextx , dfexty , dfextz ,                                     &
-   coefb     ,                                                    &
+   cofbfp ,                                                       &
    flumas, flumab ,                                               &
    viscf  , viscb  ,                                              &
    w10    , w10    , w10    )
@@ -399,7 +403,7 @@ do isweep = 1, nswmpr
     extrap = 0.d0
     iphydp = 1
 
-    call itrgrp                                                   &
+    call itrgrp &
     !==========
  ( nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
@@ -407,7 +411,8 @@ do isweep = 1, nswmpr
    epsrgp , climgp , extrap ,                                     &
    dfextx , dfexty , dfextz ,                                     &
    phydr  ,                                                       &
-   coefa  , coefb  ,                                              &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
    w10         , w10         , w10         ,                      &
    smbr   )

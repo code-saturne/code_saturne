@@ -193,7 +193,7 @@ integer          iel1   , iel2   , ieltsm
 integer          iortho , impout
 integer          inc    , iccocg
 integer          nswrgp , imligp , iwarnp
-integer          iutile , iclvar , iii
+integer          iutile , iclvar , iclvaf , iii
 integer          ipcrom , ipcvst , iflmas , iflmab , ipccp, ipcvsl
 integer          iscal
 integer          ii     , nbr    , irangv , irang1 , npoint
@@ -292,10 +292,8 @@ allocate(lstelt(max(ncel,nfac,nfabor)))
 !                 ifac=1
 
 !                     surfbn(ifac)*dt(ifabor(ifac))*cp
-!                   * [visls0(iscalt) + visct(ifabor(ifac))/sigmas(iscalt) ]
-!                   / distbr(ifac)
-!                   * [  coefa(ifac,iclvar)
-!                      + (coefb(ifac,iclvar)-1.d0)*rtp(ifabor(ifac,ivar))]
+!                   * [  coefa(ifac,iclvaf)
+!                      + coefb(ifac,iclvaf)*rtp(ifabor(ifac,ivar))]
 !                  }
 
 !                 ifac=nfabor
@@ -376,7 +374,8 @@ if (inpdt0.eq.0) then
 
   iscal = iscalt         ! temperature scalar number
   ivar =  isca(iscal)           ! temperature variable number
-  iclvar = iclrtp(ivar,icoef)   ! boundary condition number
+  iclvar = iclrtp(ivar,icoef)   ! boundary condition number for gradients and advection
+  iclvaf = iclrtp(ivar,icoeff)  ! boundary condition number for diffusion
 
   ! Physical quantity numbers
   ipcrom = ipproc(irom)
@@ -497,7 +496,7 @@ if (inpdt0.eq.0) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    call grdcel                                                     &
+    call grdcel &
     !==========
       ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
         iwarnp , nfecra ,                                              &
@@ -688,13 +687,10 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf =      surfbn(ifac) * dt(iel) * xcp                      &
-                * (xvsl+visct/sigmas(iscal)) / distbr               &
-                * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
-                   * treco(ifac))                                   &
-              -   flumab * dt(iel) * xcp                            &
-                * (  coefa(ifac,iclvar) + coefb(ifac,iclvar)        &
-                   * treco(ifac))
+    xfluxf = surfbn(ifac) * dt(iel) * xcp                             &
+             * (coefa(ifac,iclvaf) + coefb(ifac,iclvaf)*treco(ifac))  &
+           - flumab * dt(iel) * xcp                                   &
+             * (coefa(ifac,iclvar) + coefb(ifac,iclvar)*treco(ifac))
 
     xbilpa = xbilpa + xfluxf
 
@@ -735,13 +731,10 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf =    surfbn(ifac) * dt(iel) * xcp                      &
-              * (xvsl+visct/sigmas(iscal)) / distbr               &
-              * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
-                 * treco(ifac))                                   &
-              -   flumab * dt(iel) * xcp                          &
-                * (  coefa(ifac,iclvar) + coefb(ifac,iclvar)       &
-                   * treco(ifac))
+    xfluxf = surfbn(ifac) * dt(iel) * xcp                            &
+             * (coefa(ifac,iclvaf) + coefb(ifac,iclvaf)*treco(ifac)) &
+           - flumab * dt(iel) * xcp                                  &
+             * (coefa(ifac,iclvar) + coefb(ifac,iclvar)*treco(ifac))
 
     xbilpt = xbilpt + xfluxf
 
@@ -781,11 +774,10 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf =          surfbn(ifac) * dt(iel) * xcp *              &
-     (xvsl+visct/sigmas(iscal))/distbr *                          &
-     (coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)*treco(ifac))   &
-                    - flumab * dt(iel) * xcp *                    &
-     (coefa(ifac,iclvar)+ coefb(ifac,iclvar)*treco(ifac))
+    xfluxf = surfbn(ifac) * dt(iel) * xcp                             &
+             * (coefa(ifac,iclvaf) + coefb(ifac,iclvaf)*treco(ifac))  &
+           - flumab * dt(iel) * xcp                                   &
+             * (coefa(ifac,iclvar) + coefb(ifac,iclvar)*treco(ifac))
 
     xbilsy = xbilsy + xfluxf
 
@@ -825,13 +817,10 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf =    surfbn(ifac) * dt(iel) * xcp                      &
-              * (xvsl+visct/sigmas(iscal))/distbr                 &
-              * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
-                 * treco(ifac))                                   &
-              -   flumab * dt(iel) * xcp                          &
-                * (  coefa(ifac,iclvar)+ coefb(ifac,iclvar)       &
-                   * treco(ifac))
+    xfluxf = surfbn(ifac) * dt(iel) * xcp                             &
+             * (coefa(ifac,iclvaf) + coefb(ifac,iclvaf)*treco(ifac))  &
+           - flumab * dt(iel) * xcp                                   &
+             * (coefa(ifac,iclvar) + coefb(ifac,iclvar)*treco(ifac))
 
     xbilen = xbilen + xfluxf
 
@@ -871,13 +860,10 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf =     surfbn(ifac) * dt(iel) * xcp                      &
-               * (xvsl+visct/sigmas(iscal))/distbr                 &
-               * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
-                  * treco(ifac))                                   &
-             -   flumab * dt(iel) * xcp                            &
-               * (  coefa(ifac,iclvar)+ coefb(ifac,iclvar)         &
-                  * treco(ifac))
+    xfluxf = surfbn(ifac) * dt(iel) * xcp                             &
+             * (coefa(ifac,iclvaf) + coefb(ifac,iclvaf)*treco(ifac))  &
+           - flumab * dt(iel) * xcp                                   &
+             * (coefa(ifac,iclvar) + coefb(ifac,iclvar)*treco(ifac))
 
     xbilso = xbilso + xfluxf
 

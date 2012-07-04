@@ -161,18 +161,7 @@ if (iporos.eq.0) then
 
   do ifac = 1, nfabor
 
-    ii = ifabor(ifac)
-
-    visci(1) = w1(ii)
-    visci(2) = w2(ii)
-    visci(3) = w3(ii)
-
-    do isou = 1, 3
-      surf2(isou) = surfbo(isou,ifac)**2
-    enddo
-
-    viscb(ifac) = (visci(1)*surf2(1) + visci(2)*surf2(2) + visci(3)*surf2(3)) &
-                / (surfbn(ifac)*distb(ifac))
+    viscb(ifac) = surfbn(ifac)
 
   enddo
 
@@ -240,16 +229,7 @@ else
 
     ii = ifabor(ifac)
 
-    visci(1) = w1(ii) * porosi(ii)
-    visci(2) = w2(ii) * porosi(ii)
-    visci(3) = w3(ii) * porosi(ii)
-
-    do isou = 1, 3
-      surf2(isou) = surfbo(isou,ifac)**2
-    enddo
-
-    viscb(ifac) = (visci(1)*surf2(1) + visci(2)*surf2(2) + visci(3)*surf2(3)) &
-                / (surfbn(ifac)*distb(ifac))
+    viscb(ifac) = surfbn(ifac) * porosi(ii)
 
   enddo
 

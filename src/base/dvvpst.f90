@@ -134,7 +134,7 @@ character*80     name80
 
 integer          inc   , iccocg, nswrgp, imligp, iwarnp
 integer          isorva, isaut
-integer          ifac  , iloc  , ivar , iclvar
+integer          ifac  , iloc  , ivar , iclvar, iclvaf
 integer          ira   , idivdt, ineeyp
 integer          ipp   , idimt , ii    , kk   , iel
 integer          ivarl , iip
@@ -143,7 +143,7 @@ integer          iscal , ipcvsl, ipcvst, iflmab
 integer          ientla, ivarpr
 integer          ipccp , ipcrom
 
-double precision xcp   , xvsl  , srfbn, distbr
+double precision xcp   , xvsl  , srfbn
 double precision visct , flumab, diipbx, diipby, diipbz
 double precision epsrgp, climgp, extrap
 double precision omgnrm, daxis2
@@ -465,6 +465,7 @@ else if (numtyp .eq. -2) then
       iscal  = iscalt
       ivar   = isca(iscal)
       iclvar = iclrtp(ivar,icoef)
+      iclvaf = iclrtp(ivar,icoeff)
 
       !       Calcul des valeurs de la variable sur les faces de bord
 
@@ -544,7 +545,7 @@ else if (numtyp .eq. -2) then
       deallocate(treco)
 
 
-      !          Calcul du flux (ouf          !) convectif et diffusif
+      ! Calcul du flux convectif et diffusif
 
       if (ivisls(iscal).gt.0) then
         ipcvsl = ipproc(ivisls(iscal))
@@ -563,18 +564,14 @@ else if (numtyp .eq. -2) then
         else
           xvsl = visls0(iscal)
         endif
-        srfbn = surfbn(ifac)
-        distbr = distb(ifac)
+        srfbn = max(surfbn(ifac), epzero**2)
         visct  = propce(iel,ipcvst)
         flumab = propfb(ifac,iflmab)
 
-        trafbr(1 + (iloc-1)*idimt) =                            &
-             (xvsl+visct/sigmas(iscal))/max(distbr,epzero)*     &
-             (coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)*     &
-             rtp(iel,ivar))                                     &
-             - flumab/max(srfbn,epzero**2)*                    &
-             (coefa(ifac,iclvar)+ coefb(ifac,iclvar)*           &
-             rtp(iel,ivar))
+        trafbr(1 + (iloc-1)*idimt) =                                   &
+             (coefa(ifac,iclvaf) + coefb(ifac,iclvaf)*rtp(iel,ivar))   &
+             - flumab/srfbn*                                           &
+             (coefa(ifac,iclvar) + coefb(ifac,iclvar)*rtp(iel,ivar))
 
       enddo
 

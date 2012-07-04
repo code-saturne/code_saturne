@@ -204,8 +204,7 @@ do isou = 1, 3
   if (isou.eq.2) ivar = iv
   if (isou.eq.3) ivar = iw
 
-! Ceci pointe eventuellement sur ICLRTP(IVAR,ICOEF)
-  iclvar = iclrtp(ivar,icoeff)
+  iclvar = iclrtp(ivar,icoef)
 
 ! --- Calcul du gradient de la vitesse
 

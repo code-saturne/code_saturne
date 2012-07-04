@@ -484,6 +484,12 @@ if(ipass.eq.2) then
     iwma = ivar
   endif
 
+  ! --- Luminance
+  if (iirayo.gt.0) then
+    ivar = ivar + 1
+    ilum = ivar
+  endif
+
 ! --- Nombre total de variables
   nvar = ivar
 
@@ -1826,34 +1832,18 @@ if(ipass.eq.3) then
 !         pression si IPHYDR=1
 
   icondl = 0
+
+  ! Gradient Boundary conditions
   do ivar = 1, nvar
     icondl = icondl + 1
     iclrtp(ivar,icoef ) = icondl
+  enddo
+
+  ! Diffusive flux Boundary conditions
+  do ivar = 1, nvar
+    icondl = icondl + 1
     iclrtp(ivar,icoeff) = icondl
   enddo
-  if( itytur.eq.2 .or. itytur.eq.4                &
-       .or. iturb.eq.60 .or. iturb.eq.70          &
-       ) then
-    ivar = iu
-    icondl = icondl + 1
-    iclrtp(ivar,icoeff) = icondl
-    ivar = iv
-    icondl = icondl + 1
-    iclrtp(ivar,icoeff) = icondl
-    ivar = iw
-    icondl = icondl + 1
-    iclrtp(ivar,icoeff) = icondl
-  endif
-  if (iphydr.eq.1) then
-    icondl = icondl + 1
-    iclrtp(ipr,icoeff) = icondl
-  endif
-
-! Compressible
-  if (ippmod(icompf).ge.0) then
-    icondl = icondl + 1
-    iclrtp(isca(ienerg),icoeff) = icondl
-  endif
 
   ncofab = icondl
 
