@@ -201,7 +201,10 @@ class CoalCombustionModel(Variables, Model):
         if self.getH2OKineticsStatus() == "on":
             list.append("Fr_HET_H2O")
 
-        list.append("Var_AIR")
+        if self.getNOxFormationStatus() == "on":
+            list.append("FR_HCN")
+            list.append("FR_NO")
+            list.append("Enth_Ox")
 
         if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
             list.append("FR_H20")
@@ -212,7 +215,7 @@ class CoalCombustionModel(Variables, Model):
         if self.getOxidantNumber() == 3:
             list.append("FR_OXYD3")
 
-        # ieqco2 fix to 1
+        # ieqco2 fix to true
         list.append("FR_CO2")
 
         list.append("Var_F1F2")
@@ -258,6 +261,12 @@ class CoalCombustionModel(Variables, Model):
                 list.append(name)
 
         list.append("IntLuminance_4PI")
+
+        if self.getCO2KineticsStatus() == 'on':
+            self.ModelProperties.append("Ga_HET_CO2")
+
+        if self.getH2OKineticsStatus() == 'on':
+            self.ModelProperties.append("Ga_HET_H2O")
 
         return list
 
@@ -1661,6 +1670,9 @@ class CoalCombustionModel(Variables, Model):
                 self.getNitrogenConcentration(fuelId)
                 self.getHCNParameter(fuelId, 'HCN_NH3_partitionning_reaction_1')
                 self.getHCNParameter(fuelId, 'HCN_NH3_partitionning_reaction_2')
+        # update list of scalar
+        self.__createModelScalars()
+        self.__createModelProperties()
 
 
     def getNOxFormationStatus(self):
@@ -1689,14 +1701,14 @@ class CoalCombustionModel(Variables, Model):
                 co2_node.xmlRemoveChild('pre-exponential_constant')
                 co2_node.xmlRemoveChild('energy_of_activation')
                 co2_node.xmlRemoveChild('order_of_reaction')
-            self.ModelProperties.remove("Ga_HET_CO2")
-            self.node_fuel.xmlRemoveChild("Fr_HET_CO2")
         else:
-            self.ModelProperties.append("Ga_HET_CO2")
             for fuelId in range (1, self.getCoalNumber() + 1):
                 self.getPreExponentialConstant(fuelId, "CO2")
                 self.getEnergyOfActivation(fuelId, "CO2")
                 self.getOrderOfReaction(fuelId, "CO2")
+        # update list of scalar
+        self.__createModelScalars()
+        self.__createModelProperties()
 
 
     def getCO2KineticsStatus(self):
@@ -1725,14 +1737,14 @@ class CoalCombustionModel(Variables, Model):
                 h2o_node.xmlRemoveChild('pre-exponential_constant')
                 h2o_node.xmlRemoveChild('energy_of_activation')
                 h2o_node.xmlRemoveChild('order_of_reaction')
-            self.ModelProperties.remove("Ga_HET_H2O")
-            self.node_fuel.xmlRemoveChild("Fr_HET_H2O")
         else:
-            self.ModelProperties.append("Ga_HET_H2O")
             for fuelId in range (1, self.getCoalNumber() + 1):
                 self.getPreExponentialConstant(fuelId, "H2O")
                 self.getEnergyOfActivation(fuelId, "H2O")
                 self.getOrderOfReaction(fuelId, "H2O")
+        # update list of scalar
+        self.__createModelScalars()
+        self.__createModelProperties()
 
 
     def getH2OKineticsStatus(self):
@@ -1789,9 +1801,6 @@ class CoalCombustionModelTestCase(ModelTest):
                     <scalar label="Fr_HET" name="Fr_HET" type="model">
                             <flux_reconstruction status="off"/>
                     </scalar>
-                    <scalar label="Var_AIR" name="Var_AIR" type="model">
-                            <flux_reconstruction status="off"/>
-                    </scalar>
                     <property label="Temp_GAZ" name="Temp_GAZ"/>
                     <property label="ROM_GAZ" name="ROM_GAZ"/>
                     <property label="YM_CHx1m" name="YM_CHx1m"/>
@@ -1838,7 +1847,6 @@ class CoalCombustionModelTestCase(ModelTest):
                     <scalar label="Fr_MV101" name="Fr_MV101" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="Fr_MV201" name="Fr_MV201" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="Fr_HET" name="Fr_HET" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Var_AIR" name="Var_AIR" type="model"><flux_reconstruction status="off"/></scalar>
                     <property label="Temp_GAZ" name="Temp_GAZ"/>
                     <property label="ROM_GAZ" name="ROM_GAZ"/>
                     <property label="YM_CHx1m" name="YM_CHx1m"/>
@@ -1909,7 +1917,6 @@ class CoalCombustionModelTestCase(ModelTest):
                     <scalar label="Fr_MV101" name="Fr_MV101" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="Fr_MV201" name="Fr_MV201" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="Fr_HET" name="Fr_HET" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Var_AIR" name="Var_AIR" type="model"><flux_reconstruction status="off"/></scalar>
                     <property label="Temp_GAZ" name="Temp_GAZ"/>
                     <property label="ROM_GAZ" name="ROM_GAZ"/>
                     <property label="YM_CHx1m" name="YM_CHx1m"/>
@@ -2019,7 +2026,6 @@ class CoalCombustionModelTestCase(ModelTest):
                     <scalar label="Fr_MV101" name="Fr_MV101" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="Fr_MV201" name="Fr_MV201" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="Fr_HET" name="Fr_HET" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Var_AIR" name="Var_AIR" type="model"><flux_reconstruction status="off"/></scalar>
                     <property label="Temp_GAZ" name="Temp_GAZ"/>
                     <property label="ROM_GAZ" name="ROM_GAZ"/>
                     <property label="YM_CHx1m" name="YM_CHx1m"/>
@@ -2111,7 +2117,6 @@ class CoalCombustionModelTestCase(ModelTest):
                     <scalar label="Fr_MV101" name="Fr_MV101" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="Fr_MV201" name="Fr_MV201" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="Fr_HET" name="Fr_HET" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Var_AIR" name="Var_AIR" type="model"><flux_reconstruction status="off"/></scalar>
                     <property label="Temp_GAZ" name="Temp_GAZ"/>
                     <property label="ROM_GAZ" name="ROM_GAZ"/>
                     <property label="YM_CHx1m" name="YM_CHx1m"/>
