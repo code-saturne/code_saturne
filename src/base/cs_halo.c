@@ -707,6 +707,7 @@ cs_halo_renumber_cells(cs_halo_t       *halo,
  * parameters:
  *   halo      <-- pointer to halo structure
  *   sync_mode <-- synchronization mode (standard or extended)
+ *   size      <-- datatype size
  *   num       <-> pointer to local number value array
  *----------------------------------------------------------------------------*/
 
@@ -723,6 +724,23 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
   unsigned char *src;
   unsigned char *restrict _val = val;
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+    const size_t send_buffer_size =   CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
+                                             halo->n_elts[CS_HALO_EXTENDED])
+                                    * size;
+
+    if (send_buffer_size > _cs_glob_halo_send_buffer_size) {
+      _cs_glob_halo_send_buffer_size =  send_buffer_size;
+      BFT_REALLOC(_cs_glob_halo_send_buffer,
+                  _cs_glob_halo_send_buffer_size,
+                  char);
+    }
+  }
+
+#endif /* defined(HAVE_MPI) */
 
   if (sync_mode == CS_HALO_STANDARD)
     end_shift = 1;
@@ -1140,8 +1158,8 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
-    const size_t send_buffer_size =   CS_MAX(halo->n_send_elts[sync_mode],
-                                             halo->n_elts[sync_mode])
+    const size_t send_buffer_size =   CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
+                                             halo->n_elts[CS_HALO_EXTENDED])
                                     * sizeof(cs_real_t) * stride;
 
     if (send_buffer_size > _cs_glob_halo_send_buffer_size) {
