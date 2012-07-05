@@ -3611,7 +3611,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   /* Synchronize variable */
 
-  if (*imrgra != 0 && halo != NULL) {
+  if (halo != NULL) {
 
     if (*idimtr > 0) {
       cs_real_t  *restrict dpdx = grad;
