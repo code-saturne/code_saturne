@@ -403,12 +403,9 @@ nsomgb = 0
 iperio = 0
 iperot = 0
 
-! Lecture des dimensions du maillage.
-! Les tableaux seront lus apres allocation.
-! On initialise les dimensions a 0 avant la lecture, certaines
-!   rubriques etant optionnelles.
+! Get mesh metadata.
 
-call ledevi(ndim, nfml, nprfml, iperio, iperot)
+call ledevi(nfml, nprfml, iperio, iperot)
 !==========
 
 call tstjpe(iperio, iperot)

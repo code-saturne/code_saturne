@@ -53,15 +53,13 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Receive messages from the pre-processor about the dimensions of mesh
- * parameters
+ * Pass information relative to mesh metadata to the Fortran API
  *
  * Fortran Interface:
  *
- * subroutine ledevi(ndim   , nfml  , nprfml, iperio, iperot)
+ * subroutine ledevi(nfml nprfml, iperio, iperot)
  * *****************
  *
- * integer          ndim        : --> : Spacial dimension (3)
  * integer          nfml        : <-- : Number of families
  * integer          nprfml      : <-- : Number of properties per family
  * integer          iperio      : <-- : Periodicity indicator
@@ -69,11 +67,10 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(ledevi, LEDEVI)(const cs_int_t   *ndim,
-                         cs_int_t         *nfml,
-                         cs_int_t         *nprfml,
-                         cs_int_t         *iperio,
-                         cs_int_t         *iperot);
+CS_PROCF(ledevi, LEDEVI)(cs_int_t  *nfml,
+                         cs_int_t  *nprfml,
+                         cs_int_t  *iperio,
+                         cs_int_t  *iperot);
 
 /*============================================================================
  *  Public function prototypes
@@ -99,6 +96,18 @@ cs_preprocessor_data_add_file(const char     *file_name,
                               size_t          n_group_renames,
                               const char    **group_rename,
                               const double    transf_matrix[3][4]);
+
+/*----------------------------------------------------------------------------
+ * Read mesh meta-data.
+ *
+ * parameters:
+ *   mesh         <-- pointer to mesh structure
+ *   mesh_builder <-- pointer to mesh builder structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_preprocessor_data_read_headers(cs_mesh_t          *mesh,
+                                  cs_mesh_builder_t  *mesh_builder);
 
 /*----------------------------------------------------------------------------
  * Read pre-processor mesh data and finalize input.

@@ -1911,15 +1911,13 @@ _clean_groups(cs_mesh_t  *mesh)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Read sections from the pre-processor about the dimensions of mesh
- * parameters
+ * Pass information relative to mesh metadata to the Fortran API
  *
  * Fortran Interface:
  *
- * subroutine ledevi(ndim   , nfml  , nprfml, iperio, iperot)
+ * subroutine ledevi(nfml, nprfml, iperio, iperot)
  * *****************
  *
- * integer          ndim        : --> : Spacial dimension (3)
  * integer          nfml        : <-- : Number of families
  * integer          nprfml      : <-- : Number of properties per family
  * integer          iperio      : <-- : Periodicity indicator
@@ -1927,40 +1925,14 @@ _clean_groups(cs_mesh_t  *mesh)
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(ledevi, LEDEVI)(const cs_int_t   *ndim,
-                         cs_int_t         *nfml,
-                         cs_int_t         *nprfml,
-                         cs_int_t         *iperio,
-                         cs_int_t         *iperot)
+CS_PROCF(ledevi, LEDEVI)(cs_int_t   *nfml,
+                         cs_int_t   *nprfml,
+                         cs_int_t   *iperio,
+                         cs_int_t   *iperot)
 {
-  int file_id;
-
   cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_mesh_builder_t  *mb = cs_glob_mesh_builder;
-  _mesh_reader_t *mr = NULL;
 
   /* Initialize parameter values */
-
-  *nfml = 0;
-  *nprfml = 0;
-
-  /* Initialize reading of Preprocessor output */
-
-  _set_default_input_if_needed();
-
-  _cs_glob_mesh_reader = _mesh_reader_create(&_n_mesh_files,
-                                             &_mesh_file_info);
-
-  _n_max_mesh_files = 0;
-
-  mr = _cs_glob_mesh_reader;
-
-  for (file_id = 0; file_id < mr->n_files; file_id++)
-    _read_dimensions(mesh, mb, mr, file_id);
-
-  /* Return values */
-
-  assert(mesh->dim == *ndim);
 
   *nfml = mesh->n_families;
   *nprfml = mesh->n_max_family_items;
@@ -1969,23 +1941,6 @@ CS_PROCF(ledevi, LEDEVI)(const cs_int_t   *ndim,
     *iperio = 1;
   if (mesh->have_rotation_perio > 0)
     *iperot = 1;
-
-  mesh->n_domains = cs_glob_n_ranks;
-  mesh->domain_num = cs_glob_rank_id + 1;
-
-  /* Update data in cs_mesh_t structure in serial mode */
-
-  if (cs_glob_n_ranks == 1) {
-    mesh->n_cells = mesh->n_g_cells;
-    mesh->n_cells_with_ghosts = mesh->n_cells;
-    mesh->domain_num = 1;
-  }
-  else
-    mesh->domain_num = cs_glob_rank_id + 1;
-
-  /* Clean group names */
-
-  _clean_groups(mesh);
 }
 
 /*============================================================================
@@ -2104,6 +2059,58 @@ cs_preprocessor_data_add_file(const char     *file_name,
     else
       _new_group_names[i] = NULL;
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Read mesh meta-data.
+ *
+ * parameters:
+ *   mesh         <-- pointer to mesh structure
+ *   mesh_builder <-- pointer to mesh builder structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_preprocessor_data_read_headers(cs_mesh_t          *mesh,
+                                  cs_mesh_builder_t  *mesh_builder)
+{
+  int file_id;
+
+  _mesh_reader_t *mr = NULL;
+
+  /* Initialize reading of Preprocessor output */
+
+  _set_default_input_if_needed();
+
+  _cs_glob_mesh_reader = _mesh_reader_create(&_n_mesh_files,
+                                             &_mesh_file_info);
+
+  _n_max_mesh_files = 0;
+
+  mr = _cs_glob_mesh_reader;
+
+  for (file_id = 0; file_id < mr->n_files; file_id++)
+    _read_dimensions(mesh, mesh_builder, mr, file_id);
+
+  /* Return values */
+
+  assert(mesh->dim == 3);
+
+  mesh->n_domains = cs_glob_n_ranks;
+  mesh->domain_num = cs_glob_rank_id + 1;
+
+  /* Update data in cs_mesh_t structure in serial mode */
+
+  if (cs_glob_n_ranks == 1) {
+    mesh->n_cells = mesh->n_g_cells;
+    mesh->n_cells_with_ghosts = mesh->n_cells;
+    mesh->domain_num = 1;
+  }
+  else
+    mesh->domain_num = cs_glob_rank_id + 1;
+
+  /* Clean group names */
+
+  _clean_groups(mesh);
 }
 
 /*----------------------------------------------------------------------------

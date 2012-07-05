@@ -225,7 +225,11 @@ cs_run(void)
 
   cs_field_define_keys_base();
 
-  CS_PROCF(initi1, INITI1)(&_verif);
+  cs_preprocessor_data_read_headers(cs_glob_mesh,
+                                    cs_glob_mesh_builder);
+
+  if (opts.preprocess == false)
+    CS_PROCF(initi1, INITI1)(&_verif);
 
   /* Discover applications visible through MPI (requires communication);
      this is done after main calculation initialization so that the user
