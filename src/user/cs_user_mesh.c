@@ -160,7 +160,7 @@ cs_user_join(void)
   if (false) {
     int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
     int    visualization = 1; /* debug level if >= 3 */
-    float  fraction = 0.10, plane = 0.25;
+    float  fraction = 0.10, plane = 25.;
 
     join_num = cs_join_add("98 or 99",
                            fraction,
@@ -300,7 +300,7 @@ cs_user_periodicity(void)
   if (false) {
     int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
     int    visualization = 1; /* debug level if >= 3 */
-    float  fraction = 0.10, plane = 0.25;
+    float  fraction = 0.10, plane = 25.;
 
     const double translation[3] = {1.0, 0.0, 0.0}; /* Translation vector */
 
@@ -319,7 +319,7 @@ cs_user_periodicity(void)
   if (false) {
     int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
     int    visualization = 1; /* debug level if >= 3 */
-    float  fraction = 0.10, plane = 0.25;
+    float  fraction = 0.10, plane = 25.;
 
     double  theta = 20;                /* angle in degrees */
     double  axis[3] = {1.0, 0, 0};     /* axis of rotation */
@@ -361,7 +361,7 @@ cs_user_periodicity(void)
   if (false) {
     int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
     int    visualization = 1; /* debug level if >= 3 */
-    float  fraction = 0.10, plane = 0.25;
+    float  fraction = 0.10, plane = 25.;
 
     double matrix[3][4] = {{1., 0., 0., 0.5},
                            {0., 1., 0., 0.},
