@@ -55,9 +55,9 @@ class TexWriter(object):
         self.__doc.append("%s \n" % (line))
 
 
-    def addFigure(self, png):
+    def addFigure(self, g):
         self.__doc.append("\\begin{center}\n")
-        self.__doc.append("\\includegraphics[width=0.99\\textwidth]{%s}\n" % png)
+        self.__doc.append("\\includegraphics[width=0.99\\textwidth]{%s}\n" % g)
         self.__doc.append("\\end{center}\n")
 
 

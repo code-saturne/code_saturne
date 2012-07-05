@@ -575,10 +575,11 @@ in the command line.
 The following example shows the drawing of four curves (or plots, or 2D lines)
 from two files of data (which have the same name \texttt{profile.dat}). There
 are two subsets of curves (i.e. frames with axis and 2D lines), in a single
-figure. The figure will be saved on the disk in a \textbf{png} format, in the
-\texttt{POST} directory of the related study in the \textbf{destination}. Each
-drawing of a single curve is defined as a markup child of a file of data inside
-a case. Subsets and figures are defined as markup childs of \texttt{<study>}.
+figure. The figure will be saved on the disk in a \textbf{pdf} (default)
+or \textbf{png} format, in the \texttt{POST} directory of the related study
+in the \textbf{destination}. Each drawing of a single curve is defined as a
+markup child of a file of data inside a case. Subsets and figures are defined
+as markup childs of \texttt{<study>}.
 
 \small
 \begin{verbatim}
@@ -597,7 +598,7 @@ a case. Subsets and figures are defined as markup childs of \texttt{<study>}.
     </case>
     <subplot id="1" legstatus='on' legpos ='0.95 0.95' ylabel="U ($m/s$)" xlabel="Time ($s$)"/>
     <subplot id="2" legstatus='on' legpos ='0.95 0.95' ylabel="U ($m/s$)" xlabel="Time ($s$)"/>
-    <figure name="velocity" idlist="1 2" figsize="(4,5)"/>
+    <figure name="velocity" idlist="1 2" figsize="(4,5)" format="png"/>
 </study>
 \end{verbatim}
 \normalsize
@@ -731,6 +732,9 @@ with a layout of frames; the attributes are:
 \item \texttt{title}: add a title on the top of the figure;
 \item \texttt{nbrow}: impose a number of row of the layout of the subplots;
 \item \texttt{nbcol}: impose a number of column of the layout of the subplots;
+\item \texttt{format}: format of the file to be written on the disk,
+\texttt{"pdf"} (default) or \texttt{"png"} \footnote{Other format could
+be choosen (eps, ps, svg,...), but the pdf generation with pdflatex will failed.};
 \item standard options of figure can be added (table \ref{table:fig}),
 for example \texttt{figsize="(3,4)"}.
 

@@ -39,10 +39,6 @@ import matplotlib
 # matplotlib config
 #-------------------------------------------------------------------------------
 
-# Backend: Agg creates PNG output using the high quality Anti-Grain Geometry
-#          library
-matplotlib.use('Agg')
-
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
@@ -281,13 +277,14 @@ class Figure(object):
         """
         self.file_name = node.attributes["name"].value
         self.l_subplots = [int(s) for s in node.attributes["idlist"].value.split()]
+        self.format = parser.getAttribute(node, "format", "pdf")
 
         for tag in ("title", "nbrow", "nbcol"):
             self.__dict__[tag] = parser.getAttribute(node, tag, False)
 
         self.cmd = []
         for k, v in parser.getAttributes(node).items():
-            if k not in ("name", "idlist", "title", "nbrow", "nbcol"):
+            if k not in ("name", "idlist", "title", "nbrow", "nbcol", "format"):
                 self.cmd.append("plt.figure(" + k + "=" + v + ")")
 
         self.cmd += parser.getPltCommands(node)
@@ -493,31 +490,21 @@ class Plotter(object):
             self.figures.append(Figure(node, self.parser, self.curves, self.n_plots, subplots))
 
         for figure in self.figures:
-            # additional matplotlib raw commands for figure
-            for cmd in figure.cmd:
-                c = open("./tmp.py", "w")
-                c.write(cmd)
-                c.close()
-                try:
-                    execfile("./tmp.py")
-                except:
-                    print "Error with the matplotlib command: %s" % cmd
-                os.remove("./tmp.py")
-
             # Plot curve
             self.plot_figure(figure)
 
-            # save the figure
             f = os.path.join(self.parser.getDestination(),
                              study_label,
                              "POST",
                              figure.file_name)
 
-            self.__save(f)
-
             # store the name of the figure for the build of
-            # the detailed report
+            # the detailed report without the png or pdf extension.
             study_object.matplotlib_figures.append(f)
+
+            # save the figure
+            self.__save(f,  figure.format)
+
 
 
     def __draw_curve(self, ax, curve, n_fig):
@@ -627,7 +614,18 @@ class Plotter(object):
         """
         Plotter of a single figure with several subplots.
         """
-        plt.figure()
+        fig = plt.figure()
+
+        # additional matplotlib raw commands for figure
+        for cmd in figure.cmd:
+            c = open("./tmp.py", "w")
+            c.write(cmd)
+            c.close()
+            try:
+                execfile("./tmp.py")
+            except:
+                print "Error with the matplotlib command: %s" % cmd
+            os.remove("./tmp.py")
 
         # Layout
         nbrow, nbcol, hs, ri, le, ws = figure.layout()
@@ -685,9 +683,10 @@ class Plotter(object):
                 os.remove("./tmp.py")
 
 
-    def __save(self, f):
-        """method used to save the figure in a png format"""
-        plt.savefig(f)
+    def __save(self, f, fmt):
+        """method used to save the figure"""
+        f = f + "." + fmt
+        plt.savefig(f, format=fmt)
         plt.close()
 
 #-------------------------------------------------------------------------------

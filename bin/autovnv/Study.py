@@ -966,10 +966,10 @@ class Studies(object):
 
                 if s.matplotlib_figures or s.vtk_figures:
                     doc2.appendLine("\\subsection{Graphical results}")
-                    for png in s.matplotlib_figures:
-                        doc2.addFigure(png)
-                    for png in s.vtk_figures:
-                        doc2.addFigure(png)
+                    for g in s.matplotlib_figures:
+                        doc2.addFigure(g)
+                    for g in s.vtk_figures:
+                        doc2.addFigure(g)
 
                 for case in s.Cases:
                     if case.is_compare == "done":
