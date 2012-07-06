@@ -674,7 +674,7 @@ class domain(base_domain):
             if not os.path.isabs(partition_input):
                 partition_input = os.path.join(self.case_dir, partition_input)
 
-            if os.path.exists(partition):
+            if os.path.exists(partition_input):
 
                 if not os.path.isdir(partition_input):
                     err_str = partition_input + ' is not a directory.'
