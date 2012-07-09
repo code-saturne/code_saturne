@@ -358,8 +358,8 @@ class Setup:
             Package(name="MEI",
                     description="Mathematical Expressions Interpreter",
                     package="mei",
-                    version="1.0.3",
-                    archive="mei-1.0.3.tar.gz",
+                    version="1.0.4",
+                    archive="mei-1.0.4.tar.gz",
                     url=url_cs)
 
         # Code_Saturne Preprocessor
@@ -368,8 +368,8 @@ class Setup:
             Package(name="ECS",
                     description="Code_Saturne Preprocessor",
                     package="ecs",
-                    version="2.0.2",
-                    archive="ecs-2.0.2.tar.gz",
+                    version="2.0.3",
+                    archive="ecs-2.0.3.tar.gz",
                     url=url_cs)
 
         # Code_Saturne Kernel
@@ -391,9 +391,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.8",
-                    archive="hdf5-1.8.8.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.8/src/%s")
+                    version="1.8.9",
+                    archive="hdf5-1.8.9.tar.gz",
+                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.9/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -419,8 +419,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.0.4",
-                    archive="med-3.0.4.tar.gz",
+                    version="3.0.5",
+                    archive="med-3.0.5.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
