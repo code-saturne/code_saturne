@@ -963,16 +963,28 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
  *   comm        <-- associated MPI communicator
  *----------------------------------------------------------------------------*/
 
+#if defined(HAVE_MPI)
+
 static void
 _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
                   const cs_mesh_builder_t  *mb,
                   fvm_io_num_sfc_t          sfc_type,
                   int                       cell_rank[],
                   MPI_Comm                  comm)
+
+#else
+
+static void
+_cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
+                  const cs_mesh_builder_t  *mb,
+                  fvm_io_num_sfc_t          sfc_type,
+                  int                       cell_rank[])
+
+#endif
 {
   cs_lnum_t i;
   double  start_time, end_time;
-  int n_ranks = cs_glob_n_ranks, rank_id = cs_glob_rank_id;
+  int n_ranks = cs_glob_n_ranks;
 
   cs_lnum_t n_cells = 0, block_size = 0;
 
@@ -1014,7 +1026,7 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
      use variable block size if necessary so that all ranks have some
      cells assigned if possible */
 
-  if ((n_g_cells - 1) % block_size < n_ranks - 1) {
+  if ((cs_lnum_t)((n_g_cells - 1) % block_size) < n_ranks - 1) {
     int max_rank = n_ranks - 1;
     double _block_size = n_g_cells / (double)n_ranks;
     for (i = 0; i < n_cells; i++) {
@@ -2354,6 +2366,9 @@ _prepare_input(const cs_mesh_t           *mesh,
   cell_range[1] = cell_bi.gnum_range[1];
 }
 
+#if   defined(HAVE_METIS) || defined(HAVE_PARMETIS) \
+   || defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH)
+
 /*----------------------------------------------------------------------------
  * Distribute partitioning info so as to match mesh builder block info.
  *
@@ -2422,6 +2437,9 @@ _distribute_output(const cs_mesh_builder_t   *mb,
 
 #endif /* defined(HAVE_MPI) */
 }
+
+#endif /*    defined(HAVE_METIS) || defined(HAVE_PARMETIS) \
+          || defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH) */
 
 /*----------------------------------------------------------------------------
  * Write output file.
@@ -3089,7 +3107,7 @@ cs_partition(cs_mesh_t             *mesh,
              cs_mesh_builder_t     *mb,
              cs_partition_stage_t   stage)
 {
-  cs_timer_t t0, t1, t2;
+  cs_timer_t t0, t1;
   cs_timer_counter_t dt;
 
   int n_part_ranks = cs_glob_n_ranks / _part_rank_step[stage];
@@ -3186,6 +3204,7 @@ cs_partition(cs_mesh_t             *mesh,
   if (_algorithm == CS_PARTITION_METIS) {
 
     int  i;
+    cs_timer_t  t2;
     idxtype  *cell_idx = NULL, *cell_neighbors = NULL;
 
     _metis_cell_cells(n_cells,
@@ -3312,6 +3331,7 @@ cs_partition(cs_mesh_t             *mesh,
   if (_algorithm == CS_PARTITION_SCOTCH) {
 
     int  i;
+    cs_timer_t  t2;
     SCOTCH_Num  *cell_idx = NULL, *cell_neighbors = NULL;
 
     _scotch_cell_cells(n_cells,
@@ -3456,12 +3476,15 @@ cs_partition(cs_mesh_t             *mesh,
       if (n_ranks < 2)
         continue;
 
+#if defined(HAVE_MPI)
       _cell_rank_by_sfc(mesh->n_g_cells,
                         mb,
                         sfc_type,
                         cell_part,
                         cs_glob_mpi_comm);
-
+#else
+      _cell_rank_by_sfc(mesh->n_g_cells, mb, sfc_type, cell_part);
+#endif
 
       _cell_part_histogram(mb->cell_bi.gnum_range, n_ranks, cell_part);
 

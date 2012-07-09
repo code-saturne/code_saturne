@@ -286,9 +286,7 @@ typedef struct {
 
     cs_lagr_halo_t    *halo;   /* Lagrangian halo structure */
 
-#if defined(HAVE_MPI)
     cs_interface_set_t  *face_ifs;
-#endif
 
 } cs_lagr_track_builder_t;
 
