@@ -2787,10 +2787,9 @@ _select_algorithm(cs_partition_stage_t  stage)
 #elif defined(HAVE_METIS)
     if (n_part_ranks == 1 && retval == CS_PARTITION_DEFAULT)
       retval = CS_PARTITION_METIS;
-#else
+#endif
     if (retval == CS_PARTITION_DEFAULT)
       retval = CS_PARTITION_SFC_MORTON_BOX;
-#endif
 
     /* 1st stage of 2:
        If 2nd stage uses a space-filling curve, use same curve by default;
@@ -2900,8 +2899,10 @@ cs_partition_set_algorithm(cs_partition_stage_t      stage,
 {
   int n_part_ranks = cs_glob_n_ranks / rank_step;
 
-  if (n_part_ranks < 1)
+  if (n_part_ranks < 1) {
+    rank_step = cs_glob_n_ranks;
     n_part_ranks = 1;
+  }
 
   /* Check consistency of choice */
 
