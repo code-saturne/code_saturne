@@ -1776,7 +1776,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 mess = aStudy.GetName() + " " + aCase.GetName() + ": " + aXmlFile + " is already launched"
                 #QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
                 return
-            aCmd.append('-f')
+            aCmd.append('-p')
             if CFD_Code() == CFD_Saturne:
                 aCmd.append(aXmlFile)
             elif CFD_Code() == CFD_Neptune:
