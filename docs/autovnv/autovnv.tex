@@ -893,10 +893,15 @@ should be used as a child of a markup \texttt{<case>} as illustrated below:
 The file of parameters allows to execute additional matplotlib commands (i.e
 Python commands), for curves (2D lines), or subplot, or figure. For every object
 drawn, \texttt{Autovnv} associate a name to this object that can be reused in
-standard matplotlib commands. Therefore childs markup \texttt{<plt\_command>}
+standard matplotlib commands. Therefore, childs markup \texttt{<plt\_command>}
 could be added to \texttt{<plot>}, \texttt{<subplot>} or \texttt{<figure>}.
 
-It is possible to add commands with Matlab style or Python style.
+It is possible to add commands with \textbf{Matlab style} or \textbf{Python
+style}. For the Matlab style, commands are called as methods of the module
+\texttt{plt}, and for Python style commands or called as methods of the instance
+of the graphical object.
+
+Matlab style and Python style commands can be mixed.
 
 \begin{list}{$\bullet$}{}
 
@@ -912,7 +917,7 @@ are \texttt{line} and \texttt{lines} (with \texttt{line = lines[0]}).
 \end{verbatim}
 \normalsize
 
-\item subset of curves: for each subset, the associated name is \texttt{ax}:
+\item subset of curves (subplot): for each subset, the associated name is \texttt{ax}:
 
 \small
 \begin{verbatim}
@@ -926,10 +931,10 @@ are \texttt{line} and \texttt{lines} (with \texttt{line = lines[0]}).
     <plt_command>for l in ax.yaxis.get_ticklabels(): l.set_fontsize(8)</plt_command>
     <plt_command>plt.axis([-0.05, 1.6, 0.0, 0.15])</plt_command>
     <plt_command>plt.xticks([-3, -2, -1, 0, 1])</plt_command>
-    <plt_command>plt.subplots_adjust(hspace=0.4, wspace=0.4, right=0.9, left=0.15)</plt_command>
 </subplot>
 \end{verbatim}
 \normalsize
+
 
 \end{list}
 
@@ -1191,8 +1196,19 @@ It is possible to use raw commands:
  \end{verbatim}
 \normalsize
 
-\end{list}
+\item Adjust margins for layout of subplots in a figure.
 
+You have to use the raw command \texttt{subplots_adjust}:
+
+\small
+\begin{verbatim}
+<subplot id="1" legend='Yes' legpos ='0.2 0.95'>
+    <plt_command>plt.subplots_adjust(hspace=0.4, wspace=0.4, right=0.9, left=0.15, bottom=0.2, top=0.9)</plt_command>
+</subplot>
+\end{verbatim}
+\normalsize
+
+\end{list}
 
 %
 \end{document}

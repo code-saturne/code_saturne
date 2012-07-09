@@ -314,7 +314,7 @@ class Figure(object):
             nbcol = nbr
             rcParams['font.size'] = 6
             rcParams['lines.markersize']= 2
-            ri = 0.8
+            ri = 0.9
             le = 0.15
             hs = 0.35
             ws = 0.5
@@ -331,7 +331,7 @@ class Figure(object):
             elif nbcol > 5:
                 hs = 0.65
             ri = 0.9
-            le = 0.1
+            le = 0.15
             ws = 1.25
         elif nbr > 12:
             nbrow = 4
@@ -344,7 +344,7 @@ class Figure(object):
             elif nbcol > 4:
                 hs = 0.6
             ri = 0.9
-            le = 0.1
+            le = 0.15
             ws = 0.99
         elif nbr > 6:
             nbrow = 3
@@ -355,7 +355,7 @@ class Figure(object):
             if nbcol > 3:
                 hs = 0.5
             ri = 0.9
-            le = 0.1
+            le = 0.15
             ws = 0.8
         elif nbr > 2:
             nbrow = 2
@@ -363,8 +363,8 @@ class Figure(object):
             hs = 0.3
             if nbcol > 2:
               hs = 0.45
-            ri = 0.85
-            le = 0.1
+            ri = 0.9
+            le = 0.15
             ws = 0.6
             rcParams['font.size'] = 6
             rcParams['lines.markersize']= 4
@@ -631,7 +631,7 @@ class Plotter(object):
         nbrow, nbcol, hs, ri, le, ws = figure.layout()
         log.debug("plot_figure --> layout: n_plots: %s nbcol: %s nbrow: %s l_subplots: %s" % \
                   (self.n_plots, nbcol, nbrow, figure.l_subplots))
-        plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
+        plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le, bottom=0.2)
 
         # list of numbers of curves per subplot
         n_fig = [0] * self.n_plots
