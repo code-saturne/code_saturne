@@ -79,7 +79,7 @@ if test "x$with_mei" != "xno" ; then
 
   MEI_LIBS="-lmei"
 
-  CPPFLAGS="${CPPFLAGS} ${MEI_CPPFLAGS} ${BFT_CPPFLAGS}"
+  CPPFLAGS="${CPPFLAGS} ${MEI_CPPFLAGS} ${BFT_CPPFLAGS} -lm"
   LDFLAGS="${LDFLAGS} ${MEI_LDFLAGS} ${BFT_LDFLAGS}"
   LIBS="${LIBS} ${MEI_LIBS} -lbft"
 

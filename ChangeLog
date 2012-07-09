@@ -1,3 +1,11 @@
+* 09/07/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update build scripts so as to avoid issues using the GNU gold linker.
+  Building using non-shared optional libraries now requires using the
+  --disable-shared configure option.
+  modified files:
+    config/cs_mei.m4
+    src/apps/Makefile.am
+
 * 03/07/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   GUI: backport handling of batch systems from version 2.2.
   This should help avoid mistakenly running the code on a cluster's

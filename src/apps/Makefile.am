@@ -49,14 +49,7 @@ $(top_builddir)/src/elec/libcselec.la \
 $(top_builddir)/src/fuel/libcsfuel.la \
 $(top_builddir)/src/lagr/libcslagr.la \
 $(top_builddir)/src/mati/libcsmati.la \
-$(top_builddir)/src/rayt/libcsrayt.la
-libsaturne_la_LDFLAGS = -no-undefined -version 0:0:0
-
-# Main program
-
-bin_PROGRAMS = cs_solver
-cs_solver_SOURCES =
-cs_solver_LDADD = libsaturne.la $(LTLIBINTL) \
+$(top_builddir)/src/rayt/libcsrayt.la \
 @FVM_LDFLAGS@ @FVM_RUNPATH@ @FVM_LIBS@ \
 @MEI_LDFLAGS@ @MEI_LIBS@ \
 @BFT_LDFLAGS@ @BFT_LIBS@ \
@@ -64,3 +57,10 @@ cs_solver_LDADD = libsaturne.la $(LTLIBINTL) \
 @LIBXML2_LDFLAGS@ @LIBXML2_LIBS@ \
 @BLAS_LDFLAGS@ @BLAS_RUNPATH@ @BLAS_LIBS@ \
 @FCLIBS@
+libsaturne_la_LDFLAGS = -no-undefined -version 0:0:0
+
+# Main program
+
+bin_PROGRAMS = cs_solver
+cs_solver_SOURCES =
+cs_solver_LDADD = libsaturne.la $(LTLIBINTL)
