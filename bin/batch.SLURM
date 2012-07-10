@@ -5,6 +5,7 @@
 #SBATCH --ntasks=2
 #SBATCH --time=0:30:00
 #SBATCH --partition=compute
+#SBATCH --exclusive
 #SBATCH --output nameandcaseo.%j 
 #SBATCH --error nameandcasee.%j 
 #SBATCH --job-name=nameandcase
@@ -19,8 +20,10 @@
 #  --ntasks-per-core=<ntasks>         : number of tasks per core
 #  --cpu-bind=cores, sockets          : bind CPUs to cores or sockets
 #  --mem-bind=local
-#  --contiguous                       : force use of contiguous nodes for
-#                                       better latency and minimal latency
+#  --qos=<qos>                        : request given quality of service
+#                                       (for example "debug")
+#  --contiguous                       : use contiguous nodes for minimal latency
+#  --exclusive                        : do not share nodes with other jobs
 #  --partition=<name>, -p<name>       : partition (queue) (run "sinfo -s"
 #                                       for list of partitions)
 #  --reservation=<name>               : allocate resources from reservation
