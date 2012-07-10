@@ -3,7 +3,7 @@
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
 %
-%     Copyright (C) 1998-2011 EDF S.A., France
+%     Copyright (C) 1998-2012 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
 %
@@ -409,18 +409,18 @@ If the code was obtained as an archive, its components must be unpacked:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ tar xvzf bft-1.1.5.tar.gz\\
-\$ tar xvzf ecs-2.0.2.tar.gz\\
-\$ tar xvzf fvm-0.15.3.tar.gz\\
-\$ tar xvzf mei-1.0.1.tar.gz\\
-\$ tar xvzf ncs-2.0.2.tar.gz
+\$ tar xvzf ecs-2.0.3.tar.gz\\
+\$ tar xvzf fvm-0.15.4.tar.gz\\
+\$ tar xvzf mei-1.0.4.tar.gz\\
+\$ tar xvzf ncs-2.0.6.tar.gz
 }\end{minipage}}
 
 If the packages are provided as zip files, \texttt{unzip} may be substituted
 for \texttt{tar xvzf}.
 If for example you unpacked the directory in a directory
 named \texttt{/home/user/Code\_Saturne/2.0/src}, you will now
-have sub-directories named \texttt{bft-1.1.5}, \texttt{ecs-2.0.2},
-\texttt{fvm-0.15.3}, \texttt{mei-1.0.1}, and \texttt{ncs-2.0.2}.
+have sub-directories named \texttt{bft-1.1.5}, \texttt{ecs-2.0.3},
+\texttt{fvm-0.15.4}, \texttt{mei-1.0.4}, and \texttt{ncs-2.0.6}.
 
 For developers obtaining the code was obtained through a version control
 system such as Subversion, running a \texttt{./sbin/bootstrap}
@@ -472,7 +472,7 @@ based on a system-wide installation of HDF5 (which will be auto-detected),
 and using MPI compiler wrappers, a configure command may look like this:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ /home/user/Code\_Saturne/2.0/fvm-0.15.3/configure \textbackslash \\
+\$ /home/user/Code\_Saturne/2.0/fvm-0.15.4/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.0/arch/prod \textbackslash \\
 \textcolor{Magenta}{--with-bft}=/home/user/Code\_Saturne/2.0/arch/prod \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
@@ -510,7 +510,7 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 \texttt{--enable-debug} to the configure command:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ /home/user/Code\_Saturne/2.0/fvm-0.15.3/configure \textbackslash \\
+\$ /home/user/Code\_Saturne/2.0/fvm-0.15.4/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.0/arch/prod \textbackslash \\
 \textcolor{Magenta}{--with-bft}=/home/user/Code\_Saturne/2.0/arch/\textcolor{Magenta}{dbg} \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
@@ -804,8 +804,8 @@ Once BFT is installed, to configure and install the Preprocessor, we may
 use the following commands:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ mkdir -p ecs-2.0.2\_build/ivanoe \&\& cd ecs-2.0.2\_build/ivanoe\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ecs-2.0.2/configure \textbackslash \\
+\$ mkdir -p ecs-2.0.3\_build/ivanoe \&\& cd ecs-2.0.3\_build/ivanoe\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ecs-2.0.3/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe
 \textbackslash \\
 \textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe \\
@@ -828,8 +828,8 @@ Once BFT is installed, to configure and install FVM, we may use the
 following commands:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ mkdir -p fvm-0.15.3\_build/ivanoe \&\& cd fvm-0.15.3\_build/ivanoe\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.3/configure \textbackslash \\
+\$ mkdir -p fvm-0.15.4\_build/ivanoe \&\& cd fvm-0.15.4\_build/ivanoe\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.4/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe\_ompi
 \textbackslash \\
 \textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe
@@ -863,8 +863,8 @@ Once BFT is installed, to configure and install MEI, we may
 use the following commands:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ mkdir -p mei-1.0.2\_build/ivanoe \&\& cd mei-1.0.2\_build/ivanoe\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/mei-1.0.2/configure \textbackslash \\
+\$ mkdir -p mei-1.0.4\_build/ivanoe \&\& cd mei-1.0.4\_build/ivanoe\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/mei-1.0.4/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe
 \textbackslash \\
 \textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe
@@ -903,11 +903,11 @@ The \texttt{bin} directory containing the \texttt{python} wrapper
 may now be passed to the \texttt{--with-python-exec=}
 \texttt{configure} option.
 
-\subsection{Solver build\label{sec:bft:config:examples}}
+\subsection{Solver build\label{sec:ncs:config:examples}}
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$  mkdir -p ncs-2.0.2\_build/ivanoe \&\& cd ncs-2.0.2\_build/ivanoe\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ncs-2.0.2/configure \textbackslash \\
+\$  mkdir -p ncs-2.0.6\_build/ivanoe \&\& cd ncs-2.0.6\_build/ivanoe\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ncs-2.0.6/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe\_ompi
 \textbackslash \\
 \textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe \textbackslash\\
@@ -928,10 +928,10 @@ may now be passed to the \texttt{--with-python-exec=}
 The remarks regarding the selection of a Python interpreter
 as in \S\ref{sec:mei:config:examples:python} hold here also.
 
-\subsection{Cross-compiling}
+\section{Cross-compiling Examples}
 
 On machines with different front-end and compute node architectures,
-such as IBM Blue Gene/P, cross-compiling is necessary;
+such as IBM Blue Gene or Cray XT series, cross-compiling is necessary;
 some parts of the code need to be built for the front-end, other parts need
 to be built for the compute nodes, and some parts need to be built for both:
 
@@ -947,7 +947,7 @@ to be built for the compute nodes, and some parts need to be built for both:
       In any case, the Python interpreter used by the GUI and scripts
       will only need to run on the front-end or service nodes:
       execution on the compute nodes is limited to the \texttt{cs\_solver}
-      executable when launched using \texttt{mpirun}.
+      executable when launched using \texttt{mpirun} or equivalent.
       using 
 \end{itemize}
 
@@ -967,9 +967,13 @@ either for the front-end, for the compute nodes, or both:
       to output visualization meshes and fields.
 \item libCCMIO is used by the Preprocessor, so it may be needed on the
       front-end node only.
-\item \scotch or \metis may be used by a front-end node build of the
-      partitioner, as serial partitioning of large meshes requires a lot of memory.
+\item \scotch or \metis may be used by the partitioner on a front-end
+      node, as serial partitioning of large meshes requires a lot of memory.
 \end{itemize}
+
+Examples for Blue Gene/P and Blue Gene/Q are provided in the following section.
+
+\subsection{Cross-compiling for Blue Gene/P}
 
 In the following subsections, only the \texttt{configure} commands are
 detailed, as the creation of build directories and the running of
@@ -1029,13 +1033,14 @@ For the Python bindings on the front-end nodes:
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend\_python
 }\end{minipage}}
 
+\newpage
 \subsubsection{\pcs configuration}
 
 The \pcs only needs to be built for the front-end nodes
 (forcing the compiler in 64-bit mode):
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ecs-2.0.2/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ecs-2.0.3/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend \textbackslash \\
 \textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.7/arch/frontend
@@ -1056,7 +1061,7 @@ For compute nodes, the following configuration may be
 used if no MED or CGNS output is necessary:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.3/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.4/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
 \textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
 \textcolor{Magenta}{--build}=ppc64 \textbackslash \\
@@ -1078,7 +1083,7 @@ so we pass the absolute path to that library using the \texttt{LIBS}
 variable:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.3/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.4/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
 \textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/bgp
@@ -1114,7 +1119,7 @@ only if truly required by a downstream application.
 A front-end configuration is more standard:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.3/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.4/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend \textbackslash \\
 \textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/frontend \textbackslash \\
@@ -1129,7 +1134,7 @@ A front-end configuration is more standard:
 For the compute nodes, Python bindings are not useful:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/mei-1.0.2/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/mei-1.0.4/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
 \textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
 \textcolor{Violet}{--disable-python-bindings} \textbackslash\\
@@ -1143,20 +1148,21 @@ kernel build should only be used for mesh verification (if built at
 all), so it will not need evaluation of mathematical expressions:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/mei-1.0.2/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/mei-1.0.4/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
 \textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
 \textcolor{Violet}{--with-python-exec}=\textcolor{OliveGreen}{\$CS\_OPT}/python-2.7.1/arch/frontend/bin \textbackslash \\
 \textcolor{Violet}{--with-swig-exec}=\textcolor{OliveGreen}{\$CS\_OPT}/swig-1.3.39/arch/frontend/bin \textbackslash
 }\end{minipage}}
 
+\newpage
 \subsubsection{Kernel configuration}
 
 Finally, when all other packages are installed, the Kernel may
 be configured. For the compute nodes, the following command may be used:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ncs-2.0.2/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ncs-2.0.6/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp\_ompi
 \textbackslash \\
 \textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
@@ -1168,7 +1174,6 @@ be configured. For the compute nodes, the following command may be used:
 \textcolor{Violet}{--with-syrthes}=/home/projects/syrthes3.4.3 \textbackslash \\
 \textcolor{Violet}{--with-batch}=LOADL\_BG \textbackslash \\
 \textcolor{Violet}{--disable-sockets} \textbackslash \\
-\textcolor{Violet}{--disable-dlloader} \textbackslash \\
 \textcolor{Violet}{--disable-nls} \textbackslash \\
 \textcolor{Magenta}{--build}=ppc64 \textbackslash \\
 \textcolor{Magenta}{--host}=bluegenep \textbackslash \\
@@ -1178,8 +1183,8 @@ be configured. For the compute nodes, the following command may be used:
 
 The thread-safe compiler wrappers used here should not be necessary for \CS, but in our
 experience, the ESSL BLAS are correctly detected only with those wrappers,
-not with the single-threaded versions.\footnote{This might be due to a bug in the ESSL
-BLAS detection of \CS, although the code has been checked.}
+not with the single-threaded versions, as they have a dependency on threading
+functions of the XL Fortran runtime.
 
 Note that the front-end version of the \pcs is used even for
 the compute node build, as only the Kernel itself will run on the
@@ -1187,7 +1192,7 @@ latter.
 For the front-end nodes, the following command may be used:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ncs-2.0.2/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ncs-2.0.6/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp\_ompi
 \textbackslash \\
 \textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
@@ -1200,11 +1205,223 @@ For the front-end nodes, the following command may be used:
 \textcolor{red}{LDFLAGS}="-m64"
 }\end{minipage}}
 
+\subsection{Cross-compiling for Blue Gene/Q}
+
+As for the Blue Gene/P example, only the \texttt{configure} commands are
+detailed here, as the creation of build directories and the running of
+\texttt{make} and \texttt{make install} commands has already
+been described for other cases.
+
+In our example, the front-end node is based on an IBM Power architecture,
+runnning under Red Hat Enterprise Linux 6, on which the Python/Qt4
+environment should be available as an RPM package, and installed by the
+administrators. If this is not possible, the Python/Qt4 aspects of the
+Blue Gene/P example may be adapted here.
+
+On the compute nodes, the IBM XL compilers produce static object files
+by default, so the \texttt{--disable-shared} option is not necessary
+for libraries using Autotools-based installs when using those compilers,
+though it does no harm.
+
+\subsubsection{Prerequisites}
+
+As the front-end nodes of Blue Gene/Q machines may be expected to run
+Red Hat EL 6.x linux variants, instead of 5.x for blue Gene/P, more
+up-to date compilers and libraries (such as Python/Qt4) should be available
+as packages, easily installable by the system administrators.
+
+For the compute nodes, the following remarks may be mode for prerequisites:
+
+\begin{itemize}
+\item LibXml: to reduce the size and simmplify the installation of this
+library, the \texttt{--with-ftp=no}, \texttt{--with-http=no},
+and \texttt{--without-modules} options may be used with \texttt{configure}.
+\item HDF5: building this library with its \texttt{configure} script
+is a pain\footnote{It requires running a \texttt{yodconfigure}
+script and adapting other scripts (see documentation), then running
+this as a submitted job (or under a SLURM allocation if you are lucky
+enough to use this resource manager).}, but installing HDF5 1.8.9
+using CMake is as simple as on a workstation, and simply requires
+choosing the correct compilers and possibly a few other options (in
+the EDF \CS build, the GCC compilers were chosen to reduce risks, and
+the Fortran wrappers were not needed, so not built).
+\item CGNS: building CGNS 3.1 is based on CMake, and no specific
+problems have been observed.
+\item MED: building MED 3.0.5 for \CS is easier than previous versions,
+as a new \\ \texttt{--disable-fortan} option is available for the
+\texttt{configure} script. Both the C and C++ compiler wrappers
+must be specified, and the link may fail with the GNU compilers, due
+to some shared library issue (trying to force \texttt{--disable-shared}).
+With the IBM XL compilers, the same build works fine, as long as the
+\texttt{CXXFLAGS=-qlanglvl=redefmac}) option is passed. Adding
+the HDF5 tools path to the \texttt{\$PATH} environment variable for
+the  configuration stage may also be required.
+\end{itemize}
+
+\subsubsection{BFT configurations}
+
+For the compute nodes, forcing the \texttt{configure} script into
+cross-compilation mode is not necessary anymore.
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/bft-1.0.5/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{Violet}{--disable-shared} \textbackslash \\
+\textcolor{Magenta}{--build}=ppc64 \textbackslash \\
+\textcolor{Magenta}{--host}=bluegenep \textbackslash \\
+\textcolor{red}{CC}=bgxlc
+}\end{minipage}}
+
+For the front-end nodes, no special options are necessary either:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/bft-1.0.5/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq\_fen \textbackslash
+}\end{minipage}}
+
+\subsubsection{\pcs configuration}
+
+The \pcs only needs to be built for the front-end nodes:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ecs-2.0.3/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq\_fen \textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq\_fen \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/bgq\_fen
+\textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgq\_fen
+\textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgq\_fen \textbackslash \\
+\textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.1/arch/bgq\_fen \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/bgq\_fen \textbackslash \\
+\textcolor{Violet}{--without-metis}
+}\end{minipage}}
+
+\subsubsection{FVM configuration}
+
+For compute nodes, the following configuration may be
+used if no MED or CGNS output is necessary:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.4/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{red}{CC}=mpixlc
+}\end{minipage}}
+
+CGNS support may be configured normally, but FVM output is a bit more
+involved: MED uses C++ runtime libraries, which need to be defined explicitly
+for the code to link correctly. The \texttt{--with-med-dep-dirs}
+and \texttt{--with-med-dep-libs} options, which may define comma-separated
+values (no whitespace) allow defining this and passing this info to
+the Kernel build.
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.4/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8/arch/bgq
+\textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgq
+\textbackslash \\
+\textcolor{Violet}{--with-med-dep-dirs}=/opt/ibmcmp/lib/bg/lib \textbackslash \\
+\textcolor{Violet}{--with-med-dep-libs}=ibmc++ \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgq \textbackslash \\
+\textcolor{Violet}{--enable-long-gnum} \textbackslash \\
+\textcolor{Magenta}{--disable-shared} \textbackslash \\
+\textcolor{red}{CC}=/bgsys/drivers/ppcfloor/comm/xl/bin/mpixlc \textbackslash \\
+\textcolor{red}{LD\_ADD}=-R/opt/ibmcmp/lib/bg/lib
+}\end{minipage}}
+
+As for Blue Gene/P, MED is generally more useful for the \pcs than
+for post-processing, so building FVM with support for MED may only be worthwhile
+only if truly required by a downstream application.
+
+A front-end configuration is more standard:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.4/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq\_fen \textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq\_fen \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/bgq\_fen \textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgq\_fen
+\textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgq\_fen
+\textbackslash \\
+}\end{minipage}}
+
+\subsubsection{MEI configuration}
+
+For the compute nodes, Python bindings are not useful:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/mei-1.0.4/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{red}{CC}=bgxlc
+}\end{minipage}}
+
+For the front-end nodes, only the Python bindings are generally useful. The
+kernel build should only be used for mesh verification, if at
+all, so it will not need evaluation of mathematical expressions:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/mei-1.0.4/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-swig-exec}=\textcolor{OliveGreen}{\$CS\_OPT}/swig-1.3.39/arch/bgq\_fen/bin \textbackslash
+}\end{minipage}}
+
+\subsubsection{Kernel configuration}
+
+Finally, when all other packages are installed, the Kernel may
+be configured. For the compute nodes, the following command may be used:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ncs-2.0.6/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq\_ompi
+\textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{Magenta}{--with-fvm}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{Magenta}{--with-mei}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{Magenta}{--with-prepro}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq\_fen \textbackslash \\
+\textcolor{Violet}{--with-blas}=/opt/ibmmath/essl/5.1 \textbackslash \\
+\textcolor{Violet}{--with-blas-type}=ESSL \textbackslash \\
+\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/bgq\_fen \textbackslash \\
+\textcolor{Violet}{--with-batch}=SLURM\_BGQ \textbackslash \\
+\textcolor{Violet}{--disable-sockets} \textbackslash \\
+\textcolor{Violet}{--disable-nls} \textbackslash \\
+\textcolor{red}{CC}=/bgsys/drivers/ppcfloor/comm/xl/bin/mpixlc \textcolor{red}{FC}=bgxlf95\_r
+}\end{minipage}}
+
+The thread-safe Fortran compiler wrapper should not be necessary for \CS, but in our
+experience, the ESSL BLAS are correctly detected only with the thread-safe
+compiler options, as they have a dependency on threading
+functions of the XL Fortran runtime.
+
+Note that the front-end version of the \pcs is used even for
+the compute node build, as only the Kernel itself will run on the
+latter.
+For the front-end nodes, the following command may be used:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ncs-2.0.6/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq\_ompi
+\textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{Magenta}{--with-fvm}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq \textbackslash \\
+\textcolor{Magenta}{--without-mei} \textbackslash \\
+\textcolor{Magenta}{--with-prepro}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq\_fen \textbackslash
+}\end{minipage}}
+
 \section{Caveats}
 
 \subsubsection{Moving an existing installation}
 
-\textcolor{Red}{\emph{Never move an installed build}} of \CS.
+\textcolor{Red}{\emph{Never move an installed build}} of \CS,
+unless you are prepared to update multiple \emph{rpath} and
+Libtool control (\emph{.la})files, and Python scripts.
+
 As the build system is basd on the GNU Autotools, not only
 are library paths hard-coded using \emph{rpath} type info,
 but the code's scripts also contain absolute paths.
@@ -1216,13 +1433,6 @@ the correct library. In addition, the scripts will not work
 unless paths in the installed scripts are updated.
 If you are not able to update those paths without further
 explanation, you should not even think about moving the build.
-
-The mistake of moving an installed build is most often done not
-by beginners, but by more exerienced users or administrators who
-believe they know enough to force a behavior against the logic of the
-build system. Except for those experienced not only in installing
-codes but also in maintaining advanced Autotool scripts for
-at least one software package, this is usually presumptuous.
 
 If you need to test an installation in a test directory before
 installing it in a production directory, use the
@@ -1246,9 +1456,10 @@ Using Intel compilers for \CS itself and a build of Open MPI
 using the GNU compilers usually works fine, and the performance
 difference should be minimal (it can be higher using
 the GNU compilers also for \CS itself), so the issue is not
-in \CS itself, but it requires further investigation.
-In any case, avoiding this buggy combination may avoid you
-many wasted hours.
+in \CS itself. These issues seem fixed with recent combinations
+of Open MPI (1.4.5) and Intel compilers (12.1.x), according
+to both notes on the Open MPI mailing list and tests with \CS,
+but slightly older combinations should be avoided.
 
 \end{document}
 

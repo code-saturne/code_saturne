@@ -416,6 +416,20 @@ class resource_info(batch_info):
 
     #---------------------------------------------------------------------------
 
+    def n_procs_per_node(self):
+
+        """
+        Determine number of processors per node.
+        """
+
+        ppn = 1
+        if self.n_procs != None and  self.n_nodes != None:
+            ppn = self.n_procs / self.n_nodes
+
+        return ppn
+
+    #---------------------------------------------------------------------------
+
     def n_procs_from_hosts_file(self, hosts_file):
 
         """
@@ -1094,18 +1108,23 @@ class mpi_environment:
         # Determine processor count and MPMD handling
 
         self.mpiexec_n = ' --np '
-        if (resource_info != None):
+        rm = None
+        ppn = 1
+        if resource_info != None:
+            rm = resource_info.manager
             ppn = resource_info.n_procs_per_node()
+        if rm == 'SLURM':
+            self.mpiexec = 'srun'
+            self.mpiexec_n = ' --ntasks='
+            if ppn != 1:
+                self.mpiexec_n_per_node = ' --ntasks-per-node=' + str(ppn)
+        else:
             if ppn != 1:
                 self.mpiexec_n_per_node = ' --ranks-per-node ' + str(ppn)
         self.mpiexec_separator = ':'
         self.mpmd = None
 
         # Other options to add
-
-        # self.mpiexec_exe = '--exe'
-        # self.mpiexec_args = '--args'
-        # self.mpiexec_envs = '--envs OMP_NUM_THREADS=' + str(omp_num_threads)
 
         # Info commands
 

@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2011 EDF S.A., France
+#     Copyright (C) 1998-2012 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -786,6 +786,12 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
     ./$EXE_SYR -log listsyr $ECHOCOMMSYR $SOCKETSYR
     #
     $MPIHALT
+    #
+  elif [ ! -z "$SLURM_BG_NUM_NODES" ] ; then
+    #
+    localcmd=$RUN/localcmd
+    echo "$RUN/$EXE $ARG_CS_MPI $COMMAND_CWF $ARG_CS_VERIF $ARG_CS_OUTPUT $COMMAND_PARAM" > $localcmd
+    $MPIRUN `cat $localcmd` || EXECUTION_ERROR=true
     #
   elif [ $SOLCOM = 0 ] ; then
     #

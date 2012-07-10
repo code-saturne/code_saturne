@@ -4,7 +4,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2011 EDF S.A., France
+#     Copyright (C) 1998-2012 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -61,6 +61,19 @@ if [ -z  "${NUMBER_OF_PROCESSORS}" ] ; then
   elif [ ! -z "${SLURM_NPROCS}" ] ; then
     # SLURM
     NUMBER_OF_PROCESSORS=$SLURM_NPROCS
+  elif [ ! -z "$SLURM_BG_NUM_NODES" ] ; then
+    # Blue Gene using SLURM
+    NUMBER_OF_PROCESSORS=`python -c "
+import os
+s = os.getenv('SLURM_TASKS_PER_NODE')
+n_procs = 0
+for s0 in s.split(','):
+    i = s0.find('(')
+    if i > -1:
+        n_procs += int(s0[0:i])*int(s0[i+2:-1])
+    else:
+        n_procs += int(s0)
+print n_procs"`
   elif [ ! -z "${SLURM_NNODES}" ] ; then
     # SLURM
     NUMBER_OF_PROCESSORS=`srun hostname -s | wc -w`
@@ -103,8 +116,6 @@ if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
   if [ "$NOM_ARCH" = "Linux" ] ; then
     if [ "`hostname | cut -c1-6`" = "titane" ] ; then
       NOM_ARCH=titane
-    elif [ "`hostname | cut -c1-7`" = "platine" ] ; then
-      NOM_ARCH=platine
     fi
   fi
 # Default values
@@ -115,9 +126,9 @@ if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
     export PATH=${CS_MPI_PATH}:$PATH
   fi
 #
-  if [ "$NOM_ARCH" = "platine" ] ; then
-    MPIRUN="srun -n ${NUMBER_OF_PROCESSORS}"
-#
+  if [ ! -z "$SLURM_BG_NUM_NODES" ] ; then
+    MPIRUN="srun --ntasks=${NUMBER_OF_PROCESSORS}"
+
   elif [ "$NOM_ARCH" = "titane" ] ; then
     MPIRUN="mpirun -n ${NUMBER_OF_PROCESSORS}"
 #

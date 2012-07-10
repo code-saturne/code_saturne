@@ -1,3 +1,14 @@
+* 10/07/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adapt scripts and documentation for Blue Gene/Q port.
+  added files:
+    bin/batch.SLURM_BGQ
+  modified files:
+    bin/cs_exec_environment.py
+    bin/runcase.in
+    bin/runcase_mpi_env
+    config/cs_blas.m4
+    doc/install/install.tex
+
 * 09/07/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Update build scripts so as to avoid issues using the GNU gold linker.
   Building using non-shared optional libraries now requires using the
