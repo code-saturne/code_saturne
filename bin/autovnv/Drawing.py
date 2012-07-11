@@ -271,12 +271,11 @@ class Figure(object):
     """
     Management of a single figure (layout of several subplots).
     """
-    def __init__ (self, node, parser, curves, n_plots, subplots):
+    def __init__ (self, node, parser, curves, subplots):
         """
         Constructor of a figure.
         """
         self.file_name = node.attributes["name"].value
-        self.l_subplots = [int(s) for s in node.attributes["idlist"].value.split()]
         self.format = parser.getAttribute(node, "format", "pdf")
 
         for tag in ("title", "nbrow", "nbcol"):
@@ -289,11 +288,12 @@ class Figure(object):
 
         self.cmd += parser.getPltCommands(node)
 
-        self.o_subplots = []
-        for i in self.l_subplots:
+        # Store te list of subplot objects associated to the current figure
+        self.subplots = []
+        for id in [int(s) for s in node.attributes["idlist"].value.split()]:
             for p in subplots:
-                if p.id == i:
-                    self.o_subplots.append(p)
+                if p.id == id:
+                    self.subplots.append(p)
 
 
     def layout(self):
@@ -307,7 +307,7 @@ class Figure(object):
         wspace = 0.2 the amount of width reserved for blank space between subplots
         hspace = 0.2 the amount of height reserved for white space between subplots
         """
-        nbr = len(self.l_subplots)
+        nbr = len(self.subplots)
 
         if nbr < 3:
             nbrow = 1
@@ -414,7 +414,6 @@ class Plotter(object):
         @param study_label: label of a study
         """
         # initialisation for each Study
-        self.n_plots = 0
         self.curves  = []
         self.figures = []
 
@@ -427,7 +426,6 @@ class Plotter(object):
                 curve = Plot(node, self.parser, file)
                 curve.setMeasurement(True)
                 self.curves.append(curve)
-                self.n_plots = max(self.n_plots, curve.subplot)
 
         # Read the files for probes
         for case in study_object.Cases:
@@ -445,7 +443,6 @@ class Plotter(object):
                     for ycol in range(2, self.__number_of_column(f) + 1):
                         curve = Probes(f, fig, ycol)
                         self.curves.append(curve)
-                        self.n_plots = max(self.n_plots, curve.subplot)
 
         # Read the files of results
         for case in study_object.Cases:
@@ -477,17 +474,13 @@ class Plotter(object):
                         curve = Plot(nn, self.parser, f)
                         curve.setMeasurement(False)
                         self.curves.append(curve)
-                        self.n_plots = max(self.n_plots, curve.subplot)
 
         subplots = []
         for node in self.parser.getSubplots(study_label):
             subplots.append(Subplot(node, self.parser, self.curves))
 
-        for p in subplots:
-            self.n_plots = max(self.n_plots, p.id)
-
         for node in self.parser.getFigures(study_label):
-            self.figures.append(Figure(node, self.parser, self.curves, self.n_plots, subplots))
+            self.figures.append(Figure(node, self.parser, self.curves, subplots))
 
         for figure in self.figures:
             # Plot curve
@@ -503,11 +496,11 @@ class Plotter(object):
             study_object.matplotlib_figures.append(f)
 
             # save the figure
-            self.__save(f,  figure.format)
+            self.__save(f, figure.format)
 
 
 
-    def __draw_curve(self, ax, curve, n_fig):
+    def __draw_curve(self, ax, curve, p):
         """
         Draw a single curve.
         """
@@ -531,9 +524,9 @@ class Plotter(object):
             if curve.fmt:
                 lines = ax.plot(xspan, yspan, curve.fmt, label=curve.legend)
             else:
-                if n_fig[curve.subplot -1] < 8:
+                if len(p.curves) < 8:
                     lines = ax.plot(xspan, yspan, label=curve.legend)
-                elif n_fig[curve.subplot -1] < 15:
+                elif len(p.curves) < 15:
                     lines = ax.plot(xspan, yspan, '--', label=curve.legend)
                 else:
                     lines = ax.plot(xspan, yspan, ':', label=curve.legend)
@@ -629,39 +622,33 @@ class Plotter(object):
 
         # Layout
         nbrow, nbcol, hs, ri, le, ws = figure.layout()
-        log.debug("plot_figure --> layout: n_plots: %s nbcol: %s nbrow: %s l_subplots: %s" % \
-                  (self.n_plots, nbcol, nbrow, figure.l_subplots))
+        log.debug("plot_figure --> layout: nbcol: %s nbrow: %s " % (nbcol, nbrow))
         plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le, bottom=0.2)
 
-        # list of numbers of curves per subplot
-        n_fig = [0] * self.n_plots
-
         # draw curves in the right subplot
-        for j in figure.l_subplots:
-            idx = figure.l_subplots.index(j)
-            log.debug("plot_figure --> plot draw: id = %s" % j)
+        for p in figure.subplots:
+            idx = figure.subplots.index(p)
+            log.debug("plot_figure --> plot draw: id = %s" % p.id)
             ax = plt.subplot(nbrow, nbcol, idx + 1)
 
-            for curve in self.curves:
-                if j == curve.subplot:
-                    n_fig[j-1] += 1
-                    self.__draw_curve(ax, curve, n_fig)
+            for curve in p.curves:
+                self.__draw_curve(ax, curve, p)
 
         plt.hold(False)
 
         # title of subplot, axis and legend
-        bool = len(figure.l_subplots) > 1
+        bool = len(figure.subplots) > 1
 
-        for i in range(len(figure.l_subplots)):
-            p = figure.o_subplots[i]
-            ax = plt.subplot(nbrow, nbcol, i + 1)
+        for p in figure.subplots:
+            idx = figure.subplots.index(p)
+            ax = plt.subplot(nbrow, nbcol, idx + 1)
 
             if p.title:
                 ax.set_title(p.title)
 
             self.__draw_axis(ax, p)
 
-            if n_fig[i] > 0:
+            if len(p.curves) > 0:
                 self.__draw_legend(ax, p, bool, hs, ws, ri, le)
 
         # title of the figure
@@ -669,9 +656,9 @@ class Plotter(object):
            plt.suptitle(figure.title, fontsize=12)
 
         # additional matplotlib raw commands for subplot
-        for i in range(len(figure.l_subplots)):
-            p = figure.o_subplots[i]
-            ax = plt.subplot(nbrow, nbcol, i + 1)
+        for p in figure.subplots:
+            idx = figure.subplots.index(p)
+            ax = plt.subplot(nbrow, nbcol, idx + 1)
             for cmd in p.cmd:
                 c = open("./tmp.py", "w")
                 c.write(cmd)
