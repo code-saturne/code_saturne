@@ -123,6 +123,81 @@ cs_coupling_get_mpi_apps(void);
 #endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
+ * Return the optional synchronization flag for external couplings.
+ *
+ * See cs_coupling_set_sync_flag() for details.
+ *
+ * returns:
+ *   synchronization flag to apply to couplings
+ *----------------------------------------------------------------------------*/
+
+int
+cs_coupling_get_sync_flag(void);
+
+/*----------------------------------------------------------------------------
+ * Define an optional synchronization flag for external couplings.
+ *
+ * This flag is used by all couplings based on the PLE (Parallel Location
+ * and Exchange) group synchronization mechanism, which include couplings
+ * with SYRTHES 4, Code_Saturne, and NEPTUNE_CFD.
+ *
+ * It is defined by a mask, so for example flags f1, f2, and f3 may be
+ * combined using the "f1 | f2 | f2" syntax.
+ *
+ * Note also that for Code_Saturne, in the case of a variable time step,
+ * the reference time step is synchronized at the beginning of each
+ * iteration, but the actual time step is recomputed later.
+ *
+ * Possible flags are:
+ *   PLE_COUPLING_TS_MIN        Use smallest time step
+ *   PLE_COUPLING_TS_LEADER     Prescribe time step for the group
+ *                              (only one member may set this flag)
+ *   PLE_COUPLING_UNSTEADY      Inform others that this instance is
+ *                              using an unsteady solution approach
+ *   PLE_COUPLING_STEADY        Inform others that this instance is
+ *                              using a teady solution approach
+ *   PLE_COUPLING_USER_1        User definable flag
+ *   PLE_COUPLING_USER_2        User definable flag
+ *   PLE_COUPLING_USER_3        User definable flag
+ *   PLE_COUPLING_USER_4        User definable flag
+ *
+ * parameters:
+ *   flag <-- synchronization flag to apply to couplings
+ *----------------------------------------------------------------------------*/
+
+void
+cs_coupling_set_sync_flag(int flag);
+
+/*----------------------------------------------------------------------------
+ * Return the time step multiplier for external couplings.
+ *
+ * See cs_coupling_get_ts_multiplier() for details.
+ *
+ * returns:
+ *   time step multiplier for external couplings
+ *----------------------------------------------------------------------------*/
+
+double
+cs_coupling_get_ts_multiplier(void);
+
+/*----------------------------------------------------------------------------
+ * Define a time step multiplier for external couplings.
+ *
+ * The apparent time step for the current instance times (as viewed by
+ * coupled codes) is equal to the true time step times this multiplier.
+ *
+ * If the synchronization flag contains "time step min" (PLE_COUPLING_TS_MIN),
+ * the apparent time step is used to determine which code has the smallest
+ * time step.
+ *
+ * parameters:
+ *   m <-- time step multipier to aply to couplings
+ *----------------------------------------------------------------------------*/
+
+void
+cs_coupling_set_ts_multiplier(double m);
+
+/*----------------------------------------------------------------------------
  * Synchronize with applications in the same PLE coupling group.
  *
  * This function should be called before starting a new time step. The

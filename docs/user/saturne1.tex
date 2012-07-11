@@ -7077,8 +7077,8 @@ The $3^{rd}$ call, done at each time step, allows to impose boundary conditions
 \subsubsection{Fluid-Thermal coupling with \syrthes}
 %==================================
 When the user wishes to couple \CS with \syrthes to include heat transfers, it can be 
-done in the Graphical User Interface (GUI) or in the user subroutine
-\texttt{cs\_syrthes\_coupling}.
+done in the Graphical User Interface (GUI) or in the
+\texttt{cs\_syrthes\_coupling} user function.
 In the GUI, to set such a coupling, a thermal scalar must be 
 selected first in the item ``Thermal scalar'' under the heading ``Thermophysical models''.
  Then the item ``Conjugate heat transfer'' will appear, see fig. \ref{fig:syrthes}.
@@ -7093,19 +7093,24 @@ specified in case of 2D coupling.
 \end{center}
 \end{figure}
 
-If the subroutine \texttt{ussyrc} is used, the user must specify the arguments 
-passed to the subroutine '\texttt{defsyr}'. These arguments are:
+If the function \texttt{cs\_user\_syrthes\_coupling} is used, the user must
+specify the arguments passed to the '\texttt{cs\_syr\_coupling\_define}' function.
+ These arguments are:
 \begin{list}{-}{}
- \item \texttt{numsyr} is the matching \syrthes application \texttt{id} number, or $-1$,
- \item \texttt{namsyr} is the matching \syrthes application name,
- \item \texttt{cprjsy}: ' ' if the user wishes to use a 3D standard coupling,
+ \item \texttt{syrthes\_name} is the matching \syrthes application name,
+ \item \texttt{boundary\_criteria} is the surface selection criteria,
+ \item \texttt{volume\_criteria} is the volume selection criteria,
+ \item \texttt{projection\_axis}: ' ' if the user wishes to use a 3D standard coupling,
  or specify '$x$', '$y$', or '$z$' as the projection axis if a 2D coupling with \syrthes is used,
- \item \texttt{critsu} is the surface selection criteria,
- \item \texttt{critvl} is the volume selection criteria (only with \syrthes 4),
- \item \texttt{iwarns} is the verbosity level.
+ \item \texttt{verbosity} is the verbosity level.
+ \item \texttt{visualization} is the visualization level.
 \end{list}
-Examples are provided in '\texttt{ussyrc}'.
+Examples are provided in \texttt{cs\_user\_coupling.c}.
 
+The user may also define global coupling options relative to the handling of
+time-stepping, by adapting the example \texttt{cs\_user\_coupling}
+in the \texttt{cs\_user\_coupling.c} file. In the case of multiple couplings,
+these options are global to all \syrthes and \CS couplings.
 
 %==================================
 \subsection{Particle-tracking (Lagrangian) Module}

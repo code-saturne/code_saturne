@@ -1,5 +1,5 @@
 /*============================================================================
- * Common functionnality for various coupling types.
+ * \file Common functionnality for various coupling types.
  *============================================================================*/
 
 /*
@@ -74,7 +74,6 @@ BEGIN_C_DECLS
  * Local Type Definitions
  *============================================================================*/
 
-
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -84,6 +83,17 @@ BEGIN_C_DECLS
 static ple_coupling_mpi_set_t *_cs_glob_coupling_mpi_app_world = NULL;
 
 #endif
+
+/* Syncronization flag used for external couplings */
+
+static int _cs_coupling_sync_flag = 0; /* Synchronized */
+
+
+/* Optional time step multiplier for external couplings;
+   the time step for the current instance times this multiplier
+   is the apparent time step for coupled codes */
+
+static double _cs_coupling_ts_multiplier = 1.0;
 
 /*============================================================================
  * Private function definitions
@@ -136,12 +146,13 @@ void CS_PROCF(cplsyn, CPLSYN)
 
 #if defined(HAVE_MPI)
 
-/*----------------------------------------------------------------------------
- * Discover other applications in the same MPI root communicator.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Discover other applications in the same MPI root communicator.
  *
- * parameters:
- *   app_name <-- name of this instance of Code_Saturne.
- *----------------------------------------------------------------------------*/
+ * \param[in]  app_name  name of this instance of Code_Saturne
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_coupling_discover_mpi_apps(const char  *app_name)
@@ -165,10 +176,9 @@ cs_coupling_discover_mpi_apps(const char  *app_name)
 
     const char app_type[] = CS_APP_NAME " " CS_APP_VERSION;
 
-    int sync_flag = 0; /* Synchronized */
+    const char *sync_name[2] = {N_("point-to-point or not synchronized"),
+                                N_("group synchronized")};
 
-    const char *sync_name[2] = {N_("(point-to-point or not synchronized)"),
-                                N_("(group synchronized)")};
     const char local_add[] = N_(" (this instance)");
     const char nolocal_add[] = "";
 
@@ -180,7 +190,7 @@ cs_coupling_discover_mpi_apps(const char  *app_name)
     }
 
     _cs_glob_coupling_mpi_app_world
-      = ple_coupling_mpi_set_create(sync_flag,
+      = ple_coupling_mpi_set_create(_cs_coupling_sync_flag,
                                     app_type,
                                     app_name,
                                     MPI_COMM_WORLD,
@@ -202,10 +212,20 @@ cs_coupling_discover_mpi_apps(const char  *app_name)
         bft_printf(_("  %d; type:      \"%s\"%s\n"
                      "     case name: \"%s\"\n"
                      "     lead rank: %d; n_ranks: %d\n"
-                     "     %s\n\n"),
+                     "     (%s"),
                    i+1, ai.app_type, is_local,
                    ai.app_name, ai.root_rank, ai.n_ranks,
                    _(sync_name[sync_type]));
+        if (ai.status & PLE_COUPLING_TS_MIN)
+          bft_printf(_(", time step min."));
+        if (ai.status & PLE_COUPLING_TS_LEADER)
+          bft_printf(_(", time step leader"));
+        if (ai.status & PLE_COUPLING_UNSTEADY)
+          bft_printf(_(", unsteady"));
+        if (ai.status & PLE_COUPLING_STEADY)
+          bft_printf(_(", steady"));
+
+        bft_printf(_(")\n\n"));
       }
 
       bft_printf_flush();
@@ -213,9 +233,11 @@ cs_coupling_discover_mpi_apps(const char  *app_name)
   }
 }
 
-/*----------------------------------------------------------------------------
- * Finalize MPI coupling helper structures.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Finalize MPI coupling helper structures.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_coupling_finalize(void)
@@ -224,12 +246,13 @@ cs_coupling_finalize(void)
     ple_coupling_mpi_set_destroy(&_cs_glob_coupling_mpi_app_world);
 }
 
-/*----------------------------------------------------------------------------
- * Return info on other applications in the same MPI root communicator.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return info on other applications in the same MPI root communicator.
  *
- * returns:
- *   info on other applications structure.
- *----------------------------------------------------------------------------*/
+ * \return  info on other applications structure
+ */
+/*----------------------------------------------------------------------------*/
 
 const ple_coupling_mpi_set_t *
 cs_coupling_get_mpi_apps(void)
@@ -239,8 +262,100 @@ cs_coupling_get_mpi_apps(void)
 
 #endif /* HAVE_MPI */
 
-/*----------------------------------------------------------------------------
- * Synchronize with applications in the same PLE coupling group.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the optional synchronization flag for external couplings.
+ *
+ * See \ref cs_coupling_set_sync_flag for details.
+ *
+ * \return  synchronization flag to apply to couplings
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_coupling_get_sync_flag(void)
+{
+  return _cs_coupling_sync_flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define an optional synchronization flag for external couplings.
+ *
+ * This flag is used by all couplings based on the PLE (Parallel Location
+ * and Exchange) group synchronization mechanism, which include couplings
+ * with SYRTHES 4, Code_Saturne, and NEPTUNE_CFD.
+ *
+ * It is defined by a mask, so for example flags f1, f2, and f3 may be
+ * combined using the "f1 | f2 | f2" syntax.
+ *
+ * Note also that for Code_Saturne, in the case of a variable time step,
+ * the reference time step is synchronized at the beginning of each
+ * iteration, but the actual time step is recomputed later.
+ *
+ * Possible flags are:
+ *   PLE_COUPLING_TS_MIN        Use smallest time step
+ *   PLE_COUPLING_TS_LEADER     Prescribe time step for the group
+ *                              (only one member may set this flag)
+ *   PLE_COUPLING_UNSTEADY      Inform others that this instance is
+ *                              using an unsteady solution approach
+ *   PLE_COUPLING_STEADY        Inform others that this instance is
+ *                              using a teady solution approach
+ *   PLE_COUPLING_USER_1        User definable flag
+ *   PLE_COUPLING_USER_2        User definable flag
+ *   PLE_COUPLING_USER_3        User definable flag
+ *   PLE_COUPLING_USER_4        User definable flag
+ *
+ * \param[in]  flags  synchronization flag to apply to couplings
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coupling_set_sync_flag(int flag)
+{
+  _cs_coupling_sync_flag = flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the time step multiplier for external couplings.
+ *
+ * See \ref cs_coupling_get_ts_multiplier for details.
+ *
+ * \return  time step multiplier for external couplings
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_coupling_get_ts_multiplier(void)
+{
+  return _cs_coupling_ts_multiplier;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a time step multiplier for external couplings.
+ *
+ * The apparent time step for the current instance times (as viewed by
+ * coupled codes) is equal to the true time step times this multiplier.
+ *
+ * If the synchronization flag contains "time step min" (PLE_COUPLING_TS_MIN),
+ * the apparent time step is used to determine which code has the smallest
+ * time step.
+ *
+ * \param[in]  m  time step multipier to aply to couplings
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coupling_set_ts_multiplier(double m)
+{
+  _cs_coupling_ts_multiplier = m;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize with applications in the same PLE coupling group.
  *
  * This function should be called before starting a new time step. The
  * current time step id is that of the last finished time step, or 0 at
@@ -250,12 +365,12 @@ cs_coupling_get_mpi_apps(void)
  * calculation are set automatically, but the user may set additional flags
  * to this function if necessary.
  *
- * parameters:
- *   flags         <-- optional additional synchronization flags
- *   current_ts_id <-- current time step id
- *   max_ts_id     <-> maximum time step id
- *   ts            <-> suggested time step value
- *----------------------------------------------------------------------------*/
+ * \param[in]       flags          optional additional synchronization flags
+ * \param[in]       current_ts_id  current time step id
+ * \param[in, out]  max_ts_id      maximum time step id
+ * \param[in, out]  ts             suggested time step value
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_coupling_sync_apps(int      flags,
@@ -272,6 +387,8 @@ cs_coupling_sync_apps(int      flags,
     int sync_flags = 0;
     int leader_id = -1;
     double ts_min = -1.;
+
+    double _ts = *ts * _cs_coupling_ts_multiplier;
 
     int n_apps
       = ple_coupling_mpi_set_n_apps(_cs_glob_coupling_mpi_app_world);
@@ -308,7 +425,7 @@ cs_coupling_sync_apps(int      flags,
 
     ple_coupling_mpi_set_synchronize(_cs_glob_coupling_mpi_app_world,
                                      sync_flags,
-                                     *ts);
+                                     _ts);
 
     app_status
       = ple_coupling_mpi_set_get_status(_cs_glob_coupling_mpi_app_world);
@@ -318,7 +435,7 @@ cs_coupling_sync_apps(int      flags,
     /* Check if we should use the smallest time step */
 
     if (app_status[app_id] & PLE_COUPLING_TS_MIN)
-      ts_min = *ts;
+      ts_min = _ts;
 
     /* Loop on applications */
 
@@ -343,7 +460,7 @@ cs_coupling_sync_apps(int      flags,
         }
         else {
           leader_id = i;
-          *ts = app_ts[i];
+          *ts = app_ts[i] / _cs_coupling_ts_multiplier;
         }
       }
       else if (app_status[i] & PLE_COUPLING_TS_MIN) {
@@ -392,7 +509,7 @@ cs_coupling_sync_apps(int      flags,
     } /* end of loop on applications */
 
     if (ts_min > 0)
-      *ts = ts_min;
+      *ts = ts_min / _cs_coupling_ts_multiplier;
   }
 
 #else
@@ -402,21 +519,22 @@ cs_coupling_sync_apps(int      flags,
 #endif /* PLE_HAVE_MPI */
 }
 
-/*----------------------------------------------------------------------------
- * Compute extents of a mesh representation
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute extents of a mesh representation.
  *
- * parameters:
- *   mesh          <-- pointer to mesh representation structure
- *   n_max_extents <-- maximum number of sub-extents (such as element extents)
- *                     to compute, or -1 to query
- *   tolerance     <-- addition to local extents of each element:
- *                     extent = base_extent * (1 + tolerance)
- *   extents       <-> extents associated with mesh:
- *                     x_min, y_min, ..., x_max, y_max, ... (size: 2*dim)
+ * \param[in]       mesh           pointer to mesh representation structure
+ * \param[in]       n_max_extents  maximum number of sub-extents (such as
+ *                                 element extents) to compute, or -1 to query
+ * \param[in]       tolerance      addition to local extents of each element:
+ *                                 extent = base_extent * (1 + tolerance)
+ * \param[in, out]  extents        extents associated with mesh:
+ *                                 x_min, y_min, ..., x_max, y_max, ...
+ *                                 (size: 2*dim)
  *
- * returns:
- *   the number of extents computed
- *----------------------------------------------------------------------------*/
+ * \return  the number of extents computed
+ */
+/*----------------------------------------------------------------------------*/
 
 ple_lnum_t
 cs_coupling_mesh_extents(const void  *mesh,
@@ -446,8 +564,9 @@ cs_coupling_mesh_extents(const void  *mesh,
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Find elements in a given mesh containing points: updates the
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find elements in a given mesh containing points: updates the
  * location[] and distance[] arrays associated with a set of points
  * for points that are in an element of this mesh, or closer to one
  * than to previously encountered elements.
@@ -455,18 +574,19 @@ cs_coupling_mesh_extents(const void  *mesh,
  * Location is relative to the id of a given element + 1 in
  * concatenated sections of same element dimension.
  *
- * parameters:
- *   mesh         <-- pointer to mesh representation structure
- *   tolerance    <-- associated tolerance
- *   n_points     <-- number of points to locate
- *   point_coords <-- point coordinates
- *   location     <-> number of element containing or closest to each
- *                    point (size: n_points)
- *   distance     <-> distance from point to element indicated by
- *                    location[]: < 0 if unlocated, 0 - 1 if inside,
- *                    and > 1 if outside a volume element, or absolute
- *                    distance to a surface element (size: n_points)
- *----------------------------------------------------------------------------*/
+ * \param[in]       mesh          pointer to mesh representation structure
+ * \param[in]       tolerance     associated tolerance
+ * \param[in]       n_points      number of points to locate
+ * \param[in]       point_coords  point coordinates
+ * \param[in, out]  location      number of element containing or closest to
+ *                                each point (size: n_points)
+ * \param[in, out]  distance      distance from point to element indicated by
+ *                                location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                                and > 1 if outside a volume element, or
+ *                                absolute distance to a surface element
+ *                                (size: n_points)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_coupling_point_in_mesh(const void         *mesh,
@@ -485,26 +605,28 @@ cs_coupling_point_in_mesh(const void         *mesh,
                            distance);
 }
 
-/*----------------------------------------------------------------------------
- * Find elements in a given mesh containing points: updates the
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find elements in a given mesh containing points: updates the
  * location[] and distance[] arrays associated with a set of points
  * for points that are in an element of this mesh, or closer to one
  * than to previously encountered elements.
  *
  * Location is relative to parent element numbers.
  *
- * parameters:
- *   mesh         <-- pointer to mesh representation structure
- *   tolerance    <-- associated tolerance
- *   n_points     <-- number of points to locate
- *   point_coords <-- point coordinates
- *   location     <-> number of element containing or closest to each
- *                    point (size: n_points)
- *   distance     <-> distance from point to element indicated by
- *                    location[]: < 0 if unlocated, 0 - 1 if inside,
- *                    and > 1 if outside a volume element, or absolute
- *                    distance to a surface element (size: n_points)
- *----------------------------------------------------------------------------*/
+ * \param[in]       mesh          pointer to mesh representation structure
+ * \param[in]       tolerance     associated tolerance
+ * \param[in]       n_points      number of points to locate
+ * \param[in]       point_coords  point coordinates
+ * \param[in, out]  location      number of element containing or closest to
+ *                                each point (size: n_points)
+ * \param[in, out]  distance      distance from point to element indicated by
+ *                                location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                                and > 1 if outside a volume element, or
+ *                                absolute distance to a surface element
+ *                                (size: n_points)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_coupling_point_in_mesh_p(const void         *mesh,
@@ -523,8 +645,9 @@ cs_coupling_point_in_mesh_p(const void         *mesh,
                            distance);
 }
 
-/*----------------------------------------------------------------------------
- * Find elements in a given mesh closest to points: updates the
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find elements in a given mesh closest to points: updates the
  * location[] and distance[] arrays associated with a set of points
  * for points that are closer to an element of this mesh than to previously
  * encountered elements.
@@ -535,16 +658,17 @@ cs_coupling_point_in_mesh_p(const void         *mesh,
  * Location is relative to the id of a given element + 1 in
  * concatenated sections of same element dimension.
  *
- * parameters:
- *   mesh         <-- pointer to mesh representation structure
- *   n_points     <-- number of points to locate
- *   point_coords <-- point coordinates
- *   location     <-> number of element containing or closest to each
- *                    point (size: n_points)
- *   distance     <-> distance from point to element indicated by
- *                    location[]: < 0 if unlocated, or absolute
- *                    distance to a surface element (size: n_points)
- *----------------------------------------------------------------------------*/
+ * \param[in]       mesh          pointer to mesh representation structure
+ * \param[in]       n_points      number of points to locate
+ * \param[in]       point_coords  point coordinates
+ * \param[in, out]  location      number of element containing or closest to
+ *                                each point (size: n_points)
+ * \param[in, out]  distance      distance from point to element indicated by
+ *                                location[]: < 0 if unlocated, or absolute
+ *                                distance to a surface element
+ *                                (size: n_points)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_coupling_point_closest_mesh(const void         *mesh,
@@ -561,8 +685,9 @@ cs_coupling_point_closest_mesh(const void         *mesh,
                                    distance);
 }
 
-/*----------------------------------------------------------------------------
- * Find elements in a given mesh closest to points: updates the
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find elements in a given mesh closest to points: updates the
  * location[] and distance[] arrays associated with a set of points
  * for points that are closer to an element of this mesh than to previously
  * encountered elements.
@@ -572,16 +697,17 @@ cs_coupling_point_closest_mesh(const void         *mesh,
  *
  * Location is relative to parent element numbers.
  *
- * parameters:
- *   mesh         <-- pointer to mesh representation structure
- *   n_points     <-- number of points to locate
- *   point_coords <-- point coordinates
- *   location     <-> number of element containing or closest to each
- *                    point (size: n_points)
- *   distance     <-> distance from point to element indicated by
- *                    location[]: < 0 if unlocated, or absolute
- *                    distance to a surface element (size: n_points)
- *----------------------------------------------------------------------------*/
+ * \param[in]       mesh          pointer to mesh representation structure
+ * \param[in]       n_points      number of points to locate
+ * \param[in]       point_coords  point coordinates
+ * \param[in, out]  location      number of element containing or closest to
+ *                                each point (size: n_points)
+ * \param[in, out]  distance      distance from point to element indicated by
+ *                                location[]: < 0 if unlocated, or absolute
+ *                                distance to a surface element
+ *                                (size: n_points)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_coupling_point_closest_mesh_p(const void         *mesh,

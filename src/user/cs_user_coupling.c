@@ -36,18 +36,17 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * BFT library headers
+ * PLE library headers
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
+#include <ple_coupling.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_coupling.h"
 #include "cs_sat_coupling.h"
 #include "cs_syr_coupling.h"
 
@@ -64,6 +63,34 @@ BEGIN_C_DECLS
 /*============================================================================
  * User function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Define global options for couplings.
+ *
+ * These options allow defining the time step synchronization policy,
+ * as well as a time step multiplier.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_coupling(void)
+{
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
+  /*-------------------------------------------------------------------------
+   * Example for time step multiplier for external couplings.
+   *
+   * The apparent time step for the current instance times (as viewed by
+   * coupled codes) is equal to the true time step times this multiplier.
+   *
+   * When coupling with SYRTHES, it is recommended to use the same multiplier
+   * here as for the thermal variable time step (this is not automated,
+   * to allow for more advanced combinations if necessary, so the user
+   * should ensure this when using a time step multiplier).
+   *-------------------------------------------------------------------------*/
+
+  if (false)
+    cs_coupling_set_ts_multiplier(10.);
+}
 
 /*----------------------------------------------------------------------------
  * Define couplings with SYRTHES code.
