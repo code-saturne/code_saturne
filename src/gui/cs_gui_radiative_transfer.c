@@ -588,37 +588,37 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
     BFT_REALLOC(vars->properties_name, vars->nprop, char*);
 
     /* ILUMIN */
-    vars->properties_ipp[n] = ipppro[ ipproc[ *ilumin -1 ]-1 ];
-    vars->propce[n] = *ilumin;
-    BFT_MALLOC(vars->properties_name[n], strlen("intensity")+1, char);
+    vars->properties_ipp[n] = ipppro[ipproc[ *ilumin -1] -1];
+    vars->propce[n] = ipproc[ *ilumin -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("intensity") +1, char);
     strcpy(vars->properties_name[n++], "intensity");
 
     /* IQX */
-    vars->properties_ipp[n] = ipppro[ ipproc[ *iqx -1 ]-1 ];
-    vars->propce[n] = *iqx;
-    BFT_MALLOC(vars->properties_name[n], strlen("qrad_x")+1, char);
+    vars->properties_ipp[n] = ipppro[ipproc[ *iqx -1] -1];
+    vars->propce[n] = ipproc[ *iqx -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("qrad_x") +1, char);
     strcpy(vars->properties_name[n++], "qrad_x");
 
     /* IQY */
-    vars->properties_ipp[n] = ipppro[ ipproc[ *iqy -1 ]-1 ];
-    vars->propce[n] = *iqy;
-    BFT_MALLOC(vars->properties_name[n], strlen("qrad_y")+1, char);
+    vars->properties_ipp[n] = ipppro[ipproc[ *iqy -1] -1];
+    vars->propce[n] = ipproc[ *iqy -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("qrad_y") +1, char);
     strcpy(vars->properties_name[n++], "qrad_y");
 
     /* IQZ */
-    vars->properties_ipp[n] = ipppro[ ipproc[ *iqz -1 ]-1 ];
-    vars->propce[n] = *iqz;
-    BFT_MALLOC(vars->properties_name[n], strlen("qrad_z")+1, char);
+    vars->properties_ipp[n] = ipppro[ipproc[ *iqz -1] -1];
+    vars->propce[n] = ipproc[ *iqz -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("qrad_z") +1, char);
     strcpy(vars->properties_name[n++], "qrad_z");
 
     /* ITSRE */
-    vars->properties_ipp[n] = ipppro[ ipproc[ itsre[0] -1 ]-1 ];
-    vars->propce[n] = itsre[0];
-    BFT_MALLOC(vars->properties_name[n], strlen("radiative_source_term")+1, char);
+    vars->properties_ipp[n] = ipppro[ipproc[itsre[0] -1] -1];
+    vars->propce[n] = ipproc[itsre[0] -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("radiative_source_term") +1, char);
     strcpy(vars->properties_name[n++], "radiative_source_term");
 
     /* ITSRE loop on classes */
-    BFT_MALLOC(name, strlen("radiative_source_term_")+1 + 2, char);
+    BFT_MALLOC(name, strlen("radiative_source_term_") +1 +2, char);
     BFT_MALLOC(snumpp, 1 + 2, char);
     strcpy(name, "radiative_source_term_");
     for (i = 1; i < *nrphas; i++)
@@ -626,52 +626,52 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
         sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
 
-        vars->properties_ipp[n] = ipppro[ ipproc[ itsre[i] -1 ]-1 ];
-        vars->propce[n] = itsre[i];
-        BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+        vars->properties_ipp[n] = ipppro[ipproc[itsre[i] -1] -1];
+        vars->propce[n] = ipproc[itsre[i] -1] -1;
+        BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
         strcpy(vars->properties_name[n++], name);
 
         strcpy(name, "radiative_source_term_");
     }
 
     /* ITSRI */
-    vars->properties_ipp[n] = ipppro[ ipproc[ itsri[0] -1 ]-1 ];
-    vars->propce[n] = itsri[0];
-    BFT_MALLOC(vars->properties_name[n], strlen("implicit_source_term")+1, char);
+    vars->properties_ipp[n] = ipppro[ipproc[itsri[0] -1] -1];
+    vars->propce[n] = ipproc[itsri[0] -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("implicit_source_term") +1, char);
     strcpy(vars->properties_name[n++], "implicit_source_term");
 
     /* ITSRI loop on classes */
-    BFT_REALLOC(name, strlen("implicit_source_term_")+1 + 2, char);
+    BFT_REALLOC(name, strlen("implicit_source_term_") +1 +2, char);
     strcpy(name, "implicit_source_term_");
     for (i = 1; i < *nrphas; i++)
     {
         sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
 
-        vars->properties_ipp[n] = ipppro[ ipproc[ itsri[i] -1 ]-1 ];
-        vars->propce[n] = itsri[i];
-        BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+        vars->properties_ipp[n] = ipppro[ipproc[itsri[i] -1] -1];
+        vars->propce[n] = ipproc[itsri[i] -1] -1;
+        BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
         strcpy(vars->properties_name[n++], name);
 
         strcpy(name, "implicit_source_term_");
     }
 
     /* IABS */
-    vars->properties_ipp[n] = ipppro[ ipproc[ iabs[0] -1 ]-1 ];
-    vars->propce[n] = iabs[0];
-    BFT_MALLOC(vars->properties_name[n], strlen("absorption")+1, char);
+    vars->properties_ipp[n] = ipppro[ipproc[iabs[0] -1 ] -1];
+    vars->propce[n] = ipproc[iabs[0] -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("absorption") +1, char);
     strcpy(vars->properties_name[n++], "absorption");
 
     /* IABS loop on classes */
-    BFT_REALLOC(name, strlen("absorption_")+1 + 2, char);
+    BFT_REALLOC(name, strlen("absorption_") +1 + 2, char);
     strcpy(name, "absorption_");
     for (i = 1; i < *nrphas; i++)
     {
         sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
 
-        vars->properties_ipp[n] = ipppro[ ipproc[ iabs[i] -1 ]-1 ];
-        vars->propce[n] = iabs[i];
+        vars->properties_ipp[n] = ipppro[ipproc[iabs[i] -1] -1];
+        vars->propce[n] = ipproc[iabs[i] -1] -1;
         BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
         strcpy(vars->properties_name[n++], name);
 
@@ -679,44 +679,44 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
     }
 
     /* IEMI */
-    vars->properties_ipp[n] = ipppro[ ipproc[ iemi[0] -1 ]-1 ];
-    vars->propce[n] = iemi[0];
-    BFT_MALLOC(vars->properties_name[n], strlen("emission")+1, char);
+    vars->properties_ipp[n] = ipppro[ipproc[iemi[0] -1] -1];
+    vars->propce[n] = ipproc[iemi[0] -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("emission") +1, char);
     strcpy(vars->properties_name[n++], "emission");
 
     /* IEMI loop on classes */
-    BFT_REALLOC(name, strlen("emission_")+1 + 2, char);
+    BFT_REALLOC(name, strlen("emission_") +1 + 2, char);
     strcpy(name, "emission_");
     for (i = 1; i < *nrphas; i++)
     {
         sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
 
-        vars->properties_ipp[n] = ipppro[ ipproc[ iemi[i] -1 ]-1 ];
-        vars->propce[n] = iemi[i];
-        BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+        vars->properties_ipp[n] = ipppro[ipproc[iemi[i] -1] -1];
+        vars->propce[n] = ipproc[iemi[i] -1] -1;
+        BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
         strcpy(vars->properties_name[n++], name);
 
         strcpy(name, "emission_");
     }
 
     /* ICAK */
-    vars->properties_ipp[n] = ipppro[ ipproc[ icak[0] -1 ]-1 ];
-    vars->propce[n] = icak[0];
+    vars->properties_ipp[n] = ipppro[ipproc[icak[0] -1] -1];
+    vars->propce[n] = ipproc[icak[0] -1] -1;
     BFT_MALLOC(vars->properties_name[n], strlen("absorption_coefficient")+1, char);
     strcpy(vars->properties_name[n++], "absorption_coefficient");
 
     /* ICAK loop on classes */
-    BFT_REALLOC(name, strlen("absorption_coefficient_")+1 + 2, char);
+    BFT_REALLOC(name, strlen("absorption_coefficient_") +1 +2, char);
     strcpy(name, "absorption_coefficient_");
     for (i = 1; i < *nrphas; i++)
     {
         sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
 
-        vars->properties_ipp[n] = ipppro[ ipproc[ icak[i] -1 ]-1 ];
-        vars->propce[n] = icak[i];
-        BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+        vars->properties_ipp[n] = ipppro[ipproc[icak[i] -1] -1];
+        vars->propce[n] = ipproc[icak[i] -1] -1;
+        BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
         strcpy(vars->properties_name[n++], name);
 
         strcpy(name, "absorption_coefficient_");

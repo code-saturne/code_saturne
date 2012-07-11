@@ -1010,8 +1010,9 @@ static void _option_turbulence_double(const char *const param,
  *   value               <--   initialization choice
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_turbulence_initialization(const char   *const param,
-                                                   double *const value)
+static void
+cs_gui_turbulence_initialization(const char   *const param,
+                                 double       *const value)
 {
   char   *path = NULL;
   double  result;
@@ -2567,19 +2568,19 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       cs_gui_model_scalar_value(vars->model, vars->label[j], "solver_precision", &epsilo[jj]);
       cs_gui_model_scalar_value(vars->model, vars->label[j], "time_step_factor", &cdtvar[jj]);
 
-      imgr[j] = 0;
+      imgr[jj] = 0;
 
       algo_choice = cs_gui_variable_choice(vars->name[0], "solver_choice");
       if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
-        iresol[j] = 0;
+        iresol[jj] = 0;
       else if (cs_gui_strcmp(algo_choice, "jacobi"))
-        iresol[j] = 1;
+        iresol[jj] = 1;
       else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
-        iresol[j] = 2;
+        iresol[jj] = 2;
       else if (cs_gui_strcmp(algo_choice, "gmres"))
-        iresol[j] = 3;
+        iresol[jj] = 3;
       else //default value
-        iresol[j] = 1;
+        iresol[jj] = 1;
 
       tmp = (double) nitmax[jj];
       cs_gui_model_scalar_value(vars->model, vars->label[j], "max_iter_number", &tmp);
@@ -2703,7 +2704,7 @@ void CS_PROCF (csphys, CSPHYS)
   cs_gui_coriolis_value("omega_y", omegay);
   cs_gui_coriolis_value("omega_z", omegaz);
 
-  if (*omegax == 0. && *omegay == 0. && *omegaz ==0.)
+  if (*omegax == 0. && *omegay == 0. && *omegaz == 0.)
     *icorio = 0;
   else
     *icorio = 1;
@@ -2966,65 +2967,65 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     BFT_REALLOC(cs_glob_var->properties_name, cs_glob_var->nprop, char*);
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *irom-1 ]-1 ];
-    cs_glob_var->propce[n] = *irom;
+    cs_glob_var->propce[n] = ipproc[ *irom -1] -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("density")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "density");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *iviscl-1 ]-1 ];
-    cs_glob_var->propce[n] = *iviscl;
+    cs_glob_var->propce[n] = ipproc[ *iviscl -1] -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("molecular_viscosity")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "molecular_viscosity");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *ivisct-1 ]-1 ];
-    cs_glob_var->propce[n] = *ivisct;
+    cs_glob_var->propce[n] = ipproc[*ivisct -1] -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("turb_viscosity")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "turb_viscosity");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *icour-1 ]-1 ];
-    cs_glob_var->propce[n] = *icour;
+    cs_glob_var->propce[n] = ipproc[ *icour -1] -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("courant_number")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "courant_number");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *ifour-1 ]-1 ];
-    cs_glob_var->propce[n] = *ifour;
+    cs_glob_var->propce[n] = ipproc[ *ifour -1] -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("fourier_number")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "fourier_number");
 
     if (*ismago != -1 ) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *ismago-1 ]-1 ];
-      cs_glob_var->propce[n] = *ismago;
+      cs_glob_var->propce[n] = ipproc[ *ismago -1] -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("smagorinsky_constant")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "smagorinsky_constant");
     }
 
     if (*icp > 0) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *icp-1 ]-1 ];
-      cs_glob_var->propce[n] = *icp;
+      cs_glob_var->propce[n] = ipproc[ *icp -1] -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("specific_heat")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "specific_heat");
     }
 
     if (!cs_gui_strcmp(cs_glob_var->model, "compressible_model")) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *iprtot-1 ]-1 ];
-      cs_glob_var->propce[n] = *iprtot;
+      cs_glob_var->propce[n] = ipproc[ *iprtot -1] -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("total_pressure")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "total_pressure");
     }
 
     if (*iale) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisma[0]-1 ]-1 ];
-      cs_glob_var->propce[n] = ivisma[0];
+      cs_glob_var->propce[n] = ipproc[ivisma[0] -1] -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("mesh_viscosity_1")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "mesh_viscosity_1");
 
       if (itype == 1) {
         cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisma[1]-1 ]-1 ];
-        cs_glob_var->propce[n] = ivisma[1];
+        cs_glob_var->propce[n] = ipproc[ivisma[1] -1] -1;
         BFT_MALLOC(cs_glob_var->properties_name[n], strlen("mesh_viscosity_2")+1, char);
         strcpy(cs_glob_var->properties_name[n++], "mesh_viscosity_2");
 
         cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisma[2]-1 ]-1 ];
-        cs_glob_var->propce[n] = ivisma[2];
+        cs_glob_var->propce[n] = ipproc[ivisma[2] -1] -1;
         BFT_MALLOC(cs_glob_var->properties_name[n], strlen("mesh_viscosity_3")+1, char);
         strcpy(cs_glob_var->properties_name[n++], "mesh_viscosity_3");
       }
@@ -3041,7 +3042,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
         if (iscavr[i] <= 0 && ivisls[i] > 0) {
 
           cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
-          cs_glob_var->propce[n] = *ivisls;
+          cs_glob_var->propce[n] = ipproc[ *ivisls -1] -1;
 
           if (*iscalt == i+1) {
             BFT_MALLOC(cs_glob_var->properties_name[n], strlen("thermal_conductivity")+1, char);
@@ -3096,7 +3097,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
 
     for (i=0; i < cs_glob_var->ntimaver; i++) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ icmome[i]-1 ]-1 ];
-      cs_glob_var->propce[n] = icmome[i];
+      cs_glob_var->propce[n] = ipproc[icmome[i] -1] -1;
       name = _get_time_average_label(i+1);
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen(name)+1, char);
       strcpy(cs_glob_var->properties_name[n++], name);
@@ -3383,13 +3384,10 @@ void CS_PROCF(uisterm, UISTERM)(const int          *ncelet,
   int zones = 0;
   int cells = 0;
   int *cells_list = NULL;
-  double initial_value = 0;
   char *path = NULL;
   char *status = NULL;
   char *zone_id = NULL;
   char *formula = NULL;
-  char *model = NULL;
-  cs_int_t iphas = 0;
   double *aaa;
   BFT_MALLOC(aaa, (*ncelet)*6, double);
 
@@ -3693,7 +3691,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
   int cells            = 0;
   int ccfth            = 0;
   int *cells_list      = NULL;
-  double initial_value = 0;
   char *choice         = NULL;
   char *buff           = NULL;
   char *path           = NULL;
@@ -5270,7 +5267,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
               for (j=0; j < vars->nprop; j++) {
                 if (cs_gui_strcmp(name, vars->properties_name[j]))
                   array[iii+4]
-                    = propce[(vars->propce[j]-1) * (*ncelet) + iel];
+                    = propce[vars->propce[j] * (*ncelet) + iel];
               }
 
               BFT_FREE(name);
