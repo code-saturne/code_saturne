@@ -766,10 +766,13 @@ enddo
 do ipp = 2, nvppmx
   ii = itrsvr(ipp)
   if(ii.ge.1) then
-    if ((iresol(ii).eq.0.and.iconv(ii).eq.1).or.                  &
-        (iresol(ii).eq.1.and.iconv(ii).eq.0)) then
+    if (iresol(ii).eq.0.and.iconv(ii).eq.1) then
       chaine=nomvar(ipp)
       write(nfecra,2410) chaine(1:8),ii,iresol(ii),iconv(ii)
+    endif
+    if (iresol(ii).eq.1.and.iconv(ii).eq.0) then
+      chaine=nomvar(ipp)
+      write(nfecra,2411) chaine(1:8),ii,iresol(ii),iconv(ii)
     endif
   endif
 enddo
@@ -2919,6 +2922,26 @@ endif
 '@    RISQUE D ECHEC A LA RESOLUTION DU SYSTEME LINEAIRE      ',/,&
 '@    IRESOL(',I10   ,') = ',I10                               ,/,&
 '@      ET LA VARIABLE EST CONVECTEE (ICONV = ',I10,')        ',/,&
+'@                                                            ',/,&
+'@  Le calcul sera engage.                                    ',/,&
+'@                                                            ',/,&
+'@  Le solveur iteratif choisi peut ne pas converger sur le   ',/,&
+'@    systeme lineaire resultant du type de probleme considere',/,&
+'@  Verifier les parametres donnes via l''interface           ',/,&
+'@    ou cs_user_parameters.f90.                              ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2411 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION :       A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    VARIABLE ',A8                                            ,/,&
+'@    RISQUE D ECHEC A LA RESOLUTION DU SYSTEME LINEAIRE      ',/,&
+'@    IRESOL(',I10   ,') = ',I10                               ,/,&
+'@      ET LA VARIABLE N''EST PAS CONVECTEE (ICONV = ',I10,') ',/,&
 '@                                                            ',/,&
 '@  Le calcul sera engage.                                    ',/,&
 '@                                                            ',/,&
@@ -5404,18 +5427,38 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@   WARNING :      WHILE READING INPUT DATA               ',/,&
+'@ @@   warning :      while reading input data               ',/,&
 '@    =========                                               ',/,&
-'@    VARIABLE ',A8                                            ,/,&
-'@    RESOLUTION OF LINEAR SYSTEM COULD FAIL                  ',/,&
-'@    IRESOL(',I10   ,') = ',I10                               ,/,&
-'@      AND THE VARIABLE IS ADVECTED        (ICONV = ',I10,') ',/,&
+'@    variable ',a8                                            ,/,&
+'@    resolution of linear system could fail                  ',/,&
+'@    iresol(',i10   ,') = ',i10                               ,/,&
+'@      and the variable is advected        (iconv = ',i10,') ',/,&
 '@                                                            ',/,&
-'@  The calculation will be launched nevertheless             ',/,&
+'@  the calculation will be launched nevertheless             ',/,&
 '@                                                            ',/,&
-'@  The chosen linear solver could fail to converge           ',/,&
+'@  the chosen linear solver could fail to converge           ',/,&
 '@    because of the nature of the problem                    ',/,&
-'@ Check the input data given through the User Interface      ',/,&
+'@ check the input data given through the user interface      ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2411 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@   warning :      while reading input data               ',/,&
+'@    =========                                               ',/,&
+'@    variable ',a8                                            ,/,&
+'@    resolution of linear system could fail                  ',/,&
+'@    iresol(',i10   ,') = ',i10                               ,/,&
+'@      and the variable is not advected    (iconv = ',i10,') ',/,&
+'@                                                            ',/,&
+'@  the calculation will be launched nevertheless             ',/,&
+'@                                                            ',/,&
+'@  the chosen linear solver could fail to converge           ',/,&
+'@    because of the nature of the problem                    ',/,&
+'@ check the input data given through the user interface      ',/,&
 '@   or in cs_user_parameters.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -5430,7 +5473,7 @@ endif
 '@                                                            ',/,&
 '@  The calculation will run.                                  ',/&
 '@                                                            ',/,&
-'@ A turbulence model was activated by ITURB = ',I10    ,/,&
+'@ A turbulence model was activated by ITURB = ',I10           ,/,&
 '@    but writing to auxiliary restart file was de-activated  ',/,&
 '@                                                            ',/,&
 '@    ILEAUX = ',I10   ,'    IECAUX = ',I10                    ,/,&
