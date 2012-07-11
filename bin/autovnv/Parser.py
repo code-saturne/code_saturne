@@ -512,6 +512,17 @@ class Parser(object):
         return cmd
 
 
+    def getVTKCommands(self, node):
+        """
+        """
+        cmd = []
+        for n in node.getElementsByTagName("vtk_command"):
+            if n.nodeType == minidom.Node.ELEMENT_NODE and n.childNodes:
+                if n.tagName == "vtk_command":
+                    cmd.append(n.childNodes[0].data)
+        return cmd
+
+
     def getAttributes(self, node):
         """
         Return a dictionary with attributes and value of a node.

@@ -1001,7 +1001,7 @@ The attribute \texttt{file} is mandatory, and either \texttt{repo} or
 \item \texttt{time-step}: select the physical time of the value to display
 \item \texttt{size}: size of the png image
 \item \texttt{zoom}: adjust the zoom for the point of view of the cut plane
-\item \texttt{wireframe}: switch on or off the mapping on the grid
+\item \texttt{wireframe}: switch on or off the mapping on the grid\footnote{But the view might not be the true computational grid.}
 \end{list}
 
 See default values for these attributes in the table \ref{table:scalar}.
@@ -1133,6 +1133,39 @@ No attribute is mandatory.
 
 \end{list}
 
+\subsubsection{VTK raw commands}\label{sec:raw_vtk}
+
+The file of parameters allows to execute additional vtk commands (i.e Python
+commands). This possibility is mainly useful for interaction with actors and the
+camera. For each actor drawn, \texttt{Autovnv} associate a name to this object
+that can be reused in standard vtk commands. Therefore, childs markup
+\texttt{<vtk\_command>} could be added to \texttt{<scalar>}.
+
+The defined actors and camera are:
+\begin{list}{$\rightarrow$}{}
+\item \texttt{grid}: the scalar map,
+\item \texttt{axes} (if \texttt{<axes>} exits),
+\item \texttt{legend} (if \texttt{<scale>} exits),
+\item \texttt{title} (if \texttt{<title>} exits),
+\item \texttt{cam}: the parameters of the camera could be very important,
+associated to the zoom to display correctly the scalar map.
+\end{list}
+
+\small
+\begin{verbatim}
+<resu file="RESULTS.case" dest="">
+    <scalar name="alpha1_case1" variable="alpha1" normal="(0,1,0)" zoom="0.3">
+        <scale legend="Water fraction" levels="5" fontsize="20"/>
+        <title label="Grid level 1"/>
+        <axes/>
+        <vtk_command>cam.SetViewUp(1, 0, 1)</vtk_command>
+        <vtk_command>axes.ZAxisVisibilityOff()</vtk_command>
+        <vtk_command>legend.GetTitleTextProperty().BoldOn()</vtk_command>
+        <vtk_command>legend.SetOrientationToHorizontal()</vtk_command>
+    </scalar>
+</resu>
+\end{verbatim}
+\normalsize
 
 \section{Output and restart}\label{sec:restart}
 
@@ -1203,7 +1236,8 @@ You have to use the raw command \texttt{subplots\_adjust}:
 \small
 \begin{verbatim}
 <subplot id="1" legend='Yes' legpos ='0.2 0.95'>
-    <plt_command>plt.subplots_adjust(hspace=0.4, wspace=0.4, right=0.9, left=0.15, bottom=0.2, top=0.9)</plt_command>
+    <plt_command>plt.subplots_adjust(hspace=0.4, wspace=0.4, right=0.9,
+                 left=0.15, bottom=0.2, top=0.9)</plt_command>
 </subplot>
 \end{verbatim}
 \normalsize

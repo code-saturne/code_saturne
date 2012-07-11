@@ -155,6 +155,11 @@ class Scalar(object):
             self.axes_ylabel = ""
             self.axes_zlabel = ""
 
+        # raw commands
+        #-------------
+
+        self.cmd = parser.getVTKCommands(node)
+
         f.close()
 
 #-------------------------------------------------------------------------------
@@ -235,14 +240,17 @@ class Builder(object):
             print "Error: variable %s not found." % self.opt.variable
             sys.exit(1)
 
-        data = self.convertCell2Point(ds)
+        convert = self.convertCell2Point(ds)
 
         self.ren = vtk.vtkRenderer()
         self.ren.SetBackground(1., 1., 1.)
         self.cam = self.ren.GetActiveCamera()
-        cut = self.cutPlane(data)
-        self.mapper = vtk.vtkDataSetMapper()
-        self.mapper.SetInput(cut)
+        self.ren.ResetCamera()
+
+        cut = self.cutPlane(convert)
+        self.mapper = vtk.vtkPolyDataMapper()
+        self.mapper.SetInputConnection(cut.GetOutputPort())
+
         self.dilatation()
 
         if not self.opt.color_map:
@@ -251,33 +259,70 @@ class Builder(object):
         else:
             lut = eval("self." + self.opt.color_map + "()")
 
-        self.colorDataSetByArray(data, lut)
+        self.colorDataSetByArray(convert, lut)
 
-        grid_actor = vtk.vtkLODActor()
-        grid_actor.SetMapper(self.mapper)
+        grid = vtk.vtkLODActor()
+        #grid = vtk.vtkActor()
+        grid.SetMapper(self.mapper)
         if self.opt.wireframe == "on":
-            grid_actor.GetProperty().SetRepresentationToWireframe()
-        self.ren.AddActor(grid_actor)
+            grid.GetProperty().SetRepresentationToWireframe()
+        self.ren.AddActor(grid)
 
         if self.opt.axes:
-            axes_actor = self.addAxes(cut)
-            axes_actor.SetCamera(self.cam)
-            self.ren.AddActor(axes_actor)
+            axes = self.addAxes(cut)
+            axes.SetCamera(self.cam)
+            self.ren.AddActor(axes)
 
         if self.opt.title:
-            title_actor = self.setTitle()
-            self.ren.AddActor(title_actor)
+            title = self.setTitle()
+            self.ren.AddActor(title)
 
         if self.opt.scale:
-            legend_actor = self.addLegend(lut)
-            self.ren.AddActor(legend_actor)
+            legend = self.addLegend(lut)
+            self.ren.AddActor(legend)
 
-        self.ren.ResetCamera()
+        # Camera parameters
 
         if self.opt.axes and self.opt.zoom == 1.:
             self.cam.Zoom(0.9)
         elif self.opt.zoom != 1.:
             self.cam.Zoom(self.opt.zoom)
+
+        if self.opt.center:
+            self.cam.SetFocalPoint(self.opt.center[0],
+                                   self.opt.center[1],
+                                   self.opt.center[2])
+        else:
+            self.cam.SetFocalPoint(0,0,0)
+
+        self.cam.SetPosition(-1 * self.opt.normal[0],
+                             -1 * self.opt.normal[1],
+                             -1 * self.opt.normal[2])
+
+        axes.SetXAxisVisibility(1)
+        axes.SetYAxisVisibility(1)
+        axes.SetZAxisVisibility(1)
+        if self.opt.normal[1] == 0 and self.opt.normal[2] == 0:
+            axes.SetYAxisVisibility(0)
+            self.cam.SetViewUp(0, 0, 1)
+        elif self.opt.normal[0] == 0 and self.opt.normal[2] == 0:
+            axes.SetZAxisVisibility(0)
+            self.cam.SetViewUp(0, 0, 1)
+        elif self.opt.normal[0] == 0 and self.opt.normal[1] == 0:
+            axes.SetYAxisVisibility(0)
+            self.cam.SetViewUp(0, 1, 0)
+
+        cam = self.cam
+
+        for cmd in self.opt.cmd:
+            c = open("./tmp.py", "w")
+            c.write(cmd)
+            c.close()
+            try:
+                execfile("./tmp.py")
+            except:
+                print "Error with the vtk command: %s" % cmd
+            os.remove("./tmp.py")
 
         self.win = vtk.vtkRenderWindow()
         self.win.SetSize(self.opt.size[0], self.opt.size[1])
@@ -314,34 +359,40 @@ class Builder(object):
         convert = vtk.vtkCellDataToPointData()
         convert.SetInput(cellDataSet)
         convert.Update()
-        return convert.GetOutput()
+        return convert
 
 
     def cutPlane(self, ptDataSet):
         """Extract a slice from the 3D computation domain."""
+        # The (implicit) plane is used to do the cutting
         plane = vtk.vtkPlane()
         if self.opt.center:
             plane.SetOrigin(self.opt.center[0],
                             self.opt.center[1],
                             self.opt.center[2])
         else:
-            plane.SetOrigin(ptDataSet.GetCenter())
+            plane.SetOrigin(ptDataSet.GetOutput().GetCenter())
 
         plane.SetNormal(self.opt.normal[0],
                         self.opt.normal[1],
                         self.opt.normal[2])
 
+        # The cutter is set up to process each contour value over all cells
+        # (SetSortByToSortByCell). This results in an ordered output of polygons
+        # which is key to the compositing.
         cut = vtk.vtkCutter()
-        cut.SetInput(ptDataSet)
+        cut.SetInputConnection(ptDataSet.GetOutputPort())
         cut.SetCutFunction(plane)
-        return cut.GetOutput()
+        #cut.GenerateCutScalarsOn()
+        #cut.SetSortByToSortByCell()
+        return cut
 
 
     def dilatation(self):
         """Increase the dimensions of the image"""
         if self.opt.dilatation:
             magnifyFilter = vtk.vtkImageMagnify()
-            magnifyFilter.SetInputConnection(self.mapper.GetOutput())
+            magnifyFilter.SetInputConnection(self.mapper.GetOutputPort())
             magnifyFilter.SetMagnificationFactors(self.opt.dilatation[0],
                                                   self.opt.dilatation[1],
                                                   self.opt.dilatation[2])
@@ -430,7 +481,7 @@ class Builder(object):
         tprop = self.textProperty(fontsize = self.opt.axes_fontsize)
 
         axes = vtk.vtkCubeAxesActor2D()
-        axes.SetInput(obj)
+        axes.SetInput(obj.GetOutput())
         axes.SetLabelFormat(self.opt.axes_format)
         axes.SetFlyModeToOuterEdges()
         axes.SetFontFactor(1.5)
@@ -449,20 +500,14 @@ class Builder(object):
         if self.opt.axes_zlabel:
             axes.SetZLabel(self.opt.axes_zlabel)
 
-        #if self.opt.normal == (1, 0, 0):
-            #axes.XAxisVisibilityOff()
-        #elif self.opt.normal == (0, 1, 0):
-            #axes.ZAxisVisibilityOff()
-        if self.opt.normal == (0, 0, 1):
-            axes.YAxisVisibilityOff()
-
         return axes
 
 
-    def colorDataSetByArray(self, data, lut):
+    def colorDataSetByArray(self, convert, lut):
         """Build the color map."""
         array = None
         flag = True
+        data = convert.GetOutput()
         self.mapper.Modified()
 
         if data.GetCellData() and data.GetCellData().HasArray(self.opt.variable):
