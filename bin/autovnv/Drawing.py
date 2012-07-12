@@ -524,9 +524,10 @@ class Plotter(object):
             if curve.fmt:
                 lines = ax.plot(xspan, yspan, curve.fmt, label=curve.legend)
             else:
-                if len(p.curves) < 8:
+                idx = p.curves.index(curve)
+                if idx < 8:
                     lines = ax.plot(xspan, yspan, label=curve.legend)
-                elif len(p.curves) < 15:
+                elif idx < 15:
                     lines = ax.plot(xspan, yspan, '--', label=curve.legend)
                 else:
                     lines = ax.plot(xspan, yspan, ':', label=curve.legend)
