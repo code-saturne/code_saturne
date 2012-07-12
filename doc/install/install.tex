@@ -781,7 +781,7 @@ First, environment modules are loaded if necessary:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ \textcolor{Magenta}{module purge} \\
-\$ \textcolor{Magenta}{module load} intel\_compilers/12.0.3.174 \\
+\$ \textcolor{Magenta}{module load} intel\_compilers/11.1.072 \\
 \$ \textcolor{Magenta}{module load} open\_mpi/gcc/1.4.3
 }\end{minipage}}
 
@@ -917,9 +917,8 @@ may now be passed to the \texttt{--with-python-exec=}
 \textbackslash \\
 \textcolor{Magenta}{--with-prepro}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe \textbackslash \\
 \textcolor{Violet}{--with-blas}=/opt/intel/composerxe-2011.3.174/mkl \textbackslash \\
-\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.3.32/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-batch}=SLURM \textbackslash \\
 \textcolor{Violet}{--with-syrthes}=/home/projects/syrthes3.4.3 \textbackslash \\
-\textcolor{Violet}{--with-python-exec}=\textcolor{OliveGreen}{\$CS\_OPT}/python-2.7.1/arch/ompi/bin \textbackslash \\
 \textcolor{red}{CC}=mpicc \textcolor{red}{FC}=ifort
 \$  make -j 4 \&\& make install \&\& make clean\\
 \$ cd ..
