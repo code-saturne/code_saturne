@@ -109,6 +109,10 @@ if test "x$with_blas" != "xno" ; then
 
         if test "x$cs_ibm_bg_type" = "xP" ; then
           BLAS_LIBS="-lesslsmpbg -lesslbg"
+        elif test "x$cs_ibm_bg_type" != "xQ"; then
+          BLAS_LIBS="-lesslbg"
+          BLAS_LDFLAGS="-L$with_blas/lib64"
+          BLASRUNPATH="-R$with_blas/lib64"
         else
           BLAS_LIBS="-lesslsmp"
         fi

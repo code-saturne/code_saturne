@@ -407,8 +407,6 @@ class resource_info(batch_info):
 
         ppn = 1
         if self.n_procs != None and  self.n_nodes != None:
-            print self.n_procs
-            print self.n_nodes
             ppn = self.n_procs / self.n_nodes
 
         return ppn
@@ -1095,8 +1093,17 @@ class mpi_environment:
         # Determine processor count and MPMD handling
 
         self.mpiexec_n = ' --np '
-        if (resource_info != None):
+        rm = None
+        ppn = 1
+        if resource_info != None:
+            rm = resource_info.manager
             ppn = resource_info.n_procs_per_node()
+        if rm == 'SLURM':
+            self.mpiexec = 'srun'
+            self.mpiexec_n = ' --ntasks='
+            if ppn != 1:
+                self.mpiexec_n_per_node = ' --ntasks-per-node=' + str(ppn)
+        else:
             if ppn != 1:
                 self.mpiexec_n_per_node = ' --ranks-per-node ' + str(ppn)
         self.mpiexec_separator = ':'
@@ -1273,23 +1280,11 @@ if __name__ == '__main__':
     pkg = cs_package.package()
     e = exec_environment(pkg)
 
-    mpi_env = mpi_environment(pkg)
-
-    print('mpi_env.bindir =        ', mpi_env.bindir)
-    print('mpi_env.mpiexec =       ', mpi_env.mpiexec)
-    print('mpi_env.mpiexec_args =  ', mpi_env.mpiexec_args)
-    print('mpi_env.mpiexec_exe =   ', mpi_env.mpiexec_exe)
-    print('mpi_env.mpiexec_opts =  ', mpi_env.mpiexec_opts)
-    print('mpi_env.mpiexec_n =     ', mpi_env.mpiexec_n)
-    print('mpi_env.gen_hostsfile = ', mpi_env.gen_hostsfile)
-    print('mpi_env.del_hostsfile = ', mpi_env.del_hostsfile)
-    print('mpi_env.mpiboot =       ', mpi_env.mpiboot)
-    print('mpi_env.mpihalt =       ', mpi_env.mpihalt)
-    print('mpi_env.info_cmds =     ', mpi_env.info_cmds)
-    print('mpi_env.mpmd =          ', mpi_env.mpmd)
-    print('mpi_env.type =          ', mpi_env.type)
-
-    print(mpi_env.info())
+    import pprint
+    pprint.pprint(e.__dict__)
+    pprint.pprint(e.resources__dict__)
+    pprint.pprint(e.mpi_env__dict__)
+    print(e.mpi_env.info())
 
 #-------------------------------------------------------------------------------
 # End
