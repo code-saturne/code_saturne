@@ -46,6 +46,7 @@ module numvar
   ! iscapp(i)                  no du scalaire physique particuliere i
   ! nscaus                     nbre de scalaires utilisateur
   ! nscapp                     nbre de scalaires physique particuliere
+  ! nscasp                     number of species scalars
   ! iuma, ivma, iwma           Vitesse de maillage en ALE
   ! ilum                       Luminance for radiative transfert
 
@@ -57,7 +58,7 @@ module numvar
                    iphi, ifb   , ial , iomg,                    &
                    inusa,                                       &
                    isca(nscamx), iscapp(nscamx),                &
-                   nscaus      , nscapp        ,                &
+                   nscaus      , nscapp        , nscasp  ,      &
                    iuma        , ivma          , iwma ,         &
                    ilum
 

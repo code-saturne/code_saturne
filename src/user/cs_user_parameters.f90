@@ -877,9 +877,6 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-
-
-
 ! --- Variable diffusivity (ivisls=1) or constant diffusivity (ivisls=0) for
 !       each USER scalar, EXCEPT those which represent the variance
 !       of another.
@@ -897,8 +894,6 @@ endif
 
 !     Caution:    complete usphyv with the law defining the diffusivity
 !     =========   if and only if ivisls = 1 has been set here.
-
-
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1817,6 +1812,39 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
+! --- Define scalar (among nscaus) which are species:
+!     If a user scalar isca represents the species Yk,
+!     iscasp(isca) is set to 1. By default, iscasp(isca)= 0.
+!
+!     To use the Low-Mach algorithm with a multi-species state law (idilat = 3),
+!     we also have to specify the molar mass associated (wmolsp(isca))
+!     to the species Yk.
+!
+!     WARNING: This algorithm assumes that the last species is deduced from
+!              the others thank to the relation Ym = 1 - Sum_k Yk.
+!              The molar mass associated to this species has to be
+!              specified in wmolsp(0).
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+! The example set 4 species, the molar mass associated to the last one (not
+! computed) is stored in  wmolsp(0).
+
+if (nscaus.gt.0) then
+  iscasp(2) =  1
+  wmolsp(2) =  0.032d0
+
+  iscasp(3) =  1
+  wmolsp(3) =  0.016d0
+
+  iscasp(4) =  1
+  wmolsp(4) =  0.016d0
+
+
+  wmolsp(0) =  0.028d0
+endif
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Reference velocity for turbulence initialization (m2/s)
 !       (useful only with turbulence)

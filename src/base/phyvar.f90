@@ -109,6 +109,7 @@ double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), tt, ttmin, ttke, vistot, xrtp
 double precision alp3, xrij(3,3) , xnal(3)   , xnoral
 double precision xttke, xttkmg, xttdrb,epsrgp, climgp, extrap
+double precision alpha, ym, yk
 
 double precision, allocatable, dimension(:,:) :: grad
 
@@ -197,20 +198,76 @@ call usphyv &
 !  Density defined by a perfect gas equation of state
 !  for the low-Mach algorithm
 
-if (idilat.eq.3) then
+if (idilat.eq.3 .and. iscsth(iscalt).eq.2) then
 
   ivarh  = isca(iscalt) ! Works only with enthalpy
   ipcrom = ipproc(irom)
 
-  !compute the density with the perfect state law:
+  ! Count the number of species
+  nscasp = 0
+  do ii = 1, nscamx
+    nscasp = nscasp + iscasp(ii)
+  enddo
+
   do iel = 1, ncel
+
+    ! Enthalpy over Cp, with Cp specific heat variable or constant
     if (icp.gt.0) then
-      ipccp = ipproc(icp)
-      xrtp = rtp(iel,ivarh)/propce(iel,ipccp)
+      ipccp  = ipproc(icp)
+      xrtp =  rtp(iel,ivarh)/propce(iel,ipccp)
     else
-      xrtp = rtp(iel,ivarh)/cp0
+      xrtp =  rtp(iel,ivarh)/cp0
     endif
-    propce(iel,ipcrom) = pther /(rair*xrtp)
+
+    alpha = 0.d0
+
+    if (nscasp.ge.2) then
+      ! Deduced species
+      ym = 1.d0
+
+      do ii = 1, nscaus
+        if (iscasp(ii).eq.1) then
+          yk = rtp(iel, isca(ii))
+
+          ! Clipping of the fraction yk
+          yk = max(yk, 0.d0)
+          yk = min(yk, 1.d0)
+
+          alpha = alpha + yk/wmolsp(ii)
+
+          ym = ym - yk
+        endif
+      enddo
+
+      ! Clipping of remaining species
+      ym = max(ym, 0.d0)
+
+      ! Add to alpha the value due to the deduced fraction
+      alpha = alpha + ym/wmolsp(0)
+
+      ! Check if the values are correct
+      if (alpha.lt.epzero .or. rair.lt.epzero .or.   &
+           xrtp.lt.epzero .or. pther.lt.epzero) then
+        write(nfecra,9004)
+        call csexit(1)
+      endif
+
+      propce(iel,ipcrom) = pther/(alpha*rair*xrtp)
+
+    ! Monospecies: density defined with the perfect state law
+    else
+
+      ! Check if the values are correct
+      if (rair.lt.epzero .or.                       &
+          xrtp.lt.epzero .or. pther.lt.epzero) then
+        write(nfecra,9004)
+        call csexit(1)
+      endif
+
+      propce(iel,ipcrom) = pther/(rair*xrtp)
+
+    endif
+
   enddo
 
 endif
@@ -954,6 +1011,21 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+9004  format( &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
+'@    =========                                               ',/,&
+'@    OPTION IDILAT 3                                         ',/,&
+'@    LE CALCULE ENGENDRE UN RHO NEGATIF                      ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier uscfx1 et uscfpv.                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  9011  format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1132,6 +1204,19 @@ endif
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
 '@  Verify uscfx1 and uscfpv.                                 ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 9004  format( &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
+'@    ========                                                ',/,&
+'@    OPTION IDILAT 3                                         ',/,&
+'@    THE COMPUTATION MAKE RHO NEGATIV                        ',/,&
+'@                                                            ',/,&
+'@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

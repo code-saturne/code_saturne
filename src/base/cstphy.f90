@@ -187,16 +187,20 @@ module cstphy
   !          2 : clipping des variances a max(zero,scamin) et scamax
   ! iscavr : numero du scalaire associe a la variance ou zero
   !          si le scalaire n'est pas une variance
+  ! iscasp : 0 : le scalaire associe n est pas une espece
+  !          1 : le scalaire associe est une espece
   ! scamin, scamax : min et max pour clipping des scalaires
   !                  on ne clippe que si scamin < scamax
   ! visls0 : viscosite des scalaires si constante
   ! sigmas : prandtl des scalaires
+  ! wmolsp : fraction massique des scalaires d especes
+  !          wmolsp(0) is associated to the deduced species.
   ! rvarfl : coeff de dissipation des variances
 
   integer, save ::          iscsth(nscamx), ivisls(nscamx), ivissa(nscamx),  &
-                            iclvfl(nscamx), iscavr(nscamx)
+                            iclvfl(nscamx), iscavr(nscamx), iscasp(nscamx)
   double precision, save :: scamin(nscamx), scamax(nscamx),                  &
-                            visls0(nscamx),sigmas(nscamx),                   &
+                            visls0(nscamx), sigmas(nscamx), wmolsp(0:nscamx),&
                             rvarfl(nscamx)
 
   !=============================================================================

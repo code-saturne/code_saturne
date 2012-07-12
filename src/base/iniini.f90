@@ -421,6 +421,7 @@ call tstjpe(iperio, iperot)
 nscal  = 0
 nscaus = 0
 nscapp = 0
+nscasp = 0
 nvar   = 0
 
 ! --- Nombre de proprietes physiques (utile ?)
@@ -472,6 +473,7 @@ ilum   = 0
 do iscal = 1, nscamx
   isca  (iscal) = 0
   iscapp(iscal) = 0
+  iscasp(iscal) = 0
 enddo
 
 ! --- Initialisation par defaut des commons pour la physique particuliere
@@ -1260,6 +1262,7 @@ do iscal = 1, nscamx
   scamax(iscal) =+grand
   visls0(iscal) =-grand*10.d0
   sigmas(iscal) = 1.0d0
+  wmolsp(iscal) = 0.0d0
   rvarfl(iscal) = 0.8d0
 enddo
 
