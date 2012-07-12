@@ -509,7 +509,7 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 
 By default, on most architectures, both shared and static libraries
 for \CS will be built, and the executables will be linked with shared
-libraries by default. To disable either shared or static libraries,
+libraries. To disable either shared or static libraries,
 add either {\tt --disable-shared} or {\tt --disable-static}
 to the options passed to {\tt configure}. This will speed-up the build,
 process as each file will only be built once, and not twice.
@@ -677,8 +677,8 @@ reflecting the \CS source path, installation path, and a path where optional
 libraries are installed:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/2.1 \\
-\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/2.1 \\
+\$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/2.3 \\
+\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/2.3 \\
 \$ \textcolor{OliveGreen}{CS\_OPT}=/home/projects/opt
 }\end{minipage}}
 
@@ -690,21 +690,21 @@ build on a cluster named \texttt{ivanoe}, using the Intel compilers
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ \textcolor{Magenta}{module purge} \\
-\$ \textcolor{Magenta}{module load} intel\_compilers/12.0.3.174 \\
-\$ \textcolor{Magenta}{module load} open\_mpi/gcc/1.4.3 \\
+\$ \textcolor{Magenta}{module load} intel\_compilers/12.1.1.256 \\
+\$ \textcolor{Magenta}{module load} open\_mpi/gcc/1.4.5 \\
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/saturne/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe\_ompi
 \textbackslash \\
-\textcolor{Violet}{--with-blas}=/opt/intel/composerxe-2011.3.174/mkl \textbackslash \\
-\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.3.32/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/ivanoe
+\textcolor{Violet}{--with-blas}=/opt/intel/composerxe\_xe\_2011\_sp1.7.256/mkl \textbackslash \\
+\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/ivanoe
 \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/ivanoe
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.19/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/ivanoe\_ompi \textbackslash \\
-\textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-3.2/arch/ivanoe\_ompi \textbackslash \\
+\textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.23/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/ivanoe\_ompi \textbackslash \\
+\textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-4.0/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{red}{CC}=mpicc \textcolor{red}{FC}=ifort
 \textcolor{red}{CXX}=icpc
 }\end{minipage}}
@@ -723,7 +723,7 @@ which reflects this.
 In this example, HDF5, CGNS and MED were built without MPI-IO support,
 as \CS does not yet exploit MPI-IO for these libraries.
 
-\subsubsection{Cross-compiling}
+\subsection{Cross-compiling}
 
 On machines with different front-end and compute node architectures,
 such as IBM Blue Gene/P, cross-compiling is necessary.
@@ -767,6 +767,8 @@ either for the front-end, for the compute nodes, or both:
 \item \ptscotch or \parmetis may be used by a compute node build of the
       partitioner.
 \end{itemize}
+
+\subsubsection{Cross-compiling configuaration for Blue Gene/P}
 
 For an example, let us start with the front-end build:
 
@@ -840,6 +842,107 @@ Note that in the above examples, we specified an install of the \scotch
 partitioning library both for the front-end and for the compute nodes.
 The implies a serial build of \scotch on the front-end node, and a parallel
 build (\ptscotch) on the compute nodes. Both are optional.
+Similarly, \metis could be used on the front-end node, and \parmetis
+on the compute nodes.
+
+\subsubsection{Cross-compiling configuration for Blue Gene/Q}
+
+In our example, the front-end node is based on an IBM Power architecture,
+runnning under Red Hat Enterprise Linux 6, on which the Python/Qt4
+environment should be available as an RPM package, and installed by the
+administrators. If this is not possible, the Python/Qt4 aspects of the
+Blue Gene/P example may be adapted here.
+
+On the compute nodes, the IBM XL compilers produce static object files
+by default, so the \texttt{--disable-shared} option is not necessary
+for libraries using Autotools-based installs when using those compilers,
+though it does no harm.
+
+As the front-end nodes of Blue Gene/Q machines may be expected to run
+Red Hat EL 6.x linux variants, instead of 5.x for blue Gene/P, more
+up-to date compilers and libraries (such as Python/Qt4) should be available
+as packages, easily installable by the system administrators.
+
+For the compute nodes, the following remarks may be mode for prerequisites:
+
+\begin{itemize}
+\item LibXml: to reduce the size and simmplify the installation of this
+library, the \texttt{--with-ftp=no}, \texttt{--with-http=no},
+and \texttt{--without-modules} options may be used with \texttt{configure}.
+\item HDF5: building this library with its \texttt{configure} script
+is a pain\footnote{It requires running a \texttt{yodconfigure}
+script and adapting other scripts (see documentation), then running
+this as a submitted job (or under a SLURM allocation if you are lucky
+enough to use this resource manager).}, but installing HDF5 1.8.9
+using CMake is as simple as on a workstation, and simply requires
+choosing the correct compilers and possibly a few other options (in
+the EDF \CS build, the GCC compilers were chosen to reduce risks, and
+the Fortran wrappers were not needed, so not built).
+\item CGNS: building CGNS 3.1 is based on CMake, and no specific
+problems have been observed.
+\item MED: building MED 3.0.5 for \CS is easier than previous versions,
+as a new \\ \texttt{--disable-fortan} option is available for the
+\texttt{configure} script. Both the C and C++ compiler wrappers
+must be specified, and the link may fail with the GNU compilers, due
+to some shared library issue (trying to force \texttt{--disable-shared}).
+With the IBM XL compilers, the same build works fine, as long as the
+\texttt{CXXFLAGS=-qlanglvl=redefmac}) option is passed. Adding
+the HDF5 tools path to the \texttt{\$PATH} environment variable for
+the  configuration stage may also be required.
+\end{itemize}
+
+For an example, let us start with the front-end build:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/saturne/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend
+\textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/frontend
+\textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/frontend
+\textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/frontend \\
+}\end{minipage}}
+
+For the compute node, we use the same version of Python (which
+is used only for the GUI and scripts, which only run on the front-end
+or service nodes), but the compilers are cross-compilers for the
+compute nodes:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/saturne/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq
+\textbackslash \\
+\textcolor{Violet}{--with-blas}=/opt/ibmmath/essl/5.1 \textbackslash \\
+\textcolor{Violet}{--with-blas-type}=ESSL \textbackslash \\
+\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/bgq \textbackslash \\
+\textcolor{Violet}{
+--disable-sockets --disable-dlloader -disable-nls \textbackslash \\
+--disable-frontend --enable-long-gnum \textbackslash
+} \\
+\textcolor{red}{CC}=/bgsys/drivers/ppcfloor/comm/xl/bin/mpixlc\_r \textbackslash \\
+\textcolor{red}{CXX}=/bgsys/drivers/ppcfloor/comm/xl/bin/mpixlcxx\_r \textbackslash \\
+\textcolor{red}{FC}=bgxlf95\_r \\
+}\end{minipage}}
+
+The C++ compiler is specified, as it will be needed for
+the link stage due to C++ dependencies in the MED library,
+which is a static library in this example (see \S\ref{sec:ext:med}).
+
+Note that in the above examples, we specified an install of the \scotch
+partitioning library both for the front-end and for the compute nodes.
+The implies a serial build of \scotch on the front-end node, and a parallel
+build (\ptscotch) on the compute nodes. Both are optional, and the
+serial partitioning on the front-end nodes should only be used as a
+backup or as a reference for parallel partitioning. Unless robustness
+or quality issues are encountered with parallel partitioning, it
+should supercede serial partitioning, as it allows for a simpler
+toolchain even for large meshes.
 Similarly, \metis could be used on the front-end node, and \parmetis
 on the compute nodes.
 
