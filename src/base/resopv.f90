@@ -196,6 +196,7 @@ integer          ipp
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
 integer          iinvpe, indhyd
+integer          itypfl
 integer          iesdep
 integer          idtsca
 integer          nagmax, npstmg
@@ -215,6 +216,7 @@ double precision, allocatable, dimension(:) :: res, divu, presa
 double precision, dimension(:,:), allocatable :: gradp
 double precision, allocatable, dimension(:) :: cofafp, coefbp, cofbfp
 double precision, allocatable, dimension(:) :: rhs, rovsdt
+double precision, allocatable, dimension(:) :: velflx, velflb
 
 !===============================================================================
 
@@ -229,6 +231,10 @@ allocate(rhs(ncelet), rovsdt(ncelet))
 
 ! Boundary conditions for delta P
 allocate(cofafp(nfabor), coefbp(nfabor), cofbfp(nfabor))
+
+! --- Weakly compressible algorithm: semi analytic scheme
+if (idilat.eq.4) allocate(velflx(nfac), velflb(nfabor))
+
 ! --- Writting
 ipp    = ipprtp(ipr)
 
@@ -331,11 +337,13 @@ if(irnpnw.ne.1) then
   epsrgp = epsrgr(iu )
   climgp = climgr(iu )
   extrap = extrag(iu )
+  itypfl = 1
+  if (idilat.eq.4) itypfl = 0
 
-  call inimav                                                     &
+  call inimav &
   !==========
  ( nvar   , nscal  ,                                              &
-   iu     ,                                                       &
+   iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -347,6 +355,13 @@ if(irnpnw.ne.1) then
   init = 1
   call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
        ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),res)
+
+  ! --- Weakly compressible algorithm: semi analytic scheme
+  if (idilat.eq.4) then
+    do iel = 1, ncel
+      res(iel) = res(iel)*propce(iel,ipcrom)
+    enddo
+  endif
 
   if (ncesmp.gt.0) then
     do ii = 1, ncesmp
@@ -569,20 +584,43 @@ if (iphydr.eq.1) then
   enddo
 endif
 
-if (idtsca.eq.0) then
-  do iel = 1, ncel
-    ardtsr  = arak*(dt(iel)/propce(iel,ipcrom))
-    do isou = 1, 3
-      trav(isou,iel) = vel(isou,iel) + ardtsr*trav(isou,iel)
+! --- Weakly compressible algorithm: semi analytic scheme
+!     The RHS contains rho div(u*) and not div(rho u*)
+!     so this term will be add afterwards
+if (idilat.eq.4) then
+  if (idtsca.eq.0) then
+    do iel = 1, ncel
+      ardtsr  = arak*(dt(iel)/propce(iel,ipcrom))
+      do isou = 1, 3
+        trav(isou,iel) = ardtsr*trav(isou,iel)
+      enddo
     enddo
-  enddo
+  else
+    do iel=1,ncel
+      arsr  = arak/propce(iel,ipcrom)
+      do isou = 1, 3
+        trav(isou,iel) = arsr*tpucou(isou,iel)*trav(isou,iel)
+      enddo
+    enddo
+  endif
+
+! Standard algorithm
 else
-  do iel=1,ncel
-    arsr  = arak/propce(iel,ipcrom)
-    do isou = 1, 3
-      trav(isou,iel) = vel(isou,iel) + arsr*tpucou(isou,iel)*trav(isou,iel)
+  if (idtsca.eq.0) then
+    do iel = 1, ncel
+      ardtsr  = arak*(dt(iel)/propce(iel,ipcrom))
+      do isou = 1, 3
+        trav(isou,iel) = vel(isou,iel) + ardtsr*trav(isou,iel)
+      enddo
     enddo
-  enddo
+  else
+    do iel=1,ncel
+      arsr  = arak/propce(iel,ipcrom)
+      do isou = 1, 3
+        trav(isou,iel) = vel(isou,iel) + arsr*tpucou(isou,iel)*trav(isou,iel)
+      enddo
+    enddo
+  endif
 endif
 
 ! ---> Traitement du parallelisme et de la periodicite
@@ -601,11 +639,12 @@ iwarnp = iwarni(ipr)
 epsrgp = epsrgr(iu )
 climgp = climgr(iu )
 extrap = extrag(iu )
+itypfl = 1
 
-call inimav                                                       &
+call inimav &
 !==========
  ( nvar   , nscal  ,                                              &
-   iu     ,                                                       &
+   iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -943,9 +982,53 @@ relaxp = relaxv(ipr)
 
 ! --- Divergence initiale
 init = 1
-call divmas                                                       &
-  (ncelet,ncel,nfac,nfabor,init,nfecra,                           &
-   ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),divu)
+
+call divmas &
+!==========
+ ( ncelet , ncel   , nfac  , nfabor , init   , nfecra ,          &
+   ifacel , ifabor ,                                             &
+   propfa(1,iflmas), propfb(1,iflmab)        , divu )
+
+! --- Weakly compressible algorithm: semi analytic scheme
+!     The RHS contains rho div(u*) and not div(rho u*)
+if (idilat.eq.4) then
+
+  init   = 1
+  inc    = 1
+  iflmb0 = 1
+  if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
+  nswrgp = nswrgr(iu)
+  imligp = imligr(iu)
+  iwarnp = iwarni(ipr)
+  epsrgp = epsrgr(iu)
+  climgp = climgr(iu)
+  extrap = extrag(iu)
+
+  itypfl = 0
+
+  call inimav &
+  !==========
+ ( nvar   , nscal  ,                                              &
+   iu     , itypfl ,                                              &
+   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   vel    ,                                                       &
+   coefav , coefbv ,                                              &
+   velflx , velflb )
+
+  call divmas &
+  !==========
+ ( ncelet , ncel   , nfac  , nfabor , init   , nfecra ,           &
+   ifacel , ifabor ,                                              &
+   velflx , velflb , res )
+
+  do iel = 1, ncel
+    divu(iel) = divu(iel) + res(iel)*propce(iel,ipcrom)
+  enddo
+
+endif
 
 ! --- Termes sources de masse
 if (ncesmp.gt.0) then
@@ -968,6 +1051,15 @@ if (iilagr.eq.2 .and. ltsmas.eq.1) then
   do iel = 1, ncel
     divu(iel) = divu(iel) -tslagr(iel,itsmas)
   enddo
+endif
+
+! --- Weakly compressible algorithm: semi analytic scheme
+if (idilat.eq.4) then
+
+  do iel = 1, ncel
+    divu(iel) = divu(iel) + propce(iel,ipproc(iustdy(itsrho)))
+  enddo
+
 endif
 
 ! --- Initial right hand side
@@ -1306,6 +1398,7 @@ deallocate(dam, xam)
 deallocate(res, divu, presa)
 deallocate(rhs, rovsdt)
 deallocate(cofafp, coefbp, cofbfp)
+if (idilat.eq.4) deallocate(velflx, velflb)
 
 !--------
 ! Formats

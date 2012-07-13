@@ -147,6 +147,7 @@ double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: trgrdn, vort
 double precision, allocatable, dimension(:) :: tsexp
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
@@ -164,6 +165,7 @@ allocate(tinssa(ncelet), trgrdu(ncelet))
 ! Allocate work arrays
 allocate(w1(ncelet))
 allocate(tsexp(ncelet))
+allocate(dpvar(ncelet))
 
 icliup = iclrtp(iu,icoef)
 
@@ -633,7 +635,7 @@ call codits &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   tinssa , rhssa  , rtp(1,ivar)     ,                            &
+   tinssa , rhssa  , rtp(1,ivar)     , dpvar ,                    &
    rvoid  )
 
 
@@ -659,6 +661,7 @@ deallocate(tinssa, trgrdu)
 deallocate(trgrdn, vort)
 deallocate(w1)
 deallocate(tsexp)
+deallocate(dpvar)
 
 !--------
 ! FORMATS

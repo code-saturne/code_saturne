@@ -184,7 +184,7 @@ double precision vela  (3  ,ncelet)
 
 ! Local variables
 
-integer          iel   , ielpdc, ifac  , ivar  , isou
+integer          iel   , ielpdc, ifac  , ivar  , isou  , itypfl
 integer          iccocg, inc   , init  , ii    , isqrt
 integer          ireslp, nswrgp, imligp, iwarnp, ippt  , ipp
 integer          iclipr
@@ -435,6 +435,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 
 !     Calcul de rho dt/rho*grad P.n aux faces
 !       Pour gagner du temps, on ne reconstruit pas.
+  itypfl = 1
   init   = 1
   inc    = 0
   iflmb0 = 1
@@ -448,7 +449,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   call inimav                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   iu     ,                                                       &
+   iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -468,6 +469,14 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
       iel = icetsm(ii)
       xnormp(iel) = xnormp(iel)-volume(iel)*smacel(ii,ipr)
     enddo
+  endif
+
+  ! Semi-analytic weakly compressible algorithm add + 1/rho Drho/Dt
+  if (idilat.eq.4)then
+    do iel = 1, ncel
+      xnormp(iel) = xnormp(iel) + propce(iel,ipproc(iustdy(itsrho)))
+    enddo
+
   endif
 
 !     On conserve XNORMP, on complete avec u* a la fin et
@@ -716,7 +725,7 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
 
   ! Les termes diagonaux sont places dans TRAV ou TRAVA,
   !   La prise en compte de UVWK a partir de la seconde iteration
-  !   est faite directement dans codits.
+  !   est faite directement dans coditv.
   if(iterns.eq.1) then
 
     ! On utilise temporairement TRAV comme tableau de travail.
@@ -1014,7 +1023,7 @@ endif
 !     On ajoute a TRAV ou TRAVA la partie issue des termes implicites
 !       en utilisant DRTP
 !       La prise en compte de UVWK a partir de la seconde iteration
-!       est faite directement dans codits.
+!       est faite directement dans coditv.
 !     En schema std en temps, on continue a mettre MAX(-DRTP,0) dans la matrice
 !     Avec termes sources a l'ordre 2, on implicite DRTP quel que soit son signe
 !       (si on le met dans la matrice ou non selon son signe, on risque de ne pas
@@ -1571,6 +1580,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   endif
 
   ! Pour gagner du temps, on ne reconstruit pas.
+  itypfl = 1
   init   = 1
   inc    = 1
   iflmb0 = 1
@@ -1584,7 +1594,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   call inimav &
   !==========
  ( nvar   , nscal  ,                                              &
-   iu     ,                                                       &
+   iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

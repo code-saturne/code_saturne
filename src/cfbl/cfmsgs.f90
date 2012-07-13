@@ -121,7 +121,7 @@ integer          ircflp, ischcp, isstpp
 
 integer          iirom , iiromb
 integer          ivar0 , imvis1, iccfth, imodif, isou
-integer          imaspe, iflmb0
+integer          imaspe, iflmb0, itypfl
 integer          icliup, iclivp, icliwp, iclvar
 integer          itsqdm, iiun  , iextts
 
@@ -276,12 +276,13 @@ if(itsqdm.ne.0) then
     extrap = extrag(iu)
 
     imaspe = 1
+    itypfl = 1
 
 !     Calcul du flux de masse
     call inimas                                                   &
     !==========
  ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe ,                                     &
+   iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -570,11 +571,12 @@ climgp = climgr(ivar)
 extrap = extrag(ivar)
 
 imaspe = 1
+itypfl = 1
 
 call inimas                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   ivar0  , ivar0  , ivar0  , imaspe ,                            &
+   ivar0  , ivar0  , ivar0  , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

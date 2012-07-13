@@ -146,6 +146,7 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:) :: wflmas, wflmab
 double precision, allocatable, dimension(:) :: wfabg, wfbbg
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 !===============================================================================
@@ -162,6 +163,7 @@ allocate(wfabg(nfac), wfbbg(nfabor))
 allocate(w1(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 allocate(w10(ncelet))
+allocate(dpvar(ncelet))
 
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
@@ -431,7 +433,7 @@ extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 thetv  = thetav(ivar)
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -445,7 +447,7 @@ call codits                                                       &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      wflmas          , wflmab          ,          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   rovsdt , smbrs  , rtp(1,ivar)     ,                            &
+   rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  )
 
 !===============================================================================
@@ -586,6 +588,7 @@ deallocate(wflmas, wflmab)
 deallocate(w1)
 deallocate(w7, w8, w9)
 deallocate(w10)
+deallocate(dpvar)
 
 !--------
 ! FORMATS

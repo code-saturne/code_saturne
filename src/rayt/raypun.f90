@@ -151,12 +151,16 @@ double precision aa, aaa, aaaa, relaxp, thetap
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
 !===============================================================================
 ! 0. GESTION MEMOIRE
 !===============================================================================
+
+! Allocate temporary array
+allocate(dpvar(ncelet))
 
 !===============================================================================
 ! 1. PARAMETRAGE DU SOLVEUR ET INITIALISATION
@@ -256,7 +260,7 @@ call codits &
    thetaa , thetaa , coefap , coefbp , cofafp , cofbfp ,          &
    flurds , flurdb ,                                              &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   rovsdt , smbrs  , theta4 ,                                     &
+   rovsdt , smbrs  , theta4 , dpvar  ,                            &
    rvoid  )
 
 !===============================================================================
@@ -351,6 +355,9 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
+
+! Free memory
+deallocate(dpvar)
 
 !--------
 ! FORMATS

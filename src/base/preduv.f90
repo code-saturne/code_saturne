@@ -186,7 +186,7 @@ integer          ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iesprp, iestop
 integer          iptsna
-integer          iflmb0, nswrp , imaspe, ipbrom
+integer          iflmb0, nswrp , imaspe, ipbrom, itypfl
 integer          idiaex, idtva0
 
 double precision rnorm , vitnor
@@ -203,6 +203,7 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: eswork
 double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
@@ -214,6 +215,7 @@ double precision, allocatable, dimension(:,:) :: grad
 if (iescal(iespre).gt.0) then
   allocate(eswork(ncelet))
 endif
+allocate(dpvar(ncelet))
 
 
 iclipr = iclrtp(ipr,icoef)
@@ -430,11 +432,12 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   extrap = extrag(iu )
 
   imaspe = 1
+  itypfl = 1
 
   call inimas &
   !==========
  ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe ,                                     &
+   iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -454,6 +457,12 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
     do ii = 1, ncesmp
       iel = icetsm(ii)
       xnormp(iel) = xnormp(iel)-volume(iel)*smacel(ii,ipr)
+    enddo
+  endif
+  ! Semi-analytic weakly compressible algorithm add + 1/rho Drho/Dt
+  if (idilat.eq.4)then
+    do iel = 1, ncel
+      xnormp(iel) = xnormp(iel) + propce(iel,ipproc(iustdy(itsrho)))
     enddo
   endif
 
@@ -1434,7 +1443,7 @@ do isou = 1, 3
 
 !  Attention, dans le cas des estimateurs, eswork fournit l'estimateur
 !     des vitesses predites
-      call codits                                                 &
+      call codits &
       !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -1448,12 +1457,12 @@ do isou = 1, 3
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      flumas , flumab ,                            &
    viscfi , viscbi , viscf  , viscb  ,                            &
-   rovsdt , smbr   , rtp(1,ivar)     ,                            &
+   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
    eswork )
 
     elseif(iterns.gt.1) then
 
-      call codits                                                 &
+      call codits &
       !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -1467,7 +1476,7 @@ do isou = 1, 3
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      flumas , flumab ,                            &
    viscfi , viscbi , viscf  , viscb  ,                            &
-   rovsdt , smbr   , rtp(1,ivar)     ,                            &
+   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
    eswork )
 
     endif
@@ -1504,7 +1513,7 @@ do isou = 1, 3
       enddo
       iescap = 0
 
-      call codits                                                 &
+      call codits &
       !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -1518,7 +1527,7 @@ do isou = 1, 3
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      flumas , flumab ,                            &
    viscfi , viscbi , viscf  , viscb  ,                            &
-   rovsdt , smbr   , tpucou(1,isou)  ,                            &
+   rovsdt , smbr   , tpucou(1,isou)  , dpvar  ,                   &
    rvoid  )
 
       do iel = 1, ncelet
@@ -1595,11 +1604,12 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   extrap = extrag(iu )
 
   imaspe = 1
+  itypfl = 1
 
   call inimas &
   !==========
  ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe ,                                     &
+   iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1671,6 +1681,9 @@ elseif (iappel.eq.2) then
   endif
 
 endif
+
+! Free memory
+deallocate(dpvar)
 
 !--------
 ! FORMATS

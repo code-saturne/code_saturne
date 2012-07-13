@@ -119,7 +119,7 @@ double precision uvwk(ndim,ncelet)
 ! Local variables
 
 integer          iccocg, inc, iel, iel1, iel2, ifac, imax
-integer          ii    , inod
+integer          ii    , inod, itypfl
 integer          isou, ivar, iitsm
 integer          iclipr, iclipf
 integer          icliup, iclivp, icliwp, init
@@ -335,6 +335,7 @@ if (iprco.le.0) then
   ipcrom = ipproc(irom)
   ipbrom = ipprob(irom)
 
+  itypfl = 1
   init   = 1
   inc    = 1
   iflmb0 = 1
@@ -349,7 +350,7 @@ if (iprco.le.0) then
   call inimav                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   iu     ,                                                       &
+   iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -376,6 +377,7 @@ if (iprco.le.0) then
     ipcrom = ipproc(irom)
     ipbrom = ipprob(irom)
 
+    itypfl = 1
     init   = 1
     inc    = 1
     iflmb0 = 1
@@ -389,7 +391,7 @@ if (iprco.le.0) then
     call inimav &
     !==========
   ( nvar   , nscal  ,                                              &
-    iu     ,                                                       &
+    iu     , itypfl ,                                              &
     iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
     iwarnp , nfecra ,                                              &
     epsrgp , climgp , extrap ,                                     &
@@ -686,6 +688,7 @@ if (iale.eq.1) then
   ipcrom = ipproc(irom)
   ipbrom = ipprob(irom)
 
+  itypfl = 1
   init   = 1
   inc    = 1
   iflmb0 = 1
@@ -699,7 +702,7 @@ if (iale.eq.1) then
   call inimav &
   !==========
 ( nvar   , nscal  ,                                              &
-  iuma   ,                                                       &
+  iuma   , itypfl ,                                              &
   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
@@ -831,6 +834,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   ! ---> CALCUL DU FLUX DE MASSE DEDUIT DE LA VITESSE REACTUALISEE
 
+  itypfl = 1
   init   = 1
   inc    = 1
   iflmb0 = 1
@@ -845,7 +849,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   call inimav                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   iu     ,                                                       &
+   iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

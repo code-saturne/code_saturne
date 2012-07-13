@@ -107,6 +107,7 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
@@ -117,7 +118,7 @@ double precision, allocatable, dimension(:) :: smbr, rovsdt
 ! Allocate temporary arrays for the radiative equations resolution
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbr(ncelet), rovsdt(ncelet))
-
+allocate(dpvar(ncelet))
 
 ipcvmx = ipproc(ivisma(1))
 ipcvmy = ipproc(ivisma(2))
@@ -193,7 +194,7 @@ do ii = 1, 3
   relaxp = 1.d0
   thetv  = 1.d0
 
-  call codits                                                     &
+  call codits &
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -207,7 +208,7 @@ do ii = 1, 3
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   rovsdt , smbr   , rtp(1,ivar)     ,                            &
+   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  )
 
 enddo
@@ -215,6 +216,7 @@ enddo
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(smbr, rovsdt)
+deallocate(dpvar)
 
 !--------
 ! FORMATS

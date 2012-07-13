@@ -164,18 +164,20 @@ integer          ipcrom, ipcroa, ipbrom, iflmas, iflmab
 integer          ipp
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
-integer          iinvpe, imaspe, indhyd
+integer          iinvpe, imaspe, indhyd, itypfl
 integer          iesdep
 integer          idtsca
 integer          nagmax, npstmg
 integer          ibsize
+integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
+integer          nswrsp
 
 double precision residu, phydr0
 double precision ardtsr, arsr  , unsara, thetap
 double precision dtsrom, unsvom, romro0
 double precision epsrgp, climgp, extrap, epsilp
 double precision drom  , dronm1
-double precision hint, qimp
+double precision hint, qimp, epsrsp, blencp, relaxp
 
 double precision rvoid(1)
 
@@ -184,6 +186,7 @@ double precision, allocatable, dimension(:,:) :: xam
 double precision, allocatable, dimension(:) :: w1, w7
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: cofafp, coefbp, cofbfp
+double precision, allocatable, dimension(:) :: velflx, velflb, dpvar
 
 !===============================================================================
 
@@ -197,6 +200,9 @@ allocate(w1(ncelet), w7(ncelet))
 
 ! Boundary conditions for delta P
 allocate(cofafp(nfabor), coefbp(nfabor), cofbfp(nfabor))
+
+! --- Weakly compressible algorithm: semi analytic scheme
+if (idilat.eq.4) allocate(velflx(nfac), velflb(nfabor))
 
 ! --- Memoire
 
@@ -305,11 +311,13 @@ if(irnpnw.ne.1) then
   extrap = extrag(iu )
 
   imaspe = 1
+  itypfl = 1
+  if (idilat.eq.4) itypfl = 0
 
   call inimas &
   !==========
  ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe ,                                     &
+   iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -322,6 +330,13 @@ if(irnpnw.ne.1) then
   init = 1
   call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
        ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
+
+  ! --- Weakly compressible algorithm: semi analytic scheme
+  if (idilat.eq.4) then
+    do iel = 1, ncel
+      w1(iel) = w1(iel)*propce(iel,ipcrom)
+    enddo
+  endif
 
   if (ncesmp.gt.0) then
     do ii = 1, ncesmp
@@ -544,20 +559,43 @@ if (iphydr.eq.1) then
   enddo
 endif
 
-if (idtsca.eq.0) then
-  do iel = 1, ncel
-    ardtsr  = arak*(dt(iel)/propce(iel,ipcrom))
-    grad(iel,1) = rtp(iel,iu) + ardtsr*grad(iel,1)
-    grad(iel,2) = rtp(iel,iv) + ardtsr*grad(iel,2)
-    grad(iel,3) = rtp(iel,iw) + ardtsr*grad(iel,3)
-  enddo
+! --- Weakly compressible algorithm: semi analytic scheme
+!     The RHS contains rho div(u*) and not div(rho u*)
+!     so this term will be add afterwards
+if (idilat.eq.4) then
+  if (idtsca.eq.0) then
+    do iel = 1, ncel
+      ardtsr  = arak*(dt(iel)/propce(iel,ipcrom))
+      grad(iel,1) = ardtsr*grad(iel,1)
+      grad(iel,2) = ardtsr*grad(iel,2)
+      grad(iel,3) = ardtsr*grad(iel,3)
+    enddo
+  else
+    do iel=1,ncel
+      arsr  = arak/propce(iel,ipcrom)
+      grad(iel,1) =arsr*tpucou(iel,1)*grad(iel,1)
+      grad(iel,2) =arsr*tpucou(iel,2)*grad(iel,2)
+      grad(iel,3) =arsr*tpucou(iel,3)*grad(iel,3)
+    enddo
+  endif
+
+! Standard case
 else
-  do iel=1,ncel
-    arsr  = arak/propce(iel,ipcrom)
-    grad(iel,1) = rtp(iel,iu)+arsr*tpucou(iel,1)*grad(iel,1)
-    grad(iel,2) = rtp(iel,iv)+arsr*tpucou(iel,2)*grad(iel,2)
-    grad(iel,3) = rtp(iel,iw)+arsr*tpucou(iel,3)*grad(iel,3)
-  enddo
+  if (idtsca.eq.0) then
+    do iel = 1, ncel
+      ardtsr  = arak*(dt(iel)/propce(iel,ipcrom))
+      grad(iel,1) = rtp(iel,iu) + ardtsr*grad(iel,1)
+      grad(iel,2) = rtp(iel,iv) + ardtsr*grad(iel,2)
+      grad(iel,3) = rtp(iel,iw) + ardtsr*grad(iel,3)
+    enddo
+  else
+    do iel=1,ncel
+      arsr  = arak/propce(iel,ipcrom)
+      grad(iel,1) = rtp(iel,iu)+arsr*tpucou(iel,1)*grad(iel,1)
+      grad(iel,2) = rtp(iel,iv)+arsr*tpucou(iel,2)*grad(iel,2)
+      grad(iel,3) = rtp(iel,iw)+arsr*tpucou(iel,3)*grad(iel,3)
+    enddo
+  endif
 endif
 
 ! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
@@ -580,11 +618,12 @@ climgp = climgr(iu )
 extrap = extrag(iu )
 
 imaspe = 1
+itypfl = 1
 
 call inimas &
 !==========
  ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe ,                                     &
+   iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -593,10 +632,6 @@ call inimas &
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
    propfa(1,iflmas), propfb(1,iflmab) )
-
-! Free memory
-deallocate(grad)
-
 
 ! --- Projection aux faces des forces exterieures
 
@@ -877,9 +912,56 @@ enddo
 
 ! --- Divergence initiale
 init = 1
-call divmas                                                       &
-  (ncelet,ncel,nfac,nfabor,init,nfecra,                           &
-               ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w7)
+
+call divmas &
+!==========
+ ( ncelet , ncel   , nfac  , nfabor , init   , nfecra ,          &
+   ifacel , ifabor ,                                             &
+   propfa(1,iflmas), propfb(1,iflmab)        , w7 )
+
+! --- Weakly compressible algorithm: semi analytic scheme
+!     The RHS contains rho div(u*) and not div(rho u*)
+if (idilat.eq.4) then
+
+  init   = 1
+  inc    = 1
+  iccocg = 1
+  iflmb0 = 1
+  if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
+  nswrgp = nswrgr(iu)
+  imligp = imligr(iu)
+  iwarnp = iwarni(ipr)
+  epsrgp = epsrgr(iu)
+  climgp = climgr(iu)
+  extrap = extrag(iu)
+
+  imaspe = 1
+  itypfl = 0
+
+  call inimas &
+  !==========
+ ( nvar   , nscal  ,                                              &
+   iu  , iv  , iw  , imaspe , itypfl ,                            &
+   iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   rtp(1,iu)       , rtp(1,iv)       , rtp(1,iw)       ,          &
+   coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
+   coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
+   velflx , velflb )
+
+  call divmas &
+  !==========
+ ( ncelet , ncel   , nfac  , nfabor , init   , nfecra ,           &
+   ifacel , ifabor ,                                              &
+   velflx , velflb , w1 )
+
+  do iel = 1, ncel
+    w7(iel) = w7(iel) + w1(iel)*propce(iel,ipcrom)
+  enddo
+
+endif
 
 ! --- Termes sources de masse
 if (ncesmp.gt.0) then
@@ -887,6 +969,15 @@ if (ncesmp.gt.0) then
     iel = icetsm(ii)
     w7(iel) = w7(iel) -volume(iel)*smacel(ii,ipr)
   enddo
+endif
+
+! --- Weakly compressible algorithm: semi analytic scheme
+if (idilat.eq.4) then
+
+  do iel = 1, ncel
+    w7(iel) = w7(iel) + propce(iel,ipproc(iustdy(itsrho)))
+  enddo
+
 endif
 
 ! --- Source term associated to the mass aggregation
@@ -1257,10 +1348,259 @@ if (imgr(ipr).gt.0) then
   !==========
 endif
 
+!===============================================================================
+! 8. Weakly compressible algorithm: semi analytic scheme
+!    2nd step solving a convection diffusion equation
+!===============================================================================
+
+if (idilat.eq.4) then
+
+  ! Allocate temporary arrays
+  allocate(dpvar(ncelet))
+
+  ! --- Convective flux: dt/rho grad(rho)
+  inc = 1
+  iccocg = 1
+  ivar   = 0
+  nswrgp = nswrgr(iu)
+  imligp = imligr(iu)
+  iwarnp = iwarni(iu)
+  epsrgp = epsrgr(iu)
+  climgp = climgr(iu)
+  extrap = extrag(iu)
+
+  ! Dirichlet Boundary Condition on rho
+  !------------------------------------
+
+  do ifac = 1, nfabor
+    coefap(ifac) = propfb(ifac,ipbrom)
+    coefbp(ifac) = 0.d0
+  enddo
+
+  call grdcel &
+  !==========
+  (ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   propce(1,ipcrom), coefap , coefbp , grad   )
+
+  ! --- dt/rho * grad rho
+  do ii = 1, 3
+    do iel = 1, ncel
+      grad(iel,ii) = grad(iel,ii) * dt(iel) / propce(iel,ipcrom)
+    enddo
+  enddo
+
+  ! --- (dt/rho * grad rho) . S
+
+  init   = 1
+  inc    = 1
+  iccocg = 1
+  iflmb0 = 1
+  if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
+  nswrgp = nswrgr(iu)
+  imligp = imligr(iu)
+  iwarnp = iwarni(iu)
+  epsrgp = epsrgr(iu)
+  climgp = climgr(iu)
+  extrap = extrag(iu)
+
+  imaspe = 1
+  itypfl = 0
+
+  ! --- Viscosity
+  call viscfa (imvisf, dt, viscf, viscb)
+
+  do ifac = 1, nfabor
+
+     iel = ifabor(ifac)
+
+     ! Neumann Boundary Conditions
+     !----------------------------
+
+     qimp = 0.d0
+     hint = dt(iel)/distb(ifac)
+
+     call set_neumann_scalar &
+          !==================
+        ( coefap(ifac), cofafp(ifac),             &
+          coefbp(ifac), cofbfp(ifac),             &
+          qimp        , hint )
+
+  enddo
+
+  call inimas &
+  !==========
+   ( nvar   , nscal  ,                                              &
+     ipcrom , ipcrom , ipcrom , imaspe , itypfl ,                   &
+     iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
+     iwarnp , nfecra ,                                              &
+     epsrgp , climgp , extrap ,                                     &
+     propce(1,ipcrom), propfb(1,ipbrom),                            &
+     grad(1,1) , grad(1,2) , grad(1,3) ,                            &
+     coefap , coefap , coefap ,                                     &
+     coefbp , coefbp , coefbp ,                                     &
+     velflx , velflb )
+
+  ! Initialization of the variable to solve
+  do iel = 1, ncel
+    drtp(iel) = 0.d0
+    smbr(iel) = 0.d0
+  enddo
+
+  ivar = ipr
+  iconvp = 1
+  idiffp = 1
+  ireslp = -999
+  ipol   = 0
+  ndircp = 0
+  nitmap = nitmax(ivar)
+  nswrsp = nswrsm(ivar)
+  nswrgp = nswrgr(ivar)
+  imligp = imligr(ivar)
+  ircflp = ircflu(ivar)
+  ischcp = ischcv(ivar)
+  isstpp = isstpc(ivar)
+  iescap = 0
+  imgrp  = 0
+  ncymxp = ncymax(ivar)
+  nitmfp = nitmgf(ivar)
+  ipp    = ipprtp(ivar)
+  iwarnp = iwarni(ivar)
+  blencp = blencv(ivar)
+  epsilp = epsilo(ivar)
+  epsrsp = epsrsm(ivar)
+  epsrgp = epsrgr(ivar)
+  climgp = climgr(ivar)
+  extrap = extrag(ivar)
+  relaxp = relaxv(ivar)
+  thetap = thetav(ivar)
+
+  ! --- Solve the convection diffusion equation
+
+  call codits &
+  !==========
+   ( nvar   , nscal  ,                                              &
+     idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+     imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+     ischcp , isstpp , iescap ,                                     &
+     imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+     blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+     relaxp , thetap ,                                              &
+     drtp   , drtp   ,                                              &
+     coefap , coefbp ,                                              &
+     cofafp , cofbfp ,                                              &
+     velflx , velflb ,                                              &
+     viscf  , viscb  , viscf  , viscb  ,                            &
+     rovsdt , smbr   , drtp   , dpvar  ,                            &
+     rvoid  )
+
+  ! --- Update the Pressure
+
+  if (idtvar.lt.0) then
+    do iel = 1, ncel
+      rtp(iel,ipr) = rtp(iel,ipr) + relaxv(ipr)*drtp(iel)
+      ! Remove the last increment
+      drtp(iel) = drtp(iel) - dpvar(iel)
+    enddo
+  else
+    do iel = 1, ncel
+      rtp(iel,ipr) = rtp(iel,ipr) + drtp(iel)
+      ! Remove the last increment
+      drtp(iel) = drtp(iel) - dpvar(iel)
+    enddo
+  endif
+
+  ! --- Update the Mass flux
+
+  init = 0
+
+  if (idtsca.eq.0) then
+    call itrmas &
+    !==========
+ ( nvar   , nscal  ,                                              &
+   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   drtp   ,                                                       &
+   coefap , coefb(1,iclipr) ,                                     &
+   cofafp , coefb(1,iclipf) ,                                     &
+   viscf  , viscb  ,                                              &
+   dt     , dt     , dt     ,                                     &
+   propfa(1,iflmas), propfb(1,iflmab))
+
+    ! pour le dernier increment, on ne reconstruit pas, on n'appelle donc
+    ! pas GRDCEL. La valeur des DFRCXT (qui doit normalement etre nul)
+    ! est donc sans importance
+    iccocg = 0
+    nswrp = 0
+    inc = 0
+
+    call itrmas &
+    !==========
+ ( nvar   , nscal  ,                                              &
+   init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dpvar  ,                                                       &
+   coefa(1,iclipr) , coefb(1,iclipr) ,                            &
+   coefa(1,iclipf) , coefb(1,iclipf) ,                            &
+   viscf  , viscb  ,                                              &
+   dt     , dt     , dt     ,                                     &
+   propfa(1,iflmas), propfb(1,iflmab))
+
+  else
+
+    call itrmas &
+    !==========
+ ( nvar   , nscal  ,                                              &
+   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   drtp   ,                                                       &
+   coefap , coefb(1,iclipr) ,                                     &
+   cofafp , coefb(1,iclipf) ,                                     &
+   viscf  , viscb  ,                                              &
+   tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
+   propfa(1,iflmas), propfb(1,iflmab))
+
+    ! pour le dernier increment, on ne reconstruit pas, on n'appelle donc
+    ! pas GRDCEL. La valeur des DFRCXT (qui doit normalement etre nul)
+    ! est donc sans importance
+    iccocg = 0
+    nswrp = 0
+    inc = 0
+
+    call itrmas &
+    !==========
+ ( nvar   , nscal  ,                                              &
+   init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dpvar  ,                                                       &
+   coefa(1,iclipr) , coefb(1,iclipr) ,                            &
+   coefa(1,iclipf) , coefb(1,iclipf) ,                            &
+   viscf  , viscb  ,                                              &
+   tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
+   propfa(1,iflmas), propfb(1,iflmab))
+
+  endif
+
+  ! Free memory
+  deallocate(dpvar)
+
+endif
+
 ! Free memory
+deallocate(grad)
 deallocate(dam, xam)
 deallocate(w1, w7)
 deallocate(cofafp, coefbp, cofbfp)
+if (idilat.eq.4) deallocate(velflx, velflb)
 
 !--------
 ! FORMATS

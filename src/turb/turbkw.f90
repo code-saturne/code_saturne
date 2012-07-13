@@ -144,6 +144,7 @@ double precision, allocatable, dimension(:,:) :: gradk, grado, grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w5, w6
 double precision, allocatable, dimension(:) :: w7, w8
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
@@ -161,7 +162,7 @@ allocate(tinstk(ncelet), tinstw(ncelet), xf1(ncelet))
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet))
-
+allocate(dpvar(ncelet))
 
 epz2 = epzero**2
 
@@ -965,7 +966,7 @@ extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 thetap = thetav(ivar)
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -979,7 +980,7 @@ call codits                                                       &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   tinstk , smbrk  , rtp(1,ivar)     ,                            &
+   tinstk , smbrk  , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  )
 
 
@@ -1046,7 +1047,7 @@ extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 thetap = thetav(ivar)
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -1060,7 +1061,7 @@ call codits                                                       &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   tinstw , smbrw  , rtp(1,ivar)     ,                            &
+   tinstw , smbrw  , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  )
 
 
@@ -1138,6 +1139,7 @@ deallocate(tinstk, tinstw, xf1)
 deallocate(w1, w2, w3)
 deallocate(w5, w6)
 deallocate(w7, w8)
+deallocate(dpvar)
 
 !--------
 ! FORMATS

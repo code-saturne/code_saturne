@@ -105,7 +105,7 @@ integer          iccocg,iflmb0
 integer          ipcrom, ipbrom
 integer          iclva1, iclva2, iclva3
 integer          nswrgp, imligp, iwarnp
-integer          imaspe
+integer          imaspe, itypfl
 double precision epsrgp, climgp, extrap
 
 !===============================================================================
@@ -157,11 +157,12 @@ climgp = climgr(ir11)
 extrap = extrag(ir11)
 
 imaspe = 2
+itypfl = 1
 
 call inimas                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   ivar1  , ivar2  , ivar3  , imaspe ,                            &
+   ivar1  , ivar2  , ivar3  , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

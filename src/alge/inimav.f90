@@ -51,6 +51,9 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ivar          index of the current variable
+!> \param[in]     itypfl        indicator (take rho into account or not)
+!>                               - 1 compute \$f \rho\vect{u}\cdot\vect{S} \f$
+!>                               - 0 compute \$f \vect{u}\cdot\vect{S} \f$
 !> \param[in]     iflmb0        the mass flux is set to 0 on walls and
 !>                               symmetries if = 1
 !> \param[in]     init          the mass flux is initialize to 0 if > 0
@@ -88,7 +91,7 @@ subroutine inimav &
 !================
 
  ( nvar   , nscal  ,                                              &
-   ivar   ,                                                       &
+   ivar   , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgu , imligu ,          &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu , extrau ,                                     &
@@ -118,7 +121,7 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          ivar
+integer          ivar   , itypfl
 integer          iflmb0 , init   , inc    , imrgra
 integer          nswrgu , imligu
 integer          iwarnu , nfecra
@@ -169,51 +172,98 @@ elseif (init.ne.0) then
   call csexit (1)
 endif
 
-! Without porosity
-if (iporos.eq.0) then
-  !$omp parallel do private(isou)
-  do iel = 1, ncel
-    do isou = 1, 3
-      qdm(isou,iel) = rom(iel)*vel(isou,iel)
+! Standard mass flux
+if (itypfl.eq.1) then
+
+  ! Without porosity
+  if (iporos.eq.0) then
+    !$omp parallel do private(isou)
+    do iel = 1, ncel
+      do isou = 1, 3
+        qdm(isou,iel) = rom(iel)*vel(isou,iel)
+      enddo
     enddo
-  enddo
-
-  ! ---> Periodicity and parallelism treatment
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synvin(qdm)
+  ! With porosity
+  else
+    !$omp parallel do private(isou)
+    do iel = 1, ncel
+      do isou = 1, 3
+        qdm(isou,iel) = rom(iel)*vel(isou,iel)*porosi(iel)
+      enddo
+    enddo
   endif
 
-  !$omp parallel do private(isou) if(nfabor > thr_n_min)
-  do ifac = 1, nfabor
-    do isou = 1, 3
-      coefaq(isou,ifac) = romb(ifac)*coefav(isou,ifac)
-    enddo
-  enddo
-
-  ! With porosity
+! Velocity flux
 else
 
-  !$omp parallel do private(isou)
-  do iel = 1, ncel
-    do isou = 1, 3
-      qdm(isou,iel) = rom(iel)*vel(isou,iel)*porosi(iel)
+  ! Without porosity
+  if (iporos.eq.0) then
+    !$omp parallel do private(isou)
+    do iel = 1, ncel
+      do isou = 1, 3
+        qdm(isou,iel) = vel(isou,iel)
+      enddo
     enddo
-  enddo
+  ! With porosity
+  else
+    !$omp parallel do private(isou)
+    do iel = 1, ncel
+      do isou = 1, 3
+        qdm(isou,iel) = vel(isou,iel)*porosi(iel)
+      enddo
+    enddo
+  endif
+endif
 
-  ! ---> Periodicity and parallelism treatment
+! ---> Periodicity and parallelism treatment
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synvin(qdm)
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synvin(qdm)
+endif
+
+! Standard mass flux
+if (itypfl.eq.1) then
+
+  ! Without porosity
+  if (iporos.eq.0) then
+    !$omp parallel do private(isou) if(nfabor > thr_n_min)
+    do ifac =1, nfabor
+      do isou = 1, 3
+        coefaq(isou,ifac) = romb(ifac)*coefav(isou,ifac)
+      enddo
+    enddo
+  ! With porosity
+  else
+    !$omp parallel do private(iel, isou) if(nfabor > thr_n_min)
+    do ifac =1, nfabor
+      iel = ifabor(ifac)
+      do isou = 1, 3
+        coefaq(isou,ifac) = romb(ifac)*coefav(isou,ifac)*porosi(iel)
+      enddo
+    enddo
   endif
 
-  !$omp parallel do private(iel, isou) if(nfabor > thr_n_min)
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    do isou = 1, 3
-      coefaq(isou,ifac) = romb(ifac)*coefav(isou,ifac)*porosi(iel)
+! Velocity flux
+else
+
+  ! Without porosity
+  if (iporos.eq.0) then
+    !$omp parallel do private(isou) if(nfabor > thr_n_min)
+    do ifac =1, nfabor
+      do isou = 1, 3
+        coefaq(isou,ifac) = coefav(isou,ifac)
+      enddo
     enddo
-  enddo
+  ! With porosity
+  else
+    !$omp parallel do private(iel, isou) if(nfabor > thr_n_min)
+    do ifac =1, nfabor
+      iel = ifabor(ifac)
+      do isou = 1, 3
+        coefaq(isou,ifac) = coefav(isou,ifac)*porosi(iel)
+      enddo
+    enddo
+  endif
 
 endif
 
@@ -245,28 +295,57 @@ if (nswrgu.le.1) then
 
   ! Boundary faces
 
-  do ig = 1, ngrpb
-    !$omp parallel do private(ifac, ii, isou, jsou, pfac) &
-    !$omp          if(nfabor > thr_n_min)
-    do it = 1, nthrdb
-      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+  ! Standard mass flux
+  if (itypfl.eq.1) then
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, isou, jsou, pfac) &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-        ii = ifabor(ifac)
-        ! u, v, w Components
-        do isou = 1, 3
-          pfac = inc*coefaq(isou,ifac)
+          ii = ifabor(ifac)
+          ! u, v, w Components
+          do isou = 1, 3
+            pfac = inc*coefaq(isou,ifac)
 
-          ! coefbv is a matrix
-          do jsou = 1, 3
-            pfac = pfac + romb(ifac)*coefbv(isou,jsou,ifac)*vel(jsou,ii)
+            ! coefbv is a matrix
+            do jsou = 1, 3
+              pfac = pfac + romb(ifac)*coefbv(isou,jsou,ifac)*vel(jsou,ii)
+            enddo
+
+            flumab(ifac) = flumab(ifac) + pfac*surfbo(isou,ifac)
           enddo
 
-          flumab(ifac) = flumab(ifac) + pfac*surfbo(isou,ifac)
         enddo
-
       enddo
     enddo
-  enddo
+
+  ! Velocity flux
+  else
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, isou, jsou, pfac) &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+          ii = ifabor(ifac)
+          ! u, v, w Components
+          do isou = 1, 3
+            pfac = inc*coefaq(isou,ifac)
+
+            ! coefbv is a matrix
+            do jsou = 1, 3
+              pfac = pfac + coefbv(isou,jsou,ifac)*vel(jsou,ii)
+            enddo
+
+            flumab(ifac) = flumab(ifac) + pfac*surfbo(isou,ifac)
+          enddo
+
+        enddo
+      enddo
+    enddo
+
+  endif
 
 endif
 
@@ -332,42 +411,83 @@ if (nswrgu.gt.1) then
 
   ! Mass flow though boundary faces
 
-  do ig = 1, ngrpb
-    !$omp parallel do private(ifac, ii, isou, jsou, diipbx, diipby, diipbz, &
-    !$omp                     pfac, pip) if(nfabor > thr_n_min)
-    do it = 1, nthrdb
-      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+  ! Standard mass flux
+  if (itypfl.eq.1) then
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, isou, jsou, diipbx, diipby, diipbz, &
+      !$omp                     pfac, pip) if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-        ii = ifabor(ifac)
-        diipbx = diipb(1,ifac)
-        diipby = diipb(2,ifac)
-        diipbz = diipb(3,ifac)
+          ii = ifabor(ifac)
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
 
-        ! Terms along U, V, W
-        do isou = 1, 3
+          ! Terms along U, V, W
+          do isou = 1, 3
 
-          pfac = inc*coefaq(isou,ifac)
+            pfac = inc*coefaq(isou,ifac)
 
-          ! coefu is a matrix
-          do jsou = 1, 3
+            ! coefu is a matrix
+            do jsou = 1, 3
 
-            pip =  romb(ifac)*vel(jsou,ii)                &
-                 + grdqdm(jsou,1,ii)*diipbx               &
-                 + grdqdm(jsou,2,ii)*diipby               &
-                 + grdqdm(jsou,3,ii)*diipbz
+              pip =  romb(ifac)*vel(jsou,ii)                &
+                   + grdqdm(jsou,1,ii)*diipbx               &
+                   + grdqdm(jsou,2,ii)*diipby               &
+                   + grdqdm(jsou,3,ii)*diipbz
 
-            pfac = pfac + coefbv(isou,jsou,ifac)*pip
+              pfac = pfac + coefbv(isou,jsou,ifac)*pip
+
+            enddo
+
+            flumab(ifac) = flumab(ifac) + pfac*surfbo(isou,ifac)
 
           enddo
 
-          flumab(ifac) = flumab(ifac) + pfac*surfbo(isou,ifac)
-
         enddo
-
       enddo
     enddo
 
-  enddo
+  ! Velocity flux
+  else
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, isou, jsou, diipbx, diipby, diipbz, &
+      !$omp                     pfac, pip) if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+          ii = ifabor(ifac)
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
+
+          ! Terms along U, V, W
+          do isou = 1, 3
+
+            pfac = inc*coefaq(isou,ifac)
+
+            ! coefu is a matrix
+            do jsou = 1, 3
+
+              pip = vel(jsou,ii)                           &
+                  + grdqdm(jsou,1,ii)*diipbx               &
+                  + grdqdm(jsou,2,ii)*diipby               &
+                  + grdqdm(jsou,3,ii)*diipbz
+
+              pfac = pfac + coefbv(isou,jsou,ifac)*pip
+
+            enddo
+
+            flumab(ifac) = flumab(ifac) + pfac*surfbo(isou,ifac)
+
+          enddo
+
+        enddo
+      enddo
+    enddo
+
+  endif
 
 ! Deallocation
 deallocate(grdqdm)

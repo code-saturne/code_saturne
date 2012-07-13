@@ -60,6 +60,9 @@
 !>                                 velocity
 !>                               - 2 if we deal with a tensor field such as the
 !>                                 Reynolds stresses
+!> \param[in]     itypfl        indicator (take rho into account or not)
+!>                               - 1 compute \$f \rho\vect{u}\cdot\vect{S} \f$
+!>                               - 0 compute \$f \vect{u}\cdot\vect{S} \f$
 !> \param[in]     iflmb0        the mass flux is set to 0 on walls and
 !>                               symmetries if = 1
 !> \param[in]     init          the mass flux is initialize to 0 if > 0
@@ -103,7 +106,7 @@ subroutine inimas &
 !================
 
  ( nvar   , nscal  ,                                              &
-   ivar1  , ivar2  , ivar3  , imaspe ,                            &
+   ivar1  , ivar2  , ivar3  , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgu , imligu , &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu , extrau ,                                     &
@@ -133,7 +136,7 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          ivar1  , ivar2  , ivar3  , imaspe
+integer          ivar1  , ivar2  , ivar3  , imaspe , itypfl
 integer          iflmb0 , init   , inc    , imrgra , iccocg
 integer          nswrgu , imligu
 integer          iwarnu , nfecra
@@ -169,7 +172,6 @@ double precision, allocatable, dimension(:,:) :: coefqa
 allocate(qdmx(ncelet), qdmy(ncelet), qdmz(ncelet))
 allocate(coefqa(ndimfb,3))
 
-
 ! Compute momentum
 
 if (init.eq.1) then
@@ -187,51 +189,96 @@ elseif (init.ne.0) then
   call csexit (1)
 endif
 
-! Without porosity
-if (iporos.eq.0) then
-  !$omp parallel do
-  do iel = 1, ncel
-    qdmx(iel) = rom(iel)*ux(iel)
-    qdmy(iel) = rom(iel)*uy(iel)
-    qdmz(iel) = rom(iel)*uz(iel)
-  enddo
-
-  ! Periodicity and parallelism treatment
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(qdmx, qdmy, qdmz)
+! Standard mass flux
+if (itypfl.eq.1) then
+  ! Without porosity
+  if (iporos.eq.0) then
+    !$omp parallel do
+    do iel = 1, ncel
+      qdmx(iel) = rom(iel)*ux(iel)
+      qdmy(iel) = rom(iel)*uy(iel)
+      qdmz(iel) = rom(iel)*uz(iel)
+    enddo
+  ! With porosity
+  else
+    !$omp parallel do
+    do iel = 1, ncel
+      qdmx(iel) = rom(iel)*ux(iel)*porosi(iel)
+      qdmy(iel) = rom(iel)*uy(iel)*porosi(iel)
+      qdmz(iel) = rom(iel)*uz(iel)*porosi(iel)
+    enddo
   endif
 
-  !$omp parallel do if(nfabor > thr_n_min)
-  do ifac = 1, nfabor
-    coefqa(ifac,1) = romb(ifac)*coefax(ifac)
-    coefqa(ifac,2) = romb(ifac)*coefay(ifac)
-    coefqa(ifac,3) = romb(ifac)*coefaz(ifac)
-  enddo
+! Velocity flux
+else
+  ! Without porosity
+  if (iporos.eq.0) then
+    !$omp parallel do
+    do iel = 1, ncel
+      qdmx(iel) = ux(iel)
+      qdmy(iel) = uy(iel)
+      qdmz(iel) = uz(iel)
+    enddo
+  ! With porosity
+  else
+    !$omp parallel do
+    do iel = 1, ncel
+      qdmx(iel) = ux(iel)*porosi(iel)
+      qdmy(iel) = uy(iel)*porosi(iel)
+      qdmz(iel) = uz(iel)*porosi(iel)
+    enddo
+  endif
+endif
 
-! With porosity
+! Periodicity and parallelism treatment
+
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synvec(qdmx, qdmy, qdmz)
+endif
+
+! Standard mass flux
+if (itypfl.eq.1) then
+
+  ! Without porosity
+  if (iporos.eq.0) then
+    !$omp parallel do if(nfabor > thr_n_min)
+    do ifac =1, nfabor
+      coefqa(ifac,1) = romb(ifac)*coefax(ifac)
+      coefqa(ifac,2) = romb(ifac)*coefay(ifac)
+      coefqa(ifac,3) = romb(ifac)*coefaz(ifac)
+    enddo
+  ! With porosity
+  else
+    !$omp parallel do private(iel) if(nfabor > thr_n_min)
+    do ifac =1, nfabor
+      iel = ifabor(ifac)
+      coefqa(ifac,1) = romb(ifac)*coefax(ifac)*porosi(iel)
+      coefqa(ifac,2) = romb(ifac)*coefay(ifac)*porosi(iel)
+      coefqa(ifac,3) = romb(ifac)*coefaz(ifac)*porosi(iel)
+    enddo
+  endif
+
+! Velocity flux
 else
 
-  !$omp parallel do
-  do iel = 1, ncel
-    qdmx(iel) = rom(iel)*ux(iel)*porosi(iel)
-    qdmy(iel) = rom(iel)*uy(iel)*porosi(iel)
-    qdmz(iel) = rom(iel)*uz(iel)*porosi(iel)
-  enddo
-
-  ! Periodicity and parallelism treatment
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(qdmx, qdmy, qdmz)
+  ! Without porosity
+  if (iporos.eq.0) then
+    !$omp parallel do if(nfabor > thr_n_min)
+    do ifac =1, nfabor
+      coefqa(ifac,1) = coefax(ifac)
+      coefqa(ifac,2) = coefay(ifac)
+      coefqa(ifac,3) = coefaz(ifac)
+    enddo
+  ! With porosity
+  else
+    !$omp parallel do private(iel) if(nfabor > thr_n_min)
+    do ifac =1, nfabor
+      iel = ifabor(ifac)
+      coefqa(ifac,1) = coefax(ifac)*porosi(iel)
+      coefqa(ifac,2) = coefay(ifac)*porosi(iel)
+      coefqa(ifac,3) = coefaz(ifac)*porosi(iel)
+    enddo
   endif
-
-  !$omp parallel do private(iel) if(nfabor > thr_n_min)
-  do ifac =1, nfabor
-    iel = ifabor(ifac)
-    coefqa(ifac,1) = romb(ifac)*coefax(ifac)*porosi(iel)
-    coefqa(ifac,2) = romb(ifac)*coefay(ifac)*porosi(iel)
-    coefqa(ifac,3) = romb(ifac)*coefaz(ifac)*porosi(iel)
-  enddo
 
 endif
 
@@ -264,25 +311,49 @@ if (nswrgu.le.1) then
 
   ! Mass flow though boundary faces
 
-  do ig = 1, ngrpb
-    !$omp parallel do private(ifac, ii, uxfac, uyfac, uzfac) &
-    !$omp          if(nfabor > thr_n_min)
-    do it = 1, nthrdb
-      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+  ! Standard mass flux
+  if (itypfl.eq.1) then
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, uxfac, uyfac, uzfac) &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-        ii = ifabor(ifac)
-        uxfac = inc*coefqa(ifac,1) +coefbx(ifac)*romb(ifac)*ux(ii)
-        uyfac = inc*coefqa(ifac,2) +coefby(ifac)*romb(ifac)*uy(ii)
-        uzfac = inc*coefqa(ifac,3) +coefbz(ifac)*romb(ifac)*uz(ii)
+          ii = ifabor(ifac)
+          uxfac = inc*coefqa(ifac,1) +coefbx(ifac)*romb(ifac)*ux(ii)
+          uyfac = inc*coefqa(ifac,2) +coefby(ifac)*romb(ifac)*uy(ii)
+          uzfac = inc*coefqa(ifac,3) +coefbz(ifac)*romb(ifac)*uz(ii)
 
-        flumab(ifac) = flumab(ifac)                                          &
-                       + (  uxfac*surfbo(1,ifac)                             &
-                          + uyfac*surfbo(2,ifac) + uzfac*surfbo(3,ifac))
+          flumab(ifac) = flumab(ifac)                                          &
+                         + (  uxfac*surfbo(1,ifac)                             &
+                            + uyfac*surfbo(2,ifac) + uzfac*surfbo(3,ifac))
 
         enddo
       enddo
-  enddo
+    enddo
 
+  ! Velocity flux
+  else
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, uxfac, uyfac, uzfac) &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+          ii = ifabor(ifac)
+          uxfac = inc*coefqa(ifac,1) +coefbx(ifac)*ux(ii)
+          uyfac = inc*coefqa(ifac,2) +coefby(ifac)*uy(ii)
+          uzfac = inc*coefqa(ifac,3) +coefbz(ifac)*uz(ii)
+
+          flumab(ifac) = flumab(ifac)                                          &
+                         + (  uxfac*surfbo(1,ifac)                             &
+                            + uyfac*surfbo(2,ifac) + uzfac*surfbo(3,ifac))
+
+        enddo
+      enddo
+    enddo
+
+  endif
 endif
 
 
@@ -301,7 +372,7 @@ if (nswrgu.gt.1) then
 !     TRAITEMENT DE LA PERIODICITE SPEFICIQUE A INIMAS AU DEBUT
 !     =========================================================
 
-  if (iperot.gt.0) then
+  if (iperot.gt.0.and.itypfl.eq.1) then
     iappel = 1
 
     call permas &
@@ -351,28 +422,53 @@ if (nswrgu.gt.1) then
 
   ! Mass flow though boundary faces
 
-  do ig = 1, ngrpb
-    !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac) &
-    !$omp          if(nfabor > thr_n_min)
-    do it = 1, nthrdb
-      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+  ! Standard mass flux
+  if (itypfl.eq.1) then
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac) &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-        ii = ifabor(ifac)
+          ii = ifabor(ifac)
 
-        diipbx = diipb(1,ifac)
-        diipby = diipb(2,ifac)
-        diipbz = diipb(3,ifac)
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
 
-        pip =   romb(ifac) * ux(ii)                                            &
-              + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
-        pfac = inc*coefqa(ifac,1) + coefbx(ifac)*pip
+          pip =   romb(ifac) * ux(ii)                                            &
+                + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
+          pfac = inc*coefqa(ifac,1) + coefbx(ifac)*pip
 
-        flumab(ifac) = flumab(ifac) + pfac*surfbo(1,ifac)
+          flumab(ifac) = flumab(ifac) + pfac*surfbo(1,ifac)
 
+        enddo
       enddo
     enddo
-  enddo
+  ! Velocity flux
+  else
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac) &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
+          ii = ifabor(ifac)
+
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
+
+          pip = ux(ii)                                                         &
+              + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
+          pfac = inc*coefqa(ifac,1) + coefbx(ifac)*pip
+
+          flumab(ifac) = flumab(ifac) + pfac*surfbo(1,ifac)
+
+        enddo
+      enddo
+    enddo
+  endif
 
   ! Mass flow along Y
   ! =================
@@ -415,27 +511,53 @@ if (nswrgu.gt.1) then
 
   ! Mass flow though boundary faces
 
-  do ig = 1, ngrpb
-    !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac) &
-    !$omp          if(nfabor > thr_n_min)
-    do it = 1, nthrdb
-      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+  ! Standard mass flux
+  if (itypfl.eq.1) then
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac) &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-        ii = ifabor(ifac)
+          ii = ifabor(ifac)
 
-        diipbx = diipb(1,ifac)
-        diipby = diipb(2,ifac)
-        diipbz = diipb(3,ifac)
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
 
-        pip =   romb(ifac) * uy(ii)                                            &
-              + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
-        pfac = inc*coefqa(ifac,2) + coefby(ifac)*pip
+          pip =   romb(ifac) * uy(ii)                                            &
+                + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
+          pfac = inc*coefqa(ifac,2) + coefby(ifac)*pip
 
-        flumab(ifac) = flumab(ifac) + pfac*surfbo(2,ifac)
+          flumab(ifac) = flumab(ifac) + pfac*surfbo(2,ifac)
 
+        enddo
       enddo
     enddo
-  enddo
+  ! Velocity flux
+  else
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac) &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+          ii = ifabor(ifac)
+
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
+
+          pip = uy(ii)                                                          &
+              + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
+          pfac = inc*coefqa(ifac,2) + coefby(ifac)*pip
+
+          flumab(ifac) = flumab(ifac) + pfac*surfbo(2,ifac)
+
+        enddo
+      enddo
+    enddo
+  endif
 
   ! Mass flow along Z
   ! =================
@@ -476,27 +598,53 @@ if (nswrgu.gt.1) then
 
   ! Mass flow though boundary faces
 
-  do ig = 1, ngrpb
-    !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac) &
-    !$omp          if(nfabor > thr_n_min)
-    do it = 1, nthrdb
-      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+  ! Standard mass flux
+  if (itypfl.eq.1) then
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac) &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-        ii = ifabor(ifac)
+          ii = ifabor(ifac)
 
-        diipbx = diipb(1,ifac)
-        diipby = diipb(2,ifac)
-        diipbz = diipb(3,ifac)
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
 
-        pip =   romb(ifac) * uz(ii)                                            &
-              + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
-        pfac = inc*coefqa(ifac,3) + coefbz(ifac)*pip
+          pip =   romb(ifac) * uz(ii)                                            &
+                + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
+          pfac = inc*coefqa(ifac,3) + coefbz(ifac)*pip
 
-        flumab(ifac) = flumab(ifac) + pfac*surfbo(3,ifac)
+          flumab(ifac) = flumab(ifac) + pfac*surfbo(3,ifac)
 
+        enddo
       enddo
     enddo
-  enddo
+  ! Velocity flux
+  else
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, pip, pfac) &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+          ii = ifabor(ifac)
+
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
+
+          pip = uz(ii)                                                          &
+              + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
+          pfac = inc*coefqa(ifac,3) + coefbz(ifac)*pip
+
+          flumab(ifac) = flumab(ifac) + pfac*surfbo(3,ifac)
+
+        enddo
+      enddo
+    enddo
+  endif
 
   ! Free memory
   deallocate(grad)
@@ -504,7 +652,7 @@ if (nswrgu.gt.1) then
 !     TRAITEMENT DE LA PERIODICITE SPEFICIQUE A INIMAS A LA FIN
 !     =========================================================
 
-  if (iperot.gt.0) then
+  if(iperot.gt.0.and.itypfl.eq.1) then
     iappel = 2
 
     call permas &
@@ -514,7 +662,6 @@ if (nswrgu.gt.1) then
    dudxy  , drdxy  , wdudxy , wdrdxy )
 
   endif
-
 
 endif
 

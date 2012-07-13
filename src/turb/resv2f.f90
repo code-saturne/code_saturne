@@ -141,6 +141,7 @@ double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:,:) :: gradp, gradk
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
@@ -155,7 +156,7 @@ allocate(smbr(ncelet), rovsdt(ncelet))
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet))
-
+allocate(dpvar(ncelet))
 
 ipcrom = ipproc(irom  )
 ipcvis = ipproc(iviscl)
@@ -501,7 +502,7 @@ climgp = climgr(ivar)
 extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -515,7 +516,7 @@ call codits                                                       &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   rovsdt , smbr   , rtp(1,ivar)     ,                            &
+   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  )
 
 
@@ -812,7 +813,7 @@ climgp = climgr(ivar)
 extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -826,7 +827,7 @@ call codits                                                       &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   rovsdt , smbr   , rtp(1,ivar)     ,                            &
+   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  )
 
 !===============================================================================
@@ -845,6 +846,7 @@ deallocate(viscf, viscb)
 deallocate(smbr, rovsdt)
 deallocate(w1, w2, w3)
 deallocate(w4, w5)
+deallocate(dpvar)
 
 !--------
 ! FORMATS

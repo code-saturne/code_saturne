@@ -151,6 +151,7 @@ double precision, allocatable, dimension(:) :: w7, w8, usimpe
 double precision, allocatable, dimension(:) :: w10, w11, w12
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:,:,:), allocatable :: gradv
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
@@ -168,6 +169,7 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet))
 allocate(usimpk(ncelet))
 allocate(w7(ncelet), w8(ncelet), usimpe(ncelet))
+allocate(dpvar(ncelet))
 
 if (iturb.eq.51) then
   allocate(w10(ncelet),w11(ncelet))
@@ -1356,7 +1358,7 @@ extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 thetap = thetav(ivar)
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -1370,7 +1372,7 @@ call codits                                                       &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   tinstk , smbrk  , rtp(1,ivar)     ,                            &
+   tinstk , smbrk  , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  )
 
 
@@ -1439,7 +1441,7 @@ extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 thetap = thetav(ivar)
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -1453,7 +1455,7 @@ call codits                                                       &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   tinste , smbre  , rtp(1,ivar)     ,                            &
+   tinste , smbre  , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  )
 
 
@@ -1477,6 +1479,7 @@ deallocate(tinstk, tinste, divu)
 deallocate(w1, w2, w3)
 deallocate(w4, w5)
 deallocate(w7, w8, usimpe)
+deallocate(dpvar)
 
 if (allocated(w10)) deallocate(w10, w11)
 

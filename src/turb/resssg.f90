@@ -167,6 +167,7 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6, w7
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
@@ -176,6 +177,7 @@ double precision, allocatable, dimension(:) :: w4, w5, w6, w7
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet))
+allocate(dpvar(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -965,7 +967,7 @@ climgp = climgr(ivar)
 extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -979,7 +981,7 @@ call codits                                                       &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   rovsdt , smbr   , rtp(1,ivar)     ,                            &
+   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  )
 
 
@@ -989,6 +991,7 @@ call codits                                                       &
 
 ! Free memory
 deallocate(w1, w2)
+deallocate(dpvar)
 
 !--------
 ! FORMATS

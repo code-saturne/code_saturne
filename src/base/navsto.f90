@@ -124,7 +124,7 @@ integer          icliup, iclivp, icliwp, init
 integer          icluma, iclvma, iclwma
 integer          iflmas, iflmab, ipcrom, ipbrom
 integer          iflms1, iflmb1, iflmb0
-integer          nswrgp, imligp, iwarnp, imaspe
+integer          nswrgp, imligp, iwarnp, imaspe , itypfl
 integer          nbrval, iappel, iescop, idtsca
 integer          ndircp, icpt  , iecrw
 integer          numcpl
@@ -152,6 +152,7 @@ double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: flint, flbrd
 double precision, allocatable, dimension(:) :: coefap
+
 
 double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
 
@@ -320,11 +321,12 @@ if ( iprco.le.0 ) then
   extrap = extrag(iu)
 
   imaspe = 1
+  itypfl = 1
 
   call inimas &
   !==========
 ( nvar   , nscal  ,                                              &
-  iu  , iv  , iw  , imaspe ,                                     &
+  iu  , iv  , iw  , imaspe , itypfl ,                            &
   iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
@@ -333,6 +335,7 @@ if ( iprco.le.0 ) then
   coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
   coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
   propfa(1,iflmas), propfb(1,iflmab) )
+
 
 !     En ALE on doit rajouter la composante en vitesse de maillage
   if (iale.eq.1) then
@@ -377,6 +380,7 @@ if ( iprco.le.0 ) then
     extrap = extrag(iuma )
 
     imaspe = 1
+    itypfl = 1
 
     !$omp parallel do
     do ifac = 1, nfac
@@ -386,7 +390,7 @@ if ( iprco.le.0 ) then
     call inimas &
     !==========
  ( nvar   , nscal  ,                                              &
-   iuma   , ivma   , iwma   , imaspe ,                            &
+   iuma   , ivma   , iwma   , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -577,11 +581,12 @@ if (irevmc.eq.1) then
   extrap = extrag(iu)
 
   imaspe = 1
+  itypfl = 1
 
   call inimas &
   !==========
  ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe ,                                     &
+   iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -785,6 +790,7 @@ if (iale.eq.1) then
   extrap = extrag(iuma )
 
   imaspe = 1
+  itypfl = 1
 
   !$omp parallel do
   do ifac = 1, nfac
@@ -794,7 +800,7 @@ if (iale.eq.1) then
   call inimas &
   !==========
  ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe ,                                     &
+   iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -953,11 +959,12 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   extrap = extrag(iu )
 
   imaspe = 1
+  itypfl = 1
 
   call inimas &
   !==========
  ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe ,                                     &
+   iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

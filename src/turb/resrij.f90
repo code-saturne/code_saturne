@@ -160,6 +160,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
@@ -171,7 +172,7 @@ double precision, allocatable, dimension(:) :: w7, w8
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet))
-
+allocate(dpvar(ncelet))
 
 if(iwarni(ivar).ge.1) then
   write(nfecra,1000) nomvar(ipp)
@@ -727,7 +728,7 @@ climgp = climgr(ivar)
 extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -741,7 +742,7 @@ call codits                                                       &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   rovsdt , smbr   , rtp(1,ivar)     ,                            &
+   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  )
 
 
@@ -753,6 +754,7 @@ call codits                                                       &
 deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
 deallocate(w7, w8)
+deallocate(dpvar)
 
 !--------
 ! FORMATS

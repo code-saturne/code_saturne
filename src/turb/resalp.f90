@@ -111,7 +111,7 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:) :: w1
-
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
@@ -121,6 +121,7 @@ double precision, allocatable, dimension(:) :: w1
 
 allocate(smbr(ncelet), rovsdt(ncelet), w1(ncelet))
 allocate(viscf(nfac), viscb(nfabor))
+allocate(dpvar(ncelet))
 
 ipcrom = ipproc(irom)
 ipcvis = ipproc(iviscl)
@@ -264,7 +265,7 @@ call codits &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   rovsdt , smbr   , rtp(1,ivar)     ,                            &
+   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  )
 
 !===============================================================================
@@ -276,9 +277,9 @@ call codits &
    propce , rtpa   , rtp )
 
 ! Free memory
-
 deallocate(smbr, rovsdt, w1)
 deallocate(viscf, viscb)
+deallocate(dpvar)
 
 !--------
 ! FORMATS

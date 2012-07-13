@@ -1186,8 +1186,20 @@ if(ipass.eq.3) then
 
 ! --- Numeros de propriete
 
-  !     On a besoin de la masse volumique si on l'extrapole ou si ICALHY
-  if(iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
+  !    Source term for weakly compressible algorithm (semi analytic scheme)
+  if (idilat.eq.4) then
+    do iscal = 1, nscal
+      iprop         = iprop + 1
+      iustdy(iscal) = iprop
+    enddo
+    itsrho = nscal + 1
+    iprop          = iprop + 1
+    iustdy(itsrho) = iprop
+  endif
+
+  ! The density at the previous time step is required if idilat>1 or if
+  ! we perform a hydrostatic pressure correction (icalhy=1)
+  if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
     iprop         = iprop + 1
     iroma  = iprop
   endif
@@ -1307,8 +1319,18 @@ if(ipass.eq.3) then
 
 ! --- Positionnement des PROPCE
 
-  !     Variables schema en temps
-  if(iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
+  !    Source term for weakly compressible algorithm (semi analytic scheme)
+  if (idilat.eq.4) then
+    do iscal = 1, nscal
+      iprop                 = iprop + 1
+      ipproc(iustdy(iscal)) = iprop
+    enddo
+    iprop                  = iprop + 1
+    ipproc(iustdy(itsrho)) = iprop
+  endif
+
+  ! Variables schema en temps
+  if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
     iprop                 = iprop  + 1
     ipproc(iroma ) = iprop
   endif

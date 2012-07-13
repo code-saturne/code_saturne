@@ -153,6 +153,7 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
@@ -162,6 +163,7 @@ double precision, allocatable, dimension(:,:) :: grad
 
 ! Allocate temporary arrays
 allocate(w1(ncelet))
+allocate(dpvar(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -511,6 +513,16 @@ if (itspdv.eq.1) then
              *volume(iel)/sigmas(iscal)                           &
              *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
       enddo
+      ! Production term for a variance  TODO compute ustdy when isso2t >0
+      if (idilat.eq.4) then
+        do iel = 1, ncel
+          propce(iel,ipproc(iustdy(iscal))) =                     &
+          propce(iel,ipproc(iustdy(iscal))) +                     &
+               2.d0*max(propce(iel,ipcvso),zero)                  &
+             *volume(iel)/sigmas(iscal)                           &
+             *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
+        enddo
+      endif
     endif
 
     ! Free memory
@@ -540,6 +552,11 @@ if (itspdv.eq.1) then
       rovsdt(iel) = rovsdt(iel) + rhovst*thetap
 !     SMBRS recoit la dissipation
       smbrs(iel) = smbrs(iel) - rhovst*rtpa(iel,ivar)
+      ! Dissipation term for a variance
+      if (idilat.eq.4) then
+        propce(iel,ipproc(iustdy(iscal))) =                       &
+        propce(iel,ipproc(iustdy(iscal))) - rhovst*rtpa(iel,ivar)
+      endif
     enddo
 
   endif
@@ -654,7 +671,7 @@ climgp = climgr(ivar)
 extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -668,7 +685,7 @@ call codits                                                       &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   rovsdt , smbrs  , rtp(1,ivar)     ,                            &
+   rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  )
 
 !===============================================================================
@@ -709,6 +726,7 @@ endif
 
 ! Free memory
 deallocate(w1)
+deallocate(dpvar)
 
 !--------
 ! FORMATS

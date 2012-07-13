@@ -240,6 +240,18 @@ do iscal = 1, nscal
   endif
 enddo
 
+! Initialisation of source terms for weakly compressible algorithm
+if (idilat.eq.4) then
+  do iel = 1, ncel
+    propce(iel,ipproc(iustdy(itsrho))) = 0.d0
+  enddo
+  do iscal = 1, nscal
+    do iel = 1, ncel
+      propce(iel,ipproc(iustdy(iscal))) = 0.d0
+    enddo
+  enddo
+endif
+
 
 !     Viscosite de maillage en ALE
 if (iale.eq.1) then

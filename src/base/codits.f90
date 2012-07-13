@@ -154,6 +154,7 @@
 !> \param[in]     rovsdt        \f$ f_s^{imp} \f$
 !> \param[in]     smbrp         Right hand side \f$ Rhs^k \f$
 !> \param[in,out] pvar          current variable
+!> \param[in,out] dpvar         last variable increment
 !> \param[out]    eswork        prediction-stage error estimator
 !>                              (if iescap > 0)
 !_______________________________________________________________________________
@@ -171,7 +172,7 @@ subroutine codits &
    pvara  , pvark  ,                                              &
    coefap , coefbp , cofafp , cofbfp , flumas , flumab ,          &
    viscfm , viscbm , viscfs , viscbs ,                            &
-   rovsdt , smbrp  , pvar   ,                                     &
+   rovsdt , smbrp  , pvar   , dpvar  ,                            &
    eswork )
 
 !===============================================================================
@@ -214,6 +215,7 @@ double precision viscfm(nfac), viscbm(nfabor)
 double precision viscfs(nfac), viscbs(nfabor)
 double precision rovsdt(ncelet), smbrp(ncelet)
 double precision pvar(ncelet)
+double precision dpvar(ncelet)
 double precision eswork(ncelet)
 
 ! Local variables
@@ -233,7 +235,7 @@ double precision thetex
 
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:) :: dpvar, smbini, w1
+double precision, allocatable, dimension(:) :: smbini, w1
 
 !===============================================================================
 
@@ -243,7 +245,7 @@ double precision, allocatable, dimension(:) :: dpvar, smbini, w1
 
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac,2))
-allocate(dpvar(ncelet), smbini(ncelet))
+allocate(smbini(ncelet))
 
 ! Names
 chaine = nomvar(ipp)
@@ -604,7 +606,7 @@ endif
 
 ! Free memory
 deallocate(dam, xam)
-deallocate(dpvar, smbini)
+deallocate(smbini)
 
 !--------
 ! Formats

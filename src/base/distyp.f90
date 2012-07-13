@@ -112,7 +112,7 @@ double precision disty(ncelet)
 
 integer          idtva0, ivar  , iconvp, idiffp
 integer          ndircp, ireslp
-integer          iescap, iflmb0, imaspe
+integer          iescap, iflmb0, imaspe, itypfl
 integer          ncymxp, nitmfp, ipp
 integer          ifac  , iel   , ipcvis, init  , ipcrom
 integer          inc   , iccocg, isym  , isweep, infpar
@@ -131,6 +131,7 @@ double precision, allocatable, dimension(:) :: coefax, coefay, coefaz
 double precision, allocatable, dimension(:) :: coefbx, coefby, coefbz
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w2
+double precision, allocatable, dimension(:) :: dpvar
 
 integer          ipass
 data             ipass /0/
@@ -149,6 +150,7 @@ allocate(flumas(nfac), flumab(nfabor))
 allocate(rom(nfac), romb(nfabor))
 allocate(coefax(nfabor), coefay(nfabor), coefaz(nfabor))
 allocate(coefbx(nfabor), coefby(nfabor), coefbz(nfabor))
+allocate(dpvar(ncelet))
 
 ! Allocate work arrays
 allocate(w2(ncelet))
@@ -296,10 +298,12 @@ imaspe = 1
 ! Il ne s'agit ni de U ni de R
 ivar = 0
 
+itypfl = 1
+
 call inimas                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   ivar   , ivar   , ivar   , imaspe ,                            &
+   ivar   , ivar   , ivar   , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgy , imligy , &
    iwarny , nfecra ,                                              &
    epsrgy , climgy , extray ,                                     &
@@ -540,7 +544,7 @@ do isweep = 1, ntcmxy
    rtpdp  , rtpdp  ,                                              &
    coefax , coefbx , coefax , coefbx , flumas , flumab ,          &
    flumas , flumab , flumas , flumab ,                            &
-   rovsdp , smbdp  , rtpdp  ,                                     &
+   rovsdp , smbdp  , rtpdp  , dpvar  ,                            &
    rvoid  )
 
 
@@ -620,6 +624,7 @@ deallocate(rom, romb)
 deallocate(coefax, coefay, coefaz)
 deallocate(coefbx, coefby, coefbz)
 deallocate(w2)
+deallocate(dpvar)
 
 !--------
 ! Formats

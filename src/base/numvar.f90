@@ -96,6 +96,8 @@ module numvar
   ! iprtot : Pression totale au centre des cellules Ptot=P*+rho*g.(x-x0)
   !                                                             -  - -
   ! ivisma : Viscosite de maillage en ALE (eventuellement orthotrope)
+  ! iustdy : pointer for dilatation source terms
+  ! itsrho : pointer for global dilatation source terms
 
   integer, save :: ipproc(npromx), ipprof(npromx), ipprob(npromx), &
                    irom  , iroma , iviscl,                         &
@@ -104,7 +106,8 @@ module numvar
                    itstua, itssca(nscamx),                         &
                    iestim(nestmx)         , ifluma(nvarmx),        &
                    ifluaa(nvarmx), ismago, icour ,                 &
-                   ifour , iprtot, ivisma(3)
+                   ifour , iprtot, ivisma(3),                      &
+                   iustdy(nscamx), itsrho
 
   ! Position des conditions aux limites
   !  (position dans coefa et coefb des coef (coef. coef.f) relatifs a

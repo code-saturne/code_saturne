@@ -117,6 +117,7 @@ double precision, allocatable, dimension(:) :: coefax, coefay, coefaz
 double precision, allocatable, dimension(:) :: coefbx, coefby, coefbz
 double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:) :: cofafp, cofbfp
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
@@ -129,6 +130,7 @@ allocate(viscf(nfac), viscb(nfabor))
 allocate(smbrs(ncelet), rovsdt(ncelet))
 allocate(fmala(nfac), fmalb(nfabor))
 allocate(phia(ncelet))
+allocate(dpvar(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
@@ -308,7 +310,7 @@ enddo
 
 thetap = 1.0d0
 
-call codits                                                       &
+call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -321,7 +323,7 @@ call codits                                                       &
             cofafp , cofbfp ,                                     &
             fmala  , fmalb  ,                                     &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   rovsdt , smbrs  , phi    ,                                     &
+   rovsdt , smbrs  , phi    , dpvar  ,                            &
    rvoid  )
 
 
@@ -333,6 +335,7 @@ deallocate(coefap, coefbp)
 deallocate(cofafp, cofbfp)
 deallocate(phia)
 deallocate(w1, w2, w3)
+deallocate(dpvar)
 
 !--------
 ! FORMATS

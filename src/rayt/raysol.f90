@@ -177,6 +177,7 @@ double precision relaxp, thetap
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: rhs0
+double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
 
@@ -186,6 +187,7 @@ double precision, allocatable, dimension(:) :: rhs0
 
 ! Allocate a work array
 allocate(rhs0(ncelet))
+allocate(dpvar(ncelet))
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -394,7 +396,7 @@ do ii = -1,1,2
         thetap = 1.0d0
         idtva0 = 0
 
-        call codits                                               &
+        call codits &
         !==========
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 ,  nitmap ,&
@@ -406,7 +408,7 @@ do ii = -1,1,2
    rua    , ru     ,                                              &
    coefap , coefbp , cofafp , cofbfp , flurds , flurdb ,          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   rovsdt , smbrs  , ru    ,                                      &
+   rovsdt , smbrs  , ru     , dpvar  ,                            &
    rvoid  )
 
 !===============================================================================
@@ -447,6 +449,7 @@ enddo
 
 ! Free memory
 deallocate(rhs0)
+deallocate(dpvar)
 
 !--------
 ! FORMATS
