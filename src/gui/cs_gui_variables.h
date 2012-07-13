@@ -57,6 +57,7 @@ typedef struct {
   int   *pphas;           /* phase number for propce variables               */
   int    nvar;            /* total number of variables and scalars           */
   int    nscaus;          /* number of user scalars                          */
+  int    nscadr;          /* number of user scalars with drift velocity      */
   int    nscapp;          /* number of specific physics scalars              */
   int    nprop;           /* number of properties                            */
   int    nsalpp;          /* number of predifined physics properties         */

@@ -96,11 +96,16 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-integer          iscal, ivar, iel
+integer          iscal, ivar, iel, ifac
 integer          ii, iisc, itspdv, icalc, iappel
 integer          ispecf
 
 double precision, allocatable, dimension(:) :: dtr
+
+double precision, allocatable, dimension(:) :: rhosav
+double precision, allocatable, dimension(:) :: rhosab
+
+
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
 
@@ -121,6 +126,11 @@ allocate(dtr(ncelet))
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbrs(ncelet), rovsdt(ncelet))
 
+! Saving the density in case of drift-flux scalar
+if (nscadr.gt.0) then
+   allocate(rhosav(ncelet))
+   allocate(rhosab(nfabor))
+endif
 
 ipass = ipass + 1
 
@@ -297,7 +307,7 @@ if (ippmod(iphpar).ge.1) then
       else
         write(nfecra,9000)iisc,iisc,nscal,iscavr(iisc)
         call csexit (1)
-      endif
+     endif
 
 
 ! ---> Appel a covofi pour la resolution
@@ -485,10 +495,91 @@ if(nscaus.gt.0) then
 
 endif
 
+!===============================================================================
+! 3. Management of the scalars with a drift velocity
+!    (Nerisson model for aerosol deposition)
+!
+!===============================================================================
+
+if (nscadr.gt.0) then
+
+   ! --> Saving the density
+   !     (basically entering covofidr with rho = 1)
+
+   do iel = 1, ncelet
+      rhosav(iel) = propce(iel,ipproc(irom))
+      propce(iel,ipproc(irom)) = 1.d0
+   enddo
+   
+   do ifac = 1, nfabor
+      rhosab(ifac) = propfb(ifac, ipprob(irom))
+      propfb(ifac, ipprob(irom)) = 1.d0
+   enddo
+
+
+   ! ---> loop on the scalars with a drift velocity
+
+   do ii = 1, nscadr
+
+      iscal = ii + nscaus
+      ivar  = isca(iscal)
+
+      ! ---> timestep with a potential multiplicator factor
+
+      if(cdtvar(ivar).ne.1.d0) then
+         do iel = 1, ncel
+            dtr(iel) = dt(iel)*cdtvar(ivar)
+         enddo
+      else
+         do iel = 1, ncel
+            dtr(iel) = dt(iel)
+         enddo
+      endif
+
+      ! ---> Calling of covofidr 
+      !     (an adapted version of covofi routine
+      !      for the resolution of scalars with a drift velocity)
+
+      call covofidr                                                   &
+      !==========
+     ( nvar   , nscal  ,                                              &
+       ncepdc , ncetsm ,                                              &
+       iscal   , itspdv ,                                             &
+       icepdc , icetsm , itypsm ,                                     &
+       dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
+       coefa  , coefb  , ckupdc , smacel ,                            &
+       viscf  , viscb  ,                                              &
+       smbrs  , rovsdt , rhosav)
+
+
+      ! ---> End of loop on the drift-velocity scalars
+   enddo
+
+   ! --> restoring the density
+   !     
+
+   do iel = 1, ncelet
+      propce(iel,ipproc(irom)) = rhosav(iel)
+   enddo
+   do ifac = 1, nfabor
+      propfb(ifac, ipprob(irom)) = rhosab(ifac) 
+   enddo
+
+endif
+
+
+
+
 ! Free memory
 deallocate(dtr)
 deallocate(viscf, viscb)
 deallocate(smbrs, rovsdt)
+
+if (nscadr.gt.0) then
+   deallocate(rhosav)
+   deallocate(rhosab)
+endif
+
 
 !===============================================================================
 ! 4.  FORMATS

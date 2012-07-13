@@ -210,15 +210,20 @@ if(ipass.eq.1) then
     iok = iok + 1
   endif
 
-  if(nscaus.gt.0 .or. nscapp.gt.0) then
-    if((nscaus+nscapp).gt.nscamx) then
+  if(nscadr.lt.0) then
+    write(nfecra,6009) nscadr
+    iok = iok + 1
+  endif
+
+  if(nscaus.gt.0 .or. nscapp.gt.0 .or. nscadr.gt.0) then
+    if((nscaus+nscapp+nscadr).gt.nscamx) then
 
       if(nscapp.le.0) then
         write(nfecra,6011)                                        &
-             nscaus,       nscamx,nscamx       ,nscaus
+          nscaus + nscadr,       nscamx,nscamx       ,nscaus + nscadr
       else
         write(nfecra,6012)                                        &
-             nscaus,nscapp,nscamx,nscamx-nscapp,nscaus+nscapp
+       nscaus+nscadr,nscapp,nscamx,nscamx-nscapp,nscaus+nscapp+nscadr
       endif
       iok = iok + 1
     endif
@@ -233,7 +238,7 @@ if(ipass.eq.1) then
 !      On prefere que l'identite porte sur les scalaires utilisateurs,
 !        ca minimisera peut etre des erreurs utilisateur
 
-  iscal = max(0,nscaus)
+  iscal = max(0,nscaus + nscadr)
   if (nscapp.gt.0) then
     do ii = 1, nscapp
       iscal = iscal + 1
@@ -269,11 +274,12 @@ if(ipass.eq.2) then
 ! ---  NSCAL a deja ete verifie, mais on ne sait jamais.
 
   if(nscal.lt.0) then
-    write(nfecra,7010) nscal, nscaus, nscapp
+    write(nfecra,7010) nscal, nscaus, nscapp, nscadr
     iok = iok + 1
   endif
   if(nscal.gt.nscamx) then
-    write(nfecra,7011) nscal, nscamx, nscaus, nscapp, nscal
+    write(nfecra,7011) nscal , nscamx, nscaus, nscapp,     & 
+                       nscadr, nscal 
     iok = iok + 1
   endif
 
@@ -469,6 +475,13 @@ if(ipass.eq.2) then
   if(nscaus.ge.1) then
     do jj = 1, nscaus
       ii       = jj
+      ivar     = ivar + 1
+      isca(ii) = ivar
+    enddo
+  endif
+  if(nscadr.ge.1) then
+    do jj = 1, nscadr
+      ii       = jj + nscaus
       ivar     = ivar + 1
       isca(ii) = ivar
     enddo
@@ -679,7 +692,12 @@ if(ipass.eq.2) then
     ifluma(inusa)= iprop
   endif
   do iscal = 1, nscal
-    ifluma(isca(iscal)) = ifluma(iu)
+    if (idrift(iscal).gt.0) then
+      iprop = iprop + 1
+      ifluma(isca(iscal)) = iprop
+    else
+      ifluma(isca(iscal)) = ifluma(iu)
+    endif
   enddo
   if (iale.eq.1) then
     ifluma(iuma) = ifluma(ipr)
@@ -1270,7 +1288,12 @@ if(ipass.eq.3) then
       ifluaa(inusa)= iprop
     endif
     do iscal = 1, nscal
-      ifluaa(isca(iscal)) = ifluaa(iu)
+      if (idrift(iscal).eq.1) then
+        iprop = iprop + 1
+        ifluaa(isca(iscal)) = iprop
+      else
+        ifluaa(isca(iscal)) = ifluaa(iu)
+      endif
     enddo
   endif
 
@@ -2126,6 +2149,23 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 6009 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@     NOMBRE DE SCALAIRES AVEC VITESSE DE DRIFT ERRONE       ',/,&
+'@                                                            ',/,&
+'@  Le nombre de scalaires de ce type doit etre un entier     ',/,&
+'@    positif ou nul. Il vaut ici   NSCADR  = ',I10            ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier les parametres.                                  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  6010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2151,17 +2191,17 @@ endif
 '@    =========                                               ',/,&
 '@     NOMBRE DE SCALAIRES TROP GRAND                         ',/,&
 '@                                                            ',/,&
-'@  Le nombre de scalaires utilisateurs                       ',/,&
-'@    demande                          est  NSCAUS = ',I10     ,/,&
+'@  Le nombre de scalaires utilisateurs (avec et sans drift)  ',/,&
+'@    demande                 est  NSCAUS + NSCADR = ',I10     ,/,&
 '@  Le nombre de scalaires total                              ',/,&
 '@    autorise   dans paramx           est  NSCAMX = ',I10     ,/,&
 '@                                                            ',/,&
-'@  La valeur maximale autorisee de NSCAUS                    ',/,&
+'@  La valeur maximale autorisee de NSCAUS + NSCADR           ',/,&
 '@                          est donc  NSCAMX        = ',I10    ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier NSCAUS.                                          ',/,&
+'@  Verifier NSCAUS et NSCADR.                                ',/,&
 '@                                                            ',/,&
 '@  NSCAMX doit valoir au moins ',I10                          ,/,&
 '@                                                            ',/,&
@@ -2176,18 +2216,18 @@ endif
 '@     NOMBRE DE SCALAIRES TROP GRAND                         ',/,&
 '@                                                            ',/,&
 '@  Le nombre de scalaires utilisateurs                       ',/,&
-'@    demande                          est  NSCAUS = ',I10     ,/,&
+'@    demande                   est  NSCAUS + NSCADR = ',I10   ,/,&
 '@  Le nombre de scalaires pour les physiques particulieres   ',/,&
 '@    necessaire avec le modele choisi est  NSCAPP = ',I10     ,/,&
 '@  Le nombre de scalaires total                              ',/,&
 '@    autorise   dans paramx           est  NSCAMX = ',I10     ,/,&
 '@                                                            ',/,&
-'@  La valeur maximale autorisee de NSCAUS                    ',/,&
+'@  La valeur maximale autorisee de NSCAUS + NSCADR           ',/,&
 '@    avec le modele choisi est donc NSCAMX-NSCAPP = ',I10     ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier NSCAUS.                                          ',/,&
+'@  Verifier NSCAUS et NSCADR.                                ',/,&
 '@                                                            ',/,&
 '@  NSCAMX doit valoir au moins ',I10                          ,/,&
 '@                                                            ',/,&
@@ -2205,6 +2245,7 @@ endif
 '@    positif ou nul. Il vaut ici   NSCAL   = ',I10            ,/,&
 '@    Remarque : NSCAUS = ',I10                                ,/,&
 '@               NSCAPP = ',I10                                ,/,&
+'@               NSCADR = ',I10                                ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -2226,6 +2267,7 @@ endif
 '@                                                            ',/,&
 '@    Remarque : NSCAUS = ',I10                                ,/,&
 '@               NSCAPP = ',I10                                ,/,&
+'@               NSCADR = ',I10                                ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -3123,6 +3165,23 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 6009 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
+'@    =========                                               ',/,&
+'@     ERRONEOUS NUMBER OF SCALARS WITH DRIFT VELOCITY        ',/,&
+'@                                                            ',/,&
+'@  The number of scalars with drift must be an integer either',/,&
+'@   positive or zero. Here is      NSCADR  = ',I10            ,/,&
+'@                                                            ',/,&
+'@  The calculation will not be run.                          ',/,&
+'@                                                            ',/,&
+'@  Verify   parameters.                                      ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  6010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3148,17 +3207,17 @@ endif
 '@    =========                                               ',/,&
 '@     NUMBER OF SCALARS TOO LARGE                            ',/,&
 '@                                                            ',/,&
-'@  The number of users scalars                               ',/,&
-'@  requested                          is   NSCAUS = ',I10     ,/,&
+'@  The number of users scalars (with and without drift)      ',/,&
+'@  requested                 is   NSCAUS + NSCADR = ',I10     ,/,&
 '@  The total number of scalars                               ',/,&
 '@    allowed    in   paramx           is   NSCAMX = ',I10     ,/,&
 '@                                                            ',/,&
-'@  The maximmum value allowed of   NSCAUS                    ',/,&
+'@  The maximmum value allowed of   NSCAUS + NSCADR           ',/,&
 '@                          is in   NSCAMX        = ',I10      ,/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify   NSCAUS.                                          ',/,&
+'@  Verify   NSCAUS and NSCADR                                ',/,&
 '@                                                            ',/,&
 '@  NSCAMX must be at least     ',I10                          ,/,&
 '@                                                            ',/,&
@@ -3173,18 +3232,18 @@ endif
 '@     NUMBER OF SCALARS TOO LARGE                            ',/,&
 '@                                                            ',/,&
 '@  The number of users scalars                               ',/,&
-'@     requested                       is   NSCAUS = ',I10     ,/,&
+'@     requested               is  NSCAUS + NSCADR = ',I10     ,/,&
 '@  The number of scalars necessary for the specific physics'  ,/,&
 '@    with the chosen model is              NSCAPP = ',I10     ,/,&
 '@  The total number of scalars                               ',/,&
 '@    allowed    in   paramx.h         est  NSCAMX = ',I10     ,/,&
 '@                                                            ',/,&
-'@  The maximum value allowed for  NSCAUS                     ',/,&
+'@  The maximum value allowed for  NSCAUS + NSCADR            ',/,&
 '@    with the chosen model is       NSCAMX-NSCAPP = ',I10     ,/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Verify   NSCAUS.                                          ',/,&
+'@  Verify   NSCAUS and NSCADR.                               ',/,&
 '@                                                            ',/,&
 '@  NSCAMX must be at least     ',I10                          ,/,&
 '@                                                            ',/,&
@@ -3202,6 +3261,7 @@ endif
 '@    positive or zero. Here it is  NSCAL   = ',I10            ,/,&
 '@    Note     : NSCAUS = ',I10                                ,/,&
 '@               NSCAPP = ',I10                                ,/,&
+'@               NSCADR = ',I10                                ,/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
@@ -3223,6 +3283,7 @@ endif
 '@                                                            ',/,&
 '@    Note     : NSCAUS = ',I10                                ,/,&
 '@               NSCAPP = ',I10                                ,/,&
+'@               NSCADR = ',I10                                ,/,&
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&

@@ -314,6 +314,11 @@ call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscaus,  &
             ierror)
 nberro=nberro+ierror
 
+rubriq = 'nombre_scalaires_drift'
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscadr,  &
+            ierror)
+nberro=nberro+ierror
+
 rubriq = 'nombre_scalaires_pp'
 call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscapp,  &
             ierror)

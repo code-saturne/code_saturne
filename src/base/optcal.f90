@@ -65,6 +65,52 @@ module optcal
 
   double precision, save :: epsdp
 
+
+  ! Parameters for the Nerisson model of aerosol deposition
+  ! -------------------------------------------------------
+  ! 
+  !  idrift:   Choice for the model of scalar transport
+  !  itsttu:   Activation of the turbophorese modeling
+  !  itstde:   Activation of the particle-trajectory deviation
+  !  iiso:     Taking into account the extradiagonal terms of the diffusion tensor
+  !  ibrow:    Taking into account the Brownian diffusion 
+  !  ithphor:  Taking into account the thermophoretic phenomenon 
+  !  ielectro: Taking into account the electrophoretic phenomenon
+  !  idepot:   Choice of the wall deposition model
+  !  ndep:     Parameter for the Simonin model 
+
+
+  integer, save :: idrift(nscamx)
+
+  integer, save :: itsttu   , itstde,  iiso,                 &
+                   ibrow    , idepot,  ithphor,              &
+                   ielectro , ndep   
+
+
+  ! diapart: mean particle (aerosol) diameter
+  ! rhopart: mean particle (aerosol) density 
+  ! sigmag:  in case of polydispersity, diameter standard-deviation
+  ! kpart:   in case of thermophoresis, particle thermal conductivity
+  ! qpart:   in case of electrophoresis, particle charge
+  ! elfield: in case of electrophoresis, electrical field
+  ! taupae:  aerosol relaxation time
+
+  double precision, save :: diapart(nscamx)
+  double precision, save :: rhopart(nscamx)
+  double precision, save :: sigmag(nscamx)
+  double precision, save :: kpart(nscamx)
+  double precision, save :: qpart(nscamx)
+
+
+  double precision, allocatable, save, dimension(:,:) :: elfield
+  double precision, allocatable, save, dimension(:,:) :: taupae
+
+  ! ppolyd : particle polydispersity indicator
+
+  integer, save :: ppolyd(nscamx) 
+
+
+
   ! Schema en temps
 
   !  ischtp : indicateur de schema en temps

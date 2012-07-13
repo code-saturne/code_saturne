@@ -30,6 +30,27 @@ module cstphy
 
   !=============================================================================
 
+  !    Faraday constant (C/mol)
+
+  double precision cstfar
+  parameter(cstfar = 9.648d4)
+
+
+  !    Vacuum permittivity (F/m):
+
+  double precision epsvid
+  parameter(epsvid = 8.854d-12)
+
+  !    Boltzmann constant (J/K):
+
+  double precision kboltz
+  parameter(kboltz = 1.38d-23)
+
+  !    Elementary charge (C)
+  double precision celem
+  parameter(celem = 1.602176487d-19)
+
+
   ! Kelvin
 
   ! tkelvi       --> =  273,15
@@ -48,6 +69,7 @@ module cstphy
   double precision :: stephn
   parameter(stephn = 5.6703d-8)
 
+  
   ! Perfect gas constant for air (mixture)
 
   double precision :: rair

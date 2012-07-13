@@ -645,6 +645,8 @@ do ifac = 1, nfabor
       endif
     else if (iilagr.gt.0.and.idepst.gt.0) then
       uetbor(ifac) = uet
+    else if (nscadr.ge.1) then
+      uetbor(ifac) = uet
     endif
 
     ! Save yplus if post-processed

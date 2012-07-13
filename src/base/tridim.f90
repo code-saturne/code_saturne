@@ -923,6 +923,17 @@ do while (iterns.le.nterup)
 
   endif
 
+  if (nscadr.gt.0) then
+
+     call dricli &
+     !===============================
+   ( nvar   , nscal  ,                                              &
+     icodcl , itrifb , itypfb , izfppp ,                            &
+     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+     coefa  , coefb  , rcodcl )
+
+  endif
+
   !     ON CALCULE LES COEFFICIENTS ASSOCIES AUX CONDITIONS LIMITES
 
   call condli &

@@ -251,7 +251,7 @@ endif
 ! User variables
 !---------------
 
-nscal = nscaus + nscapp
+nscal = nscaus + nscapp + nscadr
 
 do ii = 1, nscal
   if (isca(ii) .gt. 0) then

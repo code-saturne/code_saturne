@@ -433,21 +433,6 @@ module lagran
   double precision, save ::  cstham , epseau,  phi1 , phi2, fion
 
 
-!    Faraday constant (C/mol)
-
-  double precision cstfar
-  parameter(cstfar = 9.648d4)
-
-
-!    Vacuum permittivity (F/m):
-
-  double precision epsvid
-  parameter(epsvid = 8.854d-12)
-
-!    Boltzmann constant (J/K):
-
-  double precision kboltz
-  parameter(kboltz = 1.38d-23)
 
   !=============================================================================
   ! 13. Mouvement brownien

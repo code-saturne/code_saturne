@@ -582,7 +582,7 @@ end subroutine
 subroutine usinsc &
 !================
 
- ( iihmpu, nfecra , nscaus , iverif )
+ ( iihmpu, nfecra , nscaus , nscadr, iverif )
 
 
 !===============================================================================
@@ -600,6 +600,7 @@ subroutine usinsc &
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! nscaus           ! i  ! <-> ! number of user scalars                         !
+! nscadr           ! i  ! <-> ! number of user scalars with drift velocity     !
 ! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
@@ -623,7 +624,7 @@ implicit none
 ! Arguments
 
 integer iihmpu, nfecra
-integer nscaus
+integer nscaus, nscadr
 integer iverif
 
 ! Local variables
@@ -689,7 +690,8 @@ endif
 
 !===============================================================================
 
-! --- Number of USER scalars (thermal or not, and whatever their carrier phase).
+! --- nscaus: number of USER scalars (thermal or not - without "drift" velocity).
+!     ------- 
 !       These scalars come in addition to the following "basic" scalars
 !       (which are naturally included in the model):
 !        - pressure
@@ -703,15 +705,22 @@ endif
 !        - mass fractions of transported scalars
 !        - the variance of another user scalar
 
-!     The maximum number of scalars is defined by 'nscamx' in paramx;
-!       it is the maximum admissible value for: nscaus + nscapp.
-
-
 !     Set nscaus = 0 if there is no user scalar.
+
+! --- nscadr: Number of scalars with a drift velocity 
+!     -------
+!              ( to be used in the Nerisson model of aerosol deposition)  
+!
+!     CAUTION: FOR DEVELOPER USER ONLY 
+
+!     The maximum number of scalars is defined by 'nscamx' in paramx;
+!       it is the maximum admissible value for: nscaus + nscapp + nscadr.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 nscaus = 0
+
+nscadr = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
@@ -908,11 +917,13 @@ do iscal = 1, nscaus
 
 enddo
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
 
 !----
 ! Formats
 !----
+
+
 
 
 

@@ -57,7 +57,7 @@ from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 
 from Base.Common import LABEL_LENGTH_MAX
 from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
+from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator, IntValidator
 
 #-------------------------------------------------------------------------------
 # log config
@@ -494,6 +494,8 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.connect(self.pushButtonVarNew,    SIGNAL("clicked()"), self.slotAddVariance)
         self.connect(self.pushButtonVarDelete, SIGNAL("clicked()"), self.slotDeleteVariance)
         self.connect(self.modelVariance,       SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.dataChanged)
+        self.connect(self.lineEditNSCADR, SIGNAL("textChanged(const QString &)"), self.slotNscadr)
+
 
         # widget initialization
         self.tableScalars.reset()
@@ -511,6 +513,14 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
             self.modelScalars.newItem(label)
         for label in self.mdl.getScalarsVarianceList():
             self.modelVariance.newItem(label)
+
+        nscadr = self.mdl.getScalDriNumber()
+        self.lineEditNSCADR.setText(QString(str(nscadr)))
+
+            
+        #validator
+        validatorNSCADR = IntValidator(self.lineEditNSCADR, min=0)
+        self.lineEditNSCADR.setValidator(validatorNSCADR)
 
 
     @pyqtSignature("")
@@ -595,6 +605,15 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
             self.tableView.resizeRowToContents(row)
         for col in range(topLeft.column(), bottomRight.column()+1):
             self.tableView.resizeColumnToContents(col)
+
+
+    @pyqtSignature("const QString &")
+    def slotNscadr(self, text):
+        """
+        Input NSCADR.
+        """
+        nscadr, ok = text.toInt()
+        self.mdl.setScalDriNumber(nscadr)
 
 
     def tr(self, text):
