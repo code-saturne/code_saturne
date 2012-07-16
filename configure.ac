@@ -285,13 +285,32 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "x$cs_ibm_bg_type" != "x" -o "$host_os" = darwin \
+if test "x$cs_ibm_bg_type" != "x" \
      -o "$host_os" = cygwin -o "$host_os" = mingw32 ; then
    enable_shared=no
 fi
 AC_SUBST(enable_shared)
 
-LT_INIT([dlopen])
+# Initialize libtool.
+
+LT_INIT
+
+# On some systems, such as Mac OS X in static mode, limitations
+# of the linker require special handling for user user subroutines
+# (due to not handling multiple definitions in the case of Mac OS X).
+# Detect this here, so as to transfer the name of a specific solution
+# (if necessary) to the Python package.
+
+cs_special_user_link=
+case "$host_os" in
+  darwin*)
+    if test "x$enable_shared" = "xno" ; then
+      cs_special_user_link='ar_x'
+    fi
+    ;;
+esac
+
+AC_SUBST(cs_special_user_link)
 
 #------------------------------------------------------------------------------
 # Checks for typedefs, structures, and compiler characteristics.
@@ -700,14 +719,48 @@ if test "x$cs_have_cplus_demangle" = "xyes"; then
   AC_DEFINE(HAVE_CPLUS_DEMANGLE, 1, HAVE_CPLUS_DEMANGLE)
 fi
 
+# Optional shared library support
+#--------------------------------
+
+cs_have_dlloader=no
+
+AC_ARG_ENABLE(dlloader,
+  [AS_HELP_STRING([--disable-dlloader], [disable dynamic shared library loading])],
+  [
+    case "${enableval}" in
+      yes) cs_have_dlloader=yes ;;
+      no)  cs_have_dlloader=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-dlloader]) ;;
+    esac
+  ],
+  [ cs_have_dlloader=yes ]
+)
+
+if test "x$cs_have_dlloader" = "xyes" ; then
+
+  saved_LIBS="$LIBS"
+  LIBS="$LIBS -ldl"
+
+  AC_MSG_CHECKING([for dlopen])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <dlfcn.h>]],
+                 [[ dlopen("none.so", RTLD_LAZY);]])],
+                 [cs_have_dlloader=dlopen],
+                 [cs_have_dlloader=no])
+  AC_MSG_RESULT($cs_have_dlloader)
+  if test "x$cs_have_dlloader" = "xdlopen" ; then
+    AC_DEFINE([HAVE_DLOPEN], 1, [dlopen support])
+  else
+    LIBS="$saved_LIBS"
+    cs_have_dlloader=no
+  fi
+
+fi
+
 # Plugin modules support
 #-----------------------
 
-cs_have_dlloader=no
 cs_have_plugins=no
-if test $lt_cv_dlopen = dlopen ; then
-  cs_have_dlloader=yes
-  AC_DEFINE([HAVE_DLOPEN], 1, [dlopen support])
+if test "x$cs_have_dlloader" = "xdlopen" ; then
   # Test for different plugins here
   if test x$cs_have_medcoupling = xyes ; then
     cs_have_plugins=yes

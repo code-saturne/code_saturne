@@ -89,11 +89,23 @@ $(top_builddir)/src/gui/libcsgui.la \
 $(top_builddir)/src/lagr/libcslagr.la \
 $(top_builddir)/src/rayt/libcsrayt.la \
 $(top_builddir)/src/user/libcsuser.la \
-$(top_builddir)/src/libcsmodules.la
+$(top_builddir)/src/libcsmodules.la \
+$(top_builddir)/src/mei/libmei.la \
+$(top_builddir)/src/bft/libbft.la \
+$(LIBPLE_LA) \
+$(LDFLAGS_PLE) $(LIBS_PLE) \
+$(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
+$(MED_LDFLAGS) $(MEDRUNPATH) $(MED_LIBS) \
+$(HDF5_LDFLAGS) $(HDF5RUNPATH) $(HDF5_LIBS) \
+$(MPI_LDFLAGS) $(MPI_LIBS) \
+$(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
+$(LDADD_BLAS) \
+$(LTLIBINTL) \
+$(FCLIBS)
 libsaturne_la_LDFLAGS = -no-undefined -version 0:0:0
 
 # Main program
-
+#pkglibexecdir = $(libexecdir)/'$(PACKAGE)
 pkglibexec_PROGRAMS = cs_solver
 
 if HAVE_LINK_CXX
@@ -125,16 +137,14 @@ endif
 cs_solver_SOURCES =
 cs_solver_LDADD = libsaturne.la \
 $(LIBPLE_LA) \
-$(top_builddir)/src/mei/libmei.la \
-$(top_builddir)/src/bft/libbft.la \
 $(LTLIBINTL) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
-$(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
-$(MED_LDFLAGS) $(MED_LIBS) \
-$(HDF5_LDFLAGS) $(HDF5_LIBS) \
+$(CGNS_LDFLAGS) $(CGNS_LIBS) $(CGNSRUNPATH) \
+$(MED_LDFLAGS) $(MED_LIBS) $(MEDRUNPATH) \
+$(HDF5_LDFLAGS) $(HDF5_LIBS) $(HDF5RUNPATH) \
 $(MPI_LDFLAGS) $(MPI_LIBS) \
 $(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
-$(BLAS_LDFLAGS) $(BLASRUNPATH) $(BLAS_LIBS) \
+$(BLAS_LDFLAGS) $(BLAS_LIBS) $(BLASRUNPATH) \
 $(FCLIBS)
 
 # Code_Saturne IO utility (minimal dependencies)
@@ -175,8 +185,8 @@ $(top_builddir)/src/bft/libbft.la \
 $(LIBPLE_LA) \
 $(LTLIBINTL) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
-$(METIS_LDFLAGS) $(METIS_LIBS) \
-$(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) \
+$(METIS_LDFLAGS) $(METIS_LIBS) $(METISRUNPATH) \
+$(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) $(SCOTCHRUNPATH) \
 $(MPI_LDFLAGS) $(MPI_LIBS)
 cs_partition_LDFLAGS = \
 $(ORIGINRUNPATH)

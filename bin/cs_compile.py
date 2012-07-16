@@ -173,6 +173,26 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
     hxx_files = fnmatch.filter(dir_files, '*.hxx') + fnmatch.filter(dir_files, '*.hpp')
     f_files = fnmatch.filter(dir_files, '*.[fF]90')
 
+    # Special handling for some linkers (such as Mac OS X), for which
+    # no multiple definitions are allowable in static mode;
+    # in this case, extract archive, then overwrite with user files.
+
+    p_libs = pkg.libs
+    if pkg.special_user_link == 'ar_x':
+        if force_link or (len(c_files) + len(cxx_files) + len(f_files)) > 0:
+            i = p_libs.find(' ')
+            if (i > 0):
+                lib0 = os.path.join(pkg.libdir, 'lib' + p_libs[2:i] + '.a')
+                p_libs = p_libs[i+1:]
+            else:
+                lib0 = os.path.join(pkg.libdir, 'lib' + p_libs[2:] + '.a')
+                p_libs = ''
+            cmd = 'ar x ' + lib0
+            if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
+                retval = 1
+
+    # Compile files
+
     for f in c_files:
         if (retval != 0 and not keep_going):
             break
@@ -228,7 +248,7 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if optlibs != None:
             if len(optlibs) > 0:
                 cmd = cmd + " " + optlibs
-        cmd = cmd + " " + pkg.ldflags + " " + pkg.libs
+        cmd = cmd + " " + pkg.ldflags + " " + p_libs
         cmd = cmd + " " + pkg.deplibs
         if pkg.rpath != "":
             cmd = cmd + " " + so_dirs_path(cmd, pkg)

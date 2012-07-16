@@ -223,6 +223,7 @@ edit_config = sed \
 	-e 's|@FCLIBS[@]|$(FCLIBS)|g' \
 	-e 's|@FCMODINCLUDE[@]|$(FCMODINCLUDE)|g' \
 	-e 's|@LDRPATH[@]|$(LDRPATH)|g' \
+	-e 's|@cs_special_user_link[@]|$(cs_special_user_link)|g' \
 	-e 's|@MODULECMD[@]|$(MODULECMD)|g' \
 	-e 's|@PYTHON[@]|$(PYTHON)|g' \
 	-e 's|@PYUIC4[@]|$(PYUIC4)|g' \
