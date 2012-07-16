@@ -51,7 +51,7 @@
 !===============================================================================
 
 
-subroutine cs_user_scal_drift 
+subroutine cs_user_scal_drift
 !============================
 
 !===============================================================================
@@ -68,7 +68,7 @@ subroutine cs_user_scal_drift
 !               itstde = 1
 !
 ! In this case, the parameters iiso and ibrow must be prescribed
-!   
+!
 !===============================================================================
 
 !===============================================================================
@@ -91,18 +91,28 @@ implicit none
 
 
 integer          ii, iel, iscal, ivar
+integer          iutile
 
 double precision alpha0, beta0, gamma0
 double precision lg
 
 !===============================================================================
 
+!===============================================================================
 
-!===============================================================================  
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+
+if (1.eq.1) return
+
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+!===============================================================================
 ! --- itsttu: Activation of the turbophorese modeling
 !     ======
 !               itsttu = 0: deactivation of the turbophorese modeling
-!               itsttu = 1: activation of the turbophorese modeling    
+!               itsttu = 1: activation of the turbophorese modeling
 !===============================================================================
 
 itsttu = 0
@@ -111,31 +121,31 @@ itsttu = 0
 ! --- itstde: Activation of the particle-trajectory deviation
 !     ======
 !               itstde = 0: deactivation of the particle-trajectory deviation
-!               itstde = 1: activation of the particle-trajectory deviation 
+!               itstde = 1: activation of the particle-trajectory deviation
 !
-!CAUTION: UNSTABLE IN THE CURRENT VERSION  
+!CAUTION: UNSTABLE IN THE CURRENT VERSION
 !===============================================================================
 
 itstde = 0
 
 !===============================================================================
-! --- iiso: Taking into account the extradiagonal terms of the diffusion tensor   
+! --- iiso: Taking into account the extradiagonal terms of the diffusion tensor
 !     ===== (1: Yes; 0;: No)
 !
-!     CAUTION: UNSTABLE IN THE CURRENT VERSION    
+!     CAUTION: UNSTABLE IN THE CURRENT VERSION
 !===============================================================================
 
 iiso  = 0
 
 !===============================================================================
-! --- ibrow: Taking into account the Brownian diffusion   
+! --- ibrow: Taking into account the Brownian diffusion
 !     ===== (1: Yes; 0;: No)
 !===============================================================================
 
 ibrow = 1
 
 !===============================================================================
-! --- ithphor: Taking into account the thermophoretic phenomenon 
+! --- ithphor: Taking into account the thermophoretic phenomenon
 !     ===== (1: Yes; 0;: No)
 !
 !  CAUTION: TO BE IMPLEMENTED
@@ -144,14 +154,13 @@ ibrow = 1
 ithphor  = 0
 
 !===============================================================================
-! --- ielectro: Taking into account the electrophoretic phenomenon 
-!     ======== (1: Yes; 0;: No)   
+! --- ielectro: Taking into account the electrophoretic phenomenon
+!     ======== (1: Yes; 0;: No)
 !
 ! CAUTION: TO BE IMPLEMENTED
 !===============================================================================
 
 ielectro  = 0
-
 
 !===============================================================================
 ! --- idepot: Choice of the wall deposition model
@@ -159,7 +168,7 @@ ielectro  = 0
 !         idepot = 1: Deposition velocity  Vd = k1*Sc^k2 + Vsedim
 !         idepot = 2: Lai & Nazaroff model
 !         idepot = 3: Sedimentation velocity only
-!         idepot = 4: O. Simonin model with y^+ term 
+!         idepot = 4: O. Simonin model with y^+ term
 !
 ! CAUTION: TO BE IMPLEMENTED
 !===============================================================================
@@ -169,18 +178,17 @@ idepot = 4
 ! No turbulence model: idepot is forced to 3
 if (iturb .eq. 0) idepot = 3
 
-! "ndep" parameter for the Simonin model 
+! "ndep" parameter for the Simonin model
 ! ndep = 1:  Wood model
 ! ndep = 2 : Prandtl model
 ndep = 2
-
 
 !===============================================================================
 ! Physical properties of the particles to be prescribed by the user
 !
 !
 !==============================================================================
-!
+
 iscal = nscaus + 1
 ivar  = isca(iscal)
 
@@ -193,7 +201,7 @@ nomvar(ipprtp(ivar)) = ""
 !               idrift = 1: drift-flux model
 !               idrift = 2: diffusion-inertia model
 !===============================================================================
- 
+
 idrift(iscal) = 2
 
 !-- diamm: Particle diameter (m)
@@ -245,26 +253,36 @@ if (ithphor.gt.0) kpart(iscal) = 0.0
 !     (2/(1+2*7.0d-8/diamp(iscal)))*((10-1)/(10+2)))*   &
 !     pi*8.84d-12*(diamp(iscal))**2*500000.d0
 
-
 if (ielectro.gt.0) qpart(iscal) = 0.0
-
 
 ! Electrical field
 
-if (ielectro.gt.0) then
+iutile = 0
+if (iutile.eq.1) then
 
-!!$   if (.not.allocated(elfield)) then
-!!$      allocate(elfield(ncel,3))
-!!$   endif
-!!$
-!!$   do iel =1, ncel
-!!$      elfield(iel,1) = 0.d0
-!!$      elfield(iel,2) = 0.0d0
-!!$      elfield(iel,3) = 500000.0d0
-!!$   enddo
+  if (ielectro.gt.0) then
 
-endif
+    if (.not.allocated(elfield)) then
+      allocate(elfield(ncel,3))
+    endif
 
+    do iel =1, ncel
+      elfield(iel,1) = 0.d0
+      elfield(iel,2) = 0.0d0
+      elfield(iel,3) = 500000.0d0
+    enddo
+
+  endif
+
+endif ! --- Test on 'iutile'
+
+!----
+! Formats
+!----
+
+!----
+! End
+!----
 
 return
-end subroutine 
+end subroutine
