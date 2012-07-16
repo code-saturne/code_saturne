@@ -290,20 +290,24 @@ class GasCombustionModel(Variables, Model):
         for node in nodes:
             previous_list.append(node['name'])
 
-        new_list = self.__createModelScalarsList(model)
-        for name in previous_list:
-            if name not in new_list:
-                self.node_gas.xmlRemoveChild('scalar',  name = name)
+        if model == "off":
+            for node in nodes:
+                node.xmlRemoveNode()
+        else:
+            new_list = self.__createModelScalarsList(model)
+            for name in previous_list:
+                if name not in new_list:
+                    self.node_gas.xmlRemoveChild('scalar',  name = name)
 
-        for name in new_list:
-            if name not in previous_list:
-                self.setNewModelScalar(self.node_gas, name)
+            for name in new_list:
+                if name not in previous_list:
+                    self.setNewModelScalar(self.node_gas, name)
 
-        NPE = NumericalParamEquatModel(self.case)
-        for node in self.node_gas.xmlGetChildNodeList('scalar'):
-            NPE.setBlendingFactor(node['label'], 0.)
-            NPE.setScheme(node['label'], 'upwind')
-            NPE.setFluxReconstruction(node['label'], 'off')
+            NPE = NumericalParamEquatModel(self.case)
+            for node in self.node_gas.xmlGetChildNodeList('scalar'):
+                NPE.setBlendingFactor(node['label'], 0.)
+                NPE.setScheme(node['label'], 'upwind')
+                NPE.setFluxReconstruction(node['label'], 'off')
 
 
     def getNdirac(self):
@@ -327,17 +331,21 @@ class GasCombustionModel(Variables, Model):
         """
         previous_list = []
         nodes = self.node_gas.xmlGetChildNodeList('property')
-        for node in nodes:
-            previous_list.append(node['name'])
+        if model == "off":
+            for node in nodes:
+                node.xmlRemoveNode()
+        else:
+            for node in nodes:
+                previous_list.append(node['name'])
 
-        new_list = self.__createModelPropertiesList(model)
-        for name in previous_list:
-            if name not in new_list:
-                self.node_gas.xmlRemoveChild('property',  name = name)
+            new_list = self.__createModelPropertiesList(model)
+            for name in previous_list:
+                if name not in new_list:
+                    self.node_gas.xmlRemoveChild('property',  name = name)
 
-        for name in new_list:
-            if name not in previous_list:
-                self.setNewProperty(self.node_gas, name)
+            for name in new_list:
+                if name not in previous_list:
+                    self.setNewProperty(self.node_gas, name)
 
 
     def createModel (self) :
