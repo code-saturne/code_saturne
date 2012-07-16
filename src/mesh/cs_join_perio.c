@@ -43,7 +43,6 @@
 
 #include "fvm_periodicity.h"
 
-#include "cs_interface.h"
 #include "cs_mesh.h"
 #include "cs_search.h"
 

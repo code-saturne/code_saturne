@@ -1511,9 +1511,6 @@ cs_join_all(void)
 
   cs_join_post_init();
 
-  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
-  cs_log_separator(CS_LOG_PERFORMANCE);
-
   /* Loop on each defined joining to deal with */
 
   for (join_id = 0; join_id < cs_glob_n_joinings; join_id++) {

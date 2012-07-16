@@ -89,7 +89,7 @@ cs_log_strlen(const char  *s);
  * parameters:
  *   dest     --> pointer to destination buffer
  *   str      <-- pointer to printable string
- *   width    <--  desired printed length
+ *   width    <-- desired printed length
  *   destsize <-- destination buffer size
  *----------------------------------------------------------------------------*/
 
