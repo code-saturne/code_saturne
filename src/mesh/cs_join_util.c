@@ -1070,9 +1070,9 @@ _add_s_edge(cs_int_t         vertex_tag[],
 
       assert(v1_id != v2_id);
       if (v1_id < v2_id)
-        a = v1_id + 1, b = v2_id + 1;
+        a = v1_id, b = v2_id;
       else
-        a = v2_id + 1, b = v1_id + 1;
+        a = v2_id, b = v1_id;
 
       /* n_edges is assumed to be small */
       for (i = 0; i < tmp_size; i++) {
@@ -1255,8 +1255,8 @@ _add_single_edges(cs_interface_set_t   *ifs,
               }
 
               edge_tag[j] = 1; /* Tag as done */
-              s_edges->array[2*shift] = tmp_edges[2*j];
-              s_edges->array[2*shift+1] = tmp_edges[2*j+1];
+              s_edges->array[2*shift] = tmp_edges[2*j] + 1;
+              s_edges->array[2*shift+1] = tmp_edges[2*j+1] + 1;
               shift++;
 
             }
@@ -1523,13 +1523,13 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
              j < c_edges->index[rank_shift+1];
              j++) {
 
-          id = cs_search_binary(n_entities, c_edges->array[2*j], distant_id);
+          id = cs_search_binary(n_entities, c_edges->array[2*j] - 1, distant_id);
           assert(id != -1);
-          c_edges->array[2*j] = local_id[id];
+          c_edges->array[2*j] = local_id[id] + 1;
 
-          id = cs_search_binary(n_entities, c_edges->array[2*j+1], distant_id);
+          id = cs_search_binary(n_entities, c_edges->array[2*j+1] - 1, distant_id);
           assert(id != -1);
-          c_edges->array[2*j+1] = local_id[id];
+          c_edges->array[2*j+1] = local_id[id] + 1;
 
         } /* Loop on couple edges */
 
@@ -1610,8 +1610,8 @@ _filter_edge_element(cs_join_select_t   *selection,
 
   for (i = 0; i < c_edges->n_elts; i++) {
 
-    vid1 = c_edges->array[2*i];
-    vid2 = c_edges->array[2*i+1];
+    vid1 = c_edges->array[2*i] - 1;
+    vid2 = c_edges->array[2*i+1] - 1;
     edge_id = _get_edge_id(vid1, vid2, sel_v2v_idx, sel_v2v_lst);
 
     if (edge_id == -1)
