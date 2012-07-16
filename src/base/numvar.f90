@@ -46,7 +46,7 @@ module numvar
   ! iscapp(i)                  no du scalaire physique particuliere i
   ! nscaus                     nbre de scalaires utilisateur
   ! nscapp                     nbre de scalaires physique particuliere
-  ! nscadr                     Number of scalars with drift velocity 
+  ! nscadr                     Number of scalars with drift velocity
   ! nscasp                     number of species scalars
   ! iuma, ivma, iwma           Vitesse de maillage en ALE
   ! ilum                       Luminance for radiative transfert

@@ -69,7 +69,7 @@ module cstphy
   double precision :: stephn
   parameter(stephn = 5.6703d-8)
 
-  
+
   ! Perfect gas constant for air (mixture)
 
   double precision :: rair

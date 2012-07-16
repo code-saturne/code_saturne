@@ -212,7 +212,7 @@ if (itytur.ne.3) then
 endif
 
 
-! test sur la viscosité (constante ou non) 
+! test sur la viscosité (constante ou non)
 if (ivivar.gt.0) then
    ipcvis = ipproc(iviscl)
 else
@@ -318,16 +318,16 @@ do iel = 1, ncel
    rovsdt(iel) = rovsdt(iel)                                        &
         + istat(ivar)*propce(iel,ipcrom)*volume(iel)/dt(iel)
 enddo
- 
+
 
 !-->------------------------------------------
-!--> Implementation of the Zaichik model of 
+!--> Implementation of the Zaichik model of
 !--> of aerosol transport
 !
 
-!-------------------------------------------------------------------------- 
+!--------------------------------------------------------------------------
 ! Cuningham correction for sub-micron particles
-!-------------------------------------------------------------------------- 
+!--------------------------------------------------------------------------
 ! Knudsen number
 ! lg : Mean free path of air molecules
 
@@ -351,7 +351,7 @@ endif
 
 do ifac = 1,nfabor
 
- propfb(ifac,iflmab) = 0.d0 
+ propfb(ifac,iflmab) = 0.d0
  viscb(ifac) = 0.d0
 
 enddo
@@ -371,11 +371,11 @@ if (idrift(iscal).gt.0) then
 
 ! --> Step 1 : Diffusion: Turbulence effect
 
-! 
+!
 ! Retrieve of the turbulent kinetic energy with
 ! respect to the chosen turbulence model
 
-   
+
    if (itytur.eq.2 .or. iturb.eq.50) then
       do iel = 1,ncel
          energy(iel) = rtp(iel,ik)
@@ -399,7 +399,7 @@ if (idrift(iscal).gt.0) then
          dissip(iel) = 0.d0
       enddo
    endif
-! 
+!
 ! Calculation of taufp, interaction time
 ! between vortices and particle
 !
@@ -427,7 +427,7 @@ if (idrift(iscal).gt.0) then
 
 
 !
-! Retrieve the velocity gradient when a 
+! Retrieve the velocity gradient when a
 ! second-order turbulence model (Rij) is
 ! not used
 
@@ -507,9 +507,8 @@ if (idrift(iscal).gt.0) then
 
 ! ---> Calculation of de (Extradiag).grad(C)
 !
-! iiso = 1 : taking into account the extradiagonal 
+! iiso = 1 : taking into account the extradiagonal
 !            terms in the Zaichik diffusion tensor
-!
 
    if (iiso .eq. 1) then
 
@@ -555,7 +554,7 @@ if (idrift(iscal).gt.0) then
             w7(iel) = gradc(iel,2) * w12 + gradc(iel,3) * w13
             w8(iel) = gradc(iel,1) * w12 + gradc(iel,3) * w23
             w9(iel) = gradc(iel,1) * w13 + gradc(iel,2) * w23
-            
+
          enddo
       endif
 
@@ -636,7 +635,7 @@ if (idrift(iscal).gt.0) then
          endif
 
          w1(iel) = rhosav(iel)*taufpt(iel)               &
-              * ((2/3.d0) * energy(iel) - nut * 2 *      & 
+              * ((2/3.d0) * energy(iel) - nut * 2 *      &
               gradu(iel,1) + dbrow(iel))
 
          w2(iel) = rhosav(iel)*taufpt(iel) *              &
@@ -647,23 +646,23 @@ if (idrift(iscal).gt.0) then
               * ((2/3.d0) * energy(iel) - nut * 2 *      &
               gradw(iel,3) + dbrow(iel))
 
-         if (w1(iel).le.0.0d0) then                                       
+         if (w1(iel).le.0.0d0) then
 
             w1(iel) = rhosav(iel) *                       &
                  (taufpt(iel) * (2/3.d0)*energy(iel) + dbrow(iel))
 
          endif
 
-         if (w2(iel).le.0.0d0) then   
-                                     
+         if (w2(iel).le.0.0d0) then
+
             w2(iel) = rhosav(iel) *                       &
                  (taufpt(iel) * (2/3.d0)*energy(iel) + dbrow(iel))
 
          endif
 
-         if (w3(iel).le.0.0d0) then                        
-                
-            w3(iel) = rhosav(iel)*(taufpt(iel) *          & 
+         if (w3(iel).le.0.0d0) then
+
+            w3(iel) = rhosav(iel)*(taufpt(iel) *          &
                  (2/3.d0)*energy(iel) + dbrow(iel))
          endif
 
@@ -809,12 +808,12 @@ enddo
 
 do iel = 1, ncel
    drift(iel,1) = drift(iel,1) + rtp(iel,iu)
-   drift(iel,2) = drift(iel,2) + rtp(iel,iv)  
-   drift(iel,3) = drift(iel,3) + rtp(iel,iw)  
+   drift(iel,2) = drift(iel,2) + rtp(iel,iv)
+   drift(iel,3) = drift(iel,3) + rtp(iel,iw)
 enddo
 
 
-! --> Step 2: Sedimentation effect : V_drift = tau_p * g 
+! --> Step 2: Sedimentation effect : V_drift = tau_p * g
 
 do iel = 1, ncel
    drift(iel,1) = drift(iel,1) + gx * taupae(iscal,iel)
@@ -832,7 +831,7 @@ if (idrift(iscal).eq.2 .and. itstde .eq. 1) then
       w1(iel) = 0.d0
       w2(iel) = 0.d0
       w3(iel) = 0.d0
-      
+
    enddo
 
 ! 3 appels à bilsc2 : ivar remplacé par iu, puis iv puis iw
@@ -853,7 +852,7 @@ if (idrift(iscal).eq.2 .and. itstde .eq. 1) then
   ircflp = ircflu(iu)
   ischcp = ischcv(iu)
   isstpp = isstpc(iu)
-  
+
   inc    = 1
   iccocg = 1
   ipp    = ipprtp(iu)
@@ -867,7 +866,7 @@ if (idrift(iscal).eq.2 .and. itstde .eq. 1) then
   iflvit = ipprof(ifluma(iu))
   iflvib = ipprob(ifluma(iu))
   relaxp = relaxv(iu)
-  
+
 call bilsc2                                                       &
 !==========
 (  nvar   , nscal  ,                                              &
@@ -963,7 +962,7 @@ call bilsc2 &
                      coefa(1,iclvib) , coefb(1,iclvib) ,          &
    propfa(1,iflvit), propfb(1,iflvib), viscf  , viscb  ,          &
    w3     )
-  
+
 
   write(*,*) "w1(1) = ",w1(1)
   write(*,*) "w2(1) = ",w2(1)
@@ -973,16 +972,16 @@ call bilsc2 &
   do iel = 1, ncel
      drift(iel,1) = drift(iel,1)                                 &
         - (gradu(iel,1) +  gradu(iel,2) +  gradu(iel,3))         &
-        + taupae(iscal,iel)*w1(iel)/(propce(iel,ipcrom)*volume(iel))     
+        + taupae(iscal,iel)*w1(iel)/(propce(iel,ipcrom)*volume(iel))
 
      drift(iel,2) =  drift(iel,2)                                 &
         - (gradv(iel,1) +  gradv(iel,2) +  gradv(iel,3))         &
-        + taupae(iscal,iel)*w2(iel)/(propce(iel,ipcrom)*volume(iel))   
+        + taupae(iscal,iel)*w2(iel)/(propce(iel,ipcrom)*volume(iel))
 
 
      drift(iel,3) = drift(iel,3)                                 &
         - (gradw(iel,1) +  gradw(iel,2) +  gradw(iel,3))         &
-        + taupae(iscal,iel)*w3(iel)/(propce(iel,ipcrom)*volume(iel))    
+        + taupae(iscal,iel)*w3(iel)/(propce(iel,ipcrom)*volume(iel))
 
   enddo
 
@@ -1013,11 +1012,11 @@ do ifac = 1, nfabor
 
   coefb1(ifac,1) = 0.d0
   coefb1(ifac,2) = 0.d0
-  coefb1(ifac,3) = 0.d0      
+  coefb1(ifac,3) = 0.d0
 
-enddo 
+enddo
 
-! On ne le met pas a zero en paroi 
+! On ne le met pas a zero en paroi
 iflmb0 = 0
 ! On l'initialise a 0
 init   = 1

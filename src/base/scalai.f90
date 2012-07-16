@@ -510,7 +510,7 @@ if (nscadr.gt.0) then
       rhosav(iel) = propce(iel,ipproc(irom))
       propce(iel,ipproc(irom)) = 1.d0
    enddo
-   
+
    do ifac = 1, nfabor
       rhosab(ifac) = propfb(ifac, ipprob(irom))
       propfb(ifac, ipprob(irom)) = 1.d0
@@ -536,7 +536,7 @@ if (nscadr.gt.0) then
          enddo
       endif
 
-      ! ---> Calling of covofidr 
+      ! ---> Calling of covofidr
       !     (an adapted version of covofi routine
       !      for the resolution of scalars with a drift velocity)
 
@@ -556,13 +556,13 @@ if (nscadr.gt.0) then
    enddo
 
    ! --> restoring the density
-   !     
+   !
 
    do iel = 1, ncelet
       propce(iel,ipproc(irom)) = rhosav(iel)
    enddo
    do ifac = 1, nfabor
-      propfb(ifac, ipprob(irom)) = rhosab(ifac) 
+      propfb(ifac, ipprob(irom)) = rhosab(ifac)
    enddo
 
 endif

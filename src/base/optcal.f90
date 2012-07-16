@@ -68,27 +68,27 @@ module optcal
 
   ! Parameters for the Nerisson model of aerosol deposition
   ! -------------------------------------------------------
-  ! 
+  !
   !  idrift:   Choice for the model of scalar transport
   !  itsttu:   Activation of the turbophorese modeling
   !  itstde:   Activation of the particle-trajectory deviation
   !  iiso:     Taking into account the extradiagonal terms of the diffusion tensor
-  !  ibrow:    Taking into account the Brownian diffusion 
-  !  ithphor:  Taking into account the thermophoretic phenomenon 
+  !  ibrow:    Taking into account the Brownian diffusion
+  !  ithphor:  Taking into account the thermophoretic phenomenon
   !  ielectro: Taking into account the electrophoretic phenomenon
   !  idepot:   Choice of the wall deposition model
-  !  ndep:     Parameter for the Simonin model 
+  !  ndep:     Parameter for the Simonin model
 
 
   integer, save :: idrift(nscamx)
 
   integer, save :: itsttu   , itstde,  iiso,                 &
                    ibrow    , idepot,  ithphor,              &
-                   ielectro , ndep   
+                   ielectro , ndep
 
 
   ! diapart: mean particle (aerosol) diameter
-  ! rhopart: mean particle (aerosol) density 
+  ! rhopart: mean particle (aerosol) density
   ! sigmag:  in case of polydispersity, diameter standard-deviation
   ! kpart:   in case of thermophoresis, particle thermal conductivity
   ! qpart:   in case of electrophoresis, particle charge
@@ -107,7 +107,7 @@ module optcal
 
   ! ppolyd : particle polydispersity indicator
 
-  integer, save :: ppolyd(nscamx) 
+  integer, save :: ppolyd(nscamx)
 
 
 

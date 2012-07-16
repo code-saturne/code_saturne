@@ -517,7 +517,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         nscadr = self.mdl.getScalDriNumber()
         self.lineEditNSCADR.setText(QString(str(nscadr)))
 
-            
+
         #validator
         validatorNSCADR = IntValidator(self.lineEditNSCADR, min=0)
         self.lineEditNSCADR.setValidator(validatorNSCADR)

@@ -156,8 +156,8 @@ allocate(nufluid(ncel))
 
 
 
-! Retrieve of the viscosity and of the relaxation time scale 
-! taupae 
+! Retrieve of the viscosity and of the relaxation time scale
+! taupae
 !
 
 
@@ -172,18 +172,18 @@ do iel = 1, ncel
               / 18.d0 / viscl0
       enddo
 
-   else    
-      nufluid(iel) = propce(iel,ipcvis) / propce(iel, ipproc(irom))  
+   else
+      nufluid(iel) = propce(iel,ipcvis) / propce(iel, ipproc(irom))
 
       do iscal = nscaus + 1, nscaus + nscadr
-         
+
          taupae(iscal,iel) = (diapart(iscal)**2)*rhopart(iscal)          &
               / 18.d0 / propce(iel,ipcvis)
 
       enddo
 
    endif
-   
+
 enddo
 
 do ifac = 1, nfabor
@@ -195,7 +195,7 @@ do ifac = 1, nfabor
 
       do iscal = nscaus + 1, nscaus + nscadr
 
-         !!     calculation of tau_p^+        
+         !!     calculation of tau_p^+
          !!     the dimensionless particle relaxation time
 
          taupplu = taupae(iscal,iel) * uetbor(ifac) ** 2 / nufluid(iel)
@@ -209,7 +209,7 @@ do ifac = 1, nfabor
 
 
          icodcl(ifac,isca(iscal)) = 3
-         rcodcl(ifac,isca(iscal),3) = rtp(iel, isca(iscal))   
+         rcodcl(ifac,isca(iscal),3) = rtp(iel, isca(iscal))
 
       enddo
 

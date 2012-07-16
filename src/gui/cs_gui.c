@@ -833,7 +833,7 @@ cs_gui_numerical_int_parameters(const char *const param,
 
 static void
 cs_gui_get_nscadr(const char   *const param,
-		        int    *const value)
+                  int          *const value)
 {
   char   *path = NULL;
   int result;
@@ -1785,8 +1785,8 @@ void CS_PROCF (csvvva, CSVVVA) (int *const iviscv)
  * INTEGER          NSCADR     <--   number of scalars with drift velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csnsca, CSNSCA) (int *const nscaus, 
-				int *const nscadr)
+void CS_PROCF (csnsca, CSNSCA) (int *const nscaus,
+                                int *const nscadr)
 
 {
   int   i     = 0;
@@ -2294,7 +2294,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     name = "name";
     BFT_MALLOC(cs_glob_var->name[k+i], strlen(name) +1, char);
     strcpy(cs_glob_var->name[k+i], name);
- 
+
     BFT_MALLOC(cs_glob_var->type[k+i], strlen("scalar")+1, char);
     strcpy(cs_glob_var->type[k+i], "scalar");
 

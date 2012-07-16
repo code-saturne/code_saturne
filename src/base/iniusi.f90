@@ -347,7 +347,7 @@ call varpos(nmodpp)
 !==========
 
 
-!  -- Parameters for the model of aerosol deposition 
+!  -- Parameters for the model of aerosol deposition
 !
 !
 !

@@ -278,8 +278,8 @@ if(ipass.eq.2) then
     iok = iok + 1
   endif
   if(nscal.gt.nscamx) then
-    write(nfecra,7011) nscal , nscamx, nscaus, nscapp,     & 
-                       nscadr, nscal 
+    write(nfecra,7011) nscal , nscamx, nscaus, nscapp,     &
+                       nscadr, nscal
     iok = iok + 1
   endif
 

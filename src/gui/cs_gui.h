@@ -115,8 +115,8 @@ void CS_PROCF (csvvva, CSVVVA) (int *const iviscv);
  * INTEGER          NSCADR     <--   number of scalars with drift velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csnsca, CSNSCA) (int *const nscaus, 
-				int *const nscadr);
+void CS_PROCF (csnsca, CSNSCA) (int *const nscaus,
+                                int *const nscadr);
 
 /*----------------------------------------------------------------------------
  * User scalars which are variance.

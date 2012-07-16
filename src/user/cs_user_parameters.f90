@@ -691,7 +691,7 @@ endif
 !===============================================================================
 
 ! --- nscaus: number of USER scalars (thermal or not - without "drift" velocity).
-!     ------- 
+!     -------
 !       These scalars come in addition to the following "basic" scalars
 !       (which are naturally included in the model):
 !        - pressure
@@ -707,11 +707,11 @@ endif
 
 !     Set nscaus = 0 if there is no user scalar.
 
-! --- nscadr: Number of scalars with a drift velocity 
+! --- nscadr: Number of scalars with a drift velocity
 !     -------
-!              ( to be used in the Nerisson model of aerosol deposition)  
+!              ( to be used in the Nerisson model of aerosol deposition)
 !
-!     CAUTION: FOR DEVELOPER USER ONLY 
+!     CAUTION: FOR DEVELOPER USER ONLY
 
 !     The maximum number of scalars is defined by 'nscamx' in paramx;
 !       it is the maximum admissible value for: nscaus + nscapp + nscadr.
