@@ -435,8 +435,8 @@ for every {\tt --with-}, {\tt --without-} is also possible.
 Select configuration options, then run {\tt configure}, for example:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ /home/user/Code\_Saturne/2.1/saturne/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.1/arch/prod
+\$ /home/user/Code\_Saturne/2.2/saturne/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.2/arch/prod
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
 \textcolor{red}{CC}=/home/user/opt/mpich2-1.4/bin/mpicc \textcolor{red}{FC}=gfortran
@@ -468,7 +468,7 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 \$ mkdir dbg\\
 \$ cd dbg\\
 \$ ../../saturne/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.1/arch/\textcolor{Magenta}{dbg}
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.2/arch/\textcolor{Magenta}{dbg}
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
 \textcolor{Magenta}{--enable-debug} \textbackslash \\
@@ -479,7 +479,7 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 
 By default, on most architectures, both shared and static libraries
 for \CS will be built, and the executables will be linked with shared
-libraries by default. To disable either shared or static libraries,
+libraries. To disable either shared or static libraries,
 add either {\tt --disable-shared} or {\tt --disable-static}
 to the options passed to {\tt configure}. This will speed-up the build,
 process as each file will only be built once, and not twice.
@@ -647,8 +647,8 @@ reflecting the \CS source path, installation path, and a path where optional
 libraries are installed:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/2.1 \\
-\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/2.1 \\
+\$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/2.2 \\
+\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/2.2 \\
 \$ \textcolor{OliveGreen}{CS\_OPT}=/home/projects/opt
 }\end{minipage}}
 
@@ -660,24 +660,23 @@ build on a cluster named \texttt{ivanoe}, using the Intel compilers
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ \textcolor{Magenta}{module purge} \\
-\$ \textcolor{Magenta}{module load} intel\_compilers/12.0.3.174 \\
-\$ \textcolor{Magenta}{module load} open\_mpi/gcc/1.4.3 \\
+\$ \textcolor{Magenta}{module load} intel\_compilers/12.1.1.256 \\
+\$ \textcolor{Magenta}{module load} open\_mpi/gcc/1.4.5 \\
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/saturne/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe\_ompi
 \textbackslash \\
-\textcolor{Violet}{--with-blas}=/opt/intel/composerxe-2011.3.174/mkl \textbackslash \\
-\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.3.32/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/ivanoe
+\textcolor{Violet}{--with-blas}=/opt/intel/composerxe\_xe\_2011\_sp1.7.256/mkl \textbackslash \\
+\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/ivanoe
 \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/ivanoe
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.19/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/ivanoe\_ompi \textbackslash \\
-\textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-3.2/arch/ivanoe\_ompi \textbackslash \\
+\textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.23/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/ivanoe\_ompi \textbackslash \\
+\textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-4.0/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{Violet}{--with-syrthes}=/home/projects/syrthes3.4.3 \textbackslash \\
-\textcolor{red}{CC}=mpicc \textcolor{red}{FC}=ifort
-\textcolor{red}{CXX}=icpc
+\textcolor{red}{CC}=mpicc \textcolor{red}{FC}=ifort \textcolor{red}{CXX}=icpc
 }\end{minipage}}
 
 In the example above, we have appended the \texttt{\_ompi} postfix
@@ -745,12 +744,12 @@ For an example, let us start with the front-end build:
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/saturne/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend
 \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/frontend
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/frontend
 \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/frontend
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/frontend \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/frontend \textbackslash \\
 \textcolor{red}{PYTHON}=\textcolor{OliveGreen}{\$CS\_OPT}/python/arch/frontend/bin/python \textbackslash \\
 \textcolor{red}{CFLAGS}="-m64" \textcolor{red}{FCFLAGS}="-m64" \textcolor{red}{CXXFLAGS}="-m64"
 }\end{minipage}}
@@ -771,12 +770,12 @@ compute nodes:
 \textbackslash \\
 \textcolor{Violet}{--with-blas}=/opt/ibmmath/essl/4.4 \textbackslash \\
 \textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.3.32/arch/bgp \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/bgp
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/bgp
 \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgp
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgp \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/bgp \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/bgp \textbackslash \\
 \textcolor{Violet}{
 --disable-sockets --disable-dlloader -disable-nls \textbackslash \\
 --disable-frontend --enable-long-gnum \textbackslash
