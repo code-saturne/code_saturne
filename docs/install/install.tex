@@ -465,8 +465,8 @@ for every {\tt --with-}, {\tt --without-} is also possible.
 Select configuration options, then run {\tt configure}, for example:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ /home/user/Code\_Saturne/2.1/saturne/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.1/arch/prod
+\$ /home/user/Code\_Saturne/2.3/saturne/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.3/arch/prod
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
 \textcolor{red}{CC}=/home/user/opt/mpich2-1.4/bin/mpicc \textcolor{red}{FC}=gfortran
@@ -498,7 +498,7 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 \$ mkdir dbg\\
 \$ cd dbg\\
 \$ ../../saturne/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.1/arch/\textcolor{Magenta}{dbg}
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.3/arch/\textcolor{Magenta}{dbg}
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
 \textcolor{Magenta}{--enable-debug} \textbackslash \\
@@ -705,8 +705,7 @@ build on a cluster named \texttt{ivanoe}, using the Intel compilers
 \textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.23/arch/ivanoe \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-4.0/arch/ivanoe\_ompi \textbackslash \\
-\textcolor{red}{CC}=mpicc \textcolor{red}{FC}=ifort
-\textcolor{red}{CXX}=icpc
+\textcolor{red}{CC}=mpicc \textcolor{red}{FC}=ifort \textcolor{red}{CXX}=icpc
 }\end{minipage}}
 
 In the example above, we have appended the \texttt{\_ompi} postfix
