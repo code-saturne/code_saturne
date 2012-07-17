@@ -383,77 +383,81 @@ call usphyv &
 !  Density defined by a perfect gas equation of state
 !  for the low-Mach algorithm
 
-if (idilat.eq.3 .and. iscsth(iscalt).eq.2) then
+if (iscalt.gt.0) then
 
-  ivarh  = isca(iscalt) ! Works only with enthalpy
-  ipcrom = ipproc(irom)
+  if (idilat.eq.3 .and. iscsth(iscalt).eq.2) then
 
-  ! Count the number of species
-  nscasp = 0
-  do ii = 1, nscamx
-    nscasp = nscasp + iscasp(ii)
-  enddo
+    ivarh  = isca(iscalt) ! Works only with enthalpy
+    ipcrom = ipproc(irom)
 
-  do iel = 1, ncel
+    ! Count the number of species
+    nscasp = 0
+    do ii = 1, nscamx
+      nscasp = nscasp + iscasp(ii)
+    enddo
 
-    ! Enthalpy over Cp, with Cp specific heat variable or constant
-    if (icp.gt.0) then
-      ipccp  = ipproc(icp)
-      xrtp =  rtp(iel,ivarh)/propce(iel,ipccp)
-    else
-      xrtp =  rtp(iel,ivarh)/cp0
-    endif
+    do iel = 1, ncel
 
-    alpha = 0.d0
+      ! Enthalpy over Cp, with Cp specific heat variable or constant
+      if (icp.gt.0) then
+        ipccp  = ipproc(icp)
+        xrtp =  rtp(iel,ivarh)/propce(iel,ipccp)
+      else
+        xrtp =  rtp(iel,ivarh)/cp0
+      endif
 
-    if (nscasp.ge.2) then
-      ! Deduced species
-      ym = 1.d0
+      alpha = 0.d0
 
-      do ii = 1, nscaus
-        if (iscasp(ii).eq.1) then
-          yk = rtp(iel, isca(ii))
+      if (nscasp.ge.2) then
+        ! Deduced species
+        ym = 1.d0
 
-          ! Clipping of the fraction yk
-          yk = max(yk, 0.d0)
-          yk = min(yk, 1.d0)
+        do ii = 1, nscaus
+          if (iscasp(ii).eq.1) then
+            yk = rtp(iel, isca(ii))
 
-          alpha = alpha + yk/wmolsp(ii)
+            ! Clipping of the fraction yk
+            yk = max(yk, 0.d0)
+            yk = min(yk, 1.d0)
 
-          ym = ym - yk
+            alpha = alpha + yk/wmolsp(ii)
+
+            ym = ym - yk
+          endif
+        enddo
+
+        ! Clipping of remaining species
+        ym = max(ym, 0.d0)
+
+        ! Add to alpha the value due to the deduced fraction
+        alpha = alpha + ym/wmolsp(0)
+
+        ! Check if the values are correct
+        if (alpha.lt.epzero .or. rair.lt.epzero .or.   &
+             xrtp.lt.epzero .or. pther.lt.epzero) then
+          write(nfecra,9004)
+          call csexit(1)
         endif
-      enddo
 
-      ! Clipping of remaining species
-      ym = max(ym, 0.d0)
+        propce(iel,ipcrom) = pther/(alpha*rair*xrtp)
 
-      ! Add to alpha the value due to the deduced fraction
-      alpha = alpha + ym/wmolsp(0)
+        ! Monospecies: density defined with the perfect state law
+      else
 
-      ! Check if the values are correct
-      if (alpha.lt.epzero .or. rair.lt.epzero .or.   &
-           xrtp.lt.epzero .or. pther.lt.epzero) then
-        write(nfecra,9004)
-        call csexit(1)
+        ! Check if the values are correct
+        if (rair.lt.epzero .or.                       &
+            xrtp.lt.epzero .or. pther.lt.epzero) then
+          write(nfecra,9004)
+          call csexit(1)
+        endif
+
+        propce(iel,ipcrom) = pther/(rair*xrtp)
+
       endif
 
-      propce(iel,ipcrom) = pther/(alpha*rair*xrtp)
+    enddo
 
-    ! Monospecies: density defined with the perfect state law
-    else
-
-      ! Check if the values are correct
-      if (rair.lt.epzero .or.                       &
-          xrtp.lt.epzero .or. pther.lt.epzero) then
-        write(nfecra,9004)
-        call csexit(1)
-      endif
-
-      propce(iel,ipcrom) = pther/(rair*xrtp)
-
-    endif
-
-  enddo
+  endif
 
 endif
 
