@@ -192,6 +192,8 @@ class TurbulenceModel(Variables, Model):
         """
         self.isInList(model_turb, self.turbulenceModelsList())
 
+        self.node_turb['model'] = model_turb
+
         NumericalParamGlobalModel(self.case).setTimeSchemeOrder(1)
 
         if model_turb == 'mixing_length':
@@ -267,8 +269,6 @@ class TurbulenceModel(Variables, Model):
             model_turb = 'off'
             self.node_turb.xmlRemoveChild('variable')
             self.node_turb.xmlRemoveChild('property')
-
-        self.node_turb['model'] = model_turb
 
 
     def __updateInletsForTurbulence(self):

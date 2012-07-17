@@ -97,6 +97,7 @@ class NumericalParamEquatModel(Model):
         self.default['solver_precision_pressure'] = 1e-8
         if NumericalParamGlobalModel(self.case).getTimeSchemeOrder() == 2:
             self.default['solver_precision'] = 1e-5
+            self.default['solver_precision_pressure'] = 1e-5
         self.default['slope_test'] = 'on'
         self.default['flux_reconstruction'] = 'on'
 
@@ -114,9 +115,15 @@ class NumericalParamEquatModel(Model):
             ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
             if label in self.UVW:
                 self.default['slope_test'] = 'off'
-            self.default['rhs_reconstruction'] = 10
+            if label == 'Pressure':
+                self.default['rhs_reconstruction'] = 5
+            else:
+                self.default['rhs_reconstruction'] = 10
         else:
-            self.default['rhs_reconstruction'] = 2
+            if label == 'Pressure':
+                self.default['rhs_reconstruction'] = 2
+            else:
+                self.default['rhs_reconstruction'] = 1
 
         if label in self.thermo:
             for node in self._getThermalScalarNode():
