@@ -775,6 +775,7 @@ rlxp1 = 0.95d0
 !       The restart indicator of the 1D wall thermal model is initialized by default
 !         to -1, to force the user to set it in uspt1d.
 !       The same goes for the vortex method restart indicator.
+!       The same goes for the synthetic turbulence method restart indicator.
 
 isuite = 0
 iecaux = 1
@@ -784,6 +785,7 @@ do ii = 1, nscamx
 enddo
 isuit1 = -1
 isuivo = -1
+isuisy = -1
 
 ! --- Reperage du temps
 

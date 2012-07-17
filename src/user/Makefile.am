@@ -75,6 +75,7 @@ cs_user_boundary_conditions.f90 \
 cs_user_coupling.c \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization.f90 \
+cs_user_les_inflow.f90 \
 cs_user_mesh.c \
 cs_user_parallel.c \
 cs_user_parameters.f90 \

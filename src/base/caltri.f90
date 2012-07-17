@@ -97,6 +97,8 @@ integer          ivar
 integer          inod   , idim
 integer          itrale , indact , indwri
 
+integer          nent
+
 double precision titer1, titer2
 double precision tecrf1, tecrf2
 
@@ -573,6 +575,19 @@ endif
 !     -> on libere la memoire.
 
 !===============================================================================
+! 10.4 Initialization for the Synthetic turbulence Inlets
+!===============================================================================
+
+nent = 0
+
+call defsyn(nent)
+
+if (isuisy.eq.1) then
+  ficsui = 'les_inflow'
+  call lecsyn( ficsui, len(ficsui) )
+endif
+
+!===============================================================================
 ! 9. TABLEAUX POUR BLC EN TEMPS MAIS A OUBLIER ENSUITE
 !===============================================================================
 
@@ -957,6 +972,12 @@ if (iisuit.eq.1) then
     !==========
  ( ficsui   , len(ficsui), nfpt1d   ,  nmxt1d  ,                  &
    nfabor   , tppt1d     , ifpt1d )
+  endif
+
+  if (nent.gt.0) then
+    ficsui = 'les_inflow'
+    call ecrsyn( ficsui, len(ficsui) )
+    !==========
   endif
 
   if (ippmod(iaeros).ge.0) then

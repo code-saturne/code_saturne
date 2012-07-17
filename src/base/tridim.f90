@@ -808,6 +808,16 @@ do while (iterns.le.nterup)
 
   endif
 
+! -- Synthetic Eddy Method en L.E.S. :
+!    (Transfert des structures dans les tableaux rcodcl)
+
+    call synthe &
+    !==========
+  ( nvar   , nscal  ,                                              &
+    ttcabs ,                                                       &
+    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+    coefa  , coefb  , rcodcl )
+
   ! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
 
   if (iale.eq.1) then

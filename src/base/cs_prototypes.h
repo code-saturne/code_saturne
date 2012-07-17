@@ -354,6 +354,26 @@ void CS_PROCF (usvpst, USVPST)
  cs_real_t        trafbr[]   /* --- work array for output boundary faces */
 );
 
+/*----------------------------------------------------------------------------
+ * Uniform random number generator
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (zufall, zufall)
+(
+ const cs_int_t   *n,             /* --> size of the vector */
+ const cs_real_t  *a              /* <-- generated random number vector */
+);
+
+/*----------------------------------------------------------------------------
+ * Gaussian random number generator
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (normalen, normalen)
+(
+ const cs_int_t   *n,             /* --> size of the vector */
+ const cs_real_t  *x              /* <-- generated random number vector */
+);
+
 /*============================================================================
  *  User function prototypes
  *============================================================================*/

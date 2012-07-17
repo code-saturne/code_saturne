@@ -289,9 +289,10 @@ module optcal
   !   isuit1 : suite du module thermique 1D en paroi
   !   isuict : suite du module aerorefrigerant
   !   isuivo : suite de la methode des vortex
+  !   isuisy : suite des methodes d entree LES
 
   integer, save :: isuite , ileaux, iecaux, iscold(nscamx),        &
-                   isuit1 , isuict, isuivo
+                   isuit1 , isuict, isuivo, isuisy
 
   ! Gestion des pas de temps
   !   ntpabs : pas de temps precedent absolu

@@ -112,6 +112,7 @@
 #include "cs_syr_coupling.h"
 #include "cs_system_info.h"
 #include "cs_timer.h"
+#include "cs_les_inflow.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -540,6 +541,10 @@ cs_run(void)
     /* Finalize gradient computation */
 
     cs_gradient_finalize();
+
+    /* Finalize synthetic inlet condition generation */
+
+    cs_inflow_finalize();
 
   }
 
