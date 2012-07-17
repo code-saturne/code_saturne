@@ -416,13 +416,11 @@ call tstjpe(iperio, iperot)
 !===============================================================================
 
 ! --- Nombre de scalaires, de scalaires a diffusivite
-!     variable, de scalaires avec vitesse de drift,
-!     de variables
+!            variable, de variables
 
 nscal  = 0
 nscaus = 0
 nscapp = 0
-nscadr = 0
 nscasp = 0
 nvar   = 0
 

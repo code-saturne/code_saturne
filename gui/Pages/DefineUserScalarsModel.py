@@ -80,7 +80,6 @@ class DefineUserScalarsModel(Variables, Model):
             default['variance']          = self.getScalarLabelsList()[0]
         else:
             default['variance']          = "no scalar"
-        default['drift-velocity_scalar'] = 0
 
         return default
 
@@ -636,25 +635,6 @@ class DefineUserScalarsModel(Variables, Model):
         n = node.xmlGetNode('scalar', 'name', label=scalar_label)
         return n['name']
 
-
-    def getScalDriNumber(self):
-        """
-        Get number of drift-velocity scalars
-        """
-        tag = 'drift-velocity_scalar'
-        v = self.scalar_node.xmlGetInt(tag)
-        if v == None:
-            v = self.defaultScalarValues()[tag]
-            self.setScalDriNumber(v)
-        return v
-
-
-    def setScalDriNumber(self, val):
-        """
-        Put number of drift-velocity scalars
-        """
-        self.isPositiveInt(val)
-        self.scalar_node.xmlSetData('drift-velocity_scalar', val)
 
 #-------------------------------------------------------------------------------
 # DefineUsersScalars test case

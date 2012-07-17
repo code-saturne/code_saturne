@@ -159,7 +159,6 @@ coupbo.f90 \
 codits.f90 \
 coditv.f90 \
 covofi.f90 \
-covofidr.f90 \
 cptssy.f90 \
 cpvosy.f90 \
 cregeo.f90 \
@@ -211,7 +210,6 @@ cs_ventil.c \
 csprnt.f90 \
 distpr.f90 \
 distyp.f90 \
-dricli.f90 \
 dttvar.f90 \
 dvvpst.f90 \
 ecrava.f90 \

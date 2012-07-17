@@ -824,31 +824,6 @@ cs_gui_numerical_int_parameters(const char *const param,
 }
 
 /*-----------------------------------------------------------------------------
- * Modify the number of drift-velocity scalars
- *
- * parameters:
- *   param               -->  label of the number of drift-velocity scalars
- *   keyword            <-->  value of the number of drift-velocity scalars
- *----------------------------------------------------------------------------*/
-
-static void
-cs_gui_get_nscadr(const char   *const param,
-                  int          *const value)
-{
-  char   *path = NULL;
-  int result;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "additional_scalars", param);
-  cs_xpath_add_function_text(&path);
-
-  if (cs_gui_get_int(path, &result))
-    *value = result;
-
-  BFT_FREE(path);
-}
-
-/*-----------------------------------------------------------------------------
  * Modify gravity parameters.
  *
  * parameters:
@@ -1495,14 +1470,14 @@ static char *_get_profile_label_name(const int id, const int nm)
 
   cs_var_t  *vars = cs_glob_var;
   name = _get_profile_name(id, nm);
-  shift = vars->nvar - vars->nscapp - vars->nscaus - vars->nscadr;
+  shift = vars->nvar - vars->nscapp - vars->nscaus;
 
   for (j=0 ; j < shift ; j++) {
     if (cs_gui_strcmp(name,  vars->name[j]))
       label = cs_gui_variable_label(name);
   }
 
-  for (j=0 ; j < vars->nscaus + vars->nscadr + vars->nscapp; j++) {
+  for (j=0 ; j < vars->nscaus + vars->nscapp; j++) {
     if (cs_gui_strcmp(name, vars->name[j+shift])) {
       BFT_MALLOC(label, strlen(vars->label[j])+1, char);
       strcpy(label, vars->label[j]);
@@ -1620,7 +1595,6 @@ void CS_PROCF (uiinit, UIINIT) (void)
   cs_glob_var->pphas           = NULL;
   cs_glob_var->nvar            = 0;
   cs_glob_var->nscaus          = 0;
-  cs_glob_var->nscadr          = 0;
   cs_glob_var->nscapp          = 0;
   cs_glob_var->nprop           = 0;
   cs_glob_var->nsalpp          = 0;
@@ -1778,16 +1752,13 @@ void CS_PROCF (csvvva, CSVVVA) (int *const iviscv)
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSNSCA (NSCAUS, NSCADR)
+ * SUBROUTINE CSNSCA (NSCAUS)
  * *****************
  *
  * INTEGER          NSCAUS     <--   user scalars number
- * INTEGER          NSCADR     <--   number of scalars with drift velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csnsca, CSNSCA) (int *const nscaus,
-                                int *const nscadr)
-
+void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
 {
   int   i     = 0;
   char *label = NULL;
@@ -1796,30 +1767,21 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus,
 
   *nscaus = cs_gui_get_tag_number("/additional_scalars/scalar", 1);
 
-  cs_gui_get_nscadr("drift-velocity_scalar", nscadr);
-
   cs_glob_var->nscaus = *nscaus;
-  cs_glob_var->nscadr = *nscadr;
 
+  BFT_MALLOC(vars->label, *nscaus, char*);
 
-  BFT_MALLOC(vars->label, *nscaus + *nscadr, char*);
-
-  for (i=0; i < vars->nscaus ; i++) {
+  for (i=0; i < vars->nscaus; i++) {
     label = _scalar_name_label("label", i+1);
     BFT_MALLOC(cs_glob_var->label[i], strlen(label)+1, char);
     strcpy(cs_glob_var->label[i], label);
     BFT_FREE(label);
   }
 
-  for (i=vars->nscaus ; i < vars->nscadr + vars->nscaus ; i++) {
-    BFT_MALLOC(cs_glob_var->label[i], strlen("drift-scal")+1, char);
-    strcpy(cs_glob_var->label[i], "drift-scal");
-  }
-
 #if _XML_DEBUG_
   bft_printf("==>CSNSCA\n");
-  bft_printf("--Total number of user scalars (with and without drift): %i\n", vars->nscaus + vars->nscadr);
-  for (i=0; i<*nscaus + *nscadr; i++)
+  bft_printf("--user scalars number: %i\n", vars->nscaus);
+  for (i=0; i<*nscaus; i++)
     bft_printf("--label of scalar[%i]: %s\n", i, vars->label[i]);
 #endif
 }
@@ -2263,7 +2225,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
 
   /* 5) update vars->type for variables */
 
-  k = cs_glob_var->nvar -cs_glob_var->nscapp -cs_glob_var->nscaus - cs_glob_var->nscadr;
+  k = cs_glob_var->nvar -cs_glob_var->nscapp -cs_glob_var->nscaus;
   for (i=0; i < k; i++) {
     BFT_MALLOC(cs_glob_var->type[i], strlen("variable")+1, char);
     strcpy(cs_glob_var->type[i], "variable");
@@ -2278,22 +2240,6 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     BFT_MALLOC(cs_glob_var->name[k+i], strlen(name) +1, char);
     strcpy(cs_glob_var->name[k+i], name);
     BFT_FREE(name);
-
-    BFT_MALLOC(cs_glob_var->type[k+i], strlen("scalar")+1, char);
-    strcpy(cs_glob_var->type[k+i], "scalar");
-
-    BFT_MALLOC(cs_glob_var->head[k+i], strlen("additional_scalar")+1, char);
-    strcpy(cs_glob_var->head[k+i], "additional_scalar");
-  }
-
- /* 6bis) user scalars with drift*/
-
-  for (i=cs_glob_var->nscaus ; i < cs_glob_var->nscaus + cs_glob_var->nscadr; i++) {
-    cs_glob_var->rtp[n++] = isca[i] -1;
-
-    name = "name";
-    BFT_MALLOC(cs_glob_var->name[k+i], strlen(name) +1, char);
-    strcpy(cs_glob_var->name[k+i], name);
 
     BFT_MALLOC(cs_glob_var->type[k+i], strlen("scalar")+1, char);
     strcpy(cs_glob_var->type[k+i], "scalar");

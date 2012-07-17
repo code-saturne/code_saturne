@@ -150,7 +150,7 @@ call usipph                                                       &
 ! 2. INITIALISATION DE PARAMETRES DEPENDANT DU NOMBRE DE SCALAIRES
 !===============================================================================
 
-! --- Nombre de scalaires utilisateurs (avec et sans vitesse de drift)
+! --- Nombre de scalaires utilisateurs
 
 
 !   - Interface Code_Saturne
@@ -158,7 +158,7 @@ call usipph                                                       &
 
 if(iihmpr.eq.1) then
 
-  call csnsca(nscaus, nscadr)
+  call csnsca(nscaus)
   !==========
 
 endif
@@ -167,7 +167,7 @@ endif
 !     ==========================
 
 iihmpu = iihmpr
-call usinsc(iihmpu , nfecra , nscaus , nscadr, iverif)
+call usinsc(iihmpu , nfecra , nscaus , iverif)
 !==========
 
 
@@ -199,8 +199,8 @@ call usppmo
 ! --- Activation du module transferts radiatifs
 
 !     Il est necessaire de connaitre l'activation du module transferts
-!     radiatifs tres tot de maniere a pouvoir reserver les variables
-!     necessaires dans certaines physiques particulieres
+!     radiatifs tres tot de maniere a pouvoir reserver less variables
+!     necessaires dans certaines physiques particuliere
 
 !   - Interface Code_Saturne
 !     ======================
@@ -217,9 +217,6 @@ endif
 
 call usray1
 !==========
-
-
-
 
 ! --- Varpos
 !     Verification et construction de ISCAPP
@@ -345,17 +342,6 @@ call usalin
 !      2ieme passage
 call varpos(nmodpp)
 !==========
-
-
-!  -- Parameters for the model of aerosol deposition
-!
-!
-!
-!   - Sous-programme utilisateur
-!     ==========================
-!
-call cs_user_scal_drift
-!======================
 
 
 !===============================================================================

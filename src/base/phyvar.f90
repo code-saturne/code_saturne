@@ -383,12 +383,9 @@ call usphyv &
 !  Density defined by a perfect gas equation of state
 !  for the low-Mach algorithm
 
-if (idilat.eq.3) then
+if (idilat.eq.3 .and. iscsth(iscalt).eq.2) then
 
-  ! Works only with enthalpy
-  if (iscalt.le.0) call csexit(1)
-  if (iscsth(iscalt).ne.2) call csexit(1)
-  ivarh  = isca(iscalt)
+  ivarh  = isca(iscalt) ! Works only with enthalpy
   ipcrom = ipproc(irom)
 
   ! Count the number of species
@@ -442,7 +439,7 @@ if (idilat.eq.3) then
 
       propce(iel,ipcrom) = pther/(alpha*rair*xrtp)
 
-      ! Monospecies: density defined with the perfect state law
+    ! Monospecies: density defined with the perfect state law
     else
 
       ! Check if the values are correct
@@ -1021,18 +1018,17 @@ if(nscal.ge.1) then
 
 ! IOK a deja ete initialise
 
-! FIXME
-!!$  do iscal = 1, nscal
-!!$
-!!$    ivar = isca(iscal)
-!!$
-!!$    if (vismin(iscal).lt.0.d0) then
-!!$      chaine = nomvar(ipprtp(ivar))
-!!$      write(nfecra,9111)chaine(1:8),iscal,vismin(iscal)
-!!$      iok = iok + 1
-!!$    endif
-!!$
-!!$  enddo
+  do iscal = 1, nscal
+
+    ivar = isca(iscal)
+
+    if (vismin(iscal).lt.0.d0) then
+      chaine = nomvar(ipprtp(ivar))
+      write(nfecra,9111)chaine(1:8),iscal,vismin(iscal)
+      iok = iok + 1
+    endif
+
+  enddo
 
 endif
 

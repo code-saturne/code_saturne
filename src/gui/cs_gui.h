@@ -108,15 +108,13 @@ void CS_PROCF (csvvva, CSVVVA) (int *const iviscv);
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSNSCA (NSCAUS, NSCADR)
+ * SUBROUTINE CSNSCA
  * *****************
  *
  * INTEGER          NSCAUS     <--   user scalars number
- * INTEGER          NSCADR     <--   number of scalars with drift velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csnsca, CSNSCA) (int *const nscaus,
-                                int *const nscadr);
+void CS_PROCF (csnsca, CSNSCA) (int *const nscaus);
 
 /*----------------------------------------------------------------------------
  * User scalars which are variance.

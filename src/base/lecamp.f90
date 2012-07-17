@@ -95,7 +95,7 @@ character        ficsui*32
 
 integer          iel
 integer          ivar  , iscal , ii    ,  ivers
-integer          jphas , jvar  , jscal , jscaus, jscapp, jscadr
+integer          jphas , jvar  , jscal , jscaus, jscapp
 integer          iok   , ncelok, nfaiok, nfabok, nsomok
 integer          ierror, irtyp,  itysup, nbval
 integer          nberro, ilecec
@@ -214,11 +214,6 @@ call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jscaus,  &
             ierror)
 nberro=nberro+ierror
 
-rubriq = 'nombre_scalaires_drift'
-call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jscadr,  &
-            ierror)
-nberro=nberro+ierror
-
 rubriq = 'nombre_scalaires_pp'
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jscapp,  &
             ierror)
@@ -247,11 +242,10 @@ endif
 !  ---> On previent si des parametres sont differents
 
 if ( jvar  .ne.nvar   .or. jscal .ne.nscal  .or.                  &
-     jscaus.ne.nscaus .or. jscapp.ne.nscapp  .or.                 &
-     jscadr.ne.nscadr ) then
+     jscaus.ne.nscaus .or. jscapp.ne.nscapp ) then
   write(nfecra,8210)                                              &
-         jvar, jscal, jscaus, jscapp, jscadr,                     &
-         nvar, nscal, nscaus, nscapp, nscadr
+         jvar, jscal, jscaus, jscapp,                             &
+         nvar, nscal, nscaus, nscapp
 endif
 
 ! ---> Fin de la lecture des dimensions
@@ -292,11 +286,11 @@ write(nfecra,1299)
 !       l'ordre scalaires utilisateurs (NSCAUS) puis scalaires
 !       physiques particulieres (NSCAPP)
 
-if((nscaus+nscadr).gt.0) then
-  do ii = 1, nscaus + nscadr
+if(nscaus.gt.0) then
+  do ii = 1, nscaus
     iscal = ii
     if(iscold(iscal).eq.-999) then
-      if(ii.le.(jscaus + jscadr)) then
+      if(ii.le.jscaus) then
         iscold(iscal) = ii
       else
         iscold(iscal) = 0
@@ -305,16 +299,12 @@ if((nscaus+nscadr).gt.0) then
   enddo
 endif
 
-do iscal = 1, jscaus+jscadr
-   write(*,*) "iscaol = ",iscold(iscal)
-enddo
-
 if(nscapp.gt.0) then
   do ii = 1, nscapp
     iscal = iscapp(ii)
     if(iscold(iscal).eq.-999) then
       if(ii.le.jscapp) then
-        iscold(iscal) = ii+jscaus+jscadr
+        iscold(iscal) = ii+jscaus
       else
         iscold(iscal) = 0
       endif
@@ -1159,7 +1149,7 @@ return
 '@    Il est cependant conseille de verifier                  ',/,&
 '@      les dimensions suivantes :                            ',/,&
 '@                                                            ',/,&
-'@          NVAR     NSCAL    NSCAUS    NSCAPP NSCADR         ',/,&
+'@                NVAR     NSCAL    NSCAUS    NSCAPP          ',/,&
 '@  AMONT : ',5I10                                             ,/,&
 '@  ACTUEL: ',5I10                                             ,/,&
 '@                                                            ',/,&

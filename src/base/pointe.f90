@@ -164,7 +164,6 @@ contains
     use radiat
     use albase
     use ihmpre
-    use numvar
 
     implicit none
 
@@ -241,8 +240,7 @@ contains
     ! Friction velocity on boundary faces
 
     if (     (itytur.eq.4 .and. idries.eq.1) &
-        .or. (iilagr.ge.1 .and. idepst.gt.0) &
-        .or. (nscadr.ge.1) ) then
+        .or. (iilagr.ge.1 .and. idepst.gt.0) ) then
       allocate(uetbor(nfabor))
     endif
 
