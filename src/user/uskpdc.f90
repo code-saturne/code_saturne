@@ -210,10 +210,9 @@ if(iappel.eq.1.or.iappel.eq.2) then
   ielpdc = 0
 
 
-! --- Exemple 2 : Pdc definies par coordonnees pour la phase 1
-!                 Pas de pertes de charge pour la phase 2
-!                 Le traitement etant different pour les phases
-!                   un test est necessaire.
+! --- Exemple 2 : Pdc definies par coordonnees pour la zone
+!                 (4 <= x <=6; 2 <= y <= 8).
+!                 Pas de pertes de charge ailleurs.
 
 !       Ce test permet de desactiver l'exemple
   if(1.eq.0) then

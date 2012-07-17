@@ -244,7 +244,7 @@ do ilelt = 1, nlelt
 
 enddo
 
-! ---> Third zone numbered izone=3 ( = inlet phase 1)
+! ---> Third zone numbered izone=3 ( = inlet)
 do ifac = 1, nfabor
   if(itypfb(ifac).eq.ientre) then
     izone        = 4

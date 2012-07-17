@@ -303,7 +303,7 @@ endif
 ifac0 = imodif
 
 !===============================================================================
-! 1. Thermodynamic law choice (for each phase)
+! 1. Thermodynamic law choice
 !    User input required.
 !===============================================================================
 
@@ -327,8 +327,6 @@ if (ieos.eq.1) then
 !===============================================================================
 ! 2.1. Parameters to be completed by the user
 !===============================================================================
-
-! For each phase
 
 ! --- Molar mass of the gas (kg/mol)
 

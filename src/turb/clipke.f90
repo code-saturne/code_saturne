@@ -255,7 +255,7 @@ endif
 '@ @@ ATTENTION : ARRET DANS clipke                           ',/,&
 '@    =========                                               ',/,&
 '@     APPEL DE clipke              AVEC OPTION = ',I10        ,/,&
-'@     Phase : ',I10                                           ,/,&
+'@                                                            ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut pas etre execute.                       ',/,&
 '@                                                            ',/,&
@@ -275,7 +275,7 @@ endif
 '@ @@ WARNING: ABORT IN clipke                                ',/,&
 '@    ========                                                ',/,&
 '@     CALL OF clipke               WITH OPTION = ',I10        ,/,&
-'@     Phase : ',I10                                           ,/,&
+'@                                                            ',/,&
 '@                                                            ',/,&
 '@  The calulation will not be run.                           ',/,&
 '@                                                            ',/,&

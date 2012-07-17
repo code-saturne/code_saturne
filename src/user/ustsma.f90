@@ -228,7 +228,7 @@ allocate(lstelt(ncel))
 if(iappel.eq.1.or.iappel.eq.2) then
 
 !===============================================================================
-! 1. For each phase, one or two calls
+! 1. One or two calls
 
 !   First call:
 !
@@ -260,7 +260,7 @@ if(iappel.eq.1.or.iappel.eq.2) then
   ieltsm = 0
 
 
-! Example 2 : Mass source term for phase one in the cells that
+! Example 2 : Mass source term one in the cells that
 !              have a boundary face of color 3 and the cells
 !              with a coordinate X between 2.5 and 5.
 !
@@ -333,7 +333,7 @@ elseif(iappel.eq.3) then
 
 !===============================================================================
 
-! 2. For each phase with ncesmp > 0 , third call
+! 2. For ncesmp > 0 , third call
 
 !       iappel = 3 : itypsm : type of mass source term
 !                    smacel : mass source term
@@ -351,7 +351,7 @@ elseif(iappel.eq.3) then
 !  --------------------------------------------------
 
 ! Example 1: simulation of an inlet condition by mass source terms
-!            and printing of the total mass rate for phase 1.
+!            and printing of the total mass rate.
 
   vent = 0.1d0
   vent2 = vent**2

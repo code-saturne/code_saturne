@@ -424,7 +424,7 @@ subroutine usipph &
 ! Purpose:
 ! --------
 
-! User subroutine for input of parameters depending on the number of phases.
+! User subroutine for input of parameters.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -523,7 +523,7 @@ endif
 
 !===============================================================================
 
-! --- Turbulence (for each phase)
+! --- Turbulence
 !       0...Laminar
 !      10...Mixing length
 !      20...k-epsilon
@@ -689,7 +689,7 @@ endif
 
 !===============================================================================
 
-! --- Number of USER scalars (thermal or not, and whatever their carrier phase).
+! --- Number of USER scalars (thermal or not).
 !       These scalars come in addition to the following "basic" scalars
 !       (which are naturally included in the model):
 !        - pressure
@@ -944,7 +944,7 @@ subroutine usipgl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nesmax           ! i  ! <-- ! maximum number of error estimators per phase   !
+! nesmax           ! i  ! <-- ! maximum number of error estimators             !
 ! iespre           ! i  ! <-- ! number of the prediction error estimator       !
 ! iesder           ! i  ! <-- ! number of the derivative error estimator       !
 ! iescor           ! i  ! <-- ! number of the correction error estimator       !
@@ -1071,7 +1071,6 @@ idtvar = 0
 
 ! --- Velocity/pressure coupling (0 : classical algorithm,
 !                                 1 : transient coupling)
-!     Only in single-phase
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1086,7 +1085,6 @@ ipucou = 0
 !              2 : dilatable unsteady algorithm
 !              3 : low-Mach algorithm
 !
-!     Only in single-phase
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1098,7 +1096,6 @@ idilat = 1
 ! --- Handling of hydrostatic pressure
 !                               (0 : usual algorithm
 !                                1 : specific handling)
-!     Only in single-phase
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1412,7 +1409,6 @@ iccvfg = 0
 ! --- Vortex method for inlet conditions in L.E.S.
 !       (0: not activated,  1: activated)
 !     The vortex method only regards the L.E.S. models
-!       and is only valid with one phase.
 !     To use the vortex method, edit the 'usvort.f90' user file.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
@@ -1429,7 +1425,7 @@ endif
 !            = 1 for centered/second order (order 2 in space)
 !       we may use intermediate real values.
 !       Here we choose:
-!         for the velocity of phase 1 and user scalars:
+!         for the velocity and user scalars:
 !           an upwind-centered scheme with 100% centering (blencv=1)
 !         for other variables
 !           the default code value (upwind standard, centered in LES)
@@ -1585,7 +1581,7 @@ omegaz = 0.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- Reference fluid properties (for each phase)
+! --- Reference fluid properties
 
 !       ro0        : density in kg/m3
 !       viscl0     : dynamic viscosity in kg/(m s)
@@ -2675,8 +2671,6 @@ if(1.eq.1) return
 imeteo = 1
 
 ! Option for variable density and viscosity
-
-!   For each phase
 
 irovar = 0
 ivivar = 0

@@ -205,7 +205,7 @@ if (1.eq.1) return
 !===============================================================================
 !  Example 1: variable density as a function of temperature
 !  =========
-!    Below, we define the same density law for all phases
+!    Below, we define the same density law
 !    Values of this property must be defined at cell centers
 !      (and optionally, at boundary faces).
 !  ===================================================================
@@ -305,7 +305,7 @@ endif ! --- Test on 'iutile'
 !===============================================================================
 !  Example 2: variable viscosity as a function of temperature
 !  =========
-!    Below, we define the same viscosity law for all phases
+!    Below, we define the same viscosity law
 !    Values of this property must be defined at cell centers
 !  ===================================================================
 
@@ -358,7 +358,7 @@ endif ! --- Test on 'iutile'
 !===============================================================================
 !  Example 3: specific heat as a function of temperature
 !  =========
-!    Below, we define the same viscosity law for all phases
+!    Below, we define the same viscosity law
 !    Values of this property must be defined at cell centers
 !  ===================================================================
 
@@ -419,7 +419,7 @@ endif ! --- Test on 'iutile'
 !===============================================================================
 !  Example 4: Lambda/Cp a function of temperature for temperature or enthalpy
 !  =========
-!    Below, we define the same lambda/Cp ratio law for all phases
+!    Below, we define the same lambda/Cp ratio law
 !    Values of this property must be defined at cell centers
 !  ===================================================================
 
@@ -595,7 +595,7 @@ if (iutile.eq.1) then
 
     endif ! --- Tests on 'ith' and 'iscavr'
 
-  enddo ! --- Loop on phases
+  enddo ! --- Loop on scalars
 endif ! --- Test on 'iutile'
 
 
@@ -2010,14 +2010,10 @@ double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 ! 1.  Example :
-!       For phase 1:
 !                visct = max(visct, rom * sqrt(dudx**2 + dudy**2 + dudz**2)
 !                (intentionally fancyful relation)
 !                Remark: incomming viscosity is consistent with the selected
 !                turbulence modelling
-!       For other phases:
-!                We keep the viscosity computed by the selected turbulence
-!                modelling
 
 !===============================================================================
 

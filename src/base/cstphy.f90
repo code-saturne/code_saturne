@@ -193,7 +193,7 @@ module cstphy
   !                  on ne clippe que si scamin < scamax
   ! visls0 : viscosite des scalaires si constante
   ! sigmas : prandtl des scalaires
-  ! wmolsp : fraction massique des scalaires d especes
+  ! wmolsp : molar fraction for multi-species scalars
   !          wmolsp(0) is associated to the deduced species.
   ! rvarfl : coeff de dissipation des variances
 

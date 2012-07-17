@@ -382,82 +382,80 @@ call usphyv &
 
 !  Density defined by a perfect gas equation of state
 !  for the low-Mach algorithm
+if (idilat.eq.3) then
 
-if (iscalt.gt.0) then
+  ! Works only with enthalpy
+  if (iscalt.le.0) call csexit(1)
+  if (iscsth(iscalt).ne.2) call csexit(1)
+  ivarh  = isca(iscalt)
+  ipcrom = ipproc(irom)
 
-  if (idilat.eq.3 .and. iscsth(iscalt).eq.2) then
+  ! Count the number of species
+  nscasp = 0
+  do ii = 1, nscamx
+    nscasp = nscasp + iscasp(ii)
+  enddo
 
-    ivarh  = isca(iscalt) ! Works only with enthalpy
-    ipcrom = ipproc(irom)
+  do iel = 1, ncel
 
-    ! Count the number of species
-    nscasp = 0
-    do ii = 1, nscamx
-      nscasp = nscasp + iscasp(ii)
-    enddo
+    ! Enthalpy over Cp, with Cp specific heat variable or constant
+    if (icp.gt.0) then
+      ipccp  = ipproc(icp)
+      xrtp =  rtp(iel,ivarh)/propce(iel,ipccp)
+    else
+      xrtp =  rtp(iel,ivarh)/cp0
+    endif
 
-    do iel = 1, ncel
+    alpha = 0.d0
 
-      ! Enthalpy over Cp, with Cp specific heat variable or constant
-      if (icp.gt.0) then
-        ipccp  = ipproc(icp)
-        xrtp =  rtp(iel,ivarh)/propce(iel,ipccp)
-      else
-        xrtp =  rtp(iel,ivarh)/cp0
+    if (nscasp.ge.2) then
+      ! Deduced species
+      ym = 1.d0
+
+      do ii = 1, nscaus
+        if (iscasp(ii).eq.1) then
+          yk = rtp(iel, isca(ii))
+
+          ! Clipping of the fraction yk
+          yk = max(yk, 0.d0)
+          yk = min(yk, 1.d0)
+
+          alpha = alpha + yk/wmolsp(ii)
+
+          ym = ym - yk
+        endif
+      enddo
+
+      ! Clipping of remaining species
+      ym = max(ym, 0.d0)
+
+      ! Add to alpha the value due to the deduced fraction
+      alpha = alpha + ym/wmolsp(0)
+
+      ! Check if the values are correct
+      if (alpha.lt.epzero .or. rair.lt.epzero .or.   &
+           xrtp.lt.epzero .or. pther.lt.epzero) then
+        write(nfecra,9004)
+        call csexit(1)
       endif
 
-      alpha = 0.d0
+      propce(iel,ipcrom) = pther/(alpha*rair*xrtp)
 
-      if (nscasp.ge.2) then
-        ! Deduced species
-        ym = 1.d0
+      ! Monospecies: density defined with the perfect state law
+    else
 
-        do ii = 1, nscaus
-          if (iscasp(ii).eq.1) then
-            yk = rtp(iel, isca(ii))
-
-            ! Clipping of the fraction yk
-            yk = max(yk, 0.d0)
-            yk = min(yk, 1.d0)
-
-            alpha = alpha + yk/wmolsp(ii)
-
-            ym = ym - yk
-          endif
-        enddo
-
-        ! Clipping of remaining species
-        ym = max(ym, 0.d0)
-
-        ! Add to alpha the value due to the deduced fraction
-        alpha = alpha + ym/wmolsp(0)
-
-        ! Check if the values are correct
-        if (alpha.lt.epzero .or. rair.lt.epzero .or.   &
-             xrtp.lt.epzero .or. pther.lt.epzero) then
-          write(nfecra,9004)
-          call csexit(1)
-        endif
-
-        propce(iel,ipcrom) = pther/(alpha*rair*xrtp)
-
-        ! Monospecies: density defined with the perfect state law
-      else
-
-        ! Check if the values are correct
-        if (rair.lt.epzero .or.                       &
-            xrtp.lt.epzero .or. pther.lt.epzero) then
-          write(nfecra,9004)
-          call csexit(1)
-        endif
-
-        propce(iel,ipcrom) = pther/(rair*xrtp)
-
+      ! Check if the values are correct
+      if (rair.lt.epzero .or.                       &
+          xrtp.lt.epzero .or. pther.lt.epzero) then
+        write(nfecra,9004)
+        call csexit(1)
       endif
 
-    enddo
+      propce(iel,ipcrom) = pther/(rair*xrtp)
 
-  endif
+    endif
+
+  enddo
 
 endif
 
@@ -1207,7 +1205,7 @@ endif
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
 '@    =========                                               ',/,&
 '@    OPTION IDILAT 3                                         ',/,&
-'@    LE CALCULE ENGENDRE UN RHO NEGATIF                      ',/,&
+'@    LE CALCUL ENGENDRE UN RHO NEGATIF                       ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -1403,7 +1401,7 @@ endif
 '@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
 '@    ========                                                ',/,&
 '@    OPTION IDILAT 3                                         ',/,&
-'@    THE COMPUTATION MAKE RHO NEGATIV                        ',/,&
+'@    THE COMPUTATION MAKE RHO NEGATIVE                       ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&

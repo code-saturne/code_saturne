@@ -150,7 +150,7 @@ iclpmn(ipprtp(inusa)) = iclpnu
 '@ @@ ATTENTION : ARRET DANS clipsa                           ',/,&
 '@    =========                                               ',/,&
 '@     APPEL DE clipsa              AVEC OPTION = ',I10        ,/,&
-'@     Phase : ',I10                                           ,/,&
+'@                                                            ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut pas etre execute.                       ',/,&
 '@                                                            ',/,&
@@ -170,7 +170,7 @@ iclpmn(ipprtp(inusa)) = iclpnu
 '@ @@ WARNING: ABORT IN clipsa                                ',/,&
 '@    ========                                                ',/,&
 '@     CALL OF clipsa               WITH OPTION = ',I10        ,/,&
-'@     Phase : ',I10                                           ,/,&
+'@                                                            ',/,&
 '@                                                            ',/,&
 '@  The calulation will not be run.                           ',/,&
 '@                                                            ',/,&
