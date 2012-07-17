@@ -176,10 +176,6 @@ class CoalCombustionModel(Variables, Model):
 
         list.append("Enthalpy")
 
-        baseNames = self.ModelVariables
-        for name in baseNames:
-            list.append(name)
-
         # list of coal variables
         baseNames = ["Fr_MV1", "Fr_MV2"]
         for baseName in baseNames:
@@ -188,6 +184,7 @@ class CoalCombustionModel(Variables, Model):
                 list.append(name)
 
         # list of class variables
+        baseNames = self.ModelVariables
         for baseName in baseNames:
             for classe in range(0, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
