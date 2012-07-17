@@ -205,7 +205,7 @@ class PlotVTK(object):
                                      d, "postprocessing", file_name)
 
                     if not os.path.isfile(f):
-                        raise ValueError, "This file does not exist: %s" % f
+                        raise ValueError, "\n\nThis file does not exist: %s\n\n" % f
 
                     for nn in plots:
                         self.figures.append(Scalar(nn, self.parser, f))

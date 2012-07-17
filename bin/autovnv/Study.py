@@ -750,7 +750,8 @@ class Studies(object):
                             n3 = self.__parser.getChilds(case.node, "data")
                             n4 = self.__parser.getChilds(case.node, "probe")
                             n5 = self.__parser.getChilds(case.node, "resu")
-                            for n in n1 + n2 + n3 + n4 + n5:
+                            n5 = self.__parser.getChilds(case.node, "input")
+                            for n in n1 + n2 + n3 + n4 + n5 + n6:
                                 if self.__parser.getAttribute(n, "dest") == "":
                                     self.__parser.setAttribute(n, "dest", run_id)
                         else:
@@ -784,7 +785,7 @@ class Studies(object):
         # 3. Update the file of parameters with the name of the result directory
             self.__parser.setAttribute(node, attr, os.listdir(result)[0])
         else:
-            self.reporting('Error: check compare/script/plot/probe/resu failed.')
+            self.reporting('Error: check compare/script/plot/probe/resu/input failed.')
             sys.exit(1)
 
 
@@ -899,6 +900,12 @@ class Studies(object):
                             dest = None
                         self.__check_dirs(l, case.label, node, repo, dest)
 
+                    for node in self.__parser.getChilds(case.node, "input"):
+                        file, dest, repo = self.__parser.getInput(node)
+                        if destination == False:
+                            dest = None
+                        self.__check_dirs(l, case.label, node, repo, dest)
+
 
     def plot(self):
         """
@@ -922,10 +929,9 @@ class Studies(object):
         @return: list of file to be attached to the report.
         """
         attached_files = []
-        dest = self.getDestination()
 
         # Fisrt global report
-        doc1 = Report1(dest,
+        doc1 = Report1(self.dest,
                        report1,
                        self.__log,
                        self.report,
@@ -950,7 +956,7 @@ class Studies(object):
 
         # Second detailed report
         if self.__compare or self.__postpro:
-            doc2 = Report2(dest, report2, self.__log)
+            doc2 = Report2(self.dest, report2, self.__log)
 
             for l, s in self.studies:
                 doc2.appendLine("\\section{%s}" % l)
@@ -969,6 +975,27 @@ class Studies(object):
                             doc2.add_row(case.diff_value, l, case.label)
                         elif self.__compare:
                             doc2.appendLine("No difference between the repository and the destination.")
+
+                    nodes = self.__parser.getChilds(case.node, "input")
+                    if nodes:
+                        doc2.appendLine("\\subsection{Results for case %s}" % case.label)
+                        for node in nodes:
+                            f, dest, repo = self.__parser.getInput(node)
+                            doc2.appendLine("\\subsubsection{%s}" % f)
+
+                            if dest:
+                                d = dest
+                                dd = self.dest
+                            elif repo:
+                                d = repo
+                                dd = self.repo
+
+                            ff = os.path.join(dd, l, case.label, "RESU", d, f)
+
+                            if not os.path.isfile(ff):
+                                print "\n\nWarning: this file does not exist: %s\n\n" % ff
+                            else:
+                                doc2.addInput(ff)
 
             attached_files.append(doc2.close())
 

@@ -413,16 +413,10 @@ class Parser(object):
 
     def getResult(self, node):
         """
-        Read:
-            <data file='profil1.dat' dest="">
-                <plot fig='1' xcol='1' ycol='2' legend='U'/>
-                <plot fig='2' xcol='1' ycol='3' legend='V'/>
-            </data>
-
         @type node: C{DOM Element}
         @param node: node of the current case
         @rtype: C{List}, C{List}
-        @return: C{List} of nodes <plot>, and C{List} of file names
+        @return: C{List} of nodes <resu>, and C{List} of file names
         """
         f  = str(node.attributes["file"].value)
 
@@ -443,6 +437,27 @@ class Parser(object):
             repo = None
 
         return plots, f, dest, repo
+
+
+    def getInput(self, node):
+        """
+        @type node: C{DOM Element}
+        @param node: node of the current case
+        @rtype: C{List}, C{List}
+        @return: C{List} of nodes <input>, and C{List} of file names
+        """
+        f  = str(node.attributes["file"].value)
+
+        try:
+            dest  = str(node.attributes["dest"].value)
+        except:
+            dest = None
+        try:
+            repo = str(node.attributes["repo"].value)
+        except:
+            repo = None
+
+        return  f, dest, repo
 
 
     def getProbes(self, node):

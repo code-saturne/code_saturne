@@ -438,7 +438,7 @@ class Plotter(object):
                                      case.label, "RESU",
                                      dest, "monitoring", file_name)
                     if not os.path.isfile(f):
-                        raise ValueError, "This file does not exist: %s" % f
+                        raise ValueError, "\n\nThis file does not exist: %s\n\n" % f
 
                     for ycol in range(2, self.__number_of_column(f) + 1):
                         curve = Probes(f, fig, ycol)
@@ -468,7 +468,7 @@ class Plotter(object):
                                          case.label, "RESU",
                                          d, "monitoring", file_name)
                         if not os.path.isfile(f):
-                            raise ValueError, "This file does not exist: %s" % f
+                            raise ValueError, "\n\nThis file does not exist: %s\n\n" % f
 
                     for nn in plots:
                         curve = Plot(nn, self.parser, f)

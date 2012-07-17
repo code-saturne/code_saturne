@@ -760,20 +760,20 @@ For more advanced options see section \ref{sec:raw}.
 
 The attributes \texttt{name} and \texttt{idlist} are mandatory.
 
-\subsubsection{Experimental data}
+\subsubsection{Experimental or analytical data}
 
-A particular markup is provided for curves of experimental data:
+A particular markup is provided for curves of experimental or analytical data:
 \texttt{<measurement>}; the attributes are:
 \begin{list}{$\rightarrow$}{}
 \item \texttt{file}: name of the file to be read on the disk;
-\item \texttt{path}: path of the directory where the file of experimental data
+\item \texttt{path}: path of the directory where the file of data
 is. the path could be ommitted (\texttt{path=""}), and in this case, the file
 will be searched recursively in the directories of the considered study.
 \end{list}
 
 The attributes \texttt{file} and \texttt{path} are mandatory.
 
-In order to draw curves of experimental data, the markup \texttt{<measurement>}
+In order to draw curves of experimental or analytical data, the markup \texttt{<measurement>}
 should be used with the markup \texttt{<plot>} as illustrated below:
 
 \small
@@ -1166,6 +1166,47 @@ associated to the zoom to display correctly the scalar map.
 </resu>
 \end{verbatim}
 \normalsize
+
+\subsection{Post-processing: input files}
+
+The post-processing is activated if the option \texttt{-p, --post} is present
+in the command line.
+
+\textsc{Autovnv} is able to include files into the final detailed report. These
+files must be in the directory of results either in the \textbf{destination} or
+in the \textbf{repository}. The following example shows the inclusion of three
+files: \texttt{performance.log} and \texttt{setup.log} from the
+\textbf{destination}, and a \texttt{performance.log} from the \textbf{repository}:
+
+\small
+\begin{verbatim}
+<case label='Grid1' status='on' compute="on" post="on">
+    <input dest="" file="performance.log"/>
+    <input dest="" file="setup.log"/>
+    <input repo="" file="performance.log"/>
+</case>
+\end{verbatim}
+\normalsize
+
+In the file of parameters, input files are defined with markups \texttt{<input>}
+as childs of a single markup \texttt{<case>}.
+The attributes of \texttt{<input>} are:
+\begin{list}{$\rightarrow$}{}
+\item \texttt{file}: name of the file to be included
+\item \texttt{repo} or \texttt{dest}: id of the results directory either in the
+\textbf{repository} or in the \textbf{destination};
+\begin{list}{$\Rightarrow$}{}
+\item if the id is not known already because the case has not yet run, just let
+the attribute empty \texttt{dest=""}, the value will be updated after the run
+step in the \textbf{destination} directory (see section \ref{sec:restart});
+\item if there is a single results directory in the \texttt{RESU} directory
+(either in the \textbf{repository} or in the \textbf{destination}) of the case,
+the id can be ommitted: \texttt{repo=""} or \texttt{dest=""}, the id will be
+completed automatically.
+\end{list}
+\end{list}
+The attribute \texttt{file} is mandatory, and either \texttt{repo} or
+\texttt{dest} must be present (but not the both) even if it is empty.
 
 \section{Output and restart}\label{sec:restart}
 
