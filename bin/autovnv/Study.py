@@ -432,25 +432,24 @@ class Study(object):
             print "Error: the directory %s does not exist" % self.__repo
             sys.exit(1)
 
+        self.Cases = []
+        self.matplotlib_figures = []
+        self.vtk_figures = []
+
         # build the list of the cases
         self.cases = parser.getCasesLabel(study)
         if not self.cases:
-            print "Error: no case defined in %s study" % study
-            sys.exit(1)
-
-        self.Cases = []
-        for data in self.__parser.getCasesKeywords(self.__study):
-            c = Case(pkg,
-                     self.__log,
-                     self.__diff,
-                     self.__study,
-                     data,
-                     self.__repo,
-                     self.__dest)
-            self.Cases.append(c)
-
-            self.matplotlib_figures = []
-            self.vtk_figures = []
+            print "\n\n\nWarning: no case defined in %s study\n\n\n" % study
+        else:
+            for data in self.__parser.getCasesKeywords(self.__study):
+                c = Case(pkg,
+                         self.__log,
+                         self.__diff,
+                         self.__study,
+                         data,
+                         self.__repo,
+                         self.__dest)
+                self.Cases.append(c)
 
 
     def getCasesLabel(self):
@@ -605,14 +604,6 @@ class Studies(object):
                    iok+=1
         if not iok:
             self.__running = False
-
-        iok = 0
-        for l, s in self.studies:
-            for case in s.Cases:
-                if case.plot == 'on':
-                   iok+=1
-        if not iok:
-            self.__postpro = False
 
 
     def reporting(self, msg, screen_only=False):
