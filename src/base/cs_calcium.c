@@ -360,8 +360,8 @@ _calcium_echo_pre_read(int                     comp_id,
   assert(var_name != NULL);
 
   if (_cs_calcium_component[comp_id] != NULL)
-    bft_printf(_("\nComponent %d [%p]:\n"),
-               comp_id, _cs_calcium_component[comp_id]);
+    bft_printf(_("\nComponent %d [%p], port %s:\n"),
+               comp_id, _cs_calcium_component[comp_id], var_name);
   else
     bft_printf(_("\nComponent %d:\n"), comp_id);
 
@@ -430,8 +430,8 @@ _calcium_echo_pre_write(int                     comp_id,
   assert(var_name != NULL);
 
   if (_cs_calcium_component[comp_id] != NULL)
-    bft_printf(_("\nComponent %d [%p]:\n"),
-               comp_id, _cs_calcium_component[comp_id]);
+    bft_printf(_("\nComponent %d [%p], port %s:\n"),
+               comp_id, _cs_calcium_component[comp_id], var_name);
   else
     bft_printf(_("\nComponent %d:\n"), comp_id);
 
