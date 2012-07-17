@@ -263,6 +263,9 @@ if( iconv (ipr).gt.0 ) then
   isym  = 2
 endif
 
+! Matrix block size
+ibsize = 1
+
 if (iresol(ipr).eq.-1) then
   ireslp = 0
   ipol   = 0
@@ -950,11 +953,11 @@ if (imgr(ipr).gt.0) then
   npstmg = ncpmgr(ipr)
   lchain = 16
 
-  call clmlga                                                     &
+  call clmlga &
   !==========
  ( chaine(1:16) ,   lchain ,                                      &
    ncelet , ncel   , nfac   ,                                     &
-   isym   , nagmax , npstmg , iwarnp ,                            &
+   isym   , ibsize , nagmax , npstmg , iwarnp ,                   &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
    dam    , xam    )
@@ -1093,7 +1096,7 @@ if (iwarni(ipr).ge.2) then
 endif
 
 ! Dynamic relaxation criterion
-! (Test to modify if needed: must be scticter than
+! (Test to modify if needed: must be stricter than
 ! the test in the conjugate gradient)
 if (swpdyn.eq.1) then
   tcrite = 100.d0*epsilo(ipr)*rnormp
@@ -1122,7 +1125,6 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
   ! The pressure is a scalar => no problem for the periodicity of rotation
   ! (iinvpe=1)
   iinvpe = 1
-  ibsize = 1
 
   call invers &
   !==========

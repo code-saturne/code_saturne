@@ -114,6 +114,7 @@ struct _cs_grid_t {
   int                 level;        /* Level in multigrid hierarchy */
   bool                symmetric;    /* Symmetric matrix coefficients
                                        indicator */
+  int                 diag_block_size[4]; /* Block sizes for diagonal, or NULL */
 
   cs_lnum_t           n_cells;      /* Local number of cells */
   cs_lnum_t           n_cells_ext;  /* Local number of participating cells
@@ -247,6 +248,11 @@ _create_grid(void)
 
   BFT_MALLOC(g, 1, cs_grid_t);
 
+  g->diag_block_size[0] = 1;
+  g->diag_block_size[1] = 1;
+  g->diag_block_size[2] = 1;
+  g->diag_block_size[3] = 1;
+
   g->level = 0;
 
   g->n_cells = 0;
@@ -324,6 +330,7 @@ static cs_grid_t *
 _coarse_init(const cs_grid_t *f)
 {
   cs_lnum_t ii;
+  int i;
   cs_grid_t *c = NULL;
 
   c = _create_grid();
@@ -332,6 +339,8 @@ _coarse_init(const cs_grid_t *f)
 
   c->level = f->level + 1;
   c->symmetric = f->symmetric;
+  for (i = 0; i < 4; i++)
+    c->diag_block_size[i] = f->diag_block_size[i];
 
   BFT_MALLOC(c->coarse_cell, f->n_cells_ext, cs_lnum_t);
 
@@ -1876,7 +1885,7 @@ _append_cell_data(cs_grid_t  *g)
 
     BFT_REALLOC(g->_cell_cen, g->n_cells_ext * 3, cs_real_t);
     BFT_REALLOC(g->_cell_vol, g->n_cells_ext, cs_real_t);
-    BFT_REALLOC(g->_da, g->n_cells_ext, cs_real_t);
+    BFT_REALLOC(g->_da, g->n_cells_ext*g->diag_block_size[3], cs_real_t);
 
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
 
@@ -1890,7 +1899,8 @@ _append_cell_data(cs_grid_t  *g)
       MPI_Recv(g->_cell_vol + g->merge_cell_idx[rank_id], n_recv,
                CS_MPI_REAL, dist_rank, tag, comm, &status);
 
-      MPI_Recv(g->_da + g->merge_cell_idx[rank_id], n_recv,
+      MPI_Recv(g->_da + g->merge_cell_idx[rank_id]*g->diag_block_size[3],
+               n_recv*g->diag_block_size[3],
                CS_MPI_REAL, dist_rank, tag, comm, &status);
 
     }
@@ -1905,7 +1915,8 @@ _append_cell_data(cs_grid_t  *g)
              tag, comm);
     BFT_FREE(g->_cell_vol);
 
-    MPI_Send(g->_da, g->n_cells, CS_MPI_REAL, g->merge_sub_root, tag, comm);
+    MPI_Send(g->_da, g->n_cells*g->diag_block_size[3], CS_MPI_REAL,
+             g->merge_sub_root, tag, comm);
     BFT_FREE(g->_da);
 
     g->n_cells = 0;
@@ -1935,7 +1946,8 @@ _sync_merged_cell_data(cs_grid_t  *g)
 
     cs_halo_sync_var(g->halo, CS_HALO_STANDARD, g->_cell_vol);
 
-    cs_halo_sync_var(g->halo, CS_HALO_STANDARD, g->_da);
+    cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD,
+                             g->_da, g->diag_block_size[3]);
 
   }
 }
@@ -2426,10 +2438,13 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
                        cs_lnum_t        *f_c_cell)
 {
   cs_lnum_t ii, jj, face_id, c_face, face_f;
+  int i;
   cs_lnum_t n_faces;
   cs_real_t f_xa1, f_xa2;
+  cs_real_t trace1, trace2;
 
   int isym = 2;
+  int *db_size = fine_grid->diag_block_size;
   int ncoarse = 8, npass_max = 10, inc_nei = 1;
   int _max_aggregation = 1, npass = 0;
 
@@ -2556,8 +2571,16 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
         /* TODO: remove these tests, or adimensionalize them */
         f_xa1 = CS_MAX(-f_xa1, 1.e-15);
         f_xa2 = CS_MAX(-f_xa2, 1.e-15);
-        aggr_crit[face_id] =   (f_da[ii]/c_cardinality[ii])
-                             * (f_da[jj]/c_cardinality[jj])/(f_xa1*f_xa2);
+
+        trace1 = 0.;
+        trace2 = 0.;
+        for (i = 0; i < db_size[0]; i++) {
+          trace1 += f_da[ii*db_size[3] + db_size[2]*i + i] ;
+          trace2 += f_da[jj*db_size[3] + db_size[2]*i + i] ;;
+        }
+        aggr_crit[face_id] =   (trace1/c_cardinality[ii])
+                             * (trace2/c_cardinality[jj])
+                             / (f_xa1*db_size[0]*f_xa2*db_size[0]);
       }
     }
 
@@ -2813,10 +2836,12 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
   int interp;
 
   cs_lnum_t ic, jc, ii, jj, c_face, face_id;
+  int i, j;
 
   cs_real_t dsigjg, dsxaij, agij;
 
   int isym = 2;
+  int *db_size = fine_grid->diag_block_size;
 
   cs_lnum_t f_n_cells = fine_grid->n_cells;
   cs_lnum_t f_n_cells_ext = fine_grid->n_cells_ext;
@@ -2851,7 +2876,7 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
   const cs_real_t *f_da = fine_grid->da;
   const cs_real_t *f_xa = fine_grid->xa;
 
-  BFT_MALLOC(w1, f_n_cells_ext, cs_real_t);
+  BFT_MALLOC(w1, f_n_cells_ext*db_size[3], cs_real_t);
 
   if (fine_grid->symmetric == true)
     isym = 1;
@@ -2909,25 +2934,34 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
 
 # pragma omp parallel for if(f_n_cells > THR_MIN)
   for (ii = 0; ii < f_n_cells; ii++)
-    w1[ii] = f_da[ii];
+    for (i = 0; i < db_size[0]; i++)
+      for (j = 0; j < db_size[0]; j++)
+        w1[ii*db_size[3] + db_size[2]*i + j] =
+          f_da[ii*db_size[3] + db_size[2]*i + j];
 
 # pragma omp parallel for if(f_n_cells_ext - f_n_cells > THR_MIN)
   for (ii = f_n_cells; ii < f_n_cells_ext; ii++)
-    w1[ii] = 0.;
+    for (i = 0; i < db_size[0]; i++)
+      for (j = 0; j < db_size[0]; j++)
+        w1[ii*db_size[3] + db_size[2]*i + j] = 0.;
 
   for (face_id = 0; face_id < f_n_faces; face_id++) {
     ii = f_face_cell[2*face_id] -1;
     jj = f_face_cell[2*face_id + 1] -1;
 
-    w1[ii] += f_xa[face_id*isym];
-    w1[jj] += f_xa[(face_id +1)*isym -1];
+    for (i = 0; i < db_size[0]; i++) {
+      w1[ii*db_size[3] + db_size[2]*i + i] += f_xa[face_id*isym];
+      w1[jj*db_size[3] + db_size[2]*i + i] += f_xa[(face_id +1)*isym -1];
+    }
   }
 
   /* Initialize coarse matrix storage on (c_da, c_xa) */
 
 # pragma omp parallel for if(c_n_cells_ext > THR_MIN)
   for (ic = 0; ic < c_n_cells_ext; ic++)
-    c_da[ic] = 0.;
+    for (i = 0; i < db_size[0]; i++)
+      for (j = 0; j < db_size[0]; j++)
+        c_da[ic*db_size[3] + db_size[2]*i + j] = 0.;
 
   /* Extradiagonal terms */
   /* (symmetric matrixes for now, even with non symmetric storage isym = 2) */
@@ -3031,15 +3065,20 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
 
   for (ii = 0; ii < f_n_cells; ii++) {
     ic = c_coarse_cell[ii] -1;
-    c_da[ic] += w1[ii];
+    for (i = 0; i < db_size[0]; i++)
+      for (j = 0; j < db_size[0]; j++)
+        c_da[ic*db_size[3] + db_size[2]*i + j] +=
+           w1[ii*db_size[3] + db_size[2]*i + j];
   }
 
   for (c_face = 0; c_face < c_n_faces; c_face++) {
     ic = c_face_cell[2*c_face] -1;
     jc = c_face_cell[2*c_face + 1] -1;
 
-    c_da[ic] -= c_xa[c_face*isym];
-    c_da[jc] -= c_xa[(c_face +1)*isym -1];
+    for (i = 0; i < db_size[0]; i++) {
+      c_da[ic*db_size[3] + db_size[2]*i + i] -= c_xa[c_face*isym];
+      c_da[jc*db_size[3] + db_size[2]*i + i] -= c_xa[(c_face +1)*isym -1];
+    }
   }
 
   /* Optional verification */
@@ -3059,9 +3098,9 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
     }
 #endif
 
-    BFT_MALLOC(w2, f_n_cells_ext, cs_real_t);
-    BFT_MALLOC(w3, c_n_cells_ext, cs_real_t);
-    BFT_MALLOC(w4, c_n_cells_ext, cs_real_t);
+    BFT_MALLOC(w2, f_n_cells_ext*db_size[3], cs_real_t);
+    BFT_MALLOC(w3, c_n_cells_ext*db_size[3], cs_real_t);
+    BFT_MALLOC(w4, c_n_cells_ext*db_size[3], cs_real_t);
 
     /* Evaluate anisotropy of fine and coarse grids */
 
@@ -3152,27 +3191,43 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
     /* Evaluate fine and coarse grids diagonal dominance */
 
     for (ii = 0; ii < f_n_cells; ii++)
-      w1[ii] = fabs(f_da[ii]);
+      for (i = 0; i < db_size[0]; i++)
+        for (j = 0; j < db_size[0]; j++)
+          w1[ii*db_size[3] + db_size[2]*i + j] =
+            fabs(f_da[ii*db_size[3] + db_size[2]*i + j]);
     for (ii = f_n_cells; ii < f_n_cells_ext; ii++)
-      w1[ii] = 0.;
+      for (i = 0; i < db_size[0]; i++)
+        for (j = 0; j < db_size[0]; j++)
+          w1[ii*db_size[3] + db_size[2]*i + j] = 0.;
 
     for (ic = 0; ic < c_n_cells; ic++)
-      w3[ic] = fabs(c_da[ic]);
+      for (i = 0; i < db_size[0]; i++)
+        for (j = 0; j < db_size[0]; j++)
+          w3[ic*db_size[3] + db_size[2]*i + j] =
+            fabs(c_da[ic*db_size[3] + db_size[2]*i + j]);
     for (ic = c_n_cells; ic < c_n_cells_ext; ic++)
-      w3[ic] = 0.;
+      for (i = 0; i < db_size[0]; i++)
+        for (j = 0; j < db_size[0]; j++)
+          w3[ic*db_size[3] + db_size[2]*i + j] = 0.;
 
     for (face_id = 0; face_id < f_n_faces; face_id++) {
       ii = f_face_cell[2*face_id] -1;
       jj = f_face_cell[2*face_id + 1] -1;
-      w1[ii] -= fabs(f_xa[face_id*isym]);
-      w1[jj] -= fabs(f_xa[(face_id +1)*isym -1]);
+
+      for (i = 0; i < db_size[0]; i++) {
+        w1[ii*db_size[3] + db_size[2]*i + i] -= fabs(f_xa[face_id*isym]);
+        w1[jj*db_size[3] + db_size[2]*i + i] -= fabs(f_xa[(face_id +1)*isym -1]);
+      }
     }
 
     for (c_face = 0; c_face < c_n_faces; c_face++) {
       ic = c_face_cell[2*c_face] -1;
       jc = c_face_cell[2*c_face + 1] -1;
-      w3[ic] -= fabs(c_xa[c_face*isym]);
-      w3[jc] -= fabs(c_xa[(c_face +1)*isym -1]);
+
+      for (i = 0; i < db_size[0]; i++) {
+        w3[ic*db_size[3] + db_size[2]*i + i] -= fabs(c_xa[c_face*isym]);
+        w3[jc*db_size[3] + db_size[2]*i + i] -= fabs(c_xa[(c_face +1)*isym -1]);
+      }
     }
 
     for (ii = 0; ii < f_n_cells; ii++)
@@ -3311,19 +3366,20 @@ void CS_PROCF(clmlgo, CLMLGO)
  * destroyed before those arrays.
  *
  * parameters:
- *   n_cells     <-- Local number of cells
- *   n_cells_ext <-- Local number of cells + ghost cells
- *   n_faces     <-- Local number of faces
- *   symmetric   <-- True if xam is symmetric, false otherwise
- *   face_cell   <-- Face -> cells connectivity (1 to n)
- *   halo        <-- Halo structure associated with this level, or NULL.
- *   numbering   <-- vectorization or thread-related numbering info, or NULL
- *   cell_cen    <-- Cell center (size: 3.n_cells_ext)
- *   cell_vol    <-- Cell volume (size: n_cells_ext)
- *   face_normal <-- Internal face normals (size: 3.n_faces)
- *   da          <-- Matrix diagonal (size: n_cell_ext)
- *   xa          <-- Matrix extra-diagonal terms
- *                   (size: n_faces if symmetric, 2.n_faces otherwise)
+ *   n_cells         <-- Local number of cells
+ *   n_cells_ext     <-- Local number of cells + ghost cells
+ *   n_faces         <-- Local number of faces
+ *   symmetric       <-- True if xam is symmetric, false otherwise
+ *   diag_block_size <-- Block sizes for diagonal, or NULL
+ *   face_cell       <-- Face -> cells connectivity (1 to n)
+ *   halo            <-- Halo structure associated with this level, or NULL.
+ *   numbering       <-- vectorization or thread-related numbering info, or NULL
+ *   cell_cen        <-- Cell center (size: 3.n_cells_ext)
+ *   cell_vol        <-- Cell volume (size: n_cells_ext)
+ *   face_normal     <-- Internal face normals (size: 3.n_faces)
+ *   da              <-- Matrix diagonal (size: n_cell_ext)
+ *   xa              <-- Matrix extra-diagonal terms
+ *                       (size: n_faces if symmetric, 2.n_faces otherwise)
  *
  * returns:
  *   base grid structure
@@ -3334,6 +3390,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            cs_lnum_t              n_cells_ext,
                            cs_lnum_t              n_faces,
                            bool                   symmetric,
+                           int                   *diag_block_size,
                            const cs_lnum_t       *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering,
@@ -3344,6 +3401,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            const cs_real_t       *xa)
 {
   cs_lnum_t ii, jj, kk, face_id;
+  int i;
 
   cs_grid_t *g = NULL;
 
@@ -3353,6 +3411,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
 
   g->level = 0;
   g->symmetric = symmetric;
+  for (i = 0; i < 4; i++)
+    g->diag_block_size[i] = diag_block_size[i];
 
   g->n_cells = n_cells;
   g->n_cells_ext = n_cells_ext;
@@ -3422,7 +3482,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
 
 
   g->matrix = cs_matrix_create(g->matrix_struct);
-  cs_matrix_set_coefficients(g->matrix, symmetric, NULL, g->da, g->xa);
+  cs_matrix_set_coefficients(g->matrix, symmetric, diag_block_size, g->da, g->xa);
 
   return g;
 }
@@ -3483,6 +3543,7 @@ cs_grid_destroy(cs_grid_t **grid)
  *   g           <-- Grid structure
  *   level       --> Level in multigrid hierarchy (or NULL)
  *   symmetric   --> Symmetric matrix coefficients indicator (or NULL)
+ *   db_size     --> Size of the diagonal block (or NULL)
  *   n_ranks     --> number of ranks with data (or NULL)
  *   n_cells     --> Number of local cells (or NULL)
  *   n_cells_ext --> Number of cells including ghosts (or NULL)
@@ -3494,6 +3555,7 @@ void
 cs_grid_get_info(const cs_grid_t  *g,
                  int              *level,
                  bool             *symmetric,
+                 int              *db_size,
                  int              *n_ranks,
                  cs_lnum_t        *n_cells,
                  cs_lnum_t        *n_cells_ext,
@@ -3507,6 +3569,13 @@ cs_grid_get_info(const cs_grid_t  *g,
 
   if (symmetric != NULL)
     *symmetric = g->symmetric;
+
+  if (db_size != NULL) {
+    db_size[0] = g->diag_block_size[0];
+    db_size[1] = g->diag_block_size[1];
+    db_size[2] = g->diag_block_size[2];
+    db_size[3] = g->diag_block_size[3];
+  }
 
   if (n_ranks != NULL) {
 #if defined(HAVE_MPI)
@@ -3680,6 +3749,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
 {
   cs_lnum_t call_id;
   cs_lnum_t isym = 2;
+  int *db_size = f->diag_block_size;
 
   /* In mutithreaded case, use a matrix structure alowing threading
      without a specific renumbering, as structures are rebuilt often */
@@ -3720,7 +3790,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
   BFT_MALLOC(c->_face_normal, c->n_faces*3, cs_real_t);
   c->face_normal = c->_face_normal;
 
-  BFT_MALLOC(c->_da, c->n_cells_ext, cs_real_t);
+  BFT_MALLOC(c->_da, c->n_cells_ext * c->diag_block_size[3], cs_real_t);
   c->da = c->_da;
 
   BFT_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
@@ -3755,7 +3825,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
   /* Synchronize matrix's geometric quantities */
 
   if (c->halo != NULL)
-    cs_halo_sync_var(c->halo, CS_HALO_STANDARD, c->_da);
+    cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_da, db_size[3]);
 
   /* Merge grids if we are below the threshold */
 
@@ -3780,7 +3850,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
                                                 NULL);
 
   c->matrix = cs_matrix_create(c->matrix_struct);
-  cs_matrix_set_coefficients(c->matrix, c->symmetric, NULL, c->da, c->xa);
+  cs_matrix_set_coefficients(c->matrix, c->symmetric, c->diag_block_size, c->da, c->xa);
 
   /* Return new (coarse) grid */
 
@@ -3804,8 +3874,10 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
                           cs_real_t        *c_var)
 {
   cs_lnum_t ii;
+  int i;
 
   const cs_lnum_t *coarse_cell;
+  int *db_size = f->diag_block_size;
 
   cs_lnum_t f_n_cells = f->n_cells;
   cs_lnum_t c_n_cells_ext = c->n_cells_r[1];
@@ -3822,10 +3894,12 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
 
 # pragma omp parallel for if(c_n_cells_ext > THR_MIN)
   for (ii = 0; ii < c_n_cells_ext; ii++)
-    c_var[ii] = 0.0;
+    for (i = 0; i < db_size[0]; i++)
+      c_var[ii*db_size[1]+i] = 0.;
 
   for (ii = 0; ii < f_n_cells; ii++)
-    c_var[coarse_cell[ii] - 1] += f_var[ii];
+    for (i = 0; i < db_size[0]; i++)
+      c_var[(coarse_cell[ii]-1)*db_size[1]+i] += f_var[ii*db_size[1]+i];
 
 #if defined(HAVE_MPI)
 
@@ -3846,12 +3920,12 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
         cs_lnum_t n_recv = (  c->merge_cell_idx[rank_id+1]
                             - c->merge_cell_idx[rank_id]);
         int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
-        MPI_Recv(c_var + c->merge_cell_idx[rank_id], n_recv, CS_MPI_REAL,
-                 dist_rank, tag, comm, &status);
+        MPI_Recv(c_var + c->merge_cell_idx[rank_id]*db_size[1],
+                 n_recv*db_size[1], CS_MPI_REAL, dist_rank, tag, comm, &status);
       }
     }
     else
-      MPI_Send(c_var, c->n_cells_r[0], CS_MPI_REAL,
+      MPI_Send(c_var, c->n_cells_r[0]*db_size[1], CS_MPI_REAL,
                c->merge_sub_root, tag, comm);
   }
 
@@ -3917,8 +3991,11 @@ cs_grid_prolong_cell_var(const cs_grid_t  *c,
                          cs_real_t        *f_var)
 {
   cs_lnum_t ii;
+  int i;
   const cs_lnum_t *coarse_cell;
   const cs_real_t *_c_var = c_var;
+
+  const int *db_size = f->diag_block_size;
 
   cs_lnum_t f_n_cells = f->n_cells;
 
@@ -3946,13 +4023,13 @@ cs_grid_prolong_cell_var(const cs_grid_t  *c,
         cs_lnum_t n_send = (  c->merge_cell_idx[rank_id+1]
                             - c->merge_cell_idx[rank_id]);
         int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
-        MPI_Send(c_var + c->merge_cell_idx[rank_id], n_send, CS_MPI_REAL,
-                 dist_rank, tag, comm);
+        MPI_Send(c_var + c->merge_cell_idx[rank_id]*db_size[1],
+                 n_send*db_size[1], CS_MPI_REAL, dist_rank, tag, comm);
       }
     }
     else {
       MPI_Status status;
-      MPI_Recv(c_var, c->n_cells_r[0], CS_MPI_REAL,
+      MPI_Recv(c_var, c->n_cells_r[0]*db_size[1], CS_MPI_REAL,
                c->merge_sub_root, tag, comm, &status);
     }
   }
@@ -3965,7 +4042,8 @@ cs_grid_prolong_cell_var(const cs_grid_t  *c,
 
 # pragma omp parallel for if(f_n_cells > THR_MIN)
   for (ii = 0; ii < f_n_cells; ii++)
-    f_var[ii] = _c_var[coarse_cell[ii] - 1];
+    for (i = 0; i < db_size[0]; i++)
+      f_var[ii*db_size[1]+i] = _c_var[(coarse_cell[ii]-1)*db_size[1]+i];
 }
 
 /*----------------------------------------------------------------------------
@@ -4142,9 +4220,12 @@ cs_grid_project_var(const cs_grid_t  *g,
                     cs_real_t         f_var[])
 {
   cs_lnum_t ii;
+  int i;
   cs_lnum_t n_max_cells = 0;
   cs_real_t *tmp_var_1 = NULL, *tmp_var_2 = NULL;
   const cs_grid_t *_g = g;
+
+  const int *db_size = g->diag_block_size;
 
   assert(g != NULL);
   assert(c_var != NULL || g->n_cells == 0);
@@ -4156,8 +4237,8 @@ cs_grid_project_var(const cs_grid_t  *g,
       n_max_cells = _g->n_cells;
   }
 
-  BFT_MALLOC(tmp_var_1, n_max_cells, cs_real_t);
-  memcpy(tmp_var_1, c_var, g->n_cells*sizeof(cs_real_t));
+  BFT_MALLOC(tmp_var_1, n_max_cells*db_size[1], cs_real_t);
+  memcpy(tmp_var_1, c_var, g->n_cells*db_size[1]*sizeof(cs_real_t));
 
   /* Project to finer levels */
 
@@ -4165,7 +4246,7 @@ cs_grid_project_var(const cs_grid_t  *g,
 
     /* Allocate temporary arrays */
 
-    BFT_MALLOC(tmp_var_2, n_max_cells, cs_real_t);
+    BFT_MALLOC(tmp_var_2, n_max_cells*db_size[1], cs_real_t);
 
     for (_g = g; _g->level > 0; _g = _g->parent) {
 
@@ -4177,7 +4258,8 @@ cs_grid_project_var(const cs_grid_t  *g,
                                tmp_var_2);
 
       for (ii = 0; ii < n_parent_cells; ii++)
-        tmp_var_1[ii] = tmp_var_2[ii];
+        for (i = 0; i < db_size[0]; i++)
+          tmp_var_1[ii*db_size[1]+i] = tmp_var_2[ii*db_size[1]+i];
 
     }
 
@@ -4189,7 +4271,7 @@ cs_grid_project_var(const cs_grid_t  *g,
     BFT_FREE(tmp_var_2);
   }
 
-  memcpy(f_var, tmp_var_1, n_base_cells*sizeof(cs_real_t));
+  memcpy(f_var, tmp_var_1, n_base_cells*db_size[1]*sizeof(cs_real_t));
 
   BFT_FREE(tmp_var_1);
 }
@@ -4209,8 +4291,10 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
                          cs_real_t         diag_dom[])
 {
   cs_lnum_t ii, jj, face_id;
+  int i, j;
 
   cs_real_t *dd = NULL;
+  int *db_size = g->diag_block_size;
 
   assert(g != NULL);
   assert(diag_dom != NULL);
@@ -4218,7 +4302,7 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
   if (g->level == 0)
     dd = diag_dom;
   else
-    BFT_MALLOC(dd, g->n_cells_ext, cs_real_t);
+    BFT_MALLOC(dd, g->n_cells_ext*db_size[3], cs_real_t);
 
   /* Compute coarse diagonal dominance */
 
@@ -4226,35 +4310,52 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
     const cs_lnum_t n_cells = g->n_cells;
     const cs_lnum_t n_faces = g->n_faces;
     const cs_lnum_t *face_cel = g->face_cell;
+    cs_real_t abs_trace;
 
     /* Diagonal part of matrix.vector product */
 
     for (ii = 0; ii < n_cells; ii++)
-      dd[ii] = fabs(g->da[ii]);
+      for (i = 0; i < db_size[0]; i++)
+        for (j = 0; j < db_size[0]; j++)
+          dd[ii*db_size[3] + db_size[2]*i + j] =
+            fabs(g->da[ii*db_size[3] + db_size[2]*i + j]);
 
     if (g->halo != NULL)
-      cs_halo_sync_var(g->halo, CS_HALO_STANDARD, dd);
+      cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, dd, db_size[3]);
 
     if (g->symmetric) {
       for (face_id = 0; face_id < n_faces; face_id++) {
         ii = face_cel[2*face_id] -1;
         jj = face_cel[2*face_id + 1] -1;
-        dd[ii] -= fabs(g->xa[face_id]);
-        dd[jj] -= fabs(g->xa[face_id]);
+
+        for (i = 0; i < db_size[0]; i++) {
+          dd[ii*db_size[3] + db_size[2]*i + i] -= fabs(g->xa[face_id]);
+          dd[jj*db_size[3] + db_size[2]*i + i] -= fabs(g->xa[face_id]);
+        }
       }
     }
     else {
       for (face_id = 0; face_id < n_faces; face_id++) {
         ii = face_cel[2*face_id] -1;
         jj = face_cel[2*face_id + 1] -1;
-        dd[ii] -= fabs(g->xa[face_id*2]);
-        dd[jj] -= fabs(g->xa[face_id*2 + 1]);
+
+        for (i = 0; i < db_size[0]; i++) {
+          dd[ii*db_size[3] + db_size[2]*i + i] -= fabs(g->xa[face_id*2]);
+          dd[jj*db_size[3] + db_size[2]*i + i] -= fabs(g->xa[face_id*2 + 1]);
+        }
       }
     }
 
     for (ii = 0; ii < n_cells; ii++) {
-      if (fabs(g->da[ii]) > 1.e-18)
-        dd[ii] /= fabs(g->da[ii]);
+      abs_trace = 0.;
+      for (i = 0; i < db_size[0]; i++)
+        abs_trace += g->da[ii*db_size[3] + db_size[2]*i + i];
+
+      abs_trace = fabs(abs_trace);
+      if (abs_trace > 1.e-18)
+        for (i = 0; i < db_size[0]; i++)
+          for (j = 0; j < db_size[0]; j++)
+            dd[ii*db_size[3] + db_size[2]*i + j] /= abs_trace;
     }
 
   }

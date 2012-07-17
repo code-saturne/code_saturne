@@ -234,6 +234,9 @@ if( iconv (ipr).gt.0 ) then
   isym  = 2
 endif
 
+! Matrix block size
+ibsize = 1
+
 if (iresol(ipr).eq.-1) then
   ireslp = 0
   ipol   = 0
@@ -882,11 +885,11 @@ if (imgr(ipr).gt.0) then
   npstmg = ncpmgr(ipr)
   lchain = 16
 
-  call clmlga                                                     &
+  call clmlga &
   !==========
  ( chaine(1:16) ,   lchain ,                                      &
    ncelet , ncel   , nfac   ,                                     &
-   isym   , nagmax , npstmg , iwarnp ,                            &
+   isym   , ibsize , nagmax , npstmg , iwarnp ,                   &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
    dam    , xam    )

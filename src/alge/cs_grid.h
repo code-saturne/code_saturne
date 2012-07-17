@@ -116,19 +116,20 @@ void CS_PROCF(clmlgo, CLMLGO)
  * destroyed before those arrays.
  *
  * parameters:
- *   n_cells     <-- Local number of cells
- *   n_cells_ext <-- Local number of cells + ghost cells
- *   n_faces     <-- Local number of faces
- *   symmetric   <-- True if xam is symmetric, false otherwise
- *   face_cell   <-- Face -> cells connectivity (1 to n)
- *   halo        <-- Halo structure associated with this level, or NULL.
- *   numbering   <-- vectorization or thread-related numbering info, or NULL
- *   cell_cen    <-- Cell center (size: 3.n_cells_ext)
- *   cell_vol    <-- Cell volume (size: n_cells_ext)
- *   face_normal <-- Internal face normals (size: 3.n_faces)
- *   da          <-- Matrix diagonal (size: n_cell_ext)
- *   xa          <-- Matrix extra-diagonal terms
- *                   (size: n_faces if symmetric, 2.n_faces otherwise)
+ *   n_cells         <-- Local number of cells
+ *   n_cells_ext     <-- Local number of cells + ghost cells
+ *   n_faces         <-- Local number of faces
+ *   symmetric       <-- True if xam is symmetric, false otherwise
+ *   diag_block_size <-- Block sizes for diagonal, or NULL
+ *   face_cell       <-- Face -> cells connectivity (1 to n)
+ *   halo            <-- Halo structure associated with this level, or NULL.
+ *   numbering       <-- vectorization or thread-related numbering info, or NULL
+ *   cell_cen        <-- Cell center (size: 3.n_cells_ext)
+ *   cell_vol        <-- Cell volume (size: n_cells_ext)
+ *   face_normal     <-- Internal face normals (size: 3.n_faces)
+ *   da              <-- Matrix diagonal (size: n_cell_ext)
+ *   xa              <-- Matrix extra-diagonal terms
+ *                       (size: n_faces if symmetric, 2.n_faces otherwise)
  *
  * returns:
  *   base grid structure
@@ -139,6 +140,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            cs_lnum_t              n_cells_ext,
                            cs_lnum_t              n_faces,
                            bool                   symmetric,
+                           int                   *diag_block_size,
                            const cs_lnum_t       *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering,
@@ -165,6 +167,7 @@ cs_grid_destroy(cs_grid_t **grid);
  *   g           <-- Grid structure
  *   level       --> Level in multigrid hierarchy (or NULL)
  *   symmetric   --> Symmetric matrix coefficients indicator (or NULL)
+ *   db_size     --> Size of the diagonal block (or NULL)
  *   n_ranks     --> number of ranks with data (or NULL)
  *   n_cells     --> Number of local cells (or NULL)
  *   n_cells_ext --> Number of cells including ghosts (or NULL)
@@ -176,6 +179,7 @@ void
 cs_grid_get_info(const cs_grid_t  *g,
                  int              *level,
                  bool             *symmetric,
+                 int              *db_size,
                  int              *n_ranks,
                  cs_lnum_t        *n_cells,
                  cs_lnum_t        *n_cells_ext,

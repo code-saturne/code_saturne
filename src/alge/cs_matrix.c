@@ -194,7 +194,7 @@ _dense_b_ax(cs_lnum_t         b_id,
 # endif
 
   for (ii = 0; ii < b_size[0]; ii++) {
-    y[b_id*b_size[1] + ii] = 0;
+    y[b_id*b_size[1] + ii] = 0.;
     for (jj = 0; jj < b_size[0]; jj++)
       y[b_id*b_size[1] + ii]
         +=   a[b_id*b_size[3] + ii*b_size[2] + jj]

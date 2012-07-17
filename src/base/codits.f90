@@ -230,7 +230,7 @@ integer          idtva0
 integer          nagmax, npstmg
 integer          ibsize
 
-double precision residu,rnorm
+double precision residu, rnorm, ressol, res
 double precision thetex
 
 double precision, allocatable, dimension(:) :: dam
@@ -251,9 +251,12 @@ allocate(smbini(ncelet))
 chaine = nomvar(ipp)
 cnom   = chaine(1:16)
 
-! MATRICE A PRIORI SYMETRIQUE ( = 1)
+! Symmetric matrix, except if advection
 isym  = 1
-if( iconvp.gt.0 ) isym  = 2
+if (iconvp.gt.0) isym  = 2
+
+! Matrix block size
+ibsize = 1
 
 ! METHODE DE RESOLUTION ET DEGRE DU PRECOND DE NEUMANN
 !     0 SI CHOIX AUTOMATIQUE GRADCO OU BICGSTAB
@@ -262,7 +265,7 @@ if( iconvp.gt.0 ) isym  = 2
 if (ireslp.eq.-1) then
   ireslq = 0
   ipol   = 0
-  if( iconvp.gt.0 ) then
+  if (iconvp.gt.0) then
     ireslq = 1
     ipol   = 0
   endif
@@ -271,13 +274,12 @@ else
   ipol   = (ireslp-ireslq)/1000
 endif
 
-
 ! PRISE DE SQRT DANS PS
 isqrt = 1
 
 ! PRISE EN COMPTE DE LA PERIODICITE
 
-!    Initialisation pour test avant promav
+! Initialisation pour test avant promav
 itenso = 0
 iinvpe = 0
 
@@ -323,18 +325,21 @@ call matrix &
    coefbp , cofbfp , rovsdt , flumas , flumab , viscfm , viscbm , &
    dam    , xam    )
 
-!     En stationnaire, on relaxe la diagonale
+! For stationary computations, the diagonal is relaxed
 if (idtvar.lt.0) then
   !$omp parallel do
   do iel = 1, ncel
     dam(iel) = dam(iel)/relaxp
   enddo
 endif
-!      CREATION DE LA HIERARCHIE DE MAILLAGE SI MULTIGRILLE
+
+!===============================================================================
+! 2. Preparation of the Algebraic Multigrid
+!===============================================================================
 
 if (imgrp.gt.0) then
 
-! --- Creation de la hierarchie de maillages
+  ! --- Building of the mesh hierarchy
 
   chaine = nomvar(ipp)
   iwarnp = iwarni(ivar)
@@ -342,11 +347,11 @@ if (imgrp.gt.0) then
   npstmg = ncpmgr(ivar)
   lchain = 16
 
-  call clmlga                                                     &
+  call clmlga &
   !==========
  ( chaine(1:16) ,    lchain ,                                     &
    ncelet , ncel   , nfac   ,                                     &
-   isym   , nagmax , npstmg , iwarnp ,                            &
+   isym   , ibsize , nagmax , npstmg , iwarnp ,                   &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
    dam    , xam    )
@@ -355,7 +360,7 @@ endif
 
 
 !===============================================================================
-! 2. Iterative process to handle non orthogonlaities (starting rom the second
+! 3. Iterative process to handle non orthogonlaities (starting from the second
 ! iteration).
 !===============================================================================
 
@@ -364,81 +369,63 @@ endif
 ! On calcule le bilan explicite total
 thetex = 1.d0 - thetap
 
-
 ! Si THETEX=0, ce n'est pas la peine d'en rajouter
 if (abs(thetex).gt.epzero) then
   inc    = 1
-! ON POURRAIT METTRE ICCOCG A 0 DANS LES APPELS SUIVANT
   iccocg = 1
-  call bilsc2                                                     &
+
+  call bilsc2 &
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
-   pvara  , pvara  ,  coefap , coefbp , cofafp , cofbfp ,         &
+   pvara  , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  )
 endif
 
-!     AVANT DE BOUCLER SUR LES SWEEP, ON STOCKE LE SECOND MEMBRE SANS
-!     RECONSTRUCTION DANS LE TABLEAU AUXILIAIRE SMBINI
+! Before looping, the RHS without reconstruction is stored in smbini
 
 !$omp parallel do
 do iel = 1, ncel
   smbini(iel) = smbrp(iel)
 enddo
 
-!     On initialise sur NCELET pour eviter une communication
+! pvar is initialized on ncelet to avoid a synchronization
+
 !$omp parallel do
 do iel = 1, ncelet
-  pvar(iel)   = pvark(iel)
+  pvar(iel) = pvark(iel)
 enddo
 
-!     On passe toujours dans bilsc2 avec INC=1
+! In the following, bilsc2 is called with inc=1,
+! except for Weight Matrix (nswrsp=-1)
 inc = 1
-!     Sauf pour les matrices poids (NSWRSP=-1)
 if (nswrsp.eq.-1) then
   nswrsp = 1
   inc = 0
 endif
 
-
-!  Attention, pour les matrices poids il faut pouvoir ne faire
-!     qu'un seul sweep
-nswmod = max( nswrsp, 1 )
-do 100 isweep = 1, nswmod
+isweep = 1
 
 ! ---> INCREMENTATION ET RECONSTRUCTION DU SECOND MEMBRE
-!      ON NE RECALCULE COCG QU'AU PREMIER PASSAGE (PRESQUE)
-
-  if( isweep.eq.1) then
-    iccocg = 1
 
 !  On est entre avec un smb explicite base sur PVARA.
 !     si on initialise avec PVAR avec autre chose que PVARA
 !     on doit donc corriger SMBR (c'est le cas lorsqu'on itere sur navsto)
-    !$omp parallel do
-    do iel = 1, ncel
-      smbini(iel) = smbini(iel) -                                 &
-                    rovsdt(iel)*(pvar(iel) - pvara(iel))
-      smbrp(iel)  = smbini(iel)
-    enddo
 
-  else
-    iccocg = 0
-    !$omp parallel do
-    do iel = 1, ncel
-!     SMBINI CONTIENT LES TERMES INSTAT, EN DIV(RHO U) ET SOURCE DE MASSE
-!     DU SECOND MEMBRE  MIS A JOUR A CHAQUE SWEEP
-      smbini(iel) = smbini(iel) - rovsdt(iel)*dpvar(iel)
-      smbrp(iel)  = smbini(iel)
-    enddo
-  endif
+!$omp parallel do
+do iel = 1, ncel
+  smbini(iel) = smbini(iel) - rovsdt(iel)*(pvar(iel) - pvara(iel))
+  smbrp(iel)  = smbini(iel)
+enddo
 
-  call bilsc2                                                     &
-  !==========
+iccocg = 1
+
+call bilsc2 &
+!==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
@@ -448,9 +435,12 @@ do 100 isweep = 1, nswmod
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  )
 
-  call prodsc(ncel,isqrt,smbrp,smbrp,residu)
+! --- Right hand side residual
+call prodsc(ncel,isqrt,smbrp,smbrp,residu)
 
-! ---> RESIDU DE NORMALISATION CALCULE AU PREMIER SWEEP
+res = residu
+
+! ---> RESIDU DE NORMALISATION
 !    (NORME C.L +TERMES SOURCES+ TERMES DE NON ORTHOGONALITE)
 
 !       Attention, lors de l'appel a promav, ici pour une variable qui
@@ -462,107 +452,146 @@ do 100 isweep = 1, nswmod
 !         inchange.
 !         Pour les autres variables (scalaires) IINVPE=1 permettra de
 !         tout echanger, meme si c'est superflu.
-  if( isweep.eq.1 ) then
-    ! Allocate a temporary array
-    allocate(w1(ncelet))
-    if(iinvpe.eq.2) then
-      iinvpp = 3
-    else
-      iinvpp = iinvpe
-    endif
-    call promav(isym,1,iinvpp,dam,xam,pvar,w1)
-    !$omp parallel do
-    do iel = 1, ncel
-      w1(iel) = w1(iel) + smbrp(iel)
-    enddo
-    call prodsc(ncel,isqrt,w1,w1,rnorm)
-    rnsmbr(ipp) = rnorm
-    ! Free memory
-    deallocate(w1)
-  endif
 
-! ---> RESOLUTION IMPLICITE SUR L'INCREMENT DPVAR
+! Allocate a temporary array
+allocate(w1(ncelet))
+
+if (iinvpe.eq.2) then
+  iinvpp = 3
+else
+  iinvpp = iinvpe
+endif
+
+call promav(isym,ibsize,iinvpp,dam,xam,pvar,w1)
+
+!$omp parallel do
+do iel = 1, ncel
+  w1(iel) = w1(iel) + smbrp(iel)
+enddo
+call prodsc(ncel,isqrt,w1,w1,rnorm)
+rnsmbr(ipp) = rnorm
+
+! Free memory
+deallocate(w1)
+
+! Warning: for Weight Matrix, one and only one sweep is done.
+nswmod = max(nswrsp, 1)
+
+! Reconstruction loop (beginning)
+!--------------------------------
+
+do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
+
+  ! --- Solving on the increment dpvar
 
   !$omp parallel do
   do iel = 1, ncel
     dpvar(iel) = 0.d0
   enddo
-  ibsize = 1
 
-  call invers                                                     &
+  ! Solver reisudal
+  ressol = residu
+
+  call invers &
   !==========
  ( cnom   , isym   , ibsize ,                                     &
    ipol   , ireslq , nitmap , imgrp  ,                            &
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
-   epsilp , rnorm  , residu ,                                     &
+   epsilp , rnorm  , ressol ,                                     &
    dam    , xam    , smbrp  , dpvar  )
 
-
+  ! Writing
   nbivar(ipp) = niterf
-  if(abs(rnorm).gt.epzero) then
-    resvar(ipp) = residu/rnorm
+  if (abs(rnorm).gt.epzero) then
+    resvar(ipp) = ressol/rnorm
   else
     resvar(ipp) = 0.d0
   endif
 
-! ---> INCREMENTATION SOLUTION
+  ! Writing
+  if (iwarnp.ge.3) then
+    write(nfecra,1000) cnom, isweep, residu, rnorm
+  endif
+
+  ! --- Update the solution with the increment
 
   !$omp parallel do
   do iel = 1, ncel
-    pvar(iel) = pvar(iel)+dpvar(iel)
+    pvar(iel) = pvar(iel) + dpvar(iel)
   enddo
 
-! ---> Handle parallelism and periodicity
-!      (periodicity of rotation is not ensured here)
-
+  ! ---> Handle parallelism and periodicity
+  !      (periodicity of rotation is not ensured here)
   if (irangp.ge.0 .or. iperio.eq.1) then
     if (itenso.eq.0) then
       call synsca (pvar)
-      !==========
     else if (itenso.eq.1) then
       call syncmp (pvar)
-      !==========
     endif
   endif
 
-! ---> TEST DE CONVERGENCE
+  isweep = isweep + 1
 
-call prodsc(ncel,isqrt,smbrp,smbrp,residu)
+  res = residu
 
-if (residu.le.epsrsp*rnorm) then
-   if(iwarnp.ge.1) then
-      write(nfecra,1000) cnom,isweep,residu,rnorm
-   endif
-   goto 200
+  ! --- Update the right hand side if needed:
+  if (isweep.le.nswmod.and.res.gt.epsrsp*rnorm) then
+
+    iccocg = 0
+
+    !$omp parallel do
+    do iel = 1, ncel
+      ! smbini already contains instationnary terms and mass source terms
+      ! of the RHS updated at each sweep
+      smbini(iel) = smbini(iel) - rovsdt(iel)*dpvar(iel)
+      smbrp(iel)  = smbini(iel)
+    enddo
+
+    call bilsc2 &
+    !==========
+   ( nvar   , nscal  ,                                              &
+     idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
+     ipp    , iwarnp ,                                              &
+     blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+     pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
+     flumas , flumab , viscfs , viscbs ,                            &
+     smbrp  )
+
+    ! --- Convergence test
+    call prodsc(ncel , isqrt , smbrp , smbrp , residu)
+
+  endif
+
+enddo
+! --- Reconstruction loop (end)
+
+! Writing: convergence
+if (iwarnp.ge.1) then
+  if (residu.le.epsrsp*rnorm) then
+    write(nfecra,1000) cnom,isweep-1,residu,rnorm
+  endif
 endif
 
-if (iwarnp.ge.3) then
-   write(nfecra,1000) cnom,isweep,residu,rnorm
-endif
-
- 100  continue
-
-if(iwarnp.ge.2) then
-   write(nfecra,1100) cnom, nswmod
+! Writing: non-convergence
+if (iwarnp.ge.2) then
+  if (isweep.gt.nswmod) then
+    write(nfecra,1100) cnom, nswmod
+  endif
 endif
 
 !===============================================================================
-! 3. After having computed the new value, an estimator is computed for the
+! 4. After having computed the new value, an estimator is computed for the
 ! prediction step of the velocity.
 !===============================================================================
 
- 200  continue
-
-! ---> TEST DE PASSAGE DANS LE CALCUL
-
 if (iescap.gt.0) then
 
-! ---> CALCUL DE LA CONTRIBUTION COMPOSANTE PAR COMPOSANTE. DE L ESTIMATEUR
+  ! ---> Computation of the estimator of the current component
 
-
-!     SMBINI CONTIENT LES TERMES INSTAT ET EN DIV(U) DU SECOND MEMBRE
-!     MIS A JOUR A CHAQUE SWEEP,DONC AU DERNIER, POUR KMAX +1, ON A:
+  ! smbini already contains instationnary terms and mass source terms
+  ! of the RHS updated at each sweep
 
   !$omp parallel do
   do iel = 1,ncel
@@ -571,10 +600,10 @@ if (iescap.gt.0) then
 
   inc    = 1
   iccocg = 1
-!     On calcule sans relaxation meme en stationnaire
+  ! Without relaxation even for a statonnary computation
   idtva0 = 0
 
-  call bilsc2                                                     &
+  call bilsc2 &
   !==========
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
@@ -585,8 +614,7 @@ if (iescap.gt.0) then
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  )
 
-!     CONTRIBUTION DES NORMES L2 DES DIFFERENTES COMPOSANTES
-!       DANS LE TABLEAU ESWORK
+  ! Contribution of the current component to the L2 norm stored in eswork
 
   !$omp parallel do
   do iel = 1,ncel
@@ -595,13 +623,14 @@ if (iescap.gt.0) then
 
 endif
 
-! SUPPRESSION DE LA HIERARCHIE DE MAILLAGES
+!===============================================================================
+! 5. Suppression of the mesh hierarchy
+!===============================================================================
 
 if (imgrp.gt.0) then
   chaine = nomvar(ipp)
   lchain = 16
   call dsmlga(chaine(1:16), lchain)
-  !==========
 endif
 
 ! Free memory

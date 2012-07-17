@@ -159,6 +159,9 @@ endif
 
 isqrt = 1
 
+! Matrix block size
+ibsize = 1
+
 !     TEST DE VARIATION DE LA PRESSION HYDROSTATIQUE EN SORTIE
 
 
@@ -294,11 +297,11 @@ if (imgr(ipr).gt.0) then
   npstmg = ncpmgr(ipr)
   lchain = 8
 
-  call clmlga                                                     &
+  call clmlga &
   !==========
  ( chaine(1:8) ,     lchain ,                                     &
    ncelet , ncel   , nfac   ,                                     &
-   isym   , nagmax , npstmg , iwarnp ,                            &
+   isym   , ibsize , nagmax , npstmg , iwarnp ,                   &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
    dam    , xam    )

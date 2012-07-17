@@ -237,34 +237,28 @@ double precision eswork(3,ncelet)
 
 ! Local variables
 
-
 character*80     chaine
 character*16     cnom(3)
 integer          lchain
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iel,icycle,nswmod
-integer          iinvpe,iinvpp
+integer          iinvpe
 integer          idtva0
 integer          nagmax, npstmg
 double precision thetex
 
 integer          isou , jsou, ifac
 integer          ibsize
-double precision residu, rnorm
-
-double precision tps1, tps2, tempsjf
+double precision residu, rnorm, ressol, res
 
 double precision, allocatable, dimension(:,:,:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
 double precision, allocatable, dimension(:,:) :: dpvar, smbini, w1
 
-save tempsjf
-data tempsjf /0/
-
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 0.  Initialization
 !===============================================================================
 
 ! Allocate temporary arrays
@@ -280,9 +274,12 @@ cnom(2)= chaine(1:16)
 chaine = nomvar(ippw)
 cnom(3)= chaine(1:16)
 
-! MATRICE A PRIORI SYMETRIQUE ( = 1)
+! Symmetric matrix, except if advection
 isym  = 1
-if( iconvp.gt.0 ) isym  = 2
+if (iconvp.gt.0) isym  = 2
+
+! Matrix block size
+ibsize = 3
 
 ! METHODE DE RESOLUTION ET DEGRE DU PRECOND DE NEUMANN
 !     0 SI CHOIX AUTOMATIQUE GRADCO OU BICGSTAB
@@ -291,7 +288,7 @@ if( iconvp.gt.0 ) isym  = 2
 if (ireslp.eq.-1) then
   ireslq = 0
   ipol   = 0
-  if( iconvp.gt.0 ) then
+  if (iconvp.gt.0) then
     ireslq = 1
     ipol   = 0
   endif
@@ -300,22 +297,19 @@ else
   ipol   = (ireslp-ireslq)/1000
 endif
 
-
 ! PRISE DE SQRT DANS PS
 isqrt = 1
 
-! LA PRISE EN COMPTE DE LA PERIODICITE EST AUTOMATIQUE
-
-!    Initialisation pour test avant promav
+! iinvpe is useless in the vectorial framework
 iinvpe = 0
 
 !===============================================================================
-! 1.  CONSTRUCTION MATRICE "SIMPLIFIEE" DE RESOLUTION
+! 1.  Building of the "simplified" matrix
 !===============================================================================
 
-! xam est le meme pour les 3 composantes
+! xam is the same for the 3 components
 
-call matrxv                                                       &
+call matrxv &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp , isym   , nfecra ,                   &
@@ -325,22 +319,45 @@ call matrxv                                                       &
    flumas , flumab , viscfm , viscbm ,                            &
    dam    , xam    )
 
-! En stationnaire, on relaxe la diagonale
+! For stationary computations, the diagonal is relaxed
 if (idtvar.lt.0) then
   do iel = 1, ncel
-    do isou=1,3
-      do jsou=1,3
+    do isou = 1, 3
+      do jsou = 1, 3
         dam(isou,jsou,iel) = dam(isou,jsou,iel)/relaxp
       enddo
     enddo
   enddo
 endif
 
-! PAS DE MULTIGRILLE POUR LA VITESSE
+!===============================================================================
+! 2. Preparation of the Algebraic Multigrid
+!===============================================================================
+
+if (imgrp.gt.0) then
+
+  ! --- Building of the mesh hierarchy
+
+  chaine = nomvar(ippu)
+  iwarnp = iwarni(ivar)
+  nagmax = nagmx0(ivar)
+  npstmg = ncpmgr(ivar)
+  lchain = 16
+
+  call clmlga &
+  !==========
+ ( chaine(1:16) ,    lchain ,                                     &
+   ncelet , ncel   , nfac   ,                                     &
+   isym   , ibsize , nagmax , npstmg , iwarnp ,                   &
+   ngrmax , ncegrm ,                                              &
+   rlxp1  ,                                                       &
+   dam    , xam    )
+
+endif
 
 !===============================================================================
-! 2.  BOUCLES SUR LES NON ORTHOGONALITES
-!       (A PARTIR DE LA SECONDE ITERATION)
+! 3. Iterative process to handle non orthogonlaities (starting from the second
+! iteration).
 !===============================================================================
 
 ! Application du theta schema
@@ -350,11 +367,10 @@ thetex = 1.d0 - thetap
 
 
 ! Si THETEX=0, ce n'est pas la peine d'en rajouter
-if(abs(thetex).gt.epzero) then
+if (abs(thetex).gt.epzero) then
   inc    = 1
-! ON POURRAIT METTRE ICCOCG A 0 DANS LES APPELS SUIVANT
 
-  call bilsc4                                                     &
+  call bilsc4 &
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
@@ -367,72 +383,46 @@ if(abs(thetex).gt.epzero) then
    smbr   )
 endif
 
-!     AVANT DE BOUCLER SUR LES SWEEP, ON STOCKE LE SECOND MEMBRE SANS
-!     RECONSTRUCTION DANS LE TABLEAU AUXILIAIRE SMBINI
+! Before looping, the RHS without reconstruction is stored in smbini
 
 do iel = 1, ncel
-  do isou=1,3
+  do isou = 1, 3
     smbini(isou,iel) = smbr(isou,iel)
   enddo
 enddo
 
-!     On initialise sur NCELET pour eviter une communication
-!     u*k contient rtpa(*) initialement
+! pvar is initialized on ncelet to avoid a synchronization
 do iel = 1, ncelet
-  do isou=1,3
+  do isou = 1, 3
     pvar(isou,iel) = pvark(isou,iel)
   enddo
 enddo
 
-!     On passe toujours dans bilsc4 avec INC=1
+! In the following, bilsc4 is called with inc=1,
+! except for Weight Matrix (nswrsp=-1)
 inc = 1
-
-!     Sauf pour les matrices poids (NSWRSP=-1)
 if (nswrsp.eq.-1) then
   nswrsp = 1
   inc = 0
 endif
 
-
-!  Attention, pour les matrices poids il faut pouvoir ne faire
-!     qu'un seul sweep
-nswmod = max( nswrsp, 1 )
-do 100 isweep = 1, nswmod
-
 ! ---> INCREMENTATION ET RECONSTRUCTION DU SECOND MEMBRE
-!      ON NE RECALCULE COCG QU'AU PREMIER PASSAGE (PRESQUE)
-
-  if( isweep.eq.1) then
 
 !  On est entre avec un smb explicite base sur PVARA.
 !     si on initialise avec PVAR avec autre chose que PVARA
 !     on doit donc corriger SMBR (c'est le cas lorsqu'on itere sur navsto)
-    do iel = 1, ncel
-      do isou=1,3
-        smbini(isou,iel) = smbini(isou,iel)                        &
-                   -fimp(isou,1,iel)*(pvar(1,iel) - pvara(1,iel))  &
-                   -fimp(isou,2,iel)*(pvar(2,iel) - pvara(2,iel))  &
-                   -fimp(isou,3,iel)*(pvar(3,iel) - pvara(3,iel))
-        smbr(isou,iel) = smbini(isou,iel)
-      enddo
-    enddo
+do iel = 1, ncel
+  do isou = 1, 3
+    smbini(isou,iel) = smbini(isou,iel)                        &
+               -fimp(isou,1,iel)*(pvar(1,iel) - pvara(1,iel))  &
+               -fimp(isou,2,iel)*(pvar(2,iel) - pvara(2,iel))  &
+               -fimp(isou,3,iel)*(pvar(3,iel) - pvara(3,iel))
+    smbr(isou,iel) = smbini(isou,iel)
+  enddo
+enddo
 
-  else
-    do iel = 1, ncel
-!     SMBINI CONTIENT LES TERMES INSTAT, EN DIV(RHO U) ET SOURCE DE MASSE
-!     DU SECOND MEMBRE  MIS A JOUR A CHAQUE SWEEP
-      do isou=1,3
-        smbini(isou,iel) = smbini(isou,iel)                 &
-                  - fimp(isou,1,iel)*dpvar(1,iel)           &
-                  - fimp(isou,2,iel)*dpvar(2,iel)           &
-                  - fimp(isou,3,iel)*dpvar(3,iel)
-        smbr(isou,iel) = smbini(isou,iel)
-      enddo
-    enddo
-  endif
-
-  call bilsc4                                                     &
-  !==========
+call bilsc4 &
+!==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
@@ -443,47 +433,43 @@ do 100 isweep = 1, nswmod
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
    smbr   )
 
-! ---> RESIDU DE NORMALISATION CALCULE AU PREMIER SWEEP
+! --- Convergence test
+call prodsc(3*ncel, isqrt, smbr, smbr, residu)
+
+res = residu
+
+! ---> RESIDU DE NORMALISATION
 !    (NORME C.L +TERMES SOURCES+ TERMES DE NON ORTHOGONALITE)
 
-!       Attention, lors de l'appel a promav, ici pour une variable qui
-!         n'est pas en increments et qui est supposee initialisee
-!         y compris dans le halo.
-!         Pour les variables vitesse et les tensions de Reynolds
-!         (IINVPE=2), il ne faudra donc pas annuler le halo
-!         des periodicites de rotation, mais au contraire le laisser
-!         inchange.
-!         Pour les autres variables (scalaires) IINVPE=1 permettra de
-!         tout echanger, meme si c'est superflu.
+allocate(w1(3, ncelet))  ! Allocate a temporary array
 
-  if (isweep.eq.1) then
+call promav(isym, ibsize, iinvpe, dam, xam, pvar, w1)
 
-    allocate(w1(3, ncelet))  ! Allocate a temporary array
+do iel = 1, ncel
+   do isou = 1, 3
+      w1(isou,iel) = w1(isou,iel) + smbr(isou,iel)
+   enddo
+enddo
 
-    if(iinvpe.eq.2) then
-      iinvpp = 3
-    else
-      iinvpp = iinvpe
-    endif
-    call promav(isym,3,iinvpp,dam,xam,pvar,w1)
-    !==========
-    do iel = 1, ncel
-       do isou = 1, 3
-          w1(isou,iel) = w1(isou,iel) + smbr(isou,iel)
-       enddo
-    enddo
-    call prodsc(3*ncel,isqrt,w1(1,1),w1(1,1),rnorm)
-    !==========
-    rnsmbr(ippu) = rnorm
-    rnsmbr(ippv) = rnorm
-    rnsmbr(ippw) = rnorm
+call prodsc(3*ncel, isqrt, w1, w1, rnorm)
 
-    deallocate(w1)  ! Free memory
+rnsmbr(ippu) = rnorm
+rnsmbr(ippv) = rnorm
+rnsmbr(ippw) = rnorm
 
-  endif
+deallocate(w1)  ! Free memory
 
+! Warning: for Weight Matrix, one and only one sweep is done.
+nswmod = max(nswrsp, 1)
 
-  ! ---> RESOLUTION IMPLICITE SUR L'INCREMENT DPVAR
+isweep = 1
+
+! Reconstruction loop (beginning)
+!--------------------------------
+
+do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
+
+  ! --- Solving on the increment dpvar
 
   do iel = 1, ncelet
     do isou =1,3
@@ -497,7 +483,7 @@ do 100 isweep = 1, nswmod
   ! Matrix block size
   ibsize = 3
 
-  call invers                                                     &
+  call invers &
   !==========
  ( cnom(1), isym   , ibsize , ipol   , ireslq , nitmap , imgrp  , &
    ncymxp , nitmfp ,                                              &
@@ -509,7 +495,8 @@ do 100 isweep = 1, nswmod
   nbivar(ippv) = niterf
   nbivar(ippw) = niterf
 
-  if(abs(rnorm)/sqrt(3.d0).gt.epzero) then
+  ! Writing
+  if (abs(rnorm)/sqrt(3.d0).gt.epzero) then
     resvar(ippu) = residu/rnorm
     resvar(ippv) = residu/rnorm
     resvar(ippw) = residu/rnorm
@@ -519,68 +506,97 @@ do 100 isweep = 1, nswmod
     resvar(ippw) = 0.d0
   endif
 
+  ! Writing
+  if (iwarnp.ge.3) then
+     write(nfecra,1000) cnom(1), isweep, residu, rnorm
+     write(nfecra,1000) cnom(2), isweep, residu, rnorm
+     write(nfecra,1000) cnom(3), isweep, residu, rnorm
+  endif
 
-! ---> INCREMENTATION SOLUTION
+  ! --- Update the solution with the increment
 
   do iel = 1, ncelet
     do isou = 1, 3
-       pvar (isou,iel) = pvar (isou,iel) + dpvar(isou,iel)
+       pvar(isou,iel) = pvar(isou,iel) + dpvar(isou,iel)
     enddo
   enddo
 
+  ! ---> Handle parallelism and periodicity
 
-! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvin(pvar)
+  endif
 
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synvin(pvar)
-  !==========
+  isweep = isweep + 1
+
+  res = residu
+
+  ! --- Update the right hand side if needed:
+  if (isweep.le.nswmod.and.res.gt.epsrsp*rnorm) then
+
+    do iel = 1, ncel
+      ! smbini already contains instationnary terms and mass source terms
+      ! of the RHS updated at each sweep
+      do isou=1,3
+        smbini(isou,iel) = smbini(isou,iel)                 &
+                  - fimp(isou,1,iel)*dpvar(1,iel)           &
+                  - fimp(isou,2,iel)*dpvar(2,iel)           &
+                  - fimp(isou,3,iel)*dpvar(3,iel)
+        smbr(isou,iel) = smbini(isou,iel)
+      enddo
+    enddo
+
+    call bilsc4 &
+    !==========
+   ( nvar   , nscal  ,                                              &
+     idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+     ischcp , isstpp , inc    , imrgra , ivisep ,                   &
+     ippu   , ippv   , ippw   , iwarnp ,                            &
+     blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+     pvar   , pvara  ,                                              &
+     coefav , coefbv , cofafv , cofbfv ,                            &
+     flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
+     smbr   )
+
+    ! --- Convergence test
+    call prodsc(3*ncel, isqrt, smbr, smbr, residu)
+
+  endif
+
+enddo
+! --- Reconstruction loop (end)
+
+! Writing: convergence
+if (iwarnp.ge.1) then
+  if (residu.le.epsrsp*rnorm) then
+    write(nfecra,1000) cnom(1),isweep-1,residu,rnorm
+    write(nfecra,1000) cnom(2),isweep-1,residu,rnorm
+    write(nfecra,1000) cnom(3),isweep-1,residu,rnorm
+  endif
 endif
 
-! ---> TEST DE CONVERGENCE
-
-call prodsc(3*ncel,isqrt,smbr(1,1),smbr(1,1),residu)
-
-if( residu.le.epsrsp*rnorm         ) then
-   if(iwarnp.ge.1) then
-      write( nfecra,1000) cnom(1),isweep,residu,rnorm
-      write( nfecra,1000) cnom(2),isweep,residu,rnorm
-      write( nfecra,1000) cnom(3),isweep,residu,rnorm
-   endif
-   goto 200
-endif
-
-if(iwarnp.ge.3) then
-   write(nfecra,1000) cnom(1),isweep,residu,rnorm
-   write(nfecra,1000) cnom(2),isweep,residu,rnorm
-   write(nfecra,1000) cnom(3),isweep,residu,rnorm
-endif
-
- 100  continue
-
-if(iwarnp.ge.2) then
-   write(nfecra,1100) cnom(1), nswmod
-   write(nfecra,1100) cnom(2), nswmod
-   write(nfecra,1100) cnom(3), nswmod
+! Writing: non-convergence
+if (iwarnp.ge.2) then
+  if (isweep.gt.nswmod) then
+    write(nfecra,1100) cnom(1), nswmod
+    write(nfecra,1100) cnom(2), nswmod
+    write(nfecra,1100) cnom(3), nswmod
+  endif
 endif
 
 !===============================================================================
-! 3.  SORTIE OU CALCUL D'ESTIMATEURS POUR LES VITESSES
-!       A L'ETAPE DE PREDICTION
+! 4. After having computed the new value, an estimator is computed for the
+! prediction step of the velocity.
 !===============================================================================
-
- 200  continue
-
-! ---> TEST DE PASSAGE DANS LE CALCUL
 
 if (iescap.gt.0) then
 
-! ---> CALCUL DE LA CONTRIBUTION COMPOSANTE PAR COMPOSANTE. DE L ESTIMATEUR
+  ! ---> Computation of the estimator of the current component
 
+  ! smbini already contains instationnary terms and mass source terms
+  ! of the RHS updated at each sweep
 
-!     SMBINI CONTIENT LES TERMES INSTAT ET EN DIV(U) DU SECOND MEMBRE
-!     MIS A JOUR A CHAQUE SWEEP,DONC AU DERNIER, POUR KMAX +1, ON A:
-
-  do iel = 1,ncel
+  do iel = 1, ncel
     do isou = 1, 3
       smbr(isou,iel) = smbini(isou,iel) - fimp(isou,1,iel)*dpvar(1,iel) &
                                         - fimp(isou,2,iel)*dpvar(2,iel) &
@@ -589,7 +605,7 @@ if (iescap.gt.0) then
   enddo
 
   inc    = 1
-!     On calcule sans relaxation meme en stationnaire
+  ! Without relaxation even for a statonnary computation
   idtva0 = 0
 
   call bilsc4 &
@@ -604,28 +620,28 @@ if (iescap.gt.0) then
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
    smbr   )
 
-!     CONTRIBUTION DES NORMES L2 DES DIFFERENTES COMPOSANTES
-!       DANS LE TABLEAU ESWORK
+  ! Contribution of the current component to the L2 norm stored in eswork
 
-  do iel = 1,ncel
-    do isou=1,3
+  do iel = 1, ncel
+    do isou = 1, 3
       eswork(isou,iel) = (smbr(isou,iel)/ volume(iel))**2
     enddo
   enddo
 
 endif
 
-! SUPPRESSION DE LA HIERARCHIE DE MAILLAGES
+!===============================================================================
+! 5. Suppression of the mesh hierarchy
+!===============================================================================
 
 if (imgrp.gt.0) then
   chaine = nomvar(ippu)
   lchain = 16
   call dsmlga(chaine(1:16), lchain)
-  !==========
 endif
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -652,10 +668,8 @@ endif
 
 #endif
 
-!12345678 : CV-DIF-TS 2000 IT - RES= 1234567890234 NORME= 12345678901234
-!ATTENTION 12345678 : NON CONVERGENCE DU SYSTEME CONV-DIFF-TS
 !----
-! FIN
+! End
 !----
 
 end subroutine

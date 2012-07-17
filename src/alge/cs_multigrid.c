@@ -638,6 +638,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
     cs_grid_get_info(grid,
                      NULL,
                      NULL,
+                     NULL,
                      &n_ranks,
                      &n_cells,
                      &n_cells_with_ghosts,
@@ -1114,6 +1115,9 @@ _abort_on_divergence(cs_multigrid_t      *mg,
     int lv_id = 0;
     cs_real_t *var = NULL, *da = NULL;
 
+    int i;
+    int db_size[4] = {1, 1, 1, 1};
+
     const cs_grid_t *g = mg->grid_hierarchy[0];
     const cs_lnum_t n_base_cells = cs_grid_get_n_cells(g);
     const cs_matrix_t  *_matrix = NULL;
@@ -1138,16 +1142,27 @@ _abort_on_divergence(cs_multigrid_t      *mg,
 
       g = mg->grid_hierarchy[lv_id];
 
+      cs_grid_get_info(g,
+                       NULL,
+                       NULL,
+                       &db_size,
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL);
+
+
       _matrix = cs_grid_get_matrix(g);
 
       cs_matrix_copy_diagonal(_matrix, da);
       cs_grid_project_var(g, n_base_cells, da, var);
       sprintf(var_name, "Diag_%04d", lv_id);
-      cs_sles_post_error_output_var(var_name, mesh_id, 1, var);
+      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
 
       cs_grid_project_diag_dom(g, n_base_cells, var);
       sprintf(var_name, "Diag_Dom_%04d", lv_id);
-      cs_sles_post_error_output_var(var_name, mesh_id, 1, var);
+      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
     }
 
     /* Output info on current level if > 0 */
@@ -1161,34 +1176,44 @@ _abort_on_divergence(cs_multigrid_t      *mg,
       cs_real_t *c_res = NULL;
 
       g = mg->grid_hierarchy[level];
-      n_cells = cs_grid_get_n_cells(g);
-      n_cells_ext = cs_grid_get_n_cells_ext(g);
+
+      cs_grid_get_info(g,
+                       NULL,
+                       NULL,
+                       &db_size,
+                       NULL,
+                       &n_cells,
+                       &n_cells_ext,
+                       NULL,
+                       NULL);
 
       cs_grid_project_var(g, n_base_cells, c_rhs[level], var);
       sprintf(var_name, "RHS_%04d", level);
-      cs_sles_post_error_output_var(var_name, mesh_id, 1, var);
+      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
 
       cs_grid_project_var(g, n_base_cells, c_vx[level], var);
       sprintf(var_name, "X_%04d", level);
-      cs_sles_post_error_output_var(var_name, mesh_id, 1, var);
+      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
 
       /* Compute residual */
 
-      BFT_MALLOC(c_res, n_cells_ext, cs_real_t);
+      BFT_MALLOC(c_res, n_cells_ext*db_size[1], cs_real_t);
 
       _matrix = cs_grid_get_matrix(g);
 
       cs_matrix_vector_multiply(rotation_mode, _matrix, c_vx[level], c_res);
 
       for (ii = 0; ii < n_cells; ii++)
-        c_res[ii] = fabs(c_res[ii] - c_rhs[level][ii]);
+        for (i = 0; i < db_size[0]; i++)
+          c_res[ii*db_size[1] + i] = fabs( c_res[ii*db_size[1] + i]
+                                         - c_rhs[level][ii*db_size[1] + i]);
 
       cs_grid_project_var(g, n_base_cells, c_res, var);
 
       BFT_FREE(c_res);
 
       sprintf(var_name, "Residual_%04d", level);
-      cs_sles_post_error_output_var(var_name, mesh_id, 1, var);
+      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
     }
 
     cs_post_finalize();
@@ -1288,6 +1313,8 @@ _multigrid_cycle(cs_multigrid_t      *mg,
   cs_lnum_t ii;
   cs_timer_t t0, t1;
 
+  int i;
+  int db_size[4] = {1, 1, 1, 1};
   int cvg = 0, c_cvg = 0;
   int n_iter = 0;
   size_t alloc_size = 0, wr_size = 0;
@@ -1337,6 +1364,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
   cs_grid_get_info(f,
                    NULL,
                    NULL,
+                   &db_size,
                    NULL,
                    &n_cells,
                    &n_cells_ext,
@@ -1350,10 +1378,10 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
   /* Allocate wr or use working area */
 
-  for (level = 1, wr_size = n_cells_ext; level < mg->n_levels; level++) {
+  for (level = 1, wr_size = n_cells_ext*db_size[1]; level < mg->n_levels; level++) {
     cs_lnum_t n_cells_max
       = cs_grid_get_n_cells_max(mg->grid_hierarchy[level]);
-    wr_size = CS_MAX(wr_size, (size_t)n_cells_max);
+    wr_size = CS_MAX(wr_size, (size_t)(n_cells_max*db_size[1]));
     wr_size = CS_SIMD_SIZE(wr_size);
   }
 
@@ -1368,9 +1396,9 @@ _multigrid_cycle(cs_multigrid_t      *mg,
   /* reserve memory for rhs and vx;
      for the finest level, simply point to input and output arrays */
 
-  BFT_MALLOC(_rhs_vx, mg->n_levels*2, cs_real_t *);
+  BFT_MALLOC(_rhs_vx, mg->n_levels*2*db_size[1], cs_real_t *);
   _rhs = _rhs_vx;
-  _vx = _rhs_vx + mg->n_levels;
+  _vx = _rhs_vx + mg->n_levels*db_size[1];
 
   _rhs[0] = NULL; /* Use _rhs_level when necessary to avoid const warning */
   _vx[0] = vx;
@@ -1385,16 +1413,16 @@ _multigrid_cycle(cs_multigrid_t      *mg,
       alloc_size
         += CS_SIMD_SIZE(cs_grid_get_n_cells_max(mg->grid_hierarchy[level]));
 
-    BFT_MALLOC(_rhs_vx_val, alloc_size*2, cs_real_t);
+    BFT_MALLOC(_rhs_vx_val, alloc_size*2*db_size[1], cs_real_t);
 
     _rhs[1] = _rhs_vx_val;
-    _vx[1] = _rhs_vx_val + alloc_size;
+    _vx[1] = _rhs_vx_val + alloc_size*db_size[1];
 
     for (level = 2; level < mg->n_levels; level++) {
       cs_lnum_t _n_cells_ext_prev
         = CS_SIMD_SIZE(cs_grid_get_n_cells_max(mg->grid_hierarchy[level-1]));
-      _rhs[level] = _rhs[level - 1] + _n_cells_ext_prev;
-      _vx[level] = _vx[level - 1] + _n_cells_ext_prev;
+      _rhs[level] = _rhs[level - 1] + _n_cells_ext_prev*db_size[1];
+      _vx[level] = _vx[level - 1] + _n_cells_ext_prev*db_size[1];
     }
   }
 
@@ -1467,14 +1495,16 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (ii = 0; ii < n_cells; ii++)
-      wr[ii] = _rhs_level[ii] - wr[ii];
+      for (i = 0; i < db_size[0]; i++)
+        wr[ii*db_size[1] + i] = _rhs_level[ii*db_size[1] + i]
+                              - wr[ii*db_size[1] + i];
 
     /* Convergence test in beginning of cycle (fine mesh) */
 
     if (level == 0) {
 
       cvg = _convergence_test(var_name,
-                              n_cells,
+                              n_cells*db_size[1],
                               n_max_cycles,
                               cycle_id,
                               verbosity,
@@ -1509,6 +1539,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
                      NULL,
                      NULL,
                      NULL,
+                     NULL,
                      &n_cells,
                      &n_cells_ext,
                      NULL,
@@ -1518,7 +1549,8 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (ii = 0; ii < n_cells; ii++) /* Initialize correction */
-      _vx[level+1][ii] = 0.0;
+      for (i = 0; i < db_size[0]; i++)
+        _vx[level+1][ii*db_size[1]+i] = 0.0;
 
     t0 = cs_timer_time();
     cs_timer_counter_add_diff(&(lv_info->t_tot[4]), &t1, &t0);
@@ -1607,6 +1639,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
                        NULL,
                        NULL,
                        NULL,
+                       NULL,
                        &n_cells,
                        &n_cells_ext,
                        NULL,
@@ -1620,7 +1653,8 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
 #     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (ii = 0; ii < n_cells; ii++)
-        _f_vx[ii] += wr[ii];
+        for (i = 0; i < db_size[0]; i++)
+          _f_vx[ii*db_size[1]+i] += wr[ii*db_size[1]+i];
 
       t1 = cs_timer_time();
       cs_timer_counter_add_diff(&(lv_info->t_tot[5]), &t0, &t1);
@@ -1723,6 +1757,7 @@ void CS_PROCF(clmlga, CLMLGA)
  const cs_int_t   *nfac,      /* <-- Number of internal faces */
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
+ const cs_int_t   *ibsize,    /* <-- Matrix block size */
  const cs_int_t   *nagmax,    /* <-- Agglomeration count limit */
  const cs_int_t   *ncpost,    /* <-- If > 0, postprocess coarsening, using
                                      coarse cell numbers modulo ncpost */
@@ -1757,6 +1792,7 @@ void CS_PROCF(clmlga, CLMLGA)
   cs_grid_t *g = NULL;
 
   bool symmetric = (*isym == 1) ? true : false;
+  int diag_block_size[4] = {*ibsize, *ibsize, *ibsize, (*ibsize)*(*ibsize)};
 
   assert(*ncelet >= *ncel);
   assert(*nfac > 0);
@@ -1789,6 +1825,7 @@ void CS_PROCF(clmlga, CLMLGA)
                                  mesh->n_cells_with_ghosts,
                                  mesh->n_i_faces,
                                  symmetric,
+                                 diag_block_size,
                                  mesh->i_face_cells,
                                  mesh->halo,
                                  mesh->i_face_numbering,
@@ -1841,6 +1878,7 @@ void CS_PROCF(clmlga, CLMLGA)
     cs_grid_get_info(g,
                      &grid_lv,
                      &symmetric,
+                     NULL,
                      &n_coarse_ranks,
                      &n_cells,
                      &n_cells_with_ghosts,
@@ -2233,6 +2271,7 @@ cs_multigrid_solve(const char          *var_name,
                    void                *aux_vectors)
 {
   int ii;
+  int db_size[4] = {1, 1, 1, 1};
 
   int cvg = 0;
   cs_lnum_t n_cells = 0;
@@ -2248,6 +2287,7 @@ cs_multigrid_solve(const char          *var_name,
   cs_grid_get_info(mg->grid_hierarchy[0],
                    NULL,
                    NULL,
+                   &db_size,
                    NULL,
                    &n_cells,
                    NULL,
@@ -2263,7 +2303,7 @@ cs_multigrid_solve(const char          *var_name,
 
   if (cs_sles_needs_solving(var_name,
                             _("Multigrid"),
-                            n_cells,
+                            n_cells*db_size[1],
                             verbosity,
                             r_norm,
                             residue,
@@ -2272,7 +2312,7 @@ cs_multigrid_solve(const char          *var_name,
     int cycle_id = 1;
 
     int *n_max_iter = NULL;
-    size_t  _aux_size = n_cells * 6;
+    size_t  _aux_size = n_cells * 6 * db_size[1];
     cs_real_t *_aux_vectors = aux_vectors;
 
     BFT_MALLOC(n_max_iter, mg->n_levels * 2, int);

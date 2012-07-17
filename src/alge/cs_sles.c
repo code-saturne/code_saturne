@@ -2724,8 +2724,6 @@ cs_sles_needs_solving(const char        *var_name,
  *   var_name          <-- Variable name
  *   solver_type       <-- Type of solver (PCG, Jacobi, ...)
  *   update_stats      <-- Automatic solver statistics indicator
- *   symmetric         <-- Symmetric coefficients indicator
- *   interleaved       <-- Indicates if matrix coefficients are interleaved
  *   a                 <-- Matrix
  *   poly_degree       <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode     <-- Halo update option for rotational periodicity

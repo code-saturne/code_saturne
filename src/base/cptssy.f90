@@ -188,6 +188,7 @@ do inbcou = 1, nbccou
         cp = cp0
       endif
 
+      !FIXME
       cecoef = volume(iel)/cp
       tsexp = (ctbexp(iloc) - ctbimp(iloc)*tfluid(iloc))* cecoef
       tsimp = ctbimp(iloc) * cecoef
