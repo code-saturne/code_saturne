@@ -41,6 +41,7 @@ pkginclude_HEADERS =
 noinst_LTLIBRARIES = libcsrayt.la
 libcsrayt_la_SOURCES = \
 raycli.f90 \
+raycll.f90 \
 raydak.f90 \
 raydir.f90 \
 raydom.f90 \

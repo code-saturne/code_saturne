@@ -425,18 +425,15 @@ endif
 return
 end subroutine
 
-
 !===============================================================================
-
 
 subroutine usray5 &
 !================
 
- ( nvar   , nscal  , iappel ,                                     &
-   itypfb , icodcl ,                                              &
+ ( nvar   , nscal  ,                                              &
+   itypfb ,                                                       &
    izfrdp ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefa  , coefb  ,                                              &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    tparoi , qincid , flunet , xlam   , epa    , eps     ,  ck   )
@@ -445,51 +442,7 @@ subroutine usray5 &
 !  Purpose:
 !  --------
 
-! User subroutine for input of radiative transfer parameters.
-
-! This subroutine is calle twice. The first time is for boundary conditions.
-! The second time is for the net radiation flux computation.
-
-
-!  1. Fisrt call (IAPPEL = 1)
-!  ==========================
-
-!    1.1 Boundary conditions fot the radiative intensity (DO model)
-!    --------------------------------------------------------------
-
-!       The array COFRUA store the intensity for each boundary faces,
-!         depending of the natur of the boundary (Dirichlet condition).
-!       The intensity of radiation is defined as the rate of emitted
-!         energy from unit surface area through unit solid angle.
-
-!       For example:
-
-
-! 1/ Gray wall: isotropic radiation field.
-!                                    4
-!                      eps.sig.tparoi         (1-eps).qincid
-!        coefap   =    --------------    +    --------------
-!                            pi                     pi
-!  wall intensity     wall emission           reflecting flux.
-
-!     (eps=1: black wall; eps=0: reflecting wall)
-
-
-! 2/ Free boundary: entering intensity is fixed to zero
-
-!        coefap   =   0.D0
-
-!    (if the user has more information, he can do something better)
-
-
-
-!    1.2 Boundary conditions fior the P-1 model
-!    ------------------------------------------
-
-
-
-!  2. Second call(IAPPEL = 2)
-!  ==========================
+! Compute the net radiation flux:
 
 !      The density of net radiation flux must calculated
 !        consistently with the boundary conditions of the intensity.
@@ -507,17 +460,7 @@ subroutine usray5 &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iappel           ! i  ! <-- ! current subroutine call number                 !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! icodcl           ! ia ! <-- ! boundary condition code                        !
-!  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
-!                  !    !     ! = 2  -> convective outelet                     !
-!                  !    !     ! = 3  -> flux density                           !
-!                  !    !     ! = 4  -> sliding wall and u.n=0 (velocity)      !
-!                  !    !     ! = 5  -> friction and u.n=0 (velocity)          !
-!                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
-!                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
-!                  !    !     !         inflowing possibly blocked             !
 ! izfrdp(nfabor)   ! ia ! --> ! boundary faces -> zone number                  !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -525,13 +468,6 @@ subroutine usray5 &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! rcodcl           ! ra ! --> ! boundary condition values                      !
-!                  !    !     ! rcodcl(1) = Dirichlet value                    !
-!                  !    !     ! rcodcl(2) = convective number                  !
-!                  !    !     ! rcodcl(3) = flux density value                 !
-!                  !    !     !  (negative for gain) in w/m2                   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! coefap, coefbp   ! ra ! --> ! boundary conditions for intensity or P-1 model !
 !  cofafp,cofbfp   !    !     !                                                !
 ! tparoi(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
@@ -541,7 +477,6 @@ subroutine usray5 &
 ! epap(nfabor)     ! ra ! --> ! thickness (m)                                  !
 ! epsp(nfabor)     ! ra ! --> ! emissivity (>0)                                !
 ! ck(ncelet)       ! ra ! <-- ! absoprtion coefficient                         !
-! ckmel(ncelet)    ! tr ! <-- ! coeff d'absorption du melange                  !
 !                  !    !     !   gaz-particules de charbon                    !
 !__________________!____!_____!________________________________________________!
 
@@ -586,9 +521,7 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
-double precision ckmel(ncelet)
 double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
 double precision tparoi(nfabor), qincid(nfabor)
@@ -599,7 +532,6 @@ double precision ck(ncelet)
 ! Local variables
 
 integer          ifac, iok
-double precision unspi, xit, distbf
 
 !===============================================================================
 
@@ -610,167 +542,9 @@ double precision unspi, xit, distbf
 ! Stop indicator (forgotten boundary faces)
 iok = 0
 
-unspi = 1.d0/pi
-
-!==============================================================================
-!  1. First call
-!  =============
 !===============================================================================
-
-if (iappel.eq.1) then
-
-!===============================================================================
-!  1.1 - Boundary conditions:
-!        DO model: COFRUA msut be filled with the intensity
-!        P-1 model: COFRUA and COFRUB msut be filled
-!      The provided examples are sufficient in most of cases.
-!===============================================================================
-
-
-
-
-!      A - DO model
-!      ^^^^^^^^^^^^
-
-
-
-
-  if (iirayo.eq.1) then
-
-    do ifac = 1, nfabor
-
-!      1.1.1 - Symmetry :
-!              ----------
-!          Reflecting boundary conditions ( EPS=0 )
-!          ----------------------------------------
-
-      if (itypfb(ifac).eq.isymet) then
-
-        icodcl(ifac, ilum) = 1
-        rcodcl(ifac, ilum, 1) = qincid(ifac) * unspi
-
-!      1.1.2 - Inlet/Outlet face: entering intensity fixed to zero
-!              (WARNING: the treatment is different from than of P-1 model)
-!          -------------------------------------------------
-
-      else if (itypfb(ifac).eq.ientre                             &
-          .or. itypfb(ifac).eq.isolib) then
-
-        icodcl(ifac, ilum) = 1
-        rcodcl(ifac, ilum, 1) = epzero
-
-!      1.1.3. - Wall boundary face: calculaed intensity
-!               ---------------------------------------
-
-      else if (itypfb(ifac).eq.iparoi                             &
-          .or. itypfb(ifac).eq.iparug) then
-
-        icodcl(ifac, ilum) = 1
-        rcodcl(ifac, ilum, 1) = eps(ifac) * stephn*(tparoi(ifac)**4)*unspi  &
-                          + (1.d0-eps(ifac))* qincid(ifac)*unspi
-
-      else
-
-!      1.1.4 - Stop if there are forgotten faces
-!              ---------------------------------
-
-!           ==============================================
-
-!             Don't skip this test
-
-!           ==============================================
-
-        write (nfecra,1000) ifac,izfrdp(ifac),itypfb(ifac)
-        iok = iok + 1
-      endif
-
-    enddo
-
-
-
-
-!   B - P-1 model
-!   ^^^^^^^^^^^^^
-
-
-
-
-
-  else if (iirayo.eq.2) then
-
-    do ifac = 1, nfabor
-
-!      1.1.1 - Symmetry or reflecting wall (EPS = 0) :
-!              zero flux
-!              ----------------------------------------
-
-      if (itypfb(ifac).eq.isymet.or.                             &
-        ((itypfb(ifac).eq.iparoi.or.                             &
-          itypfb(ifac).eq.iparug).and.eps(ifac).eq.0d0)) then
-
-        icodcl(ifac, ilum) = 3
-        rcodcl(ifac, ilum, 1) = 0.d0
-
-!      1.1.2 - Inlet/Outlet faces: zero flux
-!              (WARNING: the treatment is different from than of DO model)
-!              ----------------------------------------------------------
-
-      else if (itypfb(ifac).eq.ientre                             &
-          .or. itypfb(ifac).eq.isolib) then
-
-        icodcl(ifac, ilum) = 3
-        rcodcl(ifac, ilum, 1) = 0.d0
-
-!      1.1.3 - Wall boundary faces
-!              -------------------
-
-      else if (itypfb(ifac).eq.iparoi .or.                        &
-               itypfb(ifac).eq.iparug ) then
-
-        distbf = distb(ifac)
-
-        xit = 1.5d0 *distbf *ck(ifabor(ifac))                     &
-            * (2.d0 /(2.d0-eps(ifac)) -1.d0)
-
-        icodcl(ifac, ilum) = 2
-        rcodcl(ifac, ilum, 1) = tparoi(ifac)**4
-        rcodcl(ifac, ilum, 2) = xit
-
-      else
-
-!      1.1.4 - Stop if there are forgotten faces
-!              ---------------------------------
-
-!           ==============================================
-
-!             Don't skip this test
-
-!           ==============================================
-
-        write (nfecra,1000) ifac,izfrdp(ifac),itypfb(ifac)
-      iok = iok + 1
-    endif
-
-  enddo
-
-  endif
-
-  if (iok.ne.0) then
-    write (nfecra,1100)
-    call csexit (1)
-    !==========
-  endif
-
-!===============================================================================
-!  2 - Second call
-!  ================
-!===============================================================================
-
-else if (iappel.eq.2) then
-
-!===============================================================================
-!  2.1 - Net flux dendity for the boundary faces
-!      The provided examples are sufficient in most of cases.
+! 1 - Net flux dendity for the boundary faces
+!     The provided examples are sufficient in most of cases.
 !===============================================================================
 
 !    If the boundary conditions given above have been modified
@@ -782,105 +556,48 @@ else if (iappel.eq.2) then
 !      energy. Therefore if a wall heats the fluid by radiative transfer, the
 !      net flux is negative
 
+do ifac = 1,nfabor
 
-  do ifac = 1,nfabor
+  ! Wall faces
+  if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
 
-    if (itypfb(ifac).eq.iparoi .or.                               &
-        itypfb(ifac).eq.iparug) then
+    flunet(ifac) = eps(ifac) *(qincid(ifac) - stephn*tparoi(ifac)**4)
 
-!      2.1.1 - Wall faces
-!              ----------
+  ! Symmetry
+  else if (itypfb(ifac).eq.isymet) then
 
-      flunet(ifac) =                                              &
-      eps(ifac) *(qincid(ifac) - stephn*tparoi(ifac)**4)
+    flunet(ifac) = zero
 
+  ! Inlet/Outlet
+  else if (itypfb(ifac).eq.ientre .or. itypfb(ifac).eq.isolib) then
 
-!      2.1.2 - Symmetry :
-!              ----------
-
-    else if (itypfb(ifac).eq.isymet) then
-
-      flunet(ifac) = zero
-
-
-!      2.1.3 - Inlet/Outlet
-!              ------------
-
-    else if (itypfb(ifac).eq.ientre                               &
-        .or. itypfb(ifac).eq.isolib) then
-
-      if (iirayo.eq.1) then
-
+    if (iirayo.eq.1) then
       flunet(ifac) = qincid(ifac) -pi*coefap(ifac)
-
-      else if (iirayo.eq.2) then
-
-        flunet(ifac)= 0.d0
-
-      endif
-
-
-!      2.1.4 - Stop if there are forgotten faces
-!              ---------------------------------
-    else
-
-!           ==============================================
-
-!             Don't skip this test
-
-!           ==============================================
-
-      write (nfecra,2000) ifac,izfrdp(ifac),itypfb(ifac)
-      iok = iok + 1
-
+    else if (iirayo.eq.2) then
+      flunet(ifac)= 0.d0
     endif
 
-  enddo
+  ! Stop if there are forgotten faces
+  else
 
+    write (nfecra,2000) ifac,izfrdp(ifac),itypfb(ifac)
+    iok = iok + 1
 
-  if (iok.ne.0) then
-    write (nfecra,2100)
-    call csexit (1)
-    !==========
   endif
 
+enddo
 
+
+if (iok.ne.0) then
+  write (nfecra,2100)
+  call csexit (1)
 endif
 
 ! -------
-! FORMATS
+! Formats
 ! -------
 
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: Radiative transfer (usray5)                    ',/,&
-'@    ========                                                ',/,&
-'@              Boundary conditions non inquiries             ',/,&
-'@                                                            ',/,&
-'@    Face = ',I10   ,' Zone = ',I10   ,' Nature = ',I10         )
-
- 1100 format(                                                           &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: Radiative transfer (usray5)                    ',/,&
-'@    ========                                                ',/,&
-'@    Boundary conditions are unknown for some faces          ',/,&
-'@                                                            ',/,&
-'@    The calculation stops.                                  ',/,&
-'@                                                            ',/,&
-'@    Please verify subroutine usray5.                        ',/, &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 2000 format(                                                           &
+ 2000 format( &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -892,7 +609,7 @@ endif
 '@                                                            ',/,&
 '@    Face = ',I10   ,' Zone = ',I10   ,' Nature = ',I10         )
 
- 2100 format(                                                           &
+ 2100 format( &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -904,11 +621,13 @@ endif
 '@                                                            ',/,&
 '@    The calculation stops.                                  ',/,&
 '@                                                            ',/,&
-'@    Please verify subroutine usray5.                        ',/, &
+'@    Please verify subroutine usray5.                        ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-
+!----
+! End
+!----
 
 end subroutine

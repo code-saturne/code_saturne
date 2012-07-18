@@ -126,7 +126,6 @@ integer          iappel
 integer          ifac   , iel    , iok    , izone
 integer          inc    , iccocg , iwarnp , imligp , nswrgp
 integer          mode   , icla   , ipcla  , ivar0
-integer          icllum , iclluf
 integer          ivart
 integer          idverl
 integer          iflux(nozrdm)
@@ -143,6 +142,7 @@ double precision, allocatable, dimension(:) :: ckmel
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:) :: tempk
 double precision, allocatable, dimension(:) :: coefap, coefbp
+double precision, allocatable, dimension(:) :: cofafp, cofbfp
 double precision, allocatable, dimension(:) :: flurds, flurdb
 
 
@@ -161,6 +161,7 @@ allocate(smbrs(ncelet), rovsdt(ncelet))
 ! Allocate specific arrays for the radiative transfert module
 allocate(tempk(ncelet,nrphas))
 allocate(coefap(nfabor), coefbp(nfabor))
+allocate(cofafp(nfabor), cofbfp(nfabor))
 allocate(flurds(nfac), flurdb(nfabor))
 
 ! Allocate work arrays
@@ -170,10 +171,6 @@ allocate(ckmel(ncelet))
 !===============================================================================
 ! 1. INITIALISATIONS GENERALES
 !===============================================================================
-
-! Boundary conditions on luminance
-icllum = iclrtp(ilum, icoef)
-iclluf = iclrtp(ilum, icoeff)
 
 !---> Number of passes
 ipadom = ipadom + 1
@@ -351,55 +348,6 @@ endif
 if (aa.le.epzero) then
   write(nfecra,1100)
   idverl = -1
-endif
-
-!=============================================================================
-! 3.2 Boundary conditions for eqations Dom and P-1 approximation
-!     filling of BCs of the luminance
-!=============================================================================
-
-!--> Initialization to a non-admissible value for testing after usray5
-do ifac = 1, nfabor
-  rcodcl(ifac,ilum,1) = -grand
-enddo
-
-iappel = 1
-
-call usray5 &
-!==========
-( nvar   , nscal  , iappel ,                                     &
-  itypfb , icodcl ,                                              &
-  izfrad ,                                                       &
-  dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-  coefa  , coefb  ,                                              &
-  coefa(1,icllum) , coefb(1,icllum) ,                            &
-  coefa(1,iclluf) , coefb(1,iclluf) ,                            &
-  propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
-  propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ixlam))  ,          &
-  propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps))   ,          &
-  propce(1,ipproc(icak(1)))    )
-
-!---> Check luminance boundary conditions arrays
-
-!     Attention : dans le cas de l'approx P-1 la valeur de rcodcl(1) peut
-!     etre grande (de l'ordre de tparoi**4), d'ou la valeur de cofrmn
-
-iok = 0
-xlimit = -grand*0.1d0
-! GRAND n'est pas assez grand...
-cofrmn = rinfin
-
-do ifac = 1, nfabor
-  if (rcodcl(ifac,ilum,1).le.xlimit) then
-    iok = iok + 1
-    cofrmn = min(cofrmn, rcodcl(ifac,ilum,1))
-    write(nfecra,3000)ifac,izfrad(ifac),itypfb(ifac)
-  endif
-enddo
-
-if (iok.ne.0) then
-  write(nfecra,3100) cofrmn
-  call csexit (1)
 endif
 
 !=============================================================================
@@ -631,50 +579,28 @@ if (iirayo.eq.2) then
   endif
 
   ! Update Boundary condiction coefficients
-  do ifac = 1, nfabor
 
-    iel = ifabor(ifac)
-    hint = 1.d0 / (ckmel(iel)*distb(ifac))
+  call raycll &
+  !==========
+  ( nvar   , nscal  ,                                              &
+    itypfb ,                                                       &
+    izfrad ,                                                       &
+    rtp    , rtpa   , propce , propfa , propfb ,                   &
+    coefap , coefbp ,                                              &
+    cofafp , cofbfp ,                                              &
+    propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
+    propfb(1,ipprob(ieps))   ,                                     &
+    propce(1,ipproc(icak(1))), ckmel )
 
-    ! Neumann Boundary Condition
-    !---------------------------
-
-    if (icodcl(ifac,ilum).eq.3) then
-
-      qimp = rcodcl(ifac,ilum,3)
-
-      call set_neumann_scalar &
-           !==================
-         ( coefa(ifac,icllum), coefa(ifac,iclluf),             &
-           coefb(ifac,icllum), coefb(ifac,iclluf),             &
-           qimp              , hint )
-
-
-    ! Convective Boundary Condition
-    !------------------------------
-
-    elseif (icodcl(ifac,ilum).eq.2) then
-
-      pimp = rcodcl(ifac,ilum,1)
-      xit = rcodcl(ifac,ilum,2)
-
-      call set_convective_outlet_scalar &
-           !==================
-         ( coefa(ifac,icllum), coefa(ifac,iclluf),             &
-           coefb(ifac,icllum), coefb(ifac,iclluf),             &
-           pimp              , xit               , hint )
-
-    endif
-
-  enddo
+  ! Solving
 
   call raypun &
   !==========
 ( nvar   , nscal  ,                                              &
   itypfb ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-  coefa(1,icllum) , coefb(1,icllum) ,                            &
-  coefa(1,iclluf) , coefb(1,iclluf) ,                            &
+  coefap , coefbp ,                                              &
+  cofafp , cofbfp ,                                              &
   flurds , flurdb ,                                              &
   viscf  , viscb  ,                                              &
   smbrs  , rovsdt ,                                              &
@@ -753,32 +679,28 @@ else if (iirayo.eq.1) then
   endif
 
   ! Update Boundary condiction coefficients
-  do ifac = 1, nfabor
 
-    ! Dirichlet Boundary Conditions
-    !------------------------------
+  call raycll &
+  !==========
+  ( nvar   , nscal  ,                                              &
+    itypfb ,                                                       &
+    izfrad ,                                                       &
+    rtp    , rtpa   , propce , propfa , propfb ,                   &
+    coefap , coefbp ,                                              &
+    cofafp , cofbfp ,                                              &
+    propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
+    propfb(1,ipprob(ieps))   ,                                     &
+    propce(1,ipproc(icak(1))), ckmel )
 
-    if (icodcl(ifac,ilum).eq.1) then
-
-      hint = 0.d0
-      pimp = rcodcl(ifac,ilum,1)
-
-      call set_dirichlet_scalar &
-           !====================
-         ( coefa(ifac,icllum), coefa(ifac,iclluf),             &
-           coefb(ifac,icllum), coefb(ifac,iclluf),             &
-           pimp              , hint              , rinfin )
-    endif
-
-  enddo
+  ! Solving
 
   call raysol &
   !==========
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa(1,icllum) , coefb(1,icllum) ,                            &
-   coefa(1,iclluf) , coefb(1,iclluf) ,                            &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
@@ -815,18 +737,15 @@ do ifac = 1,nfabor
   propfb(ifac,ipprob(ifnet)) = -grand
 enddo
 
-iappel = 2
-
 !---> Reading of User datas
 call usray5 &
 !==========
-( nvar   , nscal  , iappel ,                                     &
-  itypfb , icodcl ,                                              &
+( nvar   , nscal  ,                                              &
+  itypfb ,                                                       &
   izfrad ,                                                       &
-  dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-  coefa  , coefb  ,                                              &
-  coefa(1,icllum) , coefb(1,icllum) ,                            &
-  coefa(1,iclluf) , coefb(1,iclluf) ,                            &
+  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  coefap , coefbp ,                                              &
+  cofafp , cofbfp ,                                              &
   propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
   propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ixlam))  ,          &
   propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps))   ,          &
@@ -1050,7 +969,7 @@ endif
 ! 7.2 Explicit conservative radiative source termes
 !===============================================================================
 
-! coefap and coefbp are Boundary conditions on the divergence
+! coefap and coefbp are NOW Boundary conditions on the divergence
 
 if (idverl.eq.1 .or. idverl.eq.2) then
 
@@ -1222,6 +1141,7 @@ deallocate(dcpp)
 deallocate(ckmel)
 deallocate(tempk)
 deallocate(coefap, coefbp)
+deallocate(cofafp, cofbfp)
 deallocate(flurds, flurdb)
 
 !--------
@@ -1259,57 +1179,6 @@ deallocate(flurds, flurdb)
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 3000 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT                                 ',/,&
-'@    =========                                               ',/,&
-'@                CONDITIONS AUX LIMITES MAL RENSEIGNEES      ',/,&
-'@                                                            ',/,&
-'@    Face = ',I10   ,' Zone = ',I10   ,' Type = ',I10           )
- 3100 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT                                 ',/,&
-'@    =========                                               ',/,&
-'@    LES COEFFICIENTS DE CONDITIONS AUX LIMITES (RCODCL)     ',/,&
-'@    NE SONT PAS RENSEIGNES POUR CERTAINES                   ',/,&
-'@        FACES DE BORD                                       ',/,&
-'@                                                            ',/,&
-'@        Valeur minimale RCODCL ',E14.5                       ,/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Verifier le codage de usray5.                           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 3200 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT                                 ',/,&
-'@    =========                                               ',/,&
-'@    LES COEFFICIENTS DE CONDITIONS AUX LIMITES (COFRUB)     ',/,&
-'@    NE SONT PAS RENSEIGNES POUR CERTAINES                   ',/,&
-'@        FACES DE BORD                                       ',/,&
-'@                                                            ',/,&
-'@        Valeur minimale COFRUB ',E14.5                       ,/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Verifier le codage de usray5.                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
