@@ -99,12 +99,6 @@
 				<min_value>0</min_value>
 				<max_value>1</max_value>
 			</scalar>
-			<scalar label="Var_AIR" name="Var_AIR" type="model">
-				<flux_reconstruction status="off"/>
-				<rhs_reconstruction>1</rhs_reconstruction>
-				<min_value>0</min_value>
-				<max_value>1</max_value>
-			</scalar>
 			<property label="Temp_GAZ" name="Temp_GAZ"/>
 			<property label="ROM_GAZ" name="ROM_GAZ"/>
 			<property label="YM_CHx1m" name="YM_CHx1m"/>

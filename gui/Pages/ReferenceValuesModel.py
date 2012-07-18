@@ -330,7 +330,6 @@ class ReferenceValuesTestCase(ModelTest):
                     <scalar label="Fr_MV101" name="Fr_MV101" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="Fr_MV201" name="Fr_MV201" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="Fr_HET" name="Fr_HET" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Var_AIR" name="Var_AIR" type="model"><flux_reconstruction status="off"/></scalar>
                     <property label="Temp_GAZ" name="Temp_GAZ"/>
                     <property label="ROM_GAZ" name="ROM_GAZ"/>
                     <property label="YM_CHx1m" name="YM_CHx1m"/>

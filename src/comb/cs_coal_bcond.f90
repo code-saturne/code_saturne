@@ -627,9 +627,6 @@ do ifac = 1, nfabor
 ! ------ CL pour X1.Variance
     rcodcl(ifac,isca(ifvp2m),1)   = zero
 
-! ------ CL pour X1.Variance
-    rcodcl(ifac,isca(if4p2m),1)   = zero
-
 ! ------ CL pour X1.YCO2
     if ( ieqco2 .eq. 1 ) then
       ioxy =  inmoxy(izone)

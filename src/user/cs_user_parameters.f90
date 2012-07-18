@@ -3690,13 +3690,6 @@ if ( ihtco2 .eq. 1) then
   ihisvr(ipp,1)= -1
 endif
 
-!     - Variance of 4 mixture fraction
-!       (oxidisers)
-ipp = ipprtp(isca(if4p2m))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
 !     - Mean of 5 mixture fraction
 !       (water vapor from drying)
 if (ippmod(icp3pl) .eq. 1) then
@@ -4029,12 +4022,6 @@ enddo
 !     - Moyenne du traceur 3 (representatif du C libere sous forme de CO
 !       lors de la combustion heterogene)
 ipp = ipprtp(isca(if3m))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-!     - Variance associe au traceur 4 (representatif de l'air)
-ipp = ipprtp(isca(if4p2m))
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1

@@ -298,8 +298,6 @@ if (isuite.eq.0) then
       rtp(iel,isca(if3mc2)) = zero
     endif
 
-    rtp(iel,isca(if4p2m)) = zero
-
     if ( ippmod(icp3pl) .eq. 1 ) then
       rtp(iel,isca(if5m)) = zero
     endif

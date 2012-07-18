@@ -160,7 +160,7 @@ if ( ippmod(iccoal).ge.0 ) then
 ! phase gaz      : ( F1 , F2 ) par charbon
 !                  F4 , F5 optionnel en fonction de Noxyd
 !                  F7 , Variance
-  nscapp = 1 + 4*nclacp + 2*ncharb + (noxyd-1) + 3
+  nscapp = 1 + 4*nclacp + 2*ncharb + (noxyd-1) + 2
 
   if ( ippmod(iccoal) .eq. 1 ) then
 !   humidite : f6

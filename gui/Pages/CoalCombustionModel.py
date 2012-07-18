@@ -216,7 +216,6 @@ class CoalCombustionModel(Variables, Model):
         list.append("FR_CO2")
 
         list.append("Var_F1F2")
-        list.append("Var_AIR")
 
         return list
 
@@ -274,7 +273,15 @@ class CoalCombustionModel(Variables, Model):
         classesNumber = self.getClassesNumber()
 
         list = ["Temp_GAZ", "ROM_GAZ", "YM_CHx1m", "YM_CHx2m",
-                "YM_CO", "YM_O2", "YM_CO2", "YM_H2O", "YM_N2", "XM"]
+                "YM_CO", "YM_O2", "YM_CO2", "YM_H2O", "YM_N2",
+                "YM_H2S", "YM_H2", "YM_HCN", "YM_NH3", "YM_SO2",
+                "XM", "Bilan_C", "Bilan_O", "Bilan_H"]
+
+        if self.getCO2KineticsStatus() == 'on':
+            self.ModelProperties.append("Ga_HET_CO2")
+
+        if self.getH2OKineticsStatus() == 'on':
+            self.ModelProperties.append("Ga_HET_H2O")
 
         baseNames = self.ModelProperties
 
@@ -285,11 +292,10 @@ class CoalCombustionModel(Variables, Model):
 
         list.append("IntLuminance_4PI")
 
-        if self.getCO2KineticsStatus() == 'on':
-            self.ModelProperties.append("Ga_HET_CO2")
-
-        if self.getH2OKineticsStatus() == 'on':
-            self.ModelProperties.append("Ga_HET_H2O")
+        if self.getNOxFormationStatus() == "on":
+            list.append("EXP1")
+            list.append("EXP2")
+            list.append("EXP3")
 
         return list
 

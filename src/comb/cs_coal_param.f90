@@ -373,12 +373,6 @@ if (iihmpr.ne.1) then
     ihisvr(ipp,1)= -1
   endif
 !
-  ipp = ipprtp(isca(if4p2m))
-  nomvar(IPP)  = 'Var_AIR'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-!
   ipp = ipprtp(isca(ifvp2m))
   NOMVAR(IPP)  = 'Var_F1F2'
   ichrvr(ipp)  = 1
