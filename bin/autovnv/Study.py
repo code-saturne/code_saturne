@@ -750,7 +750,7 @@ class Studies(object):
                             n3 = self.__parser.getChilds(case.node, "data")
                             n4 = self.__parser.getChilds(case.node, "probe")
                             n5 = self.__parser.getChilds(case.node, "resu")
-                            n5 = self.__parser.getChilds(case.node, "input")
+                            n6 = self.__parser.getChilds(case.node, "input")
                             for n in n1 + n2 + n3 + n4 + n5 + n6:
                                 if self.__parser.getAttribute(n, "dest") == "":
                                     self.__parser.setAttribute(n, "dest", run_id)
