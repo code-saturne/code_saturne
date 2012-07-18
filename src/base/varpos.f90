@@ -468,12 +468,6 @@ if(ipass.eq.2) then
     iwma = ivar
   endif
 
-  ! --- Luminance
-  if (iirayo.gt.0) then
-    ivar = ivar + 1
-    ilum = ivar
-  endif
-
 ! --- Scalaires
   if(nscapp.ge.1) then
     do jj = 1, nscapp

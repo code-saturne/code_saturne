@@ -206,11 +206,6 @@ if (iale.eq.1) then
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
 endif
 
-if (iirayo.gt.0) then
-  ivar = ilum
-  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-endif
-
 !     Le choix fait dans VARPOS indique qu'on ne s'interessera
 !       qu'aux proprietes au centre des cellules (pas au flux
 !       de masse en particulier, ni a la masse volumique au bord)

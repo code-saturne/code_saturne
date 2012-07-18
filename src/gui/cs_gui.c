@@ -2030,9 +2030,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                                 const int *const ivma,
                                 const int *const iwma,
                                 const int *const isca,
-                                const int *const iscapp,
-                                const int *const iirayo,
-                                const int *const ilum)
+                                const int *const iscapp)
 {
   int n = 0;
   int i, j, k;
@@ -2213,17 +2211,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     }
   }
 
-  /* 4) luminance for radiative module */
-
-  if (*iirayo > 0) {
-    cs_glob_var->rtp[n] = *ilum   -1;
-    BFT_MALLOC(cs_glob_var->name[n], strlen("radiat_luminance")+1, char);
-    strcpy(cs_glob_var->name[n], "radiat_luminance");
-    BFT_MALLOC(cs_glob_var->head[n], strlen("radiative")+1, char);
-    strcpy(cs_glob_var->head[n++], "radiative");
-  }
-
-  /* 5) update vars->type for variables */
+  /* 4) update vars->type for variables */
 
   k = cs_glob_var->nvar -cs_glob_var->nscapp -cs_glob_var->nscaus;
   for (i=0; i < k; i++) {
@@ -2231,7 +2219,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     strcpy(cs_glob_var->type[i], "variable");
   }
 
-  /* 6) user scalars */
+  /* 5) user scalars */
 
   for (i=0; i < cs_glob_var->nscaus; i++) {
     cs_glob_var->rtp[n++] = isca[i] -1;
@@ -2248,7 +2236,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     strcpy(cs_glob_var->head[k+i], "additional_scalar");
   }
 
-  /* 7) model scalars */
+  /* 6) model scalars */
 
   k = cs_glob_var->nvar -cs_glob_var->nscaus - cs_glob_var->nscapp;
   for (i=0; i < cs_glob_var->nscapp; i++) {
@@ -2265,7 +2253,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     strcpy(cs_glob_var->head[k+j], cs_glob_var->model);
   }
 
-  /* 8) check for errors */
+  /* 7) check for errors */
 
   if (n != *nvar)
     bft_error(__FILE__, __LINE__, 0,

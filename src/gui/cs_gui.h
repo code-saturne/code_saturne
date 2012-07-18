@@ -217,9 +217,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                                 const int *const ivma,
                                 const int *const iwma,
                                 const int *const isca,
-                                const int *const iscapp,
-                                const int *const iirayo,
-                                const int *const ilum);
+                                const int *const iscapp);
 
 /*----------------------------------------------------------------------------
  * Restart parameters.

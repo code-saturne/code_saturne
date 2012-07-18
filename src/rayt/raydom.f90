@@ -725,7 +725,6 @@ endif
 
 do iel = 1,ncel
   propce(iel,ipproc(ilumin)) = propce(iel,ipproc(itsre(1)))
-  rtp(iel,ilum) = propce(iel,ipproc(itsre(1)))
 enddo
 
 !===============================================================================

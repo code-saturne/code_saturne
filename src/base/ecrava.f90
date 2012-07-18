@@ -448,9 +448,6 @@ if (iale.eq.1) then
   nomrtp(ivma)='vit_maillage_v_ce'
   nomrtp(iwma)='vit_maillage_w_ce'
 endif
-if (iirayo.gt.0) then
-  nomrtp(ilum)='luminance_ce_phase'//cphase
-endif
 
 !     Dans le cas ou il y a plusieurs phases,
 !       on ne veut ecrire la pression qu'une seule fois
@@ -880,10 +877,6 @@ if (iecaux.eq.1) then
     nomflu(ivma)='fm_vit_maill_v'
     nomflu(iwma)='fm_vit_maill_w'
   endif
-  if (iirayo.gt.0) then
-    nomrtp(ilum)='fm_luminance_phase'//cphase
-  endif
-
 
   do ivar = 1, nvar
 
@@ -979,10 +972,6 @@ if (iecaux.eq.1) then
     nomflu(ivma)='fm_a_vit_maill_v'
     nomflu(iwma)='fm_a_vit_maill_w'
   endif
-  if (iirayo.gt.0) then
-    nomrtp(ilum)='fm_a_luminance_phase'//cphase
-  endif
-
 
   do ivar = 1, nvar
 
@@ -1088,9 +1077,6 @@ if (iecaux.eq.1) then
     nomcli(iuma)='_vit_maillage_u'
     nomcli(ivma)='_vit_maillage_v'
     nomcli(iwma)='_vit_maillage_w'
-  endif
-  if (iirayo.gt.0) then
-    nomrtp(ilum)='_luminance_phase'//cphase
   endif
 
 !     Dans le cas ou il y a plusieurs phases,

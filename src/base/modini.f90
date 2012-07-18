@@ -758,20 +758,6 @@ if (iale.eq.1) then
   endif
 endif
 
-! Luminance
-if (iirayo.gt.0) then
-  if (abs(thetav(ilum)+999.d0).gt.epzero) then
-    write(nfecra,1031) 'variable luminance','THETAV'
-    iok = iok + 1
-  elseif (ischtp.eq.1) then
-    thetav(ilum) = 1.d0
-  elseif (ischtp.eq.2) then
-    !     pour le moment, on ne peut pas passer par ici (cf varpos)
-    thetav(ilum) = 0.5d0
-  endif
-endif
-
-
 ! ---> ISSTPC
 !        Si l'utilisateur n'a rien specifie pour le test de pente (=-999),
 !        On impose 1 (ie sans) pour la vitesse en LES
