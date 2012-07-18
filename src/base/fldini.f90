@@ -97,6 +97,10 @@ character*80     fname(nvppmx)
 ! 1. Initialisation
 !===============================================================================
 
+! The itycat variable is used to define field categories. It is used in Fortran
+! code with hard-coded values, but in the C API, those values are based on
+! (much clearer) category mask definitions in cs_field.h.
+
 iinten = 0 ! most variables are intensive, not extensive
 iexten = 1 ! most variables are intensive, not extensive
 itycat = 4 ! for variables
@@ -339,7 +343,7 @@ do iprop = 1, nproce
   if (iapro(iprop).eq.0) then
     itycat = 8
   else
-    itycat = 8 + 16
+    itycat = 8 + 32
   endif
   call flddef(name, iinten, itycat, ityloc, idim1, ilved, inoprv, iprpfl(iprop))
   !==========
