@@ -2437,14 +2437,12 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
                        int               verbosity,
                        cs_lnum_t        *f_c_cell)
 {
-  cs_lnum_t ii, jj, face_id, c_face, face_f;
-  int i;
+  cs_lnum_t ii, jj, kk, face_id, c_face, face_f;
   cs_lnum_t n_faces;
   cs_real_t f_xa1, f_xa2;
   cs_real_t trace1, trace2;
 
   int isym = 2;
-  int *db_size = fine_grid->diag_block_size;
   int ncoarse = 8, npass_max = 10, inc_nei = 1;
   int _max_aggregation = 1, npass = 0;
 
@@ -2467,6 +2465,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
 
   cs_real_t *aggr_crit = NULL;
 
+  const int *db_size = fine_grid->diag_block_size;
   const cs_lnum_t *f_face_cells = fine_grid->face_cell;
   const cs_real_t *f_da = fine_grid->da;
   const cs_real_t *f_xa = fine_grid->xa;
@@ -2574,9 +2573,9 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
 
         trace1 = 0.;
         trace2 = 0.;
-        for (i = 0; i < db_size[0]; i++) {
-          trace1 += f_da[ii*db_size[3] + db_size[2]*i + i] ;
-          trace2 += f_da[jj*db_size[3] + db_size[2]*i + i] ;;
+        for (kk = 0; kk < db_size[0]; kk++) {
+          trace1 += f_da[ii*db_size[3] + db_size[2]*kk + kk];
+          trace2 += f_da[jj*db_size[3] + db_size[2]*kk + kk];
         }
         aggr_crit[face_id] =   (trace1/c_cardinality[ii])
                              * (trace2/c_cardinality[jj])
@@ -2835,13 +2834,11 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
 {
   int interp;
 
-  cs_lnum_t ic, jc, ii, jj, c_face, face_id;
-  int i, j;
+  cs_lnum_t ic, jc, ii, jj, kk, c_face, face_id;
 
   cs_real_t dsigjg, dsxaij, agij;
 
   int isym = 2;
-  int *db_size = fine_grid->diag_block_size;
 
   cs_lnum_t f_n_cells = fine_grid->n_cells;
   cs_lnum_t f_n_cells_ext = fine_grid->n_cells_ext;
@@ -2867,6 +2864,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
   cs_real_t *c_xa = coarse_grid->_xa;
 
   cs_real_t *w1 = NULL;
+
+  const int *db_size = fine_grid->diag_block_size;
 
   const cs_lnum_t *f_face_cell = fine_grid->face_cell;
   const cs_lnum_t *c_face_cell = coarse_grid->face_cell;
@@ -2932,36 +2931,39 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
 
   /* Initialize non differential fine grid term saved in w1 */
 
-# pragma omp parallel for if(f_n_cells > THR_MIN)
-  for (ii = 0; ii < f_n_cells; ii++)
-    for (i = 0; i < db_size[0]; i++)
-      for (j = 0; j < db_size[0]; j++)
-        w1[ii*db_size[3] + db_size[2]*i + j] =
-          f_da[ii*db_size[3] + db_size[2]*i + j];
-
+  if (db_size[0] == 1) {
+#   pragma omp parallel for if(f_n_cells > THR_MIN)
+    for (ii = 0; ii < f_n_cells; ii++)
+      w1[ii] = f_da[ii];
+  }
+  else {
+#   pragma omp parallel for private(jj, kk) if(f_n_cells > THR_MIN)
+    for (ii = 0; ii < f_n_cells; ii++) {
+      for (jj = 0; jj < db_size[0]; jj++) {
+        for (kk = 0; kk < db_size[0]; kk++)
+          w1[ii*db_size[3] + db_size[2]*jj + kk]
+            = f_da[ii*db_size[3] + db_size[2]*jj + kk];
+      }
+    }
+  }
 # pragma omp parallel for if(f_n_cells_ext - f_n_cells > THR_MIN)
-  for (ii = f_n_cells; ii < f_n_cells_ext; ii++)
-    for (i = 0; i < db_size[0]; i++)
-      for (j = 0; j < db_size[0]; j++)
-        w1[ii*db_size[3] + db_size[2]*i + j] = 0.;
+  for (ii = f_n_cells*db_size[3]; ii < f_n_cells_ext*db_size[3]; ii++)
+    w1[ii] = 0.;
 
   for (face_id = 0; face_id < f_n_faces; face_id++) {
     ii = f_face_cell[2*face_id] -1;
     jj = f_face_cell[2*face_id + 1] -1;
-
-    for (i = 0; i < db_size[0]; i++) {
-      w1[ii*db_size[3] + db_size[2]*i + i] += f_xa[face_id*isym];
-      w1[jj*db_size[3] + db_size[2]*i + i] += f_xa[(face_id +1)*isym -1];
+    for (kk = 0; kk < db_size[0]; kk++) {
+      w1[ii*db_size[3] + db_size[2]*kk + kk] += f_xa[face_id*isym];
+      w1[jj*db_size[3] + db_size[2]*kk + kk] += f_xa[(face_id +1)*isym -1];
     }
   }
 
   /* Initialize coarse matrix storage on (c_da, c_xa) */
 
 # pragma omp parallel for if(c_n_cells_ext > THR_MIN)
-  for (ic = 0; ic < c_n_cells_ext; ic++)
-    for (i = 0; i < db_size[0]; i++)
-      for (j = 0; j < db_size[0]; j++)
-        c_da[ic*db_size[3] + db_size[2]*i + j] = 0.;
+  for (ic = 0; ic < c_n_cells_ext*db_size[3]; ic++)
+    c_da[ic] = 0.;
 
   /* Extradiagonal terms */
   /* (symmetric matrixes for now, even with non symmetric storage isym = 2) */
@@ -3063,21 +3065,29 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
 
   /* Diagonal term */
 
-  for (ii = 0; ii < f_n_cells; ii++) {
-    ic = c_coarse_cell[ii] -1;
-    for (i = 0; i < db_size[0]; i++)
-      for (j = 0; j < db_size[0]; j++)
-        c_da[ic*db_size[3] + db_size[2]*i + j] +=
-           w1[ii*db_size[3] + db_size[2]*i + j];
+  if (db_size[0] == 1) {
+    for (ii = 0; ii < f_n_cells; ii++) {
+      ic = c_coarse_cell[ii] -1;
+      c_da[ic] += w1[ii];
+    }
+  }
+  else {
+    for (ii = 0; ii < f_n_cells; ii++) {
+      ic = c_coarse_cell[ii] -1;
+      for (jj = 0; jj < db_size[0]; jj++) {
+        for (kk = 0; kk < db_size[0]; kk++)
+          c_da[ic*db_size[3] + db_size[2]*jj + kk]
+            += w1[ii*db_size[3] + db_size[2]*jj + kk];
+      }
+    }
   }
 
   for (c_face = 0; c_face < c_n_faces; c_face++) {
     ic = c_face_cell[2*c_face] -1;
     jc = c_face_cell[2*c_face + 1] -1;
-
-    for (i = 0; i < db_size[0]; i++) {
-      c_da[ic*db_size[3] + db_size[2]*i + i] -= c_xa[c_face*isym];
-      c_da[jc*db_size[3] + db_size[2]*i + i] -= c_xa[(c_face +1)*isym -1];
+    for (kk = 0; kk < db_size[0]; kk++) {
+      c_da[ic*db_size[3] + db_size[2]*kk + kk] -= c_xa[c_face*isym];
+      c_da[jc*db_size[3] + db_size[2]*kk + kk] -= c_xa[(c_face +1)*isym -1];
     }
   }
 
@@ -3190,43 +3200,53 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
 
     /* Evaluate fine and coarse grids diagonal dominance */
 
-    for (ii = 0; ii < f_n_cells; ii++)
-      for (i = 0; i < db_size[0]; i++)
-        for (j = 0; j < db_size[0]; j++)
-          w1[ii*db_size[3] + db_size[2]*i + j] =
-            fabs(f_da[ii*db_size[3] + db_size[2]*i + j]);
-    for (ii = f_n_cells; ii < f_n_cells_ext; ii++)
-      for (i = 0; i < db_size[0]; i++)
-        for (j = 0; j < db_size[0]; j++)
-          w1[ii*db_size[3] + db_size[2]*i + j] = 0.;
+    for (ii = 0; ii < f_n_cells; ii++) {
+      for (jj = 0; jj < db_size[0]; jj++) {
+        for (kk = 0; kk < db_size[0]; kk++)
+          w1[ii*db_size[3] + db_size[2]*jj + kk]
+            = fabs(f_da[ii*db_size[3] + db_size[2]*jj + kk]);
+      }
+    }
+    for (ii = f_n_cells; ii < f_n_cells_ext; ii++) {
+      for (jj = 0; jj < db_size[0]; jj++) {
+        for (kk = 0; kk < db_size[0]; kk++)
+          w1[ii*db_size[3] + db_size[2]*jj + kk] = 0.;
+      }
+    }
 
-    for (ic = 0; ic < c_n_cells; ic++)
-      for (i = 0; i < db_size[0]; i++)
-        for (j = 0; j < db_size[0]; j++)
-          w3[ic*db_size[3] + db_size[2]*i + j] =
-            fabs(c_da[ic*db_size[3] + db_size[2]*i + j]);
-    for (ic = c_n_cells; ic < c_n_cells_ext; ic++)
-      for (i = 0; i < db_size[0]; i++)
-        for (j = 0; j < db_size[0]; j++)
-          w3[ic*db_size[3] + db_size[2]*i + j] = 0.;
+    for (ic = 0; ic < c_n_cells; ic++) {
+      for (jj = 0; jj < db_size[0]; jj++) {
+        for (kk = 0; kk < db_size[0]; kk++)
+          w3[ic*db_size[3] + db_size[2]*jj + kk]
+            = fabs(c_da[ic*db_size[3] + db_size[2]*jj + kk]);
+      }
+    }
+    for (ic = c_n_cells; ic < c_n_cells_ext; ic++) {
+      for (jj = 0; jj < db_size[0]; jj++) {
+        for (kk = 0; kk < db_size[0]; kk++)
+          w3[ic*db_size[3] + db_size[2]*jj + kk] = 0.;
+      }
+    }
 
     for (face_id = 0; face_id < f_n_faces; face_id++) {
       ii = f_face_cell[2*face_id] -1;
       jj = f_face_cell[2*face_id + 1] -1;
-
-      for (i = 0; i < db_size[0]; i++) {
-        w1[ii*db_size[3] + db_size[2]*i + i] -= fabs(f_xa[face_id*isym]);
-        w1[jj*db_size[3] + db_size[2]*i + i] -= fabs(f_xa[(face_id +1)*isym -1]);
+      for (kk = 0; kk < db_size[0]; kk++) {
+        w1[ii*db_size[3] + db_size[2]*kk + kk]
+          -= fabs(f_xa[face_id*isym]);
+        w1[jj*db_size[3] + db_size[2]*kk + kk]
+          -= fabs(f_xa[(face_id +1)*isym -1]);
       }
     }
 
     for (c_face = 0; c_face < c_n_faces; c_face++) {
       ic = c_face_cell[2*c_face] -1;
       jc = c_face_cell[2*c_face + 1] -1;
-
-      for (i = 0; i < db_size[0]; i++) {
-        w3[ic*db_size[3] + db_size[2]*i + i] -= fabs(c_xa[c_face*isym]);
-        w3[jc*db_size[3] + db_size[2]*i + i] -= fabs(c_xa[(c_face +1)*isym -1]);
+      for (kk = 0; kk < db_size[0]; kk++) {
+        w3[ic*db_size[3] + db_size[2]*kk + kk]
+          -= fabs(c_xa[c_face*isym]);
+        w3[jc*db_size[3] + db_size[2]*kk + kk]
+          -= fabs(c_xa[(c_face +1)*isym -1]);
       }
     }
 
@@ -3401,7 +3421,6 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            const cs_real_t       *xa)
 {
   cs_lnum_t ii, jj, kk, face_id;
-  int i;
 
   cs_grid_t *g = NULL;
 
@@ -3411,8 +3430,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
 
   g->level = 0;
   g->symmetric = symmetric;
-  for (i = 0; i < 4; i++)
-    g->diag_block_size[i] = diag_block_size[i];
+  for (ii = 0; ii < 4; ii++)
+    g->diag_block_size[ii] = diag_block_size[ii];
 
   g->n_cells = n_cells;
   g->n_cells_ext = n_cells_ext;
@@ -3749,7 +3768,6 @@ cs_grid_coarsen(const cs_grid_t   *f,
 {
   cs_lnum_t call_id;
   cs_lnum_t isym = 2;
-  int *db_size = f->diag_block_size;
 
   /* In mutithreaded case, use a matrix structure alowing threading
      without a specific renumbering, as structures are rebuilt often */
@@ -3758,6 +3776,8 @@ cs_grid_coarsen(const cs_grid_t   *f,
     = cs_glob_n_threads > 1 ? CS_MATRIX_CSR : CS_MATRIX_NATIVE;
 
   cs_grid_t *c = NULL;
+
+  const int *db_size = f->diag_block_size;
 
   assert(f != NULL);
 
@@ -3876,11 +3896,11 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
   cs_lnum_t ii;
   int i;
 
-  const cs_lnum_t *coarse_cell;
-  int *db_size = f->diag_block_size;
-
   cs_lnum_t f_n_cells = f->n_cells;
   cs_lnum_t c_n_cells_ext = c->n_cells_r[1];
+
+  const cs_lnum_t *coarse_cell;
+  const int *db_size = f->diag_block_size;
 
   assert(f != NULL);
   assert(c != NULL);
@@ -4294,7 +4314,7 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
   int i, j;
 
   cs_real_t *dd = NULL;
-  int *db_size = g->diag_block_size;
+  const int *db_size = g->diag_block_size;
 
   assert(g != NULL);
   assert(diag_dom != NULL);

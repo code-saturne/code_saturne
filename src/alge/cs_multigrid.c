@@ -1203,10 +1203,11 @@ _abort_on_divergence(cs_multigrid_t      *mg,
 
       cs_matrix_vector_multiply(rotation_mode, _matrix, c_vx[level], c_res);
 
-      for (ii = 0; ii < n_cells; ii++)
+      for (ii = 0; ii < n_cells; ii++) {
         for (i = 0; i < db_size[0]; i++)
           c_res[ii*db_size[1] + i] = fabs( c_res[ii*db_size[1] + i]
                                          - c_rhs[level][ii*db_size[1] + i]);
+      }
 
       cs_grid_project_var(g, n_base_cells, c_res, var);
 
@@ -1310,10 +1311,9 @@ _multigrid_cycle(cs_multigrid_t      *mg,
                  void                *aux_vectors)
 {
   int level, coarsest_level;
-  cs_lnum_t ii;
+  cs_lnum_t ii, jj;
   cs_timer_t t0, t1;
 
-  int i;
   int db_size[4] = {1, 1, 1, 1};
   int cvg = 0, c_cvg = 0;
   int n_iter = 0;
@@ -1330,7 +1330,6 @@ _multigrid_cycle(cs_multigrid_t      *mg,
   char *var_lv_name = _var_lv_name;
 
   double denom_n_g_cells_0 = 1.0;
-  double initial_residue = *residue;
   double _initial_residue = 0.;
 
   cs_real_t *_aux_vectors = aux_vectors;
@@ -1378,7 +1377,9 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
   /* Allocate wr or use working area */
 
-  for (level = 1, wr_size = n_cells_ext*db_size[1]; level < mg->n_levels; level++) {
+  for (level = 1, wr_size = n_cells_ext*db_size[1];
+       level < mg->n_levels;
+       level++) {
     cs_lnum_t n_cells_max
       = cs_grid_get_n_cells_max(mg->grid_hierarchy[level]);
     wr_size = CS_MAX(wr_size, (size_t)(n_cells_max*db_size[1]));
@@ -1493,11 +1494,19 @@ _multigrid_cycle(cs_multigrid_t      *mg,
                               _vx[level],
                               wr);
 
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (ii = 0; ii < n_cells; ii++)
-      for (i = 0; i < db_size[0]; i++)
-        wr[ii*db_size[1] + i] = _rhs_level[ii*db_size[1] + i]
-                              - wr[ii*db_size[1] + i];
+    if (db_size[0] == 1) {
+#     pragma omp parallel for if(n_cells > CS_THR_MIN)
+      for (ii = 0; ii < n_cells; ii++)
+        wr[ii] = _rhs_level[ii] - wr[ii];
+    }
+    else {
+#     pragma omp parallel for private(jj) if(n_cells > CS_THR_MIN)
+      for (ii = 0; ii < n_cells; ii++) {
+        for (jj = 0; jj < db_size[0]; jj++)
+        wr[ii*db_size[1] + jj] =   _rhs_level[ii*db_size[1] + jj]
+                                 - wr[ii*db_size[1] + jj];
+      }
+    }
 
     /* Convergence test in beginning of cycle (fine mesh) */
 
@@ -1547,10 +1556,20 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
     f = c;
 
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (ii = 0; ii < n_cells; ii++) /* Initialize correction */
-      for (i = 0; i < db_size[0]; i++)
-        _vx[level+1][ii*db_size[1]+i] = 0.0;
+    /* Initialize correction */
+
+    if (db_size[0] == 1) {
+#     pragma omp parallel for if(n_cells > CS_THR_MIN)
+      for (ii = 0; ii < n_cells; ii++)
+        _vx[level+1][ii] = 0.0;
+    }
+    else {
+#     pragma omp parallel for private(jj) if(n_cells > CS_THR_MIN)
+      for (ii = 0; ii < n_cells; ii++) {
+        for (jj = 0; jj < db_size[0]; jj++)
+          _vx[level+1][ii*db_size[1] + jj] = 0.0;
+      }
+    }
 
     t0 = cs_timer_time();
     cs_timer_counter_add_diff(&(lv_info->t_tot[4]), &t1, &t0);
@@ -1651,10 +1670,18 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
       cs_grid_prolong_cell_var(c, f, _vx[level+1], wr);
 
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (ii = 0; ii < n_cells; ii++)
-        for (i = 0; i < db_size[0]; i++)
-          _f_vx[ii*db_size[1]+i] += wr[ii*db_size[1]+i];
+      if (db_size[0] == 1) {
+#       pragma omp parallel for if(n_cells > CS_THR_MIN)
+        for (ii = 0; ii < n_cells; ii++)
+          _f_vx[ii] += wr[ii];
+      }
+      else {
+#       pragma omp parallel for private(jj) if(n_cells > CS_THR_MIN)
+        for (ii = 0; ii < n_cells; ii++) {
+          for (jj = 0; jj < db_size[0]; jj++)
+            _f_vx[ii*db_size[1]+jj] += wr[ii*db_size[1]+jj];
+        }
+      }
 
       t1 = cs_timer_time();
       cs_timer_counter_add_diff(&(lv_info->t_tot[5]), &t0, &t1);
@@ -1783,7 +1810,6 @@ void CS_PROCF(clmlga, CLMLGA)
 
   cs_int_t grid_lv = 0;
   cs_multigrid_t *mg = NULL;
-  cs_multigrid_info_t *mg_info = NULL;
   cs_multigrid_level_info_t *mg_lv_info = NULL;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -1804,7 +1830,6 @@ void CS_PROCF(clmlga, CLMLGA)
   var_name = cs_base_string_f_to_c_create(cname, *lname);
 
   mg = _find_or_add_system(var_name);
-  mg_info = &(mg->info);
 
   if (*iwarnp > 1)
     bft_printf(_("\n Construction of grid hierarchy for \"%s\"\n"),
