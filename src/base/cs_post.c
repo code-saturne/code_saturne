@@ -1269,7 +1269,7 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
         _init_writer(writer);
 
       if (post_mesh->exp_mesh == NULL)
-	_define_mesh(post_mesh);
+        _define_mesh(post_mesh);
 
       _divide_poly(post_mesh, writer);
 
