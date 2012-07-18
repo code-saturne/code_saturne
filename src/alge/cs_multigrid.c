@@ -1771,17 +1771,13 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
 /*----------------------------------------------------------------------------
  * Build a hierarchy of meshes starting from a fine mesh, for an
- * ACM (Additive Corrective Multigrid) method, grouping cells at
- * most 2 by 2.
+ * ACM (Additive Corrective Multigrid) method.
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(clmlga, CLMLGA)
 (
  const char       *cname,     /* <-- variable name */
  const cs_int_t   *lname,     /* <-- variable name length */
- const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
- const cs_int_t   *ncel,      /* <-- Number of local cells */
- const cs_int_t   *nfac,      /* <-- Number of internal faces */
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
  const cs_int_t   *ibsize,    /* <-- Matrix block size */
@@ -1798,267 +1794,25 @@ void CS_PROCF(clmlga, CLMLGA)
 )
 {
   char *var_name;
-  cs_timer_t t0, t1, t2;
-
-  int n_coarse_ranks = cs_glob_n_ranks;
-  int n_coarse_ranks_prev = 0;
-  cs_lnum_t n_cells = 0;
-  cs_lnum_t n_cells_with_ghosts = 0;
-  cs_lnum_t n_faces = 0;
-  cs_gnum_t n_g_cells = 0;
-  cs_gnum_t n_g_cells_prev = 0;
-
-  cs_int_t grid_lv = 0;
-  cs_multigrid_t *mg = NULL;
-  cs_multigrid_level_info_t *mg_lv_info = NULL;
-
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
-
-  cs_grid_t *g = NULL;
 
   bool symmetric = (*isym == 1) ? true : false;
   int diag_block_size[4] = {*ibsize, *ibsize, *ibsize, (*ibsize)*(*ibsize)};
 
-  assert(*ncelet >= *ncel);
-  assert(*nfac > 0);
-
-  /* Initialization */
-
-  t0 = cs_timer_time();
-
   var_name = cs_base_string_f_to_c_create(cname, *lname);
 
-  mg = _find_or_add_system(var_name);
-
-  if (*iwarnp > 1)
-    bft_printf(_("\n Construction of grid hierarchy for \"%s\"\n"),
-               var_name);
-
-  /* Destroy previous hierarchy if necessary */
-
-  if (mg->n_levels > 0) {
-    for (grid_lv = mg->n_levels - 1; grid_lv > -1; grid_lv--)
-      cs_grid_destroy(mg->grid_hierarchy + grid_lv);
-    mg->n_levels = 0;
-  }
-
-  /* Build coarse grids hierarchy */
-  /*------------------------------*/
-
-  g = cs_grid_create_from_shared(mesh->n_cells,
-                                 mesh->n_cells_with_ghosts,
-                                 mesh->n_i_faces,
-                                 symmetric,
-                                 diag_block_size,
-                                 mesh->i_face_cells,
-                                 mesh->halo,
-                                 mesh->i_face_numbering,
-                                 mq->cell_cen,
-                                 mq->cell_vol,
-                                 mq->i_face_normal,
-                                 dam,
-                                 xam);
-
-  _multigrid_add_level(mg, g); /* Assign to hierarchy */
-
-  n_cells = mesh->n_cells;
-  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
-  n_faces = mesh->n_i_faces;
-  n_g_cells = mesh->n_g_cells;
-
-  mg_lv_info = mg->lv_info;
-  mg_lv_info->n_ranks[0] = cs_glob_n_ranks;
-  mg_lv_info->n_elts[0][0] = n_cells;
-  mg_lv_info->n_elts[1][0] = n_cells_with_ghosts;
-  mg_lv_info->n_elts[2][0] = n_faces;
-
-  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(mg_lv_info->t_tot[0]), &t0, &t1);
-
-  while (true) {
-
-    n_g_cells_prev = n_g_cells;
-    n_coarse_ranks_prev = n_coarse_ranks;
-
-    /* Recursion test */
-
-    if (grid_lv >= *ngrmax) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_(" clmlga: maximum number of coarse grids (%d)\n"
-                   "         reached for \"%s\".\n"),
-                 (int)(*ngrmax), var_name);
-      break;
-    }
-
-    /* Build coarser grid from previous grid */
-
-    grid_lv += 1;
-
-    if (*iwarnp > 2)
-      bft_printf(_("\n   building level %2d grid\n"), grid_lv);
-
-    g = cs_grid_coarsen(g, *iwarnp, *nagmax, *rlxp1);
-
-    cs_grid_get_info(g,
-                     &grid_lv,
-                     &symmetric,
-                     NULL,
-                     &n_coarse_ranks,
-                     &n_cells,
-                     &n_cells_with_ghosts,
-                     &n_faces,
-                     &n_g_cells);
-
-    _multigrid_add_level(mg, g); /* Assign to hierarchy */
-
-    /* Print coarse mesh stats */
-
-    if (*iwarnp > 2) {
-
-#if defined(HAVE_MPI)
-
-      if (cs_glob_n_ranks > 1) {
-
-        int lcount[2], gcount[2];
-        int n_c_min, n_c_max, n_f_min, n_f_max;
-
-        lcount[0] = n_cells; lcount[1] = n_faces;
-        MPI_Allreduce(lcount, gcount, 2, MPI_INT, MPI_MAX,
-                      cs_glob_mpi_comm);
-        n_c_max = gcount[0]; n_f_max = gcount[1];
-
-        lcount[0] = n_cells; lcount[1] = n_faces;
-        MPI_Allreduce(lcount, gcount, 2, MPI_INT, MPI_MIN,
-                      cs_glob_mpi_comm);
-        n_c_min = gcount[0]; n_f_min = gcount[1];
-
-        bft_printf
-          (_("                                  total       min        max\n"
-             "     number of cells:     %12llu %10d %10d\n"
-             "     number of faces:                  %10d %10d\n"),
-           (unsigned long long)n_g_cells, n_c_min, n_c_max, n_f_min, n_f_max);
-      }
-
-#endif
-
-      if (cs_glob_n_ranks == 1)
-        bft_printf(_("     number of cells:     %10d\n"
-                     "     number of faces:     %10d\n"),
-                   (int)n_cells, (int)n_faces);
-
-    }
-
-    mg_lv_info = mg->lv_info + grid_lv;
-    mg_lv_info->n_ranks[0] = n_coarse_ranks;
-    mg_lv_info->n_elts[0][0] = n_cells;
-    mg_lv_info->n_elts[1][0] = n_cells_with_ghosts;
-    mg_lv_info->n_elts[2][0] = n_faces;
-
-    t2 = cs_timer_time();
-    cs_timer_counter_add_diff(&(mg_lv_info->t_tot[0]), &t1, &t2);
-    t1 = t2;
-
-    /* If too few cells were grouped, we stop at this level */
-
-    if (n_g_cells <= (cs_gnum_t)(*ncegrm))
-      break;
-    else if (n_g_cells > (0.8 * n_g_cells_prev)
-        && n_coarse_ranks == n_coarse_ranks_prev)
-      break;
-  }
+  cs_multigrid_build(var_name,
+                     *iwarnp,
+                     *ncpost,
+                     *nagmax,
+                     *ngrmax,
+                     *ncegrm,
+                     *rlxp1,
+                     symmetric,
+                     diag_block_size,
+                     dam,
+                     xam);
 
   cs_base_string_f_to_c_free(&var_name);
-
-  /* Print final info */
-
-  if (*iwarnp > 1)
-    bft_printf
-      (_("   number of coarse grids:           %d\n"
-         "   number of cells in coarsest grid: %llu\n\n"),
-       grid_lv, (unsigned long long)n_g_cells);
-
-  /* Prepare preprocessing info if necessary */
-
-  if (*ncpost > 0) {
-
-    if (mg->post_cell_max == 0) {
-      int mg_id = _multigrid_id(mg);
-      if (mg_id > -1)
-        cs_post_add_time_dep_output(_cs_multigrid_post_function,
-                                    (void *)mg);
-      mg->post_cell_max = *ncpost;
-    }
-
-    _multigrid_add_post(mg, mesh->n_cells);
-
-  }
-
-  /* Update info */
-
-#if defined(HAVE_MPI)
-
-  /* In parallel, get global (average) values from local values */
-
-  if (cs_glob_n_ranks > 1) {
-
-    int i, j;
-    cs_gnum_t *_n_elts_l = NULL, *_n_elts_s = NULL, *_n_elts_m = NULL;
-
-    BFT_MALLOC(_n_elts_l, 3*grid_lv, cs_gnum_t);
-    BFT_MALLOC(_n_elts_s, 3*grid_lv, cs_gnum_t);
-    BFT_MALLOC(_n_elts_m, 3*grid_lv, cs_gnum_t);
-
-    for (i = 0; i < grid_lv; i++) {
-      cs_multigrid_level_info_t *mg_inf = mg->lv_info + i;
-      for (j = 0; j < 3; j++)
-        _n_elts_l[i*3 + j] = mg_inf->n_elts[j][0];
-    }
-
-    MPI_Allreduce(_n_elts_l, _n_elts_s, 3*grid_lv, CS_MPI_GNUM, MPI_SUM,
-                  cs_glob_mpi_comm);
-    MPI_Allreduce(_n_elts_l, _n_elts_m, 3*grid_lv, CS_MPI_GNUM, MPI_MAX,
-                  cs_glob_mpi_comm);
-
-    for (i = 0; i < grid_lv; i++) {
-      cs_multigrid_level_info_t *mg_inf = mg->lv_info + i;
-      cs_gnum_t n_g_ranks = mg_inf->n_ranks[0];
-      for (j = 0; j < 3; j++) {
-        cs_gnum_t tmp_max = n_g_ranks * _n_elts_m[i*3+j];
-        mg_inf->n_elts[j][0] = (_n_elts_s[i*3+j] + n_g_ranks/2) / n_g_ranks;
-        mg_inf->unbalance[j][0] = (float)(tmp_max*1.0/_n_elts_s[i*3+j]);
-      }
-    }
-
-    BFT_FREE(_n_elts_m);
-    BFT_FREE(_n_elts_s);
-    BFT_FREE(_n_elts_l);
-
-  }
-
-#endif
-
-  mg->info.n_levels_tot += grid_lv;
-
-  mg->info.n_levels[0] = grid_lv;
-
-  if (mg->info.n_calls[0] > 0) {
-    if (mg->info.n_levels[0] < mg->info.n_levels[1])
-      mg->info.n_levels[1] = mg->info.n_levels[0];
-    if (mg->info.n_levels[0] > mg->info.n_levels[2])
-      mg->info.n_levels[2] = mg->info.n_levels[0];
-  }
-  else {
-    mg->info.n_levels[1] = mg->info.n_levels[0];
-    mg->info.n_levels[2] = mg->info.n_levels[0];
-  }
-
-  mg->info.n_calls[0] += 1;
-
-  /* Update timers */
-
-  t2 = cs_timer_time();
-  cs_timer_counter_add_diff(&(mg->info.t_tot[0]), &t0, &t2);
 }
 
 /*----------------------------------------------------------------------------
@@ -2073,32 +1827,12 @@ void CS_PROCF(dsmlga, DSMLGA)
 )
 {
   char *var_name;
-  int ii;
-  cs_timer_t t0, t1;
-  cs_multigrid_t *mg = NULL;
-
-  /* Initialization */
-
-  t0 = cs_timer_time();
 
   var_name = cs_base_string_f_to_c_create(cname, *lname);
 
-  mg = _find_or_add_system(var_name);
+  cs_multigrid_destroy(var_name);
 
   cs_base_string_f_to_c_free(&var_name);
-
-  /* Destroy grid hierarchy */
-
-  if (mg->n_levels > 0) {
-    for (ii = mg->n_levels - 1; ii > -1; ii--)
-      cs_grid_destroy(mg->grid_hierarchy + ii);
-    mg->n_levels = 0;
-  }
-
-  /* Update timers */
-
-  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(mg->info.t_tot[0]), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------
@@ -2239,6 +1973,327 @@ cs_multigrid_finalize(void)
   cs_glob_multigrid_n_max_systems = 0;
 
   cs_grid_finalize();
+}
+
+/*----------------------------------------------------------------------------
+ * Build a hierarchy of meshes starting from a fine mesh, for an
+ * ACM (Additive Corrective Multigrid) method.
+ *
+ * parameters:
+ *   var_name               <-- variable name
+ *   verbosity              <-- verbosity level
+ *   postprocess_block_size <-- if > 0, postprocess coarsening, using
+ *                              coarse cell numbers modulo ncpost
+ *   aggregation_limit      <-- maximum allowed fine cells per coarse cell
+ *   n_max_levels           <-- maximum number of grid levels
+ *   n_g_cells_min          <-- global number of cells on coarsest grid
+ *                              under which no merging occurs
+ *   p0p1_relax             <-- p0/p1 relaxation_parameter
+ *   symmetric              <-- indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- block sizes for diagonal, or NULL
+ *   da                     <-- diagonal values (NULL if zero)
+ *   xa                     <-- extradiagonal values (NULL if zero)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_build(const char       *var_name,
+                   int               verbosity,
+                   int               postprocess_block_size,
+                   int               aggregation_limit,
+                   int               n_max_levels,
+                   cs_gnum_t         n_g_cells_min,
+                   double            p0p1_relax,
+                   bool              symmetric,
+                   const int        *diag_block_size,
+                   const cs_real_t  *da,
+                   const cs_real_t  *xa)
+{
+  cs_timer_t t0, t1, t2;
+
+  int n_coarse_ranks = cs_glob_n_ranks;
+  int n_coarse_ranks_prev = 0;
+  cs_lnum_t n_cells = 0;
+  cs_lnum_t n_cells_with_ghosts = 0;
+  cs_lnum_t n_faces = 0;
+  cs_gnum_t n_g_cells = 0;
+  cs_gnum_t n_g_cells_prev = 0;
+
+  cs_int_t grid_lv = 0;
+  cs_multigrid_t *mg = NULL;
+  cs_multigrid_level_info_t *mg_lv_info = NULL;
+
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
+
+  cs_grid_t *g = NULL;
+
+  /* Initialization */
+
+  t0 = cs_timer_time();
+
+  mg = _find_or_add_system(var_name);
+
+  if (verbosity > 1)
+    bft_printf(_("\n Construction of grid hierarchy for \"%s\"\n"),
+               var_name);
+
+  /* Destroy previous hierarchy if necessary */
+
+  if (mg->n_levels > 0) {
+    for (grid_lv = mg->n_levels - 1; grid_lv > -1; grid_lv--)
+      cs_grid_destroy(mg->grid_hierarchy + grid_lv);
+    mg->n_levels = 0;
+  }
+
+  /* Build coarse grids hierarchy */
+  /*------------------------------*/
+
+  g = cs_grid_create_from_shared(mesh->n_cells,
+                                 mesh->n_cells_with_ghosts,
+                                 mesh->n_i_faces,
+                                 symmetric,
+                                 diag_block_size,
+                                 mesh->i_face_cells,
+                                 mesh->halo,
+                                 mesh->i_face_numbering,
+                                 mq->cell_cen,
+                                 mq->cell_vol,
+                                 mq->i_face_normal,
+                                 da,
+                                 xa);
+
+  _multigrid_add_level(mg, g); /* Assign to hierarchy */
+
+  n_cells = mesh->n_cells;
+  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
+  n_faces = mesh->n_i_faces;
+  n_g_cells = mesh->n_g_cells;
+
+  mg_lv_info = mg->lv_info;
+  mg_lv_info->n_ranks[0] = cs_glob_n_ranks;
+  mg_lv_info->n_elts[0][0] = n_cells;
+  mg_lv_info->n_elts[1][0] = n_cells_with_ghosts;
+  mg_lv_info->n_elts[2][0] = n_faces;
+
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(mg_lv_info->t_tot[0]), &t0, &t1);
+
+  while (true) {
+
+    n_g_cells_prev = n_g_cells;
+    n_coarse_ranks_prev = n_coarse_ranks;
+
+    /* Recursion test */
+
+    if (grid_lv >= n_max_levels) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_(" Multigrid: maximum number of coarse grids (%d)\n"
+                   "            reached for \"%s\".\n"),
+                 n_max_levels, var_name);
+      break;
+    }
+
+    /* Build coarser grid from previous grid */
+
+    grid_lv += 1;
+
+    if (verbosity > 2)
+      bft_printf(_("\n   building level %2d grid\n"), grid_lv);
+
+    g = cs_grid_coarsen(g, verbosity, aggregation_limit, p0p1_relax);
+
+    cs_grid_get_info(g,
+                     &grid_lv,
+                     &symmetric,
+                     NULL,
+                     &n_coarse_ranks,
+                     &n_cells,
+                     &n_cells_with_ghosts,
+                     &n_faces,
+                     &n_g_cells);
+
+    _multigrid_add_level(mg, g); /* Assign to hierarchy */
+
+    /* Print coarse mesh stats */
+
+    if (verbosity > 2) {
+
+#if defined(HAVE_MPI)
+
+      if (cs_glob_n_ranks > 1) {
+
+        int lcount[2], gcount[2];
+        int n_c_min, n_c_max, n_f_min, n_f_max;
+
+        lcount[0] = n_cells; lcount[1] = n_faces;
+        MPI_Allreduce(lcount, gcount, 2, MPI_INT, MPI_MAX,
+                      cs_glob_mpi_comm);
+        n_c_max = gcount[0]; n_f_max = gcount[1];
+
+        lcount[0] = n_cells; lcount[1] = n_faces;
+        MPI_Allreduce(lcount, gcount, 2, MPI_INT, MPI_MIN,
+                      cs_glob_mpi_comm);
+        n_c_min = gcount[0]; n_f_min = gcount[1];
+
+        bft_printf
+          (_("                                  total       min        max\n"
+             "     number of cells:     %12llu %10d %10d\n"
+             "     number of faces:                  %10d %10d\n"),
+           (unsigned long long)n_g_cells, n_c_min, n_c_max, n_f_min, n_f_max);
+      }
+
+#endif
+
+      if (cs_glob_n_ranks == 1)
+        bft_printf(_("     number of cells:     %10d\n"
+                     "     number of faces:     %10d\n"),
+                   (int)n_cells, (int)n_faces);
+
+    }
+
+    mg_lv_info = mg->lv_info + grid_lv;
+    mg_lv_info->n_ranks[0] = n_coarse_ranks;
+    mg_lv_info->n_elts[0][0] = n_cells;
+    mg_lv_info->n_elts[1][0] = n_cells_with_ghosts;
+    mg_lv_info->n_elts[2][0] = n_faces;
+
+    t2 = cs_timer_time();
+    cs_timer_counter_add_diff(&(mg_lv_info->t_tot[0]), &t1, &t2);
+    t1 = t2;
+
+    /* If too few cells were grouped, we stop at this level */
+
+    if (n_g_cells <= n_g_cells_min)
+      break;
+    else if (n_g_cells > (0.8 * n_g_cells_prev)
+        && n_coarse_ranks == n_coarse_ranks_prev)
+      break;
+  }
+
+  /* Print final info */
+
+  if (verbosity > 1)
+    bft_printf
+      (_("   number of coarse grids:           %d\n"
+         "   number of cells in coarsest grid: %llu\n\n"),
+       grid_lv, (unsigned long long)n_g_cells);
+
+  /* Prepare preprocessing info if necessary */
+
+  if (postprocess_block_size > 0) {
+
+    if (mg->post_cell_max == 0) {
+      int mg_id = _multigrid_id(mg);
+      if (mg_id > -1)
+        cs_post_add_time_dep_output(_cs_multigrid_post_function,
+                                    (void *)mg);
+      mg->post_cell_max = postprocess_block_size;
+    }
+
+    _multigrid_add_post(mg, mesh->n_cells);
+
+  }
+
+  /* Update info */
+
+#if defined(HAVE_MPI)
+
+  /* In parallel, get global (average) values from local values */
+
+  if (cs_glob_n_ranks > 1) {
+
+    int i, j;
+    cs_gnum_t *_n_elts_l = NULL, *_n_elts_s = NULL, *_n_elts_m = NULL;
+
+    BFT_MALLOC(_n_elts_l, 3*grid_lv, cs_gnum_t);
+    BFT_MALLOC(_n_elts_s, 3*grid_lv, cs_gnum_t);
+    BFT_MALLOC(_n_elts_m, 3*grid_lv, cs_gnum_t);
+
+    for (i = 0; i < grid_lv; i++) {
+      cs_multigrid_level_info_t *mg_inf = mg->lv_info + i;
+      for (j = 0; j < 3; j++)
+        _n_elts_l[i*3 + j] = mg_inf->n_elts[j][0];
+    }
+
+    MPI_Allreduce(_n_elts_l, _n_elts_s, 3*grid_lv, CS_MPI_GNUM, MPI_SUM,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(_n_elts_l, _n_elts_m, 3*grid_lv, CS_MPI_GNUM, MPI_MAX,
+                  cs_glob_mpi_comm);
+
+    for (i = 0; i < grid_lv; i++) {
+      cs_multigrid_level_info_t *mg_inf = mg->lv_info + i;
+      cs_gnum_t n_g_ranks = mg_inf->n_ranks[0];
+      for (j = 0; j < 3; j++) {
+        cs_gnum_t tmp_max = n_g_ranks * _n_elts_m[i*3+j];
+        mg_inf->n_elts[j][0] = (_n_elts_s[i*3+j] + n_g_ranks/2) / n_g_ranks;
+        mg_inf->unbalance[j][0] = (float)(tmp_max*1.0/_n_elts_s[i*3+j]);
+      }
+    }
+
+    BFT_FREE(_n_elts_m);
+    BFT_FREE(_n_elts_s);
+    BFT_FREE(_n_elts_l);
+
+  }
+
+#endif
+
+  mg->info.n_levels_tot += grid_lv;
+
+  mg->info.n_levels[0] = grid_lv;
+
+  if (mg->info.n_calls[0] > 0) {
+    if (mg->info.n_levels[0] < mg->info.n_levels[1])
+      mg->info.n_levels[1] = mg->info.n_levels[0];
+    if (mg->info.n_levels[0] > mg->info.n_levels[2])
+      mg->info.n_levels[2] = mg->info.n_levels[0];
+  }
+  else {
+    mg->info.n_levels[1] = mg->info.n_levels[0];
+    mg->info.n_levels[2] = mg->info.n_levels[0];
+  }
+
+  mg->info.n_calls[0] += 1;
+
+  /* Update timers */
+
+  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(mg->info.t_tot[0]), &t0, &t2);
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy a hierarchy of meshes starting from a fine mesh, keeping
+ * the corresponding system and postprocessing information for future calls.
+ *
+ * parameters:
+ *   var_name <-- variable name
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_destroy(const char  *var_name)
+{
+  int ii;
+  cs_timer_t t0, t1;
+  cs_multigrid_t *mg = NULL;
+
+  /* Initialization */
+
+  t0 = cs_timer_time();
+
+  mg = _find_or_add_system(var_name);
+
+  /* Destroy grid hierarchy */
+
+  if (mg->n_levels > 0) {
+    for (ii = mg->n_levels - 1; ii > -1; ii--)
+      cs_grid_destroy(mg->grid_hierarchy + ii);
+    mg->n_levels = 0;
+  }
+
+  /* Update timers */
+
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(mg->info.t_tot[0]), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------

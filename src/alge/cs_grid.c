@@ -3410,7 +3410,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            cs_lnum_t              n_cells_ext,
                            cs_lnum_t              n_faces,
                            bool                   symmetric,
-                           int                   *diag_block_size,
+                           const int             *diag_block_size,
                            const cs_lnum_t       *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering,
@@ -3430,8 +3430,15 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
 
   g->level = 0;
   g->symmetric = symmetric;
-  for (ii = 0; ii < 4; ii++)
-    g->diag_block_size[ii] = diag_block_size[ii];
+
+  if (diag_block_size != NULL) {
+    for (ii = 0; ii < 4; ii++)
+      g->diag_block_size[ii] = diag_block_size[ii];
+  }
+  else {
+    for (ii = 0; ii < 4; ii++)
+      g->diag_block_size[ii] = 1;
+  }
 
   g->n_cells = n_cells;
   g->n_cells_ext = n_cells_ext;
@@ -3766,7 +3773,6 @@ cs_grid_coarsen(const cs_grid_t   *f,
                 int                aggregation_limit,
                 double             relaxation_parameter)
 {
-  cs_lnum_t call_id;
   cs_lnum_t isym = 2;
 
   /* In mutithreaded case, use a matrix structure alowing threading

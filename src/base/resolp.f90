@@ -888,7 +888,6 @@ if (imgr(ipr).gt.0) then
   call clmlga &
   !==========
  ( chaine(1:16) ,   lchain ,                                      &
-   ncelet , ncel   , nfac   ,                                     &
    isym   , ibsize , nagmax , npstmg , iwarnp ,                   &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &

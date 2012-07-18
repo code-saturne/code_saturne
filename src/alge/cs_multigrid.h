@@ -56,17 +56,13 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------
  * Build a hierarchy of meshes starting from a fine mesh, for an
- * ACM (Additive Corrective Multigrid) method, grouping cells at
- * most 2 by 2.
+ * ACM (Additive Corrective Multigrid) method.
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(clmlga, CLMLGA)
 (
  const char       *cname,     /* <-- variable name */
  const cs_int_t   *lname,     /* <-- variable name length */
- const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
- const cs_int_t   *ncel,      /* <-- Number of local cells */
- const cs_int_t   *nfac,      /* <-- Number of internal faces */
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
  const cs_int_t   *ibsize,    /* <-- Matrix block size */
@@ -147,6 +143,50 @@ cs_multigrid_initialize(void);
 
 void
 cs_multigrid_finalize(void);
+
+/*----------------------------------------------------------------------------
+ * Build a hierarchy of meshes starting from a fine mesh, for an
+ * ACM (Additive Corrective Multigrid) method.
+ *
+ * parameters:
+ *   var_name               <-- variable name
+ *   verbosity              <-- verbosity level
+ *   postprocess_block_size <-- if > 0, postprocess coarsening, using
+ *                              coarse cell numbers modulo ncpost
+ *   aggregation_limit      <-- maximum allowed fine cells per coarse cell
+ *   n_max_levels           <-- maximum number of grid levels
+ *   n_g_cells_min          <-- global number of cells on coarsest grid
+ *                              under which no merging occurs
+ *   p0p1_relax             <-- p0/p1 relaxation_parameter
+ *   symmetric              <-- indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- block sizes for diagonal, or NULL
+ *   da                     <-- diagonal values (NULL if zero)
+ *   xa                     <-- extradiagonal values (NULL if zero)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_build(const char       *var_name,
+                   int               verbosity,
+                   int               postprocess_block_size,
+                   int               aggregation_limit,
+                   int               n_max_levels,
+                   cs_gnum_t         n_g_cells_min,
+                   double            p0p1_relax,
+                   bool              symmetric,
+                   const int        *diag_block_size,
+                   const cs_real_t  *da,
+                   const cs_real_t  *xa);
+
+/*----------------------------------------------------------------------------
+ * Destroy a hierarchy of meshes starting from a fine mesh, keeping
+ * the corresponding system and postprocessing information for future calls.
+ *
+ * parameters:
+ *   var_name <-- variable name
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_destroy(const char  *var_name);
 
 /*----------------------------------------------------------------------------
  * Sparse linear system resolution using multigrid.
