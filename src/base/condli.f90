@@ -81,6 +81,7 @@
 !>                               the walls
 !> \param[in,out] icodcl        face boundary condition code:
 !>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
 !>                               - 3 Neumann
 !>                               - 4 sliding and
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
@@ -114,11 +115,9 @@
 !>                                     \grad T \cdot \vect{n} \f$
 !> \param[out]    coefa         explicit boundary condition coefficient
 !> \param[out]    coefb         implicit boundary condition coefficient
-!>
 !> \param[out]    visvdr        viscosite dynamique ds les cellules
 !>                               de bord apres amortisst de v driest
 !> \param[out]    hbord         coefficients d'echange aux bords
-!>
 !> \param[out]    thbord        boundary temperature in \f$ \centip \f$
 !>                               (more exaclty the energetic variable)
 !> \param[in]     frcxt         external force responsible for the hydrostatic
