@@ -669,7 +669,7 @@ _get_Y1Y2_coefficient_type(const int icha)
       ichoice = 0;
     else if (cs_gui_strcmp(buff, "user_define"))
       ichoice = 1;
-    else if (cs_gui_strcmp(buff, "automatic_formula")) // ATTENTION DEFINIR UN TRUC ICI
+    else if (cs_gui_strcmp(buff, "automatic_formula"))
       ichoice = 2;
     else
       bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
