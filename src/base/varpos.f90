@@ -458,22 +458,6 @@ if(ipass.eq.2) then
     inusa  = ivar
   endif
 
-! --- Scalaires
-  if(nscapp.ge.1) then
-    do jj = 1, nscapp
-      ii       = iscapp(jj)
-      ivar     = ivar + 1
-      isca(ii) = ivar
-    enddo
-  endif
-  if(nscaus.ge.1) then
-    do jj = 1, nscaus
-      ii       = jj
-      ivar     = ivar + 1
-      isca(ii) = ivar
-    enddo
-  endif
-
 ! --- Vitesse de maillage en ALE
   if (iale.eq.1) then
     ivar = ivar + 1
@@ -488,6 +472,22 @@ if(ipass.eq.2) then
   if (iirayo.gt.0) then
     ivar = ivar + 1
     ilum = ivar
+  endif
+
+! --- Scalaires
+  if(nscapp.ge.1) then
+    do jj = 1, nscapp
+      ii       = iscapp(jj)
+      ivar     = ivar + 1
+      isca(ii) = ivar
+    enddo
+  endif
+  if(nscaus.ge.1) then
+    do jj = 1, nscaus
+      ii       = jj
+      ivar     = ivar + 1
+      isca(ii) = ivar
+    enddo
   endif
 
 ! --- Nombre total de variables
