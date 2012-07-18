@@ -352,11 +352,13 @@ class ThermalRadiationModel(Model):
             self._setVariable_ray()
             self._setBoundCond()
             self._updateModelParameters(model)
+            self.node_ray.xmlInitChildNode('variable', name='radiat_luminance', label='RadLum')
             if self.isGasCombustion():
                 self.setNewProperty(self.node_gas, "KABS")
                 self.setNewProperty(self.node_gas, "TEMP4")
                 self.setNewProperty(self.node_gas, "TEMP3")
         else:
+            self.node_ray.xmlRemoveChild('variable', name='radiat_luminance')
             if self.isGasCombustion():
                 self.node_gas.xmlRemoveChild('property',  name = "KABS")
                 self.node_gas.xmlRemoveChild('property',  name = "TEMP4")
