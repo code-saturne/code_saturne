@@ -231,7 +231,7 @@ _post_valid_faces_select(void         *input,
   BFT_MALLOC(_face_ids, marker->n_faces, cs_lnum_t);
 
   for (face_id = 0; face_id < marker->n_faces; face_id++) {
-    if (marker->flag[face_id] != 0)
+    if (marker->flag[face_id] == 0)
       _face_ids[_n_faces++] = face_id;
   }
 
@@ -408,7 +408,7 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
 
       mesh_id[1] = cs_post_get_free_mesh_id();
 
-      cs_post_define_surface_mesh_by_func(mesh_id[0],
+      cs_post_define_surface_mesh_by_func(mesh_id[1],
                                           _("Faces with valid B.C.'s"),
                                           NULL,
                                           _post_valid_faces_select,

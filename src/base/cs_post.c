@@ -1268,6 +1268,9 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
       if (writer->writer == NULL)
         _init_writer(writer);
 
+      if (post_mesh->exp_mesh == NULL)
+	_define_mesh(post_mesh);
+
       _divide_poly(post_mesh, writer);
 
       fvm_writer_set_mesh_time(writer->writer, nt_cur_abs, t_cur_abs);
