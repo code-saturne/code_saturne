@@ -1197,7 +1197,7 @@ _export_point_elements_l(const fvm_nodal_t  *mesh,
   else if (f.bf != NULL) { /* Binary mode */
 
     int32_t  k, j_end;
-    int32_t  j = 0;
+    int32_t  j = 1;
     int32_t  *buf = NULL;
     const int32_t  bufsize = n_vertices >  64 ? (n_vertices / 8) : n_vertices;
 
