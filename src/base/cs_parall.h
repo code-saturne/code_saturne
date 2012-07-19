@@ -475,6 +475,111 @@ cs_parall_counter_max(cs_lnum_t   cpt[],
 #endif
 
 /*----------------------------------------------------------------------------
+ * Sum values of a given datatype on all default communicator processes.
+ *
+ * parameters:
+ *   n        <-- number of values
+ *   datatype <-- matching Code_Saturne datatype
+ *   val      <-> local value  input, global value output (array)
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI_IN_PLACE)
+
+inline static void
+cs_parall_sum(int             n,
+              cs_datatype_t   datatype,
+              void           *val)
+{
+  if (cs_glob_n_ranks > 1) {
+    MPI_Allreduce(MPI_IN_PLACE, val, n, cs_datatype_to_mpi[datatype], MPI_SUM,
+                  cs_glob_mpi_comm);
+  }
+}
+
+#elif defined(HAVE_MPI)
+
+void
+cs_parall_sum(int             n,
+              cs_datatype_t   datatype,
+              void           *val);
+
+#else
+
+#define cs_parall_sum(_cpt, _n);
+
+#endif
+
+/*----------------------------------------------------------------------------
+ * Maximum values of a given datatype on all default communicator processes.
+ *
+ * parameters:
+ *   n        <-- number of values
+ *   datatype <-- matching Code_Saturne datatype
+ *   val      <-> local value  input, global value output (array)
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI_IN_PLACE)
+
+inline static void
+cs_parall_max(int             n,
+              cs_datatype_t   datatype,
+              void           *val)
+{
+  if (cs_glob_n_ranks > 1) {
+    MPI_Allreduce(MPI_IN_PLACE, val, n, cs_datatype_to_mpi[datatype], MPI_MAX,
+                  cs_glob_mpi_comm);
+  }
+}
+
+#elif defined(HAVE_MPI)
+
+void
+cs_parall_max(int             n,
+              cs_datatype_t   datatype,
+              void           *val);
+
+#else
+
+#define cs_parall_max(_cpt, _n)
+
+#endif
+
+/*----------------------------------------------------------------------------
+ * Minimum values of a given datatype on all default communicator processes.
+ *
+ * parameters:
+ *   n        <-- number of values
+ *   datatype <-- matching Code_Saturne datatype
+ *   val      <-> local value  input, global value output (array)
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI_IN_PLACE)
+
+inline static void
+cs_parall_min(int             n,
+              cs_datatype_t   datatype,
+              void           *val)
+{
+  if (cs_glob_n_ranks > 1) {
+    MPI_Allreduce(MPI_IN_PLACE, val, n, cs_datatype_to_mpi[datatype], MPI_MIN,
+                  cs_glob_mpi_comm);
+  }
+}
+
+#elif defined(HAVE_MPI)
+
+void
+cs_parall_min(int             n,
+              cs_datatype_t   datatype,
+              void           *val);
+
+#else
+
+#define cs_parall_min(_cpt, _n)
+
+#endif
+
+/*----------------------------------------------------------------------------
  * Return minimum recommended scatter or gather buffer size.
  *
  * This is used by some internal part to block or scatter/gather algorithms,
