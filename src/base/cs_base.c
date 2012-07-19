@@ -177,6 +177,10 @@ static _cs_base_sighandler_t cs_glob_base_sigterm_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigfpe_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigsegv_save = SIG_DFL;
 
+#if defined(__bgq__)
+static _cs_base_sighandler_t cs_glob_base_sigtrap_save = SIG_DFL;
+#endif
+
 #if defined(SIGXCPU)
 static _cs_base_sighandler_t cs_glob_base_sigcpu_save = SIG_DFL;
 #endif
@@ -1022,6 +1026,10 @@ cs_base_error_init(void)
 
   cs_glob_base_sigfpe_save  = signal(SIGFPE, _cs_base_sig_fatal);
   cs_glob_base_sigsegv_save = signal(SIGSEGV, _cs_base_sig_fatal);
+
+#if defined(__bgq__)
+  cs_glob_base_sigtrap_save  = signal(SIGTRAP, _cs_base_sig_fatal);
+#endif
 
 #if defined(SIGXCPU)
   if (cs_glob_rank_id <= 0)

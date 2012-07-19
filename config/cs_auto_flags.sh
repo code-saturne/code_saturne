@@ -713,7 +713,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
         fcflags_default_hot="-O3 -qhot"
       elif test "x$cs_ibm_bg_type" = "xQ" ; then
         fcflags_default="-qextname -qsuffix=cpp=f90"
-        fcflags_default_dbg="-g"
+        fcflags_default_dbg="-g -qcheck"
         fcflags_default_opt="-O3"
         fcflags_default_hot="-O3 -qhot"
       fi

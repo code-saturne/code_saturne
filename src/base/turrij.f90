@@ -230,6 +230,8 @@ double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 #if !defined(CS_DISABLE_F90_POINTERS)
+integer,          dimension(1), target :: ivoid
+double precision, dimension(1), target :: rvoid1, rvoid2, rvoid3, rvoid4
 double precision, dimension(ncesmp,nvar), target ::  smacel
 double precision, dimension(ncelet,*), target :: tslagr
 #else
@@ -294,6 +296,13 @@ if(iwarni(ieiph).ge.1) then
   endif
 endif
 
+#if !defined(CS_DISABLE_F90_POINTERS)
+itpsmp => ivoid
+smcelp => rvoid1
+gammap => rvoid2
+tslage => rvoid3
+tslagi => rvoid4
+#endif
 
 !     SI ITURB=30 (RIJ STD) ON STOCKE DIRECTEMENT LA PRODUCTION DANS
 !     LE TABLEAU PRODUC

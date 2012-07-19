@@ -1,3 +1,10 @@
+* 19/07/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Additional fixes for Blue Gene/Q port.
+  modified files:
+    config/cs_auto_flags.sh
+    src/base/cs_base.c
+    src/base/turrij.f90
+
 * 10/07/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Adapt scripts and documentation for Blue Gene/Q port.
   added files:
