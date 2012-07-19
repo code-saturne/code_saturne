@@ -126,15 +126,15 @@ enddo
 
 ! ---- Variables propres a la phase continue
 if ( noxyd .ge. 2 ) then
-! Oxydant 2
-scamin(if4m) = 0.d0
-scamax(if4m) = 1.d0
+  ! Oxydant 2
+  scamin(if4m) = 0.d0
+  scamax(if4m) = 1.d0
 endif
 !
 if ( noxyd .eq. 3 ) then
-! Oxydant 3
-scamin(if5m) = 0.d0
-scamax(if5m) = 1.d0
+  ! Oxydant 3
+  scamin(if5m) = 0.d0
+  scamax(if5m) = 1.d0
 endif
 ! eau libre
 if ( ippmod(iccoal) .ge. 1 ) then
@@ -146,8 +146,8 @@ scamin(if7m) = 0.d0
 scamax(if7m) = 1.d0
 ! Produits de la combustion du coke par CO2
 if ( ihtco2 .eq. 1 ) then
-scamin(if8m) = 0.d0
-scamax(if8m) = 1.d0
+  scamin(if8m) = 0.d0
+  scamax(if8m) = 1.d0
 endif
 ! Produits de la combustion du coke par H2O
 if ( ihth2o .eq. 1 ) then
