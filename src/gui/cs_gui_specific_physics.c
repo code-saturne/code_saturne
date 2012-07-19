@@ -1353,7 +1353,6 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
   ippmod[*icompf - 1] = -1;
   ippmod[*iatmos - 1] = -1;
   ippmod[*iaeros - 1] = -1;
-  ippmod[*ieos   - 1] = -1;
 
   *indjon = 1;
   *ieqco2 = 0;
@@ -1424,15 +1423,15 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
         {
           if (cs_gui_strcmp(vars->model_value, "constant_gamma")){
             ippmod[*icompf - 1] = 0;
-            ippmod[*ieos - 1] = 0;
+            *ieos = 0;
           }
           else if (cs_gui_strcmp(vars->model_value, "variable_gamma'")){
             ippmod[*icompf - 1] = 0;
-            ippmod[*ieos - 1] = 1;
+            *ieos = 1;
           }
           else if (cs_gui_strcmp(vars->model_value, "van_der_waals")){
             ippmod[*icompf - 1] = 0;
-            ippmod[*ieos - 1] = 2;
+            *ieos = 2;
           }
           else
             bft_error(__FILE__, __LINE__, 0,
