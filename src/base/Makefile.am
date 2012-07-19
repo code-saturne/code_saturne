@@ -84,6 +84,7 @@ cs_interface.h \
 cs_io.h \
 cs_log.h \
 cs_map.h \
+cs_measures_util.h \
 cs_numbering.h \
 cs_opts.h \
 cs_order.h \
@@ -187,6 +188,7 @@ cs_halo.c \
 cs_halo_perio.c \
 csinit.f90 \
 cs_numbering.c \
+cs_measures_util.c \
 csopli.f90 \
 cs_opts.c \
 cs_parall.c \
