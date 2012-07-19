@@ -246,9 +246,9 @@ else if (iirayo.eq.2) then
 
       call set_neumann_scalar &
            !==================
-         ( coefap, cofafp,             &
-           coefbp, cofbfp,             &
-           qimp  , hint )
+         ( coefap(ifac), cofafp(ifac),             &
+           coefbp(ifac), cofbfp(ifac),             &
+           qimp        , hint )
 
 
     ! 2.2 - Inlet/Outlet faces: zero flux
@@ -264,9 +264,9 @@ else if (iirayo.eq.2) then
 
       call set_neumann_scalar &
            !==================
-         ( coefap, cofafp,             &
-           coefbp, cofbfp,             &
-           qimp  , hint )
+         ( coefap(ifac), cofafp(ifac),             &
+           coefbp(ifac), cofbfp(ifac),             &
+           qimp        , hint )
 
 
     ! 2.3 - Wall boundary faces
