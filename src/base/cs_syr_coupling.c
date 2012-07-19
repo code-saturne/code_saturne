@@ -328,8 +328,17 @@ _init_all_mpi_syr(void)
   /* In single-coupling mode, no identification necessary */
 
   if (n_syr4_apps == 1 && _syr_coupling_builder_size == 1) {
+
+    ple_coupling_mpi_set_info_t ai
+      = ple_coupling_mpi_set_get_info(mpi_apps, syr_app_id);
+
     _syr_coupling_builder->match_id = syr_app_id;
+
+    BFT_REALLOC(_syr_coupling_builder->app_name, strlen(ai.app_name) + 1, char);
+    strcpy(_syr_coupling_builder->app_name, ai.app_name);
+
     n_matched_apps += 1;
+
   }
 
   /* In multiple-coupling mode, identification is necessary */
