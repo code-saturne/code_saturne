@@ -3428,13 +3428,13 @@ msgstr ""
 "\n"
 " Construction de la hiérarchie de grilles pour \"%s\"\n"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 " Multigrid: maximum number of coarse grids (%d)\n"
 "            reached for \"%s\".\n"
 msgstr ""
-" clmlga : nombre de maillages grossiers maximal (%d)\n"
-"          atteint pour \"%s\".\n"
+" Multigrille : nombre de maillages grossiers maximal (%d)\n"
+"               atteint pour \"%s\".\n"
 
 #, c-format
 msgid ""
