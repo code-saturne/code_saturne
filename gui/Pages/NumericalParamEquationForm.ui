@@ -1,7 +1,8 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>NumericalParamEquationForm</class>
- <widget class="QWidget" name="NumericalParamEquationForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="NumericalParamEquationForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
@@ -9,48 +10,48 @@
     <height>472</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" >
-   <property name="margin" >
+  <layout class="QGridLayout">
+   <property name="margin">
     <number>9</number>
    </property>
-   <property name="spacing" >
+   <property name="spacing">
     <number>6</number>
    </property>
-   <item row="0" column="0" >
-    <widget class="QTabWidget" name="tabWidgetScheme" >
-     <property name="minimumSize" >
+   <item row="0" column="0">
+    <widget class="QTabWidget" name="tabWidgetScheme">
+     <property name="minimumSize">
       <size>
        <width>400</width>
        <height>0</height>
       </size>
      </property>
-     <property name="font" >
+     <property name="font">
       <font>
        <weight>50</weight>
        <italic>false</italic>
        <bold>false</bold>
       </font>
      </property>
-     <property name="currentIndex" >
+     <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tab_2" >
-      <attribute name="title" >
+     <widget class="QWidget" name="tab_2">
+      <attribute name="title">
        <string>Solver</string>
       </attribute>
-      <layout class="QGridLayout" >
-       <property name="margin" >
+      <layout class="QGridLayout">
+       <property name="margin">
         <number>9</number>
        </property>
-       <property name="spacing" >
+       <property name="spacing">
         <number>6</number>
        </property>
-       <item row="0" column="0" >
-        <widget class="QTableView" name="tableViewSolver" >
-         <property name="minimumSize" >
+       <item row="0" column="0">
+        <widget class="QTableView" name="tableViewSolver">
+         <property name="minimumSize">
           <size>
            <width>400</width>
            <height>0</height>
@@ -60,20 +61,20 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab" >
-      <attribute name="title" >
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
        <string>Scheme</string>
       </attribute>
-      <layout class="QGridLayout" >
-       <property name="margin" >
+      <layout class="QGridLayout">
+       <property name="margin">
         <number>9</number>
        </property>
-       <property name="spacing" >
+       <property name="spacing">
         <number>6</number>
        </property>
-       <item row="0" column="0" >
-        <widget class="QTableView" name="tableViewScheme" >
-         <property name="minimumSize" >
+       <item row="0" column="0">
+        <widget class="QTableView" name="tableViewScheme">
+         <property name="minimumSize">
           <size>
            <width>420</width>
            <height>0</height>
@@ -83,20 +84,20 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_3" >
-      <attribute name="title" >
+     <widget class="QWidget" name="tab_clipping">
+      <attribute name="title">
        <string>Clipping</string>
       </attribute>
-      <layout class="QGridLayout" >
-       <property name="margin" >
+      <layout class="QGridLayout">
+       <property name="margin">
         <number>9</number>
        </property>
-       <property name="spacing" >
+       <property name="spacing">
         <number>6</number>
        </property>
-       <item row="0" column="0" >
-        <widget class="QTableView" name="tableViewClipping" >
-         <property name="minimumSize" >
+       <item row="0" column="0">
+        <widget class="QTableView" name="tableViewClipping">
+         <property name="minimumSize">
           <size>
            <width>400</width>
            <height>0</height>

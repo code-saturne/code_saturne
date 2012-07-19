@@ -714,8 +714,6 @@ class StandardItemModelClipping(QStandardItemModel):
 
         if index.column() == 0:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        elif index.column() == 1:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
@@ -827,7 +825,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.tableViewSolver.setItemDelegateForColumn(1, delegateSolverChoice)
 
         # Clipping
-        self.modelClipping = StandardItemModelClipping(self,self.NPE)
+        self.modelClipping = StandardItemModelClipping(self, self.NPE)
         self.tableViewClipping.setModel(self.modelClipping)
         self.tableViewClipping.setAlternatingRowColors(True)
         self.tableViewClipping.resizeColumnToContents(0)
@@ -842,6 +840,9 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
 
         delegateMax = MaximumDelegate(self.tableViewClipping)
         self.tableViewClipping.setItemDelegateForColumn(2, delegateMax)
+
+        if len(self.NPE.getClippingList()) == 0:
+            self.tab_clipping.setEnabled(False)
 
 
     def tr(self, text):

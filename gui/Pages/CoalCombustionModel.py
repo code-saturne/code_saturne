@@ -403,19 +403,6 @@ class CoalCombustionModel(Variables, Model):
             name = '%s%2.2i' % (baseName, coalsNumber)
             self.setNewModelScalar(self.node_fuel, name)
 
-        # update scheme default values
-        from Pages.NumericalParamEquationModel import NumericalParamEquatModel
-        for var in self.__createModelVariableMinMaxList():
-            NumericalParamEquatModel(self.case).setMinValue(var, -1.e12)
-            NumericalParamEquatModel(self.case).setMaxValue(var,  1.e12)
-
-        for classe in range(0, self.getClassesNumber()):
-            name = '%s%2.2i' % ("NP_CP", classe+1)
-            NumericalParamEquatModel(self.case).setMinValue(name, 0)
-            NumericalParamEquatModel(self.case).setMaxValue(name, 1.e12)
-
-        del NumericalParamEquatModel
-
 
     def __createCoalModelProperties(self, coalsNumber, coalClassesNumber, classesNumber):
         """
@@ -481,19 +468,6 @@ class CoalCombustionModel(Variables, Model):
         for i in range(len(baseNames)):
             name = '%s%2.2i' % (baseNames[i], classNum)
             self.setNewModelScalar(self.node_fuel, name)
-
-        # update scheme default values
-        from Pages.NumericalParamEquationModel import NumericalParamEquatModel
-        for var in self.__createModelVariableMinMaxList():
-            NumericalParamEquatModel(self.case).setMinValue(var, -1.e12)
-            NumericalParamEquatModel(self.case).setMaxValue(var,  1.e12)
-
-        for classe in range(0, self.getClassesNumber()):
-            name = '%s%2.2i' % ("NP_CP", classe+1)
-            NumericalParamEquatModel(self.case).setMinValue(name, 0)
-            NumericalParamEquatModel(self.case).setMaxValue(name, 1.e12)
-
-        del NumericalParamEquatModel
 
 
     def setCoalCombustionModel(self, model):

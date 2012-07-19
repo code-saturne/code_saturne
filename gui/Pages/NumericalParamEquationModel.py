@@ -296,7 +296,8 @@ class NumericalParamEquatModel(Model):
         list = []
         for node in self._getClippingNodesList():
             for n in node:
-                list.append(n['label'])
+                if n['type'] != 'model':
+                    list.append(n['label'])
         return list
 
 
