@@ -145,7 +145,7 @@ double precision ckmel(ncelet)
 ! Local variables
 
 integer          iel, ifac, iok
-double precision unspi, xit, distbf, pimp, hint, qimp, coefmn, xlimit
+double precision unspi, xit, distbf, pimp, hint, qimp, coefmn, xlimit, cfl
 
 !===============================================================================
 
@@ -276,7 +276,8 @@ else if (iirayo.eq.2) then
 
       distbf = distb(ifac)
 
-      xit = 1.5d0 *distbf *ck(ifabor(ifac)) * (2.d0 /(2.d0-eps(ifac)) -1.d0)
+      xit = 1.5d0 *distbf *ck(iel) * (2.d0 /(2.d0-eps(ifac)) -1.d0)
+      cfl = 1.d0/xit
 
       ! Convective Boundary Condition
       !------------------------------
@@ -284,10 +285,10 @@ else if (iirayo.eq.2) then
       pimp = tparoi(ifac)**4
 
       call set_convective_outlet_scalar &
-           !==================
+           !===========================
          ( coefap(ifac), cofafp(ifac),             &
            coefbp(ifac), cofbfp(ifac),             &
-           pimp        , xit         , hint )
+           pimp        , cfl         , hint )
 
     else
 

@@ -1895,11 +1895,11 @@ if (nscal.ge.1) then
 
       ! --- turbulent Case
       if (iturb.ne.0) then
-        hint = cpp*(rkl+idifft(ivar)*visctc/sigmas(ii))/distbf
+        hint = (rkl+idifft(ivar)*cpp*visctc/sigmas(ii))/distbf
 
       ! --- Laminar Case
       else
-        hint = cpp*rkl/distbf
+        hint = rkl/distbf
       endif
 
       ! Dirichlet Boundary Condition
@@ -1910,12 +1910,11 @@ if (nscal.ge.1) then
         pimp = rcodcl(ifac,ivar,1)
         hext = rcodcl(ifac,ivar,2)
 
-        !FIXME: hint/cpp to be consistent with viscfa
         call set_dirichlet_scalar &
              !====================
            ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
              coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-             pimp              , hint/cpp          , hext )
+             pimp              , hint              , hext )
 
 
 
@@ -2744,7 +2743,7 @@ coefa = (1.d0-coefb)*pimp
 
 ! Flux BCs
 cofaf = -hint*coefa
-cofbf =  hint*coefa
+cofbf =  hint*(1.d0 - coefb)
 
 return
 end subroutine
@@ -2806,7 +2805,7 @@ do isou = 1, 3
   cofaf(isou) = -hint*coefa(isou)
   do jsou = 1, 3
     if (jsou.eq.isou) then
-      cofbf(isou,jsou) = hint*coefa(isou)
+      cofbf(isou,jsou) = hint*(1.d0 - coefb(isou,jsou))
     else
       cofbf(isou,jsou) = 0.d0
     endif
