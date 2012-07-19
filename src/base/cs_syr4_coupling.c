@@ -456,6 +456,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 {
   char *coupled_mesh_name = NULL;
   cs_gnum_t n_exterior = 0, n_dist_elts = 0;
+  cs_gnum_t n_ext = 0;
   cs_lnum_t *elt_list = NULL;
   cs_coord_t *elt_centers = NULL;
   const double tolerance = 0.1;
@@ -514,7 +515,6 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                        elt_list);
 
     BFT_FREE(elt_list);
-    BFT_FREE(coupled_mesh_name);
 
     /* Allocate additional buffers */
 
@@ -550,7 +550,6 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                        elt_list);
 
     BFT_FREE(elt_list);
-    BFT_FREE(coupled_mesh_name);
 
   }
 
@@ -777,18 +776,89 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   /* Check that all points are effectively located */
 
   n_exterior = ple_locator_get_n_exterior(coupling_ent->locator);
+  n_ext = n_exterior;
 
-  cs_parall_counter(&n_exterior, 1);
+  cs_parall_counter(&n_ext, 1);
 
-  if (n_exterior)
+  if (n_ext) {
+
+    int i;
+    int writer_ids[] = {-1};
+    int mesh_id = cs_post_get_free_mesh_id();
+    cs_lnum_t *post_vtx_num = NULL;
+    cs_coord_t *exterior_coords = NULL;
+    cs_coord_t *el_list = NULL;
+    fvm_io_num_t *vtx_io_num = NULL;
+    fvm_nodal_t *ulck_points = fvm_nodal_create("unlocated elements (centers)",
+                                                syr_coupling->dim);
+    const ple_lnum_t *exterior_list
+      = ple_locator_get_exterior_list(coupling_ent->locator);
+
+    BFT_MALLOC(post_vtx_num, n_exterior, cs_lnum_t);
+    BFT_MALLOC(exterior_coords, 3*n_exterior, cs_coord_t);
+    BFT_MALLOC(el_list,
+               coupling_ent->n_elts*3,
+               cs_coord_t);
+
+    fvm_nodal_get_element_centers(coupling_ent->elts,
+                                  CS_INTERLACE,
+                                  coupling_ent->elt_dim,
+                                  el_list);
+
+    for (i = 0; i < (cs_lnum_t)n_exterior; i++) {
+      post_vtx_num[i] = i+1;
+      if (exterior_list[i] > coupling_ent->n_elts)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error: invalid exterior elements selection."));
+      exterior_coords[3*i   ] = el_list[3*(exterior_list[i]-1)   ];
+      exterior_coords[3*i +1] = el_list[3*(exterior_list[i]-1) +1];
+      exterior_coords[3*i +2] = el_list[3*(exterior_list[i]-1) +2];
+    }
+
+    fvm_nodal_define_vertex_list(ulck_points,
+                                 (cs_lnum_t)n_exterior,
+                                 post_vtx_num);
+    fvm_nodal_set_shared_vertices
+      (ulck_points,
+       exterior_coords);
+
+    if (cs_glob_n_ranks > 1) {
+      vtx_io_num = fvm_io_num_create_from_scan(n_exterior);
+      fvm_nodal_init_io_num(ulck_points,
+                            fvm_io_num_get_global_num(vtx_io_num),
+                            0);
+    }
+
+    cs_post_define_existing_mesh(mesh_id,
+                                 ulck_points,
+                                 0,
+                                 true,
+                                 false,
+                                 1,
+                                 writer_ids);
+
+    cs_post_activate_writer(0, 1);
+    cs_post_write_meshes(-1, 0.0);
+    cs_post_free_mesh(mesh_id);
+
+    if (cs_glob_n_ranks > 1)
+      fvm_io_num_destroy(vtx_io_num);
+
+    BFT_FREE(el_list);
+    BFT_FREE(exterior_coords);
+
     bft_error(__FILE__, __LINE__, 0,
               _("Coupling with SYRTHES impossible:\n"
                 "%llu element centers from mesh \"%s\"\n"
                 "not located on SYRTHES mesh."),
-              (unsigned long long)n_exterior, coupled_mesh_name);
+              (unsigned long long)n_ext, coupled_mesh_name);
+
+  }
 
   if (location_elts != coupling_ent->elts)
     fvm_nodal_destroy(location_elts);
+
+  BFT_FREE(coupled_mesh_name);
 
   return coupling_ent;
 }
