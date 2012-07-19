@@ -116,6 +116,7 @@ integer          iescap, iflmb0, imaspe, itypfl
 integer          ncymxp, nitmfp, ipp
 integer          ifac  , iel   , ipcvis, init  , ipcrom
 integer          inc   , iccocg, isym  , isweep, infpar
+integer          imucpp
 
 double precision xnorme, dtminy, dtmaxy, relaxp, thetap, timey
 double precision xusnmx, xusnmn, xnorm0
@@ -154,6 +155,7 @@ allocate(dpvar(ncelet))
 
 ! Allocate work arrays
 allocate(w2(ncelet))
+
 
 ipass  = ipass + 1
 
@@ -519,6 +521,7 @@ do isweep = 1, ntcmxy
   ireslp = -1
   ! Pas d'estimateurs, ni de multigrille (100 et 10 sont arbitraires)
   iescap = 0
+  imucpp = 0
   ncymxp = 100
   nitmfp = 10
   ! La case 1 est une poubelle
@@ -537,7 +540,7 @@ do isweep = 1, ntcmxy
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmay , &
    imrgra , nswrsy , nswrgy , imligy , ircfly ,                   &
-   ischcy , isstpy , iescap ,                                     &
+   ischcy , isstpy , iescap , imucpp ,                            &
    imgrpy , ncymxp , nitmfp , ipp    , iwarny ,                   &
    blency , epsily , epsrsy , epsrgy , climgy , extray ,          &
    relaxp , thetap ,                                              &
@@ -545,7 +548,7 @@ do isweep = 1, ntcmxy
    coefax , coefbx , coefax , coefbx , flumas , flumab ,          &
    flumas , flumab , flumas , flumab ,                            &
    rovsdp , smbdp  , rtpdp  , dpvar  ,                            &
-   rvoid  )
+   rvoid  , rvoid  )
 
 
   ! Clipping (indispensable si on initialise par u*/nu du pas de
@@ -589,6 +592,7 @@ enddo
 write(nfecra,8000) xnorme, xnorm0, xnorme/xnorm0, ntcmxy
 
  100  continue
+
 
 !===============================================================================
 ! 9. Finalization and printing

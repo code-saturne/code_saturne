@@ -546,6 +546,18 @@ subroutine ustssc &
 ! user manual or to the comments on the similar command getfbr in the routine
 ! cs_user_boundary_conditions.
 
+! WARNING: If scalar is the temperature, the resulting equation
+!          solved by the code is:
+!
+!  rho*Cp*volume*dT/dt + .... = crvimp*T + crvexp
+!
+!
+! Note that crvexp and crvimp are defined after the Finite Volume integration
+! over the cells, so they include the "volume" term. More precisely:
+!   - crvexp is expressed in W
+!   - crvimp is expressed in W/K
+!
+
 !
 ! STEEP SOURCE TERMS
 !===================
@@ -770,8 +782,13 @@ if (iutile.eq.0) return
 ! ----------------------------------------------
 
 ! WARNING :
-! It is assumed here that the thermal scalar in an enthalpy.
-!  If the scalar in a temperature, PWatt must be devided by Cp.
+! It is assumed here that the thermal scalar is an enthalpy.
+! If the scalar is a temperature, PWatt does not need to be devided
+! by Cp because Cp is put outside the diffusion term and multiply
+! the temperature equation as follows:
+!
+!  rho*Cp*volume*dT/dt + .... =  volume(iel)* Pwatt/volf
+!
 
 pwatt = 100.d0
 

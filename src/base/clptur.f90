@@ -1395,10 +1395,18 @@ do ifac = 1, nfabor
           endif
           if (ipcvsl.le.0) then
             rkl = visls0(iscal)
-            prdtl = visclc/rkl
+            if (abs(iscsth(iscal)).eq.1) then
+              prdtl = cpp*visclc/rkl
+            else
+              prdtl = visclc/rkl
+            endif
           else
             rkl = propce(iel,ipcvsl)
-            prdtl = visclc/rkl
+            if (abs(iscsth(iscal)).eq.1) then
+              prdtl = cpp*visclc/rkl
+            else
+              prdtl = visclc/rkl
+            endif
           endif
 
           ! --> Compressible module:
@@ -1437,23 +1445,23 @@ do ifac = 1, nfabor
               else
                 cpscv = cpscv/cv0
               endif
-              hint = cpp*(rkl+cpscv*visctc/sigmas(iscal))/distbf
+              hint = (rkl+cpp*cpscv*visctc/sigmas(iscal))/distbf
             else
-              hint = cpp*(rkl+visctc/sigmas(iscal))/distbf
+              hint = (rkl+cpp*visctc/sigmas(iscal))/distbf
             endif
 
           ! Laminar
           else
-            hint  = cpp*rkl/distbf
+            hint = rkl/distbf
           endif
 
           if (iturb.ne.0.and.icodcl(ifac,ivar).eq.5)then
             call hturbp (prdtl,sigmas(iscal),xkappa,yplus,hflui)
             !==========
             if (ideuch.eq.2) then !FIXME
-              hflui = cpp*uk*romc/(yplus*prdtl) *hflui
+              hflui = uk*romc/(yplus*prdtl) *hflui
             else
-              hflui = cpp*rkl/distbf *hflui
+              hflui = rkl/distbf *hflui
             endif
           else
             hflui = hint
@@ -1487,8 +1495,8 @@ do ifac = 1, nfabor
               !coefb(ifac,iclvar) = 1.d0
 
               ! Flux BCs
-              coefa(ifac,iclvaf) = -hflui/cpp*pimp
-              coefb(ifac,iclvaf) =  hflui/cpp
+              coefa(ifac,iclvaf) = -hflui*pimp
+              coefb(ifac,iclvaf) =  hflui
 
             else
 
@@ -1503,8 +1511,8 @@ do ifac = 1, nfabor
 
               ! Flux BCs
               heq = hflui*hext/(hflui+hext)
-              coefa(ifac,iclvaf) = -heq/cpp*pimp
-              coefb(ifac,iclvaf) =  heq/cpp
+              coefa(ifac,iclvaf) = -heq*pimp
+              coefb(ifac,iclvaf) =  heq
 
             endif
 

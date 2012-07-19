@@ -575,26 +575,6 @@ else if (numtyp .eq. -2) then
 
       enddo
 
-      !          Pour la temperature, on multiplie par CP
-      if (abs(iscsth(iscal)).eq.1) then
-        if (icp.gt.0) then
-          ipccp  = ipproc(icp   )
-        else
-          ipccp  = 0
-        endif
-        do iloc = 1, nfbrps
-          ifac = lstfbr(iloc)
-          iel = ifabor(ifac)
-          if (ipccp.gt.0) then
-            xcp = propce(iel,ipccp)
-          else
-            xcp    = cp0
-          endif
-          trafbr(1 + (iloc-1)*idimt)                            &
-               = xcp*trafbr(1 + (iloc-1)*idimt)
-        enddo
-      endif
-
       !             Valeurs entrelacées, définies sur tableau de travail
       ientla = 1
       ivarpr = 0

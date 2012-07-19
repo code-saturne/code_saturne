@@ -188,6 +188,7 @@ integer          iesprp, iestop
 integer          iptsna
 integer          iflmb0, nswrp , imaspe, ipbrom, itypfl
 integer          idiaex, idtva0
+integer          imucpp
 
 double precision rnorm , vitnor
 double precision romvom, drom
@@ -1420,6 +1421,7 @@ do isou = 1, 3
   ircflp = ircflu(ivar)
   ischcp = ischcv(ivar)
   isstpp = isstpc(ivar)
+  imucpp = 0
   imgrp  = imgr  (ivar)
   ncymxp = ncymax(ivar)
   nitmfp = nitmgf(ivar)
@@ -1448,7 +1450,7 @@ do isou = 1, 3
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -1458,7 +1460,7 @@ do isou = 1, 3
                      flumas , flumab ,                            &
    viscfi , viscbi , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
-   eswork )
+   rvoid  , eswork )
 
     elseif(iterns.gt.1) then
 
@@ -1467,7 +1469,7 @@ do isou = 1, 3
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -1477,7 +1479,7 @@ do isou = 1, 3
                      flumas , flumab ,                            &
    viscfi , viscbi , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
-   eswork )
+   rvoid  , eswork )
 
     endif
 
@@ -1518,7 +1520,7 @@ do isou = 1, 3
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ippt   , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -1528,7 +1530,7 @@ do isou = 1, 3
                      flumas , flumab ,                            &
    viscfi , viscbi , viscf  , viscb  ,                            &
    rovsdt , smbr   , tpucou(1,isou)  , dpvar  ,                   &
-   rvoid  )
+   rvoid  , rvoid  )
 
       do iel = 1, ncelet
         tpucou(iel,isou) = propce(iel,ipcrom)*tpucou(iel,isou)
@@ -1553,6 +1555,7 @@ do isou = 1, 3
 
     inc = 1
     iccocg = 1
+    imucpp = 0
 !     Pas de relaxation en stationnaire
     idtva0 = 0
 
@@ -1561,12 +1564,12 @@ do isou = 1, 3
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp ,                                              &
+   ipp    , iwarnp , imucpp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtp(1,ivar)     , rtp(1,ivar)     ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   flumas , flumab , viscf  , viscb  ,                            &
+   flumas , flumab , viscf  , viscb  , rvoid  ,                   &
    smbr   )
 
     iestop = ipproc(iestim(iestot))

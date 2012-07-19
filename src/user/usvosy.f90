@@ -219,11 +219,21 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
    endif
 
    if (ipcvsl.gt.0) then ! lambda/Cp is variable
-      lambda_over_cp = propce(iel, ipcvsl)
-      lambda =  lambda_over_cp * cp
+     if (abs(iscsth(iscal)).eq.1) then
+       lambda =  propce(iel, ipcvsl)
+       lambda_over_cp = lambda/cp
+     else
+       lambda_over_cp = propce(iel, ipcvsl)
+       lambda =  lambda_over_cp * cp
+     endif
    else
-      lambda_over_cp = visls0(iscal)
-      lambda = lambda_over_cp * cp
+     if (abs(iscsth(iscal)).eq.1) then
+       lambda =  visls0(iscal)
+       lambda_over_cp = lambda/cp
+     else
+       lambda_over_cp = visls0(iscal)
+       lambda = lambda_over_cp * cp
+     endif
    endif
 
    ! Compute a local molecular Prandtl **(1/3)

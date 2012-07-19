@@ -100,6 +100,7 @@ integer          nswrgp, imligp, iwarnp, iphydp, ipp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
+integer          imucpp
 double precision blencp, epsilp, epsrsp, epsrgp, climgp, extrap, relaxp
 double precision thetv , thetap
 double precision d1s4, d3s2, d1s2
@@ -239,6 +240,7 @@ ircflp = ircflu(ivar)
 ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
 iescap = 0
+imucpp = 0
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
@@ -256,7 +258,7 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
@@ -266,7 +268,7 @@ call codits &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
-   rvoid  )
+   rvoid  , rvoid  )
 
 !===============================================================================
 ! 3. Clipping

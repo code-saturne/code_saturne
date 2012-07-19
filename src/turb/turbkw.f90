@@ -122,6 +122,7 @@ integer          ipcrom, ipbrom, ipcvst, ipcvis, iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
 integer          ipcroo, ipbroo, ipcvto, ipcvlo
+integer          imucpp
 
 double precision rnorm , d2s3, divp23, epz2
 double precision deltk , deltw, a11, a12, a22, a21
@@ -594,6 +595,7 @@ if (ikecou.eq.1) then
   ischcp = ischcv(ivar)
   isstpp = isstpc(ivar)
   iwarnp = iwarni(ivar)
+  imucpp = 0
   blencp = blencv(ivar)
   epsrgp = epsrgr(ivar)
   climgp = climgr(ivar)
@@ -606,12 +608,12 @@ if (ikecou.eq.1) then
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp ,                                              &
+   ipp    , iwarnp , imucpp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
+   propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , rvoid  , &
    w5     )
 
 
@@ -953,6 +955,7 @@ ircflp = ircflu(ivar)
 ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
 iescap = 0
+imucpp = 0
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
@@ -971,7 +974,7 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -981,8 +984,7 @@ call codits &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    tinstk , smbrk  , rtp(1,ivar)     , dpvar  ,                   &
-   rvoid  )
-
+   rvoid  , rvoid  )
 
 ! ---> Traitement de omega
 
@@ -1033,6 +1035,7 @@ ircflp = ircflu(ivar)
 ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
 iescap = 0
+imucpp = 0
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
@@ -1052,7 +1055,7 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -1062,8 +1065,7 @@ call codits &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    tinstw , smbrw  , rtp(1,ivar)     , dpvar  ,                   &
-   rvoid  )
-
+   rvoid  , rvoid  )
 
 !===============================================================================
 ! 14. CLIPPING

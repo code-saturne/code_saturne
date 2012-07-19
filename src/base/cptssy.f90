@@ -88,7 +88,7 @@ double precision crvexp(ncelet), crvimp(ncelet)
 
 integer          nbccou, inbcou, inbcoo, ncecpl, iloc, iel
 integer          mode  , isvol , ipccp , ivart
-double precision tsexp, tsimp, cp, cecoef
+double precision tsexp, tsimp
 
 integer, dimension(:), allocatable :: lcecpl
 double precision, dimension(:), allocatable :: tfluid, ctbimp, ctbexp
@@ -110,7 +110,7 @@ if (nbccou.lt.1) then
 endif
 
 ! Define source term only for the temperature scalar
-
+!FIXME il manquerait pas un test pour dire qu'on veut que de la temperature?
 if (iscalt.ne.iscal) then
   return
 endif
@@ -179,19 +179,8 @@ do inbcou = 1, nbccou
 
       iel = lcecpl(iloc)
 
-      ! Get Cp constant or variable
-
-      if (icp.gt.0) then
-        ipccp = ipproc(icp)
-        cp = propce(iel, ipccp)
-      else
-        cp = cp0
-      endif
-
-      !FIXME
-      cecoef = volume(iel)/cp
-      tsexp = (ctbexp(iloc) - ctbimp(iloc)*tfluid(iloc))* cecoef
-      tsimp = ctbimp(iloc) * cecoef
+      tsexp = (ctbexp(iloc) - ctbimp(iloc)*tfluid(iloc))* volume(iel)
+      tsimp = ctbimp(iloc) * volume(iel)
 
       crvexp(iel) = crvexp(iel) + tsexp
       crvimp(iel) = crvimp(iel) + tsimp

@@ -147,6 +147,7 @@ integer          iptsta
 integer          inc, iccocg, iphydp, ll, kkk
 integer          ipcvlo
 integer          idimte, itenso
+integer          imucpp
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision trprod, trrij , rctse , deltij
@@ -942,7 +943,6 @@ if(isto2t.gt.0) then
   enddo
 endif
 
-
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
 ireslp = iresol(ivar)
@@ -955,6 +955,7 @@ ircflp = ircflu(ivar)
 ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
 iescap = 0
+imucpp = 0
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
@@ -972,7 +973,7 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
@@ -982,8 +983,7 @@ call codits &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
-   rvoid  )
-
+   rvoid  , rvoid  )
 
 !===============================================================================
 ! 11. IMPRESSIONS

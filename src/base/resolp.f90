@@ -171,6 +171,7 @@ integer          nagmax, npstmg
 integer          ibsize
 integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
 integer          nswrsp
+integer          imucpp
 
 double precision residu, phydr0
 double precision ardtsr, arsr  , unsara, thetap
@@ -497,16 +498,18 @@ idiffp = idiff (ipr)
 ndircp = ndircl(ipr)
 
 thetap = 1.d0
+imucpp = 0
+
 call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp ,                                     &
    isym   , nfecra ,                                              &
-   thetap ,                                                       &
+   thetap , imucpp ,                                              &
    ifacel , ifabor ,                                              &
    coefb(1,iclipr) , coefb(1,iclipf) , rovsdt ,                   &
    propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
-   dam    , xam    )
+   rvoid  , dam    , xam    )
 
 ! Strengthen the diagonal
 if (idilat.eq.3) then
@@ -1477,6 +1480,7 @@ if (idilat.eq.4) then
   extrap = extrag(ivar)
   relaxp = relaxv(ivar)
   thetap = thetav(ivar)
+  imucpp = 0
 
   ! --- Solve the convection diffusion equation
 
@@ -1485,7 +1489,7 @@ if (idilat.eq.4) then
    ( nvar   , nscal  ,                                              &
      idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
      imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-     ischcp , isstpp , iescap ,                                     &
+     ischcp , isstpp , iescap , imucpp ,                            &
      imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
@@ -1495,7 +1499,7 @@ if (idilat.eq.4) then
      velflx , velflb ,                                              &
      viscf  , viscb  , viscf  , viscb  ,                            &
      rovsdt , smbr   , drtp   , dpvar  ,                            &
-     rvoid  )
+     rvoid  , rvoid  )
 
   ! --- Update the Pressure
 

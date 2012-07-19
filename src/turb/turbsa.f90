@@ -123,6 +123,7 @@ integer          iwarnp, ipp
 integer          iptsta
 integer          ipcroo, ipbroo, ipcvto, ipcvlo
 integer          ipatrg
+integer          imucpp
 
 logical          ilved
 
@@ -608,6 +609,7 @@ ircflp = ircflu(ivar)
 ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
 iescap = 0
+imucpp = 0
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
@@ -626,7 +628,7 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -636,8 +638,7 @@ call codits &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    tinssa , rhssa  , rtp(1,ivar)     , dpvar ,                    &
-   rvoid  )
-
+   rvoid  , rvoid  )
 
 !===============================================================================
 ! 10. Clipping

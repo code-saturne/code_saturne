@@ -127,6 +127,7 @@ integer          nitmap, imgrp , ncymap, nitmgp
 integer          iinvpe
 integer          nagmax, npstmg
 integer          ibsize, iphydp
+integer          imucpp
 double precision residu, resold
 double precision thetap
 double precision epsrgp, climgp, extrap, epsilp
@@ -280,17 +281,18 @@ idiffp = idiff(ipr)
 ndircp = 0
 
 thetap = 1.d0
+imucpp = 0
 
 call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp ,                                     &
    isym   , nfecra ,                                              &
-   thetap ,                                                       &
+   thetap , imucpp ,                                              &
    ifacel , ifabor ,                                              &
    clbpot , cfbpot , pot    ,                                     &
    propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
-   dam    , xam    )
+   rvoid  , dam    , xam    )
 
 !===============================================================================
 ! 5. Preparation of the Algebraic Multigrid

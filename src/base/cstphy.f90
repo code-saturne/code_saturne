@@ -175,6 +175,7 @@ module cstphy
   !    0 : scalaire passif      (ie pas de Cp pour la loi de paroi)
   !    1 : de type temperature en K (      Cp pour la loi de paroi)
   !    2 : enthalpie            (ie pas de Cp pour la loi de paroi)
+  !    3 : energie (en compressible, pas de Cp pour la loi de paroi)
   !      la distinction C/K sert en rayonnement
   ! ivisls : si positif strictement, indique que la viscosite associee
   !            au scalaire est variable, et la valeur est le numero

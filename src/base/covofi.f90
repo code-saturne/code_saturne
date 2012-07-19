@@ -103,6 +103,8 @@ use lagpar
 use lagran
 use radiat
 use mesh
+use parall
+use period
 
 !===============================================================================
 
@@ -133,7 +135,7 @@ character*80     chaine
 integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg, isqrt, iii, iiun, ibcl
-integer          ivarsc, iscala
+integer          ivarsc
 integer          iiscav, iicp
 integer          iclvar, iclvaf
 integer          ipcrom, ipcroa, ipcrho, ipcvst, ipcvsl, iflmas, iflmab
@@ -142,6 +144,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
+integer          imucpp
 
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
@@ -154,6 +157,7 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: dpvar
+double precision, allocatable, dimension(:) :: xcpp
 
 !===============================================================================
 
@@ -170,9 +174,6 @@ allocate(dpvar(ncelet))
 xe = 0.d0
 xk = 0.d0
 
-! --- Memoire
-
-
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)
 ippvar = ipprtp(ivar)
@@ -180,7 +181,7 @@ ippvar = ipprtp(ivar)
 ! --- Numero du scalaire eventuel associe dans le cas fluctuation
 !         et numero de variable de calcul
 iiscav = iscavr(iscal)
-if(iiscav.gt.0.and.iiscav.le.nscal) then
+if (iiscav.gt.0.and.iiscav.le.nscal) then
   ivarsc = isca(iiscav)
 else
   ivarsc = 0
@@ -200,20 +201,20 @@ endif
 ipcvst = ipproc(ivisct)
 iflmas = ipprof(ifluma(ivar ))
 iflmab = ipprob(ifluma(ivar ))
-if(ivisls(iscal).gt.0) then
+if (ivisls(iscal).gt.0) then
   ipcvsl = ipproc(ivisls(iscal))
 else
   ipcvsl = 0
 endif
 
 ! --- Numero du terme source dans PROPCE si extrapolation
-if(isso2t(iscal).gt.0) then
+if (isso2t(iscal).gt.0) then
   iptsca = ipproc(itssca(iscal))
 else
   iptsca = 0
 endif
 
-!     S pour Source, V pour Variable
+! S pour Source, V pour Variable
 thets  = thetss(iscal)
 thetv  = thetav(ivar )
 
@@ -223,64 +224,98 @@ if(iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
 
+! When solving the Temperature, we solve:
+!  cp*Vol*dT/dt + ...
+if(ivar.eq.isca(iscalt)) then
+  if(abs(iscsth(iscalt)).eq.1) then
+    if(icp.gt.0) then
+      imucpp = 2
+    else
+      imucpp = 1
+    endif
+  else
+    imucpp = 0
+  endif
+else
+  imucpp = 0
+endif
+
+allocate(xcpp(ncelet))
+
+if (imucpp.eq.0) then
+  do iel = 1, ncel
+    xcpp(iel) = 1.d0
+  enddo
+elseif (imucpp.eq.1) then
+  do iel = 1, ncel
+    xcpp(iel) = cp0
+  enddo
+elseif (imucpp.eq.2) then
+  do iel = 1, ncel
+    xcpp(iel) = propce(iel,ipproc(icp))
+  enddo
+endif
+
+! Handle parallelism and periodicity
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(xcpp)
+endif
+
 !===============================================================================
-! 2. TERMES SOURCES
+! 2. Source terms
 !===============================================================================
 
-! --> Initialisation
-
+! --> Initialization
 
 do iel = 1, ncel
   rovsdt(iel) = 0.d0
   smbrs(iel) = 0.d0
 enddo
 
-iscala = iscal
-
 call ustssc &
 !==========
 ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-  iscala ,                                                       &
+  iscal  ,                                                       &
   icepdc , icetsm , itypsm ,                                     &
   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
   coefa  , coefb  , ckupdc , smacel ,                            &
   smbrs  , rovsdt )
 
-!     Si on extrapole les TS :
-!       SMBRS recoit -theta PROPCE du pas de temps precedent
-!         (on aurait pu le faire avant ustssc, mais avec le risque que
-!          l'utilisateur l'ecrase)
-!       SMBRS recoit la partie du terme source qui depend de la variable
-!       A l'ordre 2, on suppose que le ROVSDT fourni par l'utilisateur est <0
-!         on implicite le terme (donc ROVSDT*RTPA va dans SMBRS)
-!       En std, on adapte le traitement au signe de ROVSDT, mais ROVSDT*RTPA va
-!         quand meme dans SMBRS (pas d'autre choix)
-if(isso2t(iscal).gt.0) then
+! Si on extrapole les TS :
+!   SMBRS recoit -theta PROPCE du pas de temps precedent
+!     (on aurait pu le faire avant ustssc, mais avec le risque que
+!      l'utilisateur l'ecrase)
+!   SMBRS recoit la partie du terme source qui depend de la variable
+!   A l'ordre 2, on suppose que le ROVSDT fourni par l'utilisateur est <0
+!     on implicite le terme (donc ROVSDT*RTPA va dans SMBRS)
+!   En std, on adapte le traitement au signe de ROVSDT, mais ROVSDT*RTPA va
+!     quand meme dans SMBRS (pas d'autre choix)
+if (isso2t(iscal).gt.0) then
   do iel = 1, ncel
-!        Stockage temporaire pour economiser un tableau
+    ! Stockage temporaire pour economiser un tableau
     smbexp = propce(iel,iptsca)
-!        Terme source utilisateur explicite
+    ! Terme source utilisateur explicite
     propce(iel,iptsca) = smbrs(iel)
-!        Terme source du pas de temps precedent et
-!        On suppose -ROVSDT > 0 : on implicite
-!           le terme source utilisateur (le reste)
+    ! Terme source du pas de temps precedent et
+    ! On suppose -ROVSDT > 0 : on implicite
+    !    le terme source utilisateur (le reste)
     smbrs(iel) = rovsdt(iel)*rtpa(iel,ivar) - thets*smbexp
-!        Diagonale
+    ! Diagonale
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
 
-
-!     Si on n'extrapole pas les TS :
+! Si on n'extrapole pas les TS :
 else
   do iel = 1, ncel
-!        Terme source utilisateur
+    ! Terme source utilisateur
     smbrs(iel) = smbrs(iel) + rovsdt(iel)*rtpa(iel,ivar)
-!        Diagonale
+    ! Diagonale
     rovsdt(iel) = max(-rovsdt(iel),zero)
   enddo
 endif
 
-! Add thermodynamic pressure variation for the low-Mach algorithm
+! Add thermodynamic pressure variation for the low-Mach algorithm:
+! NB: iscalt is the Enthalpy
 if (idilat.eq.3 .and. iscalt.gt.0) then
   if (ivar.eq.isca(iscalt)) then
     ! unsteady thermodynamic source term added
@@ -297,7 +332,7 @@ if (iscal.eq.iscalt) then
   call cptssy &
   !==========
 ( nvar   , nscal  ,                                              &
-  iscala ,                                                       &
+  iscal  ,                                                       &
   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
   smbrs  , rovsdt )
 endif
@@ -306,10 +341,10 @@ endif
 !     Ordre 2 non pris en compte
 
 if (ippmod(iphpar).ge.1) then
-  call pptssc                                                     &
+  call pptssc &
   !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscala ,                                                       &
+   iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
@@ -319,10 +354,10 @@ endif
 ! --> Rayonnement
 !     Ordre 2 non pris en compte
 
-if ( iirayo.ge.1 ) then
+if (iirayo.ge.1) then
 
   if (iscal.eq.iscalt) then
-    call raysca                    &
+    call raysca &
     !==========
   ( iscalt,ncelet,ncel,     &
     smbrs, rovsdt,volume,propce )
@@ -335,7 +370,7 @@ if ( iirayo.ge.1 ) then
     if ( isca(iscal).ge.isca(ih2(1)) .and.       &
          isca(iscal).le.isca(ih2(nclacp)) ) then
 
-      call cprays                  &
+      call cprays &
       !==========
     ( ivar  ,ncelet, ncel  ,       &
       volume,propce,smbrs,rovsdt)
@@ -343,15 +378,15 @@ if ( iirayo.ge.1 ) then
     endif
   endif
   ! new model
-  if ( ippmod(iccoal) .ge. 0 ) then
-    if ( isca(iscal).ge.isca(ih2(1)) .and.       &
-         isca(iscal).le.isca(ih2(nclacp)) ) then
-!
-      call cs_coal_radst           &
-     !===============================
-          ( ivar  ,ncelet, ncel  ,                &
-            volume,propce,smbrs,rovsdt)
-!
+  if (ippmod(iccoal) .ge. 0) then
+    if (isca(iscal).ge.isca(ih2(1)) .and.       &
+        isca(iscal).le.isca(ih2(nclacp))) then
+
+      call cs_coal_radst &
+      !=================
+      ( ivar   , ncelet , ncel  ,                &
+        volume , propce , smbrs , rovsdt )
+
     endif
   endif
 
@@ -359,13 +394,13 @@ if ( iirayo.ge.1 ) then
   !    Ordre 2 non pris en compte
   !    Pour l'instant rayonnement non compatible avec Fuel
 
-  if ( ippmod(icfuel) .ge. 0 ) then
-    if ( isca(iscal).ge.isca(ih2(1)) .and.       &
-         isca(iscal).le.isca(ih2(nclafu)) ) then
+  if (ippmod(icfuel) .ge. 0) then
+    if (isca(iscal).ge.isca(ih2(1)) .and.       &
+        isca(iscal).le.isca(ih2(nclafu))) then
 
-      call cs_fuel_radst             &
-     !===============================
-    ( ivar  ,ncelet, ncel  ,       &
+      call cs_fuel_radst &
+     !==================
+    ( ivar  ,ncelet, ncel  ,                      &
       volume,rtpa  , propce,smbrs,rovsdt)
 
     endif
@@ -378,66 +413,51 @@ endif
 
 if (iilagr.eq.2 .and. ltsthe.eq.1)  then
 
-  if (iscsth(iscal).eq.2) then
+  if ((iscsth(iscal).eq.2).or.(abs(iscsth(iscal)).eq.1)) then
 
-!    --> Enthalpie
-
-    do iel = 1,ncel
+    do iel = 1, ncel
       smbrs (iel) = smbrs(iel)  + tslagr(iel,itste)
-      rovsdt(iel) = rovsdt(iel) + max(tslagr(iel,itsti),zero)
+      rovsdt(iel) = rovsdt(iel) + xcpp(iel)*max(tslagr(iel,itsti),zero)
     enddo
-
-  else if (iscsth(iscal).eq.1 .or. iscsth(iscal).eq.-1 ) then
-
-!    --> Temperature  :
-
-    if (icp.eq.0) then
-
-!       --> Cp constant
-
-      do iel = 1,ncel
-        smbrs (iel) = smbrs(iel)  + tslagr(iel,itste)/cp0
-        rovsdt(iel) = rovsdt(iel) + max(tslagr(iel,itsti),zero)
-      enddo
-
-    else if (icp.gt.0) then
-
-!       --> Cp variable
-
-      iicp = ipproc(icp)
-      do iel = 1,ncel
-        smbrs (iel) = smbrs(iel) + tslagr(iel,itste)              &
-                                 / propce(iel,iicp)
-        rovsdt(iel) = rovsdt(iel) + max(tslagr(iel,itsti),zero)
-      enddo
-    endif
 
   endif
 
 endif
 
-
-!     TERMES DE SOURCE DE MASSE
+! Mass source term
 
 if (ncesmp.gt.0) then
 
-!       Entier egal a 1 (pour navsto : nb de sur-iter)
+  ! Entier egal a 1 (pour navsto : nb de sur-iter)
   iiun = 1
 
-!       On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma (*theta)
-  call catsma                                                     &
+  allocate(srcmas(ncesmp))
+
+  ! When treating the Temperature, the equation is multiplied by Cp
+  do ii = 1, ncesmp
+    if (smacel(ii,ipr).gt.0.d0 .and.itypsm(ii,ivar).eq.1) then
+      srcmas(ii) = smacel(ii,ipr)*xcpp(icetsm(ii))
+    else
+      srcmas(ii) = 0.d0
+    endif
+  enddo
+
+  ! On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma (*theta)
+  call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isso2t(iscal) , thetv  ,   &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr), &
-   smbrs , rovsdt , w1)
+   volume , rtpa(1,ivar) , smacel(1,ivar) , srcmas   ,            &
+   smbrs  , rovsdt , w1)
 
-!       Si on extrapole les TS on met Gamma Pinj dans PROPCE
-  if(isso2t(iscal).gt.0) then
+  deallocate(srcmas)
+
+  ! Si on extrapole les TS on met Gamma Pinj dans PROPCE
+  if (isso2t(iscal).gt.0) then
     do iel = 1, ncel
       propce(iel,iptsca) = propce(iel,iptsca) + w1(iel)
     enddo
-!       Sinon on le met directement dans SMBRS
+  ! Sinon on le met directement dans SMBRS
   else
     do iel = 1, ncel
       smbrs(iel) = smbrs(iel) + w1(iel)
@@ -447,13 +467,12 @@ if (ncesmp.gt.0) then
 endif
 
 
-!    SI ON CALCULE LA VARIANCE DES FLUCTUATIONS D'UN SCALAIRE,
-!      ON RAJOUTE LES TERMES DE PRODUCTION ET DE DISSIPATION
+! SI ON CALCULE LA VARIANCE DES FLUCTUATIONS D'UN SCALAIRE,
+!   ON RAJOUTE LES TERMES DE PRODUCTION ET DE DISSIPATION
 
 if (itspdv.eq.1) then
 
-  if(itytur.eq.2.or.itytur.eq.3                     &
-       .or.itytur.eq.5 .or. iturb.eq.60) then
+  if (itytur.eq.2 .or. itytur.eq.3 .or. itytur.eq.5 .or. iturb.eq.60) then
 
     ! Allocate a temporary array for the gradient reconstruction
     allocate(grad(ncelet,3))
@@ -477,7 +496,7 @@ if (itspdv.eq.1) then
     climgp = climgr(iii)
     extrap = extrag(iii)
 
-    call grdcel                                                   &
+    call grdcel &
     !==========
  ( iii    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
@@ -486,16 +505,16 @@ if (itspdv.eq.1) then
                  coefb(1,iclrtp(iii,icoef)) ,                     &
    grad   )
 
-!     Traitement de la production
-!     On utilise MAX(PROPCE,ZERO) car en LES dynamique on fait un clipping
-!     tel que (mu + mu_t)>0, donc mu_t peut etre negatif et donc
-!     potentiellement (lambda/Cp + mu_t/sigma) aussi
-!     Ceci ne pose probleme que quand on resout une equation de variance
-!     de scalaire avec un modele LES ... ce qui serait curieux mais n'est
-!     pas interdit par le code.
-!       Si extrapolation : dans PROPCE
+    ! Traitement de la production
+    ! On utilise MAX(PROPCE,ZERO) car en LES dynamique on fait un clipping
+    ! tel que (mu + mu_t)>0, donc mu_t peut etre negatif et donc
+    ! potentiellement (lambda/Cp + mu_t/sigma) aussi
+    ! Ceci ne pose probleme que quand on resout une equation de variance
+    ! de scalaire avec un modele LES ... ce qui serait curieux mais n'est
+    ! pas interdit par le code.
+    !   Si extrapolation : dans PROPCE
     if (isso2t(iscal).gt.0) then
-!         On prend la viscosite a l'instant n, meme si elle est extrapolee
+      ! On prend la viscosite a l'instant n, meme si elle est extrapolee
       ipcvso = ipcvst
       if(iviext.gt.0) ipcvso = ipproc(ivista)
       do iel = 1, ncel
@@ -504,7 +523,7 @@ if (itspdv.eq.1) then
              *volume(iel)/sigmas(iscal)                           &
              *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
       enddo
-!       Sinon : dans SMBRS
+    ! Sinon : dans SMBRS
     else
       ipcvso = ipcvst
       do iel = 1, ncel
@@ -528,29 +547,28 @@ if (itspdv.eq.1) then
     ! Free memory
     deallocate(grad)
 
-!     Traitement de la dissipation
+    ! Traitement de la dissipation
     if (isso2t(iscal).gt.0) then
       thetap = thetv
     else
       thetap = 1.d0
     endif
     do iel = 1, ncel
-      if(itytur.eq.2 .or. itytur.eq.5) then
-        xk     = rtpa(iel,ik)
-        xe     = rtpa(iel,iep)
-      elseif(itytur.eq.3) then
-        xk     =                                                  &
-        0.5d0*(rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))
-        xe     = rtpa(iel,iep)
+      if (itytur.eq.2 .or. itytur.eq.5) then
+        xk = rtpa(iel,ik)
+        xe = rtpa(iel,iep)
+      elseif (itytur.eq.3) then
+        xk = 0.5d0*(rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))
+        xe = rtpa(iel,iep)
       elseif(iturb.eq.60) then
-        xk     = rtpa(iel,ik)
-        xe     = cmu*xk*rtpa(iel,iomg)
+        xk = rtpa(iel,ik)
+        xe = cmu*xk*rtpa(iel,iomg)
       endif
-      rhovst = propce(iel,ipcrom)*xe/                             &
-                 (xk * rvarfl(iscal))*volume(iel)
-!     La diagonale recoit eps/Rk, (*theta eventuellement)
+      rhovst = propce(iel,ipcrom)*xe/(xk * rvarfl(iscal))*volume(iel)
+
+      ! La diagonale recoit eps/Rk, (*theta eventuellement)
       rovsdt(iel) = rovsdt(iel) + rhovst*thetap
-!     SMBRS recoit la dissipation
+      ! SMBRS recoit la dissipation
       smbrs(iel) = smbrs(iel) - rhovst*rtpa(iel,ivar)
       ! Dissipation term for a variance
       if (idilat.eq.4) then
@@ -563,33 +581,32 @@ if (itspdv.eq.1) then
 
 endif
 
-
-if(isso2t(iscal).gt.0) then
+if (isso2t(iscal).gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel) + thetp1 * propce(iel,iptsca)
   enddo
 endif
 
-!     "VITESSE" DE DIFFUSION FACETTE
+! "VITESSE" DE DIFFUSION FACETTE
 
-!     On prend le MAX(mu_t,0) car en LES dynamique mu_t peut etre negatif
-!     (clipping sur (mu + mu_t)). On aurait pu prendre
-!     MAX(K + K_t,0) mais cela autoriserait des K_t negatif, ce qui est
-!     considere ici comme non physique.
-if( idiff(ivar).ge. 1 ) then
-  if(ipcvsl.eq.0)then
+! On prend le MAX(mu_t,0) car en LES dynamique mu_t peut etre negatif
+! (clipping sur (mu + mu_t)). On aurait pu prendre
+! MAX(K + K_t,0) mais cela autoriserait des K_t negatif, ce qui est
+! considere ici comme non physique.
+if(idiff(ivar).ge.1) then
+  if (ipcvsl.eq.0) then
     do iel = 1, ncel
       w1(iel) = visls0(iscal)                                     &
-         + idifft(ivar)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
+         + idifft(ivar)*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
     enddo
   else
     do iel = 1, ncel
       w1(iel) = propce(iel,ipcvsl)                                &
-         + idifft(ivar)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
+         + idifft(ivar)*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
     enddo
   endif
-  call viscfa                                                     &
+  call viscfa &
   !==========
  ( imvisf ,                                                       &
    w1     ,                                                       &
@@ -606,7 +623,6 @@ else
 
 endif
 
-
 ! Low Mach compressible algos (conservative in time)
 if (idilat.gt.1) then
   ipcrho = ipcroa
@@ -619,11 +635,10 @@ endif
 ! Without porosity
 if (iporos.eq.0) then
 
-
   ! --> Non stationnary term and mass aggregation term
   do iel = 1, ncel
-    rovsdt(iel) = rovsdt(iel)                                        &
-                + istat(ivar)*propce(iel,ipcrho)*volume(iel)/dt(iel)
+    rovsdt(iel) = rovsdt(iel)                                                 &
+                + istat(ivar)*xcpp(iel)*propce(iel,ipcrho)*volume(iel)/dt(iel)
   enddo
 
 ! With porosity
@@ -636,14 +651,14 @@ else
   ! --> Non stationnary term and mass aggregation term
   do iel = 1, ncel
     rovsdt(iel) = ( rovsdt(iel)                                        &
-                  + istat(ivar)*propce(iel,ipcrho)*volume(iel)/dt(iel) &
+                  + istat(ivar)*xcpp(iel)*propce(iel,ipcrho)*volume(iel)/dt(iel) &
                   ) * porosi(iel)
   enddo
 
 endif
 
 !===============================================================================
-! 3. RESOLUTION
+! 3. Solving
 !===============================================================================
 
 iconvp = iconv (ivar)
@@ -676,7 +691,7 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
@@ -686,20 +701,20 @@ call codits &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                   &
-   rvoid  )
+   xcpp   , rvoid  )
 
 !===============================================================================
-! 4. IMPRESSIONS ET CLIPPINGS
+! 4. Writting and clipping
 !===============================================================================
 
-if(ivarsc.gt.0) then
+if (ivarsc.gt.0) then
   iii = ivarsc
 else
 ! Valeur bidon
   iii = 1
 endif
 
-call clpsca                                                       &
+call clpsca &
 !==========
  ( ncelet , ncel   , nvar   , nscal  , iscal  ,                   &
    propce , rtp(1,iii)      , rtp    )
@@ -709,14 +724,14 @@ call clpsca                                                       &
 ! Ceci devrait etre valable avec le theta schema sur les Termes source
 
 if (iwarni(ivar).ge.2) then
-  if(nswrsm(ivar).gt.1) then
+  if (nswrsm(ivar).gt.1) then
     ibcl = 1
   else
     ibcl = 0
   endif
   do iel = 1, ncel
-    smbrs(iel) = smbrs(iel)                                       &
-            - istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)&
+    smbrs(iel) = smbrs(iel)                                                 &
+            - istat(ivar)*xcpp(iel)*(propce(iel,ipcrom)/dt(iel))*volume(iel)&
                 *(rtp(iel,ivar)-rtpa(iel,ivar))*ibcl
   enddo
   isqrt = 1
@@ -727,9 +742,10 @@ endif
 ! Free memory
 deallocate(w1)
 deallocate(dpvar)
+deallocate(xcpp)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -738,7 +754,7 @@ deallocate(dpvar)
 '   ** RESOLUTION POUR LA VARIABLE ',A8                        ,/,&
 '      ---------------------------                            ',/)
  1200 format(1X,A8,' : BILAN EXPLICITE = ',E14.5)
- 9000 format(                                                           &
+ 9000 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -758,7 +774,7 @@ deallocate(dpvar)
 '   ** SOLVING VARIABLE ',A8                                   ,/,&
 '      ----------------'                                       ,/)
  1200 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
- 9000 format(                                                           &
+ 9000 format( &
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/,&
@@ -775,7 +791,7 @@ deallocate(dpvar)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

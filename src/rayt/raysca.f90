@@ -107,30 +107,9 @@ if (abs(iscsth(iisca)).eq.1 .or. iscsth(iisca).eq.2) then
 
   ! Explicit part
 
-  if (abs(iscsth(iisca)).eq.1) then
-
-    ! Source term correction if the thermal scalar is the temperature
-    if (icp.gt.0) then
-      do iel = 1,ncel
-        smbrs(iel) = smbrs(iel) +                                         &
-           propce(iel,ipproc(itsre(1))) / propce(iel,ipproc(icp)) &
-         * volume(iel)
-      enddo
-    else
-      do iel = 1,ncel
-        smbrs(iel) = smbrs(iel) +  propce(iel,ipproc(itsre(1))) / cp0 &
-         * volume(iel)
-      enddo
-    endif
-
-  else
-
-    ! No correction if the thermal scalar is the enthalpy
-    do iel = 1,ncel
-      smbrs(iel) = smbrs(iel) + propce(iel,ipproc(itsre(1)))*volume(iel)
-    enddo
-
-  endif
+  do iel = 1,ncel
+    smbrs(iel) = smbrs(iel) + propce(iel,ipproc(itsre(1)))*volume(iel)
+  enddo
 
 endif
 

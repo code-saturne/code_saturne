@@ -101,6 +101,7 @@ integer          nswrgp, imligp, iwarnp , iescap
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp
 integer          imgrp, ncymxp, nitmfp
+integer          imucpp
 
 double precision epsrgp, climgp, extrap, blencp, epsilp, epsrsp
 double precision relaxp, thetap
@@ -134,7 +135,6 @@ allocate(dpvar(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-
 
 CHAINE = 'Correction pression'
 write(nfecra,1000) chaine(1:19)
@@ -275,6 +275,7 @@ imligp = 1
 ircflp = 1
 ischcp = 1
 isstpp = 0
+imucpp = 0
 imgrp  = 1
 ncymxp = 100
 nitmfp = 100
@@ -315,7 +316,7 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -324,7 +325,7 @@ call codits &
             fmala  , fmalb  ,                                     &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , phi    , dpvar  ,                            &
-   rvoid  )
+   rvoid  , rvoid  )
 
 
 ! Free memory

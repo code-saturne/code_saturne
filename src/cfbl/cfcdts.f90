@@ -165,6 +165,7 @@ double precision viscfs(nfac), viscbs(nfabor)
 double precision rovsdt(ncelet), smbrp(ncelet)
 double precision pvar(ncelet)
 double precision eswork(ncelet)
+integer          imucpp
 
 ! Local variables
 
@@ -175,6 +176,8 @@ integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
 integer          itenso,iinvpe, iinvpp,ibsize
 
 double precision residu,rnorm
+
+double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
@@ -258,16 +261,16 @@ endif
 !===============================================================================
 ! 1.  CONSTRUCTION MATRICE "SIMPLIFIEE" DE RESOLUTION
 !===============================================================================
+imucpp = 0
 
 call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp , isym   , nfecra ,                   &
-   thetap ,                                                       &
+   thetap , imucpp ,                                              &
    ifacel , ifabor ,                                              &
    coefbp , cofbfp , rovsdt , flumas , flumab , viscfm , viscbm , &
-   dam    , xam    )
-
+   rvoid  , dam    , xam    )
 
 !===============================================================================
 ! 2.  BOUCLES SUR LES NON ORTHOGONALITES

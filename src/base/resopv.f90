@@ -201,6 +201,7 @@ integer          iesdep
 integer          idtsca
 integer          nagmax, npstmg
 integer          isou  , ibsize
+integer          imucpp
 double precision residu, resold, phydr0
 double precision ardtsr, arsr  , unsara, thetap
 double precision dtsrom, unsvom, romro0
@@ -524,17 +525,18 @@ idiffp = idiff (ipr)
 ndircp = ndircl(ipr)
 
 thetap = 1.d0
+imucpp = 0
 
 call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp ,                                     &
    isym   , nfecra ,                                              &
-   thetap ,                                                       &
+   thetap , imucpp ,                                              &
    ifacel , ifabor ,                                              &
    coefb(1,iclipr) , coefb(1,iclipf) , rovsdt ,                   &
    propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
-   dam    , xam    )
+   rvoid  , dam    , xam    )
 
 ! Strengthen the diagonal
 if (idilat.eq.3) then

@@ -1148,12 +1148,21 @@ do ifac = 1, nfabor
           else
             ipcvsl = 0
           endif
+          ! FIXME useless
           if (ipcvsl.le.0) then
             rkl = visls0(iscal)
-            prdtl = visclc/rkl
+            if (abs(iscsth(iscal)).eq.1) then
+              prdtl = cpp*visclc/rkl
+            else
+              prdtl = visclc/rkl
+            endif
           else
             rkl = propce(iel,ipcvsl)
-            prdtl = visclc/rkl
+            if (abs(iscsth(iscal)).eq.1) then
+              prdtl = cpp*visclc/rkl
+            else
+              prdtl = visclc/rkl
+            endif
           endif
 
           ! --> Compressible module:
@@ -1192,14 +1201,14 @@ do ifac = 1, nfabor
               else
                 cpscv = cpscv/cv0
               endif
-              hint = cpp*(rkl+cpscv*visctc/sigmas(iscal))/distbf
+              hint = (rkl+cpp*cpscv*visctc/sigmas(iscal))/distbf
             else
-              hint = cpp*(rkl+visctc/sigmas(iscal))/distbf
+              hint = (rkl+cpp*visctc/sigmas(iscal))/distbf
             endif
 
           ! Laminar
           else
-            hint  = cpp*rkl/distbf
+            hint  = rkl/distbf
           endif
 
           ! Loi rugueuse, on recalcule le coefficient d'echange fluide - paroi
@@ -1207,7 +1216,7 @@ do ifac = 1, nfabor
 
             rugt = rcodcl(ifac,iv,3)
             act = xkappa/log((distbf+rugt)/rugt)
-            hflui = romc*cpp*uet*act*cfnns
+            hflui = romc*uet*act*cfnns
           else
             hflui = hint
           endif

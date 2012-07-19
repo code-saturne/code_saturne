@@ -131,6 +131,7 @@ double precision sclnor
 
 integer          iccfth, imodif
 integer          iij
+integer          imucpp
 double precision dijpfx, dijpfy, dijpfz, pnd
 double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 double precision diipbx, diipby, diipbz
@@ -164,7 +165,6 @@ allocate(w1(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 allocate(w10(ncelet))
 allocate(dpvar(ncelet))
-
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)
@@ -419,6 +419,7 @@ ircflp = ircflu(ivar)
 ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
 iescap = 0
+imucpp = 0
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
@@ -438,7 +439,7 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
@@ -448,7 +449,7 @@ call codits &
                      wflmas          , wflmab          ,          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                   &
-   rvoid  )
+   rvoid  , rvoid  )
 
 !===============================================================================
 ! 5. IMPRESSIONS ET CLIPPINGS

@@ -107,6 +107,9 @@
 !>                               - 1 without slope test
 !>                               - 0 with slope test
 !> \param[in]     iescap        compute the predictor indicator if 1
+!> \param[in]     imucpp        indicator
+!>                               - 0 do not multiply the convectiv term by Cp
+!>                               - 1 do multiply the convectiv term by Cp
 !> \param[in]     imgrp         indicator
 !>                               - 0 no multi-grid
 !>                               - 1 otherwise
@@ -155,6 +158,7 @@
 !> \param[in]     smbrp         Right hand side \f$ Rhs^k \f$
 !> \param[in,out] pvar          current variable
 !> \param[in,out] dpvar         last variable increment
+!> \param[in]     xcpp          array of specific heat (Cp)
 !> \param[out]    eswork        prediction-stage error estimator
 !>                              (if iescap > 0)
 !_______________________________________________________________________________
@@ -165,7 +169,7 @@ subroutine codits &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -173,7 +177,7 @@ subroutine codits &
    coefap , coefbp , cofafp , cofbfp , flumas , flumab ,          &
    viscfm , viscbm , viscfs , viscbs ,                            &
    rovsdt , smbrp  , pvar   , dpvar  ,                            &
-   eswork )
+   xcpp   , eswork )
 
 !===============================================================================
 
@@ -204,6 +208,7 @@ integer          imrgra , nswrsp , nswrgp , imligp , ircflp
 integer          ischcp , isstpp , iescap , imgrp
 integer          ncymxp , nitmfp
 integer          ipp    , iwarnp
+integer          imucpp
 double precision blencp , epsilp , epsrgp , climgp , extrap
 double precision relaxp , thetap , epsrsp
 
@@ -217,6 +222,7 @@ double precision rovsdt(ncelet), smbrp(ncelet)
 double precision pvar(ncelet)
 double precision dpvar(ncelet)
 double precision eswork(ncelet)
+double precision xcpp(ncelet)
 
 ! Local variables
 
@@ -320,10 +326,10 @@ call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp , isym   , nfecra ,                   &
-   thetap ,                                                       &
+   thetap , imucpp ,                                              &
    ifacel , ifabor ,                                              &
    coefbp , cofbfp , rovsdt , flumas , flumab , viscfm , viscbm , &
-   dam    , xam    )
+   xcpp   , dam    , xam    )
 
 ! For stationary computations, the diagonal is relaxed
 if (idtvar.lt.0) then
@@ -378,10 +384,10 @@ if (abs(thetex).gt.epzero) then
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp ,                                              &
+   ipp    , iwarnp , imucpp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
    pvara  , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-   flumas , flumab , viscfs , viscbs ,                            &
+   flumas , flumab , viscfs , viscbs , xcpp    ,                  &
    smbrp  )
 endif
 
@@ -428,10 +434,10 @@ call bilsc2 &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp ,                                              &
+   ipp    , iwarnp , imucpp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-   flumas , flumab , viscfs , viscbs ,                            &
+   flumas , flumab , viscfs , viscbs , xcpp   ,                   &
    smbrp  )
 
 ! --- Right hand side residual
@@ -552,10 +558,10 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
    ( nvar   , nscal  ,                                              &
      idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     ipp    , iwarnp ,                                              &
+     ipp    , iwarnp , imucpp ,                                     &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
      pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-     flumas , flumab , viscfs , viscbs ,                            &
+     flumas , flumab , viscfs , viscbs , xcpp   ,                   &
      smbrp  )
 
     ! --- Convergence test
@@ -607,10 +613,10 @@ if (iescap.gt.0) then
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp ,                                              &
+   ipp    , iwarnp , imucpp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-   flumas , flumab , viscfs , viscbs ,                            &
+   flumas , flumab , viscfs , viscbs , xcpp   ,                   &
    smbrp  )
 
   ! Contribution of the current component to the L2 norm stored in eswork

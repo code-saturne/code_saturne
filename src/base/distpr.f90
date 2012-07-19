@@ -98,9 +98,11 @@ integer          isqrt , iel   , ifac
 integer          inc   , iccocg, ivar
 integer          isweep, nittot, idtva0
 integer          ibsize, mmprpl, nswrsl
-
+integer          imucpp
 double precision relaxp, thetap, rnorm, residu, rnoini
 double precision dismax, dismin, hint, pimp, qimp
+
+double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: coefad, coefbd
@@ -208,17 +210,18 @@ iconvp = 0
 idiffp = 1
 isym   = 1
 thetap = 1.d0
+imucpp = 0
 
 call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp ,                                     &
    isym   , nfecra ,                                              &
-   thetap ,                                                       &
+   thetap , imucpp ,                                              &
    ifacel , ifabor ,                                              &
    coefbd , cofbfd , rovsdp ,                                     &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   dam    , xam    )
+   rvoid  , dam    , xam    )
 
 !===============================================================================
 ! 4. Solve system
@@ -293,6 +296,7 @@ do isweep = 0, nswrsl
   if (isweep.lt.nswrsl) then
     inc    = 0
     iccocg = 1
+    imucpp = 0
     ivar = 0
     idtva0 = 0
     relaxp = 1.d0
@@ -302,10 +306,10 @@ do isweep = 0, nswrsl
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , nswrgy , imligy , ircfly , &
    ischcy , isstpy , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarny ,                                              &
+   ipp    , iwarny , imucpp ,                                     &
    blency , epsrgy , climgy , extray , relaxp , thetap ,          &
    rtpdp  , rtpdp  , coefad , coefbd , coefad , cofbfd ,          &
-   viscf  , viscb  , viscf  , viscb  ,                            &
+   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
    smbdp  )
 
   endif

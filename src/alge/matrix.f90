@@ -61,6 +61,9 @@
 !>                               scheme (mix between Crank-Nicolson and
 !>                               Adams-Bashforth)
 !>                               - thetap = 1: implicit scheme
+!> \param[in]     imucpp        indicator
+!>                               - 0 do not multiply the convectiv term by Cp
+!>                               - 1 do multiply the convectiv term by Cp
 !> \param[in]     ifacel        cell indexes of interior faces
 !> \param[in]     ifabor        no de l'elt voisin d'une face de bord
 !> \param[in]     coefbp        boundary condition array for the variable
@@ -73,6 +76,7 @@
 !>                               at interior faces for the matrix
 !> \param[in]     viscb         \f$ S_\fib \f$
 !>                               at border faces for the matrix
+!> \param[in]     xcpp          array of specific heat (Cp)
 !> \param[out]    da            diagonal part of the matrix
 !> \param[out]    xa            extra interleaved diagonal part of the matrix
 !_______________________________________________________________________________
@@ -83,10 +87,10 @@ subroutine matrix &
 
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp , isym   , nfecra ,                   &
-   thetap ,                                                       &
+   thetap , imucpp ,                                              &
    ifacel , ifabor ,                                              &
    coefbp , cofbfp ,rovsdt , flumas , flumab , viscf  , viscb  ,  &
-   da     , xa     )
+   xcpp   , da     , xa     )
 
 !===============================================================================
 
@@ -105,6 +109,7 @@ implicit none
 integer          ncelet , ncel   , nfac   , nfabor
 integer          iconvp , idiffp , ndircp , isym
 integer          nfecra
+integer          imucpp
 double precision thetap
 
 integer          ifacel(2,nfac), ifabor(nfabor)
@@ -112,6 +117,7 @@ double precision coefbp(nfabor), cofbfp(nfabor), rovsdt(ncelet)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision da(ncelet ), xa(nfac ,isym)
+double precision xcpp(ncelet)
 
 ! Local variables
 
@@ -155,80 +161,163 @@ else
   enddo
 endif
 
+! When solving the temperature, the convective part is multiplied by Cp
+if (imucpp.eq.0) then
+
 !===============================================================================
 ! 2.    CALCUL DES TERMES EXTRADIAGONAUX
 !===============================================================================
 
-if (isym.eq.2) then
+  if (isym.eq.2) then
 
-  !$omp parallel do firstprivate(thetap, iconvp, idiffp) private(flui, fluj)
-  do ifac = 1, nfac
-    flui = 0.5d0*(flumas(ifac) -abs(flumas(ifac)))
-    fluj =-0.5d0*(flumas(ifac) +abs(flumas(ifac)))
-    xa(ifac,1) = thetap*(iconvp*flui -idiffp*viscf(ifac))
-    xa(ifac,2) = thetap*(iconvp*fluj -idiffp*viscf(ifac))
-  enddo
+    !$omp parallel do firstprivate(thetap, iconvp, idiffp) private(flui, fluj)
+    do ifac = 1, nfac
+      flui = 0.5d0*(flumas(ifac) -abs(flumas(ifac)))
+      fluj =-0.5d0*(flumas(ifac) +abs(flumas(ifac)))
+      xa(ifac,1) = thetap*(iconvp*flui -idiffp*viscf(ifac))
+      xa(ifac,2) = thetap*(iconvp*fluj -idiffp*viscf(ifac))
+    enddo
 
-else
+  else
 
-  !$omp parallel do firstprivate(thetap, iconvp, idiffp) private(flui)
-  do ifac = 1, nfac
-    flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-    xa(ifac,1) = thetap*(iconvp*flui -idiffp*viscf(ifac))
-  enddo
+    !$omp parallel do firstprivate(thetap, iconvp, idiffp) private(flui)
+    do ifac = 1, nfac
+      flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
+      xa(ifac,1) = thetap*(iconvp*flui -idiffp*viscf(ifac))
+    enddo
 
-endif
+  endif
 
 !===============================================================================
 ! 3.     CONTRIBUTION DES TERMES X-TRADIAGONAUX A LA DIAGONALE
 !===============================================================================
 
-if (isym.eq.2) then
+  if (isym.eq.2) then
 
-  do ig = 1, ngrpi
-    !$omp parallel do private(ifac, ii, jj)
-    do it = 1, nthrdi
-      do ifac = iompli(1,ig,it), iompli(2,ig,it)
-        ii = ifacel(1,ifac)
-        jj = ifacel(2,ifac)
-        da(ii) = da(ii) - xa(ifac,1)
-        da(jj) = da(jj) - xa(ifac,2)
+    do ig = 1, ngrpi
+      !$omp parallel do private(ifac, ii, jj)
+      do it = 1, nthrdi
+        do ifac = iompli(1,ig,it), iompli(2,ig,it)
+          ii = ifacel(1,ifac)
+          jj = ifacel(2,ifac)
+          da(ii) = da(ii) - xa(ifac,1)
+          da(jj) = da(jj) - xa(ifac,2)
+        enddo
       enddo
     enddo
-  enddo
 
-else
+  else
 
-  do ig = 1, ngrpi
-    !$omp parallel do private(ifac, ii, jj)
-    do it = 1, nthrdi
-      do ifac = iompli(1,ig,it), iompli(2,ig,it)
-        ii = ifacel(1,ifac)
-        jj = ifacel(2,ifac)
-        da(ii) = da(ii) - xa(ifac,1)
-        da(jj) = da(jj) - xa(ifac,1)
+    do ig = 1, ngrpi
+      !$omp parallel do private(ifac, ii, jj)
+      do it = 1, nthrdi
+        do ifac = iompli(1,ig,it), iompli(2,ig,it)
+          ii = ifacel(1,ifac)
+          jj = ifacel(2,ifac)
+          da(ii) = da(ii) - xa(ifac,1)
+          da(jj) = da(jj) - xa(ifac,1)
+        enddo
       enddo
     enddo
-  enddo
 
-endif
+  endif
 
 !===============================================================================
 ! 4.     CONTRIBUTION DES FACETTES DE BORDS A LA DIAGONALE
 !===============================================================================
 
-do ig = 1, ngrpb
-  !$omp parallel do firstprivate(thetap, iconvp, idiffp) &
-  !$omp          private(ifac, ii, flui) if(nfabor > thr_n_min)
-  do it = 1, nthrdb
-    do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
-      ii = ifabor(ifac)
-      flui = 0.5d0*(flumab(ifac) - abs(flumab(ifac)))
-      da(ii) = da(ii) + thetap*( iconvp*flui*(coefbp(ifac)-1.d0)         &
-                               + idiffp*viscb(ifac)*cofbfp(ifac))
+  do ig = 1, ngrpb
+    !$omp parallel do firstprivate(thetap, iconvp, idiffp) &
+    !$omp          private(ifac, ii, flui) if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+        ii = ifabor(ifac)
+        flui = 0.5d0*(flumab(ifac) - abs(flumab(ifac)))
+        da(ii) = da(ii) + thetap*( iconvp*flui*(coefbp(ifac)-1.d0)         &
+                                 + idiffp*viscb(ifac)*cofbfp(ifac))
+      enddo
     enddo
   enddo
-enddo
+
+! When solving the temperature, the convective part is multiplied by Cp
+else
+
+!===============================================================================
+! 2.    CALCUL DES TERMES EXTRADIAGONAUX
+!===============================================================================
+
+  if (isym.eq.2) then
+
+    !$omp parallel do firstprivate(thetap, iconvp, idiffp) private(flui, fluj)
+    do ifac = 1, nfac
+      flui = 0.5d0*(flumas(ifac) -abs(flumas(ifac)))
+      fluj =-0.5d0*(flumas(ifac) +abs(flumas(ifac)))
+      xa(ifac,1) = thetap*(iconvp*xcpp(ifacel(1,ifac))*flui -idiffp*viscf(ifac))
+      xa(ifac,2) = thetap*(iconvp*xcpp(ifacel(2,ifac))*fluj -idiffp*viscf(ifac))
+    enddo
+
+  else
+
+    !$omp parallel do firstprivate(thetap, iconvp, idiffp) private(flui)
+    do ifac = 1, nfac
+      flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
+      xa(ifac,1) = thetap*(iconvp*xcpp(ifacel(1,ifac))*flui -idiffp*viscf(ifac))
+    enddo
+
+  endif
+
+!===============================================================================
+! 3.     CONTRIBUTION DES TERMES X-TRADIAGONAUX A LA DIAGONALE
+!===============================================================================
+
+  if (isym.eq.2) then
+
+    do ig = 1, ngrpi
+      !$omp parallel do private(ifac, ii, jj)
+      do it = 1, nthrdi
+        do ifac = iompli(1,ig,it), iompli(2,ig,it)
+          ii = ifacel(1,ifac)
+          jj = ifacel(2,ifac)
+          da(ii) = da(ii) - xa(ifac,1)
+          da(jj) = da(jj) - xa(ifac,2)
+        enddo
+      enddo
+    enddo
+
+  else
+
+    do ig = 1, ngrpi
+      !$omp parallel do private(ifac, ii, jj)
+      do it = 1, nthrdi
+        do ifac = iompli(1,ig,it), iompli(2,ig,it)
+          ii = ifacel(1,ifac)
+          jj = ifacel(2,ifac)
+          da(ii) = da(ii) - xa(ifac,1)
+          da(jj) = da(jj) - xa(ifac,1)
+        enddo
+      enddo
+    enddo
+
+  endif
+
+!===============================================================================
+! 4.     CONTRIBUTION DES FACETTES DE BORDS A LA DIAGONALE
+!===============================================================================
+
+  do ig = 1, ngrpb
+    !$omp parallel do firstprivate(thetap, iconvp, idiffp) &
+    !$omp          private(ifac, ii, flui) if(nfabor > thr_n_min)
+    do it = 1, nthrdb
+      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+        ii = ifabor(ifac)
+        flui = 0.5d0*(flumab(ifac) - abs(flumab(ifac)))
+        da(ii) = da(ii) + thetap*( iconvp*flui*xcpp(ii)*(coefbp(ifac)-1.d0)   &
+                                 + idiffp*viscb(ifac)*cofbfp(ifac))
+      enddo
+    enddo
+  enddo
+
+endif
 
 !===============================================================================
 ! 5.  NON PRESENCE DE PTS DIRICHLET --> LEGER RENFORCEMENT DE LA

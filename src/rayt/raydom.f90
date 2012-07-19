@@ -137,7 +137,6 @@ double precision hint, qimp, xit, pimp
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
-double precision, allocatable, dimension(:) :: dcpp
 double precision, allocatable, dimension(:) :: ckmel
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:) :: tempk
@@ -165,7 +164,6 @@ allocate(cofafp(nfabor), cofbfp(nfabor))
 allocate(flurds(nfac), flurdb(nfabor))
 
 ! Allocate work arrays
-allocate(dcpp(ncelet))
 allocate(ckmel(ncelet))
 
 !===============================================================================
@@ -818,20 +816,6 @@ write(nfecra,5030) aa
 
 if (idverl.ge.0) then
 
-  !--> On stocke dans le tableau de travail dcpp le CP
-  !    Attention : il faut conserver dcpp dans la suite de la routine,
-  !    car son contenu est utilise plus loin
-
-  if (icp.gt.0) then
-    do iel = 1, ncel
-      dcpp(iel) = 1.d0/propce(iel,ipproc(icp))
-    enddo
-  else
-    do iel = 1, ncel
-      dcpp(iel) = 1.d0/cp0
-    enddo
-  endif
-
   do iel = 1, ncel
 
     !--> part d'absorption du terme source explicite
@@ -902,12 +886,11 @@ if (idverl.ge.0) then
   !--> Terme source implicite,
   !    (il faudra multiplier ce terme par VOLUME(IEL) dans COVOFI->RAYSCA)
   if (ippmod(icod3p).eq.-1 .and. ippmod(icoebu).eq.-1) then
-
     ! Rayonnement standard, flamme CP ou fuel
     do iel = 1, ncel
       propce(iel,ipproc(itsri(1))) =                         &
        -16.d0*propce(iel,ipproc(icak(1))) *stephn *          &
-         (tempk(iel,1)**3) * dcpp(iel)
+         (tempk(iel,1)**3)
     enddo
 
   else
@@ -916,7 +899,7 @@ if (idverl.ge.0) then
     do iel = 1, ncel
       propce(iel,ipproc(itsri(1))) =                         &
        -16.d0*stephn*propce(iel,ipproc(icak(1)))*            &
-           propce(iel,ipproc(it3m))  *  dcpp(iel)
+           propce(iel,ipproc(it3m))
     enddo
 
   endif
@@ -1136,7 +1119,6 @@ endif
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(smbrs, rovsdt)
-deallocate(dcpp)
 deallocate(ckmel)
 deallocate(tempk)
 deallocate(coefap, coefbp)

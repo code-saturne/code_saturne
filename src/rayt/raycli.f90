@@ -139,7 +139,7 @@ integer          ifac, iel, ideb, ivart, iscat
 integer          mode, iok, ifvu, ii, izonem, izone
 
 double precision tmin , tmax   , tx
-double precision cpp, xmtk
+double precision xmtk
 
 integer, allocatable, dimension(:) :: isothm
 
@@ -819,16 +819,10 @@ endif
 
       else if (isothm(ifac).eq.iprefl) then
 
-        if (icp.gt.0) then
-          iel = ifabor(ifac)
-          cpp = propce(iel,ipproc(icp))
-        else
-          cpp = cp0
-        endif
-
         rcodcl(ifac,ivart,1) = tbord(ifac)
+        ! hext
         rcodcl(ifac,ivart,2) =  propfb(ifac,ipprob(ixlam))     &
-                             / (propfb(ifac,ipprob(iepa))*cpp)
+                             / (propfb(ifac,ipprob(iepa)))
         rcodcl(ifac,ivart,3) = 0.d0
 
       else if (isothm(ifac).eq.ifrefl) then

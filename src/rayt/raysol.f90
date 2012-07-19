@@ -167,6 +167,7 @@ integer          imgr1 , imligp, ircflp, ischcp, isstpp, iescap
 integer          ncymap, nitmgp
 integer          idir  , ndirs , kdir  , ipp   , inum
 integer          ii, jj, kk, idtva0, ivar0
+integer          imucpp
 
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision sx, sy, sz, domega
@@ -202,6 +203,7 @@ ircflp  = 1
 ischcp  = 1
 isstpp  = 0
 iescap  = 0
+imucpp  = 0
 imgr1   = 0
 ncymap  = 100
 nitmgp  = 10
@@ -401,7 +403,7 @@ do ii = -1,1,2
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 ,  nitmap ,&
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgr1  , ncymap , nitmgp , inum   , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -409,7 +411,7 @@ do ii = -1,1,2
    coefap , coefbp , cofafp , cofbfp , flurds , flurdb ,          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , ru     , dpvar  ,                            &
-   rvoid  )
+   rvoid  , rvoid  )
 
 !===============================================================================
 ! 5.2 INTEGRATION DES FLUX ET TERME SOURCE

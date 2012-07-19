@@ -78,7 +78,9 @@ subroutine usphyv &
 !         (possibly also at boundary faces         romb   kg/m3)
 !     - molecular viscosity                        viscl  kg/(m s)
 !     - specific heat                              cp     J/(kg degrees)
-!     - "diffusivities" associated with sclalars   viscls kg/(m s)
+!     - "diffusivities" associated with sclalars   visls kg/(m s)
+! Warning if the scalar is the temperature, visls corresponds
+! to its conductivity (Lambda) in W/(m K)
 
 
 ! The types of boundary faces at the previous time step are available
@@ -416,12 +418,14 @@ if (iutile.eq.1) then
 endif ! --- Test on 'iutile'
 
 
-!===============================================================================
-!  Example 4: Lambda/Cp a function of temperature for temperature or enthalpy
+!======================================================================================
+!  Example 4: Lambda/Cp a function of temperature for enthalpy or
+!             Lambda    a function of temperature for temperature because Cp is put
+!                       outside the divergence term
 !  =========
-!    Below, we define the same lambda/Cp ratio law
-!    Values of this property must be defined at cell centers
-!  ===================================================================
+!  Below, we define the same lambda/Cp ratio law (or lambda law if temperature is used)
+!  Values of this property must be defined at cell centers
+!  ====================================================================================
 
 !    The test on 'iutile' allows deactivating instructions (which are defined
 !       only as a starting example)
@@ -442,7 +446,7 @@ if (iutile.eq.1) then
     call csexit (1)
   endif
 
-  ! --- Rank of Lambda/Cp of the thermal
+  ! --- Rank of Lambda/Cp of the thermal (or Lambda if temperature is used)
   !     in 'propce', physical properties at element centers: 'ipcvsl'
 
   if (ivisls(iscalt).gt.0) then
@@ -451,7 +455,7 @@ if (iutile.eq.1) then
     ipcvsl = 0
   endif
 
-  ! --- Stop if Lambda/CP is not variable
+  ! --- Stop if Lambda/CP (or Lambda if temperature is used) is not variable
 
   if (ipcvsl.le.0) then
     write(nfecra,1010)                                          &
@@ -459,49 +463,77 @@ if (iutile.eq.1) then
     call csexit (1)
   endif
 
-  ! --- Rank of the specific heat
-  !     in 'propce', physical properties at element centers: 'ipccp'
+  ! if iscalt is not temperature
+  if (abs(iscsth(iscalt)).ne.1) then
 
-  if (icp.gt.0) then
-    ipccp  = ipproc(icp   )
+    ! --- Rank of the specific heat
+    !     in 'propce', physical properties at element centers: 'ipccp'
+
+    if (icp.gt.0) then
+      ipccp  = ipproc(icp   )
+    else
+      ipccp  = 0
+    endif
+
+    ! --- Coefficients of laws chosen by the user
+    !       Values given here are fictitious
+
+    varal = -3.3283d-7
+    varbl =  3.6021d-5
+    varcl =  1.2527d-4
+    vardl =  0.58923d0
+
+    ! Lambda/Cp in kg/(m.s) at cell centers
+    !--------------------------------------
+    ! law    Lambda/Cp = {t * (t * (al * t +  bl) + cl) + dl} / Cp
+    ! so     propce(iel,ipcvsl) &
+    !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)/cp0
+
+    ! We assume Cp has been defined previously.
+
+    if (ipccp.le.0) then
+
+      ! --- If Cp is uniform, we use cp0
+      do iel = 1, ncel
+        xrtp = rtp(iel,ivart)
+        propce(iel,ipcvsl) =                                      &
+             (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
+             /cp0
+      enddo
+
+    else
+
+      ! --- If Cp is not uniform, we use propce above
+      do iel = 1, ncel
+        xrtp = rtp(iel,ivart)
+        propce(iel,ipcvsl) =                                      &
+             (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
+             /propce(iel,ipccp)
+      enddo
+
+    endif
+
+  ! if iscalt is temperature, the Cp division is not needed
   else
-    ipccp  = 0
-  endif
 
-  ! --- Coefficients of laws chosen by the user
-  !       Values given here are fictitious
+    ! --- Coefficients of laws chosen by the user
+    !       Values given here are fictitious
 
-  varal = -3.3283d-7
-  varbl =  3.6021d-5
-  varcl =  1.2527d-4
-  vardl =  0.58923d0
+    varal = -3.3283d-7
+    varbl =  3.6021d-5
+    varcl =  1.2527d-4
+    vardl =  0.58923d0
 
-  ! Lambda/Cp in kg/(m.s) at cell centers
-  !--------------------------------------
-  ! law    Lambda/Cp = {t * (t * (al * t +  bl) + cl) + dl} / Cp
-  ! so     propce(iel,ipcvsl) &
-  !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)/cp0
+    ! Lambda in W/(m.K) at cell centers
+    !--------------------------------------
+    ! law    Lambda = {t * (t * (al * t +  bl) + cl) + dl}
+    ! so     propce(iel,ipcvsl) &
+    !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
 
-  ! We assume Cp has been defined previously.
-
-  if (ipccp.le.0) then
-
-    ! --- If Cp is uniform, we use cp0
     do iel = 1, ncel
       xrtp = rtp(iel,ivart)
       propce(iel,ipcvsl) =                                      &
-           (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
-           /cp0
-    enddo
-
-  else
-
-    ! --- If Cp is not uniform, we use propce above
-    do iel = 1, ncel
-      xrtp = rtp(iel,ivart)
-      propce(iel,ipcvsl) =                                      &
-           (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
-           /propce(iel,ipccp)
+           (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
     enddo
 
   endif

@@ -145,6 +145,7 @@ integer          ncymap, nitmgp
 integer          inum
 integer          idtva0, ivar0
 integer          inc, iccocg
+integer          imucpp
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision aa, aaa, aaaa, relaxp, thetap
 
@@ -183,6 +184,7 @@ ircflp  = 1
 ischcp  = 1
 isstpp  = 0
 iescap  = 0
+imucpp  = 0
 imgr1   = 0
 ncymap  = 100
 nitmgp  = 10
@@ -253,7 +255,7 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgr1  , ncymap , nitmgp , inum   , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -261,7 +263,7 @@ call codits &
    flurds , flurdb ,                                              &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , theta4 , dpvar  ,                            &
-   rvoid  )
+   rvoid  , rvoid  )
 
 !===============================================================================
 ! 4. Vecteur densite de flux radiatif

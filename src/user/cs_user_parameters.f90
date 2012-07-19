@@ -1781,8 +1781,11 @@ endif
 !       identical to that scalar's diffusivity.
 
 !     When no specific physics has been activated
-!       (coal, combustion, electric arcs) and if a user scalar represents
-!       the temperature or enthalpy:
+!       (coal, combustion, electric arcs) and if a user scalar represents:
+!       - the temperature:
+!       visls0(iscalt) = Lambda
+!        because the Cp is outside of the diffusion term in the temperature equation
+!       - the enthalpy:
 !       visls0(iscalt) = Lambda/Cp
 
 !     Here, as an example, we assign to viscl0 the viscosity of the

@@ -127,10 +127,13 @@ integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
 integer          nagmax, npstmg
 integer          ibsize
+integer          imucpp
 
 double precision residu, rnorm , rnrmf , rnrmdf
 double precision epsrgp, climgp, extrap, epsilp
 double precision precre, precab, thetap
+
+double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: w1, w7, w10
 
@@ -238,17 +241,18 @@ idiffp = 1
 ndircp = 0
 
 thetap = 1.d0
+imucpp = 0
+
 call matrix &
 !==========
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp ,                                     &
    isym   , nfecra ,                                              &
-   thetap ,                                                       &
+   thetap , imucpp ,                                              &
    ifacel , ifabor ,                                              &
    coefbp , cofbfp , w1     ,                                     &
    flumas , flumab , viscf  , viscb  ,                            &
-   dam    , xam    )
-
+   rvoid  , dam    , xam    )
 
 !===============================================================================
 ! 4.  INITIALISATION DU FLUX DE MASSE

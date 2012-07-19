@@ -97,7 +97,7 @@ integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
-integer          imgrp , ncymxp, nitmfp
+integer          imgrp , ncymxp, nitmfp, imucpp
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, thetv
 double precision epsrsp
@@ -181,6 +181,7 @@ do ii = 1, 3
   ischcp = ischcv(ivar)
   isstpp = isstpc(ivar)
   iescap = 0
+  imucpp = 0
   imgrp  = imgr  (ivar)
   ncymxp = ncymax(ivar)
   nitmfp = nitmgf(ivar)
@@ -199,7 +200,7 @@ do ii = 1, 3
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , imucpp ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
@@ -209,7 +210,7 @@ do ii = 1, 3
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
-   rvoid  )
+   rvoid  , rvoid  )
 
 enddo
 
