@@ -174,6 +174,28 @@ cs_dot_xx_xy_yz(cs_lnum_t               n,
                 double                 *xy,
                 double                 *yz);
 
+/*----------------------------------------------------------------------------
+ * Return the global dot product of 2 vectors: x.y
+ *
+ * In parallel mode, the local results are summed on the default
+ * global communicator.
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * parameters:
+ *   n <-- size of arrays x and y
+ *   x <-- array of floating-point values
+ *   y <-- array of floating-point values
+ *
+ * returns:
+ *   dot product
+ *----------------------------------------------------------------------------*/
+
+double
+cs_gdot(cs_lnum_t      n,
+        const double  *x,
+        const double  *y);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -37,6 +37,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -441,6 +442,35 @@ cs_dot_xx_xy_yz(cs_lnum_t               n,
   *xx = dot_xx;
   *xy = dot_xy;
   *yz = dot_yz;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the global dot product of 2 vectors: x.y
+ *
+ * In parallel mode, the local results are summed on the default
+ * global communicator.
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * parameters:
+ *   n <-- size of arrays x and y
+ *   x <-- array of floating-point values
+ *   y <-- array of floating-point values
+ *
+ * returns:
+ *   dot product
+ *----------------------------------------------------------------------------*/
+
+double
+cs_gdot(cs_lnum_t      n,
+        const double  *x,
+        const double  *y)
+{
+  double retval = cs_dot(n, x, y);
+
+  cs_parall_sum(1, CS_DOUBLE, &retval);
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
