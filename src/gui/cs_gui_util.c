@@ -1146,6 +1146,35 @@ cs_gui_strcpy_c2f(char        *chainef,
 }
 
 /*-----------------------------------------------------------------------------
+ * Test if 2 real values are equal (avoiding compiler warnings)
+ *
+ * parameters:
+ *   v1 <-- first value to compare
+ *   v2 <-- second value to compare
+ *
+ * returns:
+ *   1 if values are equal, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_is_equal_real(cs_real_t v1,
+                     cs_real_t v2)
+{
+  size_t i;
+  int retval = 1;
+
+  const unsigned char *_v1 = (const unsigned char *)(&v1);
+  const unsigned char *_v2 = (const unsigned char *)(&v2);
+
+  for (i = 0; i < sizeof(cs_real_t); i++) {
+    if (_v1[i] != _v2[i])
+      retval = 0;
+  }
+
+  return retval;
+}
+
+/*-----------------------------------------------------------------------------
  * Add timing increment to global MEI time counter.
  *
  * parameters:
