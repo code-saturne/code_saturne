@@ -78,9 +78,9 @@ BEGIN_C_DECLS
 
 /* Return the dot product of 2 vectors: x.y */
 
-double CS_PROCF(csdot, CSDOT)(const cs_int_t  *n,
-                              const double    *x,
-                              const double    *y)
+double CS_PROCF(csdot, CSDOT)(const cs_int_t   *n,
+                              const cs_real_t  *x,
+                              const cs_real_t  *y)
 {
   return cs_dot(*n, x, y);
 }
@@ -101,8 +101,8 @@ double CS_PROCF(csdot, CSDOT)(const cs_int_t  *n,
 
 void cs_axpy(cs_lnum_t      n,
              double         a,
-             const double  *x,
-             double        *restrict y)
+             const cs_real_t  *x,
+             cs_real_t        *restrict y)
 {
   cs_lnum_t  i;
 
@@ -129,9 +129,9 @@ void cs_axpy(cs_lnum_t      n,
  *----------------------------------------------------------------------------*/
 
 double
-cs_dot(cs_lnum_t      n,
-       const double  *x,
-       const double  *y)
+cs_dot(cs_lnum_t         n,
+       const cs_real_t  *x,
+       const cs_real_t  *y)
 {
   const cs_lnum_t block_size = 60;
 
@@ -200,11 +200,11 @@ cs_dot(cs_lnum_t      n,
  *----------------------------------------------------------------------------*/
 
 void
-cs_dot_xx_xy(cs_lnum_t               n,
-             const double  *restrict x,
-             const double  *restrict y,
-             double                 *xx,
-             double                 *xy)
+cs_dot_xx_xy(cs_lnum_t                    n,
+             const cs_real_t  *restrict   x,
+             const cs_real_t  *restrict   y,
+             double                      *xx,
+             double                      *xy)
 {
   const cs_lnum_t block_size = 60;
 
@@ -283,12 +283,12 @@ cs_dot_xx_xy(cs_lnum_t               n,
  *----------------------------------------------------------------------------*/
 
 void
-cs_dot_xy_yz(cs_lnum_t               n,
-             const double  *restrict x,
-             const double  *restrict y,
-             const double  *restrict z,
-             double                 *xy,
-             double                 *yz)
+cs_dot_xy_yz(cs_lnum_t                    n,
+             const cs_real_t  *restrict   x,
+             const cs_real_t  *restrict   y,
+             const cs_real_t  *restrict   z,
+             double                      *xy,
+             double                      *yz)
 {
   const cs_lnum_t block_size = 60;
 
@@ -368,13 +368,13 @@ cs_dot_xy_yz(cs_lnum_t               n,
  *----------------------------------------------------------------------------*/
 
 void
-cs_dot_xx_xy_yz(cs_lnum_t               n,
-                const double  *restrict x,
-                const double  *restrict y,
-                const double  *restrict z,
-                double                 *xx,
-                double                 *xy,
-                double                 *yz)
+cs_dot_xx_xy_yz(cs_lnum_t                    n,
+                const cs_real_t  *restrict   x,
+                const cs_real_t  *restrict   y,
+                const cs_real_t  *restrict   z,
+                double                      *xx,
+                double                      *xy,
+                double                      *yz)
 {
   const cs_lnum_t block_size = 60;
 
@@ -462,9 +462,9 @@ cs_dot_xx_xy_yz(cs_lnum_t               n,
  *----------------------------------------------------------------------------*/
 
 double
-cs_gdot(cs_lnum_t      n,
-        const double  *x,
-        const double  *y)
+cs_gdot(cs_lnum_t         n,
+        const cs_real_t  *x,
+        const cs_real_t  *y)
 {
   double retval = cs_dot(n, x, y);
 
