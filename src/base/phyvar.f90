@@ -198,11 +198,11 @@ endif
 !   ======================
 
 if (iihmpr.eq.1) then
-  call uiphyv                                                   &
+  call uiphyv &
   !===========
 ( ncel, ncelet, nscaus,                                         &
   irom, iviscl, icp,    ivisls, irovar, ivivar,                 &
-  isca, iscalt, iscavr, ipproc, iviscv, itempk,                 &
+  isca, iscalt, iscsth, iscavr, ipproc, iviscv, itempk,         &
   p0  , t0    , ro0   , cp0   , viscl0, visls0,                 &
   rtp,    propce)
 endif

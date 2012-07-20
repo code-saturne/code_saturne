@@ -2789,6 +2789,7 @@ void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
 
 
 void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
+                                const    int *const iscsth,
                                 const    int *const iscavr,
                                 double *const visls0,
                                 double *const t0,
@@ -2810,7 +2811,15 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
 
       i = *iscalt-1;
       cs_gui_properties_value("thermal_conductivity", &visls0[i]);
-      visls0[i] = visls0[i]/result;
+      /* for the Temperature, the diffusivity factor is not divided by Cp */
+      if (abs(iscsth[i]) != 1)
+      {
+        visls0[i] = visls0[i]/result;
+      }
+      else
+      {
+        visls0[i] = visls0[i];
+      }
     }
 
     /* User scalar
@@ -4524,6 +4533,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_int_t         ivivar[],
                               const cs_int_t         isca[],
                               const cs_int_t         iscalt[],
+                              const cs_int_t         iscsth[],
                               const cs_int_t         iscavr[],
                               const cs_int_t         ipproc[],
                               const cs_int_t         iviscv[],
@@ -4559,7 +4569,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
   int ipcrom = ipproc[ *irom   -1 ] -1;
   int ipcvis = ipproc[ *iviscl -1 ] -1;
   int ipccp  = ipproc[ *icp    -1 ] -1;
-  int ipcvsl = ipproc[ ivisls[*iscalt -1 ] -1 ] -1; /* Lambda/Cp from the current thermal scalar */
+  int ipcvsl = ipproc[ ivisls[*iscalt -1 ] -1 ] -1; /* Lambda/Cp from the current thermal scalar 
+                                                       if the thermal scalar is Enthalpy or Energy
+                                                       Lambda if the thermal scalar is Temperature */
 
   /* law for density */
 
@@ -4798,7 +4810,15 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     ev_la = mei_tree_new(law_la);
 
-    mei_tree_insert(ev_la, "lambda0", visls0[*iscalt-1]*(*cp0));
+    /* for the Temperature, the diffusivity factor is not divided by Cp */
+    if (abs(iscsth[i]) != 1)
+    {
+      mei_tree_insert(ev_la, "lambda0", visls0[*iscalt-1]);
+    }
+    else
+    {
+      mei_tree_insert(ev_la, "lambda0", visls0[*iscalt-1]*(*cp0));
+    }
     mei_tree_insert(ev_la, "p0", *p0);
 
     for (i = 0; i < *nscaus; i++)
@@ -4827,8 +4847,17 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                           rtp[(isca[i] -1) * (*ncelet) + iel]);
 
         tmp = mei_evaluate(ev_la);
-        propce[ipcvsl * (*ncelet) + iel] =
+        /* for the Temperature, the diffusivity factor is not divided by Cp */
+        if (abs(iscsth[i]) != 1)
+        {
+          propce[ipcvsl * (*ncelet) + iel] =
           mei_tree_lookup(ev_la, "lambda") / propce[ipccp * (*ncelet) + iel];
+        }
+        else
+        {
+          propce[ipcvsl * (*ncelet) + iel] =
+          mei_tree_lookup(ev_la, "lambda");
+        }
       }
     }
     else
@@ -4841,8 +4870,17 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                           rtp[(isca[i] -1) * (*ncelet) + iel]);
 
         tmp = mei_evaluate(ev_la);
-        propce[ipcvsl * (*ncelet) + iel] =
+        /* for the Temperature, the diffusivity factor is not divided by Cp */
+        if (abs(iscsth[i]) != 1)
+        {
+          propce[ipcvsl * (*ncelet) + iel] =
           mei_tree_lookup(ev_la, "lambda") / *cp0;
+        }
+        else
+        {
+          propce[ipcvsl * (*ncelet) + iel] =
+          mei_tree_lookup(ev_la, "lambda");
+        }
       }
     }
     mei_tree_destroy(ev_la);

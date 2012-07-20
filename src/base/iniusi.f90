@@ -415,8 +415,8 @@ if(iihmpr.eq.1) then
   call cssca2(iscavr, scamin, scamax)
   !==========
 
-!     Diffusivites
-  call cssca3(iscalt, iscavr, visls0, t0, p0)
+  ! Diffusivites
+  call cssca3(iscalt, iscsth, iscavr, visls0, t0, p0)
   !==========
 
 !     Init turb (uref, almax) si necessaire (modele RANS)
