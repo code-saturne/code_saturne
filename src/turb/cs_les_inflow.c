@@ -78,7 +78,6 @@ extern "C" {
 #endif
 #endif /* __cplusplus */
 
-
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -238,7 +237,6 @@ _random_method(const cs_int_t   n_points,
 
   int       three = 3;
 
-
   for (point_id = 0; point_id < n_points; point_id++) {
     CS_PROCF(normalen, NORMALEN) (&three, random);
     for (coo_id = 0; coo_id < 3; coo_id++)
@@ -283,7 +281,6 @@ _batten_method(const cs_int_t       n_points,
   const double *wave_vector   = inflow->wave_vector;
   const double *amplitude_cos = inflow->amplitude_cos;
   const double *amplitude_sin = inflow->amplitude_sin;
-
 
   if (initialize == 1) {
 
@@ -367,10 +364,10 @@ _batten_method(const cs_int_t       n_points,
     double spectral_coordinates[3];
 
     /*
-      Calculate the scales of the turbulence :
+      Compute integral scales of turbulence :
       -  Tb = k / epsilon
       -  Vb = sqrt(k)
-      -  Lb = Tb / Vb     ( = k^(3/2) / epsilon )
+      -  Lb = Tb * Vb     ( = k^(3/2) / epsilon )
     */
 
     _TENSOR_TRACE_3D(kinetic_energy, reynolds_stresses + point_id*6);
@@ -397,7 +394,6 @@ _batten_method(const cs_int_t       n_points,
       double dxpot = 0.;
       double mod_wave_vector[3];
 
-
       _MODULE_3D(norm_wave_vector, wave_vector + mode_id*3);
 
       _INNER_PRODUCT_3D(spectral_velocity_scale,
@@ -416,7 +412,6 @@ _batten_method(const cs_int_t       n_points,
       _DOT_PRODUCT_3D(dxpot, mod_wave_vector, spectral_coordinates);
 
        dxpot += frequency[mode_id]*spectral_time;
-
 
       for (coo_id = 0; coo_id < 3; coo_id++)
         fluctuations[point_id*3 + coo_id] +=
@@ -490,9 +485,8 @@ _synthetic_eddy_method(const cs_int_t    n_points,
 
   int compt[3] = {0, 0, 0};
 
-
-  /* Computation of turbulent scales at each point */
-  /*-----------------------------------------------*/
+  /* Computation of the characteristic scale of the synthetic eddies */
+  /*-----------------------------------------------------------------*/
 
   BFT_MALLOC(length_scale, 3*n_points, double);
 
@@ -597,8 +591,8 @@ _synthetic_eddy_method(const cs_int_t    n_points,
     bft_printf(_("\n"));
   }
 
-  /* Definition of the box on which structures are generated */
-  /*---------------------------------------------------------*/
+  /* Definition of the box on which eddies are generated */
+  /*-----------------------------------------------------*/
 
   for (coo_id = 0; coo_id < 3; coo_id++) {
     box_min_coord[coo_id] =  HUGE_VAL;
@@ -1058,7 +1052,6 @@ _cs_inflow_add_inlet(cs_inflow_type_t   type,
   inlet->kinetic_energy   = kinetic_energy;
   inlet->dissipation_rate = dissipation_rate;
 
-
   /* Generation method of synthetic turbulence */
   /*-------------------------------------------*/
 
@@ -1253,7 +1246,6 @@ void CS_PROCF(defsyn, DEFSYN)
                  "Verify the definition of the LES inlets "
                  "(cs_user_les_inflow.f90 file).\n"),nument);
 
-
     /* Add an inlet to the global inlets array */
 
     _cs_inflow_add_inlet((cs_inflow_type_t) type,
@@ -1293,6 +1285,9 @@ void CS_PROCF(synthe, SYNTHE)
 (
  const cs_int_t  *const nvar,      /* --> number of variables                 */
  const cs_int_t  *const nscal,     /* --> number of scalars                   */
+ const cs_int_t  *const iu,        /* --> index of velocity component         */
+ const cs_int_t  *const iv,        /* --> index of velocity component         */
+ const cs_int_t  *const iw,        /* --> index of velocity component         */
  const cs_real_t *const ttcabs,    /* --> current physical time               */
  const cs_real_t        dt[],      /* --> time step                           */
  const cs_real_t        rtpa[],    /* --> variables at cellules (previous)    */
@@ -1334,6 +1329,9 @@ void CS_PROCF(synthe, SYNTHE)
 
     double wt_start, wt_stop, cpu_start, cpu_stop;
 
+    wt_start  = cs_timer_wtime();
+    cpu_start = cs_timer_cpu_time();
+
     /* Mean velocity profile, one-point statistics and dissipation rate */
     /*------------------------------------------------------------------*/
 
@@ -1371,16 +1369,11 @@ void CS_PROCF(synthe, SYNTHE)
     /* Generation of the synthetic turbulence */
     /*----------------------------------------*/
 
-    wt_start  = cs_timer_wtime();
-    cpu_start = cs_timer_cpu_time();
-
-
     BFT_MALLOC(fluctuations, 3*inlet->n_faces, cs_real_t);
 
     for (face_id = 0; face_id < inlet->n_faces; face_id++)
       for (coo_id = 0; coo_id < 3; coo_id++)
         fluctuations[face_id*3 + coo_id] = 0.;
-
 
     switch(inlet->type) {
 
@@ -1442,25 +1435,22 @@ void CS_PROCF(synthe, SYNTHE)
 
     BFT_FREE(reynolds_stresses);
 
-    wt_stop  = cs_timer_wtime();
-    cpu_stop = cs_timer_cpu_time();
-
     /* Boundary conditions */
     /*---------------------*/
 
     for (face_id = 0; face_id < inlet->n_faces; face_id++) {
 
       cs_int_t index_face = inlet->parent_num[face_id]-1;
- //FIXME use iu...
-      rcodcl[0*n_b_faces*(*nvar) + 1*n_b_faces + index_face] =
+
+      rcodcl[0*n_b_faces*(*nvar) + (*iu - 1)*n_b_faces + index_face] =
         mean_velocity[face_id*3 + 0]
         + fluctuations[face_id*3 + 0];
 
-      rcodcl[0*n_b_faces*(*nvar) + 2*n_b_faces + index_face] =
+      rcodcl[0*n_b_faces*(*nvar) + (*iv - 1)*n_b_faces + index_face] =
         mean_velocity[face_id*3 + 1]
         + fluctuations[face_id*3 + 1];
 
-      rcodcl[0*n_b_faces*(*nvar) + 3*n_b_faces + index_face] =
+      rcodcl[0*n_b_faces*(*nvar) + (*iw - 1)*n_b_faces + index_face] =
         mean_velocity[face_id*3 + 2]
         + fluctuations[face_id*3 + 2];
 
@@ -1468,6 +1458,9 @@ void CS_PROCF(synthe, SYNTHE)
 
     BFT_FREE(mean_velocity);
     BFT_FREE(fluctuations);
+
+    wt_stop  = cs_timer_wtime();
+    cpu_stop = cs_timer_cpu_time();
 
     inlet->wt_tot  += (wt_stop - wt_start);
     inlet->cpu_tot += (cpu_stop - cpu_start);
@@ -1518,7 +1511,6 @@ void CS_PROCF(lecsyn, LECSYN)
                 "in read mode.\n"
                 "Verify the existence and the name of the restart file: %s\n"),
               filnam);
-
 
   /* Pointer to the global restart structure */
   suite = cs_glob_inflow_suite;
@@ -1947,7 +1939,6 @@ void CS_PROCF(ecrsyn, ECRSYN)
                 "Verify the existence and the name of the restart file: %s\n"),
               filnam);
 
-
   /* Pointer to the global restart structure */
   suite = cs_glob_inflow_suite;
 
@@ -2214,14 +2205,14 @@ cs_inflow_finalize(void)
     cs_inlet_t *inlet = cs_glob_inflow_inlet_array[inlet_id];
 
     bft_printf(_("\n"
-                 "Bilan de la génération de turbulence pour l'entrée \"%d\""
+                 "Summary of synthetic turbulence generation for inlet \"%d\""
                  " (%s) :\n\n"
-                 "  Temps écoulé cumulé :             %12.3f\n"),
+                 "  Accumulated wall-clock time:      %12.3f\n"),
                inlet_id + 1, cs_inflow_type_name[inlet->type],
                inlet->wt_tot);
 
     if (cs_glob_rank_id < 0)
-      bft_printf(_("  Temps CPU cumulé :                %12.3f\n"),
+      bft_printf(_("  Accumulated CPU time:             %12.3f\n"),
                  inlet->cpu_tot);
 
 #if defined(HAVE_MPI)
@@ -2238,9 +2229,10 @@ cs_inflow_finalize(void)
       MPI_Allreduce(&cpu_loc, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
                     cs_glob_mpi_comm);
 
-      bft_printf(_("  Temps CPU cumulé local min :      %12.3f\n"
-                   "  Temps CPU cumulé local max :      %12.3f\n"
-                   "  Temps CPU cumulé total :          %12.3f\n"),
+      bft_printf(_("  Accumulated CPU time: \n"
+                   "    local min:                      %12.3f\n"
+                   "    local max:                      %12.3f\n"
+                   "    global:                         %12.3f\n"),
                  cpu_min, cpu_max, cpu_tot);
 
     }

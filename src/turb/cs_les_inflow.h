@@ -64,7 +64,6 @@ typedef enum {
 
 } cs_inflow_type_t;
 
-
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -73,7 +72,6 @@ typedef enum {
 /*------------------*/
 
 typedef struct _cs_inlet_t  cs_inlet_t;
-
 
 /*=============================================================================
  * Public function prototypes for Fortran API
@@ -89,7 +87,6 @@ void CS_PROCF(defsyn, DEFSYN)
  CS_ARGF_SUPP_CHAINE
 );
 
-
 /*----------------------------------------------------------------------------
  * General synthetic turbulence generation
  *----------------------------------------------------------------------------*/
@@ -97,6 +94,9 @@ void CS_PROCF(defsyn, DEFSYN)
 void CS_PROCF(synthe, SYNTHE)(
  const cs_int_t  *const nvar,      /* --> number of variables                 */
  const cs_int_t  *const nscal,     /* --> number of scalars                   */
+ const cs_int_t  *const iu,        /* --> index of velocity component         */
+ const cs_int_t  *const iv,        /* --> index of velocity component         */
+ const cs_int_t  *const iw,        /* --> index of velocity component         */
  const cs_real_t *const ttcabs,    /* --> current physical time               */
  const cs_real_t        dt[],      /* --> time step                           */
  const cs_real_t        rtpa[],    /* --> variables at cellules (previous)    */
@@ -110,11 +110,9 @@ void CS_PROCF(synthe, SYNTHE)(
  CS_ARGF_SUPP_CHAINE
 );
 
-
 void CS_PROCF(cs_user_les_inflow_init, CS_USER_LES_INFLOW_INIT)(
  cs_int_t              *nent       /* <-- number of LES inlets                */
 );
-
 
 void CS_PROCF(cs_user_les_inflow_define, CS_USER_LES_INFLOW_DEFINE)(
  const cs_int_t  *const nument,    /* --> id of the inlet                     */
@@ -127,7 +125,6 @@ void CS_PROCF(cs_user_les_inflow_define, CS_USER_LES_INFLOW_DEFINE)(
        cs_real_t      *enrent,     /* <-- ref. turb. kin. ener. at the inlet  */
        cs_real_t      *dspent      /* <-- ref. turb. dissipation at the inlet */
 );
-
 
 void CS_PROCF(cs_user_les_inflow_advanced, CS_USER_LES_INFLOW_ADVANCED)(
  const cs_int_t  *const nument,    /* --> id of the inlet                     */
@@ -148,7 +145,6 @@ void CS_PROCF(cs_user_les_inflow_advanced, CS_USER_LES_INFLOW_ADVANCED)(
        cs_real_t        epsent[]   /* <-- turb. dissipation at the inlet faces*/
 );
 
-
 /*----------------------------------------------------------------------------
  * Read the restart file of the LES inflow module
  *----------------------------------------------------------------------------*/
@@ -159,7 +155,6 @@ void CS_PROCF(lecsyn, LECSYN)
  const cs_int_t   *const lngnam   /* <- Length of the name                    */
  CS_ARGF_SUPP_CHAINE
 );
-
 
 /*----------------------------------------------------------------------------
  * Write the restart file of the LES inflow module
@@ -172,7 +167,6 @@ void CS_PROCF(ecrsyn, ECRSYN)
  CS_ARGF_SUPP_CHAINE
 );
 
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -183,7 +177,6 @@ void CS_PROCF(ecrsyn, ECRSYN)
 
 void
 cs_inflow_finalize(void);
-
 
 #ifdef __cplusplus
 }

@@ -47,6 +47,7 @@ subroutine cs_user_les_inflow_init (nent)
 ! isuisy = 1: Reading of the LES inflow module restart file
 !        = 0: not activated (synthetic turbulence reinitialized)
 
+
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -79,15 +80,20 @@ integer nent
 
 !===============================================================================
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
+! nent = Number of inlets
+!------------------------
 
-if (1.eq.1) return
+! There is two distinct synthetic turbulence inlets in the flow
+nent = 2
 
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+! Reading of the LES inflow module restart file
 
-! INSERT_MAIN_CODE_HERE
+!   isuisy = 0 ------> not activated (synthetic turbulence reinitialized)
+!   isuisy = 1 ------> activated
+!-------------------------------
+
+! Synthetic fluctuations are not re-initialized in case of restart calculation
+isuisy = isuite
 
 !--------
 ! Formats
@@ -209,15 +215,69 @@ double precision vitent(3), enrent, dspent
 
 !===============================================================================
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
+! First synthetic turbulence inlet: the Batten Method is used
+! for boundary faces of color '1'
+if (nument.eq.1) then
 
-if (1.eq.1) return
+  ! 1. Data relatve to the method employed
 
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+  ! Batten method
+  typent = 2
 
-! INSERT_MAIN_CODE_HERE
+  ! Synthetic fluctuations are composed of 200 modes
+  nelent = 200
+
+  ! No specific verbosity
+  iverbo = 0
+
+  ! 2. Data relative to the LES inflow boundary faces
+
+  ! Selection of the boundary faces of color '1'
+  call getfbr('1',nfbent,lfbent)
+
+  ! 3. Data relative to the flow
+
+  ! Velocity, turb. kinetic energy and dissipation scales are given
+  vitent(1) = 18.d0
+  vitent(2) = 0.d0
+  vitent(3) = 0.d0
+
+  enrent = 4.d0
+  dspent = 4.d0
+
+endif
+
+! Second synthetic turbulence inlet: the Synthetic Eddy Method is used
+! for the boundary faces verifying a geometric criterion
+if (nument.eq.1) then
+
+  ! 1. Data relatve to the method employed
+
+  ! Synthetic Eddy Method
+  typent = 3
+
+  ! 2000 synthetic eddies contribute to the turbulent fluctuations
+  nelent = 2000
+
+  ! Details concerning SEM in the listing
+  iverbo = 1
+
+  ! 2. Data relative to the LES inflow boundary faces
+
+  ! Selection of the boundary faces thanks to a geometric criterion
+  call getfbr('x < 0.1',fbent,lfbent)
+
+  ! 3. Data relative to the flow
+
+  ! Velocity, turb. kinetic energy and dissipation scales are given
+  vitent(1) = 12.d0
+  vitent(2) = 0.d0
+  vitent(3) = 0.d0
+
+  enrent = 3.d0
+  dspent = 3.d0
+
+endif
 
 !--------
 ! Formats
@@ -335,17 +395,121 @@ double precision epsent(nfbent)
 
 ! Local variables
 
+integer          ii, ifac, iel
+integer          ipcvis
+double precision d2s3
+double precision utau, href, reyfro, yy, yplus, uplus, kplus, eplus
+double precision uref2, xdh, xitur, xkent, xeent
+
 !===============================================================================
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
+d2s3 = 2.d0/3.d0
+ipcvis = ipproc(iviscl)
 
-if (1.eq.1) return
+! Example 1 : - mean velocity, Reynolds stresses an dissipation are deduced
+!==========   from a wall law for the first synthetic turbulence inlet,
+!             - no refining of the statistics of the flow is provided for the
+!             second synthetic turbulence inlet
+if (nument.eq.1) then
 
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+  ! Approximation of the friction velocity
+  utau = uref/20.d0
 
-! INSERT_MAIN_CODE_HERE
+  ! Reference length scale
+  href = 1.d0
+
+  do ii = 1, nfbent
+
+    ifac = lfbent(ii)
+    iel  = ifabor(ifac)
+
+    reyfro = utau*href/propce(iel,ipcvis)
+
+    ! Dimensionless wall distance
+    yy = 1.d0-abs(cdgfbo(2,ifac))
+    yplus = yy/href*reyfro
+
+    ! Reichart laws (dimensionless)
+    uplus = log(1.d0+0.4d0*yplus)/xkappa                          &
+          + 7.8d0*( 1.d0 - exp(-yplus/11.d0)                      &
+                  - yplus/11.d0*exp(-0.33d0*yplus))
+    kplus = 0.07d0*yplus*yplus*exp(-yplus/8.d0)                   &
+          + (1.d0 - exp(-yplus/20.d0))*4.5d0                      &
+            / (1.d0 + 4.d0*yplus/reyfro)
+    eplus = (1.d0/xkappa)                                         &
+          / (yplus**4+15.d0**4)**(0.25d0)
+
+    ! Arrays are filled with dimensionnal stats
+    uvwent(1,ii) = uplus*utau
+    uvwent(2,ii) = 0.d0
+    uvwent(3,ii) = 0.d0
+
+    rijent(1,ii) = d2s3*kplus*utau**2
+    rijent(2,ii) = d2s3*kplus*utau**2
+    rijent(3,ii) = d2s3*kplus*utau**2
+    rijent(4,ii) = 0.d0
+    rijent(5,ii) = 0.d0
+    rijent(6,ii) = 0.d0
+
+    epsent(ii) = eplus*utau**4/propce(iel,ipcvis)
+
+  enddo
+
+endif
+
+! No refining of the statistics of the flow is provided for the other
+! synthetic turbulence inlet
+if (nument.eq.2) then
+
+  continue
+
+endif
+
+! Example 2 : - Reynolds stresses and dissipation at the inlet are computed
+!==========   using the turbulence intensity and standard laws for
+!             a circular pipe for the first synthetic turbulence inlet,
+!             - no refining of the statistics of the flow is provided for the
+!             other synthetic turbulence inlet
+if (nument.eq.1) then
+
+  do ii = 1, nfbent
+
+    ifac = lfbent(ii)
+    iel  = ifabor(ifac)
+
+    uvwent(1,ii) = 1.1d0
+    uvwent(2,ii) = 1.1d0
+    uvwent(3,ii) = 1.1d0
+
+    uref2 = uvwent(1,ii)**2   &
+          + uvwent(2,ii)**2   &
+          + uvwent(3,ii)**2
+    uref2 = max(uref2,1.d-12)
+
+    ! Hydraulic diameter
+    xdh = 0.075d0
+
+    ! Turbulence intensity
+    xitur = 0.02d0
+
+    xkent = epzero
+    xeent = epzero
+
+    call keenin &
+    !==========
+  ( uref2, xitur, xdh, cmu, xkappa, xkent, xeent )
+
+    rijent(1,ii) = d2s3*xkent
+    rijent(2,ii) = d2s3*xkent
+    rijent(3,ii) = d2s3*xkent
+    rijent(4,ii) = 0.d0
+    rijent(5,ii) = 0.d0
+    rijent(6,ii) = 0.d0
+    epsent(ii)   = xeent
+
+  enddo
+
+endif
 
 !--------
 ! Formats
