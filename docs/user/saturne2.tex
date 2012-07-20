@@ -547,9 +547,9 @@ always useful}
 {name of the variables (unknowns, physical properties ...): used in the
 execution listing, in the post-processing files, etc.\\
 {``''}: not initialised (the code chooses the manes by default)\\
-It is recommended not to define variable names of more than 8
+It is recommended not to define variable names of more than 16
 characters, to get a clear execution listing (some advanced writing
-levels take into account only the first 8 characters).\\
+levels take into account only the first 16 characters).\\
 always useful}
 
 \motcleb{ntlist}{i}{-1 or strictly positive integer}{1}{O}{L1}
@@ -771,8 +771,7 @@ coupled with \syrthes (=1) or not (=0).
 There can be only one coupled scalar per calculation.\\
 \hspace*{1.3cm}=-999: by default\\
 \hspace*{2.cm} $\bullet$ {\tt icpsyr(iscal)}=1 for the thermal scalar
-{\tt iscal=(iscalt)} when a coupling with \syrthes has been specified in the
-Interface or the launch script\\
+{\tt iscal=(iscalt)} when a coupling with \syrthes has been specified\\
 \hspace*{2.cm} $\bullet$ {\tt icpsyr(iscal)}=0 otherwise\\
 \hspace*{1.3cm}= 0: the scalar {\tt iscal} is not coupled with \syrthes\\
 \hspace*{1.3cm}= 1: the scalar {\tt iscal} is coupled with \syrthes\\
