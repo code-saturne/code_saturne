@@ -25,12 +25,11 @@ subroutine modini
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! --------
 
-! MODIFICATION DES PARAMETRES DE CALCUL
-!    APRES INTERVENTION UTILISATEUR
-!   (COMMONS)
+! Modify calculation parameters after user changes (module variables)
+
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -38,10 +37,9 @@ subroutine modini
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -59,6 +57,7 @@ use albase
 use radiat, only: iirayo
 use alstru
 use cplsat
+use ppincl
 
 !===============================================================================
 
@@ -111,11 +110,11 @@ do ii = 2, nvppmx
   endif
 enddo
 ipp = ipppro(ipproc(irom))
-if (  ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
+if (ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
 ipp = ipppro(ipproc(ivisct))
 if ((iturb.eq.10 .or. itytur.eq.2                 &
      .or. itytur.eq.5 .or. iturb.eq.60            &
-     .or. iturb.eq.70 )                           &
+     .or. iturb.eq.70)                            &
      .and.ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
 if (idtvar.lt.0) then
   ichrvr(ipppro(ipproc(icour))) = 0
@@ -179,7 +178,7 @@ do ii = 2, nvppmx
     ihisvr(ii,1) = -1
   endif
 enddo
-if (ihisvr(ippdt ,1).eq.-999) ihisvr(ippdt ,1) = -1
+if (ihisvr(ippdt, 1).eq.-999) ihisvr(ippdt, 1) = -1
 if (ipucou.ne.1) then
   ihisvr(ipptx,1) = 0
   ihisvr(ippty,1) = 0
@@ -188,7 +187,7 @@ endif
 ipp = ipppro(ipproc(ivisct))
 if ((iturb.eq.10 .or. itytur.eq.2                        &
      .or. itytur.eq.5 .or. iturb.eq.60                   &
-     .or. iturb.eq.70 )                                  &
+     .or. iturb.eq.70)                                   &
      .and.ihisvr(ipp,1).eq.-999) ihisvr(ipp,1) = -1
 if (idtvar.lt.0) then
   ihisvr(ipppro(ipproc(icour)),1) = 0
@@ -231,46 +230,58 @@ endif
 
 ! ---> Nom des variables
 
-if (nomvar(ipprtp(ipr   )) .eq.' ') then
-  nomvar(ipprtp(ipr   )) = 'Pres'
+if (nomvar(ipprtp(ipr)) .eq.' ') then
+  nomvar(ipprtp(ipr)) = 'Pressure'
+  if (icorio.eq.1) then
+    nomvar(ipprtp(ipr)) = 'Rel Pressure'
+  endif
 endif
-if (nomvar(ipprtp(iu    )) .eq.' ') then
-  nomvar(ipprtp(iu    )) = 'VitesX'
+if (nomvar(ipprtp(iu)) .eq.' ') then
+  nomvar(ipprtp(iu))   = 'VelocityX'
+  if (icorio.eq.1) then
+    nomvar(ipprtp(iu)) = 'Rel VelocityX'
+  endif
 endif
-if (nomvar(ipprtp(iv    )) .eq.' ') then
-  nomvar(ipprtp(iv    )) = 'VitesY'
+if (nomvar(ipprtp(iv)) .eq.' ') then
+  nomvar(ipprtp(iv))   = 'VelocityY'
+  if (icorio.eq.1) then
+    nomvar(ipprtp(iv)) = 'Rel VelocityY'
+  endif
 endif
-if (nomvar(ipprtp(iw    )) .eq.' ') then
-  nomvar(ipprtp(iw    )) = 'VitesZ'
+if (nomvar(ipprtp(iw)) .eq.' ') then
+  nomvar(ipprtp(iw))   = 'VelocityZ'
+  if (icorio.eq.1) then
+    nomvar(ipprtp(iw)) = 'Rel VelocityZ'
+  endif
 endif
 if (itytur.eq.2) then
-  if (nomvar(ipprtp(ik    )) .eq.' ') then
-    nomvar(ipprtp(ik    )) = 'EnTurb'
+  if (nomvar(ipprtp(ik)) .eq.' ') then
+    nomvar(ipprtp(ik)) = 'Turb Kinetic Energy'
   endif
-  if (nomvar(ipprtp(iep   )) .eq.' ') then
-    nomvar(ipprtp(iep   )) = 'Dissip'
+  if (nomvar(ipprtp(iep)) .eq.' ') then
+    nomvar(ipprtp(iep)) = 'Turb Dissipation'
   endif
 elseif (itytur.eq.3) then
-  if (nomvar(ipprtp(ir11  )) .eq.' ') then
-    nomvar(ipprtp(ir11  )) =  'R11'
+  if (nomvar(ipprtp(ir11)) .eq.' ') then
+    nomvar(ipprtp(ir11)) =  'R11'
   endif
-  if (nomvar(ipprtp(ir22  )) .eq.' ') then
-    nomvar(ipprtp(ir22  )) = 'R22'
+  if (nomvar(ipprtp(ir22)) .eq.' ') then
+    nomvar(ipprtp(ir22)) = 'R22'
   endif
-  if (nomvar(ipprtp(ir33  )) .eq.' ') then
-    nomvar(ipprtp(ir33  )) = 'R33'
+  if (nomvar(ipprtp(ir33)) .eq.' ') then
+    nomvar(ipprtp(ir33)) = 'R33'
   endif
-  if (nomvar(ipprtp(ir12  )) .eq.' ') then
-    nomvar(ipprtp(ir12  )) = 'R12'
+  if (nomvar(ipprtp(ir12)) .eq.' ') then
+    nomvar(ipprtp(ir12)) = 'R12'
   endif
-  if (nomvar(ipprtp(ir13  )) .eq.' ') then
-    nomvar(ipprtp(ir13  )) = 'R13'
+  if (nomvar(ipprtp(ir13)) .eq.' ') then
+    nomvar(ipprtp(ir13)) = 'R13'
   endif
-  if (nomvar(ipprtp(ir23  )) .eq.' ') then
-    nomvar(ipprtp(ir23  )) = 'R23'
+  if (nomvar(ipprtp(ir23)) .eq.' ') then
+    nomvar(ipprtp(ir23)) = 'R23'
   endif
-  if (nomvar(ipprtp(iep   )) .eq.' ') then
-    nomvar(ipprtp(iep   )) = 'Dissip'
+  if (nomvar(ipprtp(iep)) .eq.' ') then
+    nomvar(ipprtp(iep)) = 'Turb Dissipation'
   endif
   if (iturb.eq.32) then
     if (nomvar(ipprtp(ial)) .eq.' ') then
@@ -278,54 +289,54 @@ elseif (itytur.eq.3) then
     endif
   endif
 elseif (itytur.eq.5) then
-  if (nomvar(ipprtp(ik    )) .eq.' ') then
-    nomvar(ipprtp(ik    )) = 'EnTurb'
+  if (nomvar(ipprtp(ik)) .eq.' ') then
+    nomvar(ipprtp(ik)) = 'Turb Kinetic Energy'
   endif
-  if (nomvar(ipprtp(iep   )) .eq.' ') then
-    nomvar(ipprtp(iep   )) = 'Dissip'
+  if (nomvar(ipprtp(iep)) .eq.' ') then
+    nomvar(ipprtp(iep)) = 'Turb Dissipation'
   endif
-  if (nomvar(ipprtp(iphi  )) .eq.' ') then
-    nomvar(ipprtp(iphi  )) = 'phi'
+  if (nomvar(ipprtp(iphi)) .eq.' ') then
+    nomvar(ipprtp(iphi)) = 'Phi'
   endif
   if (iturb.eq.50) then
-    if (nomvar(ipprtp(ifb   )) .eq.' ') then
-      nomvar(ipprtp(ifb   )) = 'fbarre'
+    if (nomvar(ipprtp(ifb)) .eq.' ') then
+      nomvar(ipprtp(ifb)) = 'f_bar'
     endif
   elseif (iturb.eq.51) then
-    if (nomvar(ipprtp(ial   )) .eq.' ') then
-      nomvar(ipprtp(ial   )) = 'Alpha'
+    if (nomvar(ipprtp(ial)) .eq.' ') then
+      nomvar(ipprtp(ial)) = 'Alpha'
     endif
   endif
 elseif (iturb.eq.60) then
-  if (nomvar(ipprtp(ik    )) .eq.' ') then
-    nomvar(ipprtp(ik    )) = 'EnTurb'
+  if (nomvar(ipprtp(ik)) .eq.' ') then
+    nomvar(ipprtp(ik)) = 'Turb Kinetic Energy'
   endif
-  if (nomvar(ipprtp(iomg  )) .eq.' ') then
-    nomvar(ipprtp(iomg  )) = 'Omega'
+  if (nomvar(ipprtp(iomg)) .eq.' ') then
+    nomvar(ipprtp(iomg)) = 'Omega'
   endif
 elseif (iturb.eq.70) then
-  if (nomvar(ipprtp(inusa )) .eq.' ') then
-    nomvar(ipprtp(inusa )) = 'NuTild'
+  if (nomvar(ipprtp(inusa)) .eq.' ') then
+    nomvar(ipprtp(inusa)) = 'NuTilda'
   endif
 endif
 
-if (nomvar(ipppro(ipproc(irom  ))) .eq.' ') then
-  nomvar(ipppro(ipproc(irom  ))) = 'MasVol'
+if (nomvar(ipppro(ipproc(irom))) .eq.' ') then
+  nomvar(ipppro(ipproc(irom))) = 'Density'
 endif
 if (nomvar(ipppro(ipproc(ivisct))) .eq.' ') then
-  nomvar(ipppro(ipproc(ivisct))) = 'VisTur'
+  nomvar(ipppro(ipproc(ivisct))) = 'Turb Viscosity'
 endif
 if (nomvar(ipppro(ipproc(iviscl))) .eq.' ') then
-  nomvar(ipppro(ipproc(iviscl))) = 'VisMol'
+  nomvar(ipppro(ipproc(iviscl))) = 'Laminar Viscosity'
 endif
 if (ismago.gt.0) then
   if (nomvar(ipppro(ipproc(ismago))) .eq.' ') then
     nomvar(ipppro(ipproc(ismago))) = 'Csdyn2'
   endif
 endif
-if (icp   .gt.0) then
-  if (nomvar(ipppro(ipproc(icp   ))) .eq.' ') then
-    nomvar(ipppro(ipproc(icp   ))) = 'ChalSp'
+if (icp.gt.0) then
+  if (nomvar(ipppro(ipproc(icp))) .eq.' ') then
+    nomvar(ipppro(ipproc(icp))) = 'Specific Heat'
   endif
 endif
 if (iescal(iespre).gt.0) then
@@ -353,15 +364,29 @@ if (iescal(iestot).gt.0) then
   endif
 endif
 
+if (iscalt.gt.0.and.iscalt.le.nscal) then
+  if (nomvar(ipprtp(isca(iscalt))) .eq.' ') then
+    if (iscsth(iscalt).eq.2) then
+      nomvar(ipprtp(isca(iscalt))) = 'Enthalpy'
+    else
+      if (iscalt.eq.ienerg) then
+        nomvar(ipprtp(isca(iscalt))) = 'Total Energy'
+      else if (iscalt.eq.itemp .or. itemp.lt.0) then
+        nomvar(ipprtp(isca(iscalt))) = 'Temperature'
+      endif
+    endif
+  endif
+endif
+
 do jj = 1, nscaus
   ii = jj
-  if (nomvar(ipprtp(isca  (ii   ))) .eq.' ') then
-    write(nomvar(ipprtp(isca  (ii   ))),'(a5,i3.3)') 'Scaus' ,ii
+  if (nomvar(ipprtp(isca(ii))) .eq.' ') then
+    write(nomvar(ipprtp(isca(ii))),'(a5,i3.3)') 'Scaus', ii
   endif
 enddo
 do jj = 1, nscapp
   ii = iscapp(jj)
-  if (nomvar(ipprtp(isca (ii))) .eq.' ') then
+  if (nomvar(ipprtp(isca(ii))) .eq.' ') then
     write(nomvar(ipprtp(isca(ii))), '(a5,i3.3)') 'Scapp', ii
   endif
 enddo
@@ -375,55 +400,71 @@ if (nbmomt.gt.0) then
   enddo
 endif
 
+! total pressure (not defined in compressible case)
+if (ippmod(icompf).lt.0) then
+  ipp = ipppro(ipproc(iprtot))
+  if (nomvar(ipp) .eq.' ') then
+    nomvar(ipp)   = 'Total Pressure'
+  endif
+endif
+
+if (nomvar(icour) .eq.' ') then
+  nomvar(icour) = 'CFL'
+endif
+
+if (nomvar(ifour) .eq.' ') then
+  nomvar(ifour) = 'Fourier Number'
+endif
+
 if (nomvar(ippdt) .eq.' ') then
-  write(nomvar(ippdt), '(a8     )') 'PasDeTmp'
+  nomvar(ippdt) = 'Local Time Step'
 endif
 
 if (nomvar(ipptx) .eq.' ') then
-  write(nomvar(ipptx), '(a8     )') 'Tx      '
+  nomvar(ipptx) = 'Tx'
 endif
 if (nomvar(ippty) .eq.' ') then
-  write(nomvar(ippty), '(a8     )') 'Ty      '
+  nomvar(ippty) = 'Ty'
 endif
 if (nomvar(ipptz) .eq.' ') then
-  write(nomvar(ipptz), '(a8     )') 'Tz      '
+  nomvar(ipptz) = 'Tz'
 endif
 
 if (iale.eq.1) then
   if (nomvar(ipprtp(iuma)) .eq.' ') then
-    write(nomvar(ipprtp(iuma)),'(a8)') 'VitmailX'
+    nomvar(ipprtp(iuma)) = 'Mesh VelocityX'
   endif
   if (nomvar(ipprtp(ivma)) .eq.' ') then
-    write(nomvar(ipprtp(ivma)),'(a8)') 'VitmailY'
+    nomvar(ipprtp(ivma)) = 'Mesh VelocityY'
   endif
   if (nomvar(ipprtp(iwma)) .eq.' ') then
-    write(nomvar(ipprtp(iwma)),'(a8)') 'VitmailZ'
+    nomvar(ipprtp(iwma)) = 'Mesh VelocityZ'
   endif
   if (iortvm.eq.0) then
     if (nomvar(ipppro(ipproc(ivisma(1)))) .eq.' ') then
-      write(nomvar(ipppro(ipproc(ivisma(1)))),'(a8)') 'ViscMail'
+      nomvar(ipppro(ipproc(ivisma(1)))) = 'Mesh ViscX'
     endif
   else
     if (nomvar(ipppro(ipproc(ivisma(1)))) .eq.' ') then
-      write(nomvar(ipppro(ipproc(ivisma(1)))),'(a8)') 'ViscMaiX'
+      nomvar(ipppro(ipproc(ivisma(1)))) = 'Mesh ViscX'
     endif
     if (nomvar(ipppro(ipproc(ivisma(2)))) .eq.' ') then
-      write(nomvar(ipppro(ipproc(ivisma(2)))),'(a8)') 'ViscMaiY'
+      nomvar(ipppro(ipproc(ivisma(2)))) = 'Mesh ViscY'
     endif
     if (nomvar(ipppro(ipproc(ivisma(3)))) .eq.' ') then
-      write(nomvar(ipppro(ipproc(ivisma(3)))),'(a8)') 'ViscMaiZ'
+      nomvar(ipppro(ipproc(ivisma(3)))) = 'Mesh ViscZ'
     endif
   endif
 endif
 
 ! ---> Sorties listing
 
-ipp = ipppro(ipproc(irom  ))
+ipp = ipppro(ipproc(irom))
 if (irovar.eq.1.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
 ipp = ipppro(ipproc(ivisct))
 if ((iturb.eq.10 .or. itytur.eq.2                 &
      .or. itytur.eq.5 .or. iturb.eq.60            &
-     .or. iturb.eq.70 )                                  &
+     .or. iturb.eq.70)                            &
      .and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
 if (inusa .gt. 0) then
   ipp = ipppro(ipproc(inusa))
@@ -509,7 +550,7 @@ endif
 
 !    -- Proprietes physiques
 if (abs(thetro+999.d0).gt.epzero) then
-  WRITE(NFECRA,1011) 'IROEXT',IROEXT,'THETRO'
+  write(nfecra,1011) 'IROEXT',iroext,'THETRO'
   iok = iok + 1
 elseif (iroext.eq.0) then
   thetro = 0.0d0
@@ -519,7 +560,7 @@ elseif (iroext.eq.2) then
   thetro = 1.d0
 endif
 if (abs(thetvi+999.d0).gt.epzero) then
-  WRITE(NFECRA,1011) 'IVIEXT',IVIEXT,'THETVI'
+  write(nfecra,1011) 'IVIEXT',iviext,'THETVI'
   iok = iok + 1
 elseif (iviext.eq.0) then
   thetvi = 0.0d0
@@ -529,7 +570,7 @@ elseif (iviext.eq.2) then
   thetvi = 1.d0
 endif
 if (abs(thetcp+999.d0).gt.epzero) then
-  WRITE(NFECRA,1011) 'ICPEXT',ICPEXT,'THETCP'
+  write(nfecra,1011) 'ICPEXT',icpext,'THETCP'
   iok = iok + 1
 elseif (icpext.eq.0) then
   thetcp = 0.0d0
@@ -541,7 +582,7 @@ endif
 
 !    -- Termes sources NS
 if (abs(thetsn+999.d0).gt.epzero) then
-  WRITE(NFECRA,1011) 'ISNO2T',ISNO2T,'THETSN'
+  write(nfecra,1011) 'ISNO2T',isno2t,'THETSN'
   iok = iok + 1
 elseif (isno2t.eq.1) then
   thetsn = 0.5d0
@@ -553,7 +594,7 @@ endif
 
 !    -- Termes sources grandeurs turbulentes
 if (abs(thetst+999.d0).gt.epzero) then
-  WRITE(NFECRA,1011) 'ISTO2T',ISTO2T,'THETST'
+  write(nfecra,1011) 'ISTO2T',isto2t,'THETST'
   iok = iok + 1
 elseif (isto2t.eq.1) then
   thetst = 0.5d0
@@ -566,7 +607,7 @@ endif
 do iscal = 1, nscal
 !    -- Termes sources des scalaires
   if (abs(thetss(iscal)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1021) ISCAL,'ISSO2T',ISSO2T(ISCAL),'THETSS'
+    write(nfecra,1021) iscal,'ISSO2T',isso2t(iscal),'THETSS'
     iok = iok + 1
   elseif (isso2t(iscal).eq.1) then
     thetss(iscal) = 0.5d0
@@ -577,7 +618,7 @@ do iscal = 1, nscal
   endif
 !    -- Diffusivite des scalaires
   if (abs(thetvs(iscal)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1021) ISCAL,'IVSEXT',IVSEXT(ISCAL),'THETVS'
+    write(nfecra,1021) iscal,'IVSEXT',ivsext(iscal),'THETVS'
     iok = iok + 1
   elseif (ivsext(iscal).eq.0) then
     thetvs(iscal) = 0.d0
@@ -593,29 +634,29 @@ enddo
 !       (enlever le IOK, modifier le message et les tests dans verini)
 
 !     Vitesse pression (la pression est prise sans interp)
-if (abs(thetav(iu )+999.d0).gt.epzero.or.                 &
-     abs(thetav(iv )+999.d0).gt.epzero.or.                 &
-     abs(thetav(iw )+999.d0).gt.epzero.or.                 &
+if (abs(thetav(iu)+999.d0).gt.epzero.or.                 &
+     abs(thetav(iv)+999.d0).gt.epzero.or.                 &
+     abs(thetav(iw)+999.d0).gt.epzero.or.                 &
      abs(thetav(ipr)+999.d0).gt.epzero) then
-  WRITE(NFECRA,1031) 'VITESSE-PRESSION ','THETAV'
+  write(nfecra,1031) 'VITESSE-PRESSION ','THETAV'
   iok = iok + 1
 elseif (ischtp.eq.1) then
-  thetav(iu ) = 1.d0
-  thetav(iv ) = 1.d0
-  thetav(iw ) = 1.d0
+  thetav(iu) = 1.d0
+  thetav(iv) = 1.d0
+  thetav(iw) = 1.d0
   thetav(ipr) = 1.d0
 elseif (ischtp.eq.2) then
-  thetav(iu ) = 0.5d0
-  thetav(iv ) = 0.5d0
-  thetav(iw ) = 0.5d0
+  thetav(iu) = 0.5d0
+  thetav(iv) = 0.5d0
+  thetav(iw) = 0.5d0
   thetav(ipr) = 1.d0
 endif
 
 !     Turbulence (en k-eps : ordre 1)
 if (itytur.eq.2) then
   if (abs(thetav(ik )+999.d0).gt.epzero.or.               &
-       abs(thetav(iep)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1031) 'VARIABLES   K-EPS','THETAV'
+      abs(thetav(iep)+999.d0).gt.epzero) then
+    write(nfecra,1031) 'VARIABLES   K-EPS','THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
     thetav(ik ) = 1.d0
@@ -627,13 +668,13 @@ if (itytur.eq.2) then
   endif
 elseif (itytur.eq.3) then
   if (abs(thetav(ir11)+999.d0).gt.epzero.or.              &
-       abs(thetav(ir22)+999.d0).gt.epzero.or.              &
-       abs(thetav(ir33)+999.d0).gt.epzero.or.              &
-       abs(thetav(ir12)+999.d0).gt.epzero.or.              &
-       abs(thetav(ir13)+999.d0).gt.epzero.or.              &
-       abs(thetav(ir23)+999.d0).gt.epzero.or.              &
-       abs(thetav(iep )+999.d0).gt.epzero) then
-    WRITE(NFECRA,1031) 'VARIABLES  RIJ-EP','THETAV'
+      abs(thetav(ir22)+999.d0).gt.epzero.or.              &
+      abs(thetav(ir33)+999.d0).gt.epzero.or.              &
+      abs(thetav(ir12)+999.d0).gt.epzero.or.              &
+      abs(thetav(ir13)+999.d0).gt.epzero.or.              &
+      abs(thetav(ir23)+999.d0).gt.epzero.or.              &
+      abs(thetav(iep )+999.d0).gt.epzero) then
+    write(nfecra,1031) 'VARIABLES  RIJ-EP','THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
     thetav(ir11) = 1.d0
@@ -665,10 +706,10 @@ elseif (itytur.eq.3) then
 
 elseif (iturb.eq.50) then
   if (abs(thetav(ik  )+999.d0).gt.epzero.or.              &
-       abs(thetav(iep )+999.d0).gt.epzero.or.              &
-       abs(thetav(iphi)+999.d0).gt.epzero.or.              &
-       abs(thetav(ifb )+999.d0).gt.epzero) then
-    WRITE(NFECRA,1031) 'VARIABLES     V2F','THETAV'
+      abs(thetav(iep )+999.d0).gt.epzero.or.              &
+      abs(thetav(iphi)+999.d0).gt.epzero.or.              &
+      abs(thetav(ifb )+999.d0).gt.epzero) then
+    write(nfecra,1031) 'VARIABLES     V2F','THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
     thetav(ik  ) = 1.d0
@@ -684,10 +725,10 @@ elseif (iturb.eq.50) then
   endif
 elseif (iturb.eq.51) then
   if (abs(thetav(ik  )+999.d0).gt.epzero.or.              &
-       abs(thetav(iep )+999.d0).gt.epzero.or.              &
-       abs(thetav(iphi)+999.d0).gt.epzero.or.              &
-       abs(thetav(ial )+999.d0).gt.epzero) then
-    WRITE(NFECRA,1031) 'VARIABLES BL-V2/K','THETAV'
+      abs(thetav(iep )+999.d0).gt.epzero.or.              &
+      abs(thetav(iphi)+999.d0).gt.epzero.or.              &
+      abs(thetav(ial )+999.d0).gt.epzero) then
+    write(nfecra,1031) 'VARIABLES BL-V2/K','THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
     thetav(ik  ) = 1.d0
@@ -703,8 +744,8 @@ elseif (iturb.eq.51) then
   endif
 elseif (iturb.eq.60) then
   if (abs(thetav(ik  )+999.d0).gt.epzero.or.              &
-       abs(thetav(iomg)+999.d0).gt.epzero ) then
-    WRITE(NFECRA,1031) 'VARIABLES K-OMEGA','THETAV'
+      abs(thetav(iomg)+999.d0).gt.epzero ) then
+    write(nfecra,1031) 'VARIABLES K-OMEGA','THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
     thetav(ik  ) = 1.d0
@@ -716,7 +757,7 @@ elseif (iturb.eq.60) then
   endif
 elseif (iturb.eq.70) then
   if (abs(thetav(inusa)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1031) 'VARIABLE NU_tilde de SA','THETAV'
+    write(nfecra,1031) 'VARIABLE NU_tilde de SA','THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
     thetav(inusa) = 1.d0
@@ -730,7 +771,7 @@ endif
 do iscal = 1, nscal
   ivar  = isca(iscal)
   if (abs(thetav(ivar)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1041) 'SCALAIRE',ISCAL,'THETAV'
+    write(nfecra,1041) 'SCALAIRE',ISCAL,'THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
     thetav(ivar) = 1.d0
@@ -742,9 +783,9 @@ enddo
 !     Vitesse de maillage en ALE
 if (iale.eq.1) then
   if (abs(thetav(iuma)+999.d0).gt.epzero.or.                       &
-     abs(thetav(ivma)+999.d0).gt.epzero.or.                       &
-     abs(thetav(iwma)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1032) 'THETAV'
+      abs(thetav(ivma)+999.d0).gt.epzero.or.                       &
+      abs(thetav(iwma)+999.d0).gt.epzero) then
+    write(nfecra,1032) 'THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
     thetav(iuma) = 1.d0
@@ -942,9 +983,9 @@ endif
 
 if (ideuch.eq.-999) then
   if (iturb.eq. 0.or.                                     &
-       iturb.eq.10.or.                                     &
-       itytur.eq.4.or.                                     &
-       iturb.eq.70) then
+      iturb.eq.10.or.                                     &
+      itytur.eq.4.or.                                     &
+      iturb.eq.70) then
     ideuch = 0
   else
     ideuch = 1
@@ -963,8 +1004,7 @@ endif
 ! Idem en Spalart-Allmaras.
 
 if (ypluli.lt.-grand) then
-  if (ideuch.eq.2 .or. itytur.eq.4 .or.           &
-       iturb.eq.70    ) then
+  if (ideuch.eq.2 .or. itytur.eq.4 .or. iturb.eq.70) then
     ypluli = 10.88d0
   else
     ypluli = 1.d0/xkappa
@@ -1398,350 +1438,350 @@ endif
 #if defined(_CS_LANG_FR)
 
  1001 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ISTMPF = ',   I10                                        ,/,&
-'@    THETFL SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
-'@    NE PAS LE MODIFIER.                                     ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier cs_user_parameters.f90                           ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========,'                                               /,&
+'@    ISTMPF = ',   i10,                                        /,&
+'@    THETFL SERA INITIALISE AUTOMATIQUEMENT.,'                 /,&
+'@    NE PAS LE MODIFIER.,'                                     /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier cs_user_parameters.f90,'                           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1011 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ',A6,' = ',   I10                                        ,/,&
-'@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
-'@    NE PAS LE MODIFIER.                                     ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier cs_user_parameters.f90                           ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========,'                                               /,&
+'@    ',a6,' = ',   i10,                                        /,&
+'@    ',a6,' SERA INITIALISE AUTOMATIQUEMENT.,'                 /,&
+'@    NE PAS LE MODIFIER.,'                                     /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier cs_user_parameters.f90,'                           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1021 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',   I10,' ',A6,' = ',   I10                    ,/,&
-'@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
-'@    NE PAS LE MODIFIER.                                     ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier cs_user_parameters.f90                           ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========,'                                               /,&
+'@    SCALAIRE ',   i10,' ',a6,' = ',   i10,                    /,&
+'@    ',a6,' SERA INITIALISE AUTOMATIQUEMENT.,'                 /,&
+'@    NE PAS LE MODIFIER.,'                                     /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier cs_user_parameters.f90,'                           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1031 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ',A17                                                    ,/,&
-'@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
-'@    NE PAS LE MODIFIER.                                     ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier cs_user_parameters.f90                           ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========,'                                               /,&
+'@    ',a17,                                                    /,&
+'@    ',a6,' SERA INITIALISE AUTOMATIQUEMENT.,'                 /,&
+'@    NE PAS LE MODIFIER.,'                                     /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier cs_user_parameters.f90,'                           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1032 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    VITESSE DE MAILLAGE EN ALE                              ',/,&
-'@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
-'@    NE PAS LE MODIFIER.                                     ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier cs_user_parameters.f90                           ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========,'                                               /,&
+'@    VITESSE DE MAILLAGE EN ALE',                              /,&
+'@    ',a6,' SERA INITIALISE AUTOMATIQUEMENT.,'                 /,&
+'@    NE PAS LE MODIFIER.,'                                     /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier cs_user_parameters.f90,'                           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1041 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ',A8,' ',I10                                             ,/,&
-'@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
-'@    NE PAS LE MODIFIER.                                     ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier cs_user_parameters.f90                           ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========,'                                               /,&
+'@    ',a8,' ',i10,                                             /,&
+'@    ',a6,' SERA INITIALISE AUTOMATIQUEMENT.,'                 /,&
+'@    NE PAS LE MODIFIER.,'                                     /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier cs_user_parameters.f90,'                           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1061 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ICALHY doit etre un entier egal a 0 ou 1                ',/,&
-'@                                                            ',/,&
-'@  Il vaut ici ',I10                                          ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier cs_user_parameters.f90                           ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========,'                                               /,&
+'@    ICALHY doit etre un entier egal a 0 ou 1',                /,&
+'@',                                                            /,&
+'@  Il vaut ici ',i10,                                          /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier cs_user_parameters.f90,'                           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1071 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',I10   ,' NE PAS MODIFIER LA DIFFUSIVITE      ',/,&
-'@                                                            ',/,&
-'@  Le scalaire ',I10   ,' represente la variance des         ',/,&
-'@    fluctuations du scalaire ',I10                           ,/,&
-'@                             (ISCAVR(',I10   ,') = ',I10     ,/,&
-'@  La diffusivite VISLS0(',I10   ,') du scalaire ',I10        ,/,&
-'@    ne doit pas etre renseignee :                           ',/,&
-'@    elle sera automatiquement prise egale a la diffusivite  ',/,&
-'@    du scalaire ',I10   ,' soit ',E14.5                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier cs_user_parameters.f90                           ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========,'                                               /,&
+'@    SCALAIRE ',i10,   ' NE PAS MODIFIER LA DIFFUSIVITE',      /,&
+'@',                                                            /,&
+'@  Le scalaire ',i10,   ' represente la variance des,'         /,&
+'@    fluctuations du scalaire ',i10,                           /,&
+'@                             (ISCAVR(',i10,   ') = ',i10,     /,&
+'@  La diffusivite VISLS0(',i10,   ') du scalaire ',i10,        /,&
+'@    ne doit pas etre renseignee :,'                           /,&
+'@    elle sera automatiquement prise egale a la diffusivite,'  /,&
+'@    du scalaire ',i10,   ' soit ',e14.5,                      /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier cs_user_parameters.f90,'                           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  2000 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@  Le modele de turbulence k-omega a ete choisi. Pour gerer  ',/,&
-'@    correctement la suite de calcul, l''indicateur ICDPAR a ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION :       A L''ENTREE DES DONNEES',               /,&
+'@    =========,'                                               /,&
+'@',                                                            /,&
+'@  Le modele de turbulence k-omega a ete choisi. Pour gerer,'  /,&
+'@    correctement la suite de calcul, l''indicateur ICDPAR a', /,&
 '@    ete mis a 1 (relecture de la distance a la paroi dans le',/,&
-'@    fichier suite).                                         ',/,&
-'@  Si cette initialisation pose probleme (modification du    ',/,&
-'@    nombre et de la position des faces de paroi depuis le   ',/,&
-'@    calcul precedent), forcer ICDPAR=-1 (il peut alors      ',/,&
-'@    y avoir un leger decalage dans la viscosite             ',/,&
-'@    turbulente au premier pas de temps).                    ',/,&
-'@                                                            ',/,&
-'@  Le calcul sera execute.                                   ',/,&
-'@                                                            ',/,&
+'@    fichier suite).',                                         /,&
+'@  Si cette initialisation pose probleme (modification du,'    /,&
+'@    nombre et de la position des faces de paroi depuis le',   /,&
+'@    calcul precedent), forcer ICDPAR=-1 (il peut alors',      /,&
+'@    y avoir un leger decalage dans la viscosite',             /,&
+'@    turbulente au premier pas de temps).',                    /,&
+'@',                                                            /,&
+'@  Le calcul sera execute.',                                   /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  2001 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@  Le modele de turbulence k-omega a ete choisi, avec        ',/,&
-'@    l''option de recalcul de la distance a la paroi         ',/,&
-'@    (ICDPAR=-1). Il se peut qu''il y ait un leger decalage  ',/,&
-'@    dans la viscosite turbulente au premier pas de temps.   ',/,&
-'@                                                            ',/,&
-'@  Le calcul sera execute.                                   ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION :       A L''ENTREE DES DONNEES',               /,&
+'@    =========,'                                               /,&
+'@',                                                            /,&
+'@  Le modele de turbulence k-omega a ete choisi, avec',        /,&
+'@    l''option de recalcul de la distance a la paroi,'         /,&
+'@    (ICDPAR=-1). Il se peut qu''il y ait un leger decalage,'  /,&
+'@    dans la viscosite turbulente au premier pas de temps.',   /,&
+'@',                                                            /,&
+'@  Le calcul sera execute.',                                   /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
 #else
 
  1001 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
-'@    ========                                                ',/,&
-'@    ISTMPF = ',   I10                                        ,/,&
-'@    THETFL WILL BE AUTOMATICALLY INITIALIZED.               ',/,&
-'@    DO NOT MODIFY IT.                                       ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Check cs_user_parameters.f90                              ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@    ISTMPF = ',   i10,                                        /,&
+'@    THETFL WILL BE AUTOMATICALLY INITIALIZED.',               /,&
+'@    DO NOT MODIFY IT.,'                                       /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Check cs_user_parameters.f90',                              /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1011 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
-'@    ========                                                ',/,&
-'@    ',A6,' = ',   I10                                        ,/,&
-'@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
-'@    DO NOT MODIFY IT.                                       ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Check cs_user_parameters.f90                              ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@    ',a6,' = ',   i10,                                        /,&
+'@    ',a6,' WILL BE INITIALIZED AUTOMATICALLY',                /,&
+'@    DO NOT MODIFY IT.,'                                       /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Check cs_user_parameters.f90',                              /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1021 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
-'@    ========                                                ',/,&
-'@    SCALAR ',   I10,' ',A6,' = ',   I10                      ,/,&
-'@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
-'@    DO NOT MODIFY IT.                                       ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Check cs_user_parameters.f90                              ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@    SCALAR ',   i10,' ',a6,' = ',   i10,                      /,&
+'@    ',a6,' WILL BE INITIALIZED AUTOMATICALLY',                /,&
+'@    DO NOT MODIFY IT.,'                                       /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Check cs_user_parameters.f90',                              /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1031 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
-'@    ========                                                ',/,&
-'@    ',A17                                                    ,/,&
-'@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
-'@    DO NOT MODIFY IT.                                       ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Check cs_user_parameters.f90                              ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@    ',a17,                                                    /,&
+'@    ',a6,' WILL BE INITIALIZED AUTOMATICALLY',                /,&
+'@    DO NOT MODIFY IT.,'                                       /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Check cs_user_parameters.f90',                              /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1032 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
-'@    ========                                                ',/,&
-'@    MESH VELOCITY IN ALE                                    ',/,&
-'@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
-'@    DO NOT MODIFY IT.                                       ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Check cs_user_parameters.f90                              ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@    MESH VELOCITY IN ALE',                                    /,&
+'@    ',a6,' WILL BE INITIALIZED AUTOMATICALLY',                /,&
+'@    DO NOT MODIFY IT.,'                                       /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Check cs_user_parameters.f90',                              /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1041 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
-'@    ========                                                ',/,&
-'@    ',A8,' ',I10                                             ,/,&
-'@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
-'@    DO NOT MODIFY IT.                                       ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Check cs_user_parameters.f90                              ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@    ',a8,' ',i10,                                             /,&
+'@    ',a6,' WILL BE INITIALIZED AUTOMATICALLY',                /,&
+'@    DO NOT MODIFY IT.,'                                       /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Check cs_user_parameters.f90',                              /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1061 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
-'@    ========                                                ',/,&
-'@    ICALHY must be an integer equal to 0 or 1               ',/,&
-'@                                                            ',/,&
-'@  Its value is ',I10                                         ,/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Check cs_user_parameters.f90                              ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@    ICALHY must be an integer equal to 0 or 1',               /,&
+'@',                                                            /,&
+'@  Its value is ',i10,                                         /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Check cs_user_parameters.f90',                              /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  1071 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
-'@    ========                                                ',/,&
-'@    SCALAR ',I10   ,' DO NOT MODIFY THE DIFFUSIVITY         ',/,&
-'@                                                            ',/,&
-'@  The scalar ',I10   ,' is the fluctuations variance        ',/,&
-'@    of the scalar ',I10                                      ,/,&
-'@                             (ISCAVR(',I10   ,') = ',I10     ,/,&
-'@  The diffusivity VISLS0(',I10   ,') of the scalar ',I10     ,/,&
-'@    must not be set:                                        ',/,&
-'@    it will be automatically set equal to the scalar        ',/,&
-'@    diffusivity ',I10   ,' i.e. ',E14.5                      ,/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Check cs_user_parameters.f90                              ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@    SCALAR ',i10,   ' DO NOT MODIFY THE DIFFUSIVITY,'         /,&
+'@',                                                            /,&
+'@  The scalar ',i10,   ' is the fluctuations variance',        /,&
+'@    of the scalar ',i10,                                      /,&
+'@                             (ISCAVR(',i10,   ') = ',i10,     /,&
+'@  The diffusivity VISLS0(',i10,   ') of the scalar ',i10,     /,&
+'@    must not be set:',                                        /,&
+'@    it will be automatically set equal to the scalar',        /,&
+'@    diffusivity ',i10,   ' i.e. ',e14.5,                      /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Check cs_user_parameters.f90',                              /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  2000 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING:       IN THE DATA SPECIFICATION                ',/,&
-'@    ========                                                ',/,&
-'@                                                            ',/,&
-'@  The k-omega turbulence model has been chosen. In order to ',/,&
+'@',                                                            /,&
+'@ @@ WARNING:       IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@',                                                            /,&
+'@  The k-omega turbulence model has been chosen. In order to', /,&
 '@    have a correct calculation restart, the ICDPAR indicator',/,&
 '@    has been set to 1 (read the wall distance in the restart',/,&
-'@    file).                                                  ',/,&
-'@  If this initialization raises any issue (modification of  ',/,&
-'@    the number and position of the wall faces since the     ',/,&
-'@    previous calcuation), force ICDPAR=1 (there might be    ',/,&
-'@    a small shift in the turbulent viscosity at the         ',/,&
-'@    first time-step).                                       ',/,&
-'@                                                            ',/,&
-'@  The calculation will be run.                              ',/,&
-'@                                                            ',/,&
+'@    file).',                                                  /,&
+'@  If this initialization raises any issue (modification of,'  /,&
+'@    the number and position of the wall faces since the',     /,&
+'@    previous calcuation), force ICDPAR=1 (there might be,'    /,&
+'@    a small shift in the turbulent viscosity at the,'         /,&
+'@    first time-step).,'                                       /,&
+'@',                                                            /,&
+'@  The calculation will be run.',                              /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  2001 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING:       IN THE DATA SPECIFICATION                ',/,&
-'@    ========                                                ',/,&
-'@                                                            ',/,&
-'@  The k-omega turbulence model has been chosen, with the    ',/,&
-'@    option for a re-calculation of the wall distance        ',/,&
-'@    (ICDPAR=-1). There might be a small shift in the        ',/,&
-'@    turbulent viscosity at the first time-step.             ',/,&
-'@                                                            ',/,&
-'@  The calculation will be run.                              ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING:       IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@',                                                            /,&
+'@  The k-omega turbulence model has been chosen, with the,'    /,&
+'@    option for a re-calculation of the wall distance',        /,&
+'@    (ICDPAR=-1). There might be a small shift in the',        /,&
+'@    turbulent viscosity at the first time-step.',             /,&
+'@',                                                            /,&
+'@  The calculation will be run.',                              /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
 #endif
 

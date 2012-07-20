@@ -25,11 +25,11 @@ subroutine impini
 
 
 !===============================================================================
-!  FONCTION  :
+! Purpose:
 !  ---------
 
-! IMPRESSION DES PARAMETRES DE CALCUL APRES INTERVENTION
-!   UTILISATEUR DANS cs_user_parameters.f90
+! Print computation parameters after user changes in cs_user_parameters.f90
+
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -37,10 +37,9 @@ subroutine impini
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -89,7 +88,7 @@ integer          nbccou, nbsucp, nbvocp, issurf, isvol
 
 
 !===============================================================================
-! 1. INTRODUCTION
+! 1. Introduction
 !===============================================================================
 
 write(nfecra,1000)
@@ -114,73 +113,73 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
                                                                 /,&
-' ===========================================================' ,/,&
+' ===========================================================', /,&
                                                                 /,&
-'               RESUME DES PARAMETRES DE CALCUL'               ,/,&
-'               ==============================='               ,/,&
+'               RESUME DES PARAMETRES DE CALCUL',               /,&
+'               ===============================',               /,&
                                                                 /,&
-' -----------------------------------------------------------' ,/)
+' -----------------------------------------------------------', /)
 
- 9900 format(                                                           &
+ 9900 format(                                                     &
                                                                 /,&
-' -----------------------------------------------------------' ,/)
- 1010 format(                                                           &
+' -----------------------------------------------------------', /)
+ 1010 format(                                                     &
                                                                 /,&
-' ** PHYSIQUE PARTICULIERE :'                                  ,/,&
-'    ---------------------'                                    ,/)
- 1020 format(                                                           &
-' --- Flamme de diffusion : Chimie 3 points'                   ,/,&
-'       OPTION = ',4X,I10                                       /)
- 1030 format(                                                           &
-' --- Flamme premelangee : Modele EBU'                         ,/,&
-'       OPTION = ',4X,I10                                      ,/,&
-'       CEBU   = ',E14.5                                        /)
- 1040 format(                                                           &
-' --- Charbon pulverise : Modele Combustible moyen local'      ,/,&
-'       OPTION = ',4X,I10                                       /)
- 1050 format(                                                           &
-' --- Fuel              : Modele Combustible moyen local'       ,/&
-'       OPTION = ',4X,I10                                       /)
- 1060 format(                                                           &
-' --- Janaf ou non (dans ce cas tabulation utilisateur)'       ,/,&
-'       INDJON = ',4X,I10,    ' (1: Janaf, 0: utilisateur)'    ,/)
+' ** PHYSIQUE PARTICULIERE :',                                  /,&
+'    ---------------------',                                    /)
+ 1020 format(                                                     &
+' --- Flamme de diffusion : Chimie 3 points',                   /,&
+'       OPTION = ',4x,i10                                       /)
+ 1030 format(                                                     &
+' --- Flamme premelangee : Modele EBU',                         /,&
+'       OPTION = ',4x,i10,                                      /,&
+'       CEBU   = ',e14.5                                        /)
+ 1040 format(                                                     &
+' --- Charbon pulverise : Modele Combustible moyen local',      /,&
+'       OPTION = ',4x,i10                                       /)
+ 1050 format(                                                     &
+' --- Fuel              : Modele Combustible moyen local',       /&
+'       OPTION = ',4x,i10                                       /)
+ 1060 format(                                                     &
+' --- Janaf ou non (dans ce cas tabulation utilisateur)',       /,&
+'       INDJON = ',4x,i10,    ' (1: Janaf, 0: utilisateur)',    /)
 
 #else
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
                                                                 /,&
-' ===========================================================' ,/,&
+' ===========================================================', /,&
                                                                 /,&
-'               CALCULATION PARAMETERS SUMMARY'                ,/,&
-'               =============================='                ,/,&
+'               CALCULATION PARAMETERS SUMMARY',                /,&
+'               ==============================',                /,&
                                                                 /,&
-' -----------------------------------------------------------' ,/)
+' -----------------------------------------------------------', /)
 
- 9900 format(                                                           &
+ 9900 format(                                                     &
                                                                 /,&
-' -----------------------------------------------------------' ,/)
- 1010 format(                                                           &
+' -----------------------------------------------------------', /)
+ 1010 format(                                                     &
                                                                 /,&
-' ** SPECIFIC PHYSICS:'                                        ,/,&
-'    ----------------'                                         ,/)
- 1020 format(                                                           &
-' --- Diffusion Flame: 3 Point Chemistry'                      ,/,&
-'       OPTION = ',4X,I10                                       /)
- 1030 format(                                                           &
-' --- Premixed Flame: EBU Model'                               ,/,&
-'       OPTION = ',4X,I10                                      ,/,&
-'       CEBU   = ',E14.5                                        /)
- 1040 format(                                                           &
-' --- Pulverized Coal: Local Mean Combustible Model'           ,/,&
-'       OPTION = ',4X,I10                                       /)
- 1050 format(                                                           &
-' --- Fuel:            Local Mean Combustible Model'           ,/,&
-'       OPTION = ',4X,I10                                       /)
- 1060 format(                                                           &
-' --- Janaf or not (user tabulation required in this case)'    ,/,&
-'       INDJON = ',4X,I10,    ' (1: Janaf, 0: user)'           ,/)
+' ** SPECIFIC PHYSICS:',                                        /,&
+'    ----------------',                                         /)
+ 1020 format(                                                     &
+' --- Diffusion Flame: 3 Point Chemistry',                      /,&
+'       OPTION = ',4x,i10                                       /)
+ 1030 format(                                                     &
+' --- Premixed Flame: EBU Model',                               /,&
+'       OPTION = ',4x,i10,                                      /,&
+'       CEBU   = ',e14.5                                        /)
+ 1040 format(                                                     &
+' --- Pulverized Coal: Local Mean Combustible Model',           /,&
+'       OPTION = ',4x,i10                                       /)
+ 1050 format(                                                     &
+' --- Fuel:            Local Mean Combustible Model',           /,&
+'       OPTION = ',4x,i10                                       /)
+ 1060 format(                                                     &
+' --- Janaf or not (user tabulation required in this case)',    /,&
+'       INDJON = ',4x,i10,    ' (1: Janaf, 0: user)',           /)
 
 #endif
 
@@ -192,7 +191,7 @@ endif
 
 write(nfecra,1500)
 write(nfecra,1510) nprfml,nfml
-write(nfecra,1520) nvar,nscal,nscaus,nscapp,                &
+write(nfecra,1520) nvar,nscal,nscaus,nscapp,                      &
                    nproce,nprofa,nprofb
 
 write(nfecra,9900)
@@ -200,43 +199,43 @@ write(nfecra,9900)
 
 #if defined(_CS_LANG_FR)
 
- 1500 format(                                                           &
+ 1500 format(                                                     &
                                                                 /,&
-' ** DIMENSIONS'                                               ,/,&
-'    ----------'                                               ,/)
- 1510 format(                                                           &
-' --- Geometrie'                                               ,/,&
-'       NPRFML = ',4X,I10,    ' (Nb de proprietes de famille )',/,&
-'       NFML   = ',4X,I10,    ' (Nb de familles              )',/)
- 1520 format(                                                           &
-' --- Physique'                                                ,/,&
-'       NVAR   = ',4X,I10,    ' (Nb de variables             )',/,&
-'       NSCAL  = ',4X,I10,    ' (Nb de scalaires             )',/,&
-'       NSCAUS = ',4X,I10,    ' (Nb de scalaires utilisateur )',/,&
-'       NSCAPP = ',4X,I10,    ' (Nb de scalaires phys. part. )',/,&
-'       NPROCE = ',4X,I10,    ' (Nb de proprietes (cellules) )',/,&
-'       NPROFA = ',4X,I10,    ' (Nb de proprietes (faces int))',/,&
-'       NPROFB = ',4X,I10,    ' (Nb de proprietes (faces brd))',/)
+' ** DIMENSIONS',                                               /,&
+'    ----------',                                               /)
+ 1510 format(                                                     &
+' --- Geometrie',                                               /,&
+'       NPRFML = ',4x,i10,    ' (Nb de proprietes de famille )',/,&
+'       NFML   = ',4x,i10,    ' (Nb de familles              )',/)
+ 1520 format(                                                     &
+' --- Physique',                                                /,&
+'       NVAR   = ',4x,i10,    ' (Nb de variables             )',/,&
+'       NSCAL  = ',4x,i10,    ' (Nb de scalaires             )',/,&
+'       NSCAUS = ',4x,i10,    ' (Nb de scalaires utilisateur )',/,&
+'       NSCAPP = ',4x,i10,    ' (Nb de scalaires phys. part. )',/,&
+'       NPROCE = ',4x,i10,    ' (Nb de proprietes (cellules) )',/,&
+'       NPROFA = ',4x,i10,    ' (Nb de proprietes (faces int))',/,&
+'       NPROFB = ',4x,i10,    ' (Nb de proprietes (faces brd))',/)
 
 #else
 
- 1500 format(                                                           &
+ 1500 format(                                                     &
                                                                 /,&
-' ** DIMENSIONS'                                               ,/,&
-'    ----------'                                               ,/)
- 1510 format(                                                           &
-' --- Geometry'                                                ,/,&
-'       NPRFML = ',4X,I10,    ' (Nb max. family properties   )',/,&
-'       NFML   = ',4X,I10,    ' (Nb families                 )',/)
- 1520 format(                                                           &
-' --- Physics'                                                 ,/,&
-'       NVAR   = ',4X,I10,    ' (Nb variables                )',/,&
-'       NSCAL  = ',4X,I10,    ' (Nb scalars                  )',/,&
-'       NSCAUS = ',4X,I10,    ' (Nb user scalars             )',/,&
-'       NSCAPP = ',4X,I10,    ' (Nb specific physics scalars )',/,&
-'       NPROCE = ',4X,I10,    ' (Nb cell properties          )',/,&
-'       NPROFA = ',4X,I10,    ' (Nb internal face properties )',/,&
-'       NPROFB = ',4X,I10,    ' (Nb boundary face properties )',/)
+' ** DIMENSIONS',                                               /,&
+'    ----------',                                               /)
+ 1510 format(                                                     &
+' --- Geometry',                                                /,&
+'       NPRFML = ',4x,i10,    ' (Nb max. family properties   )',/,&
+'       NFML   = ',4x,i10,    ' (Nb families                 )',/)
+ 1520 format(                                                     &
+' --- Physics',                                                 /,&
+'       NVAR   = ',4x,i10,    ' (Nb variables                )',/,&
+'       NSCAL  = ',4x,i10,    ' (Nb scalars                  )',/,&
+'       NSCAUS = ',4x,i10,    ' (Nb user scalars             )',/,&
+'       NSCAPP = ',4x,i10,    ' (Nb specific physics scalars )',/,&
+'       NPROCE = ',4x,i10,    ' (Nb cell properties          )',/,&
+'       NPROFA = ',4x,i10,    ' (Nb internal face properties )',/,&
+'       NPROFB = ',4x,i10,    ' (Nb boundary face properties )',/)
 
 #endif
 
@@ -250,12 +249,8 @@ write(nfecra,2000)
 write(nfecra,2010) gx,gy,gz
 write(nfecra,2011) omegax, omegay, omegaz, icorio
 
-write(nfecra,2020) ro0   ,viscl0,               &
-     cp0   ,icp   ,               &
-     p0    ,pred0 ,               &
-     t0    ,                             &
-     irovar,ivivar,               &
-     (xyzp0(ii),ii=1,3)
+write(nfecra,2020) ro0, viscl0, cp0, icp, p0, pred0, t0,  &
+                   irovar,ivivar, (xyzp0(ii),ii=1,3)
 
 if (ippmod(iphpar).ge.1) write(nfecra,2030) diftl0
 
@@ -265,71 +260,71 @@ write(nfecra,9900)
 
 #if defined(_CS_LANG_FR)
 
- 2000 format(                                                           &
+ 2000 format(                                                     &
                                                                 /,&
-' ** PROPRIETES PHYSIQUES'                                     ,/,&
-'    --------------------'                                     ,/)
- 2010 format(                                                           &
-'       GX     = ', E14.5,    ' (Composante x de la gravite  )',/,&
-'       GY     = ', E14.5,    ' (Composante y de la gravite  )',/,&
-'       GZ     = ', E14.5,    ' (Composante z de la gravite  )',/)
- 2011 format(                                                           &
-'       OMEGAX = ', E14.5,    ' (Composante x du vecteur rot.)',/,&
-'       OMEGAY = ', E14.5,    ' (Composante y du vecteur rot.)',/,&
-'       OMEGAZ = ', E14.5,    ' (Composante z du vecteur rot.)',/,&
-'       ICORIO = ', I10,      ' (Termes source de Coriolis   )',/)
- 2020 format(                                                           &
-'  -- Phase continue : '                                       ,/,&
+' ** PROPRIETES PHYSIQUES',                                     /,&
+'    --------------------',                                     /)
+ 2010 format(                                                     &
+'       GX     = ', e14.5,    ' (Composante x de la gravite  )',/,&
+'       GY     = ', e14.5,    ' (Composante y de la gravite  )',/,&
+'       GZ     = ', e14.5,    ' (Composante z de la gravite  )',/)
+ 2011 format(                                                     &
+'       OMEGAX = ', e14.5,    ' (Composante x du vecteur rot.)',/,&
+'       OMEGAY = ', e14.5,    ' (Composante y du vecteur rot.)',/,&
+'       OMEGAZ = ', e14.5,    ' (Composante z du vecteur rot.)',/,&
+'       ICORIO = ', i10,      ' (Termes source de Coriolis   )',/)
+ 2020 format(                                                     &
+'  -- Phase continue :',                                        /,&
                                                                 /,&
-'       RO0    = ', E14.5,    ' (Masse volumique     de ref. )',/,&
-'       VISCL0 = ', E14.5,    ' (Visc. molec. dynam. de ref. )',/,&
-'       CP0    = ', E14.5,    ' (Chal. Spec.     de reference)',/,&
-'       ICP    = ',4X,I10,    ' (> 0 : CP variable   (usphyv))',/,&
-'       P0     = ', E14.5,    ' (Pression totale de reference)',/,&
-'       PRED0  = ', E14.5,    ' (Press. reduite  de reference)',/,&
-'       T0     = ', E14.5,    ' (Temperature     de reference)',/,&
+'       RO0    = ', e14.5,    ' (Masse volumique     de ref. )',/,&
+'       VISCL0 = ', e14.5,    ' (Visc. molec. dynam. de ref. )',/,&
+'       CP0    = ', e14.5,    ' (Chal. Spec.     de reference)',/,&
+'       ICP    = ',4x,i10,    ' (> 0 : CP variable   (usphyv))',/,&
+'       P0     = ', e14.5,    ' (Pression totale de reference)',/,&
+'       PRED0  = ', e14.5,    ' (Press. reduite  de reference)',/,&
+'       T0     = ', e14.5,    ' (Temperature     de reference)',/,&
                                                                 /,&
-'       IROVAR = ',4X,I10,    ' (Masse vol.  cst (0) ou non(1)',/,&
-'       IVIVAR = ',4X,I10,    ' (Visc molec. cst (0) ou non(1)',/,&
+'       IROVAR = ',4x,i10,    ' (Masse vol.  cst (0) ou non(1)',/,&
+'       IVIVAR = ',4x,i10,    ' (Visc molec. cst (0) ou non(1)',/,&
 /,                                                          &
-'       Point de reference initial pour la pression           ',/,&
-'       XYZP0  = ', E14.5, E14.5, E14.5                          )
- 2030 format(                                                           &
-'       DIFTL0 = ', E14.5,    ' (Diff. dynam.    de reference)',/)
+'       Point de reference initial pour la pression',           /,&
+'       XYZP0  = ', e14.5, e14.5, e14.5                          )
+ 2030 format(                                                     &
+'       DIFTL0 = ', e14.5,    ' (Diff. dynam.    de reference)',/)
 
 #else
 
- 2000 format(                                                           &
+ 2000 format(                                                     &
                                                                 /,&
-' ** PHYSICAL PROPERTIES'                                      ,/,&
-'    -------------------'                                      ,/)
- 2010 format(                                                           &
-'       GX     = ', E14.5,    ' (Gravity x component         )',/,&
-'       GY     = ', E14.5,    ' (Gravity y component         )',/,&
-'       GZ     = ', E14.5,    ' (Gravity z component         )',/)
- 2011 format(                                                           &
-'       OMEGAX = ', E14.5,    ' (Rotation vector x component )',/,&
-'       OMEGAY = ', E14.5,    ' (Rotation vector y component )',/,&
-'       OMEGAZ = ', E14.5,    ' (Rotation vector z component )',/,&
-'       ICORIO = ', I10,      ' (Coriolis source terms       )',/)
- 2020 format(                                                           &
-'  -- Continuous phase: '                                      ,/,&
+' ** PHYSICAL PROPERTIES',                                      /,&
+'    -------------------',                                      /)
+ 2010 format(                                                     &
+'       GX     = ', e14.5,    ' (Gravity x component         )',/,&
+'       GY     = ', e14.5,    ' (Gravity y component         )',/,&
+'       GZ     = ', e14.5,    ' (Gravity z component         )',/)
+ 2011 format(                                                     &
+'       OMEGAX = ', e14.5,    ' (Rotation vector x component )',/,&
+'       OMEGAY = ', e14.5,    ' (Rotation vector y component )',/,&
+'       OMEGAZ = ', e14.5,    ' (Rotation vector z component )',/,&
+'       ICORIO = ', i10,      ' (Coriolis source terms       )',/)
+ 2020 format(                                                     &
+'  -- Continuous phase:',                                       /,&
                                                                 /,&
-'       RO0    = ', E14.5,    ' (Reference density           )',/,&
-'       VISCL0 = ', E14.5,    ' (Ref. molecular dyn. visc.   )',/,&
-'       CP0    = ', E14.5,    ' (Ref. specific heat          )',/,&
-'       ICP    = ',4X,I10,    ' (> 0: variable CP (usphyv)   )',/,&
-'       P0     = ', E14.5,    ' (Ref. total pressure         )',/,&
-'       PRED0  = ', E14.5,    ' (Ref. reduced pressure       )',/,&
-'       T0     = ', E14.5,    ' (Ref. temperature            )',/,&
+'       RO0    = ', e14.5,    ' (Reference density           )',/,&
+'       VISCL0 = ', e14.5,    ' (Ref. molecular dyn. visc.   )',/,&
+'       CP0    = ', e14.5,    ' (Ref. specific heat          )',/,&
+'       ICP    = ',4x,i10,    ' (> 0: variable CP (usphyv)   )',/,&
+'       P0     = ', e14.5,    ' (Ref. total pressure         )',/,&
+'       PRED0  = ', e14.5,    ' (Ref. reduced pressure       )',/,&
+'       T0     = ', e14.5,    ' (Ref. temperature            )',/,&
                                                                 /,&
-'       IROVAR = ',4X,I10,    ' (Density constant(0) or not(1)',/,&
-'       IVIVAR = ',4X,I10,    ' (Molec. visc cst.(0) or not(1)',/,&
-/,                                                          &
-'       Initial reference point for pressure'                  ,/,&
-'       XYZP0  = ', E14.5, E14.5, E14.5                          )
- 2030 format(                                                           &
-'       DIFTL0 = ', E14.5,    ' (Ref. dynamic diffusivity    )',/)
+'       IROVAR = ',4x,i10,    ' (Density constant(0) or not(1)',/,&
+'       IVIVAR = ',4x,i10,    ' (Molec. visc cst.(0) or not(1)',/,&
+/,                                                                &
+'       Initial reference point for pressure',                  /,&
+'       XYZP0  = ', e14.5, e14.5, e14.5                          )
+ 2030 format(                                                     &
+'       DIFTL0 = ', e14.5,    ' (Ref. dynamic diffusivity    )',/)
 
 #endif
 
@@ -347,7 +342,7 @@ if(iturb.eq.10) then
        xlomlg
 elseif(iturb.eq.20) then
   write(nfecra,2517)                                            &
-       almax ,uref  ,                                           &
+       almax, uref,                                             &
        iclkep,ikecou,igrake
   if (ikecou.eq.0 .and. idtvar.ge.0) then
     write(nfecra,2527) relaxv(ik),relaxv(iep)
@@ -355,9 +350,7 @@ elseif(iturb.eq.20) then
     write(nfecra,2540)
   endif
 elseif(iturb.eq.21) then
-  write(nfecra,2518)                                            &
-       almax ,uref  ,                                &
-       iclkep,ikecou,igrake
+  write(nfecra,2518) almax, uref, iclkep,ikecou,igrake
   if (ikecou.eq.0.and. idtvar.ge.0) then
     write(nfecra,2527) relaxv(ik),relaxv(iep)
   else
@@ -365,53 +358,44 @@ elseif(iturb.eq.21) then
   endif
 elseif(iturb.eq.30) then
   write(nfecra,2519)                                            &
-       almax ,uref  ,                                &
-       irijnu,irijrb,irijec,                  &
+       almax, uref,                                             &
+       irijnu,irijrb,irijec,                                    &
        idifre,igrari,iclsyr,iclptr
 elseif(iturb.eq.31) then
-  write(nfecra,2520)                                            &
-       almax ,uref  ,                                &
-       irijnu,irijrb,                                &
-       igrari,iclsyr,iclptr
+  write(nfecra,2520) almax, uref, irijnu,irijrb, igrari,iclsyr,iclptr
 elseif(iturb.eq.32) then
   write(nfecra,2525)                                            &
-    almax ,uref  ,                                              &
+    almax, uref,                                                &
     irijnu,irijrb,                                              &
     igrari,iclsyr,iclptr
 elseif(itytur.eq.4) then
   write(nfecra,2521)                                            &
-       csmago,cwale, xlesfl,ales,      &
-       bles,idries,cdries, xlesfd,     &
+       csmago,cwale, xlesfl,ales,                               &
+       bles,idries,cdries, xlesfd,                              &
        smagmx, ivrtex
 elseif(iturb.eq.50) then
-  write(nfecra,2522)                                            &
-       almax ,uref  ,                                &
-       iclkep,ikecou,igrake
+  write(nfecra,2522) almax, uref, iclkep,ikecou,igrake
   if (ikecou.eq.0 .and. idtvar.ge.0) then
     write(nfecra,2527) relaxv(ik),relaxv(iep)
   else
     write(nfecra,2540)
   endif
 elseif(iturb.eq.51) then
-  write(nfecra,2524)                                            &
-    almax ,uref  ,                                &
-    iclkep,ikecou,igrake
+  write(nfecra,2524) almax, uref, iclkep,ikecou,igrake
   if (ikecou.eq.0 .and. idtvar.ge.0) then
     write(nfecra,2527) relaxv(ik),relaxv(iep)
   else
     write(nfecra,2529)
   endif
 elseif(iturb.eq.60) then
-  write(nfecra,2523)                                            &
-       almax ,uref  ,                                &
-       ikecou,igrake
+  write(nfecra,2523) almax, uref, ikecou,igrake
   if (ikecou.eq.0 .and. idtvar.ge.0) then
     write(nfecra,2528) relaxv(ik),relaxv(iomg)
   else
     write(nfecra,2540)
   endif
 elseif(iturb.eq.70) then
-  write(nfecra,2529) almax , uref , relaxv(inusa)
+  write(nfecra,2529) almax,  uref,  relaxv(inusa)
 endif
 
 !   - Constantes
@@ -470,7 +454,7 @@ if (iok31.gt.0) then
 endif
 if (iok32.gt.0) then
   write(nfecra,2539)cebms1,cebmr1,cebmr2,cebmr3,cebmr4,cebmr5,    &
-                    csebm,cebmr6,cebme2,ce1,sigebm,xa1,sigmak,     &
+                    csebm,cebmr6,cebme2,ce1,sigebm,xa1,sigmak,    &
                     xceta,xct
 endif
 if (iok50.gt.0) then
@@ -494,473 +478,473 @@ write(nfecra,9900)
 
 #if defined(_CS_LANG_FR)
 
- 2510 format(                                                           &
+ 2510 format(                                                     &
                                                                 /,&
-' ** TURBULENCE                                               ',/,&
-'    ----------                                               ',/)
- 2515 format(                                                           &
-' --- Phase continue : '                                       ,/,&
+' ** TURBULENCE',                                               /,&
+'    ----------',                                               /)
+ 2515 format(                                                     &
+' --- Phase continue :',                                        /,&
                                                                 /,&
-'   - Communs                                                 ',/,&
-'       ITURB  = ',4X,I10,    ' (Modele de turbulence        )',/,&
-'       IDEUCH = ',4X,I10,    ' (0: modele a une echelle     )',/,&
+'   - Communs',                                                 /,&
+'       ITURB  = ',4x,i10,    ' (Modele de turbulence        )',/,&
+'       IDEUCH = ',4x,i10,    ' (0: modele a une echelle     )',/,&
 '                               (1: modele a deux echelles   )',/,&
 '                               (2: loi de paroi invariante  )',/,&
-'       YPLULI = ', E14.5,    ' (Y plus limite               )',/,&
-'       ILOGPO = ',4X,I10,    ' (0: loi puissance (interdite  ',/,&
+'       YPLULI = ', e14.5,    ' (Y plus limite               )',/,&
+'       ILOGPO = ',4x,i10,    ' (0: loi puissance (interdite',  /,&
 '                                              en k-epsilon) )',/,&
 '                               (1: loi log une echelle      )',/,&
-'       IGRHOK = ',4X,I10,    ' (1: Grad (rho k ) calcule    )',/,&
-'       ISCALT = ',4X,I10,    ' (Numero du scalaire temp     )',/)
- 2516 format(                                                           &
-'   - Longueur de melange (ITURB = 10)                        ',/,&
-'       XLOMLG = ', E14.5,    ' (Longueur caracteristique    )',/)
- 2517 format(                                                           &
-'   - k-epsilon           (ITURB = 20)                        ',/,&
-'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
-'       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
-'       ICLKEP = ',4X,I10,    ' (Mode de clipping k-epsilon  )',/,&
-'       IKECOU = ',4X,I10,    ' (Mode de couplage k-epsilon  )',/,&
-'       IGRAKE = ',4X,I10,    ' (Prise en compte de gravite  )')
- 2518 format(                                                           &
-'   - k-epsilon production lineaire (ITURB = 21)              ',/,&
-'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
-'       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
-'       ICLKEP = ',4X,I10,    ' (Mode de clipping k-epsilon  )',/,&
-'       IKECOU = ',4X,I10,    ' (Mode de couplage k-epsilon  )',/,&
-'       IGRAKE = ',4X,I10,    ' (Prise en compte de gravite  )')
- 2519 format(                                                           &
-'   - Rij-epsilon         (ITURB = 30)                        ',/,&
-'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
-'       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
-'       IRIJNU = ',4X,I10,    ' (Stabilisation matricielle   )',/,&
-'       IRIJRB = ',4X,I10,    ' (Reconstruction aux bords    )',/,&
-'       IRIJEC = ',4X,I10,    ' (Termes d echo de paroi      )',/,&
-'       IDIFRE = ',4X,I10,    ' (Traitmnt du tenseur de diff.)',/,&
-'       IGRARI = ',4X,I10,    ' (Prise en compte de gravite  )',/,&
-'       ICLSYR = ',4X,I10,    ' (Implicitation en symetrie   )',/,&
-'       ICLPTR = ',4X,I10,    ' (Implicitation en paroi      )',/)
- 2520 format(                                                           &
-'   - Rij-epsilon SSG     (ITURB = 31)                        ',/,&
-'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
-'       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
-'       IRIJNU = ',4X,I10,    ' (Stabilisation matricielle   )',/,&
-'       IRIJRB = ',4X,I10,    ' (Reconstruction aux bords    )',/,&
-'       IGRARI = ',4X,I10,    ' (Prise en compte de gravite  )',/,&
-'       ICLSYR = ',4X,I10,    ' (Implicitation en symetrie   )',/,&
-'       ICLPTR = ',4X,I10,    ' (Implicitation en paroi      )',/)
- 2521 format(                                                           &
-'   - LES                 (ITURB = 40, 41, 42)                ',/,&
+'       IGRHOK = ',4x,i10,    ' (1: Grad (rho k ) calcule    )',/,&
+'       ISCALT = ',4x,i10,    ' (Numero du scalaire temp     )',/)
+ 2516 format(                                                     &
+'   - Longueur de melange (ITURB = 10)',                        /,&
+'       XLOMLG = ', e14.5,    ' (Longueur caracteristique    )',/)
+ 2517 format(                                                     &
+'   - k-epsilon           (ITURB = 20)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Longueur caracteristique    )',/,&
+'       UREF   = ', e14.5,    ' (Vitesse  caracteristique    )',/,&
+'       ICLKEP = ',4x,i10,    ' (Mode de clipping k-epsilon  )',/,&
+'       IKECOU = ',4x,i10,    ' (Mode de couplage k-epsilon  )',/,&
+'       IGRAKE = ',4x,i10,    ' (Prise en compte de gravite  )')
+ 2518 format(                                                     &
+'   - k-epsilon production lineaire (ITURB = 21)',              /,&
+'       ALMAX  = ', e14.5,    ' (Longueur caracteristique    )',/,&
+'       UREF   = ', e14.5,    ' (Vitesse  caracteristique    )',/,&
+'       ICLKEP = ',4x,i10,    ' (Mode de clipping k-epsilon  )',/,&
+'       IKECOU = ',4x,i10,    ' (Mode de couplage k-epsilon  )',/,&
+'       IGRAKE = ',4x,i10,    ' (Prise en compte de gravite  )')
+ 2519 format(                                                     &
+'   - Rij-epsilon         (ITURB = 30)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Longueur caracteristique    )',/,&
+'       UREF   = ', e14.5,    ' (Vitesse  caracteristique    )',/,&
+'       IRIJNU = ',4x,i10,    ' (Stabilisation matricielle   )',/,&
+'       IRIJRB = ',4x,i10,    ' (Reconstruction aux bords    )',/,&
+'       IRIJEC = ',4x,i10,    ' (Termes d echo de paroi      )',/,&
+'       IDIFRE = ',4x,i10,    ' (Traitmnt du tenseur de diff.)',/,&
+'       IGRARI = ',4x,i10,    ' (Prise en compte de gravite  )',/,&
+'       ICLSYR = ',4x,i10,    ' (Implicitation en symetrie   )',/,&
+'       ICLPTR = ',4x,i10,    ' (Implicitation en paroi      )',/)
+ 2520 format(                                                     &
+'   - Rij-epsilon SSG     (ITURB = 31)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Longueur caracteristique    )',/,&
+'       UREF   = ', e14.5,    ' (Vitesse  caracteristique    )',/,&
+'       IRIJNU = ',4x,i10,    ' (Stabilisation matricielle   )',/,&
+'       IRIJRB = ',4x,i10,    ' (Reconstruction aux bords    )',/,&
+'       IGRARI = ',4x,i10,    ' (Prise en compte de gravite  )',/,&
+'       ICLSYR = ',4x,i10,    ' (Implicitation en symetrie   )',/,&
+'       ICLPTR = ',4x,i10,    ' (Implicitation en paroi      )',/)
+ 2521 format(                                                     &
+'   - LES                 (ITURB = 40, 41, 42)',                /,&
 '                               (Modele de sous-maille       )',/,&
 '                               (40 Modele de Smagorinsky    )',/,&
 '                               (41 Modele dynamique         )',/,&
 '                               (42 Modele WALE              )',/,&
-'       CSMAGO = ', E14.5,    ' (Constante de Smagorinski    )',/,&
-'       CWALE  = ', E14.5,    ' (Constante du modele WALE    )',/,&
-'       XLESFL = ', E14.5,    ' (La largeur du filtre en une )',/,&
-'       ALES   = ', E14.5,    ' (cellule s''ecrit            )',/,&
-'       BLES   = ', E14.5,    ' (XLESFL*(ALES*VOLUME)**(BLES))',/,&
-'       IDRIES = ',4X,I10,    ' (=1 Amortissement Van Driest )',/,&
-'       CDRIES = ', E14.5,    ' (Constante de Van Driest     )',/,&
-'       XLESFD = ', E14.5,    ' (Rapport entre le filtre     )',/,&
+'       CSMAGO = ', e14.5,    ' (Constante de Smagorinski    )',/,&
+'       CWALE  = ', e14.5,    ' (Constante du modele WALE    )',/,&
+'       XLESFL = ', e14.5,    ' (La largeur du filtre en une )',/,&
+'       ALES   = ', e14.5,    ' (cellule s''ecrit            )',/,&
+'       BLES   = ', e14.5,    ' (XLESFL*(ALES*VOLUME)**(BLES))',/,&
+'       IDRIES = ',4x,i10,    ' (=1 Amortissement Van Driest )',/,&
+'       CDRIES = ', e14.5,    ' (Constante de Van Driest     )',/,&
+'       XLESFD = ', e14.5,    ' (Rapport entre le filtre     )',/,&
 '                               (explicite et le filtre LES  )',/,&
 '                               (valeur conseillee 1.5       )',/,&
-'       SMAGMX = ', E14.5,    ' (Smagorinsky max dans le cas )',/,&
+'       SMAGMX = ', e14.5,    ' (Smagorinsky max dans le cas )',/,&
 '                               (du modele dynamique         )',/,&
-'       IVRTEX = ',4X,I10,    ' (Utilisation de la methode   )',/,&
+'       IVRTEX = ',4x,i10,    ' (Utilisation de la methode   )',/,&
 '                               (des vortex                  )')
- 2522 format(                                                           &
-'   - v2f phi-model       (ITURB = 50)                        ',/,&
-'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
-'       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
-'       ICLKEP = ',4X,I10,    ' (Mode de clipping k-epsilon  )',/,&
-'       IKECOU = ',4X,I10,    ' (Mode de couplage k-epsilon  )',/,&
-'       IGRAKE = ',4X,I10,    ' (Prise en compte de gravite  )')
- 2524 format(                                                           &
-'   - v2f BL-v2/k         (ITURB = 51)                        ',/,&
-'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
-'       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
-'       ICLKEP = ',4X,I10,    ' (Mode de clipping k-epsilon  )',/,&
-'       IKECOU = ',4X,I10,    ' (Mode de couplage k-epsilon  )',/,&
-'       IGRAKE = ',4X,I10,    ' (Prise en compte de gravite  )')
- 2523 format(                                                           &
-'   - k-omega SST         (ITURB = 60)                        ',/,&
-'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
-'       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
-'       IKECOU = ',4X,I10,    ' (Mode de couplage k-omega    )',/,&
-'       IGRAKE = ',4X,I10,    ' (Prise en compte de gravite  )')
- 2525 format(                                                           &
-'   - Rij-epsilon EBRSM     (ITURB = 32)                      ',/,&
-'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
-'       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
-'       IRIJNU = ',4X,I10,    ' (Stabilisation matricielle   )',/,&
-'       IRIJRB = ',4X,I10,    ' (Reconstruction aux bords    )',/,&
-'       IGRARI = ',4X,I10,    ' (Prise en compte de gravite  )',/,&
-'       ICLSYR = ',4X,I10,    ' (Implicitation en symetrie   )',/,&
-'       ICLPTR = ',4X,I10,    ' (Implicitation en paroi      )',/)
- 2527 format(                                                           &
-'       RELAXV = ', E14.5,    ' pour k       (Relaxation)     ',/,&
-'       RELAXV = ', E14.5,    ' pour epsilon (Relaxation)     ',/)
- 2528 format(                                                           &
-'       RELAXV = ', E14.5,    ' pour k     (Relaxation)       ',/,&
-'       RELAXV = ', E14.5,    ' pour omega (Relaxation)       ',/)
- 2529 format(                                                           &
-'   - Spalart-Allmares    (ITURB = 70)                        ',/,&
-'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
-'       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
-'       RELAXV = ', E14.5,    ' pour nu (Relaxation)          ',/)
+ 2522 format(                                                     &
+'   - v2f phi-model       (ITURB = 50)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Longueur caracteristique    )',/,&
+'       UREF   = ', e14.5,    ' (Vitesse  caracteristique    )',/,&
+'       ICLKEP = ',4x,i10,    ' (Mode de clipping k-epsilon  )',/,&
+'       IKECOU = ',4x,i10,    ' (Mode de couplage k-epsilon  )',/,&
+'       IGRAKE = ',4x,i10,    ' (Prise en compte de gravite  )')
+ 2524 format(                                                     &
+'   - v2f BL-v2/k         (ITURB = 51)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Longueur caracteristique    )',/,&
+'       UREF   = ', e14.5,    ' (Vitesse  caracteristique    )',/,&
+'       ICLKEP = ',4x,i10,    ' (Mode de clipping k-epsilon  )',/,&
+'       IKECOU = ',4x,i10,    ' (Mode de couplage k-epsilon  )',/,&
+'       IGRAKE = ',4x,i10,    ' (Prise en compte de gravite  )')
+ 2523 format(                                                     &
+'   - k-omega SST         (ITURB = 60)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Longueur caracteristique    )',/,&
+'       UREF   = ', e14.5,    ' (Vitesse  caracteristique    )',/,&
+'       IKECOU = ',4x,i10,    ' (Mode de couplage k-omega    )',/,&
+'       IGRAKE = ',4x,i10,    ' (Prise en compte de gravite  )')
+ 2525 format(                                                     &
+'   - Rij-epsilon EBRSM     (ITURB = 32)',                      /,&
+'       ALMAX  = ', e14.5,    ' (Longueur caracteristique    )',/,&
+'       UREF   = ', e14.5,    ' (Vitesse  caracteristique    )',/,&
+'       IRIJNU = ',4x,i10,    ' (Stabilisation matricielle   )',/,&
+'       IRIJRB = ',4x,i10,    ' (Reconstruction aux bords    )',/,&
+'       IGRARI = ',4x,i10,    ' (Prise en compte de gravite  )',/,&
+'       ICLSYR = ',4x,i10,    ' (Implicitation en symetrie   )',/,&
+'       ICLPTR = ',4x,i10,    ' (Implicitation en paroi      )',/)
+ 2527 format(                                                     &
+'       RELAXV = ', e14.5,    ' pour k       (Relaxation)',     /,&
+'       RELAXV = ', e14.5,    ' pour epsilon (Relaxation)',     /)
+ 2528 format(                                                     &
+'       RELAXV = ', e14.5,    ' pour k     (Relaxation)',       /,&
+'       RELAXV = ', e14.5,    ' pour omega (Relaxation)',       /)
+ 2529 format(                                                     &
+'   - Spalart-Allmares    (ITURB = 70)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Longueur caracteristique    )',/,&
+'       UREF   = ', e14.5,    ' (Vitesse  caracteristique    )',/,&
+'       RELAXV = ', e14.5,    ' pour nu (Relaxation)',          /)
 
- 2530 format(                                                           &
-' --- Constantes                                              ',/,&
+ 2530 format(                                                     &
+' --- Constantes',                                              /,&
                                                                 /,&
-'   - Communs                                                 ',/,&
-'       XKAPPA = ', E14.5,    ' (Constante de Von Karman     )',/,&
-'       CSTLOG = ', E14.5,    ' (U+=Log(y+)/kappa +CSTLOG    )',/,&
-'       APOW   = ', E14.5,    ' (U+=APOW (y+)**BPOW (W&W law))',/,&
-'       BPOW   = ', E14.5,    ' (U+=APOW (y+)**BPOW (W&W law))',/)
- 2531 format(                                                           &
-'   - k-epsilon           (ITURB = 20)'                        ,/,&
-'       CE1    = ', E14.5,    ' (Cepsilon 1 : coef de Prod.  )',/,&
-'       CE2    = ', E14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
-'       SIGMAK = ', E14.5,    ' (Prandtl relatif a k         )',/,&
-'       SIGMAE = ', E14.5,    ' (Prandtl relatif a epsilon   )',/,&
-'       CMU    = ', E14.5,    ' (Constante Cmu               )',/)
- 2532 format(                                                           &
-'   - k-epsilon production lineaire (ITURB = 21)'              ,/,&
-'       CE1    = ', E14.5,    ' (Cepsilon 1 : coef de Prod.  )',/,&
-'       CE2    = ', E14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
-'       SIGMAK = ', E14.5,    ' (Prandtl relatif a k         )',/,&
-'       SIGMAE = ', E14.5,    ' (Prandtl relatif a epsilon   )',/,&
-'       CMU    = ', E14.5,    ' (Constante Cmu               )',/)
- 2533 format(                                                           &
-'   - Rij-epsilon std     (ITURB = 30)'                        ,/,&
-'       CE1    = ', E14.5,    ' (Cepsilon 1 : coef de Prod.  )',/,&
-'       CE2    = ', E14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
-'       CRIJ1  = ', E14.5,    ' (Coef terme lent             )',/,&
-'       CRIJ2  = ', E14.5,    ' (Coef terme rapide           )',/,&
-'       CRIJ3  = ', E14.5,    ' (Coef terme de gravite       )',/,&
-'       CRIJEP = ', E14.5,    ' (Coef diffusion epsilon      )',/,&
-'       CSRIJ  = ', E14.5,    ' (Coef diffusion Rij          )',/,&
-'       CRIJP1 = ', E14.5,    ' (Coef lent pour echo de paroi)',/,&
-'       CRIJP2 = ', E14.5,    ' (Coef rapide    echo de paroi)',/,&
-'       CMU    = ', E14.5,    ' (Constante Cmu               )',/)
- 2534 format(                                                           &
-'   - Rij-epsilon SSG     (ITURB = 31)'                        ,/,&
-'       CSSGS1 = ', E14.5,    ' (Coef Cs1                    )',/,&
-'       CSSGS2 = ', E14.5,    ' (Coef Cs2                    )',/,&
-'       CSSGR1 = ', E14.5,    ' (Coef Cr1                    )',/,&
-'       CSSGR2 = ', E14.5,    ' (Coef Cr2                    )',/,&
-'       CSSGR3 = ', E14.5,    ' (Coef Cr3                    )',/,&
-'       CSSGR4 = ', E14.5,    ' (Coef Cr4                    )',/,&
-'       CSSGR5 = ', E14.5,    ' (Coef Cr5                    )',/,&
-'       CRIJS  = ', E14.5,    ' (Coef Cs diffusion de Rij    )',/,&
-'       CRIJ3  = ', E14.5,    ' (Coef terme de gravite       )',/,&
-'       CE1    = ', E14.5,    ' (Coef Ceps1                  )',/,&
-'       CSSGE2 = ', E14.5,    ' (Coef Ceps2                  )',/,&
-'       SIGMAE = ', E14.5,    ' (Coef sigma_eps              )',/,&
-'       CMU    = ', E14.5,    ' (Constante Cmu               )',/)
- 2535 format(                                                           &
-'   - v2f phi-model       (ITURB = 50)'                        ,/,&
-'       CV2FA1 = ', E14.5,    ' (a1 pour calculer Cepsilon1  )',/,&
-'       CV2FE2 = ', E14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
-'       SIGMAK = ', E14.5,    ' (Prandtl relatif a k         )',/,&
-'       SIGMAE = ', E14.5,    ' (Prandtl relatif a epsilon   )',/,&
-'       CV2FMU = ', E14.5,    ' (Constante Cmu               )',/,&
-'       CV2FCT = ', E14.5,    ' (Constante CT                )',/,&
-'       CV2FCL = ', E14.5,    ' (Constante CL                )',/,&
-'       CV2FET = ', E14.5,    ' (Constante C_eta             )',/,&
-'       CV2FC1 = ', E14.5,    ' (Constante C1                )',/,&
-'       CV2FC2 = ', E14.5,    ' (Constante C2                )',/)
- 2536 format(                                                           &
-'   - k-omega SST         (ITURB = 60)'                        ,/,&
-'       CKWSK1 = ', E14.5,    ' (Constante sigma_k1          )',/,&
-'       CKWSK2 = ', E14.5,    ' (Constante sigma_k2          )',/,&
-'       CKWSW1 = ', E14.5,    ' (Constante sigma_omega1      )',/,&
-'       CKWSW2 = ', E14.5,    ' (Constante sigma_omega2      )',/,&
-'       CKWBT1 = ', E14.5,    ' (Constante beta1             )',/,&
-'       CKWBT2 = ', E14.5,    ' (Constante beta2             )',/,&
-'       CKWGM1 = ', E14.5,    ' (Constante gamma1            )',/,&
-'       CKWGM2 = ', E14.5,    ' (Constante gamma2            )',/,&
-'       CKWA1  = ', E14.5,    ' (Cste a1 pour calculer mu_t  )',/,&
-'       CKWC1  = ', E14.5,    ' (Cste c1 pour limiteur prod  )',/,&
-'       CMU    = ', E14.5,    ' (Cste Cmu (ou Beta*) pour    )',/,&
+'   - Communs',                                                 /,&
+'       XKAPPA = ', e14.5,    ' (Constante de Von Karman     )',/,&
+'       CSTLOG = ', e14.5,    ' (U+=Log(y+)/kappa +CSTLOG    )',/,&
+'       APOW   = ', e14.5,    ' (U+=APOW (y+)**BPOW (W&W law))',/,&
+'       BPOW   = ', e14.5,    ' (U+=APOW (y+)**BPOW (W&W law))',/)
+ 2531 format(                                                     &
+'   - k-epsilon           (ITURB = 20)',                        /,&
+'       Ce1    = ', e14.5,    ' (Cepsilon 1 : coef de Prod.  )',/,&
+'       CE2    = ', e14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
+'       SIGMAK = ', e14.5,    ' (Prandtl relatif a k         )',/,&
+'       SIGMAE = ', e14.5,    ' (Prandtl relatif a epsilon   )',/,&
+'       CMU    = ', e14.5,    ' (Constante Cmu               )',/)
+ 2532 format(                                                     &
+'   - k-epsilon production lineaire (ITURB = 21)',              /,&
+'       Ce1    = ', e14.5,    ' (Cepsilon 1 : coef de Prod.  )',/,&
+'       CE2    = ', e14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
+'       SIGMAK = ', e14.5,    ' (Prandtl relatif a k         )',/,&
+'       SIGMAE = ', e14.5,    ' (Prandtl relatif a epsilon   )',/,&
+'       CMU    = ', e14.5,    ' (Constante Cmu               )',/)
+ 2533 format(                                                     &
+'   - Rij-epsilon std     (ITURB = 30)',                        /,&
+'       Ce1    = ', e14.5,    ' (Cepsilon 1 : coef de Prod.  )',/,&
+'       CE2    = ', e14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
+'       CRIJ1  = ', e14.5,    ' (Coef terme lent             )',/,&
+'       CRIJ2  = ', e14.5,    ' (Coef terme rapide           )',/,&
+'       CRIJ3  = ', e14.5,    ' (Coef terme de gravite       )',/,&
+'       CRIJEP = ', e14.5,    ' (Coef diffusion epsilon      )',/,&
+'       CSRIJ  = ', e14.5,    ' (Coef diffusion Rij          )',/,&
+'       CRIJP1 = ', e14.5,    ' (Coef lent pour echo de paroi)',/,&
+'       CRIJP2 = ', e14.5,    ' (Coef rapide    echo de paroi)',/,&
+'       CMU    = ', e14.5,    ' (Constante Cmu               )',/)
+ 2534 format(                                                     &
+'   - Rij-epsilon SSG     (ITURB = 31)',                        /,&
+'       CSSGS1 = ', e14.5,    ' (Coef Cs1                    )',/,&
+'       CSSGS2 = ', e14.5,    ' (Coef Cs2                    )',/,&
+'       CSSGR1 = ', e14.5,    ' (Coef Cr1                    )',/,&
+'       CSSGR2 = ', e14.5,    ' (Coef Cr2                    )',/,&
+'       CSSGR3 = ', e14.5,    ' (Coef Cr3                    )',/,&
+'       CSSGR4 = ', e14.5,    ' (Coef Cr4                    )',/,&
+'       CSSGR5 = ', e14.5,    ' (Coef Cr5                    )',/,&
+'       CRIJS  = ', e14.5,    ' (Coef Cs diffusion de Rij    )',/,&
+'       CRIJ3  = ', e14.5,    ' (Coef terme de gravite       )',/,&
+'       Ce1    = ', e14.5,    ' (Coef Ceps1                  )',/,&
+'       CSSGE2 = ', e14.5,    ' (Coef Ceps2                  )',/,&
+'       SIGMAE = ', e14.5,    ' (Coef sigma_eps              )',/,&
+'       CMU    = ', e14.5,    ' (Constante Cmu               )',/)
+ 2535 format(                                                     &
+'   - v2f phi-model       (ITURB = 50)',                        /,&
+'       CV2FA1 = ', e14.5,    ' (a1 pour calculer Cepsilon1  )',/,&
+'       CV2FE2 = ', e14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
+'       SIGMAK = ', e14.5,    ' (Prandtl relatif a k         )',/,&
+'       SIGMAE = ', e14.5,    ' (Prandtl relatif a epsilon   )',/,&
+'       CV2FMU = ', e14.5,    ' (Constante Cmu               )',/,&
+'       CV2FCT = ', e14.5,    ' (Constante CT                )',/,&
+'       CV2FCL = ', e14.5,    ' (Constante CL                )',/,&
+'       CV2FET = ', e14.5,    ' (Constante C_eta             )',/,&
+'       CV2FC1 = ', e14.5,    ' (Constante C1                )',/,&
+'       CV2FC2 = ', e14.5,    ' (Constante C2                )',/)
+ 2536 format(                                                     &
+'   - k-omega SST         (ITURB = 60)',                        /,&
+'       CKWSK1 = ', e14.5,    ' (Constante sigma_k1          )',/,&
+'       CKWSK2 = ', e14.5,    ' (Constante sigma_k2          )',/,&
+'       CKWSW1 = ', e14.5,    ' (Constante sigma_omega1      )',/,&
+'       CKWSW2 = ', e14.5,    ' (Constante sigma_omega2      )',/,&
+'       CKWBT1 = ', e14.5,    ' (Constante beta1             )',/,&
+'       CKWBT2 = ', e14.5,    ' (Constante beta2             )',/,&
+'       CKWGM1 = ', e14.5,    ' (Constante gamma1            )',/,&
+'       CKWGM2 = ', e14.5,    ' (Constante gamma2            )',/,&
+'       CKWA1  = ', e14.5,    ' (Cste a1 pour calculer mu_t  )',/,&
+'       CKWC1  = ', e14.5,    ' (Cste c1 pour limiteur prod  )',/,&
+'       CMU    = ', e14.5,    ' (Cste Cmu (ou Beta*) pour    )',/,&
 '                                    conversion omega/epsilon)',/)
  2537 format( &
-'   - Spalart-Allmaras    (ITURB = 70)'                        ,/,&
-'       CSAB1  = ', E14.5,    ' (Constante b1                )',/,&
-'       CSAB2  = ', E14.5,    ' (Constante b2                )',/,&
-'       CSASIG = ', E14.5,    ' (Constante sigma             )',/,&
-'       CSAV1  = ', E14.5,    ' (Constante v1                )',/,&
-'       CSAW1  = ', E14.5,    ' (Constante w1                )',/,&
-'       CSAW2  = ', E14.5,    ' (Constante w2                )',/,&
-'       CSAW3  = ', E14.5,    ' (Constante w3                )',/)
+'   - Spalart-Allmaras    (ITURB = 70)',                        /,&
+'       CSAB1  = ', e14.5,    ' (Constante b1                )',/,&
+'       CSAB2  = ', e14.5,    ' (Constante b2                )',/,&
+'       CSASIG = ', e14.5,    ' (Constante sigma             )',/,&
+'       CSAV1  = ', e14.5,    ' (Constante v1                )',/,&
+'       CSAW1  = ', e14.5,    ' (Constante w1                )',/,&
+'       CSAW2  = ', e14.5,    ' (Constante w2                )',/,&
+'       CSAW3  = ', e14.5,    ' (Constante w3                )',/)
  2538 format( &
-'   - v2f BL-v2/k         (ITURB = 51)'                        ,/,&
-'       CPALE1 = ', E14.5,    ' (Cepsilon 1 : coef de Prod.  )',/,&
-'       CPALE2 = ', E14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
-'       CPALE3 = ', E14.5,    ' (Cepsilon 3 : coef terme E   )',/,&
-'       CPALE4 = ', E14.5,    ' (Cepsilon 4 : coef Diss. mod.)',/,&
-'       SIGMAK = ', E14.5,    ' (Prandtl relatif a k         )',/,&
-'       CPALSE = ', E14.5,    ' (Prandtl relatif a epsilon   )',/,&
-'       CPALMU = ', E14.5,    ' (Constante Cmu               )',/,&
-'       CPALCT = ', E14.5,    ' (Constante CT                )',/,&
-'       CPALCL = ', E14.5,    ' (Constante CL                )',/,&
-'       CPALET = ', E14.5,    ' (Constante C_eta             )',/,&
-'       CPALC1 = ', E14.5,    ' (Constante C1                )',/,&
-'       CPALC2 = ', E14.5,    ' (Constante C2                )',/)
+'   - v2f BL-v2/k         (ITURB = 51)',                        /,&
+'       CPALe1 = ', e14.5,    ' (Cepsilon 1 : coef de Prod.  )',/,&
+'       CPALE2 = ', e14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
+'       CPALE3 = ', e14.5,    ' (Cepsilon 3 : coef terme E   )',/,&
+'       CPALE4 = ', e14.5,    ' (Cepsilon 4 : coef Diss. mod.)',/,&
+'       SIGMAK = ', e14.5,    ' (Prandtl relatif a k         )',/,&
+'       CPALSE = ', e14.5,    ' (Prandtl relatif a epsilon   )',/,&
+'       CPALMU = ', e14.5,    ' (Constante Cmu               )',/,&
+'       CPALCT = ', e14.5,    ' (Constante CT                )',/,&
+'       CPALCL = ', e14.5,    ' (Constante CL                )',/,&
+'       CPALET = ', e14.5,    ' (Constante C_eta             )',/,&
+'       CPALC1 = ', e14.5,    ' (Constante C1                )',/,&
+'       CPALC2 = ', e14.5,    ' (Constante C2                )',/)
  2539 format( &
-'   - Rij-epsilon EBRSM     (ITURB = 32)'                      ,/,&
-'       CEBMS1 = ', E14.5,    ' (Coef Cs1                    )',/,&
-'       CEBMR1 = ', E14.5,    ' (Coef Cr1                    )',/,&
-'       CEBMR2 = ', E14.5,    ' (Coef Cr2                    )',/,&
-'       CEBMR3 = ', E14.5,    ' (Coef Cr3                    )',/,&
-'       CEBMR4 = ', E14.5,    ' (Coef Cr4                    )',/,&
-'       CEBMR5 = ', E14.5,    ' (Coef Cr5                    )',/,&
-'       CSEBM  = ', E14.5,    ' (Coef Cs diffusion de Rij    )',/,&
-'       CEBMR6 = ', E14.5,    ' (Coef terme de gravite       )',/,&
-'       CEBME2 = ', E14.5,    ' (Coef Ceps2                  )',/,&
-'       CE1    = ', E14.5,    ' (Coef Ceps1                  )',/,&
-'       SIGEBM = ', E14.5,    ' (Coef sigma_eps              )',/,&
-'       XA1    = ', E14.5,    ' (Coef A1                     )',/,&
-'       SIGMAK = ', E14.5,    ' (Coef sigma_k                )',/,&
-'       XCETA  = ', E14.5,    ' (Coef Ceta                   )',/,&
-'       XCT    = ', E14.5,    ' (Coef CT                     )',/)
+'   - Rij-epsilon EBRSM     (ITURB = 32)',                      /,&
+'       CEBMS1 = ', e14.5,    ' (Coef Cs1                    )',/,&
+'       CEBMR1 = ', e14.5,    ' (Coef Cr1                    )',/,&
+'       CEBMR2 = ', e14.5,    ' (Coef Cr2                    )',/,&
+'       CEBMR3 = ', e14.5,    ' (Coef Cr3                    )',/,&
+'       CEBMR4 = ', e14.5,    ' (Coef Cr4                    )',/,&
+'       CEBMR5 = ', e14.5,    ' (Coef Cr5                    )',/,&
+'       CSEBM  = ', e14.5,    ' (Coef Cs diffusion de Rij    )',/,&
+'       CEBMR6 = ', e14.5,    ' (Coef terme de gravite       )',/,&
+'       CEBME2 = ', e14.5,    ' (Coef Ceps2                  )',/,&
+'       Ce1    = ', e14.5,    ' (Coef Ceps1                  )',/,&
+'       SIGEBM = ', e14.5,    ' (Coef sigma_eps              )',/,&
+'       XA1    = ', e14.5,    ' (Coef A1                     )',/,&
+'       SIGMAK = ', e14.5,    ' (Coef sigma_k                )',/,&
+'       XCETA  = ', e14.5,    ' (Coef Ceta                   )',/,&
+'       XCT    = ', e14.5,    ' (Coef CT                     )',/)
 
  2540 format(/)
 
 #else
 
- 2510 format(                                                           &
+ 2510 format(                                                     &
                                                                 /,&
-' ** TURBULENCE'                                               ,/,&
-'    ----------'                                               ,/)
- 2515 format(                                                           &
-' --- Continuous phase: '                                      ,/,&
+' ** TURBULENCE',                                               /,&
+'    ----------',                                               /)
+ 2515 format(                                                     &
+' --- Continuous phase:',                                       /,&
                                                                 /,&
-'   - Commons                                                 ',/,&
-'       ITURB  = ',4X,I10,    ' (Turbulence model            )',/,&
-'       IDEUCH = ',4X,I10,    ' (0: one-scale model          )',/,&
+'   - Commons',                                                 /,&
+'       ITURB  = ',4x,i10,    ' (Turbulence model            )',/,&
+'       IDEUCH = ',4x,i10,    ' (0: one-scale model          )',/,&
 '                               (1: two-scale model          )',/,&
 '                               (2: invariant wall function  )',/,&
-'       YPLULI = ', E14.5,    ' (Limit Y+                    )',/,&
-'       ILOGPO = ',4X,I10,    ' (0: power law (forbidden for'  ,/,&
+'       YPLULI = ', e14.5,    ' (Limit Y+                    )',/,&
+'       ILOGPO = ',4x,i10,    ' (0: power law (forbidden for',  /,&
 '                                              k-epsilon)    )',/,&
 '                               (1: one-scale log law        )',/,&
-'       IGRHOK = ',4X,I10,    ' (1: computed Grad(rho k)     )',/,&
-'       ISCALT = ',4X,I10,    ' (Temperature salar number    )',/)
- 2516 format(                                                           &
-'   - Mixing length       (ITURB = 10)'                        ,/,&
-'       XLOMLG = ', E14.5,    ' (Characteristic length       )',/)
- 2517 format(                                                           &
-'   - k-epsilon           (ITURB = 20)'                        ,/,&
-'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
-'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
-'       ICLKEP = ',4X,I10,    ' (k-epsilon clipping model    )',/,&
-'       IKECOU = ',4X,I10,    ' (k-epsilon coupling mode     )',/,&
-'       IGRAKE = ',4X,I10,    ' (Account for gravity         )')
- 2518 format(                                                           &
-'   - Linear production k-epsilon (ITURB = 21)'                ,/,&
-'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
-'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
-'       ICLKEP = ',4X,I10,    ' (k-epsilon clipping model    )',/,&
-'       IKECOU = ',4X,I10,    ' (k-epsilon coupling mode     )',/,&
-'       IGRAKE = ',4X,I10,    ' (Account for gravity         )')
- 2519 format(                                                           &
-'   - Rij-epsilon         (ITURB = 30)'                        ,/,&
-'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
-'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
-'       IRIJNU = ',4X,I10,    ' (Matrix stabilization        )',/,&
-'       IRIJRB = ',4X,I10,    ' (Reconstruct at boundaries   )',/,&
-'       IRIJEC = ',4X,I10,    ' (Wall echo terms             )',/,&
-'       IDIFRE = ',4X,I10,    ' (Handle diffusion tensor     )',/,&
-'       IGRARI = ',4X,I10,    ' (Prise en compte de gravite  )',/,&
-'       ICLSYR = ',4X,I10,    ' (Symmetry implicitation      )',/,&
-'       ICLPTR = ',4X,I10,    ' (Wall implicitation          )',/)
- 2520 format(                                                           &
-'   - SSG Rij-epsilon     (ITURB = 31)'                        ,/,&
-'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
-'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
-'       IRIJNU = ',4X,I10,    ' (Matrix stabilization        )',/,&
-'       IRIJRB = ',4X,I10,    ' (Reconstruct at boundaries   )',/,&
-'       IGRARI = ',4X,I10,    ' (Account for gravity         )',/,&
-'       ICLSYR = ',4X,I10,    ' (Symmetry implicitation      )',/,&
-'       ICLPTR = ',4X,I10,    ' (Wall implicitation          )',/)
- 2521 format(                                                           &
-'   - LES                 (ITURB = 40, 41, 42)'                ,/,&
+'       IGRHOK = ',4x,i10,    ' (1: computed Grad(rho k)     )',/,&
+'       ISCALT = ',4x,i10,    ' (Temperature salar number    )',/)
+ 2516 format(                                                     &
+'   - Mixing length       (ITURB = 10)',                        /,&
+'       XLOMLG = ', e14.5,    ' (Characteristic length       )',/)
+ 2517 format(                                                     &
+'   - k-epsilon           (ITURB = 20)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', e14.5,    ' (Characteristic velocity     )',/,&
+'       ICLKEP = ',4x,i10,    ' (k-epsilon clipping model    )',/,&
+'       IKECOU = ',4x,i10,    ' (k-epsilon coupling mode     )',/,&
+'       IGRAKE = ',4x,i10,    ' (Account for gravity         )')
+ 2518 format(                                                     &
+'   - Linear production k-epsilon (ITURB = 21)',                /,&
+'       ALMAX  = ', e14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', e14.5,    ' (Characteristic velocity     )',/,&
+'       ICLKEP = ',4x,i10,    ' (k-epsilon clipping model    )',/,&
+'       IKECOU = ',4x,i10,    ' (k-epsilon coupling mode     )',/,&
+'       IGRAKE = ',4x,i10,    ' (Account for gravity         )')
+ 2519 format(                                                     &
+'   - Rij-epsilon         (ITURB = 30)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', e14.5,    ' (Characteristic velocity     )',/,&
+'       IRIJNU = ',4x,i10,    ' (Matrix stabilization        )',/,&
+'       IRIJRB = ',4x,i10,    ' (Reconstruct at boundaries   )',/,&
+'       IRIJEC = ',4x,i10,    ' (Wall echo terms             )',/,&
+'       IDIFRE = ',4x,i10,    ' (Handle diffusion tensor     )',/,&
+'       IGRARI = ',4x,i10,    ' (Prise en compte de gravite  )',/,&
+'       ICLSYR = ',4x,i10,    ' (Symmetry implicitation      )',/,&
+'       ICLPTR = ',4x,i10,    ' (Wall implicitation          )',/)
+ 2520 format(                                                     &
+'   - SSG Rij-epsilon     (ITURB = 31)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', e14.5,    ' (Characteristic velocity     )',/,&
+'       IRIJNU = ',4x,i10,    ' (Matrix stabilization        )',/,&
+'       IRIJRB = ',4x,i10,    ' (Reconstruct at boundaries   )',/,&
+'       IGRARI = ',4x,i10,    ' (Account for gravity         )',/,&
+'       ICLSYR = ',4x,i10,    ' (Symmetry implicitation      )',/,&
+'       ICLPTR = ',4x,i10,    ' (Wall implicitation          )',/)
+ 2521 format(                                                     &
+'   - LES                 (ITURB = 40, 41, 42)',                /,&
 '                               (Sub-grid scale model        )',/,&
 '                               (40 Smagorinsky model        )',/,&
 '                               (41 Dynamic model            )',/,&
 '                               (42 WALE model               )',/,&
-'       CSMAGO = ', E14.5,    ' (Smagorinsky constant        )',/,&
-'       CWALE  = ', E14.5,    ' (WALE model constant         )',/,&
-'       XLESFL = ', E14.5,    ' (Filter with in a cell is    )',/,&
-'       ALES   = ', E14.5,    ' (written as                  )',/,&
-'       BLES   = ', E14.5,    ' (XLESFL*(ALES*VOLUME)**(BLES))',/,&
-'       IDRIES = ',4X,I10,    ' (=1 Van Driest damping       )',/,&
-'       CDRIES = ', E14.5,    ' (Van Driest constant         )',/,&
-'       XLESFD = ', E14.5,    ' (Ratio between the explicit  )',/,&
+'       CSMAGO = ', e14.5,    ' (Smagorinsky constant        )',/,&
+'       CWALE  = ', e14.5,    ' (WALE model constant         )',/,&
+'       XLESFL = ', e14.5,    ' (Filter with in a cell is    )',/,&
+'       ALES   = ', e14.5,    ' (written as                  )',/,&
+'       BLES   = ', e14.5,    ' (XLESFL*(ALES*VOLUME)**(BLES))',/,&
+'       IDRIES = ',4x,i10,    ' (=1 Van Driest damping       )',/,&
+'       CDRIES = ', e14.5,    ' (Van Driest constant         )',/,&
+'       XLESFD = ', e14.5,    ' (Ratio between the explicit  )',/,&
 '                               (filter and LES filter       )',/,&
 '                               (recommended value: 1.5      )',/,&
-'       SMAGMX = ', E14.5,    ' (Max Smagonsky in the        )',/,&
+'       SMAGMX = ', e14.5,    ' (Max Smagonsky in the        )',/,&
 '                               (dynamic model case          )',/,&
-'       IVRTEX = ',4X,I10,    ' (Use the vortex method       )')
- 2522 format(                                                           &
-'   - v2f phi-model       (ITURB = 50)                        ',/,&
-'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
-'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
-'       ICLKEP = ',4X,I10,    ' (k-epsilon clipping model    )',/,&
-'       IKECOU = ',4X,I10,    ' (k-epsilon coupling mode     )',/,&
-'       IGRAKE = ',4X,I10,    ' (Account for gravity         )')
- 2523 format(                                                           &
-'   - k-omega SST         (ITURB = 60)                        ',/,&
-'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
-'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
-'       IKECOU = ',4X,I10,    ' (k-epsilon coupling mode     )',/,&
-'       IGRAKE = ',4X,I10,    ' (Account for gravity         )')
+'       IVRTEX = ',4x,i10,    ' (Use the vortex method       )')
+ 2522 format(                                                     &
+'   - v2f phi-model       (ITURB = 50)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', e14.5,    ' (Characteristic velocity     )',/,&
+'       ICLKEP = ',4x,i10,    ' (k-epsilon clipping model    )',/,&
+'       IKECOU = ',4x,i10,    ' (k-epsilon coupling mode     )',/,&
+'       IGRAKE = ',4x,i10,    ' (Account for gravity         )')
+ 2523 format(                                                     &
+'   - k-omega SST         (ITURB = 60)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', e14.5,    ' (Characteristic velocity     )',/,&
+'       IKECOU = ',4x,i10,    ' (k-epsilon coupling mode     )',/,&
+'       IGRAKE = ',4x,i10,    ' (Account for gravity         )')
  2524 format(                                                     &
-'   - v2f BL-v2/k         (ITURB = 51)                        ',/,&
-'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
-'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
-'       ICLKEP = ',4X,I10,    ' (k-epsilon clipping model    )',/,&
-'       IKECOU = ',4X,I10,    ' (k-epsilon coupling mode     )',/,&
-'       IGRAKE = ',4X,I10,    ' (Account for gravity         )')
+'   - v2f BL-v2/k         (ITURB = 51)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', e14.5,    ' (Characteristic velocity     )',/,&
+'       ICLKEP = ',4x,i10,    ' (k-epsilon clipping model    )',/,&
+'       IKECOU = ',4x,i10,    ' (k-epsilon coupling mode     )',/,&
+'       IGRAKE = ',4x,i10,    ' (Account for gravity         )')
 
- 2525 format(                                                           &
-'   - Rij-epsilon EBRSM     (ITURB = 32)                      ',/,&
-'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
-'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
-'       IRIJNU = ',4X,I10,    ' (Matrix stabilization        )',/,&
-'       IRIJRB = ',4X,I10,    ' (Reconstruct at boundaries   )',/,&
-'       IGRARI = ',4X,I10,    ' (Account for gravity         )',/,&
-'       ICLSYR = ',4X,I10,    ' (Symmetry implicitation      )',/,&
-'       ICLPTR = ',4X,I10,    ' (Wall implicitation          )',/)
- 2527 format(                                                           &
-'       RELAXV = ', E14.5,    ' for k        (Relaxation)     ',/,&
-'       RELAXV = ', E14.5,    ' for epsilon  (Relaxation)     ',/)
- 2528 format(                                                           &
-'       RELAXV = ', E14.5,    ' for k      (Relaxation)       ',/,&
-'       RELAXV = ', E14.5,    ' for omega  (Relaxation)       ',/)
- 2529 format(                                                           &
-'   - Spalart-Allmares    (ITURB = 70)                        ',/,&
-'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
-'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
-'       RELAXV = ', E14.5,    ' for nu (Relaxation)           ',/)
+ 2525 format(                                                     &
+'   - Rij-epsilon EBRSM     (ITURB = 32)',                      /,&
+'       ALMAX  = ', e14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', e14.5,    ' (Characteristic velocity     )',/,&
+'       IRIJNU = ',4x,i10,    ' (Matrix stabilization        )',/,&
+'       IRIJRB = ',4x,i10,    ' (Reconstruct at boundaries   )',/,&
+'       IGRARI = ',4x,i10,    ' (Account for gravity         )',/,&
+'       ICLSYR = ',4x,i10,    ' (Symmetry implicitation      )',/,&
+'       ICLPTR = ',4x,i10,    ' (Wall implicitation          )',/)
+ 2527 format(                                                     &
+'       RELAXV = ', e14.5,    ' for k        (Relaxation)',     /,&
+'       RELAXV = ', e14.5,    ' for epsilon  (Relaxation)',     /)
+ 2528 format(                                                     &
+'       RELAXV = ', e14.5,    ' for k      (Relaxation)',       /,&
+'       RELAXV = ', e14.5,    ' for omega  (Relaxation)',       /)
+ 2529 format(                                                     &
+'   - Spalart-Allmaras    (ITURB = 70)',                        /,&
+'       ALMAX  = ', e14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', e14.5,    ' (Characteristic velocity     )',/,&
+'       RELAXV = ', e14.5,    ' for nu (Relaxation)',           /)
 
- 2530 format(                                                           &
-' --- Constants'                                               ,/,&
+ 2530 format(                                                     &
+' --- Constants',                                               /,&
                                                                 /,&
-'   - Commons                                                 ',/,&
-'       XKAPPA = ', E14.5,    ' (Von Karman constant         )',/,&
-'       CSTLOG = ', E14.5,    ' (U+=Log(y+)/kappa +CSTLOG    )',/,&
-'       APOW   = ', E14.5,    ' (U+=APOW (y+)**BPOW (W&W law))',/,&
-'       BPOW   = ', E14.5,    ' (U+=APOW (y+)**BPOW (W&W law))',/)
- 2531 format(                                                           &
-'   - k-epsilon           (ITURB = 20)'                        ,/,&
-'       CE1    = ', E14.5,    ' (Cepsilon 1: production coef.)',/,&
-'       CE2    = ', E14.5,    ' (Cepsilon 2: dissipat.  coef.)',/,&
-'       SIGMAK = ', E14.5,    ' (Prandtl relative to k       )',/,&
-'       SIGMAE = ', E14.5,    ' (Prandtl relative to epsilon )',/,&
-'       CMU    = ', E14.5,    ' (Cmu constant                )',/)
- 2532 format(                                                           &
-'   - Linear production k-epsilon (ITURB = 21)'                ,/,&
-'       CE1    = ', E14.5,    ' (Cepsilon 1: production coef.)',/,&
-'       CE2    = ', E14.5,    ' (Cepsilon 2: dissipat.  coef.)',/,&
-'       SIGMAK = ', E14.5,    ' (Prandtl relative to k       )',/,&
-'       SIGMAE = ', E14.5,    ' (Prandtl relative to epsilon )',/,&
-'       CMU    = ', E14.5,    ' (Cmu constant                )',/)
- 2533 format(                                                           &
-'   - Rij-epsilon         (ITURB = 30)'                        ,/,&
-'       CE1    = ', E14.5,    ' (Cepsilon 1: production coef.)',/,&
-'       CE2    = ', E14.5,    ' (Cepsilon 2: dissipat.  coef.)',/,&
-'       CRIJ1  = ', E14.5,    ' (Slow term coefficient       )',/,&
-'       CRIJ2  = ', E14.5,    ' (Fast term coefficient       )',/,&
-'       CRIJ3  = ', E14.5,    ' (Gravity term coefficient    )',/,&
-'       CRIJEP = ', E14.5,    ' (Epsilon diffusion coeff.    )',/,&
-'       CSRIJ  = ', E14.5,    ' (Rij diffusion coeff.        )',/,&
-'       CRIJP1 = ', E14.5,    ' (Slow coeff. for wall echo   )',/,&
-'       CRIJP2 = ', E14.5,    ' (Fast coeff. for wall echo   )',/,&
-'       CMU    = ', E14.5,    ' (Cmu constant                )',/)
- 2534 format(                                                           &
-'   - SSG Rij-epsilon     (ITURB = 31)'                        ,/,&
-'       CSSGS1 = ', E14.5,    ' (Cs1 coeff.                  )',/,&
-'       CSSGS2 = ', E14.5,    ' (Cs2 coeff.                  )',/,&
-'       CSSGR1 = ', E14.5,    ' (Cr1 coeff.                  )',/,&
-'       CSSGR2 = ', E14.5,    ' (Cr2 coeff.                  )',/,&
-'       CSSGR3 = ', E14.5,    ' (Cr3 coeff.                  )',/,&
-'       CSSGR4 = ', E14.5,    ' (Cr4 coeff.                  )',/,&
-'       CSSGR5 = ', E14.5,    ' (Cr5 coeff.                  )',/,&
-'       CRIJS  = ', E14.5,    ' (Rij Cs diffusion coeff.     )',/,&
-'       CRIJ3  = ', E14.5,    ' (Gravity term coeff.         )',/,&
-'       CE1    = ', E14.5,    ' (Ceps1 coeff.                )',/,&
-'       CSSGE2 = ', E14.5,    ' (Ceps2 coeff.                )',/,&
-'       SIGMAE = ', E14.5,    ' (sigma_eps coeff.            )',/,&
-'       CMU    = ', E14.5,    ' (Cmu constant                )',/)
- 2535 format(                                                           &
-'   - v2f phi-model       (ITURB = 50)                        ',/,&
-'       CV2FA1 = ', E14.5,    ' (a1 to calculate Cepsilon1   )',/,&
-'       CV2FE2 = ', E14.5,    ' (Cepsilon 2: dissip. coeff.  )'/, &
-'       SIGMAK = ', E14.5,    ' (Prandtl relative to k       )',/,&
-'       SIGMAE = ', E14.5,    ' (Prandtl relative to epsilon )',/,&
-'       CV2FMU = ', E14.5,    ' (Cmu constant                )',/,&
-'       CV2FCT = ', E14.5,    ' (CT constant                 )',/,&
-'       CV2FCL = ', E14.5,    ' (CL constant                 )',/,&
-'       CV2FET = ', E14.5,    ' (C_eta constant              )',/,&
-'       CV2FC1 = ', E14.5,    ' (C1 constant                 )',/,&
-'       CV2FC2 = ', E14.5,    ' (C2 constant                 )',/)
- 2536 format(                                                           &
-'   - k-omega SST         (ITURB = 60)                        ',/,&
-'       CKWSK1 = ', E14.5,    ' (sigma_k1 constant           )',/,&
-'       CKWSK2 = ', E14.5,    ' (sigma_k2 constant           )',/,&
-'       CKWSW1 = ', E14.5,    ' (sigma_omega1 constant       )',/,&
-'       CKWSW2 = ', E14.5,    ' (sigma_omega2 constant       )',/,&
-'       CKWBT1 = ', E14.5,    ' (beta1 constant              )',/,&
-'       CKWBT2 = ', E14.5,    ' (beta2 constant              )',/,&
-'       CKWGM1 = ', E14.5,    ' (gamma1 constant             )',/,&
-'       CKWGM2 = ', E14.5,    ' (gamma2 constant             )',/,&
-'       CKWA1  = ', E14.5,    ' (a1 constant to compute mu_t )',/,&
-'       CKWC1  = ', E14.5,    ' (c1 const. for prod. limiter )',/,&
-'       CMU    = ', E14.5,    ' (Cmu (or Beta*) constant for )',/,&
+'   - Commons',                                                 /,&
+'       XKAPPA = ', e14.5,    ' (Von Karman constant         )',/,&
+'       CSTLOG = ', e14.5,    ' (U+=Log(y+)/kappa +CSTLOG    )',/,&
+'       APOW   = ', e14.5,    ' (U+=APOW (y+)**BPOW (W&W law))',/,&
+'       BPOW   = ', e14.5,    ' (U+=APOW (y+)**BPOW (W&W law))',/)
+ 2531 format(                                                     &
+'   - k-epsilon           (ITURB = 20)',                        /,&
+'       Ce1    = ', e14.5,    ' (Cepsilon 1: production coef.)',/,&
+'       CE2    = ', e14.5,    ' (Cepsilon 2: dissipat.  coef.)',/,&
+'       SIGMAK = ', e14.5,    ' (Prandtl relative to k       )',/,&
+'       SIGMAE = ', e14.5,    ' (Prandtl relative to epsilon )',/,&
+'       CMU    = ', e14.5,    ' (Cmu constant                )',/)
+ 2532 format(                                                     &
+'   - Linear production k-epsilon (ITURB = 21)',                /,&
+'       Ce1    = ', e14.5,    ' (Cepsilon 1: production coef.)',/,&
+'       CE2    = ', e14.5,    ' (Cepsilon 2: dissipat.  coef.)',/,&
+'       SIGMAK = ', e14.5,    ' (Prandtl relative to k       )',/,&
+'       SIGMAE = ', e14.5,    ' (Prandtl relative to epsilon )',/,&
+'       CMU    = ', e14.5,    ' (Cmu constant                )',/)
+ 2533 format(                                                     &
+'   - Rij-epsilon         (ITURB = 30)',                        /,&
+'       Ce1    = ', e14.5,    ' (Cepsilon 1: production coef.)',/,&
+'       CE2    = ', e14.5,    ' (Cepsilon 2: dissipat.  coef.)',/,&
+'       CRIJ1  = ', e14.5,    ' (Slow term coefficient       )',/,&
+'       CRIJ2  = ', e14.5,    ' (Fast term coefficient       )',/,&
+'       CRIJ3  = ', e14.5,    ' (Gravity term coefficient    )',/,&
+'       CRIJEP = ', e14.5,    ' (Epsilon diffusion coeff.    )',/,&
+'       CSRIJ  = ', e14.5,    ' (Rij diffusion coeff.        )',/,&
+'       CRIJP1 = ', e14.5,    ' (Slow coeff. for wall echo   )',/,&
+'       CRIJP2 = ', e14.5,    ' (Fast coeff. for wall echo   )',/,&
+'       CMU    = ', e14.5,    ' (Cmu constant                )',/)
+ 2534 format(                                                     &
+'   - SSG Rij-epsilon     (ITURB = 31)',                        /,&
+'       CSSGS1 = ', e14.5,    ' (Cs1 coeff.                  )',/,&
+'       CSSGS2 = ', e14.5,    ' (Cs2 coeff.                  )',/,&
+'       CSSGR1 = ', e14.5,    ' (Cr1 coeff.                  )',/,&
+'       CSSGR2 = ', e14.5,    ' (Cr2 coeff.                  )',/,&
+'       CSSGR3 = ', e14.5,    ' (Cr3 coeff.                  )',/,&
+'       CSSGR4 = ', e14.5,    ' (Cr4 coeff.                  )',/,&
+'       CSSGR5 = ', e14.5,    ' (Cr5 coeff.                  )',/,&
+'       CRIJS  = ', e14.5,    ' (Rij Cs diffusion coeff.     )',/,&
+'       CRIJ3  = ', e14.5,    ' (Gravity term coeff.         )',/,&
+'       Ce1    = ', e14.5,    ' (Ceps1 coeff.                )',/,&
+'       CSSGE2 = ', e14.5,    ' (Ceps2 coeff.                )',/,&
+'       SIGMAE = ', e14.5,    ' (sigma_eps coeff.            )',/,&
+'       CMU    = ', e14.5,    ' (Cmu constant                )',/)
+ 2535 format(                                                     &
+'   - v2f phi-model       (ITURB = 50)',                        /,&
+'       CV2FA1 = ', e14.5,    ' (a1 to calculate Cepsilon1   )',/,&
+'       CV2FE2 = ', e14.5,    ' (Cepsilon 2: dissip. coeff.  )'/, &
+'       SIGMAK = ', e14.5,    ' (Prandtl relative to k       )',/,&
+'       SIGMAE = ', e14.5,    ' (Prandtl relative to epsilon )',/,&
+'       CV2FMU = ', e14.5,    ' (Cmu constant                )',/,&
+'       CV2FCT = ', e14.5,    ' (CT constant                 )',/,&
+'       CV2FCL = ', e14.5,    ' (CL constant                 )',/,&
+'       CV2FET = ', e14.5,    ' (C_eta constant              )',/,&
+'       CV2FC1 = ', e14.5,    ' (C1 constant                 )',/,&
+'       CV2FC2 = ', e14.5,    ' (C2 constant                 )',/)
+ 2536 format(                                                     &
+'   - k-omega SST         (ITURB = 60)',                        /,&
+'       CKWSK1 = ', e14.5,    ' (sigma_k1 constant           )',/,&
+'       CKWSK2 = ', e14.5,    ' (sigma_k2 constant           )',/,&
+'       CKWSW1 = ', e14.5,    ' (sigma_omega1 constant       )',/,&
+'       CKWSW2 = ', e14.5,    ' (sigma_omega2 constant       )',/,&
+'       CKWBT1 = ', e14.5,    ' (beta1 constant              )',/,&
+'       CKWBT2 = ', e14.5,    ' (beta2 constant              )',/,&
+'       CKWGM1 = ', e14.5,    ' (gamma1 constant             )',/,&
+'       CKWGM2 = ', e14.5,    ' (gamma2 constant             )',/,&
+'       CKWA1  = ', e14.5,    ' (a1 constant to compute mu_t )',/,&
+'       CKWC1  = ', e14.5,    ' (c1 const. for prod. limiter )',/,&
+'       CMU    = ', e14.5,    ' (Cmu (or Beta*) constant for )',/,&
 '                                    omega/epsilon conversion)',/)
- 2537 format(                                                           &
-'   - Spalart-Allmaras    (ITURB = 70)'                        ,/,&
-'       CSAB1  = ', E14.5,    ' (b1 constant                 )',/,&
-'       CSAB2  = ', E14.5,    ' (b2 constant                 )',/,&
-'       CSASIG = ', E14.5,    ' (sigma constant              )',/,&
-'       CSAV1  = ', E14.5,    ' (v1 constant                 )',/,&
-'       CSAW1  = ', E14.5,    ' (w1 constant                 )',/,&
-'       CSAW2  = ', E14.5,    ' (w2 constant                 )',/,&
-'       CSAW3  = ', E14.5,    ' (w3 constant                 )',/)
+ 2537 format(                                                     &
+'   - Spalart-Allmaras    (ITURB = 70)',                        /,&
+'       CSAB1  = ', e14.5,    ' (b1 constant                 )',/,&
+'       CSAB2  = ', e14.5,    ' (b2 constant                 )',/,&
+'       CSASIG = ', e14.5,    ' (sigma constant              )',/,&
+'       CSAV1  = ', e14.5,    ' (v1 constant                 )',/,&
+'       CSAW1  = ', e14.5,    ' (w1 constant                 )',/,&
+'       CSAW2  = ', e14.5,    ' (w2 constant                 )',/,&
+'       CSAW3  = ', e14.5,    ' (w3 constant                 )',/)
  2538 format( &
-'   - v2f BL-v2/k         (ITURB = 51)'                        ,/,&
-'       CPALE1 = ', E14.5,    ' (Cepsilon 1 : Prod. coeff.   )',/,&
-'       CPALE2 = ', E14.5,    ' (Cepsilon 2 : Diss. coeff.   )',/,&
-'       CPALE3 = ', E14.5,    ' (Cepsilon 3 : E term coeff.  )',/,&
-'       CPALE4 = ', E14.5,    ' (Cepsilon 4 : Mod Diss. coef.)',/,&
-'       SIGMAK = ', E14.5,    ' (Prandtl relative to k       )',/,&
-'       CPALSE = ', E14.5,    ' (Prandtl relative to epsilon )',/,&
-'       CPALMU = ', E14.5,    ' (Cmu constant               )',/,&
-'       CPALCT = ', E14.5,    ' (CT constant                )',/,&
-'       CPALCL = ', E14.5,    ' (CL constant                )',/,&
-'       CPALET = ', E14.5,    ' (C_eta constant             )',/,&
-'       CPALC1 = ', E14.5,    ' (C1 constant                )',/,&
-'       CPALC2 = ', E14.5,    ' (C2 constant                )',/)
+'   - v2f BL-v2/k         (ITURB = 51)',                        /,&
+'       CPALe1 = ', e14.5,    ' (Cepsilon 1 : Prod. coeff.   )',/,&
+'       CPALE2 = ', e14.5,    ' (Cepsilon 2 : Diss. coeff.   )',/,&
+'       CPALE3 = ', e14.5,    ' (Cepsilon 3 : E term coeff.  )',/,&
+'       CPALE4 = ', e14.5,    ' (Cepsilon 4 : Mod Diss. coef.)',/,&
+'       SIGMAK = ', e14.5,    ' (Prandtl relative to k       )',/,&
+'       CPALSE = ', e14.5,    ' (Prandtl relative to epsilon )',/,&
+'       CPALMU = ', e14.5,    ' (Cmu constant               )',/,&
+'       CPALCT = ', e14.5,    ' (CT constant                )',/,&
+'       CPALCL = ', e14.5,    ' (CL constant                )',/,&
+'       CPALET = ', e14.5,    ' (C_eta constant             )',/,&
+'       CPALC1 = ', e14.5,    ' (C1 constant                )',/,&
+'       CPALC2 = ', e14.5,    ' (C2 constant                )',/)
  2539  format( &
-'   - EBRSM Rij-epsilon     (ITURB = 32)'                      ,/,&
-'       CEBMS1 = ', E14.5,    ' (Cs1 coeff.                  )',/,&
-'       CEBMR1 = ', E14.5,    ' (Cr1 coeff.                  )',/,&
-'       CEBMR2 = ', E14.5,    ' (Cr2 coeff.                  )',/,&
-'       CEBMR3 = ', E14.5,    ' (Cr3 coeff.                  )',/,&
-'       CEBMR4 = ', E14.5,    ' (Cr4 coeff.                  )',/,&
-'       CEBMR5 = ', E14.5,    ' (Cr5 coeff.                  )',/,&
-'       CSEBM  = ', E14.5,    ' (Rij Cs diffusion coeff.     )',/,&
-'       CEBMR6 = ', E14.5,    ' (Gravity term coeff.         )',/,&
-'       CEBME2 = ', E14.5,    ' (Coef Ceps2                  )',/,&
-'       CE1    = ', E14.5,    ' (Coef Ceps1                  )',/,&
-'       SIGEBM = ', E14.5,    ' (Coef sigma_eps              )',/,&
-'       XA1    = ', E14.5,    ' (Coef A1                     )',/,&
-'       SIGMAK = ', E14.5,    ' (Coef sigma_k                )',/,&
-'       XCETA  = ', E14.5,    ' (Coef Ceta                   )',/,&
-'       XCT    = ', E14.5,    ' (Coef CT                     )',/)
+'   - EBRSM Rij-epsilon     (ITURB = 32)',                      /,&
+'       CEBMS1 = ', e14.5,    ' (Cs1 coeff.                  )',/,&
+'       CEBMR1 = ', e14.5,    ' (Cr1 coeff.                  )',/,&
+'       CEBMR2 = ', e14.5,    ' (Cr2 coeff.                  )',/,&
+'       CEBMR3 = ', e14.5,    ' (Cr3 coeff.                  )',/,&
+'       CEBMR4 = ', e14.5,    ' (Cr4 coeff.                  )',/,&
+'       CEBMR5 = ', e14.5,    ' (Cr5 coeff.                  )',/,&
+'       CSEBM  = ', e14.5,    ' (Rij Cs diffusion coeff.     )',/,&
+'       CEBMR6 = ', e14.5,    ' (Gravity term coeff.         )',/,&
+'       CEBME2 = ', e14.5,    ' (Coef Ceps2                  )',/,&
+'       Ce1    = ', e14.5,    ' (Coef Ceps1                  )',/,&
+'       SIGEBM = ', e14.5,    ' (Coef sigma_eps              )',/,&
+'       XA1    = ', e14.5,    ' (Coef A1                     )',/,&
+'       SIGMAK = ', e14.5,    ' (Coef sigma_k                )',/,&
+'       XCETA  = ', e14.5,    ' (Coef Ceta                   )',/,&
+'       XCT    = ', e14.5,    ' (Coef CT                     )',/)
 
  2540 format(/)
 
@@ -976,23 +960,23 @@ write(nfecra,9900)
 
 #if defined(_CS_LANG_FR)
 
- 2610 format(                                                           &
+ 2610 format(                                                     &
                                                                 /,&
-' ** VISCOSITE SECONDAIRE                                     ',/,&
-'    --------------------                                     ',/)
- 2620 format(                                                           &
-' --- Phase continue : ',I10                                   ,/,&
-'       IVISSE = ',4X,I10,    ' (1 : pris en compte          )',/)
+' ** VISCOSITE SECONDAIRE',                                     /,&
+'    --------------------',                                     /)
+ 2620 format(                                                     &
+' --- Phase continue :', i10,                                   /,&
+'       IVISSE = ',4x,i10,    ' (1 : pris en compte          )',/)
 
 #else
 
- 2610 format(                                                           &
+ 2610 format(                                                     &
                                                                 /,&
-' ** SECONDARY VISCOSITY'                                      ,/,&
-'    -------------------'                                      ,/)
- 2620 format(                                                           &
-' --- Continuous phase: ',I10                                  ,/,&
-'       IVISSE = ',4X,I10,    ' (1: accounted for            )',/)
+' ** SECONDARY VISCOSITY',                                      /,&
+'    -------------------',                                      /)
+ 2620 format(                                                     &
+' --- Continuous phase:', i10,                                  /,&
+'       IVISSE = ',4x,i10,    ' (1: accounted for            )',/)
 
 #endif
 
@@ -1002,8 +986,7 @@ if (iirayo.gt.0) then
 
   write(nfecra,2630)
 
-  write(nfecra,2640) iirayo, iscalt,       &
-                     iscsth(iscalt)
+  write(nfecra,2640) iirayo, iscalt, iscsth(iscalt)
 
   write(nfecra,2650) isuird, nfreqr, ndirec,                      &
                      idiver, imodak, iimpar, iimlum
@@ -1019,53 +1002,53 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 2630 format(                                                           &
+ 2630 format(                                                     &
                                                                 /,&
-' ** TRANSFERTS THERMIQUES RADIATIFS                          ',/,&
-'    -------------------------------                          ',/)
- 2640 format(                                                           &
-' --- Phase continue :'                                        ,/,&
-'       IIRAYO = ',4X,I10,    ' (0 : non ; 1 : DOM ; 2 : P-1 )',/,&
-'       ICSALT = ',4X,I10,    ' (Num du sca thermique associe)',/,&
-'       ISCSTH = ',4X,I10,    ' (-1 : T(C) ; 1 : T(K) ; 2 : H)',/)
- 2650 format(                                                           &
-' --- Options :                                               ',/,&
-'       ISUIRD = ',4X,I10,    ' (0 : pas de suite ; 1 : suite)',/,&
-'       NFREQR = ',4X,I10,    ' (Frequence pass. rayonnement )',/,&
-'       NDIREC = ',4X,I10,    ' (32 ou 128 directions(si DOM))',/,&
-'       IDIVER = ',4X,I10,    ' (0 1 ou 2: calcul TS radiatif)',/,&
-'       IMODAK = ',4X,I10,    ' (1: modak coef absor; 0 sinon)',/,&
-'       IIMPAR = ',4X,I10,    ' (0 1 ou 2: impr Tempera paroi)',/,&
-'       IIMLUM = ',4X,I10,    ' (0 1 ou 2: impr infos solveur)',/)
- 2660 format(                                                           &
+' ** TRANSFERTS THERMIQUES RADIATIFS',                          /,&
+'    -------------------------------',                          /)
+ 2640 format(                                                     &
+' --- Phase continue :',                                        /,&
+'       IIRAYO = ',4x,i10,    ' (0 : non ; 1 : DOM ; 2 : P-1 )',/,&
+'       ICSALT = ',4x,i10,    ' (Num du sca thermique associe)',/,&
+'       ISCSTH = ',4x,i10,    ' (-1 : T(C) ; 1 : T(K) ; 2 : H)',/)
+ 2650 format(                                                     &
+' --- Options :',                                               /,&
+'       ISUIRD = ',4x,i10,    ' (0 : pas de suite ; 1 : suite)',/,&
+'       NFREQR = ',4x,i10,    ' (Frequence pass. rayonnement )',/,&
+'       NDIREC = ',4x,i10,    ' (32 ou 128 directions(si DOM))',/,&
+'       IDIVER = ',4x,i10,    ' (0 1 ou 2: calcul TS radiatif)',/,&
+'       IMODAK = ',4x,i10,    ' (1: modak coef absor; 0 sinon)',/,&
+'       IIMPAR = ',4x,i10,    ' (0 1 ou 2: impr Tempera paroi)',/,&
+'       IIMLUM = ',4x,i10,    ' (0 1 ou 2: impr infos solveur)',/)
+ 2660 format(                                                     &
 ' --- Sorties graphiques :                                    '  )
- 2662 format(                                                           &
-'       NBRVAF = ',4X,A40                                        )
+ 2662 format(                                                     &
+'       NBRVAF = ',4x,A40                                        )
 
 #else
 
- 2630 format(                                                           &
+ 2630 format(                                                     &
                                                                 /,&
-' ** RADIATIVE THERMAL TRANSFER'                               ,/,&
-'    --------------------------'                               ,/)
- 2640 format(                                                           &
-' --- Continuous phase:'                                       ,/,&
-'       IIRAYO = ',4X,I10,    ' (0: no; 1: DOM; 2: P-1       )',/,&
-'       ICSALT = ',4X,I10,    ' (Assoc. thermal scalar num.  )',/,&
-'       ISCSTH = ',4X,I10,    ' (-1: T(C); 1: T(K); 2: H     )',/)
- 2650 format(                                                           &
-' --- Options:'                                                ,/,&
-'       ISUIRD = ',4X,I10,    ' (0: no restart; 1: restart   )',/,&
-'       NFREQR = ',4X,I10,    ' (Radiation pass frequency    )',/,&
-'       NDIREC = ',4X,I10,    ' (32 or 128 directions(if DOM))',/,&
-'       IDIVER = ',4X,I10,    ' (0 1 or 2: compute radiat. ST)',/,&
-'       IMODAK = ',4X,I10,    ' (1: modak absor coef; 0 else )',/,&
-'       IIMPAR = ',4X,I10,    ' (0 1 or 2: print wall temp.  )',/,&
-'       IIMLUM = ',4X,I10,    ' (0 1 or 2: print solver info )',/)
- 2660 format(                                                           &
+' ** RADIATIVE THERMAL TRANSFER',                               /,&
+'    --------------------------',                               /)
+ 2640 format(                                                     &
+' --- Continuous phase:',                                       /,&
+'       IIRAYO = ',4x,i10,    ' (0: no; 1: DOM; 2: P-1       )',/,&
+'       ICSALT = ',4x,i10,    ' (Assoc. thermal scalar num.  )',/,&
+'       ISCSTH = ',4x,i10,    ' (-1: T(C); 1: T(K); 2: H     )',/)
+ 2650 format(                                                     &
+' --- Options:',                                                /,&
+'       ISUIRD = ',4x,i10,    ' (0: no restart; 1: restart   )',/,&
+'       NFREQR = ',4x,i10,    ' (Radiation pass frequency    )',/,&
+'       NDIREC = ',4x,i10,    ' (32 or 128 directions(if DOM))',/,&
+'       IDIVER = ',4x,i10,    ' (0 1 or 2: compute radiat. ST)',/,&
+'       IMODAK = ',4x,i10,    ' (1: modak absor coef; 0 else )',/,&
+'       IIMPAR = ',4x,i10,    ' (0 1 or 2: print wall temp.  )',/,&
+'       IIMLUM = ',4x,i10,    ' (0 1 or 2: print solver info )',/)
+ 2660 format(                                                     &
 ' --- Graphical output:'                                         )
- 2662 format(                                                           &
-'       NBRVAF = ',4X,A40                                        )
+ 2662 format(                                                     &
+'       NBRVAF = ',4x,A40                                        )
 
 #endif
 
@@ -1073,10 +1056,7 @@ endif
 
 if (ippmod(icompf).ge.0) then
   write(nfecra,2700)
-  write(nfecra,2710)                                            &
-       icv,                                              &
-       iviscv,viscv0,                             &
-       icfgrp
+  write(nfecra,2710) icv, iviscv, viscv0, icfgrp
 
   write(nfecra,9900)
 
@@ -1084,34 +1064,34 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 2700 format(                                                           &
+ 2700 format(                                                     &
                                                                 /,&
-' ** COMPRESSIBLE : donnees complementaires                   ',/,&
-'    ------------                                             ',/)
- 2710 format(                                                           &
-' --- Phase continue : '                                       ,/,&
-'       ICV    = ',4X,I10,    ' (0 : Cv cst ; 1 : variable   )',/,&
-'       IVISCV = ',4X,I10,    ' (0 : kappa cst ; 1 : variable ',/,&
-'                                kappa : viscosite en volume  ',/,&
+' ** COMPRESSIBLE : donnees complementaires',                   /,&
+'    ------------',                                             /)
+ 2710 format(                                                     &
+' --- Phase continue :',                                        /,&
+'       ICV    = ',4x,i10,    ' (0 : Cv cst ; 1 : variable   )',/,&
+'       IVISCV = ',4x,i10,    ' (0 : kappa cst ; 1 : variable', /,&
+'                                kappa : viscosite en volume',  /,&
 '                                en kg/(m s)                 )',/,&
-'       VISCV0 = ',E14.5 ,    ' (Valeur de kappa si cst      )',/,&
-'       ICFGRP = ',4X,I10,    ' (1 : C.L. pression avec effet ',/,&
+'       VISCV0 = ',e14.5,     ' (Valeur de kappa si cst      )',/,&
+'       ICFGRP = ',4x,i10,    ' (1 : C.L. pression avec effet', /,&
 '                                hydrostatique dominant      )',/)
 
 #else
 
- 2700 format(                                                           &
+ 2700 format(                                                     &
                                                                 /,&
-' ** COMPRESSIBLE: additional data'                            ,/,&
-'    ------------                                             ',/)
- 2710 format(                                                           &
-' --- Continuous phase : '                                     ,/,&
-'       ICV    = ',4X,I10,    ' (0: Cv cst; 1: variable      )',/,&
-'       IVISCV = ',4X,I10,    ' (0: kappa cst; 1: variable'    ,/,&
-'                                kappa: volume viscosity'      ,/,&
+' ** COMPRESSIBLE: additional data',                            /,&
+'    ------------',                                             /)
+ 2710 format(                                                     &
+' --- Continuous phase :',                                      /,&
+'       ICV    = ',4x,i10,    ' (0: Cv cst; 1: variable      )',/,&
+'       IVISCV = ',4x,i10,    ' (0: kappa cst; 1: variable',    /,&
+'                                kappa: volume viscosity',      /,&
 '                                in kg/(m.s)                 )',/,&
-'       VISCV0 = ',E14.5 ,    ' (kappa value if constant     )',/,&
-'       ICFGRP = ',4X,I10,    ' (1: pressure BC with dominant' ,/,&
+'       VISCV0 = ',e14.5,     ' (kappa value if constant     )',/,&
+'       ICFGRP = ',4x,i10,    ' (1: pressure BC with dominant', /,&
 '                                hydrostatic effect          )',/)
 
 #endif
@@ -1142,7 +1122,7 @@ if (idtvar.lt.0) then
     ii = itrsvr(ipp)
     if(ii.ge.1) then
       chaine=nomvar(ipp)
-      write(nfecra,3012) chaine(1:8),relaxv(ii)
+      write(nfecra,3012) chaine(1:16),relaxv(ii)
     endif
   enddo
   write(nfecra,3013)
@@ -1166,7 +1146,7 @@ else
     ii = itrsvr(ipp)
     if(ii.ge.1) then
       chaine=nomvar(ipp)
-      write(nfecra,3041) chaine(1:8),istat(ii),cdtvar(ii)
+      write(nfecra,3041) chaine(1:16),istat(ii),cdtvar(ii)
     endif
   enddo
   write(nfecra,3042)
@@ -1188,151 +1168,151 @@ write(nfecra,9900)
 
 #if defined(_CS_LANG_FR)
 
- 3000 format(                                                           &
+ 3000 format(                                                     &
                                                                 /,&
-' ** MARCHE EN TEMPS'                                          ,/,&
-'    ---------------'                                          ,/)
- 3010 format(                                                           &
-'    ALGORITHME STATIONNAIRE'                                  ,/,&
+' ** MARCHE EN TEMPS',                                          /,&
+'    ---------------',                                          /)
+ 3010 format(                                                     &
+'    ALGORITHME STATIONNAIRE',                                  /,&
                                                                 /,&
-' --- Parametres globaux'                                      ,/,&
+' --- Parametres globaux',                                      /,&
                                                                 /,&
-'       IDTVAR = ',4X,I10,    ' (-1: algorithme stationnaire )',/,&
-'       RELXST = ', E14.5,    ' (Coef relaxation de reference)',/,&
-'                                                             ',/)
- 3011 format(                                                           &
-' --- Coefficient de relaxation par variable'                  ,/,&
+'       IDTVAR = ',4x,i10,    ' (-1: algorithme stationnaire )',/,&
+'       RELXST = ', e14.5,    ' (Coef relaxation de reference)',/,&
+                                                                /)
+ 3011 format(                                                     &
+' --- Coefficient de relaxation par variable',                  /,&
                                                                 /,&
-'---------------------'                                        ,/,&
-' Variable  RELAXV'                                            ,/,&
-'---------------------'                                          )
- 3012 format(                                                           &
- 1x,    a8,      e12.4                                           )
- 3013 format(                                                           &
-'----------------------------'                                 ,/,&
+'-----------------------------',                                /,&
+' Variable          RELAXV',                                    /,&
+'-----------------------------'                                   )
+ 3012 format(                                                     &
+ 1x,    a16,      e12.4                                           )
+ 3013 format(                                                     &
+'----------------------------',                                 /,&
                                                                 /,&
-'       RELAXV =  [0.,1.]       (coeff de relaxation         )',/)
- 3020 format(                                                           &
-'    ALGORITHME INSTATIONNAIRE'                                ,/,&
+'       RELAXV =  [0.,1.]       (coeff de relaxation         )', /)
+ 3020 format(                                                     &
+'    ALGORITHME INSTATIONNAIRE',                                /,&
                                                                 /,&
-' --- Parametres du pas de temps'                              ,/,&
+' --- Parametres du pas de temps',                              /,&
                                                                 /,&
-'       IDTVAR = ',4X,I10,    ' (0 cst;1,2 var(tps,tps-espace)',/,&
-'       IPTLRO = ',4X,I10,    ' (1 : clipping de DT lie a rho)',/,&
-'       COUMAX = ', E14.5,    ' (Courant maximum cible       )',/,&
-'       FOUMAX = ', E14.5,    ' (Fourier maximum cible       )',/,&
-'       VARRDT = ', E14.5,    ' (En DT var, accroissement max)',/,&
-'       DTMIN  = ', E14.5,    ' (Pas de temps min            )',/,&
-'       DTMAX  = ', E14.5,    ' (Pas de temps max            )',/,&
-'       DTREF  = ', E14.5,    ' (Pas de temps de reference   )',/,&
+'       IDTVAR = ',4x,i10,    ' (0 cst;1,2 var(tps,tps-espace)',/,&
+'       IPTLRO = ',4x,i10,    ' (1 : clipping de DT lie a rho)',/,&
+'       COUMAX = ', e14.5,    ' (Courant maximum cible       )',/,&
+'       FOUMAX = ', e14.5,    ' (Fourier maximum cible       )',/,&
+'       VARRDT = ', e14.5,    ' (En DT var, accroissement max)',/,&
+'       DTMIN  = ', e14.5,    ' (Pas de temps min            )',/,&
+'       DTMAX  = ', e14.5,    ' (Pas de temps max            )',/,&
+'       DTREF  = ', e14.5,    ' (Pas de temps de reference   )',/,&
                                                                 /,&
-'       En pas de temps non constant (IDTVAR = 1 ou 2),'       ,/,&
-'         lorsque la valeur de COUMAX ou FOUMAX est negative'  ,/,&
+'       En pas de temps non constant (IDTVAR = 1 ou 2),',       /,&
+'         lorsque la valeur de COUMAX ou FOUMAX est negative',  /,&
 '         ou nulle, la limitation du pas de temps associee (au',/,&
-'         nombre de Courant et de Fourier, respectivement)    ',/,&
-'         n ''est pas prise en compte.'                        ,/)
- 3030 format(                                                           &
-' --- Champ de vitesse fige'                                   ,/,&
+'         nombre de Courant et de Fourier, respectivement)',    /,&
+'         n ''est pas prise en compte.',                        /)
+ 3030 format(                                                     &
+' --- Champ de vitesse fige',                                   /,&
                                                                 /,&
-'       ICCVFG = ',4X,I10,    ' (1 : champ de vitesse fige   )',/)
- 3040 format(                                                           &
-' --- Proprietes par variable'                                 ,/,&
+'       ICCVFG = ',4x,i10,    ' (1 : champ de vitesse fige   )',/)
+ 3040 format(                                                     &
+' --- Proprietes par variable',                                 /,&
                                                                 /,&
-'----------------------------'                                 ,/,&
-' Variable  ISTAT      CDTVAR'                                 ,/,&
-'----------------------------'                                   )
- 3041 format(                                                           &
- 1x,    a8,    i7,      e12.4                                    )
- 3042 format(                                                           &
-'----------------------------'                                 ,/,&
+'------------------------------------',                         /,&
+' Variable          ISTAT      CDTVAR',                         /,&
+'------------------------------------'                            )
+ 3041 format(                                                     &
+ 1x,    a16,    i7,      e12.4                                    )
+ 3042 format(                                                     &
+'----------------------------',                                 /,&
                                                                 /,&
 '       ISTAT  =  0 ou  1       (1 pour instationnaire       )',/,&
 '       CDTVAR >  0             (coeff mult. du pas de temps )',/)
 
- 3050 format(                                                           &
-'--- Coefficient de relaxation'                                ,/,&
-'    RHO(n+1)=SRROM*RHO(n)+(1-SRROM)*RHO(n+1)'                 ,/,&
-'       SRROM  = ',E14.5                                       ,/)
+ 3050 format(                                                     &
+'--- Coefficient de relaxation',                                /,&
+'    RHO(n+1)=SRROM*RHO(n)+(1-SRROM)*RHO(n+1)',                 /,&
+'       SRROM  = ',e14.5,                                       /)
 
- 3060 format(                                                           &
+ 3060 format(                                                     &
 ' --- Ordre du schema en temps de base'                          )
- 3061 format(                                                           &
-'       ISCHTP = ',4X,I10,    ' (1 : ordre 1 ; 2 : ordre 2   )'  )
- 3062 format(                                                           &
+ 3061 format(                                                     &
+'       ISCHTP = ',4x,i10,    ' (1 : ordre 1 ; 2 : ordre 2   )'  )
+ 3062 format(                                                     &
 '                                                             '  )
 
 #else
 
- 3000 format(                                                           &
+ 3000 format(                                                     &
                                                                 /,&
-' ** TIME STEPPING'                                            ,/,&
-'    -------------'                                            ,/)
- 3010 format(                                                           &
-'    STEADY ALGORITHM'                                         ,/,&
+' ** TIME STEPPING',                                            /,&
+'    -------------',                                            /)
+ 3010 format(                                                     &
+'    STEADY ALGORITHM',                                         /,&
                                                                 /,&
-' --- Global parameters'                                       ,/,&
+' --- Global parameters',                                       /,&
                                                                 /,&
-'       IDTVAR = ',4X,I10,    ' (-1: steady algorithm        )',/,&
-'       RELXST = ', E14.5,    ' (Reference relaxation coeff. )',/,&
-'                                                             ',/)
- 3011 format(                                                           &
-' --- Per variable relaxation coefficient'                     ,/,&
+'       IDTVAR = ',4x,i10,    ' (-1: steady algorithm        )',/,&
+'       RELXST = ', e14.5,    ' (Reference relaxation coeff. )',/,&
+                                                                /)
+ 3011 format(                                                     &
+' --- Per variable relaxation coefficient',                     /,&
                                                                 /,&
-'---------------------'                                        ,/,&
-' RELAXV variable'                                             ,/,&
-'---------------------'                                          )
- 3012 format(                                                           &
- 1x,    a8,      e12.4                                           )
- 3013 format(                                                           &
-'----------------------------'                                 ,/,&
+'-----------------------------',                                /,&
+' Variable          RELAXV',                                    /,&
+'-----------------------------'                                   )
+ 3012 format(                                                     &
+ 1x,    a16,      e12.4                                           )
+ 3013 format(                                                     &
+'----------------------------',                                 /,&
                                                                 /,&
 '       RELAXV =  [0.,1.]       (relaxation coefficient      )',/)
- 3020 format(                                                           &
-'    UNSTEADY ALGORITHM'                                       ,/,&
+ 3020 format(                                                     &
+'    UNSTEADY ALGORITHM',                                       /,&
                                                                 /,&
-' --- Time step parameters'                                    ,/,&
+' --- Time step parameters',                                    /,&
                                                                 /,&
-'       IDTVAR = ',4X,I10,    ' (0 cst; 1,2 var (t, t-space  )',/,&
-'       IPTLRO = ',4X,I10,    ' (1: rho-related DT clipping  )',/,&
-'       COUMAX = ', E14.5,    ' (Maximum target CFL          )',/,&
-'       FOUMAX = ', E14.5,    ' (Maximum target Fourier      )',/,&
-'       VARRDT = ', E14.5,    ' (For var. DT, max. increase  )',/,&
-'       DTMIN  = ', E14.5,    ' (Minimum time step           )',/,&
-'       DTMAX  = ', E14.5,    ' (Maximum time step           )',/,&
-'       DTREF  = ', E14.5,    ' (Reference time step         )',/,&
+'       IDTVAR = ',4x,i10,    ' (0 cst; 1,2 var (t, t-space  )',/,&
+'       IPTLRO = ',4x,i10,    ' (1: rho-related DT clipping  )',/,&
+'       COUMAX = ', e14.5,    ' (Maximum target CFL          )',/,&
+'       FOUMAX = ', e14.5,    ' (Maximum target Fourier      )',/,&
+'       VARRDT = ', e14.5,    ' (For var. DT, max. increase  )',/,&
+'       DTMIN  = ', e14.5,    ' (Minimum time step           )',/,&
+'       DTMAX  = ', e14.5,    ' (Maximum time step           )',/,&
+'       DTREF  = ', e14.5,    ' (Reference time step         )',/,&
                                                                 /,&
-'       With a non-constant time step (IDTVAR = 1 or 2),'      ,/,&
-'         when the value of COUMAX or FOUMAX is negative'      ,/,&
-'         or zero, the associated time step limitation (for'   ,/,&
-'         CFL and Fourier respectively) is ignored.'           ,/)
- 3030 format(                                                           &
-' --- Frozen velocity field'                                   ,/,&
+'       With a non-constant time step (IDTVAR = 1 or 2),',      /,&
+'         when the value of COUMAX or FOUMAX is negative',      /,&
+'         or zero, the associated time step limitation (for',   /,&
+'         CFL and Fourier respectively) is ignored.',           /)
+ 3030 format(                                                     &
+' --- Frozen velocity field',                                   /,&
                                                                 /,&
-'       ICCVFG = ',4X,I10,    ' (1: frozen velocity field    )',/)
- 3040 format(                                                           &
-' --- Per-variable properties'                                 ,/,&
+'       ICCVFG = ',4x,i10,    ' (1: frozen velocity field    )',/)
+ 3040 format(                                                     &
+' --- Per-variable properties',                                 /,&
                                                                 /,&
-'----------------------------'                                 ,/,&
-' Variable  ISTAT      CDTVAR'                                 ,/,&
-'----------------------------'                                   )
- 3041 format(                                                           &
- 1x,    a8,    i7,      e12.4                                    )
- 3042 format(                                                           &
-'----------------------------'                                 ,/,&
+'------------------------------------',                         /,&
+' Variable          ISTAT      CDTVAR',                         /,&
+'------------------------------------'                            )
+ 3041 format(                                                     &
+ 1x,    a16,    i7,      e12.4                                    )
+ 3042 format(                                                     &
+'----------------------------',                                 /,&
                                                                 /,&
 '       ISTAT  =  0 ou  1       (1 for unsteady              )',/,&
 '       CDTVAR >  0             (time step multiplier        )',/)
 
- 3050 format(                                                           &
-'--- Relaxation coefficient'                                   ,/,&
-'    RHO(n+1)=SRROM*RHO(n)+(1-SRROM)*RHO(n+1)'                 ,/,&
-'       SRROM  = ',E14.5                                       ,/)
+ 3050 format(                                                     &
+'--- Relaxation coefficient',                                   /,&
+'    RHO(n+1)=SRROM*RHO(n)+(1-SRROM)*RHO(n+1)',                 /,&
+'       SRROM  = ',e14.5,                                       /)
 
- 3060 format(                                                           &
+ 3060 format(                                                     &
 ' --- Order of base time stepping scheme'                        )
- 3061 format(                                                           &
-'       ISCHTP = ',4X,I10,    ' (1: order 1; 2: order 2      )'  )
- 3062 format(                                                           &
+ 3061 format(                                                     &
+'       ISCHTP = ',4x,i10,    ' (1: order 1; 2: order 2      )'  )
+ 3062 format(                                                     &
 '                                                             '  )
 
 #endif
@@ -1346,7 +1326,7 @@ do ipp = 2, nvppmx
   ii = itrsvr(ipp)
   if(ii.ge.1) then
     chaine=nomvar(ipp)
-    write(nfecra,4020) chaine(1:8),                               &
+    write(nfecra,4020) chaine(1:16),                              &
                        iconv(ii),idiff(ii),idifft(ii),            &
                        ischcv(ii),isstpc(ii),                     &
                        blencv(ii),thetav(ii)
@@ -1365,7 +1345,7 @@ if (idtvar.ge.0) then
 else
   write(nfecra,4113) arak*relaxv(iu)
 endif
-write(nfecra,4114)istmpf,thetfl,                  &
+write(nfecra,4114)istmpf,thetfl,     &
      iroext,thetro,                  &
      iviext,thetvi,                  &
      icpext,thetcp,                  &
@@ -1376,17 +1356,17 @@ write(nfecra,9900)
 
 #if defined(_CS_LANG_FR)
 
- 4000 format(                                                           &
+ 4000 format(                                                     &
                                                                 /,&
-' ** CONVECTION - DIFFUSION'                                   ,/,&
-'    ----------------------'                                   ,/)
- 4010 format(                                                           &
-'-------------------------------------------------------------',/,&
-' Variable  ICONV  IDIFF IDIFFT ISCHCV ISSTPC   BLENCV  THETAV',/,&
-'-------------------------------------------------------------'  )
- 4020 format(                                                           &
- 1x,    a8,    i7,    i7,    i7,    i7,    i7,    e9.2,    e9.2  )
- 4030 format(                                                           &
+' ** CONVECTION - DIFFUSION',                                   /,&
+'    ----------------------',                                   /)
+ 4010 format(                                                             &
+'---------------------------------------------------------------------',/,&
+' Variable          ICONV  IDIFF IDIFFT ISCHCV ISSTPC   BLENCV  THETAV',/,&
+'---------------------------------------------------------------------'  )
+ 4020 format(                                                     &
+ 1x,    a16,    i7,    i7,    i7,    i7,    i7,    e9.2,    e9.2  )
+ 4030 format(                                                     &
 '-------------------------------------------------------------',/,&
                                                                 /,&
 '       ICONV  =  0 ou  1       (1 pour convection branchee  )',/,&
@@ -1400,77 +1380,77 @@ write(nfecra,9900)
 '                               (convection diffusion utilise)',/,&
 '                               ((1-theta)ancien+theta nouveau',/)
 
- 4110 format(                                                           &
+ 4110 format(                                                     &
                                                                 /,&
-' ** STOKES'                                                   ,/,&
-'    ------'                                                   ,/,&
-'       IPHYDR = ',4X,I10,  ' (1 : prise en compte explicite  ',/,&
-'                ',14X,     '      de l''equilibre entre grad ',/,&
-'                ',14X,     '      de pression et termes      ',/,&
-'                ',14X,     '      sources de gravite et de   ',/,&
-'                ',14X,     '      pertes de charge          )',/,&
-'       ICALHY = ',4X,I10,  ' (1 : calcul de la pression      ',/,&
-'                ',14X,     '      hydrostatique pour les     ',/,&
-'                ',14X,     '      conditions de Dirichlet en ',/,&
-'                ',14X,     '      sortie sur la pression    )',/,&
-'       IPRCO  = ',4X,I10,  ' (1 : avec pression-continuite  )',/,&
-'       IPUCOU = ',4X,I10,  ' (1 : avec couplage U-P renforce)',/,&
-'       NTERUP = ',4X,I10,  ' (n : avec n sweep sur navsto    ',/,&
-'                ',14X,     '      pour couplage vites/pressio',/)
- 4111 format(                                                           &
-'  -- Phase continue : '                                       ,/,&
+' ** STOKES',                                                   /,&
+'    ------',                                                   /,&
+'       IPHYDR = ',4x,i10,  ' (1 : prise en compte explicite',  /,&
+'                ',14x,     '      de l''equilibre entre grad', /,&
+'                ',14x,     '      de pression et termes',      /,&
+'                ',14x,     '      sources de gravite et de',   /,&
+'                ',14x,     '      pertes de charge          )',/,&
+'       ICALHY = ',4x,i10,  ' (1 : calcul de la pression',      /,&
+'                ',14x,     '      hydrostatique pour les',     /,&
+'                ',14x,     '      conditions de Dirichlet en', /,&
+'                ',14x,     '      sortie sur la pression    )',/,&
+'       IPRCO  = ',4x,i10,  ' (1 : avec pression-continuite  )',/,&
+'       IPUCOU = ',4x,i10,  ' (1 : avec couplage U-P renforce)',/,&
+'       NTERUP = ',4x,i10,  ' (n : avec n sweep sur navsto',    /,&
+'                ',14x,     '      pour couplage vites/pressio',/)
+ 4111 format(                                                     &
+'  -- Phase continue :',                                        /,&
                                                                 /,&
-'       IREVMC = ',4X,I10,    ' (Mode de reconstruction vites)',/)
- 4112 format(                                                           &
-'       RELAXV = ', E14.5,    ' pour la pression (relaxation) ',/,&
-'       ARAK   = ', E14.5,    ' (Facteur d Arakawa           )',/)
- 4113 format(                                                           &
-'       ARAK   = ', E14.5,    ' (Facteur d Arakawa           )',/)
- 4114 format(                                                           &
-'       ISTMPF = ',4X,I10,    ' (schema en temps pour le flux ',/,&
-'                ',14X,       ' (0 : explicite (THETFL = 0   )',/,&
-'                ',14X,       ' (1 : schema std (Saturne 1.0 )',/,&
-'                ',14X,       ' (2 : ordre 2   (THETFL = 0.5 )',/,&
-'       THETFL = ', E14.5,    ' (theta pour flux de masse    )',/,&
-'       IROEXT = ',4X,I10,    ' (extrap. masse volumique      ',/,&
-'                ',14X,       ' (0 : explicite                ',/,&
-'                ',14X,       ' (1 : n+thetro avec thetro=1/2 ',/,&
-'                ',14X,       ' (2 : n+thetro avec thetro=1   ',/,&
-'       THETRO = ', E14.5,    ' (theta pour masse volumique   ',/,&
+'       IREVMC = ',4x,i10,    ' (Mode de reconstruction vites)',/)
+ 4112 format(                                                     &
+'       RELAXV = ', e14.5,    ' pour la pression (relaxation)', /,&
+'       ARAK   = ', e14.5,    ' (Facteur d Arakawa           )',/)
+ 4113 format(                                                     &
+'       ARAK   = ', e14.5,    ' (Facteur d Arakawa           )',/)
+ 4114 format(                                                     &
+'       ISTMPF = ',4x,i10,    ' (schema en temps pour le flux', /,&
+'                ',14x,       ' (0 : explicite (THETFL = 0   )',/,&
+'                ',14x,       ' (1 : schema std (Saturne 1.0 )',/,&
+'                ',14x,       ' (2 : ordre 2   (THETFL = 0.5 )',/,&
+'       THETFL = ', e14.5,    ' (theta pour flux de masse    )',/,&
+'       IROEXT = ',4x,i10,    ' (extrap. masse volumique',      /,&
+'                ',14x,       ' (0 : explicite',                /,&
+'                ',14x,       ' (1 : n+thetro avec thetro=1/2', /,&
+'                ',14x,       ' (2 : n+thetro avec thetro=1',   /,&
+'       THETRO = ', e14.5,    ' (theta pour masse volumique',   /,&
 '                               ((1+theta)nouveau-theta ancien',/,&
-'       IVIEXT = ',4X,I10,    ' (extrap. viscosite totale     ',/,&
-'                ',14X,       ' (0 : explicite                ',/,&
-'                ',14X,       ' (1 : n+thetvi avec thetro=1/2 ',/,&
-'                ',14X,       ' (2 : n+thetvi avec thetro=1   ',/,&
-'       THETVI = ', E14.5,    ' (theta pour viscosite totale  ',/,&
+'       IVIEXT = ',4x,i10,    ' (extrap. viscosite totale',     /,&
+'                ',14x,       ' (0 : explicite',                /,&
+'                ',14x,       ' (1 : n+thetvi avec thetro=1/2', /,&
+'                ',14x,       ' (2 : n+thetvi avec thetro=1',   /,&
+'       THETVI = ', e14.5,    ' (theta pour viscosite totale',  /,&
 '                               ((1+theta)nouveau-theta ancien',/,&
-'       ICPEXT = ',4X,I10,    ' (extrap. chaleur specifique   ',/,&
-'                ',14X,       ' (0 : explicite                ',/,&
-'                ',14X,       ' (1 : n+thetcp avec thetro=1/2 ',/,&
-'                ',14X,       ' (2 : n+thetcp avec thetro=1   ',/,&
-'       THETCP = ', E14.5,    ' (theta schema chaleur spec    ',/,&
+'       ICPEXT = ',4x,i10,    ' (extrap. chaleur specifique',   /,&
+'                ',14x,       ' (0 : explicite',                /,&
+'                ',14x,       ' (1 : n+thetcp avec thetro=1/2', /,&
+'                ',14x,       ' (2 : n+thetcp avec thetro=1',   /,&
+'       THETCP = ', e14.5,    ' (theta schema chaleur spec',    /,&
 '                               ((1+theta)nouveau-theta ancien',/,&
-'       THETSN = ', E14.5,    ' (theta schema T.S. Nav-Stokes)',/,&
+'       THETSN = ', e14.5,    ' (theta schema T.S. Nav-Stokes)',/,&
 '                               ((1+theta)nouveau-theta ancien',/,&
-'       THETST = ', E14.5,    ' (theta schema T.S. Turbulence)',/,&
+'       THETST = ', e14.5,    ' (theta schema T.S. Turbulence)',/,&
 '                               ((1+theta)nouveau-theta ancien',/,&
-'       EPSUP  = ', E14.5,    ' (Test d''arret du couplage    ',/,&
-'                ',14X,       '  vitesse/pression            )',/)
+'       EPSUP  = ', e14.5,    ' (Test d''arret du couplage',    /,&
+'                ',14x,       '  vitesse/pression            )',/)
 
 
 #else
 
- 4000 format(                                                           &
+ 4000 format(                                                     &
                                                                 /,&
-' ** CONVECTION - DIFFUSION'                                   ,/,&
-'    ----------------------'                                   ,/)
- 4010 format(                                                           &
-'-------------------------------------------------------------',/,&
-' Variable  ICONV  IDIFF IDIFFT ISCHCV ISSTPC   BLENCV  THETAV',/,&
-'-------------------------------------------------------------'  )
- 4020 format(                                                           &
- 1x,    a8,    i7,    i7,    i7,    i7,    i7,    e9.2,    e9.2  )
- 4030 format(                                                           &
+' ** CONVECTION - DIFFUSION',                                   /,&
+'    ----------------------',                                   /)
+ 4010 format(                                                             &
+'---------------------------------------------------------------------',/,&
+' Variable          ICONV  IDIFF IDIFFT ISCHCV ISSTPC   BLENCV  THETAV',/,&
+'---------------------------------------------------------------------'  )
+ 4020 format(                                                     &
+ 1x,    a16,    i7,    i7,    i7,    i7,    i7,    e9.2,    e9.2  )
+ 4030 format(                                                     &
 '-------------------------------------------------------------',/,&
                                                                 /,&
 '       ICONV  =  0 ou  1       (1 for convection active     )',/,&
@@ -1484,61 +1464,61 @@ write(nfecra,9900)
 '                               (diffusion terms uses        )',/,&
 '                               ((1-theta).old+theta.new     )',/)
 
- 4110 format(                                                           &
+ 4110 format(                                                     &
                                                                 /,&
-' ** STOKES'                                                   ,/,&
-'    ------'                                                   ,/,&
-'       IPHYDR = ',4X,I10,  ' (1: account for explicit'        ,/,&
-'                ',14X,     '     balance between pressure'    ,/,&
-'                ',14X,     '     gradient, gravity source'    ,/,&
-'                ',14X,     '     terms, and head losses     )',/,&
-'       ICALHY = ',4X,I10,  ' (1: compute hydrastatic'        ,/, &
-'                ',14X,     '     pressure for Dirichlet'      ,/,&
-'                ',14X,     '     conditions for pressure'     ,/,&
-'                ',14X,     '     on outlet                  )',/,&
-'       IPRCO  = ',4X,I10,  ' (1: pressure-continuity        )',/,&
-'       IPUCOU = ',4X,I10,  ' (1: reinforced U-P coupling    )',/,&
-'       NTERUP = ',4X,I10,  ' (n: n sweeps on navsto for'      ,/,&
-'                ',14X,     '     velocity/pressure coupling )',/)
- 4111 format(                                                           &
-'  -- Continuous phase: '                                      ,/,&
+' ** STOKES',                                                   /,&
+'    ------',                                                   /,&
+'       IPHYDR = ',4x,i10,  ' (1: account for explicit',        /,&
+'                ',14x,     '     balance between pressure',    /,&
+'                ',14x,     '     gradient, gravity source',    /,&
+'                ',14x,     '     terms, and head losses     )',/,&
+'       ICALHY = ',4x,i10,  ' (1: compute hydrastatic',        /, &
+'                ',14x,     '     pressure for Dirichlet',      /,&
+'                ',14x,     '     conditions for pressure',     /,&
+'                ',14x,     '     on outlet                  )',/,&
+'       IPRCO  = ',4x,i10,  ' (1: pressure-continuity        )',/,&
+'       IPUCOU = ',4x,i10,  ' (1: reinforced U-P coupling    )',/,&
+'       NTERUP = ',4x,i10,  ' (n: n sweeps on navsto for',      /,&
+'                ',14x,     '     velocity/pressure coupling )',/)
+ 4111 format(                                                     &
+'  -- Continuous phase:',                                       /,&
                                                                 /,&
-'       IREVMC = ',4X,I10,    ' (Velocity reconstruction mode)',/)
- 4112 format(                                                           &
-'       RELAXV = ', E14.5,    ' for pressure (relaxation)'     ,/,&
-'       ARAK   = ', E14.5,    ' (Arakawa factor              )',/)
- 4113 format(                                                           &
-'       ARAK   = ', E14.5,    ' (Arakawa factor              )',/)
- 4114 format(                                                           &
-'       ISTMPF = ',4X,I10,    ' (time scheme for flow'         ,/,&
-'                ',14X,       ' (0: explicit (THETFL = 0     )',/,&
-'                ',14X,       ' (1: std scheme (Saturne 1.0  )',/,&
-'                ',14X,       ' (2: 2nd-order (THETFL = 0.5  )',/,&
-'       THETFL = ', E14.5,    ' (theta for mass flow         )',/,&
-'       IROEXT = ',4X,I10,    ' (density extrapolation'        ,/,&
-'                ',14X,       ' (0: explicit'                  ,/,&
-'                ',14X,       ' (1: n+thetro with thetro=1/2'  ,/,&
-'                ',14X,       ' (2: n+thetro with thetro=1'    ,/,&
-'       THETRO = ', E14.5,    ' (theta for density'            ,/,&
-'                               ((1+theta).new-theta.old'      ,/,&
-'       IVIEXT = ',4X,I10,    ' (total viscosity extrapolation',/,&
-'                ',14X,       ' (0: explicit'                  ,/,&
-'                ',14X,       ' (1: n+thetvi with thetro=1/2'  ,/,&
-'                ',14X,       ' (2: n+thetvi with thetro=1'    ,/,&
-'       THETVI = ', E14.5,    ' (theta for total viscosity'    ,/,&
-'                               ((1+theta).new-theta.old'      ,/,&
-'       ICPEXT = ',4X,I10,    ' (specific heat extrapolation'  ,/,&
-'                ',14X,       ' (0: explicit'                  ,/,&
-'                ',14X,       ' (1: n+thetcp with thetro=1/2'  ,/,&
-'                ',14X,       ' (2: n+thetcp with thetro=1'    ,/,&
-'       THETCP = ', E14.5,    ' (specific heat theta-scheme'   ,/,&
-'                               ((1+theta).new-theta.old'      ,/,&
-'       THETSN = ', E14.5,    ' (Nav-Stokes S.T. theta scheme)',/,&
-'                               ((1+theta).new-theta.old'      ,/,&
-'       THETST = ', E14.5,    ' (Turbulence S.T. theta-scheme)',/,&
-'                               ((1+theta).new-theta.old'      ,/,&
-'       EPSUP  = ', E14.5,    ' (Velocity/pressure coupling'   ,/,&
-'                ',14X,       '  stop test                   )',/)
+'       IREVMC = ',4x,i10,    ' (Velocity reconstruction mode)',/)
+ 4112 format(                                                     &
+'       RELAXV = ', e14.5,    ' for pressure (relaxation)',     /,&
+'       ARAK   = ', e14.5,    ' (Arakawa factor              )',/)
+ 4113 format(                                                     &
+'       ARAK   = ', e14.5,    ' (Arakawa factor              )',/)
+ 4114 format(                                                     &
+'       ISTMPF = ',4x,i10,    ' (time scheme for flow',         /,&
+'                ',14x,       ' (0: explicit (THETFL = 0     )',/,&
+'                ',14x,       ' (1: std scheme (Saturne 1.0  )',/,&
+'                ',14x,       ' (2: 2nd-order (THETFL = 0.5  )',/,&
+'       THETFL = ', e14.5,    ' (theta for mass flow         )',/,&
+'       IROEXT = ',4x,i10,    ' (density extrapolation',        /,&
+'                ',14x,       ' (0: explicit',                  /,&
+'                ',14x,       ' (1: n+thetro with thetro=1/2',  /,&
+'                ',14x,       ' (2: n+thetro with thetro=1',    /,&
+'       THETRO = ', e14.5,    ' (theta for density',            /,&
+'                               ((1+theta).new-theta.old',      /,&
+'       IVIEXT = ',4x,i10,    ' (total viscosity extrapolation',/,&
+'                ',14x,       ' (0: explicit',                  /,&
+'                ',14x,       ' (1: n+thetvi with thetro=1/2',  /,&
+'                ',14x,       ' (2: n+thetvi with thetro=1',    /,&
+'       THETVI = ', e14.5,    ' (theta for total viscosity',    /,&
+'                               ((1+theta).new-theta.old',      /,&
+'       ICPEXT = ',4x,i10,    ' (specific heat extrapolation',  /,&
+'                ',14x,       ' (0: explicit',                  /,&
+'                ',14x,       ' (1: n+thetcp with thetro=1/2',  /,&
+'                ',14x,       ' (2: n+thetcp with thetro=1',    /,&
+'       THETCP = ', e14.5,    ' (specific heat theta-scheme',   /,&
+'                               ((1+theta).new-theta.old',      /,&
+'       THETSN = ', e14.5,    ' (Nav-Stokes S.T. theta scheme)',/,&
+'                               ((1+theta).new-theta.old',      /,&
+'       THETST = ', e14.5,    ' (Turbulence S.T. theta-scheme)',/,&
+'                               ((1+theta).new-theta.old',      /,&
+'       EPSUP  = ', e14.5,    ' (Velocity/pressure coupling',   /,&
+'                ',14x,       '  stop test                   )',/)
 
 #endif
 
@@ -1551,7 +1531,7 @@ do ipp = 2, nvppmx
   ii = itrsvr(ipp)
   if(ii.ge.1) then
     chaine=nomvar(ipp)
-    write(nfecra,4520) chaine(1:8),                               &
+    write(nfecra,4520) chaine(1:16),                               &
       nswrgr(ii),nswrsm(ii),epsrgr(ii),epsrsm(ii),extrag(ii)
   endif
 enddo
@@ -1560,7 +1540,7 @@ do ipp = 2, nvppmx
   ii = itrsvr(ipp)
   if(ii.ge.1) then
     chaine=nomvar(ipp)
-    write(nfecra,4521) chaine(1:8),                               &
+    write(nfecra,4521) chaine(1:16),                               &
       ircflu(ii),imligr(ii),climgr(ii)
   endif
 enddo
@@ -1627,30 +1607,30 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 4500 format(                                                           &
+ 4500 format(                                                     &
                                                                 /,&
-' ** CALCUL DES GRADIENTS'                                     ,/,&
-'    --------------------'                                     ,/)
- 4510 format(                                                           &
-'       IMRGRA = ',4X,I10,    ' (Mode de reconstruction      )',/,&
-'       ANOMAX = ',E14.5 ,    ' (Angle de non ortho. limite  )',/,&
+' ** CALCUL DES GRADIENTS',                                     /,&
+'    --------------------',                                     /)
+ 4510 format(                                                     &
+'       IMRGRA = ',4x,i10,    ' (Mode de reconstruction      )',/,&
+'       ANOMAX = ',e14.5,     ' (Angle de non ortho. limite  )',/,&
 '                               (pour moindres carres etendu )',/,&
                                                                 /,&
-'-----------------------------------------------------------'  ,/,&
-' Variable NSWRGR NSWRSM      EPSRGR      EPSRSM      EXTRAG'  ,/,&
-'-----------------------------------------------------------'    )
- 4520 format(                                                           &
- 1x,    a8,    i7,    i7,      e12.4,      e12.4,      e12.4     )
- 4511 format(                                                           &
-'-----------------------------------------------------------  ',/,&
+'-------------------------------------------------------------------',  /,&
+' Variable         NSWRGR NSWRSM      EPSRGR      EPSRSM      EXTRAG',  /,&
+'-------------------------------------------------------------------'    )
+ 4520 format(                                                     &
+ 1x,    a16,    i7,    i7,      e12.4,      e12.4,      e12.4     )
+ 4511 format(                                                     &
+'-----------------------------------------------------------',  /,&
                                                                 /,&
-'-----------------------------------'                          ,/,&
-' Variable IRCFLU IMLIGR      CLIMGR'                          ,/,&
-'-----------------------------------'                            )
- 4521 format(                                                           &
- 1x,    a8,    i7,    i7,      e12.4                             )
- 4530 format(                                                           &
-'-----------------------------------'                          ,/,&
+'-------------------------------------------',                  /,&
+' Variable         IRCFLU IMLIGR      CLIMGR',                  /,&
+'-------------------------------------------'                     )
+ 4521 format(                                                     &
+ 1x,    a16,    i7,    i7,      e12.4                             )
+ 4530 format(                                                     &
+'-----------------------------------',                          /,&
                                                                 /,&
 '       NSWRGR =                (nb sweep reconstruction grad)',/,&
 '       NSWRSM =                (nb sweep reconstruction smb )',/,&
@@ -1661,87 +1641,87 @@ endif
 '       IMLIGR =  < 0, 0 ou 1   (methode de limit. des grad  )',/,&
 '       CLIMGR =  > 1 ou 1      (coef de limitation des grad )',/)
 
- 4810 format(                                                           &
+ 4810 format(                                                     &
                                                                 /,&
-' ** INTERPOLATION FACE'                                       ,/,&
-'    ------------------'                                       ,/,&
-'       IMVISF = ',4X,I10,    ' (0 arithmetique              )',/)
+' ** INTERPOLATION FACE',                                       /,&
+'    ------------------',                                       /,&
+'       IMVISF = ',4x,i10,    ' (0 arithmetique              )',/)
 
- 4820 format(                                                           &
+ 4820 format(                                                     &
                                                                 /,&
-' ** ESTIMATEURS D''ERREUR POUR NAVIER-STOKES'                 ,/,&
-'    ----------------------------------------'                 ,/)
- 4821 format(                                                           &
-'----------------------------------------'                     ,/,&
-' Estimateur      IESCAL (mode de calcul)'                     ,/,&
+' ** ESTIMATEURS D''ERREUR POUR NAVIER-STOKES',                 /,&
+'    ----------------------------------------',                 /)
+ 4821 format(                                                     &
+'----------------------------------------',                     /,&
+' Estimateur      IESCAL (mode de calcul)',                     /,&
 '----------------------------------------'                       )
- 4822 format(                                                           &
+ 4822 format(                                                     &
  1x,     i10,2x,    i10                                          )
- 4823 format(                                                           &
+ 4823 format(                                                     &
 '----------------------------------------'                       )
- 4824 format(                                                           &
+ 4824 format(                                                     &
                                                                 /,&
-' Estimateurs possibles :'                                     ,/,&
-' ',I2,' =IESPRE : prediction'                                 ,/,&
-'            L''estimateur est base sur la grandeur'           ,/,&
-'            I = rho_n (u*-u_n)/dt + rho_n u_n grad u*'        ,/,&
-'              - rho_n div (mu+mu_t)_n grad u* + grad P_n'     ,/,&
-'              - reste du smb(u_n, P_n, autres variables_n)'   ,/,&
+' Estimateurs possibles :',                                     /,&
+' ',i2,' =IESPRE : prediction',                                 /,&
+'            L''estimateur est base sur la grandeur',           /,&
+'            I = rho_n (u*-u_n)/dt + rho_n u_n grad u*',        /,&
+'              - rho_n div (mu+mu_t)_n grad u* + grad P_n',     /,&
+'              - reste du smb(u_n, P_n, autres variables_n)',   /,&
 !     &'            Idealement nul quand les methodes de reconstruction
 !     &'                sont parfaites et le systeme est resolu exactement
-' ',I2,' =IESDER : derive'                                     ,/,&
-'            L''estimateur est base sur la grandeur'           ,/,&
-'            I = div (flux de masse corrige apres etape'       ,/,&
-'                                               de pression)'  ,/,&
-'            Idealement nul quand l''equation de Poisson est'  ,/,&
-'              resolue exactement'                             ,/,&
-' ',I2,' =IESCOR : correction'                                 ,/,&
-'            L''estimateur est base sur la grandeur'           ,/,&
-'            I = div (rho_n u_(n+1))'                          ,/,&
-'            Idealement nul quand l''equation de Poisson est'  ,/,&
-'              resolue exactement et que le passage des flux'  ,/,&
-'              de masse aux faces vers les vitesses au centre' ,/,&
-'              se fait dans un espace de fonctions'            ,/,&
-'              a divergence nulle'                             ,/,&
-' ',I2,' =IESTOT : total'                                      ,/,&
-'            L''estimateur est base sur la grandeur'           ,/,&
-'            I = rho_n (u_(n+1)-u_n)/dt'                       ,/,&
+' ',i2,' =IESDER : derive',                                     /,&
+'            L''estimateur est base sur la grandeur',           /,&
+'            I = div (flux de masse corrige apres etape',       /,&
+'                                               de pression)',  /,&
+'            Idealement nul quand l''equation de Poisson est',  /,&
+'              resolue exactement',                             /,&
+' ',i2,' =IESCOR : correction',                                 /,&
+'            L''estimateur est base sur la grandeur',           /,&
+'            I = div (rho_n u_(n+1))',                          /,&
+'            Idealement nul quand l''equation de Poisson est',  /,&
+'              resolue exactement et que le passage des flux',  /,&
+'              de masse aux faces vers les vitesses au centre', /,&
+'              se fait dans un espace de fonctions',            /,&
+'              a divergence nulle',                             /,&
+' ',i2,' =IESTOT : total',                                      /,&
+'            L''estimateur est base sur la grandeur',           /,&
+'            I = rho_n (u_(n+1)-u_n)/dt',                       /,&
 '                                 + rho_n u_(n+1) grad u_(n+1)',/,&
-'              - rho_n div (mu+mu_t)_n grad u_(n+1)'           ,/,&
-'                                               + gradP_(n+1)' ,/,&
-'              - reste du smb(u_(n+1), P_(n+1),'               ,/,&
+'              - rho_n div (mu+mu_t)_n grad u_(n+1)',           /,&
+'                                               + gradP_(n+1)', /,&
+'              - reste du smb(u_(n+1), P_(n+1),',               /,&
 '                                          autres variables_n)',/,&
-'             Le flux du terme convectif est calcule a partir' ,/,&
-'               de u_(n+1) pris au centre des cellules (et'    ,/,&
-'               non pas a partir du flux de masse aux faces'   ,/,&
-'               actualise)'                                    ,/,&
+'             Le flux du terme convectif est calcule a partir', /,&
+'               de u_(n+1) pris au centre des cellules (et',    /,&
+'               non pas a partir du flux de masse aux faces',   /,&
+'               actualise)',                                    /,&
                                                                 /,&
-' On evalue l''estimateur selon les valeurs de IESCAL :'       ,/,&
-'   IESCAL = 0 : l''estimateur n''est pas calcule'             ,/,&
-'   IESCAL = 1 : l''estimateur    est     calcule,'            ,/,&
+' On evalue l''estimateur selon les valeurs de IESCAL :',       /,&
+'   IESCAL = 0 : l''estimateur n''est pas calcule',             /,&
+'   IESCAL = 1 : l''estimateur    est     calcule,',            /,&
 '               sans contribution du volume  (on prend abs(I))',/,&
-'   IESCAL = 2 : l''estimateur    est     calcule,'            ,/,&
-'               avec contribution du volume ("norme L2")'      ,/,&
-'               soit abs(I)*SQRT(Volume_cellule),'             ,/,&
-'               sauf pour IESCOR : on calcule'                 ,/,&
-'                 abs(I)*Volume_cellule pour mesurer'          ,/,&
-'                 un ecart en kg/s'                            ,/)
+'   IESCAL = 2 : l''estimateur    est     calcule,',            /,&
+'               avec contribution du volume ("norme L2")',      /,&
+'               soit abs(I)*SQRT(Volume_cellule),',             /,&
+'               sauf pour IESCOR : on calcule',                 /,&
+'                 abs(I)*Volume_cellule pour mesurer',          /,&
+'                 un ecart en kg/s',                            /)
 
- 4900 format(                                                           &
+ 4900 format(                                                     &
                                                                 /,&
-' ** CALCUL DES MOYENNES TEMPORELLES (MOMENTS)'                ,/,&
-'    -----------------------------------------'                ,/,&
+' ** CALCUL DES MOYENNES TEMPORELLES (MOMENTS)',                /,&
+'    -----------------------------------------',                /,&
                                                                 /,&
-'       NBMOMT = ',4X,I10,    ' (Nombre de moments           )'  )
- 4901 format(                                                           &
+'       NBMOMT = ',4x,i10,    ' (Nombre de moments           )'  )
+ 4901 format(                                                     &
                                                                 /,&
-'------------------------------------------------------'       ,/,&
-' IMOM IMOOLD NDTMOM IDFMOM'                                   ,/,&
+'------------------------------------------------------',       /,&
+' IMOM IMOOLD NDTMOM IDFMOM',                                   /,&
 '------------------------------------------------------'         )
- 4920 format(                                                           &
+ 4920 format(                                                     &
  1x,i4,    i7,    i7,5(i7)                                       )
- 4930 format(                                                           &
-'------------------------------------------------------'       ,/,&
+ 4930 format(                                                     &
+'------------------------------------------------------',       /,&
                                                                 /,&
 '       IMOM   = 0 ou > 0       (numero du moment            )',/,&
 '       IMOOLD =-1 ou > 0       (ancien moment correspondant )',/,&
@@ -1753,64 +1733,64 @@ endif
 '       IDFMOM = 0 ou > 0       (numero des variables        )',/,&
 '                               (composant le moment         )',/)
 
- 4950 format(                                                           &
+ 4950 format(                                                     &
                                                                 /,&
-' ** CALCUL DE LA DISTANCE A LA PAROI'                         ,/,&
-'    --------------------------------'                         ,/,&
+' ** CALCUL DE LA DISTANCE A LA PAROI',                         /,&
+'    --------------------------------',                         /,&
                                                                 /,&
-'       ICDPAR = ',4X,I10,    ' ( 1: std et relu      si suite',/,&
+'       ICDPAR = ',4x,i10,    ' ( 1: std et relu      si suite',/,&
 '                               (-1: std et recalcule si suite',/,&
 '                               ( 2: old et relu      si suite',/,&
 '                               (-2: old et recalcule si suite',/)
-4951  format(                                                           &
+4951  format(                                                     &
                                                                 /,&
-'       NITMAY = ',4X,I10,    ' (Nb iter pour resolution iter.',/,&
-'       NSWRSY = ',4X,I10,    ' (Nb iter pour reconstr. smb. )',/,&
-'       NSWRGY = ',4X,I10,    ' (Nb iter pour reconstr. grd. )',/,&
-'       IMLIGY = ',4X,I10,    ' (Methode de limitation grd.  )',/,&
-'       IRCFLY = ',4X,I10,    ' (Reconst. flux conv. diff.   )',/,&
-'       ISCHCY = ',4X,I10,    ' (Schema convectif            )',/,&
-'       ISSTPY = ',4X,I10,    ' (Utilisation test de pente   )',/,&
-'       IMGRPY = ',4X,I10,    ' (Algorithme multigrille      )',/,&
-'       IWARNY = ',4X,I10,    ' (Niveau d''impression        )',/,&
-'       NTCMXY = ',4X,I10,    ' (Nb iter pour convection stat.',/,&
+'       NITMAY = ',4x,i10,    ' (Nb iter pour resolution iter.',/,&
+'       NSWRSY = ',4x,i10,    ' (Nb iter pour reconstr. smb. )',/,&
+'       NSWRGY = ',4x,i10,    ' (Nb iter pour reconstr. grd. )',/,&
+'       IMLIGY = ',4x,i10,    ' (Methode de limitation grd.  )',/,&
+'       IRCFLY = ',4x,i10,    ' (Reconst. flux conv. diff.   )',/,&
+'       ISCHCY = ',4x,i10,    ' (Schema convectif            )',/,&
+'       ISSTPY = ',4x,i10,    ' (Utilisation test de pente   )',/,&
+'       IMGRPY = ',4x,i10,    ' (Algorithme multigrille      )',/,&
+'       IWARNY = ',4x,i10,    ' (Niveau d''impression        )',/,&
+'       NTCMXY = ',4x,i10,    ' (Nb iter pour convection stat.',/,&
                                                                 /,&
-'       BLENCY = ',E14.5 ,    ' (Prop. ordre 2 schema convect.',/,&
-'       EPSILY = ',E14.5 ,    ' (Precision solveur iteratif  )',/,&
-'       EPSRSY = ',E14.5 ,    ' (Precision reconst. smb.     )',/,&
-'       EPSRGY = ',E14.5 ,    ' (Precision reconst. grd.     )',/,&
-'       CLIMGY = ',E14.5 ,    ' (Coeff. pour limitation grd. )',/,&
-'       EXTRAY = ',E14.5 ,    ' (Coeff. pour extrapolation grd',/,&
-'       COUMXY = ',E14.5 ,    ' (Courant max pour convection )',/,&
-'       EPSCVY = ',E14.5 ,    ' (Precision pour convect. stat.',/,&
-'       YPLMXY = ',E14.5 ,    ' (y+ max avec influence amort.)',/)
+'       BLENCY = ',e14.5,     ' (Prop. ordre 2 schema convect.',/,&
+'       EPSILY = ',e14.5,     ' (Precision solveur iteratif  )',/,&
+'       EPSRSY = ',e14.5,     ' (Precision reconst. smb.     )',/,&
+'       EPSRGY = ',e14.5,     ' (Precision reconst. grd.     )',/,&
+'       CLIMGY = ',e14.5,     ' (Coeff. pour limitation grd. )',/,&
+'       EXTRAY = ',e14.5,     ' (Coeff. pour extrapolation grd',/,&
+'       COUMXY = ',e14.5,     ' (Courant max pour convection )',/,&
+'       EPSCVY = ',e14.5,     ' (Precision pour convect. stat.',/,&
+'       YPLMXY = ',e14.5,     ' (y+ max avec influence amort.)',/)
 
 #else
 
- 4500 format(                                                           &
+ 4500 format(                                                     &
                                                                 /,&
-' ** GRADIENTS CALCULATION'                                    ,/,&
-'    ---------------------'                                    ,/)
- 4510 format(                                                           &
-'       IMRGRA = ',4X,I10,    ' (Reconstruction mode         )',/,&
-'       ANOMAX = ',E14.5 ,    ' (Non-ortho angle: limit for  )',/,&
+' ** GRADIENTS CALCULATION',                                    /,&
+'    ---------------------',                                    /)
+ 4510 format(                                                     &
+'       IMRGRA = ',4x,i10,    ' (Reconstruction mode         )',/,&
+'       ANOMAX = ',e14.5,     ' (Non-ortho angle: limit for  )',/,&
 '                               (least squares ext. neighbors)',/,&
                                                                 /,&
-'-----------------------------------------------------------'  ,/,&
-' Variable NSWRGR NSWRSM      EPSRGR      EPSRSM      EXTRAG'  ,/,&
-'-----------------------------------------------------------'    )
- 4520 format(                                                           &
- 1x,    a8,    i7,    i7,      e12.4,      e12.4,      e12.4     )
- 4511 format(                                                           &
-'-----------------------------------------------------------  ',/,&
+'-------------------------------------------------------------------',  /,&
+' Variable         NSWRGR NSWRSM      EPSRGR      EPSRSM      EXTRAG',  /,&
+'-------------------------------------------------------------------'    )
+ 4520 format(                                                     &
+ 1x,    a16,    i7,    i7,      e12.4,      e12.4,      e12.4     )
+ 4511 format(                                                     &
+'-----------------------------------------------------------',  /,&
                                                                 /,&
-'-----------------------------------'                          ,/,&
-' Variable IRCFLU IMLIGR      CLIMGR'                          ,/,&
-'-----------------------------------'                            )
- 4521 format(                                                           &
- 1x,    a8,    i7,    i7,      e12.4                             )
- 4530 format(                                                           &
-'-----------------------------------'                          ,/,&
+'-------------------------------------------',                  /,&
+' Variable         IRCFLU IMLIGR      CLIMGR',                  /,&
+'-------------------------------------------'                     )
+ 4521 format(                                                     &
+ 1x,    a16,    i7,    i7,      e12.4                             )
+ 4530 format(                                                     &
+'-----------------------------------',                          /,&
                                                                 /,&
 '       NSWRGR =                (nb sweep gradient reconstr. )',/,&
 '       NSWRSM =                (nb sweep rhs reconstrcution )',/,&
@@ -1821,82 +1801,82 @@ endif
 '       IMLIGR =  < 0, 0 ou 1   (gradient limitation method  )',/,&
 '       CLIMGR =  > 1 ou 1      (gradient limitation coeff.  )',/)
 
- 4810 format(                                                           &
+ 4810 format(                                                     &
                                                                 /,&
-' ** FACE INTERPOLATION'                                       ,/,&
-'    ------------------'                                       ,/,&
-'       IMVISF = ',4X,I10,    ' (0 arithmetic                )',/)
+' ** FACE INTERPOLATION',                                       /,&
+'    ------------------',                                       /,&
+'       IMVISF = ',4x,i10,    ' (0 arithmetic                )',/)
 
- 4820 format(                                                           &
+ 4820 format(                                                     &
                                                                 /,&
-' ** ERROR ESTIMATORS FOR NAVIER-STOKES'                       ,/,&
-'    ----------------------------------'                       ,/)
- 4821 format(                                                           &
-'------------------------------------------'                   ,/,&
-' Estimateur      IESCAL (calculation mode)'                   ,/,&
+' ** ERROR ESTIMATORS FOR NAVIER-STOKES',                       /,&
+'    ----------------------------------',                       /)
+ 4821 format(                                                     &
+'------------------------------------------',                   /,&
+' Estimateur      IESCAL (calculation mode)',                   /,&
 '------------------------------------------'                     )
- 4822 format(                                                           &
+ 4822 format(                                                     &
  1x,     i10,2x,    i10                                          )
- 4823 format(                                                           &
+ 4823 format(                                                     &
 '----------------------------------------'                       )
- 4824 format(                                                           &
+ 4824 format(                                                     &
                                                                 /,&
-' Possible estimators:'                                        ,/,&
-' ',I2,' =IESPRE: prediction'                                  ,/,&
-'            The estimatore is based on the quantity'          ,/,&
-'            I = rho_n (u*-u_n)/dt + rho_n u_n grad u*'        ,/,&
-'              - rho_n div (mu+mu_t)_n grad u* + grad P_n'     ,/,&
-'              - remainder of rhs(u_n, P_n, other variables_n)'  ,&
-' ',I2,' =IESDER: drift'                                       ,/,&
-'            The estimator is based on quantity'               ,/,&
+' Possible estimators:',                                        /,&
+' ',i2,' =IESPRE: prediction',                                  /,&
+'            The estimatore is based on the quantity',          /,&
+'            I = rho_n (u*-u_n)/dt + rho_n u_n grad u*',        /,&
+'              - rho_n div (mu+mu_t)_n grad u* + grad P_n',     /,&
+'              - remainder of rhs(u_n, P_n, other variables_n)',  &
+' ',i2,' =IESDER: drift',                                       /,&
+'            The estimator is based on quantity',               /,&
 '            I = div (mass flow corrected after pressure step)',/,&
-'            Ideally zero when Poisson''s equation is'         ,/,&
-'              resolved exactly'                               ,/,&
-' ',I2,' =IESCOR: correction'                                  ,/,&
-'            The estimator is based on quantity'               ,/,&
-'            I = div (rho_n u_(n+1))'                          ,/,&
-'            Ideally zero when Poisson''s equation is'         ,/,&
+'            Ideally zero when Poisson''s equation is',         /,&
+'              resolved exactly',                               /,&
+' ',i2,' =IESCOR: correction',                                  /,&
+'            The estimator is based on quantity',               /,&
+'            I = div (rho_n u_(n+1))',                          /,&
+'            Ideally zero when Poisson''s equation is',         /,&
 '              resolved exactly and the passage from mass flow',/,&
-'              at faces to velocity at cell centers is done'   ,/,&
-'              in a function space with zero divergence'       ,/,&
-' ',I2,' =IESTOT: total'                                       ,/,&
-'            Estimator is based on the quantity'               ,/,&
-'            I = rho_n (u_(n+1)-u_n)/dt'                       ,/,&
+'              at faces to velocity at cell centers is done',   /,&
+'              in a function space with zero divergence',       /,&
+' ',i2,' =IESTOT: total',                                       /,&
+'            Estimator is based on the quantity',               /,&
+'            I = rho_n (u_(n+1)-u_n)/dt',                       /,&
 '                                 + rho_n u_(n+1) grad u_(n+1)',/,&
-'              - rho_n div (mu+mu_t)_n grad u_(n+1)'           ,/,&
-'                                               + gradP_(n+1)' ,/,&
-'              - rmainder of rhs(u_(n+1), P_(n+1),'            ,/,&
+'              - rho_n div (mu+mu_t)_n grad u_(n+1)',           /,&
+'                                               + gradP_(n+1)', /,&
+'              - rmainder of rhs(u_(n+1), P_(n+1),',            /,&
 '                                          other variables_n)',/, &
-'             The convective term flow is calculated from'     ,/,&
-'               u_(n+1) taken at the cell centers (and not'    ,/,&
-'               from the updated mass flow at faces)'          ,/,&
+'             The convective term flow is calculated from',     /,&
+'               u_(n+1) taken at the cell centers (and not',    /,&
+'               from the updated mass flow at faces)',          /,&
                                                                 /,&
-' We evaluate the estimator based on values of IESCAL:'        ,/,&
-'   IESCAL = 0: the estimator is not calculated'               ,/,&
-'   IESCAL = 1: the estimator is calculated, with no'          ,/,&
-'               contribution from the volume (we take abs(I))' ,/,&
-'   IESCAL = 2: the estimator is calculated,'                  ,/,&
-'               with contribution from the volume ("L2 norm")' ,/,&
-'               that is abs(I)*SQRT(Cell_volume),'             ,/,&
-'               except for IESCOR: we calculate'               ,/,&
-'                 abs(I)*Cell_volume to measure'               ,/,&
-'                 a difference in kg/s'                        ,/)
+' We evaluate the estimator based on values of IESCAL:',        /,&
+'   IESCAL = 0: the estimator is not calculated',               /,&
+'   IESCAL = 1: the estimator is calculated, with no',          /,&
+'               contribution from the volume (we take abs(I))', /,&
+'   IESCAL = 2: the estimator is calculated,',                  /,&
+'               with contribution from the volume ("L2 norm")', /,&
+'               that is abs(I)*SQRT(Cell_volume),',             /,&
+'               except for IESCOR: we calculate',               /,&
+'                 abs(I)*Cell_volume to measure',               /,&
+'                 a difference in kg/s',                        /)
 
- 4900 format(                                                           &
+ 4900 format(                                                     &
                                                                 /,&
-' ** CALCULATION OF TEMPORAL MEANS (MOMENTS)'                  ,/,&
-'    ---------------------------------------'                  ,/,&
+' ** CALCULATION OF TEMPORAL MEANS (MOMENTS)',                  /,&
+'    ---------------------------------------',                  /,&
                                                                 /,&
-'       NBMOMT = ',4X,I10,    ' (Number of moments           )'  )
- 4901 format(                                                           &
+'       NBMOMT = ',4x,i10,    ' (Number of moments           )'  )
+ 4901 format(                                                     &
                                                                 /,&
-'------------------------------------------------------'       ,/,&
-' IMOM IMOOLD NDTMOM IDFMOM'                                   ,/,&
+'------------------------------------------------------',       /,&
+' IMOM IMOOLD NDTMOM IDFMOM',                                   /,&
 '------------------------------------------------------'         )
- 4920 format(                                                           &
+ 4920 format(                                                     &
  1x,i4,    i7,    i7,5(i7)                                       )
- 4930 format(                                                           &
-'------------------------------------------------------'       ,/,&
+ 4930 format(                                                     &
+'------------------------------------------------------',       /,&
                                                                 /,&
 '       IMOM   = 0 ou > 0       (moment number               )',/,&
 '       IMOOLD =-1 ou > 0       (old moment corresponding    )',/,&
@@ -1908,37 +1888,37 @@ endif
 '       IDFMOM = 0 ou > 0       (number of variables of      )',/,&
 '                               (which the moment is composed)',/)
 
- 4950 format(                                                           &
+ 4950 format(                                                     &
                                                                 /,&
-' ** WALL DISTANCE COMPUTATION'                                ,/,&
-'    -------------------------'                                ,/,&
+' ** WALL DISTANCE COMPUTATION',                                /,&
+'    -------------------------',                                /,&
                                                                 /,&
-'       ICDPAR = ',4X,I10,    ' ( 1: std, reread if restart'   ,/,&
+'       ICDPAR = ',4x,i10,    ' ( 1: std, reread if restart',   /,&
 '                               (-1: std, recomputed if restrt',/,&
-'                               ( 2: old, reread if restart'   ,/,&
+'                               ( 2: old, reread if restart',   /,&
 '                               (-2: old, recomputed if restrt',/)
-4951  format(                                                           &
+4951  format(                                                     &
                                                                 /,&
-'       NITMAY = ',4X,I10,    ' (Nb iter for iter resolution )',/,&
-'       NSWRSY = ',4X,I10,    ' (Nb iter for rhs reconstr.   )',/,&
-'       NSWRGY = ',4X,I10,    ' (Nb iter for grad. reconstr. )',/,&
-'       IMLIGY = ',4X,I10,    ' (Gradient limitation method  )',/,&
-'       IRCFLY = ',4X,I10,    ' (Conv. Diff. flow reconstr.  )',/,&
-'       ISCHCY = ',4X,I10,    ' (Convective scheme           )',/,&
-'       ISSTPY = ',4X,I10,    ' (Slope tet use               )',/,&
-'       IMGRPY = ',4X,I10,    ' (Multigrid algorithm         )',/,&
-'       IWARNY = ',4X,I10,    ' (Verbosity level             )',/,&
-'       NTCMXY = ',4X,I10,    ' (Nb iter for steady convect. )',/,&
+'       NITMAY = ',4x,i10,    ' (Nb iter for iter resolution )',/,&
+'       NSWRSY = ',4x,i10,    ' (Nb iter for rhs reconstr.   )',/,&
+'       NSWRGY = ',4x,i10,    ' (Nb iter for grad. reconstr. )',/,&
+'       IMLIGY = ',4x,i10,    ' (Gradient limitation method  )',/,&
+'       IRCFLY = ',4x,i10,    ' (Conv. Diff. flow reconstr.  )',/,&
+'       ISCHCY = ',4x,i10,    ' (Convective scheme           )',/,&
+'       ISSTPY = ',4x,i10,    ' (Slope tet use               )',/,&
+'       IMGRPY = ',4x,i10,    ' (Multigrid algorithm         )',/,&
+'       IWARNY = ',4x,i10,    ' (Verbosity level             )',/,&
+'       NTCMXY = ',4x,i10,    ' (Nb iter for steady convect. )',/,&
                                                                 /,&
-'       BLENCY = ',E14.5 ,    ' (2nd order conv. scheme prop.)',/,&
-'       EPSILY = ',E14.5 ,    ' (Iterative solver precision  )',/,&
-'       EPSRSY = ',E14.5 ,    ' (rhs reconstruction precision)',/,&
-'       EPSRGY = ',E14.5 ,    ' (Gradient reconstr. precision)',/,&
-'       CLIMGY = ',E14.5 ,    ' (Coeff. for grad. limitation )',/,&
-'       EXTRAY = ',E14.5 ,    ' (Coeff. for grad. extrapolat.)',/,&
-'       COUMXY = ',E14.5 ,    ' (Max CFL for convection      )',/,&
-'       EPSCVY = ',E14.5 ,    ' (Precision for steady conv.  )',/,&
-'       YPLMXY = ',E14.5 ,    ' (y+ max w. damping influence )',/)
+'       BLENCY = ',e14.5,     ' (2nd order conv. scheme prop.)',/,&
+'       EPSILY = ',e14.5,     ' (Iterative solver precision  )',/,&
+'       EPSRSY = ',e14.5,     ' (rhs reconstruction precision)',/,&
+'       EPSRGY = ',e14.5,     ' (Gradient reconstr. precision)',/,&
+'       CLIMGY = ',e14.5,     ' (Coeff. for grad. limitation )',/,&
+'       EXTRAY = ',e14.5,     ' (Coeff. for grad. extrapolat.)',/,&
+'       COUMXY = ',e14.5,     ' (Max CFL for convection      )',/,&
+'       EPSCVY = ',e14.5,     ' (Precision for steady conv.  )',/,&
+'       YPLMXY = ',e14.5,     ' (y+ max w. damping influence )',/)
 
 #endif
 
@@ -1954,7 +1934,7 @@ do ipp = 2, nvppmx
   ii = itrsvr(ipp)
   if(ii.ge.1) then
     chaine=nomvar(ipp)
-    write(nfecra,5020) chaine(1:8),iresol(ii),                    &
+    write(nfecra,5020) chaine(1:16),iresol(ii),                    &
                      nitmax(ii),epsilo(ii),idircl(ii)
   endif
 enddo
@@ -1970,7 +1950,7 @@ do ipp = 2, nvppmx
   ii = itrsvr(ipp)
   if(ii.ge.1) then
     chaine=nomvar(ipp)
-    write(nfecra,5520) chaine(1:8),                               &
+    write(nfecra,5520) chaine(1:16),                               &
       imgr(ii),ncymax(ii),nitmgf(ii)
   endif
 enddo
@@ -1984,18 +1964,18 @@ write(nfecra,9900)
 
 #if defined(_CS_LANG_FR)
 
- 5010 format(                                                           &
+ 5010 format(                                                     &
                                                                 /,&
-' ** SOLVEURS ITERATIFS DE BASE'                               ,/,&
-'    --------------------------'                               ,/,&
+' ** SOLVEURS ITERATIFS DE BASE',                               /,&
+'    --------------------------',                               /,&
                                                                 /,&
-'------------------------------------------'                   ,/,&
-' Variable IRESOL NITMAX      EPSILO IDIRCL'                   ,/,&
-'------------------------------------------'                     )
- 5020 format(                                                           &
- 1x,    a8,    i7,    i7,      e12.4,    i7                      )
- 5030 format(                                                           &
-'-----------------------------------'                          ,/,&
+'--------------------------------------------------',           /,&
+' Variable         IRESOL NITMAX      EPSILO IDIRCL',           /,&
+'--------------------------------------------------'              )
+ 5020 format(                                                     &
+ 1x,    a16,    i7,    i7,      e12.4,    i7                      )
+ 5030 format(                                                     &
+'-----------------------------------',                          /,&
                                                                 /,&
 '       IRESOL =            -1  (choix automatique du solveur)',/,&
 '                IPOL*1000 + 0  (gradient conjugue           )',/,&
@@ -2004,23 +1984,23 @@ write(nfecra,9900)
 '                  avec IPOL    (degre du preconditionnement )',/,&
 '       NITMAX =                (nb d iterations max         )',/,&
 '       EPSILO =                (precision resolution        )',/,&
-'       IDIRCL = 0 ou 1         (decalage de la diagonale si'  ,/,&
+'       IDIRCL = 0 ou 1         (decalage de la diagonale si',  /,&
 '                                ISTAT=0 et pas de Dirichlet )',/)
 
- 5510 format(                                                           &
+ 5510 format(                                                     &
                                                                 /,&
-' ** MULTIGRILLE'                                              ,/,&
-'    -----------'                                              ,/,&
+' ** MULTIGRILLE',                                              /,&
+'    -----------',                                              /,&
                                                                 /,&
-'       NCEGRM = ',4X,I10,    ' (Nb cell max mail grossier   )',/,&
-'       NGRMAX = ',4X,I10,    ' (Nb max de niveaux de mail   )',/,&
-'------------------------------                               ',/,&
-' Variable   IMGR NCYMAX NITMGF                               ',/,&
-'------------------------------                               '  )
- 5520 format(                                                           &
- 1x,    a8,    i7,    i7,    i7                                  )
- 5530 format(                                                           &
-'------------------------------'                               ,/,&
+'       NCEGRM = ',4x,i10,    ' (Nb cell max mail grossier   )',/,&
+'       NGRMAX = ',4x,i10,    ' (Nb max de niveaux de mail   )',/,&
+'--------------------------------------',                       /,&
+' Variable           IMGR NCYMAX NITMGF',                       /,&
+'--------------------------------------                        '  )
+ 5520 format(                                                     &
+ 1x,    a16,    i7,    i7,    i7                                  )
+ 5530 format(                                                     &
+'------------------------------',                               /,&
                                                                 /,&
 '       IMGR   =  0 ou 1        (1 : activation du mltgrd    )',/,&
 '       NCYMAX =                (Nb max de cycles            )',/,&
@@ -2028,18 +2008,18 @@ write(nfecra,9900)
 
 #else
 
- 5010 format(                                                           &
+ 5010 format(                                                     &
                                                                 /,&
-' ** BASE ITERATIVE SOLVERS'                                   ,/,&
-'    ----------------------'                                   ,/,&
+' ** BASE ITERATIVE SOLVERS',                                   /,&
+'    ----------------------',                                   /,&
                                                                 /,&
-'------------------------------------------'                   ,/,&
-' Variable IRESOL NITMAX      EPSILO IDIRCL'                   ,/,&
-'------------------------------------------'                     )
- 5020 format(                                                           &
- 1x,    a8,    i7,    i7,      e12.4,    i7                      )
- 5030 format(                                                           &
-'-----------------------------------'                          ,/,&
+'--------------------------------------------------',           /,&
+' Variable         IRESOL NITMAX      EPSILO IDIRCL',           /,&
+'--------------------------------------------------'              )
+ 5020 format(                                                     &
+ 1x,    a16,    i7,    i7,      e12.4,    i7                      )
+ 5030 format(                                                     &
+'-----------------------------------',                          /,&
                                                                 /,&
 '       IRESOL =            -1  (automatic solver choice     )',/,&
 '                IPOL*1000 + 0  (p conjuguate gradient       )',/,&
@@ -2048,23 +2028,23 @@ write(nfecra,9900)
 '                  avec IPOL    (preconditioning degree      )',/,&
 '       NITMAX =                (max number of iterations    )',/,&
 '       EPSILO =                (resolution precision        )',/,&
-'       IDIRCL = 0 ou 1         (shift diagonal if          '  ,/,&
+'       IDIRCL = 0 ou 1         (shift diagonal if   ',         /,&
 '                                ISTAT=0 and no Dirichlet    )',/)
 
- 5510 format(                                                           &
+ 5510 format(                                                     &
                                                                 /,&
-' ** MULTIGRID'                                                ,/,&
-'    ---------'                                                ,/,&
+' ** MULTIGRID',                                                /,&
+'    ---------',                                                /,&
                                                                 /,&
-'       NCEGRM = ',4X,I10,    ' (Max nb cells coarsest grid  )',/,&
-'       NGRMAX = ',4X,I10,    ' (Max number of levels        )',/,&
-'------------------------------                               ',/,&
-' Variable   IMGR NCYMAX NITMGF                               ',/,&
-'------------------------------                               '  )
- 5520 format(                                                           &
- 1x,    a8,    i7,    i7,    i7                                  )
- 5530 format(                                                           &
-'------------------------------'                               ,/,&
+'       NCEGRM = ',4x,i10,    ' (Max nb cells coarsest grid  )',/,&
+'       NGRMAX = ',4x,i10,    ' (Max number of levels        )',/,&
+'--------------------------------------',                       /,&
+' Variable           IMGR NCYMAX NITMGF',                       /,&
+'--------------------------------------                       '  )
+ 5520 format(                                                     &
+ 1x,    a16,    i7,    i7,    i7                                 )
+ 5530 format(                                                     &
+'------------------------------',                               /,&
                                                                 /,&
 '       IMGR   =  0 ou 1        (1: multigrid activated      )',/,&
 '       NCYMAX =                (Max number  of cycles       )',/,&
@@ -2084,21 +2064,21 @@ if(nscal.ge.1) then
   write(nfecra,6011)
   do ii = 1, nscal
     chaine=nomvar(ipprtp(isca(ii)))
-    write(nfecra,6021) chaine(1:8),ii,iscsth(ii),      &
+    write(nfecra,6021) chaine(1:16),ii,iscsth(ii),      &
                        ivisls(ii),visls0(ii),sigmas(ii)
   enddo
   write(nfecra,6031)
   write(nfecra,6012)
   do ii = 1, nscal
     chaine=nomvar(ipprtp(isca(ii)))
-    write(nfecra,6022) chaine(1:8),ii,iscavr(ii),      &
+    write(nfecra,6022) chaine(1:16),ii,iscavr(ii),      &
                        rvarfl(ii)
   enddo
   write(nfecra,6032)
   write(nfecra,6013)
   do ii = 1, nscal
     chaine=nomvar(ipprtp(isca(ii)))
-    write(nfecra,6023) chaine(1:8),ii,iclvfl(ii),      &
+    write(nfecra,6023) chaine(1:16),ii,iclvfl(ii),      &
                        scamin(ii),scamax(ii)
   enddo
   write(nfecra,6033)
@@ -2116,44 +2096,44 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 6000 format(                                                           &
+ 6000 format(                                                     &
                                                                 /,&
-' ** SCALAIRES'                                                ,/,&
-'    ---------'                                                ,/)
- 6010 format(                                                           &
-'       ITBRRB = ',4X,I10,    ' (Reconstruction T ou H au brd)',/)
- 6011 format(                                                           &
-'------------------------------------------------------',/,&
-' Variable Numero ISCSTH IVISLS      VISLS0      SIGMAS',/,&
-'------------------------------------------------------'  )
- 6021 format(                                                           &
- 1x,    a8,    i7,    i7,    i7,      e12.4,      e12.4   )
- 6031 format(                                                           &
+' ** SCALAIRES',                                                /,&
+'    ---------',                                                /)
+ 6010 format(                                                     &
+'       ITBRRB = ',4x,i10,    ' (Reconstruction T ou H au brd)',/)
+ 6011 format(                                                     &
+'--------------------------------------------------------------',/,&
+' Variable         Numero ISCSTH IVISLS      VISLS0      SIGMAS',/,&
+'--------------------------------------------------------------'  )
+ 6021 format(                                                     &
+ 1x,    a16,    i7,    i7,    i7,      e12.4,      e12.4  )
+ 6031 format(                                                     &
 '------------------------------------------------------',/)
- 6012 format(                                                           &
-'-----------------------------------'                   ,/,&
-' Variable Numero ISCAVR      RVARFL'                   ,/,&
-'-----------------------------------'                     )
- 6022 format(                                                           &
- 1x,    a8,    i7,    i7,      e12.4                      )
- 6032 format(                                                           &
-'-----------------------------------'                   ,/)
- 6013 format(                                                           &
-'-----------------------------------------------'       ,/,&
-' Variable Numero ICLVFL      SCAMIN      SCAMAX'       ,/,&
-'-----------------------------------------------'         )
- 6023 format(                                                           &
- 1x,    a8,    i7,    i7,      e12.4,      e12.4          )
- 6033 format(                                                           &
-'-----------------------------------------------'       ,/)
- 6030 format(                                                           &
+ 6012 format(                                                     &
+'-------------------------------------------',                  /,&
+' Variable         Numero ISCAVR      RVARFL',                  /,&
+'-------------------------------------------'                     )
+ 6022 format(                                                     &
+ 1x,    a16,    i7,    i7,      e12.4                     )
+ 6032 format(                                                     &
+'-----------------------------------',                   /)
+ 6013 format(                                                     &
+'-------------------------------------------------------',      /,&
+' Variable         Numero ICLVFL      SCAMIN      SCAMAX',      /,&
+'-------------------------------------------------------'         )
+ 6023 format(                                                     &
+ 1x,    a16,    i7,    i7,      e12.4,      e12.4         )
+ 6033 format(                                                     &
+'-----------------------------------------------',       /)
+ 6030 format(                                                     &
 '-------------------------------------------------------------',/,&
                                                                 /,&
-'       Le numero indique pour chaque scalaire le rang'        ,/,&
-'         dans la liste de tous les scalaires. Les scalaires'  ,/,&
+'       Le numero indique pour chaque scalaire le rang',        /,&
+'         dans la liste de tous les scalaires. Les scalaires',  /,&
 '         utilisateurs sont places en tete, de 1 a NSCAUS. Les',/,&
-'         scalaires physique particuliere sont a la fin, de'   ,/,&
-'         NSCAUS+1 a NSCAPP+NSCAUS=NSCAL.'                     ,/,&
+'         scalaires physique particuliere sont a la fin, de',   /,&
+'         NSCAUS+1 a NSCAPP+NSCAUS=NSCAL.',                     /,&
                                                                 /,&
 '       ISCSTH = -1,0, 1 ou 2   (T (C), Passif, T (K) ou H   )',/,&
 '       IVISLS = 0 ou >0        (Viscosite constante ou non  )',/,&
@@ -2165,65 +2145,65 @@ endif
 '       SCAMIN =                (Valeur min autorisee        )',/,&
 '       SCAMAX =                (Valeur max autorisee        )',/,&
 '        Pour les variances, SCAMIN est ignore et SCAMAX n est',/,&
-'          pris en compte que si ICLVFL = 2'                   ,/)
- 6040 format(                                                           &
-'------------------------------------------------------'       ,/,&
-'   Scalaire      THETSS    IVSEXT      THETVS'                ,/,&
+'          pris en compte que si ICLVFL = 2',                   /)
+ 6040 format(                                                     &
+'------------------------------------------------------',       /,&
+'   Scalaire      THETSS    IVSEXT      THETVS',                /,&
 '------------------------------------------------------'         )
- 6041 format(                                                           &
+ 6041 format(                                                     &
  1x,     i10,      e12.4,      i10,      e12.4                   )
- 6042 format(                                                           &
-'------------------------------------------------------'       ,/,&
+ 6042 format(                                                     &
+'------------------------------------------------------',       /,&
                                                                 /,&
 '       THETSS =                (theta pour termes sources   )',/,&
 '                               ((1+theta)nouveau-theta ancien',/,&
 '       IVSEXT =                (extrap. viscosite totale    )',/,&
 '                               (0 : explicite               )',/,&
-'                               (1 : n+thetvs avec thetvs=1/2' ,/,&
+'                               (1 : n+thetvs avec thetvs=1/2', /,&
 '                               (2 : n+thetvs avec thetvs=1  )',/,&
 '       THETVS =                (theta pour diffusiv. scalaire',/,&
 '                               ((1+theta)nouveau-theta ancien',/)
 
 #else
 
- 6000 format(                                                           &
+ 6000 format(                                                     &
                                                                 /,&
-' ** SCALARS'                                                  ,/,&
-'    -------'                                                  ,/)
- 6010 format(                                                           &
-'       ITBRRB = ',4X,I10,    ' (T or H reconstruction at bdy)',/)
- 6011 format(                                                           &
-'------------------------------------------------------',/,&
-' Variable Number ISCSTH IVISLS      VISLS0      SIGMAS',/,&
-'------------------------------------------------------'  )
- 6021 format(                                                           &
- 1x,    a8,    i7,    i7,    i7,      e12.4,      e12.4   )
- 6031 format(                                                           &
+' ** SCALARS',                                                  /,&
+'    -------',                                                  /)
+ 6010 format(                                                     &
+'       ITBRRB = ',4x,i10,    ' (T or H reconstruction at bdy)',/)
+ 6011 format(                                                     &
+'--------------------------------------------------------------',/,&
+' Variable         Number ISCSTH IVISLS      VISLS0      SIGMAS',/,&
+'--------------------------------------------------------------'  )
+ 6021 format(                                                     &
+ 1x,    a16,    i7,    i7,    i7,      e12.4,      e12.4  )
+ 6031 format(                                                     &
 '------------------------------------------------------',/)
- 6012 format(                                                           &
-'-----------------------------------'                   ,/,&
-' Variable Number ISCAVR      RVARFL'                   ,/,&
-'-----------------------------------'                     )
- 6022 format(                                                           &
- 1x,    a8,    i7,    i7,      e12.4                      )
- 6032 format(                                                           &
-'-----------------------------------'                   ,/)
- 6013 format(                                                           &
-'-----------------------------------------------'       ,/,&
-' Variable Number ICLVFL      SCAMIN      SCAMAX'       ,/,&
-'-----------------------------------------------'         )
- 6023 format(                                                           &
- 1x,    a8,    i7,    i7,      e12.4,      e12.4          )
- 6033 format(                                                           &
-'-----------------------------------------------'       ,/)
- 6030 format(                                                           &
+ 6012 format(                                                     &
+'-------------------------------------------',                  /,&
+' Variable         Number ISCAVR      RVARFL',                  /,&
+'-------------------------------------------'                    )
+ 6022 format(                                                     &
+ 1x,    a16,    i7,    i7,      e12.4                     )
+ 6032 format(                                                     &
+'-----------------------------------',                   /)
+ 6013 format(                                                     &
+'-------------------------------------------------------',      /,&
+' Variable         Number ICLVFL      SCAMIN      SCAMAX',      /,&
+'-------------------------------------------------------'        )
+ 6023 format(                                                     &
+ 1x,    a16,    i7,    i7,      e12.4,      e12.4         )
+ 6033 format(                                                     &
+'-----------------------------------------------',       /)
+ 6030 format(                                                     &
 '-------------------------------------------------------------',/,&
                                                                 /,&
-'       For each scalar, the number indicates it''s rank'      ,/,&
-'         in the list of all scalars. User scalars are placed' ,/,&
-'         first, from 1 to NSCAUS. Specific physics scalars'   ,/,&
-'         are placed at the end, from'                         ,/,&
-'         NSCAUS+1 to NSCAPP+NSCAUS=NSCAL.'                    ,/,&
+'       For each scalar, the number indicates it''s rank',      /,&
+'         in the list of all scalars. User scalars are placed', /,&
+'         first, from 1 to NSCAUS. Specific physics scalars',   /,&
+'         are placed at the end, from',                         /,&
+'         NSCAUS+1 to NSCAPP+NSCAUS=NSCAL.',                    /,&
                                                                 /,&
 '       ISCSTH = -1,0, 1 ou 2   (T (C), Passive, T (K) or H  )',/,&
 '       IVISLS = 0 ou >0        (Viscosity: constant or not  )',/,&
@@ -2234,16 +2214,16 @@ endif
 '       ICLVFL = 0, 1 ou 2      (Variance clipping mode      )',/,&
 '       SCAMIN =                (Min authorized value        )',/,&
 '       SCAMAX =                (Max authorized value        )',/,&
-'        For variances, SCAMIN is ignored and SCAMAX is used'  ,/,&
-'          only if ICLVFL = 2'                                 ,/)
- 6040 format(                                                           &
-'------------------------------------------------------'       ,/,&
-'   Scalar        THETSS    IVSEXT      THETVS'                ,/,&
+'        For variances, SCAMIN is ignored and SCAMAX is used',  /,&
+'          only if ICLVFL = 2',                                 /)
+ 6040 format(                                                     &
+'------------------------------------------------------',       /,&
+'   Scalar        THETSS    IVSEXT      THETVS',                /,&
 '------------------------------------------------------'         )
- 6041 format(                                                           &
+ 6041 format(                                                     &
  1x,     i10,      e12.4,      i10,      e12.4                   )
- 6042 format(                                                           &
-'------------------------------------------------------'       ,/,&
+ 6042 format(                                                     &
+'------------------------------------------------------',       /,&
                                                                 /,&
 '       THETSS =                (theta for source terms      )',/,&
 '                               ((1+theta).new-theta.old     )',/,&
@@ -2251,7 +2231,7 @@ endif
 '                               (0: explicit                 )',/,&
 '                               (1: n+thetvs with thetvs=1/2 )',/,&
 '                               (2: n+thetvs with thetvs=1   )',/,&
-'       THETVS =                (theta for scalar diffusivity' ,/,&
+'       THETVS =                (theta for scalar diffusivity', /,&
 '                               ((1+theta).new-theta.old     )',/)
 
 #endif
@@ -2272,7 +2252,7 @@ if(isuite.eq.1.and.nscal.ge.1) then
   do ii = 1, nscal
     ivar = isca(ii)
     chaine=nomvar(ipprtp(ivar))
-    write(nfecra,7030) chaine(1:8),ii,iscold(ii)
+    write(nfecra,7030) chaine(1:16),ii,iscold(ii)
   enddo
   write(nfecra,7040)
 endif
@@ -2290,111 +2270,111 @@ write(nfecra,9900)
 
 #if defined(_CS_LANG_FR)
 
- 7000 format(                                                           &
-'                                                             ',/,&
-' ** GESTION DU CALCUL                                        ',/,&
-'    -----------------                                        ',/)
- 7010 format(                                                           &
-' --- Suite de calcul                                         ',/,&
-'       ISUITE = ',4X,I10,    ' (1 : suite de calcul         )',/,&
-'       ILEAUX = ',4X,I10,    ' (1 : lecture  de suiamx aussi)',/,&
-'       IECAUX = ',4X,I10,    ' (1 : ecriture de suiavx aussi)',/,&
-'                                                             ',/,&
+ 7000 format(                                                     &
+                                                                /,&
+' ** GESTION DU CALCUL',                                        /,&
+'    -----------------',                                        /)
+ 7010 format(                                                     &
+' --- Suite de calcul',                                         /,&
+'       ISUITE = ',4x,i10,    ' (1 : suite de calcul         )',/,&
+'       ILEAUX = ',4x,i10,    ' (1 : lecture  de suiamx aussi)',/,&
+'       IECAUX = ',4x,i10,    ' (1 : ecriture de suiavx aussi)',/,&
+                                                                /,&
 '       suiamx et suiavx sont les fichiers suite auxiliaires.)',/)
- 7020 format(                                                           &
-'       ISCOLD(I) : Dans le calcul precedent, numero du       ',/,&
-'                   scalaire correspondant au scalaire I du   ',/,&
-'                   calcul courant :                          ',/,&
-'                                                             ',/,&
-'---------------------------------------------------          ',/,&
-' Scalaire Numero   <-   Numero de l''ancien scalaire         ',/,&
-'---------------------------------------------------          '  )
- 7030 format(                                                           &
- 1x,    a8,    i7,    7x,    i7                                  )
- 7040 format(                                                           &
-'---------------------------------------------------          ',/,&
-'                                                             ',/,&
-'   La table precedente (ISCOLD) donne la correspondance des  ',/,&
-'     scalaires du calcul courant avec ceux du calcul         ',/,&
+ 7020 format(                                                     &
+'       ISCOLD(I) : Dans le calcul precedent, numero du',       /,&
+'                   scalaire correspondant au scalaire I du',   /,&
+'                   calcul courant :',                          /,&
+                                                                /,&
+'-----------------------------------------------------------',  /,&
+' Scalaire         Numero   <-   Numero de l''ancien scalaire', /,&
+'-----------------------------------------------------------  '  )
+ 7030 format(                                                     &
+ 1x,    a16,    i7,    7x,    i7                                 )
+ 7040 format(                                                     &
+'---------------------------------------------------',          /,&
+                                                                /,&
+'   La table precedente (ISCOLD) donne la correspondance des',  /,&
+'     scalaires du calcul courant avec ceux du calcul',         /,&
 '     precedent apres intervention eventuelle de l utilisateur',/,&
-'   Il s''agit de numeros de 1 a NSCAL qui reperent le        ',/,&
-'     scalaire dans la liste de tous les scalaires            ',/,&
-'     utilisateur+physique particuliere.                      ',/,&
-'     .-999 est la valeur par defaut si l utilisateur n est   ',/,&
-'           intervenu. Le numero des correspondant sera       ',/,&
-'           complete a la lecture du fichier suite, selon     ',/,&
-'           le nombre de scalaires disponibles, en utilisant  ',/,&
+'   Il s''agit de numeros de 1 a NSCAL qui reperent le',        /,&
+'     scalaire dans la liste de tous les scalaires',            /,&
+'     utilisateur+physique particuliere.',                      /,&
+'     .-999 est la valeur par defaut si l utilisateur n est',   /,&
+'           intervenu. Le numero des correspondant sera',       /,&
+'           complete a la lecture du fichier suite, selon',     /,&
+'           le nombre de scalaires disponibles, en utilisant',  /,&
 '           la loi (nouveau scalaire ii <- ancien scalaire ii)',/,&
-'     .   0 si l utilisateur souhaite que le scalaire du      ',/,&
-'           calcul courant n ait pas de correspondant (i.e.   ',/,&
-'           soit un nouveau scalaire).                        ',/,&
-'     .   n > 0 si l utilisateur souhaite que le scalaire du  ',/,&
-'           calcul courant ait pour correspondant le scalaire ',/,&
-'           n du calcul precedent.                            ',/)
- 7110 format(                                                           &
-' --- Duree du calcul                                         ',/,&
-'     La numerotation des pas de temps et la mesure du temps  ',/,&
-'       physique simule sont des valeurs absolues             ',/,&
-'       et non pas des valeurs relatives au calcul en cours.  ',/,&
-'                                                             ',/,&
-'       INPDT0 = ',4X,I10,    ' (1 : calcul a zero pas de tps)',/,&
-'       NTMABS = ',4X,I10,    ' (Pas de tps final demande    )',/)
- 7210 format(                                                           &
-' --- Marge en temps CPU                                      ',/,&
-'       TMARUS = ', E14.5,    ' (Marge CPU avant arret       )',/)
+'     .   0 si l utilisateur souhaite que le scalaire du',      /,&
+'           calcul courant n ait pas de correspondant (i.e.',   /,&
+'           soit un nouveau scalaire).',                        /,&
+'     .   n > 0 si l utilisateur souhaite que le scalaire du',  /,&
+'           calcul courant ait pour correspondant le scalaire', /,&
+'           n du calcul precedent.',                            /)
+ 7110 format(                                                     &
+' --- Duree du calcul',                                         /,&
+'     La numerotation des pas de temps et la mesure du temps',  /,&
+'       physique simule sont des valeurs absolues',             /,&
+'       et non pas des valeurs relatives au calcul en cours.',  /,&
+                                                                /,&
+'       INPDT0 = ',4x,i10,    ' (1 : calcul a zero pas de tps)',/,&
+'       NTMABS = ',4x,i10,    ' (Pas de tps final demande    )',/)
+ 7210 format(                                                     &
+' --- Marge en temps CPU',                                      /,&
+'       TMARUS = ', e14.5,    ' (Marge CPU avant arret       )',/)
 #else
 
- 7000 format(                                                           &
+ 7000 format(                                                     &
                                                                 /,&
-' ** CALCULATION MANAGEMENT'                                   ,/,&
-'    ----------------------'                                   ,/)
- 7010 format(                                                           &
-' --- Restarted calculation'                                   ,/,&
-'       ISUITE = ',4X,I10,    ' (1: restarted calculuation   )',/,&
-'       ILEAUX = ',4X,I10,    ' (1: also read  suiamx        )',/,&
-'       IECAUX = ',4X,I10,    ' (1: also write suiavx        )',/,&
+' ** CALCULATION MANAGEMENT',                                   /,&
+'    ----------------------',                                   /)
+ 7010 format(                                                     &
+' --- Restarted calculation',                                   /,&
+'       ISUITE = ',4x,i10,    ' (1: restarted calculuation   )',/,&
+'       ILEAUX = ',4x,i10,    ' (1: also read  suiamx        )',/,&
+'       IECAUX = ',4x,i10,    ' (1: also write suiavx        )',/,&
                                                                 /,&
-'       suiamx and suiavx are the auxiliary restart files.'    ,/)
- 7020 format(                                                           &
-'       ISCOLD(I): In the previous calculation, number of'     ,/,&
-'                  the scalar corresponding to scalar I in'    ,/,&
-'                  the current calculation:'                   ,/,&
+'       suiamx and suiavx are the auxiliary restart files.',    /)
+ 7020 format(                                                     &
+'       ISCOLD(I): In the previous calculation, number of',     /,&
+'                  the scalar corresponding to scalar I in',    /,&
+'                  the current calculation:',                   /,&
                                                                 /,&
-'---------------------------------------------------'          ,/,&
-' Scalar   Number   <-   Old scalar number'                    ,/,&
-'---------------------------------------------------'            )
- 7030 format(                                                           &
- 1x,    a8,    i7,    7x,    i7                                  )
- 7040 format(                                                           &
-'---------------------------------------------------'          ,/,&
+'-----------------------------------------------------------',  /,&
+' Scalar           Number   <-   Old scalar number',            /,&
+'-----------------------------------------------------------'    )
+ 7030 format(                                                     &
+ 1x,    a16,    i7,    7x,    i7                                 )
+ 7040 format(                                                     &
+'---------------------------------------------------',          /,&
                                                                 /,&
-'   The preceding array (ISCOLD) defines the correspondance'   ,/,&
-'     of scalars in the current calculation with those of the' ,/,&
-'     previous calculation after possible user intervention.'  ,/,&
-'   It consists of numbers 1 to NSCAL which locate the scalar' ,/,&
-'     in the list of all user+specific physics scalars.'       ,/,&
-'     .-999 is the default value if the user has not'          ,/,&
-'           intervened. The correspondant''s numbers will'     ,/,&
-'           be completed when reading the restart file, based' ,/,&
-'           on the number of available scalars, using the'     ,/,&
-'           rule (new scalar ii <- old scalar ii)'             ,/,&
-'     .   0 if the user does not want the scalar of the'       ,/,&
-'           current calculation to have a correspondant (i.e.' ,/,&
-'           it is a new scalar).'                              ,/,&
-'     .   n > 0 if the user wants the scalar of the current'   ,/,&
-'           calculation to correspond to scalar n in the'      ,/,&
-'           previous calculation.'                             ,/)
- 7110 format(                                                           &
-' --- Calculation time'                                        ,/,&
+'   The preceding array (ISCOLD) defines the correspondance',   /,&
+'     of scalars in the current calculation with those of the', /,&
+'     previous calculation after possible user intervention.',  /,&
+'   It consists of numbers 1 to NSCAL which locate the scalar', /,&
+'     in the list of all user+specific physics scalars.',       /,&
+'     .-999 is the default value if the user has not',          /,&
+'           intervened. The correspondant''s numbers will',     /,&
+'           be completed when reading the restart file, based', /,&
+'           on the number of available scalars, using the',     /,&
+'           rule (new scalar ii <- old scalar ii)',             /,&
+'     .   0 if the user does not want the scalar of the',       /,&
+'           current calculation to have a correspondant (i.e.', /,&
+'           it is a new scalar).',                              /,&
+'     .   n > 0 if the user wants the scalar of the current',   /,&
+'           calculation to correspond to scalar n in the',      /,&
+'           previous calculation.',                             /)
+ 7110 format(                                                     &
+' --- Calculation time',                                        /,&
 '     The numbering of time steps and the measure of simulated',/,&
-'       physical time are absolute values, and not values'     ,/,&
-'       relative to the current calculation.'                  ,/,&
+'       physical time are absolute values, and not values',     /,&
+'       relative to the current calculation.',                  /,&
                                                                 /,&
-'       INPDT0 = ',4X,I10,    ' (1: 0 time step calcuation   )',/,&
-'       NTMABS = ',4X,I10,    ' (Final time step required    )',/)
- 7210 format(                                                           &
-' --- CPU time margin'                                         ,/,&
-'       TMARUS = ', E14.5,    ' (CPU time margin before stop )',/)
+'       INPDT0 = ',4x,i10,    ' (1: 0 time step calcuation   )',/,&
+'       NTMABS = ',4x,i10,    ' (Final time step required    )',/)
+ 7210 format(                                                     &
+' --- CPU time margin',                                         /,&
+'       TMARUS = ', e14.5,    ' (CPU time margin before stop )',/)
 
 #endif
 
@@ -2448,11 +2428,11 @@ write(nfecra,7532)
 
 !   - Post-traitement automatique (bord)
 
-WRITE(NFECRA,7550)   'IPSTDV',IPSTDV,                             &
-                     'IPSTYP',IPSTYP,                             &
-                     'IPSTCL',IPSTCL,                             &
-                     'IPSTFT',IPSTFT,                             &
-                     'IPSTFO',IPSTFO,                             &
+write(nfecra,7550)   'IPSTDV',ipstdv,                             &
+                     'IPSTYP',ipstyp,                             &
+                     'IPSTCL',ipstcl,                             &
+                     'IPSTFT',ipstft,                             &
+                     'IPSTFO',ipstfo,                             &
                      'IPSTDV'
 
 write(nfecra,9900)
@@ -2462,91 +2442,87 @@ write(nfecra,9900)
 
  7500 format(                                                     &
                                                                 /,&
-' ** ENTREES SORTIES'                                          ,/,&
-'    ---------------'                                          ,/)
+' ** ENTREES SORTIES',                                          /,&
+'    ---------------',                                          /)
  7510 format(                                                     &
-' --- Fichier suite'                                           ,/,&
-'       NTSUIT = ',4X,I10,    ' (Periode de sauvegarde)'       ,/)
+' --- Fichier suite',                                           /,&
+'       NTSUIT = ',4x,i10,    ' (Periode de sauvegarde)',       /)
  7520 format(                                                     &
-' --- Variables post-traitees'                                 ,/,&
+' --- Variables post-traitees',                                 /,&
                                                                 /,&
 '       Numero Nom'                                              )
- 7521 format(                                                     &
-'   ',     I10,1X,          A16                                  )
+ 7521 format(i10,1X,          A16                                )
  7522 format(                                                     &
-'         --           --'                                     ,/)
+'         --           --',                                     /)
  7530 format(                                                     &
-' --- Fichiers historiques'                                    ,/,&
-'       NTHIST = ',4X,I10,    ' (Periode de sortie    )'       ,/,&
-'       FRHIST = ',4X,E11.5,  ' (Periode de sortie (s))'       ,/,&
-'       NCAPT  = ',4X,I10,    ' (Nombre de capteurs   )'       ,/,&
-'       NTHSAV = ',4X,I10,    ' (Periode de sauvegarde)'       ,/,&
+' --- Fichiers historiques',                                    /,&
+'       NTHIST = ',4x,i10,    ' (Periode de sortie    )',       /,&
+'       FRHIST = ',4x,e11.5,  ' (Periode de sortie (s))',       /,&
+'       NCAPT  = ',4x,i10,    ' (Nombre de capteurs   )',       /,&
+'       NTHSAV = ',4x,i10,    ' (Periode de sauvegarde)',       /,&
                                                                 /,&
 '       Numero Nom                   Nb. sondes (-1 : toutes)'   )
- 7531 format(                                                           &
-'   ',     I10,1X,          A16,6X,         I10                  )
- 7532 format(                                                           &
-'         --           --                --'                   ,/)
- 7540 format(                                                           &
-' --- Fichiers listing'                                        ,/,&
-'       NTLIST = ',4X,I10,    ' (Periode de sortie    )'       ,/,&
+ 7531 format(i10,1X,          A16,6X,         i10                )
+ 7532 format(                                                     &
+'         --           --                --',                   /)
+ 7540 format(                                                     &
+' --- Fichiers listing',                                        /,&
+'       NTLIST = ',4x,i10,    ' (Periode de sortie    )',       /,&
                                                                 /,&
 '       Numero Nom                 Niveau d''impression IWARNI',/,&
 '                                      (-999 : non applicable)',/)
- 7550 format(                                                           &
-' --- Variables supplementaires en post-traitement'            ,/,&
-'       ',A6,' = ',4X,I10,    ' (Produit des valeurs suivantes',/,&
-'                                selon activation ou non'      ,/,&
-'       ',A6,' = ',4X,I10,    ' (Yplus          au bord'       ,/,&
-'       ',A6,' = ',4X,I10,    ' (Variables      au bord'       ,/,&
-'       ',A6,' = ',4X,I10,    ' (Flux thermique au bord'       ,/,&
-'       ',A6,' = ',4X,I10,    ' (Force exercee  au bord'       ,/,&
-'  et   ',A6,' =              1 (Pas de sortie supplementaire' ,/)
+ 7550 format(                                                     &
+' --- Variables supplementaires en post-traitement',            /,&
+'       ',a6,' = ',4x,i10,    ' (Produit des valeurs suivantes',/,&
+'                                selon activation ou non',      /,&
+'       ',a6,' = ',4x,i10,    ' (Yplus          au bord',       /,&
+'       ',a6,' = ',4x,i10,    ' (Variables      au bord',       /,&
+'       ',a6,' = ',4x,i10,    ' (Flux thermique au bord',       /,&
+'       ',a6,' = ',4x,i10,    ' (Force exercee  au bord',       /,&
+'  et   ',a6,' =              1 (Pas de sortie supplementaire', /)
 
 #else
 
  7500 format(                                                     &
                                                                 /,&
-' ** INPUT-OUTPUT'                                             ,/,&
-'    ------------'                                             ,/)
+' ** INPUT-OUTPUT',                                             /,&
+'    ------------',                                             /)
  7510 format(                                                     &
-' --- Restart file'                                            ,/,&
-'       NTSUIT = ',4X,I10,    ' (Checkpoint frequency )'       ,/)
+' --- Restart file',                                            /,&
+'       NTSUIT = ',4x,i10,    ' (Checkpoint frequency )',       /)
  7520 format(                                                     &
-' --- Post-processed variables'                                ,/,&
+' --- Post-processed variables',                                /,&
                                                                 /,&
 '       Number Name'                                             )
- 7521 format(                                                     &
-'   ',     I10,1X,          A16                                  )
+ 7521 format(i10,1X,          A16                                )
  7522 format(                                                     &
-'         --           --'                                     ,/)
+'         --           --',                                     /)
  7530 format(                                                     &
-' --- Probe history files'                                     ,/,&
-'       NTHIST = ',4X,I10,    ' (Output frequency     )'       ,/,&
-'       FRHIST = ',4X,E11.5,  ' (Output frequency (s) )'       ,/,&
-'       NCAPT  = ',4X,I10,    ' (Number of probes     )'       ,/,&
-'       NTHSAV = ',4X,I10,    ' (Checkpoint frequency )'       ,/,&
+' --- Probe history files',                                     /,&
+'       NTHIST = ',4x,i10,    ' (Output frequency     )',       /,&
+'       FRHIST = ',4x,e11.5,  ' (Output frequency (s) )',       /,&
+'       NCAPT  = ',4x,i10,    ' (Number of probes     )',       /,&
+'       NTHSAV = ',4x,i10,    ' (Checkpoint frequency )',       /,&
                                                                 /,&
 '       Number Name                  Nb. probes (-1: all)'       )
- 7531 format(                                                           &
-'   ',     I10,1X,          A16,6X,         I10                  )
- 7532 format(                                                           &
-'         --           --                --'                   ,/)
- 7540 format(                                                           &
-' --- Log files'                                               ,/,&
-'       NTLIST = ',4X,I10,    ' (Output frequency     )'       ,/,&
+ 7531 format(i10,1X,          A16,6X,         i10                )
+ 7532 format(                                                     &
+'         --           --                --',                   /)
+ 7540 format(                                                     &
+' --- Log files',                                               /,&
+'       NTLIST = ',4x,i10,    ' (Output frequency     )',       /,&
                                                                 /,&
-'       Number Name                IWARNI verbosity level'     ,/,&
-'                                      (-999: not applicable)' ,/)
- 7550 format(                                                           &
-' --- Additional post-processing variables'                    ,/,&
-'       ',A6,' = ',4X,I10,    ' (Product of the following     ',/,&
+'       Number Name                IWARNI verbosity level',     /,&
+'                                      (-999: not applicable)', /)
+ 7550 format(                                                     &
+' --- Additional post-processing variables',                    /,&
+'       ',a6,' = ',4x,i10,    ' (Product of the following',     /,&
 '                                values based on activation  )',/,&
-'       ',A6,' = ',4X,I10,    ' (Yplus          on boundary  )',/,&
-'       ',A6,' = ',4X,I10,    ' (Variables      on boundary  )',/,&
-'       ',A6,' = ',4X,I10,    ' (Thermal flow   on boundary  )',/,&
-'       ',A6,' = ',4X,I10,    ' (Force exerted  on boundary  )',/,&
-'  and  ',A6,' =              1 (No additional output        )',/)
+'       ',a6,' = ',4x,i10,    ' (Yplus          on boundary  )',/,&
+'       ',a6,' = ',4x,i10,    ' (Variables      on boundary  )',/,&
+'       ',a6,' = ',4x,i10,    ' (Thermal flow   on boundary  )',/,&
+'       ',a6,' = ',4x,i10,    ' (Force exerted  on boundary  )',/,&
+'  and  ',a6,' =              1 (No additional output        )',/)
 
 #endif
 
@@ -2588,7 +2564,7 @@ if (nbccou .ge. 1) then
   write(nfecra,8030)
   do ii = 1, nscal
     chaine=nomvar(ipprtp(isca(ii)))
-    write(nfecra,8031) chaine(1:8),ii,icpsyr(ii)
+    write(nfecra,8031) chaine(1:16),ii,icpsyr(ii)
   enddo
   write(nfecra,8032)
 
@@ -2599,49 +2575,49 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 8000 format(                                                           &
+ 8000 format(                                                     &
                                                                 /,&
-' ** COUPLAGE SYRTHES'                                         ,/,&
-'    ----------------'                                         ,/)
- 8010 format(                                                           &
-'       NBCCOU = ',4X,I10,    ' (Nombre de couplages         )',/)
- 8020 format(                                                           &
-'       dont ',8X,I10, ' couplage(s) surfacique(s)',/,                  &
-'       dont ',8X,I10, ' couplage(s) volumique(s)',/)
- 8030 format(                                                           &
+' ** COUPLAGE SYRTHES',                                         /,&
+'    ----------------',                                         /)
+ 8010 format(                                                     &
+'       NBCCOU = ',4x,i10,    ' (Nombre de couplages         )',/)
+ 8020 format(                                                     &
+'       dont', 8x,i10, ' couplage(s) surfacique(s)',/,            &
+'       dont', 8x,i10, ' couplage(s) volumique(s)',/)
+ 8030 format(                                                     &
                                                                 /,&
-'  -- Scalaires couples'                                       ,/,&
-'-----------------------'                                      ,/,&
-' Scalaire Numero ICPSYR'                                      ,/,&
-'-----------------------'                                        )
- 8031 format(                                                           &
- 1x,    a8,    i7,    i7                                         )
- 8032 format(                                                           &
-'-----------------------'                                      ,/,&
+'  -- Scalaires couples',                                       /,&
+'-------------------------------',                              /,&
+' Scalaire         Numero ICPSYR',                              /,&
+'-------------------------------'                                )
+ 8031 format(                                                     &
+ 1x,    a16,    i7,    i7                                        )
+ 8032 format(                                                     &
+'-----------------------',                                      /,&
                                                                 /,&
 '       ICPSYR = 0 ou 1         (1 : scalaire couple SYRTHES )',/)
 
 #else
 
- 8000 format(                                                           &
+ 8000 format(                                                     &
                                                                 /,&
-' ** SYRTHES COUPLING'                                         ,/,&
-'    ----------------'                                         ,/)
- 8010 format(                                                           &
-'       NBCCOU = ',4X,I10,    ' (Number of couplings         )',/)
- 8020 format(                                                           &
-'       with ',8X,I10, ' surface coupling(s)',/,                        &
-'       with ',8X,I10, ' volume coupling(s)',/)
- 8030 format(                                                           &
+' ** SYRTHES COUPLING',                                         /,&
+'    ----------------',                                         /)
+ 8010 format(                                                     &
+'       NBCCOU = ',4x,i10,    ' (Number of couplings         )',/)
+ 8020 format(                                                     &
+'       with', 8x,i10, ' surface coupling(s)',/,                  &
+'       with', 8x,i10, ' volume coupling(s)',/)
+ 8030 format(                                                     &
                                                                 /,&
-'  -- Coupled scalars'                                         ,/,&
-'-----------------------'                                      ,/,&
-' Scalar   Number ICPSYR'                                      ,/,&
-'-----------------------'                                        )
- 8031 format(                                                           &
- 1x,    a8,    i7,    i7                                         )
- 8032 format(                                                           &
-'-----------------------'                                      ,/,&
+'  -- Coupled scalars',                                         /,&
+'-------------------------------',                              /,&
+' Scalar           Number ICPSYR',                              /,&
+'-------------------------------'                                )
+ 8031 format(                                                     &
+ 1x,    a16,    i7,    i7                                        )
+ 8032 format(                                                     &
+'-----------------------',                                      /,&
                                                                 /,&
 '       ICPSYR = 0 or 1         (1: scalar coupled to SYRTHES)',/)
 
@@ -2664,10 +2640,10 @@ if (iilagr.ne.0) then
 
   if (iphyla.eq.2) then
     write(nfecra,8111) iencra
-    do ii = 1 , ncharb
+    do ii = 1,  ncharb
       write(nfecra,8112) ii, tprenc(ii),  ii
     enddo
-    do ii = 1 , ncharb
+    do ii = 1,  ncharb
       write(nfecra,8113) ii, visref(ii), ii
     enddo
   endif
@@ -2708,221 +2684,221 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 8100 format(                                                           &
+ 8100 format(                                                     &
                                                                 /,&
-' ** ECOULEMENT DIPHASIQUE LAGRANGIEN'                         ,/,&
-'    --------------------------------'                         ,/,&
-' --- Phase continue : '                                       ,/,&
-'       IILAGR = ',4X,I10,    ' (0 : Lagrangien desactive     ',/,&
-'                ',14X,       '  1 : one way coupling         ',/,&
-'                ',14X,       '  2 : two way coupling         ',/,&
-'                ',14X,       '  3 : sur champs figes        )',/,&
-'       ISUILA = ',4X,I10,    ' (0 : pas de suite ; 1 : suite)',/,&
-'       ISUIST = ',4X,I10,    ' (1 : suite de calcul stats et' ,/,&
-'                ',14X,       '      TS de couplage retour   )',/,&
-' --- Physique particuliere associee aux particules :'         ,/,&
-'       IPHYLA = ',4X,I10,    ' (0 : pas d eqn supplementaires',/,&
-'                ',14X,       '  1 : eqns sur Dp Tp Mp        ',/,&
-'                ',14X,       '  2 : particules de charbon   )'  )
- 8105 format(                                                           &
-'       IDPVAR = ',4X,I10,    ' (1 eqn diametre Dp,   0 sinon)',/,&
-'       ITPVAR = ',4X,I10,    ' (1 eqn temperature Tp,0 sinon)',/,&
-'       IMPVAR = ',4X,I10,    ' (1 eqn masse Mp,      0 sinon)'  )
- 8106 format(                                                           &
-' --- Parametres Globaux :                                    ',/,&
-'       NBPMAX = ',4X,I10,    ' (nb max de part par iteration)',/,&
-'       NVLS   = ',4X,I10,    ' (nb var particulaires suppl. )',/,&
-'       ISTTIO = ',4X,I10,    ' (1 phase porteuse stationnair)',/,&
-'       INJCON = ',4X,I10,    ' (1 injection continue,0 sinon)',/,&
-'       IROULE = ',4X,I10,    ' (2 clonage/fusion avec calc Y+',/,&
+' ** ECOULEMENT DIPHASIQUE LAGRANGIEN',                         /,&
+'    --------------------------------',                         /,&
+' --- Phase continue :',                                        /,&
+'       IILAGR = ',4x,i10,    ' (0 : Lagrangien desactive',     /,&
+'                ',14x,       '  1 : one way coupling',         /,&
+'                ',14x,       '  2 : two way coupling',         /,&
+'                ',14x,       '  3 : sur champs figes        )',/,&
+'       ISUILA = ',4x,i10,    ' (0 : pas de suite ; 1 : suite)',/,&
+'       ISUIST = ',4x,i10,    ' (1 : suite de calcul stats et', /,&
+'                ',14x,       '      TS de couplage retour   )',/,&
+' --- Physique particuliere associee aux particules :',         /,&
+'       IPHYLA = ',4x,i10,    ' (0 : pas d eqn supplementaires',/,&
+'                ',14x,       '  1 : eqns sur Dp Tp Mp',        /,&
+'                ',14x,       '  2 : particules de charbon   )'  )
+ 8105 format(                                                     &
+'       IDPVAR = ',4x,i10,    ' (1 eqn diametre Dp,   0 sinon)',/,&
+'       ITPVAR = ',4x,i10,    ' (1 eqn temperature Tp,0 sinon)',/,&
+'       IMPVAR = ',4x,i10,    ' (1 eqn masse Mp,      0 sinon)'  )
+ 8106 format(                                                     &
+' --- Parametres Globaux :',                                    /,&
+'       NBPMAX = ',4x,i10,    ' (nb max de part par iteration)',/,&
+'       NVLS   = ',4x,i10,    ' (nb var particulaires suppl. )',/,&
+'       ISTTIO = ',4x,i10,    ' (1 phase porteuse stationnair)',/,&
+'       INJCON = ',4x,i10,    ' (1 injection continue,0 sinon)',/,&
+'       IROULE = ',4x,i10,    ' (2 clonage/fusion avec calc Y+',/,&
 '                                1 clonage/fusion sans calc Y+',/,&
 '                                0 sinon                     )'  )
 
- 8111 format(                                                           &
-' --- Options Charbon :'                                       ,/,&
-'       IENCRA = ',4X,I10,    ' (1 : encrassement si charbon )'  )
+ 8111 format(                                                     &
+' --- Options Charbon :',                                       /,&
+'       IENCRA = ',4x,i10,    ' (1 : encrassement si charbon )'  )
 
- 8112 format(                                                           &
-'       TPRENC(',I1,') = ', E11.5,                                &
-                              ' (temp seuil pour encrassement' ,/,&
-'                ',14X,       '  charbon ',I1,8X,'           )'  )
+ 8112 format(                                                     &
+'       TPRENC(',i1,') = ', e11.5,                                &
+                              ' (temp seuil pour encrassement', /,&
+'                ',14x,       '  charbon', i1,8x,'           )'  )
 
- 8113 format(                                                           &
-'       VISREF(',I1,') = ', E11.5,                                &
-                         ' (viscosite critique charbon ',I1,')'  )
+ 8113 format(                                                     &
+'       VISREF(',i1,') = ', e11.5,                                &
+                         ' (viscosite critique charbon', i1,')'  )
 
- 8120 format(                                                           &
-' --- Options Couplage Retour :'                               ,/,&
-'       NSTITS = ',4X,I10,    ' (iter de debut moy. en temps )',/,&
-'       LTSDYN = ',4X,I10,    ' (1 couplage retour dynamique )',/,&
-'       LTSMAS = ',4X,I10,    ' (1 couplage retour massique  )',/,&
-'       LTSTHE = ',4X,I10,    ' (1 couplage retour thermique )'  )
+ 8120 format(                                                     &
+' --- Options Couplage Retour :',                               /,&
+'       NSTITS = ',4x,i10,    ' (iter de debut moy. en temps )',/,&
+'       LTSDYN = ',4x,i10,    ' (1 couplage retour dynamique )',/,&
+'       LTSMAS = ',4x,i10,    ' (1 couplage retour massique  )',/,&
+'       LTSTHE = ',4x,i10,    ' (1 couplage retour thermique )'  )
 
- 8130 format(                                                           &
-' --- Options Statistiques :'                                  ,/,&
-'       ISTALA = ',4X,I10,    ' (1 : calcul de statistiques  )'  )
+ 8130 format(                                                     &
+' --- Options Statistiques :',                                  /,&
+'       ISTALA = ',4x,i10,    ' (1 : calcul de statistiques  )'  )
 
- 8135 format(                                                           &
-'       SEUIL  = ', E14.5,    ' (val min de prise en compte  )',/,&
-'       IDSTNT = ',4X,I10,    ' (iter de debut de calcul stat)',/,&
-'       NSTIST = ',4X,I10,    ' (iter de debut moy. en temps )',/,&
-'       NVLSTS = ',4X,I10,    ' (nb var statistiques suppl.  )'  )
+ 8135 format(                                                     &
+'       SEUIL  = ', e14.5,    ' (val min de prise en compte  )',/,&
+'       IDSTNT = ',4x,i10,    ' (iter de debut de calcul stat)',/,&
+'       NSTIST = ',4x,i10,    ' (iter de debut moy. en temps )',/,&
+'       NVLSTS = ',4x,i10,    ' (nb var statistiques suppl.  )'  )
 
- 8140 format(                                                           &
-' --- Options Dispersion Turbulente :                         ',/,&
-'       IDISTU = ',4X,I10,    ' (1 : prise en compte; 0 sinon)',/,&
-'       IDIFFL = ',4X,I10,    ' (1 dispersion =diffusion turb)',/,&
-'       MODCPL = ',4X,I10,    ' (iter lag debut model complet)'  )
- 8141 format(                                                           &
-'       IDIRLA = ',4X,I10,    ' (1 2 ou 3 : dir principal ect)'  )
- 8142 format(                                                           &
-' --- Options Numeriques :                                    ',/,&
-'       NORDRE = ',4X,I10,    ' (1 ou 2 ordre schema en temps)',/,&
-'       ILAPOI = ',4X,I10,    ' (1 corr. vit instantannees   )'  )
+ 8140 format(                                                     &
+' --- Options Dispersion Turbulente :',                         /,&
+'       IDISTU = ',4x,i10,    ' (1 : prise en compte; 0 sinon)',/,&
+'       IDIFFL = ',4x,i10,    ' (1 dispersion =diffusion turb)',/,&
+'       MODCPL = ',4x,i10,    ' (iter lag debut model complet)'  )
+ 8141 format(                                                     &
+'       IDIRLA = ',4x,i10,    ' (1 2 ou 3 : dir principal ect)'  )
+ 8142 format(                                                     &
+' --- Options Numeriques :',                                    /,&
+'       NORDRE = ',4x,i10,    ' (1 ou 2 ordre schema en temps)',/,&
+'       ILAPOI = ',4x,i10,    ' (1 corr. vit instantannees   )'  )
 
- 8150 format(                                                           &
-' --- Options Postprocessing Trajectoires/Deplacement :'       ,/,&
-'       IENSI1 = ',4X,I10,    ' (1 : post mode trajectoires  )',/,&
-'       IENSI2 = ',4X,I10,    ' (1 : post mode deplacements  )'  )
+ 8150 format(                                                     &
+' --- Options Postprocessing Trajectoires/Deplacement :',       /,&
+'       IENSi1 = ',4x,i10,    ' (1 : post mode trajectoires  )',/,&
+'       IENSi2 = ',4x,i10,    ' (1 : post mode deplacements  )'  )
 
- 8155 format(                                                           &
-'       NBVIS  = ',4X,I10,    ' (nb part max visualisables   )',/,&
-'       NVISLA = ',4X,I10,    ' (periode d acquisition, 0 non)',/,&
-'       IVISV1 = ',4X,I10,    ' (1 : vitesse fluide vu, 0 non)',/,&
-'       IVISV2 = ',4X,I10,    ' (1 : vitesse particule, 0 non)',/,&
-'       IVISTP = ',4X,I10,    ' (1 : temps de sejour  , 0 non)',/,&
-'       IVISDM = ',4X,I10,    ' (1 : diametre part.   , 0 non)',/,&
-'       IVISTE = ',4X,I10,    ' (1 : temperature part., 0 non)',/,&
-'       IVISMP = ',4X,I10,    ' (1 : masse particule  , 0 non)'  )
+ 8155 format(                                                     &
+'       NBVIS  = ',4x,i10,    ' (nb part max visualisables   )',/,&
+'       NVISLA = ',4x,i10,    ' (periode d acquisition, 0 non)',/,&
+'       IVISV1 = ',4x,i10,    ' (1 : vitesse fluide vu, 0 non)',/,&
+'       IVISV2 = ',4x,i10,    ' (1 : vitesse particule, 0 non)',/,&
+'       IVISTP = ',4x,i10,    ' (1 : temps de sejour,   0 non)',/,&
+'       IVISDM = ',4x,i10,    ' (1 : diametre part.,    0 non)',/,&
+'       IVISTE = ',4x,i10,    ' (1 : temperature part., 0 non)',/,&
+'       IVISMP = ',4x,i10,    ' (1 : masse particule,   0 non)'  )
 
- 8156 format(                                                           &
-'       IVISHP = ',4X,I10,    ' (1 : temp/enthal pour charbon)',/,&
-'       IVISDK = ',4X,I10,    ' (1 : diam coeur retrecissant )',/,&
-'       IVISCH = ',4X,I10,    ' (1 : masse de charbon actif  )',/,&
-'       IVISCK = ',4X,I10,    ' (1 : masse de coke           )'  )
+ 8156 format(                                                     &
+'       IVISHP = ',4x,i10,    ' (1 : temp/enthal pour charbon)',/,&
+'       IVISDK = ',4x,i10,    ' (1 : diam coeur retrecissant )',/,&
+'       IVISCH = ',4x,i10,    ' (1 : masse de charbon actif  )',/,&
+'       IVISCK = ',4x,i10,    ' (1 : masse de coke           )'  )
 
- 8160 format(                                                           &
-' --- Options Stat des Interactions Particules/Frontieres :'   ,/,&
-'       IENSI3 = ',4X,I10,    ' (1 calcul stat parietales    )'  )
+ 8160 format(                                                     &
+' --- Options Stat des Interactions Particules/Frontieres :',   /,&
+'       IENSI3 = ',4x,i10,    ' (1 calcul stat parietales    )'  )
 
- 8165 format(                                                           &
-'       SEUILF = ', E14.5,    ' (val min de prise en compte  )',/,&
-'       NSTBOR = ',4X,I10,    ' (iter de debut moy. en temps )',/,&
-'       INBRBD = ',4X,I10,    ' (1 : enr. nb d interactions  )',/,&
-'       IFLMBD = ',4X,I10,    ' (1 : enr. flux de masse part.)',/,&
-'       IANGBD = ',4X,I10,    ' (1 : enr. angle d interaction)',/,&
-'       IVITBD = ',4X,I10,    ' (1 : enr. vitesse interaction)',/,&
-'       IENCBD = ',4X,I10,    ' (1 : masse de charbon encrass)',/,&
-'       NUSBOR = ',4X,I10,    ' (1 : enr. infos user suppl.  )'  )
+ 8165 format(                                                     &
+'       SEUILF = ', e14.5,    ' (val min de prise en compte  )',/,&
+'       NSTBOR = ',4x,i10,    ' (iter de debut moy. en temps )',/,&
+'       INBRBD = ',4x,i10,    ' (1 : enr. nb d interactions  )',/,&
+'       IFLMBD = ',4x,i10,    ' (1 : enr. flux de masse part.)',/,&
+'       IANGBD = ',4x,i10,    ' (1 : enr. angle d interaction)',/,&
+'       IVITBD = ',4x,i10,    ' (1 : enr. vitesse interaction)',/,&
+'       IENCBD = ',4x,i10,    ' (1 : masse de charbon encrass)',/,&
+'       NUSBOR = ',4x,i10,    ' (1 : enr. infos user suppl.  )'  )
 
 #else
 
- 8100 format(                                                           &
+ 8100 format(                                                     &
                                                                 /,&
-' ** TWO-PHASE LANGRANGIEN FLOW'                               ,/,&
-'    --------------------------'                               ,/,&
-' --- Continuous phase: '                                      ,/,&
-'       IILAGR = ',4X,I10,    ' (0: Lagrangian deactivated    ',/,&
-'                ',14X,       '  1: one way coupling          ',/,&
-'                ',14X,       '  2: two way coupling          ',/,&
-'                ',14X,       '  3: on frozen fields         )',/,&
-'       ISUILA = ',4X,I10,    ' (0: no restart; 1: restart   )',/,&
-'       ISUIST = ',4X,I10,    ' (1: restart stats and return'  ,/,&
-'                ',14X,       '     coupling ST              )',/,&
-' --- Specific physics associated with particles:'             ,/,&
-'       IPHYLA = ',4X,I10,    ' (0: no additional equations'   ,/,&
-'                ',14X,       '  1: equations on Dp Tp Mp'     ,/,&
-'                ',14X,       '  2: coal particles           )'  )
- 8105 format(                                                           &
-'       IDPVAR = ',4X,I10,    ' (1 eqn diameter Dp,      or 0)',/,&
-'       ITPVAR = ',4X,I10,    ' (1 eqn temperature Tp,   or 0)',/,&
-'       IMPVAR = ',4X,I10,    ' (1 eqn mass Mp,          or 0)'  )
- 8106 format(                                                           &
-' --- Global parameters:                                      ',/,&
-'       NBPMAX = ',4X,I10,    ' (nb max parts per iteration  )',/,&
-'       NVLS   = ',4X,I10,    ' (nb add. suppl. variables    )',/,&
-'       ISTTIO = ',4X,I10,    ' (1 steady carrier phase      )',/,&
-'       INJCON = ',4X,I10,    ' (1 continuous injection, or 0)',/,&
-'       IROULE = ',4X,I10,    ' (2 clone/merge with Y+ calc'   ,/,&
+' ** TWO-PHASE LANGRANGIEN FLOW',                               /,&
+'    --------------------------',                               /,&
+' --- Continuous phase:',                                       /,&
+'       IILAGR = ',4x,i10,    ' (0: Lagrangian deactivated',    /,&
+'                ',14x,       '  1: one way coupling',          /,&
+'                ',14x,       '  2: two way coupling',          /,&
+'                ',14x,       '  3: on frozen fields         )',/,&
+'       ISUILA = ',4x,i10,    ' (0: no restart; 1: restart   )',/,&
+'       ISUIST = ',4x,i10,    ' (1: restart stats and return',  /,&
+'                ',14x,       '     coupling ST              )',/,&
+' --- Specific physics associated with particles:',             /,&
+'       IPHYLA = ',4x,i10,    ' (0: no additional equations',   /,&
+'                ',14x,       '  1: equations on Dp Tp Mp',     /,&
+'                ',14x,       '  2: coal particles           )'  )
+ 8105 format(                                                     &
+'       IDPVAR = ',4x,i10,    ' (1 eqn diameter Dp,      or 0)',/,&
+'       ITPVAR = ',4x,i10,    ' (1 eqn temperature Tp,   or 0)',/,&
+'       IMPVAR = ',4x,i10,    ' (1 eqn mass Mp,          or 0)'  )
+ 8106 format(                                                     &
+' --- Global parameters:',                                      /,&
+'       NBPMAX = ',4x,i10,    ' (nb max parts per iteration  )',/,&
+'       NVLS   = ',4x,i10,    ' (nb add. suppl. variables    )',/,&
+'       ISTTIO = ',4x,i10,    ' (1 steady carrier phase      )',/,&
+'       INJCON = ',4x,i10,    ' (1 continuous injection, or 0)',/,&
+'       IROULE = ',4x,i10,    ' (2 clone/merge with Y+ calc',   /,&
 '                                1 clone/merge without Y+ calc',/,&
 '                                0 otherwise                 )'  )
 
- 8111 format(                                                           &
-' --- Coal options:'''''''''                                   ,/,&
-'       IENCRA = ',4X,I10,    ' (1: fouling if coal          )'  )
+ 8111 format(                                                     &
+' --- Coal options:''''''''',                                   /,&
+'       IENCRA = ',4x,i10,    ' (1: fouling if coal          )'  )
 
- 8112 format(                                                           &
-'       TPRENC(',I1,') = ', E11.5,                                &
-                              ' (threshold temp. for coal'     ,/,&
-'                ',14X,       '  fouling ',I1,8X,'           )'  )
+ 8112 format(                                                     &
+'       TPRENC(',i1,') = ', e11.5,                                &
+                              ' (threshold temp. for coal',     /,&
+'                ',14x,       '  fouling', i1,8x,'           )'  )
 
- 8113 format(                                                           &
-'       VISREF(',I1,') = ', E11.5,                                &
-                         ' (critical coal viscosity    ',I1,')'  )
+ 8113 format(                                                     &
+'       VISREF(',i1,') = ', e11.5,                                &
+                         ' (critical coal viscosity',    i1,')'  )
 
- 8120 format(                                                           &
-' --- Return coupling options:'                                ,/,&
-'       NSTITS = ',4X,I10,    ' (start iter for time average )',/,&
-'       LTSDYN = ',4X,I10,    ' (1 dynamic return coupling   )',/,&
-'       LTSMAS = ',4X,I10,    ' (1 mass return coupling      )',/,&
-'       LTSTHE = ',4X,I10,    ' (1 thermal return coupling   )'  )
+ 8120 format(                                                     &
+' --- Return coupling options:',                                /,&
+'       NSTITS = ',4x,i10,    ' (start iter for time average )',/,&
+'       LTSDYN = ',4x,i10,    ' (1 dynamic return coupling   )',/,&
+'       LTSMAS = ',4x,i10,    ' (1 mass return coupling      )',/,&
+'       LTSTHE = ',4x,i10,    ' (1 thermal return coupling   )'  )
 
- 8130 format(                                                           &
-' --- Statistics options:'                                     ,/,&
-'       ISTALA = ',4X,I10,    ' (1: compute statistics       )'  )
+ 8130 format(                                                     &
+' --- Statistics options:',                                     /,&
+'       ISTALA = ',4x,i10,    ' (1: compute statistics       )'  )
 
- 8135 format(                                                           &
-'       SEUIL  = ', E14.5,    ' (minimum value for handling  )',/,&
-'       IDSTNT = ',4X,I10,    ' (start iter for stat calc    )',/,&
-'       NSTIST = ',4X,I10,    ' (start iter for time avergage)',/,&
-'       NVLSTS = ',4X,I10,    ' (nb add statistics variables )'  )
+ 8135 format(                                                     &
+'       SEUIL  = ', e14.5,    ' (minimum value for handling  )',/,&
+'       IDSTNT = ',4x,i10,    ' (start iter for stat calc    )',/,&
+'       NSTIST = ',4x,i10,    ' (start iter for time avergage)',/,&
+'       NVLSTS = ',4x,i10,    ' (nb add statistics variables )'  )
 
- 8140 format(                                                           &
-' --- Turbulent dispersion options:                           ',/,&
-'       IDISTU = ',4X,I10,    ' (1: accounted for; 0 otherws.)',/,&
-'       IDIFFL = ',4X,I10,    ' (1 dispersion = turb diffus. )',/,&
-'       MODCPL = ',4X,I10,    ' (complete model lag start it.)'  )
- 8141 format(                                                           &
-'       IDIRLA = ',4X,I10,    ' (1 2 ou 3: main ect dir)'        )
- 8142 format(                                                           &
-' --- Numerical options:                                      ',/,&
-'       NORDRE = ',4X,I10,    ' (1 or 2 time scheme order    )',/,&
-'       ILAPOI = ',4X,I10,    ' (1 inst. velcity corr.       )'  )
+ 8140 format(                                                     &
+' --- Turbulent dispersion options:',                           /,&
+'       IDISTU = ',4x,i10,    ' (1: accounted for; 0 otherws.)',/,&
+'       IDIFFL = ',4x,i10,    ' (1 dispersion = turb diffus. )',/,&
+'       MODCPL = ',4x,i10,    ' (complete model lag start it.)'  )
+ 8141 format(                                                     &
+'       IDIRLA = ',4x,i10,    ' (1 2 ou 3: main ect dir)'        )
+ 8142 format(                                                     &
+' --- Numerical options:',                                      /,&
+'       NORDRE = ',4x,i10,    ' (1 or 2 time scheme order    )',/,&
+'       ILAPOI = ',4x,i10,    ' (1 inst. velcity corr.       )'  )
 
- 8150 format(                                                           &
-' --- Trajectory/displacement postprocessing options:'         ,/,&
-'       IENSI1 = ',4X,I10,    ' (1: post trajectories mode   )',/,&
-'       IENSI2 = ',4X,I10,    ' (1: post displcaments mode   )'  )
+ 8150 format(                                                     &
+' --- Trajectory/displacement postprocessing options:',         /,&
+'       IENSi1 = ',4x,i10,    ' (1: post trajectories mode   )',/,&
+'       IENSi2 = ',4x,i10,    ' (1: post displcaments mode   )'  )
 
- 8155 format(                                                           &
-'       NBVIS  = ',4X,I10,    ' (max nb visualizatlbe parts  )',/,&
-'       NVISLA = ',4X,I10,    ' (acquisition period, 0 none  )',/,&
-'       IVISV1 = ',4X,I10,    ' (1: fluid velocity vu, 0 none)' ,/&
-'       IVISV2 = ',4X,I10,    ' (1: particle velocity, 0 none)',/,&
-'       IVISTP = ',4X,I10,    ' (1: resident time,     0 none)',/,&
-'       IVISDM = ',4X,I10,    ' (1: particle diameter, 0 none)',/,&
-'       IVISTE = ',4X,I10,    ' (1: part. temperature, 0 none)',/,&
-'       IVISMP = ',4X,I10,    ' (1: particle mass,     0 none)'  )
+ 8155 format(                                                     &
+'       NBVIS  = ',4x,i10,    ' (max nb visualizatlbe parts  )',/,&
+'       NVISLA = ',4x,i10,    ' (acquisition period, 0 none  )',/,&
+'       IVISV1 = ',4x,i10,    ' (1: fluid velocity vu, 0 none)', /&
+'       IVISV2 = ',4x,i10,    ' (1: particle velocity, 0 none)',/,&
+'       IVISTP = ',4x,i10,    ' (1: resident time,     0 none)',/,&
+'       IVISDM = ',4x,i10,    ' (1: particle diameter, 0 none)',/,&
+'       IVISTE = ',4x,i10,    ' (1: part. temperature, 0 none)',/,&
+'       IVISMP = ',4x,i10,    ' (1: particle mass,     0 none)'  )
 
- 8156 format(                                                           &
-'       IVISHP = ',4X,I10,    ' (1: temp/enthalpy for coal   )',/,&
-'       IVISDK = ',4X,I10,    ' (1: shrinking core diameter  )',/,&
-'       IVISCH = ',4X,I10,    ' (1: active coal mass         )',/,&
-'       IVISCK = ',4X,I10,    ' (1: coke mass                )'  )
+ 8156 format(                                                     &
+'       IVISHP = ',4x,i10,    ' (1: temp/enthalpy for coal   )',/,&
+'       IVISDK = ',4x,i10,    ' (1: shrinking core diameter  )',/,&
+'       IVISCH = ',4x,i10,    ' (1: active coal mass         )',/,&
+'       IVISCK = ',4x,i10,    ' (1: coke mass                )'  )
 
- 8160 format(                                                           &
-' --- Statistics options for particles/boundary interaction:'  ,/,&
-'       IENSI3 = ',4X,I10,    ' (1 calculate wall stats      )'  )
+ 8160 format(                                                     &
+' --- Statistics options for particles/boundary interaction:',  /,&
+'       IENSI3 = ',4x,i10,    ' (1 calculate wall stats      )'  )
 
- 8165 format(                                                           &
-'       SEUILF = ', E14.5,    ' (minimul value for handlin   )',/,&
-'       NSTBOR = ',4X,I10,    ' (start iter for time average )',/,&
-'       INBRBD = ',4X,I10,    ' (1: nb interactions rec.     )',/,&
-'       IFLMBD = ',4X,I10,    ' (1: particle mass flow rec.  )',/,&
-'       IANGBD = ',4X,I10,    ' (1: interaction angle rec.   )',/,&
-'       IVITBD = ',4X,I10,    ' (1: interaction velocity rec.)',/,&
-'       IENCBD = ',4X,I10,    ' (1: fouling coal mass        )',/,&
-'       NUSBOR = ',4X,I10,    ' (1: additional user info rec.)'  )
+ 8165 format(                                                     &
+'       SEUILF = ', e14.5,    ' (minimul value for handlin   )',/,&
+'       NSTBOR = ',4x,i10,    ' (start iter for time average )',/,&
+'       INBRBD = ',4x,i10,    ' (1: nb interactions rec.     )',/,&
+'       IFLMBD = ',4x,i10,    ' (1: particle mass flow rec.  )',/,&
+'       IANGBD = ',4x,i10,    ' (1: interaction angle rec.   )',/,&
+'       IVITBD = ',4x,i10,    ' (1: interaction velocity rec.)',/,&
+'       IENCBD = ',4x,i10,    ' (1: fouling coal mass        )',/,&
+'       NUSBOR = ',4x,i10,    ' (1: additional user info rec.)'  )
 
 #endif
 
@@ -2939,24 +2915,24 @@ write(nfecra,9900)
 
 #if defined(_CS_LANG_FR)
 
- 8210 format(                                                           &
+ 8210 format(                                                     &
                                                                 /,&
-' ** METHODE ALE (MAILLAGE MOBILE)'                            ,/,&
-'    -----------                                              ',/)
- 8220 format(                                                           &
-'       IALE   = ',4X,I10,    ' (1 : activee                 )',/ &
-'       NALINF = ',4X,I10,    ' (Iterations d''initialisation ',/ &
+' ** METHODE ALE (MAILLAGE MOBILE)',                            /,&
+'    -----------',                                              /)
+ 8220 format(                                                     &
+'       IALE   = ',4x,i10,    ' (1 : activee                 )',/ &
+'       NALINF = ',4x,i10,    ' (Iterations d''initialisation', / &
 '                                                   du fluide)',/)
 
 #else
 
- 8210 format(                                                           &
+ 8210 format(                                                     &
                                                                 /,&
-' ** ALE METHOD (MOVING MESH)'                                 ,/,&
-'    -----------                                              ',/)
- 8220 format(                                                           &
-'       IALE   = ',4X,I10,    ' (1: activated                )',/ &
-'       NALINF = ',4X,I10,    ' (Fluid initialization'         ,/ &
+' ** ALE METHOD (MOVING MESH)',                                 /,&
+'    -----------',                                              /)
+ 8220 format(                                                     &
+'       IALE   = ',4x,i10,    ' (1: activated                )',/ &
+'       NALINF = ',4x,i10,    ' (Fluid initialization',         / &
 '                                                  iterations)',/)
 
 #endif

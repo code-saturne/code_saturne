@@ -292,7 +292,11 @@ do ii = 1, nscal
       if (iscsth(iscalt) .eq. 2) then
         name = 'enthalpy'
       else
-        name = 'temperature'
+        if (iscalt.eq.ienerg) then
+          name = 'total energy'
+        else
+          name = 'temperature'
+        endif
       endif
     else
       name = nomvar(ipprtp(ivar))

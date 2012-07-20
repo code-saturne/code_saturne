@@ -222,7 +222,7 @@ if(iokcod.ne.0) then
         if(icode.eq. 0) then
           chaine=nomvar(ipp)
           write(nfecra,1000)ifac,iprfml(ifmfbr(ifac),1),          &
-                            chaine(1:8),icodcl(ifac,ivar)
+                            chaine(1:16),icodcl(ifac,ivar)
           nstoni = nstoni + 1
         endif
       enddo
@@ -277,14 +277,14 @@ do ifac = 1, nfabor
      icodcu.ne. 4.and.icodcu.ne. 5.and.icodcu.ne. 6.and.        &
      icodcu.ne. 9) then
     chaine=nomvar(ippuip)
-    write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icodcl(ifac,iu)
+    write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),icodcl(ifac,iu)
     nstvit = nstvit + 1
   endif
   if(icodcv.ne. 1.and.icodcv.ne. 2.and.icodcv.ne. 3.and.        &
      icodcv.ne. 4.and.icodcv.ne. 5.and.icodcv.ne. 6.and.        &
      icodcv.ne. 9) then
     chaine=nomvar(ippvip )
-    write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+    write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
          icodcl(ifac,iv)
     nstvit = nstvit + 1
   endif
@@ -292,7 +292,7 @@ do ifac = 1, nfabor
      icodcw.ne. 4.and.icodcw.ne. 5.and.icodcv.ne. 6.and.        &
      icodcw.ne. 9) then
     chaine=nomvar(ippwip)
-    write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+    write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
          icodcl(ifac,iw)
     nstvit = nstvit + 1
   endif
@@ -300,7 +300,7 @@ do ifac = 1, nfabor
   ! --- verification que la rugosite est initialisee si icodl=6
   if(icodcu.eq.6 .and. rcodcl(ifac,iu,3).lt.epzero)then
     CHAINE='RUGOSITV'
-    write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+    write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
          icodcl(ifac,iu)
     nstvit = nstvit + 1
   endif
@@ -308,7 +308,7 @@ do ifac = 1, nfabor
   ! --- on interdit les parois rugueuses en compressible
   if (icodcu.eq.6 .and. ippmod(icompf).gt.0) then
     chaine=nomvar(ippuip)
-    write(nfecra,1015)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),  &
+    write(nfecra,1015)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),  &
          icodcl(ifac,iu),ippmod(icompf)
     nstvit = nstvit + 1
   endif
@@ -321,7 +321,7 @@ do ifac = 1, nfabor
   if(icodcl(ifac,ipr).ne. 1.and.icodcl(ifac,ipr).ne. 2.and.     &
      icodcl(ifac,ipr).ne. 3) then
     chaine=nomvar(ippprp)
-    write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),  &
+    write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),  &
          icodcl(ifac,ipr)
     nstopp = nstopp + 1
   endif
@@ -344,10 +344,10 @@ if (itytur.eq.2) then
         icodcl(ifac,iep).ne. 5.and.                          &
         icodcl(ifac,iep).ne. 6     ) )then
       chaine=nomvar(ippkip)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
            icodcl(ifac,ik )
       chaine=nomvar(ippepp)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
            icodcl(ifac,iep)
       nstoke = nstoke + 1
     endif
@@ -364,7 +364,7 @@ elseif(itytur.eq.3) then
         icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
       chaine=nomvar(ipp11p)
       write(nfecra,1010)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),icode
       nstrij = nstrij + 1
     endif
   enddo
@@ -376,7 +376,7 @@ elseif(itytur.eq.3) then
         icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
       chaine=nomvar(ipp22p)
       write(nfecra,1010)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),icode
       nstrij = nstrij + 1
     endif
   enddo
@@ -388,7 +388,7 @@ elseif(itytur.eq.3) then
         icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
       chaine=nomvar(ipp33p)
       write(nfecra,1010)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),icode
       nstrij = nstrij + 1
     endif
   enddo
@@ -400,7 +400,7 @@ elseif(itytur.eq.3) then
         icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
       chaine=nomvar(ipp12p)
       write(nfecra,1010)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),icode
       nstrij = nstrij + 1
     endif
   enddo
@@ -412,7 +412,7 @@ elseif(itytur.eq.3) then
         icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
       chaine=nomvar(ipp13p)
       write(nfecra,1010)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),icode
       nstrij = nstrij + 1
     endif
   enddo
@@ -424,7 +424,7 @@ elseif(itytur.eq.3) then
         icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
       chaine=nomvar(ipp23p)
       write(nfecra,1010)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),icode
       nstrij = nstrij + 1
     endif
   enddo
@@ -435,7 +435,7 @@ elseif(itytur.eq.3) then
         icode.ne. 5.and.icode.ne.6) then
       chaine=nomvar(ippepp)
       write(nfecra,1010)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),icode
       nstrij = nstrij + 1
     endif
   enddo
@@ -447,7 +447,7 @@ elseif(itytur.eq.3) then
           icode.ne. 5.and.icode.ne.6) then
         chaine=nomvar(ippalp)
         write(nfecra,1010)                                      &
-          ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
+          ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),icode
         nstrij = nstrij + 1
       endif
       ! No rought wall with EBRSM
@@ -486,16 +486,16 @@ elseif (iturb.eq.50) then
         icodcl(ifac,ifb).ne. 5.and.                          &
         icodcl(ifac,ifb).ne. 6     ) )then
       chaine=nomvar(ippkip)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
            icodcl(ifac,ik )
       chaine=nomvar(ippepp)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
            icodcl(ifac,iep)
       chaine=nomvar(ippphp)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
            icodcl(ifac,iphi )
       chaine=nomvar(ippfbp)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
            icodcl(ifac,ifb)
       nstov2 = nstov2 + 1
 
@@ -529,16 +529,16 @@ elseif (iturb.eq.51) then
         icodcl(ifac,ial).ne. 5.and.                          &
         icodcl(ifac,ial).ne. 6     ) )then
       chaine=nomvar(ippkip)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
                         icodcl(ifac,ik )
       chaine=nomvar(ippepp)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
                         icodcl(ifac,iep)
       chaine=nomvar(ippphp)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
                         icodcl(ifac,iphi )
       chaine=nomvar(ippalp)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
                         icodcl(ifac,ial)
       nstov2 = nstov2 + 1
 
@@ -562,10 +562,10 @@ elseif (iturb.eq.60) then
         icodcl(ifac,iomg).ne. 5.and.                         &
         icodcl(ifac,iomg).ne. 6     ) )then
       chaine=nomvar(ippkip)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
            icodcl(ifac,ik )
       chaine=nomvar(ippomg)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
            icodcl(ifac,iomg)
       nstokw = nstokw + 1
     endif
@@ -583,7 +583,7 @@ elseif (iturb.eq.70) then
        icodcl(ifac,inusa ).ne. 5.and.                          &
        icodcl(ifac,inusa ).ne. 6           )then
       chaine=nomvar(ippnup)
-      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
            icodcl(ifac,inusa )
       nstonu = nstonu + 1
     endif
@@ -603,7 +603,7 @@ if(nscal.ge.1) then
          icodcl(ifac,ivar).ne. 6 ) then
         chaine=nomvar(ipprtp(ivar))
         write(nfecra,1010)                                        &
-          ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+          ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),                &
           icodcl(ifac,ivar)
         nstosc = nstosc + 1
       endif
@@ -611,7 +611,7 @@ if(nscal.ge.1) then
          iscavr(iis).gt.0        ) then
         chaine=nomvar(ipprtp(ivar))
         write(nfecra,1010)                                        &
-          ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+          ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),                &
           icodcl(ifac,ivar)
         nstovf = nstovf + 1
       endif
@@ -619,7 +619,7 @@ if(nscal.ge.1) then
          iscavr(iis).gt.0        ) then
         chaine=nomvar(ipprtp(ivar))
         write(nfecra,1010)                                        &
-          ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+          ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),                &
           icodcl(ifac,ivar)
         nstovf = nstovf + 1
       endif
@@ -627,7 +627,7 @@ if(nscal.ge.1) then
       if(icodcl(ifac,ivar).eq.6.and.                              &
          rcodcl(ifac,iv,3).lt.epzero)then
         CHAINE='RUGOSITS'
-        write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+        write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
                           icodcl(ifac,ivar)
         nstosc = nstosc + 1
       endif
@@ -696,16 +696,16 @@ do ifac = 1, nfabor
   icodcv = icodcl(ifac,iv)
   icodcw = icodcl(ifac,iw)
 
-  if(icodcu.eq.4.or.icodcu.eq.5.or.icodcu.eq.6.or.              &
-       icodcu.eq.9.or.                             &
+  if(icodcu.eq.4.or.icodcu.eq.5.or.icodcu.eq.6.or.                &
+       icodcu.eq.9.or.                                            &
        icodcv.eq.4.or.icodcv.eq.5.or.icodcv.eq.6.or.              &
-       icodcv.eq.9.or.                             &
+       icodcv.eq.9.or.                                            &
        icodcw.eq.4.or.icodcw.eq.5.or.icodcw.eq.6.or.              &
        icodcw.eq.9                )then
 
-    if( icodcu.ne.icodcv .or. icodcu.ne.icodcw .or.             &
+    if( icodcu.ne.icodcv .or. icodcu.ne.icodcw .or.               &
          icodcv.ne.icodcw ) then
-      write(nfecra,1020)ifac,iprfml(ifmfbr(ifac),1),            &
+      write(nfecra,1020)ifac,iprfml(ifmfbr(ifac),1),              &
            icodcu,icodcv,icodcw
       nstuvw = nstuvw + 1
     endif
@@ -723,7 +723,7 @@ do ifac = 1, nfabor
   !            IF( ICODCL(IFAC,IPRIPH).NE.1                    ) THEN
   !              CHAINE=NOMVAR(IPPPRP)
   !              WRITE(NFECRA,1030)
-  !     &          IFAC,IPRFML(IFMFBR(IFAC),1),CHAINE(1:8)
+  !     &          IFAC,IPRFML(IFMFBR(IFAC),1),CHAINE(1:16)
   !     &          ICODCL(IFAC,IPRIPH),ICODCU,ICODCV,ICODCW
   !              NSTOUP = NSTOUP + 1
   !            ENDIF
@@ -743,32 +743,32 @@ if(itytur.eq.2) then
     icodck = icodcl(ifac,ik)
     icodce = icodcl(ifac,iep)
 
-    if( (icodcu.eq.5 .or. icodcv.eq.5 .or. icodcw.eq.5 .or.     &
-         icodck.eq.5 .or. icodce.eq.5) .and.                    &
+    if( (icodcu.eq.5 .or. icodcv.eq.5 .or. icodcw.eq.5 .or.      &
+         icodck.eq.5 .or. icodce.eq.5) .and.                     &
          (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.     &
          icodck.ne.5 .or. icodce.ne.5)                    ) then
       chaine=nomvar(ippkip)
-      write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+      write(nfecra,1030)                                         &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),             &
            icodcl(ifac,ik),icodcu,icodcv,icodcw
       chaine=nomvar(ippepp)
-      write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+      write(nfecra,1030)                                         &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),             &
            icodcl(ifac,iep),icodcu,icodcv,icodcw
       nstuke = nstuke + 1
     endif
 
-    if( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.     &
-         icodck.eq.6 .or. icodce.eq.6) .and.                    &
+    if( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.      &
+         icodck.eq.6 .or. icodce.eq.6) .and.                     &
          (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.     &
          icodck.ne.6 .or. icodce.ne.6)                    ) then
       chaine=nomvar(ippkip)
-      write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+      write(nfecra,1030)                                         &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),             &
            icodcl(ifac,ik),icodcu,icodcv,icodcw
       chaine=nomvar(ippepp)
-      write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+      write(nfecra,1030)                                         &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),             &
            icodcl(ifac,iep),icodcu,icodcv,icodcw
       nstuke = nstuke + 1
     endif
@@ -790,17 +790,17 @@ elseif(iturb.eq.30.or.iturb.eq.31) then
     icor23 = icodcl(ifac,ir23)
     icodce = icodcl(ifac,iep)
 
-    if(  (icodcu.eq.5 .or. icodcv.eq.5 .or. icodcw.eq.5 .or.    &
-         icor11.eq.5 .or. icor22.eq.5 .or.                     &
-         icor33.eq.5 .or. icor12.eq.5 .or.                     &
-         icor13.eq.5 .or. icor23.eq.5 .or.                     &
-         icodce.eq.5                      ) .and.              &
-         (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.    &
-         icor11.ne.5 .or. icor22.ne.5 .or.                     &
-         icor33.ne.5 .or. icor12.ne.5 .or.                     &
-         icor13.ne.5 .or. icor23.ne.5 .or.                     &
+    if(  (icodcu.eq.5 .or. icodcv.eq.5 .or. icodcw.eq.5 .or.       &
+         icor11.eq.5 .or. icor22.eq.5 .or.                         &
+         icor33.eq.5 .or. icor12.eq.5 .or.                         &
+         icor13.eq.5 .or. icor23.eq.5 .or.                         &
+         icodce.eq.5                      ) .and.                  &
+         (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.       &
+         icor11.ne.5 .or. icor22.ne.5 .or.                         &
+         icor33.ne.5 .or. icor12.ne.5 .or.                         &
+         icor13.ne.5 .or. icor23.ne.5 .or.                         &
          icodce.ne.5                      )      ) then
-      write(nfecra,1040)                                        &
+      write(nfecra,1040)                                           &
            ifac,iprfml(ifmfbr(ifac),1),                            &
            icor11,icor22,icor33,                                   &
            icor12,icor13,icor23,                                   &
@@ -808,17 +808,17 @@ elseif(iturb.eq.30.or.iturb.eq.31) then
       nsurij = nsurij + 1
     endif
 
-    if(  (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.    &
-         icor11.eq.6 .or. icor22.eq.6 .or.                     &
-         icor33.eq.6 .or. icor12.eq.6 .or.                     &
-         icor13.eq.6 .or. icor23.eq.6 .or.                     &
-         icodce.eq.6                      ) .and.              &
-         (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.    &
-         icor11.ne.6 .or. icor22.ne.6 .or.                     &
-         icor33.ne.6 .or. icor12.ne.6 .or.                     &
-         icor13.ne.6 .or. icor23.ne.6 .or.                     &
+    if(  (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.       &
+         icor11.eq.6 .or. icor22.eq.6 .or.                         &
+         icor33.eq.6 .or. icor12.eq.6 .or.                         &
+         icor13.eq.6 .or. icor23.eq.6 .or.                         &
+         icodce.eq.6                      ) .and.                  &
+         (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.       &
+         icor11.ne.6 .or. icor22.ne.6 .or.                         &
+         icor33.ne.6 .or. icor12.ne.6 .or.                         &
+         icor13.ne.6 .or. icor23.ne.6 .or.                         &
          icodce.ne.6                      )      ) then
-      write(nfecra,1040)                                        &
+      write(nfecra,1040)                                           &
            ifac,iprfml(ifmfbr(ifac),1),                            &
            icor11,icor22,icor33,                                   &
            icor12,icor13,icor23,                                   &
@@ -826,17 +826,17 @@ elseif(iturb.eq.30.or.iturb.eq.31) then
       nsurij = nsurij + 1
     endif
 
-    if(  (icodcu.eq.4 .or. icodcv.eq.4 .or. icodcw.eq.4 .or.    &
-         icor11.eq.4 .or. icor22.eq.4 .or.                     &
-         icor33.eq.4 .or. icor12.eq.4 .or.                     &
-         icor13.eq.4 .or. icor23.eq.4                          &
+    if(  (icodcu.eq.4 .or. icodcv.eq.4 .or. icodcw.eq.4 .or.       &
+         icor11.eq.4 .or. icor22.eq.4 .or.                         &
+         icor33.eq.4 .or. icor12.eq.4 .or.                         &
+         icor13.eq.4 .or. icor23.eq.4                              &
          ) .and.                         &
-         (icodcu.ne.4 .or. icodcv.ne.4 .or. icodcw.ne.4 .or.    &
-         icor11.ne.4 .or. icor22.ne.4 .or.                     &
-         icor33.ne.4 .or. icor12.ne.4 .or.                     &
-         icor13.ne.4 .or. icor23.ne.4 .or.                     &
+         (icodcu.ne.4 .or. icodcv.ne.4 .or. icodcw.ne.4 .or.       &
+         icor11.ne.4 .or. icor22.ne.4 .or.                         &
+         icor33.ne.4 .or. icor12.ne.4 .or.                         &
+         icor13.ne.4 .or. icor23.ne.4 .or.                         &
          icodce.ne.3) ) then
-      write(nfecra,1040)                                        &
+      write(nfecra,1040)                                           &
            ifac,iprfml(ifmfbr(ifac),1),                            &
            icor11,icor22,icor33,                                   &
            icor12,icor13,icor23,                                   &
@@ -930,51 +930,51 @@ elseif(iturb.eq.50 ) then
     icodcp = icodcl(ifac,iphi)
     icodcf = icodcl(ifac,ifb)
 
-    if( (icodcu.eq.5 .or. icodcv.eq.5 .or. icodcw.eq.5 .or.     &
-         icodck.eq.5 .or. icodce.eq.5 .or. icodcp.eq.5 .or.     &
-         icodcf.eq.5 ) .and.                                    &
-         (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.     &
-         icodck.ne.5 .or. icodce.ne.5 .or. icodcp.ne.5 .or.     &
+    if( (icodcu.eq.5 .or. icodcv.eq.5 .or. icodcw.eq.5 .or.       &
+         icodck.eq.5 .or. icodce.eq.5 .or. icodcp.eq.5 .or.       &
+         icodcf.eq.5 ) .and.                                      &
+         (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.      &
+         icodck.ne.5 .or. icodce.ne.5 .or. icodcp.ne.5 .or.       &
          icodcf.ne.5 )                    ) then
       chaine=nomvar(ippkip)
-      write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+      write(nfecra,1030)                                          &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),              &
            icodcl(ifac,ik),icodcu,icodcv,icodcw
       chaine=nomvar(ippepp)
-      write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+      write(nfecra,1030)                                          &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),              &
            icodcl(ifac,iep),icodcu,icodcv,icodcw
       chaine=nomvar(ippphp)
-      write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+      write(nfecra,1030)                                          &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),              &
            icodcl(ifac,iphi),icodcu,icodcv,icodcw
       chaine=nomvar(ippfbp)
-      write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+      write(nfecra,1030)                                          &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),              &
            icodcl(ifac,ifb),icodcu,icodcv,icodcw
       nstuv2 = nstuv2 + 1
 
       if( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.     &
            icodck.eq.6 .or. icodce.eq.6 .or. icodcp.eq.6 .or.     &
            icodcf.eq.6 ) .and.                                    &
-           (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.     &
+           (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.    &
            icodck.ne.6 .or. icodce.ne.6 .or. icodcp.ne.6 .or.     &
            icodcf.ne.6 )                    ) then
         chaine=nomvar(ippkip)
         write(nfecra,1030)                                        &
-             ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+             ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
              icodcl(ifac,ik),icodcu,icodcv,icodcw
         chaine=nomvar(ippepp)
         write(nfecra,1030)                                        &
-             ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+             ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
              icodcl(ifac,iep),icodcu,icodcv,icodcw
         chaine=nomvar(ippphp)
         write(nfecra,1030)                                        &
-             ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+             ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
              icodcl(ifac,iphi),icodcu,icodcv,icodcw
         chaine=nomvar(ippfbp)
         write(nfecra,1030)                                        &
-             ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+             ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
              icodcl(ifac,ifb),icodcu,icodcv,icodcw
         nstuv2 = nstuv2 + 1
 
@@ -999,48 +999,48 @@ elseif(iturb.eq.51 ) then
     if( (icodcu.eq.5 .or. icodcv.eq.5 .or. icodcw.eq.5 .or.     &
          icodck.eq.5 .or. icodce.eq.5 .or. icodcp.eq.5 .or.     &
          icodca.eq.5 ) .and.                                    &
-         (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.     &
+         (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.    &
          icodck.ne.5 .or. icodce.ne.5 .or. icodcp.ne.5 .or.     &
          icodca.ne.5 )                    ) then
       chaine=nomvar(ippkip)
       write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
            icodcl(ifac,ik),icodcu,icodcv,icodcw
       chaine=nomvar(ippepp)
       write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
            icodcl(ifac,iep),icodcu,icodcv,icodcw
       chaine=nomvar(ippphp)
       write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
            icodcl(ifac,iphi),icodcu,icodcv,icodcw
       chaine=nomvar(ippalp)
       write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
            icodcl(ifac,ial),icodcu,icodcv,icodcw
       nstuv2 = nstuv2 + 1
 
       if( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.     &
            icodck.eq.6 .or. icodce.eq.6 .or. icodcp.eq.6 .or.     &
            icodca.eq.6 ) .and.                                    &
-           (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.     &
+           (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.    &
            icodck.ne.6 .or. icodce.ne.6 .or. icodcp.ne.6 .or.     &
            icodca.ne.6 )                    ) then
         chaine=nomvar(ippkip)
         write(nfecra,1030)                                        &
-             ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+             ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
              icodcl(ifac,ik),icodcu,icodcv,icodcw
         chaine=nomvar(ippepp)
         write(nfecra,1030)                                        &
-             ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+             ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
              icodcl(ifac,iep),icodcu,icodcv,icodcw
         chaine=nomvar(ippphp)
         write(nfecra,1030)                                        &
-             ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+             ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
              icodcl(ifac,iphi),icodcu,icodcv,icodcw
         chaine=nomvar(ippalp)
         write(nfecra,1030)                                        &
-             ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+             ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
              icodcl(ifac,ial),icodcu,icodcv,icodcw
         nstuv2 = nstuv2 + 1
 
@@ -1062,30 +1062,30 @@ elseif(iturb.eq.60 ) then
 
     if( (icodcu.eq.5 .or. icodcv.eq.5 .or. icodcw.eq.5 .or.     &
          icodck.eq.5 .or. icodom.eq.5 ) .and.                   &
-         (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.     &
+         (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.    &
          icodck.ne.5 .or. icodom.ne.5 ) ) then
       chaine=nomvar(ippkip)
       write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
            icodcl(ifac,ik),icodcu,icodcv,icodcw
       chaine=nomvar(ippomg)
       write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
            icodcl(ifac,iomg),icodcu,icodcv,icodcw
       nstukw = nstukw + 1
     endif
 
     if( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.     &
          icodck.eq.6 .or. icodom.eq.6 ) .and.                   &
-         (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.     &
+         (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.    &
          icodck.ne.6 .or. icodom.ne.6 ) ) then
       chaine=nomvar(ippkip)
       write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
            icodcl(ifac,ik),icodcu,icodcv,icodcw
       chaine=nomvar(ippomg)
       write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
            icodcl(ifac,iomg),icodcu,icodcv,icodcw
       nstukw = nstukw + 1
     endif
@@ -1103,22 +1103,22 @@ elseif(iturb.eq.70 ) then
 
     if( (icodcu.eq.5 .or. icodcv.eq.5 .or. icodcw.eq.5 .or.     &
          icodcn.eq.5 ) .and.                                    &
-         (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.     &
+         (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.    &
          icodcn.ne.5 ) ) then
       chaine=nomvar(ippnup)
       write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
            icodcl(ifac,inusa),icodcu,icodcv,icodcw
       nstunu = nstunu + 1
     endif
 
     if( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.     &
          icodcn.eq.6 ) .and.                                    &
-         (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.     &
+         (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.    &
          icodcn.ne.6 ) ) then
       chaine=nomvar(ippnup)
       write(nfecra,1030)                                        &
-           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),            &
            icodcl(ifac,inusa),icodcu,icodcv,icodcw
     endif
 
@@ -1139,7 +1139,7 @@ if( nscal.ge.1 ) then
         if(icodcl(ifac,ivar).eq.5.and.icodcu.ne.5) then
           chaine=nomvar(ipprtp(ivar))
           write(nfecra,1050) ifac,iprfml(ifmfbr(ifac),1),         &
-                        chaine(1:8), iis,                         &
+                        chaine(1:16), iis,                        &
                         icodcl(ifac,ivar), icodcu
           nstusc = nstusc + 1
         endif
@@ -1189,20 +1189,20 @@ endif
  1000 format(                                                     &
 '@                                                            ',/,&
 '@ COND. LIM. NON INITIALISEES                                ',/,&
-'@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A8    ,/,&
+'@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A16   ,/,&
 '@     ICODCL VARIABLE ', I10                                  ,/,&
 '@                                                            '  )
  1010 format(                                                     &
 '@                                                            ',/,&
 '@ COND. LIM. NON PREVUES                                     ',/,&
-'@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A8    ,/,&
+'@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A16   ,/,&
 '@     ICODCL VARIABLE ', I10                                  ,/,&
 '@                                                            '  )
  1015 format(                                                     &
 '@                                                            ',/,&
 '@ CONDITIONS AUX LIMITES DE PAROI RUGUEUSE INCOMPATIBLES     ',/,&
 '@ AVEC LE MODULE COMPRESSIBLE                                ',/,&
-'@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A8    ,/,&
+'@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A16   ,/,&
 '@     ICODCL VARIABLE =',I10                                  ,/,&
 '@     IPPMOD(ICOMPF)  =',I10                                  ,/,&
 '@                                                            '  )
@@ -1215,7 +1215,7 @@ endif
  1030 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCE COND. LIM. VITESSE-VARIABLE                    ',/,&
-'@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A8    ,/,&
+'@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A16   ,/,&
 '@     ICODCL VARIABLE ', I10                                  ,/,&
 '@     ICODCL VITESSE  ',3I10                                  ,/,&
 '@                                                            '  )
@@ -1236,7 +1236,7 @@ endif
  1050 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCE COND. LIM. VITESSE-SCALAIRE                    ',/,&
-'@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A8    ,/,&
+'@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; VARIABLE ',A16   ,/,&
 '@     SCALAIRE NUMERO ',I10                                   ,/,&
 '@     ICODCL SCALAIRE ',I10   ,'; ICODCL VITESSE ',I10        ,/,&
 '@                                                            '  )
@@ -1333,20 +1333,20 @@ endif
  1000 format(                                                     &
 '@                                                            ',/,&
 '@ UNINITIALIZED BOUNDARY CONDITIONS                          ',/,&
-'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,&
+'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A16    ,/,&
 '@     ICODCL VARIABLE ', I10                                  ,/,&
 '@                                                            '  )
  1010 format(                                                     &
 '@                                                            ',/,&
 '@ UNEXPECTED BOUNDARY CONDITIONS                             ',/,&
-'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,&
+'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A16    ,/,&
 '@     ICODCL VARIABLE ', I10                                  ,/,&
 '@                                                            '  )
  1015 format(                                                     &
 '@                                                            ',/,&
 '@ ROUGH WALL BOUNDARY CONDITIONS INCOMPATIBLE WITH THE       ',/,&
 '@ COMPRESSIBLE MODULE                                        ',/,&
-'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,&
+'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A16    ,/,&
 '@     ICODCL VARIABLE =',I10                                  ,/,&
 '@     IPPMOD(ICOMPF)  =',I10                                  ,/,&
 '@                                                            '  )
@@ -1359,7 +1359,7 @@ endif
  1030 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY-VARIABLE          ',/,&
-'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,&
+'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A16    ,/,&
 '@     ICODCL VARIABLE ', I10                                  ,/,&
 '@     ICODCL VELOCITY ',3I10                                  ,/,&
 '@                                                            '  )
@@ -1380,7 +1380,7 @@ endif
  1050 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY-SCALAR            ',/,&
-'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,&
+'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A16    ,/,&
 '@     SCALAR NUMBER ',I10                                     ,/,&
 '@     ICODCL SCALAR ',I10   ,'; ICODCL VELOCITY ',I10         ,/,&
 '@                                                            '  )

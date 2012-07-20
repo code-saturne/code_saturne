@@ -299,11 +299,11 @@ if (imgr(ipr).gt.0) then
   iwarnp = iwarni(ipr)
   nagmax = nagmx0(ipr)
   npstmg = ncpmgr(ipr)
-  lchain = 8
+  lchain = 16
 
   call clmlga &
   !==========
- ( chaine(1:8) ,     lchain ,                                     &
+ ( chaine(1:16) ,     lchain ,                                    &
    isym   , ibsize , nagmax , npstmg , iwarnp ,                   &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &

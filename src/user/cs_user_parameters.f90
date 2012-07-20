@@ -2131,7 +2131,6 @@ xyzcap(3,4) = 0.01d0
 !       if we do not assign the following array values,
 !       default values will be used
 
-!     nomvar( ) = variable name
 !     ichrvr( ) = chonological output (yes 1/no 0)
 !     ilisvr( ) = logging in listing (yes 1/no 0)
 !     ihisvr( ) = history output (number of probes and their numbers)
@@ -2148,56 +2147,38 @@ xyzcap(3,4) = 0.01d0
 
 ! pressure variable
 ipp = ipprtp(ipr)
-nomvar(ipp)   = 'Pressure'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
-if (icorio.eq.1) then
-  nomvar(ipp)   = 'Rel Pressure'
-endif
 
 ! variable v1x
 ipp = ipprtp(iu)
-nomvar(ipp)   = 'VelocityX'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
-if (icorio.eq.1) then
-  nomvar(ipp)   = 'Rel VelocityX'
-endif
 
 ! v1y variable
 ipp = ipprtp(iv)
-nomvar(ipp)   = 'VelocityY'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
-if (icorio.eq.1) then
-  nomvar(ipp)   = 'Rel VelocityY'
-endif
 
 ! v1z variable
 ipp = ipprtp(iw)
-nomvar(ipp)   = 'VelocityZ'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
-if (icorio.eq.1) then
-  nomvar(ipp)   = 'Rel VelocityZ'
-endif
 
 if (itytur.eq.2) then
 
   ! turbulent kinetic energy
   ipp = ipprtp(ik)
-  nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
   ipp = ipprtp(iep)
-  nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -2206,49 +2187,42 @@ elseif (itytur.eq.3) then
 
   ! Reynolds stresses
   ipp = ipprtp(ir11)
-  nomvar(ipp)   = 'R11'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
   ipp = ipprtp(ir22)
-  nomvar(ipp)   = 'R22'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
   ipp = ipprtp(ir33)
-  nomvar(ipp)   = 'R33'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
   ipp = ipprtp(ir12)
-  nomvar(ipp)   = 'R12'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
   ipp = ipprtp(ir13)
-  nomvar(ipp)   = 'R13'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
   ipp = ipprtp(ir23)
-  nomvar(ipp)   = 'R23'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
   ipp = ipprtp(iep)
-  nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -2257,28 +2231,24 @@ elseif (iturb.eq.50) then
 
   ! turbulent kinetic energy
   ipp = ipprtp(ik)
-  nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
   ipp = ipprtp(iep)
-  nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! phi
   ipp = ipprtp(iphi)
-  nomvar(ipp)   = 'Phi'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! f_bar
   ipp = ipprtp(ifb)
-  nomvar(ipp)   = 'f_bar'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -2287,28 +2257,24 @@ elseif (iturb.eq.51) then
 
   ! turbulent kinetic energy
   ipp = ipprtp(ik)
-  nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
   ipp = ipprtp(iep)
-  nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! phi
   ipp = ipprtp(iphi)
-  nomvar(ipp)   = 'Phi'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! alpha
   ipp = ipprtp(ial)
-  nomvar(ipp)   = 'Alpha'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -2317,14 +2283,12 @@ elseif (iturb.eq.60) then
 
   ! turbulent kinetic energy
   ipp = ipprtp(ik)
-  nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! omega
   ipp = ipprtp(iomg)
-  nomvar(ipp)   = 'Omega'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -2333,7 +2297,6 @@ elseif (iturb.eq.70) then
 
   ! Spalart-Allmaras variable (viscosity-like)
   ipp = ipprtp(inusa)
-  nomvar(ipp)   = 'NuTilda'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -2354,7 +2317,7 @@ endif
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 if (isca(1).gt.0.and.nscaus.ge.1) then
-  ipp = ipprtp(isca  (1))
+  ipp = ipprtp(isca(1))
   nomvar(ipp)  = 'Scalar 1'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -2362,7 +2325,7 @@ if (isca(1).gt.0.and.nscaus.ge.1) then
 endif
 
 if (isca(2).gt.0.and.nscaus.ge.2) then
-  ipp = ipprtp(isca  (2))
+  ipp = ipprtp(isca(2))
   nomvar(ipp)  = 'Scalar 2'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -2379,7 +2342,6 @@ endif
 ! Density variable (output for post-processing only if variable or
 !                   in the case of specific physics)
 ipp = ipppro(ipproc(irom))
-nomvar(ipp)   = 'Density'
 ichrvr(ipp)   = max(irovar,nmodpp)
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
@@ -2387,7 +2349,6 @@ ihisvr(ipp,1) = -1
 ! specific heat
 if (icp .gt. 0) then
   ipp = ipppro(ipproc(icp))
-  nomvar(ipp)   = 'Specific Heat'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = 0
@@ -2395,28 +2356,24 @@ endif
 
 ! laminar viscosity
 ipp = ipppro(ipproc(iviscl))
-nomvar(ipp)   = 'Laminar Viscosity'
 ichrvr(ipp)   = 0
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = 0
 
 ! turbulent viscosity
 ipp = ipppro(ipproc(ivisct))
-nomvar(ipp)   = 'Turb Viscosity'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ! Courant number
 ipp = ipppro(ipproc(icour))
-nomvar(ipp)   = 'CFL'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 
 ! Fourier number
 ipp = ipppro(ipproc(ifour))
-nomvar(ipp)   = 'Fourier Number'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = -1
@@ -2425,7 +2382,6 @@ ihisvr(ipp,1) = -1
 !    (square of the Samgorinsky "constant")
 if (ismago.gt.0) then
   ipp = ipppro(ipproc(ismago))
-  nomvar(ipp)   = 'Csdyn2'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -2444,7 +2400,6 @@ endif
 ! total pressure (not defined in compressible case)
 if (ippmod(icompf).lt.0) then
   ipp = ipppro(ipproc(iprtot))
-  nomvar(ipp)   = 'Total Pressure'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -2452,26 +2407,22 @@ endif
 
 ! local time step
 ipp = ippdt
-nomvar(ipp)   = 'Local Time Step'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ! characteristic time of transient velocity/pressure coupling
 ipp = ipptx
-nomvar(ipp)   = 'Tx'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ipp = ippty
-nomvar(ipp)   = 'Ty'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ipp = ipptz
-nomvar(ipp)   = 'Tz'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
@@ -3171,43 +3122,43 @@ endif
 
   do idirac = 1, ndirac
     ipp = ipppro(ipproc(irhol(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'RHOL', idirac
+    write(nomvar(ipp),'(a4,i1)') 'RHOL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(iteml(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'TEML', idirac
+    write(nomvar(ipp),'(a4,i1)') 'TEML', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(ifmel(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'FMEL', idirac
+    write(nomvar(ipp),'(a4,i1)') 'FMEL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(ifmal(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'FMAL', idirac
+    write(nomvar(ipp),'(a4,i1)') 'FMAL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(iampl(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'AMPL', idirac
+    write(nomvar(ipp),'(a4,i1)') 'AMPL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(itscl(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'TSCL', idirac
+    write(nomvar(ipp),'(a4,i1)') 'TSCL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(imaml(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'MAML', idirac
+    write(nomvar(ipp),'(a4,i1)') 'MAML', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1

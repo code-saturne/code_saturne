@@ -197,14 +197,14 @@ if  (ippmod(icompf).lt.0) then
     if (propce(iel,iiptot).gt.-0.5d0*rinfin) then
       rtp(iel,ipr) = propce(iel,iiptot)                      &
            - ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
-           + gy*(xyzcen(2,iel)-xyp0)                   &
-           + gz*(xyzcen(3,iel)-xzp0) )                 &
+           + gy*(xyzcen(2,iel)-xyp0)                         &
+           + gz*(xyzcen(3,iel)-xzp0) )                       &
            + pred0 - p0
     else
       propce(iel,iiptot) = rtp(iel,ipr)                      &
            + ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
-           + gy*(xyzcen(2,iel)-xyp0)                   &
-           + gz*(xyzcen(3,iel)-xzp0) )                 &
+           + gy*(xyzcen(2,iel)-xyp0)                         &
+           + gz*(xyzcen(3,iel)-xzp0) )                       &
            + p0 - pred0
     endif
   enddo
@@ -418,8 +418,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
 else
 
-  if (iturb.ne.0 .and. iturb.ne.10                &
-       .and. itytur.ne.4) then
+  if (iturb.ne.0 .and. iturb.ne.10 .and. itytur.ne.4) then
     if (uref.lt.0.d0) then
       write(nfecra,3039) uref
       iok = iok + 1
@@ -493,7 +492,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
                   propce , rvoid  , rtp    )
         else
           chaine = nomvar(ipprtp(isca(ii)))
-          write(nfecra,3040) ii,chaine(1:8),                      &
+          write(nfecra,3040) ii,chaine(1:16),                     &
                              valmin,scamin(ii),valmax,scamax(ii)
           iok = iok + 1
         endif
@@ -532,7 +531,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 !       n'apporterait rien, par definition
           if(valmin.lt.0.d0) then
             chaine = nomvar(ipprtp(isca(ii)))
-            write(nfecra,3050)ii,chaine(1:8),                     &
+            write(nfecra,3050)ii,chaine(1:16),                     &
                               valmin,scamin(ii),valmax,scamax(ii)
             iok = iok + 1
           endif
@@ -540,13 +539,13 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 ! Ici on clippe pour etre coherent avec la valeur du scalaire
           if(valmin.ge.0.d0) then
             iscal = ii
-            call clpsca                                           &
+            call clpsca                                            &
             !==========
-            ( ncelet , ncel   , nvar   , nscal  , iscal  ,        &
+            ( ncelet , ncel   , nvar   , nscal  , iscal  ,         &
               propce , rtp(1,isca(iscavr(ii))) , rtp      )
           else
             chaine = nomvar(ipprtp(isca(ii)))
-            write(nfecra,3050)ii,chaine(1:8),                     &
+            write(nfecra,3050)ii,chaine(1:16),                     &
                               valmin,scamin(ii),valmax,scamax(ii)
             iok = iok + 1
           endif
@@ -558,8 +557,8 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 !     mais ca n'apporterait rien, par definition
           if(valmin.lt.vfmin.or.valmax.gt.vfmax) then
             chaine = nomvar(ipprtp(isca(ii)))
-            write(nfecra,3051)ii,chaine(1:8),                     &
-                              valmin,scamin(ii),valmax,scamax(ii),&
+            write(nfecra,3051)ii,chaine(1:16),                     &
+                              valmin,scamin(ii),valmax,scamax(ii), &
                               ii,iclvfl(ii)
             iok = iok + 1
           endif
@@ -596,7 +595,7 @@ do ipp  = 2, nvppmx
       !==========
     endif
     chaine = nomvar(ipp )
-    write(nfecra,2010)chaine(1:8),valmin,valmax
+    write(nfecra,2010)chaine(1:16),valmin,valmax
   endif
 enddo
 write(nfecra,2020)
@@ -614,8 +613,7 @@ if(nbmomt.gt.0) then
       if(idtmom(imom).gt.0) then
         idtcm  = ipproc(icdtmo(idtmom(imom)))
         do iel = 1, ncel
-          valmom = propce(iel,ipcmom)/                            &
-                     max(propce(iel,idtcm),epzero)
+          valmom = propce(iel,ipcmom) / max(propce(iel,idtcm),epzero)
           valmax = max(valmax,valmom)
           valmin = min(valmin,valmom)
         enddo
@@ -623,8 +621,7 @@ if(nbmomt.gt.0) then
       else
         idtcm  =-idtmom(imom)
         do iel = 1, ncel
-          valmom = propce(iel,ipcmom)/                            &
-                     max(dtcmom(idtcm),epzero)
+          valmom = propce(iel,ipcmom)/ max(dtcmom(idtcm),epzero)
           valmax = max(valmax,valmom)
           valmin = min(valmin,valmom)
         enddo
@@ -642,7 +639,7 @@ if(nbmomt.gt.0) then
     endif
 
     chaine = nomvar(ipppro(ipcmom))
-    write(nfecra,2010)chaine(1:8),valmin,valmax
+    write(nfecra,2010)chaine(1:16),valmin,valmax
 
   enddo
   write(nfecra,2020)
@@ -720,12 +717,12 @@ if(nbmomt.gt.0) then
                               'Variable'
     elseif(idtmom(imom).lt.0) then
 #if defined(_CS_LANG_FR)
-      write(nfecra,2040) imom,dtcmom(-idtmom(imom))       ,       &
-                              dtcmom(-idtmom(imom))       ,       &
+      write(nfecra,2040) imom,dtcmom(-idtmom(imom)),              &
+                              dtcmom(-idtmom(imom)),              &
                               'Uniforme'
 #else
-      write(nfecra,2040) imom,dtcmom(-idtmom(imom))       ,       &
-                              dtcmom(-idtmom(imom))       ,       &
+      write(nfecra,2040) imom,dtcmom(-idtmom(imom)),              &
+                              dtcmom(-idtmom(imom)),              &
                               'Uniform'
 #endif
     endif
@@ -761,29 +758,29 @@ endif
 write(nfecra,3000)
 
 !----
-! FORMATS
+! Formats
 !----
 
 
 #if defined(_CS_LANG_FR)
 
  2000 format(                                                     &
-'                                                             ',/,&
-' ----------------------------------------------------------- ',/,&
-'                                                             ',/,&
-'                                                             ',/,&
-' ** INITIALISATION DES VARIABLES                             ',/,&
-'    ----------------------------                             ',/,&
-'                                                             ',/,&
-' ---------------------------------                           ',/,&
-'  Variable  Valeur min  Valeur max                           ',/,&
-' ---------------------------------                           '  )
+                                                                /,&
+' -----------------------------------------------------------', /,&
+                                                                /,&
+                                                                /,&
+' ** INITIALISATION DES VARIABLES',                             /,&
+'    ----------------------------',                             /,&
+                                                                /,&
+' -----------------------------------------',                   /,&
+'  Variable          Valeur min  Valeur max',                   /,&
+' -----------------------------------------                   '  )
  2010 format(                                                     &
- 2x,     a8,      e12.4,      e12.4                              )
+ 2x,     a16,      e12.4,      e12.4                             )
  2020 format(                                                     &
-' ---------------------------------                           ',/)
+' ---------------------------------',                           /)
  2030 format(                                                     &
-' Duree cumulee :                                             ',/,&
+' Duree cumulee :',                                             /,&
 ' ------------------------------------------------------------',/,&
 '   Moyenne  Valeur min  Valeur max Uniforme/Variable en espac',/,&
 ' ------------------------------------------------------------'  )
@@ -795,340 +792,340 @@ write(nfecra,3000)
  3000 format(/,/,                                                 &
 '-------------------------------------------------------------',/)
  3010 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@    PAS DE TEMPS NEGATIF OU NUL                             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  La valeur minimale du pas de temps DT est ',E14.5          ,/,&
-'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
-'@                                                            ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
-'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@    PAS DE TEMPS NEGATIF OU NUL',                             /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@  La valeur minimale du pas de temps DT est ',e14.5,          /,&
+'@  Verifier l''initialisation ou le fichier de reprise.',      /,&
+'@',                                                            /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut les modifier via',   /,&
+'@    cs_user_initialization.f90 ou via l''interface.',         /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3011 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@    CUMUL DE DUREE POUR LES MOYENNES NEGATIVE               ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  La valeur minimale de la duree cumulee pour la moyenne    ',/,&
-'@    IMOM = ',I10   ,' est ',E14.5                            ,/,&
-'@                                                            ',/,&
-'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
-'@                                                            ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut reinitialiser      ',/,&
-'@    la moyenne et le cumul temporel associe en imposant     ',/,&
-'@    IMOOLD(IMOM) = -1.                                      ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@    CUMUL DE DUREE POUR LES MOYENNES NEGATIVE',               /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@  La valeur minimale de la duree cumulee pour la moyenne',    /,&
+'@    IMOM = ',i10,   ' est ',e14.5,                            /,&
+'@',                                                            /,&
+'@  Verifier l''initialisation ou le fichier de reprise.',      /,&
+'@',                                                            /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut reinitialiser',      /,&
+'@    la moyenne et le cumul temporel associe en imposant',     /,&
+'@    IMOOLD(IMOM) = -1.',                                      /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3020 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@     TURBULENCE NEGATIVE OU NULLE                           ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@   Valeur minimale de k       = ',E14.5                      ,/,&
-'@   Valeur minimale de epsilon = ',E14.5                      ,/,&
-'@                                                            ',/,&
-'@  Verifier l''initialisation, le fichier de reprise,        ',/,&
-'@    ou bien la valeur de UREF.                              ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
-'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@     TURBULENCE NEGATIVE OU NULLE',                           /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@   Valeur minimale de k       = ',e14.5,                      /,&
+'@   Valeur minimale de epsilon = ',e14.5,                      /,&
+'@',                                                            /,&
+'@  Verifier l''initialisation, le fichier de reprise,',        /,&
+'@    ou bien la valeur de UREF.',                              /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut les modifier via',   /,&
+'@    cs_user_initialization.f90 ou via l''interface.',         /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3021 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@     VARIABLE PHI DU V2F (PHI_FBAR ou BL-V2/K)              ',/,&
-'@     HORS DES BORNES [0;2]                                  ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@   Valeur minimale de phi     = ',E14.5                      ,/,&
-'@   Valeur maximale de phi     = ',E14.5                      ,/,&
-'@                                                            ',/,&
-'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
-'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@     VARIABLE PHI DU V2F (PHI_FBAR ou BL-V2/K)',              /,&
+'@     HORS DES BORNES [0;2]',                                  /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@   Valeur minimale de phi     = ',e14.5,                      /,&
+'@   Valeur maximale de phi     = ',e14.5,                      /,&
+'@',                                                            /,&
+'@  Verifier l''initialisation ou le fichier de reprise.',      /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut les modifier via',   /,&
+'@    cs_user_initialization.f90 ou via l''interface.',         /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3022 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@     VARIABLE ALPHA DU V2F (BL-V2/K)                        ',/,&
-'@     HORS DES BORNES [0;1]                                  ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@   Valeur minimale de alpha   = ',E14.5                      ,/,&
-'@   Valeur maximale de alpha   = ',E14.5                      ,/,&
-'@                                                            ',/,&
-'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
-'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@     VARIABLE ALPHA DU V2F (BL-V2/K)',                        /,&
+'@     HORS DES BORNES [0;1]',                                  /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@   Valeur minimale de alpha   = ',e14.5,                      /,&
+'@   Valeur maximale de alpha   = ',e14.5,                      /,&
+'@',                                                            /,&
+'@  Verifier l''initialisation ou le fichier de reprise.',      /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut les modifier via',   /,&
+'@    cs_user_initialization.f90 ou via l''interface.',         /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3030 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@     TURBULENCE NEGATIVE OU NULLE                           ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@   Valeur minimale de R11     = ',E14.5                      ,/,&
-'@   Valeur minimale de R22     = ',E14.5                      ,/,&
-'@   Valeur minimale de R33     = ',E14.5                      ,/,&
-'@   Valeur minimale de epsilon = ',E14.5                      ,/,&
-'@                                                            ',/,&
-'@  Verifier l''initialisation, le fichier de reprise,        ',/,&
-'@    ou bien la valeur de UREF.                              ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
-'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@     TURBULENCE NEGATIVE OU NULLE',                           /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@   Valeur minimale de R11     = ',e14.5,                      /,&
+'@   Valeur minimale de R22     = ',e14.5,                      /,&
+'@   Valeur minimale de R33     = ',e14.5,                      /,&
+'@   Valeur minimale de epsilon = ',e14.5,                      /,&
+'@',                                                            /,&
+'@  Verifier l''initialisation, le fichier de reprise,',        /,&
+'@    ou bien la valeur de UREF.',                              /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut les modifier via',   /,&
+'@    cs_user_initialization.f90 ou via l''interface.',         /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3031 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@    TURBULENCE NEGATIVE OU NULLE                            ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@   Valeur minimale de k       = ',E14.5                      ,/,&
-'@   Valeur minimale de omega   = ',E14.5                      ,/,&
-'@                                                            ',/,&
-'@  Verifier l''initialisation, le fichier de reprise,        ',/,&
-'@    ou bien la valeur de UREF.                              ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
-'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@    TURBULENCE NEGATIVE OU NULLE',                            /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@   Valeur minimale de k       = ',e14.5,                      /,&
+'@   Valeur minimale de omega   = ',e14.5,                      /,&
+'@',                                                            /,&
+'@  Verifier l''initialisation, le fichier de reprise,',        /,&
+'@    ou bien la valeur de UREF.',                              /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut les modifier via',   /,&
+'@    cs_user_initialization.f90 ou via l''interface.',         /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3032 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@    TURBULENCE NEGATIVE OU NULLE                            ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@   Valeur minimale de nu      = ',E14.5                      ,/,&
-'@                                                            ',/,&
-'@  Verifier l''initialisation, le fichier de reprise,        ',/,&
-'@    ou bien la valeur de UREF.                              ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
-'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@    TURBULENCE NEGATIVE OU NULLE',                            /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@   Valeur minimale de nu      = ',e14.5,                      /,&
+'@',                                                            /,&
+'@  Verifier l''initialisation, le fichier de reprise,',        /,&
+'@    ou bien la valeur de UREF.',                              /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut les modifier via',   /,&
+'@    cs_user_initialization.f90 ou via l''interface.',         /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3039 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@    LA VITESSE DE REFERENCE UREF N''A PAS ETE INITIALISEE   ',/,&
-'@    OU A ETE MAL INITIALISEE (VALEUR NEGATIVE).             ',/,&
-'@    ELLE VAUT ICI ',E14.5                                    ,/,&
-'@                                                            ',/,&
-'@  La turbulence n''a pas pu etre initialisee                ',/,&
-'@  Corriger la valeur de UREF ou bien initialiser            ',/,&
-'@    directement la turbulence.                              ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@    LA VITESSE DE REFERENCE UREF N''A PAS ETE INITIALISEE',   /,&
+'@    OU A ETE MAL INITIALISEE (VALEUR NEGATIVE).',             /,&
+'@    ELLE VAUT ICI ',e14.5,                                    /,&
+'@',                                                            /,&
+'@  La turbulence n''a pas pu etre initialisee',                /,&
+'@  Corriger la valeur de UREF ou bien initialiser',            /,&
+'@    directement la turbulence.',                              /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3033 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@     EBRSM ALPHA<0 OU ALPHA>1                               ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@   Valeur minimale de alpha   = ',E14.5                      ,/,&
-'@   Valeur maximale de alpha   = ',E14.5                      ,/,&
-'@                                                            ',/,&
-'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
-'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@     EBRSM ALPHA<0 OU ALPHA>1',                               /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@   Valeur minimale de alpha   = ',e14.5,                      /,&
+'@   Valeur maximale de alpha   = ',e14.5,                      /,&
+'@',                                                            /,&
+'@  Verifier l''initialisation ou le fichier de reprise.',      /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut les modifier via',   /,&
+'@    cs_user_initialization.f90 ou via l''interface.',         /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
  3040 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@     GRANDEUR SCALAIRE HORS BORNES                          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Scalaire numero ',I10,' : ',A8                             ,/,&
-'@  Valeur minimale             = ',E14.5                      ,/,&
-'@    Clipping demande a SCAMIN = ',E14.5                      ,/,&
-'@  Valeur maximale             = ',E14.5                      ,/,&
-'@    Clipping demande a SCAMAX = ',E14.5                      ,/,&
-'@  Les valeurs extremes ne sont pas coherentes avec les      ',/,&
-'@    limites SCAMIN et SCAMAX imposees.                      ',/,&
-'@                                                            ',/,&
-'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
-'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@     GRANDEUR SCALAIRE HORS BORNES',                          /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@  Scalaire numero ',i10,' : ',a16,                            /,&
+'@  Valeur minimale             = ',e14.5,                      /,&
+'@    Clipping demande a SCAMIN = ',e14.5,                      /,&
+'@  Valeur maximale             = ',e14.5,                      /,&
+'@    Clipping demande a SCAMAX = ',e14.5,                      /,&
+'@  Les valeurs extremes ne sont pas coherentes avec les',      /,&
+'@    limites SCAMIN et SCAMAX imposees.',                      /,&
+'@',                                                            /,&
+'@  Verifier l''initialisation ou le fichier de reprise.',      /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut les modifier via',   /,&
+'@    cs_user_initialization.f90 ou via l''interface.',         /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3050 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@     VARIANCE NEGATIVE                                      ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Scalaire numero ',I10,' : ',A8                             ,/,&
-'@  Valeur minimale             = ',E14.5                      ,/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@     VARIANCE NEGATIVE',                                      /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@  Scalaire numero ',i10,' : ',a16,                            /,&
+'@  Valeur minimale             = ',e14.5,                      /,&
 '@  Le scalaire indique ci-dessus est une variance (ISCAVR est',/,&
-'@    positif) mais l''initialisation imposee comporte        ',/,&
-'@    des valeurs negatives.                                  ',/,&
-'@                                                            ',/,&
-'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
-'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
-'@  Verifier la definition des variances.                     ',/,&
-'@                                                            ',/,&
+'@    positif) mais l''initialisation imposee comporte',        /,&
+'@    des valeurs negatives.',                                  /,&
+'@',                                                            /,&
+'@  Verifier l''initialisation ou le fichier de reprise.',      /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut les modifier via',   /,&
+'@    cs_user_initialization.f90 ou via l''interface.',         /,&
+'@  Verifier la definition des variances.',                     /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3051 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@     VARIANCE HORS BORNES                                   ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Scalaire numero ',I10,' : ',A8                             ,/,&
-'@  Valeur minimale             = ',E14.5                      ,/,&
-'@    Clipping demande a SCAMIN = ',E14.5                      ,/,&
-'@  Valeur maximale             = ',E14.5                      ,/,&
-'@    Clipping demande a SCAMAX = ',E14.5                      ,/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@     VARIANCE HORS BORNES',                                   /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@  Scalaire numero ',i10,' : ',a16,                            /,&
+'@  Valeur minimale             = ',e14.5,                      /,&
+'@    Clipping demande a SCAMIN = ',e14.5,                      /,&
+'@  Valeur maximale             = ',e14.5,                      /,&
+'@    Clipping demande a SCAMAX = ',e14.5,                      /,&
 '@  Le scalaire indique ci-dessus est une variance (ISCAVR est',/,&
-'@    postif) mais l initialisation imposee comporte          ',/,&
-'@    des valeurs situees hors des bornes                     ',/,&
+'@    postif) mais l initialisation imposee comporte',          /,&
+'@    des valeurs situees hors des bornes',                     /,&
 '@    SCAMIN, SCAMAX ou inferieures a 0 et le mode de clipping',/,&
-'@    demande est ICLVFL(',I10,') = ',I10                      ,/,&
-'@                                                            ',/,&
-'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
-'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
-'@  Verifier la definition des variances et le mode de        ',/,&
-'@    clipping demande.                                       ',/,&
-'@                                                            ',/,&
+'@    demande est ICLVFL(',i10,') = ',i10,                      /,&
+'@',                                                            /,&
+'@  Verifier l''initialisation ou le fichier de reprise.',      /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut les modifier via',   /,&
+'@    cs_user_initialization.f90 ou via l''interface.',         /,&
+'@  Verifier la definition des variances et le mode de',        /,&
+'@    clipping demande.',                                       /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3090 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@',                                                            /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@    L INITIALISATION DES VARIABLES EST INCOMPLETE OU        ',/,&
-'@      INCOHERENTE AVEC LES VALEURS DES PARAMETRES DE CALCUL ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute (',I10,' erreurs).          ',/,&
-'@                                                            ',/,&
-'@  Se reporter aux impressions precedentes pour plus de      ',/,&
-'@    renseignements.                                         ',/,&
-'@  Attention a l''initialisation du pas de temps             ',/,&
-'@                                de la turbulence            ',/,&
-'@                                des scalaires et variances  ',/,&
-'@                                des moyennes temporelles    ',/,&
-'@                                                            ',/,&
-'@  Verifier l''initialisation ou le fichier de reprise.      ',/,&
-'@  Dans le cas ou les valeurs lues dans le fichier           ',/,&
-'@    de reprise sont incorrectes, on peut les modifier via   ',/,&
-'@    cs_user_initialization.f90 ou via l''interface.         ',/,&
-'@  Verifier les parametres de calcul.                        ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
+'@    =========',                                               /,&
+'@',                                                            /,&
+'@    L INITIALISATION DES VARIABLES EST INCOMPLETE OU',        /,&
+'@      INCOHERENTE AVEC LES VALEURS DES PARAMETRES DE CALCUL', /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute (',i10,' erreurs).',          /,&
+'@',                                                            /,&
+'@  Se reporter aux impressions precedentes pour plus de',      /,&
+'@    renseignements.',                                         /,&
+'@  Attention a l''initialisation du pas de temps',             /,&
+'@                                de la turbulence',            /,&
+'@                                des scalaires et variances',  /,&
+'@                                des moyennes temporelles',    /,&
+'@',                                                            /,&
+'@  Verifier l''initialisation ou le fichier de reprise.',      /,&
+'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
+'@    de reprise sont incorrectes, on peut les modifier via',   /,&
+'@    cs_user_initialization.f90 ou via l''interface.',         /,&
+'@  Verifier les parametres de calcul.',                        /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
 #else
 
  2000 format(                                                     &
-'                                                             ',/,&
-' ----------------------------------------------------------- ',/,&
-'                                                             ',/,&
-'                                                             ',/,&
-' ** VARIABLES INITIALIZATION                                 ',/,&
-'    ------------------------                                 ',/,&
-'                                                             ',/,&
-' ---------------------------------                           ',/,&
-'  Variable  Min. value  Max. value                           ',/,&
-' ---------------------------------                           '  )
+                                                                /,&
+' -----------------------------------------------------------', /,&
+                                                                /,&
+                                                                /,&
+' ** VARIABLES INITIALIZATION',                                 /,&
+'    ------------------------',                                 /,&
+                                                                /,&
+' -----------------------------------------',                   /,&
+'  Variable          Min. value  Max. value',                   /,&
+' -----------------------------------------                   '  )
  2010 format(                                                     &
- 2x,     a8,      e12.4,      e12.4                              )
+ 2x,     a16,      e12.4,      e12.4                             )
  2020 format(                                                     &
-' ---------------------------------                           ',/)
+' ---------------------------------',                           /)
  2030 format(                                                     &
-' Time averages (sum over the time-steps)                     ',/,&
+' Time averages (sum over the time-steps)',                     /,&
 ' ------------------------------------------------------------',/,&
-'   Average  Min. value  Max. value Uniform/Variable in space ',/,&
+'   Average  Min. value  Max. value Uniform/Variable in space', /,&
 ' ------------------------------------------------------------'  )
  2040 format(                                                     &
         i10,      e12.4,      e12.4,1x,   a8                     )
@@ -1138,312 +1135,312 @@ write(nfecra,3000)
  3000 format(/,/,                                                 &
 '-------------------------------------------------------------',/)
  3010 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@    NEGATIVE OR NULL TIME STEP                              ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  The minimum value of the time-step dt is ',E14.5           ,/,&
-'@  Verify the initialization or the restart file.            ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with                ',/,&
-'@    cs_user_initialization.f90 or with the interface.       ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@    NEGATIVE OR NULL TIME STEP',                              /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  The minimum value of the time-step dt is ',e14.5,           /,&
+'@  Verify the initialization or the restart file.',            /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, they may be modified with',                /,&
+'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3011 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@    NEGATIVE CUMULATIVE TIME FOR THE MOMENTS                ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  The minimum value of the cumulative time for the moment   ',/,&
-'@    IMOM = ',I10   ,' est ',E14.5                            ,/,&
-'@                                                            ',/,&
-'@  Verify the initialization or the restart file.            ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, the moment and the associated cumulative ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@    NEGATIVE CUMULATIVE TIME FOR THE MOMENTS',                /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  The minimum value of the cumulative time for the moment',   /,&
+'@    IMOM = ',i10,   ' est ',e14.5,                            /,&
+'@',                                                            /,&
+'@  Verify the initialization or the restart file.',            /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, the moment and the associated cumulative', /,&
 '@    time may be re-initialized by setting IMOOLD(IMOM) = -1.',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3020 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@     NEGATIVE OR NULL TURBULENCE                            ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@   Minimum value of k       = ',E14.5                        ,/,&
-'@   Minimum value of epsilon = ',E14.5                        ,/,&
-'@                                                            ',/,&
-'@  Verify the initialization, the restart file,              ',/,&
-'@    and the value of UREF.                                  ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with                ',/,&
-'@    cs_user_initialization.f90 or with the interface.       ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@     NEGATIVE OR NULL TURBULENCE',                            /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@   Minimum value of k       = ',e14.5,                        /,&
+'@   Minimum value of epsilon = ',e14.5,                        /,&
+'@',                                                            /,&
+'@  Verify the initialization, the restart file,',              /,&
+'@    and the value of UREF.',                                  /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, they may be modified with',                /,&
+'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3021 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@     PHI VARIABLE OF V2F (PHI_FBAR or BL-V2/K)              ',/,&
-'@     OUT OF BOUNDS [0;2]                                    ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@   Minimum value of phi = ',E14.5                            ,/,&
-'@   Maximum value of phi = ',E14.5                            ,/,&
-'@                                                            ',/,&
-'@  Verify the initialization or the restart file.            ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with                ',/,&
-'@    cs_user_initialization.f90 or with the interface.       ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@     PHI VARIABLE OF V2F (PHI_FBAR or BL-V2/K)',              /,&
+'@     OUT OF BOUNDS [0;2]',                                    /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@   Minimum value of phi = ',e14.5,                            /,&
+'@   Maximum value of phi = ',e14.5,                            /,&
+'@',                                                            /,&
+'@  Verify the initialization or the restart file.',            /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, they may be modified with',                /,&
+'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3022 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@     ALPHA VARIABLE OF V2F (BL-V2/K)                        ',/,&
-'@     OUT OF BOUNDS [0;1]                                    ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@   Minimum value of alpha = ',E14.5                          ,/,&
-'@   Maximum value of alpha = ',E14.5                          ,/,&
-'@                                                            ',/,&
-'@  Verify the initialization or the restart file.            ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with                ',/,&
-'@    cs_user_initialization.f90 or with the interface.       ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@     ALPHA VARIABLE OF V2F (BL-V2/K)',                        /,&
+'@     OUT OF BOUNDS [0;1]',                                    /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@   Minimum value of alpha = ',e14.5,                          /,&
+'@   Maximum value of alpha = ',e14.5,                          /,&
+'@',                                                            /,&
+'@  Verify the initialization or the restart file.',            /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, they may be modified with',                /,&
+'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3030 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@     NEGATIVE OR NULL TURBULENCE                            ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@   Minimum value of R11     = ',E14.5                        ,/,&
-'@   Minimum value of R22     = ',E14.5                        ,/,&
-'@   Minimum value of R33     = ',E14.5                        ,/,&
-'@   Minimum value of epsilon = ',E14.5                        ,/,&
-'@                                                            ',/,&
-'@  Verify the initialization, the restart file,              ',/,&
-'@    and the value of UREF.                                  ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with                ',/,&
-'@    cs_user_initialization.f90 or with the interface.       ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@     NEGATIVE OR NULL TURBULENCE',                            /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@   Minimum value of R11     = ',e14.5,                        /,&
+'@   Minimum value of R22     = ',e14.5,                        /,&
+'@   Minimum value of R33     = ',e14.5,                        /,&
+'@   Minimum value of epsilon = ',e14.5,                        /,&
+'@',                                                            /,&
+'@  Verify the initialization, the restart file,',              /,&
+'@    and the value of UREF.',                                  /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, they may be modified with',                /,&
+'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3031 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@     NEGATIVE OR NULL TURBULENCE                            ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@   Minimum value of k       = ',E14.5                        ,/,&
-'@   Minimum value of omega   = ',E14.5                        ,/,&
-'@                                                            ',/,&
-'@  Verify the initialization, the restart file,              ',/,&
-'@    and the value of UREF.                                  ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with                ',/,&
-'@    cs_user_initialization.f90 or with the interface.       ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@     NEGATIVE OR NULL TURBULENCE',                            /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@   Minimum value of k       = ',e14.5,                        /,&
+'@   Minimum value of omega   = ',e14.5,                        /,&
+'@',                                                            /,&
+'@  Verify the initialization, the restart file,',              /,&
+'@    and the value of UREF.',                                  /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, they may be modified with',                /,&
+'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3032 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@     NEGATIVE OR NULL TURBULENCE                            ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@   Minimum value of nu      = ',E14.5                        ,/,&
-'@                                                            ',/,&
-'@  Verify the initialization, the restart file,              ',/,&
-'@    and the value of UREF.                                  ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with                ',/,&
-'@    cs_user_initialization.f90 or with the interface.       ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@     NEGATIVE OR NULL TURBULENCE',                            /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@   Minimum value of nu      = ',e14.5,                        /,&
+'@',                                                            /,&
+'@  Verify the initialization, the restart file,',              /,&
+'@    and the value of UREF.',                                  /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, they may be modified with',                /,&
+'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3039 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@    THE REFERENCE VELOCITY UREF HAS NOT BEEN INITIALIZED    ',/,&
-'@    OR HAS NOT BEEN CORRECTLY INITIALIZED (NEGATIVE VALUE)  ',/,&
-'@    ITS VALUE IS ',E14.5                                     ,/,&
-'@                                                            ',/,&
-'@  The turbulence cannot be initialized                      ',/,&
-'@  Correct the value of UREF or initialize the turbulence    ',/,&
-'@    directly with cs_user_initialization.f90                ',/,&
-'@    or with the interface.                                  ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@    THE REFERENCE VELOCITY UREF HAS NOT BEEN INITIALIZED',    /,&
+'@    OR HAS NOT BEEN CORRECTLY INITIALIZED (NEGATIVE VALUE)',  /,&
+'@    ITS VALUE IS ',e14.5,                                     /,&
+'@',                                                            /,&
+'@  The turbulence cannot be initialized',                      /,&
+'@  Correct the value of UREF or initialize the turbulence',    /,&
+'@    directly with cs_user_initialization.f90',                /,&
+'@    or with the interface.',                                  /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 3033 format(                                               &
-'@                                                            ',/,&
+'@',                                                            /)
+ 3033 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@     EBRSM ALPHA<0 OU ALPHA>1                               ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@   Minimum value of alpha   = ',E14.5                        ,/,&
-'@   Maximum value of alpha   = ',E14.5                        ,/,&
-'@                                                            ',/,&
-'@  Verify the initialization or the restart file             ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with                ',/,&
-'@    cs_user_initialization.f90 or with the interface.       ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@     EBRSM ALPHA<0 OU ALPHA>1',                               /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@   Minimum value of alpha   = ',e14.5,                        /,&
+'@   Maximum value of alpha   = ',e14.5,                        /,&
+'@',                                                            /,&
+'@  Verify the initialization or the restart file',             /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, they may be modified with',                /,&
+'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3040 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@     SCALAR QUANTITIES OUT OF BOUNDS                        ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Scalar number ',I10,': ',A8                                ,/,&
-'@  Minimum value                = ',E14.5                     ,/,&
-'@    Desired clipping at SCAMIN = ',E14.5                     ,/,&
-'@  Maximum value                = ',E14.5                     ,/,&
-'@    Desired clipping at SCAMAX = ',E14.5                     ,/,&
-'@  The bounds are not coherent with the limits SCAMIN and    ',/,&
-'@    SCAMAX.                                                 ',/,&
-'@                                                            ',/,&
-'@  Verify the initialization and the restart file.           ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with                ',/,&
-'@    cs_user_initialization.f90 or with the interface.       ',/,&
-'@  Verify the clipping values.                               ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@     SCALAR QUANTITIES OUT OF BOUNDS',                        /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Scalar number ',i10,': ',a16,                               /,&
+'@  Minimum value                = ',e14.5,                     /,&
+'@    Desired clipping at SCAMIN = ',e14.5,                     /,&
+'@  Maximum value                = ',e14.5,                     /,&
+'@    Desired clipping at SCAMAX = ',e14.5,                     /,&
+'@  The bounds are not coherent with the limits SCAMIN and',    /,&
+'@    SCAMAX.',                                                 /,&
+'@',                                                            /,&
+'@  Verify the initialization and the restart file.',           /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, they may be modified with',                /,&
+'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@  Verify the clipping values.',                               /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3050 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@     NEGATIVE VARIANCE                                      ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Scalar number ',I10,': ',A8                                ,/,&
-'@  Minimum value               = ',E14.5                      ,/,&
-'@  This scalar is a variance (ISCAVR is positive)            ',/,&
-'@    but the initialization has some negative values.        ',/,&
-'@                                                            ',/,&
-'@  Verify the initialization and the restart file.           ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with                ',/,&
-'@    cs_user_initialization.f90 or with the interface.       ',/,&
-'@  Verify the variance definition.                           ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@     NEGATIVE VARIANCE',                                      /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Scalar number ',i10,': ',a16,                               /,&
+'@  Minimum value               = ',e14.5,                      /,&
+'@  This scalar is a variance (ISCAVR is positive)',            /,&
+'@    but the initialization has some negative values.',        /,&
+'@',                                                            /,&
+'@  Verify the initialization and the restart file.',           /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, they may be modified with',                /,&
+'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@  Verify the variance definition.',                           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3051 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@     VARIANCE OUT OF BOUNDS                                 ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Scalar number ',I10,': ',A8                                ,/,&
-'@  Minimum value                = ',E14.5                     ,/,&
-'@    Desired clipping at SCAMIN = ',E14.5                     ,/,&
-'@  Maximum value                = ',E14.5                     ,/,&
-'@    Desired clipping at SCAMAX = ',E14.5                     ,/,&
-'@  This scalar is a variance (ISCAVR is positive)             ',/,&
-'@    but the initialization has some values out               ',/,&
-'@    of the bounds SCAMIN, SCAMAX or lower than 0 and the    ',/,&
-'@    desired clipping mode is ICLVFL(',I10,') = ',I10         ,/,&
-'@                                                            ',/,&
-'@  Verify the initialization and the restart file.           ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with                ',/,&
-'@    cs_user_initialization.f90 or with the interface.       ',/,&
-'@  Verify the variance definition and the clipping mode.     ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@     VARIANCE OUT OF BOUNDS',                                 /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Scalar number ',i10,': ',a16,                               /,&
+'@  Minimum value                = ',e14.5,                     /,&
+'@    Desired clipping at SCAMIN = ',e14.5,                     /,&
+'@  Maximum value                = ',e14.5,                     /,&
+'@    Desired clipping at SCAMAX = ',e14.5,                     /,&
+'@  This scalar is a variance (ISCAVR is positive)',            /,&
+'@    but the initialization has some values out',              /,&
+'@    of the bounds SCAMIN, SCAMAX or lower than 0 and the',    /,&
+'@    desired clipping mode is ICLVFL(',i10,') = ',i10,         /,&
+'@',                                                            /,&
+'@  Verify the initialization and the restart file.',           /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, they may be modified with',                /,&
+'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@  Verify the variance definition and the clipping mode.',     /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  3090 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@',                                                            /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
-'@    ========                                                ',/,&
-'@                                                            ',/,&
-'@    THE VARIABLES INITIALIZATION IS INCOMPLETE OR           ',/,&
-'@    INCOHERENT WITH THE PARAMETERS VALUE OF THE CALCULATION ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run (',I10,' errors).         ',/,&
-'@                                                            ',/,&
-'@  Refer to the previous warnings for further information.   ',/,&
-'@  Pay attention to the initialization of                    ',/,&
-'@                                the time-step               ',/,&
-'@                                the turbulence              ',/,&
-'@                                the scalars and variances   ',/,&
-'@                                the time averages           ',/,&
-'@                                                            ',/,&
-'@  Verify the initialization and the restart file.           ',/,&
-'@  In the case where the values read in the restart file     ',/,&
-'@    are incorrect, they may be modified with                ',/,&
-'@    cs_user_initialization.f90 or with the interface.       ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
+'@    ========',                                                /,&
+'@',                                                            /,&
+'@    THE VARIABLES INITIALIZATION IS INCOMPLETE OR',           /,&
+'@    INCOHERENT WITH THE PARAMETERS VALUE OF THE CALCULATION', /,&
+'@',                                                            /,&
+'@  The calculation will not be run (',i10,' errors).',         /,&
+'@',                                                            /,&
+'@  Refer to the previous warnings for further information.',   /,&
+'@  Pay attention to the initialization of',                    /,&
+'@                                the time-step',               /,&
+'@                                the turbulence',              /,&
+'@                                the scalars and variances',   /,&
+'@                                the time averages',           /,&
+'@',                                                            /,&
+'@  Verify the initialization and the restart file.',           /,&
+'@  In the case where the values read in the restart file',     /,&
+'@    are incorrect, they may be modified with',                /,&
+'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
 #endif
 

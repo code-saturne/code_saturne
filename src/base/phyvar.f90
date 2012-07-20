@@ -136,7 +136,7 @@ ipass = ipass + 1
 !       en compte des periodicites pour exploitation dans pering, inimas)
 !===============================================================================
 
-if(iperot.gt.0) then
+if (iperot.gt.0) then
 
   if (ivelco.eq.0) then
     call perinu                                                    &
@@ -147,7 +147,7 @@ if(iperot.gt.0) then
     dudxy  )
   endif
 
-  if(itytur.eq.3) then
+  if (itytur.eq.3) then
 
     call perinr                                                   &
     !==========
@@ -311,39 +311,39 @@ endif
 !     On se sert de irovar (ivivar) pour ecrire et lire
 !       rho (visc) dans le fichier suite
 
-if(ntcabs.eq.ntpabs+1) then
+if (ntcabs.eq.ntpabs+1) then
 
 !     Masse volumique aux cellules et aux faces de bord
   iok1 = 0
-  if(irovar.eq.0) then
+  if (irovar.eq.0) then
     ipcrom = ipproc(irom)
     ipbrom = ipprob(irom)
     do iel = 1, ncel
-      if( abs(propce(iel ,ipcrom)-ro0   ).gt.epzero) then
+      if ( abs(propce(iel ,ipcrom)-ro0   ).gt.epzero) then
         iok1 = 1
       endif
     enddo
     do ifac = 1, nfabor
-      if( abs(propfb(ifac,ipbrom)-ro0   ).gt.epzero) then
+      if ( abs(propfb(ifac,ipbrom)-ro0   ).gt.epzero) then
         iok1 = 1
       endif
     enddo
   endif
-  if(iok1.ne.0) then
+  if (iok1.ne.0) then
     write(nfecra,9001)
   endif
 
 !     Viscosite moleculaire aux cellules
   iok2 = 0
-  if(ivivar.eq.0) then
+  if (ivivar.eq.0) then
     ipcvis = ipproc(iviscl)
     do iel = 1, ncel
-      if( abs(propce(iel ,ipcvis)-viscl0).gt.epzero) then
+      if ( abs(propce(iel ,ipcvis)-viscl0).gt.epzero) then
         iok2 = 1
       endif
     enddo
   endif
-  if(iok2.ne.0) then
+  if (iok2.ne.0) then
     if ( ippmod(icompf) .ge. 0 ) then
       write(nfecra,9003)
     else
@@ -351,7 +351,7 @@ if(ntcabs.eq.ntpabs+1) then
     endif
   endif
 
-  if(iok1.ne.0.or.iok2.ne.0) then
+  if (iok1.ne.0.or.iok2.ne.0) then
     call csexit(1)
   endif
 
@@ -510,7 +510,7 @@ elseif (iturb.eq.40) then
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel )
 
-elseif(iturb.eq.41) then
+elseif (iturb.eq.41) then
 
 ! 3.6 LES dynamique
 ! =================
@@ -634,13 +634,13 @@ if (iturb.eq.41) then
   iclipc = 0
   do iel = 1, ncel
     viscto = propce(iel,ipcvis) + propce(iel,ipcvst)
-    if(viscto.lt.0.d0) then
+    if (viscto.lt.0.d0) then
       propce(iel,ipcvst) = 0.d0
       iclipc = iclipc + 1
     endif
   enddo
-  if(iwarni(iu).ge.1) then
-    if(irangp.ge.0) then
+  if (iwarni(iu).ge.1) then
+    if (irangp.ge.0) then
       call parcpt(iclipc)
       !==========
     endif
@@ -692,7 +692,7 @@ iok = 0
 ipcrom = ipproc(irom)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
-if(icp.gt.0) then
+if (icp.gt.0) then
   ipccp  = ipproc(icp   )
   nn     = 4
 else
@@ -706,11 +706,11 @@ ipbrom = ipprob(irom)
 ! Min et max sur les cellules
 do ii = 1, nn
   ivar = 0
-  if(ii.eq.1) ivar = ipcrom
-  if(ii.eq.2) ivar = ipcvis
-  if(ii.eq.3) ivar = ipcvst
-  if(ii.eq.4) ivar = ipccp
-  if(ivar.gt.0) then
+  if (ii.eq.1) ivar = ipcrom
+  if (ii.eq.2) ivar = ipcvis
+  if (ii.eq.3) ivar = ipcvst
+  if (ii.eq.4) ivar = ipccp
+  if (ivar.gt.0) then
     varmx(ii) = propce(1,ivar)
     varmn(ii) = propce(1,ivar)
     do iel = 2, ncel
@@ -743,21 +743,20 @@ endif
 ! Impressions
 iok1 = 0
 do ii = 1, nn
-  if(ii.eq.1) chaine = nomvar(ipppro(ipproc(irom  )))
-  if(ii.eq.2) chaine = nomvar(ipppro(ipproc(iviscl)))
-  if(ii.eq.3) chaine = nomvar(ipppro(ipproc(ivisct)))
-  if(ii.eq.4) chaine = nomvar(ipppro(ipproc(icp   )))
-  if(iwarni(iu).ge.1.or.ipass.eq.1.or.                   &
-       varmn(ii).lt.0.d0)then
-    if(iok1.eq.0) then
+  if (ii.eq.1) chaine = nomvar(ipppro(ipproc(irom  )))
+  if (ii.eq.2) chaine = nomvar(ipppro(ipproc(iviscl)))
+  if (ii.eq.3) chaine = nomvar(ipppro(ipproc(ivisct)))
+  if (ii.eq.4) chaine = nomvar(ipppro(ipproc(icp   )))
+  if (iwarni(iu).ge.1.or.ipass.eq.1.or.varmn(ii).lt.0.d0) then
+    if (iok1.eq.0) then
       write(nfecra,3010)
       iok1 = 1
     endif
-    if ((ii.ne.3).or.(iturb.ne.0))                       &
-         write(nfecra,3011)chaine(1:8),varmn(ii),varmx(ii)
+    if ((ii.ne.3).or.(iturb.ne.0))                          &
+         write(nfecra,3011)chaine(1:16),varmn(ii),varmx(ii)
   endif
 enddo
-if(iok1.eq.1) write(nfecra,3012)
+if (iok1.eq.1) write(nfecra,3012)
 
 ! Verifications de valeur physique
 
@@ -765,7 +764,7 @@ if(iok1.eq.1) write(nfecra,3012)
 ii = 1
 chaine = nomvar(ipppro(ipproc(irom  )))
 if (varmn(ii).lt.0.d0) then
-  write(nfecra,9011)chaine(1:8),varmn(ii)
+  write(nfecra,9011)chaine(1:16),varmn(ii)
   iok = iok + 1
 endif
 
@@ -773,7 +772,7 @@ endif
 ii = 2
 chaine = nomvar(ipppro(ipproc(iviscl)))
 if (varmn(ii).lt.0.d0) then
-  write(nfecra,9011)chaine(1:8),varmn(ii)
+  write(nfecra,9011)chaine(1:16),varmn(ii)
   iok = iok + 1
 endif
 
@@ -788,7 +787,7 @@ if (varmn(ii).lt.0.d0.and.iturb.ne.41) then
 endif
 
 ! Chaleur specifique definie
-if(icp.gt.0) then
+if (icp.gt.0) then
   ii = 4
   chaine = nomvar(ipppro(ipproc(icp   )))
   if (varmn(ii).lt.0.d0) then
@@ -799,7 +798,7 @@ if(icp.gt.0) then
       endif
     enddo
     if (iisct.eq.1) then
-      write(nfecra,9011)chaine(1:8),varmn(ii)
+      write(nfecra,9011)chaine(1:16),varmn(ii)
       iok = iok + 1
     endif
   endif
@@ -807,12 +806,12 @@ endif
 
 ! ---> Calcul des bornes des scalaires et impressions
 
-if(nscal.ge.1) then
+if (nscal.ge.1) then
 
   iok1 = 0
   do iscal = 1, nscal
 
-    if(ivisls(iscal).gt.0) then
+    if (ivisls(iscal).gt.0) then
       ipcvis = ipproc(ivisls(iscal))
     else
       ipcvis = 0
@@ -820,7 +819,7 @@ if(nscal.ge.1) then
 
     vismax(iscal) = -grand
     vismin(iscal) =  grand
-    if(ipcvis.gt.0) then
+    if (ipcvis.gt.0) then
       do iel = 1, ncel
         vismax(iscal) = max(vismax(iscal),propce(iel,ipcvis))
         vismin(iscal) = min(vismin(iscal),propce(iel,ipcvis))
@@ -837,19 +836,17 @@ if(nscal.ge.1) then
     endif
 
     ivar = isca(iscal)
-    if(iwarni(ivar).ge.1.or.ipass.eq.1.or.                        &
-                                        vismin(iscal).le.0.d0)then
+    if (iwarni(ivar).ge.1.or.ipass.eq.1.or.vismin(iscal).le.0.d0) then
       chaine = nomvar(ipprtp(ivar))
-      if(iok1.eq.0) then
+      if (iok1.eq.0) then
         write(nfecra,3110)
         iok1 = 1
       endif
-      write(nfecra,3111)chaine(1:8),iscal,                        &
-                        vismin(iscal),vismax(iscal)
+      write(nfecra,3111) chaine(1:16),iscal,vismin(iscal),vismax(iscal)
     endif
 
   enddo
-  if(iok1.eq.1) write(nfecra,3112)
+  if (iok1.eq.1) write(nfecra,3112)
 
 ! Verifications de valeur physique
 
@@ -861,7 +858,7 @@ if(nscal.ge.1) then
 
     if (vismin(iscal).lt.0.d0) then
       chaine = nomvar(ipprtp(ivar))
-      write(nfecra,9111)chaine(1:8),iscal,vismin(iscal)
+      write(nfecra,9111)chaine(1:16),iscal,vismin(iscal)
       iok = iok + 1
     endif
 
@@ -895,13 +892,12 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 
 ! Impressions
     chaine = nomvar(ipppro(ipcvma))
-    if(iwarni(iuma).ge.1.or.ipass.eq.1.or.                        &
-         varmn(1).lt.0.d0)then
+    if (iwarni(iuma).ge.1.or.ipass.eq.1.or.varmn(1).lt.0.d0) then
       if (iok1.eq.0) then
         write(nfecra,3210)
         iok1 = 1
       endif
-      write(nfecra,3211)chaine(1:8),varmn(1),varmx(1)
+      write(nfecra,3211)chaine(1:16),varmn(1),varmx(1)
     endif
 
 ! Verifications de valeur physique
@@ -921,7 +917,7 @@ endif
 
 ! --->  arret eventuel
 
-if(iok.ne.0) then
+if (iok.ne.0) then
   write(nfecra,9999)iok
   call csexit (1)
 endif
@@ -947,393 +943,393 @@ endif
 #if defined(_CS_LANG_FR)
 
  1000 format(                                                     &
-' Nb de clippings de la viscosite totale (mu+mu_t>0) :',I10,/)
+' Nb de clippings de la viscosite totale (mu+mu_t>0) :',i10,/)
  3010 format(                                                     &
-' ---------------------------------                           ',/,&
-' Propriete  Valeur min  Valeur max                           ',/,&
-' ---------------------------------                           '  )
+' -----------------------------------------',                   /,&
+' Propriete          Valeur min  Valeur max',                   /,&
+' -----------------------------------------                   '  )
  3011 format(                                                     &
- 2x,    a8,      e12.4,      e12.4                               )
+ 2x,    a16,      e12.4,      e12.4                              )
  3012 format(                                                     &
-' ---------------------------------                           ',/)
+' -----------------------------------------',                   /)
  3110 format(                                                     &
-' --- Diffusivite :                                           ',/,&
-' ---------------------------------------                     ',/,&
-' Scalaire Numero  Valeur min  Valeur max                     ',/,&
-' ---------------------------------------                     '  )
+' --- Diffusivite :',                                           /,&
+' -----------------------------------------------',             /,&
+' Scalaire         Numero  Valeur min  Valeur max',             /,&
+' -----------------------------------------------'               )
  3111 format(                                                     &
- 1x,    a8,   i7,      e12.4,      e12.4                         )
+ 1x,    a16,   i7,      e12.4,      e12.4                        )
  3112 format(                                                     &
-' ---------------------------------------                     ',/)
+' ---------------------------------------',                     /)
  3210 format(                                                     &
-' --- Viscosite de maillage (methode ALE)                     ',/,&
-' ---------------------------------                           ',/,&
-' Propriete  Valeur min  Valeur max                           ',/,&
-' ---------------------------------                           '  )
+' --- Viscosite de maillage (methode ALE)',                     /,&
+' -----------------------------------------',                   /,&
+' Propriete          Valeur min  Valeur max',                   /,&
+' -----------------------------------------'                     )
  3211 format(                                                     &
- 2x,    a8,      e12.4,      e12.4                               )
+ 2x,    a16,      e12.4,      e12.4                              )
  3212 format(                                                     &
-' ---------------------------------                           ',/)
+' -----------------------------------------',                   /)
 
  9001  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    INCOHERENCE ENTRE LES PARAMETRES ET LA MASSE VOLUMIQUE  ',/,&
-'@                                                            ',/,&
-'@  On a indique que la masse volumique etait                 ',/,&
-'@     constante (IROVAR=0) mais on a modifie ses             ',/,&
-'@     valeurs aux cellules ou aux faces de bord.             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier l''interface, cs_user_parameters.f90, et usphyv. ',/,&
-'@                                                            ',/,&
+'@    =========',                                               /,&
+'@    INCOHERENCE ENTRE LES PARAMETRES ET LA MASSE VOLUMIQUE',  /,&
+'@',                                                            /,&
+'@  On a indique que la masse volumique etait',                 /,&
+'@     constante (IROVAR=0) mais on a modifie ses',             /,&
+'@     valeurs aux cellules ou aux faces de bord.',             /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier l''interface, cs_user_parameters.f90, et usphyv.', /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9002  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    INCOHERENCE ENTRE LES PARAMETRES ET                     ',/,&
+'@    =========',                                               /,&
+'@    INCOHERENCE ENTRE LES PARAMETRES ET',                     /,&
 '@                                    LA VISCOSITE MOLECULAIRE',/,&
-'@                                                            ',/,&
-'@  On a indique que la viscosite moleculaire                 ',/,&
+'@',                                                            /,&
+'@  On a indique que la viscosite moleculaire',                 /,&
 '@     etait constante (IVIVAR=0) mais on a modifie ses',/,&
-'@     valeurs aux cellules.                                  ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier l''interface, cs_user_parameters.f90, et usphyv. ',/,&
-'@                                                            ',/,&
+'@     valeurs aux cellules.',                                  /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier l''interface, cs_user_parameters.f90, et usphyv.', /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9003  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    MODULE COMPRESSIBLE                                     ',/,&
-'@    INCOHERENCE ENTRE USCFPV ET USCFX1 POUR                 ',/,&
+'@    =========',                                               /,&
+'@    MODULE COMPRESSIBLE',                                     /,&
+'@    INCOHERENCE ENTRE USCFPV ET USCFX1 POUR',                 /,&
 '@                                    LA VISCOSITE MOLECULAIRE',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
 '@  En compressible la viscosite moleculaire est constante par',/,&
-'@     defaut (IVIVAR=0) et la valeur de IVIVAR n''a   ',/,&
-'@     pas ete modifiee dans uscfx1. Pourtant, on a modifie   ',/,&
-'@     les valeurs de la viscosite moleculaire dans uscfpv.   ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier uscfx1 et uscfpv.                                ',/,&
-'@                                                            ',/,&
+'@     defaut (IVIVAR=0) et la valeur de IVIVAR n''a',   /,&
+'@     pas ete modifiee dans uscfx1. Pourtant, on a modifie',   /,&
+'@     les valeurs de la viscosite moleculaire dans uscfpv.',   /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier uscfx1 et uscfpv.',                                /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 9004  format( &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    OPTION IDILAT 3                                         ',/,&
-'@    LE CALCUL ENGENDRE UN RHO NEGATIF                       ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier uscfx1 et uscfpv.                                ',/,&
-'@                                                            ',/,&
+'@    =========',                                               /,&
+'@    OPTION IDILAT 3',                                         /,&
+'@    LE CALCUL ENGENDRE UN RHO NEGATIF',                       /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier uscfx1 et uscfpv.',                                /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9011  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    LA PROPRIETE PHYSIQUE ',A8  ,' N A PAS ETE              ',/,&
+'@    =========',                                               /,&
+'@    LA PROPRIETE PHYSIQUE', a16  ,' N A PAS ETE',             /,&
 '@                                       CORRECTEMENT DEFINIE.',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
 '@  La propriete physique identifiee ci-dessus est variable et',/,&
-'@    le minimum atteint est ',E12.4                           ,/,&
-'@  Verifier que cette propriete a ete definie et             ',/,&
-'@    que la loi adoptee conduit a des valeurs correctes.     ',/,&
-'@                                                            ',/,&
+'@    le minimum atteint est', e12.4                           ,/,&
+'@  Verifier que cette propriete a ete definie et',             /,&
+'@    que la loi adoptee conduit a des valeurs correctes.',     /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9012  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    LA VISCOSITE TURBULENTE                                 ',/,&
+'@    =========',                                               /,&
+'@    LA VISCOSITE TURBULENTE',                                 /,&
 '@                           N A PAS ETE CORRECTEMENT DEFINIE.',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Le minimum atteint est ',E12.4                             ,/,&
-'@  Verifier le cas echeant la definition de la masse         ',/,&
-'@    volumique et la modification de la viscosite turbulente ',/,&
-'@    dans usvist.                                            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Le minimum atteint est', e12.4                             ,/,&
+'@  Verifier le cas echeant la definition de la masse',         /,&
+'@    volumique et la modification de la viscosite turbulente', /,&
+'@    dans usvist.',                                            /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
  9111  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    LA DIFFUSIVITE DU SCALAIRE ',A8                          ,/,&
-'@       (SCALAIRE NUMERO ',I10   ,') N A PAS ETE             ',/,&
+'@    =========',                                               /,&
+'@    LA DIFFUSIVITE DU SCALAIRE', a16                         ,/,&
+'@       (SCALAIRE NUMERO', i10   ,') N A PAS ETE',             /,&
 '@                                       CORRECTEMENT DEFINIE.',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
 '@  La propriete physique identifiee ci-dessus est variable et',/,&
-'@    le minimum atteint est ',E12.4                           ,/,&
-'@  Verifier que cette propriete a bien ete definie et        ',/,&
-'@    que la loi adoptee conduit a des valeurs correctes.     ',/,&
-'@                                                            ',/,&
+'@    le minimum atteint est', e12.4                           ,/,&
+'@  Verifier que cette propriete a bien ete definie et',        /,&
+'@    que la loi adoptee conduit a des valeurs correctes.',     /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9211  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    LA VISCOSITE DE MAILLAGE N A PAS ETE                    ',/,&
+'@    =========',                                               /,&
+'@    LA VISCOSITE DE MAILLAGE N A PAS ETE',                    /,&
 '@                                       CORRECTEMENT DEFINIE.',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Le minimum atteint est ',E12.4                             ,/,&
-'@  Verifier le cas echeant la modification de la viscosite   ',/,&
-'@    dans usvima ou dans l''interface graphique.             ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Le minimum atteint est', e12.4                             ,/,&
+'@  Verifier le cas echeant la modification de la viscosite',   /,&
+'@    dans usvima ou dans l''interface graphique.',             /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9999 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@',                                                            /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    DES GRANDEURS PHYSIQUES ONT DES VALEURS INCORRECTES     ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute (',I10,' erreurs).          ',/,&
-'@                                                            ',/,&
-'@  Se reporter aux impressions precedentes pour plus de      ',/,&
-'@    renseignements.                                         ',/,&
-'@  Verifier les definitions et lois definies                 ',/,&
-'@    dans usphyv ou dans l''interface graphique.             ',/,&
-'@                                                            ',/,&
+'@    =========',                                               /,&
+'@    DES GRANDEURS PHYSIQUES ONT DES VALEURS INCORRECTES',     /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute (',i10,' erreurs).',          /,&
+'@',                                                            /,&
+'@  Se reporter aux impressions precedentes pour plus de',      /,&
+'@    renseignements.',                                         /,&
+'@  Verifier les definitions et lois definies',                 /,&
+'@    dans usphyv ou dans l''interface graphique.',             /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
 #else
 
  1000 format(                                                     &
-' Nb of clippings for the effective viscosity (mu+mu_t>0):',I10,/)
+' Nb of clippings for the effective viscosity (mu+mu_t>0):',i10,/)
  3010 format(                                                     &
-' ---------------------------------                           ',/,&
-' Property   Min. value  Max. value                           ',/,&
-' ---------------------------------                           '  )
+' -----------------------------------------',                   /,&
+' Property           Min. value  Max. value',                   /,&
+' -----------------------------------------'                     )
  3011 format(                                                     &
- 2x,    a8,      e12.4,      e12.4                               )
+ 2x,    a16,      e12.4,      e12.4                              )
  3012 format(                                                     &
-' ---------------------------------                           ',/)
+' -----------------------------------------',                   /)
  3110 format(                                                     &
-' --- Diffusivity:                                            ',/,&
-' ---------------------------------------                     ',/,&
-' Scalar   Number  Min. value  Max. value                     ',/,&
-' ---------------------------------------                     '  )
+' --- Diffusivity:',                                            /,&
+' -----------------------------------------------',             /,&
+' Scalar           Number  Min. value  Max. value',             /,&
+' -----------------------------------------------'               )
  3111 format(                                                     &
- 1x,    a8,   i7,      e12.4,      e12.4                         )
+ 1x,    a16,   i7,      e12.4,      e12.4                        )
  3112 format(                                                     &
-' ---------------------------------------                     ',/)
+' -----------------------------------------------',             /)
  3210 format(                                                     &
-' --- Mesh viscosity (ALE method)                             ',/,&
-' ---------------------------------                           ',/,&
-' Property   Min. value  Max. value                           ',/,&
-' ---------------------------------                           '  )
+' --- Mesh viscosity (ALE method)',                             /,&
+' -----------------------------------------',                   /,&
+' Property           Min. value  Max. value',                   /,&
+' -----------------------------------------'                     )
  3211 format(                                                     &
- 2x,    a8,      e12.4,      e12.4                               )
+ 2x,    a16,      e12.4,      e12.4                              )
  3212 format(                                                     &
-' ---------------------------------                           ',/)
+' -----------------------------------------',                   /)
 
  9001  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
-'@    ========                                                ',/,&
-'@    INCOHERENCY BETWEEN PARAMETERS FOR THE DENSITY.         ',/,&
-'@                                                            ',/,&
-'@  The density has been declared constant                    ',/,&
-'@     (IROVAR=0) but its value has been modified             ',/,&
-'@     in cells or at boundary faces.                         ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Check the interface, cs_user_parameters.f90, and usphyv   ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
+'@    ========',                                                /,&
+'@    INCOHERENCY BETWEEN PARAMETERS FOR THE DENSITY.',         /,&
+'@',                                                            /,&
+'@  The density has been declared constant',                    /,&
+'@     (IROVAR=0) but its value has been modified',             /,&
+'@     in cells or at boundary faces.',                         /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Check the interface, cs_user_parameters.f90, and usphyv',   /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9002  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
-'@    ========                                                ',/,&
-'@    INCOHERENCY BETWEEN PARAMETERS FOR                      ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
+'@    ========',                                                /,&
+'@    INCOHERENCY BETWEEN PARAMETERS FOR',                      /,&
 '@                                     THE MOLECULAR VISCOSITY',/,&
-'@                                                            ',/,&
-'@  The molecular viscosity has been declared constant        ',/,&
-'@     (IVIVAR=0) but its value has been  modified in cells   ',/,&
-'@     or at boundary faces.                                  ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Check the interface, cs_user_parameters.f90, and usphyv   ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@  The molecular viscosity has been declared constant',        /,&
+'@     (IVIVAR=0) but its value has been  modified in cells',   /,&
+'@     or at boundary faces.',                                  /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Check the interface, cs_user_parameters.f90, and usphyv',   /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9003  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
-'@    ========                                                ',/,&
-'@    INCOHERENCY BETWEEN USCFPV AND USCFX1 FOR               ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
+'@    ========',                                                /,&
+'@    INCOHERENCY BETWEEN USCFPV AND USCFX1 FOR',               /,&
 '@                                     THE MOLECULAR VISCOSITY',/,&
-'@                                                            ',/,&
-'@  In the compressible module, the molecular viscosity is    ',/,&
-'@     constant by default (IVIVAR=0) and the value    ',/,&
-'@     of IVIVAR  has not been modified in uscfx1. Yet, its   ',/,&
-'@     value has been modified in uscfpv.                     ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Verify uscfx1 and uscfpv.                                 ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@  In the compressible module, the molecular viscosity is',    /,&
+'@     constant by default (IVIVAR=0) and the value',    /,&
+'@     of IVIVAR  has not been modified in uscfx1. Yet, its',   /,&
+'@     value has been modified in uscfpv.',                     /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Verify uscfx1 and uscfpv.',                                 /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9004  format( &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
-'@    ========                                                ',/,&
-'@    OPTION IDILAT 3                                         ',/,&
-'@    THE COMPUTATION MAKE RHO NEGATIVE                       ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
+'@    ========',                                                /,&
+'@    OPTION IDILAT 3',                                         /,&
+'@    THE COMPUTATION MAKE RHO NEGATIVE',                       /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9011  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
-'@    ========                                                ',/,&
-'@    THE PHYSICAL PROPERTY ',A8  ,' HAS NOT BEEN             ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
+'@    ========',                                                /,&
+'@    THE PHYSICAL PROPERTY', a16  ,' HAS NOT BEEN',            /,&
 '@                                          CORRECTLY DEFINED.',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  The physical property identified is variable and the      ',/,&
-'@    minimum reached is ',E12.4                               ,/,&
-'@  Verify that this property has been defined and            ',/,&
-'@    that the chosen law leads to correct values.            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  The physical property identified is variable and the',      /,&
+'@    minimum reached is', e12.4                               ,/,&
+'@  Verify that this property has been defined and',            /,&
+'@    that the chosen law leads to correct values.',            /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9012  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
-'@    ========                                                ',/,&
-'@    THE TURBULENT VISCOSITY HAS NOT BEEN CORRECTLY DEFINED. ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  The  minimum reached is ',E12.4                            ,/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
+'@    ========',                                                /,&
+'@    THE TURBULENT VISCOSITY HAS NOT BEEN CORRECTLY DEFINED.', /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  The  minimum reached is', e12.4                            ,/,&
 '@  Verify the density definition  and the turbulent viscosity',/,&
-'@    modification in usvist (if any).                        ',/,&
-'@                                                            ',/,&
+'@    modification in usvist (if any).',                        /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
  9111  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
-'@    ========                                                ',/,&
-'@    THE DIFFUSIVITY OF THE SCALAR ',A8                       ,/,&
-'@       (SCALAR NUMBER ',I10   ,') HAS NOT BEEN              ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
+'@    ========',                                                /,&
+'@    THE DIFFUSIVITY OF THE SCALAR', a16                      ,/,&
+'@       (SCALAR NUMBER', i10   ,') HAS NOT BEEN',              /,&
 '@                                          CORRECTLY DEFINED.',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  The physical property identified is variable and the      ',/,&
-'@    minimum reached is ',E12.4                               ,/,&
-'@  Verify that this property has been defined in usphyv and  ',/,&
-'@    that the chosen law leads to correct values.            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  The physical property identified is variable and the',      /,&
+'@    minimum reached is', e12.4                               ,/,&
+'@  Verify that this property has been defined in usphyv and',  /,&
+'@    that the chosen law leads to correct values.',            /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9211  format(                                                    &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
-'@    ========                                                ',/,&
-'@    THE MESH VISCOSITY HAS NOT BEEN CORRECTLY DEFINED.      ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  The  minimum reached is ',E12.4                            ,/,&
-'@  Verify that this property has been defined in usvima and  ',/,&
-'@    that the chosen law leads to correct values.            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
+'@    ========',                                                /,&
+'@    THE MESH VISCOSITY HAS NOT BEEN CORRECTLY DEFINED.',      /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  The  minimum reached is', e12.4                            ,/,&
+'@  Verify that this property has been defined in usvima and',  /,&
+'@    that the chosen law leads to correct values.',            /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
  9999 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@',                                                            /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
-'@    ========                                                ',/,&
-'@    SOME PHYSICAL QUANTITIES HAVE INCORRECT VALUES          ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run (',I10,' errors).         ',/,&
-'@                                                            ',/,&
-'@  Refer to previous warnings for further information.       ',/,&
-'@  Verify usphyv.                                            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
+'@    ========',                                                /,&
+'@    SOME PHYSICAL QUANTITIES HAVE INCORRECT VALUES',          /,&
+'@',                                                            /,&
+'@  The calculation will not be run (',i10,' errors).',         /,&
+'@',                                                            /,&
+'@  Refer to previous warnings for further information.',       /,&
+'@  Verify usphyv.',                                            /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

@@ -222,7 +222,7 @@ thetv  = thetav(ivar )
 chaine = nomvar(ippvar)
 
 if(iwarni(ivar).ge.1) then
-  write(nfecra,1000) chaine(1:8)
+  write(nfecra,1000) chaine(1:16)
 endif
 
 ! When solving the Temperature, we solve:
@@ -737,7 +737,7 @@ if (iwarni(ivar).ge.2) then
   enddo
   isqrt = 1
   call prodsc(ncel,isqrt,smbrs,smbrs,sclnor)
-  write(nfecra,1200)chaine(1:8) ,sclnor
+  write(nfecra,1200)chaine(1:16) ,sclnor
 endif
 
 ! Free memory
@@ -752,9 +752,9 @@ deallocate(xcpp)
 #if defined(_CS_LANG_FR)
 
  1000 format(/,                                                   &
-'   ** RESOLUTION POUR LA VARIABLE ',A8                        ,/,&
+'   ** RESOLUTION POUR LA VARIABLE ',A16                       ,/,&
 '      ---------------------------                            ',/)
- 1200 format(1X,A8,' : BILAN EXPLICITE = ',E14.5)
+ 1200 format(1X,A16,' : BILAN EXPLICITE = ',E14.5)
  9000 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -772,9 +772,9 @@ deallocate(xcpp)
 #else
 
  1000 format(/,                                                   &
-'   ** SOLVING VARIABLE ',A8                                   ,/,&
+'   ** SOLVING VARIABLE ',A16                                  ,/,&
 '      ----------------'                                       ,/)
- 1200 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
+ 1200 format(1X,A16,' : EXPLICIT BALANCE = ',E14.5)
  9000 format( &
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
