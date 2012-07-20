@@ -104,17 +104,12 @@ integer          ivarh
 integer          iclipc
 integer          nswrgp, imligp, iwarnp, iphydp, iclvar
 integer          ir12ip, ir13ip, ir23ip, ialpip,iccocg,inc
-integer          iclvaf, iconvp, idiffp, ircflp
-integer          ischcp, isstpp, ippvar
-integer          ipcvsl, iflmas, iflmab
 Double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto, xrtp
 double precision alp3, xrij(3,3) , xnal(3)   , xnoral
 double precision xttke, xttkmg, xttdrb,epsrgp, climgp, extrap
 double precision alpha, ym, yk
-double precision qimp , hint
-double precision blencp, relaxp, thetex
 
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: vistot, viscf, viscb
@@ -171,173 +166,13 @@ endif
 !===============================================================================
 
 ! Diffusion terms for weakly compressible algorithm
-if (idilat.eq.4) then
+if (idilat.eq.4.and.ipass.gt.1) then
 
-  allocate(vistot(ncelet))
-  allocate(viscf(nfac), viscb(nfabor))
-
-  do iscal = 1, nscal
-
-    ! Numero de variable de calcul
-    ivar = isca(iscal)
-
-    ! Index for Boundary conditions
-    iclvar = iclrtp(ivar,icoef)
-    iclvaf = iclrtp(ivar,icoeff)
-
-    iconvp = 0
-    idiffp = 1
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    ircflp = ircflu(ivar)
-    ischcp = ischcv(ivar)
-    isstpp = isstpc(ivar)
-    inc    = 1
-    iccocg = 1
-    ippvar = ipprtp(ivar)
-    iwarnp = iwarni(ivar)
-    blencp = blencv(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
-    relaxp = relaxv(ivar)
-    thetex = 1.d0
-
-    iflmas = ipprof(ifluma(iu))
-    iflmab = ipprob(ifluma(iu))
-
-    !     "VITESSE" DE DIFFUSION FACETTE
-
-    !     On prend le MAX(mu_t,0) car en LES dynamique mu_t peut etre negatif
-    !     (clipping sur (mu + mu_t)). On aurait pu prendre
-    !     MAX(K + K_t,0) mais cela autoriserait des K_t negatif, ce qui est
-    !     considere ici comme non physique.
-
-    ipcvst = ipproc(ivisct)
-
-    if (ivisls(iscal).gt.0) then
-      ipcvsl = ipproc(ivisls(iscal))
-    else
-      ipcvsl = 0
-    endif
-
-
-    if (idiff(ivar).ge.1) then
-
-      if(ipcvsl.eq.0)then
-        do iel = 1, ncel
-          vistot(iel) = visls0(iscal)                                     &
-             + idifft(ivar)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
-        enddo
-      else
-        do iel = 1, ncel
-          vistot(iel) = propce(iel,ipcvsl)                                &
-             + idifft(ivar)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
-        enddo
-      endif
-
-      call viscfa &
-      !==========
-     ( imvisf ,                                                       &
-       vistot ,                                                       &
-       viscf  , viscb  )
-
-    else
-
-      do ifac = 1, nfac
-        viscf(ifac) = 0.d0
-      enddo
-      do ifac = 1, nfabor
-        viscb(ifac) = 0.d0
-      enddo
-      do iel = 1, ncel
-        vistot(iel) = 0.d0
-      enddo
-
-    endif
-
-    ! Si on est en combustion on doit utiliser l'ecart d'enthalpie par rapport
-    ! a l'adiabatique pour decoupler la contribution instationnaire liee a la
-    ! fraction de melange de la contribution de l'enthalpie elle-meme
-
-    if (nscapp.gt.0.and.iscal.eq.ihm) then
-
-      allocate(coefap(nfabor), coefbp(nfabor))
-      allocate(cofafp(nfabor), cofbfp(nfabor))
-      allocate(whsad(ncelet))
-
-      ! On place Hs dans un tableau de travail et on initialise
-      do iel = 1, ncel
-        whsad(iel) = propce(iel,ipproc(iustdy(ihm)))
-        propce(iel,ipproc(iustdy(ihm))) = 0.d0
-      enddo
-
-      ! ---> Echanges
-      if (irangp.ge.0.or.iperio.eq.1) then
-        call synsca(whsad)
-      endif
-
-      ! Boundary condition on Hsad: Homogenous Neumann
-      do ifac = 1, nfabor
-        iel = ifabor(ifac)
-
-        ! Neumann Boundary Conditions
-        !----------------------------
-
-        hint = vistot(iel)/distb(ifac)
-        qimp = 0.d0
-
-        call set_neumann_scalar &
-             !==================
-           ( coefap(ifac), cofafp(ifac),             &
-             coefbp(ifac), cofbfp(ifac),             &
-             qimp        , hint )
-
-
-      enddo
-
-      call bilsc2 &
-     !==========
-    ( nvar   , nscal  ,                                              &
-      idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-      ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-      ippvar , iwarnp ,                                              &
-      blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
-      whsad  , whsad  ,                                              &
-      coefap , coefbp ,                                              &
-      cofafp , cofbfp ,                                              &
-      propfa(1,iflmas), propfb(1,iflmab),                            &
-      viscf  , viscb  ,                                              &
-      propce(1,ipproc(iustdy(iscal))) )
-
-      ! Free memory
-      deallocate(coefap, coefbp)
-      deallocate(cofafp, cofbfp)
-      deallocate(whsad)
-
-    else
-
-      call bilsc2 &
-      !==========
-    ( nvar   , nscal  ,                                              &
-      idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-      ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-      ippvar , iwarnp ,                                              &
-      blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
-      rtp(1,ivar)     , rtp(1,ivar)     ,                            &
-      coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-      coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-      propfa(1,iflmas), propfb(1,iflmab),                            &
-      viscf  , viscb  ,                                              &
-      propce(1,ipproc(iustdy(iscal))) )
-
-    endif
-
-  enddo
-
-  ! Free memory
-  deallocate(viscf, viscb)
-  deallocate(vistot)
+  call diffst &
+  !==========
+ ( nvar   , nscal  ,                                     &
+   rtp    , rtpa   , propce , propfa , propfb ,          &
+   coefa  , coefb  )
 
 endif
 

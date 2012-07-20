@@ -210,6 +210,7 @@ cs_time_plot.c \
 cs_tpar1d.c \
 cs_ventil.c \
 csprnt.f90 \
+diffst.f90 \
 distpr.f90 \
 distyp.f90 \
 dttvar.f90 \
