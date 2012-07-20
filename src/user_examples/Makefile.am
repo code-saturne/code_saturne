@@ -83,7 +83,6 @@ cs_user_boundary_conditions-pulverized_coal.f90 \
 cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 \
 cs_user_initialization-atmospheric.f90 \
 cs_user_initialization-base.f90 \
-cs_user_initialization-unified_combustion_coal.f90 \
 cs_user_initialization-cooling_towers.f90 \
 cs_user_initialization-electric_arcs.f90 \
 cs_user_initialization-fuel.f90 \
@@ -91,7 +90,9 @@ cs_user_initialization-gas_3ptchem.f90 \
 cs_user_initialization-gas_ebu.f90 \
 cs_user_initialization-gas_libby_williams.f90 \
 cs_user_initialization-pulverized_coal.f90 \
-cs_user_initialization-time_step.f90
+cs_user_initialization-time_step.f90 \
+cs_user_initialization-unified_combustion_coal.f90 \
+cs_user_les_inflow-base.f90
 
 noinst_LTLIBRARIES = libcsexample.la
 libcsexample_la_SOURCES = $(examplefiles)
