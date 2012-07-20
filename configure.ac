@@ -47,8 +47,8 @@ m4_define([cs_licence_c_comment],
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */])
 
-m4_define([cs_major_version], [2])
-m4_define([cs_minor_version], [3])
+m4_define([cs_major_version], [3])
+m4_define([cs_minor_version], [0])
 m4_define([cs_release_version], [0])
 m4_define([cs_version_extra], [-alpha])
 m4_define([cs_version_string],
