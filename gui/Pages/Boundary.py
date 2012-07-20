@@ -2000,7 +2000,7 @@ class RadiativeWallBoundary(Boundary) :
         self._radiativeChoices = ['itpimp', 'ipgrno', 'ifgrno']
 
         self.head_list = ['emissivity',
-                          'thermal_conductivity',
+                          'wall_thermal_conductivity',
                           'thickness', 'flux',
                           'external_temperature_profile',
                           'internal_temperature_profile',
@@ -2016,7 +2016,7 @@ class RadiativeWallBoundary(Boundary) :
         if choice == 'itpimp':
             list = ('emissivity', 'internal_temperature_profile', 'output_zone')
         elif choice == 'ipgrno':
-            list = ('emissivity', 'thermal_conductivity', 'thickness',
+            list = ('emissivity', 'wall_thermal_conductivity', 'thickness',
                     'external_temperature_profile',
                     'internal_temperature_profile', 'output_zone')
         elif choice == 'ifgrno':
@@ -2031,7 +2031,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         dico = {}
         dico['emissivity'] = 0.8
-        dico['thermal_conductivity'] = 3.0
+        dico['wall_thermal_conductivity'] = 3.0
         dico['thickness'] = 0.10
         dico['flux'] = 0.
         dico['external_temperature_profile'] = 300.
@@ -2096,9 +2096,9 @@ class RadiativeWallBoundary(Boundary) :
         Return value of thermal conductivity for the radiative wall
         """
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
-        val = nod_ray_cond.xmlGetChildDouble('thermal_conductivity')
+        val = nod_ray_cond.xmlGetChildDouble('wall_thermal_conductivity')
         if not val:
-            val = self.__defaultValues()['thermal_conductivity']
+            val = self.__defaultValues()['wall_thermal_conductivity']
             self.setThermalConductivity(val)
 
         return val
@@ -2111,7 +2111,7 @@ class RadiativeWallBoundary(Boundary) :
         Model().isGreaterOrEqual(val, 0.)
 
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
-        nod_ray_cond.xmlSetData('thermal_conductivity', val)
+        nod_ray_cond.xmlSetData('wall_thermal_conductivity', val)
 
 
     def getThickness(self):
@@ -3560,7 +3560,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
                     <wall label="radiateur">
                         <radiative_data choice="ipgrno">
                             <emissivity>0.8</emissivity>
-                            <thermal_conductivity>3</thermal_conductivity>
+                            <wall_thermal_conductivity>3</wall_thermal_conductivity>
                             <thickness>0.1</thickness>
                             <external_temperature_profile>300</external_temperature_profile>
                             <internal_temperature_profile>300</internal_temperature_profile>
@@ -3595,7 +3595,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
                     <wall label="radiateur">
                         <radiative_data choice="ipgrno">
                             <emissivity>0.22</emissivity>
-                            <thermal_conductivity>3</thermal_conductivity>
+                            <wall_thermal_conductivity>3</wall_thermal_conductivity>
                             <thickness>0.1</thickness>
                             <external_temperature_profile>300</external_temperature_profile>
                             <internal_temperature_profile>300</internal_temperature_profile>
@@ -3630,7 +3630,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
                     <wall label="radiateur">
                         <radiative_data choice="ipgrno">
                             <emissivity>0.8</emissivity>
-                            <thermal_conductivity>5.6</thermal_conductivity>
+                            <wall_thermal_conductivity>5.6</wall_thermal_conductivity>
                             <thickness>0.1</thickness>
                             <external_temperature_profile>300</external_temperature_profile>
                             <internal_temperature_profile>300</internal_temperature_profile>
@@ -3665,7 +3665,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
                     <wall label="radiateur">
                         <radiative_data choice="ipgrno">
                             <emissivity>0.8</emissivity>
-                            <thermal_conductivity>3</thermal_conductivity>
+                            <wall_thermal_conductivity>3</wall_thermal_conductivity>
                             <thickness>2.</thickness>
                             <external_temperature_profile>300</external_temperature_profile>
                             <internal_temperature_profile>300</internal_temperature_profile>
@@ -3704,7 +3704,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
                     <wall label="radiateur">
                         <radiative_data choice="ipgrno">
                             <emissivity>0.8</emissivity>
-                            <thermal_conductivity>3</thermal_conductivity>
+                            <wall_thermal_conductivity>3</wall_thermal_conductivity>
                             <thickness>0.1</thickness>
                             <external_temperature_profile>55.55</external_temperature_profile>
                             <internal_temperature_profile>987.</internal_temperature_profile>
@@ -3746,7 +3746,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
                     <wall label="radiateur">
                         <radiative_data choice="ipgrno">
                             <emissivity>0.8</emissivity>
-                            <thermal_conductivity>3</thermal_conductivity>
+                            <wall_thermal_conductivity>3</wall_thermal_conductivity>
                             <thickness>0.1</thickness>
                             <external_temperature_profile>300.</external_temperature_profile>
                             <internal_temperature_profile>300.</internal_temperature_profile>

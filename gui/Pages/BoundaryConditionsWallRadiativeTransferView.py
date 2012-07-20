@@ -157,7 +157,7 @@ class StandardItemModelScalars(QStandardItemModel):
                      (1, self.tr("Initial temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
         if cond == 'ipgrno':
             liste = [(0, self.tr("Emissivity"), '',  'EPSP',  'emissivity'),
-                     (1, self.tr("Conductivity"), 'W/m/K', 'XLAMP', 'thermal_conductivity'),
+                     (1, self.tr("Conductivity"), 'W/m/K', 'XLAMP', 'wall_thermal_conductivity'),
                      (2, self.tr("Thickness"), 'm', 'EPAP' , 'thickness'),
                      (3, self.tr("Profile of external temperature"), 'K', 'TEXTP', 'external_temperature_profile'),
                      (4, self.tr("Profile of internal temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
