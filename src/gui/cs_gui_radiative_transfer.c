@@ -519,7 +519,7 @@ void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
         "wall_temp",
         "flux_incident",
         "thickness",
-        "thermal_conductivity",
+        "wall_thermal_conductivity",
         "emissivity",
         "flux_net",
         "flux_convectif",
@@ -950,7 +950,7 @@ void CS_PROCF (uiray2, UIRAY2)
           boundary->output_zone[izone] = (int) tmp;
           _radiative_boundary(label, "emissivity", &boundary->emissivity[izone]);
           _radiative_boundary(label, "thickness", &boundary->thickness[izone]);
-          _radiative_boundary(label, "thermal_conductivity", &boundary->thermal_conductivity[izone]);
+          _radiative_boundary(label, "wall_thermal_conductivity", &boundary->thermal_conductivity[izone]);
           _radiative_boundary(label, "external_temperature_profile", &boundary->external_temp[izone]);
           _radiative_boundary(label, "internal_temperature_profile", &boundary->internal_temp[izone]);
           _radiative_boundary(label, "flux", &boundary->conduction_flux[izone]);
@@ -1052,7 +1052,7 @@ void CS_PROCF (uiray2, UIRAY2)
          bft_printf("    type = %i\n", boundary->type[izone]);
          bft_printf("    emissivity = %f\n", boundary->emissivity[izone]);
          bft_printf("    thickness= %f\n", boundary->thickness[izone]);
-         bft_printf("    thermal_conductivity = %f\n", boundary->thermal_conductivity[izone]);
+         bft_printf("    wall_thermal_conductivity = %f\n", boundary->thermal_conductivity[izone]);
          bft_printf("    external_temp = %f\n", boundary->external_temp[izone]);
          bft_printf("    internal_temp = %f\n", boundary->internal_temp[izone]);
          bft_printf("    conduction_flux= %f\n", boundary->conduction_flux[izone]);
@@ -1069,7 +1069,7 @@ void CS_PROCF (uiray2, UIRAY2)
        bft_printf("----type = %i\n", boundary->type[izone]);
        bft_printf("----emissivity = %f\n", boundary->emissivity[izone]);
        bft_printf("----thickness= %f\n", boundary->thickness[izone]);
-       bft_printf("----thermal_conductivity = %f\n", boundary->thermal_conductivity[izone]);
+       bft_printf("----wall_thermal_conductivity = %f\n", boundary->thermal_conductivity[izone]);
        bft_printf("----external_temp = %f\n", boundary->external_temp[izone]);
        bft_printf("----internal_temp = %f\n", boundary->internal_temp[izone]);
        bft_printf("----conduction_flux= %f\n", boundary->conduction_flux[izone]);

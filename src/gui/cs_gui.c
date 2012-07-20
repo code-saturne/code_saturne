@@ -4569,7 +4569,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
   int ipcrom = ipproc[ *irom   -1 ] -1;
   int ipcvis = ipproc[ *iviscl -1 ] -1;
   int ipccp  = ipproc[ *icp    -1 ] -1;
-  int ipcvsl = ipproc[ ivisls[*iscalt -1 ] -1 ] -1; /* Lambda/Cp from the current thermal scalar 
+  int ipcvsl = ipproc[ ivisls[*iscalt -1 ] -1 ] -1; /* Lambda/Cp from the current thermal scalar
                                                        if the thermal scalar is Enthalpy or Energy
                                                        Lambda if the thermal scalar is Temperature */
 
