@@ -865,8 +865,6 @@ endif
 !       iscavr should not be modified.
 
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 !     The test on iutile allows deactivation of the instructions
 !       (which are only given as an example).
 
@@ -874,8 +872,6 @@ iutile = 0
 if (iutile.eq.1) then
   iscavr(3) = 2
 endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Variable diffusivity (ivisls=1) or constant diffusivity (ivisls=0) for
 !       each USER scalar, EXCEPT those which represent the variance
@@ -1472,8 +1468,6 @@ endif
 !     nitmax: maximum number of iterations for each unknown ivar
 !     epsilo: relative precision for the solution of the linear system.
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 iutile = 0
 if (iutile.eq.1) then
 
@@ -1489,9 +1483,6 @@ if (iutile.eq.1) then
   endif
 
 endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 
 ! --- Algebraic multigrid parameters
 
@@ -1532,8 +1523,6 @@ imgr(ipr) = 1
 !                                  and ircflu(iep)  = 0
 !     (note that variable itytur is equal to iturb/10)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 !     The test on iutile allows deactivation of the instructions
 !       (which are only given as an example).
 
@@ -1546,8 +1535,6 @@ if (iutile.eq.1) then
   endif
 
 endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! Physical constants (cstphy)
@@ -1890,8 +1877,6 @@ almax = -grand
 !         Moment <rho u v> is calculated from time step 10000.
 
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 !     The test on iutile allows deactivation of the instructions
 !       (which are only given as an example).
 
@@ -1911,8 +1896,6 @@ if (iutile.eq.1) then
   ntdmom(imom)   =  10000
 
 endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !----
 ! Formats
@@ -2070,8 +2053,6 @@ ntlist = 1
 
 ! Log (listing) verbosity
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 iutile = 0
 if (iutile.eq.1) then
 
@@ -2086,8 +2067,6 @@ if (iutile.eq.1) then
 
 endif
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 ! --- history output step
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
@@ -2101,29 +2080,29 @@ frhist = -1.d0
 ! --- Number of monitoring points (probes) and their positions
 !     (limited to ncaptm=100)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+iutile = 0
+if (iutile.eq.1) then
 
-ncapt  = 4
-tplfmt = 1 ! time plot format (1: .dat, 2: .csv, 3: both)
+  ncapt  = 4
+  tplfmt = 1 ! time plot format (1: .dat, 2: .csv, 3: both)
 
-xyzcap(1,1) = 0.30d0
-xyzcap(2,1) = 0.15d0
-xyzcap(3,1) = 0.01d0
+  xyzcap(1,1) = 0.30d0
+  xyzcap(2,1) = 0.15d0
+  xyzcap(3,1) = 0.01d0
 
-xyzcap(1,2) = 0.30d0
-xyzcap(2,2) = 0.00d0
-xyzcap(3,2) = 0.01d0
+  xyzcap(1,2) = 0.30d0
+  xyzcap(2,2) = 0.00d0
+  xyzcap(3,2) = 0.01d0
 
-xyzcap(1,3) = 0.30d0
-xyzcap(2,3) =-0.08d0
-xyzcap(3,3) = 0.01d0
+  xyzcap(1,3) = 0.30d0
+  xyzcap(2,3) =-0.08d0
+  xyzcap(3,3) = 0.01d0
 
-xyzcap(1,4) = 0.60d0
-xyzcap(2,4) =-0.05d0
-xyzcap(3,4) = 0.01d0
+  xyzcap(1,4) = 0.60d0
+  xyzcap(2,4) =-0.05d0
+  xyzcap(3,4) = 0.01d0
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
+endif
 
 ! --- current variable
 
@@ -2140,170 +2119,170 @@ xyzcap(3,4) = 0.01d0
 !           detailed log.
 
 
+iutile = 0
+if (iutile.eq.1) then
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+  ! Current dynamic variables
 
-! Current dynamic variables
-
-! pressure variable
-ipp = ipprtp(ipr)
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! variable v1x
-ipp = ipprtp(iu)
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! v1y variable
-ipp = ipprtp(iv)
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! v1z variable
-ipp = ipprtp(iw)
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-if (itytur.eq.2) then
-
-  ! turbulent kinetic energy
-  ipp = ipprtp(ik)
+  ! pressure variable
+  ipp = ipprtp(ipr)
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-  ! turbulent dissipation
-  ipp = ipprtp(iep)
+  ! variable v1x
+  ipp = ipprtp(iu)
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-elseif (itytur.eq.3) then
-
-  ! Reynolds stresses
-  ipp = ipprtp(ir11)
+  ! v1y variable
+  ipp = ipprtp(iv)
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-  ! Reynolds stresses
-  ipp = ipprtp(ir22)
+  ! v1z variable
+  ipp = ipprtp(iw)
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-  ! Reynolds stresses
-  ipp = ipprtp(ir33)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+  if (itytur.eq.2) then
 
-  ! Reynolds stresses
-  ipp = ipprtp(ir12)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+    ! turbulent kinetic energy
+    ipp = ipprtp(ik)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-  ! Reynolds stresses
-  ipp = ipprtp(ir13)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+    ! turbulent dissipation
+    ipp = ipprtp(iep)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-  ! Reynolds stresses
-  ipp = ipprtp(ir23)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+  elseif (itytur.eq.3) then
 
-  ! turbulent dissipation
-  ipp = ipprtp(iep)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+    ! Reynolds stresses
+    ipp = ipprtp(ir11)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-elseif (iturb.eq.50) then
+    ! Reynolds stresses
+    ipp = ipprtp(ir22)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-  ! turbulent kinetic energy
-  ipp = ipprtp(ik)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+    ! Reynolds stresses
+    ipp = ipprtp(ir33)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-  ! turbulent dissipation
-  ipp = ipprtp(iep)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+    ! Reynolds stresses
+    ipp = ipprtp(ir12)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-  ! phi
-  ipp = ipprtp(iphi)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+    ! Reynolds stresses
+    ipp = ipprtp(ir13)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-  ! f_bar
-  ipp = ipprtp(ifb)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+    ! Reynolds stresses
+    ipp = ipprtp(ir23)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-elseif (iturb.eq.51) then
+    ! turbulent dissipation
+    ipp = ipprtp(iep)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-  ! turbulent kinetic energy
-  ipp = ipprtp(ik)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+  elseif (iturb.eq.50) then
 
-  ! turbulent dissipation
-  ipp = ipprtp(iep)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+    ! turbulent kinetic energy
+    ipp = ipprtp(ik)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-  ! phi
-  ipp = ipprtp(iphi)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+    ! turbulent dissipation
+    ipp = ipprtp(iep)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-  ! alpha
-  ipp = ipprtp(ial)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+    ! phi
+    ipp = ipprtp(iphi)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-elseif (iturb.eq.60) then
+    ! f_bar
+    ipp = ipprtp(ifb)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-  ! turbulent kinetic energy
-  ipp = ipprtp(ik)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+  elseif (iturb.eq.51) then
 
-  ! omega
-  ipp = ipprtp(iomg)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+    ! turbulent kinetic energy
+    ipp = ipprtp(ik)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-elseif (iturb.eq.70) then
+    ! turbulent dissipation
+    ipp = ipprtp(iep)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
 
-  ! Spalart-Allmaras variable (viscosity-like)
-  ipp = ipprtp(inusa)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
+    ! phi
+    ipp = ipprtp(iphi)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+
+    ! alpha
+    ipp = ipprtp(ial)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+
+  elseif (iturb.eq.60) then
+
+    ! turbulent kinetic energy
+    ipp = ipprtp(ik)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+
+    ! omega
+    ipp = ipprtp(iomg)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+
+  elseif (iturb.eq.70) then
+
+    ! Spalart-Allmaras variable (viscosity-like)
+    ipp = ipprtp(inusa)
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+
+  endif
 
 endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! User scalar variables.
 
@@ -2314,126 +2293,125 @@ endif
 ! By specific physics, we mean only those which are handled in specific
 !   modules of the code, such as coal, combustion, electric arcs (see usppmo).
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+iutile = 0
+if (iutile.eq.1) then
 
-if (isca(1).gt.0.and.nscaus.ge.1) then
-  ipp = ipprtp(isca(1))
-  nomvar(ipp)  = 'Scalar 1'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
+  if (isca(1).gt.0.and.nscaus.ge.1) then
+    ipp = ipprtp(isca(1))
+    nomvar(ipp)  = 'Scalar 1'
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  endif
+
+  if (isca(2).gt.0.and.nscaus.ge.2) then
+    ipp = ipprtp(isca(2))
+    nomvar(ipp)  = 'Scalar 2'
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+  endif
+
 endif
-
-if (isca(2).gt.0.and.nscaus.ge.2) then
-  ipp = ipprtp(isca(2))
-  nomvar(ipp)  = 'Scalar 2'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 
 ! Other variables
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+iutile = 0
+if (iutile.eq.1) then
 
-! Density variable (output for post-processing only if variable or
-!                   in the case of specific physics)
-ipp = ipppro(ipproc(irom))
-ichrvr(ipp)   = max(irovar,nmodpp)
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
+  ! Density variable (output for post-processing only if variable or
+  !                   in the case of specific physics)
+  ipp = ipppro(ipproc(irom))
+  ichrvr(ipp)   = max(irovar,nmodpp)
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
 
-! specific heat
-if (icp .gt. 0) then
-  ipp = ipppro(ipproc(icp))
+  ! specific heat
+  if (icp .gt. 0) then
+    ipp = ipppro(ipproc(icp))
+    ichrvr(ipp)   = 0
+    ilisvr(ipp)   = 0
+    ihisvr(ipp,1) = 0
+  endif
+
+  ! laminar viscosity
+  ipp = ipppro(ipproc(iviscl))
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = 0
-endif
 
-! laminar viscosity
-ipp = ipppro(ipproc(iviscl))
-ichrvr(ipp)   = 0
-ilisvr(ipp)   = 0
-ihisvr(ipp,1) = 0
-
-! turbulent viscosity
-ipp = ipppro(ipproc(ivisct))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! Courant number
-ipp = ipppro(ipproc(icour))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-
-! Fourier number
-ipp = ipppro(ipproc(ifour))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-
-! 'csmago' variable for dynamic L.E.S. models
-!    (square of the Samgorinsky "constant")
-if (ismago.gt.0) then
-  ipp = ipppro(ipproc(ismago))
+  ! turbulent viscosity
+  ipp = ipppro(ipproc(ivisct))
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
-endif
 
-! temporal means (example for moment 1)
-if (nbmomt.gt.0) then
-  imom = 1
-  ipp = ipppro(ipproc(icmome(imom)))
-  nomvar(ipp) = 'Time Average 01'
-  ichrvr(ipp) = 1
-  ilisvr(ipp) = 1
+  ! Courant number
+  ipp = ipppro(ipproc(icour))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
-endif
 
-! total pressure (not defined in compressible case)
-if (ippmod(icompf).lt.0) then
-  ipp = ipppro(ipproc(iprtot))
+  ! Fourier number
+  ipp = ipppro(ipproc(ifour))
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+  ! 'csmago' variable for dynamic L.E.S. models
+  !    (square of the Samgorinsky "constant")
+  if (ismago.gt.0) then
+    ipp = ipppro(ipproc(ismago))
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+  endif
+
+  ! temporal means (example for moment 1)
+  if (nbmomt.gt.0) then
+    imom = 1
+    ipp = ipppro(ipproc(icmome(imom)))
+    nomvar(ipp) = 'Time Average 01'
+    ichrvr(ipp) = 1
+    ilisvr(ipp) = 1
+    ihisvr(ipp,1) = -1
+  endif
+
+  ! total pressure (not defined in compressible case)
+  if (ippmod(icompf).lt.0) then
+    ipp = ipppro(ipproc(iprtot))
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+  endif
+
+  ! local time step
+  ipp = ippdt
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
+
+  ! characteristic time of transient velocity/pressure coupling
+  ipp = ipptx
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+  ipp = ippty
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+  ipp = ipptz
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
 endif
-
-! local time step
-ipp = ippdt
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! characteristic time of transient velocity/pressure coupling
-ipp = ipptx
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-ipp = ippty
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-ipp = ipptz
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 
 !----
 ! Formats
 !----
-
 
 
 return
@@ -2502,16 +2480,12 @@ if(1.eq.1) return
 !     users.
 !
 !
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 ! --- Activation of ALE (Arbitrary Lagrangian Eulerian) method
+
 iutile = 0
 if (iutile.eq.1) then
   iale = 1
 endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
