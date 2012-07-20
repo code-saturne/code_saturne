@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-07-18 10:42+0200\n"
+"POT-Creation-Date: 2012-07-20 20:13+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5791,6 +5791,9 @@ msgid "distance_to_solid"
 msgstr ""
 
 msgid "distance_to_fluid"
+msgstr ""
+
+msgid "Error: invalid exterior elements selection."
 msgstr ""
 
 #, c-format
