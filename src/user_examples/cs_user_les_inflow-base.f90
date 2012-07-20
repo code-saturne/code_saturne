@@ -265,7 +265,7 @@ if (nument.eq.1) then
   ! 2. Data relative to the LES inflow boundary faces
 
   ! Selection of the boundary faces thanks to a geometric criterion
-  call getfbr('x < 0.1',fbent,lfbent)
+  call getfbr('x < 0.1', nfbent, lfbent)
 
   ! 3. Data relative to the flow
 
