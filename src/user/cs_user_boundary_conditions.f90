@@ -426,6 +426,7 @@ use cpincl
 use ppincl
 use ppcpfu
 use atincl
+use atsoil
 use ctincl
 use elincl
 use cs_fuel_incl

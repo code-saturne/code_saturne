@@ -24,6 +24,15 @@
 
 # Main part
 
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+$(MPI_CPPFLAGS)
+
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCMODINCLUDE)$(top_builddir)/src/base \
@@ -33,7 +42,7 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS =
+pkginclude_HEADERS = 
 
 # Library source files
 
@@ -43,12 +52,29 @@ atini1.f90 \
 atiniv.f90 \
 atlecm.f90 \
 atmcls.f90 \
+atmsol.f90 \
+atmstd.f90 \
 atphyv.f90 \
 atprke.f90 \
 atprop.f90 \
 attycl.f90 \
+atr1vf.f90 \
+attssc.f90 \
 atvarp.f90 \
-intprf.f90
+etheq.f90  \
+intprf.f90 \
+nuclea.f90 \
+satfun.f90 \
+rayigc.f90 \
+rayir.f90 \
+rayive.f90 \
+rayso.f90 \
+raysze.f90 \
+solcat.f90 \
+soliva.f90 \
+solmoy.f90 \
+solvar.f90 \
+spefun.f90
 libcsatmo_la_LDFLAGS = -no-undefined
 
 clean-local:

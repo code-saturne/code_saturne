@@ -621,13 +621,36 @@ enddo
 !                INCLUDE POUR LA VERSION ATMOSPHERIQUE
 !===============================================================================
 
-imeteo = 1
+!--> Initialisation for the meteo profile
+imeteo = 0
 nbmetd = 0
 nbmett = 0
 nbmetm = 0
+nbmaxt = 0
 do izone = 1, nozppm
   iprofm(izone) = 0
 enddo
+ihpm=0
+
+!--> Initialisation for the time and space reference of the run
+syear=-999
+squant=-999
+shour=-999
+smin=-999
+ssec=-999.d0
+
+xlon =0.d0
+xlat=0.d0
+
+! --> Initialisation for the 1d radiative model:
+
+iatra1 = 0
+nfatr1 = 1
+nvert = 1
+kvert = 20
+ivert = 0
+iqv0 = 0
+iatsoil = 0
 
 return
 end subroutine

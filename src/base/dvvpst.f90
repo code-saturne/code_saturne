@@ -88,6 +88,7 @@ subroutine dvvpst &
 !===============================================================================
 
 use paramx
+use dimens, only: ndimfb
 use pointe
 use entsor
 use cstnum
@@ -120,8 +121,8 @@ integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
 
 double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision statce(ncelet,nvlsta), statfb(nfabor,nvisbr)
 double precision stativ(ncelet,nvlsta)
 double precision tracel(ncelps*3)

@@ -24,23 +24,15 @@ subroutine attycl &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbmetd , nbmett , nbmetm ,                                     &
-   icodcl , itrifb , itypfb , izfppp , iprofm ,                   &
+   icodcl , itrifb , itypfb , izfppp ,                            &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   tmprom , ztprom , zdprom , xmet   , ymet   , pmer   ,          &
-   ttprom , qvprom , uprom  , vprom  , ekprom , epprom ,          &
-   rprom  , tpprom , phprom )
+   coefa  , coefb  , rcodcl )
 
 !===============================================================================
 ! FONCTION :
 ! --------
-
 !    CONDITIONS AUX LIMITES AUTOMATIQUES
-
 !           ECOULEMENTS ATMOSPHERIQUES
-
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -67,7 +59,7 @@ subroutine attycl &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
+! coefa, coefb     ! ra ! <-- ! boundary conditions (unused)                   !
 !  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
@@ -104,6 +96,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use atincl
 
 !===============================================================================
 
@@ -112,31 +105,22 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbmetd , nbmett , nbmetm
 
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
-integer          izfppp(nfabor), iprofm(nozppm)
+integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision tmprom(nbmetm)
-double precision ztprom(nbmett) , zdprom(nbmetd)
-double precision xmet(nbmetm)   , ymet(nbmetm)  , pmer(nbmetm)
-double precision ttprom(nbmett,nbmetm) , qvprom(nbmett,nbmetm)
-double precision uprom(nbmetd,nbmetm)  , vprom(nbmetd,nbmetm)
-double precision ekprom(nbmetd,nbmetm) , epprom(nbmetd,nbmetm)
-double precision rprom(nbmett,nbmetm)  , tpprom(nbmett,nbmetm)
-double precision phprom(nbmett,nbmetm)
 
 ! Local variables
 
 integer          ifac, izone
 double precision d2s3, zent, vs, xuent, xvent
-double precision xkent, xeent, tpent
+double precision xkent, xeent, tpent, qvent,ncent
 
 !===============================================================================
 !===============================================================================
@@ -172,33 +156,33 @@ do ifac = 1, nfabor
 !     On recupere les valeurs du profil et on met a jour RCODCL s'il n'a pas
 !       ete modifie. Il servira si la face est une face d'entree ou si c'est une
 !       face de sortie (si le flux est rentrant).
-    zent=cdgfbo(3,ifac)
+    zent = cdgfbo(3,ifac)
 
     call intprf                                                   &
     !==========
    (nbmetd, nbmetm,                                               &
-    zdprom, tmprom, uprom , zent  , ttcabs, xuent )
+    zdmet, tmmet, umet , zent  , ttcabs, xuent )
 
     call intprf                                                   &
     !==========
    (nbmetd, nbmetm,                                               &
-    zdprom, tmprom, vprom , zent  , ttcabs, xvent )
+    zdmet, tmmet, vmet , zent  , ttcabs, xvent )
 
     call intprf                                                   &
     !==========
    (nbmetd, nbmetm,                                               &
-    zdprom, tmprom, ekprom, zent  , ttcabs, xkent )
+    zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
 
     call intprf                                                   &
     !==========
    (nbmetd, nbmetm,                                               &
-    zdprom, tmprom, epprom, zent  , ttcabs, xeent )
+    zdmet, tmmet, epmet, zent  , ttcabs, xeent )
 
     call intprf                                                   &
     !==========
    (nbmett, nbmetm,                                               &
-    ztprom, tmprom, tpprom, zent  , ttcabs, tpent )
-!
+    ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+
     vs = xuent*surfbo(1,ifac) + xvent*surfbo(2,ifac)
 
     !     On met a jour le type de face de bord s'il n'a pas ete specifie
@@ -275,6 +259,19 @@ do ifac = 1, nfabor
         if (rcodcl(ifac,isca(iscalt),1).gt.rinfin*0.5d0) &
              rcodcl(ifac,isca(iscalt),1) = tpent
 
+          !  Humid Atmosphere
+          if ( ippmod(iatmos).eq.2 ) then
+            call intprf &
+            !==========
+            (nbmett, nbmetm, ztmet, tmmet, qvmet, zent, ttcabs, qvent )
+            rcodcl(ifac,isca(iscapp(2)),1) = qvent
+
+            call intprf &
+            !==========
+            (nbmett, nbmetm, ztmet, tmmet, ncmet, zent, ttcabs, ncent )
+            rcodcl(ifac,isca(iscapp(3)),1) = ncent
+          endif
+
       endif
 
     endif
@@ -293,4 +290,4 @@ enddo
 !----
 
 return
-end subroutine
+end subroutine attycl

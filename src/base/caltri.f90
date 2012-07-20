@@ -569,6 +569,7 @@ if (nfpt1t.gt.0) then
   endif
 
 endif
+
 !     Les infos sur l'epaisseur de la paroi, le nombre de points de
 !     discretisation et la raison geometrique ont ete transmises a
 !     la structure C. Elles sont maintenant inutiles dans le Fortran.
@@ -585,6 +586,14 @@ call defsyn(nent)
 if (isuisy.eq.1) then
   ficsui = 'les_inflow'
   call lecsyn( ficsui, len(ficsui) )
+endif
+
+! ATMO MODULE : INITIALIZATION FOR THE SOIL MODEL (ippmo(iatmos) = 2)
+!===============================================================================
+
+if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
+  call atmsol()
+  !===============
 endif
 
 !===============================================================================

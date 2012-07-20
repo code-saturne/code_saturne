@@ -271,6 +271,22 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
    smbrs  , rovsdt )
 endif
 
+! ---> Version atmospherique :
+
+if ( ippmod(iatmos).ge.0 ) then
+   call attssc                                                    &
+   !==========
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   iscal  ,                                                       &
+   itypfb ,                                                       &
+   icepdc , icetsm , itypsm ,                                     &
+   izfppp ,                                                       &
+   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   coefa  , coefb  , ckupdc , smacel ,                            &
+   smbrs  , rovsdt )
+endif
+
+
 ! ---> Version aerorefrigerant :
 
 if ( ippmod(iaeros).ge.0 ) then

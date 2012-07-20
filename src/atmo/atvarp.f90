@@ -29,7 +29,7 @@ subroutine atvarp
 !  ---------
 
 !    INIT DES POSITIONS DES VARIABLES POUR LE MODULE ATMOSPHERIQUE
-! REMPLISSAGE DES PARAMETRES (DEJA DEFINIS) POUR LES SCALAIRES PP
+!    REMPLISSAGE DES PARAMETRES (DEJA DEFINIS) POUR LES SCALAIRES PP
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -59,7 +59,6 @@ use ppppar
 use ppthch
 use ppincl
 use ihmpre
-
 use atincl
 
 !===============================================================================
@@ -78,10 +77,8 @@ integer        isc
 ! =====================
 
 if ( ippmod(iatmos).eq.1 ) then
-
 ! ---- Potential temperature
   itempp = iscapp(1)
-
 endif
 
 
@@ -89,24 +86,20 @@ endif
 ! =====================
 
 if ( ippmod(iatmos).eq.2 ) then
-
   ! ---- liquid potential temperature
   itempl = iscapp(1)
   ! ---- total water content
   itotwt = iscapp(2)
   ! ---- total number of droplets
   intdrp = iscapp(3)
-
 endif
 
 !   - Interface Code_Saturne
 !     ======================
 
 if (iihmpr.eq.1) then
-
   call uiatsc (ippmod, iatmos, itempp, itempl, itotwt, intdrp)
   !==========
-
 endif
 
 !===============================================================================
@@ -118,11 +111,9 @@ endif
 do isc = 1, nscapp
 
   if ( iscavr(iscapp(isc)).le.0 ) then
-
     ! ---- Viscosite dynamique moleculaire constante pour les
     !      scalaires ISCAPP(ISC)
     ivisls(iscapp(isc)) = 0
-
   endif
 
 enddo
@@ -131,5 +122,4 @@ enddo
 icp = 0
 
 return
-end subroutine
-
+end subroutine atvarp

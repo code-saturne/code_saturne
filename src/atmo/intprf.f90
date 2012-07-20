@@ -23,36 +23,33 @@
 subroutine intprf &
 !================
 
- ( nprofz , nproft ,                                   &
+ ( nprofz , nproft ,                                                            &
    profz  , proft  , profv  , xz     , temps  , var    )
 
 !===============================================================================
-!  FONCTION  :
+!  Purpose:
 !  ---------
 
-!      INTERPOLATION VERTICALE-TEMPORELLE OPTIMISEE
+!      Temporal and z-axis optimized interpolation
 
 !-------------------------------------------------------------------------------
-! Arguments
+! arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! vi               ! r  ! --> ! resultat de l'interpolation                    !
-! zi               ! r  ! <-- ! altitude a laquelle on interpole               !
-! ti               ! r  ! <-- ! temps physique auquel on interpole             !
-! aprom            ! tr ! <-- ! variables des profils meteo a                  !
-!                  !    !     !  interpoler                                    !
-! tmprom           ! tr ! <-- ! instants des profils meteo a                   !
-!                  !    !     !  interpoler                                    !
-! zdprom           ! e  ! <-- ! altitudes des profils meteo a                  !
-!                  !    !     !  interpoler                                    !
+! nprofz           ! i  ! <-- ! total number of z-measure points               !
+! nproft           ! i  ! <-- ! total number of time dataset                   !
+! profz            ! tr ! <-- ! z coordonate of measure points                 !
+! proft            ! tr ! <-- ! physical time of dataset acquisition           !
+! profv            ! tr ! <-- ! measured values                                !
+! xz               ! tr ! <-- ! interpolation elevation                        !
+! temps            ! tr ! <-- ! interpolation time                             !
+! var              ! r  ! --> ! interpolation result                           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 
 !===============================================================================
 ! Module files
@@ -78,7 +75,7 @@ double precision alphaz, alphat, var1, var2
 !===============================================================================
 
 !===============================================================================
-! 1. INTERPOLATION EN TEMPS
+! 1. Time interpolation
 !===============================================================================
 
 if (temps.le.proft(1)) then
@@ -89,8 +86,7 @@ else if (temps.ge.proft(nproft)) then
   it1 = nproft
   it2 = nproft
   alphat = 1.d0
-!     sinon on a forcement NPROFT>1
-else
+else !     else nproft > 1
   it = 1
  102    continue
   if (temps.gt.proft(it+1)) then
@@ -98,13 +94,13 @@ else
     goto 102
   else
     it1 = it
-    it2 = it+1
-    alphat = (proft(it2)-temps)/(proft(it2)-proft(it1))
+    it2 = it + 1
+    alphat = (proft(it2) - temps)/(proft(it2) - proft(it1))
   endif
 endif
 
 !===============================================================================
-! 2. INTERPOLATION VERTICALE EN ESPACE
+! 2. Z interpolation
 !===============================================================================
 
 if (xz.le.profz(1)) then
@@ -115,8 +111,7 @@ else if (xz.ge.profz(nprofz)) then
   iz1 = nprofz
   iz2 = nprofz
   alphaz = 1.d0
-!     sinon on a forcement NPROFZ>1
-else
+else ! sinon on a forcement nprofz > 1
   iz = 1
  103    continue
   if (xz.gt.profz(iz+1)) then
@@ -124,21 +119,21 @@ else
     goto 103
   else
     iz1 = iz
-    iz2 = iz+1
-    alphaz = (profz(iz2)-xz)/(profz(iz2)-profz(iz1))
+    iz2 = iz + 1
+    alphaz = (profz(iz2) - xz)/(profz(iz2) - profz(iz1))
   endif
 endif
 
 !===============================================================================
-! 3. INTERPOLATION
+! 3. Interpolation
 !===============================================================================
 
 var1 = alphaz*profv(iz1,it1) + (1.d0-alphaz)*profv(iz2,it1)
 var2 = alphaz*profv(iz1,it2) + (1.d0-alphaz)*profv(iz2,it2)
 
-var = alphat*var1 + (1.d0-alphat)*var2
+var = alphat*var1 + (1.d0 - alphat)*var2
 
-end subroutine
+end subroutine intprf
 
 
 

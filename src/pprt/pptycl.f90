@@ -342,15 +342,9 @@ elseif ( ippmod(iatmos).ge.0 ) then
   call attycl                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   nbmetd , nbmett , nbmetm ,                                     &
-   icodcl , itrifb , itypfb , izfppp , iprofm ,                   &
+   icodcl , itrifb , itypfb , izfppp ,                            &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   tmmet  , ztmet  , zdmet  ,                                     &
-   xmet   , ymet   , pmer   ,                                     &
-   ttmet  , qvmet  , umet   ,                                     &
-   vmet   , ekmet  , epmet  ,                                     &
-   rmet   , tpmet  , phmet  )
+   coefa  , coefb  , rcodcl )
 
 endif
 !----

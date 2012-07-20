@@ -104,7 +104,9 @@ usthht.f90 \
 ustsma.f90 \
 usvort.f90 \
 usvosy.f90 \
-usvpst.f90
+usvpst.f90 \
+usatdv.f90 \
+usatsoil.f90
 
 noinst_LTLIBRARIES = libcsuser.la
 libcsuser_la_SOURCES = $(userfiles)

@@ -21,13 +21,13 @@
 !-------------------------------------------------------------------------------
 
 subroutine atphyv &
-!================
+     !================
 
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   ,                                     &
-   propce , propfa , propfb ,                                     &
-   coefa  , coefb  )
+   ( nvar   , nscal  ,                                              &
+     ibrom  , izfppp ,                                              &
+     dt     , rtp    , rtpa   ,                                     &
+     propce , propfa , propfb ,                                     &
+     coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -119,15 +119,19 @@ subroutine atphyv &
 !===============================================================================
 
 use paramx
+use dimens, only: ndimfb
 use numvar
 use optcal
 use cstphy
+use cstnum, only: pi
 use entsor
 use parall
 use period
 use ppppar
-use atincl
+use ppthch
+use ppincl
 use mesh
+use atincl
 
 !===============================================================================
 
@@ -135,43 +139,53 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar, nscal
 
 integer          ibrom
 integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 
 integer          ivart, iclvar, iel
-integer          ipcrom, ipbrom, ipcvis, ipccp, ipctem
+integer          ipcrom, ipbrom, ipcvis, ipccp, ipctem, ipcliq
 integer          ipcvsl, ith, iscal, ii
 integer          iutile
 
 double precision vara, varb, varc, varam, varbm, varcm, vardm
 double precision                   varal, varbl, varcl, vardl
 double precision                   varac, varbc
-double precision xrtp,pp,zent
+double precision xrtp, rhum, rscp, pp, zent
+double precision lrhum, lrscp
+double precision qsl, esat
+double precision deltaq
+double precision qliq
+double precision qwt
+double precision tliq
 
-!===============================================================================
+logical activate
 
+! External function
 
+double precision qsatliq
+external qsatliq
+! call as: qsatliq(temperature,pressure)
 
 !===============================================================================
 ! 0. INITIALISATIONS A CONSERVER
 !===============================================================================
+
+activate = .FALSE.
 
 ! Initialize variables to avoid compiler warnings
 
 ivart = -1
 
 ! --- Initialisation memoire
-
-
 
 ! This routine computes the density and the thermodynamic temperature.
 ! The computations require the pressure profile which is here taken from
@@ -214,38 +228,62 @@ ipctem = ipproc(itempc)
 ! - Density
 ! ----------------------
 
+! Computes the perfect gaz constants according to the physics
+
+rhum = rair
+rscp = rair/cp0
+
+lrhum = rair
+lrscp = rair/cp0
+
 do iel = 1, ncel
 
   xrtp = rtp(iel,ivart) !  The thermal scalar is potential temperature
 
-  !   Pressure profile from meteo file:
-  zent=xyzcen(3,iel)
+  if (ippmod(iatmos).ge.2) then  ! humid atmosphere
+    lrhum = rair*(1.d0 + (rvsra - 1.d0)*rtp(iel, isca(itotwt)))
+    lrscp = (rair/cp0)*(1.d0 + (rvsra - cpvcpa)*                    &
+            rtp(iel,isca(itotwt)))
+  endif
+
+  ! Pressure profile from meteo file:
+  zent = xyzcen(3,iel)
   call intprf &
-  !===========
-  ( nbmett, nbmetm,                          &
-    ztmet , tmmet , phmet , zent, ttcabs, pp )
+       ! ===========
+     ( nbmett, nbmetm,                                            &
+       ztmet , tmmet , phmet , zent, ttcabs, pp )
 
-  !   Temperature in Celsius in cell centers:
-  !   ---------------------------------------
-  !   law: T = theta * (p/psol) ** (Rair/Cp0)
+  ! Temperature in Celsius in cell centers:
+  ! ---------------------------------------
+  ! law: T = theta * (p/ps) ** (Rair/Cp0)
 
-  propce(iel, ipctem) = xrtp*(pp/p0)**(rair/cp0)
+  propce(iel, ipctem) = xrtp*(pp/ps)**lrscp
   propce(iel, ipctem) = propce(iel, ipctem) - tkelvi
 
   !   Density in cell centers:
   !   ------------------------
   !   law:    RHO       =   P / ( Rair * T(K) )
 
-  propce(iel,ipcrom) = pp/(rair*xrtp)*(p0/pp)**(rair/cp0)
+  propce(iel,ipcrom) = pp/(lrhum*xrtp)*(ps/pp)**lrscp
 
 enddo
+
+if (ippmod(iatmos).ge.2) then ! humid atmosphere physics
+  ipcliq = ipproc(iliqwt)
+
+  if (moddis.eq.1)then ! all or nothing condensation scheme
+    call all_or_nothing()
+  elseif (moddis.ge.2)then ! gaussian subgrid condensation scheme
+    call gaussian()
+  endif
+endif ! (ippmod(iatmos).ge.2)
 
 
 !===============================================================================
 ! FORMATS
 !----
 
- 9010 format(                                                           &
+9010 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -256,7 +294,7 @@ enddo
 '@    La variable dont dependent les proprietes physiques ne  ',/,&
 '@      semble pas etre une variable de calcul.               ',/,&
 '@    En effet, on cherche a utiliser la temperature alors que',/,&
-'@      ISCALT = ',I10                                  ,/,&
+'@      ISCALT = ',I10                                         ,/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
 '@    Verifier le codage de usphyv (et le test lors de la     ',/,&
@@ -273,4 +311,282 @@ enddo
 !----
 
 return
-end subroutine
+contains
+
+! *******************************************************************
+! *
+! *******************************************************************
+
+subroutine all_or_nothing()
+
+lrhum = rhum
+
+do iel = 1, ncel
+
+  !   Pressure profile from meteo file:
+  zent = xyzcen(3,iel)
+  call intprf &
+       !   ===========
+     ( nbmett, nbmetm,                                            &
+       ztmet , tmmet , phmet , zent, ttcabs, pp )
+
+  xrtp = rtp(iel,ivart) ! thermal scalar: liquid potential temperature
+  tliq = xrtp*(pp/ps)**rscp ! liquid temperature
+  qwt  = rtp(iel, isca(itotwt)) !total water content
+  qsl = qsatliq(tliq , pp) ! saturated vapor content
+  deltaq = qwt - qsl
+
+  if (activate) then
+    write(nfecra,*)"atphyv::all_or_nothing::xrtp = ",xrtp
+    write(nfecra,*)"atphyv::all_or_nothing::tliq = ",tliq
+    write(nfecra,*)"atphyv::all_or_nothing::qwt = ",qwt
+    write(nfecra,*)"atphyv::all_or_nothing::qsl = ",qsl
+    write(nfecra,*)"atphyv::all_or_nothing::qwt,qsl,deltaq = ",qwt,qsl,deltaq
+    write(nfecra,*)"atphyv::all_or_nothing::zc = ",xyzcen(3,iel)
+    write(nfecra,*)"atphyv::all_or_nothing::pp = ",pp
+    write(nfecra,*)"atphyv::all_or_nothing::p0 = ",ps
+    write(nfecra,*)"atphyv::all_or_nothing::zent = ",zent
+  endif
+
+  if (deltaq.le.0.d0) then ! unsaturated air parcel
+    lrhum = rair*(1.d0 + (rvsra - 1.d0)*qwt)
+    !Celcius temperature of the air parcel
+    propce(iel, ipctem) = tliq - tkelvi
+    !density of the air parcel
+    propce(iel,ipcrom) = pp/(lrhum*tliq)
+    !liquid water content
+    propce(iel,ipcliq) = 0.d0
+    nebdia(iel) = 0.d0
+    nn(iel) = 0.d0
+  else ! saturated (ie. with liquid water) air parcel
+    qliq = deltaq/ &
+         (1.d0 + qsl*clatev**2/(rair*rvsra*cp0*tliq**2))
+    lrhum = rair*(1.d0-qliq+(rvsra-1.d0)*(qwt-qliq))
+    ! liquid water content
+    propce(iel,ipcliq) = qliq
+    ! Celcius temperature of the air parcel
+    propce(iel, ipctem)=tliq+(clatev/cp0)*qliq-tkelvi
+    ! density
+    propce(iel,ipcrom) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
+    nebdia(iel) = 1.d0
+    nn(iel) = 0.d0
+  endif
+
+enddo ! iel = 1, ncel
+end subroutine all_or_nothing
+
+! *******************************************************************
+! *
+! *******************************************************************
+
+subroutine gaussian()
+! subgrid condensation scheme assuming a gaussian distribution for the
+! fluctuations of both qw and thetal.
+double precision, dimension(:,:), allocatable :: dtlsd
+double precision, dimension(:,:), allocatable :: dqsd
+
+double precision a_const
+double precision a_coeff
+double precision alpha,al
+double precision sig_flu ! standard deviation of qw'-alpha*theta'
+double precision var_tl,var_q,cov_tlq
+double precision q1,qsup
+
+! rvap = rair*rvsra
+
+allocate(dtlsd(ncelet,3))
+allocate(dqsd(ncelet,3))
+
+! ---------------------------
+! computation of grad(thetal)
+! ---------------------------
+call grad_thetal(dtlsd)
+
+! ---------------------------
+! computation of grad(qw)
+! ---------------------------
+call grad_qw(dqsd)
+
+! -------------------------------------------------------------
+! gradients are used for estimating standard deviations of the
+! subgrid fluctuations
+! -------------------------------------------------------------
+
+lrhum = rhum
+
+a_const = 2.d0*cmu/2.3d0
+do iel = 1, ncel
+
+  a_coeff = a_const*rtp(iel, ik )**3/rtp(iel,iep)**2 ! 2 cmu/c2 * k**3 / eps**2
+  var_tl= a_coeff*(dtlsd(iel,1)**2 + dtlsd(iel,2)**2 + dtlsd(iel,3)**2)
+  var_q = a_coeff*( dqsd(iel,1)**2 + dqsd(iel,2)**2 + dqsd(iel,3)**2)
+  cov_tlq = a_coeff*(dtlsd(iel,1)*dqsd(iel,1) + dtlsd(iel,2)*dqsd(iel,2)        &
+          + dtlsd(iel,3)*dqsd(iel,3))
+  zent = xyzcen(3,iel)
+
+  call intprf &
+     ( nbmett, nbmetm,                                                          &
+       ztmet , tmmet , phmet , zent, ttcabs, pp )
+
+  xrtp = rtp(iel,ivart) ! thermal scalar: liquid potential temperature
+  tliq = xrtp*(pp/ps)**rscp ! liquid temperature
+  qwt  = rtp(iel, isca(itotwt)) ! total water content
+  qsl = qsatliq(tliq, pp) ! saturated vapor content
+  deltaq = qwt - qsl
+  alpha = (clatev*qsl/(rvap*tliq**2))*(pp/ps)**rscp
+  sig_flu = sqrt(var_q + alpha**2*var_tl - 2.d0*alpha*cov_tlq)
+
+  if (sig_flu.lt.1.d-30) sig_flu = 1.d-30
+  q1 = deltaq/sig_flu
+  al = 1.d0/(1.d0 + qsl*clatev**2/(rair*rvsra*cp0*tliq**2))
+  qsup = qsl/sig_flu
+
+  nebdia(iel) = 0.5d0*(1.d0 + erf(q1/sqrt(2.d0)))
+
+  qliq = (sig_flu                                                               &
+        /(1.d0 + qsl*clatev**2/(rvap*cp0*tliq**2)))                             &
+        *(nebdia(iel)*q1 + exp(-q1**2/2.d0)/sqrt(2.d0*pi))
+  qliq = max(qliq,1d-15)
+  nn(iel) = nebdia(iel) - (nebdia(iel)*q1                                       &
+          + exp(-q1**2/2.d0)/sqrt(2.d0*pi))*exp(-q1**2/2.d0)/sqrt(2.d0*pi)
+
+  if(qwt.lt.qliq)then
+    ! go back to all or nothing
+    if (deltaq.le.0.d0) then ! unsaturated air parcel
+      lrhum = rair*(1.d0 + (rvsra-1.d0)*qwt)
+      !Celcius temperature of the air parcel
+      propce(iel, ipctem) = tliq - tkelvi
+      !density of the air parcel
+      propce(iel,ipcrom) = pp/(lrhum*tliq)
+      !liquid water content
+      propce(iel,ipcliq) = 0.d0
+      nebdia(iel) = 0.d0
+      nn(iel) = 0.d0
+    else ! saturated (ie. with liquid water) air parcel
+      qliq = deltaq                                                             &
+            /(1.d0 + qsl*clatev**2/(rair*rvsra*cp0*tliq**2))
+      lrhum = rair*(1.d0 - qliq + (rvsra - 1.d0)*(qwt - qliq))
+      ! liquid water content
+      propce(iel,ipcliq) = qliq
+      ! Celcius temperature of the air parcel
+      propce(iel,ipctem) = tliq+(clatev/cp0)*qliq - tkelvi
+      ! density
+      propce(iel,ipcrom) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
+      nebdia(iel) = 1.d0
+      nn(iel) = 0.d0
+    endif
+  else ! coherent subgrid diagnostic
+    lrhum = rair*(1.d0 - qliq + (rvsra - 1.d0)*(qwt - qliq))
+    ! liquid water content
+    propce(iel,ipcliq) = qliq
+    !Celcius temperature of the air parcel
+    propce(iel, ipctem) = tliq + (clatev/cp0)*qliq - tkelvi
+    !density
+    propce(iel,ipcrom) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
+  endif ! qwt.lt.qliq
+
+enddo
+
+! when properly finished deallocate dtlsd
+deallocate(dtlsd)
+deallocate(dqsd)
+
+end subroutine gaussian
+
+! *******************************************************************
+! *
+! *******************************************************************
+
+subroutine grad_thetal(dtlsd)
+double precision dtlsd(ncelet,3)
+
+double precision climgp
+double precision epsrgp
+double precision extrap
+
+integer    iccocg
+integer    icltpp
+integer    iivar
+integer    imligp
+integer    inc
+integer    iphydp
+integer    itpp
+integer    iwarnp
+integer    nswrgp
+
+! Computation of the gradient of the potential temperature
+
+itpp = isca(iscalt)
+icltpp = iclrtp(itpp,icoef)
+
+! options for gradient calculation
+
+iccocg = 1
+inc = 1
+
+nswrgp = nswrgr(itpp)
+epsrgp = epsrgr(itpp)
+imligp = imligr(itpp)
+iwarnp = iwarni(itpp)
+climgp = climgr(itpp)
+extrap = extrag(itpp)
+
+iivar = itpp
+
+call grdcel                                                     &
+     !==========
+   ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
+     iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+     rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
+     dtlsd  )
+
+end subroutine grad_thetal
+
+! *******************************************************************
+! *
+! *******************************************************************
+
+subroutine grad_qw(dqsd)
+double precision dqsd(ncelet,3)
+
+double precision climgp
+double precision epsrgp
+double precision extrap
+
+integer    iccocg
+integer    iclqw
+integer    iivar
+integer    imligp
+integer    inc
+integer    iphydp
+integer    iqw
+integer    iwarnp
+integer    nswrgp
+
+! ----------------------------------------------------------------
+! now gradient of total humidity
+! ----------------------------------------------------------------
+
+iccocg = 1
+inc = 1
+
+iqw = isca(itotwt)
+iclqw = iclrtp(iqw,icoef)
+nswrgp = nswrgr(iqw)
+epsrgp = epsrgr(iqw)
+imligp = imligr(iqw)
+iwarnp = iwarni(iqw)
+climgp = climgr(iqw)
+extrap = extrag(iqw)
+
+iivar = iqw
+
+call grdcel                                                     &
+     !==========
+    (iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
+     iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+     rtpa(1,iqw), coefa(1,iclqw) , coefb(1,iclqw) ,              &
+     dqsd   )
+
+end subroutine grad_qw
+end subroutine atphyv

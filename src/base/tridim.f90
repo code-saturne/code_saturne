@@ -89,6 +89,7 @@ use ppincl
 use cpincl
 use coincl
 use atincl
+use atsoil
 use lagpar
 use lagdim
 use lagran
@@ -947,6 +948,16 @@ do while (iterns.le.nterup)
   hbord  , tbord  ,                                              &
   frcxt  )
 
+!     ==============================================
+!     Appel de l'interface sol-atmosphere
+!     ==============================================
+
+  if (ippmod(iatmos).eq.2.and.iatsoil.eq.1.and.nfmodsol.gt.0) then
+    ipcrom = ipproc(irom)
+    call solvar(rtp(1,isca(iscalt)),rtp(1,isca(itotwt)),rtp(1,ipr),  &
+                propce(1,ipcrom)   , dt ,                            &
+                rcodcl , rtp)
+  endif
 
   !     UNE FOIS LES COEFFICIENTS CALCULES, ON PEUT EN DEDUIRE PLUS
   !     FACILEMENT (I.E. SANS RECALCULS INUTILES) LES TERMES A

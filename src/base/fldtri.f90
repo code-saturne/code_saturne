@@ -94,9 +94,9 @@ implicit none
 integer          nproce, nscal
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision frcxt(ncelet,3)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 
