@@ -158,6 +158,7 @@ double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: xcpp
+double precision, allocatable, dimension(:) :: srcmas
 
 !===============================================================================
 
@@ -434,11 +435,11 @@ if (ncesmp.gt.0) then
   allocate(srcmas(ncesmp))
 
   ! When treating the Temperature, the equation is multiplied by Cp
-  do ii = 1, ncesmp
-    if (smacel(ii,ipr).gt.0.d0 .and.itypsm(ii,ivar).eq.1) then
-      srcmas(ii) = smacel(ii,ipr)*xcpp(icetsm(ii))
+  do iel = 1, ncesmp
+    if (smacel(iel,ipr).gt.0.d0 .and.itypsm(iel,ivar).eq.1) then
+      srcmas(iel) = smacel(iel,ipr)*xcpp(icetsm(iel))
     else
-      srcmas(ii) = 0.d0
+      srcmas(iel) = 0.d0
     endif
   enddo
 
