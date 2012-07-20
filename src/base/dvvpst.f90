@@ -37,7 +37,7 @@ subroutine dvvpst &
 ! --------
 
 ! Standard output of variables on post-processing meshes
-!   (called after usproj)
+!   (called after cs_user_extra_operations)
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.

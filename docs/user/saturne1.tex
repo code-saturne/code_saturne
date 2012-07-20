@@ -2254,7 +2254,8 @@ positive. The number of the associated property in \texttt{propce} is then
 \texttt{icdtmo(idtmom(imom))}\index{\texttt{icdtmo}}. For instance, for the
 average \texttt{imom}, the cumulated duration in the cell \texttt{iel} will be
 \texttt{propce(iel,icdtmo(idtmom(imom)))}.\\
-The user may have a look to the example given in \texttt{usproj} to know
+The user may have a look to the examples given for
+\texttt{cs\_user\_extra\_operations} to know
 how to calculate a time averages in a particular cases (printing of extreme
 values, writing of results, ...).
 
@@ -2579,7 +2580,7 @@ Attention must be paid to the coding of the user subroutines. If
 conventionnal subroutines like \texttt{cs\_user\_parameters.f90} or \texttt{cs\_user\_boundary\_conditions}
 usually do not cause any problem, some kind of developments are more
 complicated. The most usual cases are dealt with below. \\ Examples are
-given in the subroutine \texttt{usproj}.
+given for the subroutine \texttt{cs\_user\_extra\_operations}.
 \begin{list}{$\bullet$}{}
 \item {\bf Access to information related to neighboring cells in
       parallel and periodic cases}.\\
@@ -2620,8 +2621,8 @@ In parallel mode, the user must pay attention during the realisation of
 \item global sum (for instance, calculation of a mass flow or the total
       mass of a pollutant).
       \end{list}
-The user may refer to the different examples present in the user
-      subroutine \texttt{usproj}. \\
+The user may refer to the different examples present for the user
+      subroutine \texttt{cs\_user\_extra\_operations}. \\
 Care should be taken with the fact that the boundaries between
       subdomains consist of {\bf internal} faces shared between
       two processors (these are indeed internal faces, even if they are
@@ -3023,7 +3024,7 @@ define a subset of the mesh, for example:
 \item head-loss region (cf. \texttt{uskpdc}),
 \item source terms region (cf. \texttt{ustsns}, \texttt{ustssc}),
 \item advanced post-processing (cf. \texttt{cs\_user\_postprocess.c},
-      \texttt{usproj}, ...),
+      \texttt{cs\_user\_extra\_operations}, ...),
 \end{list}
 
 This section explains how to define surface or volume sections,
@@ -5735,8 +5736,9 @@ associate it with a different ``writer'' using the GUI or in
 \subsection{Modification of the variables at the end of a time step}
 %==================================
 
-The subroutine \texttt{usproj} is called at the end of every time step. It is used to
-print of modify any variable at the end of every time step.
+The subroutine \texttt{cs\_user\_extra\_operations} is called at the end
+of every time step. It is used to print of modify any variable at the end
+of every time step.
 
 Several examples are given:
 \begin{list}{-}{}

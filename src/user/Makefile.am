@@ -73,6 +73,7 @@ EXTRA_DIST = cs_user_modules.f90
 userfiles = \
 cs_user_boundary_conditions.f90 \
 cs_user_coupling.c \
+cs_user_extra_operations.f90 \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization.f90 \
 cs_user_les_inflow.f90 \
@@ -96,7 +97,6 @@ uslaen.f90 \
 uslag1.f90 \
 uslag2.f90 \
 usporo.f90 \
-usproj.f90 \
 uspt1d.f90 \
 usray1.f90 \
 usray2.f90 \

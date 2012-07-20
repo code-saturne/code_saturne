@@ -843,8 +843,8 @@ if (itrale.gt.0) then
     xyzcen, ra(irtp), ra(ipropc) )
   endif
 
-  call usproj                                                     &
-  !==========
+  call cs_user_extra_operations                                   &
+  !============================
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    itepa  ,                                                       &

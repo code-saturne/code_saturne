@@ -921,7 +921,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   !    Pour l'estimateur IESTOT, la pression doit etre echangee aussi.
 
   !    Cela ne remplace pas l'echange du debut de pas de temps
-  !     a cause de usproj qui vient plus tard et des calculs suite)
+  !     a cause de cs_user_extra_operations qui vient plus tard et des calculs suite)
 
 
   ! --- Vitesse

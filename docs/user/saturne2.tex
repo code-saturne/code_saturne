@@ -435,8 +435,8 @@ centers and stored in the {\tt propce} array. The standard post-processing
 actions may therefore be activated, like the writing in the listing or
 the output of result files (EnSight, MED, ...). However, if the user
 wants to manipulate the averages in a more advanced way, it is
-recommended to refer first to the user subroutines \texttt{usproj} and
-\texttt{usvpst} which provide examples. Indeed, the {\tt propce} array
+recommended to refer first to the user examples for subroutine
+\texttt{cs\_user\_extra\_operations}. Indeed, the {\tt propce} array
 does not contain the time averages directly, but only the cumulated value
 of the product $f_1*f_2...*f_n$ of the selected
 variables $f_i$. The division by the cumulated duration is done only

@@ -275,7 +275,7 @@ dnbdep = 0.d0
 
 !-->Sur Champ fige Lagrangien : RTPA = RTP
 !   Rem : cette boucle pourrait etre faite au 1er passage
-!         mais la presence de usproj incite a la prudence...
+!         mais la presence de cs_user_extra_operations incite a la prudence...
 
 if (iilagr.eq.3) then
   do ivf = 1,nvar
