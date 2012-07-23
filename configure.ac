@@ -283,7 +283,7 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "x$cs_ibm_bg_type" != "x" \
+if test "x$cs_ibm_bg_type" = "xL" -o "x$cs_ibm_bg_type" = "xP" \
      -o "$host_os" = cygwin -o "$host_os" = mingw32 ; then
    enable_shared=no
 fi
@@ -759,6 +759,7 @@ AM_GNU_GETTEXT([external])
 
 AC_SUBST(CPPFLAGS)
 AC_SUBST(CFLAGS)
+AC_SUBST(CXXFLAGS)
 AC_SUBST(FCFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)

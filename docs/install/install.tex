@@ -103,14 +103,12 @@ administrators. A few remarks are given here:
 \end{itemize}
 
 When the prerequisites are available, and a build directory
-created, building \CS and its documentation may be as simple as running:
+created, building and installing \CS may be as simple as running:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ ../../saturne/configure\\
+\$ ../../code\_saturne-\verscs/configure\\
 \$ make\\
 \$ make install\\
-\$ make pdf\\
-\$ make install-pdf
 }\end{minipage}}
 
 The following chapters give more details on \CS's recommended
@@ -447,8 +445,16 @@ In this case, additional tools need to be available:
 These tools are not necessary for builds from tarballs; they
 are called when building the tarball (using {\tt make dist}), so
 as to reduce the number of prerequisites for regular users, while
-developpers building code from a repository can be expected to
+developpers building the code from a repository can be expected to
 need a more complete developpement environment.
+
+Also, to build and install the documentation when building the code
+from a repository instead of a tarball, the following stages are required:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ make pdf\\
+\$ make install-pdf
+}\end{minipage}}
 
 \section{Configuration\label{sec:config}}
 
@@ -465,8 +471,8 @@ for every {\tt --with-}, {\tt --without-} is also possible.
 Select configuration options, then run {\tt configure}, for example:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ /home/user/Code\_Saturne/2.3/saturne/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.3/arch/prod
+\$ /home/user/Code\_Saturne/3.0/src/code\_saturne-\verscs/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/3.0/arch/prod
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
 \textcolor{red}{CC}=/home/user/opt/mpich2-1.4/bin/mpicc \textcolor{red}{FC}=gfortran
@@ -497,8 +503,8 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 \$ cd ..\\
 \$ mkdir dbg\\
 \$ cd dbg\\
-\$ ../../saturne/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.3/arch/\textcolor{Magenta}{dbg}
+\$ ../../code\_saturne-\verscs/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/3.0/arch/\textcolor{Magenta}{dbg}
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
 \textcolor{Magenta}{--enable-debug} \textbackslash \\
@@ -668,7 +674,7 @@ Most available prerequisites are auto-detected, so to install the
 code to the default \texttt{/usr/local} sub-directory,
 a command such as:
 
-\texttt{\$ ../../saturne/configure}
+\texttt{\$ ../../code\_saturne-\verscs/configure}
 
 should be sufficient.
 
@@ -677,8 +683,8 @@ reflecting the \CS source path, installation path, and a path where optional
 libraries are installed:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/2.3 \\
-\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/2.3 \\
+\$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/3.0 \\
+\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/3.0 \\
 \$ \textcolor{OliveGreen}{CS\_OPT}=/home/projects/opt
 }\end{minipage}}
 
@@ -692,7 +698,7 @@ build on a cluster named \texttt{ivanoe}, using the Intel compilers
 \$ \textcolor{Magenta}{module purge} \\
 \$ \textcolor{Magenta}{module load} intel\_compilers/12.1.1.256 \\
 \$ \textcolor{Magenta}{module load} open\_mpi/gcc/1.4.5 \\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/saturne/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe\_ompi
 \textbackslash \\
 \textcolor{Violet}{--with-blas}=/opt/intel/composerxe\_xe\_2011\_sp1.7.256/mkl \textbackslash \\
@@ -772,7 +778,7 @@ either for the front-end, for the compute nodes, or both:
 For an example, let us start with the front-end build:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/saturne/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend
 \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/frontend
@@ -796,7 +802,7 @@ or service nodes), but the compilers are cross-compilers for the
 compute nodes:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/saturne/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp
 \textbackslash \\
 \textcolor{Violet}{--with-blas}=/opt/ibmmath/essl/4.4 \textbackslash \\
@@ -855,7 +861,8 @@ Blue Gene/P example may be adapted here.
 On the compute nodes, the IBM XL compilers produce static object files
 by default, so the \texttt{--disable-shared} option is not necessary
 for libraries using Autotools-based installs when using those compilers,
-though it does no harm.
+though using \texttt{--build=ppc64 --host=bluegeneq} in this case ensures
+the cross-compiling environment is detected.
 
 As the front-end nodes of Blue Gene/Q machines may be expected to run
 Red Hat EL 6.x linux variants, instead of 5.x for blue Gene/P, more
@@ -893,7 +900,7 @@ the  configuration stage may also be required.
 For an example, let us start with the front-end build:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/saturne/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend
 \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/frontend
@@ -910,7 +917,7 @@ or service nodes), but the compilers are cross-compilers for the
 compute nodes:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/saturne/configure \textbackslash \\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq
 \textbackslash \\
 \textcolor{Violet}{--with-blas}=/opt/ibmmath/essl/5.1 \textbackslash \\
@@ -924,6 +931,8 @@ compute nodes:
 --disable-sockets --disable-dlloader -disable-nls \textbackslash \\
 --disable-frontend --enable-long-gnum \textbackslash
 } \\
+\textcolor{Magenta}{--build}=ppc64
+\textcolor{Magenta}{--host}=bluegeneq \textbackslash \\
 \textcolor{red}{CC}=/bgsys/drivers/ppcfloor/comm/xl/bin/mpixlc\_r \textbackslash \\
 \textcolor{red}{CXX}=/bgsys/drivers/ppcfloor/comm/xl/bin/mpixlcxx\_r \textbackslash \\
 \textcolor{red}{FC}=bgxlf95\_r \\
