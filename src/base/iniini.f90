@@ -866,7 +866,7 @@ irnpnw = 1
 
 ! --- Resolution couplee des composantes de vitesse
 
-ivelco = 0
+ivelco = 1
 
 ! --- Take porosity into account
 
