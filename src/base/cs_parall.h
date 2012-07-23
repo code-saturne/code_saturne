@@ -505,7 +505,7 @@ cs_parall_sum(int             n,
 
 #else
 
-#define cs_parall_sum(_cpt, _n);
+#define cs_parall_sum(_n, _datatype, _val);
 
 #endif
 
@@ -540,7 +540,7 @@ cs_parall_max(int             n,
 
 #else
 
-#define cs_parall_max(_cpt, _n)
+#define cs_parall_max(_n, _datatype, _val);
 
 #endif
 
@@ -575,7 +575,7 @@ cs_parall_min(int             n,
 
 #else
 
-#define cs_parall_min(_cpt, _n)
+#define cs_parall_min(_n, _datatype, _val);
 
 #endif
 
