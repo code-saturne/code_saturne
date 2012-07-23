@@ -396,7 +396,7 @@ endif
 '@ @@ ATTENTION : stop in definition of boundary conditions   ',/,&
 '@    =========                                               ',/,&
 '@     ALE Method has been activated                          ',/,&
-'@     User subroutine ''usalcl'' must be completed           ',/, &
+'@     User subroutine ''usalcl'' must be completed           ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run                           ',/,&
 '@                                                            ',/,&
@@ -412,8 +412,6 @@ endif
 
 ! Allocate a temporary array for boundary faces selection
 allocate(lstelt(nfabor))
-
-
 
 !===============================================================================
 ! 2.  Assign boundary conditions to boundary faces here
@@ -435,8 +433,7 @@ call getfbr('4', nlelt, lstelt)
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
-
-!     ELEMENT ADJACENT A LA FACE DE BORD
+  ! Element adjacent a la face de bord
   iel = ifabor(ifac)
 
   ialtyb(ifac) = ivimpo

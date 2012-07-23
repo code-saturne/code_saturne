@@ -79,7 +79,7 @@ integer          ii, isc, jj, ipp
 !===============================================================================
 !     L'utilisateur ne doit pas y avoir touche.
 
-if ( ippmod(iatmos).ge.1 ) then
+if (ippmod(iatmos).ge.1) then
   if(iscalt.ne.-1) then
     write(nfecra,1000)iscalt
     call csexit (1)
@@ -88,13 +88,26 @@ if ( ippmod(iatmos).ge.1 ) then
 
   do ii = 1, nscapp
     if(iscsth(iscapp(ii)).ne.-10) then
-    write(nfecra,1001)ii,iscapp(ii),iscapp(ii),iscsth(iscapp(ii))
+    write(nfecra,1001)ii,iscapp(ii),iscsth(iscapp(ii))
      call csexit (1)
      !==========
     endif
   enddo
 endif
 
+if (ippmod(iatmos).ge.2) then
+  if (itytur.ne.2) then
+    write(nfecra, 1002)
+    call csexit(1)
+  endif
+endif
+
+if (ippmod(iatmos).le.1) then
+  if (iatra1.eq.1.or.iatsoil.eq.1) then
+    write(nfecra, 1003)
+    call csexit(1)
+  endif
+endif
 
 !===============================================================================
 ! 1. INFORMATIONS GENERALES
@@ -300,7 +313,7 @@ nfatr1 = 1
 ivert = 1  ! if iatra1=1 alors ivert=1
 iqv0 = 0
 
-!flag to use the soil model (if humid atmosphere)
+! flag to use the soil model (if humid atmosphere)
 iatsoil = 0
 ! Initial values for soil variables
 tsini  = 20.d0   !TSINI  : Surface ground temperature
@@ -317,20 +330,21 @@ tmer   = 20.d0   !Sea temperature
 !  modsub = 2 : Bouzereau et al. 2004
 !  modsub = 3 : Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and Deardorff 1977
  modsub = 0
+
 !  --> Option for liquid water content distribution models
 !  moddis = 1 : all or nothing
 !  moddis = 2 : Gaussian distribution
 moddis = 1
-!
+
 !  modnuc = 0 : without nucleation
 !  modnuc = 1 : Pruppacher and Klett 1997
 !  modnuc = 2 : Cohard et al. 1998,1999
 !  modnuc = 3 : Abdul-Razzak et al. 1998,2000 NOT IMPLEMENTED YET
 modnuc = 0
-!
+
 ! sedimentation flag
 modsedi = 0
-!
+
 ! logaritmic standard deviation of the log-normal law of the droplet spectrum
 ! adimensional
 sigc = 0.53 ! other referenced values are 0.28, 0.15
@@ -356,9 +370,9 @@ if (iihmpr.eq.1) then
 
 endif
 
-!        initmeteo --> use meteo profile for variables initialization
-!                      (0: not used; 1: used )
-!     NB : should eventually be set by interface
+! initmeteo --> use meteo profile for variables initialization
+!               (0: not used; 1: used )
+! NB : should eventually be set by interface
 
 initmeteo = 1
 
@@ -369,6 +383,8 @@ call usati1
 !--------
 ! FORMATS
 !--------
+
+#if defined(_CS_LANG_FR)
 
  1000 format(                                                           &
 '@                                                            ',/,&
@@ -401,8 +417,8 @@ call usati1
 '@  Les valeurs de ISCSTH sont renseignees automatiquement.   ',/,&
 '@                                                            ',/,&
 '@  L''utilisateur ne doit pas les renseigner dans usipsu, or ',/,&
-'@    pour le scalaire ',I10   ,' correspondant au scalaire   ',/,&
-'@    physique particuliere ',I10   ,' on a                   ',/,&
+'@    pour le scalaire ',I10 ,'.                              ',/,&
+'@    on a :                                                  ',/,&
 '@    ISCSTH(',I10   ,') = ',I10                               ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
@@ -411,6 +427,120 @@ call usati1
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 1002 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
+'@                                                            ',/,&
+'@  Seul le modele de turbulence k-eps est disponible avec    ',/,&
+'@   le module atmosphere humide (ippmod(iatmos) = 2).        ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier usipsu (cs_user_parameters.f90)                  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 1003 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
+'@                                                            ',/,&
+'@  Les modeles de sol (iatsoil) et de rayonnement (iatra1)   ',/,&
+'@   ne sont disponilbes qu''avec le module atmosphere        ',/,&
+'@   humide (ippomod(iatmos) = 2).                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier usipsu (cs_user_parameters.f90)                  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+#else
+
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@                ATMOSPHERIC  MODULE                         ',/,&
+'@                                                            ',/,&
+'@  ISCALT IS SPECIFIED AUTOMATICALLY.                        ',/,&
+'@  iscalt should not be specified in usipsu, here:           ',/,&
+'@       ISCALT  = ', I10                                      ,/,&
+'@  Computation CAN NOT run.                                  ',/,&
+'@                                                            ',/,&
+'@  Check the input data given through the User Interface     ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 1001 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@                ATMOSPHERIC  MODULE                         ',/,&
+'@                                                            ',/,&
+'@  ISCSTH IS SPECIFIED AUTOMATICALLY.                        ',/,&
+'@  For the scalar ', I10 ,' iscsth  should not be specified  ',/,&
+'@   in usipsu, here:                                         ',/,&
+'@          ISCSTH(',I10   ,') = ',I10                         ,/,&
+'@  Computation CAN NOT run.                                  ',/,&
+'@                                                            ',/,&
+'@  Check the input data given through the User Interface     ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 1002 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@                ATMOSPHERIC  MODULE                         ',/,&
+'@                                                            ',/,&
+'@  Only k-eps turbulence model is available with humid       ',/,&
+'@   atmosphere module (ippmod(iatmos) = 2).                  ',/,&
+'@  Computation CAN NOT run.                                  ',/,&
+'@                                                            ',/,&
+'@  Check the input data given through the User Interface     ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 1003 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@                ATMOSPHERIC  MODULE                         ',/,&
+'@                                                            ',/,&
+'@  Ground model (iatsoil) and radiative model (iatra1)       ',/,&
+'@   are only available with humid atmosphere module          ',/,&
+'@   (ippmod(iatmos) = 2).                                    ',/,&
+'@  Computation CAN NOT run.                                  ',/,&
+'@                                                            ',/,&
+'@  Check the input data given through the User Interface     ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+#endif
+
+!----
+! End
+!----
 
 return
-end subroutine
+end subroutine atini1

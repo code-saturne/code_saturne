@@ -185,7 +185,7 @@ do isol = 1, nfmodsol
   rcodcy = rcodcl(ifac,iv,1)
   rcodcz = rcodcl(ifac,iw,1)
 
-  rcodsn = rcodcx*rnx+rcodcy*rny + rcodcz*rnz
+  rcodsn = rcodcx*rnx + rcodcy*rny + rcodcz*rnz
   rcodcl(ifac,iu,1) = rcodcx - rcodsn*rnx
   rcodcl(ifac,iv,1) = rcodcy - rcodsn*rny
   rcodcl(ifac,iw,1) = rcodcz - rcodsn*rnz
@@ -245,7 +245,7 @@ do isol = 1, nfmodsol
     tpot2 = temp(iel)
 
     tpotv1 = tpot1*(1.d0 + (rvsra - 1.d0)*qvsol)
-    tpotv2 = tpot2*(1.d0+(rvsra - 1.d0)*qv(iel))
+    tpotv2 = tpot2*(1.d0 + (rvsra - 1.d0)*qv(iel))
 
     rib = 2.d0*abs(gz)*distb(ifac)*(tpotv2 - tpotv1)/(tpotv1 + tpotv2)      &
          /vtmod/vtmod

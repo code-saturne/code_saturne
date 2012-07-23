@@ -79,7 +79,18 @@ integer           ii,iiv
 double precision :: zzmax,ztop
 double precision, save :: zvmax
 
+!==============================================================================
+
 !===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+
+if(1.eq.1) return
+
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+!===============================================================================
+
 if (imode.eq.0) then
   write(nfecra,*) 'defining the dimensions of the 1D vertical arrays'
 else
@@ -89,7 +100,7 @@ endif
 
 ! 1. Defining the max vertical level:
 !====================================
-! For the first call (imode=0) the user should fill the maximum height of the
+! For the first call (imode = 0) the user should fill the maximum height of the
 ! 1D model (zvmax), the numbert of 1D verticals and the number of levels
 ! If the 1D radiative model, the profiles will be extended to 11000m (troposhere)
 
@@ -106,7 +117,7 @@ if (imode.eq.0) then
     zzmax = (int(zvmax)/1000)*1000.d0
 
     do while(zzmax.le.(ztop-1000.d0))
-      zzmax = zzmax+1000.d0
+      zzmax = zzmax + 1000.d0
       kmx = kmx + 1
     enddo
   endif
@@ -129,7 +140,7 @@ else
   zvert(7)  = 115.0d0
   zvert(8)  = 142.0d0
   zvert(9)  = 170.5d0
-  zvert(10)  = 199.5d0
+  zvert(10) = 199.5d0
   zvert(11) = 230.0d0
   zvert(12) = 262.0d0
   zvert(13) = 294.5d0
@@ -188,7 +199,7 @@ else
   ! 3 - Initializing the position of each vertical
   !==============================================
 
-  do iiv = 1,nvert
+  do iiv = 1, nvert
 
     ! xy coordinates of vertical iiv:
     xyvert(iiv,1) = 50.d0  !x coordinate

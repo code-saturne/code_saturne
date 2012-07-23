@@ -84,6 +84,16 @@ integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+
+if(1.eq.1) return
+
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+!===============================================================================
+
 ifbt1d = 0
 allocate(lstelt(nfabor))
 
@@ -91,45 +101,42 @@ allocate(lstelt(nfabor))
 ! APPEL 1.  INITIALISATIONS
 !===============================================================================
 if (iappel.eq.1) then
-!On precise la couleur du sol
-    CALL GETFBR('75',NLELT,LSTELT)
-    do ilelt = 1, nlelt
-      ifbt1d =ifbt1d + 1
-    enddo
-    nfmodsol = ifbt1d
+  ! On precise la couleur du sol
+  call getfbr('75',nlelt,lstelt)
+  do ilelt = 1, nlelt
+    ifbt1d = ifbt1d + 1
+  enddo
+  nfmodsol = ifbt1d
 
-    allocate(indsol(nfmodsol))
+  allocate(indsol(nfmodsol))
 
-    do ilelt = 1, nlelt
-      ifac = lstelt(ilelt)
-      indsol(ilelt) = ifac
-    enddo
-!On precise le nombre sol utilise pour le modele
-! 5 dans le cas bati, 7 dans le cas bati dense/mixte/diffus
-    nbrsol   = 5
-!On renseigne la teneur en eau des deux reservoirs
-!(necessaire pour l'initialisation) arguments rajoutes dans
-! atincl.h
-    w1ini = 0.d0
-    w2ini = 0.0d0
+  do ilelt = 1, nlelt
+    ifac = lstelt(ilelt)
+    indsol(ilelt) = ifac
+  enddo
+  ! On precise le nombre sol utilise pour le modele
+  ! 5 dans le cas bati, 7 dans le cas bati dense/mixte/diffus
+  nbrsol = 5
+  ! On renseigne la teneur en eau des deux reservoirs
+  ! (necessaire pour l'initialisation)
+  w1ini = 0.d0
+  w2ini = 0.0d0
 endif
 
 
 if (iappel.eq.2) then
+  ! Modification pour cas Wangara, dans ce cas la on a Csol(mineral=4) = 1.7e-5
+  ! ainsi que zoth = 1.2e-3
+  tab_sol(4)%csol = 1.7e-5
+  tab_sol(4)%rugthe = 0.0012
 
-!Modification pour cas Wangara, dans ce cas la on a Csol(mineral=4) = 1.7e-5
-! ainsi que zoth = 1.2e-3
-    tab_sol(4)%csol = 1.7e-5
-    tab_sol(4)%rugthe = 0.0012
-
-!
-!Initialisation of the pourcent_sol array
-    do ifac = 1,nfmodsol
-        do isol = 1,nbrsol
-            pourcent_sol(ifac,isol)=0
-        enddo
-        pourcent_sol(ifac,4) = 100
+  ! Initialisation of the pourcent_sol array
+  do ifac = 1, nfmodsol
+    do isol = 1, nbrsol
+      pourcent_sol(ifac,isol) = 0
     enddo
+    pourcent_sol(ifac,4) = 100
+  enddo
 endif
 
 !===============================================================================

@@ -120,10 +120,11 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
   allocate(cressm(kmx*nvert), interp(kmx*nvert))
   allocate(infrad(3*kmx*nvert))
 
-  ideb=1
-  xmedor=150.d0
-  heuray=float(shour)+float(smin)/60.d0+ssec/3600.d0 + (ntcabs-1)*dtref/3600.d0     &
-       -xmedor*4.d0/60.d0
+  ideb = 1
+  xmedor = 150.d0
+  heuray = float(shour) + float(smin)/60.d0+ssec/3600.d0                        &
+         + (ntcabs-1)*dtref/3600.d0 &
+         - xmedor*4.d0/60.d0
 
   if (ntcabs.le.2) then
     iico2 = 1
@@ -213,25 +214,6 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     ! --- Interpolation of temperature, humidity, density on the vertical
     !     The ref pressure profile is the one computed from the meteo profile
 
-    ! do k=1,kvert
-    !   zproj(k)= zvert(k)
-    ! enddo
-
-    ! call interpo_mesh_vert                                              &
-    ! !=======================
-    ! (kvert, xvert, yvert, zproj, ndim, ncelet, ncel, xyzcen,            &
-    ! propce(:,ipproc(itempc)), ttvert)
-
-
-  ! call interpo_mesh_vert                                              &
-  ! !=======================
-    ! (kvert, xvert, yvert, zproj, ndim, ncelet, ncel, xyzcen,            &
-    ! rtpa(:,isca(itotwt)), qvvert)
-
-    ! call interpo_mesh_vert                                              &
-    ! !=======================
-    ! (kvert, xvert, yvert, zproj, ndim, ncelet, ncel, xyzcen,            &
-    ! propce(:,ipproc(irom)),romvert)
 
     do k = 2, kvert
       zray(k) = zvert(k)
@@ -305,7 +287,6 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     ! 2.2 Computing the radiative fluxes for the vertical
     !-----------------------------------------------------
 
-    !k1 = int(xyvert(ii,3))
     k1 = 1
 
     ! --- Long-wave:
