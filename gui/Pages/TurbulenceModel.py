@@ -144,7 +144,7 @@ class TurbulenceModel(Variables, Model):
         @return: default values
         """
         default = {}
-        default['turbulence_model'] = "k-epsilon"
+        default['turbulence_model'] = "k-epsilon-PL"
         default['length_scale']     = 1.0
         default['scale_model']      = 1
         default['gravity_terms']    = "on"
