@@ -338,14 +338,12 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
-        ldflags_default="-Wl,-allow-multiple-definition"
       elif test "x$cs_ibm_bg_type" = "xP" ; then
         cppflags_default="-I/bgsys/drivers/ppcfloor/arch/include"
         cflags_default="-qlanglvl=extc99"
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
-        ldflags_default="-Wl,-allow-multiple-definition"
       else
         cs_ibm_bg_type="Q"
         cppflags_default=""
@@ -353,7 +351,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
-        ldflags_default="-Wl,-allow-multiple-definition"
       fi
     fi
 
@@ -705,8 +702,8 @@ else
 
 fi
 
-# Otherwise, are we using xlc ?
-#------------------------------
+# Otherwise, are we using xlc++ ?
+#--------------------------------
 
 if test "x$cs_cxx_compiler_known" != "xyes" ; then
 
@@ -715,12 +712,10 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
 
     echo "compiler '$CXX' is IBM XL C/C++ compiler"
 
-    echo "compiler '$CC' is IBM XL C compiler"
-
     # Version strings for logging purposes and known compiler flag
     $CXX -qversion > $outfile 2>&1
     cs_ac_cxx_version=`grep 'XL C' $outfile`
-    cs_cc_compiler_known=yes
+    cs_cxx_compiler_known=yes
 
     # Default compiler flags
     cxxflags_default="-q64"
@@ -746,7 +741,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
         cxxflags_default_hot="-O3 -qhot"
         cxxflags_default_dbg="-g"
       elif test "x$cs_ibm_bg_type" = "xQ" ; then
-        cxxflags_default=""
+        cxxflags_default="-qlanglvl=redefmac"
         cxxflags_default_opt="-O3"
         cxxflags_default_hot="-O3 -qhot"
         cxxflags_default_dbg="-g"
@@ -759,12 +754,12 @@ fi
 # Otherwise, are we using pathcc ?
 #---------------------------------
 
-if test "x$cs_cc_compiler_known" != "xyes" ; then
+if test "x$cs_cxx_compiler_known" != "xyes" ; then
 
   $CXX --version 2>&1 | grep 'PathScale' > /dev/null
   if test "$?" = "0" ; then
 
-    echo "compiler '$CXX' is PathScale C compiler"
+    echo "compiler '$CXX' is PathScale C++ compiler"
 
     # Version strings for logging purposes and known compiler flag
     $CXX --version > $outfile 2>&1
@@ -786,7 +781,7 @@ fi
 # Otherwise, are we using the Cray compiler ?
 #------------------------------------------
 
-if test "x$cs_cc_compiler_known" != "xyes" ; then
+if test "x$cs_cxx_compiler_known" != "xyes" ; then
 
   $CXX -V 2>&1 | grep 'Cray C++' > /dev/null
   if test "$?" = "0" ; then

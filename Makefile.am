@@ -342,7 +342,8 @@ extras/batch/batch.LOADL_BG \
 extras/batch/batch.LSF \
 extras/batch/batch.PBS \
 extras/batch/batch.SGE \
-extras/batch/batch.SLURM
+extras/batch/batch.SLURM \
+extras/batch/batch.SLURM_BGQ
 
 # Install man pages
 
