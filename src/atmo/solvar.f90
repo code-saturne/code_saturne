@@ -207,6 +207,7 @@ do isol = 1, nfmodsol
   vtmod = txn
 
   iel = ifabor(ifac)
+  zreel = xyzcen(3,iel)
 
   if(pourcent_sol(isol,1) > 50) then
 
@@ -216,7 +217,6 @@ do isol = 1, nfmodsol
 
     ! on impose t = tmer et hr = 100 %
     esat = 610.78d0*exp(17.2694d0*tmer/(tmer + tkelvi-35.86d0))
-    zreel = xyzcen(3,iel)
 
     call intprf                                                         &
          !==========
