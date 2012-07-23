@@ -333,7 +333,7 @@ do iel = 1, ncel
   xrtp = rtp(iel,ivart) ! thermal scalar: liquid potential temperature
   tliq = xrtp*(pp/ps)**rscp ! liquid temperature
   qwt  = rtp(iel, isca(itotwt)) !total water content
-  qsl = qsatliq(tliq , pp) ! saturated vapor content
+  qsl = qsatliq(tliq, pp) ! saturated vapor content
   deltaq = qwt - qsl
 
   if (activate) then
@@ -361,11 +361,11 @@ do iel = 1, ncel
   else ! saturated (ie. with liquid water) air parcel
     qliq = deltaq/ &
          (1.d0 + qsl*clatev**2/(rair*rvsra*cp0*tliq**2))
-    lrhum = rair*(1.d0-qliq+(rvsra-1.d0)*(qwt-qliq))
+    lrhum = rair*(1.d0 - qliq + (rvsra - 1.d0)*(qwt - qliq))
     ! liquid water content
     propce(iel,ipcliq) = qliq
     ! Celcius temperature of the air parcel
-    propce(iel, ipctem)=tliq+(clatev/cp0)*qliq-tkelvi
+    propce(iel, ipctem) = tliq + (clatev/cp0)*qliq - tkelvi
     ! density
     propce(iel,ipcrom) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
     nebdia(iel) = 1.d0
