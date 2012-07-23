@@ -297,7 +297,7 @@ LT_INIT
 # of the linker require special handling for user user subroutines
 # (due to not handling multiple definitions in the case of Mac OS X).
 # Detect this here, so as to transfer the name of a specific solution
-# (if necessary) to the Python packege.
+# (if necessary) to the Python package.
 
 cs_special_user_link=
 case "$host_os" in
