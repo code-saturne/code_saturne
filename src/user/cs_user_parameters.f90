@@ -542,7 +542,7 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-iturb = 20
+iturb = 21
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
@@ -1529,7 +1529,7 @@ imgr(ipr) = 1
 iutile = 0
 if (iutile.eq.1) then
 
-  if (iturb.eq.20) then
+  if (itytur.eq.2) then
     ircflu(ik)   = 0
     ircflu(iep)  = 0
   endif
