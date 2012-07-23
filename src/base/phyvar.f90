@@ -111,7 +111,6 @@ double precision alp3, xrij(3,3) , xnal(3)   , xnoral
 double precision xttke, xttkmg, xttdrb,epsrgp, climgp, extrap
 double precision alpha, ym, yk
 
-double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: vistot, viscf, viscb
 double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:) :: cofafp, cofbfp
@@ -399,7 +398,7 @@ elseif (itytur.eq.2) then
     propce(iel,ipcvst) = propce(iel,ipcrom)*cmu*xk**2/xe
   enddo
 
-elseif (iturb.eq.30.or.iturb.eq.31) then
+elseif (itytur.eq.3) then
 
 ! 3.4 Rij-EPSILON
 ! ================
@@ -412,89 +411,6 @@ elseif (iturb.eq.30.or.iturb.eq.31) then
     xe = rtp(iel,iep)
     propce(iel,ipcvst) = propce(iel,ipcrom)*cmu*xk**2/xe
   enddo
-
-elseif (iturb.eq.32) then
-
-! 3.4 bis EB-RSM
-! ===============
-
-  ipcvis = ipproc(iviscl)
-  ipcvst = ipproc(ivisct)
-  ipcrom = ipproc(irom  )
-
-  ! Compute the gradient of alpha and the normal
-  ! N=GRAD(ALPA)/NORM(GRAD(ALPHA)) DS grdalp
-
-  allocate(grad(ncelet,3))
-
-  ivar = ial
-  inc    = 1
-  iccocg = 1
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  iwarnp = iwarni(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
-  iclvar = iclrtp(ivar,icoef)
-  iphydp = 0
-
-  call grdcel &
-  !==========
-  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-    rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-    grad   )
-
-  ! Calcul vecteur normal unitaire de alpha
-  Do iel = 1, ncel
-
-    ! ---  Calcul de la norme de alpha
-    xnoral = (grad(iel,1)*grad(iel,1) &
-           +  grad(iel,2)*grad(iel,2) &
-           +  grad(iel,3)*grad(iel,3))
-    xnoral = sqrt(xnoral)
-    ! ---  Calcul du vecteur unitaire de alpha
-    if (xnoral.le.1.d-12) then
-      xnal(1) = 0.d0
-      xnal(2) = 0.d0
-      xnal(3) = 0.d0
-    else
-      xnal(1) = grad(iel,1)/xnoral
-      xnal(2) = grad(iel,2)/xnoral
-      xnal(3) = grad(iel,3)/xnoral
-    endif
-
-    xrij(1,1) = rtp(iel,ir11)
-    xrij(2,2) = rtp(iel,ir22)
-    xrij(3,3) = rtp(iel,ir33)
-    xrij(1,2) = rtp(iel,ir12)
-    xrij(1,3) = rtp(iel,ir13)
-    xrij(2,3) = rtp(iel,ir23)
-    xrij(2,1) = xrij(1,2)
-    xrij(3,1) = xrij(1,3)
-    xrij(3,2) = xrij(2,3)
-
-    xk = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
-    xe = rtp(iel,iep)
-    alp3=rtp(iel,ial)**3
-
-    xttke  = xk/xe
-    xttkmg = xct*sqrt(propce(iel,ipcvis)/propce(iel,ipcrom) &
-                                        /xe)
-    xttdrb = max(xttke,xttkmg)
-
-    do ii=1,3
-      do jj=1,3
-        propce(iel,ipcvst) = propce(iel,ipcrom)*xttdrb*        &
-           (  cebmmu*(1.d0-alp3)*xrij(ii,jj)*xnal(ii)*xnal(jj) &
-                    +cmu*alp3*xk   )
-      enddo
-    enddo
-  enddo
-
-  ! Free memory
-  deallocate(grad)
 
 elseif (iturb.eq.40) then
 
