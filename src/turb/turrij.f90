@@ -107,6 +107,8 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6)
 
+integer,          dimension(1), target :: ivoid
+double precision, dimension(1), target :: rvoid1, rvoid2, rvoid3, rvoid4
 double precision, dimension(ncesmp,nvar), target ::  smacel
 double precision, dimension(ncelet,ntersl), target :: tslagr
 
@@ -175,6 +177,17 @@ endif
 ! Si iturb=30 (rij std) on stocke directement la production dans
 ! le tableau produc
 ! Si iturb=31 (SSG) ou 32 (EBRSM) on stocke le gradient de vitesse dans grdvit
+
+! Set some pointers to non-null values based on issues with version 2.0 and
+! associated solution on Blue Gene/Q. This will require further investigation
+! for the trunk, but the solution used here should be acceptable
+! in the meantime.
+
+itpsmp => ivoid
+smcelp => rvoid1
+gammap => rvoid2
+tslage => rvoid3
+tslagi => rvoid4
 
 !===============================================================================
 ! 2.a CALCUL DU TENSEUR DE PRODUCTION POUR LE RIJ STANDARD
