@@ -98,7 +98,7 @@ if test "x$with_blas" != "xno" ; then
         BLAS_LIBS="$with_blas_libs"
       elif test "x$cs_ibm_bg_type" != "x" ; then
         BLAS_LIBS="-lesslbg"
-        if test "x$with_blas_libs" = "x" -a "x$cs_ibm_bg_type" != "xQ"; then
+        if test "x$with_blas_libs" = "x" -a "x$cs_ibm_bg_type" = "xQ"; then
           BLAS_LDFLAGS="-L$with_blas/lib64"
           BLAS_RUNPATH="-R$with_blas/lib64"
         fi
