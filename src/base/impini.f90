@@ -1386,9 +1386,9 @@ write(nfecra,9900)
 '    ------',                                                   /,&
 '       IVELCO = ',4x,i10,  ' (0 : resolution composante par',  /,&
 '                ',14x,     '      composante de l''etape de',  /,&
-'                ',14x,     '      prediction des vitesses',    /,&
+'                ',14x,     '      prediction de la vitesse',   /,&
 '                ',14x,     '  1 : resolution couplee des',     /,&
-'                ',14x,     '      composantes de vitesses   )',/,&
+'                ',14x,     '      composantes de vitesse    )',/,&
 '       IPHYDR = ',4x,i10,  ' (1 : prise en compte explicite',  /,&
 '                ',14x,     '      de l''equilibre entre grad', /,&
 '                ',14x,     '      de pression et termes',      /,&
@@ -1473,10 +1473,10 @@ write(nfecra,9900)
                                                                 /,&
 ' ** STOKES',                                                   /,&
 '    ------',                                                   /,&
-'       IVELCO = ',4x,i10,  ' (0: segragated solving of the',   /,&
+'       IVELCO = ',4x,i10,  ' (0: segregated solving of the',   /,&
 '                ',14x,     '     velocity components during',  /,&
 '                ',14x,     '     the prediction step',         /,&
-'                ',14x,     '  1: coupled soulving of the',     /,&
+'                ',14x,     '  1: coupled solving of the',      /,&
 '                ',14x,     '     velocity components       )', /,&
 '       IPHYDR = ',4x,i10,  ' (1: account for explicit',        /,&
 '                ',14x,     '     balance between pressure',    /,&
