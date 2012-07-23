@@ -343,7 +343,7 @@ do iel = 1, ncel
   qliq = propce(iel,ipproc(iliqwt))
   nc = rtp(iel,isca(iscapp(3)))
   if(qliq.ge.1e-8)then
-    nc = max(nc,1.)
+    nc = max(nc,1.d0)
     r3(iel) = ((rho*qliq)/(rho_water*nc*conversion))**(1.d0/3.d0)
     r3(iel) = r3(iel)*a_const
   else
