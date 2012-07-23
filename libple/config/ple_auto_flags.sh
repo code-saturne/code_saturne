@@ -1,6 +1,6 @@
 # Shell script
 
-# Copyright (C) 2005-2010 EDF
+# Copyright (C) 2005-2012 EDF
 
 # This file is part of the PLE software package.  For license
 # information, see the COPYING file in the top level directory of the
@@ -241,7 +241,7 @@ if test "x$ple_compiler_known" != "xyes" ; then
 
     # Default  linker flags
     ldflags_default=""
-    ldflags_default_opt="-g -O2"
+    ldflags_default_opt="-O2"
     ldflags_default_dbg="-g"
     ldflags_default_prf="-pg"
 
@@ -259,17 +259,83 @@ if test "x$ple_compiler_known" != "xyes" ; then
         cflags_default="-g -qmaxmem=-1 -qarch=440d -qtune=440"
         cflags_default_opt="-O2"
         cflags_default_dbg=""
-        ldflags_default="-Wl,-allow-multiple-definition -L/bgl/BlueLight/ppcfloor/bglsys/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lnss_files -lnss_dns -lresolv"
+        ldflags_default="-L/bgl/BlueLight/ppcfloor/bglsys/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lnss_files -lnss_dns -lresolv"
       elif test "$ple_ibm_bg_type" = "P" ; then
         cppflags_default="-I/bgsys/drivers/ppcfloor/comm/include"
         cflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450"
-        cflags_default_opt="-O2"
+        cflags_default_opt="-O1"
         cflags_default_dbg=""
-        ldflags_default="-Wl,-allow-multiple-definition -L/bgsys/drivers/ppcfloor/comm/lib -lmpich.cnk -ldcmfcoll.cnk -ldcmf.cnk"
+        ldflags_default=""
+      else
+        ple_ibm_bg_type="Q"
+        cppflags_default=""
+        cflags_default=""
+        cflags_default_opt="-O3"
+        cflags_default_hot="-O3 -qhot"
+        cflags_default_dbg="-g"
       fi
     fi
 
   fi
+fi
+
+# Otherwise, are we using the Cray compiler ?
+#------------------------------------------
+
+if test "x$ple_cc_compiler_known" != "xyes" ; then
+
+  $CC -V 2>&1 | grep 'Cray C' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is Cray C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    ple_ac_cc_version=`$CC -V 2>&1 | grep "Cray C" | head -1`
+    ple_cc_compiler_known=yes
+    ple_linker_set=yes
+
+    # Default compiler flags
+    cflags_default=""                        # "-h c99" by default
+    cflags_default_opt="-O2"
+    cflags_default_hot="-O3"
+    cflags_default_dbg="-g"
+    cflags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
+    cflags_default_omp="-h omp"              # default: use "-h noomp" to disable
+
+    # Default  linker flags
+    ldflags_default=""
+    ldflags_default_opt="-O2"
+    ldflags_default_dbg="-g"
+    ldflags_default_prf="-h profile_generate"
+
+  fi
+fi
+
+# Otherwise, are we using pathcc ?
+#---------------------------------
+
+if test "x$ple_cc_compiler_known" != "xyes" ; then
+
+  $CC --version 2>&1 | grep 'PathScale' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is PathScale C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $CC --version > $outfile 2>&1
+    ple_ac_cc_version=`grep -i Compiler $outfile`
+    ple_cc_compiler_known=yes
+
+    # Default compiler flags
+    cflags_default="-c99 -noswitcherror"
+    cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
+    cflags_default_dbg="-g"
+    cflags_default_opt="-O2"
+    cflags_default_prf=""
+    cflags_default_omp="-openmp"
+
+  fi
+
 fi
 
 # Compiler still not identified
@@ -327,16 +393,24 @@ if test "x$ple_compiler_known" != "xyes" ; then
         ple_linker_set=yes
 
         # Default compiler flags
-        cflags_default="-Aa +e +DA2.0W"
+        cflags_default="-AC99 +e"
         cflags_default_opt="+O2"
         cflags_default_dbg="-g"
         cflags_default_prf="-G" # -G for gprof, -p for prof
 
         # Default linker flags
-        ldflags_default="+DA2.0W"
-        ldflags_default_opt="+O2"
+        ldflags_default="+FPVZOUD +U77"
+        ldflags_default_opt="+O1"
         ldflags_default_dbg="-g"
         ldflags_default_prf="-fbexe"
+
+        if test "$host_cpu" = "ia64" ; then
+          cflags_default="$cflags_default +DD64"
+          ldflags_default="$ldflags_default +DD64"
+        else
+          cflags_default="$cflags_default +DA2.0w"
+          ldflags_default="$ldflags_default +DA2.0w"
+        fi
 
       fi
       ;;
@@ -357,7 +431,7 @@ if test "x$ple_compiler_known" != "xyes" ; then
         ple_compiler_known=yes
 
         # Default compiler flags
-        cflags_default="-Xa"
+        cflags_default="-Xa -Xc99"
         cflags_default_opt="-xO2"
         cflags_default_dbg="-g"
         cflags_default_prf="-pg"

@@ -333,17 +333,58 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
       # Default compiler flags (we assume that MPI wrappers are used)
       cs_ibm_bg_type=`grep 'Blue Gene' $outfile | sed -e 's/.*Blue Gene\/\([A-Z]\).*/\1/'`
       if test "x$cs_ibm_bg_type" = "xL" ; then
-        cflags_default=""
+        cppflags_default="-I/bgl/BlueLight/ppcfloor/bglsys/include"
+        cflags_default="-qlanglvl=stdc99"
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
       elif test "x$cs_ibm_bg_type" = "xP" ; then
-        cflags_default="-I/bgsys/drivers/ppcfloor/arch/include"
+        cppflags_default="-I/bgsys/drivers/ppcfloor/arch/include"
+        cflags_default="-qlanglvl=extc99"
+        cflags_default_opt="-O3"
+        cflags_default_hot="-O3 -qhot"
+        cflags_default_dbg="-g"
+      else
+        cs_ibm_bg_type="Q"
+        cppflags_default=""
+        cflags_default=""                    # "-qlanglvl=extc99" by default
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
       fi
     fi
+
+  fi
+fi
+
+# Otherwise, are we using the Cray compiler ?
+#------------------------------------------
+
+if test "x$cs_cc_compiler_known" != "xyes" ; then
+
+  $CC -V 2>&1 | grep 'Cray C' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is Cray C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_cc_version=`$CC -V 2>&1 | grep "Cray C" | head -1`
+    cs_cc_compiler_known=yes
+    cs_linker_set=yes
+
+    # Default compiler flags
+    cflags_default=""                        # "-h c99" by default
+    cflags_default_opt="-O2"
+    cflags_default_hot="-O3"
+    cflags_default_dbg="-g"
+    cflags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
+    cflags_default_omp="-h omp"              # default: use "-h noomp" to disable
+
+    # Default  linker flags
+    ldflags_default="-z muldefs"
+    ldflags_default_opt="-O2"
+    ldflags_default_dbg="-g"
+    ldflags_default_prf="-h profile_generate"
 
   fi
 fi
@@ -661,15 +702,64 @@ else
 
 fi
 
+# Otherwise, are we using xlc++ ?
+#--------------------------------
+
+if test "x$cs_cxx_compiler_known" != "xyes" ; then
+
+  $CXX -qversion 2>&1 | grep 'XL C' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CXX' is IBM XL C/C++ compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $CXX -qversion > $outfile 2>&1
+    cs_ac_cxx_version=`grep 'XL C' $outfile`
+    cs_cxx_compiler_known=yes
+
+    # Default compiler flags
+    cxxflags_default="-q64"
+    cxxflags_default_opt="-O3"
+    cxxflags_default_hot="-O3"
+    cxxflags_default_dbg="-g"
+    cxxflags_default_prf="-pg"
+    cxxflags_default_omp="-qsmp=omp"
+
+    # Adjust options for IBM Blue Gene cross-compiler
+
+    grep 'Blue Gene' $outfile > /dev/null
+    if test "$?" = "0" ; then
+      # Default compiler flags (we assume that MPI wrappers are used)
+      if test "x$cs_ibm_bg_type" = "xL" ; then
+        cxxflags_default=""
+        cxxflags_default_opt="-O3"
+        cxxflags_default_hot="-O3 -qhot"
+        cxxflags_default_dbg="-g"
+      elif test "x$cs_ibm_bg_type" = "xP" ; then
+        cxxflags_default=""
+        cxxflags_default_opt="-O3"
+        cxxflags_default_hot="-O3 -qhot"
+        cxxflags_default_dbg="-g"
+      elif test "x$cs_ibm_bg_type" = "xQ" ; then
+        cxxflags_default="-qlanglvl=redefmac"
+        cxxflags_default_opt="-O3"
+        cxxflags_default_hot="-O3 -qhot"
+        cxxflags_default_dbg="-g"
+      fi
+    fi
+
+  fi
+fi
+
 # Otherwise, are we using pathcc ?
 #---------------------------------
 
-if test "x$cs_cc_compiler_known" != "xyes" ; then
+if test "x$cs_cxx_compiler_known" != "xyes" ; then
 
   $CXX --version 2>&1 | grep 'PathScale' > /dev/null
   if test "$?" = "0" ; then
 
-    echo "compiler '$CXX' is PathScale C compiler"
+    echo "compiler '$CXX' is PathScale C++ compiler"
 
     # Version strings for logging purposes and known compiler flag
     $CXX --version > $outfile 2>&1
@@ -688,54 +778,38 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
 
 fi
 
+# Otherwise, are we using the Cray compiler ?
+#------------------------------------------
+
+if test "x$cs_cxx_compiler_known" != "xyes" ; then
+
+  $CXX -V 2>&1 | grep 'Cray C++' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CXX' is Cray C++"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_cxx_version=`$CXX -V 2>&1 | grep "Cray C++" | head -1`
+    cs_cxx_compiler_known=yes
+
+    # Default compiler flags
+    cxxflags_default=""                        # "-h c99" by default
+    cxxflags_default_opt="-O2"
+    cxxflags_default_hot="-O3"
+    cxxflags_default_dbg="-g"
+    cfxxlags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
+    cfxxlags_default_omp="-h omp"              # default: use "-h noomp" to disable
+
+  fi
+
+fi
+
 # Compiler still not identified
 #------------------------------
 
 if test "x$cs_cxx_compiler_known" != "xyes" ; then
 
   case "$host_os" in
-
-    linux* | none)
-
-      # IBM Blue Gene
-      #--------------
-
-      $CXX -qversion 2>&1 | grep 'XL C' | grep 'Blue Gene' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CXX' is IBM XL C/C++ compiler for Blue Gene"
-
-        # Version strings for logging purposes and known compiler flag
-        $CXX -qversion > $outfile 2>&1
-        cs_ac_cxx_version=`grep 'XL C' $outfile`
-        cs_cxx_compiler_known=yes
-        cs_linker_set=yes
-
-        # Default compiler flags
-        cxxflags_default="-q64"
-        cxxflags_default_opt="-O3"
-        cxxflags_default_hot="-O3"
-        cxxflags_default_dbg="-g"
-        cxxflags_default_prf="-pg"
-        cxxflags_default_omp="-qsmp=omp"
-
-        # Default compiler flags
-        if test -d /bgl/BlueLight/ppcfloor/bglsys/include ; then
-          cxxflags_default=""
-          cxxflags_default_opt="-O3"
-          cxxflags_default_hot="-O3 -qhot"
-          cxxflags_default_dbg=""
-        elif test -d /bgsys/drivers/ppcfloor/comm/include ; then
-          cxxflags_default=""
-          cxxflags_default_opt="-O3"
-          cxxflags_default_hot="-O3 -qhot"
-          cxxflags_default_dbg=""
-        fi
-        cxxflags_default_prf="-pg"
-        cxxflags_default_omp="-qsmp=omp"
-
-      fi
-      ;;
 
     SUPER-UX*)
 
@@ -1034,7 +1108,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     if test "$?" = "0" ; then
 
       # Default compiler flags (we assume that MPI wrappers are used)
-      cs_ibm_bg_type=`grep 'Blue Gene' $outfile | sed -e 's/.*Blue Gene\/\([A-Z]\).*/\1/'`
       if test "$cs_ibm_bg_type" = "L" ; then
         fcflags_default="-qextname -qsuffix=cpp=f90"
         fcflags_default_dbg="-g"
@@ -1045,8 +1118,37 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
         fcflags_default_dbg="-g"
         fcflags_default_opt="-O3"
         fcflags_default_hot="-O3 -qhot"
+      elif test "x$cs_ibm_bg_type" = "xQ" ; then
+        fcflags_default="-qextname -qsuffix=cpp=f90"
+        fcflags_default_dbg="-g -qcheck"
+        fcflags_default_opt="-O3"
+        fcflags_default_hot="-O3 -qhot"
       fi
     fi
+
+  fi
+fi
+
+if test "x$cs_fc_compiler_known" != "xyes" ; then
+
+  # Are we using the Cray compiler ?
+  #-------------------------------
+
+  $FC -V 2>&1 | grep 'Cray Fortran' > /dev/null
+
+  if test "$?" = "0" ; then
+
+    echo "compiler '$FC' is Cray Fortran compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_fc_version=`$FC -V 2>&1 | grep "Cray Fortran" | head -1`
+    cs_fc_compiler_known=yes
+
+    fcflags_default="-eF -em"
+    fcflags_default_dbg="-g"
+    fcflags_default_opt="-O2"
+    fcflags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
+    fcflags_default_omp="-h omp"              # default: use "-h noomp" to disable
 
   fi
 fi
