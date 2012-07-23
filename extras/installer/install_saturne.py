@@ -322,7 +322,7 @@ class Setup:
                     description="Code_Saturne CFD tool",
                     package="code_saturne",
                     version="3.0-alpha",
-                    archive="code_saturne-30a.zip",
+                    archive="code_saturne-30a.tar.gz",
                     url=url_cs)
 
         p = self.packages['code_saturne']
