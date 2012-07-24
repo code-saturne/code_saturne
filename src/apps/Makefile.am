@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2011 EDF S.A.
+# Copyright (C) 1998-2012 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -64,6 +64,7 @@ AM_LDFLAGS = $(ORIGINRUNPATH)
 lib_LTLIBRARIES = libsaturne.la
 libsaturne_la_SOURCES = cs_solver.c
 libsaturne_la_LIBADD = \
+$(top_builddir)/src/fvm/libfvm_filters.la \
 $(top_builddir)/src/base/libcsbase.la \
 $(top_builddir)/src/base/libcscore.la \
 $(top_builddir)/src/pprt/libcspprt.la \
@@ -80,7 +81,21 @@ $(top_builddir)/src/elec/libcselec.la \
 $(top_builddir)/src/gui/libcsgui.la \
 $(top_builddir)/src/lagr/libcslagr.la \
 $(top_builddir)/src/rayt/libcsrayt.la \
-$(top_builddir)/src/libcsmodules.la
+$(top_builddir)/src/libcsmodules.la \
+$(top_builddir)/src/mei/libmei.la \
+$(top_builddir)/src/fvm/libfvm_filters.la \
+$(top_builddir)/src/fvm/libfvm.la \
+$(top_builddir)/src/bft/libbft.la \
+$(LIBPLE_LA) \
+$(LDFLAGS_PLE) $(LIBS_PLE) \
+$(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
+$(MED_LDFLAGS) $(MEDRUNPATH) $(MED_LIBS) \
+$(HDF5_LDFLAGS) $(HDF5RUNPATH) $(HDF5_LIBS) \
+$(MPI_LDFLAGS) $(MPI_LIBS) \
+$(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
+$(LDADD_BLAS) \
+$(LTLIBINTL) \
+$(FCLIBS)
 libsaturne_la_LDFLAGS = -no-undefined -version 0:0:0
 
 # Main program
@@ -122,12 +137,12 @@ $(top_builddir)/src/fvm/libfvm.la \
 $(top_builddir)/src/bft/libbft.la \
 $(LTLIBINTL) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
-$(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
-$(MED_LDFLAGS) $(MED_LIBS) \
-$(HDF5_LDFLAGS) $(HDF5_LIBS) \
+$(CGNS_LDFLAGS) $(CGNS_LIBS) $(CGNSRUNPATH) \
+$(MED_LDFLAGS) $(MED_LIBS) $(MEDRUNPATH) \
+$(HDF5_LDFLAGS) $(HDF5_LIBS) $(HDF5RUNPATH) \
 $(MPI_LDFLAGS) $(MPI_LIBS) \
 $(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
-$(BLAS_LDFLAGS) $(BLASRUNPATH) $(BLAS_LIBS) \
+$(BLAS_LDFLAGS) $(BLAS_LIBS) $(BLASRUNPATH) \
 $(FCLIBS)
 
 # Code_Saturne IO utility (minimal dependencies)
@@ -163,13 +178,13 @@ cs_partition_CPPFLAGS = $(AM_CPPFLAGS) \
 $(METIS_CPPFLAGS) $(SCOTCH_CPPFLAGS)
 cs_partition_SOURCES = cs_partition.c
 cs_partition_LDADD = $(top_builddir)/src/base/libcscore.la \
-$(LIBPLE_LA) \
 $(top_builddir)/src/fvm/libfvm.la \
 $(top_builddir)/src/bft/libbft.la \
+$(LIBPLE_LA) \
 $(LTLIBINTL) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
-$(METIS_LDFLAGS) $(METIS_LIBS) \
-$(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) \
+$(METIS_LDFLAGS) $(METIS_LIBS) $(METISRUNPATH) \
+$(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) $(SCOTCHRUNPATH) \
 $(MPI_LDFLAGS) $(MPI_LIBS)
 cs_partition_LDFLAGS = \
 $(ORIGINRUNPATH)

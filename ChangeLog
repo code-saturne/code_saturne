@@ -1,4 +1,13 @@
 * 04/05/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update build scripts so as to be compatible with GNU gold linker
+  and better handle detection of dynamic builds of some external libraries.
+  modified files:
+    m4/cs_hdf5.m4
+    m4/cs_metis.m4
+    m4/cs_scotch.m4
+    src/apps/Makefile.am
+
+* 04/05/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix memory leak in radiative transfer usingGUI.
   modified files:
     src/gui/cs_gui_radiative_transfer.c

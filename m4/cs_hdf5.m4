@@ -56,10 +56,14 @@ AC_ARG_WITH(hdf5-lib,
             [if test "x$with_hdf5" = "xcheck"; then
                with_hdf5=yes
              fi
-             HDF5_LDFLAGS="-L$with_hdf5_lib"],
+             HDF5_LDFLAGS="-L$with_hdf5_lib"
+             # Add the libdir to the runpath as HDF5 might not be libtoolized
+             HDF5RUNPATH="-R$with_hdf5_lib"],
             [if test "x$with_hdf5" != "xno" -a "x$with_hdf5" != "xyes" \
 	          -a "x$with_hdf5" != "xcheck"; then
                HDF5_LDFLAGS="-L$with_hdf5/lib"
+               # Add the libdir to the runpath as HDF5 might not be libtoolized
+               HDF5RUNPATH="-R$with_hdf5/lib"
              fi])
 
 
@@ -122,6 +126,7 @@ AC_SUBST(cs_have_hdf5)
 AC_SUBST(HDF5_CPPFLAGS)
 AC_SUBST(HDF5_LDFLAGS)
 AC_SUBST(HDF5_LIBS)
+AC_SUBST(HDF5RUNPATH)
 
 ])dnl
 

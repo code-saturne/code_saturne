@@ -79,10 +79,14 @@ AC_ARG_WITH(metis-lib,
             [if test "x$with_metis" = "xcheck" -o "x$with_metis" = "xno"; then
                with_metis=yes
              fi
-             METIS_LDFLAGS="-L$with_metis_lib"],
+             METIS_LDFLAGS="-L$with_metis_lib"
+             # Add the libdir to the runpath as METIS is not libtoolized
+             METISRUNPATH="-R$with_metis_lib"],
             [if test "x$with_metis" != "xno" -a "x$with_metis" != "xyes" \
 	          -a "x$with_metis" != "xcheck"; then
                METIS_LDFLAGS="-L$with_metis/lib"
+               # Add the libdir to the runpath as METIS is not libtoolized
+               METISRUNPATH="-R$with_metis/lib"
              fi])
 
 
@@ -168,6 +172,7 @@ AC_SUBST(cs_have_metis)
 AC_SUBST(METIS_CPPFLAGS)
 AC_SUBST(METIS_LDFLAGS)
 AC_SUBST(METIS_LIBS)
+AC_SUBST(METISRUNPATH)
 
 ])dnl
 
