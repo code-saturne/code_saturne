@@ -20,167 +20,132 @@
 
 !-------------------------------------------------------------------------------
 
-double precision function hypgeo (a,b,c,x)
+! Module for specific math functions
 
-!===============================================================================
-! Purpose:
-! --------
+module spefun
 
-! Calcul de la fonction hypergeometrique
-!    (cf. pour la definition de cette fonction, voir par exemple :
-!    http://mathworld.wolfram.com/hypergeometricfunction.html )
+  !=============================================================================
 
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! a                ! r  ! <-- ! ???                                            !
-! b                ! r  ! <-- ! ???                                            !
-! c                ! r  ! <-- ! ???                                            !
-! x                ! r  ! <-- ! ???                                            !
-!__________________.____._____.________________________________________________.
+contains
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+  !=============================================================================
 
-implicit none
+  ! Gamma function
 
+  function tgamma(x)
 
-! Variables
+    double precision, intent(in) :: x
+    double precision tgamma
 
-double precision x,a,b,c
+    call csgamma(x, tgamma)
 
-! Local variables
+  end function tgamma
 
-double precision series,pp,y1,y2,hyp1,hyp2
-double precision gammaa,gammab,gammac
-double precision gammabma,gammaamb,gammacma,gammacmb
-parameter        (pp=0.1)
+  !=============================================================================
 
-! Declaration des fonctions
+  ! Hypergeometric function
+  ! (see http://mathworld.wolfram.com/hypergeometricfunction.html for definition)
 
-external         hypser
-double precision hypser
+  function hypgeo (a, b, c, x)
 
-!===============================================================================
+    double precision, intent(in) :: a, b, c, x
+    double precision hypgeo
 
-gammaa   = gamma(a)
-gammab   = gamma(b)
-gammac   = gamma(c)
-gammabma = gamma(b-a)
-gammacma = gamma(c-a)
-gammaamb = gamma(a-b)
-gammacmb = gamma(c-b)
+    ! Local variables
 
-! =======================================================================
-! Calculate hypergeometric function by convergent series for |x|<1
-! =======================================================================
+    double precision series, pp, y1, y2, hyp1, hyp2
+    double precision gammaa, gammab, gammac
+    double precision gammabma, gammaamb, gammacma, gammacmb
+    parameter        (pp=0.1)
 
-if (x.ge.-1.+pp) then
-  hypgeo = hypser(a, b, c, x)
+    ! Initialization
 
-else if (x.le.-1-pp) then
-  y1     = hypser( a, a+1.-c, a+1.-b, 1.d0/x )
-  y2     = hypser( b, b+1.-c, b+1.-a, 1.d0/x )
-  hypgeo = (gammac*gammabma*y1*(-1.d0/x)**a)/(gammab*gammacma)                  &
-         + (gammac*gammaamb*y2*(-1.d0/x)**b)/(gammaa*gammacmb)
-else if ((x.gt.-1-pp).and.(x.lt.-1+pp)) then
-  y1     = hypser(a, a+1.-c, a+1.-b, 1.d0/(-1.-pp))
-  y2     = hypser(b, b+1.-c, b+1.-a, 1.d0/(-1.-pp))
-  hyp1   = (gammac*gammabma*y1*(-1.d0/(-1.-pp))**a)/(gammab*gammacma)           &
-         + (gammac*gammaamb*y2*(-1.d0/(-1.-pp))**b)/(gammaa*gammacmb)
-  hyp2   = hypser(a, b, c, -1.+pp)
-  hypgeo = hyp1 + (x - (-1.-pp))*(hyp2 - hyp1)/(2.d0*pp)
+    gammaa   = tgamma(a)
+    gammab   = tgamma(b)
+    gammac   = tgamma(c)
+    gammabma = tgamma(b-a)
+    gammacma = tgamma(c-a)
+    gammaamb = tgamma(a-b)
+    gammacmb = tgamma(c-b)
 
-endif
+    ! Compute hypergeometric function by convergent series for |x|<1
 
-end function hypgeo
+    if (x.ge.-1.+pp) then
+      hypgeo = hypser(a, b, c, x)
 
-!===============================================================================
+    else if (x.le.-1-pp) then
+      y1     = hypser( a, a+1.-c, a+1.-b, 1.d0/x )
+      y2     = hypser( b, b+1.-c, b+1.-a, 1.d0/x )
+      hypgeo = (gammac*gammabma*y1*(-1.d0/x)**a)/(gammab*gammacma)              &
+             + (gammac*gammaamb*y2*(-1.d0/x)**b)/(gammaa*gammacmb)
+    else if ((x.gt.-1-pp).and.(x.lt.-1+pp)) then
+      y1     = hypser(a, a+1.-c, a+1.-b, 1.d0/(-1.-pp))
+      y2     = hypser(b, b+1.-c, b+1.-a, 1.d0/(-1.-pp))
+      hyp1   = (gammac*gammabma*y1*(-1.d0/(-1.-pp))**a)/(gammab*gammacma)       &
+           + (gammac*gammaamb*y2*(-1.d0/(-1.-pp))**b)/(gammaa*gammacmb)
+      hyp2   = hypser(a, b, c, -1.+pp)
+      hypgeo = hyp1 + (x - (-1.-pp))*(hyp2 - hyp1)/(2.d0*pp)
 
-double precision function hypser (a,b,c,x)
-
-!===============================================================================
-! Purpose:
-! --------
-
-! Calcul de la fonction hypergeometrique pour |x| < 1 par une serie
-!     (cf. pour la definition de cette fonction, voir par exemple :
-!     http://mathworld.wolfram.com/hypergeometricfunction.html )
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! a                ! r  ! <-- ! ???                                            !
-! b                ! r  ! <-- ! ???                                            !
-! c                ! r  ! <-- ! ???                                            !
-! x                ! r  ! <-- ! ???                                            !
-!__________________.____._____.________________________________________________.
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use entsor
-
-!===============================================================================
-
-implicit none
-
-! Variables
-
-double precision x,a,b,c
-
-! Local variables
-
-integer          nn
-double precision fac,aa,bb,cc,temp
-integer,parameter :: maxiter=10000
-double precision,parameter :: error=1.d-08
-
-!===============================================================================
-
-if (abs(x).ge.1.) then
-  write (nfecra,1120) x
-  call csexit(1)
-endif
-
- fac = 1
- temp = fac
- aa  = a
- bb  = b
- cc  = c
-
-  do nn = 1, maxiter, 1
-    fac    = ((aa*bb)/cc)*fac
-    fac    = fac*x/nn
-    hypser = fac + temp
-    if (abs(hypser - temp).le. error) then
-      return
     endif
-    temp   = hypser
-    aa     = aa +1
-    bb     = bb +1
-    cc     = cc +1
- enddo
 
-!--------
-! Formats
-!--------
+  end function hypgeo
+
+  !=============================================================================
+
+  ! Calcul de la fonction hypergeometrique pour |x| < 1 par une serie
+  !     (cf. pour la definition de cette fonction, voir par exemple :
+  !     http://mathworld.wolfram.com/hypergeometricfunction.html )
+
+  function hypser (a, b, c, x)
+
+    use entsor
+
+    implicit none
+
+    double precision, intent(in) :: a, b, c, x
+    double precision hypser
+
+    !---------------------------------------------------------------------------
+
+    ! Local variables
+
+    integer          nn
+    double precision fac,aa,bb,cc,temp
+    integer,parameter :: maxiter=10000
+    double precision,parameter :: error=1.d-08
+
+    !---------------------------------------------------------------------------
+
+    if (abs(x).ge.1.) then
+      write (nfecra,1120) x
+      call csexit(1)
+    endif
+
+    fac = 1
+    temp = fac
+    aa  = a
+    bb  = b
+    cc  = c
+
+    do nn = 1, maxiter, 1
+      fac    = ((aa*bb)/cc)*fac
+      fac    = fac*x/nn
+      hypser = fac + temp
+      if (abs(hypser - temp).le. error) then
+        return
+      endif
+      temp   = hypser
+      aa     = aa +1
+      bb     = bb +1
+      cc     = cc +1
+    enddo
+
+    ! Formats
+    !--------
 
 #if defined(_CS_LANG_FR)
 
- 1120 format (                                                          &
+1120 format (                                                     &
 '@                                                            ',/,&
 '@ @@ ERREUR : dans la fonction hypser                        ',/,&
 '@    ======                                                  ',/,&
@@ -189,7 +154,7 @@ endif
 
 #else
 
- 1120 format (                                                          &
+ 1120 format (                                                    &
 '@                                                            ',/,&
 '@ @@ ERROR: in hypser function                               ',/,&
 '@    =====                                                   ',/,&
@@ -198,43 +163,21 @@ endif
 
 #endif
 
-! ----
-!  End
-! ----
+  end function hypser
 
-end function hypser
+  !=============================================================================
 
-!===============================================================================
+  ! Beta function: beta(x,y) = gamma(x)*gamma(y)/gamma(x+y)
 
-double precision function beta(x,y)
+  function beta(x, y)
 
-!===============================================================================
-! Purpose:
-! --------
+    double precision, intent(in) :: x, y
+    double precision beta
 
-! the special function beta(x,y) = gamma(x)*gamma(y)/gamma(x+y)
+    beta = tgamma(x)*tgamma(y)/tgamma(x + y)
 
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! x                ! r  ! <-- ! ???                                            !
-! y                ! r  ! <-- ! ???                                            !
-!__________________.____._____.________________________________________________.
+  end function beta
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+  !=============================================================================
 
-implicit none
-double precision x,y
-beta = gamma(x)*gamma(y)/gamma(x + y)
-
-! ----
-!  End
-! ----
-
-return
-end function beta
+end module spefun

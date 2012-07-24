@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <math.h>
 
 /*----------------------------------------------------------------------------
  * BFT library headers
@@ -203,7 +204,33 @@ void CS_PROCF (csmkdr, CSMKDR)
 }
 
 /*----------------------------------------------------------------------------
- * Copy a Fortan string buffer to a C string buffer
+ * Compute the gamma function of x.
+ *
+ * Fortran interface
+ *
+ * subroutine csgamma (x, g)
+ * ******************
+ *
+ * double precision  x     : <-- : input value
+ * double precision  gamma : --> : output value
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csgamma, CSGAMMA)
+(
+ const cs_real_t  *x,
+ cs_real_t        *gamma
+)
+{
+#if defined(HAVE_TGAMMA)
+  *gamma = tgamma(*x);
+#else
+  bft_error(__FILE__, __LINE__, 0,
+            _("tgamma() function (C99) is not available"));
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Wrapper for the gamma
  *
  * The aim of this function is to aviod issues with Fortran array bounds
  * checking when compilers such as icc 11 consider a character array from C

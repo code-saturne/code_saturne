@@ -73,8 +73,7 @@ raysze.f90 \
 solcat.f90 \
 soliva.f90 \
 solmoy.f90 \
-solvar.f90 \
-spefun.f90
+solvar.f90
 libcsatmo_la_LDFLAGS = -no-undefined
 
 clean-local:

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-07-20 20:13+0200\n"
+"POT-Creation-Date: 2012-07-24 20:13+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4083,6 +4083,9 @@ msgstr ""
 #, c-format
 msgid "The directory %s cannot be created"
 msgstr "Le répertoire %s ne peut être créé"
+
+msgid "tgamma() function (C99) is not available"
+msgstr ""
 
 #, c-format
 msgid ""

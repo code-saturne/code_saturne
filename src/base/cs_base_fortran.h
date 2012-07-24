@@ -72,6 +72,24 @@ void CS_PROCF (csmkdr, CSMKDR)
 );
 
 /*----------------------------------------------------------------------------
+ * Compute the gamma function of x.
+ *
+ * Fortran interface
+ *
+ * subroutine csgamma (x, g)
+ * ******************
+ *
+ * double precision  x     : <-- : input value
+ * double precision  gamma : --> : output value
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csgamma, CSGAMMA)
+(
+ const cs_real_t  *x,
+ cs_real_t        *gamma
+ );
+
+/*----------------------------------------------------------------------------
  * Copy a Fortan string buffer to a C string buffer
  *
  * The aim of this function is to aviod issues with Fortran array bounds
