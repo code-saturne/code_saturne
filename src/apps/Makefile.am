@@ -137,6 +137,8 @@ endif
 cs_solver_SOURCES =
 cs_solver_LDADD = libsaturne.la \
 $(LIBPLE_LA) \
+$(top_builddir)/src/mei/libmei.la \
+$(top_builddir)/src/bft/libbft.la \
 $(LTLIBINTL) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
 $(CGNS_LDFLAGS) $(CGNS_LIBS) $(CGNSRUNPATH) \
