@@ -605,8 +605,10 @@ _copy_index_alltoallv(fvm_part_to_block_t  *d,
     for (j = 0; j < d->n_block_ents+1; j++)
       block_index[j] = 0;
 
-    for (j = 0; j < d->recv_size; j++)
+    for (j = 0; j < d->recv_size; j++) {
+      assert(block_index[d->recv_block_id[j]+1] == 0 || block_index[d->recv_block_id[j]+1] == recv_buf[j]);
       block_index[d->recv_block_id[j]+1] = recv_buf[j];
+    }
 
     /* Transform count to index */
 
