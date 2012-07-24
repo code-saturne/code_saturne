@@ -20,6 +20,38 @@
 
 !-------------------------------------------------------------------------------
 
+double precision function tgamma(x)
+
+!===============================================================================
+! Purpose:
+! --------
+
+! the function gamma
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+! x                ! r  ! <-- ! parameter                                      !
+!__________________.____._____.________________________________________________.
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+implicit none
+double precision x
+call csgamma(x, tgamma)
+
+! ----
+!  End
+! ----
+
+return
+end function tgamma
+
 double precision function hypgeo (a,b,c,x)
 
 !===============================================================================
@@ -35,10 +67,10 @@ double precision function hypgeo (a,b,c,x)
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! a                ! r  ! <-- ! ???                                            !
-! b                ! r  ! <-- ! ???                                            !
-! c                ! r  ! <-- ! ???                                            !
-! x                ! r  ! <-- ! ???                                            !
+! a                ! r  ! <-- ! parameter                                      !
+! b                ! r  ! <-- ! parameter                                      !
+! c                ! r  ! <-- ! parameter                                      !
+! x                ! r  ! <-- ! parameter                                      !
 !__________________.____._____.________________________________________________.
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -65,15 +97,17 @@ parameter        (pp=0.1)
 external         hypser
 double precision hypser
 
+external         tgamma
+double precision tgamma
 !===============================================================================
 
-gammaa   = gamma(a)
-gammab   = gamma(b)
-gammac   = gamma(c)
-gammabma = gamma(b-a)
-gammacma = gamma(c-a)
-gammaamb = gamma(a-b)
-gammacmb = gamma(c-b)
+gammaa   = tgamma(a)
+gammab   = tgamma(b)
+gammac   = tgamma(c)
+gammabma = tgamma(b-a)
+gammacma = tgamma(c-a)
+gammaamb = tgamma(a-b)
+gammacmb = tgamma(c-b)
 
 ! =======================================================================
 ! Calculate hypergeometric function by convergent series for |x|<1
@@ -116,10 +150,10 @@ double precision function hypser (a,b,c,x)
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! a                ! r  ! <-- ! ???                                            !
-! b                ! r  ! <-- ! ???                                            !
-! c                ! r  ! <-- ! ???                                            !
-! x                ! r  ! <-- ! ???                                            !
+! a                ! r  ! <-- ! parameter                                      !
+! b                ! r  ! <-- ! parameter                                      !
+! c                ! r  ! <-- ! parameter                                      !
+! x                ! r  ! <-- ! parameter                                      !
 !__________________.____._____.________________________________________________.
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -219,8 +253,8 @@ double precision function beta(x,y)
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! x                ! r  ! <-- ! ???                                            !
-! y                ! r  ! <-- ! ???                                            !
+! x                ! r  ! <-- ! parameter                                      !
+! y                ! r  ! <-- ! parameter                                      !
 !__________________.____._____.________________________________________________.
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -230,7 +264,13 @@ double precision function beta(x,y)
 
 implicit none
 double precision x,y
-beta = gamma(x)*gamma(y)/gamma(x + y)
+
+! Declaration des fonctions
+
+external         tgamma
+double precision tgamma
+
+beta = tgamma(x)*tgamma(y)/tgamma(x + y)
 
 ! ----
 !  End

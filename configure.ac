@@ -263,7 +263,7 @@ if test "x$debug" = "xyes"; then
 else
   CPPFLAGS="${CPPFLAGS} -DNDEBUG"
 fi
-  
+
 # Fortran flags for French translation
 
 if test "x$french" = "xyes"; then
@@ -464,7 +464,7 @@ fi
 AM_CONDITIONAL(HAVE_LINK_CXX, test x$cs_have_link_cxx = xyes)
 
 #------------------------------------------------------------------------------
-# Enables Code_Saturne front-end 
+# Enables Code_Saturne front-end
 #------------------------------------------------------------------------------
 
 AC_ARG_ENABLE(frontend, [AS_HELP_STRING([--disable-frontend],
@@ -607,7 +607,12 @@ AC_CHECK_FUNCS([getpwuid geteuid])
 AC_CHECK_FUNCS([uname])
 AC_CHECK_FUNCS([clock_gettime getrusage gettimeofday sbrk sysinfo])
 AC_CHECK_FUNCS([posix_memalign])
-AC_CHECK_FUNCS([memset pow modf])
+AC_CHECK_FUNCS([memset])
+
+saved_LIBS="$LIBS"
+LIBS="${LIBS} -lm"
+AC_CHECK_FUNCS([pow modf tgamma])
+LIBS="$saved_LIBS"
 
 AC_FUNC_STRTOD
 
