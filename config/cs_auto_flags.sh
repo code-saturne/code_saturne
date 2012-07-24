@@ -319,6 +319,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     grep 'Blue Gene' $outfile > /dev/null
     if test "$?" = "0" ; then
       # Default compiler flags (we assume that MPI wrappers are used)
+      cs_ibm_bg_type=`grep 'Blue Gene' $outfile | sed -e 's/.*Blue Gene\/\([A-Z]\).*/\1/'`
       if test "x$cs_ibm_bg_type" = "xL" ; then
         cppflags_default="-I/bgl/BlueLight/ppcfloor/bglsys/include"
         cflags_default="-qlanglvl=stdc99"
@@ -699,7 +700,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     if test "$?" = "0" ; then
 
       # Default compiler flags (we assume that MPI wrappers are used)
-      cs_ibm_bg_type=`grep 'Blue Gene' $outfile | sed -e 's/.*Blue Gene\/\([A-Z]\).*/\1/'`
       if test "$cs_ibm_bg_type" = "L" ; then
         fcflags_default="-qextname -qsuffix=cpp=f90"
         fcflags_default_dbg="-g"
