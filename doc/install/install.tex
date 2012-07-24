@@ -1178,12 +1178,15 @@ be configured. For the compute nodes, the following command may be used:
 \textcolor{Magenta}{--host}=bluegenep \textbackslash \\
 \textcolor{Violet}{--with-python-exec}=\textcolor{OliveGreen}{\$CS\_OPT}/python-2.7.1/arch/frontend/bin \textbackslash \\
 \textcolor{red}{CC}=mpixlc\_r \textcolor{red}{FC}=bgxlf90\_r
+\textcolor{red}{LIBS}=/bgsys/drivers/ppcfloor/ppc/gnu-linux/powerpc-bgp-linux/lib/libstdc++.a \textbackslash \\
 }\end{minipage}}
 
 The thread-safe compiler wrappers used here should not be necessary for \CS, but in our
 experience, the ESSL BLAS are correctly detected only with those wrappers,
 not with the single-threaded versions, as they have a dependency on threading
 functions of the XL Fortran runtime.
+The \texttt{LIBS} value used here is the same as that for the FVM library, and is useful only when
+FVM is built with MED output format support.
 
 Note that the front-end version of the \pcs is used even for
 the compute node build, as only the Kernel itself will run on the
