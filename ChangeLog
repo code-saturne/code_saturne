@@ -1,4 +1,9 @@
-* 04/05/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+* 24/07/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Release Code_Saturne 2.1.8.
+  This is the last planned release for the 2.1 branch,
+  which becomes unsupported after this.
+
+* 24/07/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Update build scripts so as to be compatible with GNU gold linker
   and better handle detection of dynamic builds of some external libraries.
   modified files:
