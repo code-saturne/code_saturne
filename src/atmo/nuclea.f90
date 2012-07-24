@@ -71,6 +71,7 @@ use ppthch
 use ppincl
 use atincl
 use atsoil
+use spefun
 
 !===============================================================================
 
@@ -92,10 +93,11 @@ double precision aa4, cp
 
 ! Declaration des fonctions
 
-external         esatliq,hypgeo,beta
-double precision esatliq,hypgeo,beta
+external         esatliq
+double precision esatliq
 
 double precision , parameter :: rhoeau=1000. ! kg/m**3
+
 ! ===============================================================================
 ! 0.  Initialisation
 ! ===============================================================================

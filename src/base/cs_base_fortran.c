@@ -212,7 +212,7 @@ void CS_PROCF (csmkdr, CSMKDR)
  * ******************
  *
  * double precision  x     : <-- : input value
- * double precision  gamma : <-- : output value
+ * double precision  gamma : --> : output value
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csgamma, CSGAMMA)

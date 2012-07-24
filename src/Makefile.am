@@ -61,6 +61,7 @@ $(top_srcdir)/src/base/period.f90 \
 $(top_srcdir)/src/base/pointe.f90 \
 $(top_srcdir)/src/atmo/atincl.f90 \
 $(top_srcdir)/src/atmo/atsoil.f90 \
+$(top_srcdir)/src/atmo/spefun.f90 \
 $(top_srcdir)/src/cfbl/cfpoin.f90 \
 $(top_srcdir)/src/cogz/coincl.f90 \
 $(top_srcdir)/src/comb/cs_coal_incl.f90 \
