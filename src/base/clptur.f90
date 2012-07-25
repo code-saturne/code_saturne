@@ -175,8 +175,9 @@ integer          inturb, inlami, iuiptn
 integer          iclu  , iclv  , iclw  , iclk  , iclep
 integer          iclnu
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
+integer          icl11r, icl22r, icl33r, icl12r, icl13r, icl23r
 integer          iclphi, iclfb , iclal , iclomg
-integer          iclvar
+integer          iclvar, iclvrr
 integer          icluf , iclvf , iclwf , iclkf , iclepf
 integer          iclnuf
 integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
@@ -200,6 +201,7 @@ double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodcn
 double precision visclc, visctc, romc  , distbf, srfbnf, cpscv
 double precision cofimp, ypup
+double precision bldr12, ypp, dudyp, xv2
 double precision xkip, xlldrb, xllkmg, xllke, xnu
 
 integer          ntlast , iaff
@@ -252,6 +254,13 @@ elseif (itytur.eq.3) then
   icl12  = iclrtp(ir12,icoef)
   icl13  = iclrtp(ir13,icoef)
   icl23  = iclrtp(ir23,icoef)
+  ! Boundary conditions for the momentum equation
+  icl11r = iclrtp(ir11,icoefr)
+  icl22r = iclrtp(ir22,icoefr)
+  icl33r = iclrtp(ir33,icoefr)
+  icl12r = iclrtp(ir12,icoefr)
+  icl13r = iclrtp(ir13,icoefr)
+  icl23r = iclrtp(ir23,icoefr)
   iclep  = iclrtp(iep,icoef)
   if (iturb.eq.32) iclal = iclrtp(ial,icoef)
 elseif (itytur.eq.5) then
@@ -712,7 +721,7 @@ do ifac = 1, nfabor
             ! On implicite le terme de bord pour le gradient de vitesse
             ypup =  yplus/(log(yplus)/xkappa +cstlog)
             cofimp  = 1.d0 - ypup/xkappa*                        &
-                             (und0/(deuxd0*yplus-dplus) - deuxd0*rcprod )
+                             (deuxd0*rcprod - und0/(deuxd0*yplus-dplus))
             ! On implicite le terme (rho*uet*uk)
             hflui = visclc / distbf * ypup
 
@@ -763,7 +772,8 @@ do ifac = 1, nfabor
             if (yplus.ge.ypluli) then
               ! On implicite le terme de bord pour le gradient de vitesse
               ypup   =  yplus/(log(yplus)/xkappa +cstlog)
-              cofimp = 1.d0-ypup/xkappa*(deuxd0/yplus - und0/(deuxd0*yplus-dplus))
+              cofimp = 1.d0                                                    &
+                     - ypup/xkappa*(deuxd0/yplus - und0/(deuxd0*yplus-dplus))
               ! On implicite le terme (rho*uet*uk)
               hflui = visclc / distbf * ypup
             else
@@ -783,10 +793,11 @@ do ifac = 1, nfabor
 
         ! Coupled solving of the velocity components
         if (ivelco.eq.1) then
-          if (uet.gt.epzero) then !FIXME 1/yplus
-            cofimp = 1.d0 - visclc/romc/uet/(xkappa*distbf)*1.5d0
+          if (yplus.ge.ypluli) then
+            ypup   =  yplus/(log(yplus)/xkappa +cstlog)
+            cofimp = 1.d0 - ypup/(xkappa*yplus)*1.5d0
           else
-            cofimp = 1.d0
+            cofimp = 0.d0
           endif
 
         endif
@@ -886,7 +897,7 @@ do ifac = 1, nfabor
 
       ! Flux boundary conditions
       !-------------------------
-      rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz !FIXME checkme
+      rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
 
       cofafu(1,ifac)   = -hflui*(rcodcx - rcodcn*rnx)
       cofafu(2,ifac)   = -hflui*(rcodcy - rcodcn*rny)
@@ -965,45 +976,70 @@ do ifac = 1, nfabor
 
       do isou = 1, 6
 
-        if (isou.eq.1) iclvar = icl11
-        if (isou.eq.2) iclvar = icl22
-        if (isou.eq.3) iclvar = icl33
-        if (isou.eq.4) iclvar = icl12
-        if (isou.eq.5) iclvar = icl13
-        if (isou.eq.6) iclvar = icl23
+        if (isou.eq.1) then
+          iclvar = icl11
+          iclvrr = icl11r
+        elseif (isou.eq.2) then
+          iclvar = icl22
+          iclvrr = icl22r
+        elseif (isou.eq.3) then
+          iclvar = icl33
+          iclvrr = icl33r
+        elseif (isou.eq.4) then
+          iclvar = icl12
+          iclvrr = icl12r
+        elseif (isou.eq.5) then
+          iclvar = icl13
+          iclvrr = icl13r
+        elseif (isou.eq.6) then
+          iclvar = icl23
+          iclvrr = icl23r
+        endif
 
         coefa(ifac,iclvar) = 0.0d0
         coefb(ifac,iclvar) = 0.0d0
+        coefa(ifac,iclvrr) = 0.0d0
+        coefb(ifac,iclvrr) = 0.0d0
 
       enddo
 
       ! LRR and the Standard SGG.
       if ((iturb.eq.30).or.(iturb.eq.31)) then
 
+        ! blending factor so that the component R(n,tau) have only
+        ! -mu_T/(mu+mu_T)*uet*uk
+        bldr12 = 1.d0
+        if (ivelco.eq.1) bldr12 = visctc/(visclc + visctc)
         do isou = 1,6
 
           if (isou.eq.1) then
             iclvar = icl11
+            iclvrr = icl11r
             jj = 1
             kk = 1
           else if (isou.eq.2) then
             iclvar = icl22
+            iclvrr = icl22r
             jj = 2
             kk = 2
           else if (isou.eq.3) then
             iclvar = icl33
+            iclvrr = icl33r
             jj = 3
             kk = 3
           else if (isou.eq.4) then
             iclvar = icl12
+            iclvrr = icl12r
             jj = 1
             kk = 2
           else if (isou.eq.5) then
             iclvar = icl13
+            iclvrr = icl13r
             jj = 1
             kk = 3
           else if (isou.eq.6) then
             iclvar = icl23
+            iclvrr = icl23r
             jj = 2
             kk = 3
           endif
@@ -1024,14 +1060,20 @@ do ifac = 1, nfabor
             coefb(ifac,iclvar) = 0.d0
           endif
 
-          coefa(ifac,iclvar) = coefa(ifac,iclvar)  -                &
-                             (eloglo(jj,1)*eloglo(kk,2)+            &
-                              eloglo(jj,2)*eloglo(kk,1))*uet*uk
+          ! Boundary conditions for the momentum equation
+          coefa(ifac,iclvrr) = coefa(ifac,iclvar)
+          coefb(ifac,iclvrr) = coefb(ifac,iclvar)
+
+          coefa(ifac,iclvar) = coefa(ifac,iclvar)  -                  &
+                             (eloglo(jj,1)*eloglo(kk,2)+              &
+                              eloglo(jj,2)*eloglo(kk,1))*bldr12*uet*uk
 
           ! If laminar: zero Reynolds' stresses
           if (iuntur.eq.0) then
             coefa(ifac,iclvar) = 0.d0
+            coefa(ifac,iclvrr) = 0.d0
             coefb(ifac,iclvar) = 0.d0
+            coefb(ifac,iclvrr) = 0.d0
           endif
 
           ! WARNING

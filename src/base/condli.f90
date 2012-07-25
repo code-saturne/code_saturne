@@ -188,6 +188,8 @@ integer          ipcvis, ipcvst, ipccp , ipcvsl, ipccv
 integer          iclpr , iclu  , iclv  , iclw  , iclk  , iclep
 integer          iclnu
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
+integer          icl11r, icl22r, icl33r, icl12r, icl13r, icl23r
+integer          iclvrr
 integer          iclphi, iclfb , iclal , iclomg
 integer          iclvar, icluma, iclvma, iclwma
 integer          iclprf, icluf , iclvf , iclwf , iclkf , iclepf
@@ -393,6 +395,13 @@ elseif (itytur.eq.3) then
   icl12 = iclrtp(ir12,icoef)
   icl13 = iclrtp(ir13,icoef)
   icl23 = iclrtp(ir23,icoef)
+  ! Boundary conditions for the momentum equation
+  icl11r = iclrtp(ir11,icoefr)
+  icl22r = iclrtp(ir22,icoefr)
+  icl33r = iclrtp(ir33,icoefr)
+  icl12r = iclrtp(ir12,icoefr)
+  icl13r = iclrtp(ir13,icoefr)
+  icl23r = iclrtp(ir23,icoefr)
   iclep = iclrtp(iep,icoef)
   if (iturb.eq.32) iclal = iclrtp(ial,icoef)
 elseif (itytur.eq.5) then
@@ -1312,26 +1321,32 @@ elseif (itytur.eq.3) then
     if(isou.eq.1) then
       ivar   = ir11
       iclvar = icl11
+      iclvrr = icl11r
       iclvaf = icl11f
     elseif(isou.eq.2) then
       ivar   = ir22
       iclvar = icl22
+      iclvrr = icl22r
       iclvaf = icl22f
     elseif(isou.eq.3) then
       ivar   = ir33
       iclvar = icl33
-      iclvaf = icl33f
+      iclvrr = icl33r
+      iclvaf = icl22f
     elseif(isou.eq.4) then
       ivar   = ir12
       iclvar = icl12
+      iclvrr = icl12r
       iclvaf = icl12f
     elseif(isou.eq.5) then
       ivar   = ir13
       iclvar = icl13
+      iclvrr = icl13r
       iclvaf = icl13f
     elseif(isou.eq.6) then
       ivar   = ir23
       iclvar = icl23
+      iclvrr = icl23r
       iclvaf = icl23f
     endif
 
@@ -1361,6 +1376,9 @@ elseif (itytur.eq.3) then
              coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
              pimp              , hint              , hext )
 
+        ! Boundary conditions for the momentum equation
+        coefa(ifac,iclvrr) = coefa(ifac,iclvar)
+        coefb(ifac,iclvrr) = coefb(ifac,iclvar)
       endif
 
       ! Neumann Boundary Conditions
@@ -1376,6 +1394,9 @@ elseif (itytur.eq.3) then
              coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
              qimp              , hint )
 
+        ! Boundary conditions for the momentum equation
+        coefa(ifac,iclvrr) = coefa(ifac,iclvar)
+        coefb(ifac,iclvrr) = coefb(ifac,iclvar)
       ! Convective Boundary Conditions
       !-------------------------------
 
@@ -1389,6 +1410,9 @@ elseif (itytur.eq.3) then
            ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
              coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
              pimp              , cfl               , hint )
+        ! Boundary conditions for the momentum equation
+        coefa(ifac,iclvrr) = coefa(ifac,iclvar)
+        coefb(ifac,iclvrr) = coefb(ifac,iclvar)
 
       endif
 
