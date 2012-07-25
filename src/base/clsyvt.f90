@@ -125,10 +125,11 @@ integer          ifac, ii, isou, jsou
 integer          iclu  , iclv  , iclw
 integer          icluma, iclvma, iclwma
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
+integer          icl11r, icl22r, icl33r, icl12r, icl13r, icl23r
 integer          icluf , iclvf , iclwf
 integer          iclumf, iclvmf, iclwmf
 integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
-integer          iclvar, iel
+integer          iclvar, iel, iclvrr
 double precision rnx, rny, rnz, rxnn
 double precision upx, upy, upz, usn
 double precision tx, ty, tz, txn, t2x, t2y, t2z
@@ -164,6 +165,12 @@ if (itytur.eq.3) then
   icl12  = iclrtp(ir12,icoef)
   icl13  = iclrtp(ir13,icoef)
   icl23  = iclrtp(ir23,icoef)
+  icl11r = iclrtp(ir11,icoefr)
+  icl22r = iclrtp(ir22,icoefr)
+  icl33r = iclrtp(ir33,icoefr)
+  icl12r = iclrtp(ir12,icoefr)
+  icl13r = iclrtp(ir13,icoefr)
+  icl23r = iclrtp(ir23,icoefr)
 endif
 
 ! --- Flux Boundary Conditions
@@ -390,32 +397,53 @@ do ifac = 1, nfabor
 
       do isou = 1, 6
 
-        if(isou.eq.1) iclvar = icl11
-        if(isou.eq.2) iclvar = icl22
-        if(isou.eq.3) iclvar = icl33
-        if(isou.eq.4) iclvar = icl12
-        if(isou.eq.5) iclvar = icl13
-        if(isou.eq.6) iclvar = icl23
+        if (isou.eq.1) then
+          iclvar = icl11
+          iclvrr = icl11r
+        elseif (isou.eq.2) then
+          iclvar = icl22
+          iclvrr = icl22r
+        elseif (isou.eq.3) then
+          iclvar = icl33
+          iclvrr = icl33r
+        elseif (isou.eq.4) then
+          iclvar = icl12
+          iclvrr = icl12r
+        elseif (isou.eq.5) then
+          iclvar = icl13
+          iclvrr = icl13r
+        elseif (isou.eq.6) then
+          iclvar = icl23
+          iclvrr = icl23r
+        endif
 
         coefa(ifac,iclvar) = 0.0d0
+        coefa(ifac,iclvrr) = 0.0d0
         coefb(ifac,iclvar) = 0.0d0
+        coefb(ifac,iclvrr) = 0.0d0
 
       enddo
 
       do isou = 1,6
 
-        if(isou.eq.1) then
+        if (isou.eq.1) then
           iclvar = icl11
-        else if(isou.eq.2) then
+          iclvrr = icl11r
+        elseif (isou.eq.2) then
           iclvar = icl22
-        else if(isou.eq.3) then
+          iclvrr = icl22r
+        elseif (isou.eq.3) then
           iclvar = icl33
-        else if(isou.eq.4) then
+          iclvrr = icl33r
+        elseif (isou.eq.4) then
           iclvar = icl12
-        else if(isou.eq.5) then
+          iclvrr = icl12r
+        elseif (isou.eq.5) then
           iclvar = icl13
-        else if(isou.eq.6) then
+          iclvrr = icl13r
+        elseif (isou.eq.6) then
           iclvar = icl23
+          iclvrr = icl23r
         endif
 
         ! IMPLICITATION PARTIELLE EVENTUELLE DES CL
@@ -435,6 +463,10 @@ do ifac = 1, nfabor
           coefb(ifac,iclvar) = 0.d0
         endif
         ! Translate coefa into cofaf and coefb into cofbf Done in resssg.f90
+
+        ! Boundary conditions for the momentum equation
+        coefa(ifac,iclvrr) = coefa(ifac,iclvar)
+        coefb(ifac,iclvrr) = coefb(ifac,iclvar)
 
       enddo
 

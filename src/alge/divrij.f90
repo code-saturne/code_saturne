@@ -135,10 +135,10 @@ elseif(ivar.eq.iw) then
    ivar3 = ir33
 endif
 
-! --- Conditions aux limites des variables locales (Rij)
-iclva1 = iclrtp(ivar1,icoef)
-iclva2 = iclrtp(ivar2,icoef)
-iclva3 = iclrtp(ivar3,icoef)
+! --- Boundary conditions on the component Rij for the momentum equation
+iclva1 = iclrtp(ivar1,icoefr)
+iclva2 = iclrtp(ivar2,icoefr)
+iclva3 = iclrtp(ivar3,icoefr)
 
 !===============================================================================
 ! 2.  CALCUL DE LA DIVERGENCE

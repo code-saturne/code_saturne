@@ -111,9 +111,10 @@ module numvar
 
   ! icoef   : coef numeros 1 (anciens coefa coefb)
   ! icoeff  : coef numeros 2 (anciens coefaf coefbf)
+  ! icoefr  : coef number 3 (for the Rij in the momentum eq)
   ! iclrtp  : pointeur dans COEFA et COEFB
 
-  integer, save :: icoef , icoeff , iclrtp(nvarmx,2)
+  integer, save :: icoef , icoeff , icoefr , iclrtp(nvarmx,3)
 
   ! Mapping to field structures
 

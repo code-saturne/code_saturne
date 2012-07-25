@@ -509,10 +509,13 @@ enddo
 
 icoef  = 1
 icoeff = 2
+! Special treatment of divRij in the momentum equation
+icoefr = 3
 
 do ivar = 1, nvarmx
   iclrtp(ivar,icoef ) = 0
   iclrtp(ivar,icoeff) = 0
+  iclrtp(ivar,icoefr) = 0
 enddo
 
 ! --- Ici tout numvar est initialise.
