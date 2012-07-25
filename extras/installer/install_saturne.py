@@ -263,7 +263,7 @@ class Setup:
         self.optlibs = ['hdf5', 'cgns', 'med', 'mpi', 'libxml2']
 
         # Code_Saturne version
-        self.version = '2.3.O'
+        self.version = '2.3.1'
 
         # Logging file
         self.log_file = sys.stdout
@@ -321,8 +321,8 @@ class Setup:
             Package(name="Code_Saturne",
                     description="Code_Saturne CFD tool",
                     package="code_saturne",
-                    version="2.3.0",
-                    archive="code_saturne-2.3.0.tar.gz",
+                    version="2.3.1",
+                    archive="code_saturne-2.3.1.tar.gz",
                     url=url_cs)
 
         p = self.packages['code_saturne']
