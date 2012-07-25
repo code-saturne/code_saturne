@@ -997,7 +997,7 @@ The attribute \texttt{file} is mandatory, and either \texttt{repo} or
 \item \texttt{variable}: name of the variable to draw (must be present in the master ensight file)
 \item \texttt{normal}: tuple to set the normal of the cut plane of the computational domain
 \item \texttt{center}: tuple to set the center of the cut plane of the computational domain
-\item \texttt{dilatation}: tuple to transform the view of the cut plane
+\item \texttt{stretch}: tuple to stretch the view of the cut plane
 \item \texttt{time-step}: select the physical time of the value to display
 \item \texttt{size}: size of the png image
 \item \texttt{zoom}: adjust the zoom for the point of view of the cut plane
@@ -1012,9 +1012,9 @@ See default values for these attributes in the table \ref{table:scalar}.
 \hline
 \textbf{Attributes} & \textbf{Default values} \\
 \hline
-normal & (0,0,1) \\
-center & (0,0,0) \\
-dilatation & (1,1,1) \\
+normal & (0.,0.,1.) \\
+center & (0.,0.,0.) \\
+stretch & (1.,1.,1.) \\
 time-step & -1 \textit{i.e. the last record} \\
 size & (500,400) \\
 zoom & 1.0 \\

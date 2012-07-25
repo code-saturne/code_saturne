@@ -76,7 +76,7 @@ class Scalar(object):
 
         self.normal = parser.getAttributeTuple(node, "normal", (0, 0, 1))
         self.center = parser.getAttributeTuple(node, "center", ())
-        self.dilatation = parser.getAttributeTuple(node, "dilatation", ())
+        self.stretch = parser.getAttributeTuple(node, "stretch", ())
         self.time_step = float(parser.getAttribute(node, "time-step", -1.))
         self.size = parser.getAttributeTuple(node, "size", (500, 400))
         self.zoom = float(parser.getAttribute(node, "zoom", 1.))
@@ -247,11 +247,22 @@ class Builder(object):
         self.cam = self.ren.GetActiveCamera()
         self.ren.ResetCamera()
 
-        cut = self.cutPlane(convert)
         self.mapper = vtk.vtkPolyDataMapper()
-        self.mapper.SetInputConnection(cut.GetOutputPort())
 
-        self.dilatation()
+        cut = self.cutPlane(convert)
+
+        if self.opt.stretch:
+            t = vtk.vtkTransform()
+            m = vtk.vtkTransformPolyDataFilter()
+            t.Scale(self.opt.stretch[0],
+                    self.opt.stretch[1],
+                    self.opt.stretch[2])
+
+            m.SetInputConnection(cut.GetOutputPort())
+            m.SetTransform(t)
+            self.mapper.SetInputConnection(m.GetOutputPort())
+        else:
+            self.mapper.SetInputConnection(cut.GetOutputPort())
 
         if not self.opt.color_map:
             self.mapper.CreateDefaultLookupTable()
@@ -269,7 +280,10 @@ class Builder(object):
         self.ren.AddActor(grid)
 
         if self.opt.axes:
-            axes = self.addAxes(cut)
+            if self.opt.stretch:
+                axes = self.addAxes(m)
+            else:
+                axes = self.addAxes(cut)
             axes.SetCamera(self.cam)
             self.ren.AddActor(axes)
 
@@ -386,17 +400,6 @@ class Builder(object):
         #cut.GenerateCutScalarsOn()
         #cut.SetSortByToSortByCell()
         return cut
-
-
-    def dilatation(self):
-        """Increase the dimensions of the image"""
-        if self.opt.dilatation:
-            magnifyFilter = vtk.vtkImageMagnify()
-            magnifyFilter.SetInputConnection(self.mapper.GetOutputPort())
-            magnifyFilter.SetMagnificationFactors(self.opt.dilatation[0],
-                                                  self.opt.dilatation[1],
-                                                  self.opt.dilatation[2])
-            magnifyFilter.Update()
 
 
     def textProperty(self, fontsize = 20):
