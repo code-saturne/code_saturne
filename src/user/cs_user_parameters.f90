@@ -289,7 +289,7 @@ ippmod(ielarc) = -1
 !        if = -1   module not activated
 !        if = 0    standard modelling
 !        if = 1    dry atmosphere
-!        if = 2    humid atmosphere (NOT functional)
+!        if = 2    humid atmosphere (experimental)
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -2598,11 +2598,6 @@ if(1.eq.1) return
 ! Reading the meteo file
 
 imeteo = 1
-
-! Option for variable density and viscosity
-
-irovar = 0
-ivivar = 0
 
 !----
 ! End
