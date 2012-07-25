@@ -24,7 +24,11 @@
 
 module spefun
 
-  !=============================================================================
+!=============================================================================
+
+use entsor
+
+!=============================================================================
 
 contains
 
@@ -82,7 +86,7 @@ contains
       y1     = hypser(a, a+1.-c, a+1.-b, 1.d0/(-1.-pp))
       y2     = hypser(b, b+1.-c, b+1.-a, 1.d0/(-1.-pp))
       hyp1   = (gammac*gammabma*y1*(-1.d0/(-1.-pp))**a)/(gammab*gammacma)       &
-           + (gammac*gammaamb*y2*(-1.d0/(-1.-pp))**b)/(gammaa*gammacmb)
+             + (gammac*gammaamb*y2*(-1.d0/(-1.-pp))**b)/(gammaa*gammacmb)
       hyp2   = hypser(a, b, c, -1.+pp)
       hypgeo = hyp1 + (x - (-1.-pp))*(hyp2 - hyp1)/(2.d0*pp)
 
