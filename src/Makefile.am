@@ -92,6 +92,7 @@ $(top_srcdir)/src/base/numvar.f90: paramx.lo
 $(top_srcdir)/src/base/optcal.f90: paramx.lo
 $(top_srcdir)/src/base/pointe.f90: paramx.lo parall.lo period.lo optcal.lo entsor.lo lagran.lo radiat.lo ppincl.lo ihmpre.lo albase.lo
 $(top_srcdir)/src/atmo/atincl.f90: ppppar.lo ppincl.lo mesh.lo atsoil.lo
+$(top_srcdir)/src/atmo/spefun.f90: entsor.lo
 $(top_srcdir)/src/cogz/coincl.f90: paramx.lo ppppar.lo
 $(top_srcdir)/src/cplv/cpincl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/comb/cs_coal_incl.f90: ppppar.lo ppthch.lo
