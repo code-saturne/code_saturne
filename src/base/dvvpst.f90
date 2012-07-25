@@ -412,21 +412,65 @@ else if (numtyp .eq. -2) then
 
         !  Compute non-reconstructed values at boundary faces
 
-        do kk = 0, idimt-1
+        if (     ivelco.eq.0 &
+            .or. (ivar.ne.iu .and. ivar.ne.iv .and. ivar.ne.iw .and.        &
+                  ivar.ne.iuma .and. ivar.ne.ivma .and. ivar.ne.iwma)) then
 
-          iclvar = iclrtp(ivar+kk,icoef)
-          do iloc = 1, nfbrps
+          do kk = 0, idimt-1
 
-            ifac = lstfbr(iloc)
-            iel = ifabor(ifac)
+            iclvar = iclrtp(ivar+kk,icoef)
+            do iloc = 1, nfbrps
 
-            trafbr(kk + (iloc-1)*idimt + 1)                       &
-                 =   coefa(ifac,iclvar)                           &
-                   + coefb(ifac,iclvar)*rtp(iel,ivar+kk)
+              ifac = lstfbr(iloc)
+              iel = ifabor(ifac)
+
+              trafbr(kk + (iloc-1)*idimt + 1)                       &
+                   =   coefa(ifac,iclvar)                           &
+                     + coefb(ifac,iclvar)*rtp(iel,ivar+kk)
+
+            enddo
 
           enddo
 
-        enddo
+        else if (ivar.eq.iu) then
+
+          do kk = 0, idimt-1
+
+            do iloc = 1, nfbrps
+
+              ifac = lstfbr(iloc)
+              iel = ifabor(ifac)
+
+              trafbr(kk + (iloc-1)*idimt + 1)                       &
+                   =   coefau(kk+1,ifac)                            &
+                     + coefbu(kk+1,1,ifac)*rtp(iel,ivar)            &
+                     + coefbu(kk+1,2,ifac)*rtp(iel,ivar+1)          &
+                     + coefbu(kk+1,3,ifac)*rtp(iel,ivar+2)
+
+            enddo
+
+          enddo
+
+        else if (ivar.eq.iuma) then
+
+          do kk = 0, idimt-1
+
+            do iloc = 1, nfbrps
+
+              ifac = lstfbr(iloc)
+              iel = ifabor(ifac)
+
+              trafbr(kk + (iloc-1)*idimt + 1)                       &
+                   =   claale(kk+1,ifac)                            &
+                     + clbale(kk+1,1,ifac)*rtp(iel,ivar)            &
+                     + clbale(kk+1,2,ifac)*rtp(iel,ivar+1)          &
+                     + clbale(kk+1,3,ifac)*rtp(iel,ivar+2)
+
+            enddo
+
+          enddo
+
+        endif
 
         ! Interleaved values, defined on work array
         ientla = 1
