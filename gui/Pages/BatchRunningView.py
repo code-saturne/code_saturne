@@ -982,7 +982,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         try:
             run_ref_f = file(runcase, mode='r')
         except IOError:
-            print "Error: can not opening %s\n" % runcase
+            print("Error: can not open %s" % runcase)
             sys.exit(1)
         lines = run_ref_f.readlines()
         run_ref_f.close()

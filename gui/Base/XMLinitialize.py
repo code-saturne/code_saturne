@@ -262,8 +262,8 @@ class XMLinit(Variables):
                 node.xmlRemoveNode()
                 compt = compt + 1
         if compt != 0:
-            print "Profiles have been suppress from your files for incompatibility"
-            print "You must re-create them"
+            print("Profiles have been removed from your files due to  incompatibility")
+            print("You must re-create them")
 
 
 #-------------------------------------------------------------------------------
