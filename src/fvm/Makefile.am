@@ -151,9 +151,7 @@ fvm_medcoupling_la_LIBADD = \
 $(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
 $(MEDCOUPLINGRUNPATH)
 
-MEDCOUPLINGDLOPEN = -dlopen fvm_medcoupling.la
-
 endif
 
 libfvm_la_LDFLAGS = -no-undefined
-libfvm_filters_la_LDFLAGS = -no-undefined $(MEDCOUPLINGDLOPEN)
+libfvm_filters_la_LDFLAGS = -no-undefined
