@@ -99,10 +99,12 @@ def define_domain_parameters(domain):
 
     # If thermochemistry applies, the name of the thermochemistry data file
     # may be specified. For example:
-    # domain.thermochemistry_data = 'dp_FCP.xml'
+    # domain.thermochemistry_data = 'dp_C3P'
+    # domain.solidfuel_data = 'dp_FCP.xml'
 
     if domain.param == None:
         domain.thermochemistry_data = None
+        domain.solidfuel_data = None
 
     # Additional input files or patterns found in the DATA subdirectory
     # may be defined by the domain.user_input_files list.
