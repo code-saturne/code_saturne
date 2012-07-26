@@ -54,7 +54,7 @@ BEGIN_C_DECLS
 
 extern void CS_PROCF (caltri, CALTRI)
 (
- const cs_int_t   *iverif   /* <-- activate elementary tests */
+ void
 );
 
 /*----------------------------------------------------------------------------
@@ -169,7 +169,7 @@ extern void CS_PROCF (findpt, FINDPT)
 
 extern void CS_PROCF (initi1, INITI1)
 (
- const cs_int_t  *iverif          /* <-- Activate elementary tests */
+ void
 );
 
 /*----------------------------------------------------------------------------

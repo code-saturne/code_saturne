@@ -20,10 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine initi1 &
+subroutine initi1
 !================
-
- ( iverif )
 
 !===============================================================================
 !  FONCTION  :
@@ -36,7 +34,6 @@ subroutine initi1 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -59,8 +56,6 @@ use ihmpre
 implicit none
 
 ! Arguments
-
-integer          iverif
 
 ! Local variables
 
@@ -89,7 +84,7 @@ call iniini
 !      ET POSITIONNEMENT DES VARIABLES (VARPOS)
 !===============================================================================
 
-call iniusi(iverif)
+call iniusi
 !==========
 
 call ppini1
@@ -100,12 +95,6 @@ call rayopt
 
 call lagopt
 !==========
-
-! En mode verification, on positionne IMRGRA a 2 de maniere a creer
-! le voisinage etendu (complet) necessaire a certains modes de calcul
-! de gradient
-if (iverif.eq.1) imrgra = 2
-
 
 !===============================================================================
 ! 3. DEFINITION DES COUPLAGES AVEC SYRTHES
@@ -210,8 +199,6 @@ call fldini
 !===============================================================================
 ! 6. IMPRESSIONS
 !===============================================================================
-
-if (iverif.eq.1) return
 
 call impini
 !==========

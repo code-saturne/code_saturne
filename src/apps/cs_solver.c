@@ -81,6 +81,7 @@
 #include "cs_ctwr.h"
 #include "cs_field.h"
 #include "cs_gradient.h"
+#include "cs_gradient_quality.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
 #include "cs_gui_output.h"
@@ -182,7 +183,6 @@ cs_run(void)
   double  t1, t2;
 
   bool partition_preprocess = false;
-  int  _verif = -1;
   int  check_mask = 0;
   int  cwf_post = 0;
   double  cwf_threshold = -1.0;
@@ -221,16 +221,13 @@ cs_run(void)
 
   /* Call main calculation initialization function or help */
 
-  _verif = (   (opts.preprocess | opts.verif) == true
-            || opts.benchmark > 0) ? 1 : 0;
-
   cs_field_define_keys_base();
 
   cs_preprocessor_data_read_headers(cs_glob_mesh,
                                     cs_glob_mesh_builder);
 
-  if (opts.preprocess == false)
-    CS_PROCF(initi1, INITI1)(&_verif);
+  if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0)
+    CS_PROCF(initi1, INITI1)();
 
   /* Discover applications visible through MPI (requires communication);
      this is done after main calculation initialization so that the user
@@ -504,39 +501,46 @@ cs_run(void)
 
     cs_gradient_initialize();
 
-    /* Initialize sparse linear systems resolution */
+    if (opts.verif == true)
+      cs_gradient_quality();
 
-    cs_matrix_initialize();
-    cs_sles_initialize();
-    cs_multigrid_initialize();
-
-    /* Choose between standard and user solver */
-
-    if (cs_user_solver_set() == 0) {
-
-      /*----------------------------------------------
-       * Call main calculation function (code Kernel)
-       *----------------------------------------------*/
-
-      CS_PROCF(caltri, CALTRI)(&_verif);
-
-    }
     else {
 
-      /*--------------------------------
-       * Call user calculation function
-       *--------------------------------*/
+      /* Initialize sparse linear systems resolution */
 
-      cs_user_solver(cs_glob_mesh,
-                     cs_glob_mesh_quantities);
+      cs_matrix_initialize();
+      cs_sles_initialize();
+      cs_multigrid_initialize();
+
+      /* Choose between standard and user solver */
+
+      if (cs_user_solver_set() == 0) {
+
+        /*----------------------------------------------
+         * Call main calculation function (code Kernel)
+         *----------------------------------------------*/
+
+        CS_PROCF(caltri, CALTRI)();
+
+      }
+      else {
+
+        /*--------------------------------
+         * Call user calculation function
+         *--------------------------------*/
+
+        cs_user_solver(cs_glob_mesh,
+                       cs_glob_mesh_quantities);
+
+      }
+
+      /* Finalize sparse linear systems resolution */
+
+      cs_multigrid_finalize();
+      cs_sles_finalize();
+      cs_matrix_finalize();
 
     }
-
-    /* Finalize sparse linear systems resolution */
-
-    cs_multigrid_finalize();
-    cs_sles_finalize();
-    cs_matrix_finalize();
 
     /* Finalize gradient computation */
 

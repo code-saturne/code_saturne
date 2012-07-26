@@ -20,7 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine caltri ( iverif )
+subroutine caltri
 !================
 
 !===============================================================================
@@ -34,7 +34,6 @@ subroutine caltri ( iverif )
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! iverif           ! i  ! <-- ! elementary tests flag                          !
 !__________________.____._____.________________________________________________.
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -78,8 +77,6 @@ implicit none
 
 ! Arguments
 
-
-integer          iverif
 
 ! Local variables
 
@@ -131,7 +128,7 @@ double precision, allocatable, dimension(:,:) :: dlgeo
 !===============================================================================
 
 !===============================================================================
-! 1. Initialization
+! Initialization
 !===============================================================================
 
 ! Initialize first free position in array "ra"
@@ -150,14 +147,14 @@ istpp1 = 0
 ttchis = -1.d0
 
 !===============================================================================
-! 2. Geometry
+! Geometry
 !===============================================================================
 
 call cregeo
 !==========
 
 !===============================================================================
-! 3. End of modules initialization
+! End of modules initialization
 !===============================================================================
 
 call initi2
@@ -176,7 +173,7 @@ if (iilagr.gt.0) then
 endif
 
 !===============================================================================
-! 5. Zone definition for head-loss, mass source term and 1D-wall module
+! Zone definition for head-loss, mass source term and 1D-wall module
 !===============================================================================
 
 ! First pass for every subroutine
@@ -315,7 +312,7 @@ if (nfpt1t.eq.0) deallocate(izft1d)
 
 
 !===============================================================================
-! 6. Memory management
+! Memory management
 !===============================================================================
 
 ! Allocate main real arrays
@@ -338,7 +335,7 @@ if (iphydr.eq.1) then
   allocate(frcxt(ncelet,3))
 endif
 
-call init_aux_arrays ( ncelet , ncel   , ncelbr , nfac  , nfabor , iverif )
+call init_aux_arrays ( ncelet , ncel   , ncelbr , nfac  , nfabor )
 !===================
 
 if (ippmod(iatmos).ge.0) then
@@ -392,24 +389,7 @@ if (iilagr.gt.0) then
 endif
 
 !===============================================================================
-! 7. TESTS ELEMENTAIRES : appel a testel.f90
-!===============================================================================
-
-if (iverif.eq.1) then
-
-  write(nfecra, 1000)
-
-  call testel                                                     &
-  !==========
- ( nvar   ,                                                       &
-   ra(irtp) , coefa  , coefb  )
-
-  goto 200
-
-endif
-
-!===============================================================================
-! 8. INITIALISATIONS PAR DEFAUT
+! Default initializations
 !===============================================================================
 
 call iniva0 &
@@ -430,7 +410,7 @@ call fldama
 !==========
 
 !===============================================================================
-! 9. CALCUL SUITE EVENTUEL
+! Possible restart
 !===============================================================================
 
 if (isuite.eq.1) then
@@ -464,9 +444,8 @@ if (isuite.eq.1) then
 endif
 
 !===============================================================================
-! 10. INITIALISATIONS (Utilisateur et complementaires)
-!     RTP DT ROM ROMB VISCL VISCT VISCLS
-!     (TPUCOU en PERIODICITE)
+! Initializations (user and additional)
+!    rtp dt rom romb viscl visct viscls (tpucou with periodicite)
 !===============================================================================
 
 call inivar &
@@ -478,7 +457,7 @@ call inivar &
    frcxt  )
 
 !===============================================================================
-! 10.1 MODULE DE RAYONNEMENT : CALCUL SUITE EVENTUEL
+! Radiative transfer: possible restart
 !===============================================================================
 
 if (iirayo.gt.0 .and. isuird.eq.1) then
@@ -491,7 +470,7 @@ if (iirayo.gt.0 .and. isuird.eq.1) then
 endif
 
 !===============================================================================
-! 10.2 INITIALISATIONS DES PARTICULES POUR LE LAGRANGIEN
+! Initialize particles for Lagrangian module
 !===============================================================================
 
 if (iilagr.gt.0) then
@@ -508,7 +487,7 @@ if (iilagr.gt.0) then
 endif
 
 !===============================================================================
-! 10.3 INITIALISATIONS POUR LE MODULE THERMIQUE 1D EN PAROI
+! Initializations for the 1D thermal wall module
 !===============================================================================
 ! On suppose que toutes les phases voient la meme temperature de paroi
 ! USPT1D a un fonctionnement similaire a USKPDC et USTSMA, mais comme
@@ -576,7 +555,7 @@ endif
 !     -> on libere la memoire.
 
 !===============================================================================
-! 10.4 Initialization for the Synthetic turbulence Inlets
+! Initialization for the Synthetic turbulence Inlets
 !===============================================================================
 
 nent = 0
@@ -597,7 +576,7 @@ if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
 endif
 
 !===============================================================================
-! 9. TABLEAUX POUR BLC EN TEMPS MAIS A OUBLIER ENSUITE
+! Arrays for time block, to discard afterwards
 !===============================================================================
 
 !  En fin de bloc en temps on doit retrouver IFNIA1 et IFNRA1
@@ -709,7 +688,7 @@ call cscini                                                       &
  ( nvar   , nscal  )
 
 !===============================================================================
-! 10. DEBUT DE LA BOUCLE EN TEMPS
+! Start of time loop
 !===============================================================================
 
 write(nfecra,2000)
@@ -781,11 +760,10 @@ endif
 
 
 !===============================================================================
-! 11. AVANCEE EN TEMPS
+! Step forward in time
 !===============================================================================
 
-
-!     On teste la presence de ficstp pour modifier NTMABS le cas echeant
+!  Test presence of ficstp to modify ntmabs if required
 call modpar(ntcabs,ntmabs)
 !==========
 
@@ -803,7 +781,7 @@ call tridim                                                       &
    frcxt  )
 
 !===============================================================================
-! 12. CALCUL DES MOYENNES TEMPORELLES (ACCUMULATION)
+! Compute temporal means (accumulation)
 !===============================================================================
 
 
@@ -816,7 +794,7 @@ endif
 
 
 !===============================================================================
-! 13. APPEL DU MODULE LAGRANGIEN
+! Lagrangian module
 !===============================================================================
 
 if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
@@ -837,7 +815,7 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
 endif
 
 !===============================================================================
-! 14. BRANCHEMENT UTILISATEUR POUR MODIF DES VARIABLES EVENTUELLES
+! Optional processing by user
 !===============================================================================
 
 if (itrale.gt.0) then
@@ -865,7 +843,7 @@ if (itrale.gt.0) then
 endif
 
 !===============================================================================
-! 15. MISE A JOUR DU MAILLAGE (ALE)
+! Update mesh (ALE)
 !===============================================================================
 
 if (iale.eq.1 .and. inpdt0.eq.0) then
@@ -905,27 +883,21 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
 endif
 
 !===============================================================================
-! 16. TEST D'ARRET PAR MANQUE DE TEMPS
+! Stop tests
 !===============================================================================
+
+! Test for lack of remaining time
 
 call armtps(ntcabs,ntmabs)
 !==========
 
-!===============================================================================
-! 17. TEST D'ARRET ISSU DU MODULE DE RAYONNEMENT P-1
-!===============================================================================
+! Stop test from P-1 radiative model
+
 if (istpp1.eq.1) then
   ntmabs = ntcabs
 endif
 
-!===============================================================================
-! 18. TEST D'ARRET PAR DEMANDE D'UN COUPLAGE
-!===============================================================================
-
-!     En cas de couplage, on lit des maintenant l'entete du premier
-!     message du pas de temps suivant, au cas ou il s'agisse d'un
-!     message de terminaison (pas de test sur ITRALE ici, car
-!     il serait sur ITRALE + 1, toujours > 0).
+! Stop test for couplings
 
 if (idtvar.eq.0.or.idtvar.eq.1) then
   call cplsyn (ntmabs, ntcabs, ra(idt))
@@ -936,7 +908,7 @@ else
 endif
 
 !===============================================================================
-! 19. SORTIE EVENTUELLE DU FICHIER SUITE
+! Possible output of checkpoint files
 !===============================================================================
 
 iisuit = 0
@@ -1033,7 +1005,7 @@ if (iisuit.eq.1) then
 endif ! iisuit = 1
 
 !===============================================================================
-! 20. TEST POUR SAVOIR SI ON SORT UN FICHIER POST OU NON
+! Test to determine if a visualization output is generated
 !===============================================================================
 
 call pstntc(ntmabs, ntcabs, ttcabs)
@@ -1048,7 +1020,7 @@ call pstusn(ntmabs, ntcabs, ttcabs)
 !==========
 
 !===============================================================================
-! 21. SORTIE DES FICHIERS POST STANDARDS
+! Standard visualization output
 !===============================================================================
 
 !     Si ITRALE=0 on desactive tous les writers (car la geometrie n'a pas ete
@@ -1071,7 +1043,7 @@ call pstvar                                                       &
    statis , stativ , parbor )
 
 !===============================================================================
-! 22. HISTORIQUES
+! Probes
 !===============================================================================
 
 if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
@@ -1116,7 +1088,7 @@ call ushist                                                       &
 
 
 !===============================================================================
-! 23. ECRITURE LISTING TOUTES LES NTLIST ITERATIONS
+! Write to "listing" every ntlist iterations
 !===============================================================================
 
 if(ntlist.gt.0) then
@@ -1163,7 +1135,7 @@ endif
 
 
 !===============================================================================
-! 24. FIN DE LA BOUCLE EN TEMPS
+! End of time loop
 !===============================================================================
 
 itrale = itrale + 1
@@ -1174,7 +1146,7 @@ if(ntcabs.lt.ntmabs) goto 100
 ! LIBERATION DES TABLEAUX INTERMEDIAIRES (PDC+TSM)
 
 !===============================================================================
-! 25. FINALISATION HISTORIQUES
+! Finalize probes
 !===============================================================================
 
 if(iwarn0.gt.0) then
@@ -1284,7 +1256,7 @@ endif
  200  continue
 
 !===============================================================================
-! 26. MEMOIRE UTILISEE
+! Memory usage
 !===============================================================================
 
 !     Liberation des structures liees a la lecture du fichier xml
@@ -1302,20 +1274,10 @@ endif
 write(nfecra,7000)
 
 !----
-! FORMATS
+! Formats
 !----
 
 #if defined(_CS_LANG_FR)
-
- 1000 format(/,                                                   &
-'===============================================================',&
-                                                              /,/,&
-'              FONCTIONNEMENT EN MODE VERIFICATION            ',/,&
-'              ===================================            ',/,&
-'                                                             ',/,&
-' =========================================================== ',/,&
-                                                                /,&
-                                                                /)
 
  2000 format(/,/,                                                 &
 '===============================================================',&
@@ -1381,16 +1343,6 @@ write(nfecra,7000)
 
 #else
 
- 1000 format(/,                                                   &
-'===============================================================',&
-                                                              /,/,&
-'              RUNNING IN VERIFICATION MODE                   ',/,&
-'              ============================                   ',/,&
-'                                                             ',/,&
-' =========================================================== ',/,&
-                                                                /,&
-                                                                /)
-
  2000 format(/,/,                                                 &
 '===============================================================',&
                                                               /,/,&
@@ -1455,9 +1407,9 @@ write(nfecra,7000)
 
 #endif
 
-!===============================================================================
-! 26. End
-!===============================================================================
+!----
+! End
+!----
 
 return
 end subroutine

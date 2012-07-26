@@ -20,7 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine iniusi(iverif)
+subroutine iniusi
 !================
 
 !===============================================================================
@@ -43,7 +43,6 @@ subroutine iniusi(iverif)
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -82,8 +81,6 @@ use cs_coal_incl
 implicit none
 
 ! Arguments
-
-integer          iverif
 
 ! Local variables
 
@@ -142,9 +139,8 @@ endif
 !     ==========================
 
 iihmpu = iihmpr
-call usipph                                                       &
+call usipph(iihmpu , nfecra , iturb  , icp)
 !==========
- (iihmpu , nfecra , iturb  , icp , iverif)
 
 !===============================================================================
 ! 2. INITIALISATION DE PARAMETRES DEPENDANT DU NOMBRE DE SCALAIRES
@@ -167,7 +163,7 @@ endif
 !     ==========================
 
 iihmpu = iihmpr
-call usinsc(iihmpu , nfecra , nscaus , iverif)
+call usinsc(iihmpu , nfecra , nscaus)
 !==========
 
 
@@ -252,7 +248,7 @@ nscusi = nscaus
 iihmpu = iihmpr
 call usipsc                                                       &
 !==========
- ( nscmax , nscusi , iihmpu , nfecra , iscavr , ivisls , iverif )
+ ( nscmax , nscusi , iihmpu , nfecra , iscavr , ivisls )
 
 !===============================================================================
 ! 3. INITIALISATION DE PARAMETRES "GLOBAUX"
@@ -310,7 +306,7 @@ call usipgl                                                       &
  ( nesmax ,                                                       &
    ieepre , ieeder , ieecor , ieetot ,                            &
    iihmpu , nfecra ,                                              &
-   idtvar , ipucou , idilat , iphydr , ialgce , iescal , iverif,  &
+   idtvar , ipucou , idilat , iphydr , ialgce , iescal ,          &
    icwfps,  cwfthr )
 
 if (ialgce.ne.-999) call algcen(ialgce)
@@ -445,7 +441,7 @@ endif
 !   - Sous-programme utilisateur
 !     ==========================
 
-call usipsu(nmodpp , iverif)
+call usipsu(nmodpp)
 !==========
 
 call clmopt(mltmmn, mltmgl, mltmmr, mltmst, mlttyp)
@@ -527,7 +523,7 @@ endif
 !   - Sous-programme utilisateur
 !     ==========================
 
-call usipes(nmodpp, iverif)
+call usipes(nmodpp)
 !==========
 
 !----

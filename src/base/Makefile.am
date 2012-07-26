@@ -268,7 +268,6 @@ strhis.f90 \
 strini.f90 \
 strpre.f90 \
 tdesi1.f90 \
-testel.f90 \
 tridim.f90 \
 tspdcv.f90 \
 tsepdc.f90 \

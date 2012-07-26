@@ -417,7 +417,7 @@ end subroutine
 subroutine usipph &
 !================
 
- ( iihmpu, nfecra , iturb , icp , iverif )
+ ( iihmpu, nfecra , iturb , icp )
 
 
 !===============================================================================
@@ -436,7 +436,6 @@ subroutine usipph &
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! iturb            ! ia ! <-> ! turbulence model                               !
 ! icp              ! ia ! <-> ! flag for uniform Cp or not                     !
-! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -459,7 +458,6 @@ implicit none
 
 integer iihmpu, nfecra
 integer iturb, icp
-integer iverif
 
 ! Local variables
 
@@ -473,13 +471,11 @@ integer iverif
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if (iverif.eq.0) then
-  if (iihmpu.eq.1) then
-    return
-  else
-    write(nfecra,9000)
-    call csexit (1)
-  endif
+if (iihmpu.eq.1) then
+  return
+else
+  write(nfecra,9000)
+  call csexit (1)
 endif
 
  9000 format(                                                     &
@@ -582,7 +578,7 @@ end subroutine
 subroutine usinsc &
 !================
 
- ( iihmpu, nfecra , nscaus , iverif )
+ ( iihmpu, nfecra , nscaus )
 
 
 !===============================================================================
@@ -600,7 +596,6 @@ subroutine usinsc &
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! nscaus           ! i  ! <-> ! number of user scalars                         !
-! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -624,7 +619,6 @@ implicit none
 
 integer iihmpu, nfecra
 integer nscaus
-integer iverif
 
 ! Local variables
 
@@ -639,13 +633,11 @@ integer iverif
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if (iverif.eq.0) then
-  if (iihmpu.eq.1) then
-    return
-  else
-    write(nfecra,9000)
-    call csexit (1)
-  endif
+if (iihmpu.eq.1) then
+  return
+else
+  write(nfecra,9000)
+  call csexit (1)
 endif
 
  9000 format(                                                     &
@@ -730,7 +722,7 @@ end subroutine
 subroutine usipsc &
 !================
 
- ( nscmax, nscaus, iihmpu, nfecra, iscavr, ivisls , iverif )
+ ( nscmax, nscaus, iihmpu, nfecra, iscavr, ivisls )
 
 
 !===============================================================================
@@ -752,7 +744,6 @@ subroutine usipsc &
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! iscavr(nscmax)   ! ia ! <-- ! associated scalar number for variance scalars  !
 ! ivisls(nscmax)   ! ia ! <-> ! uniform scalar diffusivity flag                !
-! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -776,7 +767,6 @@ implicit none
 
 integer nscmax, nscaus, iihmpu, nfecra
 integer iscavr(nscmax), ivisls(nscmax)
-integer iverif
 
 ! Local variables
 
@@ -792,13 +782,11 @@ integer iutile, iscal
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if (iverif.eq.0) then
-  if (iihmpu.eq.1) then
-    return
-  else
-    write(nfecra,9000)
-    call csexit (1)
-  endif
+if (iihmpu.eq.1) then
+  return
+else
+  write(nfecra,9000)
+  call csexit (1)
 endif
 
  9000 format(                                                     &
@@ -925,7 +913,7 @@ subroutine usipgl &
  ( nesmax,                                                        &
    iespre, iesder, iescor, iestot,                                &
    iihmpu, nfecra,                                                &
-   idtvar, ipucou, idilat, iphydr, ialgce , iescal , iverif ,     &
+   idtvar, ipucou, idilat, iphydr, ialgce , iescal ,              &
    icwfps, cwfthr )
 
 
@@ -958,7 +946,6 @@ subroutine usipgl &
 !                  !    !     !  cell centers                                  !
 ! iescal(nesmax)   ! ia ! <-- ! flag for activation of error estimators for    !
 !                  !    !     ! Navier-Stokes                                  !
-! iverif           ! i  ! <-- ! flag for elementary tests                      !
 ! cwfthr           ! i  ! <-- ! Treshold angle to cut warped faces (do not     !
 !                  !    !     !  cut warped faces if value is negative)        !
 !__________________!____!_____!________________________________________________!
@@ -987,7 +974,7 @@ integer iespre, iesder, iescor, iestot
 integer iihmpu, nfecra
 integer idtvar, ipucou, idilat, iphydr, ialgce
 integer iescal(nesmax)
-integer iverif, icwfps
+integer icwfps
 
 double precision cwfthr
 
@@ -1003,13 +990,11 @@ double precision cwfthr
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if (iverif.eq.0) then
-  if (iihmpu.eq.1) then
-    return
-  else
-    write(nfecra,9000)
-    call csexit (1)
-  endif
+if (iihmpu.eq.1) then
+  return
+else
+  write(nfecra,9000)
+  call csexit (1)
 endif
 
  9000 format(                                                     &
@@ -1145,7 +1130,7 @@ end subroutine
 subroutine usipsu &
 !================
 
- ( nmodpp , iverif )
+ ( nmodpp )
 
 
 !===============================================================================
@@ -1160,7 +1145,6 @@ subroutine usipsu &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nmodpp           ! i  ! <-- ! number of active specific physics models       !
-! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -1197,7 +1181,6 @@ implicit none
 ! Arguments
 
 integer nmodpp
-integer iverif
 
 ! Local variables
 
@@ -1213,13 +1196,11 @@ integer iutile, ii, jj, imom
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if (iverif.eq.0) then
-  if (iihmpr.eq.1) then
-    return
-  else
-    write(nfecra,9000)
-    call csexit (1)
-  endif
+if (iihmpr.eq.1) then
+  return
+else
+  write(nfecra,9000)
+  call csexit (1)
 endif
 
  9000 format(                                                     &
@@ -1912,7 +1893,7 @@ end subroutine
 subroutine usipes &
 !================
 
- ( nmodpp , iverif )
+ ( nmodpp )
 
 
 !===============================================================================
@@ -1928,7 +1909,6 @@ subroutine usipes &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nmodpp           ! i  ! <-- ! number of active specific physics models       !
-! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -1961,7 +1941,6 @@ implicit none
 ! Arguments
 
 integer nmodpp
-integer iverif
 
 ! Local variables
 
@@ -1977,17 +1956,11 @@ integer ii, ipp, imom, iutile
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if (iverif.eq.0) then
-  if (iihmpr.eq.1) then
-    return
-  else
-    write(nfecra,9000)
-    call csexit (1)
-  endif
+if (iihmpr.eq.1) then
+  return
 else
-  if(iihmpr.eq.1) then
-    return
-  endif
+  write(nfecra,9000)
+  call csexit (1)
 endif
 
  9000 format(                                                     &

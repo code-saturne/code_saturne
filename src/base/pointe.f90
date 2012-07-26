@@ -151,8 +151,7 @@ contains
 
   subroutine init_aux_arrays &
 
-( ncelet , ncel   , ncelbr , nfac  , nfabor , &
-  iverif )
+( ncelet , ncel   , ncelbr , nfac  , nfabor )
 
     use paramx
     use parall
@@ -170,7 +169,6 @@ contains
     ! Arguments
 
     integer, intent(in) :: ncelet, ncel, ncelbr, nfac, nfabor
-    integer, intent(in) :: iverif
 
     ! Boundary-face related arrays
 
