@@ -82,10 +82,11 @@ double precision wmolce (ngazem)
 
 ! Local variables
 
+character*256    pathdatadir
 character*40     dummy
 character*12     nomesp
 
-integer          ind , iches , indtp , inicff , injcff
+integer          ind , iches , indtp , inicff , injcff, impjnf
 integer          ne   , nt  , nc , iok
 integer          icoeff(ngazem)
 
@@ -104,7 +105,7 @@ double precision tlim(3) , wcoeff(2,7) , coeff(ngazem,2,7)
 
 
 do iches= 1, 12
-  NOMESP(ICHES:ICHES)=' '
+  nomesp(iches:iches)=' '
 enddo
 
 do ne = 1 , ngazem
@@ -123,9 +124,14 @@ do ne = 1 , ncoel
   enddo
 enddo
 
-OPEN(UNIT=IMPJNF, FILE='JANAF', STATUS='OLD' , FORM='FORMATTED')
+impjnf = impfpp
 
-READ (IMPJNF,'(A)') DUMMY
+call csdatadir(len(pathdatadir), pathdatadir)
+
+open(unit=impjnf, file=trim(pathdatadir)// '/data/thch/JANAF',  &
+     status='old' , form='formatted')
+
+read(impjnf,'(a)') dummy
 
 ! Lecture des domaines de temperature
 
@@ -135,9 +141,9 @@ read (impjnf,*) (tlim(indtp) , indtp=1,3)
 
  5    continue
 
-READ (IMPJNF,'(A12,6X,A6)') NOMESP,DUMMY
+read (impjnf,'(a12,6x,a6)') nomesp, dummy
 
-IF (NOMESP(1:3).EQ.'END') GOTO 100
+if (nomesp(1:3).EQ.'END') GOTO 100
 
 read (impjnf,*) (wcoeff(1,injcff), injcff=1,5)
 read (impjnf,*) (wcoeff(1,injcff), injcff=6,7),                   &

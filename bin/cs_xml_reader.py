@@ -291,12 +291,6 @@ class Parser:
                         self.dict['meteo_data'] = getDataFromNode(node,
                                                                   'meteo_data')
 
-            node = getChildNode(th_models, 'solid_fuels')
-            if node:
-                model = str(node.getAttribute('model'))
-                if model != 'off': # 'coal_homo' or 'coal_homo2'
-                    self.dict['janaf_data'] = 'on'
-
         # Search for user input files
 
         user_data = []

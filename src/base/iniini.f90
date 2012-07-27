@@ -175,9 +175,6 @@ enddo
 impfpp = 25
 ficfpp = 'dp_thch'
 
-impjnf = impfpp
-ficjnf = 'JANAF'
-
 indjon = 1
 
 ! ---> Fichiers module atmospherique

@@ -398,7 +398,6 @@ class domain(base_domain):
         # Additional data
 
         self.thermochemistry_data = None
-        self.janaf_data = None
         self.solidfuel_data = None
         self.meteo_data = None
 
@@ -695,14 +694,6 @@ class domain(base_domain):
             self.copy_data_file(self.thermochemistry_data,
                                 'dp_thch',
                                 'thermochemistry')
-
-        if self.thermochemistry_data != None or self.solidfuel_data != None or self.janaf_data == 'on':
-            if not os.path.isfile('JANAF'):
-                self.copy_data_file(os.path.join(self.package.pkgdatadir,
-                                                 'data',
-                                                 'thch',
-                                                 'JANAF'),
-                                    'JANAF')
 
         if self.meteo_data != None:
             self.copy_data_file(self.meteo_data,

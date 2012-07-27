@@ -69,13 +69,11 @@ module entsor
 
   !     imp    --> unite logique du fichier
   !     fpp    --> fichier utilisateur lorsqu'on utilise Janaf
-  !     jnf    --> Janaf
   !     jon    --> Utilisation de Janaf ou non
 
   character*7, save :: ficfpp
-  character*5, save :: ficjnf
 
-  integer, save :: impfpp, impjnf, indjon
+  integer, save :: impfpp, indjon
 
   ! --- Input files for the atmospheric specific physics
   !        impmet --> logical unit of the meteo profile file
