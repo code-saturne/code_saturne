@@ -196,6 +196,7 @@ edit_config = sed \
 	-e 's|@pkglibexecdir[@]|$(pkglibexecdir)|g' \
 	-e 's|@pythondir[@]|$(pythondir)|g' \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
+	-e 's|@localedir[@]|$(localedir)|g' \
 	-e 's|@datarootdir[@]|$(datarootdir)|g' \
 	-e 's|@datadir[@]|$(datadir)|g' \
 	-e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \

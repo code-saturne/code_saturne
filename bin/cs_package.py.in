@@ -89,6 +89,7 @@ class package:
         self.pkglibexecdir = "@pkglibexecdir@"
         self.pythondir = "@pythondir@"
         self.pkgpythondir = "@pkgpythondir@"
+        self.localedir = "@localedir@"
         self.datarootdir = "@datarootdir@"
         self.datadir = "@datadir@"
         self.pkgdatadir = "@pkgdatadir@"

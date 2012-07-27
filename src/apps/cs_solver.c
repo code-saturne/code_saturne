@@ -641,7 +641,7 @@ main(int    argc,
 #endif
 
 #if defined(ENABLE_NLS)
-  bindtextdomain(PACKAGE, LOCALEDIR);
+  bindtextdomain(PACKAGE, cs_base_get_localedir());
   textdomain(PACKAGE);
 #endif
 

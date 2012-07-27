@@ -192,6 +192,9 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
         cmd = cmd + " -I" + pkg.pkgincludedir
+        if f == 'cs_base.c':
+            cmd = cmd + ' -DLOCALEDIR=\\"' + pkg.localedir \
+                      + '\\" -DPKGDATADIR=\\"' + pkg.pkgdatadir + '\\"'
         cmd = cmd + " " + pkg.cppflags
         cmd = cmd + " " + pkg.cflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)

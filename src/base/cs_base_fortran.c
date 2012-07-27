@@ -175,11 +175,11 @@ _close_log_files(void)
  *
  * Fortran interface
  *
- * SUBROUTINE CSMKDR (DIRNAM, DIRLEN)
+ * subroutine csmkdr (dirnam, dirlen)
  * *****************
  *
- * CHARACTER*       DIRNAM      : --> : Directory name
- * INTEGER          DIRLEN      : --> : Directory name length
+ * character*       dirnam      : <-- : Directory name
+ * integer          dirlen      : <-- : Directory name length
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csmkdr, CSMKDR)
@@ -230,7 +230,7 @@ void CS_PROCF (csgamma, CSGAMMA)
 }
 
 /*----------------------------------------------------------------------------
- * Wrapper for the gamma
+ * Copy a Fortan string buffer to a C string buffer
  *
  * The aim of this function is to aviod issues with Fortran array bounds
  * checking when compilers such as icc 11 consider a character array from C
@@ -238,12 +238,12 @@ void CS_PROCF (csgamma, CSGAMMA)
  *
  * Fortran interface
  *
- * SUBROUTINE CSSF2C (LEN, CSTR, FSTR)
+ * subroutine cssf2c (len, cstr, fstr)
  * *****************
  *
- * INTEGER          LEN         : --> : String length
- * CHARACTER*       FSTR        : --> : Fortran string
- * CHARACTER*       CSTR        : <-- : C string
+ * integer          len         : <-- : String length
+ * character*       fstr        : <-- : Fortran string
+ * character*       cstr        : --> : C string
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cssf2c, CSSF2C)
@@ -256,6 +256,44 @@ void CS_PROCF (cssf2c, CSSF2C)
 )
 {
   memcpy(cstr, fstr, *len);
+}
+
+/*----------------------------------------------------------------------------
+ * Get package data path information.
+ *
+ * The aim of this function is to aviod issues with Fortran array bounds
+ * checking when compilers such as icc 11 consider a character array from C
+ * as an array of 1-character length strings.
+ *
+ * Fortran interface
+ *
+ * subroutine csdatadir (len, dir)
+ * ********************
+ *
+ * integer          len         : <-- : maximum string length
+ * character*       dir         : --> : Fortran string
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csdatadir, CSDATADIR)
+(
+ const cs_int_t   *len,
+ char             *dir
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+)
+{
+  size_t l = *len;
+  const char *datadir = cs_base_get_pkgdatadir();
+
+  if (strlen(datadir) <= l) {
+    size_t i;
+    memcpy(dir, datadir, l);
+    for (i = strlen(datadir); i < l; i++)
+      dir[i] = ' ';
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Path passed to csdatadir too short for: %s"), datadir);
 }
 
 /*============================================================================

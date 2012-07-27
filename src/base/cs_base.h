@@ -296,6 +296,32 @@ cs_base_string_f_to_c_free(char  **c_str);
 void
 cs_base_option_string_clean(char  *s);
 
+/*----------------------------------------------------------------------------
+ * Return a string providing locale path information.
+ *
+ * This is normally the path determined upon configuration, but may be
+ * adapted for movable installs using the CS_ROOT_DIR environment variable.
+ *
+ * returns:
+ *   locale path
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_base_get_localedir(void);
+
+/*----------------------------------------------------------------------------
+ * Return a string providing package data path information.
+ *
+ * This is normally the path determined upon configuration, but may be
+ * adapted for movable installs using the CS_ROOT_DIR environment variable.
+ *
+ * returns:
+ *   package data path
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_base_get_pkgdatadir(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

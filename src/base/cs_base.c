@@ -142,6 +142,13 @@ static _cs_base_sighandler_t cs_glob_base_sigtrap_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigcpu_save = SIG_DFL;
 #endif
 
+/* Installation paths */
+
+static const char _cs_base_build_localedir[] = LOCALEDIR;
+static const char _cs_base_build_pkgdatadir[] = PKGDATADIR;
+static char *_cs_base_env_localedir = NULL;
+static char *_cs_base_env_pkgdatadir = NULL;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -1612,6 +1619,86 @@ cs_base_option_string_clean(char  *s)
 
     s[j] = '\0';
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Return a string providing locale path information.
+ *
+ * This is normally the path determined upon configuration, but may be
+ * adapted for movable installs using the CS_ROOT_DIR environment variable.
+ *
+ * returns:
+ *   locale path
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_base_get_localedir()
+{
+  /* Allow for displacable install */
+
+  if (_cs_base_env_localedir != NULL)
+    return _cs_base_env_localedir;
+
+  else if (getenv("CS_ROOT_DIR") != NULL) {
+    const char *cs_root_dir = getenv("CS_ROOT_DIR");
+#if defined(WIN32) && defined(_WIN32)
+    assert(0); /* TODO handle this */
+    return _cs_base_build_localedir;
+#else
+    const char *locale_add = "/share/locale";
+    /* Use malloc here rather than BFT_MALLOC to avoid instrumenting this
+       "one time only" allocation and allowing calls in any order.
+       (freeing this upon atexit would be instrumentation friendly,
+       but this only concerns potential movable installs, which are
+       not the recommended practice anyways) */
+    _cs_base_env_localedir = malloc(strlen(cs_root_dir) + strlen(locale_add) + 1);
+    strcpy(_cs_base_env_localedir, cs_root_dir);
+    strcat(_cs_base_env_localedir, locale_add);
+#endif
+  }
+
+  /* Standard install */
+
+  else
+    return _cs_base_build_localedir;
+}
+
+/*----------------------------------------------------------------------------
+ * Return a string providing package data path information.
+ *
+ * This is normally the path determined upon configuration, but may be
+ * adapted for movable installs using the CS_ROOT_DIR environment variable.
+ *
+ * returns:
+ *   package data path
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_base_get_pkgdatadir(void)
+{
+  /* Allow for displacable install */
+
+  if (_cs_base_env_pkgdatadir != NULL)
+    return _cs_base_env_pkgdatadir;
+
+  else if (getenv("CS_ROOT_DIR") != NULL) {
+    const char *cs_root_dir = getenv("CS_ROOT_DIR");
+#if defined(WIN32) && defined(_WIN32)
+    assert(0); /* TODO handle this */
+    return _cs_base_build_pkgdatadir;
+#else
+    const char *pkgdata_add = "/share/" PACKAGE_NAME;
+    /* Same remarks as for cs_base_get_localedir above */
+    _cs_base_env_pkgdatadir = malloc(strlen(cs_root_dir) + strlen(pkgdata_add) + 1);
+    strcpy(_cs_base_env_pkgdatadir, cs_root_dir);
+    strcat(_cs_base_env_pkgdatadir, pkgdata_add);
+#endif
+  }
+
+  /* Standard install */
+
+  else
+    return _cs_base_build_pkgdatadir;
 }
 
 /*----------------------------------------------------------------------------*/

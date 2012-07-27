@@ -111,13 +111,22 @@ cs_ventil.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcscore.la \
+noinst_LTLIBRARIES = libcscorep.la libcscore.la \
                      libcsbase.la
 
-###
+# Core library.
+# We use a helper library containing only cs_base.c, so as to pass
+# it localedir and pkgdatadir info.
+
+libcscorep_la_CPPFLAGS = \
+-DLOCALEDIR=\"$(localedir)\" \
+-DPKGDATADIR=\"$(pkgdatadir)\" \
+$(AM_CPPFLAGS)
+
+libcscorep_la_SOURCES = cs_base.c
+libcscorep_la_LDFLAGS = -no-undefined
 
 libcscore_la_SOURCES = \
-cs_base.c \
 cs_block_dist.c \
 cs_block_to_part.c \
 cs_defs.c \
@@ -131,7 +140,7 @@ cs_part_to_block.c \
 cs_system_info.c \
 cs_timer.c
 libcscore_la_LDFLAGS = -no-undefined
-libcscore_la_LIBADD = $(top_builddir)/src/fvm/libfvm.la
+libcscore_la_LIBADD = libcscorep.la $(top_builddir)/src/fvm/libfvm.la
 
 ###
 

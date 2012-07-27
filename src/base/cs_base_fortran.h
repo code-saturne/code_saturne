@@ -58,11 +58,11 @@ BEGIN_C_DECLS
  *
  * Fortran interface
  *
- * SUBROUTINE CSMKDR (DIRNAM, DIRLEN)
+ * subroutine csmkdr (dirnam, dirlen)
  * *****************
  *
- * CHARACTER*       DIRNAM      : --> : Directory name
- * INTEGER          DIRLEN      : --> : Directory name length
+ * character*       dirnam      : --> : Directory name
+ * integer          dirlen      : --> : Directory name length
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csmkdr, CSMKDR)
@@ -98,12 +98,12 @@ void CS_PROCF (csgamma, CSGAMMA)
  *
  * Fortran interface
  *
- * SUBROUTINE CSSF2C (LEN, CSTR, FSTR)
+ * subroutine cssf2c (len, cstr, fstr)
  * *****************
  *
- * INTEGER          LEN         : --> : String length
- * CHARACTER*       FSTR        : --> : Fortran string
- * CHARACTER*       CSTR        : <-- : C string
+ * integer          len         : <-- : String length
+ * character*       fstr        : <-- : Fortran string
+ * character*       cstr        : --> : C string
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cssf2c, CSSF2C)
@@ -111,6 +111,30 @@ void CS_PROCF (cssf2c, CSSF2C)
  const cs_int_t   *len,
  const char       *fstr,
  char             *cstr
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+);
+
+/*----------------------------------------------------------------------------
+ * Get package data path information.
+ *
+ * The aim of this function is to aviod issues with Fortran array bounds
+ * checking when compilers such as icc 11 consider a character array from C
+ * as an array of 1-character length strings.
+ *
+ * Fortran interface
+ *
+ * subroutine csdatadir (len, dir)
+ * ********************
+ *
+ * integer          len         : <-- : maximum string length
+ * character*       dir         : --> : Fortran string
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csdatadir, CSDATADIR)
+(
+ const cs_int_t   *len,
+ char             *dir
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
 );

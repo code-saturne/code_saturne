@@ -55,7 +55,7 @@ endif
 
 # Main part
 
-AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
+AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
@@ -157,6 +157,7 @@ $(FCLIBS)
 # Code_Saturne IO utility (minimal dependencies)
 
 if HAVE_FRONTEND
+cs_io_dump_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" -I$(top_srcdir)/src/base
 cs_io_dump_SOURCES = cs_io_dump.c
 cs_io_dump_LDADD = $(LTLIBINTL)
 endif
@@ -166,6 +167,7 @@ endif
 if HAVE_FRONTEND
 
 cs_check_syntax_CPPFLAGS = \
+-DLOCALEDIR=\"$(localedir)\" \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/mei
 cs_check_syntax_SOURCES = cs_check_syntax.c
