@@ -43,7 +43,7 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- * Public function definitions
+ * Public function prototypes for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -54,17 +54,10 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (lagbeg, LAGBEG)(const cs_int_t   *const n_particles_max,
-                          const cs_int_t   *const iphyla,
-                          const cs_int_t   *const nvls,
-                          const cs_int_t   *const nbclst);
-
-/*----------------------------------------------------------------------------
- * Delete cs_lagr_particle_set_t structure and delete other useful buffers.
- *----------------------------------------------------------------------------*/
-
-void
-cs_lagr_destroy(void);
+CS_PROCF (lagbeg, LAGBEG)(const cs_int_t   *n_particles_max,
+                          const cs_int_t   *iphyla,
+                          const cs_int_t   *nvls,
+                          const cs_int_t   *nbclst);
 
 /*----------------------------------------------------------------------------
  * Get variables and parameters associated to each particles and keep it in
@@ -75,36 +68,36 @@ cs_lagr_destroy(void);
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (prtget, PRTGET)(const cs_int_t   *const nbpmax,  /* n_particles max. */
-                          const cs_int_t   *const nbpart,  /* number of current particles */
-                          const cs_real_t        *dnbpar,  /* particle total weight */
-                          cs_int_t                liste[],
-                          cs_int_t               *nbvis,
-                          const cs_real_t         ettp[],
-                          const cs_real_t         ettpa[],
-                          const cs_int_t          itepa[],
-                          const cs_real_t         tepa[],
-                          const cs_int_t          ibord[],
-                          const cs_int_t          indep[],
-                          const cs_int_t   *const jisor,
-                          const cs_int_t   *const jrpoi,
-                          const cs_int_t   *const jrtsp,
-                          const cs_int_t   *const jdp,
-                          const cs_int_t   *const jmp,
-                          const cs_int_t   *const jxp,
-                          const cs_int_t   *const jyp,
-                          const cs_int_t   *const jzp,
-                          const cs_int_t   *const jup,
-                          const cs_int_t   *const jvp,
-                          const cs_int_t   *const jwp,
-                          const cs_int_t   *const juf,
-                          const cs_int_t   *const jvf,
-                          const cs_int_t   *const jwf,
-                          const cs_int_t   *const jtaux,
-                          const cs_int_t   *const jryplu,
-                          const cs_int_t   *const jdfac,
-                          const cs_int_t   *const jimark,
-                          cs_int_t               *idepst
+CS_PROCF (prtget, PRTGET)(const cs_int_t   *nbpmax,  /* n_particles max. */
+                          const cs_int_t   *nbpart,  /* number of current particles */
+                          const cs_real_t  *dnbpar,  /* particle total weight */
+                          cs_int_t          liste[],
+                          cs_int_t         *nbvis,
+                          const cs_real_t   ettp[],
+                          const cs_real_t   ettpa[],
+                          const cs_int_t    itepa[],
+                          const cs_real_t   tepa[],
+                          const cs_int_t    ibord[],
+                          const cs_int_t    indep[],
+                          const cs_int_t   *jisor,
+                          const cs_int_t   *jrpoi,
+                          const cs_int_t   *jrtsp,
+                          const cs_int_t   *jdp,
+                          const cs_int_t   *jmp,
+                          const cs_int_t   *jxp,
+                          const cs_int_t   *jyp,
+                          const cs_int_t   *jzp,
+                          const cs_int_t   *jup,
+                          const cs_int_t   *jvp,
+                          const cs_int_t   *jwp,
+                          const cs_int_t   *juf,
+                          const cs_int_t   *jvf,
+                          const cs_int_t   *jwf,
+                          const cs_int_t   *jtaux,
+                          const cs_int_t   *jryplu,
+                          const cs_int_t   *jdfac,
+                          const cs_int_t   *jimark,
+                          cs_int_t         *idepst
 );
 
 /*----------------------------------------------------------------------------
@@ -116,38 +109,38 @@ CS_PROCF (prtget, PRTGET)(const cs_int_t   *const nbpmax,  /* n_particles max. *
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (prtput, PRTPUT)(const cs_int_t   *const nbpmax,  /* n_particles max. */
-                          cs_int_t               *nbpart,  /* number of current particles */
-                          cs_real_t              *dnbpar,  /* particle total weight */
-                          cs_int_t               *nbpout,  /* number of outgoing particles */
-                          cs_real_t              *dnbpou,  /* outgoing particle total weight */
-                          cs_int_t               *nbperr,  /* number of failed particles */
-                          cs_real_t              *dnbper,  /* failed particles total weight */
-                          cs_int_t                liste[],
-                          cs_int_t               *nbvis,
-                          cs_real_t               ettp[],
-                          cs_real_t               ettpa[],
-                          cs_int_t                itepa[],
-                          cs_real_t               tepa[],
-                          cs_int_t                ibord[],
-                          const cs_int_t   *const jisor,
-                          const cs_int_t   *const jrpoi,
-                          const cs_int_t   *const jrtsp,
-                          const cs_int_t   *const jdp,
-                          const cs_int_t   *const jmp,
-                          const cs_int_t   *const jxp,
-                          const cs_int_t   *const jyp,
-                          const cs_int_t   *const jzp,
-                          const cs_int_t   *const jup,
-                          const cs_int_t   *const jvp,
-                          const cs_int_t   *const jwp,
-                          const cs_int_t   *const juf,
-                          const cs_int_t   *const jvf,
-                          const cs_int_t   *const jwf,
-                          const cs_int_t   *const jtaux,
-                          const cs_int_t   *const jryplu,
-                          const cs_int_t   *const jdfac,
-                          const cs_int_t   *const jimark,
+CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
+                          cs_int_t         *nbpart,  /* number of current particles */
+                          cs_real_t        *dnbpar,  /* particle total weight */
+                          cs_int_t         *nbpout,  /* number of outgoing particles */
+                          cs_real_t        *dnbpou,  /* outgoing particle total weight */
+                          cs_int_t         *nbperr,  /* number of failed particles */
+                          cs_real_t        *dnbper,  /* failed particles total weight */
+                          cs_int_t          liste[],
+                          cs_int_t         *nbvis,
+                          cs_real_t         ettp[],
+                          cs_real_t         ettpa[],
+                          cs_int_t          itepa[],
+                          cs_real_t         tepa[],
+                          cs_int_t          ibord[],
+                          const cs_int_t   *jisor,
+                          const cs_int_t   *jrpoi,
+                          const cs_int_t   *jrtsp,
+                          const cs_int_t   *jdp,
+                          const cs_int_t   *jmp,
+                          const cs_int_t   *jxp,
+                          const cs_int_t   *jyp,
+                          const cs_int_t   *jzp,
+                          const cs_int_t   *jup,
+                          const cs_int_t   *jvp,
+                          const cs_int_t   *jwp,
+                          const cs_int_t   *juf,
+                          const cs_int_t   *jvf,
+                          const cs_int_t   *jwf,
+                          const cs_int_t   *jtaux,
+                          const cs_int_t   *jryplu,
+                          const cs_int_t   *jdfac,
+                          const cs_int_t   *jimark,
                           cs_int_t               *idepst
 );
 
@@ -160,16 +153,16 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *const nbpmax,  /* n_particles max. *
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (getbdy, GETBDY)(const cs_int_t    *const nflagm,
-                          const cs_int_t    *const nfrlag,
-                          const cs_int_t    *const injcon,
-                          const cs_int_t           ilflag[],
-                          const cs_int_t           iusncl[],
-                          const cs_int_t           iusclb[],
-                          const cs_int_t           iusmoy[],
-                          const cs_int_t           iuslag[],
-                          const cs_real_t          deblag[],
-                          const cs_int_t           ifrlag[]);
+CS_PROCF (getbdy, GETBDY)(const cs_int_t    *nflagm,
+                          const cs_int_t    *nfrlag,
+                          const cs_int_t    *injcon,
+                          const cs_int_t     ilflag[],
+                          const cs_int_t     iusncl[],
+                          const cs_int_t     iusclb[],
+                          const cs_int_t     iusmoy[],
+                          const cs_int_t     iuslag[],
+                          const cs_real_t    deblag[],
+                          const cs_int_t     ifrlag[]);
 
 /*----------------------------------------------------------------------------
  * Displacement of particles.
@@ -184,28 +177,39 @@ CS_PROCF (getbdy, GETBDY)(const cs_int_t    *const nflagm,
 
 void
 CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_n_particles,
-                                cs_real_t       *p_parts_weight,
+                          cs_real_t       *p_parts_weight,
                           cs_int_t        *p_scheme_order,
                           cs_real_t        boundary_stat[],
-                          const cs_int_t  *const iensi3,
-                          const cs_int_t  *const nvisbr,
-                          const cs_int_t  *const inbr,
-                          const cs_int_t  *const inbrbd,
-                          const cs_int_t  *const iflm,
-                          const cs_int_t  *const iflmbd,
-                          const cs_int_t  *const iang,
-                          const cs_int_t  *const iangbd,
-                          const cs_int_t  *const ivit,
-                          const cs_int_t  *const ivitbd,
-                          const cs_int_t  *const nusbor,
+                          const cs_int_t  *iensi3,
+                          const cs_int_t  *nvisbr,
+                          const cs_int_t  *inbr,
+                          const cs_int_t  *inbrbd,
+                          const cs_int_t  *iflm,
+                          const cs_int_t  *iflmbd,
+                          const cs_int_t  *iang,
+                          const cs_int_t  *iangbd,
+                          const cs_int_t  *ivit,
+                          const cs_int_t  *ivitbd,
+                          const cs_int_t  *nusbor,
                           cs_int_t         iusb[],
                           cs_real_t        visc_length[],
                           cs_real_t        dlgeo[],
                           cs_real_t        rtp[],
-                          const cs_int_t  *const iu,
-                          const cs_int_t  *const iv,
-                          const cs_int_t  *const iw,
+                          const cs_int_t  *iu,
+                          const cs_int_t  *iv,
+                          const cs_int_t  *iw,
                           cs_int_t        *idepst);
+
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Delete cs_lagr_particle_set_t structure and delete other useful buffers.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_destroy(void);
 
 /*----------------------------------------------------------------------------*/
 
