@@ -90,7 +90,6 @@ void CS_PROCF (uippmo, UIPPMO) (int *const ippmod,
                                 int *const icompf,
                                 int *const iatmos,
                                 int *const iaeros,
-                                int *const indjon,
                                 int *const ieos,
                                 int *const ieqco2);
 

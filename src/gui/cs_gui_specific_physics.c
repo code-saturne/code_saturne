@@ -1330,7 +1330,6 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
                                int *const icompf,
                                int *const iatmos,
                                int *const iaeros,
-                               int *const indjon,
                                int *const ieos,
                                int *const ieqco2)
 {
@@ -1354,7 +1353,6 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
   ippmod[*iatmos - 1] = -1;
   ippmod[*iaeros - 1] = -1;
 
-  *indjon = 1;
   *ieqco2 = 0;
 
   /* Look for the active specific physics and give the value of the associated
