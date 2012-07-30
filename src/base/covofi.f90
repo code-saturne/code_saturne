@@ -227,15 +227,13 @@ endif
 
 ! When solving the Temperature, we solve:
 !  cp*Vol*dT/dt + ...
-if(ivar.eq.isca(iscalt)) then
-  if(abs(iscsth(iscalt)).eq.1) then
-    if(icp.gt.0) then
-      imucpp = 2
-    else
+if (iscalt.gt.0) then
+  if (ivar.eq.isca(iscalt)) then
+    if (abs(iscsth(iscalt)).eq.1) then
       imucpp = 1
+    else
+      imucpp = 0
     endif
-  else
-    imucpp = 0
   endif
 else
   imucpp = 0
@@ -248,13 +246,15 @@ if (imucpp.eq.0) then
     xcpp(iel) = 1.d0
   enddo
 elseif (imucpp.eq.1) then
-  do iel = 1, ncel
-    xcpp(iel) = cp0
-  enddo
-elseif (imucpp.eq.2) then
-  do iel = 1, ncel
-    xcpp(iel) = propce(iel,ipproc(icp))
-  enddo
+  if (icp.gt.0) then
+    do iel = 1, ncel
+      xcpp(iel) = propce(iel,ipproc(icp))
+    enddo
+  else
+    do iel = 1, ncel
+      xcpp(iel) = cp0
+    enddo
+  endif
 endif
 
 ! Handle parallelism and periodicity
