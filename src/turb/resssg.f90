@@ -148,12 +148,14 @@ integer          inc, iccocg, iphydp, ll, kkk
 integer          ipcvlo
 integer          idimte, itenso
 integer          imucpp
+integer          indrey(3,3)
+
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision trprod, trrij , rctse , deltij
 double precision tuexpr, thets , thetv , thetp1
 double precision aiksjk, aikrjk, aii ,aklskl, aikakj
-double precision xaniso(3,3), xstrai(3,3), xrotac(3,3), xprod(3,3)
+double precision xaniso(3,3), xstrai(3,3), xrotac(3,3), xprod(3,3), matrot(3,3)
 double precision xrij(3,3), xnal(3), xnoral, xnnd, xnu
 double precision d1s2, d1s3, d2s3, thetap
 double precision alpha3
@@ -389,6 +391,39 @@ if (iturb.eq.32) then
 
 endif
 
+if (icorio.eq.1) then
+
+  ! Compute the rotation matrix (dual antisymmetric matrix of the rotation vector)
+  matrot(1,2) = -omegaz
+  matrot(1,3) =  omegay
+  matrot(2,3) = -omegax
+
+  do ii = 1, 3
+    matrot(ii,ii) = 0.d0
+    do jj = ii+1, 3
+      matrot(jj,ii) = -matrot(ii,jj)
+    enddo
+  enddo
+
+else
+  do ii = 1, 3
+    do jj = 1, 3
+      matrot(ii,jj) = 0.d0
+    enddo
+  enddo
+endif
+
+! Index of the Reynolds stress variables in rtpa array
+indrey(1,1) = ir11
+indrey(2,2) = ir22
+indrey(3,3) = ir33
+indrey(1,2) = ir12
+indrey(1,3) = ir13
+indrey(2,3) = ir23
+indrey(2,1) = indrey(1,2)
+indrey(3,1) = indrey(1,3)
+indrey(3,2) = indrey(2,3)
+
 do iel=1,ncel
 
   ! EBRSM
@@ -439,6 +474,19 @@ do iel=1,ncel
                        rtpa(iel,ir23)*grdvit(iel,2,3) +         &
                        rtpa(iel,ir33)*grdvit(iel,3,3) )
 
+  ! Rotating frame of reference => "Coriolis production" term
+  if (icorio.eq.1) then
+    do ii = 1, 3
+      do jj = ii, 3
+        do kk = 1, 3
+          xprod(ii,jj) = xprod(ii,jj)                                   &
+                       - 2.d0*( matrot(ii,kk)*rtpa(iel,indrey(jj,kk))   &
+                              + matrot(jj,kk)*rtpa(iel,indrey(ii,kk)) )
+        enddo
+      enddo
+    enddo
+  endif
+
   xprod(2,1) = xprod(1,2)
   xprod(3,1) = xprod(1,3)
   xprod(3,2) = xprod(2,3)
@@ -481,6 +529,15 @@ do iel=1,ncel
   xrotac(3,1) = -xrotac(1,3)
   xrotac(3,2) = -xrotac(2,3)
   xrotac(3,3) = 0.d0
+
+  ! Rotating frame of reference => "absolute" vorticity
+  if (icorio.eq.1) then
+    do ii = 1, 3
+      do jj = 1, 3
+        xrotac(ii,jj) = xrotac(ii,jj) + matrot(ii,jj)
+      enddo
+    enddo
+  endif
 
   do ii=1,3
     do jj = 1,3

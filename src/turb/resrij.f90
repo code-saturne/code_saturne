@@ -135,7 +135,7 @@ double precision smbr(ncelet), rovsdt(ncelet)
 ! Local variables
 
 integer          init  , ifac  , iel   , inc   , iccocg
-integer          ii    , jj    , iiun
+integer          ii    , jj    , kk    , iiun
 integer          ipcrom, ipcvis, iflmas, iflmab, ipcroo
 integer          iclvar, iclvaf
 integer          nswrgp, imligp, iwarnp
@@ -145,6 +145,7 @@ integer          imgrp , ncymxp, nitmfp
 integer          iptsta
 integer          isoluc
 integer          imucpp
+integer          indrey(3,3)
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
@@ -154,6 +155,7 @@ double precision surfn2
 double precision tuexpr, thets , thetv , thetp1
 double precision d1s3  , d2s3
 double precision hint
+double precision matrot(3,3)
 
 double precision rvoid(1)
 
@@ -423,6 +425,86 @@ else
     rovsdt(iel) = rovsdt(iel) + propce(iel,ipcrom) * volume(iel)  &
          *(1.d0-d1s3*deltij)*crij1*rtpa(iel,iep)/trrij
   enddo
+
+endif
+
+!===============================================================================
+! 5-bis. Coriolis terms in the Phi1 and production
+!===============================================================================
+
+if (icorio.eq.1) then
+
+  do iel = 1, ncel
+    w7(iel) = 0.d0
+  enddo
+
+  ! Rotation matrix: dual antisymmetric matrix of the rotation vector omega
+  matrot(1,2) = -omegaz
+  matrot(1,3) =  omegay
+  matrot(2,3) = -omegax
+
+  do ii = 1, 3
+    matrot(ii,ii) = 0.d0
+    do jj = ii+1, 3
+      matrot(jj,ii) = -matrot(ii,jj)
+    enddo
+  enddo
+
+  ! Index Connectivity
+  indrey(1,1) = ir11
+  indrey(2,2) = ir22
+  indrey(3,3) = ir33
+  indrey(1,2) = ir12
+  indrey(1,3) = ir13
+  indrey(2,3) = ir23
+  indrey(2,1) = indrey(1,2)
+  indrey(3,1) = indrey(1,3)
+  indrey(3,2) = indrey(2,3)
+
+  if (isou.eq.1) then
+    ii = 1
+    jj = 1
+  elseif (isou.eq.2) then
+    ii = 2
+    jj = 2
+  elseif (isou.eq.3) then
+    ii = 3
+    jj = 3
+  elseif (isou.eq.4) then
+    ii = 1
+    jj = 2
+  elseif (isou.eq.5) then
+    ii = 1
+    jj = 3
+  elseif (isou.eq.6) then
+    ii = 2
+    jj = 3
+  endif
+
+  do iel = 1, ncel
+    ! Compute Gij: (i,j) component of the Coriolis production
+    do kk = 1, 3
+      w7(iel) = w7(iel) - 2.d0*( matrot(ii,kk)*rtpa(iel,indrey(jj,kk)) &
+                               + matrot(jj,kk)*rtpa(iel,indrey(ii,kk)) )
+    enddo
+    ! Coriolis contribution in the Phi1 term:
+    ! (1-C2/2)Gij
+    w7(iel) = propce(iel,ipcrom) * volume(iel) *                  &
+         (1.d0 - 0.5d0*crij2)*w7(iel)
+  enddo
+
+  ! If source terms are extrapolated
+  if(isto2t.gt.0) then
+    do iel = 1, ncel
+      propce(iel,iptsta+isou-1) =                                 &
+      propce(iel,iptsta+isou-1) + w7(iel)
+    enddo
+  ! Otherwise, directly in smbr
+  else
+    do iel = 1, ncel
+      smbr(iel) = smbr(iel) + w7(iel)
+    enddo
+  endif
 
 endif
 
