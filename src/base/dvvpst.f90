@@ -147,7 +147,7 @@ integer          ipccp , ipcrom
 double precision xcp   , xvsl  , srfbn
 double precision visct , flumab, diipbx, diipby, diipbz
 double precision epsrgp, climgp, extrap
-double precision omgnrm, daxis2
+double precision pcentr
 
 double precision rbid(1)
 
@@ -213,7 +213,6 @@ if (numtyp .eq. -1) then
   if (icorio.eq.1) then
 
     ipcrom = ipproc(irom)
-    omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
 
     namevr = 'Pressure'
     idimt = 1
@@ -224,13 +223,11 @@ if (numtyp .eq. -1) then
 
       iel = lstcel(iloc)
 
-      daxis2 =   (omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))**2 &
-               + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))**2 &
-               + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))**2
+      pcentr =   0.5d0*((omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))**2 &
+                      + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))**2 &
+                      + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))**2)
 
-      daxis2 = daxis2 / omgnrm**2
-
-      tracel(iloc) = rtp(iel,ipr) + 0.5d0*propce(iel,ipcrom)*omgnrm**2*daxis2
+      tracel(iloc) = rtp(iel,ipr) + propce(iel,ipcrom)*pcentr
 
     enddo
 
@@ -264,12 +261,11 @@ if (numtyp .eq. -1) then
                 ntcabs, ttcabs, tracel, rbid, rbid)
   endif
 
-  ! Vitesse et pression relatives en cas de calcul en repère mobile
+  ! Vitesse et pression relatives en cas de calcul en repère fixe
 
   if (imobil.eq.1) then
 
     ipcrom = ipproc(irom)
-    omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
 
     namevr = 'Rel Pressure'
     idimt = 1
@@ -280,14 +276,11 @@ if (numtyp .eq. -1) then
 
       iel = lstcel(iloc)
 
-      daxis2 =   (omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))**2 &
-               + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))**2 &
-               + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))**2
+      pcentr =   0.5d0*((omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))**2 &
+                      + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))**2 &
+                      + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))**2)
 
-      daxis2 = daxis2 / omgnrm**2
-
-      tracel(iloc) = rtp(iel,ipr)                          &
-          - 0.5d0*propce(iel,ipcrom)*omgnrm**2*daxis2
+      tracel(iloc) = rtp(iel,ipr) - propce(iel,ipcrom)*pcentr
 
     enddo
 
