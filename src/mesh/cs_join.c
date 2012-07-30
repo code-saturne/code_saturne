@@ -236,7 +236,7 @@ _get_work_struct(cs_join_param_t         param,
 {
   double  clock_start, clock_end;
 
-  cs_int_t  n_inter_faces = 0;
+  cs_lnum_t  n_inter_faces = 0;
   char  *mesh_name = NULL;
   cs_real_t  *face_normal = NULL;
   cs_gnum_t  *intersect_face_gnum = NULL;
@@ -612,7 +612,7 @@ _intersect_edges(cs_join_t               *this_join,
   /* Memory management: final state for vtx_eset (no more equiv. to get) */
 
   vtx_eset->n_max_equiv = vtx_eset->n_equiv;
-  BFT_REALLOC(vtx_eset->equiv_couple, 2*vtx_eset->n_equiv, cs_int_t);
+  BFT_REALLOC(vtx_eset->equiv_couple, 2*vtx_eset->n_equiv, cs_lnum_t);
 
   clock_end = cs_timer_wtime();
 
@@ -659,10 +659,10 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
                         cs_gnum_t          init_max_vtx_gnum,
                         cs_gnum_t         *p_o2n_vtx_gnum[])
 {
-  cs_int_t  i, shift, rank;
+  cs_lnum_t  i, shift, rank;
 
-  cs_int_t  *send_shift = NULL, *recv_shift = NULL;
-  cs_int_t  *send_count = NULL, *recv_count = NULL;
+  cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
+  cs_lnum_t  *send_count = NULL, *recv_count = NULL;
   cs_gnum_t  *send_glist = NULL, *recv_glist = NULL;
   cs_gnum_t  *new_gnum_by_block = *p_o2n_vtx_gnum;
   cs_gnum_t  *new_local_gnum = NULL;
@@ -684,21 +684,21 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   /* Request the new vtx gnum related to the initial vtx gnum */
 
-  BFT_MALLOC(send_count, n_ranks, cs_int_t);
-  BFT_MALLOC(recv_count, n_ranks, cs_int_t);
+  BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
+  BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
 
   for (i = 0; i < mesh->n_vertices; i++) {
-    rank = (mesh->global_vtx_num[i] - 1)/block_info.size;
+    rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(block_info.size);
     send_count[rank] += 1;
   }
 
   if (param.perio_type != FVM_PERIODICITY_NULL) {
 
     for (i = 0; i < select->n_vertices; i++) {
-      rank = (select->per_v_couples[2*i+1] - 1)/block_info.size;
+      rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(block_info.size);
       send_count[rank] += 1;
     }
 
@@ -706,8 +706,8 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
 
-  BFT_MALLOC(send_shift, n_ranks + 1, cs_int_t);
-  BFT_MALLOC(recv_shift, n_ranks + 1, cs_int_t);
+  BFT_MALLOC(send_shift, n_ranks + 1, cs_lnum_t);
+  BFT_MALLOC(recv_shift, n_ranks + 1, cs_lnum_t);
 
   send_shift[0] = 0;
   recv_shift[0] = 0;
@@ -769,7 +769,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   for (i = 0; i < mesh->n_vertices; i++) {
 
-    rank = (mesh->global_vtx_num[i] - 1)/block_info.size;
+    rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(block_info.size);
     shift = send_shift[rank] + send_count[rank];
     new_local_gnum[i] = send_glist[shift];  /* New global number */
     send_count[rank] += 1;
@@ -779,7 +779,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
   if (param.perio_type != FVM_PERIODICITY_NULL) {
 
     for (i = 0; i < select->n_vertices; i++) {
-      rank = (select->per_v_couples[2*i+1] - 1)/block_info.size;
+      rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(block_info.size);
       shift = send_shift[rank] + send_count[rank];
       new_local_gnum[mesh->n_vertices + i] = send_glist[shift]; /* New glob num. */
       send_count[rank] += 1;
@@ -837,7 +837,7 @@ _prepare_update_after_merge(cs_join_t          *this_join,
   cs_join_select_t  *selection = this_join->selection;
   cs_join_param_t  param = this_join->param;
 
-  const cs_int_t  n_ranks = cs_glob_n_ranks;
+  const cs_lnum_t  n_ranks = cs_glob_n_ranks;
 
   /* Build an array keeping relation between old/new global vertex num. */
 
@@ -945,7 +945,7 @@ _prepare_update_after_merge(cs_join_t          *this_join,
 
 static void
 _merge_vertices(cs_join_t                *this_join,
-                cs_int_t                  n_iwm_vertices,
+                cs_lnum_t                 n_iwm_vertices,
                 cs_gnum_t                 init_max_vtx_gnum,
                 cs_gnum_t                 n_g_new_vertices,
                 cs_join_eset_t          **vtx_eset,
@@ -1108,7 +1108,7 @@ _prepare_update_after_split(cs_join_t          *this_join,
   cs_join_param_t  param = this_join->param;
   cs_join_gset_t  *o2n_hist = *p_history, *n2o_hist = NULL;
 
-  const cs_int_t  n_ranks = cs_glob_n_ranks;
+  const cs_lnum_t  n_ranks = cs_glob_n_ranks;
 
   /* Invert face historic */
 
@@ -1504,7 +1504,7 @@ cs_join_all(void)
 
   /* Sanity checks */
 
-  assert(sizeof(cs_int_t) == sizeof(cs_lnum_t));
+  assert(sizeof(cs_lnum_t) == sizeof(cs_lnum_t));
   assert(sizeof(double) == sizeof(cs_real_t));
 
   full_clock_start = cs_timer_wtime();
@@ -1593,7 +1593,7 @@ cs_join_all(void)
 
     if (this_join->selection->n_g_faces > 0) {
 
-      cs_int_t  n_iwm_vertices;      /* iwm: initial work mesh */
+      cs_lnum_t  n_iwm_vertices;      /* iwm: initial work mesh */
       cs_gnum_t  init_max_vtx_gnum, n_g_new_vertices;
 
       cs_real_t  *work_face_normal = NULL;

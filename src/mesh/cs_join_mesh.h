@@ -82,9 +82,9 @@ typedef struct {
   /* Edge numbering is defined by the ordering of the couples of vertices
      in their global numbering */
 
-  cs_int_t     n_edges;    /* Local number of edges */
+  cs_lnum_t    n_edges;    /* Local number of edges */
   cs_gnum_t    n_g_edges;  /* Global number of edges */
-  cs_int_t    *def;        /* Definition of each edge by a couple of vertex
+  cs_lnum_t   *def;        /* Definition of each edge by a couple of vertex
                               numbers */
   cs_gnum_t   *gnum;       /* Global numbering of edges */
 
@@ -99,10 +99,10 @@ typedef struct {
     (V1, V1a), (V1, V1b), ...
   */
 
-  cs_int_t    n_vertices;    /* Number of vertices in index */
-  cs_int_t   *vtx_idx;       /* Index on first vertices */
-  cs_int_t   *adj_vtx_lst;   /* List of adjacent vertices */
-  cs_int_t   *edge_lst;      /* List of corresponding edge ids */
+  cs_lnum_t   n_vertices;    /* Number of vertices in index */
+  cs_lnum_t  *vtx_idx;       /* Index on first vertices */
+  cs_lnum_t  *adj_vtx_lst;   /* List of adjacent vertices */
+  cs_lnum_t  *edge_lst;      /* List of corresponding edge ids */
 
 } cs_join_edges_t;
 
@@ -114,15 +114,15 @@ typedef struct {
 
   /* Face connectivity */
 
-  cs_int_t     n_faces;
+  cs_lnum_t    n_faces;
   cs_gnum_t    n_g_faces;
   cs_gnum_t   *face_gnum;
-  cs_int_t    *face_vtx_idx;
-  cs_int_t    *face_vtx_lst;
+  cs_lnum_t   *face_vtx_idx;
+  cs_lnum_t   *face_vtx_lst;
 
   /* Vertex data */
 
-  cs_int_t           n_vertices;
+  cs_lnum_t          n_vertices;
   cs_gnum_t          n_g_vertices;
   cs_join_vertex_t  *vertices;
 
@@ -211,7 +211,7 @@ cs_join_mesh_create(const char  *name);
 
 cs_join_mesh_t *
 cs_join_mesh_create_from_glob_sel(const char            *mesh_name,
-                                  cs_int_t               n_elts,
+                                  cs_lnum_t              n_elts,
                                   const cs_gnum_t        glob_sel[],
                                   const cs_gnum_t        gnum_rank_index[],
                                   const cs_join_mesh_t  *local_mesh);
@@ -234,8 +234,8 @@ cs_join_mesh_create_from_glob_sel(const char            *mesh_name,
 
 cs_join_mesh_t *
 cs_join_mesh_create_from_subset(const char            *mesh_name,
-                                cs_int_t               subset_size,
-                                const cs_int_t         selection[],
+                                cs_lnum_t              subset_size,
+                                const cs_lnum_t        selection[],
                                 const cs_join_mesh_t  *parent_mesh);
 
 /*----------------------------------------------------------------------------
@@ -262,11 +262,11 @@ cs_join_mesh_t *
 cs_join_mesh_create_from_select(const char              *name,
                                 const cs_join_param_t    param,
                                 cs_join_select_t        *selection,
-                                const cs_int_t           b_f2v_idx[],
-                                const cs_int_t           b_f2v_lst[],
-                                const cs_int_t           i_f2v_idx[],
-                                const cs_int_t           i_f2v_lst[],
-                                const cs_int_t           n_vertices,
+                                const cs_lnum_t          b_f2v_idx[],
+                                const cs_lnum_t          b_f2v_lst[],
+                                const cs_lnum_t          i_f2v_idx[],
+                                const cs_lnum_t          i_f2v_lst[],
+                                const cs_lnum_t          n_vertices,
                                 const cs_real_t          vtx_coord[],
                                 const cs_gnum_t          vtx_gnum[]);
 
@@ -331,8 +331,8 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
 
 void
 cs_join_mesh_exchange(int                    n_ranks,
-                      const cs_int_t         send_rank_index[],
-                      const cs_int_t         send_faces[],
+                      const cs_lnum_t        send_rank_index[],
+                      const cs_lnum_t        send_faces[],
                       const cs_join_mesh_t  *send_mesh,
                       cs_join_mesh_t        *recv_mesh,
                       MPI_Comm               comm);
@@ -437,8 +437,8 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh);
  *---------------------------------------------------------------------------*/
 
 cs_int_t
-cs_join_mesh_get_edge(cs_int_t                v1_num,
-                      cs_int_t                v2_num,
+cs_join_mesh_get_edge(cs_lnum_t               v1_num,
+                      cs_lnum_t               v2_num,
                       const cs_join_edges_t  *edges);
 
 /*----------------------------------------------------------------------------
@@ -458,10 +458,10 @@ cs_join_mesh_get_edge(cs_int_t                v1_num,
 void
 cs_join_mesh_update(cs_join_mesh_t         *mesh,
                     const cs_join_edges_t  *edges,
-                    const cs_int_t          edge_index[],
-                    const cs_int_t          edge_new_vtx_lst[],
-                    cs_int_t                n_new_vertices,
-                    const cs_int_t          old2new[]);
+                    const cs_lnum_t         edge_index[],
+                    const cs_lnum_t         edge_new_vtx_lst[],
+                    cs_lnum_t               n_new_vertices,
+                    const cs_lnum_t         old2new[]);
 
 /*----------------------------------------------------------------------------
  * Compute for each face of the cs_join_mesh_t structure the face normal.
@@ -507,8 +507,8 @@ cs_join_mesh_get_face_normal(const cs_join_mesh_t  *mesh);
 void
 cs_join_mesh_get_edge_face_adj(const cs_join_mesh_t   *mesh,
                                const cs_join_edges_t  *edges,
-                               cs_int_t               *edge_face_idx[],
-                               cs_int_t               *edge_face_lst[]);
+                               cs_lnum_t              *edge_face_idx[],
+                               cs_lnum_t              *edge_face_lst[]);
 
 /*----------------------------------------------------------------------------
  * Dump a cs_join_vertex_t structure into a file.

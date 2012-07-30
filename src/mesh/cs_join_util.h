@@ -198,33 +198,33 @@ typedef struct {
 
 typedef struct {
 
-  cs_int_t      n_init_b_faces;  /* Number of border faces before joining */
-  cs_int_t      n_init_i_faces;  /* Number of interior faces before joining */
-  cs_int_t      n_init_vertices; /* Number of vertices before joining */
+  cs_lnum_t     n_init_b_faces;  /* Number of border faces before joining */
+  cs_lnum_t     n_init_i_faces;  /* Number of interior faces before joining */
+  cs_lnum_t     n_init_vertices; /* Number of vertices before joining */
 
-  cs_int_t      n_faces;     /* Number of border faces selected
+  cs_lnum_t     n_faces;     /* Number of border faces selected
                                 for the joining operation */
   cs_gnum_t     n_g_faces;   /* Global number of border faces selected
                                 for the joining operation */
-  cs_int_t     *faces;       /* List of selected border faces */
+  cs_lnum_t    *faces;       /* List of selected border faces */
 
   cs_gnum_t    *compact_face_gnum;    /* Global face numbering defined
                                          on the selected faces */
   cs_gnum_t    *compact_rank_index;   /* Distribution of the selected faces
                                          over the ranks */
 
-  cs_int_t      n_vertices;      /* Number of vertices selected
+  cs_lnum_t     n_vertices;      /* Number of vertices selected
                                     for the joining operation */
   cs_gnum_t     n_g_vertices;    /* Global number of selected vertices */
-  cs_int_t     *vertices;        /* List of selected vertices */
+  cs_lnum_t     *vertices;        /* List of selected vertices */
 
   /* Adjacent faces of the current face selection: border and interior */
 
-  cs_int_t      n_b_adj_faces;
-  cs_int_t      n_i_adj_faces;
+  cs_lnum_t     n_b_adj_faces;
+  cs_lnum_t     n_i_adj_faces;
 
-  cs_int_t     *b_adj_faces;
-  cs_int_t     *i_adj_faces;
+  cs_lnum_t    *b_adj_faces;
+  cs_lnum_t    *i_adj_faces;
 
   /* Keep the status of all faces of the related cs_mesh_t */
 
@@ -233,7 +233,7 @@ typedef struct {
 
   /* For periodicity handling: list of periodic vertex couples */
 
-  cs_int_t     n_couples;
+  cs_lnum_t    n_couples;
   cs_gnum_t   *per_v_couples;
 
   /*
@@ -388,13 +388,13 @@ cs_join_get_block_info(cs_gnum_t  n_g_elts,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_extract_vertices(cs_int_t         n_select_faces,
-                         const cs_int_t  *select_faces,
-                         const cs_int_t  *f2v_idx,
-                         const cs_int_t  *f2v_lst,
-                         cs_int_t         n_vertices,
-                         cs_int_t        *n_select_vertices,
-                         cs_int_t        *select_vertices[]);
+cs_join_extract_vertices(cs_lnum_t         n_select_faces,
+                         const cs_lnum_t  *select_faces,
+                         const cs_lnum_t  *f2v_idx,
+                         const cs_lnum_t  *f2v_lst,
+                         cs_lnum_t         n_vertices,
+                         cs_lnum_t        *n_select_vertices,
+                         cs_lnum_t        *select_vertices[]);
 
 /*----------------------------------------------------------------------------
  * Eliminate redundancies found between two lists of elements.
@@ -408,10 +408,10 @@ cs_join_extract_vertices(cs_int_t         n_select_faces,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_clean_selection(cs_int_t  *n_elts,
-                        cs_int_t  *elts[],
-                        cs_int_t   n_ref_elts,
-                        cs_int_t   ref_elts[]);
+cs_join_clean_selection(cs_lnum_t  *n_elts,
+                        cs_lnum_t  *elts[],
+                        cs_lnum_t   n_ref_elts,
+                        cs_lnum_t   ref_elts[]);
 
 /*----------------------------------------------------------------------------
  * Build vertex -> vertex index for a selection of faces.
@@ -428,11 +428,11 @@ cs_join_clean_selection(cs_int_t  *n_elts,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_build_edges_idx(cs_int_t        n_faces,
-                        const cs_int_t  faces[],
-                        const cs_int_t  f2v_idx[],
-                        const cs_int_t  f2v_lst[],
-                        cs_int_t        v2v_idx[]);
+cs_join_build_edges_idx(cs_lnum_t        n_faces,
+                        const cs_lnum_t  faces[],
+                        const cs_lnum_t  f2v_idx[],
+                        const cs_lnum_t  f2v_lst[],
+                        cs_lnum_t        v2v_idx[]);
 
 /*----------------------------------------------------------------------------
  * Build vertex -> vertex list for a selection of faces.
@@ -450,13 +450,13 @@ cs_join_build_edges_idx(cs_int_t        n_faces,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_build_edges_lst(cs_int_t        n_faces,
-                        const cs_int_t  faces[],
-                        const cs_int_t  f2v_idx[],
-                        const cs_int_t  f2v_lst[],
-                        cs_int_t        count[],
-                        const cs_int_t  v2v_idx[],
-                        cs_int_t        v2v_lst[]);
+cs_join_build_edges_lst(cs_lnum_t        n_faces,
+                        const cs_lnum_t  faces[],
+                        const cs_lnum_t  f2v_idx[],
+                        const cs_lnum_t  f2v_lst[],
+                        cs_lnum_t        count[],
+                        const cs_lnum_t  v2v_idx[],
+                        cs_lnum_t        v2v_lst[]);
 
 /*---------------------------------------------------------------------------*/
 

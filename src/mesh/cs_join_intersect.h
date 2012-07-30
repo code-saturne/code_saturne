@@ -61,8 +61,8 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_int_t    edge_id;    /* id of the edge implied in this intersection */
-  cs_int_t    vtx_id;     /* id of the vertex resulting of the intersection */
+  cs_lnum_t   edge_id;    /* id of the edge implied in this intersection */
+  cs_lnum_t   vtx_id;     /* id of the vertex resulting of the intersection */
   float       curv_abs;   /* curvilinear abscissa of the intersection */
 
 } cs_join_inter_t;
@@ -72,8 +72,8 @@ typedef struct {
 
 typedef struct {
 
-  cs_int_t           n_max_inter; /* max. number of intersections allocated */
-  cs_int_t           n_inter;     /* number of intersections */
+  cs_lnum_t         n_max_inter;  /* max. number of intersections allocated */
+  cs_lnum_t         n_inter;      /* number of intersections */
 
   cs_join_inter_t  *inter_lst;    /* size = 2 * n_intersections
                                      one inter_t structure for each edge
@@ -86,19 +86,19 @@ typedef struct {
 
 typedef struct {
 
-  cs_int_t     n_edges;    /* Number of edges implied in an intersection */
+  cs_lnum_t    n_edges;    /* Number of edges implied in an intersection */
 
   cs_gnum_t   *edge_gnum;  /* Global number of the related edges */
-  cs_int_t    *index;      /* Indexed list of vertex num describing
+  cs_lnum_t   *index;      /* Indexed list of vertex num describing
                               intersections on a given edge without
                               vertices at the extremity and ordered
                               by curvilinear abscissa */
 
-  cs_int_t    *vtx_lst;    /* List of new vertex num */
+  cs_lnum_t   *vtx_lst;    /* List of new vertex num */
   cs_gnum_t   *vtx_glst;   /* List of new vertex global num */
   float       *abs_lst;    /* List of curvilinear abscissa */
 
-  cs_int_t     max_sub_size;
+  cs_lnum_t    max_sub_size;
 
 } cs_join_inter_edges_t;
 
@@ -117,7 +117,7 @@ typedef struct {
  *---------------------------------------------------------------------------*/
 
 cs_join_inter_set_t *
-cs_join_inter_set_create(cs_int_t  init_size);
+cs_join_inter_set_create(cs_lnum_t init_size);
 
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_inter_set_t structure.
@@ -156,7 +156,7 @@ cs_join_inter_set_dump(FILE                       *f,
  *---------------------------------------------------------------------------*/
 
 cs_join_inter_edges_t *
-cs_join_inter_edges_create(cs_int_t  n_edges);
+cs_join_inter_edges_create(cs_lnum_t  n_edges);
 
 /*----------------------------------------------------------------------------
  * Build a cs_join_inter_edges_t structure (useful to find equivalence on

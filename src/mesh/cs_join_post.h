@@ -90,8 +90,8 @@ cs_join_post_mesh(const char            *mesh_name,
 void
 cs_join_post_faces_subset(const char            *mesh_name,
                           const cs_join_mesh_t  *parent_mesh,
-                          cs_int_t               n_select_faces,
-                          const cs_int_t         selected_faces[]);
+                          cs_lnum_t              n_select_faces,
+                          const cs_lnum_t        selected_faces[]);
 
 /*----------------------------------------------------------------------------
  * Post-process mesh after the update following the fusion operation.
@@ -119,10 +119,10 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_post_after_split(cs_int_t          n_old_i_faces,
-                         cs_int_t          n_old_b_faces,
+cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
+                         cs_lnum_t         n_old_b_faces,
                          cs_gnum_t         n_g_new_b_faces,
-                         cs_int_t          n_select_faces,
+                         cs_lnum_t         n_select_faces,
                          const cs_mesh_t  *mesh,
                          cs_join_param_t   join_param);
 
@@ -138,10 +138,10 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_post_cleaned_faces(cs_int_t         n_i_clean_faces,
-                           cs_int_t         i_clean_faces[],
-                           cs_int_t         n_b_clean_faces,
-                           cs_int_t         b_clean_faces[],
+cs_join_post_cleaned_faces(cs_lnum_t        n_i_clean_faces,
+                           cs_lnum_t        i_clean_faces[],
+                           cs_lnum_t        n_b_clean_faces,
+                           cs_lnum_t        b_clean_faces[],
                            cs_join_param_t  param);
 
 /*----------------------------------------------------------------------------

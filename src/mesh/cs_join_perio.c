@@ -207,7 +207,7 @@ _perio_face_clean(cs_join_param_t      param,
 
   int  n_ii_faces = mesh->n_i_faces;
   int  n_fi_faces = 0;
-  cs_int_t  *new_f2v_idx = NULL;
+  cs_lnum_t  *new_f2v_idx = NULL;
   int  *tag = NULL;
 
   assert(cs_glob_n_ranks > 1);
@@ -233,8 +233,8 @@ _perio_face_clean(cs_join_param_t      param,
             n_ii_faces - n_fi_faces);
 
   mesh->n_i_faces = n_fi_faces;
-  BFT_REALLOC(mesh->i_face_cells, 2*mesh->n_i_faces, cs_int_t);
-  BFT_MALLOC(new_f2v_idx, n_fi_faces + 1, cs_int_t);
+  BFT_REALLOC(mesh->i_face_cells, 2*mesh->n_i_faces, cs_lnum_t);
+  BFT_MALLOC(new_f2v_idx, n_fi_faces + 1, cs_lnum_t);
 
   n_fi_faces = 0;
   for (i = 0; i < n_ii_faces; i++) {
@@ -248,7 +248,7 @@ _perio_face_clean(cs_join_param_t      param,
   }
 
   BFT_REALLOC(mesh->global_i_face_num, mesh->n_i_faces, cs_gnum_t);
-  BFT_REALLOC(mesh->i_face_family, mesh->n_i_faces, cs_int_t);
+  BFT_REALLOC(mesh->i_face_family, mesh->n_i_faces, cs_lnum_t);
 
   /* Update interior face connectivity */
 
@@ -267,7 +267,7 @@ _perio_face_clean(cs_join_param_t      param,
     }
   }
 
-  BFT_REALLOC(mesh->i_face_vtx_lst, new_f2v_idx[n_fi_faces]-1, cs_int_t);
+  BFT_REALLOC(mesh->i_face_vtx_lst, new_f2v_idx[n_fi_faces]-1, cs_lnum_t);
   BFT_FREE(mesh->i_face_vtx_idx);
 
   mesh->i_face_vtx_idx = new_f2v_idx;
@@ -547,7 +547,7 @@ cs_join_perio_apply(cs_join_t          *this_join,
                     cs_join_mesh_t     *jmesh,
                     const cs_mesh_t    *mesh)
 {
-  cs_int_t  i, j, k, shift;
+  cs_lnum_t  i, j, k, shift;
   cs_real_t  matrix[3][4], xyz[4];
 
   cs_join_param_t  param = this_join->param;
@@ -643,10 +643,10 @@ cs_join_perio_apply(cs_join_t          *this_join,
   jmesh->n_faces *= 2;
   jmesh->n_g_faces *= 2;
 
-  BFT_REALLOC(jmesh->face_vtx_idx, jmesh->n_faces + 1, cs_int_t);
+  BFT_REALLOC(jmesh->face_vtx_idx, jmesh->n_faces + 1, cs_lnum_t);
   BFT_REALLOC(jmesh->face_gnum, jmesh->n_faces, cs_gnum_t);
   BFT_REALLOC(jmesh->face_vtx_lst,
-              2*(jmesh->face_vtx_idx[n_init_faces]-1), cs_int_t);
+              2*(jmesh->face_vtx_idx[n_init_faces]-1), cs_lnum_t);
 
   for (i = 0; i < n_init_faces; i++) {
 
@@ -735,15 +735,15 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
                          cs_gnum_t           init_max_vtx_gnum,
                          cs_gnum_t           n_g_new_vertices)
 {
-  cs_int_t  i, j, k, shift, vid, start, end, perio_start, perio_end;
-  cs_int_t  n_new_vertices, n_init_faces;
+  cs_lnum_t  i, j, k, shift, vid, start, end, perio_start, perio_end;
+  cs_lnum_t  n_new_vertices, n_init_faces;
   cs_real_t  matrix[3][4], xyz[4];
   bool  is_modified;
   cs_gnum_t  new_gnum;
   cs_join_state_t  state;
 
-  cs_int_t  *new_f2v_idx = NULL, *new_f2v_lst = NULL, *vtag = NULL;
-  cs_int_t  *linked_id = NULL;
+  cs_lnum_t  *new_f2v_idx = NULL, *new_f2v_lst = NULL, *vtag = NULL;
+  cs_lnum_t  *linked_id = NULL;
   cs_gnum_t  *gnum = NULL;
   bool  *f_state = NULL;
   cs_join_mesh_t  *work_jmesh = *p_work_jmesh;
@@ -761,7 +761,7 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
 
   fvm_periodicity_get_matrix(mesh->periodicity, 2*perio_id+1, matrix);
 
-  BFT_MALLOC(linked_id, jmesh->n_vertices, cs_int_t);
+  BFT_MALLOC(linked_id, jmesh->n_vertices, cs_lnum_t);
   BFT_MALLOC(gnum, jmesh->n_vertices, cs_gnum_t);
 
   for (i = 0; i < jmesh->n_vertices; i++) {
@@ -793,8 +793,8 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
   n_init_faces = jmesh->n_faces/2;
 
   BFT_MALLOC(f_state, jmesh->n_faces, bool);
-  BFT_MALLOC(new_f2v_idx, jmesh->n_faces + 1, cs_int_t);
-  BFT_MALLOC(vtag, jmesh->n_vertices, cs_int_t);
+  BFT_MALLOC(new_f2v_idx, jmesh->n_faces + 1, cs_lnum_t);
+  BFT_MALLOC(vtag, jmesh->n_vertices, cs_lnum_t);
 
   for (i = 0; i < jmesh->n_vertices; i++)
     vtag[i] = 0;
@@ -953,7 +953,7 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
   for (i = 0; i < jmesh->n_faces; i++)
     new_f2v_idx[i+1] += new_f2v_idx[i];
 
-  BFT_MALLOC(new_f2v_lst, new_f2v_idx[jmesh->n_faces] - 1, cs_int_t);
+  BFT_MALLOC(new_f2v_lst, new_f2v_idx[jmesh->n_faces] - 1, cs_lnum_t);
 
   for (i = 0; i < n_init_faces; i++) {
 
@@ -1067,8 +1067,8 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
   }
 
   BFT_REALLOC(jmesh->face_gnum, n_init_faces, cs_gnum_t);
-  BFT_REALLOC(jmesh->face_vtx_idx, n_init_faces + 1, cs_int_t);
-  BFT_REALLOC(jmesh->face_vtx_lst, shift, cs_int_t);
+  BFT_REALLOC(jmesh->face_vtx_idx, n_init_faces + 1, cs_lnum_t);
+  BFT_REALLOC(jmesh->face_vtx_lst, shift, cs_lnum_t);
 
   jmesh->n_faces = n_init_faces;
   jmesh->n_g_faces /= 2;
@@ -1112,9 +1112,9 @@ cs_join_perio_split_back(cs_join_t          *this_join,
                          cs_join_gset_t     *o2n_hist,
                          cs_join_gset_t    **p_n2o_hist)
 {
-  int  i, j, k, shift, vid, fid, start, end, perio_start, perio_end;
-  int  n_final_faces, n1_faces, n2_faces;
-  int  shift1, shift2, shift3, shift4;
+  cs_lnum_t  i, j, k, shift, vid, fid, start, end, perio_start, perio_end;
+  cs_lnum_t  n_final_faces, n1_faces, n2_faces;
+  cs_lnum_t  shift1, shift2, shift3, shift4;
   cs_lnum_t  n_sub_ori, n_sub_per, n_contrib, n_couples;
   cs_gnum_t  n2_g_faces;
 
@@ -1136,7 +1136,7 @@ cs_join_perio_split_back(cs_join_t          *this_join,
 
   /* Detect periodic face to delete and associate a tag for each new face */
 
-  BFT_MALLOC(f_tag, jmesh->n_faces, cs_int_t);
+  BFT_MALLOC(f_tag, jmesh->n_faces, cs_lnum_t);
 
   assert(n2o_hist->n_elts == jmesh->n_faces);
   n_couples = 0;
@@ -1321,7 +1321,7 @@ cs_join_perio_split_back(cs_join_t          *this_join,
 
   /* Define the new face -> vertex index and the new global face numbering */
 
-  BFT_MALLOC(new_f2v_idx, n_final_faces + 1, cs_int_t);
+  BFT_MALLOC(new_f2v_idx, n_final_faces + 1, cs_lnum_t);
   BFT_MALLOC(new_fgnum, n_final_faces, cs_gnum_t);
 
   new_history = cs_join_gset_create(n_final_faces);
@@ -1369,7 +1369,7 @@ cs_join_perio_split_back(cs_join_t          *this_join,
   /* Detect if there are new vertices to add to the jmesh definition */
 
   BFT_MALLOC(gnum, jmesh->n_vertices, cs_gnum_t);
-  BFT_MALLOC(linked_id, jmesh->n_vertices, cs_int_t);
+  BFT_MALLOC(linked_id, jmesh->n_vertices, cs_lnum_t);
 
   for (i = 0; i < jmesh->n_vertices; i++) {
     linked_id[i] = -1; /* Default: no link */
@@ -1415,12 +1415,12 @@ cs_join_perio_split_back(cs_join_t          *this_join,
 
   if (n_vertices_to_add > 0) {
 
-    cs_int_t  i1, i2;
+    cs_lnum_t  i1, i2;
     cs_real_t  matrix[3][4], xyz[4];
 
     BFT_REALLOC(jmesh->vertices, jmesh->n_vertices + n_vertices_to_add,
                 cs_join_vertex_t);
-    BFT_REALLOC(linked_id,  jmesh->n_vertices + n_vertices_to_add, cs_int_t);
+    BFT_REALLOC(linked_id,  jmesh->n_vertices + n_vertices_to_add, cs_lnum_t);
 
     /* Retrieve related back transformation */
 
@@ -1512,7 +1512,7 @@ cs_join_perio_split_back(cs_join_t          *this_join,
     new_history->index[i+1] += new_history->index[i];
   }
 
-  BFT_MALLOC(new_f2v_lst, new_f2v_idx[n_final_faces] - 1, cs_int_t);
+  BFT_MALLOC(new_f2v_lst, new_f2v_idx[n_final_faces] - 1, cs_lnum_t);
   BFT_MALLOC(new_history->g_list, new_history->index[new_history->n_elts],
              cs_gnum_t);
 
@@ -1682,7 +1682,7 @@ cs_join_perio_split_back(cs_join_t          *this_join,
 
 void
 cs_join_perio_split_update(cs_join_param_t             param,
-                           cs_int_t                    n_ii_faces,
+                           cs_lnum_t                   n_ii_faces,
                            const cs_join_face_type_t   face_type[],
                            const cs_join_mesh_t       *jmesh,
                            cs_mesh_t                  *mesh,

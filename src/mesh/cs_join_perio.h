@@ -251,7 +251,7 @@ cs_join_perio_split_back(cs_join_t          *this_join,
 
 void
 cs_join_perio_split_update(cs_join_param_t             param,
-                           cs_int_t                    n_ii_faces,
+                           cs_lnum_t                   n_ii_faces,
                            const cs_join_face_type_t   face_type[],
                            const cs_join_mesh_t       *jmesh,
                            cs_mesh_t                  *mesh,

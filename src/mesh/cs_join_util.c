@@ -313,11 +313,11 @@ _join_select_destroy(cs_join_param_t     param,
  *---------------------------------------------------------------------------*/
 
 static void
-_compact_face_gnum_selection(cs_int_t    n_select_faces,
+_compact_face_gnum_selection(cs_lnum_t   n_select_faces,
                              cs_gnum_t  *reduce_gnum[],
                              cs_gnum_t  *reduce_gnum_index[])
 {
-  cs_int_t  i;
+  cs_lnum_t  i;
 
   cs_gnum_t  shift = 0;
   cs_gnum_t  *_reduce_gnum = *reduce_gnum;
@@ -382,31 +382,31 @@ _compact_face_gnum_selection(cs_int_t    n_select_faces,
  *---------------------------------------------------------------------------*/
 
 static void
-_extract_contig_faces(cs_int_t          n_vertices,
-                      cs_join_select_t *selection,
-                      cs_int_t          n_faces,
-                      const cs_int_t    f2v_idx[],
-                      const cs_int_t    f2v_lst[],
-                      cs_int_t         *n_contig_faces,
-                      cs_int_t         *contig_faces[])
+_extract_contig_faces(cs_lnum_t          n_vertices,
+                      cs_join_select_t  *selection,
+                      cs_lnum_t          n_faces,
+                      const cs_lnum_t    f2v_idx[],
+                      const cs_lnum_t    f2v_lst[],
+                      cs_lnum_t         *n_contig_faces,
+                      cs_lnum_t         *contig_faces[])
 {
-  cs_int_t  i, j,  vtx_id, shift;
+  cs_lnum_t  i, j,  vtx_id, shift;
 
-  cs_int_t   _n_contig_faces = 0;
-  cs_int_t  *_contig_faces = NULL, *counter = NULL;
-  cs_int_t  *v2f_idx = NULL, *v2f_lst = NULL;
+  cs_lnum_t   _n_contig_faces = 0;
+  cs_lnum_t  *_contig_faces = NULL, *counter = NULL;
+  cs_lnum_t  *v2f_idx = NULL, *v2f_lst = NULL;
 
-  const cs_int_t  n_select_vertices = selection->n_vertices;
-  const cs_int_t  n_single_vertices = selection->s_vertices->n_elts;
-  const cs_int_t  *select_vertices = selection->vertices;
-  const cs_int_t  *single_vertices = selection->s_vertices->array;
+  const cs_lnum_t  n_select_vertices = selection->n_vertices;
+  const cs_lnum_t  n_single_vertices = selection->s_vertices->n_elts;
+  const cs_lnum_t  *select_vertices = selection->vertices;
+  const cs_lnum_t  *single_vertices = selection->s_vertices->array;
 
   if (n_select_vertices + n_single_vertices == 0)
     return;
 
   /* Reverse face -> vertex connectivity */
 
-  BFT_MALLOC(counter, n_vertices, cs_int_t);
+  BFT_MALLOC(counter, n_vertices, cs_lnum_t);
 
   for (i = 0; i < n_vertices; i++)
     counter[i] = 0;
@@ -420,7 +420,7 @@ _extract_contig_faces(cs_int_t          n_vertices,
 
   /* Define v2f_idx */
 
-  BFT_MALLOC(v2f_idx, n_vertices + 1, cs_int_t);
+  BFT_MALLOC(v2f_idx, n_vertices + 1, cs_lnum_t);
 
   v2f_idx[0] = 0;
   for (i = 0; i < n_vertices; i++)
@@ -431,7 +431,7 @@ _extract_contig_faces(cs_int_t          n_vertices,
 
   /* Define v2f_lst */
 
-  BFT_MALLOC(v2f_lst, v2f_idx[n_vertices], cs_int_t);
+  BFT_MALLOC(v2f_lst, v2f_idx[n_vertices], cs_lnum_t);
 
   for (i = 0; i < n_faces; i++) {
 
@@ -446,7 +446,7 @@ _extract_contig_faces(cs_int_t          n_vertices,
 
   } /* End of loop on faces */
 
-  BFT_REALLOC(counter, n_faces, cs_int_t);
+  BFT_REALLOC(counter, n_faces, cs_lnum_t);
 
   for (i = 0; i < n_faces; i++)
     counter[i] = 0;
@@ -476,7 +476,7 @@ _extract_contig_faces(cs_int_t          n_vertices,
 
   /* Define contig_faces */
 
-  BFT_MALLOC(_contig_faces, _n_contig_faces, cs_int_t);
+  BFT_MALLOC(_contig_faces, _n_contig_faces, cs_lnum_t);
 
   _n_contig_faces = 0;
   for (i = 0; i < n_faces; i++) {
@@ -833,20 +833,20 @@ _add_coupled_vertices(cs_interface_set_t  *interfaces,
  *---------------------------------------------------------------------------*/
 
 static void
-_get_missing_vertices(cs_int_t             n_vertices,
+_get_missing_vertices(cs_lnum_t            n_vertices,
                       cs_interface_set_t  *ifs,
-                      cs_int_t            *p_vtx_tag[],
+                      cs_lnum_t           *p_vtx_tag[],
                       cs_join_select_t    *selection)
 {
-  cs_int_t  i;
+  cs_lnum_t  i;
   cs_gnum_t  n_l_elts, n_g_elts;
 
-  cs_int_t  *vtx_tag = NULL, *related_ranks = NULL;
+  cs_lnum_t  *vtx_tag = NULL, *related_ranks = NULL;
 
   /* Define a counter on vertices. 1 if selected, 0 otherwise */
 
-  BFT_MALLOC(vtx_tag, n_vertices, cs_int_t);
-  BFT_MALLOC(related_ranks, n_vertices, cs_int_t);
+  BFT_MALLOC(vtx_tag, n_vertices, cs_lnum_t);
+  BFT_MALLOC(related_ranks, n_vertices, cs_lnum_t);
 
   for (i = 0; i < n_vertices; i++) {
     vtx_tag[i] = 0;
@@ -908,20 +908,20 @@ _get_missing_vertices(cs_int_t             n_vertices,
  *---------------------------------------------------------------------------*/
 
 static void
-_get_select_v2v_connect(cs_int_t               n_vertices,
+_get_select_v2v_connect(cs_lnum_t              n_vertices,
                         cs_join_select_t      *selection,
-                        cs_int_t               b_f2v_idx[],
-                        cs_int_t               b_f2v_lst[],
-                        cs_int_t              *p_v2v_idx[],
-                        cs_int_t              *p_v2v_lst[])
+                        cs_lnum_t              b_f2v_idx[],
+                        cs_lnum_t              b_f2v_lst[],
+                        cs_lnum_t             *p_v2v_idx[],
+                        cs_lnum_t             *p_v2v_lst[])
 {
-  cs_int_t  i, j, save, s, e, n_sel_edges, shift;
+  cs_lnum_t  i, j, save, s, e, n_sel_edges, shift;
 
-  cs_int_t  *count = NULL, *sel_v2v_idx = NULL, *sel_v2v_lst = NULL;
+  cs_lnum_t  *count = NULL, *sel_v2v_idx = NULL, *sel_v2v_lst = NULL;
 
   /* Build a vertex -> vertex connectivity for the selected boundary faces  */
 
-  BFT_MALLOC(sel_v2v_idx, n_vertices + 1, cs_int_t);
+  BFT_MALLOC(sel_v2v_idx, n_vertices + 1, cs_lnum_t);
 
   for (i = 0; i < n_vertices + 1; i++)
     sel_v2v_idx[i] = 0;
@@ -932,14 +932,14 @@ _get_select_v2v_connect(cs_int_t               n_vertices,
                           b_f2v_lst,
                           sel_v2v_idx);
 
-  BFT_MALLOC(count, n_vertices, cs_int_t);
+  BFT_MALLOC(count, n_vertices, cs_lnum_t);
 
   for (i = 0; i < n_vertices; i++) {
     sel_v2v_idx[i+1] += sel_v2v_idx[i];
     count[i] = 0;
   }
 
-  BFT_MALLOC(sel_v2v_lst, sel_v2v_idx[n_vertices], cs_int_t);
+  BFT_MALLOC(sel_v2v_lst, sel_v2v_idx[n_vertices], cs_lnum_t);
 
   cs_join_build_edges_lst(selection->n_faces,
                           selection->faces,
@@ -977,7 +977,7 @@ _get_select_v2v_connect(cs_int_t               n_vertices,
   }
 
   n_sel_edges = sel_v2v_idx[n_vertices];
-  BFT_REALLOC(sel_v2v_lst, n_sel_edges, cs_int_t);
+  BFT_REALLOC(sel_v2v_lst, n_sel_edges, cs_lnum_t);
 
   /* Return pointers */
 
@@ -999,15 +999,15 @@ _get_select_v2v_connect(cs_int_t               n_vertices,
  *   related edge_id in cs_join_edges_t structure
  *---------------------------------------------------------------------------*/
 
-inline static cs_int_t
-_get_edge_id(cs_int_t         v1_id,
-             cs_int_t         v2_id,
-             const cs_int_t   v2v_idx[],
-             const cs_int_t   v2v_lst[])
+inline static cs_lnum_t
+_get_edge_id(cs_lnum_t        v1_id,
+             cs_lnum_t        v2_id,
+             const cs_lnum_t  v2v_idx[],
+             const cs_lnum_t  v2v_lst[])
 {
   int  i, va, vb;
 
-  cs_int_t  edge_id = -1;
+  cs_lnum_t  edge_id = -1;
 
   if (v1_id < v2_id)
     va = v1_id, vb = v2_id;
@@ -1040,11 +1040,11 @@ _get_edge_id(cs_int_t         v1_id,
  *---------------------------------------------------------------------------*/
 
 static void
-_add_s_edge(cs_int_t         vertex_tag[],
-            cs_int_t         v1_id,
-            cs_int_t         v2_id,
-            const cs_int_t   sel_v2v_idx[],
-            const cs_int_t   sel_v2v_lst[],
+_add_s_edge(cs_lnum_t        vertex_tag[],
+            cs_lnum_t        v1_id,
+            cs_lnum_t        v2_id,
+            const cs_lnum_t  sel_v2v_idx[],
+            const cs_lnum_t  sel_v2v_lst[],
             cs_lnum_t       *p_tmp_size,
             cs_lnum_t       *p_max_size,
             cs_lnum_t       *p_tmp_edges[])
@@ -1127,18 +1127,18 @@ _add_s_edge(cs_int_t         vertex_tag[],
 
 static void
 _add_single_edges(cs_interface_set_t   *ifs,
-                  cs_int_t              vertex_tag[],
+                  cs_lnum_t             vertex_tag[],
                   cs_join_select_t     *selection,
-                  cs_int_t              sel_v2v_idx[],
-                  cs_int_t              sel_v2v_lst[],
-                  cs_int_t              b_f2v_idx[],
-                  cs_int_t              b_f2v_lst[],
-                  cs_int_t              i_f2v_idx[],
-                  cs_int_t              i_f2v_lst[],
-                  cs_int_t              i_face_cells[],
+                  cs_lnum_t             sel_v2v_idx[],
+                  cs_lnum_t             sel_v2v_lst[],
+                  cs_lnum_t             b_f2v_idx[],
+                  cs_lnum_t             b_f2v_lst[],
+                  cs_lnum_t             i_f2v_idx[],
+                  cs_lnum_t             i_f2v_lst[],
+                  cs_lnum_t             i_face_cells[],
                   cs_join_sync_t       *s_edges)
 {
-  cs_int_t  i, j, fid, s, e;
+  cs_lnum_t  i, j, fid, s, e;
 
   int  shift = 0, tmp_size = 0, max_size = 10;
   int  *tmp_edges = NULL;
@@ -1576,12 +1576,12 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
 
 static void
 _filter_edge_element(cs_join_select_t   *selection,
-                     const cs_int_t      sel_v2v_idx[],
-                     const cs_int_t      sel_v2v_lst[])
+                     const cs_lnum_t     sel_v2v_idx[],
+                     const cs_lnum_t     sel_v2v_lst[])
 {
-  cs_int_t  i, j, vid1, vid2, edge_id, request_count, shift, save;
+  cs_lnum_t  i, j, vid1, vid2, edge_id, request_count, shift, save;
 
-  cs_int_t  *c_edge_tag = NULL, *s_edge_tag = NULL;
+  cs_lnum_t  *c_edge_tag = NULL, *s_edge_tag = NULL;
   cs_join_sync_t  *s_edges = selection->s_edges;
   cs_join_sync_t  *c_edges = selection->c_edges;
 
@@ -1598,8 +1598,8 @@ _filter_edge_element(cs_join_select_t   *selection,
   BFT_MALLOC(request, c_edges->n_ranks + s_edges->n_ranks, MPI_Request);
   BFT_MALLOC(status, c_edges->n_ranks + s_edges->n_ranks, MPI_Status);
 
-  BFT_MALLOC(c_edge_tag, c_edges->n_elts, cs_int_t);
-  BFT_MALLOC(s_edge_tag, s_edges->n_elts, cs_int_t);
+  BFT_MALLOC(c_edge_tag, c_edges->n_elts, cs_lnum_t);
+  BFT_MALLOC(s_edge_tag, s_edges->n_elts, cs_lnum_t);
 
   for (i = 0; i < c_edges->n_elts; i++)
     c_edge_tag[i] = 1; /* define as selected */
@@ -1738,19 +1738,19 @@ _filter_edge_element(cs_join_select_t   *selection,
  *---------------------------------------------------------------------------*/
 
 static void
-_get_missing_edges(cs_int_t             b_f2v_idx[],
-                   cs_int_t             b_f2v_lst[],
-                   cs_int_t             i_f2v_idx[],
-                   cs_int_t             i_f2v_lst[],
-                   cs_int_t             n_vertices,
-                   cs_int_t             vtx_tag[],
+_get_missing_edges(cs_lnum_t            b_f2v_idx[],
+                   cs_lnum_t            b_f2v_lst[],
+                   cs_lnum_t            i_f2v_idx[],
+                   cs_lnum_t            i_f2v_lst[],
+                   cs_lnum_t            n_vertices,
+                   cs_lnum_t            vtx_tag[],
                    cs_interface_set_t  *ifs,
-                   cs_int_t             i_face_cells[],
+                   cs_lnum_t            i_face_cells[],
                    cs_join_select_t    *selection)
 {
   cs_gnum_t  n_l_elts, n_g_elts;
 
-  cs_int_t  *sel_v2v_idx = NULL, *sel_v2v_lst = NULL;
+  cs_lnum_t  *sel_v2v_idx = NULL, *sel_v2v_lst = NULL;
 
   /* Define single edge element */
 
@@ -1999,9 +1999,9 @@ cs_join_select_t *
 cs_join_select_create(const char  *selection_criteria,
                       int          verbosity)
 {
-  cs_int_t  i;
+  cs_lnum_t  i;
 
-  cs_int_t  *vtx_tag = NULL;
+  cs_lnum_t  *vtx_tag = NULL;
   cs_join_select_t  *selection = NULL;
   cs_lnum_t  *order = NULL, *ordered_faces = NULL;
   cs_interface_set_t  *ifs = NULL;
@@ -2322,6 +2322,7 @@ cs_join_get_block_info(cs_gnum_t  n_g_elts,
 {
   size_t  block_size, n_treat_elts;
   cs_gnum_t  first_glob_num, last_glob_num;
+  cs_gnum_t  _local_rank, _block_size;
 
   cs_join_block_info_t  block_info;
 
@@ -2331,8 +2332,11 @@ cs_join_get_block_info(cs_gnum_t  n_g_elts,
   if (n_g_elts % n_ranks > 0)
     block_size++;
 
-  first_glob_num = local_rank * block_size + 1;
-  last_glob_num = first_glob_num + block_size;
+  _local_rank = local_rank; /* Help ensure 64-bit arithmetic for long gnum */
+  _block_size = block_size;
+
+  first_glob_num = _local_rank * block_size + 1;
+  last_glob_num = first_glob_num + _block_size;
 
   if (last_glob_num > n_g_elts) {
 
@@ -2371,22 +2375,22 @@ cs_join_get_block_info(cs_gnum_t  n_g_elts,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_extract_vertices(cs_int_t         n_select_faces,
-                         const cs_int_t  *select_faces,
-                         const cs_int_t  *f2v_idx,
-                         const cs_int_t  *f2v_lst,
-                         cs_int_t         n_vertices,
-                         cs_int_t        *n_select_vertices,
-                         cs_int_t        *select_vertices[])
+cs_join_extract_vertices(cs_lnum_t         n_select_faces,
+                         const cs_lnum_t  *select_faces,
+                         const cs_lnum_t  *f2v_idx,
+                         const cs_lnum_t  *f2v_lst,
+                         cs_lnum_t         n_vertices,
+                         cs_lnum_t        *n_select_vertices,
+                         cs_lnum_t        *select_vertices[])
 {
   int  i, j, face_id;
 
-  cs_int_t  _n_select_vertices = 0;
-  cs_int_t  *counter = NULL, *_select_vertices = NULL;
+  cs_lnum_t  _n_select_vertices = 0;
+  cs_lnum_t  *counter = NULL, *_select_vertices = NULL;
 
   if (n_select_faces > 0) {
 
-    BFT_MALLOC(counter, n_vertices, cs_int_t);
+    BFT_MALLOC(counter, n_vertices, cs_lnum_t);
 
     for (i = 0; i < n_vertices; i++)
       counter[i] = 0;
@@ -2403,7 +2407,7 @@ cs_join_extract_vertices(cs_int_t         n_select_faces,
     for (i = 0; i < n_vertices; i++)
       _n_select_vertices += counter[i];
 
-    BFT_MALLOC(_select_vertices, _n_select_vertices, cs_int_t);
+    BFT_MALLOC(_select_vertices, _n_select_vertices, cs_lnum_t);
 
     _n_select_vertices = 0;
     for (i = 0; i < n_vertices; i++)
@@ -2434,14 +2438,14 @@ cs_join_extract_vertices(cs_int_t         n_select_faces,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_clean_selection(cs_int_t   *n_elts,
-                        cs_int_t   *elts[],
-                        cs_int_t    n_ref_elts,
-                        cs_int_t    ref_elts[])
+cs_join_clean_selection(cs_lnum_t  *n_elts,
+                        cs_lnum_t  *elts[],
+                        cs_lnum_t   n_ref_elts,
+                        cs_lnum_t   ref_elts[])
 {
-  cs_int_t  i = 0, j = 0;
-  cs_int_t  _n_elts = 0;
-  cs_int_t  *_elts = *elts;
+  cs_lnum_t  i = 0, j = 0;
+  cs_lnum_t  _n_elts = 0;
+  cs_lnum_t  *_elts = *elts;
 
   while (i < *n_elts && j < n_ref_elts) {
 
@@ -2457,7 +2461,7 @@ cs_join_clean_selection(cs_int_t   *n_elts,
   for (;i < *n_elts; i++, _n_elts++)
     _elts[_n_elts] = _elts[i];
 
-  BFT_REALLOC(_elts, _n_elts, cs_int_t);
+  BFT_REALLOC(_elts, _n_elts, cs_lnum_t);
 
   *n_elts = _n_elts;
   *elts = _elts;
@@ -2478,13 +2482,13 @@ cs_join_clean_selection(cs_int_t   *n_elts,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_build_edges_idx(cs_int_t        n_faces,
-                        const cs_int_t  faces[],
-                        const cs_int_t  f2v_idx[],
-                        const cs_int_t  f2v_lst[],
-                        cs_int_t        v2v_idx[])
+cs_join_build_edges_idx(cs_lnum_t        n_faces,
+                        const cs_lnum_t  faces[],
+                        const cs_lnum_t  f2v_idx[],
+                        const cs_lnum_t  f2v_lst[],
+                        cs_lnum_t        v2v_idx[])
 {
-  cs_int_t  i, j, v1, v2, fid, s, e;
+  cs_lnum_t  i, j, v1, v2, fid, s, e;
 
   /* Loop on all selected faces. No need to loop on other faces because
      the selected vertices are all found with this only step. */
@@ -2544,15 +2548,15 @@ cs_join_build_edges_idx(cs_int_t        n_faces,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_build_edges_lst(cs_int_t        n_faces,
-                        const cs_int_t  faces[],
-                        const cs_int_t  f2v_idx[],
-                        const cs_int_t  f2v_lst[],
-                        cs_int_t        count[],
-                        const cs_int_t  v2v_idx[],
-                        cs_int_t        v2v_lst[])
+cs_join_build_edges_lst(cs_lnum_t        n_faces,
+                        const cs_lnum_t  faces[],
+                        const cs_lnum_t  f2v_idx[],
+                        const cs_lnum_t  f2v_lst[],
+                        cs_lnum_t        count[],
+                        const cs_lnum_t  v2v_idx[],
+                        cs_lnum_t        v2v_lst[])
 {
-  cs_int_t  i, j, v1_id, v2_id, fid, s, e, shift;
+  cs_lnum_t  i, j, v1_id, v2_id, fid, s, e, shift;
 
   for (i = 0; i < n_faces; i++) {
 

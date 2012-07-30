@@ -49,21 +49,21 @@ BEGIN_C_DECLS
 
 typedef struct { /* Definition of a global indexed list of global elements */
 
-  cs_int_t   n_elts;
-  cs_gnum_t  n_g_elts;
+  cs_lnum_t   n_elts;
+  cs_gnum_t   n_g_elts;
 
   cs_gnum_t  *g_elts;   /* Global numbering of elements */
 
-  cs_int_t   *index;    /* Index on elements from */
+  cs_lnum_t  *index;    /* Index on elements from */
   cs_gnum_t  *g_list;   /* Global numbering of entities linked with g_elts */
 
 } cs_join_gset_t;
 
 typedef struct { /* Resizable array structure */
 
-  cs_int_t    n_max_elts;
-  cs_int_t    n_elts;
-  cs_int_t   *array;
+  cs_lnum_t    n_max_elts;
+  cs_lnum_t    n_elts;
+  cs_lnum_t   *array;
 
 } cs_join_rset_t;
 
@@ -74,10 +74,10 @@ typedef struct { /* Resizable array structure */
 
 typedef struct {
 
-  cs_int_t   n_max_equiv;    /* max. number of equiv. allocated */
-  cs_int_t   n_equiv;        /* number of equivalences */
-  cs_int_t  *equiv_couple;   /* ids of the two equivalent entities.
-                                size = 2 * n_equiv */
+  cs_lnum_t   n_max_equiv;    /* max. number of equiv. allocated */
+  cs_lnum_t   n_equiv;        /* number of equivalences */
+  cs_lnum_t  *equiv_couple;   /* ids of the two equivalent entities.
+                                 size = 2 * n_equiv */
 } cs_join_eset_t;
 
 /*============================================================================
@@ -95,7 +95,7 @@ typedef struct {
  *---------------------------------------------------------------------------*/
 
 cs_join_rset_t *
-cs_join_rset_create(cs_int_t  max_size);
+cs_join_rset_create(cs_lnum_t  max_size);
 
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_rset_t structure.
@@ -118,7 +118,7 @@ cs_join_rset_destroy(cs_join_rset_t  **set);
 
 void
 cs_join_rset_resize(cs_join_rset_t  **set,
-                    cs_int_t          test_size);
+                    cs_lnum_t         test_size);
 
 /*----------------------------------------------------------------------------
  * Create a new cs_join_eset_t structure.
@@ -131,7 +131,7 @@ cs_join_rset_resize(cs_join_rset_t  **set,
  *---------------------------------------------------------------------------*/
 
 cs_join_eset_t *
-cs_join_eset_create(cs_int_t  init_size);
+cs_join_eset_create(cs_lnum_t  init_size);
 
 /*----------------------------------------------------------------------------
  * Check if the requested size if allocated in the structure.
@@ -144,7 +144,7 @@ cs_join_eset_create(cs_int_t  init_size);
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_eset_check_size(cs_int_t          request_size,
+cs_join_eset_check_size(cs_lnum_t         request_size,
                         cs_join_eset_t  **equiv_set);
 
 /*----------------------------------------------------------------------------
@@ -180,7 +180,7 @@ cs_join_eset_clean(cs_join_eset_t  **eset);
  *---------------------------------------------------------------------------*/
 
 cs_join_gset_t *
-cs_join_gset_create(cs_int_t  n_elts);
+cs_join_gset_create(cs_lnum_t  n_elts);
 
 /*----------------------------------------------------------------------------
  * Build a cs_join_gset_t structure to store all the potential groups
@@ -198,7 +198,7 @@ cs_join_gset_create(cs_int_t  n_elts);
  *---------------------------------------------------------------------------*/
 
 cs_join_gset_t *
-cs_join_gset_create_from_tag(cs_int_t         n_elts,
+cs_join_gset_create_from_tag(cs_lnum_t        n_elts,
                              const cs_gnum_t  tag[]);
 
 /*----------------------------------------------------------------------------
@@ -319,7 +319,7 @@ cs_join_gset_clean_from_array(cs_join_gset_t  *set,
 
 void
 cs_join_gset_single_order(const cs_join_gset_t  *set,
-                          cs_int_t              *n_elts,
+                          cs_lnum_t             *n_elts,
                           cs_gnum_t             *new_array[]);
 
 /*----------------------------------------------------------------------------

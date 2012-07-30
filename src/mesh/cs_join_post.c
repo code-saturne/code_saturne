@@ -100,7 +100,7 @@ static  bool            _cs_join_post_initialized = false;
 static int
 _init_join_writer(void)
 {
-  cs_int_t  writer_id = cs_post_get_free_writer_id();
+  int  writer_id = cs_post_get_free_writer_id();
 
   cs_post_define_writer(writer_id,
                         "joining",
@@ -134,7 +134,7 @@ _post_vtx_dfield(fvm_nodal_t   *mesh,
 {
   fvm_writer_t  *writer = _cs_join_post_param.writer;
 
-  cs_int_t   parent_num_shift[2]  = {0, 0};
+  cs_lnum_t  parent_num_shift[2]  = {0, 0};
 
   const double  *var_ptr[9] = {NULL, NULL, NULL,
                                NULL, NULL, NULL,
@@ -178,7 +178,7 @@ _post_elt_ifield(fvm_nodal_t  *mesh,
 {
   fvm_writer_t  *writer = _cs_join_post_param.writer;
 
-  cs_int_t   parent_num_shift[2]  = {0, 0};
+  cs_lnum_t  parent_num_shift[2]  = {0, 0};
   cs_datatype_t  datatype = CS_DATATYPE_NULL;
 
   const int  *var_ptr[9] = {NULL, NULL, NULL,
@@ -186,7 +186,7 @@ _post_elt_ifield(fvm_nodal_t  *mesh,
                             NULL, NULL, NULL};
 
   assert(writer != NULL);
-  assert(sizeof(cs_int_t) == sizeof(int));
+  assert(sizeof(cs_lnum_t) == sizeof(int));
 
   if (sizeof(int) == 4)
     datatype = CS_INT32;
@@ -253,21 +253,21 @@ cs_join_post_mesh(const char            *mesh_name,
                   const cs_join_mesh_t  *join_mesh)
 {
   int  i, j;
-  cs_int_t  n_vertices;
+  cs_lnum_t  n_vertices;
 
   const char *name = NULL;
   int  *ifield = NULL;
   double  *dfield = NULL;
   cs_gnum_t  *vertex_gnum = NULL;
   cs_real_t  *vertex_coord = NULL;
-  cs_int_t  *parent_vtx_num = NULL;
+  cs_lnum_t  *parent_vtx_num = NULL;
   fvm_nodal_t  *post_mesh = NULL;
   fvm_writer_t  *writer = _cs_join_post_param.writer;
 
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
-  const cs_int_t  face_list_shift[2] = {0, join_mesh->n_faces};
-  const cs_int_t  *face_vertex_idx[1] = {join_mesh->face_vtx_idx};
-  const cs_int_t  *face_vertex_lst[1] = {join_mesh->face_vtx_lst};
+  const cs_lnum_t  face_list_shift[2] = {0, join_mesh->n_faces};
+  const cs_lnum_t  *face_vertex_idx[1] = {join_mesh->face_vtx_idx};
+  const cs_lnum_t  *face_vertex_lst[1] = {join_mesh->face_vtx_lst};
 
   /* Define an fvm_nodal_mesh_t structure from a cs_join_mesh_t structure */
 
@@ -339,7 +339,7 @@ cs_join_post_mesh(const char            *mesh_name,
 
   n_vertices = fvm_nodal_get_n_entities(post_mesh, 0);
 
-  BFT_MALLOC(parent_vtx_num, n_vertices, cs_int_t);
+  BFT_MALLOC(parent_vtx_num, n_vertices, cs_lnum_t);
   BFT_MALLOC(dfield, n_vertices, double);
 
   fvm_nodal_get_parent_num(post_mesh, 0, parent_vtx_num);
@@ -372,8 +372,8 @@ cs_join_post_mesh(const char            *mesh_name,
 void
 cs_join_post_faces_subset(const char            *mesh_name,
                           const cs_join_mesh_t  *parent_mesh,
-                          cs_int_t               n_select_faces,
-                          const cs_int_t         selected_faces[])
+                          cs_lnum_t              n_select_faces,
+                          const cs_lnum_t        selected_faces[])
 {
   cs_join_mesh_t  *subset_mesh = NULL;
 
@@ -473,14 +473,14 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_post_after_split(cs_int_t          n_old_i_faces,
-                         cs_int_t          n_old_b_faces,
+cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
+                         cs_lnum_t         n_old_b_faces,
                          cs_gnum_t         n_g_new_b_faces,
-                         cs_int_t          n_select_faces,
+                         cs_lnum_t         n_select_faces,
                          const cs_mesh_t  *mesh,
                          cs_join_param_t   join_param)
 {
-  cs_int_t  i, j;
+  cs_lnum_t  i, j;
 
   int  writer_ids[] = {_cs_join_post_param.writer_num};
   char  *mesh_name = NULL;
@@ -499,8 +499,8 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
 
   /* Define list of faces to post-treat */
 
-  BFT_MALLOC(post_i_faces, n_new_i_faces, cs_int_t);
-  BFT_MALLOC(post_b_faces, n_new_b_faces, cs_int_t);
+  BFT_MALLOC(post_i_faces, n_new_i_faces, cs_lnum_t);
+  BFT_MALLOC(post_b_faces, n_new_b_faces, cs_lnum_t);
 
   for (i = n_old_i_faces, j = 0; i < mesh->n_i_faces; i++, j++)
     post_i_faces[j] = i + 1;
@@ -529,7 +529,7 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
 
   if (join_param.visualization > 1 && n_g_new_b_faces > 0) {
 
-    cs_int_t  post_b_mesh_id = cs_post_get_free_mesh_id();
+    cs_lnum_t  post_b_mesh_id = cs_post_get_free_mesh_id();
     fvm_nodal_t  *post_b_mesh = NULL;
 
     BFT_REALLOC(mesh_name, strlen("BoundaryJoinedFaces_j") + 2 + 1, char);
@@ -575,10 +575,10 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_post_cleaned_faces(cs_int_t         n_i_clean_faces,
-                           cs_int_t         i_clean_faces[],
-                           cs_int_t         n_b_clean_faces,
-                           cs_int_t         b_clean_faces[],
+cs_join_post_cleaned_faces(cs_lnum_t        n_i_clean_faces,
+                           cs_lnum_t        i_clean_faces[],
+                           cs_lnum_t        n_b_clean_faces,
+                           cs_lnum_t        b_clean_faces[],
                            cs_join_param_t  param)
 {
   int  writer_ids[] = {_cs_join_post_param.writer_num};

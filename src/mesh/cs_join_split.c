@@ -88,8 +88,8 @@ typedef enum {
 
 typedef struct {
 
-  cs_int_t         n_faces;
-  cs_int_t        *face_index;       /* Face -> Subface index */
+  cs_lnum_t        n_faces;
+  cs_lnum_t       *face_index;       /* Face -> Subface index */
   cs_join_rset_t  *subface_index;    /* Subface -> vertex connect. index */
   cs_join_rset_t  *subface_connect;  /* Subface -> vertex connect. list */
 
@@ -249,23 +249,23 @@ _face_bbox(const cs_join_mesh_t  *m,
  *---------------------------------------------------------------------------*/
 
 static void
-_renumber_local_ordered_i(cs_int_t          n_elts,
+_renumber_local_ordered_i(cs_lnum_t         n_elts,
                           const cs_lnum_t   order[],
-                          const cs_int_t    index[],
+                          const cs_lnum_t   index[],
                           cs_gnum_t         glist[],
-                          cs_int_t         *new_index[],
+                          cs_lnum_t        *new_index[],
                           cs_gnum_t        *new_glist[])
 {
-  cs_int_t  i, j, k, o_id;
+  cs_lnum_t  i, j, k, o_id;
 
-  cs_int_t  *_new_index = NULL;
+  cs_lnum_t  *_new_index = NULL;
   cs_gnum_t   *_new_glist = NULL;
 
   assert(index[0] == 0); /* case index[0] = 1 coulb be coded in the future */
 
   /* Build a new index */
 
-  BFT_MALLOC(_new_index, n_elts + 1, cs_int_t);
+  BFT_MALLOC(_new_index, n_elts + 1, cs_lnum_t);
 
   for (i = 0; i < n_elts; i++) {
     o_id = order[i];
@@ -310,13 +310,13 @@ _renumber_local_ordered_i(cs_int_t          n_elts,
 static void
 _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
                    const cs_gnum_t        gnum_rank_index[],
-                   cs_int_t              *send_rank_index[],
-                   cs_int_t              *send_faces[])
+                   cs_lnum_t             *send_rank_index[],
+                   cs_lnum_t             *send_faces[])
 {
-  cs_int_t  i, j, rank, start, end;
+  cs_lnum_t  i, j, rank, start, end;
 
-  cs_int_t  reduce_size = 0;
-  cs_int_t  *_send_rank_index = NULL, *_send_faces = NULL, *reduce_ids = NULL;
+  cs_lnum_t  reduce_size = 0;
+  cs_lnum_t  *_send_rank_index = NULL, *_send_faces = NULL, *reduce_ids = NULL;
   cs_gnum_t  *reduce_index = NULL;
   cs_join_gset_t  *new_face_rank = NULL;
 
@@ -341,7 +341,7 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
       reduce_size++;
 
   BFT_MALLOC(reduce_index, reduce_size+1, cs_gnum_t);
-  BFT_MALLOC(reduce_ids, reduce_size, cs_int_t);
+  BFT_MALLOC(reduce_ids, reduce_size, cs_lnum_t);
 
   reduce_size = 0;
   reduce_index[0] = gnum_rank_index[0] + 1;
@@ -395,9 +395,9 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
 
     for (j = start; j < end; j++) {
 
-      cs_int_t  shift =  new_face_rank->index[rank]
-                       + new_face_rank->g_elts[rank];
-      cs_int_t  new_fid = o2n_hist->g_list[j] - 1;
+      cs_lnum_t  shift =  new_face_rank->index[rank]
+                        + new_face_rank->g_elts[rank];
+      cs_lnum_t  new_fid = o2n_hist->g_list[j] - 1;
 
       new_face_rank->g_list[shift] = new_fid;
       new_face_rank->g_elts[rank] += 1;
@@ -415,12 +415,12 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
 
   /* Define arrays to return */
 
-  BFT_MALLOC(_send_rank_index, n_ranks + 1, cs_int_t);
+  BFT_MALLOC(_send_rank_index, n_ranks + 1, cs_lnum_t);
 
   for (i = 0; i < n_ranks + 1; i++)
     _send_rank_index[i] = new_face_rank->index[i];
 
-  BFT_MALLOC(_send_faces, _send_rank_index[n_ranks], cs_int_t);
+  BFT_MALLOC(_send_faces, _send_rank_index[n_ranks], cs_lnum_t);
 
   for (i = 0; i < _send_rank_index[n_ranks]; i++)
     _send_faces[i] = new_face_rank->g_list[i];
@@ -468,19 +468,19 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
  *---------------------------------------------------------------------------*/
 
 static void
-_define_head_and_ext_edges(cs_int_t                face_id,
+_define_head_and_ext_edges(cs_lnum_t               face_id,
                            const cs_join_mesh_t   *mesh,
                            const cs_join_edges_t  *edges,
                            cs_join_rset_t         *head_edges,
                            cs_join_rset_t         *ext_edges,
-                           cs_int_t                perm)
+                           cs_lnum_t               perm)
 {
-  cs_int_t  i, j, k, shift;
-  cs_int_t  couple[2];
+  cs_lnum_t  i, j, k, shift;
+  cs_lnum_t  couple[2];
 
-  cs_int_t  start_id = mesh->face_vtx_idx[face_id]-1;
-  cs_int_t  end_id = mesh->face_vtx_idx[face_id+1]-1;
-  cs_int_t  n_face_vertices = end_id - start_id;
+  cs_lnum_t  start_id = mesh->face_vtx_idx[face_id]-1;
+  cs_lnum_t  end_id = mesh->face_vtx_idx[face_id+1]-1;
+  cs_lnum_t  n_face_vertices = end_id - start_id;
 
   assert(perm < n_face_vertices);
 
@@ -534,9 +534,9 @@ _define_head_and_ext_edges(cs_int_t                face_id,
  *---------------------------------------------------------------------------*/
 
 static face_builder_t *
-_create_face_builder(cs_int_t  n_faces)
+_create_face_builder(cs_lnum_t  n_faces)
 {
-  cs_int_t  i;
+  cs_lnum_t  i;
 
   face_builder_t  *builder = NULL;
 
@@ -544,7 +544,7 @@ _create_face_builder(cs_int_t  n_faces)
 
   builder->n_faces = n_faces;
 
-  BFT_MALLOC(builder->face_index, n_faces + 1, cs_int_t);
+  BFT_MALLOC(builder->face_index, n_faces + 1, cs_lnum_t);
 
   for (i = 0; i < n_faces + 1; i++)
     builder->face_index[i] = 0;
@@ -605,22 +605,22 @@ _destroy_face_builder(face_builder_t  *builder)
  *---------------------------------------------------------------------------*/
 
 static void
-_dump_face_builder(cs_int_t               face_id,
+_dump_face_builder(cs_lnum_t              face_id,
                    const face_builder_t  *builder,
                    FILE                  *logfile)
 {
-  cs_int_t  i, j;
-  cs_int_t  subface_id = 0;
-  cs_int_t  face_s = builder->face_index[face_id];
-  cs_int_t  face_e = builder->face_index[face_id+1];
-  cs_int_t  n_subfaces = face_e - face_s;
+  cs_lnum_t  i, j;
+  cs_lnum_t  subface_id = 0;
+  cs_lnum_t  face_s = builder->face_index[face_id];
+  cs_lnum_t  face_e = builder->face_index[face_id+1];
+  cs_lnum_t  n_subfaces = face_e - face_s;
 
   fprintf(logfile, " Face %9d (n_subfaces: %d):\n", face_id+1, n_subfaces);
 
   for (i = face_s; i <face_e; i++, subface_id++) {
 
-    cs_int_t  subface_s = builder->subface_index->array[i];
-    cs_int_t  subface_e = builder->subface_index->array[i+1];
+    cs_lnum_t  subface_s = builder->subface_index->array[i];
+    cs_lnum_t  subface_e = builder->subface_index->array[i+1];
 
     if (builder->subface_gnum == NULL)
       fprintf(logfile, "   subface %4d: (%d, %d) -",
@@ -667,15 +667,15 @@ _dump_face_builder(cs_int_t               face_id,
 
 static bool
 _find_best_adj_face(cs_join_param_t         param,
-                    cs_int_t                eid,
-                    cs_int_t                fid,
+                    cs_lnum_t               eid,
+                    cs_lnum_t               fid,
                     double                  fnorm[3],
                     double                  adj_fnorm[3],
                     const double            face_normal[],
-                    const cs_int_t         *e2f_idx,
-                    const cs_int_t         *e2f_lst)
+                    const cs_lnum_t        *e2f_idx,
+                    const cs_lnum_t        *e2f_lst)
 {
-  cs_int_t  j, k, adj_fid;
+  cs_lnum_t  j, k, adj_fid;
   double  dprod, dprod2, test_fnorm[3];
 
   int  best_fid = -1;
@@ -797,29 +797,29 @@ _find_best_adj_face(cs_join_param_t         param,
 
 static cs_join_split_error_t
 _find_next(cs_join_param_t         param,
-           cs_int_t                fid,
-           cs_int_t                vid1,
-           cs_int_t                vid2,
+           cs_lnum_t               fid,
+           cs_lnum_t               vid1,
+           cs_lnum_t               vid2,
            cs_real_t               max_coord[3],
            cs_real_t               min_coord[3],
            const double            face_normal[],
            const cs_join_mesh_t   *work,
            const cs_join_edges_t  *edges,
-           const cs_int_t         *e2f_idx,
-           const cs_int_t         *e2f_lst,
-           cs_int_t               *next_edge,
-           cs_int_t               *next_vertex)
+           const cs_lnum_t        *e2f_idx,
+           const cs_lnum_t        *e2f_lst,
+           cs_lnum_t              *next_edge,
+           cs_lnum_t              *next_vertex)
 {
-  cs_int_t  i, j, k;
+  cs_lnum_t  i, j, k;
   double  norm, dprod, adj_fnorm[3], fnorm[3], v1v2[3], v2v3[3];
 
   /* Look for the connected vertices and its associated edge */
 
-  cs_int_t  v2v_s = edges->vtx_idx[vid2];
-  cs_int_t  v2v_e = edges->vtx_idx[vid2+1];
-  cs_int_t  n_connect_vertices = v2v_e - v2v_s;
+  cs_lnum_t  v2v_s = edges->vtx_idx[vid2];
+  cs_lnum_t  v2v_e = edges->vtx_idx[vid2+1];
+  cs_lnum_t  n_connect_vertices = v2v_e - v2v_s;
 
-  cs_int_t  *f2f_connect = NULL;   /* To be implemented ... */
+  cs_lnum_t  *f2f_connect = NULL;   /* To be implemented ... */
 
   const cs_join_vertex_t  *vertices = work->vertices;
   const double  min_limit_cos = -1.1, max_limit_cos = 1.1;
@@ -847,8 +847,8 @@ _find_next(cs_join_param_t         param,
   if (n_connect_vertices > 2) { /* Look for the edge which is
                                    the most on the left */
 
-    cs_int_t  left_next_edge = -1, left_next_vertex = -1;
-    cs_int_t  right_next_edge = -1, right_next_vertex = -1;
+    cs_lnum_t  left_next_edge = -1, left_next_vertex = -1;
+    cs_lnum_t  right_next_edge = -1, right_next_vertex = -1;
     cs_real_t  left_min_cos = max_limit_cos;
     cs_real_t  right_max_cos = min_limit_cos;
 
@@ -862,7 +862,7 @@ _find_next(cs_join_param_t         param,
 
     for (i = v2v_s; i < v2v_e; i++) {
 
-      cs_int_t  vid3 = edges->adj_vtx_lst[i]-1;
+      cs_lnum_t  vid3 = edges->adj_vtx_lst[i]-1;
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
       if (tst_dbg && cs_glob_join_log != NULL)
@@ -874,7 +874,7 @@ _find_next(cs_join_param_t         param,
       if (vid3 != vid1) {
 
         bool  is_in_bbox = true;
-        cs_int_t  connect_eid = CS_ABS(edges->edge_lst[i]) - 1;
+        cs_lnum_t  connect_eid = CS_ABS(edges->edge_lst[i]) - 1;
 
         /* Test if the connected vertex is inside the face */
 
@@ -1010,7 +1010,7 @@ _find_next(cs_join_param_t         param,
 
     for (i = v2v_s; i < v2v_e; i++) {
 
-      cs_int_t  vid3 = edges->adj_vtx_lst[i]-1;
+      cs_lnum_t  vid3 = edges->adj_vtx_lst[i]-1;
 
       if (vid3 != vid1) {
         *next_edge = edges->edge_lst[i];
@@ -1070,27 +1070,27 @@ _find_next(cs_join_param_t         param,
  *---------------------------------------------------------------------------*/
 
 static cs_join_split_error_t
-_split_face(cs_int_t                fid,
-            cs_int_t                block_id,
+_split_face(cs_lnum_t               fid,
+            cs_lnum_t               block_id,
             cs_join_param_t         param,
             const cs_real_t         face_normal[],
             const cs_join_mesh_t   *work,
             const cs_join_edges_t  *edges,
-            const cs_int_t         *e2f_idx,
-            const cs_int_t         *e2f_lst,
+            const cs_lnum_t        *e2f_idx,
+            const cs_lnum_t        *e2f_lst,
             face_builder_t         *builder,
             cs_join_rset_t        **head_edges,
             cs_join_rset_t        **subface_edges,
             cs_join_rset_t        **ext_edges,
             cs_join_rset_t        **int_edges)
 {
-  cs_int_t  j, k, i1, i2, i_int, i_ext;
-  cs_int_t  first_vid, vid1, vid2;
-  cs_int_t  subface_shift, connect_shift, connect_start;
-  cs_int_t   next_vertex, next_edge;
+  cs_lnum_t  j, k, i1, i2, i_int, i_ext;
+  cs_lnum_t  first_vid, vid1, vid2;
+  cs_lnum_t  subface_shift, connect_shift, connect_start;
+  cs_lnum_t  next_vertex, next_edge;
   cs_join_split_error_t  status;
 
-  cs_int_t  n_subfaces = 0, head_edge_shift = 0;
+  cs_lnum_t  n_subfaces = 0, head_edge_shift = 0;
   cs_real_t  max_coord[3] = {-DBL_MAX, -DBL_MAX, -DBL_MAX};
   cs_real_t  min_coord[3] = {DBL_MAX, DBL_MAX, DBL_MAX};
   cs_join_rset_t  *_head_edges = *head_edges;
@@ -1135,9 +1135,9 @@ _split_face(cs_int_t                fid,
 
     while (head_edge_shift < _head_edges->n_elts) { /* Build a new sub-face */
 
-      cs_int_t  head_edge_num = _head_edges->array[head_edge_shift];
-      cs_int_t  edge_num = head_edge_num;
-      cs_int_t  edge_id = CS_ABS(edge_num) - 1;
+      cs_lnum_t  head_edge_num = _head_edges->array[head_edge_shift];
+      cs_lnum_t  edge_num = head_edge_num;
+      cs_lnum_t  edge_id = CS_ABS(edge_num) - 1;
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
       if (tst_dbg && logfile != NULL)
@@ -1220,11 +1220,11 @@ _split_face(cs_int_t                fid,
 
         for (i1 = 0; i1 < _subface_edges->n_elts - 1; i1++) {
 
-          cs_int_t e1 = CS_ABS(_subface_edges->array[i1]);
+          cs_lnum_t e1 = CS_ABS(_subface_edges->array[i1]);
 
           for (i2 = i1 + 1; i2 < _subface_edges->n_elts; i2++) {
 
-            cs_int_t e2 = CS_ABS(_subface_edges->array[i2]);
+            cs_lnum_t e2 = CS_ABS(_subface_edges->array[i2]);
 
             if (e1 == e2) { /* Returns pointers */
 
@@ -1379,13 +1379,13 @@ _split_face(cs_int_t                fid,
 inline static bool
 _indexed_is_greater(size_t           i1,
                     size_t           i2,
-                    const cs_int_t   index[],
-                    const cs_gnum_t number[])
+                    const cs_lnum_t  index[],
+                    const cs_gnum_t  number[])
 {
   int  i;
 
-  cs_int_t  i1_s = index[i1], i1_e = index[i1+1], s1 = i1_e - i1_s;
-  cs_int_t  i2_s = index[i2], i2_e = index[i2+1], s2 = i2_e - i2_s;
+  cs_lnum_t  i1_s = index[i1], i1_e = index[i1+1], s1 = i1_e - i1_s;
+  cs_lnum_t  i2_s = index[i2], i2_e = index[i2+1], s2 = i2_e - i2_s;
 
   if (s1 > s2) {
 
@@ -1424,12 +1424,12 @@ static void
 _get_subface_gnum(face_builder_t         *builder,
                   const cs_join_mesh_t   *work)
 {
-  cs_int_t  i, j, k, shift;
+  cs_lnum_t  i, j, k, shift;
   cs_gnum_t  min_val;
 
-  cs_int_t  max_size = 0;
-  cs_int_t  n_subfaces = builder->face_index[builder->n_faces];
-  cs_int_t  *index = builder->subface_index->array;
+  cs_lnum_t  max_size = 0;
+  cs_lnum_t  n_subfaces = builder->face_index[builder->n_faces];
+  cs_lnum_t  *index = builder->subface_index->array;
   cs_gnum_t  *gconnect = builder->subface_gconnect;
   cs_gnum_t  *glob_list = NULL, *tmp = NULL, *vgnum = NULL;
   fvm_io_num_t *subface_io_num = NULL;
@@ -1459,8 +1459,8 @@ _get_subface_gnum(face_builder_t         *builder,
 
   for (i = 0; i < n_subfaces; i++) {
 
-    cs_int_t  start = index[i], end = index[i+1];
-    cs_int_t  n_elts = end - start;
+    cs_lnum_t  start = index[i], end = index[i+1];
+    cs_lnum_t  n_elts = end - start;
 
     assert(n_elts > 1);
 
@@ -1531,7 +1531,7 @@ _get_subface_gnum(face_builder_t         *builder,
 
     /* Local ordering */
 
-    cs_int_t  *order_index = NULL;
+    cs_lnum_t  *order_index = NULL;
     cs_gnum_t  *order_glob_list = NULL;
     cs_lnum_t  *order = cs_order_gnum_i(NULL,
                                         glob_list,
@@ -1586,8 +1586,8 @@ _get_subface_gnum(face_builder_t         *builder,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     if (cs_glob_join_log != NULL) {
       for (i = 0; i < n_subfaces; i++) {
-        cs_int_t  start = index[i], end = index[i+1];
-        cs_int_t  n_elts = end - start;
+        cs_lnum_t  start = index[i], end = index[i+1];
+        cs_lnum_t  n_elts = end - start;
         fprintf(cs_glob_join_log,
                 " subface %5d - gnum: %10llu - connect_size: %d - ",
                 i+1, (unsigned long long)builder->subface_gnum[i], n_elts);
@@ -1631,12 +1631,12 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
                          cs_join_mesh_t        **mesh,
                          cs_join_gset_t        **p_o2n_hist)
 {
-  cs_int_t  i, j, k, id, shift, n_subfaces, o_id;
+  cs_lnum_t  i, j, k, id, shift, n_subfaces, o_id;
   cs_gnum_t  prev, cur;
 
-  cs_int_t  n_new_faces = 0;
+  cs_lnum_t  n_new_faces = 0;
   char  *new_mesh_name = NULL;
-  cs_int_t  *subfaces = NULL;
+  cs_lnum_t  *subfaces = NULL;
   cs_lnum_t  *order = NULL;
   cs_join_gset_t  *o2n_hist = NULL;
   cs_join_mesh_t  *init_mesh = *mesh, *new_mesh = NULL;
@@ -1687,7 +1687,7 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
 
   /* Build new cell_gnum array */
 
-  BFT_MALLOC(subfaces, n_new_faces, cs_int_t);
+  BFT_MALLOC(subfaces, n_new_faces, cs_lnum_t);
 
   prev = 0;
   n_new_faces = 0;
@@ -1711,7 +1711,7 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
   new_mesh->n_g_faces = builder->n_g_subfaces;
 
   BFT_MALLOC(new_mesh->face_gnum, n_new_faces, cs_gnum_t);
-  BFT_MALLOC(new_mesh->face_vtx_idx, n_new_faces + 1, cs_int_t);
+  BFT_MALLOC(new_mesh->face_vtx_idx, n_new_faces + 1, cs_lnum_t);
 
   for (i = 0; i < n_new_faces; i++) {
 
@@ -1728,7 +1728,7 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
 
   BFT_MALLOC(new_mesh->face_vtx_lst,
              new_mesh->face_vtx_idx[n_new_faces]-1,
-             cs_int_t);
+             cs_lnum_t);
 
   for (i = 0; i < n_new_faces; i++) {
 
@@ -1766,13 +1766,13 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
   if (block_info.local_size > 0) {
 
     assert(builder != NULL);
-    assert(builder->n_faces == (cs_int_t)block_info.local_size);
+    assert(builder->n_faces == (cs_lnum_t)block_info.local_size);
 
     /* Historic is a part of the data held in builder structure */
 
-    for (i = 0; i < (cs_int_t)block_info.local_size; i++)
+    for (i = 0; i < (cs_lnum_t)block_info.local_size; i++)
       /* store old glob. face num. */
-      o2n_hist->g_elts[i] = block_info.first_gnum + i;
+      o2n_hist->g_elts[i] = block_info.first_gnum + (cs_gnum_t)i;
 
     for (i = 0; i < builder->n_faces + 1; i++)
       o2n_hist->index[i] = builder->face_index[i];
@@ -1830,13 +1830,13 @@ cs_join_split_faces(cs_join_param_t          param,
                     cs_join_mesh_t         **work,
                     cs_join_gset_t         **old2new_history)
 {
-  cs_int_t  fid, j, face_s, subface_s, block_id, vid;
+  cs_lnum_t  fid, j, face_s, subface_s, block_id, vid;
   cs_gnum_t  vgnum;
   cs_join_split_error_t  code;
   cs_join_block_info_t  block_info;
 
-  cs_int_t  _n_problems = 0, n_face_problems = 0, n_max_face_vertices = 6;
-  cs_int_t  *e2f_idx = NULL, *e2f_lst = NULL;
+  cs_lnum_t  _n_problems = 0, n_face_problems = 0, n_max_face_vertices = 6;
+  cs_lnum_t  *e2f_idx = NULL, *e2f_lst = NULL;
   cs_join_gset_t  *_old2new_history = NULL;
   cs_join_rset_t  *open_cycle = NULL, *edge_traversed_twice = NULL;
   cs_join_rset_t  *loop_limit = NULL, *head_edges = NULL;
@@ -1844,7 +1844,7 @@ cs_join_split_faces(cs_join_param_t          param,
   face_builder_t  *builder = NULL;
   cs_join_mesh_t  *w = *work;
 
-  const cs_int_t  n_init_faces = w->n_faces;
+  const cs_lnum_t  n_init_faces = w->n_faces;
   const int  n_ranks = cs_glob_n_ranks;
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
 
@@ -1884,7 +1884,7 @@ cs_join_split_faces(cs_join_param_t          param,
 
   for (fid = 0, block_id = 0; fid < n_init_faces; fid++) {
 
-    int  block_rank = (w->face_gnum[fid] - 1)/block_info.size;
+    int  block_rank = (w->face_gnum[fid] - 1)/(cs_gnum_t)(block_info.size);
 
     if (block_rank == local_rank) { /* This face is a "main" face for the
                                        local rank */
@@ -2236,7 +2236,7 @@ cs_join_split_update_struct(const cs_join_param_t   param,
                             cs_join_gset_t        **o2n_hist,
                             cs_join_mesh_t        **local_mesh)
 {
-  cs_int_t  i;
+  cs_lnum_t  i;
 
   cs_join_gset_t  *_o2n_hist = *o2n_hist;
   cs_join_mesh_t  *_local_mesh = *local_mesh;
@@ -2255,11 +2255,11 @@ cs_join_split_update_struct(const cs_join_param_t   param,
 #if defined(HAVE_MPI)
   if (n_ranks > 1) { /* Parallel mode */
 
-    cs_int_t  j, subface_id;
-    cs_int_t  *send_rank_index = NULL, *send_faces = NULL;
+    cs_lnum_t  j, subface_id;
+    cs_lnum_t  *send_rank_index = NULL, *send_faces = NULL;
     cs_gnum_t  *init_face_gnum = NULL;
     cs_join_gset_t  *distrib_sync_hist = NULL;
-    cs_int_t  n_init_faces = _local_mesh->n_faces;
+    cs_lnum_t  n_init_faces = _local_mesh->n_faces;
     cs_gnum_t  n_g_init_faces = _local_mesh->n_g_faces;
 
     MPI_Comm  mpi_comm = cs_glob_mpi_comm;

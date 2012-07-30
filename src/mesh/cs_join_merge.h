@@ -130,7 +130,7 @@ cs_join_merge_vertices(cs_join_param_t        param,
 
 void
 cs_join_merge_update_struct(cs_join_param_t          param,
-                            cs_int_t                 n_iwm_vertices,
+                            cs_lnum_t                n_iwm_vertices,
                             const cs_gnum_t          iwm_vtx_gnum[],
                             cs_gnum_t                init_max_vtx_gnum,
                             const cs_gnum_t          rank_face_gnum_index[],
