@@ -146,6 +146,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w5, w6
 double precision, allocatable, dimension(:) :: w7, w8
 double precision, allocatable, dimension(:) :: dpvar
+double precision, allocatable, dimension(:) :: rotfct
 
 !===============================================================================
 
@@ -205,7 +206,6 @@ endif
 if(iwarni(ik).ge.1) then
   write(nfecra,1000)
 endif
-
 
 !===============================================================================
 ! 2. CALCUL DE dk/dxj.dw/dxj
@@ -311,7 +311,35 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 4. CALCUL DU TERME DE GRAVITE
+! 5. Take into account rotation/curvature correction, if necessary
+!===============================================================================
+
+! Spalart-Shur correction: the production terms are multiplied by a
+! 'rotation function'
+
+if (irccor.eq.1) then
+
+  ! Allocate an array for the rotation function
+  allocate(rotfct(ncel))
+
+  ! Compute the rotation function (w1 array not used)
+  call rotcor &
+  !==========
+  ( dt     , rtpa   , propce , coefa , coefb , &
+    rotfct , w1     )
+
+  do iel = 1, ncel
+    tinstk(iel) = tinstk(iel)*rotfct(iel)
+    tinstw(iel) = tinstw(iel)*rotfct(iel)
+  enddo
+
+  ! rotfct array is used later in case of renforced coupling (ikecou = 1).
+  ! The array is deallocated at the end of the subroutine.
+
+endif
+
+!===============================================================================
+! 6. CALCUL DU TERME DE GRAVITE
 !      Les termes sont stockes dans     TINSTK,TINSTW,W2
 !      En sortie de l'etape on conserve W1,W2,XF1,TINSTK,TINSTW
 !===============================================================================
@@ -378,7 +406,7 @@ endif
 
 
 !===============================================================================
-! 5. PRISE EN COMPTE DES TERMES SOURCES UTILISATEURS
+! 7. PRISE EN COMPTE DES TERMES SOURCES UTILISATEURS
 !      Les termes sont stockes dans     SMBRK,SMBRW,DAM,W3
 !      En sortie de l'etape on conserve W1-3,XF1,TINSTK,TINSTW,SMBRK,SMBRW,DAM
 !===============================================================================
@@ -401,7 +429,7 @@ call ustskw                                                       &
 !        ------   ------   ------   ------
 
 !===============================================================================
-! 7. ON FINALISE LE CALCUL DES TERMES SOURCES
+! 8. ON FINALISE LE CALCUL DES TERMES SOURCES
 
 !      Les termes sont stockes dans     SMBRK, SMBRW
 !      En sortie de l'etape on conserve SMBRK,SMBRW,DAM,W1-4
@@ -429,7 +457,7 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 8. PRISE EN COMPTE DES TERMES D'ACCUMULATION DE MASSE ET
+! 9. PRISE EN COMPTE DES TERMES D'ACCUMULATION DE MASSE ET
 !         DE LA DEUXIEME PARTIE DES TS UTILISATEURS (PARTIE EXPLICITE)
 !         STOCKAGE POUR EXTRAPOLATION EN TEMPS
 !      On utilise                       SMBRK,SMBRW
@@ -475,7 +503,7 @@ else
 endif
 
 !===============================================================================
-! 8.1 PRISE EN COMPTE DES TERMES SOURCES LAGRANGIEN : PARTIE EXPLICITE
+! 9.1 PRISE EN COMPTE DES TERMES SOURCES LAGRANGIEN : PARTIE EXPLICITE
 !     COUPLAGE RETOUR
 !===============================================================================
 
@@ -499,7 +527,7 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 endif
 
 !===============================================================================
-! 8.2 Re-set Boundary conditions flux coefficient for k and omega
+! 9.2 Re-set Boundary conditions flux coefficient for k and omega
 
 !     The definition of cofaf requires hint=(mu+muT/sigma)/distb where sigma
 !     is not constant in the k-omega model (and not directly accessible)
@@ -534,7 +562,7 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 9. PRISE EN COMPTE DES TERMES DE CONV/DIFF DANS LE SECOND MEMBRE
+! 10. PRISE EN COMPTE DES TERMES DE CONV/DIFF DANS LE SECOND MEMBRE
 
 !      Tableaux de travail              W7, W8, W1, TINSTK, TINSTW
 !      Les termes sont stockes dans     W5 et W6, puis ajoutes a SMBRK, SMBRW
@@ -775,6 +803,18 @@ endif
 !     Ordre 2 non pris en compte
 if(ikecou.eq.1) then
 
+  ! Take into account, if necessary, the Spalart-Shur rotation/curvature
+  ! correction of the production term
+  if (irccor.eq.2) then
+    do iel = 1, ncel
+      w1(iel) = rotfct(iel)
+    enddo
+  else
+    do iel = 1, ncel
+      w1(iel) = 1.d0
+    enddo
+  endif
+
   do iel = 1, ncel
 
     rom = propce(iel,ipcrom)
@@ -785,7 +825,7 @@ if(ikecou.eq.1) then
     smbrk(iel) = smbrk(iel)*romvsd
     smbrw(iel) = smbrw(iel)*romvsd
     divp23     = d2s3*max(divukw(iel),zero)
-    produc     = s2kw(iel)-d2s3*divukw(iel)**2+w2(iel)
+    produc     = w1(iel)*(s2kw(iel)-d2s3*divukw(iel)**2)+w2(iel)
     xk         = rtpa(iel,ik)
     xw         = rtpa(iel,iomg)
     xxf1       = xf1(iel)
@@ -901,7 +941,7 @@ endif
 
 
 !===============================================================================
-! 13. RESOLUTION
+! 14. RESOLUTION
 
 !       On utilise                      SMBRK, SMBRW,  TINSTK, TINSTW
 !===============================================================================
@@ -1068,7 +1108,7 @@ call codits &
    rvoid  , rvoid  )
 
 !===============================================================================
-! 14. CLIPPING
+! 15. CLIPPING
 !===============================================================================
 
 !     Calcul des Min/Max avant clipping, pour affichage
@@ -1142,6 +1182,8 @@ deallocate(w1, w2, w3)
 deallocate(w5, w6)
 deallocate(w7, w8)
 deallocate(dpvar)
+
+if (allocated(rotfct))  deallocate(rotfct)
 
 !--------
 ! FORMATS

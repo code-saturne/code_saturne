@@ -860,10 +860,23 @@ if ( iturb.ne. 0.and.iturb.ne.10.and.iturb.ne.20.and.        &
   iok = iok + 1
 endif
 
+! Rotation curvature correction for eddy-viscosity models
+if ( irccor.ne.0.and.irccor.ne.1 ) then
+  write(nfecra,2601) 'IRCCOR ',irccor
+  iok = iok + 1
+endif
+
+! Rotation curvature correction compatible only with RANS eddy-viscosity models
+if ( irccor.eq.1.and.(itytur.ne.2 .and.itytur.ne.5 .and.      &
+                      iturb .ne.60.and.iturb .ne.70) ) then
+  write(nfecra,2602) iturb
+  iok = iok + 1
+endif
+
 ! In lagrangian with two-way coupling, k-omega SST is forbidden (not
 ! properly implemented)
 if (iturb.eq.60 .and. iilagr.eq.2) then
-  write(nfecra,2601) iilagr
+  write(nfecra,2603) iilagr
   iok = iok + 1
 endif
 
@@ -3091,21 +3104,54 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
  2601 format(                                                     &
-'@',                                                            /,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    LE MODELE DE TURBULENCE K-OMEGA SST N''EST PAS',          /,&
-'@     COMPATIBLE AVEC LE LAGRANGIEN EN COUPLAGE INVERSE',      /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
+'@    ========='                                               ,/,&
+'@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0 OU 1'                ,/,&
+'@    IL VAUT ICI ',I10                                        ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
+'@'                                                            ,/,&
+'@  Verifier les parametres donnes via l''interface'           ,/,&
+'@    ou cs_user_parameters.f90.'                              ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
+'@'                                                            ,/)
+ 2602 format( &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
+'@    ========='                                               ,/,&
+'@    L''OPTION IRCCOR = 1 N''EST COMPATIBLE QU''AVEC'         ,/,&
+'@    L''OPTION ITURB = 20, 21, 50, 51, 60 ou 70'              ,/,&
+'@    ITURB VAUT ICI ',I10                                     ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
+'@'                                                            ,/,&
+'@  Verifier les parametres donnes via l''interface'           ,/,&
+'@    ou cs_user_parameters.f90.'                              ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2603 format( &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
+'@    ========='                                               ,/,&
+'@    LE MODELE DE TURBULENCE K-OMEGA SST N''EST PAS'          ,/,&
+'@     COMPATIBLE AVEC LE LAGRANGIEN EN COUPLAGE INVERSE'      ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
+'@'                                                            ,/,&
+'@  Verifier les parametres donnes via l''interface'           ,/,&
+'@    ou cs_user_parameters.f90.'                              ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
  2606 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -5587,7 +5633,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER EGAL A 0, 10, 20, 21, 30, 31,',/, &
+'@',    a6,' MUST BE AN INTEGER EGAL A 0, 10, 20, 21, 30, 31,', /,&
 '@    40, 41, 42, 50, 51 or 60',                                /,&
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
@@ -5598,7 +5644,40 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2601 format(                                                     &
+ 2601 format( &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@    ',A6,' MUST BE AN INTEGER EGAL A 0 OR 1',                 /,&
+'@   IT HAS VALUE ',I10                                        ,/,&
+'@',                                                            /,&
+'@   The calculation could NOT run.',                           /,&
+'@',                                                            /,&
+'@ Check the input data given through the User Interface',      /,&
+'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 2602 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ WARNING:   STOP WHILE READING INPUT DATA',                /,&
+'@    =========',                                               /,&
+'@    IRCCOR = 1 OPTION IS ONLY COMPATIBLE WITH',               /,&
+'@    ITURB = 20, 21, 50, 51, 60 OR 70',                        /,&
+'@    ITURB HAS VALUE ',I10                                    ,/,&
+'@',                                                            /,&
+'@   The calculation could NOT run.',                           /,&
+'@',                                                            /,&
+'@ Check the input data given through the User Interface',      /,&
+'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2603 format( &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&

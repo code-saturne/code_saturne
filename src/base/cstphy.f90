@@ -114,6 +114,8 @@ module cstphy
   !   ckw*   : constantes specifiques du k-omega SST
   !            (sk=sigma_k, sw=sigma_w, bt=beta, gm=gamma)
   !   csa*   : constantes specifiques de Spalart-Allmaras
+  !   css*   : constants of the Spalart-Shur rotation/curvature correction
+  !   ccaz*  : constants of the Cazalbou rotation/curvature correction
   !   almax  : echelle de longueur turbulente
   !   uref   : vitesse de reference
   !   xlomlg : longueur pour longueur de melange
@@ -159,6 +161,9 @@ module cstphy
                             ckwbt2 , ckwgm1 , ckwgm2 , ckwa1  , ckwc1  ,    &
                             csab1  , csab2  , csasig , csav1  , csaw1  ,    &
                             csaw2  , csaw3  ,                               &
+                            cssr1  , cssr2  , cssr3  ,                      &
+                            ccaze2 , ccazsc , ccaza  , ccazb  , ccazc  ,    &
+                            ccazd  ,                                        &
                             volmin , volmax , voltot ,                      &
                             almax   , uref  ,                               &
                             xlomlg  ,                                       &

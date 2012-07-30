@@ -64,6 +64,7 @@ resssg.f90 \
 resv2f.f90 \
 rijech.f90 \
 rijthe.f90 \
+rotcor.f90 \
 tsepls.f90 \
 turbke.f90 \
 turbkw.f90 \

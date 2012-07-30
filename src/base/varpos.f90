@@ -142,12 +142,22 @@ cindfm = 'YYYY'
 !    pour les scalaires physiques particulieres en question.
 !  On en profite aussi pour remplir ITYTUR puisque ITURB vient d'etre
 !    defini.
+!  On remplit aussi itycor puisque irccor, iturb et itytur viennent d'etre
+!    definis.
 !===============================================================================
 
 if(ipass.eq.1) then
 
 ! ---> Remplissage de ITYTUR
   itytur = iturb/10
+
+! ---> Remplissage de itycor :
+! type de correction rotation/courbure pour les modeles de viscosite turbulente
+  if (irccor.eq.1.and.(itytur.eq.2.or.itytur.eq.5)) then
+    itycor = 1
+  elseif (irccor.eq.1.and.(iturb.eq.60.or.iturb.eq.70)) then
+    itycor = 2
+  endif
 
 ! ---> Coherence modele
 !     Rq : ATTENTION il faudrait renforcer le blindage

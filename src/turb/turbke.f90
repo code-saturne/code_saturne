@@ -150,6 +150,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5
 double precision, allocatable, dimension(:) :: w7, w8, usimpe
 double precision, allocatable, dimension(:) :: w10, w11, w12
+double precision, allocatable, dimension(:) :: ce2rc
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:,:,:), allocatable :: gradv
 double precision, allocatable, dimension(:) :: dpvar
@@ -344,8 +345,46 @@ else
   enddo
 endif
 
+!=============================================================================
+! 5. Take into account rotation/curvature correction, if necessary
+!=============================================================================
+
+! Cazalbou correction: the Ceps2 coefficient of destruction term of epsislon
+! is modified by rotation and curvature
+
+! Allocate an array for the modified Ceps2 coefficient
+allocate(ce2rc(ncel))
+
+if (irccor.eq.1) then
+
+  ! Compute the modified Ceps2 coefficient (w1 array not used)
+
+  call rotcor &
+  !==========
+ ( dt     , rtpa  , propce , coefa , coefb , &
+   w1     , ce2rc )
+
+else
+
+  if (itytur.eq.2) then
+    do iel = 1, ncel
+      ce2rc(iel) = ce2
+    enddo
+  elseif(iturb.eq.50) then
+    do iel = 1, ncel
+      ce2rc(iel) = cv2fe2
+    enddo
+  elseif(iturb.eq.51) then
+    do iel = 1, ncel
+      ce2rc(iel) = ccaze2
+    enddo
+  endif
+
+endif
+! ce2rc array is used all along the subroutine. It is deallocated at the end.
+
 !===============================================================================
-! 5. Compute the buoyant term
+! 6. Compute the buoyancy term
 
 !      Les s.m. recoivent production et termes de gravite
 !      Tableaux de travail              viscb
@@ -437,7 +476,6 @@ else if (igrake.eq.1) then
   deallocate(grad)
 
 else
-
 
 ! --- Production sans termes de gravite
 !       tinstk=tinste=P
@@ -562,6 +600,14 @@ if (iturb.eq.51) then
 
   enddo
 
+  ! Take into account the Cazalbou rotation/curvature correction if necessary
+  if (irccor.eq.1) then
+     do iel =1, ncel
+       w10(iel) = w10(iel)*ce2rc(iel)/ccaze2
+       w11(iel) = w11(iel)*ce2rc(iel)/ccaze2
+     enddo
+  endif
+
   ! Free memory
   deallocate(w12)
 
@@ -597,7 +643,7 @@ if (iturb.eq.20) then
     smbre(iel) = volume(iel)*rtpa(iel,iep)/rtpa(iel,ik)*(         &
          ce1*( visct*tinste(iel)                                  &
          -d2s3*rom*rtpa(iel,ik)*divu(iel) )                       &
-         -ce2*rom*rtpa(iel,iep) )
+         -ce2rc(iel)*rom*rtpa(iel,iep) )
 
   enddo
 
@@ -615,7 +661,7 @@ else if (iturb.eq.21) then
     smbre(iel) = volume(iel)*rtpa(iel,iep)/rtpa(iel,ik)*(         &
          ce1*(tinste(iel)                                         &
          -d2s3*rom*rtpa(iel,ik)*divu(iel) )                       &
-         -ce2*rom*rtpa(iel,iep) )
+         -ce2rc(iel)*rom*rtpa(iel,iep) )
 
   enddo
 
@@ -643,7 +689,7 @@ else if (iturb.eq.50) then
     smbre(iel) = volume(iel)/tt*(                                 &
          ceps1*( visct*tinste(iel)                                &
          -d2s3*rom*rtpa(iel,ik)*divu(iel) )                       &
-         -cv2fe2*rom*rtpa(iel,iep) )
+         -ce2rc(iel)*rom*rtpa(iel,iep) )
 
 !     On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
     prdv2f(iel) = visct*prdv2f(iel)                               &
@@ -683,7 +729,6 @@ else if (iturb.eq.51) then
   enddo
 
 endif
-
 
 !===============================================================================
 ! 8. Prise en compte des termes sources utilisateurs
@@ -1061,9 +1106,9 @@ if(ikecou.eq.1) then
            -2.d0*rtpa(iel,ik)/rtpa(iel,iep)                       &
            *cmu*min(tinstk(iel),zero)+divp23
       a12 = 1.d0
-      a21 = -ce1*cmu*tinste(iel)-ce2*epssuk*epssuk
+      a21 = -ce1*cmu*tinste(iel)-ce2rc(iel)*epssuk*epssuk
       a22 = 1.d0/dt(iel)+ce1*divp23                               &
-           +2.d0*ce2*epssuk
+           +2.d0*ce2rc(iel)*epssuk
 
       unsdet = 1.d0/(a11*a22 -a12*a21)
 
@@ -1117,9 +1162,9 @@ if(ikecou.eq.1) then
         ! Pour a12 on fait comme en k-eps standard pour l'instant,
         ! on ne prend pas le terme en P+G ... est-ce judicieux ?
         a12 = 1.d0
-        a21 = -ceps1*cv2fmu*xphi*tinste(iel)-cv2fe2*epssuk*epssuk
+        a21 = -ceps1*cv2fmu*xphi*tinste(iel)-ce2rc(iel)*epssuk*epssuk
         a22 = 1.d0/dt(iel)+ceps1*divp23                           &
-             +2.d0*cv2fe2*epssuk
+             +2.d0*ce2rc(iel)*epssuk
       else
         a11 = 1.d0/dt(iel)                                        &
              -cv2fmu*xphi*ctsqnu*min(tinstk(iel),zero)/sqrt(xeps) &
@@ -1133,7 +1178,7 @@ if(ikecou.eq.1) then
              +ceps1*sqrt(xeps)/ctsqnu*divp23
         a22 = 1.d0/dt(iel)+1.d0/2.d0*ceps1*divp23*xk              &
              /ctsqnu/sqrt(xeps)                                   &
-             +3.d0/2.d0*cv2fe2/ctsqnu*sqrt(xeps)
+             +3.d0/2.d0*ce2rc(iel)/ctsqnu*sqrt(xeps)
       endif
 
       unsdet = 1.d0/(a11*a22 -a12*a21)
@@ -1247,7 +1292,7 @@ if(ikecou.eq.0)then
              rom*volume(iel)/ttke
       endif
       tinste(iel) = tinste(iel) +                                 &
-           ce2*rom*volume(iel)/ttke
+           ce2rc(iel)*rom*volume(iel)/ttke
     enddo
   else if(iturb.eq.50)then
     do iel=1,ncel
@@ -1263,7 +1308,7 @@ if(ikecou.eq.0)then
              rom*volume(iel)/ttke
       endif
       tinste(iel) = tinste(iel) +                                 &
-           cv2fe2*rom*volume(iel)/tt
+           ce2rc(iel)*rom*volume(iel)/tt
     enddo
   else if(iturb.eq.51)then
     do iel=1,ncel
@@ -1483,6 +1528,7 @@ deallocate(w1, w2, w3)
 deallocate(w4, w5)
 deallocate(w7, w8, usimpe)
 deallocate(dpvar)
+deallocate(ce2rc)
 
 if (allocated(w10)) deallocate(w10, w11)
 

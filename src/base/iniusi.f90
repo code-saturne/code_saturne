@@ -139,7 +139,7 @@ endif
 !     ==========================
 
 iihmpu = iihmpr
-call usipph(iihmpu , nfecra , iturb  , icp)
+call usipph(iihmpu , nfecra , iturb  , irccor , icp)
 !==========
 
 !===============================================================================

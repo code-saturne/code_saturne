@@ -319,8 +319,18 @@ module optcal
   !         * 42 modele de Smagorinsky dynamique de "Piomelli et Liu"
   !    = 50 v2f phi-model
   !    = 60 k-omega sst
+  !    = 70 Spalart-Allmaras
   !  itytur
   !    = int(iturb/10) pour distinguer rapidement les classes de modeles
+  !  irccor
+  !    = 0 no rotation/curvature correction for an eddy viscosity turbulence
+  !        model
+  !    = 1 activate rotation/curvature correction for an eddy viscosity
+  !        turbulence model
+  !  itycor
+  !    = 1 Cazalbou correction: default when irccor = 1 and itytur = 2 or 5
+  !    = 2 Spalart-Shur correction: default when irccor = 1 and
+  !        iturb = 60 or 70
   !  ideuch
   !    = 0 une echelle       (deux echelles = faux)
   !    = 1 deux echelles     (deux echelles = vrai)
@@ -370,11 +380,12 @@ module optcal
   !         = 1 avec methode des vortex
 
   integer, save :: iturb , itytur,                 &
-                   ideuch, ilogpo, iclkep, &
+                   irccor, itycor,                 &
+                   ideuch, ilogpo, iclkep,         &
                    igrhok, igrake,                 &
                    iscalt, ikecou,                 &
-                   irijnu, irijrb, irijec, &
-                   igrari, idifre, iclsyr, &
+                   irijnu, irijrb, irijec,         &
+                   igrari, idifre, iclsyr,         &
                    iclptr, idries, ivrtex
 
   ! ivisse prise en compte de -2/3 grad(mu div(u)) + div(mu (grad_t(u)))

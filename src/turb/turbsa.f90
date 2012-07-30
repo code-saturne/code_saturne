@@ -149,6 +149,7 @@ double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: trgrdn, vort
 double precision, allocatable, dimension(:) :: tsexp
 double precision, allocatable, dimension(:) :: dpvar
+double precision, allocatable, dimension(:) :: csab1r, rotfct
 
 !===============================================================================
 
@@ -345,6 +346,34 @@ if(irangp.ge.0) then
   endif
 endif
 
+! Take into account the Spalart-Shur rotation/curvature correction, if necessary
+! => variable production term coefficient (csab1)
+allocate(csab1r(ncel))
+
+if (irccor.eq.1) then
+
+  ! Allocate temporary array for rotation function
+  allocate(rotfct(ncel))
+
+  ! Compute the rotation function (w1 array not used)
+  call rotcor &
+  !==========
+( dt     , rtpa   , propce , coefa , coefb , &
+  rotfct , w1     )
+
+  do iel = 1, ncel
+    csab1r(iel) = csab1*rotfct(iel)
+  enddo
+
+  ! Free memory
+  deallocate(rotfct)
+
+else
+  do iel = 1, ncel
+    csab1r(iel) = csab1
+  enddo
+endif
+
 ! If source terms are extrapolated, rho is rho^n
 !                                 visct is visct^n
 do iel = 1, ncel
@@ -389,14 +418,17 @@ do iel = 1, ncel
   fw    = gsa*( (1.d0+csaw3**6)/(gsa**6+csaw3**6))**(1.d0/6.d0)
 
   rhssa(iel) = volume(iel)*rom*(                                 &
-     dsigma * csab2*trgrdn(iel)+csab1*taussa*nusa-csaw1*fw*(nusa/distbf)**2)
+     dsigma * csab2*trgrdn(iel)+csab1r(iel)*taussa*nusa-csaw1*fw*(nusa/distbf)**2)
 
   ! Implicitation of the negative source terms of the SA equation.
   ! NB : this term could be negative, and if so, then we explicit it.
-  tinssa(iel) = (max(csaw1*fw*nusa/distbf**2-csab1*taussa,0.d0)         &
+  tinssa(iel) = (max(csaw1*fw*nusa/distbf**2-csab1r(iel)*taussa,0.d0)         &
                       )*rom*volume(iel)
 
 enddo
+
+! Free memory
+deallocate(csab1r)
 
 !===============================================================================
 ! 5. Take user source terms into account

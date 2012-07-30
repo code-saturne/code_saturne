@@ -93,8 +93,11 @@ module pointe
   ! s2kw   ! ncelet                  ! stockage de 2 Sij.Sij en k-omega
   ! divukw ! ncelet                  ! stockage de divu en k-omega (en meme
   !                                    temps que s2kw)
+  ! straio ! ncelet                  ! strain rate tensor at the
+  !                                    previous time step
 
   double precision, allocatable, dimension(:) :: s2kw , divukw
+  double precision, allocatable, dimension(:,:) :: straio
 
   !... Parametres du module thermique 1D
 
@@ -255,6 +258,14 @@ contains
       allocate(divukw(ncelet))
     endif
 
+   ! Strain rate tensor at the previous time step
+   ! if rotation curvature correction
+   if (irccor.eq.1) then
+      if (idtvar.ge.0) then
+        allocate(straio(ncelet,6))
+      endif
+    endif
+
     return
 
   end subroutine init_aux_arrays
@@ -284,6 +295,7 @@ contains
     if (allocated(uetbor)) deallocate(uetbor)
     if (allocated(yplbr)) deallocate(yplbr)
     if (allocated(s2kw)) deallocate(s2kw, divukw)
+    if (allocated(straio))  deallocate(straio)
 
     return
 

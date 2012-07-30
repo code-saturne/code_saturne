@@ -80,6 +80,7 @@ character        name*300, chaine*80
 integer          iok20 , iok21 , iok30 , iok31 , iok50 , iok51 , iok60
 integer          iok32
 integer          iok70
+integer          iokss , iokcaz
 integer          ii    , jj    , ivar  , iiesca, iest
 integer          ipp   , iwar  , imom
 integer          nbccou, nbsucp, nbvocp, issurf, isvol
@@ -347,14 +348,14 @@ elseif(iturb.eq.20) then
   if (ikecou.eq.0 .and. idtvar.ge.0) then
     write(nfecra,2527) relaxv(ik),relaxv(iep)
   else
-    write(nfecra,2540)
+    write(nfecra,2550)
   endif
 elseif(iturb.eq.21) then
   write(nfecra,2518) almax, uref, iclkep,ikecou,igrake
   if (ikecou.eq.0.and. idtvar.ge.0) then
     write(nfecra,2527) relaxv(ik),relaxv(iep)
   else
-    write(nfecra,2540)
+    write(nfecra,2550)
   endif
 elseif(iturb.eq.30) then
   write(nfecra,2519)                                            &
@@ -378,7 +379,7 @@ elseif(iturb.eq.50) then
   if (ikecou.eq.0 .and. idtvar.ge.0) then
     write(nfecra,2527) relaxv(ik),relaxv(iep)
   else
-    write(nfecra,2540)
+    write(nfecra,2550)
   endif
 elseif(iturb.eq.51) then
   write(nfecra,2524) almax, uref, iclkep,ikecou,igrake
@@ -392,10 +393,13 @@ elseif(iturb.eq.60) then
   if (ikecou.eq.0 .and. idtvar.ge.0) then
     write(nfecra,2528) relaxv(ik),relaxv(iomg)
   else
-    write(nfecra,2540)
+    write(nfecra,2550)
   endif
 elseif(iturb.eq.70) then
   write(nfecra,2529) almax,  uref,  relaxv(inusa)
+endif
+if (itytur.eq.2.or.itytur.eq.5.or.iturb.eq.60.or.iturb.eq.70) then
+  write(nfecra,2540) irccor
 endif
 
 !   - Constantes
@@ -471,6 +475,22 @@ if (iok60.gt.0) then
 endif
 if(iok70.gt.0) then
   write(nfecra,2537) csab1,csab2,csasig,csav1,csaw1,csaw2,csaw3
+endif
+
+iokss = 0
+iokcaz = 0
+if (irccor.eq.1) then
+  if (itycor.eq.1) then
+    iokcaz = 1
+  elseif (itycor.eq.2) then
+    iokss = 1
+  endif
+endif
+if (iokcaz.gt.0) then
+  write(nfecra,2541) ccaze2,ccazsc,ccaza,ccazb,ccazc,ccazd
+endif
+if (iokss.gt.0) then
+  write(nfecra,2542) cssr1,cssr2,cssr3
 endif
 
 write(nfecra,9900)
@@ -710,7 +730,25 @@ write(nfecra,9900)
 '       XCETA  = ', e14.5,    ' (Coef Ceta                   )',/,&
 '       XCT    = ', e14.5,    ' (Coef CT                     )',/)
 
- 2540 format(/)
+ 2540 format( &
+'   - Correction rotation/courbure'                            ,/,&
+'       IRCCOR = ',4X,I10,    ' (0: desactivee               )',/,&
+'                               (1: activee                  )',/)
+ 2541 format( &
+'   - Correction rotation/courbure (Cazalbou)'                 ,/,&
+'       CCAZE2 = ', E14.5,    ' (Coef Ce2^0                  )',/,&
+'       CCAZSC = ', E14.5,    ' (Coef Csc                    )',/,&
+'       CCAZA  = ', E14.5,    ' (Coef a                      )',/,&
+'       CCAZB  = ', E14.5,    ' (Coef b                      )',/,&
+'       CCAZC  = ', E14.5,    ' (Coef c                      )',/,&
+'       CCAZD  = ', E14.5,    ' (Coef d                      )',/)
+ 2542 format( &
+'   - Correction rotation/courbure (Spalart-Shur)'             ,/,&
+'       CSSR1  = ', E14.5,    ' (Coef c_r1                   )',/,&
+'       CSSR2  = ', E14.5,    ' (Coef c_r2                   )',/,&
+'       CSSR3  = ', E14.5,    ' (Coef c_r3                   )',/)
+
+ 2550 format(/)
 
 #else
 
@@ -946,7 +984,25 @@ write(nfecra,9900)
 '       XCETA  = ', e14.5,    ' (Coef Ceta                   )',/,&
 '       XCT    = ', e14.5,    ' (Coef CT                     )',/)
 
- 2540 format(/)
+ 2540 format( &
+'   - Rotation/curvature correction'                           ,/,&
+'       IRCCOR = ',4X,I10,    ' (0: desactivated             )',/,&
+'                               (1: activated                )',/)
+ 2541 format( &
+'   - Rotation/curvature correction (Cazalbou)'                ,/,&
+'       CCAZE2 = ', E14.5,    ' (Coef Ce2^0                  )',/,&
+'       CCAZSC = ', E14.5,    ' (Coef Csc                    )',/,&
+'       CCAZA  = ', E14.5,    ' (Coef a                      )',/,&
+'       CCAZB  = ', E14.5,    ' (Coef b                      )',/,&
+'       CCAZC  = ', E14.5,    ' (Coef c                      )',/,&
+'       CCAZD  = ', E14.5,    ' (Coef d                      )',/)
+ 2542 format( &
+'   - Rotation/curvature correction (Spalart-Shur)'            ,/,&
+'       CSSR1  = ', E14.5,    ' (Coef c_r1                   )',/,&
+'       CSSR2  = ', E14.5,    ' (Coef c_r2                   )',/,&
+'       CSSR3  = ', E14.5,    ' (Coef c_r3                   )',/)
+
+ 2550 format(/)
 
 #endif
 

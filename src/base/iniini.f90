@@ -851,6 +851,12 @@ iclsyr = 0
 iclptr = 0
 idries =-1
 
+! --- Rotation/curvature correction of turbulence models
+!     Unactivated by default
+!     Correction type (itycor) is set in varpos
+irccor = 0
+itycor = -999
+
 ! --- Viscosite secondaire
 
 ivisse = 1
@@ -1230,6 +1236,19 @@ csasig   = 2.d0/3.d0
 csaw1    = csab1/xkappa**2 + 1.d0/csasig*(1.d0 + csab2)
 csaw2    = 0.3d0
 csaw3    = 2.d0
+
+! for the Spalart-Shur rotation/curvature correction
+cssr1 = 1.d0
+cssr2 = 12.d0
+cssr3 = 1.d0
+
+! for the Cazalbou rotation/curvature correction
+ccaze2 = 1.83d0
+ccaza  = 4.3d0
+ccazsc = 0.119d0
+ccazb  = 5.130d0
+ccazc  = 0.453d0
+ccazd  = 0.682d0
 
 !   echelle de longueur negative, recalculee par la suite
 !    ou entree par l'utilisateur

@@ -416,8 +416,7 @@ end subroutine
 
 subroutine usipph &
 !================
-
- ( iihmpu, nfecra , iturb , icp )
+ ( iihmpu, nfecra , iturb , irccor , icp )
 
 
 !===============================================================================
@@ -435,6 +434,7 @@ subroutine usipph &
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! iturb            ! ia ! <-> ! turbulence model                               !
+! irccor           ! ia ! <-> ! flag for rotation/curvature correction or not  !
 ! icp              ! ia ! <-> ! flag for uniform Cp or not                     !
 !__________________!____!_____!________________________________________________!
 
@@ -457,7 +457,7 @@ implicit none
 ! Arguments
 
 integer iihmpu, nfecra
-integer iturb, icp
+integer iturb, irccor, icp
 
 ! Local variables
 
@@ -542,6 +542,15 @@ iturb = 21
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
+! --- Rotation/curvature correction for eddy-viscosity turbulence models
+!      0...desactivated
+!      1...activated
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+irccor = 0
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Variable specific heat (ICP=1) or not (ICP=0)
 
