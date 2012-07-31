@@ -228,7 +228,7 @@ call ustsma &
 !==========
 ( nvar   , nscal  , ncepdc ,                                     &
   ncetsm , iappel ,                                              &
-  icepdc ,                                                       &
+  ivoid  ,                                                       &
   ivoid  , ivoid  , izctsm ,                                     &
   rvoid  , rvoid  ,                                              &
   rvoid  , propfa , propfb ,                                     &

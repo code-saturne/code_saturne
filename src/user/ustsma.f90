@@ -45,12 +45,12 @@ subroutine ustsma &
 ! iappel = 1
 !    Calculation of the number of cells where a mass source term is
 !    imposed: ncesmp
-!    Called once at the beginnign of the calculation
+!    Called once at the beginning of the calculation
 
 ! iappel = 2
 !    Identification of the cells where a mass source term is imposed:
 !    array icesmp(ncesmp)
-!    Called once at the beginnign of the calculation
+!    Called once at the beginning of the calculation
 
 ! iappel = 3
 !    Calculation of the values of the mass source term
@@ -71,7 +71,7 @@ subroutine ustsma &
 !           rho*(f^(n+1) - f^(n))/dt = .....
 !                                    + gamma*(f_i - f^(n+1))
 
-! f_i is the value of f associated to the injecte mass.
+! f_i is the value of f associated to the injected mass.
 ! Two options are available:
 !   - the mass flux is injected with the local value of variable f
 !                           --> f_i = f^(n+1)
@@ -148,6 +148,7 @@ subroutine ustsma &
 ! iappel           ! i  ! <-- ! indicates which at which stage the routine is  !
 !                  !    !     !  is called                                     !
 ! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
+!                  !    !     !  (usable only for iappel > 1)                  !
 ! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
 ! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
 !  (ncesmp,nvar)   !    !     !  (see uttsma.f90)                              !
@@ -194,7 +195,7 @@ integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iappel
 
-integer          icepdc(ncepdp)
+integer          icepdc(*)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          izctsm(ncel)
 
