@@ -794,11 +794,11 @@ class Studies(object):
         """
         Check coherency between xml file of parameters and repository and destination.
         """
-        if repo:
+        if repo != None:
             result = os.path.join(self.repo, study_label, case_label, 'RESU')
             self.__check_dir(study_label, case_label, node, result, repo, "repo")
 
-        if dest:
+        if dest != None:
             result = os.path.join(self.dest, study_label, case_label, 'RESU')
             self.__check_dir(study_label, case_label, node, result, dest, "dest")
 
