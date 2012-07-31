@@ -32,47 +32,60 @@ subroutine uskpdc &
    coefa  , coefb  , ckupdc )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
 
-!                    PERTES DE CHARGE (PDC)
+!    User subroutine.
 
-! IAPPEL = 1 :
-!             CALCUL DU NOMBRE DE CELLULES OU L'ON IMPOSE UNE PDC
-! IAPPEL = 2 :
-!             REPERAGE DES CELLULES OU L'ON IMPOSE UNE PDC
-! IAPPEL = 3 :
-!             CALCUL DES VALEURS DES COEFS DE PDC
+!    Define Head losses
+
+! The subroutine uskpdc is called at three different stages in the code
+!  (iappel = 1, 2 or 3)
+
+! iappel = 1:
+!    Calculation of the number of cells where a head loss term is
+!    imposed: ncepdp
+!    Called once at the beginning of the calculation
+
+! iappel = 2
+!    Identification of the cells where a head loss term is imposed:
+!    array icepdc(ncepdc)
+!    Called once at the beginning of the calculation
+
+! iappel = 3
+!    Calculation of the values of the head loss term
+!    Called at each time step
+
+! Note that calling this subroutine completely overwrites head losses
+! defined using the GUI.
+
+! ckupdc is the local head loss term
+
+! It appears on the momentum as follows:
+!    rho du/dt = - grad p + head_loss        (+ other terms)
+!                      with head_loss = - rho ckupdc u ( en kg/(m2 s))
+
+! For a distributed head loss,
+
+!    let ksil = dhl/(0.5 rho u**2) given by the litterature
+!    (dhl est is the head loss per unit length)
+
+!    the source term tspdc is equal to dhl = - ksil *(0.5 rho u**2)
+
+!    we have ckupdc = 0.5 ksil abs(U)
 
 
-! CKUPDC EST LE COEFF DE PDC CALCULE.
+! For a singular head loss,
 
-!  IL INTERVIENT DANS LA QDM COMME SUIT :
-!    RHO DU/DT = - GRAD P + TSPDC        (+ AUTRES TERMES)
-!                      AVEC TSPDC = - RHO CKUPDC U ( en kg/(m2 s))
+!    let ksil = dhs/(0.5 rho u**2) given by the litterature
+!    (dhs est is the singular head loss)
 
+!    the source term tspdc is equal to dhs/l = - ksil/l *(0.5 rho u**2)
 
-!  POUR UNE PDC REPARTIE,
+!    we have ckupdc = 0.5 ksis/l abs(u)
 
-!    SOIT KSIL = DHL/(0.5 RHO U**2) DONNE DANS LA LITTERATURE
-!    (DHL EST LA PERTE DE CHARGE PAR UNITE DE LONGUEUR)
-
-!    LE TERME SOURCE TSPDC VAUT DHL = - KSIL *(0.5 RHO U**2)
-
-!    ON A CKUPDC = 0.5 KSIL ABS(U)
-
-
-!  POUR UNE PDC SINGULIERE,
-
-!    SOIT KSIS = DHS/(0.5 RHO U**2) DONNE DANS LA LITTERATURE
-!    (DHS EST LA PERTE DE CHARGE SINGULIERE)
-
-!    LE TERME SOURCE TSPDC VAUT DHS/L = - KSIS/L *(0.5 RHO U**2)
-
-!    ON A CKUPDC = 0.5 KSIS/L ABS(U)
-
-!    OU L DESIGNE LA LONGUEUR SUR LAQUELLE
-!           ON A CHOISI DE REPRESENTER LA ZONE DE PDC SINGULIERE
+!    where l is the length over whic we have chosen to represent the
+!    singular head loss
 
 
 ! Cells identification
@@ -93,7 +106,7 @@ subroutine uskpdc &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
-! icepdc(ncepdp    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
+! icepdc(ncepdp    ! te ! <-- ! numbers of ncepdp cells with head loss         !
 ! izcpdc(ncelet)   ! ia ! <-- ! cells zone for head loss definition            !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -103,7 +116,7 @@ subroutine uskpdc &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
+! ckupdc           ! tr ! <-- ! work array for head loss                       !
 !  (ncepdp,6)      !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
@@ -159,7 +172,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -171,57 +184,48 @@ if(1.eq.1) return
 allocate(lstelt(ncel))
 
 
-if(iappel.eq.1.or.iappel.eq.2) then
+if (iappel.eq.1.or.iappel.eq.2) then
 
-!===============================================================================
+  !=============================================================================
 
-! 1. POUR CHAQUE PHASE : UN OU DEUX APPELS
+  ! 2 calls:
 
-!      PREMIER APPEL :
+  ! iappel = 1:
+  !    Calculation of the number of cells where a head loss term is
+  !    imposed: ncepdp
+  !    Called once at the beginning of the calculation
 
-!        IAPPEL = 1 : NCEPDP : CALCUL DU NOMBRE DE CELLULES
-!                                AVEC PERTES DE CHARGE
+  ! iappel = 2
+  !    Identification of the cells where a head loss term is imposed:
+  !    array icepdc(ncepdc)
+  !    Called once at the beginning of the calculation
 
+  ! Notes:
 
-!      DEUXIEME APPEL (POUR LES PHASES AVEC NCEPDP > 0) :
+  !    - Do not use ckupdc in this section (it is defined with iappel = 3)
+  !    - Use icepdc in this section only with (iappel = 2)
 
-!        IAPPEL = 2 : ICEPDC : REPERAGE DU NUMERO DES CELLULES
-!                                AVEC PERTES DE CHARGE
+  !=============================================================================
 
-! REMARQUES :
+  ! To be completed by the user: cell selection
+  ! -------------------------------------------
 
-!        Ne pas utiliser CKUPDC dans cette section
-!          (il est rempli au troisieme appel, IAPPEL = 3)
-
-!        Ne pas utiliser ICEPDC dans cette section
-!           au premier appel (IAPPEL = 1)
-
-!        On passe ici a chaque pas de temps
-!           (ATTENTION au cout calcul de vos developpements)
-
-!===============================================================================
-
-
-!  1.1 A completer par l'utilisateur : selection des cellules
-!  -----------------------------------------------------------
-
-! --- Exemple 1 : Aucune pdc (defaut)
+  ! Example 1: No head loss (default)
 
   ielpdc = 0
 
 
-! --- Exemple 2 : Pdc definies par coordonnees pour la zone
-!                 (4 <= x <=6; 2 <= y <= 8).
-!                 Pas de pertes de charge ailleurs.
+  ! Example 2: head losses define by coodinates for zone
+  !            (4 <= x <=6; 2 <= y <= 8).
+  !            No head losses else
 
-!       Ce test permet de desactiver l'exemple
-  if(1.eq.0) then
+  if (1.eq.0) then ! This test allows deactivating the example
 
     izone = 0
     ielpdc = 0
 
     call getcel('X <= 6.0 and X >= 4.0 and Y >= 2.0 and'//      &
-         'Y <= 8.0',nlelt,lstelt)
+                'Y <= 8.0',nlelt,lstelt)
 
     izone = izone + 1
 
@@ -235,12 +239,12 @@ if(iappel.eq.1.or.iappel.eq.2) then
   endif
 
 
-!  1.2 Sous section generique a ne pas modifier
-!  ---------------------------------------------
+! Generic subsection that should not be modified
+! ----------------------------------------------
 
-! --- Pour IAPPEL = 1,
-!      Renseigner NCEPDP, nombre de cellules avec pdc
-!      Le bloc ci dessous est valable pourles 2 exemples ci dessus
+! For iappel = 1,
+!    Define ncepdp, the number of cells with head losses
+!    This is valid for both examples above
 
   if (iappel.eq.1) then
     ncepdp = ielpdc
@@ -248,42 +252,36 @@ if(iappel.eq.1.or.iappel.eq.2) then
 
 !-------------------------------------------------------------------------------
 
-elseif(iappel.eq.3) then
+else if (iappel.eq.3) then
 
-!===============================================================================
+  !=============================================================================
 
-! 2. POUR CHAQUE PHASE AVEC NCEPDP > 0 , TROISIEME APPEL
+  ! Third call, at each time step
 
-!      TROISIEME APPEL (POUR LES PHASES AVEC NCEPDP > 0) :
+  ! iappel = 3:
 
-!       IAPPEL = 3 : CKUPDC : CALCUL DES COEFFICIENTS DE PERTE DE CHARGE
-!                             DANS LE REPERE DE CALCUL
-!                             STOCKES DANS L'ORDRE
-!                             K11, K22, K33, K12, K13, K23
+  !    ckupdc: compute head loss coefficients in the calculation coordinates,
+  !            organized in order k11, k22, k33, k12, k13, k23
 
+  ! Note:
+  !
+  !    - make sure diagonal coefficients are positive. The calculation
+  !      may crash if this is not the case, and no further check will
+  !      be done
 
-!    REMARQUE :
+  !      ===========================================================
 
-!        Veillez a ce que les coefs diagonaux soient positifs.
+  ! To be completed by the user: coefficient values
+  ! -----------------------------------------------
 
-!        Vous risquez un PLANTAGE si ce n'est pas le cas.
+  ! --- Caution
+  !   It is important that all ckupdc values are defined (by zero values if
+  !   necessary), as they will be used to compute a source term in cells
+  !   identified previously.
 
-!        AUCUN controle ulterieur ne sera effectue.
-
-!      ===========================================================
-
-
-!  2.1 A completer par l'utilisateur : valeur des coefs
-!  -----------------------------------------------------
-
-! --- Attention
-!   Il est important que les CKUPDC soient completes (par des valeurs
-!     nulles eventuellement) dans la mesure ou ils seront utilises pour
-!     calculer un terme source dans les cellules identifiees precedemment.
-
-!   On les initialise tous par des valeurs nulles.
-!       Et on demande a l'utilisateur de conserver cette initialisation.
-!                                        =========
+  !   They are initialized by zero values,
+  !   and the user must keep this initialization.
+  !                     ====
 
   do ikpdc = 1, 6
     do ielpdc = 1, ncepdp
@@ -291,8 +289,8 @@ elseif(iappel.eq.3) then
     enddo
   enddo
 
-  ! --- Tenseur diagonal
-  !   Exemple de pertes de charges dans la direction x
+  ! --- Diagonal tensor
+  !     Example of head losses in direction x
 
   iutile = 0
   if (iutile.eq.0) return
@@ -305,11 +303,11 @@ elseif(iappel.eq.3) then
     ckupdc(ielpdc,3) =  0.d0*vit
   enddo
 
-  ! --- Tenseur 3x3
-  !   Exemple de pertes de charges a ALPHA = 45 degres x,y
-  !      la direction x resiste par ck1 et y par ck2
-  !      ck2 nul represente des ailettes comme ceci :  ///////
-  !      dans le repere de calcul X Y
+  ! ---  3x3 tensor
+  !      Example of head losses at alpha = 45 degres x,y
+  !      direction x resists by ck1 and y by ck2
+  !      ck2 = 0 represents vanes as follows:  ///////
+  !      in coordinate system x y
 
   !                 Y|    /y
   !                  |  /
@@ -339,7 +337,7 @@ elseif(iappel.eq.3) then
     ckupdc(ielpdc,6) =  0.d0
   enddo
 
-!-------------------------------------------------------------------------------
+  !-----------------------------------------------------------------------------
 
 endif
 
