@@ -55,6 +55,7 @@ log = logging.getLogger(__file__)
 log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
+def nodot(item): return item[0] != '.'
 
 class RunThread(threading.Thread):
     """
@@ -776,14 +777,14 @@ class Studies(object):
         # 2. The result directory must be read automatically;
         #    check if there is a single result directory.
         elif rep == "":
-            if not (len(os.listdir(result)) == 1):
+            if not (len(filter(nodot, os.listdir(result))) == 1):
                 msg = "Study %s case %s:\nthere is not a single result directory in %s\nStop.\n" % \
                     (study_label, case_label, result)
                 self.reporting(msg)
                 sys.exit(1)
 
         # 3. Update the file of parameters with the name of the result directory
-            self.__parser.setAttribute(node, attr, os.listdir(result)[0])
+            self.__parser.setAttribute(node, attr, filter(nodot, os.listdir(result))[0])
         else:
             self.reporting('Error: check compare/script/plot/probe/resu/input failed.')
             sys.exit(1)
@@ -793,11 +794,11 @@ class Studies(object):
         """
         Check coherency between xml file of parameters and repository and destination.
         """
-        if repo != None:
+        if repo:
             result = os.path.join(self.repo, study_label, case_label, 'RESU')
             self.__check_dir(study_label, case_label, node, result, repo, "repo")
 
-        if dest != None:
+        if dest:
             result = os.path.join(self.dest, study_label, case_label, 'RESU')
             self.__check_dir(study_label, case_label, node, result, dest, "dest")
 
