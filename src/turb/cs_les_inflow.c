@@ -1268,7 +1268,7 @@ void CS_PROCF(defsyn, DEFSYN)
     else if (type == 3)
       bft_printf(_("   Number of structures: %d\n\n"),n_entities);
     else
-      bft_printf(_("   \n"),n_entities);
+      bft_printf(_("   \n"));
 
   }
 
