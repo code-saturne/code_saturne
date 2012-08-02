@@ -448,7 +448,7 @@ class StandardItemModelSolver(QStandardItemModel):
         QStandardItemModel.__init__(self)
         self.NPE = NPE
         self.SM = SM
-        self.setColumnCount(4)
+        self.setColumnCount(5)
         self.dataSolver = []
         # list of items to be disabled in the view
         self.disabledItem = []
