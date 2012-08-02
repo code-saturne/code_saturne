@@ -319,7 +319,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
 #   pragma omp parallel for private(cidx, cell_id2, ddc, dc, i, j)
     for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
       for (cidx = cell_cells_idx[cell_id1];
-           cidx < cell_cells_idx[cell_id1];
+           cidx < cell_cells_idx[cell_id1+1];
            cidx++) {
 
         cell_id2 = cell_cells_lst[cidx - 1] - 1;
