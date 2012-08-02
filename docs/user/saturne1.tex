@@ -554,11 +554,6 @@ physics)\\
 
         \end{list}
 
-        \item {\em very useful:}
-        \begin{list}{-}{}
-                \item \texttt{uslabo} to manage potential specific treatments at the
-             boundaries (rebound conditions, specific statistics, ...)
-        \end{list}
     \end{list}
 
    \item {\bf For the compressible module:}
@@ -2847,8 +2842,7 @@ the boundary statistics are marked out by the following ``pointers'':
 \begin{list}{$\rightarrow$}{}
 \item \texttt{inbr}: number of particle/boundary interactions
 \item \texttt{iflm}: particle mass flow at the boundary faces
-\item \texttt{iang}: mean interaction angle with the boundary faces (see example
-      in \texttt{uslabo})
+\item \texttt{iang}: mean interaction angle with the boundary faces 
 \item \texttt{ivit}: mean interaction velocity with the boundary faces
 \item \texttt{ienc}: mass of coal deposit at the walls
 \item \texttt{iusb(ii): ii\textit{th}} supplementary user boundary statistics
@@ -7243,7 +7237,7 @@ key word list (\S\ref{prg_motscles_lagr}).
 %==================================
 \subsubsection{Prescribing particle boundary conditions (GUI and/or \texttt{uslag2})}
 %==================================
-In the framework of the multiphase Lagrangian modeling, the management of the boundary conditions concerns the particle behavior when there is an interaction between its trajectory and a boundary face. These boundary conditions may be imposed independently of those concerning the Eulerian fluid phase (but they are of course generally consistent). The boundary condition zones are actually redefined by the Lagrangian module (cf. \S\ref{fvm_selector}), and a type of particle behavior is associated with each one. The boundary conditions related to particles can be defined in the Graphical User Interface (GUI) or in the subroutine \texttt{uslag2}. More advanced user-defined boundary conditions can be prescribed in the user-subroutines \texttt{uslain} and \texttt{uslabo}.
+In the framework of the multiphase Lagrangian modeling, the management of the boundary conditions concerns the particle behavior when there is an interaction between its trajectory and a boundary face. These boundary conditions may be imposed independently of those concerning the Eulerian fluid phase (but they are of course generally consistent). The boundary condition zones are actually redefined by the Lagrangian module (cf. \S\ref{fvm_selector}), and a type of particle behavior is associated with each one. The boundary conditions related to particles can be defined in the Graphical User Interface (GUI) or in the subroutine \texttt{uslag2}. More advanced user-defined boundary conditions can be prescribed in the user-subroutine \texttt{uslain}.
 
 \minititre{Use of the GUI}
 
@@ -7267,14 +7261,10 @@ The main numerical variables are described below.
 
 \variablist{iusclb}{iusclb(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones
 previously identified, a particle boundary condition type is
-given. There are two categories of particle boundary condition types:
-those predefined in the subroutine \texttt{uslabo} (marked out by the
+given. The categories of particle boundary condition types are marked out by the
 key words \texttt{ientrl\index{ientrl}}, \texttt{isortl\index{isortl}},
 \texttt{irebol\index{irebol}}, \texttt{idepo1\index{idepo1}},
-\texttt{idepo2\index{idepo2}}, \texttt{idepo3\index{idepo3}},
-\texttt{iencrl\index{iencrl}}) and the user boundary condition types (marked out
-by the key words \texttt{jbord1} to \texttt{jbord5)\index{jbord1}}, whose corresponding
-particle behaviour must be defined in the subroutine \texttt{uslabo}.
+\texttt{idepo2\index{idepo2}}, \texttt{iencrl\index{iencrl}}).
 
 \begin{list}{$\bullet$}{}
 
@@ -7297,13 +7287,7 @@ particle behaviour must be defined in the subroutine \texttt{uslabo}.
        if \texttt{iencra} = 1. A limit temperature \texttt{tprenc\index{tprenc}}, a
        critical viscosity \texttt{visref\index{visref}} and the coal composition
        in mineral matters must be given in the subroutine
-       \texttt{uslag1}. The slagging criterion given by default may be
-       modified in the subroutine \texttt{uslabo}.
-
- \item if \texttt{iusclb(izone)} = \texttt{jbord1} to \texttt{jbord5}, then the particle
-       interaction with the boundary zone \texttt{izone} is given by the user. The
-       particle behaviour associated with each type \texttt{jbord}* must be defined in
-       the subroutine \texttt{uslabo}.
+       \texttt{uslag1}.
 
 \end{list}
 }
@@ -7453,90 +7437,6 @@ The user subroutine \texttt{uslain} can be used to complete \texttt{uslag2} when
 
 \noindent
 In the case of a more advanced use, it is possible to modify here all the arrays \texttt{ettp}, \texttt{tepa} and \texttt{itepa}. The particles already present in the calculation domain are marked out by an index varying between 1 and \texttt{nbpart}. The particles entering the calculation domain at the current iteration are marked out by an index varying between \texttt{nbpart}+1 and \texttt{nbpnew}.
-
-
-
-\minititre{Setting up non-standard particle boundary conditions}
-
-\noindent
-The subroutine \texttt{uslabo} is not mandatory but is required in four different
- cases. It is called for each particle/boundary interaction.
-
-\noindent
-Firstly, an intervention is required when \texttt{jbord}* type boundary
-conditions are used: it is then necessary to code in this subroutine the
-corresponding particle/boundary interactions.
-
-\noindent
-Secondly, it is possible to select the particle/boundary interaction types
-(\texttt{irebol}, \texttt{idepo1}, ...) for which the user wants to save the wall
-statistics activated in the subroutine \texttt{uslag1}.
-
-\noindent
-Thirdly, if user boundary statistics are activated {\em via}
-the key word \texttt{nusbor\index{nusbor}} in the subroutine \texttt{uslag1}, it
-is then necessary to program them in the subroutine
-\texttt{uslabo}. When the boundary statistics are stationary, these new
-boundary statistics are added using the array \texttt{parbor}. When they are
-non-stationary (number of Lagrangian iterations lower than \texttt{nstbor}, or
-\texttt{isttio} = 0), the array \texttt{parbor} is reset at every iteration.
-
-\noindent
-Fourthly, when the user wants to modify the formulation of the wall
-slagging by the coal particles, it is then necessary to program the new laws
-in the subroutine \texttt{uslabo}.
-
-\noindent
-\minititre{Construction rules of a new particle/boundary interaction}
-\begin{enumerate}
-\item The real numbers \texttt{kx}, \texttt{ky}, \texttt{kz} provide the
-      coordinates of the intersection
-      point between the current particle trajectory and the interacting
-      boundary face.
-
-\item If the user wants to modify the particle position, it can be done
-      directly {\em via} the arrays \texttt{ettp} and \texttt{ettpa}:
-
-\begin{list}{-}{}
-\item new departure point of the current trajectory segment: \\
-\texttt{ettpa(npt,jxp)}, \texttt{ettpa(npt,jyp)}, \texttt{ettpa(npt,jzp)}
-\item new arrival point of the current trajectory segment: \\
-\texttt{ettp(npt,jxp)}, \texttt{ettp(npt,jyp)}, \texttt{ettp(npt,jzp)}
-\end{list}
-
-\item The particle and the fluid velocities may be modified according to
-      the desired interaction {\em via} the arrays \texttt{vitpar\index{vitpar}}
-      and \texttt{vitflu\index{vitflu}}, they \textbf{must not} be modified {\em
-      via} \texttt{ettp} and \texttt{ettpa} in this subroutine.
-
-\item For a given interaction, it is necessary to specify the key word
-      \texttt{isuivi\index{isuivi}}:
-
-\begin{list}{-}{}
-\item \texttt{isuivi} = 0 if the particle does not need to be followed in
-      the mesh after the interaction between its trajectory and the
-      boundary face (by default, it is the case for \texttt{ientrl}, \texttt{isortl},
-      \texttt{idepo1}, \texttt{idepo2});
-\item \texttt{isuivi} = 1 to continue to follow the particle in the mesh
-      after its interaction (by default, it is the case for \texttt{irebol} and
-      \texttt{idepo3}). The value of \texttt{isuivi} may be a function of the
-      particle and
-      boundary state (for instance, \texttt{isuivi} = 0 or 1 depending on the
-      physical properties for the interaction type \texttt{iencrl}).
-\end{list}
-
-\item The array zone \texttt{itepa(npt,jisor)}, containing the index-number of the
-      cell where the particle is, must be updated. Generally:
-
-\begin{list}{-}{}
-\item \texttt{itepa(npt,jisor)} = \texttt{ifabor(kface)} when the particle stays in the
-      calculation domain (\texttt{kface} is the number of the interacting
-      boundary face).
-\item \texttt{itepa(npt,jisor)} = 0 to eliminate definitively the particle from
-      the calculation domain.
-\end{list}
-
-\end{enumerate}
 
 % --> to go to theory guide
 %--------------------------

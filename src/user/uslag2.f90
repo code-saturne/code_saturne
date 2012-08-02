@@ -324,12 +324,6 @@ iusncl(izone) = nbclas
 !                 (useful only if iensi2 = 1)
 !     = idepfa -> deposition of the particle with DLVO forces
 !     = iencrl -> fouling (coal only iphyla = 2)
-!     = jbord1 -> user-defined particle/boundary interaction (cf. uslabo)
-!     = jbord2 -> user-defined particle/boundary interaction (cf. uslabo)
-!     = jbord3 -> user-defined particle/boundary interaction (cf. uslabo)
-!     = jbord4 -> user-defined particle/boundary interaction (cf. uslabo)
-!     = jbord5 -> user-defined particle/boundary interaction (cf. uslabo)
-
 
 
 !     Array iuslag :

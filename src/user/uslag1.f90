@@ -183,7 +183,6 @@ if (iphyla.eq.2) then
 !              = 1 fouling
 
 !       * In uslag2.f90, the boundary on which the fouling can occur must be given
-!       * The fouling is treated in uslabo.f90
 !       * Post-processing:  IENSI3 = 1 and IENCBD = 1 (10.2)
 
   iencra = 0
@@ -782,15 +781,11 @@ seuilf = 0.d0
 !   13.2.2 Information to be recorded
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
-!   * Some information that may interest the user are already written
-!     in the uslabo subroutine. To activate them, the user has to set below
+!   * To activate them, the user has to set below
 !     the corresponding keyword to 1.
-!   * The selection of the interaction modes (irebol, idepo1... see the uslabo
-!     subroutine) that triggers the recording of the information is carried out
-!     in uslabo. The default selection must be validated or modified by the user.
+!   * The default selection must be validated or modified by the user.
 !   * By default the asked information for all the particle/wall interactions
-!     are written in the same recording. Modifying this behavior can me performed
-!     by an intervention in the uslabo subroutine.
+!     are written in the same recording.
 !   * The boundary statistic 'number of particle/boundary interactions' must be
 !     selected to activate the particle average imoybr(...) = 2
 
@@ -820,8 +815,6 @@ ivitbd = 0
 !    * these additional recordings are stored in the parbor array
 !    * here we prescribe the nusbor number of additional recordings
 !    * the max value of this number is nusbrd=10 (in lagpar.h)
-!    * see an example of code of an additional recording in the
-!      uslabo subroutine.
 
 nusbor = 0
 
@@ -846,8 +839,8 @@ nusbor = 0
 !       steady calculation.
 !      -if imoybr(iusb(ii)) = 2 -> a particle average is applied, i.e. the
 !       statistic is divided by the number of recorded particle/boundary
-!       interactions (in terms of statistical weight) dans parbor(nfabor,inbr)
-!       (cf uslabo). To use this average, inbrbd must be set to 1.
+!       interactions (in terms of statistical weight) in parbor(nfabor,inbr)
+!       To use this average, inbrbd must be set to 1.
 !    * The back-ups in the restart file are performed without applying
 !      this average.
 !    * The average is applied if the number of interactions (in statistical

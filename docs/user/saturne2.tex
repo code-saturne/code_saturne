@@ -3043,7 +3043,7 @@ always useful}
 \label{prg_motscles_lagr}
 
 Most of these key words may be modified in the user subroutines
-\texttt{uslag1}, \texttt{uslag2}, \texttt{uslabo}, \texttt{uslaen},
+\texttt{uslag1}, \texttt{uslag2}, \texttt{uslaen},
 \texttt{uslast} and \texttt{uslaed}. It is however strongly recommended
 not to modify those belonging to the level L3.
 
@@ -3520,16 +3520,12 @@ useful if \texttt{iensi3}=1}
 interactions, and of the calculation of the associated boundary statistics.\\
 \texttt{inbrd} = 1 is a compulsory condition to use the particulate average
 \texttt{imoybr} = 2\\
-the selection of the type of interactions that are to be recorded is specified
-in the subroutine \texttt{uslabo}\\
 useful if \texttt{iensi3}=1}
 
 \motcleb{iflmbd}{i}{0, 1}{0}{O}{L1}
 {activation (=1) or not (=0) of the recording of the particulate mass flow
 related to the particle/boundary interactions, and of the calculation of
 the associated boundary statistics\\
-the selection of the type of interactions that are to be recorded is specified
-in the subroutine \texttt{uslabo}\\
 \texttt{inbrd} = 1 is a compulsory condition to use \texttt{iflmbd}=1\\
 useful if \texttt{iensi3}=1 and \texttt{inbrbd}=1}
 
@@ -3538,16 +3534,12 @@ useful if \texttt{iensi3}=1 and \texttt{inbrbd}=1}
 {activation (=1) or not (=0) of the recording of the angle between a
 particle trajectory and a boundary face involved in a particle/boundary
 interaction, and of the calculation of the associated boundary statistics\\
-the selection of the type of interactions that are to be recorded is specified
-in the subroutine \texttt{uslabo}\\
 useful if \texttt{iensi3}=1}
 
 \motcleb{ivitbd}{i}{0, 1}{0}{O}{L1}
 {activation (=1) or not (=0) of the recording of the velocity of a particle
 involved in a particle/boundary interaction, and of the calculation of
 the associated boundary statistics\\
-the selection of the type of interactions that are to be recorded is specified
-in the subroutine \texttt{uslabo}\\
 useful if \texttt{iensi3}=1}
 
 \motcleb{iencbd}{i}{0, 1}{0}{O}{L1}
