@@ -669,6 +669,7 @@ Calculation management
         self.setRowClose(self.tr('Mobil mesh boundary'))
         self.setRowClose(self.tr('Fluid structure interaction'))
         self.setRowClose(self.tr('Source terms'))
+        self.setRowClose(self.tr('Head losses'))
 
         # Steady flow management
 
@@ -786,6 +787,7 @@ Calculation management
         node_domain = case.xmlGetNode('solution_domain')
         node_vol = node_domain.xmlGetNode('volumic_conditions')
         nb_zone = 0
+        nb_zone_losses = 0
 
         for node in node_vol.xmlGetChildNodeList('zone'):
             if node['momentum_source_term'] == 'on':
@@ -796,16 +798,19 @@ Calculation management
                 nb_zone = nb_zone + 1
             elif node['scalar_source_term'] == 'on':
                 nb_zone = nb_zone + 1
+            elif node['head_losses'] == 'on':
+                nb_zone_losses = nb_zone_losses + 1
 
         if nb_zone > 0:
             self.setRowOpen(self.tr('Source terms'))
+        if nb_zone_losses > 0:
+            self.setRowOpen(self.tr('Head losses'))
 
         self.__hideRow()
 
 
     def __hideRow(self):
         """Only for developpement purpose"""
-        #self.setRowClose(self.tr('Head losses'))
         self.setRowClose(self.tr('Current species'))
 
 

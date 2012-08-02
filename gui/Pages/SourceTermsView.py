@@ -103,9 +103,17 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         self.zone = ""
         zones = self.volzone.getZones()
         for zone in zones:
-            if (zone.getNature()['momentum_source_term'] == "on" or \
-                zone.getNature()['thermal_source_term']  == "on" or \
-                zone.getNature()['scalar_source_term']   == "on"):
+            active = 0
+            if (zone.getNature()['momentum_source_term'] == "on"):
+                active = 1
+
+            if ('thermal_source_term' in zone.getNature().keys()):
+                if (zone.getNature()['thermal_source_term']  == "on"):
+                    active = 1
+            if ('scalar_source_term' in zone.getNature().keys()):
+                if (zone.getNature()['scalar_source_term']  == "on"):
+                    active = 1
+            if (active):
                 label = zone.getLabel()
                 name = str(zone.getCodeNumber())
                 self.modelZone.addItem(self.tr(label), name)

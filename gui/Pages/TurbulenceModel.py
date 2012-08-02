@@ -67,6 +67,9 @@ class TurbulenceModel(Variables, Model):
         self.node_gas    = self.node_models.xmlGetChildNode('gas_combustion', 'model')
         self.node_turb   = self.node_models.xmlInitChildNode('turbulence',    'model')
         self.node_bc     = self.case.xmlGetNode('boundary_conditions')
+        self.node_ana    = self.case.xmlInitNode('analysis_control')
+        self.node_prof   = self.node_ana.xmlInitNode('profiles')
+        self.node_ava    = self.node_ana.xmlInitNode('time_averages')
 
         self.__turbModel = ('off',
                             'mixing_length',
@@ -183,6 +186,10 @@ class TurbulenceModel(Variables, Model):
         for v in self.__allVariables:
             if v not in varList:
                 self.node_turb.xmlRemoveChild('variable', name=v)
+                for node in self.node_prof.xmlGetNodeList('profile'):
+                    node.xmlRemoveChild('var_prop', name=v)
+                for node in self.node_ava.xmlGetNodeList('time_average'):
+                    node.xmlRemoveChild('var_prop', name=v)
         self.node_turb.xmlRemoveChild('property', name=propName)
 
 
