@@ -203,14 +203,17 @@ class VolumicZone(Zone):
 
 
     def _initNatureList(self):
-        self._natureList = ['initialization',
-                            'head_losses',
-                            'momentum_source_term']
+        self._natureList = ['initialization']
+
+        if self._case['package'].name == 'code_saturne':
+            self._natureList.append('head_losses')
+            self._natureList.append('momentum_source_term')
 
         self._natureDict = {}
         self._natureDict['initialization']       = self.tr("Initialization")
-        self._natureDict['head_losses']          = self.tr("Head losses")
-        self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
+        if self._case['package'].name == 'code_saturne':
+            self._natureDict['head_losses']          = self.tr("Head losses")
+            self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
 
         from Pages.ThermalScalarModel import ThermalScalarModel
         if ThermalScalarModel(self._case).getThermalScalarModel() != 'off':
