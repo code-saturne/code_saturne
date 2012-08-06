@@ -23,28 +23,22 @@
 subroutine csopli &
 !================
 
- (irkpar, nrkpar, ilogr0, ilogrp)
+ (infecr, isuppr, ierror)
 
 !===============================================================================
 ! Purpose:
 ! -------
 
-!    Initialize log files using Fortran IO.
+!    Open log files using Fortran IO.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! irkpar           ! i  ! <-- ! rank if parallel; -1 if sequential             !
-! nrkpar           ! i  ! <-- ! number of parallel ranks                       !
-! ilogr0           ! i  ! <-- ! log output option for rank 0                   !
-!                  !    !     !   0: not redirected                            !
-!                  !    !     !   1: redirected to "listing" file              !
-! ilogrp           ! i  ! <-- ! log output option for ranks > 0                !
-!                  !    !     !   0: not redirected (for debugging)            !
-!                  !    !     !   1: redirected to "listing_n*" files          !
-!                  !    !     !   2: redirected to /dev/null (suppressed)      !
+! infecr           ! i  ! <-- ! value to assign to nfecra                      !
+! isuppr           ! i  ! <-- ! supress output if ~                            !
+! ierror           ! i  ! --> ! error code                                     !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -65,59 +59,34 @@ implicit none
 
 ! Arguments
 
-integer          irkpar, nrkpar, ilogr0, ilogrp
+integer infecr, isuppr, ierror
 
 ! Local variables
 
-character        name*30
+character*64     name
 
 !===============================================================================
 
-nfecra = 6  ! default value for Fortran "stdout"
+ierror = 0
 
-if (irkpar .le. 0) then
-  if (ilogr0 .eq. 1) then
-    nfecra = 9
-    name = 'listing'
-  endif
+nfecra = infecr
+
+if (nfecra .eq. 6) return
+
+call cslogname(len(name), name)
+
+if (isuppr .eq. 0) then
+  open(file=name, unit=nfecra, form='formatted', status='old',   &
+       position='append', action='write', err=900)
 else
-  if (ilogrp .eq. 1) then
-    nfecra = 9
-    if (nrkpar .ge. 10000) then
-      write (name,'(a9,i7.4)') 'listing_n', irkpar + 1
-    else
-      write (name,'(a9,i4.4)') 'listing_n', irkpar + 1
-    endif
-  else if (ilogrp.eq.2) then
-    nfecra = 9
-    name = '/dev/null'
-  endif
-endif
-
-if (nfecra.eq.9) then
-   open (file=name, unit=nfecra, form='formatted', status='unknown', err=900)
+  open(file=name, unit=nfecra, form='formatted', status='unknown', err=900)
 endif
 
 goto 950
 
- 900  write (0, 999) name
-call csexit (1)
+900 ierror = 1
 
- 950  continue
-
-#if defined(_CS_LANG_FR)
-
- 999  format(/,                                    &
-'Code_Saturne : Erreur d''initialisation :',/,     &
-'Impossible d''ouvrir le fichier : ', a, /)
-
-#else
-
- 999  format(/,                                    &
-'Code_Saturne: Initialization error:',/,           &
-'Impossible to open the file: ', a, /)
-
-#endif
+950 continue
 
 return
 end subroutine

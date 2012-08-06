@@ -58,24 +58,6 @@ extern void CS_PROCF (caltri, CALTRI)
 );
 
 /*----------------------------------------------------------------------------
- * Close log (listing) handled by Fortran: (CLose LIsting)
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (csclli, CSCLLI)
-(
- void
-);
-
-/*----------------------------------------------------------------------------
- * Flush standard output.
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (csflsh, CSFLSH)
-(
- void
-);
-
-/*----------------------------------------------------------------------------
  * Initialize Fortran base common bloc values
  *----------------------------------------------------------------------------*/
 
@@ -84,31 +66,6 @@ extern void CS_PROCF (csinit, CSINIT)
  const cs_int_t  *irgpar,  /* <-- MPI Rank in parallel, -1 otherwise */
  const cs_int_t  *nrgpar,  /* <-- Number of MPI processes, or 1 */
  const cs_int_t  *nthpar   /* <-- Number of threads */
-);
-
-/*----------------------------------------------------------------------------
- * Initialize Fortran log (listing) files
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (csopli, CSOPLI)
-(
- const cs_int_t  *irkpar,  /* <-- MPI Rank in parallel, -1 otherwise */
- const cs_int_t  *nrkpar,  /* <-- Number of MPI processes, or 1 */
- const cs_int_t  *ilogr0,  /* <-- Output of main log (listing (rank 0): */
-                           /*     0: non redirected; 1: to 'listing' file */
- const cs_int_t  *ilogrp   /* <-- Output of logs for ranks > 0: */
-                           /*     0: non redirected; 1: to 'listing_n*' files */
-                           /*     2: to '/dev/null' (suppressed) */
-);
-
-/*----------------------------------------------------------------------------
- * Print a message to standard output.
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (csprnt, CSPRNT)
-(
-  char       *cs_buf_print,
-  cs_int_t   *msgsize
 );
 
 /*----------------------------------------------------------------------------

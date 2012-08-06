@@ -26,34 +26,30 @@ subroutine csinit &
  ( irgpar , nrgpar , nthpar )
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+!  Purpose:
+!  --------
 
-! INIT DU LISTING ET DE PARAMETRES ASSOCIES AU PREPROCESSEUR
+!  Initialize parallel paramters
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! irgpar           ! e  ! <-- ! rang si parallele ; -1 si sequentiel           !
-! nrgpar           ! e  ! <-- ! nombre de processus ; 1 si sequentiel          !
-! nthpar           ! e  ! <-- ! nombre de threads                              !
+! irgpar           ! e  ! <-- ! rank if parallel; -1 if sequantial             !
+! nrgpar           ! e  ! <-- ! number of MPI ranks: 1 if sequantial           !
+! nthpar           ! e  ! <-- ! number of threads per rank                     !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
 ! Module files
 !===============================================================================
 
-use paramx
-use optcal
-use entsor
 use parall
 
 !===============================================================================
@@ -65,7 +61,7 @@ integer  irgpar, nrgpar, nthpar
 !===============================================================================
 
 !===============================================================================
-! Initialisation du common IPARAL
+! Basic initialization for parall module
 !===============================================================================
 
 irangp = irgpar
@@ -75,6 +71,10 @@ nthrdi = 1
 nthrdb = 1
 ngrpi = 1
 ngrpb = 1
+
+!----
+! End
+!----
 
 return
 end subroutine

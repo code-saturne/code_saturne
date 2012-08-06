@@ -24,10 +24,10 @@ subroutine csclli
 !================
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-! FERME LES LISTING DES PROCESSSEURS DE RANG > 0
+!    Close log files using Fortran IO.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -36,10 +36,8 @@ subroutine csclli
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
 !===============================================================================
 
 !===============================================================================
@@ -53,14 +51,11 @@ use entsor
 
 implicit none
 
-!-------------------------------------------
-! --- stdout :
-!     NFECRA = 6 par défaut (processeur 0)
-!   Les autres fichiers listing sont fermes ici
-!-------------------------------------------
+! If output has been redirected, it uses unit nfecra = 9 instead of 6
 
 if (nfecra.ne.6) then
   close(nfecra)
+  nfecra = 6
 endif
 
 return

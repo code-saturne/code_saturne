@@ -84,6 +84,11 @@ typedef enum {
   CS_TYPE_void
 } cs_type_t;
 
+/* Function pointers for extra cleanup operations to be called when
+   entering cs_exit() or bft_error() */
+
+typedef int (cs_base_atexit_t) (void);
+
 /*=============================================================================
  * Global variable definitions
  *============================================================================*/
@@ -97,10 +102,10 @@ typedef enum {
  *
  * Fortran interface:
  *
- * SUBROUTINE CSEXIT (STATUS)
+ * subroutine csexit (status)
  * *****************
  *
- * INTEGER          STATUS      : --> : 0 for success, 1+ for error
+ * integer          status      : <-- : 0 for success, 1+ for error
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csexit, CSEXIT)
@@ -113,10 +118,10 @@ void CS_PROCF (csexit, CSEXIT)
  *
  * Fortran interface:
  *
- * SUBROUTINE DMTMPS (TCPU)
+ * subroutine dmtmps (tcpu)
  * *****************
  *
- * DOUBLE PRECISION TCPU        : --> : CPU time (user + system)
+ * double precision tcpu        : <-- : cpu time (user + system)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (dmtmps, DMTMPS)
@@ -225,6 +230,25 @@ void
 cs_base_time_summary(void);
 
 /*----------------------------------------------------------------------------
+ * Set output file name and suppression flag for bft_printf().
+ *
+ * This allows redirecting or suppressing logging for different ranks.
+ *
+ * parameters:
+ *   log_name    <-- base file name for log, or NULL for stdout
+ *   r0_log_flag <-- redirection for rank 0 log;
+ *                   0: not redirected; 1: redirected to <log_name> file
+ *   rn_log_flag <-- redirection for ranks > 0 log:
+ *                   0: not redirected; 1: redirected to <log_name>_n*" file;
+ *                   2: redirected to "/dev/null" (suppressed)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_bft_printf_init(const char  *log_name,
+                        int          r0_log_flag,
+                        int          rn_log_flag);
+
+/*----------------------------------------------------------------------------
  * Replace default bft_printf() mechanism with internal mechanism.
  *
  * This allows redirecting or suppressing logging for different ranks.
@@ -244,6 +268,32 @@ cs_base_bft_printf_set(const char  *log_name,
                        int          rn_log_flag);
 
 /*----------------------------------------------------------------------------
+ * Return name of default log file.
+ *
+ * cs_base_bft_printf_set or cs_base_c_bft_printf_set() must have
+ * been called before this.
+ *
+ * returns:
+ *   name of default log file
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_base_bft_printf_name(void);
+
+/*----------------------------------------------------------------------------
+ * Return flag indicating if the default log file output is suppressed.
+ *
+ * cs_base_bft_printf_set or cs_base_c_bft_printf_set() must have
+ * been called before this.
+ *
+ * returns:
+ *   output suppression flag
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_base_bft_printf_suppressed(void);
+
+/*----------------------------------------------------------------------------
  * Print a warning message header.
  *
  * parameters:
@@ -254,6 +304,20 @@ cs_base_bft_printf_set(const char  *log_name,
 void
 cs_base_warn(const char  *file_name,
              int          line_num);
+
+/*----------------------------------------------------------------------------
+ * Define a function to be called when entering cs_exit() or bft_error().
+ *
+ * Compared to the C atexit(), only one function may be called (latest
+ * setting wins), but the function is called slighty before exit,
+ * so it is well adapted to cleanup such as flushing of non-C API logging.
+ *
+ * parameters:
+ *   fct <-- pointer tu function to be called
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_atexit_set(cs_base_atexit_t  *const fct);
 
 /*----------------------------------------------------------------------------
  * Convert a character string from the Fortran API to the C API.

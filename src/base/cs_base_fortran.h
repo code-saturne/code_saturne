@@ -116,6 +116,29 @@ void CS_PROCF (cssf2c, CSSF2C)
 );
 
 /*----------------------------------------------------------------------------
+ * Get log name file information.
+ *
+ * When log file output is suppressed, it returns the name of the
+ * bit buck file ("/dev/null")
+ *
+ * Fortran interface
+ *
+ * subroutine cslogname (len, name)
+ * ********************
+ *
+ * integer          len         : <-- : maximum string length
+ * character*       name        : --> : Fortran string
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cslogname, CSLOGNAME)
+(
+ const cs_int_t   *len,
+ char             *dir
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+);
+
+/*----------------------------------------------------------------------------
  * Get package data path information.
  *
  * The aim of this function is to aviod issues with Fortran array bounds
@@ -146,20 +169,44 @@ void CS_PROCF (csdatadir, CSDATADIR)
 /*----------------------------------------------------------------------------
  * Replace default bft_printf() mechanism with internal mechanism.
  *
- * This is necessary for good consistency of messages output from C or
- * from Fortran, and to handle parallel and serial logging options.
+ * This variant is designed to allow switching from C to Fortran output,
+ * whithout disabling regular C stdout output when switched to Fortran.
+ *
+ * This allows redirecting or suppressing logging for different ranks.
  *
  * parameters:
+ *   log_name    <-- base file name for log, or NULL for stdout
  *   r0_log_flag <-- redirection for rank 0 log;
- *                   0: not redirected; 1: redirected to "listing" file
+ *                   0: not redirected; 1: redirected to <log_name> file
  *   rn_log_flag <-- redirection for ranks > 0 log:
- *                   0: not redirected; 1: redirected to "listing_n*" file;
+ *                   0: not redirected; 1: redirected to <log_name>_n*" file;
  *                   2: redirected to "/dev/null" (suppressed)
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_fortran_bft_printf_set(int r0_log_flag,
-                               int rn_log_flag);
+cs_base_fortran_bft_printf_set(const char  *log_name,
+                               int          r0_log_flag,
+                               int          rn_log_flag);
+
+/*----------------------------------------------------------------------------
+ * Switch bft_printf() mechanism to C output.
+ *
+ * This function may only be called after cs_base_fortran_bft_printf_set()
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_fortran_bft_printf_to_c(void);
+
+/*----------------------------------------------------------------------------
+ * Switch bft_printf() mechanism to Fortran output.
+ *
+ * This function may only be called after cs_base_fortran_bft_printf_set()
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_fortran_bft_printf_to_f(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

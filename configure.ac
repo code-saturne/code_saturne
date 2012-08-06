@@ -355,9 +355,6 @@ if test "x$cs_have_long_gnum" = "xyes"; then
 fi
 AC_SUBST(cs_have_long_gnum)
 
-# Check for Fortran 2003 flush feature
-CS_AC_TEST_FC_FLUSH
-
 # Check for Fortran module generation
 CS_AC_TEST_FC_MOD
 

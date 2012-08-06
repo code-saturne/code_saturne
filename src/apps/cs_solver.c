@@ -226,8 +226,22 @@ cs_run(void)
   cs_preprocessor_data_read_headers(cs_glob_mesh,
                                     cs_glob_mesh_builder);
 
-  if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0)
+  /* Initialize Fortran API and calculation setup */
+
+  if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
+
+    cs_int_t _n_threads = cs_glob_n_threads;
+    cs_int_t _rank_id = cs_glob_rank_id, _n_ranks = cs_glob_n_ranks;
+
+    cs_base_fortran_bft_printf_to_f();
+
+    CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks, &_n_threads);
+
     CS_PROCF(initi1, INITI1)();
+
+    cs_base_fortran_bft_printf_to_c();
+
+  }
 
   /* Discover applications visible through MPI (requires communication);
      this is done after main calculation initialization so that the user
@@ -413,82 +427,6 @@ cs_run(void)
     cs_benchmark(mpi_trace_mode);
   }
 
-  /* Update Fortran mesh sizes and quantities */
-
-  {
-    cs_int_t n_g_cells = cs_glob_mesh->n_g_cells;
-    cs_int_t n_g_i_faces = cs_glob_mesh->n_g_i_faces;
-    cs_int_t n_g_b_faces = cs_glob_mesh->n_g_b_faces;
-    cs_int_t n_g_vertices = cs_glob_mesh->n_g_vertices;
-    cs_int_t nthrdi = 1;
-    cs_int_t nthrdb = 1;
-    cs_int_t ngrpi = 1;
-    cs_int_t ngrpb = 1;
-    const cs_int_t *idxfi = NULL;
-    const cs_int_t *idxfb = NULL;
-
-    if (cs_glob_mesh->i_face_numbering != NULL) {
-      const cs_numbering_t *_n = cs_glob_mesh->i_face_numbering;
-      nthrdi = _n->n_threads;
-      ngrpi = _n->n_groups;
-      idxfi = _n->group_index;
-    }
-
-    if (cs_glob_mesh->b_face_numbering != NULL) {
-      const cs_numbering_t *_n = cs_glob_mesh->b_face_numbering;
-      nthrdb = _n->n_threads;
-      ngrpb = _n->n_groups;
-      idxfb = _n->group_index;
-    }
-
-    CS_PROCF (majgeo, MAJGEO)(&(cs_glob_mesh->n_cells),
-                              &(cs_glob_mesh->n_cells_with_ghosts),
-                              &(cs_glob_mesh->n_i_faces),
-                              &(cs_glob_mesh->n_b_faces),
-                              &(cs_glob_mesh->n_vertices),
-                              &(cs_glob_mesh->i_face_vtx_connect_size),
-                              &(cs_glob_mesh->b_face_vtx_connect_size),
-                              &(cs_glob_mesh->n_b_cells),
-                              &n_g_cells,
-                              &n_g_i_faces,
-                              &n_g_b_faces,
-                              &n_g_vertices,
-                              &nthrdi,
-                              &nthrdb,
-                              &ngrpi,
-                              &ngrpb,
-                              idxfi,
-                              idxfb,
-                              cs_glob_mesh->i_face_cells,
-                              cs_glob_mesh->b_face_cells,
-                              cs_glob_mesh->b_face_family,
-                              cs_glob_mesh->cell_family,
-                              cs_glob_mesh->family_item,
-                              cs_glob_mesh->i_face_vtx_idx,
-                              cs_glob_mesh->i_face_vtx_lst,
-                              cs_glob_mesh->b_face_vtx_idx,
-                              cs_glob_mesh->b_face_vtx_lst,
-                              cs_glob_mesh->b_cells,
-                              &(cs_glob_mesh_quantities->min_vol),
-                              &(cs_glob_mesh_quantities->max_vol),
-                              &(cs_glob_mesh_quantities->tot_vol),
-                              cs_glob_mesh_quantities->cell_cen,
-                              cs_glob_mesh_quantities->i_face_normal,
-                              cs_glob_mesh_quantities->b_face_normal,
-                              cs_glob_mesh_quantities->i_face_cog,
-                              cs_glob_mesh_quantities->b_face_cog,
-                              cs_glob_mesh->vtx_coord,
-                              cs_glob_mesh_quantities->cell_vol,
-                              cs_glob_mesh_quantities->i_face_surf,
-                              cs_glob_mesh_quantities->b_face_surf,
-                              cs_glob_mesh_quantities->i_dist,
-                              cs_glob_mesh_quantities->b_dist,
-                              cs_glob_mesh_quantities->weight,
-                              cs_glob_mesh_quantities->dijpf,
-                              cs_glob_mesh_quantities->diipb,
-                              cs_glob_mesh_quantities->dofij);
-  }
-
   if (opts.preprocess == false && opts.benchmark <= 0) {
 
     /* Check that mesh seems valid */
@@ -511,6 +449,84 @@ cs_run(void)
       cs_matrix_initialize();
       cs_sles_initialize();
       cs_multigrid_initialize();
+
+      /* Update Fortran mesh sizes and quantities */
+
+      {
+        cs_int_t n_g_cells = cs_glob_mesh->n_g_cells;
+        cs_int_t n_g_i_faces = cs_glob_mesh->n_g_i_faces;
+        cs_int_t n_g_b_faces = cs_glob_mesh->n_g_b_faces;
+        cs_int_t n_g_vertices = cs_glob_mesh->n_g_vertices;
+        cs_int_t nthrdi = 1;
+        cs_int_t nthrdb = 1;
+        cs_int_t ngrpi = 1;
+        cs_int_t ngrpb = 1;
+        const cs_int_t *idxfi = NULL;
+        const cs_int_t *idxfb = NULL;
+
+        if (cs_glob_mesh->i_face_numbering != NULL) {
+          const cs_numbering_t *_n = cs_glob_mesh->i_face_numbering;
+          nthrdi = _n->n_threads;
+          ngrpi = _n->n_groups;
+          idxfi = _n->group_index;
+        }
+
+        if (cs_glob_mesh->b_face_numbering != NULL) {
+          const cs_numbering_t *_n = cs_glob_mesh->b_face_numbering;
+          nthrdb = _n->n_threads;
+          ngrpb = _n->n_groups;
+          idxfb = _n->group_index;
+        }
+
+        cs_base_fortran_bft_printf_to_f();
+
+        CS_PROCF (majgeo, MAJGEO)(&(cs_glob_mesh->n_cells),
+                                  &(cs_glob_mesh->n_cells_with_ghosts),
+                                  &(cs_glob_mesh->n_i_faces),
+                                  &(cs_glob_mesh->n_b_faces),
+                                  &(cs_glob_mesh->n_vertices),
+                                  &(cs_glob_mesh->i_face_vtx_connect_size),
+                                  &(cs_glob_mesh->b_face_vtx_connect_size),
+                                  &(cs_glob_mesh->n_b_cells),
+                                  &n_g_cells,
+                                  &n_g_i_faces,
+                                  &n_g_b_faces,
+                                  &n_g_vertices,
+                                  &nthrdi,
+                                  &nthrdb,
+                                  &ngrpi,
+                                  &ngrpb,
+                                  idxfi,
+                                  idxfb,
+                                  cs_glob_mesh->i_face_cells,
+                                  cs_glob_mesh->b_face_cells,
+                                  cs_glob_mesh->b_face_family,
+                                  cs_glob_mesh->cell_family,
+                                  cs_glob_mesh->family_item,
+                                  cs_glob_mesh->i_face_vtx_idx,
+                                  cs_glob_mesh->i_face_vtx_lst,
+                                  cs_glob_mesh->b_face_vtx_idx,
+                                  cs_glob_mesh->b_face_vtx_lst,
+                                  cs_glob_mesh->b_cells,
+                                  &(cs_glob_mesh_quantities->min_vol),
+                                  &(cs_glob_mesh_quantities->max_vol),
+                                  &(cs_glob_mesh_quantities->tot_vol),
+                                  cs_glob_mesh_quantities->cell_cen,
+                                  cs_glob_mesh_quantities->i_face_normal,
+                                  cs_glob_mesh_quantities->b_face_normal,
+                                  cs_glob_mesh_quantities->i_face_cog,
+                                  cs_glob_mesh_quantities->b_face_cog,
+                                  cs_glob_mesh->vtx_coord,
+                                  cs_glob_mesh_quantities->cell_vol,
+                                  cs_glob_mesh_quantities->i_face_surf,
+                                  cs_glob_mesh_quantities->b_face_surf,
+                                  cs_glob_mesh_quantities->i_dist,
+                                  cs_glob_mesh_quantities->b_dist,
+                                  cs_glob_mesh_quantities->weight,
+                                  cs_glob_mesh_quantities->dijpf,
+                                  cs_glob_mesh_quantities->diipb,
+                                  cs_glob_mesh_quantities->dofij);
+      }
 
       /* Choose between standard and user solver */
 
@@ -582,6 +598,10 @@ cs_run(void)
 
   cs_gui_particles_free();
 
+  /* Switch logging back to C (may be moved dependingon Fortran dependencies) */
+
+  cs_base_fortran_bft_printf_to_c();
+
   /* Free field info */
 
   cs_field_destroy_all();
@@ -640,11 +660,6 @@ main(int    argc,
 
 #endif
 
-#if defined(ENABLE_NLS)
-  bindtextdomain(PACKAGE, cs_base_get_localedir());
-  textdomain(PACKAGE);
-#endif
-
   (void)cs_timer_wtime();
 
   /* Trap floating-point exceptions */
@@ -664,22 +679,20 @@ main(int    argc,
   cs_base_mem_init();
   cs_base_error_init();
 
+  /* Initialize internationalization */
+
+#if defined(ENABLE_NLS)
+  bindtextdomain(PACKAGE, cs_base_get_localedir());
+  textdomain(PACKAGE);
+#endif
+
   /* Parse command line */
 
   cs_opts_define(argc, argv, &opts);
 
   /* Open 'listing' (log) files */
 
-  {
-    cs_int_t _n_threads = cs_glob_n_threads;
-    cs_int_t _rank_id = cs_glob_rank_id, _n_ranks = cs_glob_n_ranks;
-
-    CS_PROCF(csinit, CSINIT)(&_rank_id,
-                             &_n_ranks,
-                             &_n_threads);
-  }
-
-  cs_base_fortran_bft_printf_set(opts.ilisr0, opts.ilisrp);
+  cs_base_fortran_bft_printf_set("listing", opts.ilisr0, opts.ilisrp);
 
   /* Log-file header and command line arguments recap */
 

@@ -31,6 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -123,6 +124,7 @@ static bool  cs_glob_base_str_init = false;
 static bool  cs_glob_base_str_is_free[CS_BASE_N_STRINGS];
 static char  cs_glob_base_str[CS_BASE_N_STRINGS][CS_BASE_STRING_LEN + 1];
 
+
 /* Global variables associated with signal handling */
 
 #if defined(SIGHUP)
@@ -148,6 +150,15 @@ static const char _cs_base_build_localedir[] = LOCALEDIR;
 static const char _cs_base_build_pkgdatadir[] = PKGDATADIR;
 static char *_cs_base_env_localedir = NULL;
 static char *_cs_base_env_pkgdatadir = NULL;
+
+/* Log file */
+
+static char  *_bft_printf_file_name = NULL;
+static bool   _bft_printf_suppress = false;
+
+/* Additional cleanup steps */
+
+static cs_base_atexit_t  * _cs_base_atexit = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -219,6 +230,8 @@ _cs_base_err_vprintf(const char  *format,
   if (initialized == false) {
 
     char err_file_name[81];
+    int i;
+    int n_dec = 1;
 
     if (cs_glob_rank_id < 1)
       strcpy(err_file_name, "error");
@@ -242,10 +255,8 @@ _cs_base_err_vprintf(const char  *format,
                                                             cs_timer_wtime()
                                                             is unusable. */
 #endif
-      if (cs_glob_n_ranks > 9999)
-        sprintf(err_file_name, "error_n%07d", cs_glob_rank_id + 1);
-      else
-        sprintf(err_file_name, "error_n%04d", cs_glob_rank_id + 1);
+      for (i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
+      sprintf(err_file_name, "error_n%0*d", n_dec, cs_glob_rank_id + 1);
     }
 
     freopen(err_file_name, "w", stderr);
@@ -323,6 +334,11 @@ _cs_base_error_handler(const char  *nom_fic,
                        const char  *format,
                        va_list      arg_ptr)
 {
+  if (_cs_base_atexit != NULL) {
+    _cs_base_atexit();
+    _cs_base_atexit = NULL;
+  }
+
   bft_printf_flush();
 
   _cs_base_err_printf("\n");
@@ -481,6 +497,11 @@ _cs_base_backtrace_print(int  niv_debut)
 static void
 _cs_base_sig_fatal(int  signum)
 {
+  if (_cs_base_atexit != NULL) {
+    _cs_base_atexit();
+    _cs_base_atexit = NULL;
+  }
+
   bft_printf_flush();
 
   switch (signum) {
@@ -564,6 +585,11 @@ _cs_base_erreur_mpi(MPI_Comm  *comm,
   int name_len = 0;
   char comm_name[MPI_MAX_OBJECT_NAME + 1];
 #endif
+
+  if (_cs_base_atexit != NULL) {
+    _cs_base_atexit();
+    _cs_base_atexit = NULL;
+  }
 
   bft_printf_flush();
 
@@ -731,10 +757,10 @@ _cs_base_mpi_setup(const char *app_name)
  *
  * Fortran interface:
  *
- * SUBROUTINE CSEXIT (STATUS)
+ * subroutine csexit (status)
  * *****************
  *
- * INTEGER          STATUS      : --> : 0 for success, 1+ for error
+ * integer          status      : <-- : 0 for success, 1+ for error
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csexit, CSEXIT)
@@ -750,10 +776,10 @@ void CS_PROCF (csexit, CSEXIT)
  *
  * Fortran interface:
  *
- * SUBROUTINE DMTMPS (TCPU)
+ * subroutine dmtmps (tcpu)
  * *****************
  *
- * DOUBLE PRECISION TCPU        : --> : CPU time (user + system)
+ * double precision tcpu        : <-- : cpu time (user + system)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (dmtmps, DMTMPS)
@@ -1103,6 +1129,11 @@ cs_base_mpi_init(int    *argc,
 void
 cs_exit(int  status)
 {
+  if (_cs_base_atexit != NULL) {
+    _cs_base_atexit();
+    _cs_base_atexit = NULL;
+  }
+
   if (status == EXIT_FAILURE) {
 
     bft_printf_flush();
@@ -1177,8 +1208,8 @@ cs_base_error_init(void)
 void
 cs_base_mem_init(void)
 {
-  char  *nom_base;
-  char  *nom_complet = NULL;
+  char  *base_name;
+  char  *file_name = NULL;
 
   /* Set error handler */
 
@@ -1196,21 +1227,25 @@ cs_base_mem_init(void)
 
   /* Memory management initialization */
 
-  if ((nom_base = getenv("CS_MEM_LOG")) != NULL) {
+  if ((base_name = getenv("CS_MEM_LOG")) != NULL) {
 
     /* We may not use BFT_MALLOC here as memory management has
        not yet been initialized using bft_mem_init() */
 
-    nom_complet = malloc((strlen(nom_base) + 6) * sizeof (char));
-
-    if (nom_complet != NULL) {
+    if (file_name != NULL) {
 
       /* In parallel, we will have one trace file per MPI process */
-      if (cs_glob_rank_id >= 0)
-        sprintf(nom_complet, "%s.%04d", nom_base, cs_glob_rank_id + 1);
-      else
-        strcpy(nom_complet, nom_base);
-
+      if (cs_glob_rank_id >= 0) {
+        int i;
+        int n_dec = 1;
+        for (i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
+        file_name = malloc((strlen(base_name) + n_dec + 2) * sizeof (char));
+        sprintf(file_name, "%s.%0*d", base_name, n_dec, cs_glob_rank_id + 1);
+      }
+      else {
+        file_name = malloc((strlen(base_name) + 1) * sizeof (char));
+        strcpy(file_name, base_name);
+      }
     }
 
   }
@@ -1220,11 +1255,11 @@ cs_base_mem_init(void)
 
   else {
     cs_glob_base_bft_mem_init = true;
-    bft_mem_init(nom_complet);
+    bft_mem_init(file_name);
   }
 
-  if (nom_complet != NULL)
-    free (nom_complet);
+  if (file_name != NULL)
+    free (file_name);
 }
 
 /*----------------------------------------------------------------------------
@@ -1336,8 +1371,15 @@ cs_base_mem_finalize(void)
 
   /* Finalize memory handling */
 
-  if (cs_glob_base_bft_mem_init == true)
+  if (cs_glob_base_bft_mem_init == true) {
+
+    BFT_FREE(_cs_base_env_localedir);
+    BFT_FREE(_cs_base_env_pkgdatadir);
+    BFT_FREE(_bft_printf_file_name);
+
     bft_mem_end();
+
+  }
 
   /* Finalize memory usage count */
 
@@ -1409,7 +1451,7 @@ cs_base_time_summary(void)
 }
 
 /*----------------------------------------------------------------------------
- * Replace default bft_printf() mechanism with internal mechanism.
+ * Set output file name and suppression flag for bft_printf().
  *
  * This allows redirecting or suppressing logging for different ranks.
  *
@@ -1423,65 +1465,133 @@ cs_base_time_summary(void)
  *----------------------------------------------------------------------------*/
 
 void
+cs_base_bft_printf_init(const char  *log_name,
+                        int          r0_log_flag,
+                        int          rn_log_flag)
+{
+  BFT_FREE(_bft_printf_file_name);
+  _bft_printf_suppress = false;
+
+  /* Rank 0 */
+
+  if (cs_glob_rank_id < 1 && r0_log_flag == 1 && log_name != NULL) {
+
+    BFT_MALLOC(_bft_printf_file_name, strlen(log_name) + 1, char);
+    strcpy(_bft_printf_file_name, log_name);
+
+  }
+
+  /* Other ranks */
+
+  else if (cs_glob_rank_id > 0) {
+
+    if (log_name != NULL && rn_log_flag == 1) { /* Non-suppressed logs */
+
+      int i;
+      int n_dec = 1;
+      for (i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
+      BFT_MALLOC(_bft_printf_file_name, strlen(log_name) + n_dec + 3, char);
+      sprintf(_bft_printf_file_name,
+              "%s_n%0*d",
+              log_name,
+              n_dec,
+              cs_glob_rank_id+1);
+
+    }
+
+    else if (rn_log_flag == 2) { /* Suppressed logs */
+
+      _bft_printf_suppress = true;
+      bft_printf_proxy_set(_cs_base_bft_printf_null);
+      bft_printf_flush_proxy_set(_cs_base_bft_printf_flush_null);
+      ple_printf_function_set(_cs_base_bft_printf_null);
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Replace default bft_printf() mechanism with internal mechanism.
+ *
+ * This allows redirecting or suppressing logging for different ranks.
+ *
+ * parameters:
+ *   log_name    <-- base file name for log, or NULL for stdout
+ *   r0_log_flag <-- redirection for rank 0 log;
+ *                   0: not redirected; 1: redirected to <log_name> file
+ *   rn_log_flag <-- redirection for ranks > 0 log:
+ *                   0: not redirected; 1: redirected to <log_name>_n*" file;
+ *                   2: suppressed
+ *----------------------------------------------------------------------------*/
+
+void
 cs_base_bft_printf_set(const char  *log_name,
                        int          r0_log_flag,
                        int          rn_log_flag)
 {
-  /* Non-suppressed logs */
+  cs_base_bft_printf_init(log_name, r0_log_flag, rn_log_flag);
 
-  if (log_name != NULL && (cs_glob_rank_id < 1 || rn_log_flag != 2)) {
-
-    char *filename = NULL;
-    BFT_MALLOC(filename, strlen(log_name) + 10, char);
+  if (_bft_printf_file_name != NULL && _bft_printf_suppress == false) {
 
     bft_printf_proxy_set(vprintf);
     bft_printf_flush_proxy_set(_cs_base_bft_printf_flush);
     ple_printf_function_set(vprintf);
 
-    filename[0] = '\0';
-
-    if (cs_glob_rank_id < 1) {
-      if (r0_log_flag != 0)
-        strcpy(filename, log_name);
-    }
-    else {
-      if (rn_log_flag != 0) {
-        if (cs_glob_n_ranks > 9999)
-          sprintf(filename, "%s_n%07d", log_name, cs_glob_rank_id+1);
-        else
-          sprintf(filename, "%s_n%04d", log_name, cs_glob_rank_id+1);
-      }
-    }
-
     /* Redirect log */
 
-    if (filename[0] != '\0') {
+    if (_bft_printf_file_name != NULL) {
 
-      FILE *fp = freopen(filename, "w", stdout);
+      FILE *fp = freopen(_bft_printf_file_name, "w", stdout);
 
       if (fp == NULL)
         bft_error(__FILE__, __LINE__, errno,
                   _("It is impossible to redirect the standard output "
-                    "to file:\n%s"), filename);
+                    "to file:\n%s"), _bft_printf_file_name);
 
 #if defined(HAVE_DUP2)
       if (dup2(fileno(fp), fileno(stderr)) == -1)
         bft_error(__FILE__, __LINE__, errno,
                   _("It is impossible to redirect the standard error "
-                    "to file:\n%s"), filename);
+                    "to file:\n%s"), _bft_printf_file_name);
 #endif
+
     }
 
-    BFT_FREE(filename);
   }
 
-  /* Suppressed logs */
+}
 
-  else if (cs_glob_rank_id > 0) {
-    bft_printf_proxy_set(_cs_base_bft_printf_null);
-    bft_printf_flush_proxy_set(_cs_base_bft_printf_flush_null);
-    ple_printf_function_set(_cs_base_bft_printf_null);
-  }
+/*----------------------------------------------------------------------------
+ * Return name of default log file.
+ *
+ * cs_base_bft_printf_set or cs_base_c_bft_printf_set() must have
+ * been called before this.
+ *
+ * returns:
+ *   name of default log file
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_base_bft_printf_name(void)
+{
+  return _bft_printf_file_name;
+}
+
+/*----------------------------------------------------------------------------
+ * Return flag indicating if the default log file output is suppressed.
+ *
+ * cs_base_bft_printf_set or cs_base_c_bft_printf_set() must have
+ * been called before this.
+ *
+ * returns:
+ *   name of default log file
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_base_bft_printf_suppressed(void)
+{
+  return _bft_printf_suppress;
 }
 
 /*----------------------------------------------------------------------------
@@ -1498,6 +1608,23 @@ cs_base_warn(const char  *file_name,
 {
   bft_printf(_("\n\nCode_Saturne: %s:%d: Warning\n"),
              file_name, line_num);
+}
+
+/*----------------------------------------------------------------------------
+ * Define a function to be called when entering cs_exit() or bft_error().
+ *
+ * Compared to the C atexit(), only one function may be called (latest
+ * setting wins), but the function is called slighty before exit,
+ * so it is well adapted to cleanup such as flushing of non-C API logging.
+ *
+ * parameters:
+ *   fct <-- pointer tu function to be called
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_atexit_set(cs_base_atexit_t  *const fct)
+{
+  _cs_base_atexit = fct;
 }
 
 /*----------------------------------------------------------------------------
@@ -1646,14 +1773,12 @@ cs_base_get_localedir()
     return _cs_base_build_localedir;
 #else
     const char *locale_add = "/share/locale";
-    /* Use malloc here rather than BFT_MALLOC to avoid instrumenting this
-       "one time only" allocation and allowing calls in any order.
-       (freeing this upon atexit would be instrumentation friendly,
-       but this only concerns potential movable installs, which are
-       not the recommended practice anyways) */
-    _cs_base_env_localedir = malloc(strlen(cs_root_dir) + strlen(locale_add) + 1);
+    BFT_MALLOC(_cs_base_env_localedir,
+               strlen(cs_root_dir) + strlen(locale_add) + 1,
+               char);
     strcpy(_cs_base_env_localedir, cs_root_dir);
     strcat(_cs_base_env_localedir, locale_add);
+    return _cs_base_env_localedir;
 #endif
   }
 
@@ -1688,10 +1813,12 @@ cs_base_get_pkgdatadir(void)
     return _cs_base_build_pkgdatadir;
 #else
     const char *pkgdata_add = "/share/" PACKAGE_NAME;
-    /* Same remarks as for cs_base_get_localedir above */
-    _cs_base_env_pkgdatadir = malloc(strlen(cs_root_dir) + strlen(pkgdata_add) + 1);
+    BFT_MALLOC(_cs_base_env_pkgdatadir,
+               strlen(cs_root_dir) + strlen(pkgdata_add) + 1,
+               char);
     strcpy(_cs_base_env_pkgdatadir, cs_root_dir);
     strcat(_cs_base_env_pkgdatadir, pkgdata_add);
+    return _cs_base_env_pkgdatadir;
 #endif
   }
 

@@ -31,6 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -84,6 +85,42 @@ BEGIN_C_DECLS
  *  Global variables
  *============================================================================*/
 
+static FILE  *_bft_printf_file = NULL;
+
+/*============================================================================
+ * Priototypes for Fortran subroutines
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Print a message to standard output.
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (csprnt, CSPRNT)
+(
+  char       *cs_buf_print,
+  cs_int_t   *msgsize
+);
+
+/*----------------------------------------------------------------------------
+ * Initialize Fortran log (listing) files
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (csopli, CSOPLI)
+(
+ const cs_int_t  *infecr,  /* <-- value to assign to nfecra */
+ const cs_int_t  *isuppr,  /* <-- supress output if 1 */
+ const cs_int_t  *ierror   /* --> error code (0 if sucess) */
+);
+
+/*----------------------------------------------------------------------------
+ * Close log (listing) handled by Fortran: (CLose LIsting)
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (csclli, CSCLLI)
+(
+ void
+);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -93,25 +130,39 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 static int
-_bft_printf(const char     *const format,
-            va_list         arg_ptr)
+_bft_printf_c(const char     *const format,
+              va_list         arg_ptr)
 {
- cs_int_t  line;
- cs_int_t  msgsize;
+  if (_bft_printf_file != NULL)
+    return vfprintf(_bft_printf_file, format, arg_ptr);
+  else
+    return 0;
+}
 
- /* Buffer for printing from C code: print to a character string, which will
-    be printed to file by Fortran code.
-    If Fortran output is completely replaced by C output in the future,
-    we will be able to remove this step, but it is currently necessary
-    so as to ensure that the same output files may be used and output
-    remains ordered. */
+/*----------------------------------------------------------------------------
+ * Print a message to standard output
+ *----------------------------------------------------------------------------*/
+
+static int
+_bft_printf_f(const char     *const format,
+              va_list         arg_ptr)
+{
+  cs_int_t  line;
+  cs_int_t  msgsize;
+
+  /* Buffer for printing from C code: print to a character string, which will
+     be printed to file by Fortran code.
+     If Fortran output is completely replaced by C output in the future,
+     we will be able to remove this step, but it is currently necessary
+     so as to ensure that the same output files may be used and output
+     remains ordered. */
 
 #undef CS_BUF_PRINT_F_SIZE
 #define CS_BUF_PRINT_F_SIZE 16384
 
- static char cs_buf_print_f[CS_BUF_PRINT_F_SIZE];
+  static char cs_buf_print_f[CS_BUF_PRINT_F_SIZE];
 
- /* Write to buffer */
+  /* Write to buffer */
 
 #if (__STDC_VERSION__ < 199901L)
   msgsize = vsprintf (cs_buf_print_f, format, arg_ptr);
@@ -151,19 +202,23 @@ _bft_printf(const char     *const format,
 static int
 _bft_printf_flush(void)
 {
-  CS_PROCF (csflsh, CSFLSH) ();
-
-  return 0;
+  if (_bft_printf_file != NULL)
+    return fflush(_bft_printf_file);
+  else
+    return 0;
 }
 
 /*----------------------------------------------------------------------------
- * Close Fortran log files.
+ * Close C output log file.
  *----------------------------------------------------------------------------*/
 
 static void
-_close_log_files(void)
+_close_c_log_file(void)
 {
-  CS_PROCF(csclli, CSCLLI)();
+  if (_bft_printf_file != NULL) {
+    fclose(_bft_printf_file);
+    _bft_printf_file = NULL;
+  }
 }
 
 /*============================================================================
@@ -259,6 +314,46 @@ void CS_PROCF (cssf2c, CSSF2C)
 }
 
 /*----------------------------------------------------------------------------
+ * Get log name file information.
+ *
+ * When log file output is suppressed, it returns the name of the
+ * bit buck file ("/dev/null")
+ *
+ * Fortran interface
+ *
+ * subroutine cslogname (len, name)
+ * ********************
+ *
+ * integer          len         : <-- : maximum string length
+ * character*       name        : --> : Fortran string
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cslogname, CSLOGNAME)
+(
+ const cs_int_t   *len,
+ char             *dir
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+)
+{
+  size_t l = *len;
+  const char *name = cs_base_bft_printf_name();
+
+  if (cs_base_bft_printf_suppressed())
+    name = "/dev/null";
+
+  if (strlen(name) <= l) {
+    size_t i;
+    memcpy(dir, name, l);
+    for (i = strlen(name); i < l; i++)
+      dir[i] = ' ';
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Path passed to cslogname too short for: %s"), name);
+}
+
+/*----------------------------------------------------------------------------
  * Get package data path information.
  *
  * The aim of this function is to aviod issues with Fortran array bounds
@@ -303,40 +398,159 @@ void CS_PROCF (csdatadir, CSDATADIR)
 /*----------------------------------------------------------------------------
  * Replace default bft_printf() mechanism with internal mechanism.
  *
- * This is necessary for good consistency of messages output from C or
- * from Fortran, and to handle parallel and serial logging options.
+ * This variant is designed to allow switching from C to Fortran output,
+ * whithout disabling regular C stdout output when switched to Fortran.
+ *
+ * This allows redirecting or suppressing logging for different ranks.
  *
  * parameters:
+ *   log_name    <-- base file name for log, or NULL for stdout
  *   r0_log_flag <-- redirection for rank 0 log;
- *                   0: not redirected; 1: redirected to "listing" file
+ *                   0: not redirected; 1: redirected to <log_name> file
  *   rn_log_flag <-- redirection for ranks > 0 log:
- *                   0: not redirected; 1: redirected to "listing_n*" file;
+ *                   0: not redirected; 1: redirected to <log_name>_n*" file;
  *                   2: redirected to "/dev/null" (suppressed)
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_fortran_bft_printf_set(int r0_log_flag,
-                               int rn_log_flag)
+cs_base_fortran_bft_printf_set(const char  *log_name,
+                               int          r0_log_flag,
+                               int          rn_log_flag)
 {
-  cs_int_t _rank_id = cs_glob_rank_id;
-  cs_int_t _n_ranks = cs_glob_n_ranks;
-  cs_int_t _ilisr0 = r0_log_flag;
-  cs_int_t _ilisrn = rn_log_flag;
+  const char *name = NULL;
+  bool suppress = false;
+  cs_int_t infecr = 6, isuppr = 0, ierror = 0;
 
-  bft_printf_proxy_set(_bft_printf);
+  /* C output */
+
+  cs_base_bft_printf_init(log_name, r0_log_flag, rn_log_flag);
+
+  name = cs_base_bft_printf_name();
+  suppress = cs_base_bft_printf_suppressed();
+
+  if (suppress == false) {
+
+    if (name != NULL) {
+
+      _bft_printf_file = fopen(name, "w");
+
+      if (_bft_printf_file == NULL)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("It is impossible to open the default output "
+                    "file:\n%s"), name);
+
+    }
+
+    else
+      _bft_printf_file = stdout;
+
+  }
+
+  /* Fortran output */
+
+  if (suppress) {
+    infecr = 9;
+    isuppr = 1;
+    name = "/dev/null";
+  }
+
+  CS_PROCF(csopli, CSOPLI)(&infecr, &isuppr, &ierror);
+
+  if (ierror != 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error opening file \"%s\" from Fortran."), name);
+
+  /* Set function pointers */
+
+  bft_printf_proxy_set(_bft_printf_c);
   bft_printf_flush_proxy_set(_bft_printf_flush);
-  ple_printf_function_set(_bft_printf);
+  ple_printf_function_set(_bft_printf_c);
 
-  /* Open Fortran log files */
+  /* Close C and Fortran log files upon standard or error exit routines
+     (switch back to C mode in pre-exit stage to ensure flushing,
+     close C file at exit). */
 
-  CS_PROCF(csopli, CSOPLI)(&_rank_id,
-                           &_n_ranks,
-                           &_ilisr0,
-                           &_ilisrn);
+  cs_base_atexit_set(cs_base_fortran_bft_printf_to_c);
+  atexit(_close_c_log_file);
+}
 
-  /* Close Fortran log files upon exit */
+/*----------------------------------------------------------------------------
+ * Switch bft_printf() mechanism to C output.
+ *
+ * This function may only be called after cs_base_fortran_bft_printf_set()
+ *----------------------------------------------------------------------------*/
 
-  atexit(_close_log_files);
+void
+cs_base_fortran_bft_printf_to_c(void)
+{
+  const char *name = cs_base_bft_printf_name();
+
+  if (name != NULL) {
+
+    CS_PROCF(csclli, CSCLLI)();
+
+    if (_bft_printf_file == NULL) {
+
+      _bft_printf_file = fopen(name, "a");
+
+      if (_bft_printf_file == NULL)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("It is impossible to re-open the default output "
+                    "file:\n%s"), name);
+
+    }
+
+  }
+
+  /* Set function pointers */
+
+  bft_printf_proxy_set(_bft_printf_c);
+  ple_printf_function_set(_bft_printf_c);
+}
+
+/*----------------------------------------------------------------------------
+ * Switch bft_printf() mechanism to Fortran output.
+ *
+ * This function may only be called after cs_base_fortran_bft_printf_set()
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_fortran_bft_printf_to_f(void)
+{
+  const char *name = cs_base_bft_printf_name();
+
+  if (name != NULL) {
+
+    cs_int_t nfecra = 9, isuppr = 0, ierror = 0;
+
+    /* Close C output */
+
+    int retval = fclose(_bft_printf_file);
+
+    if (retval != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error closing file \"%s\":\n\n"
+                  "  %s"), name, strerror(errno));
+    _bft_printf_file = NULL;
+
+    /* Open Fortran output */
+
+    if (cs_base_bft_printf_suppressed())
+      isuppr = 1;
+
+    CS_PROCF(csopli, CSOPLI)(&nfecra, &isuppr, &ierror);
+
+    if (ierror != 0) {
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error opening file \"%s\" from Fortran."), name);
+    }
+
+  }
+
+  /* Set function pointers */
+
+  bft_printf_proxy_set(_bft_printf_f);
+  ple_printf_function_set(_bft_printf_f);
 }
 
 /*----------------------------------------------------------------------------*/

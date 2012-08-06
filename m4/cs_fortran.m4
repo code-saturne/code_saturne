@@ -93,31 +93,3 @@ AC_SUBST(FCMODINCLUDE)
 
 ])dnl
 
-# CS_AC_TEST_FC_FLUSH
-#------------------
-# checks if the Fortran compiler handles flush (Fortran 2003)
-
-AC_DEFUN([CS_AC_TEST_FC_FLUSH], [
-
-cs_fc_flush=no
-
-AC_LANG_PUSH(Fortran)
-
-AC_MSG_CHECKING([for Fortran 2003 flush instruction])
-AC_LINK_IFELSE([AC_LANG_PROGRAM([],
-               [[      flush(6) ]])],
-               [ cs_fc_flush=yes ],
-               [ cs_fc_flush=no])
-AC_MSG_RESULT($cs_fc_flush)
-
-AC_LANG_POP([Fortran])
-
-if test "x$cs_fc_flush" = "xyes"; then
-  if test "x$cs_ibm_bg_type" = "x" ; then
-    FCFLAGS="${FCFLAGS} -D_CS_FC_HAVE_FLUSH"
-  fi
-fi
-
-unset $cs_fc_flush
-
-])dnl
