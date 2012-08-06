@@ -518,8 +518,8 @@ if test "x$cs_have_gui" = "xyes" ; then
 try: import PyQt4
 except ImportError: sys.exit(1)
 from PyQt4.QtCore import *
-if map(int, string.split(QT_VERSION_STR, '.')) < [4,3,0]: sys.exit(1)
-if map(int, string.split(PYQT_VERSION_STR, '.')) < [4,3,0]: sys.exit(1)
+if [list(map(int, QT_VERSION_STR.split('.')))] < [4,3,0]: sys.exit(1)
+if [list(map(int, PYQT_VERSION_STR.split('.')))] < [4,3,0]: sys.exit(1)
 sys.exit(0)]"
 
   ${PYTHON} -c "${prog}"

@@ -450,7 +450,7 @@ class OutputVolumicVariablesModel(Model):
         Update probe_recording markups if it exists
         """
         self.isInList(label, self.getLabelsList())
-        nb = len(string.split(list))
+        nb = len(list.split())
         if nb == len(self.getVariableProbeList()):
             for nodeList in self.listNodeVolum:
                 for node in nodeList:
@@ -469,7 +469,7 @@ class OutputVolumicVariablesModel(Model):
                             pass
                         n = node.xmlInitNode('probes', choice=str(nb))
                         if nb > 0:
-                            for i in string.split(list):
+                            for i in list.split():
                                 n.xmlInitChildNodeList('probe_recording',name=i)
 
 #-------------------------------------------------------------------------------

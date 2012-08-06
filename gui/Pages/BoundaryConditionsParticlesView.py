@@ -117,7 +117,7 @@ class ParticleBoundaryInteractionDelegate(QItemDelegate):
         self.combo_mdl = ComboModel(editor,1,1)
         nature = index.model()._data[index.row()][1]
         self.dico = index.model().dicoM2V[nature]
-        for k, v in self.dico.items():
+        for k, v in list(self.dico.items()):
             self.combo_mdl.addItem(v, k)
         editor.installEventFilter(self)
         #editor.setSizeAdjustPolicy(QComboBox.AdjustToContents)
@@ -173,10 +173,10 @@ class StandardItemModelBoundaries(QStandardItemModel):
             }
 
         self.dicoV2M = {}
-        for key in self.dicoM2V.keys():
+        for key in list(self.dicoM2V.keys()):
             dico = self.dicoM2V[key]
             self.dicoV2M[key] = {}
-            for k, v in dico.items():
+            for k, v in list(dico.items()):
                 self.dicoV2M[key][v] = k
 
         # Initialization

@@ -202,7 +202,7 @@ class Informations:
 
     def getLocalizations(self):
         list = self.refList + self.groupList
-        return map(str, list)
+        return list(map(str, list))
 
 
 #-------------------------------------------------------------------------------

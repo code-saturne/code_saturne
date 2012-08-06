@@ -175,13 +175,13 @@ class BoundaryNatureDelegate(QItemDelegate):
         self.dicoM2V = dicoM2V
 
         self.dicoV2M = {}
-        for k, v in self.dicoM2V.items():
+        for k, v in list(self.dicoM2V.items()):
             self.dicoV2M[v] = k
 
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        for k in self.dicoV2M.keys():
+        for k in list(self.dicoV2M.keys()):
             editor.addItem(k)
         editor.installEventFilter(self)
         #editor.setSizeAdjustPolicy(QComboBox.AdjustToContents)
@@ -193,7 +193,7 @@ class BoundaryNatureDelegate(QItemDelegate):
         row = index.row()
         col = index.column()
         str_model = index.model().getData(row, col)
-        idx = self.dicoM2V.keys().index(str_model)
+        idx = list(self.dicoM2V.keys()).index(str_model)
         #str_view  = self.dicoM2V[str_model]
         #comboBox.setItem(str_view)
         comboBox.setCurrentIndex(idx)
@@ -303,7 +303,7 @@ class StandardItemVolumeNature(QStandardItemModel):
 
     def getChecked(self):
         s = []
-        for k, v in self.dicoNature.items():
+        for k, v in list(self.dicoNature.items()):
             if v == "on":
                 s.append(k)
         return string.join(s, ";")
@@ -453,7 +453,7 @@ class StandardItemModelLocalization(QStandardItemModel):
             elif col == 2:
                 if self.zoneType == "VolumicZone":
                     data = self._data[row][col]
-                    item = string.join([self.dicoM2V[key] for key in self.dicoM2V.keys() if data[key] == "on"], "\n")
+                    item = string.join([self.dicoM2V[key] for key in list(self.dicoM2V.keys()) if data[key] == "on"], "\n")
 #                    item = ""
 #                    for key in dico.keys():
 #                        print(key)
@@ -513,9 +513,9 @@ class StandardItemModelLocalization(QStandardItemModel):
             if self.zoneType == "VolumicZone":
 
                 # We modify the dictionary here
-                nature_list = string.split(str(value.toString()), ";")
+                nature_list = str(value.toString()).split(";")
 
-                for key in self._data[row][col].keys():
+                for key in list(self._data[row][col].keys()):
                     if key in nature_list:
                         self._data[row][col][key] = "on"
                     else:
@@ -753,7 +753,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
 
         for row in list:
             [label, code, nature, localization] = self.modelLocalization.getItem(row)
-            if "all[]" not in string.split(new_localization, " "):
+            if "all[]" not in new_localization.split(" "):
                 new_localization += " or " + localization
             if localization == "all[]":
                 new_localization = "all[]"

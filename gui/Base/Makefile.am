@@ -65,13 +65,15 @@ RESOURCES = $(QRCFILES:.qrc=_rc.py)
 
 # Specific rules
 
+PYRCC4VER = `$(PYTHON) --version 2>&1 | cut -c 8`
+
 SUFFIXES = .ui .qrc _rc.py
 
 .ui.py:
 	$(PYUIC4) -o $@ $<
 
 .qrc_rc.py:
-	$(PYRCC4) -o $@ $<
+	$(PYRCC4) -root $(pkgpythondir)/Base -py$(PYRCC4VER) -o $@ $<
 
 all-local: $(FORMS) $(RESOURCES)
 

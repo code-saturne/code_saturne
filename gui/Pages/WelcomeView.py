@@ -36,7 +36,12 @@ from PyQt4 import QtGui
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.WelcomeForm import Ui_WelcomeForm
+try:
+    from Pages.WelcomeForm import Ui_WelcomeForm
+except Exception:
+    import os, sys
+    sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
+    from Pages.WelcomeForm import Ui_WelcomeForm
 
 #-------------------------------------------------------------------------------
 # This class defines the welcome page

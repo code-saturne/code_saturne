@@ -124,7 +124,7 @@ class DefineUserScalarsModel(Variables, Model):
         if not scalar_label:
             if length != 0:
                 i = 1
-                while (Dscal + str(i)) in __coef.values():
+                while (Dscal + str(i)) in list(__coef.values()):
                     i = i + 1
                 num = str(i)
             else:
@@ -135,8 +135,8 @@ class DefineUserScalarsModel(Variables, Model):
         # existing scalar
 
         else:
-            if scalar_label not in __coef.keys()or \
-               (scalar_label in __coef.keys() and __coef[scalar_label] == ''):
+            if scalar_label not in list(__coef.keys())or \
+               (scalar_label in list(__coef.keys()) and __coef[scalar_label] == ''):
 
                 __coef[scalar_label] = Dscal + str(length + 1)
 
@@ -159,7 +159,7 @@ class DefineUserScalarsModel(Variables, Model):
         if not scalar_label:
             if length != 0:
                 i = 1
-                while (Lscal + str(i)) in __coef.values():
+                while (Lscal + str(i)) in list(__coef.values()):
                     i = i + 1
                 num = str(i)
             else:

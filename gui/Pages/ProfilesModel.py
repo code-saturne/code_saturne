@@ -117,7 +117,7 @@ class ProfilesModel(Model):
                     if name != 'local_time_step':
                         self.dicoLabel2Name[label] = name
 
-        return self.dicoLabel2Name.keys()
+        return list(self.dicoLabel2Name.keys())
 
 
     def __setFormula(self, label, str):

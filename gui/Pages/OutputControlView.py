@@ -1507,7 +1507,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Update line for command of format's options at each modification of
         post processing format
         """
-        opts = string.split(options, ',')
+        opts = options.split(',')
         format = self.modelWriter.getItem(row)['format']
         log.debug("__updateOptionsFormat-> format = %s" % format)
         log.debug("__updateOptionsFormat-> options = %s" % options)

@@ -23,7 +23,11 @@
 
 #-------------------------------------------------------------------------------
 
-import ConfigParser
+try:
+    import ConfigParser  # Python2
+    configparser = ConfigParser
+except Exception:
+    import configparser  # Python3
 import datetime
 import fnmatch
 import os
@@ -472,7 +476,7 @@ class domain(base_domain):
                                      root_str = root_str,
                                      version_str = version_str)
             params = P.getParams()
-            for k in params.keys():
+            for k in list(params.keys()):
                 self.__dict__[k] = params[k]
 
         # Now override or complete data from the XML file.
@@ -723,11 +727,11 @@ class domain(base_domain):
         study_dir = os.path.split(self.case_dir)[0]
 
         # User config file
-        u_cfg = ConfigParser.ConfigParser()
+        u_cfg = configparser.ConfigParser()
         u_cfg.read(os.path.expanduser('~/.' + self.package.configfile))
 
         # Global config file
-        g_cfg = ConfigParser.ConfigParser()
+        g_cfg = configparser.ConfigParser()
         g_cfg.read(self.package.get_configfile())
 
         # A mesh can be found in different mesh database directories

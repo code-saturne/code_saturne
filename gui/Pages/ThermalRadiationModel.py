@@ -95,7 +95,7 @@ class ThermalRadiationModel(Model):
         """
         Return the name and the defaul label for cells properties.
         """
-        for k, v in self.c_prop.items():
+        for k, v in list(self.c_prop.items()):
             if k in ('absorption', 'emission', 'radiative_source_term', 'absorption_coefficient'):
                 for classe in range(1, self.classesNumber+1):
                     k = '%s_%2.2i' % (k, classe)
@@ -317,11 +317,11 @@ class ThermalRadiationModel(Model):
 
     def _setVariable_ray(self):
         if self.getRadiativeModel() != "off":
-            for k, v in self.__volumeProperties().items():
+            for k, v in list(self.__volumeProperties().items()):
                 if not self.node_ray.xmlGetNode('property', name=k):
                     self.node_ray.xmlInitNode('property', label=v, name=k)
 
-            for k, v in self.__boundaryProperties().items():
+            for k, v in list(self.__boundaryProperties().items()):
                 if not self.node_ray.xmlGetNode('property', name=k):
                     self.node_ray.xmlInitNode('property', label=v, name=k, support='boundary')
 

@@ -88,7 +88,7 @@ class Zone(object):
         else:
             self._localization = self.defaultValues()['localization']
         if nature:
-            if typeZone == 'VolumicZone' and type(nature) == types.StringType:
+            if typeZone == 'VolumicZone' and type(nature) == bytes:
                 self._nature = self.defaultValues()['nature'].copy()
                 self._nature[nature] = "on"
             else:
@@ -587,9 +587,9 @@ class VolumicLocalizationModel(LocalizationModel):
         oldNature = self.getNature(label)
         if oldNature != nature:
             for option in self.__natureOptions:
-                if option not in nature.keys():
+                if option not in list(nature.keys()):
                     nature[option] = 'off'
-            for k,v in nature.items():
+            for k,v in list(nature.items()):
                 node[k] = v
 
 
@@ -604,7 +604,7 @@ class VolumicLocalizationModel(LocalizationModel):
                                                            label = newZone.getLabel(),
                                                            id = newZone.getCodeNumber())
 
-        for k, v in newZone.getNature().items():
+        for k, v in list(newZone.getNature().items()):
             node[k] = v
 
         node.xmlSetTextNode(newZone.getLocalization())
@@ -627,7 +627,7 @@ class VolumicLocalizationModel(LocalizationModel):
 
         node['label'] = newLabel
         node.xmlSetTextNode(newLocal)
-        for k, v in new_zone.getNature().items():
+        for k, v in list(new_zone.getNature().items()):
             node[k] = v
 
         # update data in the entire case

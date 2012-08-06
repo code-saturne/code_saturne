@@ -33,7 +33,11 @@ This module defines global constant.
 import os.path
 
 from optparse import OptionParser
-import ConfigParser
+try:
+    import ConfigParser
+    configparser = ConfigParser
+except Exception:
+    import configparser
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -56,7 +60,7 @@ if not os.path.isfile(cs_check_syntax):
 
 # Test if a batch system is available
 
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 config.read([package().get_configfile(),
              os.path.expanduser('~/.' + package().configfile)])
 

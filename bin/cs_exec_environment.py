@@ -152,7 +152,7 @@ def set_modules(pkg):
     for cmd in cmds:
         (output, error) = subprocess.Popen([cmd_prefix, 'python'] + cmd.split(),
                                            stdout=subprocess.PIPE).communicate()
-        exec output
+        exec(output)
 
 #-------------------------------------------------------------------------------
 

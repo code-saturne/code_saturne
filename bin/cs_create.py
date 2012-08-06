@@ -44,7 +44,11 @@ and the following classes:
 import os, sys, pwd, shutil, stat
 import types, string, re, fnmatch
 from optparse import OptionParser
-import ConfigParser
+try:
+    import ConfigParser  # Python2
+    configparser = ConfigParser
+except Exception:
+    import configparser  # Python3
 
 
 #-------------------------------------------------------------------------------
@@ -151,7 +155,7 @@ def syrthes_path_line(pkg):
 
     line = None
 
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read([pkg.get_configfile(),
                  os.path.expanduser('~/.' + pkg.configfile)])
 
@@ -171,8 +175,8 @@ def comments(filename, use_gui):
     Comment or uncomment examples in user files.
     """
 
-    fd = file(filename, 'r')
-    fdt = file(filename+'.tmp','w')
+    fd = open(filename, 'r')
+    fdt = open(filename+'.tmp','w')
 
     kwd_beg = re.compile('EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START')
     kwd_end = re.compile('EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END')
@@ -248,7 +252,7 @@ class Study:
         """
         syrthes_version = None
 
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         config.read([self.package.get_configfile(),
                      os.path.expanduser('~/.' + self.package.configfile)])
         if config.has_option('install', 'syrthes'):
@@ -289,7 +293,7 @@ class Study:
 
         # Creating Code_Aster case
         if self.ast_case_name is not None:
-            config = ConfigParser.ConfigParser()
+            config = configparser.ConfigParser()
             config.read([self.package.get_configfile(),
                          os.path.expanduser('~/.' + self.package.configfile)])
             if config.has_option('install', 'aster'):
@@ -310,7 +314,7 @@ class Study:
         """
 
         try:
-            config = ConfigParser.ConfigParser()
+            config = configparser.ConfigParser()
             config.read([self.package.get_configfile(),
                          os.path.expanduser('~/.' + self.package.configfile)])
             syr_datapath = os.path.join(config.get('install', 'syrthes'),
@@ -362,7 +366,7 @@ class Study:
                              os.path.join(datadir, 'salome', 'fsi.export') + ".\n")
             sys.exit(1)
 
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         config.read([self.package.get_configfile(),
                      os.path.expanduser('~/.' + self.package.configfile)])
         asterhome = config.get('install', 'aster')
@@ -628,7 +632,7 @@ class Study:
 
         # Add batch system info if necessary
 
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         config.read([self.package.get_configfile(),
                      os.path.expanduser('~/.' + self.package.configfile)])
 

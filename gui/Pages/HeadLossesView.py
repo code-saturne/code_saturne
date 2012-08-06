@@ -215,7 +215,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         self.entriesNumber = 0
         d = HeadLossesModel(self.case).getNameAndLocalizationZone()
         liste=[]
-        liste=d.items()
+        liste=list(d.items())
         t=[]
         for t in liste :
             NamLoc=t[1]

@@ -32,7 +32,7 @@ This module contains the following class:
 #-------------------------------------------------------------------------------
 
 import os, logging, subprocess
-import string, shutil, cStringIO
+import string, shutil
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -259,7 +259,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         """
         if self.proc is None:
             return
-        self.proc.setReadChannel(QProcess.StandardError)
+        self.proc.setReadChannel(QProcess.Exception)
 
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()
@@ -419,7 +419,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         Update command-line options at each modification of
         post processing format
         """
-        list = string.split(line, ',')
+        list = line.split(',')
         format = self.modelFMTCHR.dicoV2M[str(self.comboBoxFMTCHR.currentText())]
         log.debug("__updateOptionsFormat-> FMTCHR = %s" % format)
         log.debug("__updateOptionsFormat-> OPTCHR = %s" % line)

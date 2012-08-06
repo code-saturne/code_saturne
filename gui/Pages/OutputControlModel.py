@@ -39,7 +39,6 @@ This module defines the following classes:
 #-------------------------------------------------------------------------------
 
 import string, sys, unittest
-from types import FloatType
 
 #-------------------------------------------------------------------------------
 # Application modules import

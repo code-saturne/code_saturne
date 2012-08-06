@@ -34,7 +34,11 @@ This module contains the following classes and function:
 #-------------------------------------------------------------------------------
 
 import os, sys, string, logging
-import ConfigParser
+try:
+    import ConfigParser
+    configparser = ConfigParser
+except Exception:
+    import configparser
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -618,7 +622,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         for config_file in [os.path.expanduser('~/.' + package.configfile),
                             package.get_configfile()]:
-            cfg = ConfigParser.ConfigParser()
+            cfg = configparser.ConfigParser()
             cfg.read(config_file)
             if cfg.has_option('run', 'meshpath'):
                 cfg_mesh_dirs = cfg.get('run', 'meshpath').split(':')

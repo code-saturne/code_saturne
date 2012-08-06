@@ -105,8 +105,8 @@ class MeshModel:
             mesh = mesh[:-3]
 
         extension = ""
-        last_caracters = (string.split(mesh, ".")[-1:])[0]
-        if last_caracters in self.ext.keys():
+        last_caracters = (mesh.split(".")[-1:])[0]
+        if last_caracters in list(self.ext.keys()):
             extension = last_caracters
         return extension
 
@@ -132,7 +132,7 @@ class MeshModel:
         @return: List of all authorized extensions for mesh files.
         @rtype: C{List}
         """
-        return self.ext.keys()
+        return list(self.ext.keys())
 
 
     def getBuildFormatList(self):

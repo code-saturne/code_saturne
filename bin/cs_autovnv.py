@@ -186,7 +186,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to):
 
     for p in exe, dif:
         if not os.path.isfile(p):
-            print "Error: executable %s not found." % p
+            print("Error: executable %s not found." % p)
             sys.exit(1)
 
     dif += " -d"
@@ -285,7 +285,7 @@ def main(argv, pkg):
     # Command line
 
     opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, addresses = process_cmd_line(argv, pkg)
-    opt_to  = string.split(addresses)
+    opt_to  = addresses.split()
 
     retcode = runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to)
 

@@ -76,7 +76,7 @@ class Constantes:
         """
         Set an attributs
         """
-        if attr in self.__dict__.keys():
+        if attr in list(self.__dict__.keys()):
             raise Exception("Cannot reassign constant %s" % attr)
         else:
             self.__dict__[attr] = value

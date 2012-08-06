@@ -425,8 +425,8 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
                 new = file_name + " --tool=memcheck"
             else:
                 new = ""
-                for i in string.split(self.valgrind):
-                    if i == string.split(self.valgrind)[0]:
+                for i in self.valgrind.split():
+                    if i == self.valgrind.split()[0]:
                         i = file_name
                         new = new + i + ' '
             self.valgrind = new
@@ -580,7 +580,7 @@ class ListingDialogView(CommandMgrDialogView):
             if s.indexOf(QString("Result directory")) != -1:
                 self.exec_dir = "Result directory"
         elif self.exec_dir == "Result directory":
-            self.exec_dir = string.join(string.split(str(s)), ' ')
+            self.exec_dir = string.join(str(s).split(), ' ')
             title = os.path.basename(self.exec_dir)
             self.setWindowTitle(title)
             self.suffix = title

@@ -38,7 +38,11 @@ import datetime
 import os, sys, pwd
 import types, string, re, fnmatch
 from optparse import OptionParser
-import ConfigParser
+try:
+    import ConfigParser  # Python2
+    configparser = ConfigParser
+except Exception:
+    import configparser  # Python3
 
 import cs_exec_environment
 import cs_case_domain
@@ -172,7 +176,7 @@ def main(argv, pkg):
 
     # Use alternate compute (back-end) package if defined
 
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read([pkg.get_configfile()])
 
     pkg_compute = None

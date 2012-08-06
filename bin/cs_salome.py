@@ -37,7 +37,6 @@ This module defines the following functions:
 import os, sys
 
 from optparse import OptionParser
-import ConfigParser
 
 import cs_exec_environment
 from cs_config import config

@@ -54,7 +54,12 @@ from PyQt4.QtGui  import *
 
 import cs_info
 
-from Base.MainForm import Ui_MainForm
+try:
+    from Base.MainForm import Ui_MainForm
+except:
+    sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Base"))
+    from Base.MainForm import Ui_MainForm
+
 from Base.IdView import IdView
 from Base.BrowserView import BrowserView
 from Base import XMLengine
@@ -330,13 +335,13 @@ class MainView(object):
             #        if self.recentFiles else QVariant()
             settings.setValue("RecentFiles", recentFiles)
             settings.setValue("MainWindow/Geometry",
-                    QVariant(self.saveGeometry()))
+                              QVariant(self.saveGeometry()))
             settings.setValue("MainWindow/State",
-                    QVariant(self.saveState()))
+                              QVariant(self.saveState()))
             settings.setValue("MainWindow/Color",
-                    QVariant(self.palette().color(QPalette.Window).name()))
+                              QVariant(self.palette().color(QPalette.Window).name()))
             settings.setValue("MainWindow/Font",
-                    QVariant(self.font().toString()))
+                              QVariant(self.font().toString()))
 
             event.accept()
             log.debug("closeEvent -> accept")

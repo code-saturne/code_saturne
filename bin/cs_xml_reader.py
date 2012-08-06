@@ -177,7 +177,7 @@ class Parser:
 
         extension = None
         last_caracters = (name.split('.')[-1:])[0]
-        if last_caracters in ext.keys():
+        if last_caracters in list(ext.keys()):
             extension = last_caracters
         return extension
 

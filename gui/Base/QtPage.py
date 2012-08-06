@@ -260,7 +260,6 @@ class ComboModel:
 # Validators for editors
 #-------------------------------------------------------------------------------
 
-vmax = sys.maxint
 vmax = 2147483647
 vmin = -vmax
 

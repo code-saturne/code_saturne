@@ -22,8 +22,11 @@
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 #-------------------------------------------------------------------------------
-
-import ConfigParser
+try:
+    import ConfigParser  # Python2
+    configparser = ConfigParser
+except Exception:
+    import configparser  # Python3
 import os
 import os.path
 import sys
@@ -87,7 +90,7 @@ def coupling(package,
 
     # Use alternate compute (back-end) package if defined
 
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read([package.get_configfile()])
 
     package_compute = None

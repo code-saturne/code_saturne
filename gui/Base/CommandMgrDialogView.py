@@ -273,7 +273,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         killList = []
 
         for ps in psraw:
-            psList.append(map(int, ps.split()))
+            psList.append(list(map(int, ps.split())))
 
         for ps in psList:
             if int(self.proc.pid()) == ps[1]:
@@ -286,7 +286,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         if len(killList) <= 0:
             return
 
-        cmd = "kill -9 %s" % string.join(map(str, killList), ' ')
+        cmd = "kill -9 %s" % string.join(list(map(str, killList)), ' ')
         subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 
 
@@ -379,7 +379,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         """
         if self.proc is None:
             return
-        self.proc.setReadChannel(QProcess.StandardError)
+        self.proc.setReadChannel(QProcess.Exception)
 
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()

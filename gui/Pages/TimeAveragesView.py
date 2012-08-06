@@ -229,11 +229,11 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
 
         # Update list of variables, properties, scalars ...
 
-        liste_label = QStringList()
-        for label in self.mdl.dicoLabel2Name.keys():
-            liste_label.append(label)
+        lst_label = QStringList()
+        for label in list(self.mdl.dicoLabel2Name.keys()):
+            lst_label.append(label)
 
-        self.modelDrag.setStringList(liste_label)
+        self.modelDrag.setStringList(lst_label)
 
         # Is it a following calculation ?
 
@@ -249,8 +249,8 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
 
         for nb in range(self.mdl.getNumberOfTimeAverage()):
             self.entriesNumber = self.entriesNumber + 1
-            label, start, restart, list = self.mdl.getTimeAverageData(nb+1)
-            self.insertAverage(label, start, restart, list)
+            label, start, restart, lst = self.mdl.getTimeAverageData(nb+1)
+            self.insertAverage(label, start, restart, lst)
 
 
     def getLabel(self):
@@ -323,11 +323,11 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         return self.modelAverage.getItem(row)
 
 
-    def insertAverage(self, label, ntdmom, imoold, list):
+    def insertAverage(self, label, ntdmom, imoold, lst):
         """
         Insert values in Hlist.
         """
-        idfmom = string.join(list,'*')
+        idfmom = string.join(lst,'*')
         idfmom_view = "<" + idfmom +">"
 
         if imoold == self.mdl.defaultValues()['restart']:
@@ -335,11 +335,11 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.modelAverage.addItem(label, ntdmom, imoold, idfmom_view)
 
 
-    def replaceTimeAverage(self, row, label, ntdmom, imoold, list):
+    def replaceTimeAverage(self, row, label, ntdmom, imoold, lst):
         """
         Insert values in Hlist.
         """
-        idfmom = string.join(list,'*')
+        idfmom = string.join(lst,'*')
         idfmom_view = "<" + idfmom + ">"
 
         if imoold == None:
@@ -383,7 +383,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
                 imoold = self.mdl.defaultValues()['restart']
 
             self.insertAverage(label, ntdmom, imoold, var_prop)
-            average = string.split(idfmom, '*')
+            average = idfmom.split('*')
             self.mdl.setTimeAverage(label, ntdmom, imoold, average)
         self.__eraseEntries()
 
@@ -485,8 +485,8 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             self.modelIMOOLD.setItem(str_model=choice)
             self.lineEditRestart.setText(QString(str(imoold)))
 
-        liste = [QString(s) for s in idfmom.replace('>','').replace('<','').split('*')]
-        self.modelDrop.setStringList(liste)
+        lst = [QString(s) for s in idfmom.replace('>','').replace('<','').split('*')]
+        self.modelDrop.setStringList(lst)
 
 
     @pyqtSignature("")
@@ -495,10 +495,10 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         Add a new var from list to profile
         """
         if (self.listViewDrag.currentIndex().row() >=0) :
-            liste = self.modelDrop.stringList()
+            lst = self.modelDrop.stringList()
             var = self.modelDrag.stringList()[self.listViewDrag.currentIndex().row()]
-            liste.append(var)
-            self.modelDrop.setStringList(liste)
+            lst.append(var)
+            self.modelDrop.setStringList(lst)
 
 
     @pyqtSignature("")

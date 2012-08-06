@@ -23,7 +23,11 @@
 
 #-------------------------------------------------------------------------------
 
-import ConfigParser
+try:
+    import ConfigParser  # Python2
+    configparser = ConfigParser
+except Exception:
+    import configparser  # Python3
 import datetime
 import os
 import os.path
@@ -1420,7 +1424,7 @@ fi
             else:
                 username = os.getenv('USER')
 
-            config = ConfigParser.ConfigParser({'user':username})
+            config = configparser.ConfigParser({'user':username})
             config.read([self.package.get_configfile(),
                          os.path.expanduser('~/.' + self.package.configfile)])
 

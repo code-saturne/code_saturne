@@ -596,9 +596,9 @@ class BatchRunningModel(Model):
         If keyword == None, all keywords are updated
         If keyword == key, only key is updated.
         """
-        l = self.dictValues.keys()
+        l = list(self.dictValues.keys())
         l.append(None) # Add 'None' when no keyword is specified in argument.
-        for k in self.dictValues.keys():
+        for k in list(self.dictValues.keys()):
             if self.dictValues[k] == 'None':
                 self.dictValues[k] = None
         self.isInList(keyword, l)
@@ -697,7 +697,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'job_ppn': '1',
         'job_walltime': '34:77:22'}
 
-        for k in dico_PBS.keys():
+        for k in list(dico_PBS.keys()):
             if mdl.dictValues[k] != dico_PBS[k] :
                 print("\nwarning for key: ", k)
                 print("  read value in the batch description:", mdl.dictValues[k])

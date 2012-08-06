@@ -50,12 +50,12 @@ except ImportError:
     sys.exit(0)
 
 
-if map(int, string.split(QT_VERSION_STR, ".")) < [4, 3, 0]:
+if list(map(int, QT_VERSION_STR.split( "."))) < [4, 3, 0]:
     raise SystemExit("Graphical user interface requires Qt 4.3 or later "\
                      "(found %s)." % QT_VERSION_STR)
 
 
-if map(int, string.split(PYQT_VERSION_STR, ".")) < [4, 3, 0]:
+if list(map(int, PYQT_VERSION_STR.split("."))) < [4, 3, 0]:
     raise SystemExit("Graphical user interface requires PyQt 4.3 or later "\
                      "(found %s)." % PYQT_VERSION_STR)
 
@@ -124,8 +124,10 @@ def main(argv, pkg):
     # Test the package name to know which modules have to be imported
     if pkg.name == 'code_saturne':
         icons_path = os.path.join(pkg.pkgpythondir, 'Base', 'icons')
+        sys.path.insert(1, os.path.join(pkg.pkgpythondir, 'Base'))
     else:
         icons_path = os.path.join(pkg.pkgpythondir, 'core', 'icons')
+        sys.path.insert(1, os.path.join(pkg.pkgpythondir, 'core'))
 
     case, spl = process_cmd_line(argv)
 

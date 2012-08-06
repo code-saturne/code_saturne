@@ -120,7 +120,7 @@ class TimeAveragesModel(Model):
                     if name != 'local_time_step':
                         self.dicoLabel2Name[label] = name
 
-        return self.dicoLabel2Name.keys()
+        return list(self.dicoLabel2Name.keys())
 
 
     def __updateTimeAverage(self, nb, label, start, restart, list):
@@ -148,7 +148,7 @@ class TimeAveragesModel(Model):
         node['id'] = str(nb)
 
         for var in list:
-            self.isInList(var, self.dicoLabel2Name.keys())
+            self.isInList(var, list(self.dicoLabel2Name.keys()))
             node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
 
         node.xmlSetData('time_step_start', start)
@@ -241,7 +241,7 @@ class TimeAveragesModel(Model):
             restart = node.xmlGetInt('restart_from_time_average')
 
         for var in node.xmlGetChildNodeList('var_prop'):
-            for label in self.dicoLabel2Name.keys():
+            for label in list(self.dicoLabel2Name.keys()):
                 if self.dicoLabel2Name[label] == var['name']:
                     list.append(label)
         return node['label'], start, restart, list

@@ -46,7 +46,7 @@ rootNode = None
 #-------------------------------------------------------------------------------
 
 import os, sys, string, unittest, logging
-from types import StringType, UnicodeType, FloatType, IntType
+from types import UnicodeType
 from xml.dom.minidom import Document, parse, parseString, Node
 from xml.sax.handler import ContentHandler
 from xml.sax import make_parser
@@ -82,7 +82,7 @@ def xmlChecker(filename):
         p = make_parser()
         p.setContentHandler(ContentHandler())
         p.parse(filename)
-    except Exception, e:
+    except Exception as e:
         f = os.path.basename(filename)
         m = "%s file reading error. \n\n"\
             "This file is not in accordance with XML specifications.\n\n"\
@@ -164,7 +164,7 @@ class Dico:
         Simple tool wich print on the current terminal the contents of the dico.
         """
         if hasattr(self, 'data'):
-            for i in self.data.keys():
+            for i in list(self.data.keys()):
                 print("%s -> %s" % (i, self.data[i]))
 
 
@@ -263,7 +263,7 @@ class XMLElement:
         """
         if self.ca: self.ca.modified()
 
-        for attr, value in kwargs.items():
+        for attr, value in list(kwargs.items()):
             if not self.el.hasAttribute(attr):
                 self.el.setAttribute(attr, _encode(str(value)))
 
@@ -278,7 +278,7 @@ class XMLElement:
         if self.el.nodeType == Node.ELEMENT_NODE:
             if self.el.hasAttributes():
                 attrs = self.el._get_attributes()
-                a_names = attrs.keys()
+                a_names = list(attrs.keys())
                 a_names.sort()
                 for a_name in a_names:
                     d[a_name] = attrs[a_name].value
@@ -309,7 +309,7 @@ class XMLElement:
         """
         if self.ca: self.ca.modified()
 
-        for attr, value in kwargs.items():
+        for attr, value in list(kwargs.items()):
             self.el.setAttribute(attr, _encode(str(value)))
 
         log.debug("xmlSetAttribute-> %s" % self.__xmlLog())
@@ -369,7 +369,7 @@ class XMLElement:
             if node.nodeType == Node.ELEMENT_NODE:
                 dd = self._inst(node).xmlGetAttributeDictionary()
                 key = node.tagName
-                for k in dd.keys(): key = key + (k+dd[k])
+                for k in list(dd.keys()): key = key + (k+dd[k])
                 d[key] = self._inst(node)
             elif node.nodeType == Node.TEXT_NODE:
                 try:
@@ -404,14 +404,14 @@ class XMLElement:
             return 1
         d1 = self.xmlSortByTagName()
         d2 = other.xmlSortByTagName()
-        l1 = d1.keys()
-        l2 = d2.keys()
+        l1 = list(d1.keys())
+        l2 = list(d2.keys())
         l1.sort()
         l2.sort()
         if l1 != l2:
             return 1
         if self.el.childNodes and other.el.childNodes:
-            for key in d1.keys():
+            for key in list(d1.keys()):
                 if d1[key] != d2[key]:
                     return 1
         return 0
@@ -460,7 +460,7 @@ class XMLElement:
 
         for node in nodeL:
             iok = 0
-            for k, v in kwargs.items():
+            for k, v in list(kwargs.items()):
                 if node.getAttribute(str(k)) == str(v):
                     iok = 1
                 else:
@@ -501,7 +501,7 @@ class XMLElement:
         el = self.doc.createElement(tag)
         for k in attrList:
             el.setAttribute(k, "")
-        for k, v in kwargs.items():
+        for k, v in list(kwargs.items()):
             el.setAttribute(k, _encode(str(v)))
 
         log.debug("xmlAddChild-> %s %s" % (tag, self.__xmlLog()))
@@ -519,7 +519,7 @@ class XMLElement:
 
         if newTextNode == "" or newTextNode == None : return
 
-        if type(newTextNode) != StringType: newTextNode = str(newTextNode)
+        if type(newTextNode) != str: newTextNode = str(newTextNode)
 
         if self.el.hasChildNodes():
             for n in self.el.childNodes:
@@ -545,7 +545,7 @@ class XMLElement:
         # "B. Floating Point Arithmetic: Issues and Limitations
         #  http://www.python.org/doc/current/tut/node14.html"
         #
-        if type(textNode) == FloatType: textNode = str("%g" % (textNode))
+        if type(textNode) == float: textNode = str("%g" % (textNode))
 
         nodeList = self._childNodeList(tag, *attrList, **kwargs)
         elementList = []
@@ -754,7 +754,7 @@ class XMLElement:
         Return a list of XMLElement nodes from the explored
         XMLElement node (i.e. self).
         """
-        return map(self._inst, self._nodeList(tag, *attrList, **kwargs))
+        return list(map(self._inst, self._nodeList(tag, *attrList, **kwargs)))
 
 
     def xmlGetNode(self, tag, *attrList, **kwargs):
@@ -781,7 +781,7 @@ class XMLElement:
         Each element of the returned list is an instance of the XMLElement
         class.
         """
-        return map(self._inst, self._childNodeList(tag, *attrList, **kwargs))
+        return list(map(self._inst, self._childNodeList(tag, *attrList, **kwargs)))
 
 
     def xmlGetChildNode(self, tag, *attrList, **kwargs):
@@ -812,12 +812,12 @@ class XMLElement:
         if not nodeList:
             child = self.xmlAddChild(tag, *attrList, **kwargs)
             for k in attrList: child.el.setAttribute(k, "")
-            for k, v in kwargs.items(): child.el.setAttribute(k, _encode(str(v)))
+            for k, v in list(kwargs.items()): child.el.setAttribute(k, _encode(str(v)))
             nodeList.append(child)
         else:
-            list = []
-            for node in nodeList: list.append(self._inst(node))
-            nodeList = list
+            l = []
+            for node in nodeList: l.append(self._inst(node))
+            nodeList = l
 
         return nodeList
 
@@ -832,12 +832,12 @@ class XMLElement:
         if not nodeList:
             child = self.xmlAddChild(tag, *attrList, **kwargs)
             for k in attrList: child.el.setAttribute(k, "")
-            for k, v in kwargs.items(): child.el.setAttribute(k, _encode(str(v)))
+            for k, v in list(kwargs.items()): child.el.setAttribute(k, _encode(str(v)))
             nodeList.append(child)
         else:
-            list = []
-            for node in nodeList: list.append(self._inst(node))
-            nodeList = list
+            l = []
+            for node in nodeList: l.append(self._inst(node))
+            nodeList = l
 
         return nodeList
 
@@ -853,7 +853,7 @@ class XMLElement:
         if not nodeList:
             child = self.xmlAddChild(tag, *attrList, **kwargs)
             for k in attrList: child.el.setAttribute(k, "")
-            for k, v in kwargs.items(): child.el.setAttribute(k, _encode(str(v)))
+            for k, v in list(kwargs.items()): child.el.setAttribute(k, _encode(str(v)))
         else:
             if len(nodeList) > 1:
                 msg = "There is an error in with the use of the xmlInitNode method. "\
@@ -877,7 +877,7 @@ class XMLElement:
         if not nodeList:
             child = self.xmlAddChild(tag, *attrList, **kwargs)
             for k in attrList: child.el.setAttribute(k, "")
-            for k, v in kwargs.items(): child.el.setAttribute(k, _encode(str(v)))
+            for k, v in list(kwargs.items()): child.el.setAttribute(k, _encode(str(v)))
         else:
             if len(nodeList) > 1:
                 msg = "There is an error in with the use of the xmlInitChildNode method. "\
@@ -935,7 +935,7 @@ class XMLElement:
         # element content; otherwise the comparison might produce a wrong
         # result due to the content of two elements having different amounts of
         # whitespace.
-        return string.join(string.split(text), ' ')
+        return string.join(text.split(), ' ')
 
 
 ##class _Document(Document):
