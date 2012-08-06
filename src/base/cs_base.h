@@ -93,42 +93,6 @@ typedef int (cs_base_atexit_t) (void);
  * Global variable definitions
  *============================================================================*/
 
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Call exit routine from Fortran code
- *
- * Fortran interface:
- *
- * subroutine csexit (status)
- * *****************
- *
- * integer          status      : <-- : 0 for success, 1+ for error
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csexit, CSEXIT)
-(
-  const cs_int_t  *status
-);
-
-/*----------------------------------------------------------------------------
- * CPU time used since execution start
- *
- * Fortran interface:
- *
- * subroutine dmtmps (tcpu)
- * *****************
- *
- * double precision tcpu        : <-- : cpu time (user + system)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (dmtmps, DMTMPS)
-(
-  cs_real_t  *tcpu
-);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

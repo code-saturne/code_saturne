@@ -226,6 +226,44 @@ _close_c_log_file(void)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Call exit routine from Fortran code
+ *
+ * Fortran interface:
+ *
+ * subroutine csexit (status)
+ * *****************
+ *
+ * integer          status      : <-- : 0 for success, 1+ for error
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csexit, CSEXIT)
+(
+  const cs_int_t  *status
+)
+{
+  cs_exit(*status);
+}
+
+/*----------------------------------------------------------------------------
+ * Elapsed time since execution start
+ *
+ * Fortran interface:
+ *
+ * subroutine dmtmps (tw)
+ * *****************
+ *
+ * double precision tw          : <-- : elapsed time
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (dmtmps, DMTMPS)
+(
+  cs_real_t  *tw
+)
+{
+  *tw = cs_timer_cpu_time();
+}
+
+/*----------------------------------------------------------------------------
  * Create a directory, or check it exists.
  *
  * Fortran interface

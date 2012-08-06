@@ -54,6 +54,38 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Call exit routine from Fortran code
+ *
+ * Fortran interface:
+ *
+ * subroutine csexit (status)
+ * *****************
+ *
+ * integer          status      : <-- : 0 for success, 1+ for error
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csexit, CSEXIT)
+(
+  const cs_int_t  *status
+);
+
+/*----------------------------------------------------------------------------
+ * Elapsed time since execution start
+ *
+ * Fortran interface:
+ *
+ * subroutine dmtmps (tw)
+ * *****************
+ *
+ * double precision tw          : <-- : elapsed time
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (dmtmps, DMTMPS)
+(
+  cs_real_t  *tw
+);
+
+/*----------------------------------------------------------------------------
  * Create a directory, or check it exists.
  *
  * Fortran interface

@@ -1157,8 +1157,6 @@ do while (iterns.le.nterup)
   if(ineedy.eq.1.and.iwarny.ge.1) then
     call dmtmps(tdist2)
     tditot = tdist2-tdist1
-    if (irangp.ge.0) call parsom (tditot)
-                     !==========
     write(nfecra,4010)tditot
   endif
 
@@ -1660,8 +1658,8 @@ call schtmp                                                       &
 '  ==================================                         ',/)
 
  4010 format(/,                                                   &
-' ** TEMPS CPU TOTAL POUR LA DISTANCE A LA PAROI : ',E14.5     ,/,&
-'    -------------------------------------------              ',/)
+' ** TEMPS POUR LA DISTANCE A LA PAROI : ',E14.5               ,/,&
+'    ---------------------------------                        ',/)
 
 #else
 
@@ -1712,8 +1710,8 @@ call schtmp                                                       &
 '  =====================                                      ',/)
 
  4010 format(/,                                                   &
-' ** TOTAL CPU TIME FOR THE WALL DISTANCE: ',E14.5             ,/,&
-'    -------------------------------------                    ',/)
+' ** TIME FOR THE WALL DISTANCE: ',E14.5                       ,/,&
+'    ---------------------------                              ',/)
 
 #endif
 

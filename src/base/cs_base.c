@@ -749,48 +749,6 @@ _cs_base_mpi_setup(const char *app_name)
 #endif /* HAVE_MPI */
 
 /*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Call exit routine from Fortran code
- *
- * Fortran interface:
- *
- * subroutine csexit (status)
- * *****************
- *
- * integer          status      : <-- : 0 for success, 1+ for error
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csexit, CSEXIT)
-(
-  const cs_int_t  *status
-)
-{
-  cs_exit (*status);
-}
-
-/*----------------------------------------------------------------------------
- * CPU time used since execution start
- *
- * Fortran interface:
- *
- * subroutine dmtmps (tcpu)
- * *****************
- *
- * double precision tcpu        : <-- : cpu time (user + system)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (dmtmps, DMTMPS)
-(
-  cs_real_t  *tcpu
-)
-{
-  *tcpu = cs_timer_cpu_time();
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 

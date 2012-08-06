@@ -1300,10 +1300,10 @@ write(nfecra,7000)
  3002 format(/,' INSTANT ',E18.9,        '   INITIALISATION ALE ',/,    &
 ' ============================================================= ',&
  /,/)
- 3010 format(/,' TEMPS CPU POUR L''ITERATION ',I15,' :    ',E14.5,/,/,  &
+ 3010 format(/,' TEMPS POUR L''ITERATION ',I15,' :    ',E14.5,/,/,      &
 '===============================================================',&
  /)
- 3012 format(/,' TEMPS CPU POUR L''INITIALISATION ALE :    ',E14.5,/,/, &
+ 3012 format(/,' TEMPS POUR L''INITIALISATION ALE :    ',E14.5,/,/,     &
 '===============================================================',&
  /)
  3020 format(/,/,                                                 &
@@ -1313,7 +1313,7 @@ write(nfecra,7000)
  ' Sortie finale de fichiers suite',/,                     &
  '   Sauvegarde a l''iteration ', I10, ', Temps physique ',E14.5,/,/)
  3022 format(/,/,                                                 &
- ' Temps CPU pour les fichiers suite : ',E14.5,/,/)
+ ' Temps pour les fichiers suite : ',E14.5,/,/)
 
  4000 format(/,/,                                                 &
 '===============================================================',&
@@ -1328,8 +1328,8 @@ write(nfecra,7000)
                                                                 /,&
                                                                 /)
  4010 format(                                                   /,&
- 3X,'** TEMPS CPU POUR LES SORTIES FINALES : ',E14.5           ,/,&
- 3X,'   ----------------------------------                    ',/)
+ 3X,'** TEMPS POUR LES SORTIES FINALES : ',E14.5               ,/,&
+ 3X,'   ------------------------------                        ',/)
  7000 format(/,/,                                                 &
 ' =========================================================== ',/,&
                                                               /,/,&
@@ -1364,10 +1364,10 @@ write(nfecra,7000)
  3002 format(/,' INSTANT ',E18.9,        '   ALE INITIALIZATION ',/,    &
 ' ============================================================= ',&
  /,/)
- 3010 format(/,' CPU TIME FOR THE TIME STEP  ',I15,':     ',E14.5,/,/,  &
+ 3010 format(/,' TIME FOR THE TIME STEP  ',I15,':     ',E14.5,/,/,  &
 '===============================================================',&
  /)
- 3012 format(/,' CPU TIME FOR ALE INITIALIZATION:          ',E14.5,/,/, &
+ 3012 format(/,' TIME FOR ALE INITIALIZATION:        ',E14.5,/,/, &
 '===============================================================',&
  /)
  3020 format(/,/,                                                 &
@@ -1377,7 +1377,7 @@ write(nfecra,7000)
  ' Write final restart files',/,                                  &
  '   checkpoint at iteration ',    I10,  ', Physical time ',E14.5,/,/)
  3022 format(/,/,                                                 &
- ' CPU time for restart files: ',E14.5,/,/)
+ ' Time for restart files: ',E14.5,/,/)
 
  4000 format(/,/,                                                 &
 '===============================================================',&
@@ -1392,8 +1392,8 @@ write(nfecra,7000)
                                                                 /,&
                                                                 /)
  4010 format(                                                   /,&
- 3X,'** CPU TIME FOR FINAL WRITING: ',E14.5                    ,/,&
- 3X,'   ---------------------------                           ',/)
+ 3X,'** TIME FOR FINAL WRITING: ',E14.5                        ,/,&
+ 3X,'   -----------------------                                ',/)
  7000 format(/,/,                                                 &
 ' =========================================================== ',/,&
                                                               /,/,&
