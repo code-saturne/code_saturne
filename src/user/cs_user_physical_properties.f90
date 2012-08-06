@@ -71,14 +71,14 @@ subroutine usphyv &
 !             . viscosity  (initialized at viscl0)
 !      - in the GUI or cs_user_initialization
 !             . calculation variables (initialized at 0 by defaut
-!             or to the value given in the GUI or in usiniv)
+!             or to the value given in the GUI or in cs_user_initialization)
 
 ! We may define here variation laws for cell properties, for:
 !     - density                                    rom    kg/m3
 !         (possibly also at boundary faces         romb   kg/m3)
 !     - molecular viscosity                        viscl  kg/(m s)
 !     - specific heat                              cp     J/(kg degrees)
-!     - "diffusivities" associated with sclalars   visls kg/(m s)
+!     - "diffusivities" associated with scalars    visls kg/(m s)
 ! Warning if the scalar is the temperature, visls corresponds
 ! to its conductivity (Lambda) in W/(m K)
 
