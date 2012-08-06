@@ -1259,6 +1259,8 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
         if ((residu + 0.001d0*residu).gt.resold) then
           relaxv(ipr) = max(0.8d0*relaxp, 0.1d0)
+        else
+          relaxv(ipr) = min(1.2d0*relaxp, 1.0d0)
         endif
 
       endif
