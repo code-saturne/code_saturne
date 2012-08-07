@@ -35,7 +35,7 @@ This module defines the following functions:
 #===============================================================================
 
 import datetime
-import os, sys, pwd
+import os, sys
 import types, string, re, fnmatch
 from optparse import OptionParser
 try:

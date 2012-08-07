@@ -605,6 +605,7 @@ AC_CHECK_FUNCS([uname])
 AC_CHECK_FUNCS([clock_gettime getrusage gettimeofday sbrk sysinfo])
 AC_CHECK_FUNCS([posix_memalign])
 AC_CHECK_FUNCS([memset])
+AC_CHECK_FUNCS([strtok_r])
 
 saved_LIBS="$LIBS"
 LIBS="${LIBS} -lm"

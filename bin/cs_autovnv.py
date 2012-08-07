@@ -29,7 +29,7 @@
 
 import os, sys
 import string
-import pwd
+import getpass
 import platform
 
 from optparse import OptionParser
@@ -213,7 +213,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to):
     studies.reporting(" Platform:           " + platform.platform())
     studies.reporting(" Computer:           " + platform.uname()[1] + "  " + release())
     studies.reporting(" Process Id:         " + str(os.getpid()))
-    studies.reporting(" User name:          " + pwd.getpwuid(os.getuid())[0])
+    studies.reporting(" User name:          " + getpass.getuser())
     studies.reporting(" Working directory:  " + os.getcwd())
     studies.reporting("\n")
 

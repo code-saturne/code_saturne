@@ -37,7 +37,7 @@ This module defines the following functions:
 #-------------------------------------------------------------------------------
 
 
-import os, sys, pwd, shutil, stat, fnmatch
+import os, sys, shutil, stat, fnmatch
 from optparse import OptionParser
 
 #-------------------------------------------------------------------------------

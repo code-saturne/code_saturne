@@ -41,7 +41,7 @@ and the following classes:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import os, sys, pwd, shutil, stat
+import os, sys, shutil, stat
 import types, string, re, fnmatch
 from optparse import OptionParser
 try:
