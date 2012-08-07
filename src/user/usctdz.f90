@@ -26,11 +26,10 @@ subroutine usctdz
 !================
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR POUR LA DEFINITION DES ZONES D'ECHANGE
-! D'UN AEROREFRIGERANT
+! Define cooling tower parameters
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -71,28 +70,27 @@ integer          imzech,ntypze,idimze,neleze
 double precision teaueze,qeaueze,deltat
 double precision xap,xnp,surface,dgout
 
-
 !===============================================================================
 
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 
-! La modelisation choisie doit etre coherente avec IPPMOD
+! The chosen model must be consistent with ippmod
 
-! IMZECH = 0 - pas de modele
-!          1 - modele de Merkel
-!          2 - modele de Poppe
+! IMZECH = 0 - no model
+!          1 - Merkels model
+!          2 - Poppe's model
 
 imzech  = ippmod(iaeros)
 
-! Definition de la zone d'echange
+! Define exchange zone
 
 idimze  = 2
 ntypze  = 2
@@ -107,13 +105,13 @@ dgout   = 0.005d0
 
 call defct &
 !=========
- ( idimze, '2 or 3', imzech, ntypze, neleze,          &
-   deltat, teaueze, qeaueze, xap, xnp, surface, dgout )
+ (idimze, '2 or 3', imzech, ntypze, neleze,           &
+  deltat, teaueze, qeaueze, xap, xnp, surface, dgout)
 
 
-!===============================================================================
-!     FORMATS
-!===============================================================================
+!----
+! End
+!----
 
 return
 end subroutine

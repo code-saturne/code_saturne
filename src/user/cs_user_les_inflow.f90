@@ -52,7 +52,7 @@ subroutine cs_user_les_inflow_init (nent)
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! nent             ! i  ! <-- ! number of synthetic turbulence inlets          !
+! nent             ! i  ! --> ! number of synthetic turbulence inlets          !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -164,15 +164,15 @@ subroutine cs_user_les_inflow_define &
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! nument           ! i  ! --> ! id of the inlet                                !
-! typent           ! i  ! <-- ! type of inflow method at the inlet             !
-! nelent           ! i  ! <-- ! numb. of entities of the inflow meth           !
-! iverbo           ! i  ! <-- ! verbosity level                                !
-! nfbent           ! i  ! <-- ! numb. of bound. faces of the inlet             !
-! lfbent           ! ra ! <-- ! list of bound. faces of the inlet              !
-! vitent           ! ra ! <-- ! ref. mean velocity at the inlet                !
-! enrent           ! r  ! <-- ! ref. turb. kin. ener. at the inlet             !
-! dspent           ! r  ! <-- ! ref. turb. dissipation at the inlet            !
+! nument           ! i  ! <-- ! id of the inlet                                !
+! typent           ! i  ! --> ! type of inflow method at the inlet             !
+! nelent           ! i  ! --> ! numb. of entities of the inflow meth           !
+! iverbo           ! i  ! --> ! verbosity level                                !
+! nfbent           ! i  ! --> ! numb. of bound. faces of the inlet             !
+! lfbent           ! ra ! --> ! list of bound. faces of the inlet              !
+! vitent           ! ra ! --> ! ref. mean velocity at the inlet                !
+! enrent           ! r  ! --> ! ref. turb. kin. ener. at the inlet             !
+! dspent           ! r  ! --> ! ref. turb. dissipation at the inlet            !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -251,7 +251,7 @@ subroutine cs_user_les_inflow_advanced &
 !    Generation of synthetic turbulence at LES inlets
 
 !    Accurate definition of mean velocity, Reynolds stresses and dissipation
-!    rate for each boundary faces of the synthetic turbulence inlet 'nument'
+!    rate for each boundary face of the synthetic turbulence inlet 'nument'
 
 ! Usage
 ! -----

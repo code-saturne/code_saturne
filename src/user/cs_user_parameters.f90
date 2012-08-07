@@ -25,7 +25,7 @@
 ! Purpose:
 ! -------
 
-! User subroutines for input of calculation parameters (Fortran commons).
+! User subroutines for input of calculation parameters (Fortran modules).
 !   These subroutines are called in all cases.
 
 ! If the Code_Saturne GUI is used, this file is not required (but may be
@@ -109,7 +109,7 @@ implicit none
 !       used is that from his case definition, and not that from the library.
 !===============================================================================
 
-if(1.eq.1) then
+if (1.eq.1) then
   return
 endif
 
@@ -2451,7 +2451,7 @@ integer iutile
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -2483,9 +2483,10 @@ nalinf = 75
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-! --- Maximum number of iterations in case of implicit Fluid Structure Coupling with structural
-!     calculations (internal and/or external(i.e. using Code_Aster)). NALIMX = 1, in case of
-!     explicit FSI algorithm.
+! --- Maximum number of iterations in case of implicit Fluid Structure Coupling
+!     with structural calculations (internal and/or external
+!     (i.e. using Code_Aster)).
+!     NALIMX = 1, in case of explicit FSI algorithm.
 
 nalimx = 15
 
@@ -2567,7 +2568,7 @@ implicit none
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
@@ -3246,7 +3247,7 @@ implicit none
 !       thus the default (library reference) version stops immediately.
 !===============================================================================
 
-if(1.eq.1) then
+if (1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
@@ -3350,7 +3351,7 @@ implicit none
 !       thus the default (library reference) version stops immediately.
 !===============================================================================
 
-if(1.eq.1) then
+if (1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
@@ -3429,7 +3430,7 @@ subroutine uscpi1
 !  ---------
 
 !  User's routine to control outing of variables for pulverised coal combustion
-!  (these parameters are in COMMON)
+!  (these parameters are in modules)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -3797,20 +3798,16 @@ subroutine uscpl1
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+!  Purpose:
+!  -------
 
+!   Lagrangian module coupled with pulverized coal:
+!   -----------------------------------------------
 
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN COUPLE CHARBON PULVERISE :
-!   --------------------------------------------------------------
+!      Eulerian combustion of pulverized coal and
+!      Lagrangian transport of coal particles
 
-!    ROUTINE UTILISATEUR POUR PHYSIQUE PARTICULIERE
-
-!      COMBUSTION EULERIENNE DE CHARBON PULVERISE ET
-!      TRANSPORT LAGRANGIEN DES PARTICULES DE CHARBON
-
-!    ROUTINE UTILISATEUR POUR ENTREE DES PARAMETRES DE CALCUL
-!      (COMMONS)
+!    User subroutine for calculation parameter definitions (modules)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -3819,10 +3816,9 @@ subroutine uscpl1
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -3854,48 +3850,48 @@ integer          ipp , icha
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0. This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if(1.eq.1) then
+if (1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
 
- 9000 format(                                                           &
-'@                                                            ',/,&
+ 9000 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     COMBUSTION CHARBON PULVERISE COUPLE AU                 ',/,&
-'@     TRANSPORT LAGRANGIEN DES PARTICULES DE CHARBON :       ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR uscpl1 DOIT ETRE COMPLETE',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input',/,                          &
+'@    =======',/,                                                 &
+'@     The user subroutine ''uscpl1'' must be completed',/,       &
+'@     for pulverized coal combustion coupled with',/,            &
+'@     lagrangian transport of coal particles',/,                 &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 
 !===============================================================================
-! 1. VARIABLES TRANSPORTEES
+! 1. Transported variables
 !===============================================================================
 
-!  Sortie chrono, suivi listing, sortie histo
-!     Si l'on n'affecte pas les tableaux suivants,
-!     les valeurs par defaut seront utilisees
-
-!       ICHRVR( ) = sortie chono (oui 1/non 0)
-!       ILISVR( ) = suivi listing (oui 1/non 0)
-!       IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes
-
+!  Chronological output, logging in listing, history output
+!       if we do not assign the following array values,
+!       default values will be used!
+!
+!     ichrvr( ) = chonological output (yes 1/no 0)
+!     ilisvr( ) = logging in listing (yes 1/no 0)
+!     ihisvr( ) = history output (number of probes and their numbers)
+!     if ihisvr(.,1)  = -1, output for all probes
 
 ! --> Variables propres a la phase gaz continue
 
@@ -3933,17 +3929,17 @@ ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
 !===============================================================================
-! 2. VARIABLES ALGEBRIQUES OU D'ETAT
+! 2. Algebraic or state variables
 !===============================================================================
 
-!  Sortie chrono, suivi listing, sortie histo
-!     Si l'on n'affecte pas les tableaux suivants,
-!     les valeurs par defaut seront utilisees
-
-!       ICHRVR( ) = sortie chono (oui 1/non 0)
-!       ILISVR( ) = suivi listing (oui 1/non 0)
-!       IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes
+!  Chronological output, logging in listing, history output
+!       if we do not assign the following array values,
+!       default values will be used!
+!
+!     ichrvr( ) = chonological output (yes 1/no 0)
+!     ilisvr( ) = logging in listing (yes 1/no 0)
+!     ihisvr( ) = history output (number of probes and their numbers)
+!     if ihisvr(.,1)  = -1, output for all probes
 
 ! --> Variables algebriques propres a la suspension gaz - particules
 
@@ -4038,10 +4034,12 @@ subroutine user_coal_ini1
 
 
 !===============================================================================
-!  PURPOSE   :
+!  Purpose:
 !  ---------
+
 !  User's routine to control outing of variables for pulverised coal combustion
-!  (these parameters are in COMMON)
+!  (these parameters are in a module)
+
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -4085,16 +4083,16 @@ integer          ipp , icla , icha
 
 
 !===============================================================================
-! 1. TRANSPORTED VARIABLES
+! 1. Transported variables
 !===============================================================================
 
 ! OUTLET chrono, listing, and histo
 !     if below vector are not allocated, default values will be used
 
-!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
-!       ILISVR( ) =  listing outlet (Yes 1/No  0)
-!       IHISVR( ) =  histo outlet (number of roiqu and number)
-!       if IHISVR(.,1)  = -1 every probe
+!       ichrvr( ) =  chono outlet (Yes 1/No  0)
+!       ilisvr( ) =  listing outlet (Yes 1/No  0)
+!       ihisvr( ) =  histo outlet (number of roiqu and number)
+!       if ihisvr(.,1)  = -1 every probe
 
 
 ! --> Variables for the mix (carrying gas and coal particles)
@@ -4446,11 +4444,10 @@ subroutine user_fuel_ini1
 !========================
 
 !===============================================================================
-!  PURPOSE   :
-!  ---------
+!  Purpose:
+!  --------
 
-!  USER ROUTINE FOR ALLOCATE COMPUTATION PARAMETERS DEALING WITH FUEL
-!    (COMMONS)
+!  User routine for allocate computation parameters dealing with fuel
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -4489,22 +4486,21 @@ use ppcpfu
 
 implicit none
 
-integer          ipp , icla
+integer ipp, icla
 
 !===============================================================================
 
 !===============================================================================
-! 1. TRANSPORTED VARIABLES
+! 1. Transported variables
 !===============================================================================
 
 ! OUTLET chrono, listing, and histo
 !     if below vector are not allocated, default values will be used
 
-!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
-!       ILISVR( ) =  listing outlet (Yes 1/No  0)
-!       IHISVR( ) =  histo outlet (number of roiqu and number)
-!       if IHISVR(.,1)  = -1 every probe
-
+!       ichrvr( ) =  chono outlet (Yes 1/No  0)
+!       ilisvr( ) =  listing outlet (Yes 1/No  0)
+!       ihisvr( ) =  histo outlet (number of roiqu and number)
+!       if ihisvr(.,1)  = -1 every probe
 
 ! --> Variables for the mix (carrying gas and coal particles)
 
@@ -4536,7 +4532,6 @@ do icla = 1, nclafu
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 enddo
-
 
 ! --> Variables for carrying gas
 
@@ -4592,10 +4587,10 @@ endif
 ! OUTLET chrono, listing, and histo
 !     if below vector are not allocated, default values will be used
 
-!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
-!       ILISVR( ) =  listing outlet (Yes 1/No  0)
-!       IHISVR( ) =  histo outlet (number of roiqu and number)
-!       if IHISVR(.,1)  = -1 every monitoring point
+!       ichrvr( ) =  chono outlet (Yes 1/No  0)
+!       ilisvr( ) =  listing outlet (Yes 1/No  0)
+!       ihisvr( ) =  histo outlet (number of roiqu and number)
+!       if ihisvr(.,1)  = -1 every monitoring point
 
 
 ! --> Variables for the mix (carrying gas and coal particles)
@@ -4727,19 +4722,19 @@ ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     - Carbone Bilan
+!     - Carbon balance
 ipp = ipppro(ipproc(ibcarbone))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     - Oxygen bilan
+!     - Oxygen balance
 ipp = ipppro(ipproc(iboxygen))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     - Hydrogen bilan
+!     - Hydrogen balance
 ipp = ipppro(ipproc(ibhydrogen))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
@@ -4830,18 +4825,18 @@ integer          ipp, iesp , idimve
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if(1.eq.1) then
+if (1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
-!
+
  9000 format(                                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''useli1'' must be completed',/, &
+'@     The user subroutine ''useli1'' must be completed',/,       &
 '@     for electric module',/,                                    &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
@@ -4853,7 +4848,7 @@ endif
 
 
 !===============================================================================
-! 1. SOLVED VARIABLES
+! 1. Solved variables
 !===============================================================================
 
 !  Chronological output, logging in listing, history output
@@ -5059,117 +5054,92 @@ use ctincl
 
 implicit none
 
-double precision cpa,cpe,cpv,hv0,rhoe,visc,conduc
-
 !===============================================================================
 
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0. This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if(1.eq.1) then
+if (1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
 
- 9000 format(                                                           &
-'@                                                            ',/,&
+ 9000 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input',/,                          &
+'@    =======',/,                                                 &
+'@     The user subroutine ''uscti1'' must be completed',/,       &
+'@     for the cooling tower module',/,                           &
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE L''ENTREE DES DONNEES         ',/,&
-'@    =========                                               ',/,&
-'@                      MODULE AEROREFRIGERANTS               ',/,&
-'@                                                            ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usctin DOIT ETRE COMPLETE',/,&
-'@                                                            ',/,&
-'@     Ce sous-programme utilisateur permet de definir les    ',/,&
-'@       options generales. Il est indispensable.             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1.  PARAMETRES POUR L'ECART DE TEMPERATURE IMPOSE
+! 1. Parameters for prescibed temperature difference
 !===============================================================================
 
-!     ACTIVATION
+! Activation
 iaeeri = 0
 
-!     ECART DE REFRIGERATION A IMPOSER
+! Temperature difference (cooling) to prescribe
 vaeeri = 13.d0
 
-!     FREQUENCE DE MODIFICATION DE LA TEMPERATURE
+! Temperature modification frequency
 iaeerp = 5
 
-!     PAS DE TEMPERATURE POUR LE CALCUL DE LA PENTE DE ECARTREF(TEAU)
+! Temperature step to compute difference slope tref(teau)
 paseri = 0.015d0
 
-!     MAXIMUM DE LA TEMPERATURE D'EAU CHAUDE MOYENNE PONDEREE
+! Maximum average hot water temperature
 aetemx = 80.d0
 
-!     MINIMUM DE LA TEMPERATURE D'EAU REFROIDIE MOYENNE PONDEREE
+! Minimum average cooled water temperature
 aetemn = 10.d0
 
-!     NOMBRE DE ZONES D'ECHANGES AYANT UNE FRONTIERE ENTREE EAU
-
+! Number of excange zones with a water inlet boundary
 nbzsup = 2
 
-!     LISTE DES NBZSUP ZONES D'ECHANGES EN BORD DE L'ENTREE EAU
-
+! List of the nbzsup exchange zones at water inlet boundary
 lizsup(1) = 1
 lizsup(2) = 2
 
-!     NOMBRE DE ZONES D'ECHANGES AYANT UNE FRONTIERE SORTIE EAU
+! Number of excange zones with a water outlet boundary
 nbzinf = 2
 
-!     LISTE DES NBZINF ZONES D'ECHANGES EN BORD DE LA SORTIE EAU
-
+! List of the nbzinf exchange zones at water outlet boundary
 lizinf(1) = 1
 lizinf(2) = 2
 
-!     INSTANT ACTIVATION ECART IMPOSE
+! Prescribed difference activation start time
 
-inbaei = 1000.D0
+inbaei = 1000.d0
 
 !===============================================================================
-! 2.  POST-PROCESSING DES ZONES D'ECHANGES
+! 2. Post-processing of exchange zones
 !===============================================================================
 
 ichrze = 1
 
 !===============================================================================
-! 3.  CALCUL SUITE AEROREFRIGERANT
+! 3. Cooling tower restart
 !===============================================================================
 
 isuict = isuite
-
-!===============================================================================
-! 4.  PROPRIETES DE L'AIR
-!===============================================================================
-
-! Il est deconseille de modifier ici ces proprietes
-
-cpa    = 1006.0d0
-cpv    = 1831.0d0
-cpe    = 4179.0d0
-hv0    = 2501600.0d0
-rhoe   = 997.85615d0
-visc   = 1.765d-5
-conduc = 0.02493d0
-
-call ctprof &
-!==========
-( cpa, cpv, cpe, hv0, rhoe, visc, conduc, gx, gy, gz )
 
 !----
 ! End

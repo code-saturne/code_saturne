@@ -65,6 +65,7 @@ implicit none
 ! Local variables
 
 integer ii, jj, isc, ipp
+double precision cpa,cpe,cpv,hv0,rhoe,visc,conduc
 
 !===============================================================================
 
@@ -128,6 +129,19 @@ ihisvr(ipp,1)= -1
 ! Postprocessing output
 
 ichrze = 1
+
+! Air properties
+
+cpa    = 1006.0d0
+cpv    = 1831.0d0
+cpe    = 4179.0d0
+hv0    = 2501600.0d0
+rhoe   = 997.85615d0
+visc   = 1.765d-5
+conduc = 0.02493d0
+
+call ctprof(cpa, cpv, cpe, hv0, rhoe, visc, conduc, gx, gy, gz)
+!==========
 
 !===============================================================================
 ! 2. Define user settings
