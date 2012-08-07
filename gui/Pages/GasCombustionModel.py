@@ -230,29 +230,29 @@ class GasCombustionModel(Variables, Model):
                         "4-peak_adiabatic", "4-peak_enthalpy"]
         acceptable_options = ["2-peak_enthalpy", "3-peak_enthalpy",
                               "4-peak_enthalpy"]
-        list = []
+        lst = []
 
         if model == 'd3p':
-            list.append("Fra_MEL")
-            list.append("Var_FMe")
+            lst.append("Fra_MEL")
+            lst.append("Var_FMe")
             if option == 'extended':
-                list.append("Enthalpy")
+                lst.append("Enthalpy")
         elif model == 'ebu':
-            list.append("Fra_GF")
+            lst.append("Fra_GF")
             if option == "mixture_st" or option =="enthalpy_misture_st":
-                list.append("Fra_MEL")
+                lst.append("Fra_MEL")
             elif option == "enthalpy_st" or option =="enthalpy_mixture_st":
-                list.append("Enthalpy")
+                lst.append("Enthalpy")
         elif model == 'lwp':
-            list.append("Fra_MEL")
-            list.append("Var_FMe")
-            list.append("Fra_Mas")
-            list.append("COYF_PP4")
+            lst.append("Fra_MEL")
+            lst.append("Var_FMe")
+            lst.append("Fra_Mas")
+            lst.append("COYF_PP4")
             if option in list_options:
-                list.append("Var_FMa")
+                lst.append("Var_FMa")
             if option in acceptable_options:
-                list.append("Enthalpy")
-        return list
+                lst.append("Enthalpy")
+        return lst
 
 
     def __createModelPropertiesList(self, model):
@@ -260,24 +260,24 @@ class GasCombustionModel(Variables, Model):
         Private method
         Create model properties
         """
-        list = []
-        list.append("Temperature")
-        list.append("YM_Fuel")
-        list.append("YM_Oxyd")
-        list.append("YM_Prod")
+        lst = []
+        lst.append("Temperature")
+        lst.append("YM_Fuel")
+        lst.append("YM_Oxyd")
+        lst.append("YM_Prod")
         if model == 'lwp':
-            list.append("T.SOURCE")
-            list.append("Mas_Mol")
+            lst.append("T.SOURCE")
+            lst.append("Mas_Mol")
             ndirac = self.getNdirac()
             for idirac in range(ndirac):
-                list.append("RHOL0" + str(idirac + 1))
-                list.append("TEML0" + str(idirac + 1))
-                list.append("FMEL0" + str(idirac + 1))
-                list.append("FMAL0" + str(idirac + 1))
-                list.append("AMPL0" + str(idirac + 1))
-                list.append("TSCL0" + str(idirac + 1))
-                list.append("MAML0" + str(idirac + 1))
-        return list
+                lst.append("RHOL0" + str(idirac + 1))
+                lst.append("TEML0" + str(idirac + 1))
+                lst.append("FMEL0" + str(idirac + 1))
+                lst.append("FMAL0" + str(idirac + 1))
+                lst.append("AMPL0" + str(idirac + 1))
+                lst.append("TSCL0" + str(idirac + 1))
+                lst.append("MAML0" + str(idirac + 1))
+        return lst
 
 
     def __createModelScalars(self , model):

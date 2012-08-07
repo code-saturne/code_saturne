@@ -113,21 +113,21 @@ class MeshFormatDelegate(QItemDelegate):
         super(MeshFormatDelegate, self).__init__(parent)
         self.parent = parent
         self.updateLayout = updateLayout
-        self.list = MeshModel().getBuildFormatList()
+        self.lst = MeshModel().getBuildFormatList()
         # Compute width based on longest possible string and font metrics
         fm = self.parent.fontMetrics()
         self.textSize = fm.size(Qt.TextSingleLine, QString('pro-STAR/STAR4 (*.ngeom)'))
         self.textSize.setHeight(1)
-        for i in range(len(self.list)):
-            w = fm.size(Qt.TextSingleLine, QString(self.list[i][1])).width()
+        for i in range(len(self.lst)):
+            w = fm.size(Qt.TextSingleLine, QString(self.lst[i][1])).width()
             if w > self.textSize.width():
                 self.textSize.setWidth(w)
 
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        for i in range(len(self.list)):
-            fmt = self.list[i]
+        for i in range(len(self.lst)):
+            fmt = self.lst[i]
             editor.addItem(QString(fmt[1] + fmt[2]))
         return editor
 
@@ -135,17 +135,17 @@ class MeshFormatDelegate(QItemDelegate):
     def setEditorData(self, comboBox, index):
         key = index.model().dataMeshes[index.row()][1]
         string = ''
-        for i in range(len(self.list)):
-            if key == self.list[i][0]:
+        for i in range(len(self.lst)):
+            if key == self.lst[i][0]:
                 comboBox.setCurrentIndex(i)
 
 
     def setModelData(self, comboBox, model, index):
         value = str(comboBox.currentText())
         key = ''
-        for i in range(len(self.list)):
-            if value == self.list[i][1] + self.list[i][2]:
-                key = self.list[i][0]
+        for i in range(len(self.lst)):
+            if value == self.lst[i][1] + self.lst[i][2]:
+                key = self.lst[i][0]
         model.setData(index, QVariant(key))
         if self.updateLayout != None:
             self.updateLayout()
@@ -258,10 +258,10 @@ class StandardItemModelMeshes(QStandardItemModel):
         # list of items to be disabled in the QTableView
         self.disabledItem = []
 
-        list = MeshModel().getBuildFormatList()
+        lst = MeshModel().getBuildFormatList()
         self.formatDict = {'':''}
-        for i in range(len(list)):
-            self.formatDict[list[i][0]] = list[i][1]
+        for i in range(len(lst)):
+            self.formatDict[lst[i][0]] = lst[i][1]
 
         self.populateModel()
 
@@ -300,28 +300,28 @@ class StandardItemModelMeshes(QStandardItemModel):
 
         for mesh in self.mdl.getMeshList():
             format = self.mdl.getMeshFormat(mesh)
-            list   = []
-            list.append(mesh[0])
-            list.append(format)
+            lst   = []
+            lst.append(mesh[0])
+            lst.append(format)
             if format in ['cgns', 'med', 'ensight']:
                 num = self.mdl.getMeshNumbers(mesh)
                 if not num:
                     num = ''
-                list.append(num)
+                lst.append(num)
             else:
-                list.append("")
-            list.append(self.mdl.getMeshReorient(mesh))
+                lst.append("")
+            lst.append(self.mdl.getMeshReorient(mesh))
             if format == 'cgns':
-                list.append(self.mdl.getMeshGroupFaces(mesh))
-                list.append(self.mdl.getMeshGroupCells(mesh))
+                lst.append(self.mdl.getMeshGroupFaces(mesh))
+                lst.append(self.mdl.getMeshGroupCells(mesh))
             else:
-                list.append("")
-                list.append("")
-            list.append(mesh[1])
-            list.append(self.__isMeshPathValid(mesh))
+                lst.append("")
+                lst.append("")
+            lst.append(mesh[1])
+            lst.append(self.__isMeshPathValid(mesh))
 
-            self.dataMeshes.append(list)
-            log.debug("populateModel-> dataMeshes = %s" % list)
+            self.dataMeshes.append(lst)
+            log.debug("populateModel-> dataMeshes = %s" % lst)
             row = self.rowCount()
             self.setRowCount(row + 1)
 

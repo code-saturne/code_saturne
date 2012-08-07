@@ -172,52 +172,52 @@ class CoalCombustionModel(Variables, Model):
         coalsNumber = self.getCoalNumber()      # total number of solid fuel
         classesNumber = self.getClassesNumber() # total number of class (diameter)
 
-        list = []
+        lst = []
 
-        list.append("Enthalpy")
+        lst.append("Enthalpy")
 
         # list of coal variables
         baseNames = ["Fr_MV1", "Fr_MV2"]
         for baseName in baseNames:
             for coal in range(0, coalsNumber):
                 name = '%s%2.2i' % (baseName, coal+1)
-                list.append(name)
+                lst.append(name)
 
         # list of class variables
         baseNames = self.ModelVariables
         for baseName in baseNames:
             for classe in range(0, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
-                list.append(name)
+                lst.append(name)
 
-        list.append("Fr_HET_O2")
+        lst.append("Fr_HET_O2")
 
         if self.getCO2KineticsStatus() == "on":
-            list.append("Fr_HET_CO2")
+            lst.append("Fr_HET_CO2")
 
         if self.getH2OKineticsStatus() == "on":
-            list.append("Fr_HET_H2O")
+            lst.append("Fr_HET_H2O")
 
         if self.getNOxFormationStatus() == "on":
-            list.append("FR_HCN")
-            list.append("FR_NO")
-            list.append("Enth_Ox")
+            lst.append("FR_HCN")
+            lst.append("FR_NO")
+            lst.append("Enth_Ox")
 
         if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
-            list.append("FR_H20")
+            lst.append("FR_H20")
 
         if self.getOxidantNumber() >= 2:
-            list.append("FR_OXYD2")
+            lst.append("FR_OXYD2")
 
         if self.getOxidantNumber() == 3:
-            list.append("FR_OXYD3")
+            lst.append("FR_OXYD3")
 
         # ieqco2 fix to true
-        list.append("FR_CO2")
+        lst.append("FR_CO2")
 
-        list.append("Var_F1F2")
+        lst.append("Var_F1F2")
 
-        return list
+        return lst
 
 
     def __createModelVariableMinMaxList(self):
@@ -228,21 +228,21 @@ class CoalCombustionModel(Variables, Model):
         coalsNumber = self.getCoalNumber()      # total number of solid fuel
         classesNumber = self.getClassesNumber() # total number of class (diameter)
 
-        list = []
+        lst = []
 
-        list.append("Enthalpy")
+        lst.append("Enthalpy")
 
         # list of class variables
         baseNames =  ["ENT_CP"]
         for baseName in baseNames:
             for classe in range(0, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
-                list.append(name)
+                lst.append(name)
 
         if self.getNOxFormationStatus() == "on":
-            list.append("Enth_Ox")
+            lst.append("Enth_Ox")
 
-        return list
+        return lst
 
 
     def __createModelScalars(self):
@@ -272,10 +272,10 @@ class CoalCombustionModel(Variables, Model):
         """
         classesNumber = self.getClassesNumber()
 
-        list = ["Temp_GAZ", "ROM_GAZ", "YM_CHx1m", "YM_CHx2m",
-                "YM_CO", "YM_O2", "YM_CO2", "YM_H2O", "YM_N2",
-                "YM_H2S", "YM_H2", "YM_HCN", "YM_NH3", "YM_SO2",
-                "XM", "Bilan_C", "Bilan_O", "Bilan_H"]
+        lst = ["Temp_GAZ", "ROM_GAZ", "YM_CHx1m", "YM_CHx2m",
+               "YM_CO", "YM_O2", "YM_CO2", "YM_H2O", "YM_N2",
+               "YM_H2S", "YM_H2", "YM_HCN", "YM_NH3", "YM_SO2",
+               "XM", "Bilan_C", "Bilan_O", "Bilan_H"]
 
         if self.getCO2KineticsStatus() == 'on':
             self.ModelProperties.append("Ga_HET_CO2")
@@ -288,16 +288,16 @@ class CoalCombustionModel(Variables, Model):
         for baseName in baseNames:
             for classe in range(0, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
-                list.append(name)
+                lst.append(name)
 
-        list.append("IntLuminance_4PI")
+        lst.append("IntLuminance_4PI")
 
         if self.getNOxFormationStatus() == "on":
-            list.append("EXP1")
-            list.append("EXP2")
-            list.append("EXP3")
+            lst.append("EXP1")
+            lst.append("EXP2")
+            lst.append("EXP3")
 
-        return list
+        return lst
 
 
     def __createModelProperties(self):
@@ -830,7 +830,6 @@ class CoalCombustionModel(Variables, Model):
     def __updateFuelId(self):
         """
         """
-        list = []
         n = 0
         for node in self.node_fuel.xmlGetNodeList('solid_fuel'):
             if int(node['fuel_id']) > 0 :
@@ -864,7 +863,6 @@ class CoalCombustionModel(Variables, Model):
         """
         """
         node_oxi = self.node_fuel.xmlInitNode('oxidants')
-        list = []
         n = 0
         for node in node_oxi.xmlGetNodeList('oxidant'):
             if int(node['ox_id']) > 0 :
@@ -998,7 +996,6 @@ class CoalCombustionModel(Variables, Model):
     def __updateClassId(self, fuelId):
         """
         """
-        list = []
         n = 0
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_class = solid_fuel.xmlInitNode('class')
@@ -1042,7 +1039,6 @@ class CoalCombustionModel(Variables, Model):
     def __updateRefusalId(self, fuelId):
         """
         """
-        list = []
         n = 0
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         for node in solid_fuel.xmlGetNodeList('refusal'):

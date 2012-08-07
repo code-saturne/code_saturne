@@ -123,7 +123,7 @@ class TimeAveragesModel(Model):
         return list(self.dicoLabel2Name.keys())
 
 
-    def __updateTimeAverage(self, nb, label, start, restart, list):
+    def __updateTimeAverage(self, nb, label, start, restart, lst):
         """
         Private method.
         Update data for average I{label}.
@@ -142,12 +142,12 @@ class TimeAveragesModel(Model):
         @type restart: C{Int}
         @param restart: restart parameter value for the time average I{label}.
         @type list: C{List}
-        @param list: list of variables and properties for the time average I{label}.
+        @param lst: list of variables and properties for the time average I{label}.
         """
         node = self.node_mean.xmlInitNode('time_average', label=label)
         node['id'] = str(nb)
 
-        for var in list:
+        for var in lst:
             self.isInList(var, list(self.dicoLabel2Name.keys()))
             node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
 
@@ -160,7 +160,7 @@ class TimeAveragesModel(Model):
             node.xmlRemoveChild('restart_from_time_average')
 
 
-    def setTimeAverage(self, label, start, restart, list):
+    def setTimeAverage(self, label, start, restart, lst):
         """
         Public method.
         Add a new time average I{label}.
@@ -171,17 +171,17 @@ class TimeAveragesModel(Model):
         @type restart: C{Int}
         @param restart: restart parameter value for the new time average I{label}.
         @type list: C{List}
-        @param list: list of variables and properties for the new time average I{label}.
+        @param lst: list of variables and properties for the new time average I{label}.
         """
         self.isGreater(start, 0)
         self.isNotInList(restart, [0])
         self.isNotInList(label, self.getTimeAverageLabels())
 
         nb = self.getNumberOfTimeAverage()
-        self.__updateTimeAverage(nb+1, label, start, restart, list)
+        self.__updateTimeAverage(nb+1, label, start, restart, lst)
 
 
-    def replaceTimeAverage(self, old_label, new_label, start, restart, list):
+    def replaceTimeAverage(self, old_label, new_label, start, restart, lst):
         """
         Public method.
         Replaces data for time average I{old_label}.
@@ -205,7 +205,7 @@ class TimeAveragesModel(Model):
             node.xmlRemoveChild('var_prop')
             node.xmlRemoveChild('time_step_start')
             node.xmlRemoveChild('restart_from_time_average')
-        self.__updateTimeAverage(node['id'], new_label, start, restart, list)
+        self.__updateTimeAverage(node['id'], new_label, start, restart, lst)
 
 
     def deleteTimeAverage(self, label):
@@ -233,7 +233,7 @@ class TimeAveragesModel(Model):
         @rtype: C{Tuple}
         """
         self.isInt(imom)
-        list = []
+        lst = []
         restart = self.defaultValues()['restart']
         node = self.node_mean.xmlGetNode('time_average', id=imom)
         start = node.xmlGetInt('time_step_start')
@@ -243,8 +243,8 @@ class TimeAveragesModel(Model):
         for var in node.xmlGetChildNodeList('var_prop'):
             for label in list(self.dicoLabel2Name.keys()):
                 if self.dicoLabel2Name[label] == var['name']:
-                    list.append(label)
-        return node['label'], start, restart, list
+                    lst.append(label)
+        return node['label'], start, restart, lst
 
 
     def getTimeAverageLabels(self):
@@ -253,11 +253,11 @@ class TimeAveragesModel(Model):
         @return: list of time averages labels.
         @rtype: C{List} of C{String}
         """
-        list = []
+        lst = []
         for node in self.node_mean.xmlGetNodeList('time_average'):
             label = node['label']
-            list.append(label)
-        return list
+            lst.append(label)
+        return lst
 
 
     def getNumberOfTimeAverage(self):

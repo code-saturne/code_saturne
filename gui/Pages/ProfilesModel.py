@@ -170,14 +170,14 @@ class ProfilesModel(Model):
         Public method.
         Returns the profiles labels list.
         """
-        list = []
+        lst = []
         for node in self.node_prof.xmlGetNodeList('profile'):
             label = node['label']
-            list.append(label)
-        return list
+            lst.append(label)
+        return lst
 
 
-    def setProfile(self, label, title, format, list, freq, formula, NbPoint):
+    def setProfile(self, label, title, format, lst, freq, formula, NbPoint):
         """
         Public method.
         Sets data to create one profile named I{label}.
@@ -189,7 +189,7 @@ class ProfilesModel(Model):
         label_xml = label + self.suffix
         node = self.node_prof.xmlInitNode('profile', label=label_xml)
         node.xmlAddChild('format', name=format)
-        for var in list:
+        for var in lst:
             self.isInList(var, self.__var_prop_list)
             node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
         node.xmlSetData('output_frequency', freq)
@@ -198,7 +198,7 @@ class ProfilesModel(Model):
         self.__setNbPoint(label, NbPoint)
 
 
-    def replaceProfile(self, old_label, label, title, format, list, freq, formula, NbPoint):
+    def replaceProfile(self, old_label, label, title, format, lst, freq, formula, NbPoint):
         """
         Public method.
         Replaces data from I{old_label} profile
@@ -218,7 +218,7 @@ class ProfilesModel(Model):
             for tag in ('format', 'var_prop', 'output_frequency', 'formula','points'):
                 node.xmlRemoveChild(tag)
             node.xmlAddChild('format', name=format)
-            for var in list:
+            for var in lst:
                 self.isInList(var, self.__var_prop_list)
                 node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
             node['label'] = label_xml
@@ -247,7 +247,7 @@ class ProfilesModel(Model):
         frequency and coordinates.
         """
         self.isInList(label, self.getProfilesLabelsList())
-        list = []
+        lst = []
         label_xml = label + self.suffix
         node = self.node_prof.xmlGetNode('profile', label=label_xml)
         freq = node.xmlGetInt('output_frequency')
@@ -261,11 +261,11 @@ class ProfilesModel(Model):
         for var in node.xmlGetChildNodeList('var_prop'):
             for name in self.__var_prop_list:
                 if self.dicoLabel2Name[name] == var['name']:
-                    list.append(name)
+                    lst.append(name)
         label_xml = node['label']
         label = label_xml
 
-        return label, title, format, list, freq, formula, NbPoint
+        return label, title, format, lst, freq, formula, NbPoint
 
 
 #-------------------------------------------------------------------------------

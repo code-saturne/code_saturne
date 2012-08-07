@@ -662,15 +662,15 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         Private Slot.
         Warning: the Volume region 'all_cells' is mandatory, therefore it can not be deleted.
         """
-        list = []
+        lst = []
         for index in self.tableView.selectionModel().selectedRows():
             row = index.row()
-            list.append(row)
+            lst.append(row)
 
-        list.sort()
-        list.reverse()
+        lst.sort()
+        lst.reverse()
 
-        for row in list:
+        for row in lst:
             [label, codeNumber, nature, localization] = self.modelLocalization.getItem(row)
             if not (label == "all_cells" and self.zoneType == 'VolumicZone'):
                 self.mdl.deleteZone(label)
@@ -738,11 +738,11 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         """
         public slot
         """
-        list = []
+        lst = []
         for index in self.tableView.selectionModel().selectedRows():
-            list.append(index.row())
+            lst.append(index.row())
 
-        row = list.pop(0)
+        row = lst.pop(0)
         [label, code, nature, new_localization] = self.modelLocalization.getItem(row)
 
         new_zone = Zone(self.zoneType,
@@ -751,7 +751,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
                         localization = new_localization,
                         nature       = nature)
 
-        for row in list:
+        for row in lst:
             [label, code, nature, localization] = self.modelLocalization.getItem(row)
             if "all[]" not in new_localization.split(" "):
                 new_localization += " or " + localization

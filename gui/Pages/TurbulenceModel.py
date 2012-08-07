@@ -208,32 +208,32 @@ class TurbulenceModel(Variables, Model):
             self.__removeVariablesAndProperties([], 'smagorinsky_constant')
 
         elif model_turb in ('k-epsilon', 'k-epsilon-PL'):
-            list = ('turb_k', 'turb_eps')
-            for v in list:
+            lst = ('turb_k', 'turb_eps')
+            for v in lst:
                 self.setNewTurbulenceVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
-            self.__removeVariablesAndProperties(list, 'smagorinsky_constant')
+            self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
 
         elif model_turb in ('Rij-epsilon', 'Rij-SSG'):
-            list = ('component_R11', 'component_R22', 'component_R33',
-                    'component_R12', 'component_R13', 'component_R23',
-                    'turb_eps')
-            for v in list:
+            lst = ('component_R11', 'component_R22', 'component_R33',
+                   'component_R12', 'component_R13', 'component_R23',
+                   'turb_eps')
+            for v in lst:
                 self.setNewTurbulenceVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
-            self.__removeVariablesAndProperties(list, 'smagorinsky_constant')
+            self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
 
         elif model_turb == 'Rij-EBRSM':
-            list = ('component_R11', 'component_R22', 'component_R33',
-                    'component_R12', 'component_R13', 'component_R23',
-                    'turb_eps', 'turb_alpha')
-            for v in list:
+            lst = ('component_R11', 'component_R22', 'component_R33',
+                   'component_R12', 'component_R13', 'component_R23',
+                   'turb_eps', 'turb_alpha')
+            for v in lst:
                 self.setNewTurbulenceVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
-            self.__removeVariablesAndProperties(list, 'smagorinsky_constant')
+            self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
 
         elif model_turb in self.LESmodels():
             self.setNewProperty(self.node_turb, 'smagorinsky_constant')
@@ -250,27 +250,27 @@ class TurbulenceModel(Variables, Model):
             del NumericalParamEquatModel
 
         elif model_turb == 'v2f-phi':
-            list = ('turb_k', 'turb_eps', 'turb_phi', 'turb_fb')
-            for v in list:
+            lst = ('turb_k', 'turb_eps', 'turb_phi', 'turb_fb')
+            for v in lst:
                 self.setNewTurbulenceVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
-            self.__removeVariablesAndProperties(list, 'smagorinsky_constant')
+            self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
 
         elif model_turb == 'k-omega-SST':
-            list = ('turb_k', 'turb_omega')
-            for v in list:
+            lst = ('turb_k', 'turb_omega')
+            for v in lst:
                 self.setNewTurbulenceVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
-            self.__removeVariablesAndProperties(list, 'smagorinsky_constant')
+            self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
 
         elif model_turb == 'Spalart-Allmaras':
-            list = ('turb_nusa')
+            lst = ('turb_nusa')
             self.setNewTurbulenceVariable(self.node_turb, 'turb_nusa')
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
-            self.__removeVariablesAndProperties(list, 'smagorinsky_constant')
+            self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
 
         else:
             model_turb = 'off'

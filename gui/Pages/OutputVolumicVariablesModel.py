@@ -330,7 +330,7 @@ class OutputVolumicVariablesModel(Model):
         Return list of probes if it exists for node['name'] = name. Only for the View
         """
         self.isInList(label, self.getLabelsList())
-        list = self.getVariableProbeList()
+        lst = self.getVariableProbeList()
         for nodeList in self.listNodeVolum:
             for node in nodeList:
                 if node['label'] == label:
@@ -338,12 +338,12 @@ class OutputVolumicVariablesModel(Model):
                     if node_probes:
                         nb_probes = node_probes['choice']
                         if nb_probes == '0':
-                            list = []
+                            lst = []
                         elif nb_probes > '0':
-                            list = []
+                            lst = []
                             for n in node_probes.xmlGetChildNodeList('probe_recording'):
-                                list.append(n['name'])
-        return list
+                                lst.append(n['name'])
+        return lst
 
 
     def getPrintingStatus(self, label):
@@ -445,12 +445,12 @@ class OutputVolumicVariablesModel(Model):
                             node.xmlRemoveChild('postprocessing_recording')
 
 
-    def updateProbes(self, label, list):
+    def updateProbes(self, label, lst):
         """
         Update probe_recording markups if it exists
         """
         self.isInList(label, self.getLabelsList())
-        nb = len(list.split())
+        nb = len(lst.split())
         if nb == len(self.getVariableProbeList()):
             for nodeList in self.listNodeVolum:
                 for node in nodeList:
@@ -469,7 +469,7 @@ class OutputVolumicVariablesModel(Model):
                             pass
                         n = node.xmlInitNode('probes', choice=str(nb))
                         if nb > 0:
-                            for i in list.split():
+                            for i in lst.split():
                                 n.xmlInitChildNodeList('probe_recording',name=i)
 
 #-------------------------------------------------------------------------------

@@ -173,7 +173,7 @@ class DefineUserScalarsModel(Variables, Model):
         Private method.
         Update suffixe number for scalar name and diffusivity' name.
         """
-        list = []
+        lst = []
         n = 0
         for node in self.scalar_node.xmlGetNodeList('scalar'):
             n = n + 1
@@ -226,10 +226,10 @@ class DefineUserScalarsModel(Variables, Model):
     def getScalarLabelsList(self):
         """Public method.
         Return the User scalar label list (thermal scalar included)"""
-        list = []
+        lst = []
         for node in self.scalar_node.xmlGetNodeList('scalar'):
-            list.append(node['label'])
-        return list
+            lst.append(node['label'])
+        return lst
 
 
     def getMeteoScalarsList(self):
@@ -256,10 +256,10 @@ class DefineUserScalarsModel(Variables, Model):
         Return the user scalar label list (without thermal scalar).
         Method also used by UserScalarPropertiesView
         """
-        list = []
+        lst = []
         for node in self.scalar_node.xmlGetNodeList('scalar', type='user'):
-            list.append(node['label'])
-        return list
+            lst.append(node['label'])
+        return lst
 
 
     def setScalarBoundaries(self):
@@ -372,23 +372,23 @@ class DefineUserScalarsModel(Variables, Model):
         """
         Return list of scalars which have a variance
         """
-        list = []
+        lst = []
         for node in self.scalar_node.xmlGetNodeList('scalar'):
             sca = node.xmlGetString('variance')
-            if sca and sca not in list:
-                list.append(sca)
-        return list
+            if sca and sca not in lst:
+                lst.append(sca)
+        return lst
 
 
     def getScalarsVarianceList(self):
         """
         Return list of scalars which are also a variance
         """
-        list = []
+        lst = []
         for node in self.scalar_node.xmlGetNodeList('scalar'):
-            if node.xmlGetString('variance') and node['label'] not in list:
-                list.append(node['label'])
-        return list
+            if node.xmlGetString('variance') and node['label'] not in lst:
+                lst.append(node['label'])
+        return lst
 
 
     def getVarianceLabelFromScalarLabel(self, label):
@@ -579,19 +579,19 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(slabel, self.getScalarLabelsList())
 
         # First add the main scalar to delete
-        list = []
-        list.append(slabel)
+        lst = []
+        lst.append(slabel)
 
         # Then add variance scalar related to the main scalar
         for node in self.scalar_node.xmlGetNodeList('scalar'):
             if node.xmlGetString('variance') == slabel:
-                list.append(node['label'])
+                lst.append(node['label'])
 
         # Delete all scalars
-        for scalar in list:
+        for scalar in lst:
             self.__deleteScalar(scalar)
 
-        return list
+        return lst
 
 
     def getScalarType(self, scalar_label):

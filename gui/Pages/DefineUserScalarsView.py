@@ -528,15 +528,15 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         Just delete the current selected entries from the table and
         of course from the XML file.
         """
-        list = []
+        lst = []
         for index in self.tableScalars.selectionModel().selectedRows():
             row = index.row()
-            list.append(row)
+            lst.append(row)
 
-        list.sort()
-        list.reverse()
+        lst.sort()
+        lst.reverse()
 
-        for row in list:
+        for row in lst:
             label = self.modelScalars.getItem(row)
             if self.mdl.getScalarType(label) == 'user':
                 self.mdl.deleteScalar(label)
@@ -573,15 +573,15 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         Just delete the current selected entries from the table and
         of course from the XML file.
         """
-        list = []
+        lst = []
         for index in self.tableVariance.selectionModel().selectedRows():
             row = index.row()
-            list.append(row)
+            lst.append(row)
 
-        list.sort()
-        list.reverse()
+        lst.sort()
+        lst.reverse()
 
-        for row in list:
+        for row in lst:
             label = self.modelVariance.getItem(row)[0]
             self.mdl.deleteScalar(label)
             self.modelVariance.deleteItem(row)

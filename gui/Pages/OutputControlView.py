@@ -1216,7 +1216,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Just delete the current selected entries from the Hlist and
         of course from the XML file.
         """
-        list = []
+        lst = []
         selectionModel = self.tableViewWriter.selectionModel()
         for index in selectionModel.selectedRows():
             w = self.modelWriter.getItem(index.row())['id']
@@ -1225,9 +1225,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 msg   = self.tr("You can't delete a default writer.")
                 QMessageBox.information(self, title, msg)
                 return
-            list.append(str(w))
+            lst.append(str(w))
 
-        self.mdl.deleteWriter(list)
+        self.mdl.deleteWriter(lst)
 
         self.modelWriter.deleteAllData()
         list_writer = []
@@ -1576,7 +1576,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Just delete the current selected entries from the Hlist and
         of course from the XML file.
         """
-        list = []
+        lst = []
         selectionModel = self.tableViewMesh.selectionModel()
         for index in selectionModel.selectedRows():
             mesh_id = self.modelMesh.getItem(index.row())['id']
@@ -1586,9 +1586,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                                 "(but you may disassociate it from all writers).")
                 QMessageBox.information(self, title, msg)
                 return
-            list.append(str(mesh_id))
+            lst.append(str(mesh_id))
 
-        self.mdl.deleteMesh(list)
+        self.mdl.deleteMesh(lst)
 
         self.modelMesh.deleteAllData()
         list_mesh = []
@@ -1801,13 +1801,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Just delete the current selected entries from the Hlist and
         of course from the XML file.
         """
-        list = []
+        lst = []
         selectionModel = self.tableViewPoints.selectionModel()
         for index in selectionModel.selectedRows():
             name = index.row() + 1
-            list.append(name)
+            lst.append(name)
 
-        self.mdl.deleteMonitoringPoints(list)
+        self.mdl.deleteMonitoringPoints(lst)
 
         self.modelMonitoring.deleteAllData()
         for n in range(self.mdl.getNumberOfMonitoringPoints()):

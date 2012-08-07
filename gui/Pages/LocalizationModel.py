@@ -631,10 +631,10 @@ class VolumicLocalizationModel(LocalizationModel):
             node[k] = v
 
         # update data in the entire case
-        list = self.__natureOptions
-        list.append('initial_value')
-        list.append('head_loss')
-        for tag in list:
+        lst = self.__natureOptions
+        lst.append('initial_value')
+        lst.append('head_loss')
+        for tag in lst:
             for n in self._case.xmlGetNodeList(tag, zone=old_zone.getCodeNumber()):
                 n['zone'] = newCodeNumber
             for n in self._case.xmlGetNodeList(tag, id=old_zone.getCodeNumber()):

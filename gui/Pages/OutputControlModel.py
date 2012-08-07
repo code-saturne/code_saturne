@@ -163,7 +163,6 @@ class OutputControlModel(Model):
         #Private method.
         #Update suffix number for writer label.
         #"""
-        list = []
         n = 0
         for node in self.node_out.xmlGetNodeList('writer', 'label'):
             if int(node['id']) > 0 :
@@ -513,7 +512,6 @@ class OutputControlModel(Model):
         #Private method.
         #Update suffixe number for mesh label.
         #"""
-        list = []
         n = 0
         for node in self.node_out.xmlGetNodeList('mesh'):
             if int(node['id']) > 0 :
@@ -740,8 +738,6 @@ class OutputControlModel(Model):
 
         self.__deleteAssociatedWriter(mesh_id, writer_id)
 
-        return list
-
 
     def setAssociatedWriterChoice(self, mesh_id, writer_list):
         """
@@ -894,20 +890,20 @@ class OutputControlModel(Model):
             self.__setCoordinates(name, coord, val)
 
 
-    def deleteMonitoringPoints(self, list):
+    def deleteMonitoringPoints(self, lst):
         """
         Public method.
         Conveniant method for the view. Delete a list of monitoring points.
         @type list: C{List} of C{Int}
         @param list: list of identifier of monitoring points to delete
         """
-        list.sort()
-        r = len(list)
+        lst.sort()
+        r = len(lst)
         for n in range(r):
-            name = str(list[n])
+            name = str(lst[n])
             self.deleteMonitoringPoint(name)
             for i in range(n, r):
-                list[i] = list[i] - 1
+                lst[i] = lst[i] - 1
 
 
     def deleteMonitoringPoint(self, num):
