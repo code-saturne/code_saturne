@@ -43,7 +43,6 @@
 
 #include "bft_error.h"
 #include "bft_mem.h"
-#include "bft_printf.h"
 
 #include "fvm_defs.h"
 #include "fvm_convert_array.h"
