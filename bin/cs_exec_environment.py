@@ -1121,7 +1121,7 @@ class mpi_environment:
         else:
             if ppn != 1:
                 self.mpiexec_n_per_node = ' --ranks-per-node ' + str(ppn)
-        self.mpiexec_separator = ':'
+            self.mpiexec_separator = ':'
         self.mpmd = None
 
         # Other options to add
