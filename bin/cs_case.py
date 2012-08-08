@@ -1428,9 +1428,15 @@ fi
             config.read([self.package.get_configfile(),
                          os.path.expanduser('~/.' + self.package.configfile)])
 
+            # Determine default execution directory if not forced;
+            # If the case is already in a sub-directory of the execution
+            # directory determined in the configuration file, run in place.
+
             if config.has_option('run', 'scratchdir'):
                 scratchdir = os.path.expanduser(config.get('run', 'scratchdir'))
                 scratchdir = os.path.expandvars(scratchdir)
+                if self.case_dir.find(scratchdir) == 0:
+                    scratchdir = None
 
         if scratchdir != None:
             self.exec_prefix = os.path.join(scratchdir, self.package.scratchdir)
