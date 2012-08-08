@@ -492,13 +492,15 @@ cs_mesh_init_interfaces(cs_mesh_t          *mesh,
  * ghost cells according to halo type requested by global options.
  *
  * parameters:
- *   mesh  <->  pointer to mesh structure
- *   mb    <->  pointer to mesh builder (in case of periodicity)
+ *   mesh       <->  pointer to mesh structure
+ *   mb         <->  pointer to mesh builder (in case of periodicity)
+ *   halo_type  <->  type of halo (standard or extended)
  *----------------------------------------------------------------------------*/
 
 void
 cs_mesh_init_halo(cs_mesh_t          *mesh,
-                  cs_mesh_builder_t  *mb);
+                  cs_mesh_builder_t  *mb,
+                  cs_halo_type_t      halo_type);
 
 /*----------------------------------------------------------------------------
  * Get the global number of ghost cells.

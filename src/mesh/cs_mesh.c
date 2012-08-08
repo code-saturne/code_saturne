@@ -94,24 +94,6 @@ BEGIN_C_DECLS
 cs_mesh_t  *cs_glob_mesh = NULL;
 
 /*============================================================================
- * Public FORTRAN function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Check necessity of extended mesh from FORTRAN options.
- *
- * Interface Fortran :
- *
- * SUBROUTINE HALTYP (IVOSET)
- * *****************
- *
- * INTEGER          IVOSET      : <-- : Indicator of necessity of extended mesh
- *----------------------------------------------------------------------------*/
-
-extern void
-CS_PROCF (haltyp, HALTYP)(const cs_int_t   *ivoset);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -2732,15 +2714,16 @@ cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
  * ghost cells according to halo type requested by global options.
  *
  * parameters:
- *   mesh  <->  pointer to mesh structure
- *   mb    <->  pointer to mesh builder (in case of periodicity)
+ *   mesh       <->  pointer to mesh structure
+ *   mb         <->  pointer to mesh builder (in case of periodicity)
+ *   halo_type  <->  type of halo (standard or extended)
  *----------------------------------------------------------------------------*/
 
 void
 cs_mesh_init_halo(cs_mesh_t          *mesh,
-                  cs_mesh_builder_t  *mb)
+                  cs_mesh_builder_t  *mb,
+                  cs_halo_type_t      halo_type)
 {
-  int  ivoset;
   cs_lnum_t  i;
   double  t1, t2;
   double  halo_time = 0, interface_time = 0, ext_neighborhood_time = 0;
@@ -2757,11 +2740,6 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
   const cs_lnum_t  n_vertices = mesh->n_vertices;
 
-  /* Choose the type of halo to build according to Fortran options.
-     IMRGRA == 3 or 2 OR ITURB == 41 => CS_MESH_HALO_EXTENDED */
-
-  CS_PROCF (haltyp, HALTYP) (&ivoset);
-
   /* Build halo */
 
   if (mesh->n_domains > 1 || mesh->n_init_perio > 0) {
@@ -2776,21 +2754,15 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
       fvm_periodicity_combine(mesh->periodicity, 0);
     }
 
-    if (ivoset == 1) {
+    mesh->halo_type = halo_type;
 
+    if (halo_type ==  CS_HALO_EXTENDED)
       bft_printf(_("\n Halo construction with extended neighborhood\n"
                    " ============================================\n\n"));
 
-      mesh->halo_type = CS_HALO_EXTENDED;
-
-    }
-    else {
-
+    else
       bft_printf(_("\n Halo construction with standard neighborhood\n"
                    " ============================================\n\n"));
-
-      mesh->halo_type = CS_HALO_STANDARD;
-    }
 
     /* Build periodic numbering */
 
@@ -2931,7 +2903,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
   /* Define a cell -> cells connectivity for the extended neighborhood
      if necessary */
 
-  if (ivoset == 1) {
+  if (halo_type ==  CS_HALO_EXTENDED) {
 
     t1 = cs_timer_wtime();
     bft_printf(_(" Extended neighborhood structures definition\n"));
@@ -2960,7 +2932,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
                      halo_time,
                      ext_neighborhood_time);
 
-  else if (ivoset == 1) {
+  else if (halo_type ==  CS_HALO_EXTENDED) {
     cs_log_printf(CS_LOG_PERFORMANCE,
                   _("\nExtended connectivity creation (%.3g s)\n"),
                   ext_neighborhood_time);

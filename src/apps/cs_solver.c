@@ -180,12 +180,14 @@ static fenv_t _fenv_old;     /* Old exception mask */
 void
 cs_run(void)
 {
+  cs_int_t  ivoset;
   double  t1, t2;
 
   bool partition_preprocess = false;
   int  check_mask = 0;
   int  cwf_post = 0;
   double  cwf_threshold = -1.0;
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
 
   /* System information */
 
@@ -239,9 +241,15 @@ cs_run(void)
 
     CS_PROCF(initi1, INITI1)();
 
+    CS_PROCF (haltyp, HALTYP) (&ivoset);
+    if (ivoset)
+      halo_type = CS_HALO_EXTENDED;
+
     cs_base_fortran_bft_printf_to_c();
 
   }
+  else if (opts.verif)
+    halo_type = CS_HALO_EXTENDED;
 
   /* Discover applications visible through MPI (requires communication);
      this is done after main calculation initialization so that the user
@@ -310,7 +318,7 @@ cs_run(void)
   /* Initialize extended connectivity, ghost cells and other remaining
      parallelism-related structures */
 
-  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder);
+  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
   cs_mesh_update_auxiliary(cs_glob_mesh);
 
   /* Possible geometry modification */
@@ -355,7 +363,7 @@ cs_run(void)
         cs_mesh_to_builder(cs_glob_mesh, cs_glob_mesh_builder, true, NULL);
       cs_partition(cs_glob_mesh, cs_glob_mesh_builder, CS_PARTITION_MAIN);
       cs_mesh_from_builder(cs_glob_mesh, cs_glob_mesh_builder);
-      cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder);
+      cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
       cs_mesh_update_auxiliary(cs_glob_mesh);
     }
     else
