@@ -260,7 +260,7 @@ void CS_PROCF (dmtmps, DMTMPS)
   cs_real_t  *tw
 )
 {
-  *tw = cs_timer_cpu_time();
+  *tw = cs_timer_wtime();
 }
 
 /*----------------------------------------------------------------------------
