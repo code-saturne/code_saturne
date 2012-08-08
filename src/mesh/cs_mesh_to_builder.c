@@ -1003,6 +1003,9 @@ _mesh_to_builder_perio_faces(const cs_mesh_t    *mesh,
 
   mb->n_perio = mesh->n_init_perio;
 
+  if (mesh->n_init_perio < 1)
+    return;
+
   cs_mesh_get_perio_faces(mesh,
                           &(mb->n_per_face_couples),
                           &(mb->per_face_couples));
@@ -1012,8 +1015,7 @@ _mesh_to_builder_perio_faces(const cs_mesh_t    *mesh,
      so the global number of couples is simply the sum over all
      ranks of the local counts. */
 
-  if (mesh->n_init_perio > 0)
-    BFT_MALLOC(mb->n_g_per_face_couples, mesh->n_init_perio, cs_gnum_t);
+  BFT_MALLOC(mb->n_g_per_face_couples, mesh->n_init_perio, cs_gnum_t);
 
 #if defined(HAVE_MPI)
 
