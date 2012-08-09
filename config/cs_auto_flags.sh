@@ -325,6 +325,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     ldflags_default_opt="-O3"
     ldflags_default_dbg="-g"
     ldflags_default_prf="-pg"
+    ldflags_rpath="-R"
 
     # Adjust options for IBM Blue Gene cross-compiler
 
