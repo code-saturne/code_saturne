@@ -2146,7 +2146,7 @@ _create_exch_inter_datatype(void)
 
   /* Create new datatype */
 
-#if defined(MPI_VERSION) && (MPI_VERSION >= 2)
+#if (MPI_VERSION >= 2)
   MPI_Type_create_struct(2, blocklengths, displacements, types, &new_type);
 #else
   MPI_Type_struct(2, blocklengths, displacements, types, &new_type);

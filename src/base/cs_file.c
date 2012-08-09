@@ -1136,7 +1136,7 @@ _mpi_file_read_block_ip(cs_file_t  *f,
     disps[0] = gdisp;
   }
 
-  MPI_Type_hindexed(1, lengths, disps, ent_type, &file_type);
+  MPI_Type_create_hindexed(1, lengths, disps, ent_type, &file_type);
   MPI_Type_commit(&file_type);
 
   MPI_File_set_view(f->fh, f->offset, ent_type, file_type, datarep, f->info);
@@ -1273,7 +1273,7 @@ _mpi_file_write_block_ip(cs_file_t  *f,
     disps[0] = gdisp;
   }
 
-  MPI_Type_hindexed(1, lengths, disps, ent_type, &file_type);
+  MPI_Type_create_hindexed(1, lengths, disps, ent_type, &file_type);
   MPI_Type_commit(&file_type);
 
   MPI_File_set_view(f->fh, f->offset, ent_type, file_type, datarep, f->info);
@@ -1641,7 +1641,7 @@ cs_file_read_global(cs_file_t  *f,
         char datarep[] = "native";
         lengths[0] = ni * size;
         disps[0] = 0;
-        MPI_Type_hindexed(1, lengths, disps, MPI_BYTE, &file_type);
+        MPI_Type_create_hindexed(1, lengths, disps, MPI_BYTE, &file_type);
         MPI_Type_commit(&file_type);
         MPI_File_set_view(f->fh, f->offset, MPI_BYTE, file_type,
                           datarep, f->info);
@@ -1751,7 +1751,7 @@ cs_file_write_global(cs_file_t   *f,
       char datarep[] = "native";
       lengths[0] = ni * size;
       disps[0] = 0;
-      MPI_Type_hindexed(1, lengths, disps, MPI_BYTE, &file_type);
+      MPI_Type_create_hindexed(1, lengths, disps, MPI_BYTE, &file_type);
       MPI_Type_commit(&file_type);
       MPI_File_set_view(f->fh, f->offset, MPI_BYTE, file_type,
                         datarep, f->info);

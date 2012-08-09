@@ -77,7 +77,13 @@ extern "C" {
  *============================================================================*/
 
 #if defined(HAVE_MPI) && !defined(CS_IGNORE_MPI)
+
 #  include <mpi.h>
+
+#  if !defined(MPI_VERSION) /* Defined in up-to-date MPI versions */
+#    define MPI_VERSION 1 
+#  endif
+
 #endif
 
 #if defined(HAVE_OPENMP)

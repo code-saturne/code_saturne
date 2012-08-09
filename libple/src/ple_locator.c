@@ -45,6 +45,9 @@
 
 #if defined(PLE_HAVE_MPI)
 #include <mpi.h>
+#if !defined(MPI_VERSION) /* Defined in up-to-date MPI versions */
+#  define MPI_VERSION 1 
+#endif
 #endif
 
 /*----------------------------------------------------------------------------
@@ -1731,12 +1734,16 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
 
   double comm_timing[4] = {0., 0., 0., 0.};
 
-  MPI_Aint extent;
+  MPI_Aint lb, extent;
   MPI_Status status;
 
   /* Check extent of datatype */
 
+#if (MPI_VERSION >= 2)
+  MPI_Type_get_extent(datatype, &lb, &extent);
+#else
   MPI_Type_extent(datatype, &extent);
+#endif
   MPI_Type_size(datatype, &size);
 
   if (extent != size)
@@ -1931,7 +1938,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
   size_t dist_v_idx;
   unsigned char *dist_v_ptr, *loc_v_ptr;
 
-  MPI_Aint extent;
+  MPI_Aint lb, extent;
   void *loc_v_buf = NULL;
   int *dist_v_flag = NULL, *loc_v_flag = NULL;
   MPI_Status *status = NULL;
@@ -1941,7 +1948,11 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
   /* Check extent of datatype */
 
+#if (MPI_VERSION >= 2)
+  MPI_Type_get_extent(datatype, &lb, &extent);
+#else
   MPI_Type_extent(datatype, &extent);
+#endif
   MPI_Type_size(datatype, &size);
 
   if (extent != size)

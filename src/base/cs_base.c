@@ -583,9 +583,9 @@ _cs_base_mpi_fin(void)
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_base_erreur_mpi(MPI_Comm  *comm,
-                    int       *errcode,
-                    ...)
+_cs_base_mpi_error(MPI_Comm  *comm,
+                   int       *errcode,
+                   ...)
 {
   int err_len;
   char err_string[MPI_MAX_ERROR_STRING + 1];
@@ -700,7 +700,7 @@ _cs_base_mpi_setup(const char *app_name)
 
   int app_num = -1;
 
-#if defined(DEBUG) || !defined(NDEBUG)
+#if (defined(DEBUG) || !defined(NDEBUG)) && (MPI_VERSION >= 2)
   MPI_Errhandler errhandler;
 #endif
 
@@ -743,13 +743,13 @@ _cs_base_mpi_setup(const char *app_name)
 
   /* Initialize error handlers */
 
-#if defined(DEBUG) || !defined(NDEBUG)
+#if (defined(DEBUG) || !defined(NDEBUG)) && (MPI_VERSION >= 2)
   if (nbr > 1 || cs_glob_mpi_comm != MPI_COMM_NULL) {
-    MPI_Errhandler_create(&_cs_base_erreur_mpi, &errhandler);
-    MPI_Errhandler_set(MPI_COMM_WORLD, errhandler);
+    MPI_Comm_create_errhandler(&_cs_base_mpi_error, &errhandler);
+    MPI_Comm_set_errhandler(MPI_COMM_WORLD, errhandler);
     if (   cs_glob_mpi_comm != MPI_COMM_WORLD
         && cs_glob_mpi_comm != MPI_COMM_NULL)
-      MPI_Errhandler_set(cs_glob_mpi_comm, errhandler);
+      MPI_Comm_set_errhandler(cs_glob_mpi_comm, errhandler);
     MPI_Errhandler_free(&errhandler);
   }
 #endif
@@ -851,7 +851,7 @@ cs_base_logfile_head(int    argc,
 
   /* Define MPI Information */
 
-#if defined(MPI_VERSION) && defined(MPI_SUBVERSION)
+#if defined(MPI_SUBVERSION)
 #if defined(OPEN_MPI)
 #if defined(OMPI_MAJOR_VERSION)
   char mpi_lib[32];
@@ -875,10 +875,10 @@ cs_base_logfile_head(int    argc,
   const char mpi_lib[] = "MPICH";
 #elif defined(HP_MPI)
   const char mpi_lib[] = "HP-MPI";
-#elif defined(MPI_VERSION) && defined(MPI_SUBVERSION)
+#elif defined(MPI_SUBVERSION)
   const char *mpi_lib = NULL;
 #endif
-#endif /* defined(MPI_VERSION) && defined(MPI_SUBVERSION) */
+#endif /* defined(MPI_SUBVERSION) */
 
   /* Determine compilation date */
 
@@ -924,7 +924,7 @@ cs_base_logfile_head(int    argc,
 
   bft_printf(_("  build %s\n"), str);
 
-#if defined(MPI_VERSION) && defined(MPI_SUBVERSION)
+#if defined(MPI_SUBVERSION)
   if (mpi_lib != NULL)
     bft_printf(_("  MPI version %d.%d (%s)\n\n"),
                MPI_VERSION, MPI_SUBVERSION, mpi_lib);
@@ -1028,7 +1028,7 @@ cs_base_mpi_init(int    *argc,
   if (use_mpi == true) {
     MPI_Initialized(&flag);
     if (!flag) {
-#if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
+#if (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
       int mpi_threads;
       MPI_Init_thread(argc, argv, MPI_THREAD_FUNNELED, &mpi_threads);
 #else
@@ -1056,7 +1056,7 @@ cs_base_mpi_init(int    *argc,
 
     MPI_Initialized(&flag);
     if (!flag) {
-#if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
+#if (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
       int mpi_threads;
       MPI_Init_thread(argc, argv, MPI_THREAD_FUNNELED, &mpi_threads);
 #else
