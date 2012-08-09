@@ -27,13 +27,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
-
 /*============================================================================
  * Autoconf-defined macros
  *============================================================================*/
@@ -45,6 +38,13 @@ extern "C" {
 /*============================================================================
  * Internationalization
  *============================================================================*/
+
+#ifdef __cplusplus
+extern "C" {
+#if 0
+} /* Fake brace to force Emacs auto-indentation back to column 0 */
+#endif
+#endif /* __cplusplus */
 
 #if defined(ENABLE_NLS) && defined(HAVE_GETTEXT)
 
@@ -68,6 +68,10 @@ extern "C" {
 
 #endif /* ENABLE_NLS && HAVE_GETTEXT */
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
 /*============================================================================
  * Parallelism
  *============================================================================*/
@@ -83,6 +87,8 @@ extern "C" {
 /*============================================================================
  * C99 Qualifiers
  *============================================================================*/
+
+#ifndef __cplusplus /* C */
 
 /* inline provided by cs_config.h if necessary */
 
@@ -106,6 +112,14 @@ extern "C" {
 #  endif
 
 #endif
+
+#else /* C++ */
+
+#  ifndef HAVE_RESTRICT /* Must be provided by caller */
+#    define restrict
+#  endif
+
+#endif /* __cplusplus */
 
 /*============================================================================
  * Definitions that may not always be provided directly by the system
@@ -147,16 +161,16 @@ extern "C" {
 #if HAVE_STDBOOL_H
 #  include <stdbool.h>
 #else
-#  ifndef HAVE__BOOL
-#    ifdef __cplusplus
-typedef bool _Bool;
-#    else
+#  ifndef __cplusplus
+#    ifndef HAVE__BOOL
 #      define _Bool signed char;
 #    endif
+#    define bool _Bool
+#    define false 0
+#    define true 1
+#  else
+#    define _Bool bool;
 #  endif
-#  define bool _Bool
-#  define false 0
-#  define true 1
 #  define __bool_true_false_are_defined 1
 #endif
 
@@ -215,6 +229,13 @@ typedef unsigned long long uint64_t;
 /*============================================================================
  * General types and macros used throughout Code_Saturne
  *============================================================================*/
+
+#ifdef __cplusplus
+extern "C" {
+#if 0
+} /* Fake brace to force Emacs auto-indentation back to column 0 */
+#endif
+#endif /* __cplusplus */
 
 /*----------------------------------------------------------------------------
  * Variable value type.
@@ -384,7 +405,7 @@ typedef enum {
 /*
  * Macro used to handle automatic "Fortran string length" arguments
  * (not used by Code_Saturne calls, but set by many compilers).
- * Some compilers, like the Fujitsu VPP 5000 compiler, may not
+ * Some compilers, like the Fujitsu VPP 5000 compiler in its time, may not
  * support the variable length lists in mixed C/Fortran calls.
  */
 
