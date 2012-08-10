@@ -57,7 +57,7 @@ subroutine lagent &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! lndnod           ! e  !  ->           ! longueur du tableau icocel
+! lndnod           ! e  !  -> ! longueur du tableau icocel                     !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
@@ -165,6 +165,14 @@ double precision surf   , volp , vitp
 double precision dintrf(1)
 
 integer, allocatable, dimension(:) :: iwork
+double precision, allocatable, dimension(:) :: surflag
+double precision, allocatable, dimension(:,:) :: surlgrg
+integer, allocatable, dimension(:) :: ninjrg
+integer, allocatable, dimension(:,:,:) :: iusloc
+
+
+double precision unif, offset
+integer irp, ipart, jj, kk, nfrtot, nlocnew
 
 !===============================================================================
 
@@ -172,6 +180,7 @@ integer, allocatable, dimension(:) :: iwork
 ! 0.  GESTION MEMOIRE
 !===============================================================================
 
+allocate(iusloc(nclagm,nflagm,ndlaim))
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -193,6 +202,7 @@ do nb = 1, nflagm
     enddo
     do nd = 1,ndlaim
       iuslag(nc,nb,nd) = 0
+      iusloc(nc,nb,nd) = 0
     enddo
   enddo
 enddo
@@ -282,6 +292,14 @@ call uslag2                                                       &
    coefa  , coefb  ,                                              &
    ettp   , tepa   )
 
+do nb = 1, nflagm
+  do nc = 1, nclagm
+     do nd = 1,ndlaim
+        iusloc(nc,nb,nd) = iuslag(nc,nb,nd)
+     enddo
+  enddo
+enddo
+
 !===============================================================================
 ! 3. Controles
 !===============================================================================
@@ -324,6 +342,56 @@ do ifac = 1, nfabor
     endif
   endif
 enddo
+
+
+! --> Calculation of the surfaces of the Lagrangian boundary zones
+
+nrangp = irangp
+
+
+if (irangp.ge.0) then
+
+   nrangp = irangp
+   call parmax(nrangp)
+
+   nfrtot = nfrlag
+   call parcpt(nfrtot)
+
+   allocate(surflag(nflagm))
+   allocate(surlgrg(nflagm, nrangp + 1))
+   allocate(ninjrg(nrangp  + 1))
+
+   do jj = 1, nrangp + 1
+      do kk = 1, nflagm
+         surlgrg(kk,jj) = 0.0
+      enddo
+   enddo
+
+   do ii = 1, nfrlag
+
+      surflag(ilflag(ii)) = 0.d0
+
+      do ifac = 1, nfabor
+
+         if (ilflag(ii).eq.ifrlag(ifac)) then
+
+            surflag(ilflag(ii)) = surflag(ilflag(ii)) + surfbn(ifac)
+            surlgrg(ilflag(ii), irangp + 1) =                                  &
+                       surlgrg(ilflag(ii), irangp + 1) + surfbn(ifac)
+
+         endif
+
+      enddo
+
+      call parsom(surflag(ilflag(ii)))
+
+      do jj = 1, nrangp + 1
+         call parsom(surlgrg(ilflag(ii), jj))
+      enddo
+
+   enddo
+
+endif
 
 ! --> Nombre de classes.
 
@@ -616,9 +684,11 @@ do ii = 1, nfrlag
   do nc = 1, iusncl(nb)
     if (iuslag(nc,nb,ijfre).eq.0 .and. iplas.eq.1) then
       iuslag(nc,nb,ijfre) = ntcabs
+      iusloc(nc,nb,ijfre) = ntcabs
     endif
     if (iuslag(nc,nb,ijfre).eq.0 .and. iplas.gt.1) then
       iuslag(nc,nb,ijfre) = ntcabs+1
+      iusloc(nc,nb,ijfre) = ntcabs+1
     endif
   enddo
 enddo
@@ -681,47 +751,102 @@ npt = nbpart
 ! Allocate a work array
 allocate(iwork(nbpmax))
 
+! Initialisation du nombre local
+! de particules injectées par rang
+nlocnew = 0
+
 !     Ensuite, on regarde ou on les met
 
 !     pour chaque zone de bord :
 do ii = 1,nfrlag
-  nb = ilflag(ii)
-!       pour chaque classe :
-  do nc = 1, iusncl(nb)
-!         si de nouvelles particules doivent entrer :
-    if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
+   nb = ilflag(ii)
+   !       pour chaque classe :
+   do nc = 1, iusncl(nb)
+      !         si de nouvelles particules doivent entrer :
+      if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
 
-      if ( iuslag(nc,nb,ijprpd) .eq. 1 ) then
+         if ( iuslag(nc,nb,ijprpd) .eq. 1 ) then
 
-      call lagnew                                                 &
-      !==========
-  ( lndnod ,                                                      &
-    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
-    nb     ,                                                      &
-    ifrlag , itepa(1,jisor)  , iwork  ,                           &
-    ettp   )
 
-      elseif ( iuslag(nc,nb,ijprpd) .eq. 2 ) then
+          ! Calcul sur le rang 0 du nombre de particules à injecter pour chaque rang
+          ! base sur la surface relative de chaque zone d'injection presente sur
+          ! chaque rang --> remplissage du tableau ninjrg(nrangp+1)
 
-        call lagnpr                                               &
-        !==========
-  ( lndnod ,                                                      &
-    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
-    nb     ,                                                      &
-    ifrlag , itepa(1,jisor)  , iwork  ,                           &
-    ettp   )
+            if (irangp.eq.0) then
+
+               do irp = 1, nrangp + 1
+                  ninjrg(irp) = 0
+               enddo
+
+               do ipart = 1, iuslag(nc,nb,ijnbp)
+
+                  call zufall(1, unif)
+
+                  irp = 1
+                  offset = surlgrg(nb,irp) / surflag(nb)
+
+156               if (unif.lt.offset) then
+
+                     ninjrg(irp) = ninjrg(irp) + 1
+                     goto 561
+
+                  else
+                     irp = irp + 1
+                     offset = offset + surlgrg(nb,irp) / surflag(nb)
+                     goto 156
+
+                  endif
+ 561              enddo
+
+            endif
+            ! Broadcast a tous les rangs
+            if (irangp.ge.0) then
+               call parbci(0, nrangp + 1, ninjrg)
+            endif
+
+            ! Fin du calcul du nombre de particules à injecter
+
+            if (irangp.ge.0) then
+               iusloc(nc,nb,ijnbp) = ninjrg(irangp+1)
+               nlocnew = nlocnew + ninjrg(irangp+1)
+            else
+               iusloc(nc,nb,ijnbp) = iuslag(nc,nb,ijnbp)
+               nlocnew = nlocnew + iuslag(nc,nb,ijnbp)
+            endif
+
+            if  (iusloc(nc,nb,ijnbp).gt.0) then
+
+               call lagnew                                                   &
+               !==========
+             ( lndnod ,                                                      &
+               nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
+               npt    , nlocnew ,      iusloc(nc,nb,ijnbp)  ,                 &
+               nb     ,                                                      &
+               ifrlag , itepa(1,jisor)  , iwork  ,                           &
+               ettp   )
+
+            endif
+
+         elseif ( iuslag(nc,nb,ijprpd) .eq. 2 ) then
+
+            call lagnpr                                                      &
+            !==========
+           ( lndnod ,                                                      &
+             nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
+             npt    , nlocnew ,  iusloc(nc,nb,ijnbp)   ,                    &
+             nb     ,                                                      &
+             ifrlag , itepa(1,jisor)  , iwork  ,                           &
+             ettp   )
+         endif
+
       endif
-
-    endif
-  enddo
+   enddo
 enddo
 
 !-->TEST DE CONTROLE (NE PAS MODIFIER)
 
-if ( (nbpart+nbpnew).ne.npt ) then
-  write(nfecra,3010) nbpnew, npt-nbpart
+if ( (nbpart+nlocnew).ne.npt ) then
+  write(nfecra,3010) nlocnew, npt-nbpart
   call csexit (1)
   !==========
 endif
@@ -739,9 +864,9 @@ do ii = 1,nfrlag
   do nc = 1, iusncl(nb)
 
 !         si de nouvelles particules doivent entrer :
-    if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
+     if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
 
-      do ip = npt+1 , npt+iuslag(nc,nb,ijnbp)
+      do ip = npt+1 , npt + iusloc(nc,nb,ijnbp)
         iel = itepa(ip,jisor)
         ifac = iwork(ip)
 
@@ -816,7 +941,7 @@ do ii = 1,nfrlag
             ettp(ip,jdp) = ruslag(nc,nb,idpt)                     &
                          + rd(1) * ruslag(nc,nb,ivdpt)
 
-!    On verifie qu'on obtient un diam�tre dans la gamme des 99,7%
+!    On verifie qu'on obtient un diametre dans la gamme des 99,7%
 
             d3 = 3.d0 * ruslag(nc,nb,ivdpt)
             if (ettp(ip,jdp).lt.ruslag(nc,nb,idpt)-d3)            &
@@ -998,7 +1123,7 @@ do ii = 1,nfrlag
 
       enddo
 
-      npt = npt + iuslag(nc,nb,ijnbp)
+      npt = npt + iusloc(nc,nb,ijnbp)
 
     endif
 
@@ -1007,8 +1132,8 @@ enddo
 
 !-->TEST DE CONTROLE (NE PAS MODIFIER)
 
-if ( (nbpart+nbpnew).ne.npt ) then
-  write(nfecra,3010) nbpnew, npt-nbpart
+if ( (nbpart+nlocnew).ne.npt ) then
+  write(nfecra,3010) nlocnew, npt-nbpart
   call csexit (1)
   !==========
 endif
@@ -1020,57 +1145,60 @@ endif
 
 !   reinitialisation du compteur de nouvelles particules
 
-  npt = nbpart
+npt = nbpart
 
 !     pour chaque zone de bord :
 
-  do ii = 1,nfrlag
-    nb = ilflag(ii)
+do ii = 1,nfrlag
+   nb = ilflag(ii)
 
-!         pour chaque classe :
+   !         pour chaque classe :
 
-  do nc = 1,iusncl(nb)
+   do nc = 1,iusncl(nb)
 
-!         si de nouvelles particules sont entrees,
-!         et si on a un debit non nul :
+      !         si de nouvelles particules sont entrees,
+      !         et si on a un debit non nul :
 
-    if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 .and.               &
-         ruslag(nc,nb,idebt) .gt. 0.d0        .and.               &
-         iuslag(nc,nb,ijnbp) .gt. 0                 ) then
+      if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 .and.               &
+           ruslag(nc,nb,idebt) .gt. 0.d0        .and.               &
+           iuslag(nc,nb,ijnbp) .gt. 0                 ) then
 
-      dmasse = 0.d0
-      do ip = npt+1 , npt+iuslag(nc,nb,ijnbp)
-        dmasse = dmasse + ettp(ip,jmp)
-      enddo
+         dmasse = 0.d0
+         do ip = npt+1 , npt + iusloc(nc,nb,ijnbp)
+            dmasse = dmasse + ettp(ip,jmp)
+         enddo
 
-!        Calcul des Poids
+         !        Calcul des Poids
 
-      if ( dmasse.gt.0.d0 ) then
-        do ip = npt+1 , npt+iuslag(nc,nb,ijnbp)
-          tepa(ip,jrpoi) = ( ruslag(nc,nb,idebt)*dtp ) / dmasse
-        enddo
-      else
-        write(nfecra,1057) nb, nc, ruslag(nc,nb,idebt),           &
-                                   iuslag(nc,nb,ijnbp)
-        call csexit (1)
-        !==========
+         if ( dmasse.gt.0.d0 ) then
+            do ip = npt+1 , npt+iuslag(nc,nb,ijnbp)
+               tepa(ip,jrpoi) = ( ruslag(nc,nb,idebt)*dtp ) / dmasse
+            enddo
+         else
+            write(nfecra,1057) nb, nc, ruslag(nc,nb,idebt),           &
+                 iusloc(nc,nb,ijnbp)
+            call csexit (1)
+            !==========
+         endif
+
+
+         npt = npt +  iusloc(nc,nb,ijnbp)
+
       endif
 
-      endif
+   enddo
 
-      npt = npt + iuslag(nc,nb,ijnbp)
+enddo
 
-    enddo
-
-  enddo
 
 !-->TEST DE CONTROLE (NE PAS MODIFIER)
 
-if ( (nbpart+nbpnew).ne.npt ) then
-  write(nfecra,3010) nbpnew, npt-nbpart
-  call csexit (1)
-  !==========
-endif
+! FIXME : the following test seems flawed
+!if ( (nbpart+nlocnew).ne.npt ) then
+!  write(nfecra,3010) nlocnew, npt-nbpart
+!  call csexit (1)
+!  !==========
+!endif
 
 
 
@@ -1082,7 +1210,7 @@ endif
 !   si de nouvelles particules doivent entrer :
 
 npar1 = nbpart+1
-npar2 = nbpart+nbpnew
+npar2 = nbpart+ iusloc(nc,nb,ijnbp)
 
 call lagipn                                                       &
 !==========
@@ -1102,7 +1230,7 @@ call uslain                                                       &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nbpnew ,                                                       &
+   nlocnew ,                                                       &
    itypfb , itrifb , itepa  , ifrlag , iwork  ,                   &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
@@ -1119,9 +1247,9 @@ do ii = 1,nfrlag
   do nc = 1, iusncl(nb)
 
 !         si de nouvelles particules doivent entrer :
-    if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
+    if (mod(ntcabs,iusloc(nc,nb,ijfre)).eq.0) then
 
-      do ip = npt+1 , npt+iuslag(nc,nb,ijnbp)
+      do ip = npt+1 , npt+iusloc(nc,nb,ijnbp)
 
         if (ettp(ip,jdp).lt.0.d0 .and.                            &
             ruslag(nc,nb,ivdpt).gt.0.d0) then
@@ -1132,7 +1260,7 @@ do ii = 1,nfrlag
 
       enddo
 
-      npt = npt + iuslag(nc,nb,ijnbp)
+      npt = npt + iusloc(nc,nb,ijnbp)
 
     endif
 
@@ -1172,7 +1300,7 @@ if ( injcon.eq.1 ) then
 !!$        !==========
 !!$  ( lndnod ,                                                      &
 !!$    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-!!$    npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
+!!$    npt    , nlocnew , iuslag(nc,nb,ijnbp)      ,                  &
 !!$    itycel , icocel ,                                             &
 !!$    ifrlag , itepa(1,jisor)  , iwork  ,                           &
 !!$    ettp   )
@@ -1186,8 +1314,8 @@ endif
 
 !-->TEST DE CONTROLE (NE PAS MODIFIER)
 
-if ( (nbpart+nbpnew).ne.npt ) then
-  write(nfecra,3010) nbpnew, npt-nbpart
+if ( (nbpart+nlocnew).ne.npt ) then
+  write(nfecra,3010) nlocnew, npt-nbpart
   call csexit (1)
   !==========
 endif
@@ -1221,16 +1349,16 @@ do ii = 1,nfrlag
 !        si de nouvelles particules sont entrees,
 
     if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 .and.               &
-         iuslag(nc,nb,ijnbp) .gt. 0                 ) then
+             iusloc(nc,nb,ijfre).gt.0            ) then
 
-      do ip = npt+1 , npt+iuslag(nc,nb,ijnbp)
+      do ip = npt+1 , npt+iusloc(nc,nb,ijnbp)
         deblag(nb) = deblag(nb) + tepa(ip,jrpoi)*ettp(ip,jmp)
         dnbpnw = dnbpnw + tepa(ip,jrpoi)
       enddo
 
     endif
 
-    npt = npt + iuslag(nc,nb,ijnbp)
+    npt = npt + iusloc(nc,nb,ijnbp)
 
   enddo
 
@@ -1257,7 +1385,7 @@ if ( iensi1.eq.1 ) then
 !           si de nouvelles particules doivent entrer :
       if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
 
-        do ip = npt+1 , npt+iuslag(nc,nb,ijnbp)
+        do ip = npt+1 , npt+iusloc(nc,nb,ijnbp)
           call enslag                                             &
           !==========
            ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,         &
@@ -1265,7 +1393,7 @@ if ( iensi1.eq.1 ) then
              itepa  ,                                             &
              ettp   , tepa   )
         enddo
-        npt = npt + iuslag(nc,nb,ijnbp)
+        npt = npt + iusloc(nc,nb,ijfre)
 
       endif
     enddo
@@ -1281,12 +1409,21 @@ endif
 !     NBPTOT : NOMBRE DE PARTICULES TOTAL INJECTE DANS
 !              LE CALCUL DEPUIS LE DEBUT SUITE COMPRISE
 
-nbpart = nbpart + nbpnew
+
+nbpart = nbpart + nlocnew
 dnbpar = dnbpar + dnbpnw
 
-nbptot = nbptot + nbpnew
+nbptot = nbptot + nlocnew
 
 !===============================================================================
+
+deallocate(iusloc)
+
+if (irangp.ge.0) then
+   deallocate(surflag)
+   deallocate(surlgrg)
+   deallocate(ninjrg)
+endif
 
 !--------
 ! FORMATS

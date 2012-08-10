@@ -95,6 +95,7 @@ use numvar
 use optcal
 use cstnum
 use entsor
+use parall
 use lagpar
 use lagran
 use mesh
@@ -130,6 +131,11 @@ character        chcond*16
 
 double precision, allocatable, dimension(:) :: tabvr
 
+integer nbpartall, nbpoutall, nbperrall, nbpdepall
+
+double precision dnbparall, dnbperall, dnbpouall
+double precision dnbdepall, dnbpnwall
+
 !===============================================================================
 !===============================================================================
 ! 1. Initializations
@@ -151,6 +157,34 @@ endif
 
 write (nfecra,1000)
 
+! Parallelism management
+
+nbpartall = nbpart
+nbpoutall = nbpout
+nbperrall = nbperr
+nbpdepall = nbpdep
+
+dnbparall = dnbpar
+dnbpouall = dnbpou
+dnbperall = dnbper
+dnbdepall = dnbdep
+dnbpnwall = dnbpnw
+
+if (irangp.ge.0) then
+
+   call parcpt(nbpartall)
+   call parcpt(nbpoutall)
+   call parcpt(nbperrall)
+   call parcpt(nbpdepall)
+
+   call parsom(dnbparall)
+   call parsom(dnbpouall)
+   call parsom(dnbperall)
+   call parsom(dnbdepall)
+   call parsom(dnbpnwall)
+
+endif
+
 ! Number of particles
 
 write(nfecra,1003)
@@ -158,7 +192,7 @@ write(nfecra,1010) iplas , iplar
 write(nfecra,1003)
 write(nfecra,1020)
 write(nfecra,1003)
-write(nfecra,1031) nbpnew, dnbpnw
+write(nfecra,1031) nbpnew, dnbpnwall
 if (iroule.ge.1) then
   write(nfecra,1037) npcsup, dnpcsu
   write(nfecra,1032) npclon, dnpclo
@@ -167,10 +201,10 @@ endif
 if (iphyla.eq.2 .and. iencra.eq.1) then
   write(nfecra,1038) npencr, dnpenc
 endif
-write(nfecra,1033) nbpout-nbperr, (dnbpou-dnbper)
-write(nfecra,1039) nbpdep, dnbdep
-write(nfecra,1035) nbperr, dnbper
-write(nfecra,1036) nbpart, dnbpar
+write(nfecra,1033) nbpoutall-nbperr, (dnbpou-dnbper)
+write(nfecra,1039) nbpdepall, dnbdepall
+write(nfecra,1035) nbperrall, dnbperall
+write(nfecra,1036) nbpartall, dnbparall
 if (nbptot.gt.0) then
   write(nfecra,1050) (nbpert*100.d0)/dble(nbptot)
   write(nfecra,1001)
@@ -197,6 +231,10 @@ do ii = 1,nfrlag
     CHCOND = 'DLVO CONDITIONS'
   else
     CHCOND = 'USER'
+  endif
+
+  if (irangp.ge.0) then
+     call parsom(deblag(nb))
   endif
 
   write(nfecra,7001) nb,deblag(nb)/dtp,chcond
@@ -266,7 +304,14 @@ if (istala.eq.1) then
 
          endif
 
+         if (irangp.ge.0) then
+            call parmin(gmin)
+            call parmax(gmax)
+         endif
+
          write(nfecra,3020) nomlag(ivf),  gmin, gmax
+
+
       enddo
 
          ! Free memory

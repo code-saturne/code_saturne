@@ -81,7 +81,7 @@ extern "C" {
 #  include <mpi.h>
 
 #  if !defined(MPI_VERSION) /* Defined in up-to-date MPI versions */
-#    define MPI_VERSION 1 
+#    define MPI_VERSION 1
 #  endif
 
 #endif
