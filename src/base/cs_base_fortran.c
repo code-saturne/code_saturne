@@ -374,16 +374,19 @@ void CS_PROCF (cslogname, CSLOGNAME)
                                          by many Fortran compilers) */
 )
 {
+  size_t name_l;
+
   size_t l = *len;
   const char *name = cs_base_bft_printf_name();
 
   if (cs_base_bft_printf_suppressed())
     name = "/dev/null";
 
-  if (strlen(name) <= l) {
+  name_l = strlen(name);
+  if (name_l <= l) {
     size_t i;
-    memcpy(dir, name, l);
-    for (i = strlen(name); i < l; i++)
+    memcpy(dir, name, name_l);
+    for (i = name_l; i < l; i++)
       dir[i] = ' ';
   }
   else
