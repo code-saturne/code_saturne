@@ -132,9 +132,10 @@ double precision statis(ncelet,nvlsta)
 
 double precision dnbpr
 
-integer nbpartall, nbpnewall, nbpoutall, nbperrall, nbpdepall
+integer nbpartall, nbpoutall, nbperrall, nbpdepall
 
-double precision dnbparall, dnbperall, dnbpouall, dnbpnwall, dnbdepall
+double precision dnbparall, dnbperall, dnbpouall
+double precision dnbdepall, dnbpnwall
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -160,31 +161,28 @@ ipass = ipass + 1
 ! Parallelism management
 
 nbpartall = nbpart
-nbpnewall = nbpnew
 nbpoutall = nbpout
 nbperrall = nbperr
 nbpdepall = nbpdep
 
 dnbparall = dnbpar
-dnbpnwall = dnbpnw
 dnbpouall = dnbpou
 dnbperall = dnbper
 dnbdepall = dnbdep
-
+dnbpnwall = dnbpnw
 
 if (irangp.ge.0) then
 
    call parcpt(nbpartall)
-   call parcpt(nbpnewall)
    call parcpt(nbpoutall)
    call parcpt(nbperrall)
    call parcpt(nbpdepall)
 
    call parsom(dnbparall)
-   call parsom(dnbpnwall)
    call parsom(dnbpouall)
    call parsom(dnbperall)
    call parsom(dnbdepall)
+   call parsom(dnbpnwall)
 
 endif
 
@@ -233,7 +231,7 @@ if (irangp.le.0) then
 
     write(implal,2000) iplas,(dtp*iplas),                         &
          nbpartall        , dnbparall        ,                    &
-         nbpnewall        , dnbpnwall        ,                    &
+         nbpnew        ,dnbpnwall        ,                    &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
          nbpdepall        , dnbdepall        ,                    &
          nbperrall        , dnbperall        ,                    &
@@ -248,7 +246,7 @@ if (irangp.le.0) then
 
     write(implal,2001) iplas,(dtp*iplas),                         &
          nbpartall     , dnbparall        ,                       &
-         nbpnewall     , dnbpnwall        ,                       &
+         nbpnew        ,dnbpnwall        ,                              &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
          nbpdepall        , dnbdepall        ,                    &
          nbperrall        , dnbperall        ,                    &
@@ -262,7 +260,7 @@ if (irangp.le.0) then
 
     write(implal,2002) iplas,(dtp*iplas),                         &
          nbpartall     , dnbparall        ,                       &
-         nbpnewall        , dnbpnwall        ,                    &
+         nbpnew        ,dnbpnwall        ,                           &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
          nbpdepall        , dnbdepall        ,                    &
          nbperrall        , dnbperall        ,                    &
@@ -273,7 +271,7 @@ if (irangp.le.0) then
 
     write(implal,2003) iplas,(dtp*iplas),                         &
          nbpartall     , dnbparall        ,                       &
-         nbpnewall        , dnbpnwall        ,                    &
+         nbpnew        ,dnbpnwall        ,                           &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
          nbpdepall        , dnbdepall        ,                    &
          nbperrall        , dnbperall        ,                    &
