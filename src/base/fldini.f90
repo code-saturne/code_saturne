@@ -82,8 +82,8 @@ implicit none
 integer          ii, ippu, ippv, ippw, ivar, iprop
 integer          imom, idtnm
 integer          keyvis, keylbl, keycpl, iflid, ikeyid, ikeyvl, iopchr
-integer          nfld, iinten, iexten, itycat, ityloc, idim1, idim3, ilved
-integer          iprev, inoprv
+integer          nfld, itycat, ityloc, idim1, idim3
+logical          ilved, iprev, inoprv
 integer          ifvar(nvppmx), iapro(npromx)
 
 character*80     name
@@ -101,15 +101,13 @@ character*80     fname(nvppmx)
 ! code with hard-coded values, but in the C API, those values are based on
 ! (much clearer) category mask definitions in cs_field.h.
 
-iinten = 0 ! most variables are intensive, not extensive
-iexten = 1 ! most variables are intensive, not extensive
-itycat = 4 ! for variables
+itycat = FIELD_INTENSIVE + FIELD_VARIABLE  ! for most variables
 ityloc = 1 ! variables defined on cells
 idim1  = 1
 idim3  = 3
-ilved  = 0   ! not interleaved by default
-iprev = 1    ! variables have previous value
-inoprv = 0   ! variables have no previous value
+ilved  = .false.   ! not interleaved by default
+iprev = .true.     ! variables have previous value
+inoprv = .false.   ! variables have no previous value
 
 name = 'post_vis'
 call fldkid(name, keyvis)
@@ -139,8 +137,8 @@ endif
 
 ivar = ipr
 name = 'pressure'
-call flddef(name, iinten, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
-!==========
+call field_create(name, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
+!================
 call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
 !==========
 if (ichrvr(ipprtp(ivar)) .eq. 1) then
@@ -150,8 +148,8 @@ endif
 
 ivar = iu
 name = 'velocity'
-call flddef(name, iinten, itycat, ityloc, idim3, ilved, iprev, ivarfl(iu))
-!==========
+call field_create(name, itycat, ityloc, idim3, ilved, iprev, ivarfl(iu))
+!================
 ! Change label for velocity to remove trailing coordinate name
 name = nomvar(ipprtp(iu))
 name1 = name(1:32)
@@ -247,8 +245,8 @@ endif
 do ii = 1, nfld
   ivar = ifvar(ii)
   name = nomvar(ipprtp(ivar))
-  call flddef(name, iinten, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
-  !==========
+  call field_create(name, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
+  !================
   call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
   !==========
   if (ichrvr(ipprtp(ivar)) .eq. 1) then
@@ -265,8 +263,8 @@ nfld = 0
 if (iale.eq.1) then
   ivar = iuma
   name = 'mesh_velocity'
-  call flddef(name, iinten, itycat, ityloc, idim3, ilved, iprev, ivarfl(ivar))
-  !==========
+  call field_create(name, itycat, ityloc, idim3, ilved, iprev, ivarfl(ivar))
+  !================
   call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
   !==========
   if (ichrvr(ipprtp(ivar)) .eq. 1) then
@@ -301,8 +299,8 @@ do ii = 1, nscal
     else
       name = nomvar(ipprtp(ivar))
     endif
-    call flddef(name, iinten, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
-    !==========
+    call field_create(name, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
+    !================
     call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
     !==========
     if (ichrvr(ipprtp(ivar)) .eq. 1) then
@@ -345,12 +343,12 @@ do iprop = 1, nproce
     write(name, '(a, i3.3)') 'property_', iprop
   endif
   if (iapro(iprop).eq.0) then
-    itycat = 8
+    itycat = FIELD_PROPERTY
   else
-    itycat = 8 + 32
+    itycat = FIELD_PROPERTY + FIELD_ACCUMULATOR
   endif
-  call flddef(name, iinten, itycat, ityloc, idim1, ilved, inoprv, iprpfl(iprop))
-  !==========
+  call field_create(name, itycat, ityloc, idim1, ilved, inoprv, iprpfl(iprop))
+  !================
   call fldsks(iprpfl(iprop), keylbl, name)
   !==========
   if (ichrvr(ipppro(iprop)) .eq. 1) then
@@ -384,20 +382,20 @@ enddo
 ! Reserved fields whose ids are not saved (may be queried by name)
 !-----------------------------------------------------------------
 
-itycat = 0
+itycat = FIELD_INTENSIVE
 
 ! Local time step
 
 name = 'dt'
-call flddef(name, iexten, itycat, ityloc, idim1, ilved, inoprv, iflid)
-!==========
+call field_create(name, itycat, ityloc, idim1, ilved, inoprv, iflid)
+!================
 
 ! Transient velocity/pressure coupling
 
 if (ipucou.ne.0) then
   name = 'tpucou'
-  call flddef(name, iexten, itycat, ityloc, idim3, ilved, inoprv, iflid)
-  !==========
+  call field_create(name, itycat, ityloc, idim3, ilved, inoprv, iflid)
+  !================
 endif
 
 return

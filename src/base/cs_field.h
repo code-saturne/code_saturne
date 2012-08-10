@@ -129,51 +129,6 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define a field.
- *
- * Fortran interface; use flddef (see field.f90)
- *
- * subroutine fldde1 (name, lname, iexten, itycat, ityloc, idim, ilved,
- * *****************
- *                    iprev, idfld)
- *
- * character*       name        : <-- : Field name
- * integer          lname       : <-- : Field name length
- * integer          iexten      : <-- : 1: intensive; 2: extensive
- * integer          itycat      : <-- : Field category (may be added)
- *                              :     :   4: variable
- *                              :     :   8: property
- *                              :     :  16: postprocess
- *                              :     :  32: accumulator
- *                              :     :  64: user
- * integer          ityloc      : <-- : Location type
- *                              :     :  0: none
- *                              :     :  1: cells
- *                              :     :  2: interior faces
- *                              :     :  3: interior faces
- *                              :     :  4: vertices
- * integer          idim        : <-- : Field dimension
- * integer          ilved       : <-- : 0: not intereaved; 1: interleaved
- * integer          iprev       : <-- : 0: no previous values, 1: previous
- * integer          idfld       : --> : id of defined field
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (fldde1, FLDDE1)
-(
- const char       *name,
- const cs_int_t   *lname,
- const cs_int_t   *iexten,
- const cs_int_t   *itycat,
- const cs_int_t   *ityloc,
- const cs_int_t   *idim,
- const cs_int_t   *ilved,
- const cs_int_t   *iprev,
- cs_int_t         *idfld
- CS_ARGF_SUPP_CHAINE              /*   (possible 'length' arguments added
-                                        by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
  * Allocate field values
  *
  * Fortran interface
@@ -290,30 +245,6 @@ void CS_PROCF (fldpv1, FLDPV1)
 (
  const cs_int_t   *ifield,
  const cs_int_t   *iprev
-);
-
-/*----------------------------------------------------------------------------
- * Return an id associated with a given field name if present.
- *
- * If the field has not been defined previously, -1 is returned.
- *
- * Fortran interface; use fldfid (see field.f90)
- *
- * subroutine fldfi1 (name,   lname,  ifield)
- * *****************
- *
- * character*       name        : <-- : Field name
- * integer          lname       : <-- : Field name length
- * integer          ifield      : --> : id of given key
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (fldfi1, FLDFI1)
-(
- const char       *name,
- const cs_int_t   *lname,
- cs_int_t         *ifield
- CS_ARGF_SUPP_CHAINE              /*   (possible 'length' arguments added
-                                        by many Fortran compilers) */
 );
 
 /*----------------------------------------------------------------------------
@@ -495,14 +426,12 @@ cs_field_n_fields(void);
 /*----------------------------------------------------------------------------
  * Create a field descriptor.
  *
- * For fields with a dimension greater than 1, components are interleaved.
- *
  * parameters:
  *   name         <-- field name
  *   type_flag    <-- mask of field property and category values
  *   location_id  <-- id of associated location
  *   dim          <-- field dimension (number of components)
- *   interleaved  <-- indicate if values ar interleaved
+ *   interleaved  <-- indicate if values are interleaved
  *                    (ignored if number of components < 2)
  *   has_previous <-- maintain values at the previous time step ?
  *
@@ -556,9 +485,9 @@ cs_field_map_values(cs_field_t   *f,
  * interleaving behavior as the field, unless components are coupled.
  *
  * For multidimensional fields with coupled components, interleaving
- * is the norm, and implicit coefficients arrays are arrays of block matrices,
- * not vectors, so the number of entris for each boundary face is
- * dim*dim instead of dim.
+ * is the norm, and implicit b and bf coefficient arrays are arrays of
+ * block matrices, not vectors, so the number of entries for each boundary
+ * face is dim*dim instead of dim.
  *
  * parameters:
  *   f            <-- pointer to field structure

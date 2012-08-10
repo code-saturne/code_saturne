@@ -283,8 +283,8 @@ enddo
 ! Local time step
 
 name = 'dt'
-call fldfid(name, iflid)
-!==========
+call field_id_get(name, iflid)
+!================
 call fldmap(iflid, dt, dt)
 !==========
 
@@ -292,8 +292,8 @@ call fldmap(iflid, dt, dt)
 
 if (ipucou.ne.0) then
   name = 'tpucou'
-  call fldfid(name, iflid)
-  !==========
+  call field_id_get(name, iflid)
+  !================
   call fldmap(iflid, tpucou, tpucou)
   !==========
 endif

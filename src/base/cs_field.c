@@ -142,66 +142,72 @@ static const char *_type_flag_name[] = {N_("intensive"),
                                         N_("user")};
 
 /*============================================================================
- * Fortran function prototypes for subroutines from field.f90.
+ * Prototypes for functions intended for use only by Fortran wrappers.
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Set global temporary scalar field pointer to null.
+ * Return the id of a defined field based on its name.
  *
- * function fldps2
- * ***************
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   name <-- field name
+ *
+ * returns:
+ *   id the field structure
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (fldps2, FLDPS2)
-(
- void
-);
+int
+cs_f_field_id_by_name(const char *name);
 
 /*----------------------------------------------------------------------------
- * Set global temporary scalar field pointer to a given array.
+ * Return a pointer to a field's variable values
  *
- * function fldps3 (nval, val)
- * ***************
+ * This function is intended for use by Fortran wrappers.
  *
- * integer          nval        : <-- : Number of field values
- * double precision val         : <-- : pointer to field values
+ * parameters:
+ *   id           <-- field id
+ *   pointer_type <-- 1: var; 2: var_p;
+ *   pointer_rank <-- expected rank (1 for scalar, 2 for vector)
+ *   dim          --> dimensions (indexes in Fortran order,
+ *                    dim[i] = 0 if i unused)
+ *   p            --> returned pointer
+ *
+ * returns:
+ *   pointer to the field structure, or NULL
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (fldps3, FLDPS3)
-(
- const cs_int_t   *nval,
- cs_real_t        *val
-);
+void
+cs_f_field_var_ptr_by_id(int          id,
+                         int          pointer_type,
+                         int          pointer_rank,
+                         int          dim[2],
+                         cs_real_t  **p);
 
 /*----------------------------------------------------------------------------
- * Set global temporary vector field pointer to null.
+ * Return a pointer to a field's boundary condition coefficient values
  *
- * function fldpv2
- * ***************
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   id           <-- field id
+ *   pointer_type <-- 1: bc_coeffs->a;   2: bc_coeffs->b
+ *                    3: bc_coeffs->af;  4: bc_coeffs->bf
+ *   pointer_rank <-- expected rank (1 for scalar, 2 for vector)
+ *   dim          <-- dimensions (indexes in Fortran order,
+ *                    dim[i] = 0 if i unused)
+ *   p            <-- returned pointer
+ *
+ * returns:
+ *   pointer to the field structure, or NULL
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (fldpv2, FLDPV2)
-(
- void
-);
-
-/*----------------------------------------------------------------------------
- * Set global temporary vector field pointer to a given array.
- *
- * function fldpv3 (nval1, nval2, val)
- * ***************
- *
- * integer          nval1       : <-- : Number of values for first index
- * integer          nval2       : <-- : Number of values for second index
- * double precision val         : <-- : pointer to field values
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (fldpv3, FLDPV3)
-(
- const cs_int_t   *nval1,
- const cs_int_t   *nval2,
- cs_real_t        *val
-);
+void
+cs_f_field_bc_coeffs_ptr_by_id(int          id,
+                               int          pointer_type,
+                               int          pointer_rank,
+                               int          dim[3],
+                               cs_real_t  **p);
 
 /*============================================================================
  * Private function definitions
@@ -209,8 +215,6 @@ void CS_PROCF (fldpv3, FLDPV3)
 
 /*----------------------------------------------------------------------------*/
 /* Create a field descriptor.
- *
- * For fields with a dimension greater than 1, components are interleaved.
  *
  * parameters:
  *   name        <-- field name
@@ -477,88 +481,6 @@ _cs_field_free_str(void)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define a field.
- *
- * Fortran interface; use flddef (see cs_fieldt_f2c.f90)
- *
- * subroutine fldde1 (name, lname, iexten, itycat, ityloc, idim, ilved,
- * *****************
- *                    iprev, idfld)
- *
- * character*       name        : <-- : Field name
- * integer          lname       : <-- : Field name length
- * integer          iexten      : <-- : 1: intensive; 2: extensive
- * integer          itycat      : <-- : Field category (may be added)
- *                              :     :   4: variable
- *                              :     :   8: property
- *                              :     :  16: postprocess
- *                              :     :  32: accumulator
- *                              :     :  64: user
- * integer          ityloc      : <-- : Location type
- *                              :     :  0: none
- *                              :     :  1: cells
- *                              :     :  2: interior faces
- *                              :     :  3: interior faces
- *                              :     :  4: vertices
- * integer          idim        : <-- : Field dimension
- * integer          ilved       : <-- : 0: not intereaved; 1: interleaved
- * integer          iprev       : <-- : 0: no previous values, 1: previous
- * integer          ifield      : --> : id of defined field
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (fldde1, FLDDE1)
-(
- const char       *name,
- const cs_int_t   *lname,
- const cs_int_t   *iexten,
- const cs_int_t   *itycat,
- const cs_int_t   *ityloc,
- const cs_int_t   *idim,
- const cs_int_t   *ilved,
- const cs_int_t   *iprev,
- cs_int_t         *ifield
- CS_ARGF_SUPP_CHAINE              /*   (possible 'length' arguments added
-                                        by many Fortran compilers) */
-)
-{
-  char *bufname;
-  int type_flag = 0;
-  bool interleaved = (*ilved == 0) ? false : true;
-  bool has_prev = (*iprev == 0) ? false : true;
-
-  cs_field_t *f = NULL;
-
-  bufname = cs_base_string_f_to_c_create(name, *lname);
-
-  if (*iexten & 1)
-    type_flag = CS_FIELD_EXTENSIVE;
-  else if (*iexten & 2)
-    type_flag = CS_FIELD_INTENSIVE;
-
-  if (*itycat & 4)
-    type_flag = type_flag | CS_FIELD_VARIABLE;
-  if (*itycat & 8)
-    type_flag = type_flag | CS_FIELD_PROPERTY;
-  if (*itycat & 16)
-    type_flag = type_flag | CS_FIELD_POSTPROCESS;
-  if (*itycat & 32)
-    type_flag = type_flag | CS_FIELD_ACCUMULATOR;
-  if (*itycat == 64)
-    type_flag = type_flag | CS_FIELD_USER;
-
-  f = cs_field_create(bufname,
-                      type_flag,
-                      *ityloc,
-                      *idim,
-                      interleaved,
-                      has_prev);
-
-  cs_base_string_f_to_c_free(&bufname);
-
-  *ifield = f->id;
-}
-
-/*----------------------------------------------------------------------------
  * Allocate field values
  *
  * Fortran interface
@@ -663,115 +585,182 @@ void CS_PROCF (fldama, FLDAMA)
 }
 
 /*----------------------------------------------------------------------------
- * Retrieve field value pointer for a scalar field.
+ * Return the id of a defined field based on its name.
  *
- * Fortran interface; use fldpts
+ * This function is intended for use by Fortran wrappers.
  *
- * function fldps1 (ifield, iprev)
- * ***************
+ * parameters:
+ *   name <-- field name
  *
- * integer          ifield      : <-- : Field id
- * integer          iprev       : <-- : if 1, pointer to previous values
+ * returns:
+ *   id the field structure
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (fldps1, FLDPS1)
-(
- const cs_int_t   *ifield,
- const cs_int_t   *iprev
-)
+int
+cs_f_field_id_by_name(const char *name)
 {
-  cs_field_t *f = cs_field_by_id(*ifield);
-  cs_real_t *val = NULL;
-
-  if (*iprev == 0)
-    val = (f->val_pre);
-  else
-    val = (f->val);
-
-  if (val == NULL)
-    CS_PROCF(fldps2, FLDPS2)();
-  else {
-    cs_int_t nval;
-    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(*ifield);
-    nval = n_elts[2];
-    CS_PROCF(fldps3, FLDPS3)(&nval, val);
-  }
+  cs_field_t  *f = cs_field_by_name(name);
+  return f->id;
 }
 
 /*----------------------------------------------------------------------------
- * Retrieve field value pointer for a vector field.
+ * Return a pointer to a field's variable values
  *
- * Fortran interface; use fldpts
+ * This function is intended for use by Fortran wrappers.
  *
- * function fldpv1 (ifield, iprev)
- * ***************
+ * parameters:
+ *   id           <-- field id
+ *   pointer_type <-- 1: var; 2: var_p;
+ *   pointer_rank <-- expected rank (1 for scalar, 2 for vector)
+ *   dim          --> dimensions (indexes in Fortran order,
+ *                    dim[i] = 0 if i unused)
+ *   p            --> returned pointer
  *
- * integer          ifield      : <-- : Field id
- * integer          iprev       : <-- : if 1, pointer to previous values
+ * returns:
+ *   pointer to the field structure, or NULL
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (fldpv1, FLDPV1)
-(
- const cs_int_t   *ifield,
- const cs_int_t   *iprev
-)
+void
+cs_f_field_var_ptr_by_id(int          id,
+                         int          pointer_type,
+                         int          pointer_rank,
+                         int          dim[2],
+                         cs_real_t  **p)
 {
-  cs_field_t *f = cs_field_by_id(*ifield);
-  cs_real_t *val = NULL;
+  cs_field_t *f = cs_field_by_id(id);
+  int cur_p_rank = 1;
 
-  if (*iprev == 0)
-    val = (f->val_pre);
-  else
-    val = (f->val);
+  dim[1] = 0;
+  dim[2] = 0;
+  *p = NULL;
 
-  if (val == NULL)
-    CS_PROCF(fldpv2, FLDPV2)();
-  else {
-    cs_int_t nval1, nval2;
-    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(*ifield);
-    if (f->interleaved) {
-      nval1 = f->dim;
-      nval2 = n_elts[2];
+  if (pointer_type == 1 || pointer_type == 2) {
+
+    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+    if (pointer_type == 1)
+      *p = f->val;
+    else
+      *p = f->val_pre;
+    if (f->dim == 1)
+      dim[0] = n_elts[2];
+    else if (f->interleaved) {
+      dim[0] = f->dim;
+      dim[1] = n_elts[2];
+      cur_p_rank = 2;
     }
     else {
-      nval1 = n_elts[2];
-      nval2 = f->dim;
+      dim[0] = n_elts[2];
+      dim[1] = f->dim;
+      cur_p_rank = 2;
     }
-    CS_PROCF(fldpv3, FLDPV3)(&nval1, &nval2, val);
+
   }
+
+  if (cur_p_rank != pointer_rank)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Fortran pointer of rank %d requested for values of field \"%s\",\n"
+         "which have rank %d."),
+       pointer_rank, f->name, cur_p_rank);
 }
 
 /*----------------------------------------------------------------------------
- * Return an id associated with a given field name if present.
+ * Return a pointer to a field's boundary condition coefficient values
  *
- * If the field has not been defined previously, -1 is returned.
+ * This function is intended for use by Fortran wrappers.
  *
- * Fortran interface
+ * parameters:
+ *   id           <-- field id
+ *   pointer_type <-- 1: bc_coeffs->a;   2: bc_coeffs->b
+ *                    3: bc_coeffs->af;  4: bc_coeffs->bf
+ *   pointer_rank <-- expected rank (1 for scalar, 2 for vector)
+ *   dim          <-- dimensions (indexes in Fortran order,
+ *                    dim[i] = 0 if i unused)
+ *   p            <-- returned pointer
  *
- * subroutine fldfid (name,   lname,  ifield)
- * *****************
- *
- * character*       name        : <-- : Field name
- * integer          lname       : <-- : Field name length
- * integer          ifield      : --> : id of given key
+ * returns:
+ *   pointer to the field structure, or NULL
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (fldfi1, FLDFI1)
-(
- const char       *name,
- const cs_int_t   *lname,
- cs_int_t         *ifield
- CS_ARGF_SUPP_CHAINE              /*   (possible 'length' arguments added
-                                        by many Fortran compilers) */
-)
+void
+cs_f_field_bc_coeffs_ptr_by_id(int          id,
+                               int          pointer_type,
+                               int          pointer_rank,
+                               int          dim[3],
+                               cs_real_t  **p)
 {
-  char *bufname;
+  cs_field_t *f = cs_field_by_id(id);
+  int cur_p_rank = 1;
 
-  bufname = cs_base_string_f_to_c_create(name, *lname);
+  dim[1] = 0;
+  dim[2] = 0;
+  dim[3] = 0;
+  *p = NULL;
 
-  *ifield = cs_map_name_to_id_try(_field_map, bufname);
+  const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+  const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(location_id);
+  assert(f->location_id == CS_MESH_LOCATION_CELLS);
 
-  cs_base_string_f_to_c_free(&bufname);
+  if (f->bc_coeffs == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Field \"%s\"\n"
+                " does not have associated BC coefficients."),
+              f->name);
+
+  if (f->type & CS_FIELD_VARIABLE) {
+
+    if (pointer_type == 1)
+      *p = f->bc_coeffs->a;
+    else if (pointer_type == 2)
+      *p = f->bc_coeffs->b;
+    else if (pointer_type == 3)
+      *p = f->bc_coeffs->af;
+    else if (pointer_type == 4)
+      *p = f->bc_coeffs->bf;
+
+    if (f->dim == 1)
+      dim[0] = n_elts[2];
+
+    else {
+
+      int coupled = 0;
+      int coupled_key_id = cs_field_key_id_try("coupled");
+
+      if (coupled_key_id > -1)
+        coupled = cs_field_get_key_int(f, coupled_key_id);
+
+      if (coupled) {
+
+        if (pointer_type == 1 || pointer_type == 3) {
+          dim[0] = f->dim;
+          dim[1] = n_elts[2];
+          cur_p_rank = 2;
+        }
+        else { /* if (pointer_type == 2 || pointer_type == 4) */
+          dim[0] = f->dim;
+          dim[1] = f->dim;
+          dim[2] = n_elts[2];
+          cur_p_rank = 3;
+        }
+
+      }
+      else { /* uncoupled */
+
+        dim[0] = n_elts[2];
+        dim[1] = f->dim;
+        cur_p_rank = 2;
+
+      }
+
+    }
+
+  }
+
+  if (cur_p_rank != pointer_rank)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Fortran pointer of rank %d requested for BC coefficients of field\n"
+                " \"%s\", which have rank %d."),
+              pointer_rank, f->name, cur_p_rank);
 }
 
 /*----------------------------------------------------------------------------
@@ -779,7 +768,7 @@ void CS_PROCF (fldfi1, FLDFI1)
  *
  * If the key has not been defined previously, -1 is returned.
  *
- * Fortran interface; use fldkid (see cs_fieldt_f2c.f90)
+ * Fortran interface; use fldkid (see field.f90)
  *
  * subroutine fldki1 (name,   lname,  ikeyid)
  * *****************
@@ -935,7 +924,7 @@ void CS_PROCF (fldgkd, FLDGKD)
  * If the key id is not valid, or the value type or field category is not
  * compatible, a fatal error is provoked.
  *
- * Fortran interface; use fldsk1 (see cs_fieldt_f2c.f90)
+ * Fortran interface; use fldsk1 (see field.f90)
  *
  * subroutine fldsk1 (ifield, ikey, str, lstr)
  * *****************
@@ -983,7 +972,7 @@ void CS_PROCF (fldsk1, FLDSK1)
  * If the key id is not valid, or the value type or field category is not
  * compatible, a fatal error is provoked.
  *
- * Fortran interface; use fldgk1 (see cs_fieldt_f2c.f90)
+ * Fortran interface; use fldgk1 (see field.f90)
  *
  * subroutine fldgk1 (ifield, ikey, str, lstr)
  * *****************
@@ -1039,8 +1028,6 @@ cs_field_n_fields(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Create a field descriptor.
- *
- * For fields with a dimension greater than 1, components are interleaved.
  *
  * \param[in]  name          field name
  * \param[in]  type_flag     mask of field property and category values
@@ -1145,9 +1132,9 @@ cs_field_map_values(cs_field_t   *f,
  * interleaving behavior as the field, unless components are coupled.
  *
  * For multidimensional fields with coupled components, interleaving
- * is the norm, and implicit coefficients arrays are arrays of block matrices,
- * not vectors, so the number of entries for each boundary face is
- * dim*dim instead of dim.
+ * is the norm, and implicit b and bf coefficient arrays are arrays of
+ * block matrices, not vectors, so the number of entries for each boundary
+ * face is dim*dim instead of dim.
  *
  * \param[in, out]  f             pointer to field structure
  * \param[in]       have_flux_bc  if true, flux bc coefficients (af and bf)
