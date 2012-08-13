@@ -197,7 +197,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         setGreenColor(self.pushButtonSpecies, True)
 
 
-    @pyqtSignature("constQStrinq&")
+    @pyqtSignature("const QString&")
     def slotMomentumFormula(self):
         """
         Set momentumFormula of the source term
@@ -226,7 +226,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
             setGreenColor(self.sender(), False)
 
 
-    @pyqtSignature("constQStrinq&")
+    @pyqtSignature("const QString&")
     def slotSpeciesFormula(self):
         """
         """
@@ -273,7 +273,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         return th_sca_label, unit
 
 
-    @pyqtSignature("constQStrinq&")
+    @pyqtSignature("const QString&")
     def slotThermalFormula(self):
         """
         Input the initial formula of thermal scalar
