@@ -142,25 +142,25 @@ class MainView(object):
 
         # connections
 
-        self.connect(self.fileOpenAction,   SIGNAL("activated()"),   self.fileOpen)
-        self.connect(self.fileNewAction,    SIGNAL("activated()"),   self.fileNew)
+        self.connect(self.fileOpenAction,   SIGNAL("triggered()"),   self.fileOpen)
+        self.connect(self.fileNewAction,    SIGNAL("triggered()"),   self.fileNew)
         self.connect(self.menuRecent,       SIGNAL("aboutToShow()"), self.updateRecentFileMenu)
-        self.connect(self.fileSaveAction,   SIGNAL("activated()"),   self.fileSave)
-        self.connect(self.fileSaveAsAction, SIGNAL("activated()"),   self.fileSaveAs)
-        self.connect(self.fileCloseAction,  SIGNAL("activated()"),   self.close)
-        self.connect(self.fileQuitAction,   SIGNAL("activated()"),   self.fileQuit)
+        self.connect(self.fileSaveAction,   SIGNAL("triggered()"),   self.fileSave)
+        self.connect(self.fileSaveAsAction, SIGNAL("triggered()"),   self.fileSaveAs)
+        self.connect(self.fileCloseAction,  SIGNAL("triggered()"),   self.close)
+        self.connect(self.fileQuitAction,   SIGNAL("triggered()"),   self.fileQuit)
 
-        self.connect(self.openXtermAction,      SIGNAL("activated()"), self.openXterm)
-        self.connect(self.displayCaseAction,    SIGNAL("activated()"), self.displayCase)
+        self.connect(self.openXtermAction,      SIGNAL("triggered()"), self.openXterm)
+        self.connect(self.displayCaseAction,    SIGNAL("triggered()"), self.displayCase)
 
         self.connect(self.IdentityAction, SIGNAL("toggled(bool)"), self.dockWidgetIdentityDisplay)
         self.connect(self.BrowserAction,  SIGNAL("toggled(bool)"), self.dockWidgetBrowserDisplay)
 
-        self.connect(self.displayAboutAction,    SIGNAL("activated()"), self.displayAbout)
-        self.connect(self.backgroundColorAction, SIGNAL("activated()"), self.setColor)
-        self.connect(self.actionFont,            SIGNAL("activated()"), self.setFontSize)
+        self.connect(self.displayAboutAction,    SIGNAL("triggered()"), self.displayAbout)
+        self.connect(self.backgroundColorAction, SIGNAL("triggered()"), self.setColor)
+        self.connect(self.actionFont,            SIGNAL("triggered()"), self.setFontSize)
 
-        self.connect(self.displayLicenceAction,   SIGNAL("activated()"), self.displayLicence)
+        self.connect(self.displayLicenceAction,   SIGNAL("triggered()"), self.displayLicence)
 
         # connection for page layout
 
@@ -1009,10 +1009,10 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.Browser = BrowserView()
         self.ui_initialize()
 
-        self.connect(self.displayCSManualAction,   SIGNAL("activated()"), self.displayCSManual)
-        self.connect(self.displayCSTutorialAction, SIGNAL("activated()"), self.displayCSTutorial)
-        self.connect(self.displayCSKernelAction,   SIGNAL("activated()"), self.displayCSKernel)
-        self.connect(self.displayCSRefcardAction,  SIGNAL("activated()"), self.displayCSRefcard)
+        self.connect(self.displayCSManualAction,   SIGNAL("triggered()"), self.displayCSManual)
+        self.connect(self.displayCSTutorialAction, SIGNAL("triggered()"), self.displayCSTutorial)
+        self.connect(self.displayCSKernelAction,   SIGNAL("triggered()"), self.displayCSKernel)
+        self.connect(self.displayCSRefcardAction,  SIGNAL("triggered()"), self.displayCSRefcard)
 
 
     def initCase(self):
