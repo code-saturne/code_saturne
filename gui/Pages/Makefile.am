@@ -54,8 +54,6 @@ ConjugateHeatTransferView.py \
 ConjugateHeatTransferModel.py \
 CoriolisSourceTermsModel.py \
 CoriolisSourceTermsView.py \
-CurrentSpeciesModel.py \
-CurrentSpeciesView.py \
 DefineUserScalarsModel.py \
 DefineUserScalarsView.py \
 ElectricalModelsModel.py \
@@ -151,7 +149,6 @@ CoalCombustionForm.ui \
 CompressibleForm.ui \
 ConjugateHeatTransferForm.ui \
 CoriolisSourceTermsForm.ui \
-CurrentSpeciesForm.ui \
 DefineUserScalarsForm.ui \
 FacesSelectionForm.ui \
 FluidCharacteristicsForm.ui \

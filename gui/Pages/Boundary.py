@@ -3104,8 +3104,8 @@ class CoalInletBoundaryTestCase(ModelTest):
 
         # creation du fichier dp_FCP avec 2 charbons et 3 classes
         self.case['data_path'] = "."
-        from Pages.CoalThermoChemistry import CoalThermoChemistryModel, Coal
-        coalThermoChModel = CoalThermoChemistryModel("dp_FCP", self.case)
+        #from Pages.CoalThermoChemistry import CoalThermoChemistryModel, Coal
+        #coalThermoChModel = CoalThermoChemistryModel("dp_FCP", self.case)
         m.createCoalModelScalarsAndProperties(coalThermoChModel)
         coalThermoChModel.save()
 
@@ -3173,8 +3173,8 @@ class CoalInletBoundaryTestCase(ModelTest):
 
         # creation du fichier dp_FCP avec 3 charbons et 6 classes
         self.case['data_path'] = "."
-        from Pages.CoalThermoChemistry import CoalThermoChemistryModel, Coal
-        coalThermoChModel = CoalThermoChemistryModel("dp_FCP", self.case)
+        #from Pages.CoalThermoChemistry import CoalThermoChemistryModel, Coal
+        #coalThermoChModel = CoalThermoChemistryModel("dp_FCP", self.case)
         m.createCoalModelScalarsAndProperties(coalThermoChModel)
         coalThermoChModel.save()
 

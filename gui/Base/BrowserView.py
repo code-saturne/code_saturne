@@ -418,7 +418,6 @@ Thermophysical models
     Turbulence models
     Thermal model
     Gas combustion
-    Current species
     Pulverized fuel combustion
     Electrical models
     Radiative transfers
@@ -652,7 +651,6 @@ Calculation management
 
         self.setRowClose(self.tr('Particles and droplets tracking'))
         self.setRowClose(self.tr('Gas combustion'))
-        self.setRowClose(self.tr('Current species'))
         self.setRowClose(self.tr('Pulverized fuel combustion'))
         self.setRowClose(self.tr('Electrical models'))
         self.setRowClose(self.tr('Radiative transfers'))
@@ -743,7 +741,6 @@ Calculation management
 
         elif node2['model'] in ('homogeneous_fuel', 'homogeneous_fuel_moisture'):
             self.setRowClose(self.tr('Thermal model'))
-            self.setRowOpen(self.tr('Current species'))
             self.setRowOpen(self.tr('Pulverized fuel combustion'))
             self.setRowOpen(self.tr('Radiative transfers'))
             self.setRowOpen(self.tr('Conjugate heat transfer'))
@@ -811,7 +808,6 @@ Calculation management
 
     def __hideRow(self):
         """Only for developpement purpose"""
-        self.setRowClose(self.tr('Current species'))
 
 
     def tr(self, text):

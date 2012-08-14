@@ -115,10 +115,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.GasCombustionView as Page
         thisPage = Page.GasCombustionView(root, case)
 
-    elif page_name == tr("Current species"):
-        import Pages.CurrentSpeciesView as Page
-        thisPage = Page.CurrentSpeciesView(root, case)
-
     elif page_name == tr("Pulverized fuel combustion"):
         import Pages.CoalCombustionView as Page
         thisPage = Page.CoalCombustionView(root, case, stbar)
