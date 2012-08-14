@@ -260,10 +260,10 @@ bin/cs_package.py bin/runcase_aster: Makefile
 	$(edit_config) $${srcdir}$@.in >$@.tmp
 	mv $@.tmp $@
 
-bin/code_saturne: $(srcdir)/bin/code_saturne.in 
-bin/cs_package.py: $(srcdir)/bin/cs_package.py.in 
-bin/runcase_aster: $(srcdir)/bin/runcase_aster.in 
-bin/runcase_coupling: $(srcdir)/bin/runcase_coupling.in 
+bin/code_saturne: $(srcdir)/bin/code_saturne.in
+bin/cs_package.py: $(srcdir)/bin/cs_package.py.in
+bin/runcase_aster: $(srcdir)/bin/runcase_aster.in
+bin/runcase_coupling: $(srcdir)/bin/runcase_coupling.in
 
 CLEANFILES = $(edit_scripts)
 EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in bin/runcase_aster.in bin/runcase_coupling.in
@@ -326,7 +326,7 @@ data/thch/dp_C3PSJ \
 data/thch/dp_C4P \
 data/thch/dp_ELE \
 data/thch/dp_FCP \
-data/thch/dp_FCP_new \
+data/thch/dp_FCP.xml \
 data/thch/dp_FUE \
 data/thch/dp_FUE_new \
 data/thch/dp_transfo \
