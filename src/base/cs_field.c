@@ -611,19 +611,25 @@ cs_f_field_var_ptr_by_id(int          id,
   if (pointer_type == 1 || pointer_type == 2) {
 
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+    cs_lnum_t _n_elts = n_elts[2];
+
     if (pointer_type == 1)
       *p = f->val;
     else
       *p = f->val_pre;
+
+    if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
+      _n_elts = 0;
+
     if (f->dim == 1)
-      dim[0] = n_elts[2];
+      dim[0] = _n_elts;
     else if (f->interleaved) {
       dim[0] = f->dim;
-      dim[1] = n_elts[2];
+      dim[1] = _n_elts;
       cur_p_rank = 2;
     }
     else {
-      dim[0] = n_elts[2];
+      dim[0] = _n_elts;
       dim[1] = f->dim;
       cur_p_rank = 2;
     }
@@ -673,6 +679,8 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
 
   const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
   const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(location_id);
+  cs_lnum_t _n_elts = n_elts[2];
+
   assert(f->location_id == CS_MESH_LOCATION_CELLS);
 
   if (f->bc_coeffs == NULL)
@@ -692,8 +700,11 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
     else if (pointer_type == 4)
       *p = f->bc_coeffs->bf;
 
+    if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
+      _n_elts = 0;
+
     if (f->dim == 1)
-      dim[0] = n_elts[2];
+      dim[0] = _n_elts;
 
     else {
 
@@ -707,20 +718,20 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
 
         if (pointer_type == 1 || pointer_type == 3) {
           dim[0] = f->dim;
-          dim[1] = n_elts[2];
+          dim[1] = _n_elts;
           cur_p_rank = 2;
         }
         else { /* if (pointer_type == 2 || pointer_type == 4) */
           dim[0] = f->dim;
           dim[1] = f->dim;
-          dim[2] = n_elts[2];
+          dim[2] = _n_elts;
           cur_p_rank = 3;
         }
 
       }
       else { /* uncoupled */
 
-        dim[0] = n_elts[2];
+        dim[0] = _n_elts;
         dim[1] = f->dim;
         cur_p_rank = 2;
 
