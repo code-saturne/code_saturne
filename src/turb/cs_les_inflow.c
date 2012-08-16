@@ -990,7 +990,7 @@ _rescale_fluctuations(cs_int_t     n_points,
  * Add a new inlet for synthetic turbulence inflow generation
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _cs_inflow_add_inlet(cs_inflow_type_t   type,
                      const cs_int_t     n_faces,
                      const cs_int_t    *num_face,

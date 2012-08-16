@@ -840,20 +840,20 @@ static void
 _dump_particle(cs_lagr_particle_t  part)
 {
   bft_printf("  particle:\n"
-             "\tglobal num    : %u\n"
+             "\tglobal num    : %llu\n"
              "\tcur_cell_num  : %d\n"
              "\tstate         : %d\n"
              "\tprev_id       : %d\n"
              "\tnext_id       : %d\n"
              "\tcoord         : [%e, %e, %e]\n",
-             part.global_num,
-             part.cur_cell_num,
-             part.state,
-             part.prev_id,
-             part.next_id,
-             part.coord[0],
-             part.coord[1],
-             part.coord[2]);
+             (unsigned long long)part.global_num,
+             (int)part.cur_cell_num,
+             (int)part.state,
+             (int)part.prev_id,
+             (int)part.next_id,
+             (double)part.coord[0],
+             (double)part.coord[1],
+             (double)part.coord[2]);
 #if defined(HAVE_MPI)
   bft_printf("\tcell_rk       : %d\n", part.cell_rank);
 #endif
@@ -1909,7 +1909,7 @@ _test_wall_cell(cs_lagr_particle_t *particle,
   cs_lnum_t  start = cell_face_idx[cell_id];
   cs_lnum_t  end =  cell_face_idx[cell_id + 1];
 
-  cs_lnum_t i, j, k;
+  cs_lnum_t i;
 
   for (i = start; i < end; i++)
   {
@@ -2250,8 +2250,6 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
 {
   cs_lnum_t  i, j, k;
   cs_real_t  depl[3];
-
-  cs_lnum_t old_cell_num;
 
   cs_lnum_t  error = 0;
   cs_lnum_t  n_loops = 0;
@@ -2838,7 +2836,6 @@ _update_particle_set(cs_lnum_t                n_recv_particles,
     cs_lagr_particle_t  new_part = lag_halo->recv_buf->particles[i];
 
     new_id = set->first_free_id;
-    int old_first_free =  set->first_free_id;
 
     if (set->particles[set->first_free_id].next_id != -1) {
       set->first_free_id = set->particles[set->first_free_id].next_id;
@@ -3839,7 +3836,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
   cs_lnum_t  i, j;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  int nfabor  = mesh->n_b_faces;
 
   cs_lnum_t  n_delete_particles = 0;
   cs_lnum_t  n_failed_particles = 0;
@@ -3848,7 +3844,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
   cs_real_t  r_weight = 0.0;
   cs_real_t  tot_weight = 0.0;
 
-  cs_lnum_t  n_particles = *p_n_particles;
   cs_lnum_t  scheme_order = *p_scheme_order;
   cs_lagr_particle_set_t  *set = _particle_set;
   cs_lagr_particle_set_t  *prev_set = _prev_particle_set;
@@ -3960,7 +3955,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
     /*  assert(j == -1);  After a loop on particles, next_id of the last
         particle must not be defined */
 
-    if (cs_glob_mesh->n_init_perio > 0 || cs_glob_n_ranks > 1) {
+    if (mesh->n_init_perio > 0 || cs_glob_n_ranks > 1) {
 
       /* Synchronisation of a selection of particles for parallelism and
          periodicity. Number of particles on the local rank may change. */
