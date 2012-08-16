@@ -107,9 +107,6 @@ integer icondl, icondf
 
 integer          ifvar(nvppmx)
 
-character*80     name
-character*32     name1, name2, name3
-
 !===============================================================================
 
 
@@ -130,32 +127,27 @@ ivar = ipr
 icondl = iclrtp(ivar, icoef)
 icondf = iclrtp(ivar, icoeff)
 
-call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
-!==========
+call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
 if (nfabor .gt. 0) then
-  call fldbcm(ivarfl(ivar),                             &
-  !==========
-              coefa(1, icondl), coefb(1, icondl),       &
-              coefa(1, icondf), coefb(1, icondf))
+  call field_map_bc_coeffs(ivarfl(ivar),                             &
+                           coefa(1, icondl), coefb(1, icondl),       &
+                           coefa(1, icondf), coefb(1, icondf))
 endif
 
 ivar = iu
-call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
-!==========
+call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
 
 if (nfabor .gt. 0) then
   if (ivelco .eq. 0) then
     icondl = iclrtp(ivar, icoef)
     icondf = iclrtp(ivar, icoeff)
-    call fldbcm(ivarfl(ivar),                           &
-    !==========
-                coefa(1, icondl), coefb(1, icondl),     &
-                coefa(1, icondf), coefb(1, icondf))
+    call field_map_bc_coeffs(ivarfl(ivar),                           &
+                             coefa(1, icondl), coefb(1, icondl),     &
+                             coefa(1, icondf), coefb(1, icondf))
   else
-    call fldbcm(ivarfl(ivar),                           &
-    !==========
-                coefau(1, 1), coefbu(1, 1, 1),          &
-                cofafu(1, 1), cofbfu(1, 1, 1))
+    call field_map_bc_coeffs(ivarfl(ivar),                           &
+                             coefau(1, 1), coefbu(1, 1, 1),          &
+                             cofafu(1, 1), cofbfu(1, 1, 1))
   endif
 endif
 
@@ -212,13 +204,11 @@ do ii = 1, nfld
   ivar = ifvar(ii)
   icondl = iclrtp(ivar, icoef)
   icondf = iclrtp(ivar, icoeff)
-  call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
-  !==========
+  call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
   if (nfabor .gt. 0) then
-    call fldbcm(ivarfl(ivar),                           &
-    !==========
-                coefa(1, icondl), coefb(1, icondl),     &
-                coefa(1, icondf), coefb(1, icondf))
+    call field_map_bc_coeffs(ivarfl(ivar),                           &
+                             coefa(1, icondl), coefb(1, icondl),     &
+                             coefa(1, icondf), coefb(1, icondf))
   endif
 enddo
 
@@ -229,21 +219,18 @@ nfld = 0
 
 if (iale.eq.1) then
   ivar = iuma
-  call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
-  !==========
+  call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
   if (nfabor .gt. 0) then
     if (ivelco .eq. 0) then
       icondl = iclrtp(ivar, icoef)
       icondf = iclrtp(ivar, icoeff)
-      call fldbcm(ivarfl(ivar),                         &
-      !==========
-                  coefa(1, icondl), coefb(1, icondl),   &
-                  coefa(1, icondf), coefb(1, icondf))
+      call field_map_bc_coeffs(ivarfl(ivar),                         &
+                               coefa(1, icondl), coefb(1, icondl),   &
+                               coefa(1, icondf), coefb(1, icondf))
     else
-      call fldbcm(ivarfl(ivar),                         &
-      !==========
-                  claale(1, 1), clbale(1, 1, 1),        &
-                  cfaale(1, 1), cfbale(1, 1, 1))
+      call field_map_bc_coeffs(ivarfl(ivar),                         &
+                               claale(1, 1), clbale(1, 1, 1),        &
+                               cfaale(1, 1), cfbale(1, 1, 1))
     endif
   endif
 endif
@@ -258,13 +245,11 @@ do ii = 1, nscal
     ivar = isca(ii)
     icondl = iclrtp(ivar, icoef)
     icondf = iclrtp(ivar, icoeff)
-    call fldmap(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
-    !==========
+    call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
     if (nfabor .gt. 0) then
-      call fldbcm(ivarfl(ivar),                         &
-      !==========
-                  coefa(1, icondl), coefb(1, icondl),   &
-                  coefa(1, icondf), coefb(1, icondf))
+      call field_map_bc_coeffs(ivarfl(ivar),                         &
+                               coefa(1, icondl), coefb(1, icondl),   &
+                               coefa(1, icondf), coefb(1, icondf))
     endif
   endif
 enddo
@@ -273,8 +258,7 @@ enddo
 ! properties at cell centers (no mass flux, nor density at the boundary).
 
 do iprop = 1, nproce
-  call fldmap(iprpfl(iprop), propce(1, iprop), propce(1, iprop))
-  !==========
+  call field_map_values(iprpfl(iprop), propce(1, iprop), propce(1, iprop))
 enddo
 
 ! Reserved fields whose ids are not saved (may be queried by name)
@@ -282,20 +266,14 @@ enddo
 
 ! Local time step
 
-name = 'dt'
-call field_id_get(name, iflid)
-!================
-call fldmap(iflid, dt, dt)
-!==========
+call field_get_id('dt', iflid)
+call field_map_values(iflid, dt, dt)
 
 ! Transient velocity/pressure coupling
 
 if (ipucou.ne.0) then
-  name = 'tpucou'
-  call field_id_get(name, iflid)
-  !================
-  call fldmap(iflid, tpucou, tpucou)
-  !==========
+  call field_get_id('tpucou', iflid)
+  call field_map_values(iflid, tpucou, tpucou)
 endif
 
 return

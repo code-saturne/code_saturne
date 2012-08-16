@@ -31,6 +31,11 @@ has evolved over the years, but unless you are ready to update a whole
 file to a more current style (in which case the other guidelines should be
 followed), try to remain consistent with the style in the current file.
 
+For new files, use recently updated examples, such as
+\texttt{src/base/cs\_field.c} and  \texttt{src/basecs\_field.h} for C,
+\texttt{src/base/field.f90} for Fortran modules, or
+\texttt{src/base/codits.f90} for other Fortran files.
+
 \subsection{General rules}
 
 The following general rules are strongly recommended:
@@ -48,8 +53,17 @@ The following general rules are strongly recommended:
       to ensure readability on small screens, or when viewing code side-by-side
       on wider screens. This rule is less important for \LaTeX documentation
       sources (one could argue that using one line per paragraph and relying
-      on line wrapping would actually make revision merging simpler). 
+      on line wrapping would actually make revision merging simpler).
 \end{itemize}
+
+For new developpements, prefer C to Fortran, as the code should progressively
+mve to purely C code. As many variables and arrays are still accessible
+only through Fortran modules, this is not always possible, but defining
+Fortran/C bindings such as in the \texttt{field.f90} module helps
+make data accessible to both languages, easing the progressive migration
+from Fortran to C. Fortran bindings should only be defined when access
+to C functions or variables from Fortran is required, and may be removed
+for parts of the code purely handled in C.
 
 \subsection{C coding style}
 
@@ -358,8 +372,8 @@ file.
 \begin{itemize}
 
 \item one routine per file (except if all routines except the first
-      are ``private''). This rule has a few exceptions, such as the
-      \texttt{cs\_user\_parameters.f90} user file which contains several
+      are ``private''). This rule has a few exceptions, such as in modules,
+      in the \texttt{cs\_user\_parameters.f90} user file which contains several
       subroutines (it initially followed the rule, but subroutines were split,
       while the file was not), and Fortran wrappers for several C
       functions defined in a single C file are also usually defined
@@ -367,23 +381,26 @@ file.
  
 \item exactly 6 characters per routine name, with no underscores.
       As Fortran 95 allows longer identifiers, the 6 character limit is
-      obsolete, buy avoiding \texttt{\_} characters is still recommendend,
-      as most compilers add an underscore character to the routine name,
-      and often add a second underscore if no special options are given,
+      obsolete, buy avoiding \texttt{\_} characters is still recommended
+      in routines that might be called from C, unless \texttt{bind(C)}
+      is used, as most compilers add an underscore character to the routine
+      name, and often add a second underscore if no special options are given,
       while the C \texttt{CS\_PROCF} macro does not handle this situation,
       possibly leading to link issues.
+      For routine names longer than 6 character, more verbose names
+      are recommended (using underscores as word separators), though
+      the Fortran 95 standard requires those names be limited to 31
+      characters.
 
 \item at least 2 characters per variable names 
       (banish variables \texttt{i}, \texttt{j}, or \texttt{k},
        preferring \texttt{ii}, \texttt{jj}, or \texttt{kk}, as this makes
-       searching under a text editor easier).
+       searching under a text editor easier for non-experts).
 
 \item avoid commented example lines in user subroutines; otherwise,
       the code is never compiled and thus probably incorrect.
       Using a \texttt{if (iuse) ... endif} construct with
       \texttt{iuse = 0} instead is recommended.
-
-\item assign integer variable names starting with i, j, k, l, m, and n. 
 
 \item use \texttt{do}~/~\texttt{enddo} constructs instead of
       \texttt{do}~/~\texttt{continue}.
@@ -392,8 +409,7 @@ file.
       would be more appropriate.
 
 \item avoid print statements using \texttt{write(format, *)},
-      or \texttt{print} constructs, or use \texttt{\#ifdef debug}
-      around debugging code using them, to ensure that output is redirected
+      or \texttt{print} constructs, to ensure that output is redirected
       correctly in parallel mode.
 
 \item use \texttt{d} and not \texttt{e} to define double-precision
@@ -404,6 +420,13 @@ file.
       exceptions.
 
 \end{itemize}
+
+\subsubsection{Language\label{sec:regle.lang}}
+
+Fortran 1995 or above is required, and constructs or intrinsic functions
+requiring Fortran 2003 or above should be avoided, except for the
+Fortran 2003 ISO\_C\_BINDING module, which is available in all major
+current Fortran compilers.
 
 \subsection{Python coding style}
 

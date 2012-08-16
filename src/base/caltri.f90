@@ -70,6 +70,7 @@ use cplsat
 use atincl
 use cfpoin
 use mesh
+use field
 
 !===============================================================================
 
@@ -406,8 +407,8 @@ call fldtri &
    ra(idt)    , ra(itpuco) , ra(irtpa) , ra(irtp) ,               &
    ra(ipropc) , propfa , propfb , coefa , coefb )
 
-call fldama
-!==========
+call field_allocate_or_map_all
+!=============================
 
 !===============================================================================
 ! Possible restart

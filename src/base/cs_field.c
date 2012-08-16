@@ -1,5 +1,5 @@
 /*============================================================================
- * \file Field management.
+ * Field management.
  *============================================================================*/
 
 /*
@@ -65,6 +65,64 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+/*!
+  \file cs_field.c
+        Field management.
+
+  \struct cs_field_bc_coeffs_t
+
+  \brief Field boundary condition descriptor (for variables)
+
+  \var cs_field_bc_coeffs_t::location_id
+       Id of matching location
+
+  \var cs_field_bc_coeffs_t::a
+       Explicit coefficient
+  \var cs_field_bc_coeffs_t::b
+       Implicit coefficient
+  \var cs_field_bc_coeffs_t::af
+       Explicit coefficient for flux
+  \var cs_field_bc_coeffs_t::bf
+       Implicit coefficient for flux
+
+  \struct cs_field_t
+
+  \brief Field descriptor
+
+  Members of this field are publicly accessible, to allow for concise
+  syntax, as it is expected to be used in many places.
+
+  \var  cs_field_t::name
+        Canonical name
+  \var  cs_field_t::id
+        Field id (based on order of field declaration, starting at 0)
+  \var  cs_field_t::type
+        Field type flag (sum of field mask constants, defining if a field
+        is a variable, a property, ...)
+  \var  cs_field_t::dim
+        Field dimension (usually 1 for scalar, 3 for vector, or 6 for
+        symmetric tensor)
+  \var  cs_field_t::interleaved
+        are field value arrays interleaved ? (recommended for new developments,
+        but mapped legacy fields may be non-interleaved)
+  \var  cs_field_t::location_id
+        Id of matching mesh location
+  \var  cs_field_t::n_time_vals
+        Number of time values (1 or 2)
+  \var  cs_field_t::val
+        For each active location, pointer to matching values array
+  \var  cs_field_t::val_pre
+        For each active location, pointer to matching previous values array
+        (only if n_time_vals > 1)
+  \var  cs_field_t::bc_coeffs
+        Boundary condition coefficients, for variable type fields
+  \var  cs_field_t::is_owner
+        Ownership flag for values and boundary coefficients
+*/
+
+/*=============================================================================
  * Macro definitions
  *============================================================================*/
 
@@ -72,7 +130,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
+/*! \cond 0 (start ignore by Doxygen) */
 
 /* Field key definitions */
 
@@ -99,7 +157,7 @@ typedef struct {
 
 } cs_field_key_val_t;
 
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Static global variables
@@ -143,39 +201,19 @@ static const char *_type_flag_name[] = {N_("intensive"),
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, whith function bodies).
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Return the id of a defined field based on its name.
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   name <-- field name
- *
- * returns:
- *   id the field structure
- *----------------------------------------------------------------------------*/
+/*! \cond 0 (start ignore by Doxygen) */
 
 int
 cs_f_field_id_by_name(const char *name);
 
-/*----------------------------------------------------------------------------
- * Return a pointer to a field's variable values
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   id           <-- field id
- *   pointer_type <-- 1: var; 2: var_p;
- *   pointer_rank <-- expected rank (1 for scalar, 2 for vector)
- *   dim          --> dimensions (indexes in Fortran order,
- *                    dim[i] = 0 if i unused)
- *   p            --> returned pointer
- *
- * returns:
- *   pointer to the field structure, or NULL
- *----------------------------------------------------------------------------*/
+void
+cs_f_field_get_name(int           id,
+                    int           name_max,
+                    const char  **name,
+                    int          *name_len);
 
 void
 cs_f_field_var_ptr_by_id(int          id,
@@ -184,30 +222,36 @@ cs_f_field_var_ptr_by_id(int          id,
                          int          dim[2],
                          cs_real_t  **p);
 
-/*----------------------------------------------------------------------------
- * Return a pointer to a field's boundary condition coefficient values
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   id           <-- field id
- *   pointer_type <-- 1: bc_coeffs->a;   2: bc_coeffs->b
- *                    3: bc_coeffs->af;  4: bc_coeffs->bf
- *   pointer_rank <-- expected rank (1 for scalar, 2 for vector)
- *   dim          <-- dimensions (indexes in Fortran order,
- *                    dim[i] = 0 if i unused)
- *   p            <-- returned pointer
- *
- * returns:
- *   pointer to the field structure, or NULL
- *----------------------------------------------------------------------------*/
-
 void
 cs_f_field_bc_coeffs_ptr_by_id(int          id,
                                int          pointer_type,
                                int          pointer_rank,
                                int          dim[3],
                                cs_real_t  **p);
+
+void
+cs_f_field_set_key_int(int  f_id,
+                       int  k_id,
+                       int  value);
+
+void
+cs_f_field_set_key_double(int     f_id,
+                          int     k_id,
+                          double  value);
+
+void
+cs_f_field_set_key_str(int          f_id,
+                       int          k_id,
+                       const char  *str);
+
+void
+cs_f_field_get_key_str(int           f_id,
+                       int           key_id,
+                       int           str_max,
+                       const char  **str,
+                       int          *str_len);
+
+/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Private function definitions
@@ -480,109 +524,7 @@ _cs_field_free_str(void)
  * Public Fortran function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Allocate field values
- *
- * Fortran interface
- *
- * subroutine fldalo (ifield)
- * *****************
- *
- * integer          ifield      : <-- : Field id
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (fldalo, FLDALO)
-(
- const cs_int_t   *ifield
-)
-{
-  cs_field_t *f = cs_field_by_id(*ifield);
-
-  cs_field_allocate_values(f);
-}
-
-/*----------------------------------------------------------------------------
- * Map values to a field.
- *
- * Fortran interface
- *
- * subroutine fldmap (ifield, val, valp)
- * *****************
- *
- * integer          ifield      : <-- : Field id
- * cs_real_t*       val         : <-- : Pointer to field values array
- * cs_real_t*       valp        : <-- : Pointer to values at previous
- *                              :     : time step if field was defined
- *                              :     : with iprev = 1
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (fldmap, FLDMAP)
-(
- const cs_int_t   *ifield,
- cs_real_t        *val,
- cs_real_t        *valp
-)
-{
-  cs_field_t *f = cs_field_by_id(*ifield);
-
-  cs_field_map_values(f, val, valp);
-}
-
-/*----------------------------------------------------------------------------
- * Map field boundary coefficient arrays.
- *
- * Fortran interface
- *
- * subroutine fldbcm (ifield, icpled, a, b, af, bf)
- * *****************
- *
- * integer          ifield      : <-- : Field id
- * cs_real_t*       a           : <-- : explicit BC coefficients array
- * cs_real_t*       b           : <-- : implicit BC coefficients array
- * cs_real_t*       af          : <-- : explicit flux BC coefficients array,
- *                              :     : or a (or NULL)
- * cs_real_t*       bf          : <-- : implicit flux BC coefficients array,
- *                              :     : or a (or NULL)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (fldbcm, FLDBCM)
-(
- const cs_int_t   *ifield,
- cs_real_t        *a,
- cs_real_t        *b,
- cs_real_t        *af,
- cs_real_t        *bf
-)
-{
-  cs_real_t *_af = (af != a) ? af : NULL;
-  cs_real_t *_bf = (bf != b) ? bf : NULL;
-
-  cs_field_t *f = cs_field_by_id(*ifield);
-
-  cs_field_map_bc_coeffs(f, a, b, _af, _bf);
-}
-
-/*----------------------------------------------------------------------------
- * Allocate arrays for all defined fields based on their location.
- *
- * Location sized must thus be known.
- *
- * Fields that do not own their data should all have been mapped at this
- * stage, and are checked.
- *
- * Fortran interface
- *
- * subroutine fldama
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (fldama, FLDAMA)
-(
- void
-)
-{
-  cs_field_allocate_or_map_all();
-}
+/*! \cond 0 (start ignore by Doxygen) */
 
 /*----------------------------------------------------------------------------
  * Return the id of a defined field based on its name.
@@ -601,6 +543,38 @@ cs_f_field_id_by_name(const char *name)
 {
   cs_field_t  *f = cs_field_by_name(name);
   return f->id;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the name of a field defined by its id.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   id       <-- field id
+ *   name_max <-- maximum name length
+ *   name     --> pointer to associated length
+ *   name_len --> length of associated length
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_get_name(int           id,
+                    int           name_max,
+                    const char  **name,
+                    int          *name_len)
+{
+  const cs_field_t *f = cs_field_by_id(id);
+  *name = f->name;
+  *name_len = strlen(*name);
+
+  if (*name_len > name_max) {
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error retrieving name from Field %d (\"%s\"):\n"
+         "Fortran caller name length (%d) is too small for name \"%s\"\n"
+         "(of length %d)."),
+       f->id, f->name, name_max, *name, *name_len);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -757,43 +731,11 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
   }
 
   if (cur_p_rank != pointer_rank)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Fortran pointer of rank %d requested for BC coefficients of field\n"
-                " \"%s\", which have rank %d."),
-              pointer_rank, f->name, cur_p_rank);
-}
-
-/*----------------------------------------------------------------------------
- * Return an id associated with a given key name if present.
- *
- * If the key has not been defined previously, -1 is returned.
- *
- * Fortran interface; use fldkid (see field.f90)
- *
- * subroutine fldki1 (name,   lname,  ikeyid)
- * *****************
- *
- * character*       name        : <-- : Key name
- * integer          lname       : <-- : Key name length
- * integer          ikey        : --> : id of given key
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (fldki1, FLDKI1)
-(
- const char       *name,
- const cs_int_t   *lname,
- cs_int_t         *ikey
- CS_ARGF_SUPP_CHAINE              /*   (possible 'length' arguments added
-                                        by many Fortran compilers) */
-)
-{
-  char *bufname;
-
-  bufname = cs_base_string_f_to_c_create(name, *lname);
-
-  *ikey = cs_field_key_id_try(bufname);
-
-  cs_base_string_f_to_c_free(&bufname);
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Fortran pointer of rank %d requested for BC coefficients of field\n"
+         " \"%s\", which have rank %d."),
+       pointer_rank, f->name, cur_p_rank);
 }
 
 /*----------------------------------------------------------------------------
@@ -802,59 +744,32 @@ void CS_PROCF (fldki1, FLDKI1)
  * If the key id is not valid, or the value type or field category is not
  * compatible, a fatal error is provoked.
  *
- * subroutine fldski (ifield, ikey, value)
- * *****************
+ * This function is intended for use by Fortran wrappers.
  *
- * integer          ifield      : <-- : Field id
- * integer          ikey        : <-- : Key id
- * integer          value       : <-- : Associated value
+ * parameters:
+ *   f_id  <-- field id
+ *   k_id  <-- key id
+ *   value <-- associated value
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (fldski, FLDSKI)
-(
- const cs_int_t   *ifield,
- const cs_int_t   *ikey,
- cs_int_t         *value
-)
+void
+cs_f_field_set_key_int(int  f_id,
+                       int  k_id,
+                       int  value)
 {
   int retval = 0;
 
-  cs_field_t *f = cs_field_by_id(*ifield);
+  cs_field_t *f = cs_field_by_id(f_id);
 
-  retval = cs_field_set_key_int(f, *ikey, *value);
+  retval = cs_field_set_key_int(f, k_id, value);
 
   if (retval != 0) {
-    const char *key = cs_map_name_to_id_reverse(_key_map, *ikey);
+    const char *key = cs_map_name_to_id_reverse(_key_map, k_id);
     bft_error(__FILE__, __LINE__, 0,
               _("Error %d assigning integer value to Field \"%s\" with\n"
                 "type flag %d with key %d (\"%s\")."),
-              retval, f->name, f->type, *ikey, key);
+              retval, f->name, f->type, k_id, key);
   }
-}
-
-/*----------------------------------------------------------------------------
- * Return a integer value for a given key associated with a field.
- *
- * If the key id is not valid, or the value type or field category is not
- * compatible, a fatal error is provoked.
- *
- * subroutine fldgki (ifield, ikey, value)
- * *****************
- *
- * integer          ifield      : <-- : Field id
- * integer          ikey        : <-- : Key id
- * integer          value       : --> : Associated value
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (fldgki, FLDGKI)
-(
- const cs_int_t   *ifield,
- const cs_int_t   *ikey,
- cs_int_t         *value
-)
-{
-  const cs_field_t *f = cs_field_by_id(*ifield);
-  *value = cs_field_get_key_int(f, *ikey);
 }
 
 /*----------------------------------------------------------------------------
@@ -863,59 +778,32 @@ void CS_PROCF (fldgki, FLDGKI)
  * If the key id is not valid, or the value type or field category is not
  * compatible, a fatal error is provoked.
  *
- * subroutine fldskd (ifield, ikey, value)
- * *****************
+ * This function is intended for use by Fortran wrappers.
  *
- * integer          ifield      : <-- : Field id
- * integer          ikey        : <-- : Key id
- * double precision value       : <-- : Associated value
+ * parameters:
+ *   f_id  <-- field id
+ *   k_id  <-- key id
+ *   value <-- associated value
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (fldskd, FLDSKD)
-(
- const cs_int_t   *ifield,
- const cs_int_t   *ikey,
- cs_real_t        *value
-)
+void
+cs_f_field_set_key_double(int     f_id,
+                          int     k_id,
+                          double  value)
 {
   int retval = 0;
 
-  cs_field_t *f = cs_field_by_id(*ifield);
+  cs_field_t *f = cs_field_by_id(f_id);
 
-  retval = cs_field_set_key_double(f, *ikey, *value);
+  retval = cs_field_set_key_double(f, k_id, value);
 
   if (retval != 0) {
-    const char *key = cs_map_name_to_id_reverse(_key_map, *ikey);
+    const char *key = cs_map_name_to_id_reverse(_key_map, k_id);
     bft_error(__FILE__, __LINE__, 0,
               _("Error %d assigning real value to Field \"%s\" with\n"
                 "type flag %d with key %d (\"%s\")."),
-              retval, f->name, f->type, *ikey, key);
+              retval, f->name, f->type, k_id, key);
   }
-}
-
-/*----------------------------------------------------------------------------
- * Return a floating point value for a given key associated with a field.
- *
- * If the key id is not valid, or the value type or field category is not
- * compatible, a fatal error is provoked.
- *
- * subroutine fldgkd (ifield, ikey, value)
- * *****************
- *
- * integer          ifield      : <-- : Field id
- * integer          ikey        : <-- : Key id
- * double precision value       : --> : Associated value
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (fldgkd, FLDGKD)
-(
- const cs_int_t   *ifield,
- const cs_int_t   *ikey,
- cs_real_t        *value
-)
-{
-  const cs_field_t *f = cs_field_by_id(*ifield);
-  *value = cs_field_get_key_double(f, *ikey);
 }
 
 /*----------------------------------------------------------------------------
@@ -924,46 +812,29 @@ void CS_PROCF (fldgkd, FLDGKD)
  * If the key id is not valid, or the value type or field category is not
  * compatible, a fatal error is provoked.
  *
- * Fortran interface; use fldsk1 (see field.f90)
+ * This function is intended for use by Fortran wrappers.
  *
- * subroutine fldsk1 (ifield, ikey, str, lstr)
- * *****************
- *
- * integer          ifield      : <-- : Field id
- * integer          ikey        : <-- : Key id
- * character*       str         : <-- : Associated string
- * integer          lstr        : <-- : Associated string length
+ * parameters:
+ *   f_id <-- field id
+ *   k_id <-- key id
+ *   str  <-- associated string
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (fldsk1, FLDSK1)
-(
- const cs_int_t   *ifield,
- const cs_int_t   *ikey,
- const char       *str,
- const cs_int_t   *lstr
- CS_ARGF_SUPP_CHAINE              /*   (possible 'length' arguments added
-                                        by many Fortran compilers) */
-)
+void
+cs_f_field_set_key_str(int          f_id,
+                       int          k_id,
+                       const char  *str)
 {
-  char *bufstr;
-
-  int retval = 0;
-
-  cs_field_t *f = cs_field_by_id(*ifield);
-
-  bufstr = cs_base_string_f_to_c_create(str, *lstr);
-
-  retval = cs_field_set_key_str(f, *ikey, bufstr);
+  cs_field_t *f = cs_field_by_id(f_id);
+  int retval = cs_field_set_key_str(f, k_id, str);
 
   if (retval != 0) {
-    const char *key = cs_map_name_to_id_reverse(_key_map, *ikey);
+    const char *key = cs_map_name_to_id_reverse(_key_map, k_id);
     bft_error(__FILE__, __LINE__, 0,
-              _("Error %d assigning real value to Field \"%s\" with\n"
+              _("Error %d assigning string value to Field \"%s\" with\n"
                 "type flag %d with key %d (\"%s\")."),
-              retval, f->name, f->type, *ikey, key);
+              retval, f->name, f->type, k_id, key);
   }
-
-  cs_base_string_f_to_c_free(&bufstr);
 }
 
 /*----------------------------------------------------------------------------
@@ -972,40 +843,43 @@ void CS_PROCF (fldsk1, FLDSK1)
  * If the key id is not valid, or the value type or field category is not
  * compatible, a fatal error is provoked.
  *
- * Fortran interface; use fldgk1 (see field.f90)
+ * This function is intended for use by Fortran wrappers.
  *
- * subroutine fldgk1 (ifield, ikey, str, lstr)
- * *****************
+ * parameters:
+ *   f_id    <-- field id
+ *   k_id    <-- id of associated key
+ *   str_max <-- maximum string length
+ *   str     --> pointer to associated string
+ *   str_len --> length of associated string
  *
- * integer          ifield      : <-- : Field id
- * integer          ikey        : <-- : Key id
- * character*       str         : --> : Associated string
- * integer          lstr        : <-- : Associated string length
+ * returns:
+ *   pointer to character string
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (fldgk1, FLDGK1)
-(
- const cs_int_t   *ifield,
- const cs_int_t   *ikey,
- char             *str,
- const cs_int_t   *lstr
- CS_ARGF_SUPP_CHAINE              /*   (possible 'length' arguments added
-                                        by many Fortran compilers) */
-)
+void
+cs_f_field_get_key_str(int           f_id,
+                       int           key_id,
+                       int           str_max,
+                       const char  **str,
+                       int          *str_len)
 {
-  cs_int_t  i, l;
+  const cs_field_t *f = cs_field_by_id(f_id);
+  *str = cs_field_get_key_str(f, key_id);
 
-  const char *s = NULL;
-  const cs_field_t *f = cs_field_by_id(*ifield);
-  s = cs_field_get_key_str(f, *ikey);
+  *str_len = strlen(*str);
 
-  l = strlen(s);
-
-  for (i = 0; i < l && i < *lstr; i++)
-    str[i] = s[i];
-  for ( ; i < *lstr; i++)
-    str[i] = ' ';
+  if (*str_len > str_max) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error retrieving string from Field %d (\"%s\") and key %d (\"%s\"):\n"
+         "Fortran caller string length (%d) is too small for string \"%s\"\n"
+         "(of length %d)."),
+       f->id, f->name, key_id, key, str_max, *str, *str_len);
+  }
 }
+
+/*! \endcond (end ignore by Doxygen) */
 
 /*=============================================================================
  * Public function definitions
@@ -1088,7 +962,7 @@ cs_field_allocate_values(cs_field_t  *f)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Map existing values to field descriptor.
+ * \brief  Map existing value arrays to field descriptor.
  *
  * \param[in, out]  f            pointer to field structure
  * \param[in]       val          pointer to array of values

@@ -21,15 +21,19 @@
 !-------------------------------------------------------------------------------
 
 
-! Module for field-related operations
+!> \file field.f90
+!> Module for field-related operations
 
 module field
 
   !=============================================================================
 
-  integer FIELD_INTENSIVE, FIELD_EXTENSIVE
-  integer FIELD_VARIABLE, FIELD_PROPERTY
-  integer FIELD_POSTPROCESS, FIELD_ACCUMULATOR, FIELD_USER
+  integer :: FIELD_INTENSIVE, FIELD_EXTENSIVE
+  integer :: FIELD_VARIABLE, FIELD_PROPERTY
+  integer :: FIELD_POSTPROCESS, FIELD_ACCUMULATOR, FIELD_USER
+
+  integer :: FIELD_OK, FIELD_INVALID_KEY_NAME, FIELD_INVALID_KEY_ID,   &
+             FIELD_INVALID_CATEGORY, FIELD_INVALID_TYPE
 
   parameter (FIELD_INTENSIVE=1)
   parameter (FIELD_EXTENSIVE=2)
@@ -39,9 +43,77 @@ module field
   parameter (FIELD_ACCUMULATOR=32)
   parameter (FIELD_USER=64)
 
+  parameter (FIELD_OK=0)
+  parameter (FIELD_INVALID_KEY_NAME=1)
+  parameter (FIELD_INVALID_KEY_ID=2)
+  parameter (FIELD_INVALID_CATEGORY=3)
+  parameter (FIELD_INVALID_TYPE=4)
+
   !=============================================================================
 
   interface
+
+    ! Interface to C function allocating field values
+
+    !> \brief Allocate arrays for all defined fields based on their location.
+
+    !> Location sized must thus be known.
+
+    !> Fields that do not own their data should all have been mapped at this
+    !> stage, and are checked.
+
+    subroutine field_allocate_or_map_all()  &
+      bind(C, name='cs_field_allocate_or_map_all')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine field_allocate_or_map_all
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function assigning integer value to a key
+
+    !> \brief Assign a floating point value for a given key to a field.
+
+    !> If the key id is not valid, or the value type or field category is not
+    !> compatible, a fatal error is provoked.
+
+    !> \param[in]   f_id     field id
+    !> \param[in]   k_id     id of associated key
+    !> \param[in]   k_value  value associated with key
+
+    subroutine field_set_key_int(f_id, k_id, k_value)  &
+      bind(C, name='cs_f_field_set_key_int')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id, k_id, k_value
+    end subroutine field_set_key_int
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function assigning floating-point value to a key
+
+    !> \brief Assign a floating point value for a given key to a field.
+
+    !> If the key id is not valid, or the value type or field category is not
+    !> compatible, a fatal error is provoked.
+
+    !> \param[in]   f_id     field id
+    !> \param[in]   k_id     id of associated key
+    !> \param[in]   k_value  value associated with key
+
+    subroutine field_set_key_double(f_id, k_id, k_value)  &
+      bind(C, name='cs_f_field_set_key_double')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id, k_id
+      real(c_double), value :: k_value
+    end subroutine field_set_key_double
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
 
     ! Interface to C function creating a field descriptor
 
@@ -85,6 +157,43 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function returning a given field name pointer and length.
+
+    subroutine cs_f_field_get_name(f_id, f_name_max, f_name, f_name_len)  &
+      bind(C, name='cs_f_field_get_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value       :: f_id
+      integer(c_int), value       :: f_name_max
+      type(c_ptr), intent(out)    :: f_name
+      integer(c_int), intent(out) :: f_name_len
+    end subroutine cs_f_field_get_name
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function allocating field values
+
+    subroutine cs_field_allocate_values(f)  &
+      bind(C, name='cs_field_allocate_values')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: f
+    end subroutine cs_field_allocate_values
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function mapping field values
+
+    subroutine cs_field_map_values(f, var, var_prev)  &
+      bind(C, name='cs_field_map_values')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: f
+      real(kind=c_double), dimension(*) :: var, var_prev
+    end subroutine cs_field_map_values
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function allocating boundary condition coefficients
 
     subroutine cs_field_allocate_bc_coeffs(f, have_flux_bc)  &
@@ -94,6 +203,18 @@ module field
       type(c_ptr), value           :: f
       logical(c_bool), value       :: have_flux_bc
     end subroutine cs_field_allocate_bc_coeffs
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function mapping boundary condition coefficients
+
+    subroutine cs_field_map_bc_coeffs(f, a, b, af, bf)  &
+      bind(C, name='cs_field_map_bc_coeffs')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: f
+      real(kind=c_double), dimension(*) :: a, b, af, bf
+    end subroutine cs_field_map_bc_coeffs
 
     !---------------------------------------------------------------------------
 
@@ -115,7 +236,7 @@ module field
     !---------------------------------------------------------------------------
 
     ! Interface to C function returning field's boundary condition
-    ! coefficient valuesvalue pointer and dimensions.
+    ! coefficient values pointer and dimensions.
 
     ! If the field id is not valid, a fatal error is provoked.
 
@@ -130,6 +251,79 @@ module field
       type(c_ptr), intent(out)     :: c_p
     end subroutine cs_f_field_bc_coeffs_ptr_by_id
 
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function obtaining a field key id by its name
+
+    function cs_field_key_id_try(name) result(id) &
+      bind(C, name='cs_field_key_id_try')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in)  :: name
+      integer(c_int)                                           :: id
+    end function cs_field_key_id_try
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function assigning a character string for a given key
+    ! to a field.
+
+    subroutine cs_f_field_set_key_str(f_id, c_id, str) &
+      bind(C, name='cs_f_field_set_key_str')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value                                    :: f_id, c_id
+      character(kind=c_char, len=1), dimension(*), intent(in)  :: str
+    end subroutine cs_f_field_set_key_str
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function returning an integer for a given key associated
+    ! with a field
+
+    function cs_field_get_key_int(f, k_id) result(k_value) &
+      bind(C, name='cs_field_get_key_int')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value    :: f
+      integer(c_int), value :: k_id
+      integer(c_int)        :: k_value
+    end function cs_field_get_key_int
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function returning an floating-point valuer for a given
+    ! key associated with a field
+
+    function cs_field_get_key_double(f, k_id) result(k_value) &
+      bind(C, name='cs_field_get_key_double')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value    :: f
+      integer(c_int), value :: k_id
+      real(c_double)        :: k_value
+    end function cs_field_get_key_double
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function returning a string for a given key associated
+    ! with a field.
+
+    subroutine cs_f_field_get_key_str(f_id, k_id, str_max, str, str_len) &
+      bind(C, name='cs_f_field_get_key_str')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value       :: f_id, k_id, str_max
+      type(c_ptr), intent(out)    :: str
+      integer(c_int), intent(out) :: str_len
+    end subroutine cs_f_field_get_key_str
+
+    !---------------------------------------------------------------------------
+
+    !> \endcond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
   end interface
 
   !=============================================================================
@@ -138,7 +332,22 @@ contains
 
   !=============================================================================
 
-  ! Define a field.
+  !> \brief  Define a field.
+
+  !> \param[in]  name           field name
+  !> \param[in]  type_flag      field categories (may be added)
+  !> \param[in]  location_id    field location type:
+  !>                              0: none
+  !>                              1: cells
+  !>                              2: interior faces
+  !>                              3: interior faces
+  !>                              4: vertices
+  !> \param[in]  dim            field dimension
+  !> \param[in]  interleaved    .true. if values interleaved
+  !>                            (ignored if < 2 components)
+  !> \param[in]  has_previous   .true. if values at previous
+  !>                            time step are maintained
+  !> \param[out] id             id of defined field
 
   subroutine field_create(name, type_flag, location_id, dim,   &
                           interleaved, has_previous,           &
@@ -149,21 +358,13 @@ contains
 
     ! Arguments
 
-    character(len=*), intent(in) :: name         ! Field name
-    integer, intent(in)          :: type_flag    ! Field category (may be added)
-    integer, intent(in)          :: location_id  ! Location type
-                                                 !   0: none
-                                                 !   1: cells
-                                                 !   2: interior faces
-                                                 !   3: interior faces
-                                                 !   4: vertices
-    integer, intent(in)          :: dim          ! Field dimension
-    logical, intent(in)          :: interleaved  ! true if values interleaved
-                                                 ! ignored if < 2 components
-    logical, intent(in)          :: has_previous ! true if values at previous
-                                                 ! time step are maintained
-
-    integer, intent(out)         :: id           ! Id of defined field
+    character(len=*), intent(in) :: name
+    integer, intent(in)          :: type_flag
+    integer, intent(in)          :: location_id
+    integer, intent(in)          :: dim
+    logical, intent(in)          :: interleaved
+    logical, intent(in)          :: has_previous
+    integer, intent(out)         :: id
 
     ! Local variables
 
@@ -192,19 +393,22 @@ contains
 
   !=============================================================================
 
-  ! Return an id associated with a given field name if present.
+  !> \brief  Return an id associated with a given field name if present.
 
-  ! If the field has not been defined previously, -1 is returned.
+  !> If the field has not been defined previously, -1 is returned.
 
-  subroutine field_id_get(name, id)
+  !> \param[in]  name           field name
+  !> \param[out] id             id of field
+
+  subroutine field_get_id(name, id)
 
     use, intrinsic :: iso_c_binding
     implicit none
 
     ! Arguments
 
-    character(len=*), intent(in) :: name         ! Field name
-    integer, intent(out)         :: id           ! Id of defined field
+    character(len=*), intent(in) :: name
+    integer, intent(out)         :: id
 
     ! Local variables
 
@@ -216,11 +420,118 @@ contains
 
     return
 
-  end subroutine field_id_get
+  end subroutine field_get_id
 
   !=============================================================================
 
-  ! Allocate boundary condition coefficient arrays if applicable.
+  !> \brief Return a given field's name.
+
+  !> \param[in]   f_id  field id
+  !> \param[out]  name  field's name
+
+  subroutine field_get_name (f_id, name)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)           :: f_id
+    character(len=*), intent(out) :: name
+
+    ! Local variables
+
+    integer :: i
+    integer(c_int) :: c_f_id, c_k_id, name_max, c_name_len
+    type(c_ptr) :: f, c_name_p
+    character(kind=c_char, len=1), dimension(:), pointer :: c_name
+
+    c_f_id = f_id
+    name_max = len(name)
+
+    call cs_f_field_get_name(f_id, name_max, c_name_p, c_name_len)
+    call c_f_pointer(c_name_p, c_name, [c_name_len])
+
+    do i = 1, c_name_len
+      name(i:i) = c_name(i)
+    enddo
+    do i = c_name_len + 1, name_max
+      name(i:i) = ' '
+    enddo
+
+    return
+
+  end subroutine field_get_name
+
+  !=============================================================================
+
+  !> \brief Allocate field's value arrays.
+
+  !> \param[in]  id  field id
+
+  subroutine field_allocate_values(id)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in) :: id           ! Id of defined field
+
+    ! Local variables
+
+    integer(c_int) :: c_id
+    type(c_ptr)    :: f
+
+    c_id = id
+
+    f = cs_field_by_id(c_id)
+    call cs_field_allocate_values(f)
+
+    return
+
+  end subroutine field_allocate_values
+
+  !=============================================================================
+
+  !> \brief  Map existing value arrays to field descriptor.
+
+  !> \param[in]  id       field id
+  !> \param[in]  val      pointer to array of values
+  !> \param[in]  val_pre  pointer to array of previous values (ignored if
+  !>                      field was defined with have_previous = .false.)
+
+  subroutine field_map_values(id, val, val_pre)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)                        :: id
+    double precision, intent(in), dimension(*) :: val, val_pre
+
+    ! Local variables
+
+    integer(c_int) :: c_id
+    type(c_ptr)    :: f
+
+    c_id = id
+
+    f = cs_field_by_id(c_id)
+    call cs_field_map_values(f, val, val_pre)
+
+    return
+
+  end subroutine field_map_values
+
+  !=============================================================================
+
+  !> \brief Allocate boundary condition coefficient arrays if applicable.
+
+  !> \param[in]  id            field id
+  !> \param[in]  have_flux_bc  if .true., flux BC coefficients
+  !>                           (coefaf and coefbf) are added
 
   subroutine field_allocate_bc_coeffs(id, have_flux_bc)
 
@@ -229,7 +540,7 @@ contains
 
     ! Arguments
 
-    integer, intent(in) :: id           ! Id of defined field
+    integer, intent(in) :: id
     logical, intent(in) :: have_flux_bc
 
     ! Local variables
@@ -238,7 +549,9 @@ contains
     logical(c_bool) :: c_have_flux_bc
     type(c_ptr)     :: f
 
-    f = cs_field_by_id(id)
+    c_id = id
+
+    f = cs_field_by_id(c_id)
     c_have_flux_bc = have_flux_bc
     call cs_field_allocate_bc_coeffs(f, c_have_flux_bc)
 
@@ -248,92 +561,226 @@ contains
 
   !=============================================================================
 
-  ! Return an id associated with a given key name if present.
+  !> \brief  Map existing field boundary condition coefficient arrays.
 
-  ! If the key has not been defined previously, -1 is returned.
+  !> \param[in]  id  field id
+  !> \param[in]  a   explicit BC coefficients array
+  !> \param[in]  b   implicit BC coefficients array
+  !> \param[in]  af  explicit flux BC coefficients array, if present
+  !> \param[in]  bf  implicit flux BC coefficients array, if present
 
-  subroutine fldkid (name, ikey)
+  subroutine field_map_bc_coeffs(id, a, b, af, bf)
 
+    use, intrinsic :: iso_c_binding
     implicit none
 
     ! Arguments
 
-    character(len=*), intent(in) :: name    ! Key name
-
-    integer, intent(out)         :: ikey    ! Id of key
+    integer, intent(in)                        :: id
+    double precision, intent(in), dimension(*) :: a, b, af, bf
 
     ! Local variables
 
-    integer :: lname
+    integer(c_int) :: c_id
+    type(c_ptr)    :: f
 
-    lname = len(name)
+    c_id = id
 
-    call fldki1(name, lname, ikey)
-    !==========
+    f = cs_field_by_id(c_id)
+    call cs_field_map_bc_coeffs(f, a, b, af, bf)
 
     return
 
-  end subroutine fldkid
+  end subroutine field_map_bc_coeffs
 
   !=============================================================================
 
-  ! Assign a character string for a given key to a field.
+  !> \brief  Return an id associated with a given key name if present.
 
-  ! If the key id is not valid, or the value type or field category is not
-  ! compatible, a fatal error is provoked.
+  !> If the key has not been defined previously, -1 is returned.
 
-  subroutine fldsks (ifield, ikey, str)
+  !> \param[in]   name  key name
+  !> \param[out]  id    associated key id
 
+  subroutine field_get_key_id (name, id)
+
+    use, intrinsic :: iso_c_binding
     implicit none
 
     ! Arguments
 
-    integer, intent(in)          :: ifield   ! Field id
-    integer, intent(in)          :: ikey     ! Key id
-    character(len=*), intent(in) :: str      ! Associated string
+    character(len=*), intent(in) :: name
+    integer, intent(out)         :: id
 
     ! Local variables
 
-    integer :: lstr
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    integer(c_int)                               :: c_id
 
-    lstr = len(str)
+    c_name = trim(name)//c_null_char
 
-    call fldsk1(ifield, ikey, str, lstr)
-    !==========
+    c_id = cs_field_key_id_try(c_name)
+    id = c_id
 
     return
 
-  end subroutine fldsks
+  end subroutine field_get_key_id
 
   !=============================================================================
 
-  ! Return a character string for a given key associated with a field.
+  !> \brief Return an integer value for a given key associated with a field.
 
-  ! If the key id is not valid, or the value type or field category is not
-  ! compatible, a fatal error is provoked.
+  !> If the key id is not valid, or the value type or field category is not
+  !> compatible, a fatal error is provoked.
 
-  subroutine fldgks (ifield, ikey, str)
+  !> \param[in]   f_id     field id
+  !> \param[in]   k_id     id of associated key
+  !> \param[out]  k_value  integer value associated with key id for this field
 
+  subroutine field_get_key_int (f_id, k_id, k_value)
+
+    use, intrinsic :: iso_c_binding
     implicit none
 
     ! Arguments
 
-    integer, intent(in)           :: ifield   ! Field id
-    integer, intent(in)           :: ikey     ! Key id
-    character(len=*), intent(out) :: str      ! Associated string
+    integer, intent(in)   :: f_id, k_id
+    integer, intent(out)  :: k_value
 
     ! Local variables
 
-    integer :: lstr
+    integer(c_int) :: c_f_id, c_k_id, c_k_value
+    type(c_ptr) :: f
 
-    lstr = len(str)
-
-    call fldgk1(ifield, ikey, str, lstr)
-    !==========
+    c_f_id = f_id
+    c_k_id = k_id
+    f = cs_field_by_id(c_f_id)
+    c_k_value = cs_field_get_key_int(f, k_id)
+    k_value = c_k_value
 
     return
 
-  end subroutine fldgks
+  end subroutine field_get_key_int
+
+  !=============================================================================
+
+  !> \brief Return a floating-point value for a given key associated with a
+  !> field.
+
+  !> If the key id is not valid, or the value type or field category is not
+  !> compatible, a fatal error is provoked.
+
+  !> \param[in]   f_id     field id
+  !> \param[in]   k_id     id of associated key
+  !> \param[out]  k_value  integer value associated with key id for this field
+
+  subroutine field_get_key_double (f_id, k_id, k_value)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)            :: f_id, k_id
+    double precision, intent(out)  :: k_value
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id, c_k_id
+    real(c_double) :: c_k_value
+    type(c_ptr) :: f
+
+    c_f_id = f_id
+    c_k_id = k_id
+    f = cs_field_by_id(c_f_id)
+    c_k_value = cs_field_get_key_double(f, k_id)
+    k_value = c_k_value
+
+    return
+
+  end subroutine field_get_key_double
+
+  !=============================================================================
+
+  !> \brief Assign a character string for a given key to a field.
+
+  !> If the key id is not valid, or the value type or field category is not
+  !> compatible, a fatal error is provoked.
+
+  !> \param[in]   f_id  field id
+  !> \param[in]   k_id  id of associated key
+  !> \param[in]   str   string associated with key
+
+  subroutine field_set_key_str (f_id, k_id, str)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)          :: f_id, k_id
+    character(len=*), intent(in) :: str
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id, c_k_id
+    character(len=len_trim(str)+1, kind=c_char) :: c_str
+
+    c_f_id = f_id
+    c_k_id = k_id
+    c_str = trim(str)//c_null_char
+
+    call cs_f_field_set_key_str(c_f_id, c_k_id, c_str)
+
+    return
+
+  end subroutine field_set_key_str
+
+  !=============================================================================
+
+  !> \brief Return a character string for a given key associated with a field.
+
+  !> If the key id is not valid, or the value type or field category is not
+  !> compatible, a fatal error is provoked.
+
+  !> \param[in]   f_id  field id
+  !> \param[in]   k_id  id of associated key
+  !> \param[out]  str   string associated with key
+
+  subroutine field_get_key_str (f_id, k_id, str)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)           :: f_id, k_id
+    character(len=*), intent(out) :: str
+
+    ! Local variables
+
+    integer :: i
+    integer(c_int) :: c_f_id, c_k_id, str_max, c_str_len
+    type(c_ptr) :: f, c_str_p
+    character(kind=c_char, len=1), dimension(:), pointer :: c_str
+
+    c_f_id = f_id
+    c_k_id = k_id
+    str_max = len(str)
+
+    call cs_f_field_get_key_str(f_id, k_id, str_max, c_str_p, c_str_len)
+    call c_f_pointer(c_str_p, c_str, [c_str_len])
+
+    do i = 1, c_str_len
+      str(i:i) = c_str(i)
+    enddo
+    do i = c_str_len + 1, str_max
+      str(i:i) = ' '
+    enddo
+
+    return
+
+  end subroutine field_get_key_str
 
   !=============================================================================
 
@@ -426,9 +873,9 @@ contains
   !> \brief Return pointer to the values array of a given scalar field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    pointer to scalar field values
+  !> \param[out]    p         pointer to scalar field values
 
-  subroutine field_val_get_s (field_id, p)
+  subroutine field_get_val_s (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -449,16 +896,16 @@ contains
     call cs_f_field_var_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1)])
 
-  end subroutine field_val_get_s
+  end subroutine field_get_val_s
 
   !=============================================================================
 
   !> \brief Return pointer to the values array of a given vector field
 
   !> \param[in]     field_id  id of given field (which must be vectorial)
-  !> \param[out]    pointer to vector field values
+  !> \param[out]    p         pointer to vector field values
 
-  subroutine field_val_get_v (field_id, p)
+  subroutine field_get_val_v (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -479,16 +926,16 @@ contains
     call cs_f_field_var_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
 
-  end subroutine field_val_get_v
+  end subroutine field_get_val_v
 
   !=============================================================================
 
   !> \brief Return pointer to the previous values array of a given scalar field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    pointer to previous scalr field values
+  !> \param[out]    p         pointer to previous scalar field values
 
-  subroutine field_val_prev_get_s (field_id, p)
+  subroutine field_get_val_prev_s (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -509,16 +956,16 @@ contains
     call cs_f_field_var_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1)])
 
-  end subroutine field_val_prev_get_s
+  end subroutine field_get_val_prev_s
 
   !=============================================================================
 
   !> \brief Return pointer to the previous values array of a given vector field
 
   !> \param[in]     field_id  id of given field (which must be vectorial)
-  !> \param[out]    pointer to previous vector field values
+  !> \param[out]    p         pointer to previous vector field values
 
-  subroutine field_val_prev_get_v (field_id, p)
+  subroutine field_get_val_prev_v (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -539,16 +986,16 @@ contains
     call cs_f_field_var_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
 
-  end subroutine field_val_prev_get_v
+  end subroutine field_get_val_prev_v
 
   !=============================================================================
 
   !> \brief Return pointer to the coefa array of a given scalar field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    pointer to scalar field BC coefa values
+  !> \param[out]    p         pointer to scalar field BC coefa values
 
-  subroutine field_coefa_get_s (field_id, p)
+  subroutine field_get_coefa_s (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -569,16 +1016,16 @@ contains
     call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1)])
 
-  end subroutine field_coefa_get_s
+  end subroutine field_get_coefa_s
 
   !=============================================================================
 
   !> \brief Return pointer to the coefa array of a given vector field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    pointer to vector field BC coefa values
+  !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_coefa_get_v (field_id, p)
+  subroutine field_get_coefa_v (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -599,16 +1046,16 @@ contains
     call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
 
-  end subroutine field_coefa_get_v
+  end subroutine field_get_coefa_v
 
   !=============================================================================
 
   !> \brief Return pointer to the coefb array of a given scalar field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    pointer to scalar field BC coefa values
+  !> \param[out]    p         pointer to scalar field BC coefa values
 
-  subroutine field_coefb_get_s (field_id, p)
+  subroutine field_get_coefb_s (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -629,16 +1076,16 @@ contains
     call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1)])
 
-  end subroutine field_coefb_get_s
+  end subroutine field_get_coefb_s
 
   !=============================================================================
 
   !> \brief Return pointer to the coefb array of a given uncoupled vector field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    pointer to vector field BC coefa values
+  !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_coefb_get_uv (field_id, p)
+  subroutine field_get_coefb_uv (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -659,16 +1106,16 @@ contains
     call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
 
-  end subroutine field_coefb_get_uv
+  end subroutine field_get_coefb_uv
 
   !=============================================================================
 
   !> \brief Return pointer to the coefb array of a given coupled vector field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    pointer to vector field BC coefa values
+  !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_coefb_get_v (field_id, p)
+  subroutine field_gey_coefb_v (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -689,16 +1136,16 @@ contains
     call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2), f_dim(3)])
 
-  end subroutine field_coefb_get_v
+  end subroutine field_gey_coefb_v
 
   !=============================================================================
 
   !> \brief Return pointer to the coefa array of a given scalar field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    pointer to scalar field BC coefa values
+  !> \param[out]    p         pointer to scalar field BC coefa values
 
-  subroutine field_coefaf_get_s (field_id, p)
+  subroutine field_get_coefaf_s (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -719,16 +1166,16 @@ contains
     call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1)])
 
-  end subroutine field_coefaf_get_s
+  end subroutine field_get_coefaf_s
 
   !=============================================================================
 
   !> \brief Return pointer to the coefa array of a given vector field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    pointer to vector field BC coefa values
+  !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_coefaf_get_v (field_id, p)
+  subroutine field_get_coefaf_v (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -749,16 +1196,16 @@ contains
     call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
 
-  end subroutine field_coefaf_get_v
+  end subroutine field_get_coefaf_v
 
   !=============================================================================
 
   !> \brief Return pointer to the coefb array of a given scalar field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    pointer to scalar field BC coefa values
+  !> \param[out]    p         pointer to scalar field BC coefa values
 
-  subroutine field_coefbf_get_s (field_id, p)
+  subroutine field_get_coefbf_s (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -779,16 +1226,16 @@ contains
     call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1)])
 
-  end subroutine field_coefbf_get_s
+  end subroutine field_get_coefbf_s
 
   !=============================================================================
 
   !> \brief Return pointer to the coefb array of a given uncoupled vector field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    pointer to vector field BC coefa values
+  !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_coefbf_get_uv (field_id, p)
+  subroutine field_get_coefbf_uv (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -809,16 +1256,16 @@ contains
     call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
 
-  end subroutine field_coefbf_get_uv
+  end subroutine field_get_coefbf_uv
 
   !=============================================================================
 
   !> \brief Return pointer to the coefb array of a given coupled vector field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    pointer to vector field BC coefa values
+  !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_coefbf_get_v (field_id, p)
+  subroutine field_get_coefbf_v (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -839,7 +1286,7 @@ contains
     call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2), f_dim(3)])
 
-  end subroutine field_coefbf_get_v
+  end subroutine field_get_coefbf_v
 
   !=============================================================================
 

@@ -110,16 +110,13 @@ iprev = .true.     ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 
 name = 'post_vis'
-call fldkid(name, keyvis)
-!==========
+call field_get_key_id(name, keyvis)
 
 name = 'label'
-call fldkid(name, keylbl)
-!==========
+call field_get_key_id(name, keylbl)
 
 name = 'coupled'
-call fldkid(name, keycpl)
-!==========
+call field_get_key_id(name, keycpl)
 
 ! Postprocessing level for variables
 
@@ -138,18 +135,15 @@ endif
 ivar = ipr
 name = 'pressure'
 call field_create(name, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
-!================
-call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
-!==========
+call field_set_key_str(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
 if (ichrvr(ipprtp(ivar)) .eq. 1) then
-  call fldski(ivarfl(ivar), keyvis, iopchr)
-  !==========
+  call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
 endif
 
 ivar = iu
 name = 'velocity'
 call field_create(name, itycat, ityloc, idim3, ilved, iprev, ivarfl(iu))
-!================
+
 ! Change label for velocity to remove trailing coordinate name
 name = nomvar(ipprtp(iu))
 name1 = name(1:32)
@@ -159,15 +153,12 @@ name = nomvar(ipprtp(iw))
 name3 = name(1:32)
 call fldsnv (name1, name2, name3)
 !==========
-call fldsks(ivarfl(ivar), keylbl, name1)
-!==========
+call field_set_key_str(ivarfl(ivar), keylbl, name1)
 if (ichrvr(ipprtp(ivar)) .eq. 1) then
-  call fldski(ivarfl(ivar), keyvis, iopchr)
-  !==========
+  call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
 endif
 if (ivelco .eq. 1) then
-  call fldski(ivarfl(ivar), keycpl, 1)
-  !==========
+  call field_set_key_int(ivarfl(ivar), keycpl, 1)
 endif
 
 ! All components point to same field
@@ -246,12 +237,9 @@ do ii = 1, nfld
   ivar = ifvar(ii)
   name = nomvar(ipprtp(ivar))
   call field_create(name, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
-  !================
-  call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
-  !==========
+  call field_set_key_str(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
   if (ichrvr(ipprtp(ivar)) .eq. 1) then
-    call fldski(ivarfl(ivar), keyvis, iopchr)
-    !==========
+    call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
   endif
 enddo
 
@@ -264,16 +252,12 @@ if (iale.eq.1) then
   ivar = iuma
   name = 'mesh_velocity'
   call field_create(name, itycat, ityloc, idim3, ilved, iprev, ivarfl(ivar))
-  !================
-  call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
-  !==========
+  call field_set_key_str(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
   if (ichrvr(ipprtp(ivar)) .eq. 1) then
-    call fldski(ivarfl(ivar), keyvis, iopchr)
-    !==========
+    call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
   endif
   if (ivelco .eq. 1) then
-    call fldski(ivarfl(ivar), keycpl, 1)
-    !==========
+    call field_set_key_int(ivarfl(ivar), keycpl, 1)
   endif
   ivarfl(ivma) = ivarfl(iuma)
   ivarfl(iwma) = ivarfl(iwma)
@@ -300,12 +284,9 @@ do ii = 1, nscal
       name = nomvar(ipprtp(ivar))
     endif
     call field_create(name, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
-    !================
-    call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
-    !==========
+    call field_set_key_str(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
     if (ichrvr(ipprtp(ivar)) .eq. 1) then
-      call fldski(ivarfl(ivar), keyvis, iopchr)
-      !==========
+      call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
     endif
   endif
 
@@ -348,12 +329,9 @@ do iprop = 1, nproce
     itycat = FIELD_PROPERTY + FIELD_ACCUMULATOR
   endif
   call field_create(name, itycat, ityloc, idim1, ilved, inoprv, iprpfl(iprop))
-  !================
-  call fldsks(iprpfl(iprop), keylbl, name)
-  !==========
+  call field_set_key_str(iprpfl(iprop), keylbl, name)
   if (ichrvr(ipppro(iprop)) .eq. 1) then
-    call fldski(iprpfl(iprop), keyvis, ichrvr(ipppro(iprop)))
-    !==========
+    call field_set_key_int(iprpfl(iprop), keyvis, ichrvr(ipppro(iprop)))
   endif
 enddo
 
@@ -361,8 +339,7 @@ enddo
 !---------------------------------
 
 name = 'moment_dt'
-call fldkid(name, ikeyid)
-!==========
+call field_get_key_id(name, ikeyid)
 
 do imom = 1, nbmomt
   ! property id matching moment
@@ -375,8 +352,7 @@ do imom = 1, nbmomt
   elseif(idtnm.lt.0) then
     ikeyvl = idtnm - 1
   endif
-  call fldski(iprpfl(iprop), ikeyid, ikeyvl)
-  !==========
+  call field_set_key_int(iprpfl(iprop), ikeyid, ikeyvl)
 enddo
 
 ! Reserved fields whose ids are not saved (may be queried by name)
@@ -388,14 +364,12 @@ itycat = FIELD_INTENSIVE
 
 name = 'dt'
 call field_create(name, itycat, ityloc, idim1, ilved, inoprv, iflid)
-!================
 
 ! Transient velocity/pressure coupling
 
 if (ipucou.ne.0) then
   name = 'tpucou'
   call field_create(name, itycat, ityloc, idim3, ilved, inoprv, iflid)
-  !================
 endif
 
 return
