@@ -1076,7 +1076,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     cs_ac_fc_version=`grep 'PathScale' $outfile`
     cs_fc_compiler_known=yes
 
-    fcflags_default="-Wall -Wno-unused"
+    fcflags_default="-Wall -Wno-unused -cpp"
     fcflags_default_dbg="-g -ffortran-bounds-check"
     fcflags_default_opt="-O"
     fcflags_default_hot="-fast"
