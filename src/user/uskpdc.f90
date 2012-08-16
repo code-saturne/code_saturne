@@ -161,7 +161,6 @@ double precision ckupdc(ncepdp,6)
 integer          iel, ielpdc, ikpdc
 integer          ilelt, nlelt
 integer          izone
-integer          iutile
 
 double precision alpha, cosalp, sinalp, vit, ck1, ck2
 
@@ -292,8 +291,7 @@ else if (iappel.eq.3) then
   ! --- Diagonal tensor
   !     Example of head losses in direction x
 
-  iutile = 0
-  if (iutile.eq.0) return
+  if (.true.) return  ! (replace .true. with .false. or remove test to activate)
 
   do ielpdc = 1, ncepdp
     iel=icepdc(ielpdc)
@@ -317,8 +315,7 @@ else if (iappel.eq.3) then
   !                    \
   !                     \ x
 
-  iutile = 0
-  if (iutile.eq.0) return
+  if (.true.) return  ! (replace .true. with .false. or remove test to activate)
 
   alpha  = pi/4.d0
   cosalp = cos(alpha)

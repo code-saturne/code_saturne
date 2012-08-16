@@ -158,7 +158,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 integer          ivart, iclvar, iel
 integer          ipcrom, ipbrom, ipcvis, ipccp
 integer          ipcvsl, ith, iscal, ii
-integer          iutile
 double precision vara, varb, varc, varam, varbm, varcm, vardm
 double precision                   varal, varbl, varcl, vardl
 double precision                   varac, varbc
@@ -188,8 +187,8 @@ if (1.eq.1) return
 !   The following examples should be adapted by the user
 !   ====================================================
 
-!  Each example is bounded by a test on "iutile", as a precaution.
-!  Set iutile to 1 to activate the example.
+!  Each example is bounded by a test using .false. as a precaution.
+!  Replace .false. by .true to activate the example.
 
 !  It is recommended to keep only the minimum necessary in this file
 !  (i.e. remove all unused example code)
@@ -212,11 +211,10 @@ if (1.eq.1) return
 !      (and optionally, at boundary faces).
 !  ===================================================================
 
-!    The test on 'iutile' allows deactivating instructions (which are defined
+!    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ! Position of variables, coefficients
   ! -----------------------------------
@@ -301,7 +299,7 @@ if (iutile.eq.1) then
   ! Caution: ibrom = 1 is necessary for the law to be taken
   !                           into account.
 
-endif ! --- Test on 'iutile'
+endif ! --- Test on .false.
 
 
 !===============================================================================
@@ -311,11 +309,10 @@ endif ! --- Test on 'iutile'
 !    Values of this property must be defined at cell centers
 !  ===================================================================
 
-!    The test on 'iutile' allows deactivating instructions (which are defined
+!    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ! Position of variables, coefficients
   ! -----------------------------------
@@ -354,7 +351,7 @@ if (iutile.eq.1) then
          xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
   enddo
 
-endif ! --- Test on 'iutile'
+endif ! --- Test on .false.
 
 
 !===============================================================================
@@ -364,11 +361,10 @@ endif ! --- Test on 'iutile'
 !    Values of this property must be defined at cell centers
 !  ===================================================================
 
-!    The test on 'iutile' allows deactivating instructions (which are defined
+!    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ! Position of variables, coefficients
   ! -----------------------------------
@@ -415,7 +411,7 @@ if (iutile.eq.1) then
     propce(iel,ipccp ) = varac*xrtp + varbc
   enddo
 
-endif ! --- Test on 'iutile'
+endif ! --- Test on .false.
 
 
 !======================================================================================
@@ -427,11 +423,10 @@ endif ! --- Test on 'iutile'
 !  Values of this property must be defined at cell centers
 !  ====================================================================================
 
-!    The test on 'iutile' allows deactivating instructions (which are defined
+!    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ! Position of variables, coefficients
   ! -----------------------------------
@@ -538,7 +533,7 @@ if (iutile.eq.1) then
 
   endif
 
-endif ! --- Test on 'iutile'
+endif ! --- Test on .false.
 
 
 !===============================================================================
@@ -553,11 +548,10 @@ endif ! --- Test on 'iutile'
 !    Values of this property must be defined at cell centers
 !  ===================================================================
 
-!    The test on 'iutile' allows deactivating instructions (which are defined
+!    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   do ii = 1, nscaus ! Loop on scalars
 
@@ -628,7 +622,7 @@ if (iutile.eq.1) then
     endif ! --- Tests on 'ith' and 'iscavr'
 
   enddo ! --- Loop on scalars
-endif ! --- Test on 'iutile'
+endif ! --- Test on .false.
 
 
 !===============================================================================
@@ -905,7 +899,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-integer          ivart, iel, iutile
+integer          ivart, iel
 integer          ipcvis, ipcvsv, ipccp
 integer          ipcvsl, ith, iscal, ii, iccfth, imodif
 double precision varam, varbm, varcm, vardm
@@ -975,11 +969,10 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 !    the temperature. All variables are evaluated at the cell centres.
 !===============================================================================
 
-!    The test on 'iutile' allows deactivating instructions (which are defined
+!    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ! --- Rank of the temperature in the array 'rtp'
   !     To refer to the user-defined scalar number 2 instead, for example, use
@@ -1012,7 +1005,7 @@ if (iutile.eq.1) then
     propce(iel,ipcvis) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
   enddo
 
-endif ! --- Test on 'iutile'
+endif ! --- Test on .false.
 
 ! --- Discard the following test so that the code does not stop
 if (1.eq.1) then
@@ -1028,11 +1021,10 @@ endif
 !    of the temperature. All variables are evaluated at the cell centres.
 !===============================================================================
 
-!    The test on 'iutile' allows deactivating instructions (which are defined
+!    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ! --- Rank of the temperature in the array 'rtp'
   !     To refer to the user-defined scalar number 2 instead, for example, use
@@ -1076,7 +1068,7 @@ if (iutile.eq.1) then
     propce(iel,ipcvsv) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
   enddo
 
-endif ! --- Test on 'iutile'
+endif ! --- Test on .false.
 
 ! --- Discard the following test so that the code do not stop
 if (1.eq.1) then
@@ -1092,11 +1084,10 @@ endif
 !    of the temperature. All variables are evaluated at the cell centres.
 !===============================================================================
 
-!    The test on 'iutile' allows deactivating instructions (which are defined
+!    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ! Warning:
   ! =======
@@ -1165,7 +1156,7 @@ if (iutile.eq.1) then
      coefa  , coefb  ,                                              &
      propce(1, ipproc(icv) )  , w1     , w2     , w3     )
 
-endif ! --- Test on 'iutile'
+endif ! --- Test on .false.
 
 ! --- Discard the following test so that the code do not stop
 if (1.eq.1) then
@@ -1181,11 +1172,10 @@ endif
 !    of the temperature. All variables are evaluated at the cell centres.
 !===============================================================================
 
-!    The test on 'iutile' allows deactivating instructions (which are defined
+!    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ! --- Rank of the temperature in the array 'rtp'
   !     To refer to the user-defined scalar number 2 instead, for example, use
@@ -1231,7 +1221,7 @@ if (iutile.eq.1) then
     propce(iel,ipcvsl) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
   enddo
 
-endif ! --- Test on 'iutile'
+endif ! --- Test on .false.
 
 ! --- Discard the following test so that the code do not stop
 if (1.eq.1) then
@@ -1254,11 +1244,10 @@ endif
 !    of the temperature. All variables are evaluated at the cell centres.
 !===============================================================================
 
-!    The test on 'iutile' allows deactivating instructions (which are defined
+!    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ! --- Loop on the scalars
   do ii = 1, nscaus
@@ -1331,7 +1320,7 @@ if (iutile.eq.1) then
   enddo
   ! --- End of the loop on the scalars
 
-endif ! --- Test on 'iutile'
+endif ! --- Test on .false.
 
 ! Free memory
 deallocate(w1, w2, w3)
@@ -2031,7 +2020,7 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
 
-integer          iel, iccocg, inc, iutile
+integer          iel, iccocg, inc
 integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvst
 double precision dudx, dudy, dudz, sqdu, visct, rom
@@ -2049,12 +2038,11 @@ double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
-!  The test on 'iutile' allows deactivating instructions (which are defined
+!  The test below allows deactivating instructions (which are defined
 !     only as a starting example)
-!  Set iutile to 1 or remove this test to activate the example.
+!  Replace .true. with .false. or remove this test to activate the example.
 
-iutile = 0
-if (iutile.eq.0) return
+if (.true.) return
 
 !=============================================================================
 ! 1.2 Initialization
@@ -2233,18 +2221,17 @@ double precision smagor(ncelet), mijlij(ncelet), mijmij(ncelet)
 
 ! Local variables
 
-integer          iel, iutile
+integer          iel
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 
 !===============================================================================
 
-!  The test on 'iutile' allows deactivating instructions (which are defined
+!  The test below allows deactivating instructions (which are defined
 !     only as a starting example)
-!  Set iutile to 1 or remove this test to activate the example.
+!  Replace .true. with .false. or remove this test to activate the example.
 
-iutile = 0
-if (iutile.eq.0) return
+if (.true.) return
 
 !===============================================================================
 ! 1.  INITIALISATION
@@ -2388,7 +2375,7 @@ double precision viscmx(ncelet), viscmy(ncelet), viscmz(ncelet)
 
 ! Local variables
 
-integer          iel, iutile
+integer          iel
 double precision rad, xr2, xcen, ycen, zcen
 
 !===============================================================================
@@ -2410,11 +2397,10 @@ if (1.eq.1) return
 !     In general it appears quite much easier to fill mesh viscosity arrays at
 !     the beginning of the calculations basing on the initial geometry.
 
-!  The test on 'iutile' allows deactivating instructions (which are defined
+!  The test on .false. allows deactivating instructions (which are defined
 !     only as a starting example)
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   if (ntcabs.eq.0) then
     rad = (1.d-3)**2
@@ -2440,7 +2426,7 @@ if (iutile.eq.1) then
 
   endif
 
-endif ! --- Test on 'iutile'
+endif ! --- Test on .false.
 
 !----
 ! Formats

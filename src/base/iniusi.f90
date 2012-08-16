@@ -108,7 +108,7 @@ double precision relaxp, extrap, cwfthr
 call csihmp(iihmpr)
 !==========
 
-if(iihmpr.eq.1) then
+if (iihmpr.eq.1) then
 
   call uiinit
   !==========
@@ -125,7 +125,7 @@ endif
 !   - Interface Code_Saturne
 !     ======================
 
-if(iihmpr.eq.1) then
+if (iihmpr.eq.1) then
 
   call csturb(iturb, ideuch, igrake, igrari, xlomlg)
   !==========
@@ -152,7 +152,7 @@ call usipph(iihmpu , nfecra , iturb  , irccor , icp)
 !   - Interface Code_Saturne
 !     ======================
 
-if(iihmpr.eq.1) then
+if (iihmpr.eq.1) then
 
   call csnsca(nscaus)
   !==========
@@ -189,7 +189,16 @@ endif
 !   - Sous-programme utilisateur
 !     ==========================
 
-call usppmo
+! Initialize specific physics modules not available at the moment
+
+ippmod(icobml) = -1  ! premix model of Bray - Moss - Libby
+ippmod(icodeq) = -1  ! diffusion flame with fast equilibrium chemistry
+ippmod(ielion) = -1  ! ionic mobility
+
+! User initialization
+
+iihmpu = iihmpr
+call usppmo(iihmpu)
 !==========
 
 ! --- Activation du module transferts radiatifs
@@ -201,7 +210,7 @@ call usppmo
 !   - Interface Code_Saturne
 !     ======================
 
-if(iihmpr.eq.1) then
+if (iihmpr.eq.1) then
 
   call uiray1(iirayo, isuird, ndirec, nfreqr, idiver, iimpar, iimlum)
   !==========
@@ -230,13 +239,13 @@ call varpos(nmodpp)
 !   - Interface Code_Saturne
 !     ======================
 
-if(iihmpr.eq.1) then
+if (iihmpr.eq.1) then
 
   call  csisca(iscavr)
-!       ============
+  !===========
 
   call  csivis(iscavr, ivisls, iscalt, iscsth)
-!       ============
+  !===========
 
 endif
 
@@ -246,9 +255,8 @@ endif
 nscmax = nscamx
 nscusi = nscaus
 iihmpu = iihmpr
-call usipsc                                                       &
+call usipsc(nscmax , nscusi , iihmpu , nfecra , iscavr , ivisls)
 !==========
- ( nscmax , nscusi , iihmpu , nfecra , iscavr , ivisls )
 
 !===============================================================================
 ! 3. INITIALISATION DE PARAMETRES "GLOBAUX"
@@ -352,7 +360,7 @@ call varpos(nmodpp)
 !   - Interface Code_Saturne
 !     ======================
 
-if(iihmpr.eq.1) then
+if (iihmpr.eq.1) then
 
   call csvnum                                                     &
   !==========
@@ -378,7 +386,7 @@ if(iihmpr.eq.1) then
               dtmax, coumax, foumax, varrdt, relxst)
 
 !     Temperature ou enthalpie (hors physiques particulieres)
-  if(nmodpp.eq.0) then
+  if (nmodpp.eq.0) then
     call cssca1(iscalt, iscsth)
     !==========
 
@@ -451,7 +459,7 @@ call indsui(isuite)
 !==========
 
 ! Choose if the 3x3 dimensionless matrix cocg is computed for the iterative
-! algorithm and the Least square method for ivelco = 1.
+! algorithm and the Least squares method for ivelco = 1.
 if (ivelco.eq.1) then
   if (imrgra.eq.0) then
     ioptit = 1
@@ -486,7 +494,7 @@ call varpos(nmodpp)
 !     ======================
 
 
-if(iihmpr.eq.1) then
+if (iihmpr.eq.1) then
 
     iappel = 1
 
@@ -527,7 +535,7 @@ call usipes(nmodpp)
 !==========
 
 !----
-! FORMATS
+! Formats
 !----
 
 

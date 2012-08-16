@@ -249,7 +249,6 @@ integer          iel    , ifac   , ivar
 integer          irh    , itk    , ien
 integer          iclp   , iclr   , iclt   , icle
 integer          iclu   , iclv   , iclw
-integer          iutile
 double precision gamagp , xmasml , enint
 double precision xmach  , xmachi , xmache , dxmach
 
@@ -603,9 +602,8 @@ if (ieos.eq.1) then
     ! Verification of the values of the density
     !   This test can be discarded to reduce the CPU time (if
     !     density is <= 0, the calculation will simply fail)
-    !   It is discarded here with iutile = 0
-    iutile = 0
-    if (iutile.eq.1) then
+    !   It is discarded here with .false.
+    if (.false.) then
       ierr = 0
       do iel = 1, ncel
         if (rtp(iel,irh).le.0.d0) then
@@ -630,9 +628,8 @@ if (ieos.eq.1) then
     ! Verification of the values of the density
     !   This test can be discarded to reduce the CPU time (if
     !     density is <= 0, the calculation will simply fail)
-    !   It is discarded here with iutile = 0
-    iutile = 0
-    if (iutile.eq.1) then
+    !   It is discarded here with .false.
+    if (.false.) then
       ierr = 0
       do iel = 1, ncel
         if (rtp(iel,irh).lt.0.d0) then

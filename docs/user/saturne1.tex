@@ -700,10 +700,6 @@ created.
 executed in the directory \texttt{STUDY} adds the case directories
 \texttt{DEBIT3} and \texttt{DEBIT4}.
 
-An option \texttt{--nogui} is available for the use of \CS
-without Graphic Interface. This option must
-be either the first or the last argument and appear only once.
-
 In the directory \texttt{DATA}, the \texttt{code\_saturne~create} command
 places a subdirectory \texttt{THCH} containing examples of thermochemical data
 files used for pulverised coal combustion,
@@ -1571,24 +1567,6 @@ be given to the variable \texttt{PARAM} in the launch script (see
 script is edited from the Interface (Calculation management $\rightarrow$
 Prepare batch analysis), the PARAM section is filled automatically as are the
 other parameters specified through the Interface.
-
-
-\minititre{Note: option \texttt{--nogui} of the \texttt{code\_saturne~create} command}
-When a calculation is using the Interface but, for some reason, some extra
-parameters need to be specified in the subroutine \texttt{cs\_user\_parameters.f90}, the latter
-must be placed in the directory \texttt{SRC}. But, while doing this, all the
-parameters appearing in \texttt{cs\_user\_parameters.f90} will also be taken into account. In
-order to prevent the user from having to respecify in \texttt{cs\_user\_parameters.f90} all that
-he has already specified through the Interface, \texttt{code\_saturne~create} automatically
-comments out the examples in \texttt{cs\_user\_parameters.f90} (\texttt{Cex} at the beginning of
-each line) while copying it in the directory \texttt{REFERENCE}. Therefore, the user
-only needs to uncomment the specific parts of \texttt{cs\_user\_parameters.f90} he wants to modify,
-and the rest of the examples will be ignored.\\
-On the contrary, if the Interface will not be used, then all the parameters in
-\texttt{cs\_user\_parameters.f90} have to be specified. In that case, using the \texttt{--nogui}
-option of \texttt{code\_saturne~create} will prevent it from commenting \texttt{cs\_user\_parameters.f90}
-out, thus saving the user the tedious task of uncommenting all the lines (and
-the risk of skipping some of them).
 
 %==================================
 \subsection{User subroutines}
@@ -4068,15 +4046,10 @@ the user must indicate \texttt{iscavr(jj)=kk}
 \noindent
 $\bullet\ $ When using the interface, only the
 additional parameters (which can not be defined in the interface)
-should appear in \texttt{cs\_user\_parameters.f90}. To spare the user the necessity to
-delete the other parameters given as examples in the subroutine, the
-setup program \texttt{code\_saturne~create} comments automatically all the
-example lines of \texttt{cs\_user\_parameters.f90} with a code ``\texttt{!ex}''. The user
-needs then only to remove comments at the lines which are useful for his
-case. This function of
-\texttt{code\_saturne~create} can be deactivated with
-the option ``\texttt{--nogui}'' (useful if the user knows that he will not
-use the interface).
+should appear in \texttt{cs\_user\_parameters.f90}. The user
+needs then only to activate examples which are useful for his
+case (replacing \texttt{if (.false.)} with \texttt{if (.true.)},
+or removing such tests).
 
 \subsection{Selection of mesh inputs: \textmd{\texttt{cs\_user\_mesh\_input}}}
 %==================================

@@ -209,7 +209,7 @@ double precision smacel(ncesmp,nvar)
 ! Local variables
 
 integer          ieltsm
-integer          ifac, iutile, ii
+integer          ifac, ii
 integer          ilelt, nlelt
 integer          izone
 
@@ -226,7 +226,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-if(iappel.eq.1.or.iappel.eq.2) then
+if (iappel.eq.1.or.iappel.eq.2) then
 
 !===============================================================================
 ! 1. One or two calls
@@ -276,8 +276,7 @@ if(iappel.eq.1.or.iappel.eq.2) then
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-  iutile = 0
-  if(iutile.eq.1) then
+  if (.false.) then
 
     izone = 0
     ieltsm = 0
@@ -330,7 +329,7 @@ if(iappel.eq.1.or.iappel.eq.2) then
 
 !-------------------------------------------------------------------------------
 
-elseif(iappel.eq.3) then
+elseif (iappel.eq.3) then
 
 !===============================================================================
 
@@ -408,7 +407,7 @@ elseif(iappel.eq.3) then
       itypsm(ieltsm,iomg)= 1
       smacel(ieltsm,iomg)= xeent/cmu/xkent
     endif
-    if(nscal.gt.0) then
+    if (nscal.gt.0) then
       do ii = 1, nscal
         itypsm(ieltsm,isca(ii)) = 1
         smacel(ieltsm,isca(ii)) = 1.d0
@@ -437,8 +436,7 @@ elseif(iappel.eq.3) then
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-  iutile = 0
-  if(iutile.eq.1) then
+  if (.false.) then
 
     ! Calculation of the total volume of the area where the mass source
     !   term is imposed (the case of parallel computing is taken into

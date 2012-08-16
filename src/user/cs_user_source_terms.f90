@@ -158,7 +158,7 @@ double precision crvexp(ncelet), crvimp(ncelet)
 ! Local variables
 
 character*80     chaine
-integer          iel, ipcrom, ipp, iutile
+integer          iel, ipcrom, ipp
 double precision ckp, qdm
 
 integer, allocatable, dimension(:) :: lstelt
@@ -220,9 +220,7 @@ ipcrom = ipproc(irom  )
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-iutile = 0
-
-if (iutile.eq.0) return
+if (.true.) return
 
 ! ----------------------------------------------
 
@@ -388,7 +386,7 @@ double precision crvexp(3,ncelet), crvimp(3,3,ncelet)
 ! Local variables
 
 character*80     chaine
-integer          iel, ipcrom, ipp, iutile
+integer          iel, ipcrom, ipp
 double precision ckp, qdm
 
 integer, allocatable, dimension(:) :: lstelt
@@ -450,9 +448,7 @@ ipcrom = ipproc(irom  )
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-iutile = 0
-
-if (iutile.eq.0) return
+if (.true.) return
 
 ! ----------------------------------------------
 
@@ -653,7 +649,7 @@ double precision crvexp(ncelet), crvimp(ncelet)
 ! Local variables
 
 character*80     chaine
-integer          ivar, iiscvr, ipcrom, iel, iutile
+integer          ivar, iiscvr, ipcrom, iel
 integer          ilelt, nlelt
 
 double precision tauf, prodf, volf, pwatt
@@ -731,9 +727,7 @@ endif
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-iutile = 0
-
-if (iutile.eq.0) return
+if (.true.) return
 
 ! ----------------------------------------------
 
@@ -775,9 +769,7 @@ endif
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-iutile = 0
-
-if (iutile.eq.0) return
+if (.true.) return
 
 ! ----------------------------------------------
 
@@ -975,7 +967,7 @@ double precision creexp(ncelet), creimp(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom, iutile
+integer          iel, ipcrom
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -1025,9 +1017,7 @@ endif
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-iutile = 0
-
-if (iutile.eq.0) return
+if (.true.) return
 
 ! ----------------------------------------------
 
@@ -1221,7 +1211,7 @@ double precision crwexp(ncelet), crwimp(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom, iutile
+integer          iel, ipcrom
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -1271,9 +1261,7 @@ endif
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-iutile = 0
-
-if (iutile.eq.0) return
+if (.true.) return
 
 ! ----------------------------------------------
 
@@ -1467,7 +1455,7 @@ double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom, iutile
+integer          iel, ipcrom
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -1517,9 +1505,7 @@ endif
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-iutile = 0
-
-if (iutile.eq.0) return
+if (.true.) return
 
 ! ----------------------------------------------
 
@@ -1729,7 +1715,7 @@ double precision produc(ncelet), gphigk(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom, iutile
+integer          iel, ipcrom
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -1778,9 +1764,7 @@ endif
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-iutile = 0
-
-if (iutile.eq.0) return
+if (.true.) return
 
 ! ----------------------------------------------
 
@@ -1978,7 +1962,7 @@ double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom, iutile
+integer          iel, ipcrom
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -2024,9 +2008,7 @@ endif
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-iutile = 0
-
-if (iutile.eq.0) return
+if (.true.) return
 
 ! ----------------------------------------------
 

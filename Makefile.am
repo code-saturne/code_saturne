@@ -309,8 +309,11 @@ bin/autovnv/TexMaker.py
 
 nodist_pkgdata_DATA = \
 bin/runcase_aster \
-bin/runcase_coupling \
-bin/SaturneGUI
+bin/runcase_coupling
+
+if HAVE_GUI
+  nodist_pkgdata_DATA += bin/SaturneGUI
+endif
 
 dist_pkgdata_DATA = \
 bin/cs_user_scripts.py

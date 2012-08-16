@@ -108,7 +108,7 @@ double precision hvol(ncecpl), tfluid(ncecpl)
 ! Local variables
 
 character*80     chaine
-integer          ivar, iiscvr, iel, iloc, iutile
+integer          ivar, iiscvr, iel, iloc
 integer          ipcrom, ipcvsl, ipcvis, ipccp
 
 double precision cp, mu, lambda, rho, uloc, L, sexcvo
@@ -159,9 +159,7 @@ endif
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-iutile = 0
-
-if(iutile.eq.0) return
+if (.true.) return  ! (replace .true. with .false. or remove test to activate)
 
 hvol_cst = 1.0d6
 
@@ -193,9 +191,7 @@ enddo
 !  not needed. Therefore the following test is designed to prevent
 !  any bad surprise.
 
-iutile = 0
-
-if(iutile.eq.0) return
+if (.true.) return  ! (replace .true. with .false. or remove test to activate)
 
 sexcvo = 36.18d0  ! Surface area where exchanges take place by unit of volume
 L = 0.03d0        ! Characteristic length

@@ -1108,18 +1108,18 @@ omegaz = 0.d0
 !         (du moins, on l'espere...) : on adopte la meme methode pour la
 !         symetrie.
 
-irovar = -1
-ivivar = -1
-ro0    = -grand*10.d0
-viscl0 = -grand*10.d0
-p0     = 1.013d5
+irovar = 0
+ivivar = 0
+ro0    = 1.17862d0
+viscl0 = 1.83337d-5
+p0     = 1.01325d5
 pred0  = 0.d0
 xyzp0(1)= -rinfin
 xyzp0(2)= -rinfin
 xyzp0(3)= -rinfin
 ixyzp0 = -1
-t0     = 0.d0
-cp0    = -grand*10.d0
+t0 = 20.d0 + 273.15d0
+cp0    = 1017.24d0
 
 ! --- Turbulence
 !     YPLULI est mis a -GRAND*10. Si l'utilisateur ne l'a pas specifie dans usipsu, on
@@ -1252,7 +1252,7 @@ ccazd  = 0.682d0
 
 !   echelle de longueur negative, recalculee par la suite
 !    ou entree par l'utilisateur
-almax   = -grand*10.d0
+almax   = -999.d0
 
 !   vitesse de reference pour l'initialisation de la turbulence
 !    doit etre entree par l'utilisateur, sauf s'il initialise lui-meme
@@ -1328,7 +1328,7 @@ iihmpr = 0
 iale = 0
 
 ! --- Iterations d'initialisation fluide seul
-nalinf = -999
+nalinf = 0
 
 ! --- Type de viscosite de maillage (isotrope par defaut)
 iortvm = 0
@@ -1345,7 +1345,7 @@ nbaste = -999
 ntcast = 0
 
 ! --- Parametres du couplage implicite
-nalimx = -999
+nalimx = 1
 epalim = 1.d-5
 
 ! --- Iteration d'initialisation de l'ALE

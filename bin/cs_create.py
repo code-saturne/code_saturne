@@ -30,7 +30,6 @@ This module defines the following functions:
 - usage
 - process_cmd_line
 - make_executable
-- comments
 and the following classes:
 - study
 - class
@@ -74,10 +73,6 @@ def process_cmd_line(argv, pkg):
                       metavar="<case>",
                       help="create a case from another one")
 
-    parser.add_option("--nogui", dest="use_gui",
-                      action="store_false",
-                      help="don't use the GUI")
-
     parser.add_option("--noref", dest="use_ref",
                       action="store_false",
                       help="don't copy references")
@@ -98,7 +93,6 @@ def process_cmd_line(argv, pkg):
                       metavar="<ast_case>",
                       help="create a new Code_Aster case.")
 
-    parser.set_defaults(use_gui=True)
     parser.set_defaults(use_ref=True)
     parser.set_defaults(study_name=os.path.basename(os.getcwd()))
     parser.set_defaults(case_names=[])
@@ -122,7 +116,6 @@ def process_cmd_line(argv, pkg):
                  options.syr_case_names,
                  options.ast_case_name,
                  options.copy,
-                 options.use_gui,
                  options.use_ref,
                  options.verbose)
 
@@ -167,57 +160,13 @@ def syrthes_path_line(pkg):
     return line
 
 #-------------------------------------------------------------------------------
-# Comment or uncomment examples in user files
-#-------------------------------------------------------------------------------
-
-def comments(filename, use_gui):
-    """
-    Comment or uncomment examples in user files.
-    """
-
-    fd = open(filename, 'r')
-    fdt = open(filename+'.tmp','w')
-
-    kwd_beg = re.compile('EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START')
-    kwd_end = re.compile('EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END')
-
-
-    if use_gui:
-
-        comment_line = 0
-        for line in fd:
-            if kwd_beg.search(line): comment_line = 1
-            if comment_line == 0:
-                fdt.write(line)
-            else:
-                if len(line) > 1:
-                    fdt.write('!ex '+line)
-                else:
-                    fdt.write('!ex'+line)
-                if kwd_end.search(line): comment_line = 0
-
-    else:
-
-        for line in fd:
-            if not kwd_beg.search(line) and not kwd_end.search(line):
-                fdt.write(line)
-
-    fd.close()
-    fdt.close()
-
-    shutil.move(filename+'.tmp', filename)
-
-    return
-
-
-#-------------------------------------------------------------------------------
 # Definition of a class for a study
 #-------------------------------------------------------------------------------
 
 class Study:
 
     def __init__(self, package, name, cases, syr_case_names, ast_case_name,
-                 copy, use_gui, use_ref, verbose):
+                 copy, use_ref, verbose):
         """
         Initialize the structure for a study.
         """
@@ -230,7 +179,6 @@ class Study:
         self.copy = copy
         if self.copy is not None:
             self.copy = os.path.abspath(self.copy)
-        self.use_gui = use_gui
         self.use_ref = use_ref
         self.verbose = verbose
 
@@ -540,11 +488,10 @@ class Study:
             abs_f = os.path.join(datadir, 'cs_user_scripts.py')
             shutil.copy(abs_f, ref)
 
-        if self.use_gui:
+        csguiname = self.package.guiname
+        csguiscript = os.path.join(datadir, csguiname)
 
-            csguiname = self.package.guiname
-            csguiscript = os.path.join(datadir, csguiname)
-
+        if os.path.isfile(csguiscript):
             shutil.copy(csguiscript, data)
             make_executable(os.path.join(data, csguiname))
 
@@ -560,10 +507,6 @@ class Study:
             shutil.copytree(user_distpath, user)
             if self.package.name == 'code_saturne' :
                 shutil.copytree(user_examples_distpath, user_examples)
-
-            f = os.path.join(user, 'cs_user_parameters.f90')
-            if os.path.isfile(f):
-                comments(f, self.use_gui)
 
         # Copy data and source files from another case
 
@@ -693,7 +636,6 @@ class Study:
         print("Names of the cases:", self.cases)
         if self.copy is not None:
             print("Copy from case:", self.copy)
-        print("Use the GUI:", self.use_gui)
         print("Copy references:", self.use_ref)
         if self.n_sat > 1:
             print("Number of instances:", self.n_sat)

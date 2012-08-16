@@ -1272,10 +1272,21 @@ enddo
 
 
 ! ---> VISLS0 (IVISLS ont ete verifies dans varpos)
-!      Pour les variances de fluctuations, les valeurs du tableau
-!        precedent ne doivent pas avoir ete modifiees par l'utilisateur
-!        Elles sont prises egales aux valeurs correspondantes pour le
-!        scalaire associe.
+
+! For scalars which are not variances, define the default diffusivity
+
+! Pour les variances de fluctuations, les valeurs du tableau
+! precedent ne doivent pas avoir ete modifiees par l'utilisateur
+! Elles sont prises egales aux valeurs correspondantes pour le
+! scalaire associe.
+
+if (nscaus.gt.0) then
+  do jj = 1, nscaus
+    if (iscavr(jj).le.0 .and. visls0(jj).lt.-grand) then
+      visls0(jj) = viscl0
+    endif
+  enddo
+endif
 
 if (nscal.gt.0) then
   do ii = 1, nscal

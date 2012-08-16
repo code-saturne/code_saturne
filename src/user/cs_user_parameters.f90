@@ -54,8 +54,9 @@
 !===============================================================================
 
 
-subroutine usppmo
+subroutine usppmo &
 !================
+ ( ixmlpu )
 
 
 !===============================================================================
@@ -65,7 +66,7 @@ subroutine usppmo
 !    User subroutine.
 
 !    Define the use of a specific physics amongst the following:
-!      - combustion with gaz / coal / heavy fuel oil
+!      - combustion with gas / coal / heavy fuel oil
 !      - compressible flows
 !      - electric arcs
 !      - atmospheric modelling
@@ -79,6 +80,8 @@ subroutine usppmo
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
+! ixmlpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
+!                  !    !     ! used (1: yes, 0: no)                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -101,6 +104,10 @@ use ppcpfu
 !===============================================================================
 
 implicit none
+
+! Arguments
+
+integer ixmlpu
 
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -127,11 +134,11 @@ endif
 !        if =  0   adiabatic model
 !        if =  1   extended model with enthalpy source term
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ippmod(icod3p) = -1
+  ippmod(icod3p) = -1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- coebu: Eddy-Break Up pre-mixed flame
 ! ==========
@@ -146,11 +153,11 @@ ippmod(icod3p) = -1
 !        if =  3   extended model with enthalpy and mixture fraction transport
 !                   (dilution, thermal losses, etc.)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ippmod(icoebu) = -1
+  ippmod(icoebu) = -1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- colwc: Libby-Williams pre-mixed flame
 ! ==========
@@ -163,11 +170,11 @@ ippmod(icoebu) = -1
 !        if =  4   extended four-peak model, adiabatic
 !        if =  5   extended four-peak model with enthalpy source terms
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ippmod(icolwc) = -1
+  ippmod(icolwc) = -1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- cp3pl: Pulverized coal combustion
 ! ==========
@@ -184,11 +191,11 @@ ippmod(icolwc) = -1
 !        if = 0    module activated
 !        if = 1    with drying
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ippmod(icp3pl) = -1
+  ippmod(icp3pl) = -1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- cpl3c: Pulverized coal with Lagrangian reciprocal approach
 ! ==========
@@ -199,11 +206,11 @@ ippmod(icp3pl) = -1
 !        if = 0    module activated
 !        if = 1    with drying (NOT functional)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ippmod(icpl3c) = -1
+  ippmod(icpl3c) = -1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- cfuel: Heavy fuel oil combustion
 ! ==========
@@ -215,11 +222,11 @@ ippmod(icpl3c) = -1
 !        if = -1   module not activated
 !        if = 0    module activated
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ippmod(icfuel) = -1
+  ippmod(icfuel) = -1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- coal :
 ! ==========
@@ -237,11 +244,11 @@ ippmod(icfuel) = -1
 !        if = 0    module activated
 !        if = 1    with drying
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ippmod(iccoal) = -1
+  ippmod(iccoal) = -1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- compf: Compressible flows
 ! ==========
@@ -249,11 +256,11 @@ ippmod(iccoal) = -1
 !        if = -1   module not activated
 !        if = 0    module activated
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ippmod(icompf) = -1
+  ippmod(icompf) = -1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- eljou: Joule effect
 ! ==========
@@ -264,11 +271,11 @@ ippmod(icompf) = -1
 !        if = 3    Potentiel reel     + CDL Transfo
 !        if = 4    Potentiel complexe + CDL Transfo
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ippmod(ieljou) = -1
+  ippmod(ieljou) = -1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- elarc: Electric arcs
 ! ==========
@@ -277,11 +284,11 @@ ippmod(ieljou) = -1
 !        if = 1    electric potential
 !        if = 2    electric potential and vector potential (hence 3D modelling)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ippmod(ielarc) = -1
+  ippmod(ielarc) = -1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- atmos: Atmospheric flows
 ! ==========
@@ -291,11 +298,11 @@ ippmod(ielarc) = -1
 !        if = 1    dry atmosphere
 !        if = 2    humid atmosphere (experimental)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ippmod(iatmos) = -1
+  ippmod(iatmos) = -1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- aeros: Cooling towers
 ! ==========
@@ -305,44 +312,14 @@ ippmod(iatmos) = -1
 !        if = 1    Poppe's model
 !        if = 2    Merkel's model
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ippmod(iaeros) = -1
+  ippmod(iaeros) = -1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
-
-!===============================================================================
-! 2.  Specific physics module not available at the moment
-!===============================================================================
-
-! WARNING: The following modules ARE NOT functional!
-! =======
-
-! --- cobml: Premix model of Bray - Moss - Libby
-! ==========
-
-!        if = -1   module not activated
-
-ippmod(icobml) = -1
-
-! --- codeq: Diffusion flame with fast equilibrium chemistry
-! ==========
-
-!        if = -1   module not activated
-
-ippmod(icodeq) = -1
-
-! --- elion: Ionic mobility
-! ==========
-
-!        if = -1   module not activated
-
-ippmod(ielion) = -1
-
+endif
 
 !===============================================================================
-! 3.  Specific options related to herebefore modules
+! 2.  Specific options related to herebefore modules
 !===============================================================================
 
 ! These options are defined here at the moment, this might change in the future
@@ -352,11 +329,11 @@ ippmod(ielion) = -1
 !       if = 0   user-specified
 !       if = 1   tabulated by JANAF (default)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-indjon = 1
+  indjon = 1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- Kinetic model for NOx formation
 
@@ -365,11 +342,11 @@ indjon = 1
 !         if = 0  unused
 !         if = 1  activated
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ieqnox = 0
+  ieqnox = 0
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- Kinetic model for CO <=> CO2
 
@@ -379,11 +356,11 @@ ieqnox = 0
 !         if = 1  transport of CO2 mass fraction
 !         if = 2  transport of CO mass fraction
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ieqco2 = 0
+  ieqco2 = 0
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- Heteregoneous combustion by CO2
 
@@ -393,11 +370,11 @@ ieqco2 = 0
 !         if = 0  unused
 !         if = 1  activated
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-ihtco2 = 0
+  ihtco2 = 0
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 !----
 ! Formats
@@ -416,7 +393,7 @@ end subroutine
 
 subroutine usipph &
 !================
- ( iihmpu, nfecra , iturb , irccor , icp )
+ ( ixmlpu, nfecra , iturb , irccor , icp )
 
 
 !===============================================================================
@@ -430,7 +407,7 @@ subroutine usipph &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
+! ixmlpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! iturb            ! ia ! <-> ! turbulence model                               !
@@ -456,7 +433,7 @@ implicit none
 
 ! Arguments
 
-integer iihmpu, nfecra
+integer ixmlpu, nfecra
 integer iturb, irccor, icp
 
 ! Local variables
@@ -471,7 +448,7 @@ integer iturb, irccor, icp
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if (iihmpu.eq.1) then
+if (ixmlpu.eq.1) then
   return
 else
   write(nfecra,9000)
@@ -511,46 +488,49 @@ endif
 
 !     If we are using the Code_Saturne GUI:
 
-!       we will find in the user subroutines commented examples
-!       on the model of the present section.
+!       parameters protected by a test of the form:
 
-!       If necessary, the user may uncomment them and adapt them to
-!       his needs.
+!       if (ixmlpu.eq.0) then
+!          ...
+!       endif
+
+!       should already have been defined using the GUI, so only
+!       experts should consider removing the test and adapting them here.
 
 !===============================================================================
 
 ! --- Turbulence
-!       0...Laminar
-!      10...Mixing length
-!      20...k-epsilon
-!      21...k-epsilon (linear production)
-!      30...Rij-epsilon, (standard LRR)
-!      31...Rij-epsilon (SSG)
-!      32...Rij-epsilon (EBRSM)
-!      40...LES (Smagorinsky)
-!      41...LES (Dynamic)
-!      42...LES (WALE)
-!      50...v2f (phi-model)
-!      51...v2f (BL-v2/k)
-!      60...k-omega SST
-!      70...Spalart Allmaras
+!       0: Laminar
+!      10: Mixing length
+!      20: k-epsilon
+!      21: k-epsilon (linear production)
+!      30: Rij-epsilon, (standard LRR)
+!      31: Rij-epsilon (SSG)
+!      32: Rij-epsilon (EBRSM)
+!      40: LES (Smagorinsky)
+!      41: LES (Dynamic)
+!      42: LES (WALE)
+!      50: v2f (phi-model)
+!      51: v2f (BL-v2/k)
+!      60: k-omega SST
+!      70: Spalart Allmaras
 !  For 10, contact the development team before use
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-iturb = 21
+  iturb = 21
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- Rotation/curvature correction for eddy-viscosity turbulence models
-!      0...desactivated
-!      1...activated
+!      0: deactivated
+!      1: activated
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (.false.) then
 
-irccor = 0
+  irccor = 1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- Variable specific heat (ICP=1) or not (ICP=0)
 
@@ -566,11 +546,11 @@ irccor = 0
 !     =========   if and only if variable Cp has been selected here
 !                 (with icp=1)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-icp = 0
+  icp = 0
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 !----
 ! Formats
@@ -587,7 +567,7 @@ end subroutine
 subroutine usinsc &
 !================
 
- ( iihmpu, nfecra , nscaus )
+ ( ixmlpu, nfecra , nscaus )
 
 
 !===============================================================================
@@ -601,7 +581,7 @@ subroutine usinsc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
+! ixmlpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! nscaus           ! i  ! <-> ! number of user scalars                         !
@@ -626,7 +606,7 @@ implicit none
 
 ! Arguments
 
-integer iihmpu, nfecra
+integer ixmlpu, nfecra
 integer nscaus
 
 ! Local variables
@@ -642,7 +622,7 @@ integer nscaus
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if (iihmpu.eq.1) then
+if (ixmlpu.eq.1) then
   return
 else
   write(nfecra,9000)
@@ -710,11 +690,11 @@ endif
 
 !     Set nscaus = 0 if there is no user scalar.
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (ixmlpu.eq.0) then
 
-nscaus = 0
+  nscaus = 0
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 !----
 ! Formats
@@ -731,7 +711,7 @@ end subroutine
 subroutine usipsc &
 !================
 
- ( nscmax, nscaus, iihmpu, nfecra, iscavr, ivisls )
+ ( nscmax, nscaus, ixmlpu, nfecra, iscavr, ivisls )
 
 
 !===============================================================================
@@ -748,7 +728,7 @@ subroutine usipsc &
 !__________________!____!_____!________________________________________________!
 ! nscmax           ! i  ! <-- ! maximum number of scalars                      !
 ! nscaus           ! i  ! <-- ! number of user scalars                         !
-! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
+! ixmlpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! iscavr(nscmax)   ! ia ! <-- ! associated scalar number for variance scalars  !
@@ -774,12 +754,12 @@ implicit none
 
 ! Arguments
 
-integer nscmax, nscaus, iihmpu, nfecra
+integer nscmax, nscaus, ixmlpu, nfecra
 integer iscavr(nscmax), ivisls(nscmax)
 
 ! Local variables
 
-integer iutile, iscal
+integer iscal
 
 !===============================================================================
 
@@ -791,7 +771,7 @@ integer iutile, iscal
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if (iihmpu.eq.1) then
+if (ixmlpu.eq.1) then
   return
 else
   write(nfecra,9000)
@@ -861,12 +841,7 @@ endif
 !       the corresponding information is given automatically, and
 !       iscavr should not be modified.
 
-
-!     The test on iutile allows deactivation of the instructions
-!       (which are only given as an example).
-
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
   iscavr(3) = 2
 endif
 
@@ -888,25 +863,24 @@ endif
 !     Caution:    complete usphyv with the law defining the diffusivity
 !     =========   if and only if ivisls = 1 has been set here.
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (.false.) then
 
-do iscal = 1, nscaus
+  do iscal = 1, nscaus
 
-  ! For user scalars which do not represent the variance of another scalar
-  if (iscavr(iscal).le.0) then
+    ! For user scalars which do not represent the variance of another scalar
+    if (iscavr(iscal).le.0) then
 
-    ivisls(iscal) = 0
+      ivisls(iscal) = 0
 
-  endif
+    endif
 
-enddo
+  enddo
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 !----
 ! Formats
 !----
-
 
 
 return
@@ -921,7 +895,7 @@ subroutine usipgl &
 
  ( nesmax,                                                        &
    iespre, iesder, iescor, iestot,                                &
-   iihmpu, nfecra,                                                &
+   ixmlpu, nfecra,                                                &
    idtvar, ipucou, idilat, iphydr, ialgce , iescal ,              &
    icwfps, cwfthr )
 
@@ -942,7 +916,7 @@ subroutine usipgl &
 ! iesder           ! i  ! <-- ! number of the derivative error estimator       !
 ! iescor           ! i  ! <-- ! number of the correction error estimator       !
 ! iestot           ! i  ! <-- ! number of the total error estimator            !
-! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
+! ixmlpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! idtvar           ! i  ! --> ! variable time step flag                        !
@@ -980,7 +954,7 @@ implicit none
 
 integer nesmax
 integer iespre, iesder, iescor, iestot
-integer iihmpu, nfecra
+integer ixmlpu, nfecra
 integer idtvar, ipucou, idilat, iphydr, ialgce
 integer iescal(nesmax)
 integer icwfps
@@ -999,7 +973,7 @@ double precision cwfthr
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if (iihmpu.eq.1) then
+if (ixmlpu.eq.1) then
   return
 else
   write(nfecra,9000)
@@ -1052,21 +1026,16 @@ endif
 !                 2 : variable in time and space
 !                -1 : steady algorithm)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-idtvar = 0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
+if (.false.) then
+  idtvar = 0
+endif
 
 ! --- Velocity/pressure coupling (0 : classical algorithm,
 !                                 1 : transient coupling)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-ipucou = 0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+if (.false.) then
+  ipucou = 0
+endif
 
 ! Algorithm to take into account the density variation in time
 !
@@ -1076,38 +1045,27 @@ ipucou = 0
 !              3 : low-Mach algorithm
 !
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-idilat = 1
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
+if (.false.) then
+  idilat = 1
+endif
 
 ! --- Handling of hydrostatic pressure
 !                               (0 : usual algorithm
 !                                1 : specific handling)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-iphydr = 0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
+if (.false.) then
+  iphydr = 1
+endif
 
 ! --- Estimators for Navier-Stokes (non-frozen velocity field)
 !     We recommend running a calculation restart on a few time steps
 !       with the activation of the most interesting of those.
 !        (=2 to activate, =0 to deactivate).
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-!       div(rho u) -Gamma
-iescal(iescor) = 0
-!       resolution precision for the momentum
-iescal(iestot) = 0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
+if (.false.) then
+  iescal(iescor) = 2   ! div(rho u) -Gamma
+  iescal(iestot) = 2   ! resolution precision for the momentum
+endif
 
 ! --- Triangulate warped faces:
 !       If cwfthr is positive, faces whose warping angle are greater than
@@ -1116,18 +1074,14 @@ iescal(iestot) = 0
 !       If icwfps = 1, additional postprocessing will be activated to
 !         show faces before and after cutting.
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-icwfps = 0
-cwfthr= -1.d0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
+if (.false.) then
+  icwfps = 0
+  cwfthr= -1.d0
+endif
 
 !----
 ! Formats
 !----
-
 
 return
 end subroutine
@@ -1193,7 +1147,7 @@ integer nmodpp
 
 ! Local variables
 
-integer iutile, ii, jj, imom
+integer ii, jj, imom
 
 !===============================================================================
 
@@ -1256,33 +1210,34 @@ endif
 ! Calculation options (optcal)
 ! ============================
 
-!     In case of restart, read auxiliary restart file ileaux (= 1) or not (0).
+! In case of restart, read auxiliary restart file ileaux (= 1) or not (0).
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+! By default, this file is read, but it may be useful to deactivate
+! its use when restarting after a preprocessing stage possibly leading
+! to a different number of faces (such as simply joining meshes on
+! a different architecture or optimization level or with different options).
 
-ileaux = 1
+! Writing of auxiliary restart files may also be deactivated using: iecaux = 0
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+if (.false.) then
+  ileaux = 0
+endif
 
 ! --- Duration
 !       ntmabs = absolute number of the last time step required
 !         if we have already run 10 time steps and want to
 !         run 10 more, ntmabs must be set to 10 + 10 = 20
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-ntmabs = 10
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+if (.false.) then
+  ntmabs = 10
+endif
 
 ! --- Reference time step
 !     The example given below is probably not adapted to your case.
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-dtref  = 0.01d0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+if (.false.) then
+  dtref  = 0.01d0
+endif
 
 ! --- Maximum time step: dtmax
 !     Set a value base on characteristic values of your case.
@@ -1297,9 +1252,7 @@ dtref  = 0.01d0
 !     dtmax = min(Ld/Ud, sqrt(Lt/(g.Delta_rho/rho)))
 
 
-
 ! --- Temperature or enthalpy
-
 
 
 !   When specific physics are activated (coal, combustion, electric arcs)
@@ -1337,73 +1290,64 @@ dtref  = 0.01d0
 
 ! --- Segregated or coupled solver for the velocity components:
 !       0 for the segregated solver
-!       1 for the coupled solver
+!       1 for the coupled solver (default)
 !
 !     The coupled solver may improve the accuracy and the robustness of the
 !     simulation in case of periodicity of rotation, Corriolis source terms.
 !     It implicits the wall shear stress.
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-ivelco = 0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+if (.false.) then
+  ivelco = 0
+endif
 
 ! --- Solver taking a pscalar porosity into account:
 !       0 No porosity taken into account (Standard)
 !       1 Porosity taken into account
 !
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (.false.) then
+  iporos = 1
+endif
 
-iporos = 0
+if (.false.) then
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+  if (nmodpp.eq.0 .and. nscaus.gt.0) then
 
+    ! Number of the scalar representing temperature or enthalpy,
+    !   or -1 if there is none.
+    ! When the choice is done by the Code_Saturne GUI, the scalar representing
+    !   the temperature or enthalpy is always the first.
 
-if (nmodpp.eq.0) then
+    iscalt = -1
 
-  ! Number of the scalar representing temperature or enthalpy,
-  !   or -1 if there is none.
-  ! When the choice is done by the Code_Saturne GUI, the scalar representing
-  !   the temperature or enthalpy is always the first.
+    ! If there is a temperature or enthalpy variable:
+    if (iscalt.gt.0) then
+      ! we indicate if it is the temperature (=1) or the enthalpy (=2).
+      iscsth(iscalt) = 1
+    endif
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-  iscalt = -1
-
-! If there is a temperature or enthalpy variable:
-  if (iscalt.gt.0) then
-    ! we indicate if it is the temperature (=1) or the enthalpy (=2).
-    iscsth(iscalt) = 1
   endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 endif
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 ! --- Calculation (restart) with frozen velocity field (1 yes, 0 no)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-iccvfg = 0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+if (.false.) then
+  iccvfg = 1
+endif
 
 ! --- Vortex method for inlet conditions in L.E.S.
 !       (0: not activated,  1: activated)
 !     The vortex method only regards the L.E.S. models
 !     To use the vortex method, edit the 'usvort.f90' user file.
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (.false.) then
 
-if (itytur.eq.4) then
-  ivrtex = 0
+  if (itytur.eq.4) then
+    ivrtex = 1
+  endif
+
 endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Convective scheme
 
@@ -1430,20 +1374,18 @@ endif
 !         the corresponding information is set automatically elsewhere:
 !         we do not modify blencv here.
 
+if (.false.) then
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+  blencv(iu) = 1.0d0
+  blencv(iv) = 1.0d0
+  blencv(iw) = 1.0d0
+  if (nscaus.ge.1) then
+    do ii = 1, nscaus
+      blencv(isca(ii)) = 1.0d0
+    enddo
+  endif
 
-blencv(iu) = 1.0d0
-blencv(iv) = 1.0d0
-blencv(iw) = 1.0d0
-if (nscaus.ge.1) then
-  do ii = 1, nscaus
-    blencv(isca(ii)) = 1.0d0
-  enddo
 endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 
 ! --- Linear solver parameters (for each unknown)
 
@@ -1458,8 +1400,7 @@ endif
 !     nitmax: maximum number of iterations for each unknown ivar
 !     epsilo: relative precision for the solution of the linear system.
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   iresol(iu) = 2
   iresol(iv) = 2
@@ -1476,12 +1417,10 @@ endif
 
 ! --- Algebraic multigrid parameters
 
-!     imgr = 0: no multigrid
-!     imgr = 1: algebraic multigrid
+! imgr = 0: no multigrid
+! imgr = 1: algebraic multigrid
 
-!     Only available for pressure and purely diffusive variables.
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+! Only available for pressure and purely diffusive variables.
 
 ! mltmmn = 300  ! mean number of cells under which merging takes place
 ! mltmgl = 500  ! global number of cells under which merging takes place
@@ -1491,9 +1430,9 @@ endif
 !               ! 1: loop over faces to coarsen in criteria order
 !               ! 3: loop over faces to coarsen in Hilbert order
 
-imgr(ipr) = 1
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+if (.false.) then
+  imgr(ipr) = 1
+endif
 
 
 !=========================================================================
@@ -1513,11 +1452,7 @@ imgr(ipr) = 1
 !                                  and ircflu(iep)  = 0
 !     (note that variable itytur is equal to iturb/10)
 
-!     The test on iutile allows deactivation of the instructions
-!       (which are only given as an example).
-
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   if (itytur.eq.2) then
     ircflu(ik)   = 0
@@ -1532,13 +1467,13 @@ endif
 
 ! --- gravity (g in m/s2, with the sign in the calculation coordinate axes).
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (.false.) then
 
-gx = 0.d0
-gy = 0.d0
-gz = 0.d0
+  gx = 0.d0
+  gy = 0.d0
+  gz = 0.d0
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- rotation vector of the reference frame (omega in s-1)
 
@@ -1548,15 +1483,15 @@ gz = 0.d0
 !                 = 1: rotation is taken into account by Coriolis source terms
 !                      (simulation in the relative frame)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (.false.) then
 
-icorio = 0
+  icorio = 0
 
-omegax = 0.d0
-omegay = 0.d0
-omegaz = 0.d0
+  omegax = 0.d0
+  omegay = 0.d0
+  omegaz = 0.d0
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- Reference fluid properties
 
@@ -1660,52 +1595,48 @@ omegaz = 0.d0
 !         xyzp0 is not useful because the pressure variable directly
 !             represents the total pressure.
 
+if (.false.) then
+  ro0    = 1.17862d0
+  viscl0 = 1.83337d-5
+  cp0    = 1017.24d0
+endif
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (.false.) then
+  t0 = 20.d0 + 273.15d0
+  p0 = 1.01325d5
+endif
 
-ro0    = 0.235d0
-viscl0 = 0.84d-6
-cp0    = 1219.d0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
-t0 = 1000.d0 + 273.15d0
-p0 = 1.01325d5
 ! We only specify XYZ0 if we explicitely fix Dirichlet conditions
 ! for the pressure.
-! xyzp0(1) = 0.d0
-! xyzp0(2) = 0.d0
-! xyzp0(3) = 0.d0
 
+if (.false.) then
+  xyzp0(1) = 0.d0
+  xyzp0(2) = 0.d0
+  xyzp0(3) = 0.d0
+endif
 
 ! --- irovar, ivivar: density and viscosity constant or not ?
 
 !     When a specific physics module is active
 !       (coal, combustion, electric arcs, compressible: see usppmo)
-!       we DO NOT set variables 'irovar' and 'ivivar' here, as
+!       we MUST NOT set variables 'irovar' and 'ivivar' here, as
 !       they are defined automatically.
 !     Nonetheless, for the compressible case, ivivar may be modified
 !       in the uscfx1 user subroutine.
 
-!     When no specific physics module is active, it is necessary to
-!       specify if the density and the molecular viscosity
-!         are constant (irovar=0, ivivar=0)
+!     When no specific physics module is active, we may specify if the
+!         density and the molecular viscosity
+!         are constant (irovar=0, ivivar=0), which is the default
 !          or variable (irovar=1, ivivar=1)
 
-!       if they are variable, the law must be defined in usphyv;
+!       if they are variable, the law must be defined in usphyv
+!         (incs_user_physical_properties.f90);
 !       if they are constant, they take values ro0 and viscl0.
 
-!       as an example, we assume below that they are constant.
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-if (nmodpp.eq.0) then
-  irovar = 0
-  ivivar = 0
+if (.false.) then
+  irovar = 1
+  ivivar = 1
 endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 
 ! --- Minimum (scamin) and maximum (scamax) admissible values for
 !        each USER scalar:
@@ -1724,10 +1655,7 @@ endif
 !        model, the information is automatically set elsewhere: we
 !        do not set scamin or scamax.
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-! If there are user scalars
-if (nscaus.gt.0) then
+if (.false.) then
 
   ! Loop on user scalars:
   do jj = 1, nscaus
@@ -1740,8 +1668,6 @@ if (nscaus.gt.0) then
   enddo
 
 endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Reference diffusivity visls0 in kg/(m s) for each
 !        USER scalar except those which represent the variance of another.
@@ -1765,15 +1691,11 @@ endif
 !       - the enthalpy:
 !       visls0(iscalt) = Lambda/Cp
 
-!     Here, as an example, we assign to viscl0 the viscosity of the
-!       carrier phase, which is fitting for passive tracers which
-!       follow the fluid.
+!     Here, as an example, we assign to viscl0 the viscosity of the fluid
+!       phase, which is fitting for passive tracers which follow the fluid
+!       (this is also the default used if not modified here or using the GUI).
 
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-! If there are user scalars
-if (nscaus.gt.0) then
+if (.false.) then
 
   ! We loop on user scalars:
   do jj = 1, nscaus
@@ -1785,8 +1707,6 @@ if (nscaus.gt.0) then
   enddo
 
 endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Define scalar (among nscaus) which are species:
 !     If a user scalar isca represents the species Yk,
@@ -1801,12 +1721,11 @@ endif
 !              The molar mass associated to this species has to be
 !              specified in wmolsp(0).
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
 ! The example set 4 species, the molar mass associated to the last one (not
 ! computed) is stored in  wmolsp(0).
 
-if (nscaus.gt.0) then
+if (.false.) then
+
   iscasp(2) =  1
   wmolsp(2) =  0.032d0
 
@@ -1816,33 +1735,29 @@ if (nscaus.gt.0) then
   iscasp(4) =  1
   wmolsp(4) =  0.016d0
 
-
   wmolsp(0) =  0.028d0
-endif
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! --- Reference velocity for turbulence initialization (m2/s)
 !       (useful only with turbulence)
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-uref    = 1.d0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+if (.false.) then
+  uref = 1.d0
+endif
 
 ! --- Reference length scale in meters for initialization
 !       of epsilon (and specific clipping of turbulence, but
 !       this is not the default option)
 !       Assign a value of the order of the largest dimension of the
 !       physical domain in which the flow may develop.
+!       If a negative value is set here, or no value set and the GUI not
+!       used, the cubic root of the domain will be used.
 !       (useful only for turbulence).
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-almax = -grand
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+if (.false.) then
+  almax = 0.5
+endif
 
 ! --- Definition of moments
 !     (at the most nbmomx moments, correlations of maximum order ndgmox)
@@ -1866,12 +1781,7 @@ almax = -grand
 !       Moment <u> is calculated starting from time step 1000
 !         Moment <rho u v> is calculated from time step 10000.
 
-
-!     The test on iutile allows deactivation of the instructions
-!       (which are only given as an example).
-
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ! First moment: <u>
   imom  = 1
@@ -1890,7 +1800,6 @@ endif
 !----
 ! Formats
 !----
-
 
 return
 end subroutine
@@ -1953,7 +1862,7 @@ integer nmodpp
 
 ! Local variables
 
-integer ii, ipp, imom, iutile
+integer ii, ipp, imom
 
 !===============================================================================
 
@@ -2016,27 +1925,17 @@ endif
 ! 1. Input-output (entsor)
 !===============================================================================
 
-! --- write auxiliary restart file iecaux = 1 yes, 0 no
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-iecaux = 1
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
-
 ! Frequency of log output
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (.false.) then
 
-ntlist = 1
+  ntlist = 1
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+endif
 
 ! Log (listing) verbosity
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   do ii = 1, nvar
     iwarni(ii) = 1
@@ -2049,21 +1948,19 @@ if (iutile.eq.1) then
 
 endif
 
-! --- history output step
+! --- probes output step
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (.false.) then
 
-nthist = 1
-frhist = -1.d0
+  nthist = 1
+  frhist = -1.d0
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
+endif
 
 ! --- Number of monitoring points (probes) and their positions
 !     (limited to ncaptm=100)
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ncapt  = 4
   tplfmt = 1 ! time plot format (1: .dat, 2: .csv, 3: both)
@@ -2100,9 +1997,7 @@ endif
 !     Note: Only the fist 8 characters of a name will be used in the most
 !           detailed log.
 
-
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ! Current dynamic variables
 
@@ -2275,8 +2170,7 @@ endif
 ! By specific physics, we mean only those which are handled in specific
 !   modules of the code, such as coal, combustion, electric arcs (see usppmo).
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   if (isca(1).gt.0.and.nscaus.ge.1) then
     ipp = ipprtp(isca(1))
@@ -2298,8 +2192,7 @@ endif
 
 ! Other variables
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
 
   ! Density variable (output for post-processing only if variable or
   !                   in the case of specific physics)
@@ -2444,8 +2337,6 @@ implicit none
 
 ! Local variables
 
-integer iutile
-
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -2458,18 +2349,14 @@ if (1.eq.1) return
 
 !===============================================================================
 !
-!     Here are some examples that can be adapted and changed by Code Saturne
-!     users.
+! Here are some examples that can be adapted and changed by Code Saturne users.
 !
 !
 ! --- Activation of ALE (Arbitrary Lagrangian Eulerian) method
 
-iutile = 0
-if (iutile.eq.1) then
+if (.false.) then
   iale = 1
 endif
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ! --- Number of iterations for fluid initialization. Contrary to ntmabs (for example)
 !     nalinf is not an absolute iteration number, meaning that in case of
@@ -2477,35 +2364,32 @@ endif
 !     for fuid initialization beginning from the first current iteration of
 !     the calculation restart. In general nalinf = 0 in that case.
 
-nalinf = 75
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (.false.) then
+  nalinf = 75
+endif
 
 ! --- Maximum number of iterations in case of implicit Fluid Structure Coupling
 !     with structural calculations (internal and/or external
 !     (i.e. using Code_Aster)).
 !     NALIMX = 1, in case of explicit FSI algorithm.
 
-nalimx = 15
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (.false.) then
+  nalimx = 15
+endif
 
 ! --- Relative precision of sub-cycling Fluid Structure Coupling algorithm.
-epalim = 1.d-5
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+if (.false.) then
+  epalim = 1.d-5
+endif
 
 ! --- Mesh viscosity modeling (cf. usvima)
 !     0 : isotropic
 !     1 : orthotropic
-iortvm = 0
 
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+if (.false.) then
+  iortvm = 0
+endif
 
 !----
 ! Formats

@@ -324,7 +324,6 @@ implicit none
 integer          nument , nfbent
 integer          nvar   , nscal
 integer          lfbent(nfbent)
-integer          iutile
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
