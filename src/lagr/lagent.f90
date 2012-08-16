@@ -171,8 +171,10 @@ integer, allocatable, dimension(:) :: ninjrg
 integer, allocatable, dimension(:,:,:) :: iusloc
 
 
-double precision unif, offset
+double precision offset
 integer irp, ipart, jj, kk, nfrtot, nlocnew
+
+double precision, dimension(1) :: unif
 
 !===============================================================================
 
@@ -785,7 +787,7 @@ do ii = 1,nfrlag
                   irp = 1
                   offset = surlgrg(nb,irp) / surflag(nb)
 
-156               if (unif.lt.offset) then
+156               if (unif(1).lt.offset) then
 
                      ninjrg(irp) = ninjrg(irp) + 1
                      goto 561
