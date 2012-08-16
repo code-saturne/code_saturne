@@ -22,8 +22,5 @@
 
 #-------------------------------------------------------------------------------
 
-# Add the "tools" directory to enable igghexa_to_med compilation
-
 SUBDIRS = base pre-post util appli
 
-DIST_SUBDIRS = $(SUBDIRS) tools
