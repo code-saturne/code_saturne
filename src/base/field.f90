@@ -1115,7 +1115,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_gey_coefb_v (field_id, p)
+  subroutine field_get_coefb_v (field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1136,7 +1136,7 @@ contains
     call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2), f_dim(3)])
 
-  end subroutine field_gey_coefb_v
+  end subroutine field_get_coefb_v
 
   !=============================================================================
 
