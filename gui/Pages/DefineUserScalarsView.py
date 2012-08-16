@@ -163,12 +163,12 @@ class VarianceNameDelegate(QItemDelegate):
             if new_plabel in model.mdl.getScalarLabelsList():
                 default = {}
                 default['label']  = self.old_plabel
-                default['list']   = model.mdl.getVarianceLabelsList()
+                default['list']   = model.mdl.getScalarLabelsList()
                 default['regexp'] = self.regExp
                 log.debug("setModelData -> default = %s" % default)
 
-                from Pages.VerifyExistenceVarianceLabelDialogView import VerifyExistenceVarianceLabelDialogView
-                dialog = VerifyExistenceVarianceLabelDialogView(self.parent, default)
+                from Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
+                dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()
                     new_plabel = result['label']
