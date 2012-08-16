@@ -73,7 +73,7 @@ SUFFIXES = .ui .qrc _rc.py
 	$(PYUIC4) -o $@ $<
 
 .qrc_rc.py:
-	$(PYRCC4) -root $(pkgpythondir)/Base -py$(PYRCC4VER) -o $@ $<
+	$(PYRCC4) -py$(PYRCC4VER) -o $@ $<
 
 all-local: $(FORMS) $(RESOURCES)
 
