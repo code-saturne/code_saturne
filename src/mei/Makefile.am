@@ -55,4 +55,4 @@ mei_parser_glob.c \
 mei_parser.y \
 mei_scanner.l
 
-libmei_la_LDFLAGS = -no-undefined -version-info 0:0:0
+libmei_la_LDFLAGS = -no-undefined

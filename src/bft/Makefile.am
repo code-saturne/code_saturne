@@ -50,4 +50,4 @@ bft_mem_usage.c \
 bft_printf.c
 
 libbft_la_LIBADD = $(LTLIBINTL)
-libbft_la_LDFLAGS = -no-undefined -version-info 0:0:0
+libbft_la_LDFLAGS = -no-undefined
