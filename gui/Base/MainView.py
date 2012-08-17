@@ -75,6 +75,7 @@ except:
 
 from Pages.WelcomeView import WelcomeView
 from Pages.IdentityAndPathesModel import IdentityAndPathesModel
+from Pages.XMLEditorView import XMLEditorView
 
 
 #-------------------------------------------------------------------------------
@@ -621,7 +622,8 @@ class MainView(object):
         print the case (xml file) on the current terminal
         """
         if hasattr(self, 'case'):
-            print(self.case)
+            dialog = XMLEditorView(self, self.case)
+            dialog.show()
 
 
     def updateStudyId(self):

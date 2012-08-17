@@ -122,7 +122,8 @@ TimeStepView.py \
 TurbulenceModel.py \
 TurbulenceView.py \
 VerifyExistenceLabelDialogView.py \
-WelcomeView.py
+WelcomeView.py \
+XMLEditorView.py
 
 # PyQt User Interface files
 
@@ -189,7 +190,8 @@ TimeStepForm.ui \
 TurbulenceAdvancedOptionsDialogForm.ui \
 TurbulenceForm.ui \
 VerifyExistenceLabelDialogForm.ui \
-WelcomeForm.ui
+WelcomeForm.ui \
+XMLEditorForm.ui
 
 # PyQt Resources files
 
