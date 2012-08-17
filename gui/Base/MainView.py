@@ -40,6 +40,7 @@ This module defines the following classes:
 #-------------------------------------------------------------------------------
 
 import os, sys, string, shutil, signal, logging
+import subprocess, platform
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -608,10 +609,18 @@ class MainView(object):
 
         open an xterm window
         """
-        if hasattr(self, 'case'):
-            os.system('cd  ' + self.case['case_path'] + ' && xterm -sb &')
+        if sys.platform.startswith("win"):
+            cmd = "cmd &"
         else:
-            os.system('xterm -sb&')
+            if hasattr(self, 'case'):
+                cmd = "cd  " + self.case['case_path'] + " && xterm -sb &"
+            else:
+                cmd = "xterm -sb &"
+
+        p = subprocess.Popen(cmd,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
 
 
     @pyqtSignature("")
