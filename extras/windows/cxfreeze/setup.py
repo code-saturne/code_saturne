@@ -31,7 +31,7 @@ from cx_Freeze import setup, Executable
 # ---------------------
 
 # Module search path
-path = sys.path + ["bin", "lib/site-packages/code_saturne"]
+path = sys.path + ["bin", "lib/python2.7/site-packages/code_saturne"]
  
 # Specific modules to be included
 includes = ["sip"]

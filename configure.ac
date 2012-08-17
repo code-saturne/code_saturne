@@ -485,6 +485,28 @@ AC_SUBST(cs_have_frontend)
 AC_ARG_VAR([PYTHON], [the Python interpreter])
 AM_PATH_PYTHON(["2.4"])
 
+# On MinGW hosts, Automake/Python mixes Windows-style and GNU-style paths 
+# It seems better to use the standard way of installing Python modules,
+# as it is on Unix systems (whichever is chosen, Python modules will be
+# freezed by cx_freeze for Windows packaging).
+# So, we choose to override some Python paths.
+if test "$host_os" = mingw32 ; then
+
+  AC_MSG_NOTICE([Overriding Python paths on MinGW hosts])
+
+  am_cv_python_pythondir=\${prefix}/lib/python$PYTHON_VERSION/site-packages
+  AC_MSG_CHECKING([for $PYTHON script directory])
+  pythondir=$am_cv_python_pythondir
+  pkgpythondir=\${pythondir}/$PACKAGE
+  AC_MSG_RESULT([$pythondir])
+
+  am_cv_python_pyexecdir=\${exec_prefix}/lib/python$PYTHON_VERSION/site-packages
+  AC_MSG_CHECKING([for $PYTHON extension module directory])
+  pyexecdir=$am_cv_python_pyexecdir
+  pkgpyexecdir=\${pyexecdir}/$PACKAGE
+  AC_MSG_RESULT([$pyexecdir])
+fi
+
 #------------------------------------------------------------------------------
 # Enables Code_Saturne graphical user interface
 #------------------------------------------------------------------------------
@@ -550,8 +572,16 @@ sys.stdout.write(path)]"
   AC_ARG_VAR([PYUIC4], [PyQt4 user interfaces compiler])
   AC_ARG_VAR([PYRCC4], [PyQt4 resources compiler])
 
-  AC_PATH_PROG([PYUIC4], [pyuic4], [], [${PYPATH}:$PATH])
-  AC_PATH_PROG([PYRCC4], [pyrcc4], [], [${PYPATH}:$PATH])
+  # On MinGW hosts, pyuic4 is a batch file and cannot be run from MSYS.
+  # To bypass this issue, we launch pyuic4 through cmd.exe
+  # with a "standard" PATH.
+  # pyrcc4 does not need this trick as it is a standard executable.
+  if test "$host_os" = mingw32 ; then
+    CMDPYUIC4="cmd //C $PYPATH/Lib/site-packages/PyQt4/pyuic4"
+  fi
+
+  AC_PATH_PROG([PYUIC4], [pyuic4], [$CMDPYUIC4], [${PYPATH}:$PATH])
+  AC_PATH_PROG([PYRCC4], [pyrcc4], [],           [${PYPATH}:$PATH])
 
   if test -z "$ac_cv_path_PYUIC4" -o -z "$ac_cv_path_PYRCC4"; then
     AC_MSG_FAILURE([cannot find PyQt4 dev tools, Graphical User Interface cannot be installed])
