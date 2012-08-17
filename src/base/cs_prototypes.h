@@ -367,6 +367,14 @@ void
 cs_user_join(void);
 
 /*----------------------------------------------------------------------------
+ * Tag bad cells within the mesh based on geometric criteria.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
+                           cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------
  * Define mesh files to read and optional associated transformations.
  *----------------------------------------------------------------------------*/
 
@@ -410,12 +418,14 @@ void
 cs_user_mesh_save(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
- * Tag bad cells within the mesh based on geometric criteria.
+ * Set options for cutting of warped faces
+ *
+ * parameters:
+ *   mesh <-> pointer to mesh structure to smoothe
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
-                           cs_mesh_quantities_t  *mesh_quantities);
+cs_user_mesh_warping(void);
 
 /*----------------------------------------------------------------------------
  * Define advanced partitioning options.

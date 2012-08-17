@@ -221,6 +221,9 @@ cs_run(void)
   cs_gui_mesh_define_periodicities();
   cs_user_periodicity();
 
+  cs_gui_mesh_warping();
+  cs_user_mesh_warping();
+
   /* Call main calculation initialization function or help */
 
   cs_field_define_keys_base();

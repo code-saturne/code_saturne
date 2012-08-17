@@ -317,21 +317,22 @@ _get_periodicity_mixed(int     number,
 }
 
 /*============================================================================
- * Public Fortran function definitions
+ * Public function definitions
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
  * Determine whether warped faces should be cut.
- *
- * subroutine uicwf
- * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uicwf, UICWF) (void)
+void
+cs_gui_mesh_warping(void)
 {
   char  *path = NULL;
   int cut_warped_faces = 0;
   double max_warp_angle = -1;
+
+  if (!cs_gui_file_is_loaded())
+    return;
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "solution_domain", "faces_cutting");
@@ -369,10 +370,6 @@ void CS_PROCF (uicwf, UICWF) (void)
   if (cut_warped_faces && max_warp_angle > 0.0)
     cs_mesh_warping_set_defaults(max_warp_angle, 0);
 }
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
 
 /*-----------------------------------------------------------------------------
  * Define joinings using a GUI-produced XML file.

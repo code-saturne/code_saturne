@@ -896,8 +896,7 @@ subroutine usipgl &
  ( nesmax,                                                        &
    iespre, iesder, iescor, iestot,                                &
    ixmlpu, nfecra,                                                &
-   idtvar, ipucou, idilat, iphydr, ialgce , iescal ,              &
-   icwfps, cwfthr )
+   idtvar, ipucou, idilat, iphydr, ialgce , iescal )
 
 
 !===============================================================================
@@ -929,8 +928,6 @@ subroutine usipgl &
 !                  !    !     !  cell centers                                  !
 ! iescal(nesmax)   ! ia ! <-- ! flag for activation of error estimators for    !
 !                  !    !     ! Navier-Stokes                                  !
-! cwfthr           ! i  ! <-- ! Treshold angle to cut warped faces (do not     !
-!                  !    !     !  cut warped faces if value is negative)        !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -957,9 +954,6 @@ integer iespre, iesder, iescor, iestot
 integer ixmlpu, nfecra
 integer idtvar, ipucou, idilat, iphydr, ialgce
 integer iescal(nesmax)
-integer icwfps
-
-double precision cwfthr
 
 ! Local variables
 
@@ -1065,18 +1059,6 @@ endif
 if (.false.) then
   iescal(iescor) = 2   ! div(rho u) -Gamma
   iescal(iestot) = 2   ! resolution precision for the momentum
-endif
-
-! --- Triangulate warped faces:
-!       If cwfthr is positive, faces whose warping angle are greater than
-!         the given value (in degrees) are subdivided into triangles;
-!       if cwfthr negative, faces are not subdivided.
-!       If icwfps = 1, additional postprocessing will be activated to
-!         show faces before and after cutting.
-
-if (.false.) then
-  icwfps = 0
-  cwfthr= -1.d0
 endif
 
 !----

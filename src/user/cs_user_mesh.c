@@ -74,6 +74,7 @@
 #include "cs_mesh_bad_cells.h"
 #include "cs_mesh_smoother.h"
 #include "cs_mesh_thinwall.h"
+#include "cs_mesh_warping.h"
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_preprocessor_data.h"
@@ -465,6 +466,30 @@ cs_user_periodicity(void)
                                 max_break, max_sub_face,
                                 tml, tmb, tmr, tmr_distrib);
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Set options for cutting of warped faces
+ *
+ * parameters:
+ *   mesh <-> pointer to mesh structure to smoothe
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_mesh_warping(void)
+{
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
+  if (false) {
+
+    double max_warp_angle = 3; /* bounded between 0 and 90 degrees */
+    int postprocess = 0;
+
+    cs_mesh_warping_set_defaults(max_warp_angle,
+                                 postprocess);
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------

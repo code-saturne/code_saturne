@@ -87,9 +87,9 @@ implicit none
 integer          ii, iscal , nmodpp
 integer          nscmax, nesmax, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
-integer          ialgce, icwfps
+integer          ialgce
 integer          iappel, ioptit, ioplsq
-double precision relaxp, extrap, cwfthr
+double precision relaxp, extrap
 
 !===============================================================================
 
@@ -282,11 +282,6 @@ if (iihmpr.eq.1) then
   call csiphy(iphydr)
   !==========
 
-  ! Mesh related options
-
-  call uicwf
-  !=========
-
 endif
 
 !   - Sous-programme utilisateur
@@ -306,19 +301,15 @@ iihmpu = iihmpr
 !     Le blindage en erreur est dans cs_maillage_grd.c (erreur si IALGCE>1,
 !       cs_glob_maillage_grd_cdg_cel inchange si IALGCE<0)
 ialgce = -999
-icwfps = 0     ! Set to 1 to postprocess cutting of warped faces
-cwfthr = -1.d0 ! Threshold (in degrees) to triangulate warped faces if positive
 
 call usipgl                                                       &
 !==========
  ( nesmax ,                                                       &
    ieepre , ieeder , ieecor , ieetot ,                            &
    iihmpu , nfecra ,                                              &
-   idtvar , ipucou , idilat , iphydr , ialgce , iescal ,          &
-   icwfps,  cwfthr )
+   idtvar , ipucou , idilat , iphydr , ialgce , iescal )
 
 if (ialgce.ne.-999) call algcen(ialgce)
-if (cwfthr.ge.0.d0) call setcwf(icwfps, cwfthr)
 
 ! --- Parametres de la methode ALE
 
