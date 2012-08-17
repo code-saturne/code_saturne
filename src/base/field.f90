@@ -265,6 +265,19 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function querying if key value was defined
+
+    function cs_field_is_key_set(f, k_id) result(is_set) &
+      bind(C, name='cs_field_is_key_set')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value    :: f
+      integer(c_int), value :: k_id
+      logical(c_bool)       :: is_set
+    end function cs_field_is_key_set
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function assigning a character string for a given key
     ! to a field.
 
@@ -592,6 +605,41 @@ contains
     return
 
   end subroutine field_map_bc_coeffs
+
+  !=============================================================================
+
+  !> \brief  Query if a given key has been set for a field.
+
+  !> If the key id is not valid, or the field category is not
+  !> compatible, a fatal error is provoked.
+
+  !> \param[in]   f_id     field id
+  !> \param[in]   k_id     id of associated key
+  !> \param[out]  k_value  integer value associated with key id for this field
+
+  subroutine field_is_key_set(f_id, k_id, is_set)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)   :: f_id, k_id
+    logical, intent(out)  :: is_set
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id, c_k_id
+    logical(c_bool) :: c_is_set
+    type(c_ptr) :: f
+
+    c_f_id = f_id
+    c_k_id = k_id
+    f = cs_field_by_id(c_f_id)
+    c_is_set = cs_field_is_key_set(f, k_id)
+    is_set = c_is_set
+
+  end subroutine field_is_key_set
 
   !=============================================================================
 

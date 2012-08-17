@@ -269,7 +269,6 @@ cs_f_field_get_key_str(int           f_id,
  *
  * returns:
  *   pointer to new field.
- *
  *----------------------------------------------------------------------------*/
 
 static cs_field_t *
@@ -541,8 +540,15 @@ _cs_field_free_str(void)
 int
 cs_f_field_id_by_name(const char *name)
 {
-  cs_field_t  *f = cs_field_by_name(name);
-  return f->id;
+  int retval;
+  cs_field_t  *f = cs_field_by_name_try(name);
+
+  if (f != NULL)
+    retval = f->id;
+  else
+    retval = -1;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------
@@ -1551,6 +1557,60 @@ cs_field_key_flag(int key_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Query if a given key has been set for a field.
+ *
+ * If the key id is not valid, or the field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * \param[in]  f       pointer to field structure
+ * \param[in]  key_id  id of associated key
+ *
+ * \return  true if the key has been set for this field, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_field_is_key_set(const cs_field_t  *f,
+                     int               key_id)
+{
+  int errcode = CS_FIELD_OK;
+
+  assert(f->id >= 0 && f->id < _n_fields);
+
+  if (key_id > -1 && key_id < _n_keys) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
+      errcode = CS_FIELD_INVALID_CATEGORY;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
+      bool retval = false;
+      if (kv->is_set)
+        retval = true;
+      return retval;
+    }
+  }
+  else
+    errcode = CS_FIELD_INVALID_KEY_ID;
+
+  if (errcode != CS_FIELD_OK) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
+    if (errcode == CS_FIELD_INVALID_CATEGORY)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" with type flag %d\n"
+                  "has no value associated with key %d (\"%s\")."),
+                f->name, f->type, key_id, key);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field keyword with id %d is not defined."),
+                key_id);
+  }
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Assign a integer value for a given key to a field.
  *
  * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
@@ -2383,6 +2443,7 @@ cs_field_define_keys_base(void)
   cs_field_define_key_str("label", NULL, 0);
 
   cs_field_define_key_int("post_vis", 0, 0);
+  cs_field_define_key_int("log", 0, 0);
   cs_field_define_key_int("coupled", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("moment_dt", -1, CS_FIELD_PROPERTY);
 }

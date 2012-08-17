@@ -444,6 +444,24 @@ int
 cs_field_key_flag(int key_id);
 
 /*----------------------------------------------------------------------------
+ * Query if a given key has been set for a field.
+ *
+ * If the key id is not valid, or the field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * parameters:
+ *   f             <-- pointer to field structure
+ *   key_id <-- id of associated key
+ *
+ * returns:
+ *   true if the key has been set for this field, false otherwise
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_field_is_key_set(const cs_field_t  *f,
+                    int                key_id);
+
+/*----------------------------------------------------------------------------
  * Assign a integer value for a given key to a field.
  *
  * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
