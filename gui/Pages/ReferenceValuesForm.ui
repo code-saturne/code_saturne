@@ -398,7 +398,7 @@
         <item row="0" column="2">
          <widget class="QLineEdit" name="lineEditOxydant">
           <property name="toolTip">
-           <string>Code_Saturne key word: T0</string>
+           <string>Code_Saturne key word: Tinoxy</string>
           </property>
          </widget>
         </item>
@@ -435,7 +435,7 @@
         <item row="1" column="2">
          <widget class="QLineEdit" name="lineEditFuel">
           <property name="toolTip">
-           <string>Code_Saturne key word: T0</string>
+           <string>Code_Saturne key word: Tinfue</string>
           </property>
          </widget>
         </item>
