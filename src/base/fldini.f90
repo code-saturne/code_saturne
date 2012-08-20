@@ -335,11 +335,7 @@ enddo
 do imom = 1, nbmomt
   ! property id matching moment
   iprop = ipproc(icmome(imom))
-  ! dt type and number
-  idtnm = idtmom(imom)
-  if (idtnm.gt.0) then
-    icdtmo(idtnm) = 1
-  elseif(idtnm.lt.0) then
+  if (idtmom(imom).ne.0) then
     iapro(iprop) = 1
   endif
 enddo
