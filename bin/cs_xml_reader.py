@@ -296,7 +296,7 @@ class Parser:
                 data_node = getChildNode(node, 'data_file')
                 if data_node:
                     self.dict['gas_data'] = getDataFromNode(node,
-                                                            'data_node')
+                                                            'data_file')
 
         # Search for user input files
 
