@@ -40,7 +40,7 @@
 #include <stdarg.h>
 #include <time.h>
 
-#if defined(HAVE_GETCWD) || defined(HAVE_SLEEP)
+#if defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
 
@@ -556,6 +556,83 @@ _cs_base_sig_fatal(int  signum)
   bft_backtrace_print(3);
 
   _cs_base_exit(EXIT_FAILURE);
+}
+
+/*----------------------------------------------------------------------------
+ * Return a string providing path information.
+ *
+ * This is normally the path determined upon configuration, but may be
+ * adapted for movable installs using the CS_ROOT_DIR environment variable
+ * or by a guess on the assumed relative path.
+ *----------------------------------------------------------------------------*/
+
+static const char *
+_get_path(const char *dir_path,
+          const char *build_path,
+                char *env_path)
+{
+#if defined(HAVE_RELOCATABLE)
+  {
+    const char *cs_root_dir = NULL;
+    const char *rel_path = NULL;
+
+    /* Allow for displacable install */
+
+    if (env_path != NULL)
+      return env_path;
+
+    /* First try with an environment variable CS_ROOT_DIR */
+
+    if (getenv("CS_ROOT_DIR") != NULL) {
+      cs_root_dir = getenv("CS_ROOT_DIR");
+      rel_path = "/";
+    }
+
+#if defined(HAVE_GETCWD)
+
+    /*
+      Then, try to guess a relative path, knowing that executables can be:
+      - in libexecdir/code_saturne [default]
+      - in bin [windows]
+    */
+
+    else {
+
+      int buf_size = 128;
+      char *buf = NULL;
+
+      while (cs_root_dir == NULL) {
+        buf_size *= 2;
+        BFT_REALLOC(buf, buf_size, char);
+        cs_root_dir = getcwd(buf, buf_size);
+        if (cs_root_dir == NULL && errno != ERANGE)
+          bft_error(__FILE__, __LINE__, errno,
+                    _("Error querying working directory.\n"));
+      }
+
+#if defined(WIN32) || defined(_WIN32)
+      rel_path = "/../";
+#else
+      rel_path = "/../../";
+#endif
+
+    }
+#endif /* defined(HAVE_GETCWD) */
+
+    BFT_MALLOC(env_path,
+               strlen(cs_root_dir) + strlen(rel_path) + strlen(dir_path) + 1,
+               char);
+    strcpy(env_path, cs_root_dir);
+    strcat(env_path, rel_path);
+    strcat(env_path, dir_path);
+
+    return env_path;
+  }
+#endif /* defined(HAVE_RELOCATABLE) */
+
+  /* Standard install */
+
+  return build_path;
 }
 
 #if defined(HAVE_MPI)
@@ -1719,48 +1796,20 @@ cs_base_option_string_clean(char  *s)
 /*----------------------------------------------------------------------------
  * Return a string providing locale path information.
  *
- * This is normally the path determined upon configuration, but may be
- * adapted for movable installs using the CS_ROOT_DIR environment variable.
- *
  * returns:
  *   locale path
  *----------------------------------------------------------------------------*/
 
 const char *
-cs_base_get_localedir()
+cs_base_get_localedir(void)
 {
-  /* Allow for displacable install */
-
-  if (_cs_base_env_localedir != NULL)
-    return _cs_base_env_localedir;
-
-  else if (getenv("CS_ROOT_DIR") != NULL) {
-    const char *cs_root_dir = getenv("CS_ROOT_DIR");
-#if defined(WIN32) && defined(_WIN32)
-    assert(0); /* TODO handle this */
-    return _cs_base_build_localedir;
-#else
-    const char *locale_add = "/share/locale";
-    BFT_MALLOC(_cs_base_env_localedir,
-               strlen(cs_root_dir) + strlen(locale_add) + 1,
-               char);
-    strcpy(_cs_base_env_localedir, cs_root_dir);
-    strcat(_cs_base_env_localedir, locale_add);
-    return _cs_base_env_localedir;
-#endif
-  }
-
-  /* Standard install */
-
-  else
-    return _cs_base_build_localedir;
+  return _get_path("share/locale",
+                   _cs_base_build_localedir,
+                   _cs_base_env_localedir);
 }
 
 /*----------------------------------------------------------------------------
  * Return a string providing package data path information.
- *
- * This is normally the path determined upon configuration, but may be
- * adapted for movable installs using the CS_ROOT_DIR environment variable.
  *
  * returns:
  *   package data path
@@ -1769,31 +1818,9 @@ cs_base_get_localedir()
 const char *
 cs_base_get_pkgdatadir(void)
 {
-  /* Allow for displacable install */
-
-  if (_cs_base_env_pkgdatadir != NULL)
-    return _cs_base_env_pkgdatadir;
-
-  else if (getenv("CS_ROOT_DIR") != NULL) {
-    const char *cs_root_dir = getenv("CS_ROOT_DIR");
-#if defined(WIN32) && defined(_WIN32)
-    assert(0); /* TODO handle this */
-    return _cs_base_build_pkgdatadir;
-#else
-    const char *pkgdata_add = "/share/" PACKAGE_NAME;
-    BFT_MALLOC(_cs_base_env_pkgdatadir,
-               strlen(cs_root_dir) + strlen(pkgdata_add) + 1,
-               char);
-    strcpy(_cs_base_env_pkgdatadir, cs_root_dir);
-    strcat(_cs_base_env_pkgdatadir, pkgdata_add);
-    return _cs_base_env_pkgdatadir;
-#endif
-  }
-
-  /* Standard install */
-
-  else
-    return _cs_base_build_pkgdatadir;
+  return _get_path("share/" PACKAGE_NAME,
+                   _cs_base_build_pkgdatadir,
+                   _cs_base_env_pkgdatadir);
 }
 
 /*----------------------------------------------------------------------------*/

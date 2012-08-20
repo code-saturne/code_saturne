@@ -172,6 +172,9 @@ AC_ARG_ENABLE(relocatable,
 )
 AC_SUBST(relocatable)
 AM_CONDITIONAL(HAVE_RELOCATABLE, [test "${relocatable}" = yes])
+if test "${relocatable}" = yes ; then
+  AC_DEFINE([HAVE_RELOCATABLE], 1, [Relocatable installation])
+fi
 
 # Default compiler options (may be modified
 # by defining CFLAGS in the environment)
