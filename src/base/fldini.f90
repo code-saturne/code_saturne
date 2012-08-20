@@ -210,6 +210,11 @@ elseif (itytur.eq.3) then
   nfld = nfld + 1
   ifvar(nfld) = iep
   fname(nfld) = 'epsilon'
+  if (iturb.eq.32) then
+    nfld = nfld + 1
+    ifvar(nfld) = ial
+    fname(nfld) = 'alphap'
+  endif
 elseif (itytur.eq.5) then
   nfld = nfld + 1
   ifvar(nfld) = ik
@@ -246,7 +251,7 @@ endif
 
 do ii = 1, nfld
   ivar = ifvar(ii)
-  name = nomvar(ipprtp(ivar))
+  name = fname(ii)
   call flddef(name, iinten, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
   !==========
   call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
@@ -267,8 +272,13 @@ if (iale.eq.1) then
   name = 'mesh_velocity'
   call flddef(name, iinten, itycat, ityloc, idim3, ilved, iprev, ivarfl(ivar))
   !==========
+  name = nomvar(ipprtp(iuma))
+  name1 = name(1:32)
+  name = nomvar(ipprtp(ivma))
+  name2 = name(1:32)
+  name = nomvar(ipprtp(iwma))
+  name3 = name(1:32)
   call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
-  !==========
   if (ichrvr(ipprtp(ivar)) .eq. 1) then
     call fldski(ivarfl(ivar), keyvis, iopchr)
     !==========
@@ -391,12 +401,33 @@ itycat = 0
 name = 'dt'
 call flddef(name, iexten, itycat, ityloc, idim1, ilved, inoprv, iflid)
 !==========
+call fldsks(iflid, keylbl, nomvar(ippdt))
+!==========
+if (idtvar.eq.2.and.ichrvr(ippdt).gt.0) then
+  call fldski(iflid, keyvis, ichrvr(ippdt))
+  !==========
+endif
 
 ! Transient velocity/pressure coupling
 
 if (ipucou.ne.0) then
   name = 'tpucou'
   call flddef(name, iexten, itycat, ityloc, idim3, ilved, inoprv, iflid)
+  !==========
+  ! Change label to remove trailing coordinate name
+  name = nomvar(ipptx)
+  name1 = name(1:32)
+  name = nomvar(ippty)
+  name2 = name(1:32)
+  name = nomvar(ipptz)
+  name3 = name(1:32)
+  call fldsnv (name1, name2, name3)
+  !==========
+  call fldsks(iflid, keylbl, name1)
+  !==========
+endif
+if (ichrvr(ipptx).gt.0) then
+  call fldski(iflid, keyvis, ichrvr(ipptx))
   !==========
 endif
 
