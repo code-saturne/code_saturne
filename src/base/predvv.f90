@@ -296,13 +296,13 @@ if (iappel.eq.1.and.iphydr.eq.1) then
     dfrcxt(iel,2) = drom*gy - frcxt(iel,2)
     dfrcxt(iel,3) = drom*gz - frcxt(iel,3)
   enddo
-!     Ajout eventuel des pertes de charges
+  ! Add head losses
   if (ncepdp.gt.0) then
     do ielpdc = 1, ncepdp
       iel=icepdc(ielpdc)
-      vit1   = vela(iel,1)
-      vit2   = vela(iel,2)
-      vit3   = vela(iel,3)
+      vit1   = vela(1,iel)
+      vit2   = vela(2,iel)
+      vit3   = vela(3,iel)
       cpdc11 = ckupdc(ielpdc,1)
       cpdc22 = ckupdc(ielpdc,2)
       cpdc33 = ckupdc(ielpdc,3)
