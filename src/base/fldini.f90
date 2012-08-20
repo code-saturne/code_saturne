@@ -263,6 +263,8 @@ if (iale.eq.1) then
   name2 = name(1:32)
   name = nomvar(ipprtp(iwma))
   name3 = name(1:32)
+  call fldsnv (name1, name2, name3)
+  !==========
   call field_set_key_str(ivarfl(ivar), keylbl, name1)
   if (ichrvr(ipprtp(ivar)) .eq. 1) then
     call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
