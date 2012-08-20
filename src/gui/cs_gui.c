@@ -2521,7 +2521,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
 
       imgr[j] = 0;
 
-      algo_choice = cs_gui_variable_choice(vars->name[i], "solver_choice");
+      algo_choice = cs_gui_variable_choice(vars->label[i], "solver_choice");
       if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
         iresol[j] = 0;
       else if (cs_gui_strcmp(algo_choice, "jacobi"))
@@ -2558,7 +2558,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
 
       imgr[jj] = 0;
 
-      algo_choice = cs_gui_variable_choice(vars->name[0], "solver_choice");
+      algo_choice = cs_gui_variable_choice(vars->label[j], "solver_choice");
       if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
         iresol[jj] = 0;
       else if (cs_gui_strcmp(algo_choice, "jacobi"))
