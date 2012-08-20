@@ -90,7 +90,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
 
         if model == 'd3p':
             self.modelGasCombustionOption.addItem(self.tr("adiabatic model"), "adiabatic")
-            self.modelGasCombustionOption.addItem(self.tr("extended model with enthalpy source term"), "extended")
+            self.modelGasCombustionOption.addItem(self.tr("non adiabatic model"), "extended")
         elif model == 'ebu':
             self.modelGasCombustionOption.addItem(self.tr("reference Spalding model"), "spalding")
             self.modelGasCombustionOption.addItem(self.tr("extended model with enthalpy source term"), "enthalpy_st")

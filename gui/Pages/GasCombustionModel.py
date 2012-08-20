@@ -139,6 +139,8 @@ class GasCombustionModel(Variables, Model):
         node_prop   = self.case.xmlGetNode('physical_properties')
         node_fluid  = node_prop.xmlInitNode('fluid_properties')
 
+        old_model = self.node_gas['model']
+
         if model == 'off':
             self.node_gas['model'] = model
             ThermalRadiationModel(self.case).setRadiativeModel('off')
@@ -150,7 +152,7 @@ class GasCombustionModel(Variables, Model):
                     node.xmlRemoveNode()
             for zone in LocalizationModel('BoundaryZone', self.case).getZones():
                 if zone.getNature() == "inlet":
-                    Boundary("gas_comb_inlet", zone.getLabel(), self.case).deleteGas()
+                    Boundary("inlet", zone.getLabel(), self.case).deleteGas()
 
             node_fluid.xmlRemoveChild('property', name='dynamic_diffusion')
 
@@ -160,6 +162,11 @@ class GasCombustionModel(Variables, Model):
             self.node_joule['model'] = 'off'
             self.node_therm['model'] = 'off'
             self.setNewFluidProperty(node_fluid, 'dynamic_diffusion')
+
+            if old_model != model:
+                for zone in LocalizationModel('BoundaryZone', self.case).getZones():
+                    if zone.getNature() == "inlet":
+                        Boundary("inlet", zone.getLabel(), self.case).deleteGas()
 
         if model != 'd3p':
             self.node_reference.xmlRemoveChild('oxydant_temperature')

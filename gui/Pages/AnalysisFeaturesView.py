@@ -125,9 +125,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelAtmospheric.addItem(self.tr("humid atmosphere"), "humid")
 
         self.modelGasCombustionModel.addItem(self.tr("off"), "off")
-        self.modelGasCombustionModel.addItem(self.tr("premixed flame (Eddy Break-Up)"), "ebu")
-        self.modelGasCombustionModel.addItem(self.tr("equilibrium chemistry diffusion flame (Presumed PDF)"), "d3p")
-        self.modelGasCombustionModel.addItem(self.tr("premixed flame (Libby_Williams)"), "lwp")
+        self.modelGasCombustionModel.addItem(self.tr("perfect premixed flame (Eddy Break-Up)"), "ebu")
+        self.modelGasCombustionModel.addItem(self.tr("infinitely fast chemistry diffusion flame"), "d3p")
+        self.modelGasCombustionModel.addItem(self.tr("partial premixed flame (Libby_Williams)"), "lwp")
 
         self.modelPulverizedCoal.addItem(self.tr("off"), "off")
         self.modelPulverizedCoal.addItem(self.tr("homogeneous approach"), "homogeneous_fuel")
