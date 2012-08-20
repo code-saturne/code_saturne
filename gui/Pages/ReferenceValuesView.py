@@ -133,12 +133,12 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
             self.groupBoxTemperature.show()
             self.labelInfoT0.hide()
             self.groupBoxMassMolar.hide()
+        elif model == "comp" or model == "coal":
+            self.groupBoxTemperature.show()
+            self.groupBoxMassMolar.show()
         elif model != "off":
             self.groupBoxTemperature.show()
-            self.groupBoxMassMolar.show()
-        elif model == "comp":
-            self.groupBoxTemperature.show()
-            self.groupBoxMassMolar.show()
+            self.groupBoxMassMolar.hide()
         else:
             self.groupBoxTemperature.hide()
             self.groupBoxMassMolar.hide()
