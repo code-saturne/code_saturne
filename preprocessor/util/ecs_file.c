@@ -883,7 +883,7 @@ ecs_file_flush(ecs_file_t  *f)
 
   else if (f->gzptr != NULL) {
 
-    retval = gzflush(f->ptr, Z_FULL_FLUSH);
+    retval = gzflush(f->gzptr, Z_FULL_FLUSH);
 
     if (retval != 0)
       ecs_error(__FILE__, __LINE__, 0,
