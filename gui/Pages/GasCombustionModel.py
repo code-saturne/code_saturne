@@ -370,6 +370,25 @@ class GasCombustionModel(Variables, Model):
         self.__createModelProperties(model)
 
 
+    def getThermoChemistryDataFileName(self):
+        """
+        Get name for properties data (return None if not defined)i
+        """
+        n = self.node_gas.xmlGetNode('data_file')
+        name = None
+        if  n:
+            name = n['choice']
+        return name
+
+
+    def setThermoChemistryDataFileName(self, name):
+        """
+        Put name for properties data and load file for number gaz and radiative model
+        """
+        n = self.node_gas.xmlInitNode('data_file')
+        n['choice'] = name
+
+
 #-------------------------------------------------------------------------------
 # Gas combustion test case
 #-------------------------------------------------------------------------------

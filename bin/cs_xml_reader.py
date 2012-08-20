@@ -291,6 +291,13 @@ class Parser:
                         self.dict['meteo_data'] = getDataFromNode(node,
                                                                   'meteo_data')
 
+            node = getChildNode(th_models, 'gas_combustion')
+            if node:
+                data_node = getChildNode(node, 'data_file')
+                if data_node:
+                    self.dict['gas_data'] = getDataFromNode(node,
+                                                            'choice')
+
         # Search for user input files
 
         user_data = []

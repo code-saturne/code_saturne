@@ -31,7 +31,7 @@ This module contains the following classes and function:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import logging
+import logging, os
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -48,6 +48,7 @@ from Base.Toolbox import GuiParam
 from GasCombustionForm import Ui_GasCombustionForm
 import Base.QtPage as QtPage
 from Pages.GasCombustionModel import GasCombustionModel
+from Base.QtPage import setGreenColor
 
 #-------------------------------------------------------------------------------
 # log config
@@ -84,6 +85,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
 
         # Connections
         self.connect(self.comboBoxGasCombustionOption, SIGNAL("activated(const QString&)"), self.slotGasCombustionOption)
+        self.connect(self.pushButtonThermochemistryData, SIGNAL("pressed()"), self.__slotSearchThermochemistryData)
 
         # Initialize Widgets
         model = self.mdl.getGasCombustionModel()
@@ -107,6 +109,13 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         option = self.mdl.getGasCombustionOption()
         self.modelGasCombustionOption.setItem(str_model= option)
 
+        name = self.mdl.getThermoChemistryDataFileName()
+        if name != None:
+            self.labelThermochemistryFile.setText(QString(name))
+            setGreenColor(self.pushButtonThermochemistryData, False)
+        else:
+            setGreenColor(self.pushButtonThermochemistryData, True)
+
 
     @pyqtSignature("const QString&")
     def slotGasCombustionOption(self, text):
@@ -116,6 +125,29 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         option = self.modelGasCombustionOption.dicoV2M[str(text)]
         self.mdl.setGasCombustionOption(option)
+
+
+    @pyqtSignature("")
+    def __slotSearchThermochemistryData(self):
+        """
+        Select a properties file of data for electric arc
+        """
+        data = self.case['data_path']
+        title = self.tr("Thermochemistry file of data.")
+        filetypes = self.tr("Thermochemistry (*dp_*);;All Files (*)")
+        file = QFileDialog.getOpenFileName(self, title, data, filetypes)
+        file = str(file)
+        if not file:
+            return
+        file = os.path.basename(file)
+        if file not in os.listdir(data):
+            title = self.tr("WARNING")
+            msg   = self.tr("This selected file is not in the DATA directory")
+            QMessageBox.information(self, title, msg)
+        else:
+            self.labelThermochemistryFile.setText(QString(file))
+            self.mdl.setThermoChemistryDataFileName(file)
+            setGreenColor(self.pushButtonThermochemistryData, False)
 
 
     def tr(self, text):

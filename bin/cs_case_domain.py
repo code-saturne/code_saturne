@@ -404,6 +404,7 @@ class domain(base_domain):
         self.thermochemistry_data = None
         self.solidfuel_data = None
         self.meteo_data = None
+        self.gas_data = None
 
         self.user_input_files = None
         self.user_scratch_files = None
@@ -706,6 +707,11 @@ class domain(base_domain):
             # Second copy so as to have correct name upon backup
             if self.meteo_data != 'meteo':
                 self.copy_data_file(self.meteo_data)
+
+        if self.gas_data != None:
+            self.copy_data_file(self.gas_data,
+                                'dp_thch',
+                                'thermochemistry')
 
         # Presence of user input files
 

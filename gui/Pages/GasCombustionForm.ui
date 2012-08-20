@@ -25,7 +25,7 @@
   <property name="autoFillBackground">
    <bool>true</bool>
   </property>
-  <layout class="QGridLayout" name="gridLayout_2">
+  <layout class="QGridLayout" name="gridLayout_3">
    <item row="0" column="0">
     <spacer name="horizontalSpacer">
      <property name="orientation">
@@ -57,10 +57,10 @@
      <property name="title">
       <string>Gas Combustion Option</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout">
+     <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="0">
-       <layout class="QHBoxLayout" name="horizontalLayout">
-        <item>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
          <spacer>
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -68,26 +68,85 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>13</width>
-            <height>98</height>
+            <height>36</height>
            </size>
           </property>
          </spacer>
         </item>
-        <item>
+        <item row="0" column="1">
          <widget class="QComboBox" name="comboBoxGasCombustionOption"/>
         </item>
-        <item>
+        <item row="0" column="2" colspan="2">
          <spacer>
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
-            <width>13</width>
-            <height>98</height>
+            <width>98</width>
+            <height>36</height>
            </size>
           </property>
          </spacer>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QLabel" name="labelMeteoData">
+          <property name="text">
+           <string>thermochemistry data file: </string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QPushButton" name="pushButtonThermochemistryData">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="../../../../../../../../netdata/I51157/Version_electrique/saturne_trunk/gui/Pages/resources_pages.qrc">
+            <normaloff>:/new/prefix1/icons/22x22/document-open.png</normaloff>:/new/prefix1/icons/22x22/document-open.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>22</width>
+            <height>22</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3">
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>13</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="2" column="0" colspan="4">
+         <widget class="QLabel" name="labelThermochemistryFile">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -122,6 +181,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../../../../../../../netdata/I51157/Version_electrique/saturne_trunk/gui/Pages/resources_pages.qrc"/>
+ </resources>
  <connections/>
 </ui>
