@@ -45,7 +45,6 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import XMLmodel, ModelTest
-from Pages.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # Model class
@@ -61,26 +60,40 @@ class FluidCharacteristicsModel(Variables, Model):
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_prop   = self.case.xmlGetNode('physical_properties')
         self.node_fluid  = self.node_prop.xmlInitNode('fluid_properties')
-        self.node_comp = self.node_models.xmlInitNode('compressible_model')
+        self.node_comp   = self.node_models.xmlInitNode('compressible_model', 'model')
+        self.node_gas    = self.node_models.xmlInitNode('gas_combustion',     'model')
+        self.node_coal   = self.node_models.xmlInitNode('solid_fuels',        'model')
 
         self.node_density   = self.setNewFluidProperty(self.node_fluid, 'density')
         self.node_viscosity = self.setNewFluidProperty(self.node_fluid, 'molecular_viscosity')
         self.node_heat      = self.setNewFluidProperty(self.node_fluid, 'specific_heat')
         self.node_cond      = self.setNewFluidProperty(self.node_fluid, 'thermal_conductivity')
-        self.node_dyn       = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')
-        self.nodeList = (self.node_density, self.node_viscosity,
-                         self.node_heat, self.node_cond, self.node_dyn)
-        if CompressibleModel(self.case).getCompressibleModel() != 'off':
-            self.node_vol_visc  = self.setNewFluidProperty(self.node_fluid, 'volumic_viscosity')
-            self.nodeList = (self.node_density, self.node_viscosity,
-                             self.node_heat, self.node_cond,
-                             self.node_vol_visc, self.node_dyn)
 
 
     def __nodeFromTag(self, name):
         """
         Private method : return node with attibute name 'name'
         """
+        if self.node_coal['model'] != None and self.node_coal['model'] != 'off':
+            self.node_dyn = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')
+            self.nodeList = (self.node_density, self.node_viscosity,
+                             self.node_heat, self.node_dyn)
+
+        elif self.node_gas['model'] != None and self.node_gas['model'] != 'off':
+            self.node_dyn = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')
+            self.nodeList = (self.node_density, self.node_viscosity,
+                             self.node_heat, self.node_dyn)
+
+        elif self.node_comp['model'] != None and self.node_comp['model'] != 'off':
+            self.node_vol_visc  = self.setNewFluidProperty(self.node_fluid, 'volumic_viscosity')
+            self.node_dyn = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')
+            self.nodeList = (self.node_density, self.node_viscosity,
+                             self.node_heat, self.node_vol_visc, self.node_dyn)
+        else:
+            self.node_cond      = self.setNewFluidProperty(self.node_fluid, 'thermal_conductivity')
+            self.nodeList = (self.node_density, self.node_viscosity,
+                             self.node_heat, self.node_cond)
+
         for node in self.nodeList:
             if node['name'] == name:
                 return node

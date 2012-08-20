@@ -136,6 +136,8 @@ class GasCombustionModel(Variables, Model):
         Update the gas combustion model markup from the XML document.
         """
         self.isInList(model, self.gasCombustionModelsList())
+        node_prop   = self.case.xmlGetNode('physical_properties')
+        node_fluid  = node_prop.xmlInitNode('fluid_properties')
 
         if model == 'off':
             self.node_gas['model'] = model
@@ -150,11 +152,14 @@ class GasCombustionModel(Variables, Model):
                 if zone.getNature() == "inlet":
                     Boundary("gas_comb_inlet", zone.getLabel(), self.case).deleteGas()
 
+            node_fluid.xmlRemoveChild('property', name='dynamic_diffusion')
+
         else:
             self.node_gas['model'] = model
             self.node_coal['model']  = 'off'
             self.node_joule['model'] = 'off'
             self.node_therm['model'] = 'off'
+            self.setNewFluidProperty(node_fluid, 'dynamic_diffusion')
 
         if model != 'd3p':
             self.node_reference.xmlRemoveChild('oxydant_temperature')

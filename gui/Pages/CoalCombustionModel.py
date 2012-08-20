@@ -70,13 +70,6 @@ class CoalCombustionModel(Variables, Model):
 
         self.coalCombustionModel = ('off', 'homogeneous_fuel', 'homogeneous_fuel_moisture')
 
-        self.ModelVariables =  ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP"]
-        self.ModelProperties = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                                "Ga_DV1",  "Ga_DV2", "Ga_HET_O2"]
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
-            self.ModelVariables.append("XWT_CP")
-            self.ModelProperties.append("Ga_SEC")
-
 
     def defaultValues(self):
         """
@@ -164,6 +157,37 @@ class CoalCombustionModel(Variables, Model):
         return coalCombustionList
 
 
+    def __getVariableList(self):
+        """
+        Private method
+        Create list of variables for a class
+        """
+        modelVariables =  ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP"]
+        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
+            modelVariables.append("XWT_CP")
+
+        return modelVariables
+
+
+    def __getPropertiesList(self):
+        """
+        Private method
+        Create list of properties for a class
+        """
+        modelProperties = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
+                                "Ga_DV1",  "Ga_DV2", "Ga_HET_O2"]
+        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
+            modelProperties.append("Ga_SEC")
+
+        if self.getCO2KineticsStatus() == 'on':
+            modelProperties.append("Ga_HET_CO2")
+
+        if self.getH2OKineticsStatus() == 'on':
+            modelProperties.append("Ga_HET_H2O")
+
+        return modelProperties
+
+
     def __createModelVariableList(self):
         """
         Private method
@@ -184,7 +208,7 @@ class CoalCombustionModel(Variables, Model):
                 lst.append(name)
 
         # list of class variables
-        baseNames = self.ModelVariables
+        baseNames = self.__getVariableList()
         for baseName in baseNames:
             for classe in range(0, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
@@ -277,13 +301,7 @@ class CoalCombustionModel(Variables, Model):
                "YM_H2S", "YM_H2", "YM_HCN", "YM_NH3", "YM_SO2",
                "XM", "Bilan_C", "Bilan_O", "Bilan_H"]
 
-        if self.getCO2KineticsStatus() == 'on':
-            self.ModelProperties.append("Ga_HET_CO2")
-
-        if self.getH2OKineticsStatus() == 'on':
-            self.ModelProperties.append("Ga_HET_H2O")
-
-        baseNames = self.ModelProperties
+        baseNames = self.__getPropertiesList()
 
         for baseName in baseNames:
             for classe in range(0, classesNumber):
@@ -332,14 +350,14 @@ class CoalCombustionModel(Variables, Model):
         self.__createModelProperties()
 
 
-    def __updateWetScalarsAndProperty(self):
+    def __updateWetScalarsAndProperty(self, model):
         """
         Private method
         Delete scalars XWT_CP and Fr_H20 and property Ga_SEC
         if model isn't 'homogeneous_fuel_moisture'
         """
         # TODO a supprimer doit etre appele si on change le modele uniquement
-        if self.getCoalCombustionModel() != 'homogeneous_fuel_moisture':
+        if model != 'homogeneous_fuel_moisture':
             nod = self.node_fuel.xmlGetNode('scalar', type="model", name="FR_H20")
             if nod:
                 nod.xmlRemoveNode()
@@ -356,33 +374,14 @@ class CoalCombustionModel(Variables, Model):
         Private method
         Update the coal combustion model markup from the XML document.
         """
-        # TODO : a revoir pas necessaire a priori
         self.isInList(model, self.__coalCombustionModelsList())
 
         mdl = FluidCharacteristicsModel(self.case)
 
-        if model == 'off':
-            w = mdl.node_density.xmlGetDouble('initial_value')
-
-            if w == None:
-                v = mdl.defaultFluidCharacteristicsValues()['density']
-                mdl.node_density.xmlSetData('initial_value',v)
-                mdl.setPropertyMode('density', 'constant')
-                mdl.node_density.xmlInitNode('listing_printing', status='off')
-                mdl.node_density.xmlInitNode('postprocessing_recording', status='off')
-
-                v = mdl.defaultFluidCharacteristicsValues()['thermal_conductivity']
-                mdl.node_cond.xmlSetData('initial_value',v)
-                mdl.setPropertyMode('thermal_conductivity', 'constant')
-                mdl.node_cond.xmlInitNode('listing_printing', status='off')
-                mdl.node_cond.xmlInitNode('postprocessing_recording', status='off')
-
-        else:
+        if model != 'off':
             mdl.setPropertyMode('density', 'variable')
-            mdl.node_density.xmlRemoveChild('initial_value')
-            mdl.node_density.xmlRemoveChild('listing_printing')
-            mdl.node_density.xmlRemoveChild('postprocessing_recording')
-            mdl.node_cond.xmlRemoveNode()
+            if mdl.getPropertyMode('density') == 'constant':
+                mdl.setPropertyMode('density', 'variable')
 
 
     def __createCoalModelScalars(self, coalsNumber, coalClassesNumber, classesNumber):
@@ -391,7 +390,7 @@ class CoalCombustionModel(Variables, Model):
         Create new scalars for one coal
         """
         # add new scalars
-        baseNames = self.ModelVariables
+        baseNames = self.__getVariableList()
 
         for baseName in baseNames:
             for classe in range(classesNumber - coalClassesNumber, classesNumber):
@@ -410,7 +409,7 @@ class CoalCombustionModel(Variables, Model):
         Create new properties for one coal
         """
         # create new properties
-        baseNames = self.ModelProperties
+        baseNames = self.__getPropertiesList()
 
         for baseName in baseNames:
             for classe in range(classesNumber - coalClassesNumber, classesNumber):
@@ -423,7 +422,7 @@ class CoalCombustionModel(Variables, Model):
         Private method
         Create class of model properties
         """
-        baseNames = self.ModelProperties
+        baseNames = self.__getPropertiesList()
 
         # Rename other classes
         nodeList = self.node_fuel.xmlGetNodeList('property')
@@ -449,7 +448,7 @@ class CoalCombustionModel(Variables, Model):
         Private method
         Create a new coal and associated scalars
         """
-        baseNames = self.ModelVariables
+        baseNames = self.__getVariableList()
 
         # Rename other classes
         nodeList = self.node_fuel.xmlGetNodeList('scalar')
@@ -477,14 +476,13 @@ class CoalCombustionModel(Variables, Model):
         self.isInList(model, self.__coalCombustionModelsList())
 
         self.node_fuel['model']  = model
-        self.__updateScalarAndProperty()
+        self.__updateScalarAndProperty(model)
 
-    def __updateScalarAndProperty(self):
+
+    def __updateScalarAndProperty(self, model):
         """
         Update scalars and properties depending on model
         """
-        model = self.getCoalCombustionModel()
-
         if model == 'off':
             for tag in ('scalar',
                         'property',
@@ -510,8 +508,8 @@ class CoalCombustionModel(Variables, Model):
             self.createOxidant()
             self.createCoalModelScalarsAndProperties()
 
-            if self.getCoalCombustionModel() != 'homogeneous_fuel_moisture':
-                self.__updateWetScalarsAndProperty()
+            if model != 'homogeneous_fuel_moisture':
+                self.__updateWetScalarsAndProperty(model)
 
 
     def getCoalCombustionModel(self):
@@ -613,7 +611,7 @@ class CoalCombustionModel(Variables, Model):
         classesNumber = self.getClassesNumber()
 
         # list of variables for a class
-        baseNames = self.ModelVariables
+        baseNames = self.__getVariableList()
 
         # Remove coal classes
         nodeList = self.node_fuel.xmlGetNodeList('scalar')
@@ -657,7 +655,7 @@ class CoalCombustionModel(Variables, Model):
         classesNumber = self.getClassesNumber()
 
         # list of properties for a class
-        baseNames = self.ModelProperties
+        baseNames = self.__getPropertiesList()
 
         # Remove coal classes
         nodeList = self.node_fuel.xmlGetNodeList('property')

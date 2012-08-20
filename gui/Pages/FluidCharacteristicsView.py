@@ -54,6 +54,8 @@ from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.ReferenceValuesModel import ReferenceValuesModel
 from Pages.CompressibleModel import CompressibleModel
+from Pages.CoalCombustionModel import CoalCombustionModel
+from Pages.GasCombustionModel import GasCombustionModel
 from Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
@@ -148,14 +150,22 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                     ('molecular_viscosity', 'Mu'),
                     ('specific_heat', 'Cp'),
                     ('volumic_viscosity', 'Viscv0'),
-                    ('thermal_conductivity', 'Al'),
+                    ('dynamic_diffusion', 'Diftl0')]
+        elif CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
+            list = [('density', 'Rho'),
+                    ('molecular_viscosity', 'Mu'),
+                    ('specific_heat', 'Cp'),
+                    ('dynamic_diffusion', 'Diftl0')]
+        elif GasCombustionModel(self.case).getGasCombustionModel() != 'off':
+            list = [('density', 'Rho'),
+                    ('molecular_viscosity', 'Mu'),
+                    ('specific_heat', 'Cp'),
                     ('dynamic_diffusion', 'Diftl0')]
         else:
             list = [('density', 'Rho'),
                     ('molecular_viscosity', 'Mu'),
                     ('specific_heat', 'Cp'),
-                    ('thermal_conductivity', 'Al'),
-                    ('dynamic_diffusion', 'Diftl0')]
+                    ('thermal_conductivity', 'Al')]
 
         self.list_scalars = []
         self.m_sca = DefineUserScalarsModel(self.case)
