@@ -278,7 +278,10 @@ if (iale.eq.1) then
   name2 = name(1:32)
   name = nomvar(ipprtp(iwma))
   name3 = name(1:32)
-  call fldsks(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
+  call fldsnv (name1, name2, name3)
+  !==========
+  call fldsks(ivarfl(ivar), keylbl, name1)
+  !==========
   if (ichrvr(ipprtp(ivar)) .eq. 1) then
     call fldski(ivarfl(ivar), keyvis, iopchr)
     !==========
