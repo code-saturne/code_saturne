@@ -852,6 +852,9 @@ do ifac = 1, nfabor
     uiptmx = max(uiptn*iuntur,uiptmx)
     if (uiptn*iuntur.lt.-epzero) iuiptn = iuiptn + 1
 
+    ! To be coherent with a wall function, clip it to 0
+    cofimp = max(cofimp, 0.d0)
+
     if (itytur.eq.3) then
       hint =  visclc          /distbf
     else
