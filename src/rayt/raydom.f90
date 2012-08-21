@@ -100,6 +100,7 @@ use ppincl
 use cpincl
 use radiat
 use ihmpre
+use dimens, only: ndimfb
 use mesh
 
 !===============================================================================
@@ -110,15 +111,15 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          itypfb(nfabor)
-integer          icodcl(nfabor,nvar)
-integer          izfrad(nfabor)
+integer          itypfb(ndimfb)
+integer          icodcl(ndimfb,nvar)
+integer          izfrad(ndimfb)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision rcodcl(nfabor,nvar,3)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision rcodcl(ndimfb,nvar,3)
+double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 
@@ -154,14 +155,14 @@ save       ipadom
 !===============================================================================
 
 ! Allocate temporary arrays for the radiative equations resolution
-allocate(viscf(nfac), viscb(nfabor))
+allocate(viscf(nfac), viscb(ndimfb))
 allocate(smbrs(ncelet), rovsdt(ncelet))
 
 ! Allocate specific arrays for the radiative transfert module
 allocate(tempk(ncelet,nrphas))
-allocate(coefap(nfabor), coefbp(nfabor))
-allocate(cofafp(nfabor), cofbfp(nfabor))
-allocate(flurds(nfac), flurdb(nfabor))
+allocate(coefap(ndimfb), coefbp(ndimfb))
+allocate(cofafp(ndimfb), cofbfp(ndimfb))
+allocate(flurds(nfac), flurdb(ndimfb))
 
 ! Allocate work arrays
 allocate(ckmel(ncelet))

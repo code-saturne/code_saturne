@@ -111,6 +111,7 @@ use ppppar
 use ppthch
 use ppincl
 use radiat
+use dimens, only: ndimfb
 use mesh
 
 !===============================================================================
@@ -122,16 +123,16 @@ implicit none
 integer          nvar   , nscal
 integer          isvhb  , isvtb
 
-integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor), itypfb(nfabor)
-integer          izfrad(nfabor)
+integer          icodcl(ndimfb,nvar)
+integer          itrifb(ndimfb), itypfb(ndimfb)
+integer          izfrad(ndimfb)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision rcodcl(nfabor,nvar,3)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision hbord(nfabor),tbord(nfabor)
+double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision rcodcl(ndimfb,nvar,3)
+double precision coefa(ndimfb,*), coefb(ndimfb,*)
+double precision hbord(ndimfb),tbord(ndimfb)
 
 ! Local variables
 
