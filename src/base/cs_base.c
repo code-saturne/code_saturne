@@ -569,7 +569,7 @@ _cs_base_sig_fatal(int  signum)
 static const char *
 _get_path(const char  *dir_path,
           const char  *build_path,
-	  char        *env_path)
+          char        *env_path)
 {
 #if defined(HAVE_RELOCATABLE)
   {
