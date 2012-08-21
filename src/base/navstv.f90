@@ -939,6 +939,7 @@ if (nterup.gt.1) then
 
   icvrge = 1
 
+  xnrmu = 0.d0
   !$omp parallel do reduction(+:xnrmu0) private(xdu, xdv, xdw)
   do iel = 1,ncel
     xdu = vel(1,iel) - uvwk(1,iel)
