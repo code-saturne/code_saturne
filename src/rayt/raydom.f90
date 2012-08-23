@@ -138,6 +138,7 @@ double precision hint, qimp, xit, pimp
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
+double precision, allocatable, dimension(:) :: dcp
 double precision, allocatable, dimension(:) :: ckmel
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:) :: tempk
@@ -884,6 +885,20 @@ if (idverl.ge.0) then
                                  + propce(iel,ipproc(iemi(1)))
   enddo
 
+  ! Allocate work arrays
+  allocate(dcp(ncelet))
+
+  !--> 1/Cp is stored in dcp
+  if (icp.gt.0) then
+    do iel = 1,ncel
+      dcp(iel) = 1.d0/propce(iel,ipproc(icp))
+    enddo
+  else
+    do iel = 1,ncel
+      dcp(iel) = 1.d0/cp0
+    enddo
+  endif
+
   !--> Terme source implicite,
   !    (il faudra multiplier ce terme par VOLUME(IEL) dans COVOFI->RAYSCA)
   if (ippmod(icod3p).eq.-1 .and. ippmod(icoebu).eq.-1) then
@@ -891,7 +906,7 @@ if (idverl.ge.0) then
     do iel = 1, ncel
       propce(iel,ipproc(itsri(1))) =                         &
        -16.d0*propce(iel,ipproc(icak(1))) *stephn *          &
-         (tempk(iel,1)**3)
+         (tempk(iel,1)**3) * dcp(iel)
     enddo
 
   else
@@ -900,10 +915,12 @@ if (idverl.ge.0) then
     do iel = 1, ncel
       propce(iel,ipproc(itsri(1))) =                         &
        -16.d0*stephn*propce(iel,ipproc(icak(1)))*            &
-           propce(iel,ipproc(it3m))
+           propce(iel,ipproc(it3m)) * dcp(iel)
     enddo
 
   endif
+
+  deallocate(dcp)
 
   ! Combustion CP : On rajoute la contribution des particules
   if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
