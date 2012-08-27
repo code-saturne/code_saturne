@@ -157,8 +157,6 @@ typedef struct {
 
 } cs_field_key_val_t;
 
-/*! \endcond (end ignore by Doxygen) */
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -201,10 +199,8 @@ static const char *_type_flag_name[] = {N_("intensive"),
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, whith function bodies).
+ * (descriptions follow, with function bodies).
  *============================================================================*/
-
-/*! \cond 0 (start ignore by Doxygen) */
 
 int
 cs_f_field_id_by_name(const char *name);
@@ -520,7 +516,7 @@ _cs_field_free_str(void)
 }
 
 /*============================================================================
- * Public Fortran function definitions
+ * Fortran wrapper function definitions
  *============================================================================*/
 
 /*! \cond 0 (start ignore by Doxygen) */
