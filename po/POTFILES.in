@@ -88,6 +88,7 @@ src/base/cs_syr4_coupling.c
 src/base/cs_syr_coupling.c
 src/base/cs_system_info.c
 src/base/cs_time_plot.c
+src/base/cs_time_step.c
 src/base/cs_timer.c
 src/base/cs_tpar1d.c
 src/base/cs_ventil.c

@@ -26,6 +26,8 @@ module optcal
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
   use paramx
 
   !=============================================================================
@@ -248,36 +250,40 @@ module optcal
   integer, save :: isuite , ileaux, iecaux, iscold(nscamx),        &
                    isuit1 , isuict, isuivo, isuisy
 
-  ! Gestion des pas de temps
-  !   ntpabs : pas de temps precedent absolu
-  !   ntcabs : pas de temps courant   absolu
-  !   ntmabs : pas de temps max       absolu
-  !   ttpabs :        temps precedent absolu
-  !   ttcabs :        temps courant   absolu
-  !   ttmabs :        temps max       absolu
-  !   inpdt0 : indicateur "zero pas de temps"
+  ! Time step
 
-  !   ntmabs = numero absolu du dernier pas de temps desire
-  !            si on a deja fait 10 pas de temps
-  !              et qu'on veut en faire 10 autres,
-  !              il faut affecter 10 + 10 = 20 a ntmabs
-  !   ntpabs = numero relu dans le fichier suite
-  !   ntcabs = incremente au debut du pas de temps
-  !              et donc initialise a ntpabs
-  !   inpdt0 = 1 pour ne faire aucun pas de temps (0 sinon)
-  !              pour les calculs non suite :
-  !                on saute uniquement les resolutions (Navier-Stokes,
-  !                  turbulence, scalaires...)
-  !              pour les calculs suite :
-  !                on saute les resolutions (navier-stokes,
-  !                  turbulence, scalaires...) et le calcul des proprietes
-  !                  physiques, les conditions aux limites (les grandeurs
-  !                  sont lues dans le fichier suite)
+  !> Absolute time step number for previous calculation.
+  integer(c_int), pointer, save :: ntpabs
 
-  integer, save ::          ntpabs, ntcabs, ntmabs, inpdt0
-  double precision, save :: ttpabs, ttcabs
+  !> Current absolute time step number.
+  !> In case of restart, this is equal to ntpabs + number of new iterations.
+  integer(c_int), pointer, save :: ntcabs
+
+  !> Maximum absolute time step number.
+  integer(c_int), pointer, save :: ntmabs
+
+  !> Absolute time value for previous calculation.
+  real(c_double), pointer, save :: ttpabs
+
+  !> Current absolute time.
+  !> In case of restart, this is equal to ttpabs + additional computed time.
+  real(c_double), pointer, save :: ttcabs
+
+  !> Maximum absolute time.
+  real(c_double), pointer, save :: ttmabs
 
   ! Option pas de temps
+  !   inpdt0 : indicateur "zero pas de temps"
+  !     = 0 : calcul standard
+  !     = 1 : pour ne faire aucun pas de temps (0 sinon)
+  !             pour les calculs non suite :
+  !               on saute uniquement les resolutions (Navier-Stokes,
+  !               turbulence, scalaires...)
+  !             pour les calculs suite :
+  !               on saute les resolutions (navier-stokes,
+  !               turbulence, scalaires...) et le calcul des proprietes
+  !               physiques, les conditions aux limites (les grandeurs
+  !               sont lues dans le fichier suite)
   !   idtvar : pas de temps variable
   !     = -1 : algorithme stationnaire
   !     =  0 : pas de temps constant
@@ -298,7 +304,7 @@ module optcal
   !   relaxv : relaxation des variables (1 pas de relax)
   !   relxst : coefficient de relaxation de base stationnaire
 
-  integer, save ::          idtvar,iptlro
+  integer, save ::          inpdt0, idtvar,iptlro
   double precision, save :: dtref,coumax,foumax,                  &
                             dtmin,dtmax ,varrdt,cdtvar(nvarmx),   &
                             relaxv(nvarmx), relxst
@@ -571,6 +577,68 @@ module optcal
   !          = 0 on ne calcule pas les efforts aux parois
 
   integer, save :: ineedf
+
+  !=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global time step structure
+
+    subroutine cs_f_time_step_get_pointers(nt_prev, nt_cur, nt_max,  &
+                                           t_prev, t_cur, t_max)     &
+      bind(C, name='cs_f_time_step_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: nt_prev, nt_cur, nt_max
+      type(c_ptr), intent(out) :: t_prev, t_cur, t_max
+    end subroutine cs_f_time_step_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> \endcond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran time step API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine time_step_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_ntpabs, c_ntcabs, c_ntmabs
+    type(c_ptr) :: c_ttpabs, c_ttcabs, c_ttmabs
+
+    call cs_f_time_step_get_pointers(c_ntpabs, c_ntcabs, c_ntmabs, &
+                                     c_ttpabs, c_ttcabs, c_ttmabs)
+
+    call c_f_pointer(c_ntpabs, ntpabs)
+    call c_f_pointer(c_ntcabs, ntcabs)
+    call c_f_pointer(c_ntmabs, ntmabs)
+
+    call c_f_pointer(c_ttpabs, ttpabs)
+    call c_f_pointer(c_ttcabs, ttcabs)
+    call c_f_pointer(c_ttmabs, ttmabs)
+
+  end subroutine time_step_init
 
   !=============================================================================
 
