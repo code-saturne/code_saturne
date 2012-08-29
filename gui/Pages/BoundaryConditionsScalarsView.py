@@ -82,7 +82,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         Setup the widget
         """
-        self.case = case
+        self.__case = case
         self.__boundary = None
 
         self.connect(self.lineEditValueThermal, SIGNAL("textChanged(const QString &)"), self.slotValueThermal)
@@ -125,8 +125,8 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.__boundary = boundary
 
         self.nature  = boundary.getNature()
-        self.therm   = ThermalScalarModel(self.case)
-        self.sca_mo  = DefineUserScalarsModel(self.case)
+        self.therm   = ThermalScalarModel(self.__case)
+        self.sca_mo  = DefineUserScalarsModel(self.__case)
 
         self.modelTypeThermal = ComboModel(self.comboBoxTypeThermal, 1, 1)
         self.modelTypeSpecies = ComboModel(self.comboBoxTypeSpecies, 1, 1)
@@ -324,7 +324,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         Show the widget
         """
-        if DefineUserScalarsModel(self.case).getScalarLabelsList():
+        if DefineUserScalarsModel(self.__case).getScalarLabelsList():
             self.__setBoundary(boundary)
             self.show()
         else:
@@ -410,10 +410,12 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.__case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotThermalFormula -> %s" % str(result))
@@ -436,10 +438,12 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.__case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotSpeciesFormula -> %s" % str(result))
@@ -462,10 +466,12 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.__case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotMeteoFormula -> %s" % str(result))

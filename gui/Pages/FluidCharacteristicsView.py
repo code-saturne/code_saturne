@@ -582,10 +582,12 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         symbols_rho.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
         symbols_rho.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
-        dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = symbols_rho,
-                                     examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = symbols_rho,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
@@ -617,10 +619,12 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
             ref_temperature = ReferenceValuesModel(self.case).getTemperature()
             symbols_mu.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
 
-        dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = symbols_mu,
-                                     examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = symbols_mu,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
@@ -645,10 +649,12 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         symbols_cp.append(('cp0', 'Specific heat (reference value) = ' + str(cp0_value)))
         symbols_cp.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
-        dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = symbols_cp,
-                                     examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = symbols_cp,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
@@ -674,10 +680,12 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         symbols_viscv0.append(('p0', 'Reference pressure = '+str(ref_pressure)+' Pa'))
         symbols_viscv0.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
         symbols_viscv0.append(('T', 'Temperature'))
-        dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = symbols_viscv0,
-                                     examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = symbols_viscv0,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaViscv0 -> %s" % str(result))
@@ -702,10 +710,12 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         symbols_al.append(('lambda0', 'Thermal conductivity (reference value) = ' + str(lambda0_value)))
         symbols_al.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
-        dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = symbols_al,
-                                     examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = symbols_al,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
@@ -728,10 +738,12 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         sym.append((str(self.scalar),str(self.scalar)))
         diff0_value = self.m_sca.getScalarDiffusivityInitialValue(self.scalar)
         sym.append((str(name)+'_ref', str(self.scalar)+' diffusion coefficient (reference value) = '+str(diff0_value)+' m^2/s'))
-        dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDiff -> %s" % str(result))

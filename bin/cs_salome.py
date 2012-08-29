@@ -89,9 +89,9 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH;
         run_cmd = "${KERNEL_ROOT_DIR}/bin/salome/envSalome.py python ${KERNEL_ROOT_DIR}/bin/salome/runSalome.py"
 
     cmd = template % {'salomeenv': cfg.salome_env,
-                      'prefix': pkg.prefix,
-                      'pythondir': pkg.pythondir,
-                      'pkgpythondir': pkg.pkgpythondir,
+                      'prefix': pkg.get_dir('prefix'),
+                      'pythondir': pkg.get_dir('pythondir'),
+                      'pkgpythondir': pkg.get_dir('pkgpythondir'),
                       'runsalome': run_cmd,
                       'modules': default_modules}
 

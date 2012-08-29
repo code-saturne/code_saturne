@@ -239,10 +239,12 @@ eps = ustar2^1.5/(kappa*dh*0.1);"""
                    ('t','time'),
                    ('dt','time step'),
                    ('iter','number of time step')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.__case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -300,10 +302,12 @@ R23 = 0;
                    ('t','time'),
                    ('dt','time step'),
                    ('iter','number of time step')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.__case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -363,10 +367,12 @@ alpha =  1.;
                    ('t','time'),
                    ('dt','time step'),
                    ('iter','number of time step')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.__case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -416,10 +422,12 @@ fb = 0;"""
                    ('t','time'),
                    ('dt','time step'),
                    ('iter','number of time step')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.__case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -465,10 +473,12 @@ omega = eps/(cmu * k);"""
                    ('t','time'),
                    ('dt','time step'),
                    ('iter','number of time step')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.__case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -513,10 +523,12 @@ nusa = eps/(cmu * k);"""
                    ('t','time'),
                    ('dt','time step'),
                    ('iter','number of time step')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.__case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))

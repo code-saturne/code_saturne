@@ -31,6 +31,7 @@ except Exception:
 import datetime
 import os
 import os.path
+import platform
 import sys
 import stat
 
@@ -476,7 +477,7 @@ class case:
         r = exec_env.resources
 
         date = (datetime.datetime.now()).strftime("%A %B %d %H:%M:%S CEST %Y")
-        t_uname = os.uname()
+        t_uname = platform.uname()
         s_uname = ''
         for t in t_uname:
             s_uname = s_uname + t + ' '
@@ -495,7 +496,7 @@ class case:
             cmd += ' ' + arg
         s.write('  Command        : ' + cmd + '\n')
         s.write(dhline)
-        s.write('  Package path   : ' + self.package.exec_prefix + '\n')
+        s.write('  Package path   : ' + self.package.get_dir('exec_prefix') + '\n')
         s.write(hline)
         if homard_prefix != None:
             s.write('  HOMARD          : ' + homard_prefix + '\n')
@@ -596,7 +597,13 @@ class case:
         """
         Determine name of solver script file.
         """
-        return os.path.join(self.exec_dir, 'run_solver.sh')
+
+        if sys.platform.startswith('win'):
+            script = 'run_solver.bat'
+        else:
+            script = 'run_solver.sh'
+
+        return os.path.join(self.exec_dir, script)
 
     #---------------------------------------------------------------------------
 
@@ -863,14 +870,13 @@ class case:
         s_path = self.solver_script_path()
         s = open(s_path, 'w')
 
-        user_shell = cs_exec_environment.get_shell_type()
-
-        s.write('#!' + user_shell + '\n\n')
+        cs_exec_environment.write_shell_shebang(s)
 
         # Add detection and handling of SALOME YACS module if run from
-        # this environment.
+        # this environment (only available on Linux platforms).
 
-        yacs_test = \
+        if sys.platform.startswith('linux'):
+            yacs_test = \
 """
 # Detect and handle running under SALOME YACS module.
 YACS_ARG=
@@ -878,7 +884,7 @@ if test "$SALOME_CONTAINERNAME" != "" -a "$CFDRUN_ROOT_DIR" != "" ; then
   YACS_ARG="--yacs-module=${CFDRUN_ROOT_DIR}"/lib/salome/libCFD_RunExelib.so
 fi
 """
-        s.write(yacs_test + '\n')
+            s.write(yacs_test + '\n')
 
         # Set environment modules if necessary
 
@@ -890,22 +896,24 @@ fi
 
         # Add MPI directories to PATH if in nonstandard path
 
-        s.write('# Export paths here if necessary or recommended.\n')
+        cs_exec_environment.write_script_comment(s,
+            'Export paths here if necessary or recommended.\n')
         if len(self.package_compute.mpi_bindir) > 0:
-            s.write('export PATH='+ self.package_compute.mpi_bindir + ':$PATH\n')
+            cs_exec_environment.write_prepend_path(s, 'PATH',
+                self.package_compute.mpi_bindir)
         if len(self.package_compute.mpi_libdir) > 0:
-            s.write('export LD_LIBRARY_PATH='+ self.package_compute.mpi_libdir \
-                        + ':$LD_LIBRARY_PATH\n')
+            cs_exec_environment.write_preprend_path(s, 'LD_LIBRARY_PATH',
+                self.package_compute.mpi_libdir)
         s.write('\n')
 
         # Boot MPI daemons if necessary
 
         if mpi_env.gen_hostsfile != None:
-            s.write('# Generate hostsfile.\n')
+            cs_exec_environment.write_script_comment(s, 'Generate hostsfile.\n')
             s.write(mpi_env.gen_hostsfile + ' || exit $?\n\n')
 
         if n_procs > 1 and mpi_env.mpiboot != None:
-            s.write('# Boot MPI daemons.\n')
+            cs_exec_environment.write_script_comment(s, 'Boot MPI daemons.\n')
             s.write(mpi_env.mpiboot + ' || exit $?\n\n')
 
         # Start assembling command
@@ -939,9 +947,12 @@ fi
             s_args = self.domains[0].solver_command()
 
             s.write('cd ' + s_args[0] + '\n\n')
-            s.write('# Run solver.\n')
-            s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2]
-                    + ' $YACS_ARGS' + ' $@\n')
+            cs_exec_environment.write_script_comment(s, 'Run solver.\n')
+            s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2])
+            if sys.platform.startswith('linux'):
+                s.write(' $YACS_ARGS')
+            s.write(' ' + cs_exec_environment.get_script_positional_args() +
+                    '\n')
 
         # General case
 
@@ -971,19 +982,23 @@ fi
 
         # Obtain return value (or sum thereof)
 
-        s.write('\nCS_RET=$?\n')
+        cs_exec_environment.write_export_env(s, 'CS_RET',
+                                             cs_exec_environment.get_script_return_code())
 
         # Halt MPI daemons if necessary
 
         if n_procs > 1 and mpi_env.mpihalt != None:
-            s.write('\n# Halt MPI daemons.\n')
+            cs_exec_environment.write_script_comment(s, 'Halt MPI daemons.\n')
             s.write(mpi_env.mpihalt + '\n\n')
 
         if mpi_env.del_hostsfile != None:
-            s.write('# Remove hostsfile.\n')
+            cs_exec_environment.write_script_comment(s, 'Remove hostsfile.\n')
             s.write(mpi_env.del_hostsfile + '\n\n')
 
-        s.write('\nexit $CS_RET\n\n')
+        if sys.platform.startswith('win'):
+            s.write('\nexit %CS_RET%\n')
+        else:
+            s.write('\nexit $CS_RET\n')
         s.close()
 
         oldmode = (os.stat(s_path)).st_mode
@@ -1124,7 +1139,7 @@ fi
             + '                      ***********************\n' \
             + '\n' \
             + ' Version: ' + self.package.version + '\n' \
-            + ' Path:    ' + self.package.exec_prefix + '\n\n' \
+            + ' Path:    ' + self.package.get_dir('exec_prefix') + '\n\n' \
             + ' Result directory:\n' \
             + '   ' +  str(self.result_dir) + '\n\n'
 
@@ -1350,7 +1365,8 @@ fi
         n_domains = len(self.domains) + len(self.syr_domains)
         if n_domains > 1 and self.error == '':
             dir_files = os.listdir(self.exec_dir)
-            for f in ['run_solver.sh', 'mpmd_configfile', 'mpmd_exec.sh']:
+            for f in ['run_solver.sh', 'run_solver.bat',
+                      'mpmd_configfile', 'mpmd_exec.sh']:
                 if f in dir_files:
                     try:
                         os.remove(f)
@@ -1419,7 +1435,7 @@ fi
 
            # Read the possible config files
 
-            if sys.platform == 'win32' or sys.platform == 'win64':
+            if sys.platform.startswith('win'):
                 username = os.getenv('USERNAME')
             else:
                 username = os.getenv('USER')

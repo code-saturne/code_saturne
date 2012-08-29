@@ -1437,10 +1437,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             req = [('iactive', 'at a time step the writer is active or not')]
             sym = [('t', 'current time'),
                    ('niter', 'current time step')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                        required   = req,
-                                        symbols    = sym,
-                                        examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = str(dialog.get_result())
                 log.debug("slotWriterFrequencyFormula -> %s" % result)

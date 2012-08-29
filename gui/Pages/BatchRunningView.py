@@ -42,6 +42,12 @@ import re
 import logging
 import subprocess
 
+try:
+    import ConfigParser  # Python2
+    configparser = ConfigParser
+except Exception:
+    import configparser  # Python3
+
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
@@ -61,7 +67,6 @@ from Pages.BatchRunningUserFilesDialogForm import Ui_BatchRunningUserFilesDialog
 from Pages.BatchRunningAdvancedOptionsDialogForm import Ui_BatchRunningAdvancedOptionsDialogForm
 from Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRunningStopByIterationDialogForm
 
-from Base.Common import cs_batch_type
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
 from Base.CommandMgrDialogView import CommandMgrDialogView
@@ -664,6 +669,19 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             if not self.case['batch']:
                 if 'runcase' in os.listdir(self.case['scripts_path']):
                     self.case['batch'] = 'runcase'
+                elif 'runcase.bat' in os.listdir(self.case['scripts_path']):
+                    self.case['batch'] = 'runcase.bat'
+
+
+        # Get batch type
+
+        config = configparser.ConfigParser()
+        config.read([self.case['package'].get_configfile(),
+                     os.path.expanduser('~/.' + self.case['package'].configfile)])
+
+        cs_batch_type = None
+        if config.has_option('install', 'batch'):
+            cs_batch_type = config.get('install', 'batch')
 
         self.case['batch_type'] = cs_batch_type
 
@@ -954,7 +972,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Return an id.
         """
-        cmd = os.path.join(self.case['package'].bindir,
+        cmd = os.path.join(self.case['package'].get_dir('bindir'),
                            self.case['package'].name)
         cmd += " run --suggest-id"
         r_title = subprocess.Popen(cmd,
@@ -978,6 +996,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Update the command line in the launcher C{runcase}.
         """
         runcase = os.path.join(self.case['scripts_path'], "runcase")
+        if sys.platform.startswith('win'):
+            runcase = runcase + '.bat'
 
         try:
             run_ref_f = file(runcase, mode='r')
@@ -987,7 +1007,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         lines = run_ref_f.readlines()
         run_ref_f.close()
 
-        pattern = r'^\\' + self.case['package'].name
+        if sys.platform.startswith('win'):
+            pattern = r'^' + self.case['package'].name
+        else:
+            pattern = r'^\\' + self.case['package'].name
 
         for i in range(len(lines)):
             if re.search(pattern, lines[i]):

@@ -24,10 +24,38 @@
 
 #-------------------------------------------------------------------------------
 
-import os, sys
+import os
+import sys
+
+#-------------------------------------------------------------------------------
+# Handle Python modules possible locations
+#-------------------------------------------------------------------------------
+
+# Store the installation path of Code_Saturne Python modules.
+cspath = '@pkgpythondir@'
+
+# Store the information whether the installation is relocatable or not.
+relocatable = '@relocatable@'
+
+# Get the script rootdir (especially useful for relocatable installation)
+#   When frozen with cx_freeze __file__ is not defined in code_saturne,
+#   therefore we use two different ways of getting the script path.
+if hasattr(sys, 'frozen'):
+    rootdir = sys.executable
+else:
+    rootdir = os.path.realpath(__file__)
+
+# For a relocatable installation, reset cspath (i.e. for a standard Python
+# installation: lib/pythonX.Y/site-packages/code_saturne). We also assume
+# that the main script still lies in the bin directory.
+if relocatable == 'yes':
+    bindir = os.path.dirname(rootdir)
+    prefix = os.path.dirname(bindir)
+    sitedir = os.path.join(prefix,
+                           'lib', 'python' + sys.version[:3], 'site-packages')
+    cspath = os.path.join(sitedir, 'code_saturne')
 
 # Trick so that one doesn't have to set the PYTHONPATH variable
-cspath = '@pkgpythondir@'
 if os.path.isdir(cspath) and not cspath in sys.path:
     sys.path.insert(0, cspath)
 
@@ -41,7 +69,7 @@ if __name__ == '__main__':
 
     # Retrieve package information (name, version, installation dirs, ...)
     from cs_package import package
-    pkg = package()
+    pkg = package(scriptdir = rootdir)
 
     # Create an instance of the main script
     cs = master_script(sys.argv[1:], pkg)

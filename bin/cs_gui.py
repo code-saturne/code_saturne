@@ -123,11 +123,11 @@ def main(argv, pkg):
 
     # Test the package name to know which modules have to be imported
     if pkg.name == 'code_saturne':
-        icons_path = os.path.join(pkg.pkgpythondir, 'Base', 'icons')
-        sys.path.insert(1, os.path.join(pkg.pkgpythondir, 'Base'))
+        icons_path = os.path.join(pkg.get_dir('pkgpythondir'), 'Base', 'icons')
+        sys.path.insert(1, os.path.join(pkg.get_dir('pkgpythondir'), 'Base'))
     else:
-        icons_path = os.path.join(pkg.pkgpythondir, 'core', 'icons')
-        sys.path.insert(1, os.path.join(pkg.pkgpythondir, 'core'))
+        icons_path = os.path.join(pkg.get_dir('pkgpythondir'), 'core', 'icons')
+        sys.path.insert(1, os.path.join(pkg.get_dir('pkgpythondir'), 'core'))
 
     case, spl = process_cmd_line(argv)
 

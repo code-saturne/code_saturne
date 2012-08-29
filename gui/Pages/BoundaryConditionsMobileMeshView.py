@@ -132,6 +132,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
                  ('iter', 'number of iteration')]
 
         dialog = QMeiEditorView(self,
+                                check_syntax = self.__case['package'].get_check_syntax(),
                                 expression = exp,
                                 required   = req,
                                 symbols    = symbs,

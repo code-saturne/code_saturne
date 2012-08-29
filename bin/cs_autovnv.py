@@ -209,7 +209,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to):
     studies.reporting(" ----------\n")
     studies.reporting(" Code name:         " + pkg.name)
     studies.reporting(" Kernel version:    " + pkg.version)
-    studies.reporting(" Install directory: " + pkg.exec_prefix)
+    studies.reporting(" Install directory: " + pkg.get_dir('exec_prefix'))
     studies.reporting(" File dump:         " + dif)
     studies.reporting(" Repository:        " + studies.getRepository())
     studies.reporting(" Destination:       " + studies.getDestination())

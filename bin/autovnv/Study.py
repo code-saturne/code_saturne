@@ -213,7 +213,7 @@ class Case(object):
 
         for i in range(len(lines)):
             if re.search(r'^prefix=', lines[i]):
-                 lines[i] = "prefix=" + self.pkg.prefix + "\n"
+                 lines[i] = "prefix=" + self.pkg.get_dir('prefix') + "\n"
 
         f = file(ref, mode = 'w')
         f.writelines(lines)
@@ -233,7 +233,7 @@ class Case(object):
 
         for i in range(len(lines)):
             if re.search(r'^export PATH=', lines[i]):
-                 lines[i] = 'export PATH="' + self.pkg.bindir +'":$PATH\n'
+                 lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
 
         f = file(ref, mode = 'w')
         f.writelines(lines)
@@ -248,7 +248,7 @@ class Case(object):
         """
         home = os.getcwd()
         os.chdir(os.path.join(d, self.label, 'SRC'))
-        cmd = os.path.join(self.pkg.bindir, self.exe) + " compile -t"
+        cmd = os.path.join(self.pkg.get_dir('bindir'), self.exe) + " compile -t"
 
         p = subprocess.Popen(cmd,
                              shell=True,
@@ -268,7 +268,7 @@ class Case(object):
 
     def __suggest_run_id(self):
 
-        cmd = os.path.join(self.pkg.bindir, self.exe) + " run --suggest-id"
+        cmd = os.path.join(self.pkg.get_dir('bindir'), self.exe) + " run --suggest-id"
         p = subprocess.Popen(cmd,
                              shell=True,
                              stdout=subprocess.PIPE,
@@ -508,7 +508,7 @@ class Study(object):
 
         for c in self.Cases:
             if not os.path.isdir(c.label):
-                e = os.path.join(c.pkg.bindir, c.exe)
+                e = os.path.join(c.pkg.get_dir('bindir'), c.exe)
                 cmd = e + " create --case " + c.label  \
                       + " --quiet --noref --copy-from "    \
                       + os.path.join(self.__repo, c.label)

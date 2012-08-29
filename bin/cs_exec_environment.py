@@ -28,6 +28,7 @@ import fnmatch
 import os
 import subprocess
 import sys
+import platform
 import tempfile
 
 python_version = sys.version[:3]
@@ -67,6 +68,9 @@ def get_shell_type():
     (Bourne shell variants are handled, C-shell variants are not).
     """
 
+    if sys.platform.startswith('win'):
+        return None
+
     user_shell = os.getenv('SHELL')
     if not user_shell:
         user_shell = '/bin/sh'
@@ -74,6 +78,93 @@ def get_shell_type():
         user_shell = '/bin/sh'
 
     return user_shell
+
+#-------------------------------------------------------------------------------
+
+def write_shell_shebang(fd):
+    """
+    Write the shell shebang or '@echo off' for a Windows COMMAND.
+    """
+
+    if sys.platform.startswith('win'):
+        fd.write('@echo off\n\n')
+    else:
+        user_shell = get_shell_type()
+        fd.write('#!' + user_shell + '\n\n')
+
+#-------------------------------------------------------------------------------
+
+def write_script_comment(fd, comment):
+    """
+    Write a comment in a script in the correct form.
+    (starting with a '#' for Linux shells and 'rem' for Windows COMMAND).
+    """
+
+    if sys.platform.startswith('win'):
+        fd.write('rem ')
+    else:
+        fd.write('# ')
+    fd.write(comment)
+
+#-------------------------------------------------------------------------------
+
+def write_export_env(fd, var, value):
+    """
+    Write the correct command so as to export environment variables.
+    """
+
+    if sys.platform.startswith('win'):
+        export_cmd = 'set ' + var + '="' + value
+    else:
+        if get_shell_type()[-3:] == 'csh': # handle C-type shells
+            export_cmd = 'setenv ' + var + ' "' + value
+        else:                              # handle Bourne-type shells
+            export_cmd = 'export ' + var + '="' + value
+    export_cmd = export_cmd + '\n'
+    fd.write(export_cmd)
+
+#-------------------------------------------------------------------------------
+
+def write_prepend_path(fd, var, user_path):
+    """
+    Write the correct command so as to export PATH-type variables.
+    """
+
+    if sys.platform.startswith('win'):
+        export_cmd = 'set ' + var + '="' + user_path + '";%' + var + '%'
+    else:
+        if get_shell_type()[-3:] == 'csh': # handle C-type shells
+            export_cmd = 'setenv ' + var + ' "' + user_path + '":$' + var
+        else:                              # handle Bourne-type shells
+            export_cmd = 'export ' + var + '="' + user_path + '":$' + var
+    export_cmd = export_cmd + '\n'
+    fd.write(export_cmd)
+
+#-------------------------------------------------------------------------------
+
+def get_script_positional_args():
+    """
+    Write the positional arguments with a newline character.
+    """
+
+    if sys.platform.startswith('win'):
+        args = '%*'
+    else:
+        args = '$@'
+    return args
+
+#-------------------------------------------------------------------------------
+
+def get_script_return_code():
+    """
+    Write the return code with a newline character.
+    """
+
+    if sys.platform.startswith('win'):
+        ret_code = '%ERROR_LEVEL%'
+    else:
+        ret_code = '$?'
+    return ret_code
 
 #-------------------------------------------------------------------------------
 
@@ -1205,12 +1296,12 @@ class mpi_environment:
         # but these are cases on systems we have used in the past
         # but do not currently have access to).
 
-        if os.uname()[0] == 'OSF1':
+        if platform.uname()[0] == 'OSF1':
             if abs_exec_path('prun') != None:
                 self.mpiexec = 'prun'
                 self.mpiexec_n = ' -n '
 
-        elif os.uname()[0] == 'AIX':
+        elif platform.uname()[0] == 'AIX':
             if abs_exec_path('poe') != None:
                 self.mpiexec = 'poe'
                 self.mpiexec_n = None
@@ -1254,7 +1345,7 @@ class exec_environment:
         Returns Execution environment.
         """
 
-        if sys.platform == 'win32' or sys.platform == 'win64':
+        if sys.platform.startswith('win'):
             self.user = os.getenv('USERNAME')
         else:
             self.user = os.getenv('USER')

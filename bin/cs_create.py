@@ -49,6 +49,7 @@ try:
 except Exception:
     import configparser  # Python3
 
+import cs_exec_environment
 
 #-------------------------------------------------------------------------------
 # Process the passed command line arguments
@@ -298,7 +299,7 @@ class Study:
         resu = os.path.join(repbase, 'RESU_COUPLING')
         os.mkdir(resu)
 
-        datadir = self.package.pkgdatadir
+        datadir = self.package.get_dir("pkgdatadir")
         try:
             shutil.copy(os.path.join(datadir, 'runcase_aster'),
                         os.path.join(repbase, 'runcase_coupling'))
@@ -407,7 +408,7 @@ class Study:
         resu = os.path.join(repbase, 'RESU_COUPLING')
         os.mkdir(resu)
 
-        datadir = self.package.pkgdatadir
+        datadir = self.package.get_dir("pkgdatadir")
         try:
             shutil.copy(os.path.join(datadir, 'runcase_coupling'), repbase)
         except:
@@ -455,7 +456,7 @@ class Study:
         if self.verbose > 0:
             sys.stdout.write("  o Creating case  '%s'...\n" % casename)
 
-        datadir = self.package.pkgdatadir
+        datadir = self.package.get_dir("pkgdatadir")
         data_distpath  = os.path.join(datadir, 'data')
         user_distpath = os.path.join(datadir, 'user')
         if self.package.name == 'code_saturne' :
@@ -479,7 +480,7 @@ class Study:
             ref           = os.path.join(data, 'REFERENCE')
             os.mkdir(ref)
             for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE',
-                      'dp_FCP', 'dp_FCP.xml',
+                      'dp_FCP', 'dp_FCP.xml', 'dp_FCP_new',
                       'dp_FUE', 'dp_FUE_new',
                       'meteo']:
                 abs_f = os.path.join(thch_distpath, f)
@@ -488,12 +489,28 @@ class Study:
             abs_f = os.path.join(datadir, 'cs_user_scripts.py')
             shutil.copy(abs_f, ref)
 
-        csguiname = self.package.guiname
-        csguiscript = os.path.join(datadir, csguiname)
+        # Write a wrapper for GUI launching
 
-        if os.path.isfile(csguiscript):
-            shutil.copy(csguiscript, data)
-            make_executable(os.path.join(data, csguiname))
+        guiscript = os.path.join(data, self.package.guiname)
+        if sys.platform.startswith('win'):
+            guiscript = guiscript + '.bat'
+
+        fd = open(guiscript, 'w')
+        cs_exec_environment.write_shell_shebang(fd)
+
+        cs_exec_environment.write_script_comment(fd,
+            'Ensure the correct command is found:\n')
+        cs_exec_environment.write_prepend_path(fd, 'PATH',
+                                               self.package.get_dir("bindir"))
+        cs_exec_environment.write_script_comment(fd, 'Run command:\n')
+        # On Linux systems, add a backslash to prevent aliases
+        if sys.platform.startswith('linux'): fd.write('\\')
+        fd.write(self.package.name + ' gui ' +
+                 cs_exec_environment.get_script_positional_args() + '\n')
+
+        fd.close()
+
+        make_executable(guiscript)
 
         # User source files directory
 
@@ -561,17 +578,15 @@ class Study:
         Update batch file for the study
         """
 
-        user_shell = os.getenv('SHELL')
-        if not user_shell:
-            user_shell = '/bin/sh'
 
         batch_file = os.path.join(distrep, 'runcase')
         if scriptname == 'runcase_coupling':
             batch_file += '_batch'
+        if sys.platform.startswith('win'):
+            batch_file = batch_file + '.bat'
 
         fd = open(batch_file, 'w')
-
-        fd.write('#!' + user_shell + '\n')
+        cs_exec_environment.write_shell_shebang(fd)
 
         # Add batch system info if necessary
 
@@ -608,18 +623,17 @@ class Study:
         # Add command to execute.
 
         if scriptname:
-            fd.write('# Launch script:\n')
+            cs_exec_environment.write_script_comment(fd, 'Launch script:\n')
             fd.write('./' + scriptname + '\n\n')
         else:
-            fd.write('# Ensure the correct command is found:\n')
-            if user_shell[-3:] == 'csh': # handle C-type shells, just in case...
-                export_cmd = 'setenv PATH '
-            else:                        # handle Bourne-type shells (recommended)
-                export_cmd = 'export PATH='
-            export_cmd += '"' + self.package.bindir + '":$PATH'
-            fd.write(export_cmd + '\n\n')
-            fd.write('# Run command:\n')
-            fd.write('\\' + self.package.name + ' run\n\n')
+            cs_exec_environment.write_script_comment(fd,
+                'Ensure the correct command is found:\n')
+            cs_exec_environment.write_prepend_path(fd, 'PATH',
+                                                   self.package.get_dir("bindir"))
+            cs_exec_environment.write_script_comment(fd, 'Run command:\n')
+            # On Linux systems, add a backslash to prevent aliases
+            if sys.platform.startswith('linux'): fd.write('\\')
+            fd.write(self.package.name + ' run\n')
 
         fd.close()
 

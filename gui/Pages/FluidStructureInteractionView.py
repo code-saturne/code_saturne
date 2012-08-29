@@ -425,6 +425,7 @@ class FormulaCoupling(Coupling):
 
         # run the editor
         dialog = QMeiEditorView(self.getWidget(),
+                                check_syntax = None,
                                 expression = exp,
                                 required   = self.__required,
                                 symbols    = self.__symbols,

@@ -251,10 +251,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')] #quel symbol
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
@@ -288,10 +290,12 @@ eps = k^1.5*cmu/almax;
                    ('z','cell center coordinate'),
                    ('uref','reference velocity'),
                    ('almax','reference length')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -329,10 +333,12 @@ eps = k^1.5*cmu/almax;"""
                    ('z','cell center coordinate'),
                    ('uref','reference velocity'),
                    ('almax','reference length')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -372,10 +378,12 @@ alpha = 1.;"""
                    ('z','cell center coordinate'),
                    ('uref','reference velocity'),
                    ('almax','reference length')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -406,10 +414,12 @@ fb = 0.;
                    ('z','cell center coordinate'),
                    ('uref','reference velocity'),
                    ('almax','reference length')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -432,10 +442,12 @@ omega = k^0.5/almax;"""
                    ('z','cell center coordinate'),
                    ('uref','reference velocity'),
                    ('almax','reference length')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -456,10 +468,12 @@ nusa = (cmu * k)/eps;;"""
                    ('z','cell center coordinate'),
                    ('uref','reference velocity'),
                    ('almax','reference length')]
-            dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+            dialog = QMeiEditorView(self,
+                                    check_syntax = self.case['package'].get_check_syntax(),
+                                    expression = exp,
+                                    required   = req,
+                                    symbols    = sym,
+                                    examples   = exa)
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -480,10 +494,12 @@ nusa = (cmu * k)/eps;;"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
@@ -504,10 +520,12 @@ nusa = (cmu * k)/eps;;"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
@@ -527,10 +545,12 @@ nusa = (cmu * k)/eps;;"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMeteo -> %s" % str(result))
@@ -679,10 +699,12 @@ nusa = (cmu * k)/eps;;"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotPressureFormula -> %s" % str(result))
@@ -704,10 +726,12 @@ nusa = (cmu * k)/eps;;"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotDensityFormula -> %s" % str(result))
@@ -729,10 +753,12 @@ nusa = (cmu * k)/eps;;"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotTemperatureFormula -> %s" % str(result))
@@ -754,10 +780,12 @@ nusa = (cmu * k)/eps;;"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotEnergyFormula -> %s" % str(result))

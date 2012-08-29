@@ -150,6 +150,7 @@ bin/code_saturne \
 bin/cs_package.py \
 bin/runcase_aster \
 bin/runcase_coupling \
+extras/salome/fsi_appli_config.xml \
 cs_config.h
 
 ACLOCAL_AMFLAGS = -I m4
@@ -183,7 +184,8 @@ $(LIBS_BLAS)
 
 edit_python = sed \
 	-e 's|@PYTHON[@]|$(PYTHON)|g' \
-	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g'
+	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
+	-e 's|@relocatable[@]|$(relocatable)|g'
 
 edit_config = sed \
 	-e 's|@prefix[@]|$(prefix)|g' \
@@ -203,7 +205,6 @@ edit_config = sed \
 	-e 's|@docdir[@]|$(docdir)|g' \
 	-e 's|@pdfdir[@]|$(pdfdir)|g' \
 	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
-	-e 's|@syrthes_prefix[@]|$(syrthes_prefix)|g' \
 	-e 's|@mpi_type[@]|$(mpi_type)|g' \
 	-e 's|@mpi_bindir[@]|$(mpi_bindir)|g' \
 	-e 's|@mpi_libdir[@]|$(mpi_libdir)|g' \
@@ -311,10 +312,6 @@ nodist_pkgdata_DATA = \
 bin/runcase_aster \
 bin/runcase_coupling
 
-if HAVE_GUI
-  nodist_pkgdata_DATA += bin/SaturneGUI
-endif
-
 dist_pkgdata_DATA = \
 bin/cs_user_scripts.py
 
@@ -329,6 +326,7 @@ data/thch/dp_C3PSJ \
 data/thch/dp_C4P \
 data/thch/dp_ELE \
 data/thch/dp_FCP \
+data/thch/dp_FCP_new \
 data/thch/dp_FCP.xml \
 data/thch/dp_FUE \
 data/thch/dp_FUE_new \
@@ -368,12 +366,12 @@ extras/code_saturne.cfg.template
 # Install SALOME related files
 
 salomedir = ${pkgdatadir}/salome
-salome_DATA = \
-extras/salome/fsi_yacs_scheme.xml
+dist_salome_DATA = \
+extras/salome/fsi_yacs_scheme.xml \
+extras/salome/fsi.export
 
 nodist_salome_DATA = \
-extras/salome/fsi_appli_config.xml \
-extras/salome/fsi.export
+extras/salome/fsi_appli_config.xml
 
 # Update gettext dictionnaries
 
@@ -413,7 +411,6 @@ dist-hook: changelog
 	-rm -rf `find $(distdir)/examples  -name .svn`
 	-rm -rf `find $(distdir)/extras  -name .svn`
 	-rm -rf `find $(distdir)/patches -name .svn`
-	-rm -f $(distdir)/extras/salome/fsi_appli_config.xml
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

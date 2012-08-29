@@ -22,6 +22,7 @@
 
 #-------------------------------------------------------------------------------
 
+import os
 import sys
 
 #-------------------------------------------------------------------------------
@@ -47,11 +48,21 @@ class master_script:
         help_commands = ("help", "--help", "-h")
         vers_commands = ("--version", "-v")
 
-        if (len(self.command) < 1):
-            self.usage()
-            sys.exit(0)
-
-        command = self.command[0]
+        if len(self.command) < 1:
+            # On Windows platform, we have two executables frozen by cx_freeze:
+            # a .com designed for a console mode (it can also be accessed
+            # without the extension) and a .exe designed for a GUI mode.
+            # At the moment, running the main script does not launch the GUI
+            # mode. Therefore, we force the 'gui' option in this case.
+            # This can be changed later on.
+            if sys.platform.startswith('win') and \
+                    os.path.basename(sys.argv[0]).endswith('exe'):
+                command = 'gui'
+            else:
+                self.usage()
+                sys.exit(0)
+        else:
+            command = self.command[0]
 
         if command in help_commands:
             self.usage()

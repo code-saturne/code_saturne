@@ -35,6 +35,7 @@ This module contains the following classes and function:
 # Library modules import
 #-------------------------------------------------------------------------------
 
+import os
 import sys, string
 import logging
 import subprocess
@@ -52,8 +53,6 @@ from PyQt4.QtGui  import *
 
 from Base.Toolbox import GuiParam
 from Pages.QMeiEditorForm import Ui_QMeiDialog
-
-from Base.Common import cs_check_syntax
 
 #-------------------------------------------------------------------------------
 # log config
@@ -149,7 +148,7 @@ class QMeiHighlighter(QSyntaxHighlighter):
 class QMeiEditorView(QDialog, Ui_QMeiDialog):
     """
     """
-    def __init__(self, parent, expression = "", symbols = [], required = [], examples = ""):
+    def __init__(self, parent, check_syntax = None, expression = "", symbols = [], required = [], examples = ""):
         """
         Constructor.
         """
@@ -157,6 +156,12 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
 
         Ui_QMeiDialog.__init__(self)
         self.setupUi(self)
+
+        if check_syntax is not None:
+            if not os.path.isfile(check_syntax):
+                check_syntax = None
+
+        self.check_syntax = check_syntax
 
         self.required = required
         self.symbols  = symbols
@@ -255,7 +260,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
         What to do when user clicks on 'OK'.
         """
 
-        if cs_check_syntax == None:
+        if self.check_syntax == None:
             QDialog.accept(self)
             return
 
@@ -265,7 +270,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
 
         log.debug("check.string: %s" % str(self.textEditExpression.toPlainText()))
 
-        check = subprocess.Popen([cs_check_syntax],
+        check = subprocess.Popen([self.check_syntax],
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)

@@ -644,11 +644,6 @@ Calculation management
         Public method.
         Configures the browser with users data.
         """
-        try:
-            import cs_package
-        except:
-            self.setRowClose(self.tr('Mesh quality criteria'))
-
         self.setRowClose(self.tr('Particles and droplets tracking'))
         self.setRowClose(self.tr('Gas combustion'))
         self.setRowClose(self.tr('Pulverized fuel combustion'))

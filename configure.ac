@@ -845,7 +845,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  docs/user/Makefile docs/user/graphics/Makefile
                  tests/Makefile
                  extras/salome/fsi_appli_config.xml
-                 bin/cs_config.py bin/SaturneGUI])
+                 bin/cs_config.py])
 
 #------------------------------------------------------------------------------
 

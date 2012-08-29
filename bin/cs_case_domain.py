@@ -970,7 +970,7 @@ class domain(base_domain):
 
         # Determine files from this stage to ignore or to possibly remove
 
-        for f in [self.package.solver, 'run_solver.sh']:
+        for f in [self.package.solver, 'run_solver.sh', 'run_solver.bat']:
             if f in dir_files:
                 purge_list.append(f)
         purge_list.extend(fnmatch.filter(dir_files, 'core*'))

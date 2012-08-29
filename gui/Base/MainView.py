@@ -42,6 +42,12 @@ This module defines the following classes:
 import os, sys, string, shutil, signal, logging
 import subprocess, platform
 
+try:
+    import ConfigParser  # Python2
+    configparser = ConfigParser
+except Exception:
+    import configparser  # Python3
+
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
@@ -67,7 +73,7 @@ from Base import XMLengine
 from Base.XMLinitialize import *
 from Base.XMLmodel import *
 from Base.Toolbox import GuiParam, displaySelectedPage
-from Base.Common import XML_DOC_VERSION, cs_batch_type
+from Base.Common import XML_DOC_VERSION
 
 try:
     import Pages
@@ -610,7 +616,7 @@ class MainView(object):
         open an xterm window
         """
         if sys.platform.startswith("win"):
-            cmd = "cmd &"
+            cmd = "start cmd"
         else:
             if hasattr(self, 'case'):
                 cmd = "cd  " + self.case['case_path'] + " && xterm -sb &"
@@ -1004,6 +1010,16 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         Ui_MainForm.__init__(self)
 
         self.setupUi(self)
+
+        # Get batch type
+
+        config = configparser.ConfigParser()
+        config.read([cmd_package.get_configfile(),
+                     os.path.expanduser('~/.' + cmd_package.configfile)])
+
+        cs_batch_type = None
+        if config.has_option('install', 'batch'):
+            cs_batch_type = config.get('install', 'batch')
 
         # create some instance variables
 

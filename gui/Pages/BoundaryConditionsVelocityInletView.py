@@ -404,10 +404,12 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                ('t', 'current time'),
                ('iter', 'number of iteration')]
 
-        dialog = QMeiEditorView(self, expression = exp,
-                                      required   = req,
-                                      symbols    = sym,
-                                      examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.__case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
@@ -493,10 +495,12 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                ('t', 'current time'),
                ('iter', 'number of iteration')]
 
-        dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = sym,
-                                     examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.__case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDirection -> %s" % str(result))

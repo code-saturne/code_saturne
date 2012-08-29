@@ -113,7 +113,6 @@ class config:
         self.features['gui'] = "@cs_have_gui@"
         self.features['frontend'] = "@cs_have_frontend@"
         self.features['openmp'] = "@cs_have_openmp@"
-        self.features['socket'] = "@cs_have_socket@"
         self.features['long-gnum'] = "@cs_have_long_gnum@"
         self.features['nls'] = '@USE_NLS@'
 
@@ -383,7 +382,7 @@ def main(argv, pkg):
 
     if opts.cppflags is not None:
         if opts.cppflags == "saturne":
-            print("@CPPFLAGS@ -I" + pkg.pkgincludedir)
+            print("@CPPFLAGS@ -I" + pkg.get_dir("pkgincludedir"))
         elif opts.cppflags == "ple":
             print(pkg.ple_cppflags)
         else:
@@ -391,7 +390,7 @@ def main(argv, pkg):
 
     if opts.ldflags is not None:
         if opts.ldflags == "saturne":
-            print("-L" + pkg.libdir)
+            print("-L" + pkg.get_dir("libdir"))
         elif opts.ldflags == "ple":
             print(pkg.ple_ldflags)
         else:

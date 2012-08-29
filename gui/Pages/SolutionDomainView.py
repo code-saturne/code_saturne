@@ -57,8 +57,6 @@ from Pages.SolutionDomainModel import RelOrAbsPath, MeshModel, SolutionDomainMod
 from Pages.FacesSelectionView import StandardItemModelFaces
 from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
 
-import cs_package
-
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -616,7 +614,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         self.case['mesh_path'] = self.mesh_dirs[0]
 
-        package = cs_package.package()
+        package = self.case['package']
 
         # User and global mesh directories
 

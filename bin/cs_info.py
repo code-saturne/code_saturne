@@ -109,8 +109,8 @@ def get_pdf(pkg):
     Return the list of available PDF manual for the command line.
     """
     l = []
-    if os.path.isdir(pkg.pdfdir):
-        for pdf in fnmatch.filter(os.listdir(pkg.pdfdir), '*.pdf'):
+    if os.path.isdir(pkg.get_dir('pdfdir')):
+        for pdf in fnmatch.filter(os.listdir(pkg.get_dir('pdfdir')), '*.pdf'):
             l.append(pdf[:-4])
     return l
 
@@ -128,7 +128,7 @@ def launch_manual(reader, m, pkg):
 
     readers = ["okular", "evince", "kpdf", "gpdf", "xpdf", "acroread"]
 
-    manual = os.path.join(pkg.pdfdir, m) + '.pdf'
+    manual = os.path.join(pkg.get_dir('pdfdir'), m) + '.pdf'
 
     if not os.path.isfile(manual):
         print("File %s not found." % manual)

@@ -116,7 +116,7 @@ def so_dirs_path(flags, pkg):
     retval = " " + pkg.rpath
     count = 0
 
-    pkg_lib = os.path.join(pkg.libdir, pkg.name)
+    pkg_lib = os.path.join(pkg.get_dir('libdir'), pkg.name)
     if os.path.isdir(pkg_lib):
         retval = retval + ":" + pkg_lib
         count += 1
@@ -174,10 +174,10 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if force_link or (len(c_files) + len(cxx_files) + len(f_files)) > 0:
             i = p_libs.find(' ')
             if (i > 0):
-                lib0 = os.path.join(pkg.libdir, 'lib' + p_libs[2:i] + '.a')
+                lib0 = os.path.join(pkg.get_dir('libdir'), 'lib' + p_libs[2:i] + '.a')
                 p_libs = p_libs[i+1:]
             else:
-                lib0 = os.path.join(pkg.libdir, 'lib' + p_libs[2:] + '.a')
+                lib0 = os.path.join(pkg.get_dir('libdir'), 'lib' + p_libs[2:] + '.a')
                 p_libs = ''
             cmd = 'ar x ' + lib0
             if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
@@ -191,10 +191,10 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         cmd = pkg.cc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
-        cmd = cmd + " -I" + pkg.pkgincludedir
+        cmd = cmd + " -I" + pkg.get_dir('pkgincludedir')
         if f == 'cs_base.c':
-            cmd = cmd + ' -DLOCALEDIR=\\"' + pkg.localedir \
-                      + '\\" -DPKGDATADIR=\\"' + pkg.pkgdatadir + '\\"'
+            cmd = cmd + ' -DLOCALEDIR=\\"' + pkg.get_dir('localedir') \
+                      + '\\" -DPKGDATADIR=\\"' + pkg.get_dir('pkgdatadir') + '\\"'
         cmd = cmd + " " + pkg.cppflags
         cmd = cmd + " " + pkg.cflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
@@ -207,7 +207,7 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         cmd = pkg.cxx
         if len(hxx_files) > 0:
             cmd = cmd + " -I" + srcdir
-        cmd = cmd + " -I" + pkg.pkgincludedir
+        cmd = cmd + " -I" + pkg.get_dir('pkgincludedir')
         cmd = cmd + " " + pkg.cppflags
         cmd = cmd + " " + pkg.cxxflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
@@ -239,7 +239,7 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         cmd = cmd + " -o " + exec_name
         if (len(c_files) + len(cxx_files) + len(f_files)) > 0:
           cmd = cmd + " *.o"
-        cmd = cmd + " -L" + pkg.libdir
+        cmd = cmd + " -L" + pkg.get_dir('libdir')
         if optlibs != None:
             if len(optlibs) > 0:
                 cmd = cmd + " " + optlibs

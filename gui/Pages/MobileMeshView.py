@@ -228,10 +228,12 @@ if (xray2 < xr2) {
                 ('t', 'current time'),
                 ('iter', 'number of iteration')]
 
-        dialog = QMeiEditorView(self,expression = exp,
-                                     required   = req,
-                                     symbols    = symb,
-                                     examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = symb,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMobileMeshView -> %s" % str(result))

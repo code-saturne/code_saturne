@@ -28,14 +28,15 @@
 
 #-------------------------------------------------------------------------------
 
-import os.path
+import os
+import sys
 
 # Package information
 #--------------------
 
 class package:
 
-    def __init__(self):
+    def __init__(self, scriptdir = None):
 
         self.name = "@PACKAGE_NAME@"
         self.tarname = "@PACKAGE_TARNAME@"
@@ -79,23 +80,42 @@ class package:
         self.ple_ldflags = "@PLE_LDFLAGS@"
         self.ple_libs = "@PLE_LIBS@"
 
-        self.prefix = "@prefix@"
-        self.exec_prefix = "@exec_prefix@"
-        self.bindir = "@bindir@"
-        self.includedir = "@includedir@"
-        self.pkgincludedir = "@pkgincludedir@"
-        self.libdir = "@libdir@"
-        self.libexecdir = "@libexecdir@"
-        self.pkglibexecdir = "@pkglibexecdir@"
-        self.pythondir = "@pythondir@"
-        self.pkgpythondir = "@pkgpythondir@"
-        self.localedir = "@localedir@"
-        self.datarootdir = "@datarootdir@"
-        self.datadir = "@datadir@"
-        self.pkgdatadir = "@pkgdatadir@"
-        self.docdir = "@docdir@"
-        self.pdfdir = "@pdfdir@"
-        self.sysconfdir = "@sysconfdir@"
+        # Installation directories
+
+        self.scriptdir = scriptdir
+
+        self.dirs = {'prefix': ("", "@prefix@"),
+                     'exec_prefix': ("", "@exec_prefix@"),
+                     'bindir': ("bin", "@bindir@"),
+                     'includedir': ("incude", "@includedir@"),
+                     'pkgincludedir': (os.path.join("include", self.name),
+                                       "@pkgincludedir@"),
+                     'libdir': ("lib", "@libdir@"),
+                     'libexecdir': ("libexec", "@libexecdir@"),
+                     'pkglibexecdir': (os.path.join("libexec", self.name),
+                                       "@pkglibexecdir@"),
+                     'pythondir': (os.path.join("lib",
+                                                "python" + sys.version[:3],
+                                                "site-packages"),
+                                   "@pythondir@"),
+                     'pkgpythondir': (os.path.join("lib",
+                                                   "python" + sys.version[:3],
+                                                   "site-packages",
+                                                   self.name),
+                                      "@pkgpythondir@"),
+                     'localedir': (os.path.join("share", "locale"),
+                                   "@localedir@"),
+                     'datarootdir': ("share", "@datarootdir@"),
+                     'datadir': ("share", "@datadir@"),
+                     'pkgdatadir': (os.path.join("share", self.name),
+                                    "@pkgdatadir@"),
+                     'docdir': (os.path.join("share", "doc", self.name),
+                                "@docdir@"),
+                     'pdfdir': (os.path.join("share", "doc", self.name),
+                                "@pdfdir@"),
+                     'sysconfdir': ("etc", "@sysconfdir@")}
+
+        # Execution environment
 
         self.mpi_type = "@mpi_type@"
         self.mpi_bindir = "@mpi_bindir@"
@@ -104,45 +124,60 @@ class package:
         self.env_modules = "@cs_env_modules@"
         self.env_modulecmd = "@MODULECMD@"
 
+    def get_dir(self, installdir):
+
+        import cs_config
+        cfg = cs_config.config()
+        # On Windows, executables are installed in "bindir" for DLL search
+        if sys.platform.startswith("win") and \
+                installdir in ("libexecdir", "pkglibexecdir"):
+            installdir = "bindir"
+        if cfg.features['relocatable'] == "yes":
+            bindir = os.path.dirname(self.scriptdir)
+            prefix = os.path.dirname(bindir)
+            return os.path.join(prefix, self.dirs[installdir][0])
+        else:
+            return self.dirs[installdir][1]
+
     def get_preprocessor(self):
 
-        preprocessordir = "@pkglibexecdir@"
-        return os.path.join(preprocessordir, self.preprocessor)
+        return os.path.join(self.get_dir("pkglibexecdir"),
+                            self.preprocessor)
 
     def get_partitioner(self):
 
-        partitionerdir = "@pkglibexecdir@"
-        return os.path.join(partitionerdir, self.partitioner)
+        return os.path.join(self.get_dir("pkglibexecdir"),
+                            self.partitioner)
 
     def get_solver(self):
 
-        solverdir = "@pkglibexecdir@"
-        return os.path.join(solverdir, self.solver)
+        return os.path.join(self.get_dir("pkglibexecdir"),
+                            self.solver)
 
     def get_check_syntax(self):
 
-        checksyntaxdir = "@pkglibexecdir@"
-        return os.path.join(checksyntaxdir, self.check_syntax)
+        return os.path.join(self.get_dir("pkglibexecdir"),
+                            self.check_syntax)
 
     def get_io_dump(self):
 
-        iodumpdir = "@pkglibexecdir@"
-        return os.path.join(iodumpdir, self.io_dump)
+        return os.path.join(self.get_dir("pkglibexecdir"),
+                            self.io_dump)
 
     def get_configfile(self):
 
-        configfiledir = "@sysconfdir@"
-        return os.path.join(configfiledir, self.configfile)
+        return os.path.join(self.get_dir("sysconfdir"),
+                            self.configfile)
 
     def get_batchdir(self):
 
-        batchdir = "@pkgdatadir@"
-        return os.path.join(batchdir, 'batch')
+        return os.path.join(self.get_dir("pkgdatadir"),
+                            'batch')
 
     def get_runcase_script(self, script):
 
-        runcasedir = "@pkgdatadir@"
-        return os.path.join(runcasedir, script)
+        return os.path.join(self.get_dir("pkgdatadir"),
+                            script)
 
     def get_alternate_version(self, version):
         """
@@ -153,9 +188,9 @@ class package:
 
         # Determine path (by absolute or local name)
         pythondir = os.path.normpath(version)
-        prefix = os.path.normpath(self.exec_prefix)
-        if self.pkgpythondir.find(prefix) > -1:
-            postfix = self.pkgpythondir[len(prefix)+1:]
+        prefix = os.path.normpath(self.get_dir("exec_prefix"))
+        if self.get_dir("pkgpythondir").find(prefix) > -1:
+            postfix = self.get_dir("pkgpythondir")[len(prefix)+1:]
             if not os.path.isabs(pythondir):
                 prefix = os.path.split(prefix)[0]
             else:

@@ -215,7 +215,9 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
                                 required   = req,
                                 symbols    = sym,
                                 examples   = exa)
@@ -239,10 +241,12 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
@@ -287,10 +291,12 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))

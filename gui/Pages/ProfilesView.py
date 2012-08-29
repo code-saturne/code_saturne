@@ -516,10 +516,12 @@ z = -0.5*t+5;"""
                ('z', "z formula")]
         sym = [('t', 'parameter')]
 
-        dialog = QMeiEditorView(self, expression = exp,
-                                      required   = req,
-                                      symbols    = sym,
-                                      examples   = exa)
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotLineFormula -> %s" % str(result))
