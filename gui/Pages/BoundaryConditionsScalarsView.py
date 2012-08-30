@@ -290,7 +290,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         setGreenColor(self.pushButtonMeteo, False)
 
         if self.meteo_list != None:
-            self.meteo_type = self.__boundary.getScalarChoice(self.species)
+            self.meteo_type = self.__boundary.getScalarChoice(self.meteo)
             self.modelTypeMeteo.setItem(str_model = self.meteo_type)
             self.labelValueMeteo.setText('Value')
             self.groupBoxMeteo.setTitle('Meteo')
