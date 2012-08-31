@@ -399,6 +399,22 @@ void CS_PROCF(syntin, SYNTIN)
  cs_real_t  var[]
 );
 
+/*----------------------------------------------------------------------------
+ * Update a symmetric tensor array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine syntis(var)
+ * *****************
+ *
+ * var   : <-> : interleaved symmetric tensor (of dimension 6)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(syntis, SYNTIS)
+(
+ cs_real_t  var[]
+);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

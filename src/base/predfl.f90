@@ -128,7 +128,7 @@ integer          iinvpe
 integer          nagmax, npstmg
 integer          ibsize, iphydp
 integer          imucpp
-double precision residu, resold
+double precision residu
 double precision thetap
 double precision epsrgp, climgp, extrap, epsilp
 double precision drom  , tcrite, relaxp, rnorm, hint, qimp
@@ -336,14 +336,9 @@ enddo
 
 relaxp = relaxv(ipr)
 
-! Dynamic relaxation criterion
 ! (Test to modify if needed: must be scticter than
 ! the test in the conjugate gradient)
-if (swpdyn.eq.1) then
-  tcrite = 100.d0*epsilo(ipr)*rnorm
-else
-  tcrite = 10.d0*epsrsm(ipr)*rnorm
-endif
+tcrite = 10.d0*epsrsm(ipr)*rnorm
 
 ! Reconstruction loop (beginning)
 !--------------------------------
@@ -427,18 +422,6 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
     ! --- Convergence test
     call prodsc(ncel, isqrt, rhs, rhs, residu)
-
-    ! Dynamic relaxation criterion
-    if (swpdyn.eq.1) then
-      if (isweep.gt.2) then
-
-        if ((residu + 0.001d0*residu).gt.resold) then
-          relaxv(ipr) = max(0.8d0*relaxp, 0.1d0)
-        endif
-
-      endif
-      resold = residu
-    endif
 
     if (iwarni(ipr).ge.2) then
       if (rnorm.ge.epzero) then

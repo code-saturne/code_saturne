@@ -32,7 +32,7 @@ module pointe
 
   !... Auxiliaires
 
-  ! Array ! Dimension               ! Description
+  ! Array  ! Dimension               ! Description
 
   ! dispar ! ncelet                  ! distance a la face de type 5 (phase 1) la
   !                                    plus proche
@@ -146,6 +146,9 @@ module pointe
   ! porosi ! ncelet                  ! value of the porosity
   double precision, allocatable, dimension(:) :: porosi
 
+  ! visten ! ncelet                  ! symmetric tensor cell visco
+  double precision, allocatable, dimension(:,:) :: visten
+
 contains
 
   !=============================================================================
@@ -172,6 +175,9 @@ contains
     ! Arguments
 
     integer, intent(in) :: ncelet, ncel, ncelbr, nfac, nfabor
+
+    ! Local variables
+    integer                iok, ivar
 
     ! Boundary-face related arrays
 
@@ -208,6 +214,16 @@ contains
 
     if (iporos.eq.1) then
       allocate(porosi(ncelet))
+    endif
+
+    ! Symmetric cell diffusivity when needed
+    iok = 0
+    do ivar = 1, nvarmx
+      if (idften(ivar).eq.6) iok = iok + 1
+    enddo
+
+    if (iok.ge.1) then
+      allocate(visten(6,ncelet))
     endif
 
     ! Wall-distance calculation
@@ -285,6 +301,7 @@ contains
     if (allocated(izft1d)) deallocate(izft1d)
     if (allocated(coefau)) deallocate(coefau, cofafu, coefbu, cofbfu)
     if (allocated(porosi)) deallocate(porosi)
+    if (allocated(visten)) deallocate(visten)
     if (allocated(cfaale)) deallocate(cfaale, cfbale, claale, clbale)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)

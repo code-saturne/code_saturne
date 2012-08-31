@@ -97,6 +97,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp, ivisep
+integer          iswdyp
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, thetv
 double precision epsrsp, prosrf
@@ -226,6 +227,7 @@ ircflp = ircflu(iuma)
 ischcp = ischcv(iuma)
 isstpp = isstpc(iuma)
 iescap = 0
+iswdyp = iswdyn(iuma)
 imgrp  = imgr  (iuma)
 ncymxp = ncymax(iuma)
 nitmfp = nitmgf(iuma)
@@ -247,7 +249,7 @@ call coditv &
  ( nvar   , nscal  ,                                              &
    idtvar , iuma   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , iswdyp ,                            &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &

@@ -116,7 +116,7 @@ integer          iescap, iflmb0, imaspe, itypfl
 integer          ncymxp, nitmfp, ipp
 integer          ifac  , iel   , ipcvis, init  , ipcrom
 integer          inc   , iccocg, isym  , isweep, infpar
-integer          imucpp
+integer          imucpp, idftnp, iswdyp
 
 double precision xnorme, dtminy, dtmaxy, relaxp, thetap, timey
 double precision xusnmx, xusnmn, xnorm0
@@ -522,6 +522,8 @@ do isweep = 1, ntcmxy
   ! Pas d'estimateurs, ni de multigrille (100 et 10 sont arbitraires)
   iescap = 0
   imucpp = 0
+  idftnp = 1
+  iswdyp = 0
   ncymxp = 100
   nitmfp = 10
   ! La case 1 est une poubelle
@@ -540,13 +542,14 @@ do isweep = 1, ntcmxy
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmay , &
    imrgra , nswrsy , nswrgy , imligy , ircfly ,                   &
-   ischcy , isstpy , iescap , imucpp ,                            &
+   ischcy , isstpy , iescap , imucpp , idftnp , iswdyp ,          &
    imgrpy , ncymxp , nitmfp , ipp    , iwarny ,                   &
    blency , epsily , epsrsy , epsrgy , climgy , extray ,          &
    relaxp , thetap ,                                              &
    rtpdp  , rtpdp  ,                                              &
    coefax , coefbx , coefax , coefbx , flumas , flumab ,          &
-   flumas , flumab , flumas , flumab ,                            &
+   flumas , flumab , rvoid  , flumas , flumab , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    rovsdp , smbdp  , rtpdp  , dpvar  ,                            &
    rvoid  , rvoid  )
 

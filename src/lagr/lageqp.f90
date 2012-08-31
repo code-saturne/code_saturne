@@ -101,7 +101,7 @@ integer          nswrgp, imligp, iwarnp , iescap
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp
 integer          imgrp, ncymxp, nitmfp
-integer          imucpp
+integer          imucpp, idftnp, iswdyp
 
 double precision epsrgp, climgp, extrap, blencp, epsilp, epsrsp
 double precision relaxp, thetap
@@ -276,6 +276,8 @@ ircflp = 1
 ischcp = 1
 isstpp = 0
 imucpp = 0
+idftnp = 1
+iswdyp = 0
 imgrp  = 1
 ncymxp = 100
 nitmfp = 100
@@ -316,14 +318,15 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp ,                            &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    phia   , phia   , coefap , coefbp ,                            &
-            cofafp , cofbfp ,                                     &
-            fmala  , fmalb  ,                                     &
-   viscf  , viscb  , viscf  , viscb  ,                            &
+   cofafp , cofbfp ,                                              &
+   fmala  , fmalb  ,                                              &
+   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    rovsdt , smbrs  , phi    , dpvar  ,                            &
    rvoid  , rvoid  )
 

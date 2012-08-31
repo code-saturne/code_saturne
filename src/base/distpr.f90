@@ -70,7 +70,6 @@ use optcal
 use cstphy
 use cstnum
 use ppppar
-!use coincl !FIXME usefull?
 use parall
 use period
 use mltgrd
@@ -98,7 +97,7 @@ integer          isqrt , iel   , ifac
 integer          inc   , iccocg, ivar
 integer          isweep, nittot, idtva0
 integer          ibsize, mmprpl, nswrsl
-integer          imucpp
+integer          imucpp, idftnp
 double precision relaxp, thetap, rnorm, residu, rnoini
 double precision dismax, dismin, hint, pimp, qimp
 
@@ -297,19 +296,21 @@ do isweep = 0, nswrsl
     inc    = 0
     iccocg = 1
     imucpp = 0
+    idftnp = 1 ! no tensorial diffusivity
     ivar = 0
     idtva0 = 0
     relaxp = 1.d0
 
-    call bilsc2                                                   &
+    call bilsca &
     !==========
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , nswrgy , imligy , ircfly , &
    ischcy , isstpy , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarny , imucpp ,                                     &
+   ipp    , iwarny , imucpp , idftnp ,                            &
    blency , epsrgy , climgy , extray , relaxp , thetap ,          &
    rtpdp  , rtpdp  , coefad , coefbd , coefad , cofbfd ,          &
-   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
+   viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    smbdp  )
 
   endif

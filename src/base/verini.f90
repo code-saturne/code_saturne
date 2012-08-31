@@ -1291,26 +1291,30 @@ if (ineedy.eq.1) then
 
 endif
 
-! --- Dynamic relaxv(ipr) option
+! --- Dynamic relaxation option
 
-if (swpdyn.eq.1) then
-  if (ivelco.ne.1) then
-    write(nfecra,2741) ivelco
-  else
-    if (nswrsm(ipr).lt.20) then
-      nswrsm(ipr) = 20
-      write(nfecra,2742) nswrsm(ipr)
+do ivar = 1, nvar
+  if (iswdyn(ivar).ge.1) then
+    if (ivelco.ne.1) then
+      write(nfecra,2741) ivelco
+    else
+      ! The number of reconstruction sweeps is set to 20 at least
+      if (nswrsm(ivar).lt.20) then
+        nswrsm(ivar) = 20
+        write(nfecra,2742) nswrsm(ivar)
+      endif
+      if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
+        if (isstpc(iu).eq.0.or.isstpc(iv).eq.0.or.isstpc(iw).eq.0) then
+          isstpc(iu) = 1
+          isstpc(iv) = 1
+          isstpc(iw) = 1
+
+          write(nfecra, 2743)
+        endif
+      endif
     endif
-    if (isstpc(iu).eq.0.or.isstpc(iv).eq.0.or.isstpc(iw).eq.0) then
-      isstpc(iu) = 1
-      isstpc(iv) = 1
-      isstpc(iw) = 1
-
-      write(nfecra, 2743)
-    endif
- endif
-endif
-
+  endif
+enddo
 
 !===============================================================================
 ! 2. MULTIGRILLE : TABLEAUX DU MULTIGRILLE : formats 3000
@@ -3567,11 +3571,11 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION :',                                             /,&
 '@    =========',                                               /,&
-'@    L''OPTION SPWDYN = 1 N''EST COMPATIBLE QU''AVEC',         /,&
+'@    L''OPTION iswdyn = 1 N''EST COMPATIBLE QU''AVEC',         /,&
 '@    L''OPTION IVELCO = 1.',                                   /,&
 '@    IVELCO VAUT ICI', i10,                                    /,&
 '@',                                                            /,&
-'@  Le calcul continue, swpdyn = 1 non pris en compte.',        /,&
+'@  Le calcul continue, iswdyn = 0.',                           /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -3581,10 +3585,10 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION :',                                             /,&
 '@    =========',                                               /,&
-'@    OPTION SWPDYN = 1  : ON SOUHAITE NSWRSM(IPR) > 19',       /,&
+'@    OPTION iswdyn = 1  : ON SOUHAITE NSWRSM(IPR) > 19',       /,&
 '@    NSWRSM(IPR) VAUT ICI', i10,                               /,&
 '@',                                                            /,&
-'@  Le calcul continue avec nswrsm(ipr) = 20.',                  /,&
+'@  Le calcul continue avec nswrsm(ipr) = 20.',                 /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6108,11 +6112,10 @@ endif
 '@',                                                            /,&
 '@ @@ WARNING:',                                                /,&
 '@    =========',                                               /,&
-'@    SWPDYN = 1 OPTION IS ONLY COMPATIBLE WITH IVELCO = 1',    /,&
-'@    IVELCO HAS VALUE', i10,                                   /,&
+'@    iswdyn = 1 OPTION IS ONLY COMPATIBLE WITH ivelco = 1',    /,&
+'@    ivelco HAS VALUE', i10,                                   /,&
 '@',                                                            /,&
-'@  The calculation continue, spwdyn = 1 is not taken',         /,&
-'@  into account.',                                             /,&
+'@  The calculation continue with iswdyn = 0.',                 /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6122,7 +6125,7 @@ endif
 '@',                                                            /,&
 '@ @@ WARNING:',                                                /,&
 '@    =========',                                               /,&
-'@    SWPDYN = 1 OPTION: WE WANT NSWRSM(IPR) > 19',             /,&
+'@    iswdyn = 1 OPTION: NSWRSM(IPR) > 19 IS REQUIRED',         /,&
 '@    NSWRSM(IPR) HAS VALUE', i10,                              /,&
 '@',                                                            /,&
 '@  The calculation continue with nswrsm(ipr) = 20.',           /,&

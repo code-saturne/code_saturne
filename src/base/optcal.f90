@@ -45,8 +45,20 @@ module optcal
   !   idifft : si idiff = 1
   !     = 1 prise en compte de la diffusion turbulente
   !     = 0 non prise en compte de la diffusion turbulente
+  !   idften
+  !     = 1 scalar diffusivity
+  !     = 3 orthotropic diffusivity
+  !     = 6 symmetric tensor diffusivity
+  !   iswdyn
+  !     = 0 no dynamic relaxation
+  !     = 1 dynamic relaxation depending on
+  !       \$f \delta \varia^k \f$
+  !     = 2 dynamic relaxation depending on
+  !       \$f \delta \varia^k \f$  and
+  !       \$f \delta \varia^{k-1} \f$
 
-  integer, save :: istat(nvarmx), iconv(nvarmx), idiff(nvarmx), idifft(nvarmx)
+  integer, save :: istat(nvarmx), iconv(nvarmx), idiff(nvarmx), idifft(nvarmx),&
+                   idften(nvarmx), iswdyn(nvarmx)
 
   ! Proprietes physiques rho et viscl constantes ou variables
   !    =1 variable, =0 constant
@@ -425,15 +437,6 @@ module optcal
   !     = 0 Standard algorithm (Without porosity)
 
   integer, save :: iporos
-
-  ! swpdyn
-  !    = 1 sweeps de reconstruction sur le second membre de l'equation
-  !        de continuite variables 0 < nswrsm(ipr) et relaxv(ipr)
-  !        variable 0.1 < relaxv(ipr) < 1  (option seulement disponible
-  !        avec ivelco = 1)
-  !    = 0 option desactive
-
-  integer, save :: swpdyn
 
   ! ipucou algorithme couplage instationnaire vitesse/pression
 

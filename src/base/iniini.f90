@@ -538,6 +538,8 @@ do ii = 1, nvarmx
   istat (ii) = 1
   idiff (ii) = 1
   idifft(ii) = 1
+  idften(ii) = 1
+  iswdyn(ii) = 0
 enddo
 
 ! --- Schema en temps
@@ -883,9 +885,6 @@ ivelco = 1
 ! --- Take porosity into account
 
 iporos = 0
-
-! relaxv(ipr) dynamique
-swpdyn = 0
 
 ! --- Couplage U-P
 !       Non active par defaut

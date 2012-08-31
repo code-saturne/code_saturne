@@ -295,8 +295,11 @@ typedef char     cs_byte_t;     /* Byte (untyped memory unit) */
 
 typedef cs_lnum_t  cs_lnum_2_t[2];      /* Vector of 2 local numbers */
 
+typedef cs_real_t  cs_real_2_t[2];      /* Vector of 2 real values */
 typedef cs_real_t  cs_real_3_t[3];      /* Vector of 3 real values */
 typedef cs_real_t  cs_real_4_t[4];      /* Vector of 4 real values */
+typedef cs_real_t  cs_real_6_t[6];      /* Vector of 6 real values
+                                           (for symmetric tensor) */
 typedef cs_real_t  cs_real_33_t[3][3];  /* Matrix of 3x3 real values */
 
 /* Mappings to MPI datatypes */

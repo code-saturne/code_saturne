@@ -124,7 +124,7 @@ integer          iwarnp, ipp
 integer          iptsta
 integer          ipcroo, ipbroo, ipcvto, ipcvlo
 integer          iphydp
-integer          imucpp
+integer          imucpp, idftnp, iswdyp
 
 double precision rnorm , d2s3, divp23
 double precision deltk , delte, a11, a12, a22, a21
@@ -883,6 +883,7 @@ if (ikecou.eq.1) then
   isstpp = isstpc(ivar)
   iwarnp = iwarni(ivar)
   imucpp = 0
+  idftnp = 1 ! no tensorial diffusivity
   blencp = blencv(ivar)
   epsrgp = epsrgr(ivar)
   climgp = climgr(ivar)
@@ -890,17 +891,19 @@ if (ikecou.eq.1) then
   relaxp = relaxv(ivar)
   thetap = thetav(ivar)
 
-  call bilsc2                                                     &
+  call bilsca &
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp ,                                     &
+   ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , rvoid  , &
+   propfa(1,iflmas), propfb(1,iflmab),                            &
+   viscf  , viscb  , rvoid  , rvoid  ,                            &
+   rvoid  , rvoid  ,                                              &
    w7     )
 
   if (iwarni(ivar).ge.2) then
@@ -973,6 +976,7 @@ if (ikecou.eq.1) then
   isstpp = isstpc(ivar)
   iwarnp = iwarni(ivar)
   imucpp = 0
+  idftnp = 1 ! no tensorial diffusivity
   blencp = blencv(ivar)
   epsrgp = epsrgr(ivar)
   climgp = climgr(ivar)
@@ -980,17 +984,19 @@ if (ikecou.eq.1) then
   relaxp = relaxv(ivar)
   thetap = thetav(ivar)
 
-  call bilsc2                                                     &
+  call bilsca &
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp ,                                     &
+   ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , rvoid  , &
+   propfa(1,iflmas), propfb(1,iflmab),                            &
+   viscf  , viscb  , rvoid  , rvoid  ,                            &
+   rvoid  , rvoid  ,                                              &
    w8     )
 
   if (iwarni(ivar).ge.2) then
@@ -1394,6 +1400,8 @@ ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
 iescap = 0
 imucpp = 0
+idftnp = idften(ivar)
+iswdyp = iswdyn(ivar)
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
@@ -1412,15 +1420,16 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp ,                            &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-                     coefa(1,iclvar) , coefb(1,iclvar) ,          &
-                     coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
-                     propfa(1,iflmas), propfb(1,iflmab),          &
-   viscf  , viscb  , viscf  , viscb  ,                            &
+   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
+   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   propfa(1,iflmas), propfb(1,iflmab),                            &
+   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    tinstk , smbrk  , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  , rvoid  )
 
@@ -1477,6 +1486,8 @@ ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
 iescap = 0
 imucpp = 0
+idftnp = idften(ivar)
+iswdyp = iswdyn(ivar)
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
@@ -1495,15 +1506,16 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp ,                            &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-                     coefa(1,iclvar) , coefb(1,iclvar) ,          &
-                     coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
-                     propfa(1,iflmas), propfb(1,iflmab),          &
-   viscf  , viscb  , viscf  , viscb  ,                            &
+   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
+   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   propfa(1,iflmas), propfb(1,iflmab),                            &
+   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    tinste , smbre  , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  , rvoid  )
 

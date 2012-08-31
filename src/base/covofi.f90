@@ -94,7 +94,7 @@ use cstphy
 use cstnum
 use ppppar
 use ppthch
-use pointe, only: porosi
+use pointe, only: porosi, visten
 use coincl
 use cpincl
 use cs_fuel_incl
@@ -144,17 +144,21 @@ integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          imucpp
+integer          imucpp, idftnp, iswdyp
 
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp
+double precision trrij , csteps
 
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: w1
+double precision, allocatable, dimension(:,:) :: viscce
+double precision, allocatable, dimension(:,:) :: weighf
+double precision, allocatable, dimension(:) :: weighb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: xcpp
@@ -589,6 +593,17 @@ if (isso2t(iscal).gt.0) then
   enddo
 endif
 
+! Low Mach compressible algos (conservative in time)
+if (idilat.gt.1) then
+  ipcrho = ipcroa
+
+! Standard algo
+else
+  ipcrho = ipcrom
+endif
+
+idftnp = idften(ivar)
+
 ! "VITESSE" DE DIFFUSION FACETTE
 
 ! On prend le MAX(mu_t,0) car en LES dynamique mu_t peut etre negatif
@@ -596,22 +611,75 @@ endif
 ! MAX(K + K_t,0) mais cela autoriserait des K_t negatif, ce qui est
 ! considere ici comme non physique.
 if(idiff(ivar).ge.1) then
-  if (ipcvsl.eq.0) then
-    do iel = 1, ncel
-      w1(iel) = visls0(iscal)                                     &
-         + idifft(ivar)*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
-    enddo
-  else
-    do iel = 1, ncel
-      w1(iel) = propce(iel,ipcvsl)                                &
-         + idifft(ivar)*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
-    enddo
+
+  ! Scalar diffusivity
+  if (idftnp.eq.1) then
+    if (ipcvsl.eq.0) then
+      do iel = 1, ncel
+        w1(iel) = visls0(iscal)                                     &
+           + idifft(ivar)*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
+      enddo
+    else
+      do iel = 1, ncel
+        w1(iel) = propce(iel,ipcvsl)                                &
+           + idifft(ivar)*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
+      enddo
+    endif
+
+    call viscfa &
+    !==========
+   ( imvisf ,                      &
+     w1     ,                      &
+     viscf  , viscb  )
+
+  ! Symmetric tensor diffusivity
+  elseif (idftnp.eq.6) then
+
+    ! Allocate temporary arrays
+    allocate(viscce(6,ncelet))
+    allocate(weighf(2,nfac))
+    allocate(weighb(nfabor))
+
+    if (ipcvsl.eq.0) then
+      do iel = 1, ncel
+
+        viscce(1,iel) = visls0(iscal)                                      &
+                      + idifft(ivar)*xcpp(iel)*visten(1,iel)/sigmas(iscal)
+        viscce(2,iel) = visls0(iscal)                                      &
+                      + idifft(ivar)*xcpp(iel)*visten(2,iel)/sigmas(iscal)
+        viscce(3,iel) = visls0(iscal)                                      &
+                      + idifft(ivar)*xcpp(iel)*visten(3,iel)/sigmas(iscal)
+        viscce(4,iel) = idifft(ivar)*xcpp(iel)*visten(4,iel)/sigmas(iscal)
+        viscce(5,iel) = idifft(ivar)*xcpp(iel)*visten(5,iel)/sigmas(iscal)
+        viscce(6,iel) = idifft(ivar)*xcpp(iel)*visten(6,iel)/sigmas(iscal)
+
+      enddo
+    else
+      do iel = 1, ncel
+
+        viscce(1,iel) = propce(iel,ipcvsl)                                 &
+                      + idifft(ivar)*xcpp(iel)*visten(1,iel)/sigmas(iscal)
+        viscce(2,iel) = propce(iel,ipcvsl)                                 &
+                      + idifft(ivar)*xcpp(iel)*visten(2,iel)/sigmas(iscal)
+        viscce(3,iel) = propce(iel,ipcvsl)                                 &
+                      + idifft(ivar)*xcpp(iel)*visten(3,iel)/sigmas(iscal)
+        viscce(4,iel) = idifft(ivar)*xcpp(iel)*visten(4,iel)/sigmas(iscal)
+        viscce(5,iel) = idifft(ivar)*xcpp(iel)*visten(5,iel)/sigmas(iscal)
+        viscce(6,iel) = idifft(ivar)*xcpp(iel)*visten(6,iel)/sigmas(iscal)
+
+      enddo
+    endif
+
+    iwarnp = iwarni(ivar)
+
+    call vitens &
+    !==========
+   ( imvisf ,                      &
+     viscce ,                      &
+     weighf , weighb ,             &
+     viscf  , viscb  )
+
   endif
-  call viscfa &
-  !==========
- ( imvisf ,                                                       &
-   w1     ,                                                       &
-   viscf  , viscb  )
 
 else
 
@@ -622,15 +690,6 @@ else
     viscb(ifac) = 0.d0
   enddo
 
-endif
-
-! Low Mach compressible algos (conservative in time)
-if (idilat.gt.1) then
-  ipcrho = ipcroa
-
-! Standard algo
-else
-  ipcrho = ipcrom
 endif
 
 ! Without porosity
@@ -674,6 +733,7 @@ ircflp = ircflu(ivar)
 ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
 iescap = 0
+iswdyp = iswdyn(ivar)
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
@@ -692,15 +752,16 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp ,                            &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-                     coefa(1,iclvar) , coefb(1,iclvar) ,          &
-                     coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
-                     propfa(1,iflmas), propfb(1,iflmab),          &
-   viscf  , viscb  , viscf  , viscb  ,                            &
+   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
+   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   propfa(1,iflmas), propfb(1,iflmab),                            &
+   viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
+   weighf , weighb ,                                              &
    rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                   &
    xcpp   , rvoid  )
 
@@ -742,6 +803,8 @@ endif
 
 ! Free memory
 deallocate(w1)
+if (allocated(viscce)) deallocate(viscce)
+if (allocated(weighf)) deallocate(weighf, weighb)
 deallocate(dpvar)
 deallocate(xcpp)
 

@@ -98,7 +98,7 @@ integer          iccocg, inc
 integer          iconvp, idiffp, ircflp
 integer          ischcp, isstpp, ippvar
 integer          ipcvsl, iflmas, iflmab
-integer          imucpp
+integer          imucpp, idftnp
 double precision epsrgp, climgp, extrap
 double precision blencp, relaxp, thetex
 double precision qimp , hint
@@ -135,6 +135,7 @@ do iscal = 1, nscal
   inc    = 1
   iccocg = 1
   imucpp = 0
+  idftnp = 1 !idften(ivar)!FIXME when activating GGDH
   ippvar = ipprtp(ivar)
   iwarnp = iwarni(ivar)
   blencp = blencv(ivar)
@@ -235,18 +236,19 @@ do iscal = 1, nscal
     enddo
 
     ! Diffusion term calculation
-    call bilsc2 &
+    call bilsca &
    !==========
   ( nvar   , nscal  ,                                              &
     idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-    ippvar , iwarnp , imucpp ,                                     &
+    ippvar , iwarnp , imucpp , idftnp ,                            &
     blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
     whsad  , whsad  ,                                              &
     coefap , coefbp ,                                              &
     cofafp , cofbfp ,                                              &
     propfa(1,iflmas), propfb(1,iflmab),                            &
-    viscf  , viscb  , rvoid  ,                                     &
+    viscf  , viscb  , rvoid  , rvoid  ,                            &
+    rvoid  , rvoid  ,                                              &
     propce(1,ipproc(iustdy(iscal))) )
 
     ! Free memory
@@ -257,18 +259,19 @@ do iscal = 1, nscal
   else
 
     ! Diffusion term calculation
-    call bilsc2 &
+    call bilsca &
     !==========
   ( nvar   , nscal  ,                                              &
     idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-    ippvar , iwarnp , imucpp ,                                     &
+    ippvar , iwarnp , imucpp , idftnp ,                            &
     blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
     rtp(1,ivar)     , rtp(1,ivar)     ,                            &
     coefa(1,iclvar) , coefb(1,iclvar) ,                            &
     coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
     propfa(1,iflmas), propfb(1,iflmab),                            &
-    viscf  , viscb  , rvoid  ,                                     &
+    viscf  , viscb  , rvoid  , rvoid  ,                            &
+    rvoid  , rvoid  ,                                              &
     propce(1,ipproc(iustdy(iscal))) )
 
   endif

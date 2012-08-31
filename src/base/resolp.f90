@@ -171,7 +171,7 @@ integer          nagmax, npstmg
 integer          ibsize
 integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
 integer          nswrsp
-integer          imucpp
+integer          imucpp, idftnp, iswdyp
 
 double precision residu, phydr0
 double precision ardtsr, arsr  , unsara, thetap
@@ -1522,6 +1522,9 @@ if (idilat.eq.4) then
   ischcp = ischcv(ivar)
   isstpp = isstpc(ivar)
   iescap = 0
+  imucpp = 0
+  idftnp = idften(ivar)
+  iswdyp = iswdyn(ivar)
   imgrp  = 0
   ncymxp = ncymax(ivar)
   nitmfp = nitmgf(ivar)
@@ -1535,7 +1538,6 @@ if (idilat.eq.4) then
   extrap = extrag(ivar)
   relaxp = relaxv(ivar)
   thetap = thetav(ivar)
-  imucpp = 0
 
   ! --- Solve the convection diffusion equation
 
@@ -1544,7 +1546,7 @@ if (idilat.eq.4) then
    ( nvar   , nscal  ,                                              &
      idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
      imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-     ischcp , isstpp , iescap , imucpp ,                            &
+     ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
      imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
@@ -1552,7 +1554,8 @@ if (idilat.eq.4) then
      coefap , coefbp ,                                              &
      cofafp , cofbfp ,                                              &
      velflx , velflb ,                                              &
-     viscf  , viscb  , viscf  , viscb  ,                            &
+     viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+     rvoid  , rvoid  ,                                              &
      rovsdt , smbr   , drtp   , dpvar  ,                            &
      rvoid  , rvoid  )
 

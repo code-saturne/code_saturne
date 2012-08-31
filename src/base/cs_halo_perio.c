@@ -316,6 +316,60 @@ _apply_tensor_rotation(cs_real_t   matrix[3][4],
 }
 
 /*----------------------------------------------------------------------------
+ * Compute a matrix * tensor * Tmatrix product to apply a rotation to a
+ * given symmetric interleaved tensor
+ *
+ * parameters:
+ *   matrix[3][4]        --> transformation matrix in homogeneous coords.
+ *                           last line = [0; 0; 0; 1] (Not used here)
+ *   tensor              <-> incoming (6) symmetric tensor
+ *----------------------------------------------------------------------------*/
+
+static void
+_apply_sym_tensor_rotation(cs_real_t   matrix[3][4],
+                           cs_real_t   *tensor)
+{
+  cs_lnum_t  i, j, k, l;
+
+  cs_real_t  t[3][3];
+  cs_real_t  t0[3][3];
+
+  t0[0][0] = tensor[0];
+  t0[1][1] = tensor[1];
+  t0[2][2] = tensor[2];
+  t0[0][1] = tensor[3];
+  t0[1][0] = tensor[3];
+  t0[1][2] = tensor[4];
+  t0[2][1] = tensor[4];
+  t0[0][2] = tensor[5];
+  t0[2][0] = tensor[5];
+
+  for (k = 0; k < 3; k++) {
+    for (j = 0; j < 3; j++) {
+      t[k][j] = 0.;
+      for (l = 0; l < 3; l++)
+        t[k][j] += matrix[j][l] * t0[k][l];
+    }
+  }
+
+  for (i = 0; i < 3; i++) {
+    for (j = 0; j < 3; j++) {
+      t0[i][j] = 0.;
+      for (k = 0; k < 3; k++)
+        t0[i][j] += matrix[i][k] * t[k][j];
+    }
+  }
+
+  tensor[0] = t0[0][0];
+  tensor[1] = t0[1][1];
+  tensor[2] = t0[2][2];
+  tensor[3] = t0[0][1];
+  tensor[3] = t0[1][0];
+  tensor[4] = t0[2][1];
+  tensor[5] = t0[2][0];
+
+}
+/*----------------------------------------------------------------------------
  * Compute the rotation of a third-order symmetric interleaved tensor
  * (18 components)
  * TENSOR_ijk = M_ip M_jq M_kr TENSOR_pqr
@@ -1696,6 +1750,74 @@ cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
   } /* End of loop on transformations for the local rank */
 }
 
+/*----------------------------------------------------------------------------
+ * Synchronize values for a real tensor (symmetric interleaved) between
+ * periodic cells.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   var       <-> symmetric tensor to update (6 values)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
+                                cs_halo_type_t    sync_mode,
+                                cs_real_t         var[])
+{
+  int  rank_id, t_id;
+  cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
+
+  cs_real_t  matrix[3][4];
+
+  fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
+
+  const int  n_transforms = halo->n_transforms;
+  const cs_lnum_t  n_elts   = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
+  const int  have_rotation = cs_glob_mesh->have_rotation_perio;
+
+  if (sync_mode == CS_HALO_N_TYPES || have_rotation == 0)
+    return;
+
+  assert(halo != NULL);
+
+  _test_halo_compatibility(halo);
+
+  for (t_id = 0; t_id < n_transforms; t_id++) {
+
+    shift = 4 * halo->n_c_domains * t_id;
+
+    perio_type = fvm_periodicity_get_type(periodicity, t_id);
+
+    if (perio_type >= FVM_PERIODICITY_ROTATION) {
+
+      fvm_periodicity_get_matrix(periodicity, t_id, matrix);
+
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+        start_std = halo->perio_lst[shift + 4*rank_id];
+        end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
+
+        for (i = start_std; i < end_std; i++)
+          _apply_sym_tensor_rotation(matrix, var + 6*(n_elts+i));
+
+        if (sync_mode == CS_HALO_EXTENDED) {
+
+          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
+          end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
+
+          for (i = start_ext; i < end_ext; i++)
+            _apply_sym_tensor_rotation(matrix, var + 6*(n_elts+i));
+
+        } /* End of the treatment of rotation */
+
+      } /* End if halo is extended */
+
+    } /* End of loop on ranks */
+
+  } /* End of loop on transformations for the local rank */
+}
 /*----------------------------------------------------------------------------
  * Synchronize values for a real diagonal tensor between periodic cells.
  *

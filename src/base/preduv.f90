@@ -188,7 +188,7 @@ integer          iesprp, iestop
 integer          iptsna
 integer          iflmb0, nswrp , imaspe, ipbrom, itypfl
 integer          idiaex, idtva0
-integer          imucpp
+integer          imucpp, idftnp, iswdyp
 
 double precision rnorm , vitnor
 double precision romvom, drom
@@ -1422,6 +1422,8 @@ do isou = 1, 3
   ischcp = ischcv(ivar)
   isstpp = isstpc(ivar)
   imucpp = 0
+  idftnp = 0 !no tensorial diffusion avalaible for the velocity
+  iswdyp = iswdyn(ivar)
   imgrp  = imgr  (ivar)
   ncymxp = ncymax(ivar)
   nitmfp = nitmgf(ivar)
@@ -1450,15 +1452,16 @@ do isou = 1, 3
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp ,                            &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-                     coefa(1,iclvar) , coefb(1,iclvar) ,          &
-                     coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
-                     flumas , flumab ,                            &
-   viscfi , viscbi , viscf  , viscb  ,                            &
+   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
+   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   flumas , flumab ,                                              &
+   viscfi , viscbi , rvoid  , viscf  , viscb  , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  , eswork )
 
@@ -1469,15 +1472,16 @@ do isou = 1, 3
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp ,                            &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , uvwk(1,isou) ,                               &
-                     coefa(1,iclvar) , coefb(1,iclvar) ,          &
-                     coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
-                     flumas , flumab ,                            &
-   viscfi , viscbi , viscf  , viscb  ,                            &
+   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
+   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   flumas , flumab ,                                              &
+   viscfi , viscbi , rvoid  , viscf  , viscb  , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  , eswork )
 
@@ -1520,15 +1524,16 @@ do isou = 1, 3
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp ,                            &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ippt   , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    tpucou(1,isou)  , tpucou(1,isou)  ,                            &
-                     coefa(1,iclvar) , coefb(1,iclvar) ,          &
-                     coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
-                     flumas , flumab ,                            &
-   viscfi , viscbi , viscf  , viscb  ,                            &
+   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
+   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   flumas , flumab ,                                              &
+   viscfi , viscbi , rvoid  , viscf  , viscb  , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    rovsdt , smbr   , tpucou(1,isou)  , dpvar  ,                   &
    rvoid  , rvoid  )
 
@@ -1555,21 +1560,21 @@ do isou = 1, 3
 
     inc = 1
     iccocg = 1
-    imucpp = 0
 !     Pas de relaxation en stationnaire
     idtva0 = 0
 
-    call bilsc2                                                   &
+    call bilsca &
     !==========
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp ,                                     &
+   ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtp(1,ivar)     , rtp(1,ivar)     ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   flumas , flumab , viscf  , viscb  , rvoid  ,                   &
+   flumas , flumab , viscf  , viscb  , rvoid  , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    smbr   )
 
     iestop = ipproc(iestim(iestot))

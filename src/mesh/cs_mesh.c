@@ -2118,6 +2118,24 @@ void CS_PROCF(syntin, SYNTIN)
   cs_mesh_sync_var_tens(var);
 }
 
+/*----------------------------------------------------------------------------
+ * Update a symmetric tensor array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine syntis(var)
+ * *****************
+ *
+ * var   : <-> : interleaved symmetric tensor (of dimension 6)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(syntis, SYNTIS)
+(
+ cs_real_t  var[]
+)
+{
+  cs_mesh_sync_var_sym_tens(var);
+}
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -3542,6 +3560,28 @@ cs_mesh_sync_var_tens(cs_real_t  *var)
     cs_halo_perio_sync_var_tens(halo,
                                 CS_HALO_STANDARD,
                                 var);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a symmetric tensor array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var  <->  symmetric interleaved tensor (of dimension 6)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_sym_tens(cs_real_t  *var)
+{
+  const cs_halo_t  *halo = cs_glob_mesh->halo;
+
+  if (halo == NULL) return;
+
+  cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, var, 6);
+
+  if (cs_glob_mesh->n_init_perio > 0)
+    cs_halo_perio_sync_var_sym_tens(halo,
+                                    CS_HALO_STANDARD,
+                                    var);
 }
 
 /*----------------------------------------------------------------------------

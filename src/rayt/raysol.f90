@@ -167,7 +167,7 @@ integer          imgr1 , imligp, ircflp, ischcp, isstpp, iescap
 integer          ncymap, nitmgp
 integer          idir  , ndirs , kdir  , ipp   , inum
 integer          ii, jj, kk, idtva0, ivar0
-integer          imucpp
+integer          imucpp, idftnp, iswdyp
 
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision sx, sy, sz, domega
@@ -204,6 +204,8 @@ ischcp  = 1
 isstpp  = 0
 iescap  = 0
 imucpp  = 0
+idftnp  = 1
+iswdyp  = 0
 imgr1   = 0
 ncymap  = 100
 nitmgp  = 10
@@ -403,13 +405,14 @@ do ii = -1,1,2
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 ,  nitmap ,&
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp ,                            &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgr1  , ncymap , nitmgp , inum   , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rua    , ru     ,                                              &
    coefap , coefbp , cofafp , cofbfp , flurds , flurdb ,          &
-   viscf  , viscb  , viscf  , viscb  ,                            &
+   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    rovsdt , smbrs  , ru     , dpvar  ,                            &
    rvoid  , rvoid  )
 

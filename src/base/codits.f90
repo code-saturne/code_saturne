@@ -33,7 +33,7 @@
 !>
 !> \f[
 !> f_s^{imp}(a^{n+1}-a^n)
-!> + \divs \left( a^{n+1} \rho \vect {u} - \mu \grad a^{n+1} \right)
+!> + \divs \left( a^{n+1} \rho \vect{u} - \mu \grad a^{n+1} \right)
 !> = Rhs
 !> \f]
 !>
@@ -110,6 +110,17 @@
 !> \param[in]     imucpp        indicator
 !>                               - 0 do not multiply the convectiv term by Cp
 !>                               - 1 do multiply the convectiv term by Cp
+!> \param[in]     idftnp        indicator
+!>                               - 0 the diffusivity is scalar
+!>                               - 1 the diffusivity is a diagonal tensor
+!>                               - 2 the diffusivity is a symmetric tensor
+!> \param[in]     iswdyp        indicator
+!>                               - 0 no dynamic relaxation
+!>                               - 1 dynamic relaxation depending on
+!>                                 \$f \delta \varia^k \f$
+!>                               - 2 dynamic relaxation depending on
+!>                                 \$f \delta \varia^k \f$  and
+!>                                 \$f \delta \varia^{k-1} \f$
 !> \param[in]     imgrp         indicator
 !>                               - 0 no multi-grid
 !>                               - 1 otherwise
@@ -150,10 +161,16 @@
 !>                               at interior faces for the matrix
 !> \param[in]     viscbm        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
 !>                               at border faces for the matrix
+!> \param[in]     visccm        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
 !> \param[in]     viscfs        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
 !>                               at interior faces for the r.h.s.
 !> \param[in]     viscbs        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
 !>                               at border faces for the r.h.s.
+!> \param[in]     visccs        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+!> \param[in]     weighf        internal face weight between cells i j in case
+!>                               of tensor diffusion
+!> \param[in]     weighb        boundary face weight for cells i in case
+!>                               of tensor diffusion
 !> \param[in]     rovsdt        \f$ f_s^{imp} \f$
 !> \param[in]     smbrp         Right hand side \f$ Rhs^k \f$
 !> \param[in,out] pvar          current variable
@@ -169,13 +186,14 @@ subroutine codits &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp ,                            &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    pvara  , pvark  ,                                              &
    coefap , coefbp , cofafp , cofbfp , flumas , flumab ,          &
-   viscfm , viscbm , viscfs , viscbs ,                            &
+   viscfm , viscbm , visccm , viscfs , viscbs , visccs ,          &
+   weighf , weighb ,                                              &
    rovsdt , smbrp  , pvar   , dpvar  ,                            &
    xcpp   , eswork )
 
@@ -208,7 +226,7 @@ integer          imrgra , nswrsp , nswrgp , imligp , ircflp
 integer          ischcp , isstpp , iescap , imgrp
 integer          ncymxp , nitmfp
 integer          ipp    , iwarnp
-integer          imucpp
+integer          imucpp , idftnp , iswdyp
 double precision blencp , epsilp , epsrgp , climgp , extrap
 double precision relaxp , thetap , epsrsp
 
@@ -217,7 +235,10 @@ double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscfm(nfac), viscbm(nfabor)
+double precision visccm(ncelet)
 double precision viscfs(nfac), viscbs(nfabor)
+double precision visccs(ncelet)
+double precision weighf(2,nfac), weighb(nfabor)
 double precision rovsdt(ncelet), smbrp(ncelet)
 double precision pvar(ncelet)
 double precision dpvar(ncelet)
@@ -235,13 +256,15 @@ integer          idimte,itenso,iinvpe, iinvpp
 integer          idtva0
 integer          nagmax, npstmg
 integer          ibsize
+integer          incp, insqrt
 
-double precision residu, rnorm, ressol, res
-double precision thetex
+double precision residu, rnorm, ressol, res, rnorm2
+double precision thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
 
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:) :: smbini, w1
+double precision, allocatable, dimension(:) :: smbini, w1, adxk, adxkm1, dpvarm1
+double precision, allocatable, dimension(:) :: rhs0
 
 !===============================================================================
 
@@ -252,6 +275,10 @@ double precision, allocatable, dimension(:) :: smbini, w1
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac,2))
 allocate(smbini(ncelet))
+if (iswdyp.ge.1) then
+  allocate(adxk(ncelet), adxkm1(ncelet), dpvarm1(ncelet))
+  allocate(rhs0(ncelet))
+endif
 
 ! Names
 chaine = nomvar(ipp)
@@ -379,15 +406,16 @@ if (abs(thetex).gt.epzero) then
   inc    = 1
   iccocg = 1
 
-  call bilsc2 &
+  call bilsca &
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp ,                                     &
+   ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
    pvara  , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-   flumas , flumab , viscfs , viscbs , xcpp    ,                  &
+   flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
+   weighf , weighb ,                                              &
    smbrp  )
 endif
 
@@ -405,7 +433,7 @@ do iel = 1, ncelet
   pvar(iel) = pvark(iel)
 enddo
 
-! In the following, bilsc2 is called with inc=1,
+! In the following, bilsca is called with inc=1,
 ! except for Weight Matrix (nswrsp=-1)
 inc = 1
 if (nswrsp.eq.-1) then
@@ -423,22 +451,46 @@ isweep = 1
 
 !$omp parallel do
 do iel = 1, ncel
-  smbini(iel) = smbini(iel) - rovsdt(iel)*(pvar(iel) - pvara(iel))
-  smbrp(iel)  = smbini(iel)
+  smbrp(iel)  = 0.d0
 enddo
 
 iccocg = 1
 
-call bilsc2 &
+call bilsca &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp ,                                     &
+   ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-   flumas , flumab , viscfs , viscbs , xcpp   ,                   &
+   flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
+   weighf , weighb ,                                              &
    smbrp  )
+
+if (iswdyp.ge.1) then
+  !$omp parallel do
+  do iel = 1, ncel
+    rhs0(iel) = smbrp(iel)
+    smbini(iel) = smbini(iel) - rovsdt(iel)*(pvar(iel) - pvara(iel))
+    smbrp(iel)  = smbrp(iel) + smbini(iel)
+
+    adxkm1(iel) = 0.d0
+    adxk(iel) = 0.d0
+    dpvar(iel) = 0.d0
+  enddo
+
+  ! ||A.dx^0||^2 = 0
+  nadxk = 0.d0
+
+else
+
+  !$omp parallel do
+  do iel = 1, ncel
+    smbini(iel) = smbini(iel) - rovsdt(iel)*(pvar(iel) - pvara(iel))
+    smbrp(iel)  = smbrp(iel) + smbini(iel)
+  enddo
+endif
 
 ! --- Right hand side residual
 call prodsc(ncel,isqrt,smbrp,smbrp,residu)
@@ -473,8 +525,10 @@ call promav(isym,ibsize,iinvpp,dam,xam,pvar,w1)
 do iel = 1, ncel
   w1(iel) = w1(iel) + smbrp(iel)
 enddo
+
 call prodsc(ncel,isqrt,w1,w1,rnorm)
 rnsmbr(ipp) = rnorm
+rnorm2 = rnorm**2
 
 ! Free memory
 deallocate(w1)
@@ -490,9 +544,17 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
   ! --- Solving on the increment dpvar
 
   !$omp parallel do
-  do iel = 1, ncel
-    dpvar(iel) = 0.d0
-  enddo
+
+  if (iswdyp.ge.1) then
+    do iel = 1, ncel
+      dpvarm1(iel) = dpvar(iel)
+      dpvar(iel) = 0.d0
+    enddo
+  else
+    do iel = 1, ncel
+      dpvar(iel) = 0.d0
+    enddo
+  endif
 
   ! Solver reisudal
   ressol = residu
@@ -517,14 +579,104 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
   ! Writing
   if (iwarnp.ge.3) then
     write(nfecra,1000) cnom, isweep, residu, rnorm
+    write(nfecra,1010) cnom, isweep, niterf
+  endif
+
+  ! Dynamic relaxation of the system
+  if (iswdyp.ge.1) then
+
+    ! Computation of the variable ralaxation coefficient
+
+    !$omp parallel do
+    do iel = 1, ncelet
+      adxkm1(iel) = adxk(iel)
+      adxk(iel) = - rhs0(iel)
+    enddo
+
+    call bilsca &
+    !==========
+   ( nvar   , nscal  ,                                              &
+     idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
+     ipp    , iwarnp , imucpp , idftnp ,                            &
+     blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+     dpvar  , dpvar  , coefap , coefbp , cofafp , cofbfp ,          &
+     flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
+     weighf , weighb ,                                              &
+     adxk   )
+
+    insqrt = 0
+
+    ! ||E.dx^(k-1)-E.0||^2
+    nadxkm1 = nadxk
+
+    ! ||A.dx^k-E.0||^2
+    call prodsc(ncel , insqrt , adxk , adxk , nadxk)
+
+    ! < E.dx^k-E.0; r^k >
+    call prodsc(ncel , insqrt , smbrp , adxk , paxkrk)
+
+    ! Relaxation with respect to dx^k and dx^(k-1)
+    if (iswdyp.ge.2) then
+
+      ! < E.dx^(k-1)-E.0; r^k >
+      call prodsc(ncel , insqrt , smbrp , adxkm1 , paxm1rk)
+
+      ! < E.dx^(k-1)-E.0; E.dx^k-E.0 >
+      call prodsc(ncel , insqrt , adxk, adxkm1 , paxm1ax)
+
+      if (nadxkm1.gt.1.d-30*rnorm2.and.                     &
+          (nadxk*nadxkm1-paxm1ax**2).gt.1.d-30*rnorm2) then
+        beta = (paxkrk*paxm1ax - nadxk*paxm1rk)/(nadxk*nadxkm1-paxm1ax**2)
+      else
+        beta = 0.d0
+      endif
+
+    else
+      beta = 0.d0
+      paxm1ax =1.d0
+      paxm1rk = 0.d0
+      paxm1ax = 0.d0
+    endif
+
+    ! The first sweep is not relaxed
+    if (isweep.eq.1) then
+      alph = 1.d0
+      beta = 0.d0
+    elseif (isweep.eq.2) then
+      beta = 0.d0
+      alph = -paxkrk/max(nadxk, 1.d-30*rnorm2)
+    else
+      alph = -(paxkrk + beta*paxm1ax)/max(nadxk, 1.d-30*rnorm2)
+    endif
+
+    ! Writing
+    if (iwarnp.ge.3) then
+      write(nfecra,1200) cnom, isweep, alph, beta, &
+                         paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax
+    endif
+
   endif
 
   ! --- Update the solution with the increment
 
-  !$omp parallel do
-  do iel = 1, ncel
-    pvar(iel) = pvar(iel) + dpvar(iel)
-  enddo
+  if (iswdyp.eq.0) then
+    !$omp parallel do
+    do iel = 1, ncel
+      pvar(iel) = pvar(iel) + dpvar(iel)
+    enddo
+  elseif (iswdyp.eq.1) then
+    if (alph.lt.0.d0) goto 100
+    !$omp parallel do
+    do iel = 1, ncel
+      pvar(iel) = pvar(iel) + alph*dpvar(iel)
+    enddo
+  elseif (iswdyp.ge.2) then
+    !$omp parallel do
+    do iel = 1, ncel
+      pvar(iel) = pvar(iel) + alph*dpvar(iel) + beta*dpvarm1(iel)
+    enddo
+  endif
 
   ! ---> Handle parallelism and periodicity
   !      (periodicity of rotation is not ensured here)
@@ -545,23 +697,43 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
 
     iccocg = 0
 
-    !$omp parallel do
-    do iel = 1, ncel
-      ! smbini already contains instationnary terms and mass source terms
-      ! of the RHS updated at each sweep
-      smbini(iel) = smbini(iel) - rovsdt(iel)*dpvar(iel)
-      smbrp(iel)  = smbini(iel)
-    enddo
+    if (iswdyp.eq.0) then
+      !$omp parallel do
+      do iel = 1, ncel
+        ! smbini already contains instationnary terms and mass source terms
+        ! of the RHS updated at each sweep
+        smbini(iel) = smbini(iel) - rovsdt(iel)*dpvar(iel)
+        smbrp(iel)  = smbini(iel)
+      enddo
+    elseif (iswdyp.eq.1) then
+      !$omp parallel do
+      do iel = 1, ncel
+        ! smbini already contains instationnary terms and mass source terms
+        ! of the RHS updated at each sweep
+        smbini(iel) = smbini(iel) - rovsdt(iel)*alph*dpvar(iel)
+        smbrp(iel)  = smbini(iel)
+      enddo
+    elseif (iswdyp.ge.2) then
+      !$omp parallel do
+      do iel = 1, ncel
+        ! smbini already contains instationnary terms and mass source terms
+        ! of the RHS updated at each sweep
+        smbini(iel) = smbini(iel)                                     &
+                    - rovsdt(iel)*(alph*dpvar(iel)+beta*dpvarm1(iel))
+        smbrp(iel)  = smbini(iel)
+      enddo
+    endif
 
-    call bilsc2 &
+    call bilsca &
     !==========
    ( nvar   , nscal  ,                                              &
      idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     ipp    , iwarnp , imucpp ,                                     &
+     ipp    , iwarnp , imucpp , idftnp ,                            &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
      pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-     flumas , flumab , viscfs , viscbs , xcpp   ,                   &
+     flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
+     weighf , weighb ,                                              &
      smbrp  )
 
     ! --- Convergence test
@@ -571,6 +743,8 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
 
 enddo
 ! --- Reconstruction loop (end)
+
+100 continue
 
 ! Writing: convergence
 if (iwarnp.ge.1) then
@@ -608,15 +782,16 @@ if (iescap.gt.0) then
   ! Without relaxation even for a statonnary computation
   idtva0 = 0
 
-  call bilsc2 &
+  call bilsca &
   !==========
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp ,                                     &
+   ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-   flumas , flumab , viscfs , viscbs , xcpp   ,                   &
+   flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
+   weighf , weighb ,                                              &
    smbrp  )
 
   ! Contribution of the current component to the L2 norm stored in eswork
@@ -641,32 +816,45 @@ endif
 ! Free memory
 deallocate(dam, xam)
 deallocate(smbini)
-
+if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1)
 !--------
 ! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
 
- 1000 format (                                                          &
+ 1000 format ( &
  1X,A16,' : CV-DIF-TS',I5,' IT - RES= ',E12.5,' NORME= ', E12.5)
- 1100 format (                                                          &
-'@                                                            ',/,&
-'@ @@ ATTENTION : ',A8 ,' CONVECTION-DIFFUSION-TERMES SOURCES ',/,&
-'@    =========                                               ',/,&
-'@  Nombre d''iterations maximal ',I10   ,' atteint           ',/,&
-'@                                                            '  )
-
+ 1010 format ( &
+ 1X,A16,' : Current reconstruction sweep = ',I5,' - Sweeps for solver = ',I5)
+ 1100 format ( &
+'@'                                                                 ,/,&
+'@ @@ ATTENTION : ',A8 ,' CONVECTION-DIFFUSION-TERMES SOURCES'      ,/,&
+'@    ========='                                                    ,/,&
+'@  Nombre d''iterations maximal ',I10   ,' atteint'                ,/,&
+'@' )
+ 1200 format ( &
+ 1X,A16,' Sweep: ',I5,'Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
+'    < A.dx^k  ; r^k > = ',E12.5,' ||A.dx^k  ||^2 = ',E12.5                ,/,&
+'    < A.dx^k-1; r^k > = ',E12.5,' ||A.dx^k-1||^2 = ',E12.5                ,/,&
+' < A.dx^k-1; A.dx^k > = ',E12.5)
 #else
 
- 1000 format (                                                          &
+ 1000 format ( &
  1X,A16,' : CV-DIF-TS',I5,' IT - RES= ',E12.5,' NORM= ', E12.5)
- 1100 format (                                                          &
-'@                                                            ',/,&
-'@ @@ WARNING: ',A8 ,' CONVECTION-DIFFUSION-SOURCE TERMS      ',/,&
-'@    ========                                                ',/,&
-'@  Maximum number of iterations ',I10   ,' reached           ',/,&
-'@                                                            '  )
+ 1010 format ( &
+ 1X,A16,' : Current reconstruction sweep = ',I5,' - Sweeps for solver = ',I5)
+ 1100 format ( &
+'@'                                                                 ,/,&
+'@ @@ WARNING: ',A8 ,' CONVECTION-DIFFUSION-SOURCE TERMS'           ,/,&
+'@    ========'                                                     ,/,&
+'@  Maximum number of iterations ',I10   ,' reached'                ,/,&
+'@' )
+ 1200 format ( &
+ 1X,A16,' Sweep: ',I5,'Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
+'    < A.dx^k  ; r^k > = ',E12.5,' ||A.dx^k  ||^2 = ',E12.5                ,/,&
+'    < A.dx^k-1; r^k > = ',E12.5,' ||A.dx^k-1||^2 = ',E12.5                ,/,&
+' < A.dx^k-1; A.dx^k > = ',E12.5)
 
 #endif
 

@@ -24,23 +24,24 @@
 ! Function:
 ! ---------
 
-!> \file bilsc2.f90
+!> \file bilsct.f90
 !>
 !> \brief This function adds the explicit part of the convection/diffusion
-!> terms of a standard transport equation of a scalar field \f$ \varia \f$.
+!> terms of a transport equation of a scalar field \f$ \varia \f$ such as the
+!> temperature.
 !>
 !> More precisely, the right hand side \f$ Rhs \f$ is updated as
 !> follows:
 !> \f[
 !> Rhs = Rhs + \sum_{\fij \in \Facei{\celli}}      \left(
-!>        \dot{m}_\ij \varia_\fij
-!>      - \mu_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
+!>        C_p\dot{m}_\ij \varia_\fij
+!>      - \lambda_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
 !> \f]
 !>
 !> Warning:
-!> \f$ Rhs \f$ has already been initialized before calling bilsc2!
+!> \f$ Rhs \f$ has already been initialized before calling bilsct!
 !>
-!> Options:
+!> Options for the convective scheme:
 !> - blencp = 0: upwind scheme for the advection
 !> - blencp = 1: no upwind scheme except in the slope test
 !> - ischcp = 0: second order
@@ -52,8 +53,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     idtvar        indicator of the temporal scheme
 !> \param[in]     ivar          index of the current variable
 !> \param[in]     iconvp        indicator
@@ -117,10 +116,11 @@
 !>                               at interior faces for the r.h.s.
 !> \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
 !>                               at border faces for the r.h.s.
+!> \param[in]     xcpp          array of specific heat (\f$ C_p \f$)
 !> \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
 !_______________________________________________________________________________
 
-subroutine bilsc2 &
+subroutine bilsct &
 !================
 
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
@@ -128,7 +128,7 @@ subroutine bilsc2 &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-   flumas , flumab , viscf  , viscb  ,                            &
+   flumas , flumab , viscf  , viscb  , xcpp   ,                   &
    smbrp  )
 
 !===============================================================================
@@ -151,13 +151,11 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , iccocg
 integer          iwarnp , ipp
-
 
 double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
 
@@ -167,6 +165,7 @@ double precision cofafp(nfabor), cofbfp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscf (nfac), viscb (nfabor)
 double precision smbrp(ncelet)
+double precision xcpp(ncelet)
 
 ! Local variables
 
@@ -263,7 +262,6 @@ else
     grad(iel,3) = 0.d0
   enddo
 endif
-
 
 ! ======================================================================
 ! ---> CALCUL DU GRADIENT DECENTRE DPDXA, DPDYA, DPDZA POUR TST DE PENTE
@@ -447,9 +445,9 @@ if (iupwin.eq.1) then
           pif  = pi
           pjf  = pj
 
-          fluxi = iconvp*(flui*pir + fluj*pjf - flumas(ifac)*pi)       &
+          fluxi = iconvp*xcpp(ii)*(flui*pir + fluj*pjf - flumas(ifac)*pi)       &
                 + idiffp*viscf(ifac)*(pipr - pjp)
-          fluxj = iconvp*(flui*pif + fluj*pjr - flumas(ifac)*pj)       &
+          fluxj = iconvp*xcpp(jj)*(flui*pif + fluj*pjr - flumas(ifac)*pj)       &
                 + idiffp*viscf(ifac)*(pip - pjpr)
 
           smbrp(ii) = smbrp(ii) - fluxi
@@ -466,7 +464,7 @@ if (iupwin.eq.1) then
       !$omp parallel do private(ifac, ii, jj, dijpfx, dijpfy, dijpfz, pnd,      &
       !$omp                     diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, &
       !$omp                     dpxf, dpyf, dpzf, pip, pjp, flui, fluj,         &
-      !$omp                     pif, pjf, flux, pi, pj)                         &
+      !$omp                     pif, pjf, fluxi, fluxj, pi, pj)                 &
       !$omp             reduction(+:infac)
       do it = 1, nthrdi
         do ifac = iompli(1,ig,it), iompli(2,ig,it)
@@ -509,10 +507,13 @@ if (iupwin.eq.1) then
           pif = pi
           pjf = pj
 
-          flux = iconvp*(flui*pif +fluj*pjf) + idiffp*viscf(ifac)*(pip -pjp)
+          fluxi = iconvp*xcpp(ii)*(flui*pif +fluj*pjf -flumas(ifac)*pi) &
+                + idiffp*viscf(ifac)*(pip -pjp)
+          fluxj = iconvp*xcpp(jj)*(flui*pif +fluj*pjf -flumas(ifac)*pj) &
+                + idiffp*viscf(ifac)*(pip -pjp)
 
-          smbrp(ii) = smbrp(ii) - thetap *(flux - iconvp*flumas(ifac)*pi)
-          smbrp(jj) = smbrp(jj) + thetap *(flux - iconvp*flumas(ifac)*pj)
+          smbrp(ii) = smbrp(ii) - thetap * fluxi
+          smbrp(jj) = smbrp(jj) + thetap * fluxj
 
         enddo
       enddo
@@ -628,9 +629,9 @@ else if (isstpp.eq.1) then
           ! Flux
           ! ----
 
-          fluxi =   iconvp*(flui*pifri + fluj*pjfri - flumas(ifac)*pi) &
+          fluxi =   iconvp*xcpp(ii)*(flui*pifri + fluj*pjfri - flumas(ifac)*pi) &
                   + idiffp*viscf(ifac)*(pipr -pjp)
-          fluxj =   iconvp*(flui*pifrj + fluj*pjfrj - flumas(ifac)*pj) &
+          fluxj =   iconvp*xcpp(jj)*(flui*pifrj + fluj*pjfrj - flumas(ifac)*pj) &
                   + idiffp*viscf(ifac)*(pip -pjpr)
 
           ! Assembly
@@ -650,8 +651,8 @@ else if (isstpp.eq.1) then
       !$omp parallel do private(ifac, ii, jj, dijpfx, dijpfy, dijpfz, pnd,      &
       !$omp                     diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, &
       !$omp                     dpxf, dpyf, dpzf, pip, pjp, flui, fluj, pif,    &
-      !$omp                     pjf, difx, dify, difz, djfx, djfy, djfz, flux,  &
-      !$omp                     pi, pj)
+      !$omp                     pjf, difx, dify, difz, djfx, djfy, djfz, fluxi, &
+      !$omp                     fluxj, pi, pj)
       do it = 1, nthrdi
         do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
@@ -722,13 +723,16 @@ else if (isstpp.eq.1) then
           ! Flux
           ! ----
 
-          flux = iconvp*(flui*pif +fluj*pjf) + idiffp*viscf(ifac)*(pip -pjp)
+          fluxi = iconvp*xcpp(ii)*(flui*pif +fluj*pjf - flumas(ifac)*pi) &
+                + idiffp*viscf(ifac)*(pip -pjp)
+          fluxj = iconvp*xcpp(jj)*(flui*pif +fluj*pjf - flumas(ifac)*pj) &
+                + idiffp*viscf(ifac)*(pip -pjp)
 
           ! Assembly
           ! --------
 
-          smbrp(ii) = smbrp(ii) - thetap *(flux - iconvp*flumas(ifac)*pi)
-          smbrp(jj) = smbrp(jj) + thetap *(flux - iconvp*flumas(ifac)*pj)
+          smbrp(ii) = smbrp(ii) - thetap * fluxi
+          smbrp(jj) = smbrp(jj) + thetap * fluxj
 
         enddo
       enddo
@@ -887,10 +891,10 @@ else
           ! Flux
           ! ----
 
-          fluxi =   iconvp*(flui*pifri + fluj*pjfri - flumas(ifac)*pi) &
-                  + idiffp*viscf(ifac)*(pipr -pjp)
-          fluxj =   iconvp*(flui*pifrj + fluj*pjfrj - flumas(ifac)*pj) &
-                  + idiffp*viscf(ifac)*(pip -pjpr)
+          fluxi = iconvp*xcpp(ii)*(flui*pifri + fluj*pjfri - flumas(ifac)*pi) &
+                + idiffp*viscf(ifac)*(pipr -pjp)
+          fluxj = iconvp*xcpp(jj)*(flui*pifrj + fluj*pjfrj - flumas(ifac)*pj) &
+                + idiffp*viscf(ifac)*(pip -pjpr)
 
           ! Assembly
           ! --------
@@ -907,12 +911,12 @@ else
 
     do ig = 1, ngrpi
        !$omp parallel do private(ifac, ii, jj, dijpfx, dijpfy, dijpfz, pnd,     &
-      !$omp                     distf, srfan, diipfx, diipfy, diipfz, djjpfx,   &
-      !$omp                     djjpfy, djjpfz, dpxf, dpyf, dpzf, pip, pjp,     &
-      !$omp                     flui, fluj, testi, testj, testij, dcc, ddi,     &
-      !$omp                     ddj, tesqck, pif, pjf, difx, dify, difz,        &
-      !$omp                     djfx, djfy, djfz, flux, pi, pj)                 &
-      !$omp             reduction(+:infac)
+       !$omp                     distf, srfan, diipfx, diipfy, diipfz, djjpfx,  &
+       !$omp                     djjpfy, djjpfz, dpxf, dpyf, dpzf, pip, pjp,    &
+       !$omp                     flui, fluj, testi, testj, testij, dcc, ddi,    &
+       !$omp                     ddj, tesqck, pif, pjf, difx, dify, difz,       &
+       !$omp                     djfx, djfy, djfz, fluxi, fluxj, pi, pj)        &
+       !$omp             reduction(+:infac)
        do it = 1, nthrdi
         do ifac = iompli(1,ig,it), iompli(2,ig,it)
 
@@ -1024,14 +1028,16 @@ else
           ! Flux
           ! ----
 
-          flux =   iconvp*(flui*pif +fluj*pjf)                        &
-                 + idiffp*viscf(ifac)*(pip -pjp)
+          fluxi = iconvp*xcpp(ii)*(flui*pif + fluj*pjf - flumas(ifac)*pi)  &
+                + idiffp*viscf(ifac)*(pip-pjp)
+          fluxj = iconvp*xcpp(jj)*(flui*pif + fluj*pjf - flumas(ifac)*pj)  &
+                + idiffp*viscf(ifac)*(pip-pjp)
 
           ! Assembly
           ! --------
 
-          smbrp(ii) = smbrp(ii) - thetap *(flux - iconvp*flumas(ifac)*pi)
-          smbrp(jj) = smbrp(jj) + thetap *(flux - iconvp*flumas(ifac)*pj)
+          smbrp(ii) = smbrp(ii) - thetap *fluxi
+          smbrp(jj) = smbrp(jj) + thetap *fluxj
 
         enddo
       enddo
@@ -1080,14 +1086,14 @@ if (idtvar.lt.0) then
         endif
 
         pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
-        pipr =   pir                                                            &
-               + ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
+        pipr = pir                                                            &
+             + ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
 
         pfac  = inc*coefap(ifac) +coefbp(ifac)*pipr
         pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pipr
 
-        flux =   iconvp*(flui*pir + fluj*pfac - flumab(ifac)*pi )               &
-               + idiffp*viscb(ifac)*pfacd
+        flux = iconvp*xcpp(ii)*(flui*pir + fluj*pfac - flumab(ifac)*pi )      &
+             + idiffp*viscb(ifac)*pfacd
         smbrp(ii) = smbrp(ii) - flux
 
       enddo
@@ -1127,8 +1133,8 @@ else
         pfac  = inc*coefap(ifac) + coefbp(ifac)*pip
         pfacd = inc*cofafp(ifac) + cofbfp(ifac)*pip
 
-        flux =   iconvp*((flui - flumab(ifac))*pi + fluj*pfac)         &
-               + idiffp*viscb(ifac)*pfacd
+        flux = iconvp*xcpp(ii)*((flui - flumab(ifac))*pi + fluj*pfac)         &
+             + idiffp*viscb(ifac)*pfacd
         smbrp(ii) = smbrp(ii) - thetap * flux
 
       enddo
@@ -1155,9 +1161,9 @@ deallocate(dpdxa, dpdya, dpdza)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET DANS bilsc2                           ',/,&
+'@ @@ ATTENTION : ARRET DANS bilsct                           ',/,&
 '@    =========                                               ',/,&
-'@     APPEL DE bilsc2 POUR ',A8 ,' AVEC ISCHCP = ',I10        ,/,&
+'@     APPEL DE bilsct POUR ',A8 ,' AVEC ISCHCP = ',I10        ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut pas etre execute.                       ',/,&
 '@                                                            ',/,&
@@ -1176,9 +1182,9 @@ deallocate(dpdxa, dpdya, dpdza)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING: ABORT IN bilsc2                                ',/,&
+'@ @@ WARNING: ABORT IN bilsct                                ',/,&
 '@    ========                                                ',/,&
-'@     CALL OF bilsc2 FOR ',A8 ,' WITH ISCHCP = ',I10          ,/,&
+'@     CALL OF bilsct FOR ',A8 ,' WITH ISCHCP = ',I10          ,/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&

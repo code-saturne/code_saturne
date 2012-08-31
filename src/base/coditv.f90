@@ -118,6 +118,13 @@
 !>                               - 1 without slope test
 !>                               - 0 with slope test
 !> \param[in]     iescap        compute the predictor indicator if 1
+!> \param[in]     iswdyp        indicator
+!>                               - 0 no dynamic relaxation
+!>                               - 1 dynamic relaxation depending on
+!>                                 \$f \delta \varia^k \f$
+!>                               - 2 dynamic relaxation depending on
+!>                                 \$f \delta \varia^k \f$  and
+!>                                 \$f \delta \varia^{k-1} \f$
 !> \param[in]     imgrp         indicator
 !>                               - 0 no multi-grid
 !>                               - 1 otherwise
@@ -175,7 +182,7 @@ subroutine coditv &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , iswdyp ,                            &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -184,7 +191,7 @@ subroutine coditv &
    flumas , flumab ,                                              &
    viscfm , viscbm , viscfs , viscbs , secvif , secvib ,          &
    fimp   ,                                                       &
-   smbr   ,                                                       &
+   smbrp  ,                                                       &
    pvar   ,                                                       &
    eswork )
 
@@ -214,6 +221,7 @@ integer          idtvar , ivar   , iconvp , idiffp , ndircp
 integer          nitmap
 integer          imrgra , nswrsp , nswrgp , imligp , ircflp
 integer          ischcp , isstpp , iescap , imgrp
+integer          iswdyp
 integer          ncymxp , nitmfp
 integer          iwarnp
 integer          ippu   , ippv   , ippw   , ivisep
@@ -232,7 +240,7 @@ double precision viscfm(nfac), viscbm(nfabor)
 double precision viscfs(nfac), viscbs(nfabor)
 double precision secvif(nfac), secvib(nfabor)
 double precision fimp(3,3,ncelet)
-double precision smbr(3,ncelet)
+double precision smbrp(3,ncelet)
 double precision eswork(3,ncelet)
 
 ! Local variables
@@ -245,15 +253,19 @@ integer          inc,isweep,niterf,iel,icycle,nswmod
 integer          iinvpe
 integer          idtva0
 integer          nagmax, npstmg
-double precision thetex
-
 integer          isou , jsou, ifac
 integer          ibsize
+integer          incp, insqrt
+
 double precision residu, rnorm, ressol, res
+double precision thetex
+double precision alph, beta
+double precision paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax
 
 double precision, allocatable, dimension(:,:,:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
 double precision, allocatable, dimension(:,:) :: dpvar, smbini, w1
+double precision, allocatable, dimension(:,:) :: adxk, adxkm1, dpvarm1
 
 !===============================================================================
 
@@ -265,6 +277,7 @@ double precision, allocatable, dimension(:,:) :: dpvar, smbini, w1
 ! be carefull here, xam is interleaved
 allocate(dam(3,3,ncelet), xam(2,nfac))
 allocate(dpvar(3,ncelet), smbini(3,ncelet))
+if (iswdyp.ge.1) allocate(adxk(3,ncelet), adxkm1(3,ncelet), dpvarm1(3,ncelet))
 
 ! Names
 chaine = nomvar(ippu)
@@ -379,14 +392,14 @@ if (abs(thetex).gt.epzero) then
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
-   smbr   )
+   smbrp  )
 endif
 
 ! Before looping, the RHS without reconstruction is stored in smbini
 
 do iel = 1, ncel
   do isou = 1, 3
-    smbini(isou,iel) = smbr(isou,iel)
+    smbini(isou,iel) = smbrp(isou,iel)
   enddo
 enddo
 
@@ -416,7 +429,7 @@ do iel = 1, ncel
                -fimp(isou,1,iel)*(pvar(1,iel) - pvara(1,iel))  &
                -fimp(isou,2,iel)*(pvar(2,iel) - pvara(2,iel))  &
                -fimp(isou,3,iel)*(pvar(3,iel) - pvara(3,iel))
-    smbr(isou,iel) = smbini(isou,iel)
+    smbrp(isou,iel) = smbini(isou,iel)
   enddo
 enddo
 
@@ -430,10 +443,10 @@ call bilsc4 &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
-   smbr   )
+   smbrp  )
 
 ! --- Convergence test
-call prodsc(3*ncel, isqrt, smbr, smbr, residu)
+call prodsc(3*ncel, isqrt, smbrp, smbrp, residu)
 
 res = residu
 
@@ -446,7 +459,7 @@ call promav(isym, ibsize, iinvpe, dam, xam, pvar, w1)
 
 do iel = 1, ncel
    do isou = 1, 3
-      w1(isou,iel) = w1(isou,iel) + smbr(isou,iel)
+      w1(isou,iel) = w1(isou,iel) + smbrp(isou,iel)
    enddo
 enddo
 
@@ -457,6 +470,19 @@ rnsmbr(ippv) = rnorm
 rnsmbr(ippw) = rnorm
 
 deallocate(w1)  ! Free memory
+
+if (iswdyp.ge.1) then
+  do iel = 1, ncelet
+    do isou =1,3
+      adxkm1(isou,iel) = 0.d0
+      adxk(isou,iel) = 0.d0
+      dpvar(isou,iel) = 0.d0
+    enddo
+  enddo
+
+  ! ||A.dx^0||^2 = 0
+  nadxk = 0.d0
+endif
 
 ! Warning: for Weight Matrix, one and only one sweep is done.
 nswmod = max(nswrsp, 1)
@@ -488,7 +514,7 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu          ,                            &
-   dam    , xam    , smbr   , dpvar  )
+   dam    , xam    , smbrp  , dpvar  )
 
   nbivar(ippu) = niterf
   nbivar(ippv) = niterf
@@ -512,13 +538,94 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
      write(nfecra,1000) cnom(3), isweep, residu, rnorm
   endif
 
+  ! Dynamic relaxation of the system
+  if (iswdyp.ge.1) then
+
+    ! Computation of the variable ralaxation coefficient
+    incp = 0
+
+    do iel = 1, ncelet
+      do isou = 1, 3
+        adxkm1(isou,iel) = adxk(isou,iel)
+        adxk(isou,iel) = 0.d0
+      enddo
+    enddo
+
+    call bilsc4 &
+    !==========
+   ( nvar   , nscal  ,                                              &
+     idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+     ischcp , isstpp , incp   , imrgra , ivisep ,                   &
+     ippu   , ippv   , ippw   , iwarnp ,                            &
+     blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+     dpvar  , dpvar  ,                                              &
+     coefav , coefbv , cofafv , cofbfv ,                            &
+     flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
+     adxk   )
+
+    insqrt = 0
+
+    ! ||A.dx^(k-1)||^2
+    nadxkm1 = nadxk
+
+    ! ||A.dx^k||^2
+    call prodsc(3*ncel , insqrt , adxk , adxk , nadxk)
+
+    ! < A.dx^k; r^k >
+    call prodsc(3*ncel , insqrt , smbrp , adxk , paxkrk)
+
+    ! Relaxation with respect to dx^k and dx^(k-1)
+    if (iswdyp.ge.2) then
+
+      ! < A.dx^(k-1); r^k >
+      call prodsc(3*ncel , insqrt , smbrp , adxkm1 , paxm1rk)
+
+      ! < A.dx^(k-1); A.dx^k >
+      call prodsc(3*ncel , insqrt , adxk, adxkm1 , paxm1ax)
+
+      if (nadxkm1.gt.1.d-30.and.(nadxk*nadxkm1-paxm1ax**2).gt.1.d-30) then
+        beta = (paxkrk*paxm1ax - nadxk*paxm1rk)/(nadxk*nadxkm1-paxm1ax**2)
+      else
+        beta = 0.d0
+      endif
+
+    else
+      beta = 0.d0
+      paxm1ax =1.d0
+    endif
+
+    alph = -(paxkrk + beta*paxm1ax)/max(nadxk, 1.d-30)
+
+    ! Writing
+    if (iwarnp.ge.3) then
+      write(nfecra,1200) cnom, isweep, alph, beta, &
+                         paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax
+    endif
+
+  endif
+
   ! --- Update the solution with the increment
 
-  do iel = 1, ncelet
-    do isou = 1, 3
-       pvar(isou,iel) = pvar(isou,iel) + dpvar(isou,iel)
+  if (iswdyp.eq.0) then
+    do iel = 1, ncel
+      do isou = 1, 3
+         pvar(isou,iel) = pvar(isou,iel) + dpvar(isou,iel)
+      enddo
     enddo
-  enddo
+  elseif (iswdyp.eq.1) then
+    do iel = 1, ncel
+      do isou = 1, 3
+         pvar(isou,iel) = pvar(isou,iel) + alph*dpvar(isou,iel)
+      enddo
+    enddo
+  elseif (iswdyp.ge.2) then
+    do iel = 1, ncel
+      do isou = 1, 3
+         pvar(isou,iel) = pvar(isou,iel) + alph*dpvar(isou,iel)  &
+                        + beta*dpvarm1(isou,iel)
+      enddo
+    enddo
+  endif
 
   ! ---> Handle parallelism and periodicity
 
@@ -541,7 +648,7 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
                   - fimp(isou,1,iel)*dpvar(1,iel)           &
                   - fimp(isou,2,iel)*dpvar(2,iel)           &
                   - fimp(isou,3,iel)*dpvar(3,iel)
-        smbr(isou,iel) = smbini(isou,iel)
+        smbrp(isou,iel) = smbini(isou,iel)
       enddo
     enddo
 
@@ -555,10 +662,10 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
      pvar   , pvara  ,                                              &
      coefav , coefbv , cofafv , cofbfv ,                            &
      flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
-     smbr   )
+     smbrp  )
 
     ! --- Convergence test
-    call prodsc(3*ncel, isqrt, smbr, smbr, residu)
+    call prodsc(3*ncel, isqrt, smbrp, smbrp, residu)
 
   endif
 
@@ -597,9 +704,9 @@ if (iescap.gt.0) then
 
   do iel = 1, ncel
     do isou = 1, 3
-      smbr(isou,iel) = smbini(isou,iel) - fimp(isou,1,iel)*dpvar(1,iel) &
-                                        - fimp(isou,2,iel)*dpvar(2,iel) &
-                                        - fimp(isou,3,iel)*dpvar(3,iel)
+      smbrp(isou,iel) = smbini(isou,iel) - fimp(isou,1,iel)*dpvar(1,iel) &
+                                         - fimp(isou,2,iel)*dpvar(2,iel) &
+                                         - fimp(isou,3,iel)*dpvar(3,iel)
     enddo
   enddo
 
@@ -617,13 +724,13 @@ if (iescap.gt.0) then
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
-   smbr   )
+   smbrp   )
 
   ! Contribution of the current component to the L2 norm stored in eswork
 
   do iel = 1, ncel
     do isou = 1, 3
-      eswork(isou,iel) = (smbr(isou,iel)/ volume(iel))**2
+      eswork(isou,iel) = (smbrp(isou,iel)/ volume(iel))**2
     enddo
   enddo
 
@@ -639,31 +746,46 @@ if (imgrp.gt.0) then
   call dsmlga(chaine(1:16), lchain)
 endif
 
+! Free memory
+deallocate(dam, xam)
+deallocate(dpvar, smbini)
+if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1)
+
 !--------
 ! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
 
- 1000 format (                                                          &
+ 1000 format ( &
  1X,A16,' : CV-DIF-TS',I5,' IT - RES= ',E12.5,' NORME= ', E12.5)
- 1100 format (                                                          &
-'@                                                            ',/,&
-'@ @@ ATTENTION : ',A8 ,' CONVECTION-DIFFUSION-TERMES SOURCES ',/,&
-'@    =========                                               ',/,&
-'@  Nombre d''iterations maximal ',I10   ,' atteint           ',/,&
-'@                                                            '  )
+ 1100 format ( &
+'@'                                                                 ,/,&
+'@ @@ ATTENTION : ',A8 ,' CONVECTION-DIFFUSION-TERMES SOURCES'      ,/,&
+'@    ========='                                                    ,/,&
+'@  Nombre d''iterations maximal ',I10   ,' atteint'                ,/,&
+'@' )
+ 1200 format ( &
+ 1X,A16,' Sweep: ',I5,' Relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
+'    < A.dx^k  ; r^k > = ',E12.5,' ||A.dx^k  ||^2 = ',E12.5         ,/,&
+'    < A.dx^k-1; r^k > = ',E12.5,' ||A.dx^k-1||^2 = ',E12.5         ,/,&
+' < A.dx^k-1; A.dx^k > = ',E12.5)
 
 #else
 
- 1000 format (                                                          &
+ 1000 format ( &
  1X,A16,' : CV-DIF-TS',I5,' IT - RES= ',E12.5,' NORM= ', E12.5)
- 1100 format (                                                          &
-'@                                                            ',/,&
-'@ @@ WARNING: ',A8 ,' CONVECTION-DIFFUSION-SOURCE TERMS      ',/,&
-'@    ========                                                ',/,&
-'@  Maximum number of iterations ',I10   ,' reached           ',/,&
-'@                                                            '  )
+ 1100 format ( &
+'@'                                                                 ,/,&
+'@ @@ WARNING: ',A8 ,' CONVECTION-DIFFUSION-SOURCE TERMS'           ,/,&
+'@    ========'                                                     ,/,&
+'@  Maximum number of iterations ',I10   ,' reached'                ,/,&
+'@' )
+ 1200 format ( &
+ 1X,A16,' Sweep: ',I5,' Relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
+'    < A.dx^k  ; r^k > = ',E12.5,' ||A.dx^k  ||^2 = ',E12.5         ,/,&
+'    < A.dx^k-1; r^k > = ',E12.5,' ||A.dx^k-1||^2 = ',E12.5         ,/,&
+' < A.dx^k-1; A.dx^k > = ',E12.5)
 
 #endif
 

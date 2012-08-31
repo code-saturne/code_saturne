@@ -72,8 +72,11 @@ cs_matrix.c \
 cs_matrix_util.c \
 cs_multigrid.c \
 cs_sles.c \
+bilsca.f90 \
+bilsct.f90 \
 bilsc2.f90 \
 bilsc4.f90 \
+diften.f90 \
 divmas.f90 \
 divrij.f90 \
 grdcel.f90 \
@@ -96,6 +99,7 @@ projtv.f90 \
 vectds.f90 \
 viscfa.f90 \
 visort.f90 \
+vitens.f90 \
 viortv.f90
 libcsalge_la_LDFLAGS = -no-undefined
 

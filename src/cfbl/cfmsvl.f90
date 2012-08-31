@@ -131,7 +131,7 @@ double precision sclnor
 
 integer          iccfth, imodif
 integer          iij
-integer          imucpp
+integer          imucpp, idftnp, iswdyp
 double precision dijpfx, dijpfy, dijpfz, pnd
 double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 double precision diipbx, diipby, diipbz
@@ -420,6 +420,8 @@ ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
 iescap = 0
 imucpp = 0
+idftnp = idften(ivar)
+iswdyp = iswdyn(ivar)
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
@@ -438,16 +440,17 @@ call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp ,                            &
+   imrgra , nswrsp , nswrgp , imligp , ircflp , iswdyp ,          &
+   ischcp , isstpp , iescap , imucpp , idftnp ,                   &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-                     coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
-                     wflmas          , wflmab          ,          &
-   viscf  , viscb  , viscf  , viscb  ,                            &
+   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   wflmas          , wflmab          ,                            &
+   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  , rvoid  )
 

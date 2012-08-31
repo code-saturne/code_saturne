@@ -162,7 +162,7 @@ do icla = 1, nclafu
 !
        propce(iel,ipchgl) = 6.d0*lambda*xnuss/propce(iel,ipcdia)**2        &
                            /propce(iel,ipcro2)*rtpa(iel,isca(iyfol(icla)))
-!  
+!
     endif
 !
   enddo
@@ -192,7 +192,7 @@ do icla = 1, nclafu
 !===============================================================================
 ! EVAPORATION
 !===============================================================================
-! Verification sur la masse du fioul liquide. 
+! Verification sur la masse du fioul liquide.
 ! a) Si deva1 < deva2 il ne reste plus de fioul liquide.
 !    Du coup pas d'evaporation.
 ! b) Verification sur la plage des temperatures d'evaporation.
@@ -218,10 +218,10 @@ do icla = 1, nclafu
 !===============================================================================
 !MC COMBUSTION HETEROGENE
 !===============================================================================
-! Verification sur la masse du coke. 
-! a) Si deva1.le.deva2 -> Il ne reste plus de fioul liquide. Du coup la particule 
+! Verification sur la masse du coke.
+! a) Si deva1.le.deva2 -> Il ne reste plus de fioul liquide. Du coup la particule
 !    est constituee de charbon et d'inertes.
-! b) Si dhet1.gt.dhet2 il reste du charbon. Si non la particule est constituee 
+! b) Si dhet1.gt.dhet2 il reste du charbon. Si non la particule est constituee
 !    que des inertes.
 !
     dhet1= rtpa(iel,isca(iyfol(icla)))                                     &
@@ -230,7 +230,7 @@ do icla = 1, nclafu
 !
       if (deva1.le.deva2.and.dhet1.gt.dhet2 ) then
 !
-! On considere la masse du coke restant comme une particule spherique. Le 
+! On considere la masse du coke restant comme une particule spherique. Le
 !   diametre correspendant est dcoke.
       dcoke = ( ( rtpa(iel,isca(iyfol(icla)))                              &
               /(rtpa(iel,isca(ing(icla)))*rho0fl)                          &

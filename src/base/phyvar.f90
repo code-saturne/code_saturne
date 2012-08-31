@@ -110,11 +110,7 @@ double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto, xrtp
 double precision alp3, xrij(3,3) , xnal(3)   , xnoral
 double precision xttke, xttkmg, xttdrb,epsrgp, climgp, extrap
 double precision alpha, ym, yk
-
-double precision, allocatable, dimension(:) :: vistot, viscf, viscb
-double precision, allocatable, dimension(:) :: coefap, coefbp
-double precision, allocatable, dimension(:) :: cofafp, cofbfp
-double precision, allocatable, dimension(:) :: whsad
+double precision trrij, csteps
 
 integer          ipass
 data             ipass /0/
@@ -125,7 +121,6 @@ save             ipass
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
-
 
 ipass = ipass + 1
 
@@ -524,7 +519,48 @@ elseif (iturb.eq.70) then
 endif
 
 !===============================================================================
-! 4.  MODIFICATION UTILISATEUR DE LA VISCOSITE TURBULENTE
+! 4. Symmetric tensor diffusivity
+!===============================================================================
+iok = 0
+do ivar = 1, nvar
+  if (idften(ivar).eq.6) iok = 1
+enddo
+
+if (iok.eq.1) then
+  if (itytur.eq.3) then
+
+    ipcrom = ipproc(irom)
+
+    do iel = 1, ncel
+      !FIXME it should be csrij/sigmae instead of crijep
+      trrij = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
+      csteps  = propce(iel,ipcrom) * csrij * trrij / rtp(iel,iep)
+
+      visten(1,iel) = csteps*rtp(iel,ir11)
+      visten(2,iel) = csteps*rtp(iel,ir22)
+      visten(3,iel) = csteps*rtp(iel,ir33)
+      visten(4,iel) = csteps*rtp(iel,ir12)
+      visten(5,iel) = csteps*rtp(iel,ir13)
+      visten(6,iel) = csteps*rtp(iel,ir23)
+    enddo
+
+  else
+
+    do iel = 1, ncel
+      visten(1,iel) = 0.d0
+      visten(2,iel) = 0.d0
+      visten(3,iel) = 0.d0
+      visten(4,iel) = 0.d0
+      visten(5,iel) = 0.d0
+      visten(6,iel) = 0.d0
+    enddo
+
+  endif
+endif
+
+!===============================================================================
+! 5. User modification of the turbulent viscosity and symmetric tensor
+!    diffusivity
 !===============================================================================
 
 call usvist &
@@ -536,7 +572,7 @@ call usvist &
   coefa  , coefb  , ckupdc , smacel )
 
 !===============================================================================
-! 5.  CLIPPING DE LA VISCOSITE TURBULENTE EN LES DYNAMIQUE
+! 6. Clipping of the turbulent viscosity in dynamic LES
 !===============================================================================
 
 ! Pour la LES en modele dynamique on clippe la viscosite turbulente de maniere
@@ -565,7 +601,7 @@ if (iturb.eq.41) then
 endif
 
 !===============================================================================
-! 6.  MODIFICATION UTILISATEUR DE LA VISCOSITE DE MAILLAGE EN ALE
+! 6. User modification of the mesh viscosity in ALE
 !===============================================================================
 
 if (iale.eq.1.and.ntcabs.eq.0) then
@@ -597,7 +633,6 @@ endif
 !===============================================================================
 ! 7.  IMPRESSIONS DE CONTROLE DES VALEURS ENTREES PAR L'UTILISATEUR
 !===============================================================================
-
 
 ! ---> Calcul des bornes des variables et impressions
 

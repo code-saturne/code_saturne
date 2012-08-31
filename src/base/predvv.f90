@@ -192,6 +192,7 @@ integer          iclik
 integer          ipcrom, ipcroa, ipcroo, ipcrho, ipcvis, ipcvst
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
+integer          iswdyp
 integer          imgrp , ncymxp, nitmfp
 integer          iesprp, iestop
 integer          iptsna
@@ -1378,6 +1379,7 @@ imligp = imligr(iu)
 ircflp = ircflu(iu)
 ischcp = ischcv(iu)
 isstpp = isstpc(iu)
+iswdyp = iswdyn(iu)
 imgrp  = imgr  (iu)
 ncymxp = ncymax(iu)
 nitmfp = nitmgf(iu)
@@ -1390,7 +1392,6 @@ climgp = climgr(iu)
 extrap = extrag(iu)
 relaxp = relaxv(iu)
 thetap = thetav(iu)
-
 ippu   = ipprtp(iu)
 ippv   = ipprtp(iv)
 ippw   = ipprtp(iw)
@@ -1410,7 +1411,7 @@ if(iappel.eq.1) then
  ( nvar   , nscal  ,                                              &
    idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , iswdyp ,                            &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -1430,7 +1431,7 @@ if(iappel.eq.1) then
  ( nvar   , nscal  ,                                              &
    idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , iswdyp ,                            &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -1496,7 +1497,7 @@ if(iappel.eq.1) then
  ( nvar   , nscal  ,                                              &
    idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
-   ischcp , isstpp , iescap ,                                     &
+   ischcp , isstpp , iescap , iswdyp ,                            &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &

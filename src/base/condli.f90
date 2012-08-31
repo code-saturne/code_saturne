@@ -209,6 +209,7 @@ double precision upx   , upy   , upz   , vistot
 double precision xk, xe, xnu
 double precision xllke, xllkmg, xlldrb
 double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
+double precision visci(3,3), fikis, viscis, distfi
 
 logical          ilved
 
@@ -1917,13 +1918,56 @@ if (nscal.ge.1) then
         rkl = propce(iel,ipcvsl)
       endif
 
-      ! --- turbulent Case
-      if (iturb.ne.0) then
+      ! Scalar diffusivity
+      if (idften(ivar).eq.1) then
         hint = (rkl+idifft(ivar)*cpp*visctc/sigmas(ii))/distbf
 
-      ! --- Laminar Case
-      else
-        hint = rkl/distbf
+      ! Symmetric tensor diffusivity
+      elseif (idften(ivar).eq.6) then
+
+        visci(1,1) = rkl + idifft(ivar)*cpp*visten(1,iel)/sigmas(ii)
+        visci(2,2) = rkl + idifft(ivar)*cpp*visten(2,iel)/sigmas(ii)
+        visci(3,3) = rkl + idifft(ivar)*cpp*visten(3,iel)/sigmas(ii)
+        visci(1,2) =       idifft(ivar)*cpp*visten(4,iel)/sigmas(ii)
+        visci(2,1) =       idifft(ivar)*cpp*visten(4,iel)/sigmas(ii)
+        visci(2,3) =       idifft(ivar)*cpp*visten(5,iel)/sigmas(ii)
+        visci(3,2) =       idifft(ivar)*cpp*visten(5,iel)/sigmas(ii)
+        visci(1,3) =       idifft(ivar)*cpp*visten(6,iel)/sigmas(ii)
+        visci(3,1) =       idifft(ivar)*cpp*visten(6,iel)/sigmas(ii)
+
+        ! ||Ki.S||^2
+        viscis = ( visci(1,1)*surfbo(1,ifac)       &
+                 + visci(1,2)*surfbo(2,ifac)       &
+                 + visci(1,3)*surfbo(3,ifac))**2   &
+               + ( visci(2,1)*surfbo(1,ifac)       &
+                 + visci(2,2)*surfbo(2,ifac)       &
+                 + visci(2,3)*surfbo(3,ifac))**2   &
+               + ( visci(3,1)*surfbo(1,ifac)       &
+                 + visci(3,2)*surfbo(2,ifac)       &
+                 + visci(3,3)*surfbo(3,ifac))**2
+
+        ! IF.Ki.S
+        fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+                )*surfbo(1,ifac)                              &
+              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+                )*surfbo(2,ifac)                              &
+              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+                )*surfbo(3,ifac)
+
+        distfi = distb(ifac)
+
+        ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+        ! NB: eps =1.d-1 must be consistent with vitens.f90
+        fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+        hint = viscis/surfbn(ifac)/fikis
+
       endif
 
       ! Dirichlet Boundary Condition
@@ -1939,8 +1983,6 @@ if (nscal.ge.1) then
            ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
              coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
              pimp              , hint              , hext )
-
-
 
         ! ---> COUPLAGE : on stocke le hint (lambda/d      en temperature,
         !                                    lambda/(cp d) en enthalpie,

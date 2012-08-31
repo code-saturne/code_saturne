@@ -201,9 +201,10 @@ integer          iesdep
 integer          idtsca
 integer          nagmax, npstmg
 integer          isou  , ibsize
-integer          imucpp
+integer          imucpp, idftnp, iswdyp
 integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
 integer          nswrsp
+integer          insqrt
 
 double precision residu, resold, phydr0
 double precision ardtsr, arsr  , unsara, thetap
@@ -211,6 +212,8 @@ double precision dtsrom, unsvom, romro0
 double precision epsrgp, climgp, extrap, epsilp
 double precision drom  , dronm1, tcrite, relaxp
 double precision hint, qimp, pimpv(3), rinfiv(3), epsrsp, blencp
+double precision ressol, rnorm2
+double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
 
 double precision rvoid(1)
 
@@ -223,6 +226,7 @@ double precision, allocatable, dimension(:) :: rhs, rovsdt
 double precision, allocatable, dimension(:) :: velflx, velflb, dpvar
 double precision, allocatable, dimension(:,:) :: coefar, cofafr
 double precision, allocatable, dimension(:,:,:) :: coefbr, cofbfr
+double precision, allocatable, dimension(:) :: adxk, adxkm1, dpvarm1, rhs0
 
 !===============================================================================
 
@@ -234,6 +238,9 @@ double precision, allocatable, dimension(:,:,:) :: coefbr, cofbfr
 allocate(dam(ncelet), xam(nfac,2))
 allocate(res(ncelet), presa(ncelet), divu(ncelet))
 allocate(rhs(ncelet), rovsdt(ncelet))
+iswdyp = iswdyn(ipr)
+if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
+                          dpvarm1(ncelet), rhs0(ncelet))
 
 ! Boundary conditions for delta P
 allocate(cofafp(nfabor), coefbp(nfabor), cofbfp(nfabor))
@@ -1125,24 +1132,86 @@ if (iwarni(ipr).ge.2) then
   endif
 endif
 
-! Dynamic relaxation criterion
-! (Test to modify if needed: must be stricter than
-! the test in the conjugate gradient)
-if (swpdyn.eq.1) then
-  tcrite = 100.d0*epsilo(ipr)*rnormp
-else
-  tcrite = 10.d0*epsrsm(ipr)*rnormp
+! Dynamic relaxation initialization
+!----------------------------------
+if (iswdyp.ge.1) then
+
+  do iel = 1, ncelet
+    adxkm1(iel) = 0.d0
+    adxk(iel) = 0.d0
+  enddo
+
+  ! ||A.dx^0||^2 = 0
+  nadxk = 0.d0
+
+  rnorm2 = rnormp**2
+
+  iccocg = 1
+  init = 1
+  inc  = 0
+  if (iphydr.eq.1) inc = 1
+  nswrgp = nswrgr(ipr)
+  imligp = imligr(ipr)
+  iwarnp = iwarni(ipr)
+  epsrgp = epsrgr(ipr)
+  climgp = climgr(ipr)
+  extrap = extrag(ipr)
+
+  if (idtsca.eq.0) then
+
+    call itrgrp &
+    !==========
+ ( nvar   , nscal  ,                                              &
+   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   drtp   ,                                                       &
+   coefap , coefb(1,iclipr) ,                                     &
+   cofafp , coefb(1,iclipf) ,                                     &
+   viscf  , viscb  ,                                              &
+   dt     , dt     , dt     ,                                     &
+   rhs0   )
+
+  else
+    !interleaved tpucou array
+    call itrgrv &
+    !==========
+ ( nvar   , nscal  ,                                              &
+   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   drtp   ,                                                       &
+   coefap , coefb(1,iclipr) ,                                     &
+   cofafp , coefb(1,iclipf) ,                                     &
+   viscf  , viscb  ,                                              &
+   tpucou ,                                                       &
+   rhs0   )
+
+  endif
+
 endif
+
+tcrite = 10.d0*epsrsm(ipr)*rnormp
 
 ! Reconstruction loop (beginning)
 !--------------------------------
 
 do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
-  ! --- Solving on the increment drtp
-  do iel = 1, ncel
-    drtp(iel) = 0.d0
-  enddo
+  ! Solving on the increment drtp
+  !------------------------------
+  if (iswdyp.eq.0) then
+    do iel = 1, ncel
+      drtp(iel) = 0.d0
+    enddo
+  else
+    do iel = 1, ncel
+      dpvarm1(iel) = drtp(iel)
+      drtp(iel) = 0.d0
+    enddo
+  endif
 
   chaine = nomvar(ipp)
   nitmap = nitmax(ipr)
@@ -1156,13 +1225,16 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
   ! (iinvpe=1)
   iinvpe = 1
 
+  ! Solver reisudal
+  ressol = residu
+
   call invers &
   !==========
  ( chaine(1:16)    , isym   , ibsize ,                            &
    ipol   , ireslp , nitmap , imgrp  ,                            &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
-   epsilp , rnormp , residu ,                                     &
+   epsilp , rnormp , ressol ,                                     &
    dam    , xam    , rhs    , drtp   )
 
   ! Writing
@@ -1173,17 +1245,150 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     resvar(ipp) = 0.d0
   endif
 
-  ! Update the increment of pressure
-  if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.tcrite) then
-    do iel = 1, ncel
-      presa(iel) = rtp(iel,ipr)
-      rtp(iel,ipr) = presa(iel) + relaxv(ipr)*drtp(iel)
+  ! Writing
+  if (iwarnp.ge.3) then
+    write(nfecra,1500) chaine(1:16), isweep, residu, rnormp, niterf
+  endif
+
+  ! Dynamic relaxation of the system
+  !---------------------------------
+  if (iswdyp.ge.1) then
+
+    ! Computation of the variable ralaxation coefficient
+
+    !$omp parallel do
+    do iel = 1, ncelet
+      adxkm1(iel) = adxk(iel)
+      adxk(iel) = - rhs0(iel)
     enddo
-  ! If it is the last sweep, update with the total increment
-  else
+
+    iccocg = 1
+    init = 0
+    inc  = 0
+    if (iphydr.eq.1) inc = 1
+    nswrgp = nswrgr(ipr)
+    imligp = imligr(ipr)
+    iwarnp = iwarni(ipr)
+    epsrgp = epsrgr(ipr)
+    climgp = climgr(ipr)
+    extrap = extrag(ipr)
+
+    if (idtsca.eq.0) then
+
+      call itrgrp &
+      !==========
+   ( nvar   , nscal  ,                                              &
+     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+     iwarnp , nfecra ,                                              &
+     epsrgp , climgp , extrap ,                                     &
+     dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+     drtp   ,                                                       &
+     coefap , coefb(1,iclipr) ,                                     &
+     cofafp , coefb(1,iclipf) ,                                     &
+     viscf  , viscb  ,                                              &
+     dt     , dt     , dt     ,                                     &
+     adxk   )
+
+    else
+      !interleaved tpucou array
+      call itrgrv &
+      !==========
+   ( nvar   , nscal  ,                                              &
+     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+     iwarnp , nfecra ,                                              &
+     epsrgp , climgp , extrap ,                                     &
+     dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+     drtp   ,                                                       &
+     coefap , coefb(1,iclipr) ,                                     &
+     cofafp , coefb(1,iclipf) ,                                     &
+     viscf  , viscb  ,                                              &
+     tpucou ,                                                       &
+     adxk   )
+
+    endif
+
+    do iel = 1, ncel
+      adxk(iel) = - adxk(iel)
+    enddo
+
+    insqrt = 0
+
+    ! ||E.dx^(k-1)-E.0||^2
+    nadxkm1 = nadxk
+
+    ! ||E.dx^k-E.0||^2
+    call prodsc(ncel , insqrt , adxk , adxk , nadxk)
+
+    ! < E.dx^k-E.0; r^k >
+    call prodsc(ncel , insqrt , rhs , adxk , paxkrk)
+
+    ! Relaxation with respect to dx^k and dx^(k-1)
+    if (iswdyp.ge.2) then
+
+      ! < E.dx^(k-1)-E.0; r^k >
+      call prodsc(ncel , insqrt , rhs , adxkm1 , paxm1rk)
+
+      ! < E.dx^(k-1)-E.0; E.dx^k -E.0 >
+      call prodsc(ncel , insqrt , adxk, adxkm1 , paxm1ax)
+
+      if (nadxkm1.gt.1.d-30*rnorm2.and.                    &
+         (nadxk*nadxkm1-paxm1ax**2).gt.1.d-30*rnorm2) then
+        beta = (paxkrk*paxm1ax - nadxk*paxm1rk)/(nadxk*nadxkm1-paxm1ax**2)
+      else
+        beta = 0.d0
+      endif
+
+    else
+      beta = 0.d0
+      paxm1ax = 1.d0
+      paxm1rk = 0.d0
+      paxm1ax = 0.d0
+    endif
+
+    ! The first sweep is not relaxed
+    if (isweep.eq.1) then
+      alph = 1.d0
+      beta = 0.d0
+    elseif (isweep.eq.2) then
+      beta = 0.d0
+      alph = -paxkrk/max(nadxk, 1.d-30*rnorm2)
+    else
+      alph = -(paxkrk + beta*paxm1ax)/max(nadxk, 1.d-30*rnorm2)
+    endif
+
+    ! Writing
+    if (iwarnp.ge.3) then
+      write(nfecra,1200) chaine(1:16), isweep, alph, beta, &
+                         paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax
+    endif
+
+  endif
+
+  ! Update the increment of pressure
+  !---------------------------------
+
+  if (iswdyp.eq.0) then
+    if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.tcrite) then
+      do iel = 1, ncel
+        presa(iel) = rtp(iel,ipr)
+        rtp(iel,ipr) = presa(iel) + relaxv(ipr)*drtp(iel)
+      enddo
+    ! If it is the last sweep, update with the total increment
+    else
+      do iel = 1, ncel
+        presa(iel) = rtp(iel,ipr)
+        rtp(iel,ipr) = presa(iel) + drtp(iel)
+      enddo
+    endif
+  elseif (iswdyp.eq.1) then
+     do iel = 1, ncel
+      presa(iel) = rtp(iel,ipr)
+      rtp(iel,ipr) = presa(iel) + alph*drtp(iel)
+    enddo
+  elseif (iswdyp.ge.2) then
     do iel = 1, ncel
       presa(iel) = rtp(iel,ipr)
-      rtp(iel,ipr) = presa(iel) + drtp(iel)
+      rtp(iel,ipr) = presa(iel) + alph*drtp(iel) + beta*dpvarm1(iel)
     enddo
   endif
 
@@ -1191,6 +1396,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
   ! --- Update the right hand side if needed:
   !      rhs^{k+1} = - div(rho u^n) - D(dt, delta delta p^{k+1})
+  !-------------------------------------------------------------
 
   if (isweep.le.nswmpr) then
     iccocg = 1
@@ -1252,21 +1458,6 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
     ! --- Convergence test
     call prodsc(ncel,isqrt,rhs,rhs,residu)
-
-    ! Dynamic relaxation criterion
-    if (swpdyn.eq.1) then
-      if (isweep.gt.2) then
-
-        if ((residu + 0.001d0*residu).gt.resold) then
-          relaxv(ipr) = max(0.8d0*relaxp, 0.1d0)
-        else
-          relaxv(ipr) = min(1.2d0*relaxp, 1.0d0)
-        endif
-
-      endif
-      resold = residu
-    endif
-
 
     ! Writing
     if (iwarni(ipr).ge.2) then
@@ -1557,6 +1748,8 @@ if (idilat.eq.4) then
   isstpp = isstpc(ivar)
   iescap = 0
   imucpp = 0
+  idftnp = idften(ivar)
+  iswdyp = iswdyn(ivar)
   imgrp  = 0
   ncymxp = ncymax(ivar)
   nitmfp = nitmgf(ivar)
@@ -1577,8 +1770,8 @@ if (idilat.eq.4) then
   !==========
    ( nvar   , nscal  ,                                              &
      idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
-     imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-     ischcp , isstpp , iescap , imucpp ,                            &
+     imrgra , nswrsp , nswrgp , imligp , ircflp , iswdyn ,          &
+     ischcp , isstpp , iescap , imucpp , idftnp ,                   &
      imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
@@ -1586,7 +1779,8 @@ if (idilat.eq.4) then
      coefap , coefbp ,                                              &
      cofafp , cofbfp ,                                              &
      velflx , velflb ,                                              &
-     viscf  , viscb  , viscf  , viscb  ,                            &
+     viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+     rvoid  , rvoid  ,                                              &
      rovsdt , rhs    , drtp   , dpvar  ,                            &
      rvoid  , rvoid  )
 
@@ -1708,12 +1902,13 @@ else
 endif
 
 ! Free memory
-deallocate(gradp)
 deallocate(dam, xam)
 deallocate(res, divu, presa)
-deallocate(rhs, rovsdt)
+deallocate(gradp)
 deallocate(cofafp, coefbp, cofbfp)
+deallocate(rhs, rovsdt)
 if (idilat.eq.4) deallocate(velflx, velflb)
+if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 
 !--------
 ! Formats
@@ -1721,26 +1916,45 @@ if (idilat.eq.4) deallocate(velflx, velflb)
 
 #if defined(_CS_LANG_FR)
 
+ 1200 format ( &
+ 1X,A16,' Sweep: ',I5,'Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
+'    < A.dx^k  ; r^k > = ',E12.5,' ||A.dx^k  ||^2 = ',E12.5                ,/,&
+'    < A.dx^k-1; r^k > = ',E12.5,' ||A.dx^k-1||^2 = ',E12.5                ,/,&
+' < A.dx^k-1; A.dx^k > = ',E12.5)
  1300 format(1X,A16,' : RESIDU DE NORMALISATION =', E14.6)
- 1440 format(1X,A16,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6,&
+ 1440 format(1X,A16,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6,  &
              ', RELAXP = ',E14.6)
- 1600 format(                                                     &
-'@                                                            ',/,&
-'@ @@ ATTENTION : ', A16,' ETAPE DE PRESSION                  ',/,&
-'@    =========                                               ',/,&
-'@  Nombre d''iterations maximal ',I10   ,' atteint           ',/,&
-'@                                                            '  )
+ 1500 format ( &
+ 1X,A16,' : Current reconstruction sweep = ',I5                     ,/,&
+'           sweep residual = ',E12.5,', norm = ',E12.5              ,/,&
+'           number of sweeps for solver = ',I5)
+ 1600 format( &
+'@'                                                                 ,/,&
+'@ @@ ATTENTION : ', A16,' ETAPE DE PRESSION'                       ,/,&
+'@    ========='                                                    ,/,&
+'@  Nombre d''iterations maximal ',I10   ,' atteint'                ,/,&
+'@' )
 
 #else
 
+ 1200 format ( &
+ 1X,A16,' Sweep: ',I5,'Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
+'    < A.dx^k  ; r^k > = ',E12.5,' ||A.dx^k  ||^2 = ',E12.5                ,/,&
+'    < A.dx^k-1; r^k > = ',E12.5,' ||A.dx^k-1||^2 = ',E12.5                ,/,&
+' < A.dx^k-1; A.dx^k > = ',E12.5)
+
  1300 format(1X,A16,' : NORMED RESIDUALS = ', E14.6)
- 1440 format(1X,A16,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6,&
+ 1440 format(1X,A16,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6, &
              ', RELAXP = ',E14.6)
- 1600 format(                                                     &
-'@'                                                            ,/,&
-'@ @@ WARNING: ', A16,' PRESSURE STEP '                        ,/,&
-'@    ========'                                                ,/,&
-'@  Maximum number of iterations ',I10   ,' reached'           ,/,&
+ 1500 format ( &
+ 1X,A16,' : Current reconstruction sweep = ',I5                     ,/,&
+'           sweep residual = ',E12.5,', norm = ',E12.5              ,/,&
+'           number of sweeps for solver = ',I5)
+ 1600 format( &
+'@'                                                                 ,/,&
+'@ @@ WARNING: ', A16,' PRESSURE STEP'                              ,/,&
+'@    ========'                                                     ,/,&
+'@  Maximum number of iterations ',I10   ,' reached'                ,/,&
 '@'                                                              )
 
 #endif

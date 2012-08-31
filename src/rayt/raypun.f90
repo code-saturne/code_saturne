@@ -145,7 +145,7 @@ integer          ncymap, nitmgp
 integer          inum
 integer          idtva0, ivar0
 integer          inc, iccocg
-integer          imucpp
+integer          imucpp, idftnp, iswdyp
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision aa, aaa, aaaa, relaxp, thetap
 
@@ -185,6 +185,8 @@ ischcp  = 1
 isstpp  = 0
 iescap  = 0
 imucpp  = 0
+idftnp  = 1
+iswdyp  = 0
 imgr1   = 0
 ncymap  = 100
 nitmgp  = 10
@@ -255,13 +257,14 @@ call codits &
  ( nvar   , nscal  ,                                              &
    idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp ,                            &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgr1  , ncymap , nitmgp , inum   , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    thetaa , thetaa , coefap , coefbp , cofafp , cofbfp ,          &
    flurds , flurdb ,                                              &
-   viscf  , viscb  , viscf  , viscb  ,                            &
+   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    rovsdt , smbrs  , theta4 , dpvar  ,                            &
    rvoid  , rvoid  )
 
