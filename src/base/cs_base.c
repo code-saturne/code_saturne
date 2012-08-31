@@ -1277,7 +1277,7 @@ cs_base_mem_init(void)
     /* We may not use BFT_MALLOC here as memory management has
        not yet been initialized using bft_mem_init() */
 
-    if (file_name != NULL) {
+    if (base_name != NULL) {
 
       /* In parallel, we will have one trace file per MPI process */
       if (cs_glob_rank_id >= 0) {
