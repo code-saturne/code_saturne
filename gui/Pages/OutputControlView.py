@@ -201,12 +201,13 @@ class FormatWriterDelegate(QItemDelegate):
         editor.addItem(QString("EnSight"))
         editor.addItem(QString("MED"))
         editor.addItem(QString("CGNS"))
+        editor.addItem(QString("CCM-IO"))
         editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, comboBox, index):
-        dico = {"ensight": 0, "med": 1, "cgns": 2}
+        dico = {"ensight": 0, "med": 1, "cgns": 2, "ccm": 3}
         row = index.row()
         string = index.model().dataWriter[row]['format']
         idx = dico[string]
@@ -530,8 +531,14 @@ class StandardItemModelWriter(QStandardItemModel):
         self.populateModel()
 
     def populateModel(self):
-        self.dicoV2M= {"EnSight": 'ensight',"MED" : 'med', "CGNS": 'cgns'}
-        self.dicoM2V= {"ensight" : 'EnSight',"med" : 'MED', "cgns": 'CGNS'}
+        self.dicoV2M= {"EnSight": 'ensight',
+                       "MED" : 'med',
+                       "CGNS": 'cgns',
+                       "CCM-IO": 'ccm'}
+        self.dicoM2V= {"ensight" : 'EnSight',
+                       "med" : 'MED',
+                       "cgns": 'CGNS',
+                       "ccm": 'CCM-IO'}
         for id in self.mdl.getWriterIdList():
             row = self.rowCount()
             self.setRowCount(row + 1)
@@ -1541,6 +1548,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             if format == "cgns":
                 self.modelPolyhedra.setItem(str_model='divide_polyhedra')
                 self.modelPolyhedra.disableItem(str_model='display')
+            elif format == "ccm":
+                self.modelPolygon.disableItem(str_model='discard_polygons')
+                self.modelPolygon.disableItem(str_model='divide_polygons')
+                self.modelPolyhedra.disableItem(str_model='discard_polyhedra')
+                self.modelPolyhedra.disableItem(str_model='divide_polyhedra')
 
             self.modelFormat.setItem(str_model="binary")
             self.comboBoxFormat.setEnabled(False)

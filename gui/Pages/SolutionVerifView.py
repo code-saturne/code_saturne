@@ -151,7 +151,10 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
                 # Define postprocessing output for errors and warnings.
 
-                cmd += ' --post-error ' + self.fmt
+                if self.fmt in ('med', 'cgns'):
+                    cmd += ' --post-error ' + self.fmt
+                else:
+                    cmd += ' --post-error ensight'
 
                 cmd += ' --case preprocess'
                 if len(nodeList) > 1:
@@ -338,6 +341,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         self.modelFMTCHR.addItem(self.tr("EnSight Gold"), 'ensight')
         self.modelFMTCHR.addItem(self.tr("MED"), 'med')
         self.modelFMTCHR.addItem(self.tr("CGNS"), 'cgns')
+        self.modelFMTCHR.addItem(self.tr("CCM-IO"), 'ccm')
 
         self.modelFormat.addItem(self.tr("binary"), 'binary')
         self.modelFormat.addItem(self.tr("text"), 'text')
@@ -455,6 +459,11 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
             if format == "cgns":
                 self.modelPolyhedra.setItem(str_model='divide_polyhedra')
                 self.modelPolyhedra.disableItem(str_model='display')
+            elif format == "ccm":
+                self.modelPolygon.disableItem(str_model='divide_polygons')
+                self.modelPolygon.disableItem(str_model='discard_polygons')
+                self.modelPolyhedra.disableItem(str_model='divide_polyhedra')
+                self.modelPolyhedra.disableItem(str_model='discard_polyhedra')
 
             self.modelFormat.setItem(str_model="binary")
             self.modelFormat.disableItem(str_model='text')

@@ -63,6 +63,7 @@
 
 /* Headers for available writers (could be replaced by plugin system) */
 
+#include "fvm_to_ccm.h"
 #include "fvm_to_cgns.h"
 #include "fvm_to_med.h"
 #include "fvm_to_ensight.h"
@@ -96,9 +97,9 @@ extern "C" {
 
 /* Number and status of defined formats */
 
-static const int _fvm_writer_n_formats = 4;
+static const int _fvm_writer_n_formats = 5;
 
-static fvm_writer_format_t _fvm_writer_format_list[4] = {
+static fvm_writer_format_t _fvm_writer_format_list[5] = {
 
   /* Built-in EnSight Gold writer */
   {
@@ -211,6 +212,41 @@ static fvm_writer_format_t _fvm_writer_format_list[4] = {
     NULL,
     NULL,
     NULL
+  },
+
+  /* CCM-IO writer */
+  {
+    "CCM-IO",
+    "2.6.1+",
+    (  FVM_WRITER_FORMAT_USE_EXTERNAL
+     | FVM_WRITER_FORMAT_HAS_POLYGON
+     | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
+    FVM_WRITER_FIXED_MESH,
+    0,                                 /* dynamic library count */
+    NULL,                              /* dynamic library */
+    NULL,                              /* dynamic library name */
+    NULL,                              /* dynamic library prefix */
+#if defined(HAVE_CCM)
+    fvm_to_ccm_n_version_strings,     /* n_version_strings_func */
+    fvm_to_ccm_version_string,        /* version_string_func */
+    fvm_to_ccm_init_writer,           /* init_func */
+    fvm_to_ccm_finalize_writer,       /* finalize_func */
+    fvm_to_ccm_set_mesh_time,         /* set_mesh_time_func */
+    fvm_to_ccm_needs_tesselation,     /* needs_tesselation_func */
+    fvm_to_ccm_export_nodal,          /* export_nodal_func */
+    fvm_to_ccm_export_field,          /* export_field_func */
+    NULL                               /* flush_func */
+#else
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+#endif
   }
 
 };
@@ -653,6 +689,8 @@ fvm_writer_get_format_id(const char  *format_name)
     strcpy(closest_name, "MED");
   else if (strncmp(tmp_name, "cgns", 4) == 0)
     strcpy(closest_name, "CGNS");
+  else if (strncmp(tmp_name, "ccm", 3) == 0)
+    strcpy(closest_name, "CCM-IO");
 
   /* Find name in list */
 

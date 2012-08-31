@@ -29,7 +29,8 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
 $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-AM_LDFLAGS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
+AM_LDFLAGS = $(ADF_LDFLAGS) $(CCM_LDFLAGS) $(CGNS_LDFLAGS) $(MED_LDFLAGS) \
+$(HDF5_LDFLAGS) $(MPI_LDFLAGS)
 
 # Conditionally compiled extensions
 
@@ -75,6 +76,7 @@ fvm_morton.h \
 fvm_nodal_priv.h \
 fvm_selector_postfix.h \
 fvm_tesselation.h \
+fvm_to_ccm.h \
 fvm_to_cgns.h \
 fvm_to_med.h \
 fvm_to_ensight.h \
@@ -123,6 +125,18 @@ fvm_to_ensight.c \
 fvm_to_ensight_case.c \
 fvm_writer.c \
 fvm_writer_helper.c
+
+if HAVE_CCM
+noinst_LTLIBRARIES += libfvm_ccm.la
+libfvm_ccm_la_CPPFLAGS =\
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/mesh \
+$(CFLAGS_DBG) $(CFLAGS_OPT) \
+$(ADF_CPPFLAGS) $(CCM_CPPFLAGS) $(MPI_CPPFLAGS)
+libfvm_filters_la_LIBADD += libfvm_ccm.la
+libfvm_ccm_la_SOURCES = fvm_to_ccm.c
+endif
 
 if HAVE_CGNS
 noinst_LTLIBRARIES += libfvm_cgns.la
