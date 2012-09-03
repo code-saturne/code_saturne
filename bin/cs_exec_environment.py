@@ -117,9 +117,9 @@ def write_export_env(fd, var, value):
         export_cmd = 'set ' + var + '="' + value
     else:
         if get_shell_type()[-3:] == 'csh': # handle C-type shells
-            export_cmd = 'setenv ' + var + ' "' + value
+            export_cmd = 'setenv ' + var + ' ' + value
         else:                              # handle Bourne-type shells
-            export_cmd = 'export ' + var + '="' + value
+            export_cmd = 'export ' + var + '=' + value
     export_cmd = export_cmd + '\n'
     fd.write(export_cmd)
 
