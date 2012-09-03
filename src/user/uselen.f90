@@ -30,7 +30,6 @@ subroutine uselen &
    ncelps , nfacps , nfbrps ,                                     &
    lstcel , lstfac , lstfbr ,                                     &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    tracel , trafac , trafbr )
 
 !===============================================================================
@@ -61,8 +60,6 @@ subroutine uselen &
 ! propfa           ! tr ! <-- ! proprietes physiques au centre des             !
 !  (nfac,*)        !    !     !    faces internes                              !
 ! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
-!  (nfabor,*)      !    !     !    faces de bord                               !
-! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! tracel(*)        ! tr ! <-- ! tab reel valeurs cellules post                 !
 ! trafac(*)        ! tr ! <-- ! tab reel valeurs faces int. post               !
@@ -96,6 +93,7 @@ use ppthch
 use ppincl
 use elincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -113,7 +111,6 @@ integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision tracel(ncelps*3)
 double precision trafac(nfacps*3), trafbr(nfbrps*3)
 
@@ -122,12 +119,13 @@ double precision trafac(nfacps*3), trafbr(nfbrps*3)
 character*32     namevr
 integer          iel   , iloc
 integer          ivar  , ivar0 , inc   , iccocg
-integer          nswrgp, imligp, iwarnp, iclimv
+integer          nswrgp, imligp, iwarnp
 integer          ipcsii
 integer          ientla, ivarpr
 double precision epsrgp, climgp, extrap
 double precision rbid(1)
 
+double precision, dimension(:), pointer :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
@@ -148,14 +146,13 @@ if(nummai.eq.-1) then
   allocate(grad(ncelet,3))
 
 !===============================================================================
-! 1.   Graident of the real potential
+! 1.   Gradient of the real potential
 !===============================================================================
 
   idimt  = 3
-  NAMEVR = 'Gr_PotR'
+  namevr = 'Gr_PotR'
 
   ivar = isca(ipotr)
-  iclimv = iclrtp(ivar,icoef)
 
   inc = 1
   iccocg = 1
@@ -166,16 +163,18 @@ if(nummai.eq.-1) then
   climgp = climgr(ivar)
   extrap = extrag(ivar)
   ivar0 = 0
-!
+
+  call field_get_coefa_s(ivarfl(ivar), coefap)
+  call field_get_coefb_s(ivarfl(ivar), coefbp)
+
   call grdcel                                                     &
   !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
-!       POTR
+   rtp(1,ivar), coefap, coefbp,                                   &
+   ! POTR
    grad   )
 
-!
   ientla = 0
   ivarpr = 1
 
@@ -191,10 +190,9 @@ if(nummai.eq.-1) then
   if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
 
     idimt  = 3
-    NAMEVR = 'Gr_PotI'
+    namevr = 'Gr_PotI'
 
     ivar = isca(ipoti)
-    iclimv = iclrtp(ivar,icoef)
 
     inc = 1
     iccocg = 1
@@ -204,18 +202,20 @@ if(nummai.eq.-1) then
     epsrgp = epsrgr(ivar)
     climgp = climgr(ivar)
     extrap = extrag(ivar)
-!
+
     ivar0 = 0
-!
+
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+
     call grdcel                                                   &
     !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
-!       POTI
+   rtp(1,ivar), coefap, coefbp,                                   &
+   ! poti
    grad   )
 
-!
     ientla = 0
     ivarpr = 1
 
@@ -233,10 +233,9 @@ if(nummai.eq.-1) then
   if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
 
     idimt  = 3
-    NAMEVR = 'Cour_Im'
+    namevr = 'Cour_Im'
 
     ivar = isca(ipoti)
-    iclimv = iclrtp(ivar,icoef)
 
 !    As in elflux
     ipcsii = ipproc(ivisls(ipoti))
@@ -252,12 +251,15 @@ if(nummai.eq.-1) then
 !
     ivar0 = 0
 
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+
     call grdcel                                                   &
     !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
-!       POTI
+   rtp(1,ivar), coefap, coefbp,                                   &
+   ! poti
    grad   )
 
     do iloc = 1, ncelps
@@ -283,12 +285,11 @@ if(nummai.eq.-1) then
   if( ippmod(ielarc).ge.2 ) then
 
     idimt  = 3
-    NAMEVR = 'Ch_Mag'
+    namevr = 'Ch_Mag'
 
 !   Ax Component
 
     ivar = isca(ipotva(1))
-    iclimv = iclrtp(ivar,icoef)
 
     inc = 1
     iccocg = 1
@@ -298,17 +299,20 @@ if(nummai.eq.-1) then
     epsrgp = epsrgr(ivar)
     climgp = climgr(ivar)
     extrap = extrag(ivar)
-!
+
     ivar0 = 0
-!
+
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+
     call grdcel                                                   &
     !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
+   rtp(1,ivar), coefap, coefbp,                                   &
    grad   )
 
-!       B = rot A ( B = curl A)
+    ! B = rot A ( B = curl A)
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
@@ -320,7 +324,6 @@ if(nummai.eq.-1) then
 !    Ay component
 
     ivar = isca(ipotva(2))
-    iclimv = iclrtp(ivar,icoef)
 
     inc = 1
     iccocg = 1
@@ -330,14 +333,17 @@ if(nummai.eq.-1) then
     epsrgp = epsrgr(ivar)
     climgp = climgr(ivar)
     extrap = extrag(ivar)
-!
+
     ivar0 = 0
-!
+
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+
     call grdcel                                                   &
     !==========
   ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
+    rtp(1,ivar), coefap, coefbp,                                  &
     grad   )
 
 !       B = rot A (B = curl A)
@@ -352,7 +358,6 @@ if(nummai.eq.-1) then
 !    Az component
 
     ivar = isca(ipotva(3))
-    iclimv = iclrtp(ivar,icoef)
 
     inc = 1
     iccocg = 1
@@ -362,14 +367,17 @@ if(nummai.eq.-1) then
     epsrgp = epsrgr(ivar)
     climgp = climgr(ivar)
     extrap = extrag(ivar)
-!
+
     ivar0 = 0
-!
+
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+
     call grdcel                                                   &
     !==========
   ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
+    rtp(1,ivar), coefap, coefbp,                                  &
     grad   )
 
 !       B = rot A (B = curl A)
@@ -398,7 +406,7 @@ if(nummai.eq.-1) then
   if (ippmod(ieljou).eq.4) then
 
     idimt  = 1
-    NAMEVR = 'ModPot'
+    namevr = 'ModPot'
 
     ivar = isca(ipotr)
 
@@ -417,7 +425,7 @@ if(nummai.eq.-1) then
                 ntcabs, ttcabs, tracel, rbid, rbid)
 
     idimt  = 1
-    NAMEVR = 'ArgPot'
+    namevr = 'ArgPot'
 
     ivar = isca(ipotr)
 

@@ -283,8 +283,7 @@ call ustssc &
   iscal  ,                                                       &
   icepdc , icetsm , itypsm ,                                     &
   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-  coefa  , coefb  , ckupdc , smacel ,                            &
-  smbrs  , rovsdt )
+  ckupdc , smacel , smbrs  , rovsdt )
 
 ! Si on extrapole les TS :
 !   SMBRS recoit -theta PROPCE du pas de temps precedent

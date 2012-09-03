@@ -28,7 +28,7 @@ subroutine uslaen &
  ( nvar   , nscal  , nvlsta ,                                     &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statis , stativ , tracel )
+   statis , stativ , tracel )
 
 !===============================================================================
 ! Purpose:
@@ -69,8 +69,6 @@ subroutine uslaen &
 ! propfa           ! ra ! <-- ! physical properties at interior face centers   !
 !  (nfac,*)        !    !     !                                                !
 ! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
-!  (nfabor,*)      !    !     !                                                !
-! coefa, coefb     ! ra ! <-- ! boundary conditions at the boundary faces      !
 !  (nfabor,*)      !    !     !                                                !
 ! statis(ncelet    ! ra ! <-- ! cumulation of the volume statistics            !
 !   nvlsta)        !    !     !                                                !
@@ -116,7 +114,6 @@ integer          ivarl , ivarl1 , ivarlm , iflu , ilpd1 , icla
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
-double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision tracel(ncelet)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
@@ -255,7 +252,7 @@ endif
 '@  The variance of the statistical weight has been asked     ',/,&
 '@    in uslaen (ivarl=',   I10,' et iflu=',  I10,').         ',/,&
 '@                                                            ',/,&
-'@  The calling of the subroutine uslaen must be checked      ',/, &
+'@  The call to subroutine uslaen must be checked             ',/, &
 '@                                                            ',/,&
 '@  The calculation continues.                                ',/,&
 '@                                                            ',/,&

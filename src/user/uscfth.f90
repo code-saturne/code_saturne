@@ -28,7 +28,6 @@ subroutine uscfth &
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    sorti1 , sorti2 , gamagr , xmasm1 )
 
 !===============================================================================
@@ -194,8 +193,6 @@ subroutine uscfth &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! sorti1,2(*)      ! ra ! --> ! output variable (unused if iccfth.lt.0)        !
 ! gamagr(*)        ! ra ! --> ! equivalent "gamma" constant of the gas         !
 !                  !    !     !   (unused if iccfth.lt.0)                      !
@@ -225,6 +222,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -237,7 +235,6 @@ integer          iccfth   , imodif
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*), propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 double precision sorti1(*), sorti2(*), gamagr(*), xmasm1(*)
 
@@ -247,10 +244,13 @@ integer          ifac0
 integer          ierr
 integer          iel    , ifac   , ivar
 integer          irh    , itk    , ien
-integer          iclp   , iclr   , iclt   , icle
-integer          iclu   , iclv   , iclw
-double precision gamagp , xmasml , enint
+double precision gamagp , xmasml , enint, pfac
 double precision xmach  , xmachi , xmache , dxmach
+
+double precision, dimension(:), pointer :: coefap, coefbp
+double precision, dimension(:), pointer :: coefar, coefae
+double precision, dimension(:), pointer :: coefat, coefbt, coefps
+double precision, dimension(:,:), pointer :: coefav, coefpv
 
 integer          npmax
 parameter (npmax = 1000)
@@ -283,16 +283,9 @@ ierr   = 0
 
 ! Rank of the variables in their associated arrays
 if (iccfth.ge.0.or.iccfth.le.-2) then
-  irh = isca(irho  )
+  irh = isca(irho)
   itk = isca(itempk)
   ien = isca(ienerg)
-  iclp = iclrtp(ipr,icoef)
-  iclr = iclrtp(irh,icoef)
-  iclt = iclrtp(itk,icoef)
-  icle = iclrtp(ien,icoef)
-  iclu = iclrtp(iu,icoef)
-  iclv = iclrtp(iv,icoef)
-  iclw = iclrtp(iw,icoef)
 endif
 
 ! For calculation of values at the cell centers,
@@ -300,6 +293,18 @@ endif
 ! For calculation of values at the cell faces,
 !   ifac0 is the number of the current face
 ifac0 = imodif
+
+call field_get_coefa_s(ivarfl(ipr), coefap)
+call field_get_coefa_s(ivarfl(ipr), coefbp)
+
+call field_get_coefa_s(ivarfl(irh), coefar)
+
+call field_get_coefa_s(ivarfl(itk), coefat)
+call field_get_coefa_s(ivarfl(itk), coefbt)
+
+call field_get_coefa_s(ivarfl(irh), coefae)
+
+call field_get_coefa_v(ivarfl(iu), coefav)
 
 !===============================================================================
 ! 1. Thermodynamic law choice
@@ -720,28 +725,28 @@ if (ieos.eq.1) then
     !     next.
 
     !   Rarefaction !FIXME with the new cofaf cofbf
-    if (xmach.lt.0.d0.and.coefb(ifac,iclp).le.1.d0) then
+    if (xmach.lt.0.d0.and.coefbp(ifac).le.1.d0) then
 
       if (xmach.gt.2.d0/(1.d0-gamagp)) then
-        coefb(ifac,iclp) = (1.d0 + (gamagp-1.d0)/2.d0 * xmach)    &
+        coefbp(ifac) = (1.d0 + (gamagp-1.d0)/2.d0 * xmach)    &
              ** (2.d0*gamagp/(gamagp-1.d0))
       else
         ! In case the rarefaction is too strong, a zero Dirichlet value
         !   is used for pressure (the value of coefb is used here as an
         !   indicator and will be modified later in cfxtcl)
-        coefb(ifac,iclp) = rinfin
+        coefbp(ifac) = rinfin
       endif
 
       !  Shock
-    elseif (xmach.gt.0.d0.and.coefb(ifac,iclp).ge.1.d0) then
+    elseif (xmach.gt.0.d0.and.coefbp(ifac).ge.1.d0) then
 
-      coefb(ifac,iclp) = 1.d0 + gamagp*xmach                      &
+      coefbp(ifac) = 1.d0 + gamagp*xmach                      &
             *( (gamagp+1.d0)/4.d0*xmach                           &
                 + sqrt(1.d0 + (gamagp+1.d0)**2/16.d0*xmach**2) )
 
       !  Oscillation between rarefaction and shock or zero Mach number
     else
-      coefb(ifac,iclp) = 1.d0
+      coefbp(ifac) = 1.d0
     endif
 
 
@@ -788,40 +793,55 @@ if (ieos.eq.1) then
          + rtp(iel,iv)*surfbo(2,ifac)                             &
          + rtp(iel,iw)*surfbo(3,ifac) ) / surfbn(ifac)            &
          / sqrt( gamagp * rtp(iel,ipr) / rtp(iel,irh) )
-    xmache =                                                      &
-         ( coefa(ifac,iclu)*surfbo(1,ifac)                        &
-         + coefa(ifac,iclv)*surfbo(2,ifac)                        &
-         + coefa(ifac,iclw)*surfbo(3,ifac) ) /surfbn(ifac)        &
-         / sqrt( gamagp * rtp(iel,ipr) / rtp(iel,irh) )
+    if (ivelco.eq.0) then
+      xmache =                                                    &
+           (  coefav(ifac,1)*surfbo(1,ifac)                       &
+            + coefav(ifac,2)*surfbo(2,ifac)                       &
+            + coefav(ifac,3)*surfbo(3,ifac) ) /surfbn(ifac)       &
+           / sqrt( gamagp * rtp(iel,ipr) / rtp(iel,irh) )
+    else
+      xmache =                                                    &
+           (  coefav(1,ifac)*surfbo(1,ifac)                       &
+            + coefav(2,ifac)*surfbo(2,ifac)                       &
+            + coefav(3,ifac)*surfbo(3,ifac) ) /surfbn(ifac)       &
+           / sqrt( gamagp * rtp(iel,ipr) / rtp(iel,irh) )
+    endif
     dxmach = xmachi - xmache
 
     ! Pressure: rarefaction wave (Rusanov)
     if (dxmach.le.0.d0) then
 
       if (dxmach.gt.2.d0/(1.d0-gamagp)) then
-        coefa(ifac,iclp) = rtp(iel,ipr)*                          &
+        coefap(ifac) = rtp(iel,ipr)*                              &
              ( (1.d0 + (gamagp-1.d0)*0.50d0*dxmach)               &
                ** (2.d0*gamagp/(gamagp-1.d0))    )
       elseif (dxmach.le.2.d0/(1.d0-gamagp) ) then
-        coefa(ifac,iclp) = 0.d0
+        coefap(ifac) = 0.d0
       endif
 
       ! Pressure: shock (Rusanov)
     else
-      coefa(ifac,iclp) = rtp(iel,ipr)*                            &
+      coefap(ifac) = rtp(iel,ipr)*                                &
            (  1.d0 + gamagp*dxmach                                &
            *( (gamagp+1.d0)*0.25d0*dxmach                         &
            + sqrt(1.d0 + (gamagp+1.d0)**2/16.d0*dxmach**2) )  )
     endif
 
     ! This choice overrides the previous Rusanov choice
-    coefa(ifac,iclp) = rtp(iel,ipr)
+    coefap(ifac) = rtp(iel,ipr)
 
     ! Total energy
-    coefa(ifac,icle) =                                            &
-         coefa(ifac,iclp)/((gamagp-1.d0)*coefa(ifac,iclr))        &
-         + 0.5d0*(coefa(ifac,iclu)**2                             &
-                + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
+    if (ivelco.eq.0) then
+      coefae(ifac) =                                              &
+           coefap(ifac)/((gamagp-1.d0)*coefar(ifac))              &
+           + 0.5d0*(coefav(ifac,1)**2                             &
+                  + coefav(ifac,2)**2 + coefav(ifac,3)**2)
+    else
+      coefae(ifac) =                                              &
+           coefap(ifac)/((gamagp-1.d0)*coefar(ifac))              &
+           + 0.5d0*(coefav(1,ifac)**2                             &
+                  + coefav(2,ifac)**2 + coefav(3,ifac)**2)
+    endif
 
 
 !  -- Subsonic inlet with prescribed mass and enthalpy flow rates
@@ -858,80 +878,151 @@ if (ieos.eq.1) then
     iel  = ifabor(ifac)
 
     ! Rarefaction case
-    if (coefa(ifac,iclp).le.rtp(iel,ipr)) then
+    if (coefap(ifac).le.rtp(iel,ipr)) then
 
       ! Density
-      coefa(ifac,iclr) = rtp(iel,irh)                             &
-           * (coefa(ifac,iclp)/rtp(iel,ipr))**(1.d0/gamagp)
+      coefar(ifac) = rtp(iel,irh)                             &
+           * (coefap(ifac)/rtp(iel,ipr))**(1.d0/gamagp)
 
       ! Velocity
-      coefa(ifac,iclu) = rtp(iel,iu)                              &
-           + 2.d0/(gamagp-1.d0)                                   &
-           * sqrt(gamagp*rtp(iel,ipr)/rtp(iel,irh))               &
-           * (1.d0-(coefa(ifac,iclp)/rtp(iel,ipr)                 &
-                        )**((gamagp-1.d0)/(2.d0*gamagp)))         &
-           * surfbo(1,ifac)/surfbn(ifac)
 
-      coefa(ifac,iclv) = rtp(iel,iv)                              &
-           + 2.d0/(gamagp-1.d0)                                   &
-           * sqrt( gamagp*rtp(iel,ipr)/rtp(iel,irh))              &
-           * (1.d0-(coefa(ifac,iclp)/rtp(iel,ipr)                 &
-                        )**((gamagp-1.d0)/(2.d0*gamagp)))         &
-           * surfbo(2,ifac)/surfbn(ifac)
+      if (ivelco.eq.0) then
 
-      coefa(ifac,iclw) = rtp(iel,iw)                              &
-           + 2.d0/(gamagp-1.d0)                                   &
-           * sqrt( gamagp*rtp(iel,ipr)/rtp(iel,irh))              &
-           * (1.d0-(coefa(ifac,iclp)/rtp(iel,ipr)                 &
-                        )**((gamagp-1.d0)/(2.d0/gamagp)))         &
-           * surfbo(3,ifac)/surfbn(ifac)
+        coefav(ifac,1) = rtp(iel,iu)                               &
+             + 2.d0/(gamagp-1.d0)                                  &
+             * sqrt(gamagp*rtp(iel,ipr)/rtp(iel,irh))              &
+             * (1.d0-(coefap(ifac)/rtp(iel,ipr)                    &
+                          )**((gamagp-1.d0)/(2.d0*gamagp)))        &
+             * surfbo(1,ifac)/surfbn(ifac)
 
-      ! Total energy
-      coefa(ifac,icle) =                                          &
-           coefa(ifac,iclp)/((gamagp-1.d0)*coefa(ifac,iclr))      &
-           + 0.5d0*(coefa(ifac,iclu)**2                           &
-                  + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
+        coefav(ifac,2) = rtp(iel,iv)                               &
+             + 2.d0/(gamagp-1.d0)                                  &
+             * sqrt( gamagp*rtp(iel,ipr)/rtp(iel,irh))             &
+             * (1.d0-(coefap(ifac)/rtp(iel,ipr)                    &
+                          )**((gamagp-1.d0)/(2.d0*gamagp)))        &
+             * surfbo(2,ifac)/surfbn(ifac)
+
+        coefav(ifac,3) = rtp(iel,iw)                               &
+             + 2.d0/(gamagp-1.d0)                                  &
+             * sqrt( gamagp*rtp(iel,ipr)/rtp(iel,irh))             &
+             * (1.d0-(coefap(ifac)/rtp(iel,ipr)                    &
+                          )**((gamagp-1.d0)/(2.d0/gamagp)))        &
+             * surfbo(3,ifac)/surfbn(ifac)
+
+        ! Total energy
+        coefae(ifac) =                                             &
+             coefap(ifac)/((gamagp-1.d0)*coefar(ifac))             &
+             + 0.5d0*(coefav(ifac,1)**2                            &
+                    + coefav(ifac,2)**2 + coefav(ifac,3)**2)
+
+      else
+
+        coefav(1,ifac) = rtp(iel,iu)                               &
+             + 2.d0/(gamagp-1.d0)                                  &
+             * sqrt(gamagp*rtp(iel,ipr)/rtp(iel,irh))              &
+             * (1.d0-(coefap(ifac)/rtp(iel,ipr)                    &
+                          )**((gamagp-1.d0)/(2.d0*gamagp)))        &
+             * surfbo(1,ifac)/surfbn(ifac)
+
+        coefav(2,ifac) = rtp(iel,iv)                               &
+             + 2.d0/(gamagp-1.d0)                                  &
+             * sqrt( gamagp*rtp(iel,ipr)/rtp(iel,irh))             &
+             * (1.d0-(coefap(ifac)/rtp(iel,ipr)                    &
+                          )**((gamagp-1.d0)/(2.d0*gamagp)))        &
+             * surfbo(2,ifac)/surfbn(ifac)
+
+        coefav(3,ifac) = rtp(iel,iw)                               &
+             + 2.d0/(gamagp-1.d0)                                  &
+             * sqrt( gamagp*rtp(iel,ipr)/rtp(iel,irh))             &
+             * (1.d0-(coefap(ifac)/rtp(iel,ipr)                    &
+                          )**((gamagp-1.d0)/(2.d0/gamagp)))        &
+             * surfbo(3,ifac)/surfbn(ifac)
+
+        ! Total energy
+        coefae(ifac) =                                             &
+             coefap(ifac)/((gamagp-1.d0)*coefar(ifac))             &
+             + 0.5d0*(coefav(1,ifac)**2                            &
+                    + coefav(2,ifac)**2 + coefav(3,ifac)**2)
+
+      endif
 
     ! Shock
     else
 
       ! Density
-      coefa(ifac,iclr) = rtp(iel,irh)                             &
-           * ( (gamagp+1.d0)*coefa(ifac,iclp)                     &
-             + (gamagp-1.d0)*rtp(iel,ipr) )                       &
-           / ( (gamagp-1.d0)*coefa(ifac,iclp)                     &
+      coefar(ifac) = rtp(iel,irh)                                  &
+           * ( (gamagp+1.d0)*coefap(ifac)                          &
+             + (gamagp-1.d0)*rtp(iel,ipr) )                        &
+           / ( (gamagp-1.d0)*coefap(ifac)                          &
              + (gamagp+1.d0)*rtp(iel,ipr) )
 
       ! Velocity
-      coefa(ifac,iclu) = rtp(iel,iu)                              &
-           - (coefa(ifac,iclp)-rtp(iel,ipr))                      &
-           * sqrt(2.d0/                                           &
-                  (rtp(iel,irh)                                   &
-                   *((gamagp+1.d0)*coefa(ifac,iclp)               &
-                    +(gamagp-1.d0)*rtp(iel,ipr) )))               &
-           * surfbo(1,ifac)/surfbn(ifac)
 
-      coefa(ifac,iclv) = rtp(iel,iv)                              &
-           - (coefa(ifac,iclp)-rtp(iel,ipr))                      &
-           * sqrt(2.d0/                                           &
-                  (rtp(iel,irh)                                   &
-                   *((gamagp+1.d0)*coefa(ifac,iclp)               &
-                    +(gamagp-1.d0)*rtp(iel,ipr) )))               &
-           * surfbo(2,ifac)/surfbn(ifac)
+      if (ivelco.eq.0) then
 
-      coefa(ifac,iclw) = rtp(iel,iw)                              &
-           - (coefa(ifac,iclp)-rtp(iel,ipr))                      &
-           * sqrt(2.d0/                                           &
-                  (rtp(iel,irh)                                   &
-                   *((gamagp+1.d0)*coefa(ifac,iclp)               &
-                    +(gamagp-1.d0)*rtp(iel,ipr) )))               &
-           * surfbo(3,ifac)/surfbn(ifac)
+        coefav(ifac,1) = rtp(iel,iu)                               &
+             - (coefap(ifac)-rtp(iel,ipr))                         &
+             * sqrt(2.d0/                                          &
+                    (rtp(iel,irh)                                  &
+                     *((gamagp+1.d0)*coefap(ifac)                  &
+                      +(gamagp-1.d0)*rtp(iel,ipr) )))              &
+             * surfbo(1,ifac)/surfbn(ifac)
 
-      ! Total energy
-      coefa(ifac,icle) =                                          &
-           coefa(ifac,iclp)/((gamagp-1.d0)*coefa(ifac,iclr))      &
-           + 0.5d0*(coefa(ifac,iclu)**2                           &
-                  + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
+        coefav(ifac,2) = rtp(iel,iv)                               &
+             - (coefap(ifac)-rtp(iel,ipr))                         &
+             * sqrt(2.d0/                                          &
+                    (rtp(iel,irh)                                  &
+                     *((gamagp+1.d0)*coefap(ifac)                  &
+                      +(gamagp-1.d0)*rtp(iel,ipr) )))              &
+             * surfbo(2,ifac)/surfbn(ifac)
+
+        coefav(ifac,3) = rtp(iel,iw)                               &
+             - (coefap(ifac)-rtp(iel,ipr))                         &
+             * sqrt(2.d0/                                          &
+                    (rtp(iel,irh)                                  &
+                     *((gamagp+1.d0)*coefap(ifac)                  &
+                      +(gamagp-1.d0)*rtp(iel,ipr) )))              &
+             * surfbo(3,ifac)/surfbn(ifac)
+
+        ! Total energy
+        coefae(ifac) =                                             &
+             coefap(ifac)/((gamagp-1.d0)*coefar(ifac))             &
+             + 0.5d0*(coefav(ifac,1)**2                            &
+                    + coefav(ifac,2)**2 + coefav(ifac,3)**2)
+
+      else
+
+        coefav(1,ifac) = rtp(iel,iu)                               &
+             - (coefap(ifac)-rtp(iel,ipr))                         &
+             * sqrt(2.d0/                                          &
+                    (rtp(iel,irh)                                  &
+                     *((gamagp+1.d0)*coefap(ifac)                  &
+                      +(gamagp-1.d0)*rtp(iel,ipr) )))              &
+             * surfbo(1,ifac)/surfbn(ifac)
+
+        coefav(2,ifac) = rtp(iel,iv)                               &
+             - (coefap(ifac)-rtp(iel,ipr))                         &
+             * sqrt(2.d0/                                          &
+                    (rtp(iel,irh)                                  &
+                     *((gamagp+1.d0)*coefap(ifac)                  &
+                      +(gamagp-1.d0)*rtp(iel,ipr) )))              &
+             * surfbo(2,ifac)/surfbn(ifac)
+
+        coefav(3,ifac) = rtp(iel,iw)                               &
+             - (coefap(ifac)-rtp(iel,ipr))                         &
+             * sqrt(2.d0/                                          &
+                    (rtp(iel,irh)                                  &
+                     *((gamagp+1.d0)*coefap(ifac)                  &
+                      +(gamagp-1.d0)*rtp(iel,ipr) )))              &
+             * surfbo(3,ifac)/surfbn(ifac)
+
+        ! Total energy
+        coefae(ifac) =                                             &
+             coefap(ifac)/((gamagp-1.d0)*coefar(ifac))             &
+             + 0.5d0*(coefav(1,ifac)**2                            &
+                    + coefav(2,ifac)**2 + coefav(3,ifac)**2)
+
+      endif
 
     endif
 
@@ -947,14 +1038,21 @@ if (ieos.eq.1) then
     iel  = ifabor(ifac)
 
     ! Temperature
-    coefa(ifac,iclt) =                                            &
-         xmasml*coefa(ifac,iclp)/(rr*coefa(ifac,iclr))
+    coefat(ifac) = xmasml*coefap(ifac)/(rr*coefar(ifac))
 
     ! Energie totale
-    coefa(ifac,icle) =                                            &
-         cv0*coefa(ifac,iclt)                                     &
-         + 0.5d0*( coefa(ifac,iclu)**2                            &
-                 + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 )
+
+    if (ivelco.eq.0) then
+      coefae(ifac) =                                            &
+           cv0*coefat(ifac)                                     &
+           + 0.5d0*( coefav(ifac,1)**2                          &
+                   + coefav(ifac,2)**2 + coefav(ifac,3)**2 )
+    else
+      coefae(ifac) =                                            &
+           cv0*coefat(ifac)                                     &
+           + 0.5d0*( coefav(1,ifac)**2                          &
+                   + coefav(2,ifac)**2 + coefav(3,ifac)**2 )
+    endif
 
 
 ! --- Calculation of density and energy from pressure and temperature
@@ -965,14 +1063,21 @@ if (ieos.eq.1) then
     iel  = ifabor(ifac)
 
     ! Density
-    coefa(ifac,iclr) =                                            &
-         xmasml*coefa(ifac,iclp)/(rr*coefa(ifac,iclt))
+    coefar(ifac) =                                            &
+         xmasml*coefap(ifac)/(rr*coefat(ifac))
 
     ! Total energy
-    coefa(ifac,icle) =                                            &
-         cv0*coefa(ifac,iclt)                                     &
-         + 0.5d0*( coefa(ifac,iclu)**2                            &
-                 + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 )
+    if (ivelco.eq.0) then
+      coefae(ifac) =                                            &
+           cv0*coefat(ifac)                                     &
+           + 0.5d0*( coefav(ifac,1)**2                          &
+                   + coefav(ifac,2)**2 + coefav(ifac,3)**2 )
+    else
+      coefae(ifac) =                                            &
+           cv0*coefat(ifac)                                     &
+           + 0.5d0*( coefav(1,ifac)**2                          &
+                   + coefav(2,ifac)**2 + coefav(3,ifac)**2 )
+    endif
 
 
 ! --- Calculation of density and temperature from pressure and total energy
@@ -983,15 +1088,22 @@ if (ieos.eq.1) then
     iel  = ifabor(ifac)
 
     ! Density
-    coefa(ifac,iclr) = coefa(ifac,iclp)/( (gamagp-1.d0)*          &
-         (coefa(ifac,icle)                                        &
-         - 0.5d0*( coefa(ifac,iclu)**2                            &
-                 + coefa(ifac,iclv)**2                            &
-                 + coefa(ifac,iclw)**2 ) ) )
+    if (ivelco.eq.0) then
+      coefar(ifac) = coefap(ifac)/((gamagp-1.d0)*               &
+           (coefae(ifac)                                        &
+             - 0.5d0*(  coefav(ifac,1)**2                       &
+                      + coefav(ifac,2)**2                       &
+                      + coefav(ifac,3)**2)))
+    else
+      coefar(ifac) = coefap(ifac)/((gamagp-1.d0)*               &
+           (coefae(ifac)                                        &
+             - 0.5d0*(  coefav(1,ifac)**2                       &
+                      + coefav(2,ifac)**2                       &
+                      + coefav(3,ifac)**2)))
+    endif
 
     ! Temperature
-    coefa(ifac,iclt)=                                             &
-         xmasml*coefa(ifac,iclp)/(rr*coefa(ifac,iclr))
+    coefat(ifac) = xmasml*coefap(ifac)/(rr*coefar(ifac))
 
 
 ! --- Calculation of pressure and energy from density and temperature
@@ -1002,13 +1114,18 @@ if (ieos.eq.1) then
     iel  = ifabor(ifac)
 
     ! Pressure
-    coefa(ifac,iclp) = coefa(ifac,iclr)*rr/xmasml                 &
-                                       *coefa(ifac,iclt)
+    coefap(ifac) = coefar(ifac)*rr/xmasml * coefat(ifac)
 
     ! Total energy
-    coefa(ifac,icle) = cv0 * coefa(ifac,iclt)                     &
-         + 0.5d0*( coefa(ifac,iclu)**2                            &
-                 + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 )
+    if (ivelco.eq.0) then
+      coefae(ifac) = cv0 * coefat(ifac)                           &
+           + 0.5d0*( coefav(ifac,1)**2                            &
+                   + coefav(ifac,2)**2 + coefav(ifac,3)**2 )
+    else
+      coefae(ifac) = cv0 * coefat(ifac)                           &
+           + 0.5d0*( coefav(1,ifac)**2                            &
+                   + coefav(2,ifac)**2 + coefav(3,ifac)**2 )
+    endif
 
 
 ! --- Calculation of pressure and temperature from density and energy
@@ -1019,16 +1136,23 @@ if (ieos.eq.1) then
     iel  = ifabor(ifac)
 
     ! Pressure
-    coefa(ifac,iclp) = (gamagp-1.d0)*coefa(ifac,iclr)             &
-          *( coefa(ifac,icle)                                     &
-            - 0.5d0*( coefa(ifac,iclu)**2                         &
-                    + coefa(ifac,iclv)**2                         &
-                    + coefa(ifac,iclw)**2 ) )
-
+    if (ivelco.eq.0) then
+      coefap(ifac) = (gamagp-1.d0)*coefar(ifac)                   &
+            *( coefae(ifac)                                       &
+              - 0.5d0*( coefav(ifac,1)**2                         &
+                      + coefav(ifac,2)**2                         &
+                      + coefav(ifac,3)**2 ) )
+    else
+      coefap(ifac) = (gamagp-1.d0)*coefar(ifac)                   &
+            *( coefae(ifac)                                       &
+              - 0.5d0*( coefav(1,ifac)**2                         &
+                      + coefav(2,ifac)**2                         &
+                      + coefav(3,ifac)**2 ) )
+    endif
 
     ! Temperature
-    coefa(ifac,iclt)=                                             &
-         xmasml*coefa(ifac,iclp)/(rr*coefa(ifac,iclr))
+    coefat(ifac)=                                             &
+         xmasml*coefap(ifac)/(rr*coefar(ifac))
 
 
 ! --- End of the treatment of the perfect gas
@@ -1396,34 +1520,34 @@ elseif (ieos.eq.2) then
            + rtp(iel,iw)*surfbo(3,ifac) ) / surfbn(ifac)       &
          / sqrt( gamagr(iel)*rtp(iel,ipr)/rtp(iel,irh) )
 
-    coefa(ifac,iclp) = 0.d0
+    coefap(ifac) = 0.d0
 
     ! Pression and entropy: rarefaction !FIXME with the new cofaf
 
     if (xmach.le.0.d0 .and. xmach.gt.2.d0/(1.d0-gamagr(iel))) then
-      coefb(ifac,iclp) = (1.d0 + (gamagr(iel)-1.d0)/2.d0 * xmach) &
+      coefbp(ifac) = (1.d0 + (gamagr(iel)-1.d0)/2.d0 * xmach) &
            ** (2.d0*gamagr(iel)/(gamagr(iel)-1.d0))
-      coefb(ifac,iclt) = 1.d0
+      coefbt(ifac) = 1.d0
 
     elseif (xmach.le.2.d0/(1.d0-gamagr(iel)) ) then
-      coefb(ifac,iclp) = 0.d0
-      coefb(ifac,iclt) = 1.d0
+      coefbp(ifac) = 0.d0
+      coefbt(ifac) = 1.d0
 
       ! Pressure and entropy: shock
 
     else
-      coefb(ifac,iclp) = 1.d0 + gamagr(iel)*xmach                 &
+      coefbp(ifac) = 1.d0 + gamagr(iel)*xmach                    &
             *( (gamagr(iel)+1.d0)/4.d0*xmach                      &
            + sqrt(1.d0 + (gamagr(iel)+1.d0)**2/16.d0*xmach**2) )
-      coefb(ifac,iclt) = coefb(ifac,iclp)/(1.d0-coefb(ifac,iclp)) &
+      coefbt(ifac) = coefbp(ifac)/(1.d0-coefbp(ifac))       &
           / rtp(iel,ipr) * ( rtp(iel,irh)                         &
               * (rtp(iel,iu)**2+rtp(iel,iv)**2+rtp(iel,iw)**2)    &
-              + rtp(iel,ipr) *(1.d0-coefb(ifac,iclp)) )
+              + rtp(iel,ipr) *(1.d0-coefbp(ifac)) )
     endif
 
     ! Total energy: 'internal energy - Cv T'
 
-    coefa(ifac,icle) = 0.d0
+    coefae(ifac) = 0.d0
 
     ! Stop if error detected
     if (ierr.eq.1) call csexit (1)
@@ -1442,26 +1566,33 @@ elseif (ieos.eq.2) then
          + rtp(iel,iv)*surfbo(2,ifac)                             &
          + rtp(iel,iw)*surfbo(3,ifac) )/surfbn(ifac)              &
          / sqrt(gamagr(iel)*rtp(iel,ipr)/rtp(iel,irh))
-    xmache = ( coefa(ifac,iclu)*surfbo(1,ifac)                    &
-         + coefa(ifac,iclv)*surfbo(2,ifac)                        &
-         + coefa(ifac,iclw)*surfbo(3,ifac) )/surfbn(ifac)         &
-         / sqrt(gamagr(iel)*rtp(iel,ipr)/rtp(iel,irh))
+    if (ivelco.eq.0) then
+      xmache = (  coefav(ifac,1)*surfbo(1,ifac)                    &
+                + coefav(ifac,2)*surfbo(2,ifac)                    &
+                + coefav(ifac,3)*surfbo(3,ifac) )/surfbn(ifac)     &
+           / sqrt(gamagr(iel)*rtp(iel,ipr)/rtp(iel,irh))
+    else
+      xmache = (  coefav(1,ifac)*surfbo(1,ifac)                    &
+                + coefav(2,ifac)*surfbo(2,ifac)                    &
+                + coefav(3,ifac)*surfbo(3,ifac) )/surfbn(ifac)     &
+           / sqrt(gamagr(iel)*rtp(iel,ipr)/rtp(iel,irh))
+    endif
     dxmach = xmachi - xmache
 
     ! Pressure: rarefaction wave
     if (dxmach.le.0.d0) then
 
       if (dxmach.gt.2.d0/(1.d0-gamagr(iel))) then
-        coefa(ifac,iclp) = rtp(iel,ipr)*                          &
+        coefap(ifac) = rtp(iel,ipr)*                              &
              ( (1.d0 + (gamagr(iel)-1.d0)*0.50d0*dxmach)          &
                ** (2.d0*gamagr(iel)/(gamagr(iel)-1.d0))  )
       elseif (dxmach.le.2.d0/(1.d0-gamagr(iel)) ) then
-        coefa(ifac,iclp) = 0.d0
+        coefap(ifac) = 0.d0
       endif
 
     ! Pressure: shock
     else
-      coefa(ifac,iclp) = rtp(iel,ipr)*                            &
+      coefap(ifac) = rtp(iel,ipr)*                                &
            (  1.d0 + gamagr(iel)*dxmach                           &
            *( (gamagr(iel)+1.d0)*0.25d0*dxmach                    &
            + sqrt(1.d0 + (gamagr(iel)+1.d0)**2/16.d0              &
@@ -1469,13 +1600,20 @@ elseif (ieos.eq.2) then
     endif
 
     ! This choice overrides the previous Rusanov choice
-    coefa(ifac,iclp) = rtp(iel,ipr)
+    coefap(ifac) = rtp(iel,ipr)
 
     ! Total energy
-    coefa(ifac,icle) =                                            &
-         coefa(ifac,iclp)/((gamagr(iel)-1.d0)*coefa(ifac,iclr))   &
-         + 0.5d0*(coefa(ifac,iclu)**2                             &
-                + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
+    if (ivelco.eq.0) then
+      coefae(ifac) =                                              &
+           coefap(ifac)/((gamagr(iel)-1.d0)*coefar(ifac))         &
+           + 0.5d0*(coefav(ifac,1)**2                             &
+                  + coefav(ifac,2)**2 + coefav(ifac,3)**2)
+    else
+      coefae(ifac) =                                              &
+           coefap(ifac)/((gamagr(iel)-1.d0)*coefar(ifac))         &
+           + 0.5d0*(coefav(1,ifac)**2                             &
+                  + coefav(2,ifac)**2 + coefav(3,ifac)**2)
+    endif
 
 !  -- Outlet
 
@@ -1494,98 +1632,108 @@ elseif (ieos.eq.2) then
     ! Supersonic outlet: Dirichlet for all variables
     if (xmach.ge.1.d0) then
       do ivar = 1, nvar
-        coefa(ifac,iclrtp(ivar,icoef)) = rtp(iel,ivar)
+        if ((ivar.lt.iu.or.ivar.gt.iw) .and. (ivar.lt.iuma.or.ivar.gt.iwma)) then
+          call field_get_coefa_s(ivarfl(ivar), coefps)
+          coefps(ifac) = rtp(iel,ivar)
+        else if (ivar.eq.iu .or. ivar.eq.iuma) then
+          call field_get_coefa_v(ivarfl(ivar), coefpv)
+          if (ivelco .eq. 0) then
+            coefpv(ifac,1) = rtp(iel,ivar)
+            coefpv(ifac,2) = rtp(iel,ivar+1)
+            coefpv(ifac,3) = rtp(iel,ivar+2)
+          else
+            coefpv(1,ifac) = rtp(iel,ivar)
+            coefpv(2,ifac) = rtp(iel,ivar+1)
+            coefpv(3,ifac) = rtp(iel,ivar+2)
+          endif
+        endif
       enddo
 
       ! Entropy
-      coefa(ifac,iclt) =                                          &
-           rtp(iel,ipr)/rtp(iel,irh)**gamagr(iel)
+      coefat(ifac) = rtp(iel,ipr)/rtp(iel,irh)**gamagr(iel)
 
     ! Subsonic outlet
     elseif (xmach.lt.1.d0 .and. xmach.ge.0.d0) then
 
       ! Rarefaction:
-      if (coefa(ifac,iclp).le.rtp(iel,ipr)) then
+      if (coefap(ifac).le.rtp(iel,ipr)) then
 
         ! Density
-        coefa(ifac,iclr) = rtp(iel,irh)                           &
-             * (coefa(ifac,iclp)/rtp(iel,ipr))                    &
+        coefar(ifac) = rtp(iel,irh)                           &
+             * (coefap(ifac)/rtp(iel,ipr))                    &
                 **(1.d0/gamagr(iel))
 
         ! Velocity
-        coefa(ifac,iclu) = rtp(iel,iu)                            &
-             + 2.d0/(gamagr(iel)-1.d0)                            &
- * sqrt( gamagr(iel) * rtp(iel,ipr) / rtp(iel,irh) )              &
-             * ( 1.d0                                             &
- - (coefa(ifac,iclp)/rtp(iel,ipr))                                &
-               **((gamagr(iel)-1.d0)/2.d0/gamagr(iel)) )          &
- * surfbo(1,ifac) / surfbn(ifac)
 
-        coefa(ifac,iclv) = rtp(iel,iv)                            &
-             + 2.d0/(gamagr(iel)-1.d0)                            &
- * sqrt( gamagr(iel) * rtp(iel,ipr) / rtp(iel,irh) )              &
-             * ( 1.d0                                             &
- - (coefa(ifac,iclp)/rtp(iel,ipr))                                &
-               **((gamagr(iel)-1.d0)/2.d0/gamagr(iel)) )          &
- * surfbo(2,ifac) / surfbn(ifac)
+        pfac =  2.d0/(gamagr(iel)-1.d0)                                    &
+               * sqrt(gamagr(iel) * rtp(iel,ipr) / rtp(iel,irh))           &
+               * (  1.d0                                                   &
+                  - (coefap(ifac)/rtp(iel,ipr))                            &
+                                **((gamagr(iel)-1.d0)/2.d0/gamagr(iel)))
 
-        coefa(ifac,iclw) = rtp(iel,iw)                            &
-             + 2.d0/(gamagr(iel)-1.d0)                            &
- * sqrt( gamagr(iel) * rtp(iel,ipr) / rtp(iel,irh) )              &
-             * ( 1.d0                                             &
- - (coefa(ifac,iclp)/rtp(iel,ipr))                                &
-               **((gamagr(iel)-1.d0)/2.d0/gamagr(iel)) )          &
- * surfbo(3,ifac) / surfbn(ifac)
+        if (ivelco.eq.0) then
+          coefav(ifac,1) = rtp(iel,iu) + pfac * surfbo(1,ifac)/surfbn(ifac)
+          coefav(ifac,2) = rtp(iel,iv) + pfac * surfbo(2,ifac)/surfbn(ifac)
+          coefav(ifac,3) = rtp(iel,iw) + pfac * surfbo(3,ifac)/surfbn(ifac)
+          ! Total energy
+          coefae(ifac) =   coefap(ifac) / ((gamagr(iel)-1.d0)*coefar(ifac))  &
+                         + 0.5d0*(  coefav(ifac,1)**2                        &
+                                  + coefav(ifac,2)**2                        &
+                                  + coefav(ifac,3)**2)
+        else
+          coefav(1,ifac) = rtp(iel,iu) + pfac * surfbo(1,ifac)/surfbn(ifac)
+          coefav(2,ifac) = rtp(iel,iv) + pfac * surfbo(2,ifac)/surfbn(ifac)
+          coefav(3,ifac) = rtp(iel,iw) + pfac * surfbo(3,ifac)/surfbn(ifac)
+          ! Total energy
+          coefae(ifac) =   coefap(ifac) / ((gamagr(iel)-1.d0)*coefar(ifac))  &
+                         + 0.5d0*(  coefav(1,ifac)**2                        &
+                                  + coefav(2,ifac)**2                        &
+                                  + coefav(3,ifac)**2)
+        endif
 
-        ! Total energy
-        coefa(ifac,icle) = coefa(ifac,iclp)                       &
- /( (gamagr(iel)-1.d0)*coefa(ifac,iclr) )                         &
-              + 0.5d0*(coefa(ifac,iclu)**2                        &
-                     + coefa(ifac,iclv)**2                        &
-                     + coefa(ifac,iclw)**2)
 
         ! Entropy
-        coefa(ifac,iclt) = coefa(ifac,iclp)                       &
-                             /coefa(ifac,iclr)**gamagr(iel)
+        coefat(ifac) = coefap(ifac) / coefar(ifac)**gamagr(iel)
 
       ! Shock:
       else
 
         ! Density
-        coefa(ifac,iclr) = rtp(iel,irh)                           &
- * ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
-   + (gamagr(iel)-1.d0)*rtp(iel,ipr) )                            &
- / ( (gamagr(iel)-1.d0)*coefa(ifac,iclp)                          &
-   + (gamagr(iel)+1.d0)*rtp(iel,ipr) )
+        coefar(ifac) = rtp(iel,irh)                              &
+                       * ( (gamagr(iel)+1.d0)*coefap(ifac)       &
+                         + (gamagr(iel)-1.d0)*rtp(iel,ipr) )     &
+                       / ( (gamagr(iel)-1.d0)*coefap(ifac)       &
+                         + (gamagr(iel)+1.d0)*rtp(iel,ipr) )
 
         ! Velocity
-        coefa(ifac,iclu) = rtp(iel,iu)                            &
- - (coefa(ifac,iclp)-rtp(iel,ipr))*sqrt(2.d0/rtp(iel,irh)         &
- / ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
-   + (gamagr(iel)-1.d0)*rtp(iel,ipr) ))                           &
- * surfbo(1,ifac) / surfbn(ifac)
 
-        coefa(ifac,iclv) = rtp(iel,iv)                            &
- - (coefa(ifac,iclp)-rtp(iel,ipr))*sqrt(2.d0/rtp(iel,irh)         &
- / ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
-   + (gamagr(iel)-1.d0)*rtp(iel,ipr) ))                           &
- * surfbo(2,ifac) / surfbn(ifac)
+        pfac =   (coefap(ifac)-rtp(iel,ipr))                         &
+               * sqrt( 2.d0/rtp(iel,irh)                             &
+                      / ( (gamagr(iel)+1.d0)*coefap(ifac)            &
+                        + (gamagr(iel)-1.d0)*rtp(iel,ipr) ))
 
-        coefa(ifac,iclw) = rtp(iel,iw)                            &
- - (coefa(ifac,iclp)-rtp(iel,ipr))*sqrt(2.d0/rtp(iel,irh)         &
- / ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
-   + (gamagr(iel)-1.d0)*rtp(iel,ipr) ))                           &
- * surfbo(3,ifac) / surfbn(ifac)
-
-        ! Total energy
-        coefa(ifac,icle) = coefa(ifac,iclp)                       &
- /( (gamagr(iel)-1.d0)*coefa(ifac,iclr) )                         &
-     + 0.5d0*(coefa(ifac,iclu)**2                                 &
-            + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
+        if (ivelco.eq.0) then
+          coefav(ifac,1) = rtp(iel,iu) - pfac * surfbo(1,ifac) / surfbn(ifac)
+          coefav(ifac,2) = rtp(iel,iv) - pfac * surfbo(2,ifac) / surfbn(ifac)
+          coefav(ifac,3) = rtp(iel,iw) - pfac * surfbo(3,ifac) / surfbn(ifac)
+          ! Total energy
+          coefae(ifac) = coefap(ifac)                                         &
+                         /( (gamagr(iel)-1.d0)*coefar(ifac) )                 &
+                         + 0.5d0*(  coefav(ifac,1)**2                         &
+                                  + coefav(ifac,2)**2 + coefav(ifac,3)**2)
+        else
+          coefav(1,ifac) = rtp(iel,iu) - pfac * surfbo(1,ifac) / surfbn(ifac)
+          coefav(2,ifac) = rtp(iel,iv) - pfac * surfbo(2,ifac) / surfbn(ifac)
+          coefav(3,ifac) = rtp(iel,iw) - pfac * surfbo(3,ifac) / surfbn(ifac)
+          ! Total energy
+          coefae(ifac) = coefap(ifac)                                         &
+                         /( (gamagr(iel)-1.d0)*coefar(ifac) )                 &
+                         + 0.5d0*(  coefav(1,ifac)**2                         &
+                                  + coefav(2,ifac)**2 + coefav(3,ifac)**2)
+        endif
 
         ! Entropy
-        coefa(ifac,iclt) = coefa(ifac,iclp)                       &
-                             /coefa(ifac,iclr)**gamagr(iel)
+        coefat(ifac) = coefap(ifac) / coefar(ifac)**gamagr(iel)
 
       endif
 
@@ -1605,13 +1753,20 @@ elseif (ieos.eq.2) then
     iel  = ifabor(ifac)
 
     ! Temperature
-    coefa(ifac,iclt) = xmasm1(iel)/rr*coefa(ifac,iclp)            &
-                                        /coefa(ifac,iclr)
+    coefat(ifac) = xmasm1(iel)/rr*coefap(ifac) / coefar(ifac)
 
     ! Total energy
-    coefa(ifac,icle) = propce(iel,ipproc(icv))                    &
-               * coefa(ifac,iclt) + 0.5d0*( coefa(ifac,iclu)**2   &
-                    + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
+    if (ivelco.eq.0) then
+      coefae(ifac) = propce(iel,ipproc(icv)) * coefat(ifac)    &
+                    + 0.5d0*(   coefav(ifac,1)**2              &
+                              + coefav(ifac,2)**2              &
+                              + coefav(ifac,3)**2)
+    else
+      coefae(ifac) = propce(iel,ipproc(icv)) * coefat(ifac)    &
+                    + 0.5d0*(   coefav(1,ifac)**2              &
+                              + coefav(2,ifac)**2              &
+                              + coefav(3,ifac)**2)
+    endif
 
 
 ! --- Calculation of density and energy from pressure and temperature
@@ -1622,14 +1777,21 @@ elseif (ieos.eq.2) then
     iel  = ifabor(ifac)
 
     ! Density
-    coefa(ifac,iclr) = xmasm1(iel)/rr*coefa(ifac,iclp)            &
-                                       /coefa(ifac,iclt)
+    coefar(ifac) = xmasm1(iel)/rr*coefap(ifac)            &
+                                       /coefat(ifac)
 
     ! Total energy
-    coefa(ifac,icle) = propce(iel,ipproc(icv))                    &
-               * coefa(ifac,iclt) + 0.5d0*( coefa(ifac,iclu)**2   &
-                    + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
-
+    if (ivelco.eq.0) then
+      coefae(ifac) = propce(iel,ipproc(icv)) * coefat(ifac)    &
+                    + 0.5d0*(   coefav(ifac,1)**2              &
+                              + coefav(ifac,2)**2              &
+                              + coefav(ifac,3)**2)
+    else
+      coefae(ifac) = propce(iel,ipproc(icv)) * coefat(ifac)    &
+                    + 0.5d0*(   coefav(1,ifac)**2              &
+                              + coefav(2,ifac)**2              &
+                              + coefav(3,ifac)**2)
+    endif
 
 ! --- Calculation of density and temperature from pressure and total energy
 
@@ -1639,13 +1801,23 @@ elseif (ieos.eq.2) then
     iel  = ifabor(ifac)
 
     ! Density
-    coefa(ifac,iclr) = coefa(ifac,iclp)/(gamagr(iel)-1.d0)        &
-           / (coefa(ifac,icle) - 0.5d0*( coefa(ifac,iclu)**2      &
-                 + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 ))
+    if (ivelco.eq.0) then
+      coefar(ifac) = coefap(ifac)/(gamagr(iel)-1.d0)           &
+                     / (coefae(ifac)                           &
+                        - 0.5d0*(  coefav(ifac,1)**2           &
+                                 + coefav(ifac,2)**2           &
+                                 + coefav(ifac,3)**2))
+    else
+      coefar(ifac) = coefap(ifac)/(gamagr(iel)-1.d0)           &
+                     / (coefae(ifac)                           &
+                        - 0.5d0*(  coefav(1,ifac)**2           &
+                                 + coefav(2,ifac)**2           &
+                                 + coefav(3,ifac)**2))
+    endif
 
     ! Temperature
-    coefa(ifac,iclt)= xmasm1(iel)/rr*coefa(ifac,iclp)             &
-                                       /coefa(ifac,iclr)
+    coefat(ifac)= xmasm1(iel)/rr*coefap(ifac)             &
+                                       /coefar(ifac)
 
 
 ! --- Calculation of pressure and energy from density and temperature
@@ -1656,13 +1828,18 @@ elseif (ieos.eq.2) then
     iel  = ifabor(ifac)
 
     ! Pressure
-    coefa(ifac,iclp) = coefa(ifac,iclr)*rr/xmasm1(iel)            &
-                                       *coefa(ifac,iclt)
+    coefap(ifac) = coefar(ifac)*rr/xmasm1(iel)*coefat(ifac)
 
     ! Total energy
-    coefa(ifac,icle) = propce(iel,ipproc(icv))                    &
-               * coefa(ifac,iclt) + 0.5d0*( coefa(ifac,iclu)**2   &
-                    + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
+    if (ivelco.eq.0) then
+      coefae(ifac) = propce(iel,ipproc(icv)) * coefat(ifac)               &
+                    + 0.5d0*(  coefav(ifac,1)**2                          &
+                             + coefav(ifac,2)**2 + coefav(ifac,3)**2)
+    else
+      coefae(ifac) = propce(iel,ipproc(icv)) * coefat(ifac)               &
+                    + 0.5d0*(  coefav(1,ifac)**2                          &
+                             + coefav(2,ifac)**2 + coefav(3,ifac)**2)
+    endif
 
 
 ! --- Calculation of pressure and temperature from density and energy
@@ -1673,14 +1850,23 @@ elseif (ieos.eq.2) then
     iel  = ifabor(ifac)
 
     ! Pressure
-    coefa(ifac,iclp) = (gamagr(iel)-1.d0)*coefa(ifac,iclr)        &
-          *( coefa(ifac,icle) - 0.5d0*( coefa(ifac,iclu)**2       &
-                + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 ) )
+    if (ivelco.eq.0) then
+      coefap(ifac) = (gamagr(iel)-1.d0)*coefar(ifac)            &
+                     * ( coefae(ifac)                           &
+                       - 0.5d0*(  coefav(ifac,1)**2             &
+                                + coefav(ifac,2)**2             &
+                                + coefav(ifac,3)**2 ) )
+    else
+      coefap(ifac) = (gamagr(iel)-1.d0)*coefar(ifac)            &
+                     * ( coefae(ifac)                           &
+                       - 0.5d0*(  coefav(1,ifac)**2             &
+                                + coefav(2,ifac)**2             &
+                                + coefav(3,ifac)**2 ) )
+    endif
 
 
     ! Temperature
-    coefa(ifac,iclt)= xmasm1(iel)/rr*coefa(ifac,iclp)             &
-                                       /coefa(ifac,iclr)
+    coefat(ifac)= xmasm1(iel)/rr*coefap(ifac) / coefar(ifac)
 
 
 ! --- End of perfect gas with variable gamma

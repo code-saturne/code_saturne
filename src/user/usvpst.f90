@@ -31,7 +31,7 @@ subroutine usvpst &
    itypps ,                                                       &
    lstcel , lstfac , lstfbr ,                                     &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statis ,                                     &
+   statis ,                                                       &
    tracel , trafac , trafbr )
 
 !===============================================================================
@@ -80,8 +80,6 @@ subroutine usvpst &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! statis           ! ra ! <-- ! statistic values (Lagrangian)                  !
 !  (ncelet, nvlsta)!    !     !                                                !
 ! tracel(*)        ! ra ! --- ! work array for post-processed cell values      !
@@ -107,6 +105,7 @@ use numvar
 use parall
 use period
 use mesh
+use field
 
 !===============================================================================
 
@@ -124,7 +123,6 @@ integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
 double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision statis(ncelet,nvlsta)
 double precision tracel(ncelps*3)
 double precision trafac(nfacps*3), trafbr(nfbrps*3)
@@ -134,12 +132,14 @@ double precision trafac(nfacps*3), trafbr(nfbrps*3)
 character*32     namevr
 
 integer          ntindp
-integer          iel, ifac, iloc, ivar, iclt
+integer          iel, ifac, iloc, ivar
 integer          idimt, ii , jj
 integer          ientla, ivarpr
 integer          imom1, imom2, ipcmo1, ipcmo2, idtcm
 double precision pnd
 double precision rvoid(1)
+
+double precision, dimension(:), pointer :: coefap, coefbp
 
 integer          ipass
 data             ipass /0/
@@ -581,12 +581,14 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
     ! Compute variable values on boundary faces.
 
     ivar = isca(iscalt)
-    iclt = iclrtp(ivar,icoef)
+
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
 
     do iloc = 1, nfbrps
       ifac = lstfbr(iloc)
       ii = ifabor(ifac)
-      trafbr(iloc) = coefa(ifac,iclt)+coefb(ifac,iclt)*rtp(ii, ivar)
+      trafbr(iloc) = coefap(ifac) + coefbp(ifac)*rtp(ii, ivar)
     enddo
 
     ! Values are defined on the work array, not on the parent.

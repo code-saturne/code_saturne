@@ -165,7 +165,6 @@ if ( isuite.eq.0 ) then
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
 
 !     On initialise la diffusivite thermique
@@ -198,7 +197,7 @@ if ( isuite.eq.0 ) then
     call cs_user_initialization &
     !==========================
   ( nvar   , nscal  ,                                            &
-    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+    dt     , rtp    , propce , propfa , propfb )
 
 ! ----- Initialisation des proprietes physiques ROM et ROMB
 
@@ -243,7 +242,6 @@ else
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
 
   endif

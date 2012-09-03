@@ -543,20 +543,20 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
 
   ! --- Solving on the increment dpvar
 
-  !$omp parallel do
-
   if (iswdyp.ge.1) then
+    !$omp parallel do
     do iel = 1, ncel
       dpvarm1(iel) = dpvar(iel)
       dpvar(iel) = 0.d0
     enddo
   else
+    !$omp parallel do
     do iel = 1, ncel
       dpvar(iel) = 0.d0
     enddo
   endif
 
-  ! Solver reisudal
+  ! Solver residual
   ressol = residu
 
   call invers &

@@ -206,8 +206,7 @@ call usphyv &
 ( nvar   , nscal  ,                                              &
   ibrom  ,                                                       &
   dt     , rtp    , rtpa   ,                                     &
-  propce , propfa , propfb ,                                     &
-  coefa  , coefb  )
+  propce , propfa , propfb )
 
 !  Density defined by a perfect gas equation of state
 !  for the low-Mach algorithm
@@ -569,7 +568,7 @@ call usvist &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-  coefa  , coefb  , ckupdc , smacel )
+  ckupdc , smacel )
 
 !===============================================================================
 ! 6. Clipping of the turbulent viscosity in dynamic LES
@@ -625,7 +624,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
   !==========
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , propce(1,ipproc(ivisma(1))) ,                &
+   propce(1,ipproc(ivisma(1))) ,                                  &
    propce(1,ipproc(ivisma(2))) , propce(1,ipproc(ivisma(3))) )
 
 endif

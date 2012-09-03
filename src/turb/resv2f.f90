@@ -300,7 +300,7 @@ call ustsv2                                                       &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel , prdv2f , w1     ,          &
+   ckupdc , smacel , prdv2f , w1     ,                            &
    smbr   , rovsdt )
 
 !     Si on extrapole les T.S.
@@ -569,7 +569,7 @@ call ustsv2                                                       &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel , prdv2f , w1     ,          &
+   ckupdc , smacel , prdv2f , w1     ,                            &
    smbr   , rovsdt )
 
 !     Si on extrapole les T.S.

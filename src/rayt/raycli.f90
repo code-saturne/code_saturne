@@ -267,7 +267,6 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
    icodcl , izfrad , isothm ,                                     &
    tmin   , tmax   , tx     ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefa  , coefb  ,                                              &
    tbord  , propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ihconv))  ,&
    propfb(1,ipprob(ifconv)),                                      &
    propfb(1,ipprob(ixlam)) , propfb(1,ipprob(iepa)) ,             &
@@ -334,13 +333,12 @@ endif
 
   call usray2                                                     &
   !==========
- ( nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    icodcl , izfrad , isothm ,                                     &
    tmin   , tmax   , tx     ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefa  , coefb  ,                                              &
-   tbord  , propfb(1,ipprob(ifnet)) ,  propfb(1,ipprob(ifconv))  ,&
+   tbord  , propfb(1,ipprob(ifnet)) ,  propfb(1,ipprob(ifconv)) , &
    propfb(1,ipprob(ifconv)) , propfb(1,ipprob(ixlam)),            &
    propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps)) ,            &
    text   , tint   )
@@ -596,7 +594,6 @@ endif
    mode   ,                                                       &
    itypfb ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    propfb(1,ipprob(itparo)) , tbord  , tempk  )
 !                                   Resultat : T en K
 
@@ -745,11 +742,10 @@ endif
 
         call usray4                                               &
         !==========
- ( nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
-   itypfb ,                                                      &
+   itypfb ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
    tempk  )
 !                          HPAROI
@@ -758,9 +754,9 @@ endif
 
         call ppray4                                               &
         !==========
- ( nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
-   itypfb ,                                                      &
+   itypfb ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
@@ -789,7 +785,6 @@ endif
    mode   ,                                                       &
    itypfb ,                                                      &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    text   , tbord  , tempk  )
 !                       HEXT
 

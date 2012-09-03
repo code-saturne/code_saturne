@@ -719,7 +719,7 @@ if (nummai .eq. -1) then
  ( nvar   , nscal  , nvlsta ,                                     &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statce , stativ , tracel )
+   statce , stativ , tracel )
 
 !           La variable est deja definie sur le maillage volumique
 !           global ; on utilise donc l'indirection  (donc IVARPR = 1)
@@ -758,7 +758,7 @@ if (nummai .eq. -1) then
  ( nvar   , nscal  , nvlsta ,                                     &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statce , stativ , tracel )
+   statce , stativ , tracel )
 
 !           La variable est deja definie sur le maillage volumique
 !           global ; on utilise donc l'indirection  (donc IVARPR = 1)
@@ -934,7 +934,6 @@ if (     ippmod(ieljou).ge.1                                      &
    ncelps , nfacps , nfbrps ,                                     &
    lstcel , lstfac , lstfbr ,                                     &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    tracel , trafac , trafbr )
 
 endif

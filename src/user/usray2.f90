@@ -30,7 +30,6 @@ subroutine usray2 &
    icodcl , izfrdp , isothp ,                                     &
    tmin   , tmax   , tx     ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefa  , coefb  ,                                              &
    tparop , qincid , hfcnvp , flcnvp ,                            &
    xlamp  , epap   , epsp   , textp  , tintp  )
 
@@ -161,8 +160,6 @@ subroutine usray2 &
 ! rcodcl           ! ra ! --> ! boundary condition values                      !
 !                  !    !     ! rcodcl(3) = flux density value                 !
 !                  !    !     !  (negative for gain) in w/m2                   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! tparop(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
 ! qincid(nfabor)   ! ra ! <-- ! radiative incident flux  (W/m2)                !
 ! hfcnvp(nfabor)   ! ra ! <-- ! convective exchange coefficient (W/m2/K)       !
@@ -214,7 +211,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 double precision tparop(nfabor), qincid(nfabor)
 double precision hfcnvp(nfabor),flcnvp(nfabor)

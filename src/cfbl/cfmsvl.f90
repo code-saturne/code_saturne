@@ -478,7 +478,6 @@ call clpsca                                                       &
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w7     , w8     , w9     , w10    )
 
 
@@ -566,7 +565,6 @@ if(igrdpp.gt.0) then
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    rtp(1,ipr)        , w8     , w9     , w10    )
 
 !===============================================================================

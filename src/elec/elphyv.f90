@@ -716,8 +716,7 @@ call uselph                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  )
+   dt     , rtp    , rtpa   , propce , propfa , propfb )
 
 
 

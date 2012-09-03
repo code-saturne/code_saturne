@@ -991,8 +991,7 @@ if(iterns.eq.1) then
    iu   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   tsexp  , tsimp  )
+   ckupdc , smacel , tsexp  , tsimp  )
 
   ! Coupling between two Code_Saturne
   if (nbrcpl.gt.0) then

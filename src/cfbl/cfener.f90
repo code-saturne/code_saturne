@@ -220,8 +220,7 @@ call ustssc                                                       &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt )
+   ckupdc , smacel , smbrs  , rovsdt )
 
 do iel = 1, ncel
   smbrs(iel) = smbrs(iel) + rovsdt(iel)*rtp(iel,ivar)
@@ -501,7 +500,6 @@ if( idiff(ivar).ge. 1 ) then
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w9     , wb     , w8     , w1     )
 
 !     Calcul de la divergence avec reconstruction
@@ -694,7 +692,6 @@ call clpsca                                                       &
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w6     , w7     , w8     , w9     )
 
 
@@ -726,7 +723,6 @@ endif
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    rtp(1,ipr) , rtp(1,isca(itempk)) , w8     , w9 )
 
 !===============================================================================

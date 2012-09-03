@@ -252,7 +252,7 @@ call ustsri                                                       &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smcelp , gamma  , grdvit , grdvit , &
+   ckupdc , smcelp , gamma  , grdvit , grdvit ,                   &
    smbr   , rovsdt )
 
 !     Si on extrapole les T.S.

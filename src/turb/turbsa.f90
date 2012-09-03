@@ -448,7 +448,7 @@ call ustssa                                                       &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel , vort   , trgrdu ,          &
+   ckupdc , smacel , vort   , trgrdu ,                            &
    tsexp  , tsimp )
 
 !===============================================================================

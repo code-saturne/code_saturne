@@ -483,7 +483,6 @@ subroutine uslain &
    nptnew ,                                                       &
    itypfb , itrifb , itepa  , ifrlag , injfac ,                   &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus )
 
 !===============================================================================
@@ -535,8 +534,6 @@ subroutine uslain &
 !  (nfac,*)        !    !     !                                                !
 ! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
 !  (nfabor,*)      !    !     !                                                !
-! coefa, coefb     ! ra ! <-- ! boundary conditions at the boundary faces      !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
@@ -586,7 +583,6 @@ integer          injfac(nbpmax)
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
-double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 
@@ -751,7 +747,6 @@ subroutine uslapr &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart  ,         &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   )
 
 !===============================================================================
@@ -815,8 +810,6 @@ subroutine uslapr &
 !  (nfac,*)        !    !     !                                                !
 ! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
 !  (nfabor,*)      !    !     !                                                !
-! coefa, coefb     ! ra ! <-- ! boundary conditions at the boundary faces      !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
@@ -869,7 +862,6 @@ double precision ddpart , ttpart
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
-double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 
 ! Local variables
@@ -991,7 +983,6 @@ subroutine uslaru &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , croule , auxl  ,                    &
    distpa , distyp )
 
@@ -1034,8 +1025,6 @@ subroutine uslaru &
 ! propfa           ! ra ! <-- ! physical properties at interior face centers   !
 !  (nfac,*)        !    !     !                                                !
 ! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
-!  (nfabor,*)      !    !     !                                                !
-! coefa, coefb     ! ra ! <-- ! boundary conditions at the boundary faces      !
 !  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
@@ -1087,7 +1076,6 @@ integer          itepa(nbpmax,nivep)
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*) , croule(ncelet)
 double precision auxl(nbpmax,3)
@@ -1177,7 +1165,6 @@ subroutine uslast &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
    statis , stativ )
 
@@ -1243,8 +1230,6 @@ subroutine uslast &
 !  (nfac,*)        !    !     !                                                !
 ! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
 !  (nfabor,*)      !    !     !                                                !
-! coefa, coefb     ! ra ! <-- ! boundary conditions at the boundary faces      !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! ettpa            ! ra ! <-- ! array of the variables associated to           !
@@ -1300,7 +1285,6 @@ integer          itepa(nbpmax,nivep)
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
-double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
@@ -1540,7 +1524,7 @@ if (1.eq.0) then
  ( nvar   , nscal  , nvlsta ,                                     &
    ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,          &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statis , stativ , tabvr  )
+   statis , stativ , tabvr  )
 
         ind = 0
         do ii = 1, npts

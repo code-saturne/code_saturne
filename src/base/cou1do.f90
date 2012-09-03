@@ -175,8 +175,7 @@ call  uspt1d &
    tept1d , hept1d , fept1d ,                                     &
    xlmbt1 , rcpt1d , dtpt1d ,                                     &
    dt     , rtpa   ,                                              &
-   propce , propfa , propfb ,                                     &
-   coefa  , coefb  )
+   propce , propfa , propfb )
 
 iappel = 3
 call vert1d &

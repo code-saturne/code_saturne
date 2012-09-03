@@ -317,8 +317,6 @@ void CS_PROCF (usvpst, USVPST)
  const cs_real_t  propce[],  /* <-- cell physical properties */
  const cs_real_t  propfa[],  /* <-- interior face physical properties */
  const cs_real_t  propfb[],  /* <-- boundary face physical properties */
- const cs_real_t  coefa[],   /* <-- boundary conditions array */
- const cs_real_t  coefb[],   /* <-- boundary conditions array */
  const cs_real_t  statce[],  /* <-- cell statistics (Lagrangian) */
  cs_real_t        tracel[],  /* --- work array for output cells */
  cs_real_t        trafac[],  /* --- work array for output interior faces */

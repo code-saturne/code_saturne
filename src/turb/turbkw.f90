@@ -423,10 +423,10 @@ call ustskw                                                       &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel , s2kw   , divukw ,          &
+   ckupdc , smacel , s2kw   , divukw ,                            &
    w1     , w2     , xf1    ,                                     &
    smbrk  , smbrw  , dam    , w3     )
-!        ------   ------   ------   ------
+!  ------   ------   ------   ------
 
 !===============================================================================
 ! 8. ON FINALISE LE CALCUL DES TERMES SOURCES

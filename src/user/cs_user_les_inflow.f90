@@ -239,7 +239,6 @@ subroutine cs_user_les_inflow_advanced &
    nvar   , nscal ,                                               &
    lfbent ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    uvwent , rijent , epsent )
 
 !===============================================================================
@@ -291,8 +290,6 @@ subroutine cs_user_les_inflow_advanced &
 ! propce           ! ra ! --> ! physical properties at cells                   !
 ! propfa           ! ra ! --> ! physical properties at faces                   !
 ! propfb           ! ra ! --> ! physical properties at bound. faces            !
-! coefa            ! ra ! --> ! boundary conditions array                      !
-! coefb            ! ra ! --> ! boundary conditions array                      !
 ! uent             ! ra ! <-- ! mean velocity at the inlet faces               !
 ! rijent           ! ra ! <-- ! turb. kin. ener. at the inlet faces            !
 ! epsent           ! ra ! <-- ! turb. dissipation at the inlet faces           !
@@ -328,7 +325,6 @@ integer          lfbent(nfbent)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision uvwent(ndim,nfbent), rijent(6,nfbent)
 double precision epsent(nfbent)
 

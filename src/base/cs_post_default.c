@@ -213,7 +213,6 @@ _write_additional_vars(void             *input,
                             _input->dt,
                             _input->rtpa, _input->rtp,
                             _input->propce, _input->propfa, _input->propfb,
-                            _input->coefa, _input->coefb,
                             _input->statce,
                             cel_vals, i_face_vals, b_face_vals);
 

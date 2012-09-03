@@ -281,7 +281,6 @@ subroutine usray4 &
    mode   ,                                                       &
    itypfb ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    tparop , hparop , tempk  )
 
 !===============================================================================
@@ -314,8 +313,6 @@ subroutine usray4 &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! tparop(nfabor)   ! i  ! <-- ! temperature in kelvin for wall boundary faces  !
 ! hparop(nfabor)   ! i  ! --> ! enthalpy for wall boundary faces               !
 ! tempk(ncelet)    ! i  ! --> ! temperature in kelvin                          !
@@ -360,7 +357,6 @@ integer          itypfb(nfabor)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 double precision tempk(ncelet)
 double precision tparop(nfabor), hparop(nfabor)

@@ -299,7 +299,6 @@ subroutine cs_user_les_inflow_advanced &
    nvar   , nscal ,                                               &
    lfbent ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    uvwent , rijent , epsent )
 
 !===============================================================================
@@ -340,22 +339,20 @@ subroutine cs_user_les_inflow_advanced &
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! nument           ! i  ! --> ! id of the inlet                                !
-! nfbent           ! i  ! --> ! numb. of bound. faces of the inlet             !
-! nvar             ! i  ! --> ! number of variables                            !
-! nscal            ! i  ! --> ! number of scalars                              !
-! lfbent           ! i  ! --> ! list of bound. faces of the inlet              !
-! dt               ! r  ! --> ! time step                                      !
-! rtpa             ! ra ! --> ! variables at cells (previous)                  !
-! rtp              ! ra ! --> ! variables at cells                             !
-! propce           ! ra ! --> ! physical properties at cells                   !
-! propfa           ! ra ! --> ! physical properties at faces                   !
-! propfb           ! ra ! --> ! physical properties at bound. faces            !
-! coefa            ! ra ! --> ! boundary conditions array                      !
-! coefb            ! ra ! --> ! boundary conditions array                      !
-! uent             ! ra ! <-- ! mean velocity at the inlet faces               !
-! rijent           ! ra ! <-- ! turb. kin. ener. at the inlet faces            !
-! epsent           ! ra ! <-- ! turb. dissipation at the inlet faces           !
+! nument           ! i  ! <-- ! id of the inlet                                !
+! nfbent           ! i  ! <-> ! numb. of bound. faces of the inlet             !
+! nvar             ! i  ! <-- ! number of variables                            !
+! nscal            ! i  ! <-- ! number of scalars                              !
+! lfbent           ! i  ! <-> ! list of bound. faces of the inlet              !
+! dt               ! r  ! <-- ! time step                                      !
+! rtpa             ! ra ! <-- ! variables at cells (previous)                  !
+! rtp              ! ra ! <-- ! variables at cells                             !
+! propce           ! ra ! <-- ! physical properties at cells                   !
+! propfa           ! ra ! <-- ! physical properties at faces                   !
+! propfb           ! ra ! <-- ! physical properties at bound. faces            !
+! uent             ! ra ! --> ! mean velocity at the inlet faces               !
+! rijent           ! ra ! --> ! turb. kin. ener. at the inlet faces            !
+! epsent           ! ra ! --> ! turb. dissipation at the inlet faces           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -389,7 +386,6 @@ integer          iutile
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision uvwent(ndim,nfbent), rijent(6,nfbent)
 double precision epsent(nfbent)
 

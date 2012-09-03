@@ -198,7 +198,6 @@ if(icalep.ne.0) then
 ( nvar   , nscal  ,                                              &
   iccfth , imodif ,                                              &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-  coefa  , coefb  ,                                              &
   w5     , w7     , w3     , w4     )
 endif
 
@@ -223,7 +222,6 @@ if(icalgm.ne.0) then
 ( nvar   , nscal  ,                                              &
   iccfth , imodif ,                                              &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-  coefa  , coefb  ,                                              &
   w1     , w2     , w6     , w4     )
 
   if(ieos.eq.1) then
@@ -296,7 +294,6 @@ do ifac = 1, nfabor
  ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
 
 !       En outre, il faut appliquer une pre-correction pour compenser
@@ -425,7 +422,6 @@ do ifac = 1, nfabor
  ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
 
 
@@ -505,7 +501,6 @@ do ifac = 1, nfabor
  ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
 
 
@@ -560,7 +555,6 @@ do ifac = 1, nfabor
  ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
 
 !               flux de masse et type de conditions aux limites :
@@ -614,7 +608,6 @@ do ifac = 1, nfabor
  ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
 
 !     Rusanov, flux de masse et type de conditions aux limites :
@@ -668,7 +661,6 @@ do ifac = 1, nfabor
  ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
 
 !     Rusanov, flux de masse et type de conditions aux limites :

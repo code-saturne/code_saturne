@@ -367,8 +367,7 @@ if (ippmod(iphpar).ge.1) then
             call uselrc                                           &
             !==========
   ( nvar   , nscal  ,                                             &
-    dt     , rtpa   , rtp    , propce , propfa , propfb ,         &
-    coefa  , coefb  )
+    dt     , rtpa   , rtp    , propce , propfa , propfb )
 
           endif
 

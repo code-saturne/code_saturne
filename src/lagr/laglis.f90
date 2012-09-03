@@ -277,7 +277,7 @@ if (istala.eq.1) then
         ( nvar   , nscal  , nvlsta ,                              &
           ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,   &
           dt     , rtpa   , rtp    , propce , propfa , propfb ,   &
-          coefa  , coefb  , statis , stativ , tabvr  )
+          statis , stativ , tabvr  )
 
         if ((ivf.ne.ilfv).and.(ivf.ne.ilpd)) then
 

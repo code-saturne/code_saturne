@@ -314,7 +314,7 @@ call ustske                                                       &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel , tinstk , divu   ,          &
+   ckupdc , smacel , tinstk , divu   ,                            &
    w7     , w8     , usimpk , usimpe )
 
 !===============================================================================

@@ -1363,7 +1363,6 @@ void CS_PROCF(synthe, SYNTHE)
                              nvar, nscal,
                              inlet->parent_num,
                              dt, rtpa, rtp, propce, propfa, propfb,
-                             coefa, coefb,
                              mean_velocity, reynolds_stresses, dissipation_rate);
 
     /* Generation of the synthetic turbulence */

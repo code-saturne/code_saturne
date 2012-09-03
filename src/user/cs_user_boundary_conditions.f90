@@ -28,7 +28,7 @@ subroutine cs_user_boundary_conditions &
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl )
+   rcodcl )
 
 !===============================================================================
 ! Purpose:
@@ -387,8 +387,6 @@ subroutine cs_user_boundary_conditions &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! ra ! --> ! boundary condition values                      !
 !  (nfabor,nvar,3) !    !     ! rcodcl(1) = Dirichlet value                    !
 !                  !    !     ! rcodcl(2) = exterior exchange coefficient      !
@@ -447,7 +445,6 @@ integer          izfppp(nfabor)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables

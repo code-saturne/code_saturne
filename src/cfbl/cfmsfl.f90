@@ -224,8 +224,7 @@ if(itsqdm.ne.0) then
    iu  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   w10    , w9     )
+   ckupdc , smacel , w10    , w9     )
 
 !     Suivant Y
   call ustsns                                                     &
@@ -234,8 +233,7 @@ if(itsqdm.ne.0) then
    iv  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   w11    , w9     )
+   ckupdc , smacel , w11    , w9     )
 
 !     Suivant Z
   call ustsns                                                     &
@@ -244,8 +242,7 @@ if(itsqdm.ne.0) then
    iw  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   w12    , w9     )
+   ckupdc , smacel , w12    , w9     )
 
 
 ! --- Terme de convection de quantite de mouvement
@@ -436,7 +433,6 @@ call uscfth                                                       &
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w1     , w8     , w9     , w10    )
 
 ! --- Communication de l'entropie
@@ -453,7 +449,6 @@ call uscfth                                                       &
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w2     , w8     , w9     , w10    )
 
 ! --- Pour la condition au bord sur l'entropie

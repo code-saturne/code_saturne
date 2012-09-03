@@ -403,7 +403,6 @@ if (iroule.ge.1) then
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa ,                                      &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , croule , auxl ,                     &
    dispar , yplpar )
 
@@ -819,7 +818,6 @@ call uslast                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
    statis , stativ )
 

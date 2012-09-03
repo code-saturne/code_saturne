@@ -228,7 +228,6 @@ do inbcou = 1, nbccou
     ( nvar   , nscal  ,                                              &
       iccfth , imodif ,                                              &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-      coefa  , coefb  ,                                              &
       wa(iepsel) , wa(iepsfa) , wa(igamag) , wa(ixmasm) )
       !---------   ---------
 

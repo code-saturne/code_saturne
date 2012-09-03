@@ -30,7 +30,6 @@ subroutine uslag2 &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   )
 
 !===============================================================================
@@ -84,8 +83,6 @@ subroutine uslag2 &
 !  (nfac,*)        !    !     !                                                !
 ! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
 !  (nfabor,*)      !    !     !                                                !
-! coefa, coefb     ! ra ! <-- ! boundary conditions at the boundary faces      !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
@@ -131,7 +128,6 @@ integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
-double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 
 ! Local variables

@@ -104,6 +104,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         self.lineEditNBVIS.setValidator(validatorNBVIS)
 
         validatorNVISLA = IntValidator(self.lineEditNVISLA, min=0)
+        #setExclusive
         self.lineEditNVISLA.setValidator(validatorNVISLA)
 
         validatorNTLAL = IntValidator(self.lineEditNTLAL)
@@ -123,6 +124,18 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.checkBoxIENSI2.setChecked(True)
         else:
             self.checkBoxIENSI2.setChecked(False)
+
+        self.modelFormat = ComboModel(self.comboBoxFormat,1,1)
+        format = self.model.getPostProcessingFormat()
+        self.modelFormat.addItem(format)
+        self.modelFormat.setItem(str_model=format)
+        self.comboBoxFormat.setDisabled(True)
+
+        self.modelOption = ComboModel(self.comboBoxOptions,1,1)
+        option = self.model.getPostProcessingOption()
+        self.modelOption.addItem(option)
+        self.modelOption.setItem(str_model=option)
+        self.comboBoxOptions.setDisabled(True)
 
         npart = self.model.getDisplayParticlesValue()
         self.lineEditNBVIS.setText(QString(str(npart)))
@@ -261,13 +274,19 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
 
 
     @pyqtSignature("const QString&")
+    def slotChoiceNVISLA(self, text):
+        """
+        Input NVISLA.
+        """
+        log.debug("slotChoiceNVISLA text = %s " %str(text))
+
+
+    @pyqtSignature("const QString&")
     def slotNVISLA(self, text):
         """
         Input NVISLA.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toInt()
-            self.model.setPostProcessingFrequency(value)
+        log.debug("slotNVISLA text = %s " %str(text))
 
 
     @pyqtSignature("const QString&")

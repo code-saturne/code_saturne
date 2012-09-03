@@ -270,7 +270,7 @@ if (ipass.eq.3) then
     !--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
 
     ipp = ipppro(ipproc(icak(irphas)))
-    nomvar(IPP)   = 'CoefAb_'//num
+    nomvar(ipp)   = 'CoefAb_'//num
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
     ihisvr(ipp,1) = -1

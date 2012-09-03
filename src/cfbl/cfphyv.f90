@@ -121,8 +121,7 @@ iuscfp = 1
 call uscfpv                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  )
+   dt     , rtp    , rtpa   , propce , propfa , propfb )
 
 !     Si IUSCFP = 0, l'utilisateur n'a pas inclus le ss pgm uscfpv dans
 !       ses sources. C'est une erreur si Cp, Cv ou Lambda est variable.

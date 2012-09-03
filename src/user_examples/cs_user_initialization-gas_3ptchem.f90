@@ -26,7 +26,7 @@ subroutine cs_user_initialization &
 !================================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfa , propfb )
 
 !===============================================================================
 ! Purpose:
@@ -87,8 +87,6 @@ subroutine cs_user_initialization &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -132,7 +130,6 @@ integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 

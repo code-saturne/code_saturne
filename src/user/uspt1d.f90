@@ -31,8 +31,7 @@ subroutine uspt1d &
    tept1d , hept1d , fept1d ,                                     &
    xlmt1d , rcpt1d , dtpt1d ,                                     &
    dt     , rtpa   ,                                              &
-   propce , propfa , propfb ,                                     &
-   coefa  , coefb  )
+   propce , propfa , propfb )
 
 !===============================================================================
 ! Purpose:
@@ -103,8 +102,6 @@ subroutine uspt1d &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -141,7 +138,6 @@ integer          izft1d(nfabor)
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision eppt1d(nfpt1d) , rgpt1d(nfpt1d) , tppt1d(nfpt1d)
 double precision tept1d(nfpt1d) , hept1d(nfpt1d) , fept1d(nfpt1d)
 double precision xlmt1d(nfpt1d) , rcpt1d(nfpt1d) , dtpt1d(nfpt1d)

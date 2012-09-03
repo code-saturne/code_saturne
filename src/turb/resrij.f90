@@ -228,7 +228,7 @@ call ustsri                                                       &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smcelp , gamma  , produc , produc , &
+   ckupdc , smcelp , gamma  , produc , produc ,                   &
    smbr   , rovsdt )
 
 !     Si on extrapole les T.S.

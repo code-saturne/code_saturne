@@ -291,7 +291,6 @@ call uslag2                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   )
 
 do nb = 1, nflagm
@@ -914,7 +913,6 @@ do ii = 1,nfrlag
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   )
 
           ettp(ip,jup) = uupart
@@ -972,7 +970,6 @@ do ii = 1,nfrlag
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   )
 
           ettp(ip,jdp) = ddpart
@@ -1014,7 +1011,6 @@ do ii = 1,nfrlag
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   )
 
               ettp(ip,jtp) = ttpart
@@ -1098,7 +1094,6 @@ do ii = 1,nfrlag
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   )
 
           volp = pis6*d3
@@ -1232,10 +1227,9 @@ call uslain                                                       &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nlocnew ,                                                       &
+   nlocnew ,                                                      &
    itypfb , itrifb , itepa  , ifrlag , iwork  ,                   &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus )
 
 !   reinitialisation du compteur de nouvelles particules

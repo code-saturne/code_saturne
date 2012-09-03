@@ -215,9 +215,9 @@ endif
 if (idtvar.lt.0) then
 
   do ig = 1, ngrpi
-    !$omp parallel do private(ifac, ii, jj, visci, viscj        &
+    !$omp parallel do private(ifac, ii, jj, visci, viscj,       &
     !$omp                     pipp, pjpp, pippr, pjppr,         &
-    !$omp                     fluxi, fluxj,fikdvi, fikdvi,      &
+    !$omp                     fluxi, fluxj, fikdvi,             &
     !$omp                     pi, pj, pir, pjr, pia, pja)       &
     !$omp             reduction(+:infac)
     do it = 1, nthrdi
@@ -403,7 +403,7 @@ if (idtvar.lt.0) then
 
   do ig = 1, ngrpb
     !$omp parallel do private(ifac, ii, visci, fikdvi,                           &
-    !$omp                     pir, pippr, pfac, pfacd, flux, pi, pia)            &
+    !$omp                     pir, pippr, pfacd, flux, pi, pia)                  &
     !$omp          if(nfabor > thr_n_min)
     do it = 1, nthrdb
       do ifac = iomplb(1,ig,it), iomplb(2,ig,it)

@@ -29,7 +29,7 @@ subroutine uskpdc &
    ncepdp , iappel ,                                              &
    icepdc , izcpdc ,                                              &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc )
+   ckupdc )
 
 !===============================================================================
 ! Purpose:
@@ -114,8 +114,6 @@ subroutine uskpdc &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! work array for head loss                       !
 !  (ncepdp,6)      !    !     !                                                !
 !__________________!____!_____!________________________________________________!
@@ -153,7 +151,6 @@ integer          izcpdc(ncel)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6)
 
 ! Local variables

@@ -382,7 +382,6 @@ if (idverl.ge.0) then
         mode   ,                                                     &
         itypfb ,                                                     &
         dt     , rtp    , rtpa   , propce , propfa , propfb ,        &
-        coefa  , coefb  ,                                            &
         propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  )
 
     else

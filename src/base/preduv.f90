@@ -1139,13 +1139,13 @@ do isou = 1, 3
 ! FIXME with porosity
   if(iterns.eq.1) then
 
-    call ustsns                                                 &
+    call ustsns                                                    &
     !==========
   ( nvar   , nscal  , ncepdp , ncesmp ,                            &
     ivar   ,                                                       &
     icepdc , icetsm , itypsm ,                                     &
     dt     , rtpa   , propce , propfa , propfb ,                   &
-    coefa  , coefb  , ckupdc , smacel ,                            &
+    ckupdc , smacel ,                                              &
     w7     , drtp   )
 
     if (nbrcpl.gt.0) then

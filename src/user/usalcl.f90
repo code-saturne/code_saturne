@@ -29,7 +29,7 @@ subroutine usalcl &
    nvar   , nscal  ,                                              &
    icodcl , itypfb , ialtyb , impale ,                            &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl , xyzno0 , depale )
+   rcodcl , xyzno0 , depale )
 
 !===============================================================================
 ! Purpose:
@@ -306,8 +306,6 @@ subroutine usalcl &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! ra ! --> ! boundary condition values                      !
 !  (nfabor,nvar,3) !    !     ! rcodcl(1) = Dirichlet value                    !
 !                  !    !     ! rcodcl(2) = exterior exchange coefficient      !
@@ -359,7 +357,6 @@ integer          impale(nnod)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision depale(nnod,3), xyzno0(3,nnod)
 

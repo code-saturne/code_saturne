@@ -620,8 +620,7 @@ do isou = 1, 3
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbr   , drtp   )
+   ckupdc , smacel , smbr   , drtp   )
 
   do iel = 1, ncel
     rovsdt(iel) = max(-drtp(iel),zero)

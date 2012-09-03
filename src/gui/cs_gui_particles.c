@@ -930,6 +930,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   char *label = NULL;
   char *attr = NULL;
   char *path1 = NULL;
+  char *fmt, *opt;
 
   attr = _get_attr("model", 1, "lagrangian");
   if (attr == NULL || cs_gui_strcmp(attr, "off"))
@@ -1030,6 +1031,10 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   _get_int(nbvis,  3, "lagrangian", "output", "number_of_particles");
   _get_int(nvisla, 3, "lagrangian", "output", "postprocessing_frequency");
   _get_int(ntlal,  3, "lagrangian", "output", "listing_printing_frequency");
+  fmt = _get_attr("choice", 3, "lagrangian", "output", "postprocessing_format");
+  opt = _get_attr("choice", 3, "lagrangian", "output", "postprocessing_options");
+  BFT_FREE(fmt);
+  BFT_FREE(opt);
 
   /* Statistics */
 

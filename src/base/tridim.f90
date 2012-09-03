@@ -517,7 +517,7 @@ if (ncpdct.gt.0) then
   ncepdc , iappel ,                                              &
   icepdc , izcpdc ,                                              &
   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-  coefa  , coefb  , ckupdc )
+  ckupdc )
 
 endif
 
@@ -545,7 +545,7 @@ if(nctsmt.gt.0) then
   icepdc ,                                                       &
   icetsm , itypsm , izctsm ,                                     &
   dt     , rtpa   , propce , propfa , propfb ,                   &
-  coefa  , coefb  , ckupdc , smacel )
+  ckupdc , smacel )
 
 endif
 
@@ -606,8 +606,7 @@ if (ivrtex.eq.1) then
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
    dt     , rtpa   ,                                              &
-   propce , propfa , propfb ,                                     &
-   coefa  , coefb  )
+   propce , propfa , propfb )
 
 !     Verification des donnees entrees par l'utilisateur
 !       (au premier passage seulement)
@@ -764,7 +763,7 @@ do while (iterns.le.nterup)
   ( nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb , izfppp ,                            &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , rcodcl )
+    rcodcl )
 
   !     - Interface Code_Saturne
   !       ======================
@@ -860,8 +859,7 @@ do while (iterns.le.nterup)
     icodcl , itypfb , ialtyb ,                                     &
     impale ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , rcodcl ,                                     &
-    xyzno0 , depale )
+    rcodcl , xyzno0 , depale )
 
     !     Au cas ou l'utilisateur aurait touche DEPALE sans mettre IMPALE=1, on
     !       remet le deplacement initial

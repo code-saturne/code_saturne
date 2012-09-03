@@ -28,8 +28,7 @@ subroutine usphyv &
  ( nvar   , nscal  ,                                              &
    ibrom  ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
-   propce , propfa , propfb ,                                     &
-   coefa  , coefb  )
+   propce , propfa , propfb )
 
 !===============================================================================
 ! Purpose:
@@ -115,8 +114,6 @@ subroutine usphyv &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -151,7 +148,6 @@ integer          ibrom
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
@@ -290,7 +286,7 @@ if (.false.) then
   ! ibrom = 1
   ! do ifac = 1, nfabor
   !   iel = ifabor(ifac)
-  !   xrtp = coefa(ifac, iclvar)+rtp(iel, ivart)*coefb(ifac, iclvar)
+  !   xrtp = coefa(ifac)+rtp(iel, ivart)*coefb(ifac)
   !   propfb(ifac, ipbrom) = xrtp * (vara*xrtp+varb) + varc
   ! enddo
 
@@ -772,8 +768,7 @@ subroutine uscfpv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  )
+   dt     , rtp    , rtpa   , propce , propfa , propfb )
 
 !===============================================================================
 ! Purpose:
@@ -859,8 +854,6 @@ subroutine uscfpv &
 ! propce(ncelet, *)! ra ! <-> ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -895,7 +888,6 @@ integer          nvar   , nscal
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
@@ -1152,9 +1144,8 @@ if (.false.) then
   !==========
    ( nvar   , nscal  ,                                              &
      iccfth , imodif ,                                              &
-     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-     coefa  , coefb  ,                                              &
-     propce(1, ipproc(icv) )  , w1     , w2     , w3     )
+     dt     , rtp    , rtpa  , propce , propfa , propfb ,           &
+     propce(1, ipproc(icv))  , w1     , w2     , w3     )
 
 endif ! --- Test on .false.
 
@@ -1461,8 +1452,7 @@ subroutine uselph &
 
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  )
+   dt     , rtp    , rtpa   , propce , propfa , propfb )
 
 !===============================================================================
 ! FONCTION :
@@ -1553,8 +1543,6 @@ subroutine uselph &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -1591,7 +1579,6 @@ integer          izfppp(nfabor)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
@@ -1932,7 +1919,7 @@ subroutine usvist &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel )
+   ckupdc , smacel )
 
 !===============================================================================
 ! Purpose:
@@ -1973,8 +1960,6 @@ subroutine usvist &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! ra ! <-- ! work array for head loss terms                 !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! ra ! <-- ! values of variables related to mass source     !
@@ -1999,6 +1984,7 @@ use entsor
 use parall
 use period
 use mesh
+use field
 
 !===============================================================================
 
@@ -2015,16 +2001,15 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
 
 integer          iel, iccocg, inc
-integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvst
 double precision dudx, dudy, dudz, sqdu, visct, rom
 
+double precision, dimension(:), pointer :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
@@ -2058,12 +2043,6 @@ allocate(grad(ncelet,3))
 ipcvst = ipproc(ivisct)
 ipcrom = ipproc(irom  )
 
-! --- Boundary condition number associated to variables in COEFA and COEFB
-!      JB=>?  (c.l. std, i.e. non flux)
-ipcliu = iclrtp(iu,icoef)
-ipcliv = iclrtp(iv,icoef)
-ipcliw = iclrtp(iw,icoef)
-
 !===============================================================================
 ! 1.3 Compute velocity gradient
 !===============================================================================
@@ -2071,13 +2050,19 @@ ipcliw = iclrtp(iw,icoef)
 iccocg = 1
 inc = 1
 
+! Note: this example should produce an error if used with ivelco = 1,
+!       so it should be updated
+
+call field_get_coefa_s(ivarfl(iu), coefap)
+call field_get_coefb_s(ivarfl(iu), coefbp)
+
 call grdcel &
 !==========
  ( iu  , imrgra , inc    , iccocg ,                      &
    nswrgr(iu) , imligr(iu) ,                             &
    iwarni(iu) , nfecra ,                                 &
    epsrgr(iu) , climgr(iu) , extrag(iu) ,                &
-   rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
+   rtpa(1,iu) , coefap , coefbp ,                        &
    grad   )
 
 !===============================================================================
@@ -2128,7 +2113,7 @@ subroutine ussmag &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   ckupdc , smacel ,                                              &
    smagor , mijlij , mijmij )
 
 !===============================================================================
@@ -2169,8 +2154,6 @@ subroutine ussmag &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
@@ -2215,7 +2198,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smagor(ncelet), mijlij(ncelet), mijmij(ncelet)
 
@@ -2286,7 +2268,6 @@ subroutine usvima &
 
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    viscmx , viscmy , viscmz )
 
 !===============================================================================
@@ -2331,8 +2312,6 @@ subroutine usvima &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! viscmx(ncelet)    ! ra ! <-- ! mesh viscosity in X direction                 !
 ! viscmy(ncelet)    ! ra ! <-- ! mesh viscosity in Y direction                 !
 ! viscmz(ncelet)    ! ra ! <-- ! mesh viscosity in Z direction                 !
@@ -2370,7 +2349,6 @@ integer          nvar   , nscal
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision viscmx(ncelet), viscmy(ncelet), viscmz(ncelet)
 
 ! Local variables

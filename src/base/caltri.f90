@@ -206,7 +206,6 @@ call  uskpdc &
   ivoid  , izcpdc ,                                              &
   rvoid  , rvoid  , rvoid  ,                                     &
   rvoid  , propfa , propfb ,                                     &
-  coefa  , coefb  ,                                              &
   rvoid  )
 
 ! Total number of cells with head-loss
@@ -233,7 +232,6 @@ call ustsma &
   ivoid  , ivoid  , izctsm ,                                     &
   rvoid  , rvoid  ,                                              &
   rvoid  , propfa , propfb ,                                     &
-  coefa  , coefb  ,                                              &
   ckupdc , rvoid  )
 
 ! Total number of cells with mass source term
@@ -260,8 +258,7 @@ call uspt1d &
    rvoid  , rvoid  , rvoid  ,                                     &
    rvoid  , rvoid  , rvoid  ,                                     &
    rvoid  , rvoid  ,                                              &
-   rvoid  , propfa , propfb ,                                     &
-   coefa  , coefb  )
+   rvoid  , propfa , propfb )
 
 nfpt1t = nfpt1d
 if (irangp.ge.0) then
@@ -511,8 +508,7 @@ if (nfpt1t.gt.0) then
    tept1d , hept1d , fept1d ,                                     &
    xlmbt1 , rcpt1d , dtpt1d ,                                     &
    ra(idt)    , ra(irtpa) ,                                       &
-   ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  )
+   ra(ipropc) , propfa , propfb )
 
   iappel = 2
   call vert1d &
@@ -606,7 +602,6 @@ if(ncpdct.gt.0) then
   icepdc , izcpdc ,                                              &
   ra(idt)    , ra(irtpa) , ra(irtp)   ,                          &
   ra(ipropc) , propfa , propfb ,                                 &
-  coefa  , coefb  ,                                              &
   ckupdc )
 
 endif
@@ -628,7 +623,6 @@ if(nctsmt.gt.0) then
   icetsm , itypsm , izctsm ,                                     &
   ra(idt)    , ra(irtpa) ,                                       &
   ra(ipropc) , propfa , propfb ,                                 &
-  coefa  , coefb  ,                                              &
   ckupdc , smacel )
 
 endif
@@ -650,8 +644,7 @@ if (ivrtex.eq.1) then
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
    ra(idt)    , ra(irtpa) ,                                       &
-   ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  )
+   ra(ipropc) , propfa , propfb )
 
   call vorver ( nfabor , iappel )
   !==========
@@ -821,7 +814,7 @@ endif
 
 if (itrale.gt.0) then
 
-!       Sortie postprocessing de profils 1D
+  ! Sortie postprocessing de profils 1D
 
   if (iihmpr.eq.1) then
     call uiprof                                                   &
@@ -1084,8 +1077,7 @@ call ushist                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
    ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  )
+   ra(ipropc) , propfa , propfb )
 
 
 !===============================================================================

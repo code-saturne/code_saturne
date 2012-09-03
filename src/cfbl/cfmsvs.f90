@@ -137,7 +137,6 @@ call uscfth                                                       &
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    w1     , rvoid  , w2     , w3     )
 
 ! --- "Vitesse" de diffusion de RHO = dt*c2
