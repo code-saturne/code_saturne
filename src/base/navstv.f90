@@ -476,6 +476,30 @@ if (iprco.le.0) then
 
   endif
 
+  ! Interleaved values of vel and vela
+
+  !$omp parallel do
+  do iel = 1, ncelet
+    rtp (iel,iu) = vel (1,iel)
+    rtp (iel,iv) = vel (2,iel)
+    rtp (iel,iw) = vel (3,iel)
+    rtpa(iel,iu) = vela(1,iel)
+    rtpa(iel,iv) = vela(2,iel)
+    rtpa(iel,iw) = vela(3,iel)
+    if (ipucou.eq.1 .or. ncpdct.gt.0) then
+      tpucou(iel,1) = tpucov(1,iel)
+      tpucou(iel,2) = tpucov(2,iel)
+      tpucou(iel,3) = tpucov(3,iel)
+    endif
+  enddo
+
+  ! Free memory
+  !--------------
+  deallocate(vel)
+  deallocate(vela)
+  deallocate(coefap)
+  if (ipucou.eq.1 .or. ncpdct.gt.0) deallocate(tpucov)
+
   return
 
 endif
