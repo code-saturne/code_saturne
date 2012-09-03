@@ -124,6 +124,7 @@ src/fvm/fvm_point_location.c
 src/fvm/fvm_selector.c
 src/fvm/fvm_selector_postfix.c
 src/fvm/fvm_tesselation.c
+src/fvm/fvm_to_ccm.c
 src/fvm/fvm_to_cgns.c
 src/fvm/fvm_to_ensight.c
 src/fvm/fvm_to_ensight_case.c

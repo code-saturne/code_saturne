@@ -120,7 +120,6 @@ sbin/clean \
 sbin/rmb \
 config/cs_auto_flags.sh \
 m4/acx_pthread.m4 \
-m4/cs_adf.m4 \
 m4/cs_blas.m4 \
 m4/cs_ccm.m4 \
 m4/cs_cgns.m4 \
@@ -175,10 +174,12 @@ CSCXXFLAGS = $(CXXFLAGS) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT)
 CSFCFLAGS = $(FCFLAGS) $(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 CSLDFLAGS = $(PLE_LDFLAGS) $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
+$(CCM_LDFLAGS) \
 $(METIS_LDFLAGS) $(SCOTCH_LDFLAGS) $(MPI_LDFLAGS) $(LIBXML2_LDFLAGS) \
 $(LDFLAGS_BLAS)
 
 CSLIBS = $(PLE_LIBS) $(CGNS_LIBS) $(MED_LIBS) $(HDF5_LIBS) \
+$(CCM_LIBS) \
 $(METIS_LIBS) $(SCOTCH_LIBS) $(MPI_LIBS) $(LIBXML2_LIBS) \
 $(LIBS_BLAS)
 

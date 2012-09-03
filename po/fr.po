@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-07-24 20:10+0200\n"
+"POT-Creation-Date: 2012-09-03 11:26+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3940,12 +3940,18 @@ msgstr "Signal SIGFPE (exception en virgule flottante) intercepté !\n"
 msgid "SIGSEGV signal (forbidden memory area access) intercepted!\n"
 msgstr "Signal SIGSEGV (accès à une zone mémoire interdite) intercepté !\n"
 
+msgid "SIGABRT signal (Abort) intercepted.\n"
+msgstr "Signal SIGABRT (Abandon) intercepté !\n"
+
 msgid "SIGXCPU signal (CPU time limit reached) intercepted.\n"
 msgstr "Signal SIGXCPU (temps CPU limite atteint) intercepté.\n"
 
 #, c-format
 msgid "Signal %d intercepted!\n"
 msgstr "Signal %d intercepté !\n"
+
+msgid "Error querying working directory.\n"
+msgstr "Erreur à la récupération du répertoire d'exécution du cas.\n"
 
 #, c-format
 msgid ""
@@ -3966,9 +3972,6 @@ msgstr ""
 "\n"
 "Erreur MPI :\n"
 "%s\n"
-
-msgid "Error querying working directory.\n"
-msgstr "Erreur à la récupération du répertoire d'exécution du cas.\n"
 
 msgid "command: \n"
 msgstr "commande : \n"
@@ -4086,6 +4089,34 @@ msgstr "Le répertoire %s ne peut être créé"
 
 msgid "tgamma() function (C99) is not available"
 msgstr ""
+
+#, c-format
+msgid "Path passed to cslogname too short for: %s"
+msgstr ""
+
+#, c-format
+msgid "Path passed to csdatadir too short for: %s"
+msgstr ""
+
+#, c-format
+msgid ""
+"It is impossible to open the default output file:\n"
+"%s"
+msgstr ""
+"Il est impossible d'ouvrir le fichier de sortie par défaut :\n"
+"%s"
+
+#, c-format
+msgid "Error opening file \"%s\" from Fortran."
+msgstr "Erreur à l'ouverture du fichier \"%s\" depuis le Fortran."
+
+#, c-format
+msgid ""
+"It is impossible to re-open the default output file:\n"
+"%s"
+msgstr ""
+"Il est impossible de réouvrir le fichier de sortie par défaut :\n"
+"%s"
 
 #, c-format
 msgid ""
@@ -4354,6 +4385,31 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Error retrieving name from Field %d (\"%s\"):\n"
+"Fortran caller name length (%d) is too small for name \"%s\"\n"
+"(of length %d)."
+msgstr ""
+
+#, c-format
+msgid ""
+"Fortran pointer of rank %d requested for values of field \"%s\",\n"
+"which have rank %d."
+msgstr ""
+
+#, c-format
+msgid ""
+"Field \"%s\"\n"
+" does not have associated BC coefficients."
+msgstr ""
+
+#, c-format
+msgid ""
+"Fortran pointer of rank %d requested for BC coefficients of field\n"
+" \"%s\", which have rank %d."
+msgstr ""
+
+#, c-format
+msgid ""
 "Error %d assigning integer value to Field \"%s\" with\n"
 "type flag %d with key %d (\"%s\")."
 msgstr ""
@@ -4367,6 +4423,21 @@ msgid ""
 msgstr ""
 "Erreur %d à l'association d'un réel au champ \"%s\"\n"
 "d'indicateur de type %d avec la clé %d (\"%s\")."
+
+#, c-format
+msgid ""
+"Error %d assigning string value to Field \"%s\" with\n"
+"type flag %d with key %d (\"%s\")."
+msgstr ""
+"Erreur %d à l'association d'une chaîne au champ \"%s\"\n"
+"d'indicateur de type %d avec la clé %d (\"%s\")."
+
+#, c-format
+msgid ""
+"Error retrieving string from Field %d (\"%s\") and key %d (\"%s\"):\n"
+"Fortran caller string length (%d) is too small for string \"%s\"\n"
+"(of length %d)."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -4397,16 +4468,16 @@ msgstr ""
 "n'a pas de valeur associée avec la clé %d (\"%s\")."
 
 #, c-format
+msgid "Field keyword with id %d is not defined."
+msgstr "Le mot clé de champs avec id %d n'est pas défini."
+
+#, c-format
 msgid ""
 "Field \"%s\" has keyword %d (\"%s\")\n"
 "of type \"%c\" and not \"%c\"."
 msgstr ""
 "Le champ \"%s\" a un mot clé %d (\"%s\")\n"
 "de type \"%c\" et non \"%c\"."
-
-#, c-format
-msgid "Field keyword with id %d is not defined."
-msgstr "Le mot clé de champs avec id %d n'est pas défini."
 
 #, c-format
 msgid ""
@@ -6913,6 +6984,108 @@ msgstr ""
 #, c-format
 msgid "Tesselation of element type %s not implemented."
 msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing state."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing processor node."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d finalizing processor node."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d creating new phase."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing problem description."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing solution."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing restart info."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing map."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing new vertices entity."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing vertices."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing cells."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing face -> vertices connectivity."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing face -> cells connectivity."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing faces entity."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d writing field data."
+msgstr ""
+
+msgid "Incorrect multidimensional field data format"
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d creating field: %s."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d creating new entity."
+msgstr ""
+
+#, c-format
+msgid "CCMIO error %d creating multidimensional field data."
+msgstr ""
+
+msgid "Unhandled field data format"
+msgstr ""
+
+msgid "Incorrect entity type to store field data"
+msgstr ""
+
+msgid "Type of post data not handled at the moment"
+msgstr ""
+
+msgid "CCMIO output can currently handle only non-time-dependent meshes."
+msgstr ""
+
+msgid "Empty CCMIO filename."
+msgstr "Nom de fichier CCMIO vide."
+
+#, c-format
+msgid ""
+"CCMIOOpenFile() failed to open file \"%s\"\n"
+"CCMIO error %d."
+msgstr ""
+"CCMIOOpenFile() n'est pas parvenu à ouvrir le fichier \"%s\"\n"
+"Ereur CCMIO %d."
+
+#, c-format
+msgid "CCMIO error %d closing file."
+msgstr "Erreur CCMIO %d à la fermeture d'un fichier."
 
 #, c-format
 msgid ""

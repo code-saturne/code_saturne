@@ -103,7 +103,6 @@ $(top_builddir)/src/mei/libmei.la \
 $(top_builddir)/src/bft/libbft.la \
 $(LIBPLE_LA) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
-$(ADF_LDFLAGS) $(ADFRUNPATH) $(ADF_LIBS) \
 $(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS) \
 $(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
 $(MED_LDFLAGS) $(MED_LIBS) \
@@ -146,7 +145,6 @@ cs_solver_LDADD = libsaturne.la \
 $(LIBPLE_LA) \
 $(LTLIBINTL) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
-$(ADF_LDFLAGS) $(ADF_LIBS) $(ADFRUNPATH) \
 $(CCM_LDFLAGS) $(CCM_LIBS) $(CCMRUNPATH) \
 $(CGNS_LDFLAGS) $(CGNS_LIBS) $(CGNSRUNPATH) \
 $(MED_LDFLAGS) $(MED_LIBS) \

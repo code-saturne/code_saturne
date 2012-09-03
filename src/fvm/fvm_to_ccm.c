@@ -1,6 +1,6 @@
 /*============================================================================
  * Write a nodal representation associated with a mesh and associated
- * variables to CCM-IO files
+ * variables to CCMIO files
  *============================================================================*/
 
 /*
@@ -105,8 +105,13 @@ extern "C" {
  * Local Macro Definitions
  *============================================================================*/
 
-#if (kCCMIOVersion == 20601)
+/* Definitions missing in older CCMIO versions */
+
+#if !defined(CCMIOSIZEC)
   #define CCMIOSIZEC(x)  (x)
+#endif
+
+#if !defined(CCMIOINDEXC)
   #define CCMIOINDEXC(x) (x)
 #endif
 
@@ -115,7 +120,7 @@ extern "C" {
  *============================================================================*/
 
 #if (kCCMIOVersion == 20601)
-typedef CCMIOSize CCMIOSize_t;
+typedef int CCMIOSize_t;
 typedef int CCMIOIndex_t;
 #endif
 
@@ -160,8 +165,8 @@ typedef struct {
 typedef struct {
 
   char         *name;                /* Writer name */
-  char         *mesh_filename;       /* associated CCM-IO geometry file name */
-  char         *solution_filename;   /* associated CCM-IO solution file name */
+  char         *mesh_filename;       /* associated CCMIO geometry file name */
+  char         *solution_filename;   /* associated CCMIO solution file name */
 
   CCMIOID       root_id;             /* Id of the root_node */
   CCMIOID       vertices_id;         /* Id of the vertices node */
@@ -215,6 +220,42 @@ cs_datatype_t _ccm_num_datatype = CS_INT32;
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
+
+/* prototype for use by following function */
+
+void ADF_Database_Version(const double Root_ID,
+                          char *version,
+                          char *creation_date,
+                          char *modification_date,
+                          int *error_return);
+
+/*----------------------------------------------------------------------------
+ * Function used only to ensure link with adf library.
+ *
+ * For shared library builds on versions of Linux recent enough to use
+ * the gold linker, linker commands to use the ADF library seem to be ignored,
+ * as the libccmio.so library does not include dependency info to libadf
+ * (from LibCCMIO versions 2.6.1 to 2.06.023 at least).
+ *
+ * parameters:
+ *   do_something <-- if true, call ADF function (should be called with false)
+ *----------------------------------------------------------------------------*/
+
+static void
+_force_adf_link(bool do_something)
+{
+  if (do_something) {
+    char *version = NULL, *creation_date = NULL, *modification_date = NULL;
+    int error_return;
+    double root_id = 0;
+
+    ADF_Database_Version(root_id,
+                         version,
+                         creation_date,
+                         modification_date,
+                         &error_return);
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Get the global number of entities associated to a mesh.
@@ -551,8 +592,7 @@ _write_state(fvm_to_ccm_writer_t  *w)
     CCMIONewState(err, w->root_id, state_full_name, NULL, NULL, &state_id);
     if (error != kCCMIONoErr)
       bft_error(__FILE__, __LINE__, 0,
-                _("CCMIO error %d writing state."),
-                (int)error);
+                _("CCMIO error %d writing state."), (int)error);
     w->state_id = state_id;
 
     BFT_FREE(state_full_name);
@@ -571,11 +611,7 @@ static void
 _write_processor(fvm_to_ccm_writer_t  *w)
 {
   if (w->rank < 1) {
-#if (kCCMIOVersion == 20601)
-    int i = 0;
-#else
     CCMIOSize_t i = 0;
-#endif
     CCMIOError error = kCCMIONoErr, *err = &error;
     CCMIOID processor_id;
 
@@ -593,6 +629,10 @@ _write_processor(fvm_to_ccm_writer_t  *w)
                         TRUE,
                         TRUE,
                         TRUE);
+
+    if (error != kCCMIONoErr)
+      bft_error(__FILE__, __LINE__, 0,
+                _("CCMIO error %d writing processor node."), (int)error);
 
     w->processor_id = processor_id;
   }
@@ -692,11 +732,7 @@ _write_phase(CCMIOID              *phase_id,
              fvm_to_ccm_writer_t  *w)
 {
   if (w->rank < 1) {
-#if (kCCMIOVersion == 20601)
-    int i = 0;
-#else
     CCMIOSize_t i = 0;
-#endif
     CCMIOError error = kCCMIONoErr, *err =  &error;
 
     /* Check if the current solution node already has a phase node */
@@ -729,11 +765,7 @@ _write_problem_description(fvm_to_ccm_writer_t  *w)
 {
   CCMIOID problem_id, id;
   CCMIOError error = kCCMIONoErr, *err =  &error;
-#if (kCCMIOVersion == 20601)
-  int i = 0;
-#else
   CCMIOSize_t i = 0;
-#endif
 
   if (w->rank < 1) {
 
@@ -777,11 +809,17 @@ static void
 _write_solution(fvm_to_ccm_writer_t  *w)
 {
   if (w->rank < 1) {
+
     CCMIOError error = kCCMIONoErr, *err = &error;
     CCMIOID solution_id;
 
     CCMIONewEntity(err, w->root_id, kCCMIOFieldSet, "Field set", &solution_id);
     w->solution_id = solution_id;
+
+    if (error != kCCMIONoErr)
+      bft_error(__FILE__, __LINE__, 0,
+                _("CCMIO error %d writing solution."), (int)error);
+
   }
 }
 
@@ -820,6 +858,11 @@ _write_restart_info(int                   time_step,
                           time_value,
                           NULL,
                           start_angle);
+
+    if (error != kCCMIONoErr)
+      bft_error(__FILE__, __LINE__, 0,
+                _("CCMIO error %d writing restart info."), (int)error);
+
   }
 
 }
@@ -991,6 +1034,45 @@ _write_vertices_map(const cs_mesh_t      *mesh,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Count global periodic faces.
+ *
+ * parameters:
+ *   b_mesh        <-- pointer to base mesh structure
+ *   cell_gnum     <-- array of global cell numbers, ordered by nodal mesh
+ *   w             <-> pointer to writer structure
+ *
+ * returns:
+ *   global number of periodic faces
+ *----------------------------------------------------------------------------*/
+
+static cs_gnum_t
+_count_faces_perio_g(const cs_mesh_t      *b_mesh,
+                     const cs_gnum_t      *cell_gnum,
+                     fvm_to_ccm_writer_t  *w)
+{
+  cs_lnum_t i;
+  cs_gnum_t n_g_perio_faces = 0;
+
+  if (b_mesh->periodicity != NULL) {
+
+    const cs_lnum_t *face_cells = b_mesh->i_face_cells;
+
+    for (i = 0; i < b_mesh->n_i_faces; i++) {
+      if (   cell_gnum[face_cells[2*i] - 1] == 0
+          || cell_gnum[face_cells[2*i + 1] - 1] == 0)
+        n_g_perio_faces += 1;
+    }
+
+    cs_parall_sum(1, CS_GNUM_TYPE, &n_g_perio_faces);
+
+  }
+
+  w->n_g_perio_faces = n_g_perio_faces;
+
+  return n_g_perio_faces;
+}
+
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
@@ -1031,12 +1113,16 @@ _write_vertices_g(const cs_mesh_t      *mesh,
              &(w->vtx_map_id),
              w);
 
-  if (w->rank < 1)
+  if (w->rank < 1) {
     CCMIONewEntity(err,
                    w->root_id,
                    kCCMIOVertices,
                    "Vertices",
                    &(w->vertices_id));
+    if (error != kCCMIONoErr)
+      bft_error(__FILE__, __LINE__, 0,
+                _("CCMIO error %d writing new vertices entity."), (int)error);
+  }
 
   /* Create distribution structure */
 
@@ -1096,8 +1182,7 @@ _write_vertices_g(const cs_mesh_t      *mesh,
 
     if (error != kCCMIONoErr)
       bft_error(__FILE__, __LINE__, 0,
-                _("CCMIO error %d writing vertices."),
-                (int)error);
+                _("CCMIO error %d writing vertices."), (int)error);
 
   } while (_vtx_coords_s != NULL);
 
@@ -1192,8 +1277,14 @@ _write_cells_g(const cs_mesh_t      *b_mesh,
     _cell_gc_id_s = cs_file_serializer_advance(s, range);
 
     if (_cell_gc_id_s != NULL) { /* only possible on rank 0 */
+
       CCMIOWriteCells(err, cells_id, map_id, _cell_gc_id_s,
                       CCMIOINDEXC(range[0]-1), CCMIOINDEXC(range[1]-1));
+
+      if (error != kCCMIONoErr)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("CCMIO error %d writing cells."), (int)error);
+
     }
 
   } while (_cell_gc_id_s != NULL);
@@ -1334,6 +1425,10 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
       CCMIOWriteFaces(err, entity_id, entity, map_id,
                       CCMIOSIZEC(g_connect_size), _face_connect_g_s,
                       CCMIOINDEXC(range[0]-1), CCMIOINDEXC(range[1]-1));
+      if (error != kCCMIONoErr)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("CCMIO error %d writing face -> vertices connectivity."),
+                  (int)error);
     }
 
   } while (_face_connect_g_s != NULL);
@@ -1446,6 +1541,10 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
       CCMIOWriteFaceCells(err, entity_id, entity, map_id,
                           _face_cell_g_s,
                           CCMIOINDEXC(range[0]-1), CCMIOINDEXC(range[1]-1));
+      if (error != kCCMIONoErr)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("CCMIO error %d writing face -> cells connectivity."),
+                  (int)error);
     }
 
   } while (_face_cell_g_s != NULL);
@@ -1453,44 +1552,6 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
   cs_file_serializer_destroy(&s);
 
   BFT_FREE(_face_cell_g);
-}
-
-/*----------------------------------------------------------------------------
- * Count periodic faces in parallel.
- *
- * parameters:
- *   b_mesh        <-- pointer to base mesh structure
- *   cell_gnum     <-- array of global cell numbers, ordered by nodal mesh
- *   w             <-> pointer to writer structure
- *
- * returns:
- *   global number of periodic faces
- *----------------------------------------------------------------------------*/
-
-static cs_gnum_t
-_count_faces_perio_g(const cs_mesh_t      *b_mesh,
-                     const cs_gnum_t      *cell_gnum,
-                     fvm_to_ccm_writer_t  *w)
-{
-  cs_lnum_t i;
-  cs_gnum_t n_perio_faces = 0, n_g_perio_faces = 0;
-
-  if (b_mesh->periodicity != NULL) {
-
-    const cs_lnum_t *face_cells = b_mesh->i_face_cells;
-
-    for (i = 0; i < b_mesh->n_i_faces; i++) {
-      if (   cell_gnum[face_cells[2*i] - 1] == 0
-          || cell_gnum[face_cells[2*i + 1] - 1] == 0)
-        n_perio_faces += 1;
-    }
-    MPI_Allreduce(&n_perio_faces, &n_g_perio_faces, 1, CS_MPI_GNUM, MPI_MAX,
-                  w->comm);
-  }
-
-  w->n_g_perio_faces = n_g_perio_faces;
-
-  return n_g_perio_faces;
 }
 
 /*----------------------------------------------------------------------------
@@ -1654,6 +1715,10 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
       CCMIOWriteFaces(err, entity_id, entity, map_id,
                       CCMIOSIZEC(g_connect_size), _face_connect_g_s,
                       CCMIOINDEXC(range[0]-1), CCMIOINDEXC(range[1]-1));
+      if (error != kCCMIONoErr)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("CCMIO error %d writing face -> vertices connectivity."),
+                  (int)error);
     }
 
   } while (_face_connect_g_s != NULL);
@@ -1755,9 +1820,9 @@ _write_face_cells_perio_g(const cs_mesh_t        *b_mesh,
                                 _face_cell_g,
                                 w->comm);
 
-  do {
+  cs_ccm_num_t write_range[2] = {0, 0};
 
-    cs_ccm_num_t write_range[2] = {0, 0};
+  do {
 
     _face_cell_g_s = cs_file_serializer_advance(s, range);
 
@@ -1790,10 +1855,20 @@ _write_face_cells_perio_g(const cs_mesh_t        *b_mesh,
       write_range[0] = write_range[1];
       write_range[1] = write_range[0] + j;
 
-      CCMIOWriteFaceCells(err, entity_id, entity, map_id,
-                          _face_cell_g_s,
-                          CCMIOINDEXC(write_range[0]),
-                          CCMIOINDEXC(write_range[1]));
+      if (write_range[1] > write_range[0]) {
+
+        CCMIOWriteFaceCells(err, entity_id, entity, map_id,
+                            _face_cell_g_s,
+                            CCMIOINDEXC(write_range[0]),
+                            CCMIOINDEXC(write_range[1]));
+
+        if (error != kCCMIONoErr)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("CCMIO error %d writing face -> cells connectivity."),
+                    (int)error);
+
+      }
+
     }
 
   } while (_face_cell_g_s != NULL);
@@ -1866,6 +1941,10 @@ _write_faces_g(const cs_mesh_t       *b_mesh,
 
   if (w->rank < 1) {
 
+    cs_gnum_t n_g_map_faces = n_g_faces;
+    if (entity == kCCMIOInternalFaces)
+      n_g_map_faces -= n_g_perio_faces;
+
     cs_block_dist_info_t map_face_bi = face_bi;
 
     if (n_g_perio_faces > 0 && entity == kCCMIOInternalFaces)
@@ -1875,7 +1954,7 @@ _write_faces_g(const cs_mesh_t       *b_mesh,
                                                 cs_parall_get_min_coll_buf_size(),
                                                 n_g_faces - n_g_perio_faces);
 
-    _write_map(NULL, n_g_faces, map_face_bi, map_num_shift, &map_id, w);
+    _write_map(NULL, n_g_map_faces, map_face_bi, map_num_shift, &map_id, w);
 
     if (entity == kCCMIOInternalFaces)
       CCMIONewEntity(err, topology_id, entity,
@@ -1886,6 +1965,11 @@ _write_faces_g(const cs_mesh_t       *b_mesh,
       CCMIONewIndexedEntity(err, topology_id, entity, 0,
                             "Boundary faces", &entity_id);
     }
+
+    if (error != kCCMIONoErr)
+      bft_error(__FILE__, __LINE__, 0,
+                _("CCMIO error %d writing faces entity."), (int)error);
+
   }
 
   /* When there is no periodicity or we are handling "true"
@@ -1955,6 +2039,11 @@ _write_faces_g(const cs_mesh_t       *b_mesh,
 
         CCMIONewIndexedEntity(err, topology_id, entity, 1,
                               "Periodic faces", &entity_id);
+
+        if (error != kCCMIONoErr)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("CCMIO error %d writing faces entity."), (int)error);
+
       }
 
     }
@@ -2049,6 +2138,10 @@ _write_vertices_l(const cs_mesh_t      *mesh,
                         (const float *)(mesh->vtx_coord),
                         CCMIOINDEXC(range[0]-1),
                         CCMIOINDEXC(range[1]-1));
+
+    if (error != kCCMIONoErr)
+      bft_error(__FILE__, __LINE__, 0,
+                _("CCMIO error %d writing vertices."), (int)error);
 }
 
 /*----------------------------------------------------------------------------
@@ -2105,6 +2198,10 @@ _write_cells_l(const cs_mesh_t      *b_mesh,
 
   CCMIOWriteCells(err, cells_id, map_id, cell_family,
                   CCMIOINDEXC(range[0]-1), CCMIOINDEXC(range[1]-1));
+
+  if (error != kCCMIONoErr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("CCMIO error %d writing cells."), (int)error);
 
   BFT_FREE(cell_family);
 }
@@ -2175,6 +2272,11 @@ _write_face_vertices_l(const cs_mesh_t         *b_mesh,
                   CCMIOSIZEC(face_connect_size), face_connect,
                   CCMIOINDEXC(0), CCMIOINDEXC(face_connect_size));
 
+  if (error != kCCMIONoErr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("CCMIO error %d writing face -> vertices connectivity."),
+              (int)error);
+
   BFT_FREE(face_connect);
 }
 
@@ -2227,6 +2329,11 @@ _write_face_cells_l(const cs_mesh_t        *b_mesh,
   CCMIOWriteFaceCells(err, entity_id, entity, map_id,
                       face_cells,
                       CCMIOINDEXC(kCCMIOStart), CCMIOINDEXC(kCCMIOEnd));
+
+  if (error != kCCMIONoErr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("CCMIO error %d writing face -> cells connectivity."),
+              (int)error);
 
   BFT_FREE(face_cells);
 }
@@ -2304,9 +2411,15 @@ _write_face_vertices_perio_l(const cs_mesh_t        *b_mesh,
   }
 
   CCMIOError error = kCCMIONoErr, *err = &error;
+
   CCMIOWriteFaces(err, entity_id, entity, map_id,
                   CCMIOSIZEC(k), face_connect,
                   CCMIOINDEXC(0), CCMIOINDEXC(k));
+
+  if (error != kCCMIONoErr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("CCMIO error %d writing face -> vertices connectivity."),
+              (int)error);
 
   BFT_FREE(face_connect);
 }
@@ -2377,9 +2490,15 @@ _write_face_cells_perio_l(const cs_mesh_t        *b_mesh,
   /* Write connectivity */
 
   CCMIOError error = kCCMIONoErr, *err = &error;
+
   CCMIOWriteFaceCells(err, entity_id, entity, map_id,
                       face_cells,
                       CCMIOINDEXC(kCCMIOStart), CCMIOINDEXC(kCCMIOEnd));
+
+  if (error != kCCMIONoErr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("CCMIO error %d writing face -> cells connectivity."),
+              (int)error);
 
   BFT_FREE(face_cells);
 }
@@ -2452,6 +2571,10 @@ _write_faces_l(const cs_mesh_t       *b_mesh,
                           "Boundary faces", &entity_id);
   }
 
+  if (error != kCCMIONoErr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("CCMIO error %d writing faces entity."), (int)error);
+
   /* When there is no periodicity or we are handling "true"
      boundary faces, use basic output functions */
 
@@ -2490,15 +2613,16 @@ _write_faces_l(const cs_mesh_t       *b_mesh,
                                             0,
                                             n_g_perio_faces);
 
-      if (w->rank < 1) {
+      map_num_shift = b_mesh->n_g_b_faces;
 
-        map_num_shift = b_mesh->n_g_b_faces;
+      _write_map(NULL, n_g_perio_faces, face_bi, map_num_shift, &map_id, w);
 
-        _write_map(NULL, n_g_perio_faces, face_bi, map_num_shift, &map_id, w);
+      CCMIONewIndexedEntity(err, topology_id, entity, 1,
+                            "Periodic faces", &entity_id);
 
-        CCMIONewIndexedEntity(err, topology_id, entity, 1,
-                              "Periodic faces", &entity_id);
-      }
+      if (error != kCCMIONoErr)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("CCMIO error %d writing faces entity."), (int)error);
 
     }
 
@@ -2794,7 +2918,8 @@ _write_field_data_g(CCMIOID                 data_id,
 
       if (error != kCCMIONoErr)
         bft_error(__FILE__, __LINE__, 0,
-                  _("Error writing field values to CCM file."));
+                  _("CCMIO error %d writing field data."), (int)error);
+
     }
 
   } while (_field_values_s != NULL);
@@ -2952,7 +3077,7 @@ _write_field_data_l(CCMIOID                     data_id,
 
   if (error != kCCMIONoErr)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error writing field values to CCM file."));
+              _("CCMIO error %d writing field data."), (int)error);
 }
 
 /*----------------------------------------------------------------------------
@@ -3180,6 +3305,9 @@ _write_multidimensional_field_data(const char              *name,
                      kCCMIOFieldData,
                      NULL,
                      &data_id);
+      if (error != kCCMIONoErr)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("CCMIO error %d creating new entity."), (int)error);
     }
 
     /* Write data in parallel */
@@ -3219,12 +3347,16 @@ _write_multidimensional_field_data(const char              *name,
                           mesh);
 
     /* Link the data node with component of the parent field node */
-    if (w->rank < 1)
+    if (w->rank < 1) {
       CCMIOWriteMultiDimensionalFieldData(err,
                                           field_id,
                                           component,
                                           child_field_id);
-
+      if (error != kCCMIONoErr)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("CCMIO error %d creating multidimensional field data."),
+                  (int)error);
+    }
   }
 
   BFT_FREE(full_name);
@@ -3430,10 +3562,10 @@ _write_field(const char                 *name,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Returns number of library version strings associated with the CCM-IO format.
+ * Returns number of library version strings associated with the CCMIO format.
  *
  * returns:
- *   number of library version strings associated with the CCM-IO format.
+ *   number of library version strings associated with the CCMIO format.
  *----------------------------------------------------------------------------*/
 
 int
@@ -3443,7 +3575,7 @@ fvm_to_ccm_n_version_strings(void)
 }
 
 /*----------------------------------------------------------------------------
- * Returns a library version string associated with the CCM-IO format.
+ * Returns a library version string associated with the CCMIO format.
  *
  * In certain cases, when using dynamic libraries, fvm may be compiled
  * with one library version, and linked with another. If both run-time
@@ -3474,7 +3606,7 @@ fvm_to_ccm_version_string(int string_index,
 }
 
 /*----------------------------------------------------------------------------
- * Initialize FVM to CCM-IO file writer.
+ * Initialize FVM to CCMIO file writer.
  *
  * parameters:
  *   name           <-- base output case name.
@@ -3483,7 +3615,7 @@ fvm_to_ccm_version_string(int string_index,
  *   comm           <-- associated MPI communicator.
  *
  * returns:
- *   pointer to opaque CCM-IO writer structure.
+ *   pointer to opaque CCMIO writer structure.
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
@@ -3522,7 +3654,7 @@ fvm_to_ccm_init_writer(const char             *name,
 
   if (time_dependency != FVM_WRITER_FIXED_MESH)
     bft_error(__FILE__, __LINE__, 0,
-              _("CCM-IO output can currently handle only "
+              _("CCMIO output can currently handle only "
                 "non-time-dependent meshes."));
 
   writer->time_dependency = time_dependency;
@@ -3547,7 +3679,7 @@ fvm_to_ccm_init_writer(const char             *name,
   name_length = strlen(name);
   if (name_length == 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("Empty CCM-IO filename."));
+              _("Empty CCMIO filename."));
   BFT_MALLOC(writer->name, name_length + 1, char);
   strcpy(writer->name, name);
 
@@ -3578,14 +3710,14 @@ fvm_to_ccm_init_writer(const char             *name,
   BFT_MALLOC(writer->path, strlen(path)+1, char);
   strcpy(writer->path, path);
 
-  /* CCM-IO Base structure */
+  /* CCMIO Base structure */
 
   /* Other variables */
 
   writer->rank = 0;
   writer->n_ranks = 1;
 
-  /* Open CCM-IO file */
+  /* Open CCMIO file */
 
   writer->is_open = false;
 
@@ -3614,14 +3746,17 @@ fvm_to_ccm_init_writer(const char             *name,
   cs_parall_set_min_coll_buf_size(0); /* for testing */
 #endif
 
+  /* Artificially force link of ADF library using gold linker */
+  _force_adf_link(false);
+
   return writer;
 }
 
 /*----------------------------------------------------------------------------
- * Finalize FVM to CCM-IO file writer.
+ * Finalize FVM to CCMIO file writer.
  *
  * parameters:
- *   this_writer_p <-- pointer to opaque CCM-IO writer structure.
+ *   this_writer_p <-- pointer to opaque CCMIO writer structure.
  *
  * returns:
  *   NULL pointer.
@@ -3678,7 +3813,7 @@ fvm_to_ccm_set_mesh_time(void     *this_writer_p,
 
 /*----------------------------------------------------------------------------
  * Indicate if elements of a given type in a mesh associated with a given
- * CCM-IO file writer need to be tesselated.
+ * CCMIO file writer need to be tesselated.
  *
  * parameters:
  *   this_writer_p <-- pointer to associated writer
@@ -3698,7 +3833,7 @@ fvm_to_ccm_needs_tesselation(fvm_writer_t       *this_writer_p,
 }
 
 /*----------------------------------------------------------------------------
- * Write nodal mesh to a CCM-IO file
+ * Write nodal mesh to a CCMIO file
  *
  * parameters:
  *   this_writer_p <-- pointer to associated writer.
@@ -3772,8 +3907,9 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
     CCMIOOpenFile(err, w->mesh_filename, kCCMIOWrite, &root);
     if (error != kCCMIONoErr)
       bft_error(__FILE__, __LINE__, 0,
-                _("CCMIOOpenFile() failed to open file \"%s\" : \n%s"),
-                w->mesh_filename, "CCM-IO error");
+                _("CCMIOOpenFile() failed to open file \"%s\"\n"
+                  "CCMIO error %d."),
+                w->solution_filename, (int)error);
     w->root_id = root;
     w->is_open = true;
   }
@@ -3861,8 +3997,15 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
       BFT_FREE(cell_gnum);
     }
 
-    if (w->rank < 1)
+    if (w->rank < 1) {
+
       CCMIOCloseFile(err, w->root_id);
+
+      if (error != kCCMIONoErr)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("CCMIO error %d closing file."), (int)error);
+
+    }
 
     w->is_open = false;
 
@@ -3871,7 +4014,7 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
 }
 
 /*----------------------------------------------------------------------------
- * Write field associated with a nodal mesh to a CCM-IO file.
+ * Write field associated with a nodal mesh to a CCMIO file.
  *
  * Assigning a negative value to the time step indicates a time-independent
  * field (in which case the time_value argument is unused).
@@ -3958,8 +4101,9 @@ fvm_to_ccm_export_field(void                   *this_writer_p,
     CCMIOOpenFile(err, w->solution_filename, kCCMIOWrite, &root);
     if (error != kCCMIONoErr)
       bft_error(__FILE__, __LINE__, 0,
-                _("CCMIOOpenFile() failed to open file \"%s\" : \n%s"),
-                w->solution_filename, "CCM-IO error");
+                _("CCMIOOpenFile() failed to open file \"%s\"\n"
+                  "CCMIO error %d."),
+                w->solution_filename, (int)error);
     w->root_id = root;
     w->is_open = true;
 
@@ -4035,8 +4179,15 @@ fvm_to_ccm_export_field(void                   *this_writer_p,
 
   /* Close file */
 
-  if (w->rank < 1)
+  if (w->rank < 1) {
+
     CCMIOCloseFile(err, w->root_id);
+
+    if (error != kCCMIONoErr)
+      bft_error(__FILE__, __LINE__, 0,
+                _("CCMIO error %d closing file."), (int)error);
+
+  }
 
   w->is_open = false;
 }

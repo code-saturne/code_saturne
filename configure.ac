@@ -446,7 +446,6 @@ CS_AC_TEST_SCOTCH
 CS_AC_TEST_HDF5
 CS_AC_TEST_CGNS
 CS_AC_TEST_MED
-CS_AC_TEST_ADF
 CS_AC_TEST_CCM
 CS_AC_TEST_ZLIB
 CS_AC_TEST_SALOME
@@ -897,7 +896,6 @@ echo " PT-SCOTCH (Parallel Graph Partitioning) support: "$cs_have_ptscotch""
 if test x$cs_have_ptscotch = xno ; then
   echo " SCOTCH (Graph Partitioning) support: "$cs_have_scotch""
 fi
-echo " ADF support: "$cs_have_adf""
 echo " CCM support: "$cs_have_ccm""
 echo " HDF (Hierarchical Data Format) support: "$cs_have_hdf5""
 echo " CGNS (CFD General Notation System) support: "$cs_have_cgns""

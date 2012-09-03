@@ -66,29 +66,19 @@ AC_ARG_WITH(ccm-lib,
                CCMRUNPATH="-R$with_ccm/lib"
              fi])
 
-# ADF may be provided directly (patched ADF with libccmio)
-# or through CGNS
-
-if test "x$with_ccm" != "xno" -a "x$cs_have_adf" = "xno" -a "x$cs_have_cgns" = "xno"
-then
-  if test "x$with_ccm" = "xcheck"; then
-    with_ccm=no
-    AC_MSG_WARN([no ADF library found; will not search for CCM])
-  else
-    AC_MSG_ERROR([no ADF library found; required for CCM])
-  fi
-fi
-
 if test "x$with_ccm" != "xno" ; then
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  if test "x$ADF_LIBS" != "x" ; then
-    CCM_LIBS="-lccmio $ADF_LIBS"
+  # ADF may be provided directly (patched ADF with libccmio)
+  # or through CGNS
+
+  if test "x$cs_have_cgns" = "xno" ; then
+    CCM_LIBS="-lccmio -ladf"
     CPPFLAGS="${CPPFLAGS} ${CCM_CPPFLAGS}"
-    LDFLAGS="${LDFLAGS} ${CCM_LDFLAGS} $ADF_LDFLAGS"
+    LDFLAGS="${LDFLAGS} ${CCM_LDFLAGS}"
   elif test "x$CGNS_LIBS" != "x" ; then
     CCM_LIBS="-lccmio"
     CPPFLAGS="${CPPFLAGS} ${CCM_CPPFLAGS}"
@@ -108,17 +98,23 @@ if test "x$with_ccm" != "xno" ; then
                     ])
 
   if test "x$cs_have_ccm_headers" = "xyes"; then
-    AC_CHECK_LIB(ccmio, CCMIOOpenFile, 
-                 [ AC_DEFINE([HAVE_CCM], 1, [CCM file support])
-                   cs_have_ccm=yes
-                 ], 
-                 [if test "x$with_ccm" != "xcheck" ; then
-                    AC_MSG_FAILURE([CCM support is requested, but test for CCM failed!])
-                  else
-                    AC_MSG_WARN([no CCM file support])
-                  fi
-                 ],
-                 )
+
+    AC_LINK_IFELSE([AC_LANG_PROGRAM(
+[[#include <libccmio/ccmio.h>]],
+[[CCMIOID root;
+CCMIOError error = kCCMIONoErr;
+CCMIOOpenFile(&error, "test.ccm", kCCMIOWrite, &root);]])
+                   ],
+                   [ AC_DEFINE([HAVE_CCM], 1, [CCM file support])
+                     cs_have_ccm=yes
+                   ], 
+                   [if test "x$with_ccm" != "xcheck" ; then
+                      AC_MSG_FAILURE([CCM support is requested, but test for CCM failed!])
+                    else
+                      AC_MSG_WARN([no CCM file support])
+                    fi
+                   ],
+                   )
   fi
 
   if test "x$cs_have_ccm" != "xyes"; then
