@@ -74,7 +74,7 @@ class LagrangianOutputModel(Model):
         """
         self.case = case
         self.node_lagr = self.case.root().xmlInitNode('lagrangian', 'model')
-        self._setDefaultVariables()
+        self.node_output = self.node_lagr.xmlInitChildNode('output')
 
 
     def _defaultLagrangianOutputValues(self):
@@ -100,61 +100,6 @@ class LagrangianOutputModel(Model):
         default['raw_coal_mass_fraction'] = "off"
         default['char_mass_fraction'] = "off"
         return default
-
-
-    def _setDefaultVariables(self):
-        """
-        Set variables and properties if lagrangian model is on.
-        """
-        self.node_output = self.node_lagr.xmlInitChildNode('output')
-
-##         default = self._defaultLagrangianOutputValues()['listing_printing_frequency']
-##         node = self.node_output.xmlInitChildNode('listing_printing_frequency')
-##         node.xmlSetTextNode(str(default))
-
-##         default = self._defaultLagrangianOutputValues()['postprocessing_frequency']
-##         node = self.node_output.xmlInitChildNode('postprocessing_frequency')
-##         node.xmlSetTextNode(str(default))
-
-##         default = self._defaultLagrangianOutputValues()['postprocessing_format']
-##         self.node_output.xmlInitChildNode('postprocessing_format', choice=default)
-
-##         default = self._defaultLagrangianOutputValues()['postprocessing_options']
-##         self.node_output.xmlInitChildNode('postprocessing_options', choice=default)
-
-##         default = self._defaultLagrangianOutputValues()['particles']
-##         self.node_output.xmlInitChildNode('particles', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['trajectory']
-##         self.node_output.xmlInitChildNode('trajectory', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['number_of_particles']
-##         node = self.node_output.xmlInitChildNode('number_of_particles')
-##         node.xmlSetTextNode(str(default))
-
-##         default = self._defaultLagrangianOutputValues()['resident_time']
-##         self.node_output.xmlInitChildNode('resident_time', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['diameter']
-##         self.node_output.xmlInitChildNode('diameter', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['velocity_particles']
-##         self.node_output.xmlInitChildNode('velocity_particles', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['velocity_fluid_seen']
-##         self.node_output.xmlInitChildNode('velocity_fluid_seen', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['mass']
-##         self.node_output.xmlInitChildNode('mass', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['shrinking_core_diameter']
-##         self.node_output.xmlInitChildNode('shrinking_core_diameter', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['raw_coal_mass_fraction']
-##         self.node_output.xmlInitChildNode('raw_coal_mass_fraction', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['char_mass_fraction']
-##         self.node_output.xmlInitChildNode('char_mass_fraction', status=default)
 
 
     def setTrajectoryStatus(self, status):
@@ -258,30 +203,6 @@ class LagrangianOutputModel(Model):
             freq = self._defaultLagrangianOutputValues()['postprocessing_frequency']
             self.setPostProcessingFrequency(freq)
         return freq
-
-
-    def getPostProcessingFormat(self):
-        """
-        Return the value for post-processing format.
-        """
-        node_format = self.node_output.xmlInitChildNode('postprocessing_format', 'choice')
-        format = node_format['choice']
-        if not format:
-            format = self._defaultLagrangianOutputValues()['postprocessing_format']
-            #self.setPostProcessingFormat(format)
-        return format
-
-
-    def getPostProcessingOption(self):
-        """
-        Return the value for post-processing options.
-        """
-        node_format = self.node_output.xmlInitChildNode('postprocessing_options', 'choice')
-        format = node_format['choice']
-        if not format:
-            format = self._defaultLagrangianOutputValues()['postprocessing_options']
-            #self.setPostProcessingOption(format)
-        return format
 
 
     def setFluidVelocityStatus(self, status):
