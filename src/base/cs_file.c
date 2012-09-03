@@ -2359,48 +2359,55 @@ cs_file_serializer_advance(cs_file_serializer_t  *s,
 
   if (s->rank_id == 0) {
 
-    int dist_rank = s->next_rank_id;
     int count = 0;
 
-    if (s->next_rank_id >= s->n_ranks)
-      return NULL;
+    while (count == 0) {
 
-    else if (s->next_rank_id != 0) {
+      int dist_rank = s->next_rank_id;
 
-      count = s->count[dist_rank];
+      count = 0;
 
-      /* Forced synchronization */
-      sync_range[1] = sync_range[0] + count;
-      MPI_Send(&sync_range, 2, CS_MPI_GNUM, dist_rank, CS_FILE_MPI_TAG, s->comm);
+      if (s->next_rank_id >= s->n_ranks)
+        return NULL;
 
-      /* Receive data */
-      MPI_Recv(s->recv_buf, (count * s->size), MPI_BYTE, dist_rank,
-               CS_FILE_MPI_TAG, s->comm, &status);
+      else if (s->next_rank_id != 0) {
 
-      retval = s->recv_buf;
-    }
+        count = s->count[dist_rank];
 
-    else { /* First call, rank id 0 */
-      count = s->count[dist_rank];
-      retval = s->buf;
-    }
+        /* Forced synchronization */
+        sync_range[1] = sync_range[0] + count;
+        MPI_Send(&sync_range, 2, CS_MPI_GNUM, dist_rank, CS_FILE_MPI_TAG, s->comm);
 
-    /* Update status */
+        /* Receive data */
+        MPI_Recv(s->recv_buf, (count * s->size), MPI_BYTE, dist_rank,
+                 CS_FILE_MPI_TAG, s->comm, &status);
 
-    s->next_rank_id += 1;
-    while (s->next_rank_id < s->n_ranks) {
-      if (s->count[s->next_rank_id] > 0)
-        break;
-      else
-        s->next_rank_id += 1;
-    }
+        retval = s->recv_buf;
+      }
 
-    if (cur_range != NULL) {
-      cur_range[0] = s->next_g_num;
-      cur_range[1] = cur_range[0] + count;
-    }
+      else { /* First call, rank id 0 */
+        count = s->count[dist_rank];
+        retval = s->buf;
+      }
 
-    s->next_g_num += count;
+      /* Update status */
+
+      s->next_rank_id += 1;
+      while (s->next_rank_id < s->n_ranks) {
+        if (s->count[s->next_rank_id] > 0)
+          break;
+        else
+          s->next_rank_id += 1;
+      }
+
+      if (cur_range != NULL) {
+        cur_range[0] = s->next_g_num;
+        cur_range[1] = cur_range[0] + count;
+      }
+
+      s->next_g_num += count;
+
+    };
 
   }
 
