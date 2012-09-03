@@ -1098,8 +1098,8 @@ if (iprco .ne.0.and.iprco .ne.1) then
   iok = iok + 1
 endif
 if (iprco.eq.1) then
-  if (irevmc.ne.0.and.irevmc.ne.1.and.irevmc.ne.2) then
-    write(nfecra,2211) 'IREVMC',irevmc
+  if (irevmc.ne.0.and.irevmc.ne.1) then
+    write(nfecra,2201) 'IREVMC',irevmc
     iok = iok + 1
   endif
   arakfr = arak

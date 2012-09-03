@@ -1707,7 +1707,7 @@ if (idilat.eq.4) then
    coefap(ifac) = 0.d0
    cofafp(ifac) = 0.d0
   enddo
-  
+
   ! --- Convective source term
   do iel = 1, ncel
     rhs(iel) = 0.d0
@@ -1797,7 +1797,7 @@ if (idilat.eq.4) then
      imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
-     drtp   , drtp   ,                                              &!FIXME rtp(1,ipr)  rtp(1,ipr) 
+     drtp   , drtp   ,                                              &!FIXME rtp(1,ipr)  rtp(1,ipr)
      coefap , coefb(1,iclipr) ,                                     &
      cofafp , coefb(1,iclipf) ,                                     &
      velflx , velflb ,                                              &
