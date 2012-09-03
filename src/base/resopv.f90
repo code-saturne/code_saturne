@@ -189,8 +189,7 @@ integer          ireslp, nswmpr
 integer          isweep, niterf, icycle
 integer          iflmb0, ifcsor
 integer          nswrgp, imligp, iwarnp
-integer          iclipf
-integer                  iclipr, icliup, iclivp, icliwp
+integer          iclipf, iclipr, icliup, iclivp, icliwp
 integer          ipcrom, ipcroa, ipbrom, iflmas, iflmab
 integer          ipp
 integer          idiffp, iconvp, ndircp
@@ -211,7 +210,7 @@ double precision ardtsr, arsr  , unsara, thetap
 double precision dtsrom, unsvom, romro0
 double precision epsrgp, climgp, extrap, epsilp
 double precision drom  , dronm1, tcrite, relaxp
-double precision hint, qimp, pimpv(3), rinfiv(3), epsrsp, blencp
+double precision hint, qimp, qimpv(3), epsrsp, blencp
 double precision ressol, rnorm2
 double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
 
@@ -244,9 +243,6 @@ if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
 
 ! Boundary conditions for delta P
 allocate(cofafp(nfabor), coefbp(nfabor), cofbfp(nfabor))
-
-! --- Weakly compressible algorithm: semi analytic scheme
-if (idilat.eq.4) allocate(velflx(nfac), velflb(nfabor))
 
 ! --- Writting
 ipp    = ipprtp(ipr)
@@ -645,6 +641,8 @@ endif
 
 init   = 1
 inc    = 1
+! BCs will be taken into account after in idilat=4
+if (idilat.eq.4) inc = 0
 iflmb0 = 1
 if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
 nswrgp = nswrgr(iu )
@@ -978,7 +976,7 @@ endif
 ! 7. Solving (Loop over the non-orthogonalities)
 !===============================================================================
 
-! --- Numbre of sweeps
+! --- Number of sweeps
 nswmpr = nswrsm(ipr)
 
 ! --- Variables are set to 0
@@ -993,7 +991,7 @@ enddo
 
 relaxp = relaxv(ipr)
 
-! --- Divergence initiale
+! --- Initial divergence
 init = 1
 
 call divmas &
@@ -1004,9 +1002,14 @@ call divmas &
 
 ! --- Weakly compressible algorithm: semi analytic scheme
 !     1. The RHS contains rho div(u*) and not div(rho u*)
-!     2. The mass flux is completed by rho u* . S
+!     2. Add dilatation source term to rhs
+!     3. The mass flux is completed by rho u* . S
+
 if (idilat.eq.4) then
 
+  allocate(velflx(nfac), velflb(nfabor))
+
+  ! 1. The RHS contains rho div(u*) and not div(rho u*)
   init   = 1
   inc    = 1
   iflmb0 = 1
@@ -1042,7 +1045,12 @@ if (idilat.eq.4) then
     divu(iel) = divu(iel) + res(iel)*propce(iel,ipcrom)
   enddo
 
-  ! 2. The mass flux is completed by rho u* . S
+  ! 2. Add the dilatation source term D(rho)/Dt
+  do iel = 1, ncel
+    divu(iel) = divu(iel) + propce(iel,ipproc(iustdy(itsrho)))
+  enddo
+
+  ! 3. The mass flux is completed by rho u* . S
   init   = 0
   inc    = 1
   iflmb0 = 1
@@ -1091,15 +1099,6 @@ if (iilagr.eq.2 .and. ltsmas.eq.1) then
   do iel = 1, ncel
     divu(iel) = divu(iel) -tslagr(iel,itsmas)
   enddo
-endif
-
-! --- Weakly compressible algorithm: semi analytic scheme
-if (idilat.eq.4) then
-
-  do iel = 1, ncel
-    divu(iel) = divu(iel) + propce(iel,ipproc(iustdy(itsrho)))
-  enddo
-
 endif
 
 ! --- Initial right hand side
@@ -1625,7 +1624,7 @@ if (idilat.eq.4) then
   ivar   = 0
   nswrgp = nswrgr(iu)
   imligp = imligr(iu)
-  iwarnp = iwarni(iu)
+  iwarnp = iwarni(ipr)
   epsrgp = epsrgr(iu)
   climgp = climgr(iu)
   extrap = extrag(iu)
@@ -1648,7 +1647,7 @@ if (idilat.eq.4) then
   ! --- dt/rho * grad rho
   do iel = 1, ncel
     do isou = 1, 3
-      trav(iel,isou) = gradp(iel,ii) * dt(iel) / propce(iel,ipcrom)
+      trav(isou,iel) = gradp(iel,isou) * dt(iel) / propce(iel,ipcrom)
     enddo
   enddo
 
@@ -1670,10 +1669,7 @@ if (idilat.eq.4) then
   ! --- Viscosity
   call viscfa (imvisf, dt, viscf, viscb)
 
-  rinfiv(1) = rinfin
-  rinfiv(2) = rinfin
-  rinfiv(3) = rinfin
-
+  ! --- Boundary Conditions for the convective flux
   do ifac = 1, nfabor
 
      iel = ifabor(ifac)
@@ -1681,16 +1677,16 @@ if (idilat.eq.4) then
      ! Neumann Boundary Conditions
      !----------------------------
 
-     pimpv(1) = 0.d0
-     pimpv(2) = 0.d0
-     pimpv(3) = 0.d0
+     qimpv(1) = 0.d0
+     qimpv(2) = 0.d0
+     qimpv(3) = 0.d0
      hint = dt(iel)/distb(ifac)
 
-     call set_dirichlet_vector &
-          !===================
+     call set_neumann_vector &
+          !=================
         ( coefar(1,ifac)  , cofafr(1,ifac)  ,             &
           coefbr(1,1,ifac), cofbfr(1,1,ifac),             &
-          pimpv           , hint            , rinfiv )
+          qimpv           , hint             )
 
   enddo
 
@@ -1706,38 +1702,64 @@ if (idilat.eq.4) then
    coefar , coefbr ,                                              &
    velflx , velflb )
 
-  ! Initialization of the variable to solve
+  ! --- Boundary condition for the pressure increment
+  do ifac = 1, nfabor
+   coefap(ifac) = 0.d0
+   cofafp(ifac) = 0.d0
+  enddo
+  
+  ! --- Convective source term
   do iel = 1, ncel
-    rovsdt(iel) = dt(iel)/9.d4 * volume(iel)
-    drtp(iel)   = 0.d0
-    rhs(iel)   = - divu(iel)
+    rhs(iel) = 0.d0
   enddo
 
-  ! Neumann boundary condition for the pressure increment
-  !------------------------------------------------------
+  ivar   = ipr
+  iconvp = 1
+  idiffp = 0
+  nswrsp = 1
+  imligp = imligr(ivar)
+  ircflp = ircflu(ivar)
+  ischcp = ischcv(ivar)
+  isstpp = isstpc(ivar)
+  inc    = 1
+  iccocg = 1
+  ipp    = ipprtp(ivar)
+  iwarnp = iwarni(ivar)
+  imucpp = 0
+  blencp = blencv(ivar)
+  epsrgp = epsrgr(ivar)
+  climgp = climgr(ivar)
+  extrap = extrag(ivar)
+  relaxp = relaxv(ivar)
+  thetap = 1.d0
 
-  do ifac = 1, nfabor
+  call bilsc2 &
+  !==========
+ ( nvar   , nscal  ,                                              &
+   idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
+   ipp    , iwarnp , imucpp ,                                     &
+   blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+   rtp(1,ipr)      , rtp(1,ipr)      ,                            &
+   coefap , coefb(1,iclipr) ,                                     &
+   cofafp , coefb(1,iclipf) ,                                     &
+   velflx , velflb , viscf  , viscb  , rvoid   ,                  &
+   rhs   )
 
-    iel = ifabor(ifac)
-
-    hint = dt(iel)/distb(ifac)
-    qimp = 0.d0
-
-    call set_neumann_scalar &
-         !=================
-       ( coefap(ifac), cofafp(ifac),             &
-         coefbp(ifac), cofbfp(ifac),             &
-         qimp        , hint )
-
+  ! --- Initialization of the variable to solve
+  do iel = 1, ncel
+    rovsdt(iel) = 0.d0
+    drtp(iel)   = 0.d0
+    dpvar(iel)  = 0.d0
+    rhs(iel)    = - rhs(iel)
   enddo
 
   ! --- Solve the convection diffusion equation
 
-  ivar   = ipr
-  iconvp = 1
   idiffp = 1
   ireslp = 1
   ipol   = 0
+  ! To reinforce the diagonal
   ndircp = 0
   nitmap = nitmax(ivar)
   nswrsp = nswrsm(ivar)
@@ -1775,9 +1797,9 @@ if (idilat.eq.4) then
      imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
-     rtp(1,ipr)      , drtp   ,                                     &
-     coefap , coefbp ,                                              &
-     cofafp , cofbfp ,                                              &
+     drtp   , drtp   ,                                              &!FIXME rtp(1,ipr)  rtp(1,ipr) 
+     coefap , coefb(1,iclipr) ,                                     &
+     cofafp , coefb(1,iclipf) ,                                     &
      velflx , velflb ,                                              &
      viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
      rvoid  , rvoid  ,                                              &
@@ -1797,14 +1819,12 @@ if (idilat.eq.4) then
   init   = 0
   inc    = 1
   iccocg = 1
-  iflmb0 = 1
-  if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
-  nswrgp = nswrgr(iu)
-  imligp = imligr(iu)
+  nswrgp = nswrgr(ipr)
+  imligp = imligr(ipr)
   iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(iu)
-  climgp = climgr(iu)
-  extrap = extrag(iu)
+  epsrgp = epsrgr(ipr)
+  climgp = climgr(ipr)
+  extrap = extrag(ipr)
 
   if (idtsca.eq.0) then
     call itrmas &
@@ -1815,8 +1835,8 @@ if (idilat.eq.4) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt(1,1)     , dfrcxt(1,2)     , dfrcxt(1,3)     ,          &
    drtp   ,                                                       &
-   coefap , coefbp ,                                              &
-   cofafp , cofbfp ,                                              &
+   coefap , coefb(1,iclipr) ,                                     &
+   cofafp , coefb(1,iclipf) ,                                     &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    propfa(1,iflmas), propfb(1,iflmab))
@@ -1835,8 +1855,8 @@ if (idilat.eq.4) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt(1,1)     , dfrcxt(1,2)     , dfrcxt(1,3)     ,          &
    dpvar  ,                                                       &
-   coefap , coefbp ,                                              &
-   cofafp , cofbfp ,                                              &
+   coefap , coefb(1,iclipr) ,                                     &
+   cofafp , coefb(1,iclipf) ,                                     &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    propfa(1,iflmas), propfb(1,iflmab))
@@ -1850,10 +1870,10 @@ if (idilat.eq.4) then
      init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
      iwarnp , nfecra ,                                              &
      epsrgp , climgp , extrap ,                                     &
-     dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+     dfrcxt(1,1)     , dfrcxt(1,2)     , dfrcxt(1,3)     ,          &
      drtp   ,                                                       &
-     coefap , coefbp ,                                              &
-     cofafp , cofbfp ,                                              &
+     coefap , coefb(1,iclipr) ,                                     &
+     cofafp , coefb(1,iclipf) ,                                     &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
      propfa(1,iflmas), propfb(1,iflmab))
@@ -1870,10 +1890,10 @@ if (idilat.eq.4) then
      init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
      iwarnp , nfecra ,                                              &
      epsrgp , climgp , extrap ,                                     &
-     dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+     dfrcxt(1,1)     , dfrcxt(1,2)     , dfrcxt(1,3)     ,          &
      dpvar  ,                                                       &
-     coefap , coefbp ,                                              &
-     cofafp , cofbfp ,                                              &
+     coefap , coefb(1,iclipr) ,                                     &
+     cofafp , coefb(1,iclipf) ,                                     &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
      propfa(1,iflmas), propfb(1,iflmab))
@@ -1884,6 +1904,7 @@ if (idilat.eq.4) then
   deallocate(dpvar)
   deallocate(coefar, coefbr)
   deallocate(cofafr, cofbfr)
+  deallocate(velflx, velflb)
 
 endif
 
@@ -1907,7 +1928,6 @@ deallocate(res, divu, presa)
 deallocate(gradp)
 deallocate(cofafp, coefbp, cofbfp)
 deallocate(rhs, rovsdt)
-if (idilat.eq.4) deallocate(velflx, velflb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 
 !--------
