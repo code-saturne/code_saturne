@@ -704,8 +704,6 @@ _export_vertex_coords_l(const fvm_nodal_t           *mesh,
   Coords->decrRef();
 }
 
-#if defined(HAVE_MPI)
-
 /*----------------------------------------------------------------------------
  * Write strided connectivity block to a MEDCoupling mesh
  *
@@ -743,6 +741,8 @@ _write_connect_block(fvm_element_t      type,
     med_mesh->insertNextCell(med_type, stride, elt_buf);
   }
 }
+
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Write strided global connectivity block to a MEDCoupling object
