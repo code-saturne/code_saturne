@@ -262,7 +262,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         """
         if self.proc is None:
             return
-        self.proc.setReadChannel(QProcess.Exception)
+        self.proc.setReadChannel(QProcess.StandardError)
 
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()
