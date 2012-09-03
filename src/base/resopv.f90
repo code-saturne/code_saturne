@@ -1792,8 +1792,8 @@ if (idilat.eq.4) then
   !==========
    ( nvar   , nscal  ,                                              &
      idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
-     imrgra , nswrsp , nswrgp , imligp , ircflp , iswdyn ,          &
-     ischcp , isstpp , iescap , imucpp , idftnp ,                   &
+     imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+     ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
      imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
