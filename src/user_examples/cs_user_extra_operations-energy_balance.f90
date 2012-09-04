@@ -29,7 +29,6 @@ subroutine cs_user_extra_operations &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    itepa  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
 !===============================================================================
@@ -63,8 +62,6 @@ subroutine cs_user_extra_operations &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ettp, ettpa      ! ra ! <-- ! particle-defined variables                     !
 !  (nbpmax, nvp)   !    !     !  (at current and previous time steps)          !
 ! tepa             ! ra ! <-- ! real particle properties                       !
@@ -121,7 +118,6 @@ integer          itepa(nbpmax,nivep)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta), stativ(ncelet,nvlsta-1)
@@ -136,7 +132,6 @@ integer          iel1   , iel2   , ieltsm
 integer          iortho
 integer          inc    , iccocg
 integer          nswrgp , imligp , iwarnp
-integer          iclvar , iclvaf
 integer          ipcrom , ipcvst , iflmas , iflmab , ipccp, ipcvsl
 integer          iscal
 integer          ncesmp
@@ -205,6 +200,8 @@ allocate(lstelt(max(ncel,nfac,nfabor)))
 !-------------------------------------------------------------------------------
 
 ! Temperature variable: ivar = isca(iscalt) (use rtp(iel, ivar))
+
+!             boundary coefficients coefap/coefbp are those of ivarfl(ivar)
 
 !-------------------------------------------------------------------------------
 
@@ -300,9 +297,7 @@ if (inpdt0.eq.0) then
   xbilan = 0.d0
 
   iscal = iscalt         ! temperature scalar number
-  ivar =  isca(iscal)           ! temperature variable number
-  iclvar = iclrtp(ivar,icoef)   ! boundary condition number for gradients and advection
-  iclvaf = iclrtp(ivar,icoeff)  ! boundary condition number for diffusion
+  ivar =  isca(iscal)    ! temperature variable number
 
   ! Physical quantity numbers
   ipcrom = ipproc(irom)
@@ -327,10 +322,13 @@ if (inpdt0.eq.0) then
     ipcvsl = 0
   endif
 
-  ! Get boundary condition pointers
+  ! Boundary condition pointers for gradients and advection
 
   call field_get_coefa_s(ivarfl(ivar), coefap)
   call field_get_coefb_s(ivarfl(ivar), coefbp)
+
+  ! Boundary condition pointers for diffusion
+
   call field_get_coefaf_s(ivarfl(ivar), cofafp)
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 

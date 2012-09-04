@@ -831,7 +831,6 @@ if (itrale.gt.0) then
    itepa  ,                                                       &
    ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
    ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
 endif
