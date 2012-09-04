@@ -250,6 +250,7 @@ edit_config = sed \
 
 bin/code_saturne bin/runcase_coupling: Makefile
 	rm -f $@ $@.tmp
+	$(MKDIR_P) bin
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
 	$(edit_python) $${srcdir}$@.in >$@.tmp
@@ -257,6 +258,7 @@ bin/code_saturne bin/runcase_coupling: Makefile
 
 bin/cs_package.py bin/runcase_aster: Makefile
 	rm -f $@ $@.tmp
+	$(MKDIR_P) bin
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
 	$(edit_config) $${srcdir}$@.in >$@.tmp
