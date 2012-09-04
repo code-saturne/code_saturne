@@ -2356,9 +2356,9 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
 
   /* Destroy group class set after selectors, who reference it */
 
-  if (cs_glob_mesh->class_defs != NULL)
-    cs_glob_mesh->class_defs
-      = fvm_group_class_set_destroy(cs_glob_mesh->class_defs);
+  if (mesh->class_defs != NULL)
+    mesh->class_defs
+      = fvm_group_class_set_destroy(mesh->class_defs);
 }
 
 /*----------------------------------------------------------------------------
