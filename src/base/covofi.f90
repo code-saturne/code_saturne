@@ -674,7 +674,7 @@ if(idiff(ivar).ge.1) then
     call vitens &
     !==========
    ( imvisf ,                      &
-     viscce ,                      &
+     viscce , iwarnp ,             &
      weighf , weighb ,             &
      viscf  , viscb  )
 
