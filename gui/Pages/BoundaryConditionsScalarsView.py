@@ -175,8 +175,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         else:
             self.groupBoxSpecies.hide()
 
+        self.meteo_list = ""
         self.meteo_list = self.sca_mo.getMeteoScalarsList()
-        if self.meteo_list != None:
+        if self.meteo_list != []:
             self.groupBoxMeteo.show()
             self.modelMeteo = ComboModel(self.comboBoxMeteo, 1, 1)
             for m in self.meteo_list:
@@ -289,7 +290,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.pushButtonMeteo.setEnabled(False)
         setGreenColor(self.pushButtonMeteo, False)
 
-        if self.meteo_list != None:
+        if self.meteo_list != []:
             self.meteo_type = self.__boundary.getScalarChoice(self.meteo)
             self.modelTypeMeteo.setItem(str_model = self.meteo_type)
             self.labelValueMeteo.setText('Value')
