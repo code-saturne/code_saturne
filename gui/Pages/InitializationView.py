@@ -666,7 +666,7 @@ nusa = (cmu * k)/eps;;"""
 
 
 
-    @pyqtSignature("constQStrinq&")
+    @pyqtSignature("const QString&")
     def slotPressureFormula(self):
         """
         Input the initial Pressure formula
@@ -691,7 +691,7 @@ nusa = (cmu * k)/eps;;"""
 
 
 
-    @pyqtSignature("constQStrinq&")
+    @pyqtSignature("const QString&")
     def slotDensityFormula(self):
         """
         Input the initial Density formula
@@ -716,7 +716,7 @@ nusa = (cmu * k)/eps;;"""
 
 
 
-    @pyqtSignature("constQStrinq&")
+    @pyqtSignature("const QString&")
     def slotTemperatureFormula(self):
         """
         Input the initial Temperature formula
@@ -741,7 +741,7 @@ nusa = (cmu * k)/eps;;"""
 
 
 
-    @pyqtSignature("constQStrinq&")
+    @pyqtSignature("const QString&")
     def slotEnergyFormula(self):
         """
         Input the initial Energy formula
