@@ -564,7 +564,6 @@ else if (numtyp .eq. -2) then
    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
    grad   )
 
-
       !          Calcul de la valeur reconstruite dans les cellules de bord
 
       do ifac = 1, nfabor
@@ -572,16 +571,13 @@ else if (numtyp .eq. -2) then
         diipbx = diipb(1,ifac)
         diipby = diipb(2,ifac)
         diipbz = diipb(3,ifac)
-        treco(ifac) = rtp(iel,ivar)                  &
+        treco(ifac) = rtp(iel,ivar)                        &
              + diipbx*grad(iel,1)                          &
              + diipby*grad(iel,2)                          &
              + diipbz*grad(iel,3)
       enddo
 
-      ! Free memory
       deallocate(grad)
-      deallocate(treco)
-
 
       ! Calcul du flux convectif et diffusif
 
@@ -607,11 +603,13 @@ else if (numtyp .eq. -2) then
         flumab = propfb(ifac,iflmab)
 
         trafbr(1 + (iloc-1)*idimt) =                                   &
-             (coefa(ifac,iclvaf) + coefb(ifac,iclvaf)*rtp(iel,ivar))   &
+             (coefa(ifac,iclvaf) + coefb(ifac,iclvaf)*treco(ifac))     &
              - flumab/srfbn*                                           &
-             (coefa(ifac,iclvar) + coefb(ifac,iclvar)*rtp(iel,ivar))
+             (coefa(ifac,iclvar) + coefb(ifac,iclvar)*treco(ifac))
 
       enddo
+
+      deallocate(treco)
 
       !             Valeurs entrelacées, définies sur tableau de travail
       ientla = 1
