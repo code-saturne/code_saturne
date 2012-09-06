@@ -1937,10 +1937,10 @@ if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 #if defined(_CS_LANG_FR)
 
  1200 format ( &
- 1X,A16,' Sweep: ',I5,'Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
-'    < A.dx^k  ; r^k > = ',E12.5,' ||A.dx^k  ||^2 = ',E12.5                ,/,&
-'    < A.dx^k-1; r^k > = ',E12.5,' ||A.dx^k-1||^2 = ',E12.5                ,/,&
-' < A.dx^k-1; A.dx^k > = ',E12.5)
+ 1X,A16,' Sweep: ',I5,' Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
+'    < dI^k  ; R^k > = ',E12.5,' ||dI^k  ||^2 = ',E12.5                     ,/,&
+'    < dI^k-1; R^k > = ',E12.5,' ||dI^k-1||^2 = ',E12.5                     ,/,&
+'   < dI^k-1; dI^k > = ',E12.5)
  1300 format(1X,A16,' : RESIDU DE NORMALISATION =', E14.6)
  1440 format(1X,A16,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6,  &
              ', RELAXP = ',E14.6)
@@ -1958,11 +1958,10 @@ if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 #else
 
  1200 format ( &
- 1X,A16,' Sweep: ',I5,'Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
-'    < A.dx^k  ; r^k > = ',E12.5,' ||A.dx^k  ||^2 = ',E12.5                ,/,&
-'    < A.dx^k-1; r^k > = ',E12.5,' ||A.dx^k-1||^2 = ',E12.5                ,/,&
-' < A.dx^k-1; A.dx^k > = ',E12.5)
-
+ 1X,A16,' Sweep: ',I5,' Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
+'    < dI^k  ; R^k > = ',E12.5,' ||dI^k  ||^2 = ',E12.5                     ,/,&
+'    < dI^k-1; R^k > = ',E12.5,' ||dI^k-1||^2 = ',E12.5                     ,/,&
+'   < dI^k-1; dI^k > = ',E12.5)
  1300 format(1X,A16,' : NORMED RESIDUALS = ', E14.6)
  1440 format(1X,A16,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6, &
              ', RELAXP = ',E14.6)

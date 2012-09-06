@@ -571,7 +571,7 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
   ! Writing
   nbivar(ipp) = niterf
   if (abs(rnorm).gt.epzero) then
-    resvar(ipp) = ressol/rnorm
+    resvar(ipp) = residu/rnorm
   else
     resvar(ipp) = 0.d0
   endif
@@ -610,7 +610,7 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
     ! ||E.dx^(k-1)-E.0||^2
     nadxkm1 = nadxk
 
-    ! ||A.dx^k-E.0||^2
+    ! ||E.dx^k-E.0||^2
     call prodsc(ncel , insqrt , adxk , adxk , nadxk)
 
     ! < E.dx^k-E.0; r^k >
@@ -816,7 +816,7 @@ endif
 ! Free memory
 deallocate(dam, xam)
 deallocate(smbini)
-if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1)
+if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1,rhs0)
 !--------
 ! Formats
 !--------
@@ -833,11 +833,12 @@ if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1)
 '@    ========='                                                    ,/,&
 '@  Nombre d''iterations maximal ',I10   ,' atteint'                ,/,&
 '@' )
- 1200 format ( &
- 1X,A16,' Sweep: ',I5,'Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
-'    < A.dx^k  ; r^k > = ',E12.5,' ||A.dx^k  ||^2 = ',E12.5                ,/,&
-'    < A.dx^k-1; r^k > = ',E12.5,' ||A.dx^k-1||^2 = ',E12.5                ,/,&
-' < A.dx^k-1; A.dx^k > = ',E12.5)
+1200 format ( &
+ 1X,A16,' Sweep: ',I5,' Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
+'    < dI^k  ; R^k > = ',E12.5,' ||dI^k  ||^2 = ',E12.5                     ,/,&
+'    < dI^k-1; R^k > = ',E12.5,' ||dI^k-1||^2 = ',E12.5                     ,/,&
+'   < dI^k-1; dI^k > = ',E12.5)
+
 #else
 
  1000 format ( &
@@ -850,11 +851,11 @@ if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1)
 '@    ========'                                                     ,/,&
 '@  Maximum number of iterations ',I10   ,' reached'                ,/,&
 '@' )
- 1200 format ( &
- 1X,A16,' Sweep: ',I5,'Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
-'    < A.dx^k  ; r^k > = ',E12.5,' ||A.dx^k  ||^2 = ',E12.5                ,/,&
-'    < A.dx^k-1; r^k > = ',E12.5,' ||A.dx^k-1||^2 = ',E12.5                ,/,&
-' < A.dx^k-1; A.dx^k > = ',E12.5)
+1200 format ( &
+ 1X,A16,' Sweep: ',I5,' Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
+'    < dI^k  ; R^k > = ',E12.5,' ||dI^k  ||^2 = ',E12.5                     ,/,&
+'    < dI^k-1; R^k > = ',E12.5,' ||dI^k-1||^2 = ',E12.5                     ,/,&
+'   < dI^k-1; dI^k > = ',E12.5)
 
 #endif
 

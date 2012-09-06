@@ -257,7 +257,7 @@ integer          isou , jsou, ifac
 integer          ibsize
 integer          incp, insqrt
 
-double precision residu, rnorm, ressol, res
+double precision residu, rnorm, ressol, res, rnorm2
 double precision thetex
 double precision alph, beta
 double precision paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax
@@ -265,7 +265,7 @@ double precision paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax
 double precision, allocatable, dimension(:,:,:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
 double precision, allocatable, dimension(:,:) :: dpvar, smbini, w1
-double precision, allocatable, dimension(:,:) :: adxk, adxkm1, dpvarm1
+double precision, allocatable, dimension(:,:) :: adxk, adxkm1, dpvarm1, rhs0
 
 !===============================================================================
 
@@ -277,7 +277,10 @@ double precision, allocatable, dimension(:,:) :: adxk, adxkm1, dpvarm1
 ! be carefull here, xam is interleaved
 allocate(dam(3,3,ncelet), xam(2,nfac))
 allocate(dpvar(3,ncelet), smbini(3,ncelet))
-if (iswdyp.ge.1) allocate(adxk(3,ncelet), adxkm1(3,ncelet), dpvarm1(3,ncelet))
+if (iswdyp.ge.1) then
+  allocate(adxk(3,ncelet), adxkm1(3,ncelet), dpvarm1(3,ncelet))
+  allocate(rhs0(3,ncelet))
+endif
 
 ! Names
 chaine = nomvar(ippu)
@@ -334,6 +337,7 @@ call matrxv &
 
 ! For stationary computations, the diagonal is relaxed
 if (idtvar.lt.0) then
+  !$omp parallel do private(isou, jsou)
   do iel = 1, ncel
     do isou = 1, 3
       do jsou = 1, 3
@@ -397,6 +401,7 @@ endif
 
 ! Before looping, the RHS without reconstruction is stored in smbini
 
+!$omp parallel do private(isou)
 do iel = 1, ncel
   do isou = 1, 3
     smbini(isou,iel) = smbrp(isou,iel)
@@ -404,6 +409,8 @@ do iel = 1, ncel
 enddo
 
 ! pvar is initialized on ncelet to avoid a synchronization
+
+!$omp parallel do private(isou)
 do iel = 1, ncelet
   do isou = 1, 3
     pvar(isou,iel) = pvark(isou,iel)
@@ -423,13 +430,11 @@ endif
 !  On est entre avec un smb explicite base sur PVARA.
 !     si on initialise avec PVAR avec autre chose que PVARA
 !     on doit donc corriger SMBR (c'est le cas lorsqu'on itere sur navsto)
+
+!$omp parallel do private(isou)
 do iel = 1, ncel
   do isou = 1, 3
-    smbini(isou,iel) = smbini(isou,iel)                        &
-               -fimp(isou,1,iel)*(pvar(1,iel) - pvara(1,iel))  &
-               -fimp(isou,2,iel)*(pvar(2,iel) - pvara(2,iel))  &
-               -fimp(isou,3,iel)*(pvar(3,iel) - pvara(3,iel))
-    smbrp(isou,iel) = smbini(isou,iel)
+    smbrp(isou,iel) = 0.d0
   enddo
 enddo
 
@@ -445,6 +450,42 @@ call bilsc4 &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
    smbrp  )
 
+! Dynamic relaxation
+if (iswdyp.ge.1) then
+
+  !$omp parallel do private(isou)
+  do iel = 1, ncel
+    do isou = 1, 3
+      rhs0(isou,iel) = smbrp(isou,iel)
+      smbini(isou,iel) = smbini(isou,iel)                        &
+                 -fimp(isou,1,iel)*(pvar(1,iel) - pvara(1,iel))  &
+                 -fimp(isou,2,iel)*(pvar(2,iel) - pvara(2,iel))  &
+                 -fimp(isou,3,iel)*(pvar(3,iel) - pvara(3,iel))
+      smbrp(isou,iel) = smbrp(isou,iel) + smbini(isou,iel)
+
+      adxkm1(isou,iel) = 0.d0
+      adxk(isou,iel) = 0.d0
+      dpvar(isou,iel) = 0.d0
+    enddo
+  enddo
+
+  ! ||A.dx^0||^2 = 0
+  nadxk = 0.d0
+
+else
+
+  !$omp parallel do private(isou)
+  do iel = 1, ncel
+    do isou = 1, 3
+      smbini(isou,iel) = smbini(isou,iel)                        &
+                 -fimp(isou,1,iel)*(pvar(1,iel) - pvara(1,iel))  &
+                 -fimp(isou,2,iel)*(pvar(2,iel) - pvara(2,iel))  &
+                 -fimp(isou,3,iel)*(pvar(3,iel) - pvara(3,iel))
+      smbrp(isou,iel) = smbrp(isou,iel) + smbini(isou,iel)
+    enddo
+  enddo
+endif
+
 ! --- Convergence test
 call prodsc(3*ncel, isqrt, smbrp, smbrp, residu)
 
@@ -457,6 +498,7 @@ allocate(w1(3, ncelet))  ! Allocate a temporary array
 
 call promav(isym, ibsize, iinvpe, dam, xam, pvar, w1)
 
+!$omp parallel do private(isou)
 do iel = 1, ncel
    do isou = 1, 3
       w1(isou,iel) = w1(isou,iel) + smbrp(isou,iel)
@@ -468,21 +510,9 @@ call prodsc(3*ncel, isqrt, w1, w1, rnorm)
 rnsmbr(ippu) = rnorm
 rnsmbr(ippv) = rnorm
 rnsmbr(ippw) = rnorm
+rnorm2 = rnorm**2
 
 deallocate(w1)  ! Free memory
-
-if (iswdyp.ge.1) then
-  do iel = 1, ncelet
-    do isou =1,3
-      adxkm1(isou,iel) = 0.d0
-      adxk(isou,iel) = 0.d0
-      dpvar(isou,iel) = 0.d0
-    enddo
-  enddo
-
-  ! ||A.dx^0||^2 = 0
-  nadxk = 0.d0
-endif
 
 ! Warning: for Weight Matrix, one and only one sweep is done.
 nswmod = max(nswrsp, 1)
@@ -496,11 +526,25 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
 
   ! --- Solving on the increment dpvar
 
-  do iel = 1, ncelet
-    do isou =1,3
-      dpvar(isou,iel) = 0.d0
+  ! Dynamic relaxation of the system
+  if (iswdyp.ge.1) then
+
+    !$omp parallel do private(isou)
+    do iel = 1, ncel
+      do isou =1,3
+        dpvarm1(isou,iel) = dpvar(isou,iel)
+        dpvar(isou,iel) = 0.d0
+      enddo
     enddo
-  enddo
+  else
+
+    !$omp parallel do private(isou)
+    do iel = 1, ncel
+      do isou =1,3
+        dpvar(isou,iel) = 0.d0
+      enddo
+    enddo
+  endif
 
   ! iinvpe is useless in the vectorial framework
   iinvpe = 0
@@ -508,19 +552,21 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
   ! Matrix block size
   ibsize = 3
 
+  ! Solver residual
+  ressol = residu
+
   call invers &
   !==========
  ( cnom(1), isym   , ibsize , ipol   , ireslq , nitmap , imgrp  , &
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
-   epsilp , rnorm  , residu          ,                            &
+   epsilp , rnorm  , ressol ,                                     &
    dam    , xam    , smbrp  , dpvar  )
 
-  nbivar(ippu) = niterf
-  nbivar(ippv) = niterf
-  nbivar(ippw) = niterf
-
   ! Writing
+  nbivar(ippu) = nbivar(ippu) + niterf
+  nbivar(ippv) = nbivar(ippv) + niterf
+  nbivar(ippw) = nbivar(ippw) + niterf
   if (abs(rnorm)/sqrt(3.d0).gt.epzero) then
     resvar(ippu) = residu/rnorm
     resvar(ippv) = residu/rnorm
@@ -542,12 +588,12 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
   if (iswdyp.ge.1) then
 
     ! Computation of the variable ralaxation coefficient
-    incp = 0
 
+    !$omp parallel do private(isou)
     do iel = 1, ncelet
       do isou = 1, 3
         adxkm1(isou,iel) = adxk(isou,iel)
-        adxk(isou,iel) = 0.d0
+        adxk(isou,iel) = - rhs0(isou,iel)
       enddo
     enddo
 
@@ -565,25 +611,26 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
 
     insqrt = 0
 
-    ! ||A.dx^(k-1)||^2
+    ! ||E.dx^(k-1)-E.0||^2
     nadxkm1 = nadxk
 
-    ! ||A.dx^k||^2
+    ! ||E.dx^k-E.0||^2
     call prodsc(3*ncel , insqrt , adxk , adxk , nadxk)
 
-    ! < A.dx^k; r^k >
+    ! < E.dx^k-E.0; r^k >
     call prodsc(3*ncel , insqrt , smbrp , adxk , paxkrk)
 
     ! Relaxation with respect to dx^k and dx^(k-1)
     if (iswdyp.ge.2) then
 
-      ! < A.dx^(k-1); r^k >
+      ! < E.dx^(k-1)-E.0; r^k >
       call prodsc(3*ncel , insqrt , smbrp , adxkm1 , paxm1rk)
 
-      ! < A.dx^(k-1); A.dx^k >
+      ! < E.dx^(k-1)-E.0; E.dx^k-E.0 >
       call prodsc(3*ncel , insqrt , adxk, adxkm1 , paxm1ax)
 
-      if (nadxkm1.gt.1.d-30.and.(nadxk*nadxkm1-paxm1ax**2).gt.1.d-30) then
+      if (nadxkm1.gt.1.d-30*rnorm2.and.                     &
+          (nadxk*nadxkm1-paxm1ax**2).gt.1.d-30*rnorm2) then
         beta = (paxkrk*paxm1ax - nadxk*paxm1rk)/(nadxk*nadxkm1-paxm1ax**2)
       else
         beta = 0.d0
@@ -592,9 +639,20 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
     else
       beta = 0.d0
       paxm1ax =1.d0
+      paxm1rk = 0.d0
+      paxm1ax = 0.d0
     endif
 
-    alph = -(paxkrk + beta*paxm1ax)/max(nadxk, 1.d-30)
+    ! The first sweep is not relaxed
+    if (isweep.eq.1) then
+      alph = 1.d0
+      beta = 0.d0
+    elseif (isweep.eq.2) then
+      beta = 0.d0
+      alph = -paxkrk/max(nadxk, 1.d-30*rnorm2)
+    else
+      alph = -(paxkrk + beta*paxm1ax)/max(nadxk, 1.d-30*rnorm2)
+    endif
 
     ! Writing
     if (iwarnp.ge.3) then
@@ -607,18 +665,24 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
   ! --- Update the solution with the increment
 
   if (iswdyp.eq.0) then
+
+    !$omp parallel do private(isou)
     do iel = 1, ncel
       do isou = 1, 3
          pvar(isou,iel) = pvar(isou,iel) + dpvar(isou,iel)
       enddo
     enddo
   elseif (iswdyp.eq.1) then
+
+    !$omp parallel do private(isou)
     do iel = 1, ncel
       do isou = 1, 3
          pvar(isou,iel) = pvar(isou,iel) + alph*dpvar(isou,iel)
       enddo
     enddo
   elseif (iswdyp.ge.2) then
+
+    !$omp parallel do private(isou)
     do iel = 1, ncel
       do isou = 1, 3
          pvar(isou,iel) = pvar(isou,iel) + alph*dpvar(isou,iel)  &
@@ -640,17 +704,51 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
   ! --- Update the right hand side if needed:
   if (isweep.le.nswmod.and.res.gt.epsrsp*rnorm) then
 
-    do iel = 1, ncel
-      ! smbini already contains instationnary terms and mass source terms
-      ! of the RHS updated at each sweep
-      do isou=1,3
-        smbini(isou,iel) = smbini(isou,iel)                 &
-                  - fimp(isou,1,iel)*dpvar(1,iel)           &
-                  - fimp(isou,2,iel)*dpvar(2,iel)           &
-                  - fimp(isou,3,iel)*dpvar(3,iel)
-        smbrp(isou,iel) = smbini(isou,iel)
+    if (iswdyp.eq.0) then
+
+      !$omp parallel do private(isou)
+      do iel = 1, ncel
+        ! smbini already contains instationnary terms and mass source terms
+        ! of the RHS updated at each sweep
+        do isou = 1, 3
+          smbini(isou,iel) = smbini(isou,iel)                 &
+                    - fimp(isou,1,iel)*dpvar(1,iel)           &
+                    - fimp(isou,2,iel)*dpvar(2,iel)           &
+                    - fimp(isou,3,iel)*dpvar(3,iel)
+          smbrp(isou,iel) = smbini(isou,iel)
+        enddo
       enddo
-    enddo
+
+    elseif (iswdyp.eq.1) then
+
+      !$omp parallel do private(isou)
+      do iel = 1, ncel
+        ! smbini already contains instationnary terms and mass source terms
+        ! of the RHS updated at each sweep
+        do isou = 1, 3
+          smbini(isou,iel) = smbini(isou,iel)                 &
+                    - fimp(isou,1,iel)*alph*dpvar(1,iel)      &
+                    - fimp(isou,2,iel)*alph*dpvar(2,iel)      &
+                    - fimp(isou,3,iel)*alph*dpvar(3,iel)
+          smbrp(isou,iel) = smbini(isou,iel)
+        enddo
+      enddo
+
+    elseif (iswdyp.eq.2) then
+
+      !$omp parallel do private(isou)
+      do iel = 1, ncel
+        ! smbini already contains instationnary terms and mass source terms
+        ! of the RHS updated at each sweep
+        do isou = 1, 3
+          smbini(isou,iel) = smbini(isou,iel)                                  &
+                    - fimp(isou,1,iel)*(alph*dpvar(1,iel)+beta*dpvarm1(1,iel)) &
+                    - fimp(isou,2,iel)*(alph*dpvar(2,iel)+beta*dpvarm1(2,iel)) &
+                    - fimp(isou,3,iel)*(alph*dpvar(3,iel)+beta*dpvarm1(3,iel))
+          smbrp(isou,iel) = smbini(isou,iel)
+        enddo
+      enddo
+    endif
 
     call bilsc4 &
     !==========
@@ -702,6 +800,7 @@ if (iescap.gt.0) then
   ! smbini already contains instationnary terms and mass source terms
   ! of the RHS updated at each sweep
 
+  !$omp parallel do private(isou)
   do iel = 1, ncel
     do isou = 1, 3
       smbrp(isou,iel) = smbini(isou,iel) - fimp(isou,1,iel)*dpvar(1,iel) &
@@ -728,6 +827,7 @@ if (iescap.gt.0) then
 
   ! Contribution of the current component to the L2 norm stored in eswork
 
+  !$omp parallel do private(isou)
   do iel = 1, ncel
     do isou = 1, 3
       eswork(isou,iel) = (smbrp(isou,iel)/ volume(iel))**2
@@ -749,7 +849,7 @@ endif
 ! Free memory
 deallocate(dam, xam)
 deallocate(dpvar, smbini)
-if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1)
+if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 
 !--------
 ! Formats
@@ -766,10 +866,10 @@ if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1)
 '@  Nombre d''iterations maximal ',I10   ,' atteint'                ,/,&
 '@' )
  1200 format ( &
- 1X,A16,' Sweep: ',I5,' Relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
-'    < A.dx^k  ; r^k > = ',E12.5,' ||A.dx^k  ||^2 = ',E12.5         ,/,&
-'    < A.dx^k-1; r^k > = ',E12.5,' ||A.dx^k-1||^2 = ',E12.5         ,/,&
-' < A.dx^k-1; A.dx^k > = ',E12.5)
+ 1X,A16,' Sweep: ',I5,' Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
+'    < dI^k  ; R^k > = ',E12.5,' ||dI^k  ||^2 = ',E12.5                     ,/,&
+'    < dI^k-1; R^k > = ',E12.5,' ||dI^k-1||^2 = ',E12.5                     ,/,&
+'   < dI^k-1; dI^k > = ',E12.5)
 
 #else
 
@@ -782,10 +882,10 @@ if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1)
 '@  Maximum number of iterations ',I10   ,' reached'                ,/,&
 '@' )
  1200 format ( &
- 1X,A16,' Sweep: ',I5,' Relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
-'    < A.dx^k  ; r^k > = ',E12.5,' ||A.dx^k  ||^2 = ',E12.5         ,/,&
-'    < A.dx^k-1; r^k > = ',E12.5,' ||A.dx^k-1||^2 = ',E12.5         ,/,&
-' < A.dx^k-1; A.dx^k > = ',E12.5)
+ 1X,A16,' Sweep: ',I5,' Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
+'    < dI^k  ; R^k > = ',E12.5,' ||dI^k  ||^2 = ',E12.5                     ,/,&
+'    < dI^k-1; R^k > = ',E12.5,' ||dI^k-1||^2 = ',E12.5                     ,/,&
+'   < dI^k-1; dI^k > = ',E12.5)
 
 #endif
 
