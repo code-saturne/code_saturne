@@ -302,7 +302,7 @@ call field_get_coefa_s(ivarfl(irh), coefar)
 call field_get_coefa_s(ivarfl(itk), coefat)
 call field_get_coefa_s(ivarfl(itk), coefbt)
 
-call field_get_coefa_s(ivarfl(irh), coefae)
+call field_get_coefa_s(ivarfl(ien), coefae)
 
 call field_get_coefa_v(ivarfl(iu), coefav)
 
