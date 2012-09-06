@@ -24,22 +24,27 @@
 ! Function:
 ! ---------
 
-!> \file bilsca.f90
+!> \file bilscv.f90
 !>
 !> \brief Wrapper to the function which adds the explicit part of the
 !> convection/diffusion
-!> terms of a transport equation of a scalar field \f$ \varia \f$.
+!> terms of a transport equation of a vector field \f$ \vect{\varia} \f$.
 !>
-!> More precisely, the right hand side \f$ Rhs \f$ is updated as
+!> More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
 !> follows:
 !> \f[
-!> Rhs = Rhs + \sum_{\fij \in \Facei{\celli}}      \left(
-!>        \dot{m}_\ij \varia_\fij
-!>      - \mu_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
+!> \vect{Rhs} = \vect{Rhs} + \sum_{\fij \in \Facei{\celli}}      \left(
+!>        \dot{m}_\ij \vect{\varia}_\fij
+!>      - \mu_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
 !> \f]
 !>
+!> Remark:
+!> if ivisep = 1, then we also take \f$ \mu \transpose{\gradt\vect{\varia}}
+!> + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
+!> the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
+!>
 !> Warning:
-!> \f$ Rhs \f$ has already been initialized before calling bilsca!
+!> \f$ \vect{Rhs} \f$ has already been initialized before calling bilscv!
 !>
 !> Options for the diffusive scheme:
 !> - idftnp = 1: scalar diffusivity
@@ -50,8 +55,6 @@
 !> - blencp = 1: no upwind scheme except in the slope test
 !> - ischcp = 0: second order
 !> - ischcp = 1: centred
-!> - imucpp = 0: do not multiply the convective part by \f$ C_p \f$
-!> - imucpp = 1: multiply the convective part by \f$ C_p \f$
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -90,14 +93,13 @@
 !> \param[in]     imrgra        indicator
 !>                               - 0 iterative gradient
 !>                               - 1 least square gradient
-!> \param[in]     iccocg        indicator
-!>                               - 1 re-compute cocg matrix (for iterativ gradients)
+!> \param[in]     ivisep        indicator to take \f$ \divv
+!>                               \left(\mu \gradt \transpose{\vect{a}} \right)
+!>                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
+!>                               - 1 take into account,
 !>                               - 0 otherwise
 !> \param[in]     ipp*          index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
-!> \param[in]     imucpp        indicator
-!>                               - 0 do not multiply the convectiv term by Cp
-!>                               - 1 do multiply the convectiv term by Cp
 !> \param[in]     idftnp        indicator
 !>                               - 1 scalar diffusivity
 !>                               - 6 symmetric tensor diffusivity
@@ -114,15 +116,15 @@
 !>                               scheme (mix between Crank-Nicolson and
 !>                               Adams-Bashforth)
 !>                               - thetap = 1: implicit scheme
-!> \param[in]     pvar          solved variable (current time step)
-!> \param[in]     pvara         solved variable (previous time step)
-!> \param[in]     coefa         boundary condition array for the variable
+!> \param[in]     pvar          vitesse resolue (instant courant)
+!> \param[in]     pvara         vitesse resolue (instant precedent)
+!> \param[in]     coefav        boundary condition array for the variable
 !>                               (Explicit part)
-!> \param[in]     coefb         boundary condition array for the variable
+!> \param[in]     coefbv        boundary condition array for the variable
 !>                               (Impplicit part)
-!> \param[in]     cofaf         boundary condition array for the diffusion
+!> \param[in]     cofafv        boundary condition array for the diffusion
 !>                               of the variable (Explicit part)
-!> \param[in]     cofbf         boundary condition array for the diffusion
+!> \param[in]     cofbfv        boundary condition array for the diffusion
 !>                               of the variable (Implicit part)
 !> \param[in]     flumas        mass flux at interior faces
 !> \param[in]     flumab        mass flux at boundary faces
@@ -130,27 +132,22 @@
 !>                               at interior faces for the r.h.s.
 !> \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
 !>                               at border faces for the r.h.s.
-!> \param[in]     viscce        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
-!> \param[in]     xcpp          array of specific heat (Cp)
-!> \param[in]     weighf        internal face weight between cells i j in case
-!>                               of tensor diffusion
-!> \param[in]     weighb        boundary face weight for cells i in case
-!>                               of tensor diffusion
-!> \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+!> \param[in]     secvif        secondary viscosity at interior faces
+!> \param[in]     secvib        secondary viscosity at boundary faces
+!> \param[in,out] smbr          right hand side \f$ \vect{Rhs} \f$
 !_______________________________________________________________________________
 
-subroutine bilsca &
+subroutine bilscv &
 !================
-
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp , idftnp ,                            &
+   ischcp , isstpp , inc    , imrgra , ivisep ,                   &
+   ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-   flumas , flumab , viscf  , viscb  , viscce , xcpp   ,          &
-   weighf , weighb ,                                              &
-   smbrp  )
+   pvar   , pvara  ,                                              &
+   coefav , coefbv , cofafv , cofbfv ,                            &
+   flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
+   smbr   )
 
 !===============================================================================
 
@@ -159,6 +156,7 @@ subroutine bilsca &
 !===============================================================================
 
 use paramx
+use numvar
 use pointe
 use entsor
 use parall
@@ -176,102 +174,45 @@ integer          nvar   , nscal
 integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
-integer          inc    , imrgra , iccocg
-integer          iwarnp , ipp    , imucpp, idftnp
+integer          inc    , imrgra , ivisep
+integer          idftnp
+integer          iwarnp , ippu   , ippv   , ippw
 
 double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
-
-double precision pvar (ncelet), pvara(ncelet)
-double precision coefap(nfabor), coefbp(nfabor)
-double precision cofafp(nfabor), cofbfp(nfabor)
-double precision flumas(nfac), flumab(nfabor)
-double precision viscf (nfac), viscb (nfabor)
-double precision weighf(2,nfac), weighb(nfabor)
-double precision smbrp(ncelet)
-double precision xcpp(ncelet)
-double precision viscce(*)
+double precision pvar  (3  ,ncelet)
+double precision pvara (3  ,ncelet)
+double precision coefav(3  ,nfabor)
+double precision cofafv(3  ,nfabor)
+double precision coefbv(3,3,nfabor)
+double precision cofbfv(3,3,nfabor)
+double precision flumas(nfac)  , flumab(nfabor)
+double precision viscf (nfac)  , viscb (nfabor)
+double precision secvif(nfac), secvib(nfabor)
+double precision smbr(3,ncelet)
 
 ! Local variables
-double precision idiflc
 
 !===============================================================================
 
 ! Scalar diffusivity
 if (idftnp.eq.1) then
-  if (imucpp.eq.0) then
 
-    call bilsc2 &
-    !==========
-   ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     ipp    , iwarnp ,                                              &
+  call bilsc4 &
+  !==========
+   ( nvar   , nscal  ,                                              &
+     idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+     ischcp , isstpp , inc    , imrgra , ivisep ,                   &
+     ippu   , ippv   , ippw   , iwarnp ,                            &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-     pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-     flumas , flumab , viscf  , viscb  ,                            &
-     smbrp  )
-
-  ! The convective part is mulitplied by Cp for the Temperature
-  else
-
-    call bilsct &
-    !==========
-   ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     ipp    , iwarnp ,                                              &
-     blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-     pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-     flumas , flumab , viscf  , viscb  , xcpp   ,                   &
-     smbrp  )
-
-  endif
+     pvar   , pvara  ,                                              &
+     coefav , coefbv , cofafv , cofbfv ,                            &
+     flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
+     smbr   )
 
 ! Symmetric tensor diffusivity
 elseif (idftnp.eq.6) then
 
-  idiflc = 0
-  ! Convective part
-  if (imucpp.eq.0.and.iconvp.eq.1) then
-
-    call bilsc2 &
-    !==========
-   ( idtvar , ivar   , iconvp , idiflc , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     ipp    , iwarnp ,                                              &
-     blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-     pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-     flumas , flumab , viscf  , viscb  ,                            &
-     smbrp  )
-
-  ! The convective part is mulitplied by Cp for the Temperature
-  elseif (imucpp.eq.1.and.iconvp.eq.1) then
-
-    call bilsct &
-    !==========
-   ( idtvar , ivar   , iconvp , idiflc , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     ipp    , iwarnp ,                                              &
-     blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-     pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-     flumas , flumab , viscf  , viscb  , xcpp   ,                   &
-     smbrp  )
-
-  endif
-
-  ! Diffusive part
-  if (idiffp.eq.1) then
-
-    call diften &
-    !==========
-   ( idtvar , ivar   , nswrgp , imligp , ircflp ,                   &
-     inc    , imrgra , iccocg , ipp    , iwarnp , epsrgp ,          &
-     climgp , extrap , relaxp , thetap ,                            &
-     pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-     viscf  , viscb  , viscce ,                                     &
-     weighf , weighb ,                                              &
-     smbrp  )
-
-  endif
-
+  !TODO
 endif
 
 !--------
@@ -283,4 +224,5 @@ endif
 !----
 
 return
+
 end subroutine

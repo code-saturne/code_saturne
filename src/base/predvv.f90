@@ -20,6 +20,72 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file predvv.f90
+!>
+!> \brief This subroutine perform the velocity prediction step of the Navier
+!> Stokes equations for incompressible or slightly compressible flows for
+!> the coupled velocity components solver.
+!>
+!> - at the first call, the predicted velocities are computed and also
+!>   an estimator on the predicted velocity is computed.
+!
+!> - at the second call, a global estimator on Navier Stokes is computed.
+!>   This second call is done after the correction step (resopv).
+
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     iappel        call number (1 or 2)
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     iterns        index of the iteration on Navier-Stokes
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     icepdc        index of cells with head loss
+!> \param[in]     icetsm        index of cells with mass source term
+!> \param[in]     itypsm        type of mass source term for the variables
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in,out] propfa        physical properties at interior face centers
+!> \param[in,out] propfb        physical properties at boundary face centers
+!> \param[in]     flumas        internal mass flux (depending on iappel)
+!> \param[in]     flumab        boundary mass flux (depending on iappel)
+!> \param[in]     coefa, coefb  boundary conditions
+!> \param[in]     ckupdc        work array for the head loss
+!> \param[in]     smacel        variable value associated to the mass source
+!>                               term (for ivar=ipr, smacel is the mass flux
+!>                               \f$ \Gamma^n \f$)
+!> \param[in]     frcxt         external forces making hydrostatic pressure
+!> \param[in]     trava         working array for the velocity-pressure coupling
+!> \param[in]     ximpa         idem
+!> \param[in]     uvwk          idem (stores the velocity at the previous iteration)*
+!> \param[in]     dfrcxt        variation of the external forces
+!> \param[in]                    making the hydrostatic pressure
+!> \param[in]     tpucou        non scalar time step in case of
+!>                               velocity pressure coupling
+!> \param[in]     trav          right hand side for the normalizing
+!>                               the residual
+
+!> \param[in]     viscf         visc*surface/dist aux faces internes
+!> \param[in]     viscb         visc*surface/dist aux faces de bord
+!> \param[in]     viscfi        idem viscf pour increments
+!> \param[in]     viscbi        idem viscb pour increments
+!> \param[in]     secvif        secondary viscosity at interior faces
+!> \param[in]     secvib        secondary viscosity at boundary faces
+!> \param[in]     w*            working array (TODO to be removed)
+!> \param[in]     xnormp        workig array for the norm of the pressure
+!_______________________________________________________________________________
+
 subroutine predvv &
 !================
  ( iappel ,                                                       &
@@ -34,91 +100,6 @@ subroutine predvv &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     , xnormp )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! Solving of NS equations for incompressible or slightly compressible flows for
-! one time step. Both convection-diffusion and continuity steps are performed.
-! The velocity components are solved together in once.
-
-! AU PREMIER APPEL,  ON EFFECTUE LA PREDICITION DES VITESSES
-!               ET  ON CALCULE UN ESTIMATEUR SUR LA VITESSE PREDITE
-
-! AU DEUXIEME APPEL, ON CALCULE UN ESTIMATEUR GLOBAL
-!               POUR NAVIER-STOKES :
-!   ON UTILISE TRAV, SMBR ET LES TABLEAUX DE TRAVAIL
-!   ON APPELLE BILSC4 AU LIEU DE CODITV
-!   ON REMPLIT LE PROPCE ESTIMATEUR IESTOT
-!   CE DEUXIEME APPEL INTERVIENT DANS NAVSTV APRES RESOPV
-!   LORS DE CE DEUXIEME APPEL
-!     RTPA ET RTP SONT UN UNIQUE TABLEAU (= RTP)
-!     LE FLUX DE MASSE EST LE FLUX DE MASSE DEDUIT DE LA VITESSE
-!      AU CENTRE CONTENUE DANS RTP
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! iappel           ! e  ! <-- ! numero d'appel du sous programme               !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! iterns           ! e  ! <-- ! numero d'iteration sur navsto                  !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! flumas           ! tr ! <-- ! flux de masse aux faces internes               !
-!  (nfac  )        !    !     !   (distinction iappel=1 ou 2)                  !
-! flumab           ! tr ! <-- ! flux de masse aux faces de bord                !
-!  (nfabor  )      !    !     !    (distinction iappel=1 ou 2)                 !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
-!                  !    !     !  hydrostatique                                 !
-! trava            ! tr ! <-- ! tableau de travail pour couplage               !
-!(3,ncelet)        !    !     ! vitesse pression par point fixe                !
-! ximpa            ! tr ! <-- ! tableau de travail pour couplage               !
-!(3,3,ncelet)      !    !     ! vitesse pression par point fixe                !
-! uvwk             ! tr ! <-- ! tableau de travail pour couplage u/p           !
-!                  !    !     ! sert a stocker la vitesse de                   !
-!                  !    !     ! l'iteration precedente                         !
-!dfrcxt(ncelet,3)  ! tr ! --> ! variation de force exterieure                  !
-!                  !    !     !  generant la pression hydrostatique            !
-! tpucou           ! tr ! --> ! couplage vitesse pression                      !
-! (ndim,ncelel)    !    !     !                                                !
-! trav(3,ncelet)   ! tr ! --> ! smb qui servira pour normalisation             !
-!                  !    !     !  dans resolp                                   !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor)    ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! viscfi(nfac)     ! tr ! --- ! idem viscf pour increments                     !
-! viscbi(nfabor)   ! tr ! --- ! idem viscb pour increments                     !
-! secvif(nfac)     ! tr ! --- ! secondary viscosity at interior faces          !
-! secvib(nfabor)   ! tr ! --- ! secondary viscosity at boundary faces          !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
-! xnormp(ncelet    ! tr ! <-- ! tableau reel pour norme resolp                 !
-! tslagr(ncelet    ! tr ! <-- ! terme de couplage retour du                    !
-!   ntersl)        !    !     !   lagrangien                                   !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -187,12 +168,12 @@ double precision vela  (3  ,ncelet)
 integer          iel   , ielpdc, ifac  , ivar  , isou  , itypfl
 integer          iccocg, inc   , init  , ii    , isqrt
 integer          ireslp, nswrgp, imligp, iwarnp, ippt  , ipp
+integer          iswdyp, idftnp
 integer          iclipr
 integer          iclik
 integer          ipcrom, ipcroa, ipcroo, ipcrho, ipcvis, ipcvst
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
-integer          iswdyp
 integer          imgrp , ncymxp, nitmfp
 integer          iesprp, iestop
 integer          iptsna
@@ -705,7 +686,7 @@ endif
 !-------------------------------------------------------------------------------
 ! ---> TERMES DE GRADIENT TRANSPOSE
 
-!     These terms are taken into account in bilsc4.
+!     These terms are taken into account in bilscv.
 !     We only compute here the secondary viscosity.
 
 if (ivisse.eq.1) then
@@ -1378,6 +1359,7 @@ imligp = imligr(iu)
 ircflp = ircflu(iu)
 ischcp = ischcv(iu)
 isstpp = isstpc(iu)
+idftnp = idften(iu)
 iswdyp = iswdyn(iu)
 imgrp  = imgr  (iu)
 ncymxp = ncymax(iu)
@@ -1410,7 +1392,7 @@ if(iappel.eq.1) then
  ( nvar   , nscal  ,                                              &
    idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
-   ischcp , isstpp , iescap , iswdyp ,                            &
+   ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -1430,7 +1412,7 @@ if(iappel.eq.1) then
  ( nvar   , nscal  ,                                              &
    idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
-   ischcp , isstpp , iescap , iswdyp ,                            &
+   ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -1466,14 +1448,11 @@ if(iappel.eq.1) then
     enddo
   endif
 
-!     COUPLAGE P/U RENFORCE : CALCUL DU VECTEUR T ENTRELACE, STOCKE DANS TPUCOU
-!       ON PASSE DANS CODITV, EN NE FAISANT QU'UN SEUL SWEEP, ET EN
-!       INITIALISANT TPUCOU A 0 POUR QUE LA PARTIE CV/DIFF AJOUTEE
-!       PAR BILSC4 SOIT NULLE
-!     NSWRSP = -1 INDIQUERA A CODITS QU'IL NE FAUT FAIRE QU'UN SWEEP
-!       ET QU'IL FAUT METTRE INC A 0 (POUR OTER LES DIRICHLETS DANS LES
-!       CL DES MATRICES POIDS)
-
+  ! Velocity-pression coupling: compute the vector T, stored in tpucou,
+  !  coditv is called, only one sweep is done, and tpucou is initialized
+  !  by 0. so that the advection/diffusion added by bilscv is 0.
+  !  nswrsp = -1 indicated that only one sweep is required and inc=0
+  !  for boundary contitions on the weight matrix.
   if (ipucou.eq.1) then
     nswrsp = -1
     do iel = 1, ncel
@@ -1496,7 +1475,7 @@ if(iappel.eq.1) then
  ( nvar   , nscal  ,                                              &
    idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
-   ischcp , isstpp , iescap , iswdyp ,                            &
+   ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -1543,12 +1522,12 @@ elseif(iappel.eq.2) then
   ippv  = ipprtp(iv)
   ippw  = ipprtp(iw)
 
-  call bilsc4 &
+  call bilscv &
   !==========
  ( nvar   , nscal  ,                                              &
    idtva0 , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , ippv   , ippw   , iwarnp ,                            &
+   ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    vel    , vel    ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &

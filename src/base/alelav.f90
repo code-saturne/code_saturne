@@ -20,6 +20,33 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file alelav.f90
+!>
+!> \brief This subroutine perform the solving of a Poisson equation
+!> on the mesh velocity for ALE module.
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in,out] propfa        physical properties at interior face centers
+!> \param[in,out] propfb        physical properties at boundary face centers
+!> \param[in]     coefa, coefb  boundary conditions
+!_______________________________________________________________________________
+
 subroutine alelav &
 !================
 
@@ -27,34 +54,6 @@ subroutine alelav &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! Solving of the Laplace equation for the mesh velocity for ALE
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!-------------------------------------------------------------------------------
 !===============================================================================
 
 !===============================================================================
@@ -97,7 +96,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp, ivisep
-integer          iswdyp
+integer          iswdyp, idftnp
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, thetv
 double precision epsrsp, prosrf
@@ -227,6 +226,7 @@ ircflp = ircflu(iuma)
 ischcp = ischcv(iuma)
 isstpp = isstpc(iuma)
 iescap = 0
+idftnp = idften(iuma)
 iswdyp = iswdyn(iuma)
 imgrp  = imgr  (iuma)
 ncymxp = ncymax(iuma)
@@ -249,7 +249,7 @@ call coditv &
  ( nvar   , nscal  ,                                              &
    idtvar , iuma   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
-   ischcp , isstpp , iescap , iswdyp ,                            &
+   ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &

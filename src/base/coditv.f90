@@ -118,6 +118,11 @@
 !>                               - 1 without slope test
 !>                               - 0 with slope test
 !> \param[in]     iescap        compute the predictor indicator if 1
+!> \param[in]     idftnp        indicator
+!>                               - 0 the diffusivity is scalar
+!>                               - 1 the diffusivity is a diagonal tensor
+!>                               - 2 the diffusivity is a symmetric tensor
+
 !> \param[in]     iswdyp        indicator
 !>                               - 0 no dynamic relaxation
 !>                               - 1 dynamic relaxation depending on
@@ -182,7 +187,7 @@ subroutine coditv &
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
-   ischcp , isstpp , iescap , iswdyp ,                            &
+   ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
@@ -221,7 +226,7 @@ integer          idtvar , ivar   , iconvp , idiffp , ndircp
 integer          nitmap
 integer          imrgra , nswrsp , nswrgp , imligp , ircflp
 integer          ischcp , isstpp , iescap , imgrp
-integer          iswdyp
+integer          idftnp , iswdyp
 integer          ncymxp , nitmfp
 integer          iwarnp
 integer          ippu   , ippv   , ippw   , ivisep
@@ -386,12 +391,12 @@ thetex = 1.d0 - thetap
 if (abs(thetex).gt.epzero) then
   inc    = 1
 
-  call bilsc4 &
+  call bilscv &
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , ippv   , ippw   , iwarnp ,                            &
+   ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -417,7 +422,7 @@ do iel = 1, ncelet
   enddo
 enddo
 
-! In the following, bilsc4 is called with inc=1,
+! In the following, bilscv is called with inc=1,
 ! except for Weight Matrix (nswrsp=-1)
 inc = 1
 if (nswrsp.eq.-1) then
@@ -438,12 +443,12 @@ do iel = 1, ncel
   enddo
 enddo
 
-call bilsc4 &
+call bilscv &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , ippv   , ippw   , iwarnp ,                            &
+   ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -597,12 +602,12 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
       enddo
     enddo
 
-    call bilsc4 &
+    call bilscv &
     !==========
    ( nvar   , nscal  ,                                              &
      idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , incp   , imrgra , ivisep ,                   &
-     ippu   , ippv   , ippw   , iwarnp ,                            &
+     ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
      dpvar  , dpvar  ,                                              &
      coefav , coefbv , cofafv , cofbfv ,                            &
@@ -750,12 +755,12 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
       enddo
     endif
 
-    call bilsc4 &
+    call bilscv &
     !==========
    ( nvar   , nscal  ,                                              &
      idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-     ippu   , ippv   , ippw   , iwarnp ,                            &
+     ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
      pvar   , pvara  ,                                              &
      coefav , coefbv , cofafv , cofbfv ,                            &
@@ -813,12 +818,12 @@ if (iescap.gt.0) then
   ! Without relaxation even for a statonnary computation
   idtva0 = 0
 
-  call bilsc4 &
+  call bilscv &
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , ippv   , ippw   , iwarnp ,                            &
+   ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &

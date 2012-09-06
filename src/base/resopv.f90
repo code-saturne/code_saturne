@@ -56,21 +56,6 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     icetsm        index of cells with mass source terms
-!> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfa        physical properties at interior face centers
-!> \param[in,out] propfb        physical properties at boundary face centers
-!> \param[in]     smacel        variable value associated to the mass source
-!>                               term (for ivar=ipr, smacel is the mass flux
-!>                               \f$ \Gamma^n \f$)
-
-
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     icepdc        index of cells with head loss
@@ -86,12 +71,10 @@
 !> \param[in,out] propfa        physical properties at interior face centers
 !> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
-!>
 !> \param[in]     ckupdc        work array for the head loss
-!>
-!> \param[in]     smacel        values of variables associated to the mass
-!>                               source (for the pressure, smacel
-!>                               is the mass flux)
+!> \param[in]     smacel        variable value associated to the mass source
+!>                               term (for ivar=ipr, smacel is the mass flux
+!>                               \f$ \Gamma^n \f$)
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     dfrcxt        variation of the external forces
 !> \param[in]                    making the hydrostatic pressure
@@ -117,7 +100,7 @@ subroutine resopv &
    icepdc , icetsm , itypsm , isostd , idtsca ,                   &
    dt     , rtp    , rtpa   , vel    , vela   ,                   &
    propce , propfa , propfb ,                                     &
-   coefa  , coefb  , coefav , coefbv , coefap ,                   & !TODO
+   coefa  , coefb  , coefav , coefbv , coefap ,                   &
    ckupdc , smacel ,                                              &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
