@@ -317,11 +317,13 @@ _compute_least_squares(const cs_mesh_t             *mesh,
 
   const cs_real_t *surfbo  = mesh_quantities->b_face_normal;
 
-  cs_lnum_t  i, face_id, cell1, cell2, cell_id;
-  cs_real_t  cell_center1[3], cell_center2[3];
-  cs_real_t  vect[3], dij[3];
+  int           sweep_id, n_sweeps;
+  cs_lnum_t     i, k, indexl, indexc, face_id, cell1, cell2, cell_id;
+  cs_real_3_t   cell_center1, cell_center2, vect, dij, eigenvalues;
+  cs_real_33_t  w2, rot;
 
   double unsdij, surfn, surf_n_inv, min_diag, max_diag;
+  double pivot, y, t, s, c;
 
   cs_real_t *w1 = NULL;
   BFT_MALLOC(w1, 6 * n_cells_wghosts, cs_real_t);
@@ -388,16 +390,87 @@ _compute_least_squares(const cs_mesh_t             *mesh,
     w1[cell1 + 5 * n_cells_wghosts] += dij[1] * dij[2];
   }
 
-  /* Approximative method using the Frobenius norm to estimate the min/max
-     eigenvalues ratio */
+  /* Use of a Jacobi transformation to estimate the min/max eigenvalues ratio */
+
+  n_sweeps = 100;
 
   for (cell_id = 0; cell_id < n_cells; cell_id++) {
+
+    w2[0][0] = w1[cell_id];
+    w2[1][1] = w1[cell_id + n_cells_wghosts];
+    w2[2][2] = w1[cell_id + 2 * n_cells_wghosts];
+    w2[0][1] = w1[cell_id + 3 * n_cells_wghosts];
+    w2[0][2] = w1[cell_id + 4 * n_cells_wghosts];
+    w2[1][2] = w1[cell_id + 5 * n_cells_wghosts];
+    w2[1][0] = w1[cell_id + 3 * n_cells_wghosts];
+    w2[2][0] = w1[cell_id + 4 * n_cells_wghosts];
+    w2[2][1] = w1[cell_id + 5 * n_cells_wghosts];
+
+    for (sweep_id = 0; sweep_id < n_sweeps; sweep_id++) {
+
+      pivot  = 0.;
+
+      for (i = 0; i < 3; i++)
+        eigenvalues[i] = w2[i][i];
+
+      for (i = 0; i < 3; i++) {
+        for (k = 0; k < 3; k++) {
+          if (fabs(w2[i][k]) >= pivot && i != k) {
+            pivot = fabs(w2[i][k]);
+            indexl = i;
+            indexc = k;
+          }
+        }
+      }
+
+      if (pivot < 1.e-10)
+        break;
+
+      y = (w2[indexc][indexc] - w2[indexl][indexl]) / (2.*w2[indexl][indexc]);
+
+      if (y >= 0.)
+        t = 1. / (fabs(y) + sqrt(y*y + 1));
+      else
+        t = -1. / (fabs(y) + sqrt(y*y + 1));
+
+      c = 1. / sqrt(t*t + 1);
+      s = t*c;
+
+      for (i = 0; i < 3; i++) {
+        for (k = 0; k < 3; k++)
+          rot[i][k] = 0.;
+      }
+
+      for (i = 0; i < 3; i++)
+        rot[i][i] = 1.;
+
+      rot[indexl][indexl] = c;
+      rot[indexc][indexc] = c;
+      rot[indexl][indexc] = -s;
+      rot[indexc][indexl] = s;
+
+      for (i = 0; i < 3; i++)
+        for (k = 0; k < 3; k++)
+          w2[i][k] = rot[i][0]*w2[0][k] +
+                     rot[i][1]*w2[1][k] +
+                     rot[i][2]*w2[2][k];
+
+      rot[indexl][indexc] = s;
+      rot[indexc][indexl] = -s;
+
+      for (i = 0; i < 3; i++)
+        for (k = 0; k < 3; k++)
+          w2[i][k] = w2[i][0]*rot[0][k] +
+                     w2[i][1]*rot[1][k] +
+                     w2[i][2]*rot[2][k];
+    }
+
     min_diag = 1.e15;
     max_diag = 0.0;
 
     for (i = 0; i < 3; i++) {
-      min_diag = fmin(min_diag, fabs(w1[cell_id + i * n_cells_wghosts]));
-      max_diag = fmax(max_diag, fabs(w1[cell_id + i * n_cells_wghosts]));
+      min_diag = fmin(min_diag, fabs(eigenvalues[i]));
+      max_diag = fmax(max_diag, fabs(eigenvalues[i]));
     }
 
     lsq[cell_id] = min_diag / max_diag;
