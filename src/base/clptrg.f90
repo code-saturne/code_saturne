@@ -201,7 +201,7 @@ double precision und0, deuxd0
 double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodcn
 double precision visclc, visctc, romc  , distbf, srfbnf, cpscv
-double precision cofimp, ypup
+double precision cofimp
 double precision distb0, rugd  , rugt  , ydep  , act
 double precision dsa0
 
@@ -234,7 +234,7 @@ uet = 1.d0
 utau = 1.d0
 sqrcmu = sqrt(cmu)
 
-! --- Constantes de relaxation en atmosphere non neutre
+! --- Correction factors for stratification (used in atmospheric version)
 cfnnu=1.d0
 cfnns=1.d0
 cfnnk=1.d0
@@ -571,7 +571,7 @@ do ifac = 1, nfabor
       ! Compute reduced gravity for non horizontal walls :
       gredu = gx*rnx + gy*rny + gz*rnz
 
-      call atmcls & !FIXME TODO
+      call atmcls &
       !==========
     ( nvar   , nscal  ,                                              &
       ifac   , iel    ,                                              &
@@ -642,7 +642,6 @@ do ifac = 1, nfabor
       if (visctc.gt.epzero) then
 
         ! Pseudo decalage de la paroi de la distance rugd :
-        ! TODO modified for non neutral boundary layer (cfnnu)
         distb0=distbf+rugd
         xmutlm = xkappa*uk*distb0*romc
 
@@ -652,8 +651,8 @@ do ifac = 1, nfabor
 
         rcflux = max(xmutlm,visctc)/(visclc+visctc)*distbf/distb0
 
+        ! modified for non neutral boundary layer (cfnnu)
         ! FIXME: it should be uet/xkappa and not uk!
-        ! FIXME the "min" is useless.
         uiptn  = min(utau,max(utau - uk/xkappa*rcprod*cfnnu,0.d0))
         uiptnf = utau - uet/xkappa*rcflux*cfnnu
         iuntur = 1
@@ -661,10 +660,9 @@ do ifac = 1, nfabor
         ! Coupled solving of the velocity components
         if (ivelco.eq.1) then
           ! The boundary term for velocity gradient is implicit
-          ypup = distbf*uk*romc/visclc/uplus
           cofimp  = max(1.d0 - 1.d0/(xkappa*uplus)*rcprod*cfnnu, 0.d0)
           ! The term (rho*uet*uk) is implicit
-          hflui = visclc / distbf * ypup
+          hflui = (visclc+visctc)/distbf/(xkappa*uplus)*rcflux*cfnnu
         endif
 
       ! In the viscous sub-layer
@@ -812,7 +810,7 @@ do ifac = 1, nfabor
       hint = (visclc+visctc/sigmae)/distbf
 
       pimp = uk**3/(xkappa*ydep**2)*distbf*cfnne
-      qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
+      qimp = -pimp*hint !TODO transform it to use d eps / d y directly
 
       call set_neumann_scalar &
            !==================
@@ -930,7 +928,7 @@ do ifac = 1, nfabor
       hint = (visclc+visctc/sigmae)/distbf
 
       pimp = uk**3/(xkappa*ydep**2)*distbf*cfnne
-      qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
+      qimp = -pimp*hint !TODO transform it to use d eps / d y directly
 
       call set_neumann_scalar &
            !==================
@@ -1108,7 +1106,7 @@ do ifac = 1, nfabor
 
       pimp = distbf*4.d0*uk**3*romc**2/           &
             (sqrcmu*xkappa*visclc**2*yplus**2)
-      qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
+      qimp = -pimp*hint !TODO transform it to use d eps / d y directly
 
       call set_neumann_scalar &
            !==================
@@ -1180,7 +1178,6 @@ do ifac = 1, nfabor
           else
             ipcvsl = 0
           endif
-          ! FIXME useless
           if (ipcvsl.le.0) then
             rkl = visls0(iscal)
             if (abs(iscsth(iscal)).eq.1) then
@@ -1248,7 +1245,7 @@ do ifac = 1, nfabor
 
             rugt = rcodcl(ifac,iv,3)
             act = xkappa/log((distbf+rugt)/rugt)
-            hflui = romc*uet*act*cfnns
+            hflui = romc*cpp*uet*act*cfnns
           else
             hflui = hint
           endif
@@ -1276,9 +1273,6 @@ do ifac = 1, nfabor
               hredui = hint/hflui
               coefa(ifac,iclvar) = pimp/hredui
               coefb(ifac,iclvar) = (hredui-1.d0)/hredui
-              !FIXME ou un flux nul
-              !coefa(ifac,iclvar) = 0.d0
-              !coefb(ifac,iclvar) = 1.d0
 
               ! Flux BCs
               coefa(ifac,iclvaf) = -hflui*pimp
@@ -1291,9 +1285,6 @@ do ifac = 1, nfabor
               coefa(ifac,iclvar) = hext*pimp/(hint+hext*hredui)
               coefb(ifac,iclvar) = (hint-(1.d0-hredui)*hext)/       &
                                  (hint+hext*hredui)
-              !FIXME or zero flux?
-              !coefa(ifac,iclvar) = 0.d0
-              !coefb(ifac,iclvar) = 1.d0
 
               ! Flux BCs
               heq = hflui*hext/(hflui+hext)
