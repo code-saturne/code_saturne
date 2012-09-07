@@ -23,10 +23,10 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the 'Partitioning' page.
+This module defines the 'PerformanceTuning' page.
 
 This module contains the following classes:
-- PartitionView
+- PerformanceTuningView
 """
 
 #-------------------------------------------------------------------------------
@@ -50,22 +50,22 @@ from PyQt4.QtGui  import *
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
 from Pages.SolutionDomainModel import RelOrAbsPath
-from Pages.PartitionForm import Ui_PartitionForm
-from Pages.PartitionModel import PartitionModel
+from Pages.PerformanceTuningForm import Ui_PerformanceTuningForm
+from Pages.PerformanceTuningModel import PerformanceTuningModel
 
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
 
 logging.basicConfig()
-log = logging.getLogger("PartitionView")
+log = logging.getLogger("PerformanceTuningView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
 
-class PartitionView(QWidget, Ui_PartitionForm):
+class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
     """
     This page is devoted to the start/restart control.
     """
@@ -75,11 +75,11 @@ class PartitionView(QWidget, Ui_PartitionForm):
         """
         QWidget.__init__(self, parent)
 
-        Ui_PartitionForm.__init__(self)
+        Ui_PerformanceTuningForm.__init__(self)
         self.setupUi(self)
         self.case = case
 
-        self.mdl = PartitionModel(self.case)
+        self.mdl = PerformanceTuningModel(self.case)
 
         # Combo models and items
 

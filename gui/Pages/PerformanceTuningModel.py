@@ -23,11 +23,11 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the 'Partitioning' page.
+This module defines the 'PerformanceTuning' page.
 
 This module defines the following classes:
-- PartitionModel
-- PartitionTestCase
+- PerformanceTuningModel
+- PerformanceTuningTestCase
 """
 
 #-------------------------------------------------------------------------------
@@ -47,12 +47,12 @@ from Base.XMLvariables import Model
 from Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
-# Partitioning model class
+# PerformanceTuning model class
 #-------------------------------------------------------------------------------
 
-class PartitionModel(Model):
+class PerformanceTuningModel(Model):
     """
-    Manage the input/output markups in the xml doc about Partitioning
+    Manage the input/output markups in the xml doc about PerformanceTuninging
     """
     def __init__(self, case):
         """
@@ -230,7 +230,7 @@ class PartitionModel(Model):
 #-------------------------------------------------------------------------------
 
 
-class PartitionTestCase(ModelTest):
+class PerformanceTuningTestCase(ModelTest):
     """
     """
     def checkPartitionInstantiation(self):
@@ -257,7 +257,7 @@ class PartitionTestCase(ModelTest):
                     'Could not get partition in Partition model'
 
 def runTest():
-    print("PartitionTestCase")
+    print("PerformanceTuningTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

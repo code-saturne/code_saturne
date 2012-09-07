@@ -93,8 +93,8 @@ OutputSurfacicVariablesView.py \
 OutputVolumicVariablesModel.py \
 OutputVolumicVariablesView.py \
 PreProcessingInformationsView.py \
-PartitionModel.py \
-PartitionView.py \
+PerformanceTuningModel.py \
+PerformanceTuningView.py \
 ProfilesModel.py \
 ProfilesView.py \
 QMeiEditorView.py \
@@ -172,7 +172,7 @@ NumericalParamGlobalForm.ui \
 OutputControlForm.ui \
 OutputSurfacicVariablesForm.ui \
 OutputVolumicVariablesForm.ui \
-PartitionForm.ui \
+PerformanceTuningForm.ui \
 ProfilesForm.ui \
 QMeiEditorForm.ui \
 ReferenceValuesForm.ui \

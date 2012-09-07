@@ -238,9 +238,9 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.StartRestartView as Page
         thisPage = Page.StartRestartView(root, case)
 
-    elif page_name == tr("Partitioning"):
-        import Pages.PartitionView as Page
-        thisPage = Page.PartitionView(root, case)
+    elif page_name == tr("Performance tuning"):
+        import Pages.PerformanceTuningView as Page
+        thisPage = Page.PerformanceTuningView(root, case)
 
     elif page_name == tr("Prepare batch calculation"):
         import Pages.BatchRunningView as Page
