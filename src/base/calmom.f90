@@ -85,7 +85,7 @@ allocate(travm(ncelet))
 
 ! Boucle et test sur les moments a calculer
 do imom = 1, nbmomt
-  if(ntcabs.ge.ntdmom(imom)) then
+  if (ntcabs.ge.ntdmom(imom).and.ttcabs.ge.ttdmom(imom)) then
 
 !   Position dans PROPCE du tableau de cumul des moments
     icmom = ipproc(icmome(imom))

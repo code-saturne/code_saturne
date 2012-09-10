@@ -1756,6 +1756,7 @@ endif
 !            Value -1 indicates the we must reinitialize moment imom.
 !        ntdmom(imom) defined the time step at which the moment calculation
 !          is started.
+!        ttdmom(imom) defined the time at which the moment calculation is started.
 
 !     We give below the example of the calculation of moments <u> and <rho u v>
 !       the moment <u> is reread in the restart file if we are restarting,
@@ -1769,6 +1770,7 @@ if (.false.) then
   imom  = 1
   idfmom(1,imom) =  iu
   ntdmom(imom)   =  1000
+  ttdmom(imom)   =  0.d0
   ! Second moment: <rho u v>
   imom  = 2
   idfmom(1,imom) = -irom
@@ -1776,6 +1778,7 @@ if (.false.) then
   idfmom(3,imom) =  iv
   imoold(imom)   = -1
   ntdmom(imom)   =  10000
+  ttdmom(imom)   =  10.d0
 
 endif
 

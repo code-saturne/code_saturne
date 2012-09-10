@@ -1647,7 +1647,7 @@ if(nbmomt.gt.0) then
   write(nfecra,4901)
   do imom = 1, nbmomt
     write(nfecra,4920)imom,imoold(imom),                          &
-         ntdmom(imom),(idfmom(jj,imom),jj=1,ndgmox)
+         ntdmom(imom),ttdmom(imom),(idfmom(jj,imom),jj=1,ndgmox)
   enddo
   write(nfecra,4930)
 endif
@@ -1782,10 +1782,10 @@ endif
  4901 format(                                                     &
                                                                 /,&
 '------------------------------------------------------',       /,&
-' IMOM IMOOLD NDTMOM IDFMOM',                                   /,&
+' IMOM IMOOLD NDTMOM TTDMOM IDFMOM',                            /,&
 '------------------------------------------------------'         )
  4920 format(                                                     &
- 1x,i4,    i7,    i7,5(i7)                                       )
+ 1x,i4,    i7,    i7, e14.5, 5(i7)                               )
  4930 format(                                                     &
 '------------------------------------------------------',       /,&
                                                                 /,&
@@ -1794,7 +1794,9 @@ endif
 '                               (  en suite de calcul ou     )',/,&
 '                               (-1 si le moment est         )',/,&
 '                               (  reinitialise              )',/,&
-'       NDTMOM = 0 ou > 0       (numero du pas de temps de   )',/,&
+'       NTDMOM = 0 ou > 0       (numero du pas de temps de   )',/,&
+'                               (debut de calcul du moment   )',/,&
+'       TTDMOM = 0 ou > 0       (instant de                  )',/,&
 '                               (debut de calcul du moment   )',/,&
 '       IDFMOM = 0 ou > 0       (numero des variables        )',/,&
 '                               (composant le moment         )',/)
@@ -1940,7 +1942,7 @@ endif
 ' IMOM IMOOLD NDTMOM IDFMOM',                                   /,&
 '------------------------------------------------------'         )
  4920 format(                                                     &
- 1x,i4,    i7,    i7,5(i7)                                       )
+ 1x,i4,    i7,    i7, e14.5, 5(i7)                               )
  4930 format(                                                     &
 '------------------------------------------------------',       /,&
                                                                 /,&
@@ -1949,8 +1951,10 @@ endif
 '                               (  to calculation restart or )',/,&
 '                               (-1 if the moment is         )',/,&
 '                               (  reinitialized             )',/,&
-'       NDTMOM = 0 ou > 0       (moment calculation starting )',/,&
+'       NTDMOM = 0 ou > 0       (moment calculation starting )',/,&
 '                               (time step number            )',/,&
+'       TTDMOM = 0 ou > 0       (moment calculation starting )',/,&
+'                               (time                        )',/,&
 '       IDFMOM = 0 ou > 0       (number of variables of      )',/,&
 '                               (which the moment is composed)',/)
 

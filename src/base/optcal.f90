@@ -484,6 +484,7 @@ module optcal
   !  nbmomt : nombre de moyennes demandees
   !  nbdtcm : nombre de tableaux ncel pour le temps cumule
   !  ntdmom : numero du pas de temps initial pour le calcul du moment
+  !  ttdmom : temps initial pour le calcul du moment
   !  imoold : numero de l'ancien moment correspondant en cas de suite
   !  icmome : pointeur pour les moments (donne un numero de propriete)
   !           s'utilise ainsi propce(iel,ipproc(icmome(imom)))
@@ -505,7 +506,7 @@ module optcal
                             icmome(nbmomx), idtmom(nbmomx),                 &
                             idfmom(ndgmox,nbmomx),          idgmom(nbmomx), &
                             icdtmo(nbmomx), ippmom(nvppmx)
-  double precision, save :: dtcmom(nbmomx)
+  double precision, save :: dtcmom(nbmomx), ttdmom(nbmomx)
 
   ! Indicateur pertes de charge global (ie somme sur les processeurs
   !   de ncepdc)

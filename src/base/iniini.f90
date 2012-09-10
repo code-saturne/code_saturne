@@ -1010,6 +1010,8 @@ nfpt1t = 0
 do imom = 1, nbmomx
 !       Pas de temps de depart (-1 : jamais)
   ntdmom(imom) = -1
+  ! start time
+  ttdmom(imom) = 0.d0
 !       Ancien moment a relire ou -1 pour (re)initialisation
   imoold(imom) = -2
 enddo
