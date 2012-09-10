@@ -103,7 +103,9 @@ integer          iturph, jturph, itytph, jtytph
 integer          nfmtsc, nfmtru
 integer          jturb, jtytur, jale
 integer          impamo
+integer          ival
 double precision d2s3, d2s3xk
+double precision rval
 
 !===============================================================================
 
@@ -346,16 +348,16 @@ rubriq = 'nbre_pas_de_temps'
 itysup = 0
 nbval  = 1
 irtyp  = 1
-call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,ntpabs,  &
-            ierror)
+call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,ival,ierror)
+ntpabs = ival ! no direct read to avoid pointer issue
 nberro=nberro+ierror
 
 rubriq = 'instant_precedent'
 itysup = 0
 nbval  = 1
 irtyp  = 2
-call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,ttpabs,  &
-            ierror)
+call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,rval,ierror)
+ttpabs = rval ! no direct read to avoid pointer issue
 nberro=nberro+ierror
 
 
