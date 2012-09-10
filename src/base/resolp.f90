@@ -1059,9 +1059,7 @@ do 100 isweep = 1, nswmpr
   endif
   if (isweep.eq.1) rnsmbr(ipp) = residu
 
-!  Test a modifier eventuellement
-! (il faut qu'il soit plus strict que celui de gradco)
-  if( residu .le. 10.d0*epsrsm(ipr)*rnormp ) then
+  if (residu .le. epsrsm(ipr)*rnormp ) then
 ! --- Si convergence, calcul de l'indicateur
 !                     mise a jour du flux de masse et sortie
 

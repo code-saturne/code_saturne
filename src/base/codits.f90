@@ -539,7 +539,7 @@ nswmod = max(nswrsp, 1)
 
 ! Reconstruction loop (beginning)
 !--------------------------------
-
+nbivar(ipp) = 0
 do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
 
   ! --- Solving on the increment dpvar
@@ -570,7 +570,7 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
    dam    , xam    , smbrp  , dpvar  )
 
   ! Writing
-  nbivar(ipp) = niterf
+  nbivar(ipp) = nbivar(ipp) + niterf
   if (abs(rnorm).gt.epzero) then
     resvar(ipp) = residu/rnorm
   else
@@ -755,7 +755,7 @@ if (iwarnp.ge.1) then
 endif
 
 ! Writing: non-convergence
-if (iwarnp.ge.2) then
+if (iwarnp.ge.1) then
   if (isweep.gt.nswmod) then
     write(nfecra,1100) cnom, nswmod
   endif

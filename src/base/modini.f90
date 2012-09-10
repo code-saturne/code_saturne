@@ -854,37 +854,37 @@ enddo
 !           a l'ordre 1 :
 !                  2  pour la pression
 !                  1  pour les autres variables
-!                  on initialise EPSRSM a 1.D-8
 !                  on initialise EPSILO a 1.D-8
+!                  on initialise EPSRSM a 10*EPSILO
 !           a l'ordre 2 :
 !                  5  pour la pression
 !                  10 pour les autres variables
-!                  on initialise EPSRSM a 1.D-5
 !                  on initialise EPSILO a 1.D-5
+!                  on initialise EPSRSM a 10*EPSILO
 !     Attention aux tests dans verini
 
 if (ischtp.eq.2) then
   ii = ipr
   if (nswrsm(ii).eq.-999) nswrsm(ii) = 5
-  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 1.d-5
   if (abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
+  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 10.d0*epsilo(ii)
   ii = iu
   if (nswrsm(ii).eq.-999) nswrsm(ii) = 10
-  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 1.d-5
   if (abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
+  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 10.d0*epsilo(ii)
   ii = iv
   if (nswrsm(ii).eq.-999) nswrsm(ii) = 10
-  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 1.d-5
   if (abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
+  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 10.d0*epsilo(ii)
   ii = iw
   if (nswrsm(ii).eq.-999) nswrsm(ii) = 10
-  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 1.d-5
   if (abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
+  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 10.d0*epsilo(ii)
   do jj = 1, nscal
     ii = isca(jj)
     if (nswrsm(ii).eq.-999) nswrsm(ii) = 10
-    if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 1.d-5
     if (abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
+    if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 10.d0*epsilo(ii)
   enddo
 endif
 ii = ipr
@@ -892,8 +892,8 @@ if (nswrsm(ii).eq.-999) nswrsm(ii) = 2
 
 do ii = 1, nvarmx
   if (nswrsm(ii).eq.-999) nswrsm(ii) = 1
-  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 1.d-8
   if (abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-8
+  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 10.d0*epsilo(ii)
 enddo
 
 ! ---> ANOMAX

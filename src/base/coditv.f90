@@ -543,6 +543,9 @@ isweep = 1
 
 ! Reconstruction loop (beginning)
 !--------------------------------
+nbivar(ippu) = 0
+nbivar(ippv) = 0
+nbivar(ippw) = 0
 
 do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
 
@@ -803,7 +806,7 @@ if (iwarnp.ge.1) then
 endif
 
 ! Writing: non-convergence
-if (iwarnp.ge.2) then
+if (iwarnp.ge.1) then
   if (isweep.gt.nswmod) then
     write(nfecra,1100) cnom(1), nswmod
     write(nfecra,1100) cnom(2), nswmod

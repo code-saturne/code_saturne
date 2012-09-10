@@ -192,7 +192,7 @@ double precision residu, resold, phydr0
 double precision ardtsr, arsr  , unsara, thetap
 double precision dtsrom, unsvom, romro0
 double precision epsrgp, climgp, extrap, epsilp
-double precision drom  , dronm1, tcrite, relaxp
+double precision drom  , dronm1, relaxp
 double precision hint, qimp, qimpv(3), epsrsp, blencp
 double precision ressol, rnorm2
 double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
@@ -1176,12 +1176,10 @@ if (iswdyp.ge.1) then
 
 endif
 
-tcrite = 10.d0*epsrsm(ipr)*rnormp
-
 ! Reconstruction loop (beginning)
 !--------------------------------
 
-do while (isweep.le.nswmpr.and.residu.gt.tcrite)
+do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
 
   ! Solving on the increment drtp
   !------------------------------
@@ -1351,7 +1349,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
   !---------------------------------
 
   if (iswdyp.eq.0) then
-    if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.tcrite) then
+    if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) then
       do iel = 1, ncel
         presa(iel) = rtp(iel,ipr)
         rtp(iel,ipr) = presa(iel) + relaxv(ipr)*drtp(iel)
