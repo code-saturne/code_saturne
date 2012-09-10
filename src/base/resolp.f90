@@ -1489,6 +1489,7 @@ if (idilat.eq.4) then
   ipp    = ipprtp(ivar)
   iwarnp = iwarni(ivar)
   imucpp = 0
+  idftnp = idften(ivar)
   blencp = blencv(ivar)
   epsrgp = epsrgr(ivar)
   climgp = climgr(ivar)
@@ -1496,22 +1497,23 @@ if (idilat.eq.4) then
   relaxp = relaxv(ivar)
   thetap = 1.d0
 
-  call bilsc2 &
+  call bilsca &
   !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp ,                                     &
+   ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtp(1,ipr)      , rtp(1,ipr)      ,                            &
    coefap , coefb(1,iclipr) ,                                     &
    cofafp , coefb(1,iclipf) ,                                     &
-   velflx , velflb , viscf  , viscb  , rvoid   ,                  &
+   velflx , velflb , viscf  , viscb  , rvoid  , rvoid  ,          &
+   rvoid  , rvoid  ,                                              &
    smbr   )
 
   ! --- Initialization of the variable to solve
   do iel = 1, ncel
-    rovsdt(iel) = 0.d0
+    rovsdt(iel) = 340.d0/dt(iel) * volume(iel)
     drtp(iel)   = 0.d0
     dpvar(iel)  = 0.d0
     smbr(iel)   = - smbr(iel)
@@ -1561,7 +1563,7 @@ if (idilat.eq.4) then
      imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
-     drtp   , drtp   ,                                              &!FIXME rtp(1,ipr)  rtp(1,ipr)
+     drtp   , drtp   ,                                              &
      coefap , coefb(1,iclipr) ,                                     &
      cofafp , coefb(1,iclipf) ,                                     &
      velflx , velflb ,                                              &
